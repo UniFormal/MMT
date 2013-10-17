@@ -1,5 +1,15 @@
 package info.kwarc.mmt.api
 
+/** A ComponentContainer holds the data keyed by a DeclarationComponent */
+trait ComponentContainer {
+   /** updates this container using the pieces of another one */
+   def update(nw: ComponentContainer)
+   /** empties this container, afterwards the component is absent */
+   def delete
+   /** true if (some dimension of) this component is present */
+   def isDefined: Boolean
+}
+
 /** A DeclarationComponent identifies a component of a Declaration. It is used in CPath's */
 abstract class DeclarationComponent(s : String) {
    override def toString = s

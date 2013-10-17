@@ -25,12 +25,15 @@ trait Extension extends Logger {
    /** a custom error class for this extension */
    case class LocalError(s: String) extends ExtensionError(logPrefix, s)
    
-   /** initialization (empty by default) */
-   def init(controller: Controller, args: List[String]) {
+   /** MMT initialization */
+   private[api] def init(controller: Controller) {
       this.controller = controller
       report = controller.report
    }
-   /** termination (empty by default)
+   
+   /** extension-specific initialization (override as needed, empty by default) */
+   def start(args: List[String]) {}
+   /** extension-specific cleanup (override as needed, empty by default)
     *
     * Extensions may create persistent data structures and processes,
     * but they must clean up after themselves in this method
@@ -83,12 +86,12 @@ class ExtensionManager(controller: Controller) extends Logger {
                                 new ontology.Present, new ontology.PresentDecl) 
       
       // initialize all extensions
-      getAll.foreach(_.init(controller, Nil))
+      getAll.foreach(_.init(controller))
    }
 
    /** instantiates an extension, initializes it, and adds it
     *  @param cls qualified class name (e.g., org.my.Extension), must be on the class path at run time
-    *  @parag args arguments that will be passed when initializing the extension
+    *  @param args arguments that will be passed when initializing the extension
     */
    def addExtension(cls: String, args: List[String]) {
        log("trying to create extension " + cls)
@@ -104,7 +107,7 @@ class ExtensionManager(controller: Controller) extends Logger {
    /** initializes and adds an extension */
    def addExtension(ext: Extension, args: List[String] = Nil) {
        log("adding extension " + ext.getClass.toString)
-       ext.init(controller, args)
+       ext.init(controller)
        if (ext.isInstanceOf[Plugin]) {
           log("  ... as plugin")
           val pl = ext.asInstanceOf[Plugin]
@@ -136,13 +139,14 @@ class ExtensionManager(controller: Controller) extends Logger {
           parserExtensions ::= ext.asInstanceOf[ParserExtension]
        }
        if (ext.isInstanceOf[QueryExtension]) {
-          log("  ... as parser extension")
+          log("  ... as query extension")
           queryExtensions ::= ext.asInstanceOf[QueryExtension]
        }
        if (ext.isInstanceOf[ServerPlugin]) {
           log("  ... as server plugin")
           serverPlugins ::= ext.asInstanceOf[ServerPlugin]
        }
+       ext.start(args)
    }
 
    /** retrieves an applicable Compiler */
@@ -155,8 +159,13 @@ class ExtensionManager(controller: Controller) extends Logger {
    def getServerPlugin(cont : String) : Option[ServerPlugin] = serverPlugins.find(_.isApplicable(cont))
    /** retrieves an applicable parser extension */
    def getParserExtension(se: StructuralElement, keyword: String) : Option[ParserExtension] = parserExtensions find {_.isApplicable(se, keyword)}
-   /** retrieves an applicable Foundation */
-   def getFoundation(p: MPath) : Option[Foundation] = foundations find {_.foundTheory == p}
+   /** retrieves the closest Foundation that covers a theory, if any */
+   def getFoundation(p: MPath) : Option[Foundation] = foundations find {_.foundTheory == p} orElse {
+      val mt = objects.TheoryExp.meta(objects.OMMOD(p))(controller.globalLookup)
+      mt flatMap getFoundation
+   }
+   def getFoundation(thy: objects.Term) : Option[Foundation] =
+      objects.TheoryExp.meta(thy)(controller.globalLookup) flatMap getFoundation
 
    /** sets the URL of the MathWebSearch backend */
    def setMWS(uri: URI) {mws = Some(uri)}

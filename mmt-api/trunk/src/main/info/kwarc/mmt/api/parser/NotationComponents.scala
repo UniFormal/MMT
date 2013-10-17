@@ -143,12 +143,15 @@ case class ScriptMarker(main: Marker, sup: Option[Marker], sub: Option[Marker],
    def flatMap(f: Marker => List[Marker]) =
       ScriptMarker(gMap(f)(main), sup map gMap(f), sub map gMap(f), over map gMap(f), under map gMap(f))
 }
-/** a marker for table-like layouting */
-case class TableMarker(rows: List[List[Marker]], lines: Boolean) extends PresentationMarker {
+/** a marker for fractions */
+case class FractionMarker(above: List[Marker], below: List[Marker], line: Boolean) extends PresentationMarker {
    def flatMap(f: Marker => List[Marker]) = {
-      val rowsF = rows map {row => row flatMap f}
-      TableMarker(rowsF, lines)
+      FractionMarker(above.flatMap(f), below.flatMap(f), line)
    }
+}
+/** a marker for type of the presented object */
+case object InferenceMarker extends PresentationMarker {
+   def flatMap(f: Marker => List[Marker]) = InferenceMarker
 }
 
 object PresentationMarker {
@@ -198,7 +201,7 @@ object PresentationMarker {
                val enum = sofar.head
                val (denom, rest) = splitOffOne(left)
                left = rest
-               val newHead = TableMarker(List(List(enum), List(denom)), true)
+               val newHead = FractionMarker(List(enum), List(denom), true)
                sofar = newHead :: sofar.tail
             case m =>
                sofar ::= m

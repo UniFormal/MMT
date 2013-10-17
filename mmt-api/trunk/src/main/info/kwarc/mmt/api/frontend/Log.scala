@@ -22,7 +22,7 @@ trait Logger {
 class Report {
    /** output is categorized, the elements of group determine which categories are considered
     *  the categories "user" (for user input) and "error" are output by default */
-   val groups = scala.collection.mutable.Set[String]("user", "error")
+   private[api] val groups = scala.collection.mutable.Set[String]("user", "error")
    /** logs a message if logging is switched on for the group */
    def apply(group : => String, msg : => String) : Unit =
 	   if (groups.contains(group) || groups.contains("*")) log(group, msg)
@@ -33,7 +33,6 @@ class Report {
 	}
    /** definitely logs a message */
    private def log(group : => String, msg : => String) {
-	   if (rec) mem ::= ind + group + ": " + msg  
 	   handlers.foreach(_.apply(ind, group, msg))
 	}
 
@@ -45,19 +44,13 @@ class Report {
    }
    /** removes all ReportHandlers with a certain id */
    def removeHandler(id: String) {handlers = handlers.filter(_.id != id)}
-
-   protected var ind : String = ""
+   /** the current indentation */
+   private var ind : String = ""
    /** increase indentation */
-   def indent {ind += "  "}
+   private[frontend] def indent {ind += "  "}
    /** decrease indentation */
-   def unindent {ind = ind.substring(2)}
-
-   //this should not be here, if needed, a special LogHandler should be added temporarily
-   private var mem : List[String] = Nil
-   private var rec = false
-   def record {rec = true}
-   def recall = mem
-   def clear {mem = Nil; rec = false}
+   private[frontend] def unindent {ind = ind.substring(2)}
+   /** flushes all handlers */
    def flush {
       handlers foreach {_.flush}
    }
@@ -93,4 +86,15 @@ class FileHandler(val filename : File, timestamps: Boolean) extends ReportHandle
    }
    override def flush {file.flush}
    override def toString = "file " + filename
+}
+
+/** remembers logged lines */
+class CacheHandler(id: String) extends ReportHandler(id) {
+   //this should not be here, if needed, a special LogHandler should be added temporarily
+   private var memory : List[String] = Nil
+   def recall = memory.reverse
+   def clear {memory = Nil}
+   def apply(ind: String, group: String, msg: String) {
+      memory ::= ind + group + ": " + msg
+   }
 }

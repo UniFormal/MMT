@@ -101,20 +101,22 @@ trait NotationBasedPresenter extends ObjectPresenter {
       aux(sub, "_")
       aux(sup, "^")
       doSpace(1)
-    }
-   
-   def doTableRow(row: List[Cont])(implicit rh : RenderingHandler) {
-      row.head()
-      row.tail map {e =>
-         doOperator("&")
-         e()
-      }
    }
-   def doTable(rows: List[List[Cont]], lines: Boolean)(implicit rh : RenderingHandler) {
-      doTableRow(rows.head)
-      rows.tail map {row =>
-         doOperator("\\\\")
-         doTableRow(row)
+   
+   def doFraction(above: List[Cont], below: List[Cont], line: Boolean)(implicit rh : RenderingHandler) {
+      doBracketedGroup {
+         above.head()
+         above.foreach {
+            e => doSpace(1)
+            e()
+         }
+      }
+      doOperator("/")
+      doBracketedGroup {
+         below.foreach {
+            e => doSpace(1)
+            e()
+         }
       }
    }
    
@@ -289,8 +291,10 @@ trait NotationBasedPresenter extends ObjectPresenter {
                            case s: ScriptMarker =>
                               def aux(mOpt: Option[Marker]) = mOpt.map {m => (_:Unit) => doMarkers(List(m))} 
                               doScript(doMarkers(List(s.main)), aux(s.sup), aux(s.sub), aux(s.over), aux(s.under))
-                           case TableMarker(rows, lines) =>
-                              doTable(rows map {r => r map {e => (_:Unit) => doMarkers(List(e))}}, lines)
+                           case FractionMarker(a,b,l) =>
+                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              doFraction(a map aux, b map aux, l)
+                           case InferenceMarker =>
                         }
                         previous = Some(current)
                      }

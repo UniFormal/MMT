@@ -13,17 +13,20 @@ import parser._
 case class GlobalParams(rh : RenderingHandler, nset : MPath)
 
 /** This class collects the parameters that vary locally during one presentation task.
- * @param pos the current position within the presented expressions
- * @param iPrec the input precedence possible provided by the parent level (used for bracket generation)
- * @param context some information about how to present the free variables that were bound on higher levels
+ * @param ids generated ids
+ * @param owner the CPath governing the current subobject (if any)
+ * @param pos the current position within the current object
+ * @param source the source location (if any)
+ * @param bracketInfo information to help decide whether to place brackets around the current subobject
  * @param inObject a flag to indicate whether the presented expression is a declaration or an object
+ * @param context some information about how to present the free variables that were bound on higher levels
  */
-case class LocalParams(ids : List[(String,String)], pos : Position, source: Option[SourceRef],
+case class LocalParams(ids : List[(String,String)], owner: Option[CPath], pos : Position, source: Option[SourceRef],
                        inObject : Boolean, bracketInfo : Option[BracketInfo], context : List[VarData]) {
    def asContext = Context(context map (_.decl) : _*)
 }
 object LocalParams {
-   val objectTop = LocalParams(Nil, Position.Init, None, true, None, Nil)
+   val objectTop = LocalParams(Nil, None, Position.Init, None, true, None, Nil)
 }
 /** This class stores information about a bound variable.
  * @param decl the variable declaration
@@ -46,9 +49,9 @@ case class StrToplevel(c: Content) extends Content {
 }
 /** A special presentable object that is wrapped around the math objects encountered during presentation
  * @param c the presented object
- * @param opath the position of the object (if known)
+ * @param cpath the path of the object (if known)
  */
-case class ObjToplevel(c: Obj, opath: Option[OPath]) extends Content {
+case class ObjToplevel(c: Obj, cpath: Option[CPath]) extends Content {
    def components = List(c)
    def role = c.role
    def governingPath = c.governingPath
@@ -61,7 +64,7 @@ case class ObjToplevel(c: Obj, opath: Option[OPath]) extends Content {
  * @param style the notation style used for presentation
  */
 class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
-   init(c, Nil)
+   init(c)
    //TODO expandXRefs is a bit of a hack, can be set by callees to presend with refs expanded. 
    //Any other solution requires changing the APIs
    var expandXRefs = false 
@@ -102,14 +105,14 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
             val key = NotationKey(None, Role_StrToplevel)
             val notation = controller.get(gpar.nset, key)
             render(notation.presentation, ContentComponents(List(c)), None, List(0), gpar, lpar)
-         case ObjToplevel(c, opath) =>
+         case ObjToplevel(c, cpath) =>
             val key = NotationKey(None, Role_ObjToplevel)
             val notation = controller.get(gpar.nset, key)
-            val opComps : List[Content] = opath match {
+            val cpComps : List[Content] = cpath match {
                case None => List(Omitted, Omitted)
-               case Some(p) => List(StringLiteral(p.parent.toPath), StringLiteral(p.component))
+               case Some(p) => List(StringLiteral(p.parent.toPath), StringLiteral(p.component.toString))
             }
-            render(notation.presentation, ContentComponents(c :: opComps), None, List(0), gpar, lpar)
+            render(notation.presentation, ContentComponents(c :: cpComps), None, List(0), gpar, lpar.copy(owner = cpath))
          case l: Literal =>
             gpar.rh(l)
          case s: StructuralElement =>
@@ -186,7 +189,7 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
                   val notation = controller.get(gpar.nset, key)
                   notation.presentation
             }
-            val contComps = ContentComponents(comps, Nil, None, Some(o))
+            val contComps = ContentComponents(comps, Nil, None, Some(o1))
             render(presentation, contComps, Some(posP), List(0), gpar, newlpar)
       }
    }
@@ -331,14 +334,16 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
            if (f != "infer") throw PresentationError("undefined function: " + f)
            o match {
               case o: Term =>
-                 val meta = controller.notstore.get(gpar.nset).from match {
-                    case m : MPath => m
+                 val meta = lpar.owner match {
+                    case Some(CPath(p,_)) => p.module
                     case _ => throw PresentationError("no foundation found")
                  }
                  val found = controller.extman.getFoundation(meta).getOrElse(throw PresentationError("no foundation found"))
-                 val tp = try {found.inference(o, lpar.asContext)(controller.globalLookup)}
-                        catch {case _ : Throwable => OMID(utils.mmt.mmtbase ? "dummy" ? "error")}
-                 present(tp, gpar, lpar)
+                 try {
+                    val tp = found.inference(o, lpar.asContext)(controller.globalLookup)
+                    present(tp, gpar, lpar)
+                 } catch {case e : Throwable => gpar.rh(e.getMessage)}
+                 
               case c => throw PresentationError("cannot infer type of " + c)
            }
      }

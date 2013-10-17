@@ -29,13 +29,7 @@ class TermDimension {
  * The representations are read < parsed < analyzed.
  * Setting a representation marks the higher representations as dirty.
  */
-class TermContainer {
-   /**
-    * the API may deactivate a TermContainer instead of deleting it to permit reusing it later
-    * 
-    * invariant: API client code may assume that this flag is never set   
-    */
-   private[api] var inactive : Boolean = false
+class TermContainer extends ComponentContainer {
    private var _read     : Option[String] = None
    private val _parsed   = new TermDimension
    private val _analyzed = new TermDimension
@@ -47,33 +41,36 @@ class TermContainer {
    /** the analyzed representation after type and argument reconstruction */
    def analyzed = _analyzed.term
    /** setter for the unparsed string representation */
-   def read_=(s: String) {
-      val changed = Some(s) != _read
+   def read_=(s: Option[String]) {
+      val changed = s != _read
       if (changed) {
-         _read           = Some(s)
+         _read           = s
          _parsed.dirty   = true
          _analyzed.dirty = true
       }
    }
+   def read_=(s: String) {read_=(Some(s))}
    /** setter for the parsed representation without further analysis */
-   def parsed_=(t: Term) {
-      val changed = Some(t) != _parsed.term
+   def parsed_=(t: Option[Term]) {
+      val changed = t != _parsed.term
       if (changed) {
-         _parsed.term    = Some(t)
+         _parsed.term    = t
          _parsed.time    = System.currentTimeMillis
          _analyzed.dirty = true
       }
       _parsed.dirty = false
    }
+   def parsed_=(t: Term) {parsed_=(Some(t))}
    /** setter for the analyzed representation */
-   def analyzed_=(t: Term) {
-      val changed = Some(t) != _analyzed.term
+   def analyzed_=(t: Option[Term]) {
+      val changed = t != _analyzed.term
       if (changed) {
-         _analyzed.term = Some(t)
+         _analyzed.term = t
          _analyzed.time = System.currentTimeMillis
       }
       _analyzed.dirty = false
    }
+   def analyzed_=(t: Term) {analyzed_=(Some(t))}
    /** true if the term must still be (re)parsed */
    def isParsedDirty = ! _parsed.dirty
    /** time of the last change */
@@ -91,20 +88,15 @@ class TermContainer {
    /** copies over the components of another TermContainer
     *  dependent dimensions that are not part of tc become dirty
     */
-   def update(tc: TermContainer) {
-      tc.read foreach {r =>
-         read = r
-         inactive = false
-      }
-      tc.parsed foreach {t =>
-         parsed = t
-         inactive = false
-      }
-      tc.analyzed foreach {p =>
-         analyzed = p
-         inactive = false
-      }
-   }
+   def update(tc: ComponentContainer) {tc match {
+      case tc: TermContainer =>
+         read = tc.read
+         if (!(tc.parsed.isEmpty && tc.read.isDefined)) // keep old, now dirty, value if tc is unparsed
+            parsed = tc.parsed
+         if (!(tc.analyzed.isEmpty && tc.parsed.isDefined)) // keep old, now dirty, value if tc is unanalyzed
+            analyzed = tc.analyzed
+      case _ => throw ImplementationError("not a TermContainer")
+   }}
    /** delete this component */
    def delete {
       _read = None

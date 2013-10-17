@@ -15,15 +15,15 @@ case class NotationKey(path : Option[Path], role : Role)
  * @param mem the memory
  * @param report the logging handler
  */
-class NotationStore(mem : ROMemory, report : frontend.Report) {
+class NotationStore(mem : ROMemory, val report : frontend.Report) extends Logger {
    private val lib = mem.content
    protected val sets = new HashMap[MPath, Style]
+   val logPrefix = "notations"
 
    /** the imports relations between notation sets */
    protected val imports = new ReflTransHashRelation[MPath]
    /** caches the list of imported notation sets */
    protected var visible = new HashMap[MPath, List[MPath]]
-   private def log(s : => String) = report("notations", s)
    def get(path : MPath) : Style = {
       try {sets(path)}
       catch {case _ : Throwable => 
@@ -41,52 +41,52 @@ class NotationStore(mem : ROMemory, report : frontend.Report) {
     */
    def get(path : MPath, key : NotationKey) : StyleNotation = {
       log("looking up notation for " + key)
-      report.indent
-      val nset = try {sets(path)}
-                 catch {case _ : Throwable => throw frontend.NotFound(path)}
-      //look up key in all visible sets, return first found notation
-      def getDeep(key : NotationKey) : Option[StyleNotation] = {
-         //a list containing all imported sets in depth-first order
-         //value is cached in visible
-         log("looking in styles for key " + key)
-         val vis = visible.getOrElseUpdate(path,imports.preimageDFO(path))
-         val not = vis.mapFind(get(_ : MPath).get(key))
-         not
+      val not = logGroup {
+         val nset = try {sets(path)}
+                    catch {case _ : Throwable => throw frontend.NotFound(path)}
+         //look up key in all visible sets, return first found notation
+         def getDeep(key : NotationKey) : Option[StyleNotation] = {
+            //a list containing all imported sets in depth-first order
+            //value is cached in visible
+            log("looking in styles for key " + key)
+            val vis = visible.getOrElseUpdate(path,imports.preimageDFO(path))
+            val not = vis.mapFind(get(_ : MPath).get(key))
+            not
+         }
+         key.path match {
+           case None =>
+              getDeep(key) match {
+                 case Some(hn) => hn
+                 case None => 
+                    throw GetError("no notation found for " + key + " in style " + path)
+              }
+           case Some(p) =>
+              val r = key.role
+              //to find the default notation highNot, we use keys without a path and try some roles in order
+              val roles : List[Role] = r match {
+                 case Role_application(None) => 
+                   mem.ontology.getType(p) match {
+                       case Some(ontology.IsConstant(rl)) => List(Role_application(rl), r) // application of constants may differ depending on their role, if given 
+                       case _ => List(r)
+                    }
+                 case Role_Constant(Some(s)) => List(r, Role_Constant(None))
+                 case r => List(r)
+              }
+              val highNot = roles mapFind {r => getDeep(NotationKey(None, r))} 
+              val lowNot = getDeep(key) 
+              (highNot, lowNot) match {
+                 case (Some(hn), None) => hn
+                 case (None, Some(ln)) => ln
+                 case (Some(hn), Some(ln)) =>
+                    log("merging notations")
+                    // the default notation may force being wrapped around lowNot
+                    if (hn.wrap) StyleNotation(ln.nset, ln.key, hn.presentation.fill(ln.presentation), false)
+                    else ln
+                 case (None, None) =>
+                    throw GetError("no notation found for " + key + " in style " + path)
+              }
+           }
       }
-      val not = key.path match {
-        case None =>
-           getDeep(key) match {
-              case Some(hn) => hn
-              case None => 
-                 throw GetError("no notation found for " + key + " in style " + path)
-           }
-        case Some(p) =>
-           val r = key.role
-           //to find the default notation highNot, we use keys without a path and try some roles in order
-           val roles : List[Role] = r match {
-              case Role_application(None) => 
-                mem.ontology.getType(p) match {
-                    case Some(ontology.IsConstant(rl)) => List(Role_application(rl), r) // application of constants may differ depending on their role, if given 
-                    case _ => List(r)
-                 }
-              case Role_Constant(Some(s)) => List(r, Role_Constant(None))
-              case r => List(r)
-           }
-           val highNot = roles mapFind {r => getDeep(NotationKey(None, r))} 
-           val lowNot = getDeep(key) 
-           (highNot, lowNot) match {
-              case (Some(hn), None) => hn
-              case (None, Some(ln)) => ln
-              case (Some(hn), Some(ln)) =>
-                 log("merging notations")
-                 // the default notation may force being wrapped around lowNot
-                 if (hn.wrap) StyleNotation(ln.nset, ln.key, hn.presentation.fill(ln.presentation), false)
-                 else ln
-              case (None, None) =>
-                 throw GetError("no notation found for " + key + " in style " + path)
-           }
-        }
-      report.unindent
       log("notation found for " + key + ": " + not)
       not
    }

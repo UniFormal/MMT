@@ -30,7 +30,6 @@ class Pattern(val home: Term, val name : LocalName, val params: Context, val bod
        {notC.toNode}
      </pattern>    
    def role = info.kwarc.mmt.api.Role_Pattern
-   override def compNames : List[(String,Int)] = List(("paramsBegin",1),("paramsEnd",params.length),("conBegin",params.length + 1)) 
    def components = OMID(path) :: params ::: body
    def getComponents = Nil //TODO
    def getDeclarations = Nil

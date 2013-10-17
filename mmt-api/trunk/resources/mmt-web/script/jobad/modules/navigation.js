@@ -10,10 +10,10 @@ var navigation = {
 	},
 	
 	init: function(JOBADInstance) {
-		//updateVisibility(document.documentElement);
 		$('#currentstyle').text(mmt.notstyle.split("?").pop());
 		var query = window.location.search.substring(1);
-		this.navigate(query);
+		if (query != "")
+		   this.navigate(query);
 	},
 
 	navigate: function (uri) {
