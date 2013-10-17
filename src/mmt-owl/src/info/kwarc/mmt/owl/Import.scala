@@ -4,7 +4,6 @@ import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.io._
 import org.semanticweb.owlapi.model._
 import org.semanticweb.owlapi.util.SimpleIRIMapper
-import java.io.{File,FileWriter}
 import java.net.URI
 import scala.collection.mutable.Set // 
 import scala.collection.JavaConversions._ //
@@ -119,7 +118,7 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 	        }
 	      } else
 	    	n
-		val constant = Constant(OMMOD(currThy), name, None, Some(tp), None, None, None)
+		val constant = Constant(OMMOD(currThy), name, None, Some(tp), None, None)
 		//theory name: ex, class name:woman, type, none for definition
 		constant.metadata = md
 		controller.add(constant)
@@ -595,9 +594,9 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 }
 
 class OWLCompiler extends Compiler {
-   def isApplicable(src : String): Boolean = { src == "owl" }
+   val key = "owl-omdoc"
    override def includeFile(f:  String) = f.endsWith("owl")
-   def compile(in: utils.File, dpath: Option[DPath], out: utils.File) : List[SourceError] = {
+   def buildOne(in: File, dpath: DPath, out: File): List[Error] = {
        val source : File = in
        val target : File = out.setExtension("omdoc")
       
@@ -615,13 +614,11 @@ class OWLCompiler extends Compiler {
 	  /* println(doc.toString)*/
 		
 	   target.getParentFile.mkdirs
-	   val file = new FileWriter(target)
+	   val file = File.Writer(target)
 	   file.write(doc.toString)
 	   file.close
 	   
 	   Nil
- 
-      
    }
 }
 
