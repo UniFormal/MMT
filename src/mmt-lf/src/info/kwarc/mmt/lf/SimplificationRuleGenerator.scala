@@ -9,6 +9,7 @@ import parser.ImplicitArg
 class SimplificationRuleGenerator extends ChangeListener {
   override val logPrefix = "rule-gen"
   case class DoesNotMatch(msg : String = "") extends java.lang.Throwable(msg)
+  override def onUpdate(e: ContentElement) {onAdd(e)}
   override def onAdd(e: ContentElement) {onCheck(e)}
   override def onDelete(p: Path) {
      controller.extman.ruleStore.delete {r => r.path == p}
@@ -52,7 +53,7 @@ class SimplificationRuleGenerator extends ChangeListener {
                    else
                       error("not of eq-args shape")
                case ApplySpine(OMS(ded), List(ApplySpine(OMS(eq), argls))) if argls.length >= 2 =>
-                   if (controller.globalLookup.getConstant(ded).rl == Some("Truth") &&
+                   if (controller.globalLookup.getConstant(ded).rl == Some("Judgment") &&
                        controller.globalLookup.getConstant(eq).rl == Some("Eq"))
                       generateRule(c, argls)
                    else

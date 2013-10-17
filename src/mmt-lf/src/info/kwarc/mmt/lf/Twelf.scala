@@ -43,8 +43,7 @@ class Twelf extends Compiler {
     * creates and intializes a Catalog
     * first argument is the location of the twelf-server script
     */
-   override def init(con: frontend.Controller, args: List[String]) {
-      super.init(con, Nil)
+   override def start(args: List[String]) {
       if (args.isEmpty) throw ParseError("no path to Twelf given")
       path = File(args(0))
       catalog = new Catalog(HashSet(), HashSet("*.elf"), HashSet(".svn"), port, true, report("lfcatalog", _))
