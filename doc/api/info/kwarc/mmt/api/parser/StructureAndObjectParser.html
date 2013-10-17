@@ -47,10 +47,7 @@
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>An implementation of the continuation functions in StructureParser with reasonable defaults.
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="StructureParser.html" class="extype" name="info.kwarc.mmt.api.parser.StructureParser">StructureParser</a>, <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
-        </div><div class="toggleContainer block">
-          <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a href="../../latex/LatexStructureParser.html" class="extype" name="info.kwarc.mmt.latex.LatexStructureParser">LatexStructureParser</a></div>
+          <div class="superTypes hiddenContent"><a href="StructureParser.html" class="extype" name="info.kwarc.mmt.api.parser.StructureParser">StructureParser</a>, <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -119,7 +116,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -158,7 +155,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -226,10 +223,10 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -268,7 +265,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -297,7 +294,7 @@
         <span class="name">errorCont</span><span class="params">(<span name="err">err: <a href="../SourceError.html" class="extype" name="info.kwarc.mmt.api.SourceError">SourceError</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="state">state: <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">A continuation function called on every error that was found</p><div class="fullcomment"><div class="comment cmt"><p>A continuation function called on every error that was found</p><p>Error handling is very lenient and will recover wherever possible.</p><p>Default implementation adds every error to the ParserState
+      <p class="shortcomment cmt">A continuation function called on every error that was found</p><div class="fullcomment"><div class="comment cmt"><p>A continuation function called on every error that was found</p><p>Error handling will recover wherever possible.</p><p>Default implementation adds every error to the ParserState
 </p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="StructureParser.html" class="extype" name="info.kwarc.mmt.api.parser.StructureParser">StructureParser</a></dd></dl></div>
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
@@ -311,7 +308,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -341,34 +338,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.parser.StructureParser#inDocParsers" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="inDocParsers:scala.collection.mutable.HashMap[String,info.kwarc.mmt.api.parser.InDocParser]"></a>
-      <a id="inDocParsers:HashMap[String,InDocParser]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">inDocParsers</span><span class="result">: <span class="extype" name="scala.collection.mutable.HashMap">HashMap</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="InDocParser.html" class="extype" name="info.kwarc.mmt.api.parser.InDocParser">InDocParser</a>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">a table of external parsers that can parser declarations in a document, indexed by keyword</p><div class="fullcomment"><div class="comment cmt"><p>a table of external parsers that can parser declarations in a document, indexed by keyword</p><p> plugins may register parsers here to extend MMT with new keywords
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="StructureParser.html" class="extype" name="info.kwarc.mmt.api.parser.StructureParser">StructureParser</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.parser.StructureParser#inTheoryParsers" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="inTheoryParsers:scala.collection.mutable.HashMap[String,info.kwarc.mmt.api.parser.InTheoryParser]"></a>
-      <a id="inTheoryParsers:HashMap[String,InTheoryParser]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">inTheoryParsers</span><span class="result">: <span class="extype" name="scala.collection.mutable.HashMap">HashMap</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="InTheoryParser.html" class="extype" name="info.kwarc.mmt.api.parser.InTheoryParser">InTheoryParser</a>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">a table of external parsers that can parser declarations in a theory, indexed by keyword</p><div class="fullcomment"><div class="comment cmt"><p>a table of external parsers that can parser declarations in a theory, indexed by keyword</p><p> plugins may register parsers here to extend MMT with new keywords
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="StructureParser.html" class="extype" name="info.kwarc.mmt.api.parser.StructureParser">StructureParser</a></dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -383,6 +352,19 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log(e:info.kwarc.mmt.api.Error):Unit"></a>
+      <a id="log(Error):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="params">(<span name="e">e: <a href="../Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="log(s:=&gt;String):Unit"></a>
       <a id="log(⇒String):Unit"></a>
       <h4 class="signature">
@@ -392,6 +374,19 @@
       </span>
       <span class="symbol">
         <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logError(s:=&gt;String):Unit"></a>
+      <a id="logError(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logError</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
@@ -421,6 +416,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="StructureParser.html" class="extype" name="info.kwarc.mmt.api.parser.StructureParser">StructureParser</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logTime" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logTime:Unit"></a>
+      <a id="logTime:Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logTime</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -430,7 +438,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -486,7 +494,7 @@ if that fails, the <a href="DefaultObjectParser$.html" class="extype" name="info
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">readConstant</span><span class="params">(<span name="mpath">mpath: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>, <span name="conS">conS: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="docBaseO">docBaseO: <span class="extype" name="scala.Option">Option</span>[<a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a>] = <span class="symbol">None</span></span>, <span name="namespace">namespace: <span class="extype" name="scala.collection.mutable.ListMap">ListMap</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a>] = <span class="symbol">new ListMap</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">readConstant</span><span class="params">(<span name="mpath">mpath: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>, <span name="conS">conS: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="docBaseO">docBaseO: <span class="extype" name="scala.Option">Option</span>[<a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/package.html">None</a></span></span></span>, <span name="namespace">namespace: <span class="extype" name="scala.collection.mutable.ListMap">ListMap</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a>] = <span class="symbol">new ListMap</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">reads a constant from a string</p><div class="fullcomment"><div class="comment cmt"><p>reads a constant from a string</p></div><dl class="paramcmts block"><dt class="param">mpath</dt><dd class="cmt"><p>the uri of the parent module</p></dd><dt class="param">docBaseO</dt><dd class="cmt"><p>optionally the base uri of the containing document</p></dd><dt class="param">namespace</dt><dd class="cmt"><p>the namespace declarations found so far
@@ -570,7 +578,7 @@ if that fails, the <a href="DefaultObjectParser$.html" class="extype" name="info
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">readModule</span><span class="params">(<span name="dpath">dpath: <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a></span>, <span name="modS">modS: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="docBaseO">docBaseO: <span class="extype" name="scala.Option">Option</span>[<a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a>] = <span class="symbol">None</span></span>, <span name="namespace">namespace: <span class="extype" name="scala.collection.mutable.ListMap">ListMap</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a>] = <span class="symbol">new ListMap</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">readModule</span><span class="params">(<span name="dpath">dpath: <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a></span>, <span name="modS">modS: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="docBaseO">docBaseO: <span class="extype" name="scala.Option">Option</span>[<a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/package.html">None</a></span></span></span>, <span name="namespace">namespace: <span class="extype" name="scala.collection.mutable.ListMap">ListMap</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a>] = <span class="symbol">new ListMap</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">reads a module from a string</p><div class="fullcomment"><div class="comment cmt"><p>reads a module from a string</p></div><dl class="paramcmts block"><dt class="param">dpath</dt><dd class="cmt"><p>the uri of the parent document</p></dd><dt class="param">modS</dt><dd class="cmt"><p>the module string</p></dd><dt class="param">docBaseO</dt><dd class="cmt"><p>optionally the base uri of the containing document</p></dd><dt class="param">namespace</dt><dd class="cmt"><p>the namespace declarations found so far
@@ -732,7 +740,7 @@ if that fails, the <a href="DefaultObjectParser$.html" class="extype" name="info
             </div><div class="parent" name="info.kwarc.mmt.api.frontend.Logger">
               <h3>Inherited from <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></h3>
             </div><div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

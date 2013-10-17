@@ -40,14 +40,14 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">BreadthRule</span><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.uom.Rule">Rule</a></span>
+        <span class="name">BreadthRule</span><span class="result"> extends <a href="../objects/Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A BreadthRule looks at all arguments of an operator, but usually does not look inside them</p><p>It is applicable to a term of the form</p><pre>OMA(op, args)</pre><p>A LocalChange replaces args.
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="Rule.html" class="extype" name="info.kwarc.mmt.api.uom.Rule">Rule</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../objects/Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
           <div class="subClasses hiddenContent"><a href="Collect.html" class="extype" name="info.kwarc.mmt.api.uom.Collect">Collect</a>, <a href="Commutative.html" class="extype" name="info.kwarc.mmt.api.uom.Commutative">Commutative</a>, <a href="Complement.html" class="extype" name="info.kwarc.mmt.api.uom.Complement">Complement</a>, <a href="Idempotent.html" class="extype" name="info.kwarc.mmt.api.uom.Idempotent">Idempotent</a>, <a href="Implementation.html" class="extype" name="info.kwarc.mmt.api.uom.Implementation">Implementation</a>, <a href="../../lf/UnsafeBeta$.html" class="extype" name="info.kwarc.mmt.lf.UnsafeBeta">UnsafeBeta</a></div>
@@ -68,7 +68,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.uom.BreadthRule"><span>BreadthRule</span></li><li class="in" name="info.kwarc.mmt.api.uom.Rule"><span>Rule</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.uom.BreadthRule"><span>BreadthRule</span></li><li class="in" name="info.kwarc.mmt.api.objects.Rule"><span>Rule</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -89,7 +89,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.uom.BreadthRule#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(op:info.kwarc.mmt.api.GlobalName):info.kwarc.mmt.api.uom.BreadthRule"></a>
+      <a id="&lt;init&gt;(head:info.kwarc.mmt.api.GlobalName):info.kwarc.mmt.api.uom.BreadthRule"></a>
       <a id="&lt;init&gt;:BreadthRule"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -97,7 +97,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">BreadthRule</span><span class="params">(<span name="op">op: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>)</span>
+        <span class="name">BreadthRule</span><span class="params">(<span name="head">head: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>)</span>
       </span>
       </h4>
       
@@ -115,7 +115,7 @@
         <span class="kind">type</span>
       </span>
       <span class="symbol">
-        <span class="name">Rewrite</span><span class="result"> = (<span class="extype" name="scala.List">List</span>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]) ⇒ <a href="Change.html" class="extype" name="info.kwarc.mmt.api.uom.Change">Change</a></span>
+        <span class="name">Rewrite</span><span class="result"> = (<a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]) ⇒ <a href="Change.html" class="extype" name="info.kwarc.mmt.api.uom.Change">Change</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">a Rewrite takes the arguments args and returns a simplification Result</p>
@@ -133,7 +133,7 @@
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="result">: (<span class="extype" name="scala.List">List</span>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]) ⇒ <a href="Change.html" class="extype" name="info.kwarc.mmt.api.uom.Change">Change</a></span>
+        <span class="name">apply</span><span class="result">: (<a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]) ⇒ <a href="Change.html" class="extype" name="info.kwarc.mmt.api.uom.Change">Change</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">the implementation of the simplification rule</p>
@@ -151,7 +151,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -190,7 +190,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -229,10 +229,10 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -245,7 +245,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -274,7 +274,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -304,6 +304,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.uom.BreadthRule#head" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="head:info.kwarc.mmt.api.GlobalName"></a>
+      <a id="head:GlobalName"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">head</span><span class="result">: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">an MMT URI that is used to indicate when the Rule is applicable</p><div class="fullcomment"><div class="comment cmt"><p>an MMT URI that is used to indicate when the Rule is applicable</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.uom.BreadthRule">BreadthRule</a> → <a href="../objects/Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -326,7 +339,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -356,19 +369,35 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.uom.BreadthRule#op" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="op:info.kwarc.mmt.api.GlobalName"></a>
-      <a id="op:GlobalName"></a>
+    </li><li name="info.kwarc.mmt.api.objects.Rule#parent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="parent:info.kwarc.mmt.api.objects.Term"></a>
+      <a id="parent:Term"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">op</span><span class="result">: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
+        <span class="name">parent</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">the home theory in which this rule lives</p><div class="fullcomment"><div class="comment cmt"><p>the home theory in which this rule lives</p><p>a rule is only applicable if the home theory is included</p><p>by default, the theory of the head operator
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../objects/Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Rule#path" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="path:info.kwarc.mmt.api.GlobalName"></a>
+      <a id="path:GlobalName"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">path</span><span class="result">: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">an MMT URI that identifies the rule, by default the head
+</p><div class="fullcomment"><div class="comment cmt"><p>an MMT URI that identifies the rule, by default the head
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../objects/Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -382,7 +411,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.objects.Rule#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
       <a id="toString():String"></a>
       <h4 class="signature">
@@ -394,7 +423,7 @@
         <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../objects/Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a> → AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -452,10 +481,10 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="info.kwarc.mmt.api.uom.Rule">
-              <h3>Inherited from <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.uom.Rule">Rule</a></h3>
+        <div class="parent" name="info.kwarc.mmt.api.objects.Rule">
+              <h3>Inherited from <a href="../objects/Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></h3>
             </div><div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

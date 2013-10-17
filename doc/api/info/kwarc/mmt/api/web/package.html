@@ -63,8 +63,60 @@
 
         <div id="types" class="types members">
               <h3>Type Members</h3>
-              <ol><li name="info.kwarc.mmt.api.web.Server" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ServerextendsHServer"></a>
+              <ol><li name="info.kwarc.mmt.api.web.AdminServer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AdminServerextendsServerPlugin"></a>
+      <a id="AdminServer:AdminServer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="AdminServer.html"><span class="name">AdminServer</span></a><span class="result"> extends <a href="ServerPlugin.html" class="extype" name="info.kwarc.mmt.api.web.ServerPlugin">ServerPlugin</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Plugin for MMT actions</p>
+    </li><li name="info.kwarc.mmt.api.web.Body" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BodyextendsAnyRef"></a>
+      <a id="Body:Body"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Body.html"><span class="name">Body</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">the body of an HTTP request</p>
+    </li><li name="info.kwarc.mmt.api.web.QueryServer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="QueryServerextendsServerPlugin"></a>
+      <a id="QueryServer:QueryServer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="QueryServer.html"><span class="name">QueryServer</span></a><span class="result"> extends <a href="ServerPlugin.html" class="extype" name="info.kwarc.mmt.api.web.ServerPlugin">ServerPlugin</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Plugin for QMT query requests</p>
+    </li><li name="info.kwarc.mmt.api.web.SVGServer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SVGServerextendsServerPlugin"></a>
+      <a id="SVGServer:SVGServer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="SVGServer.html"><span class="name">SVGServer</span></a><span class="result"> extends <a href="ServerPlugin.html" class="extype" name="info.kwarc.mmt.api.web.ServerPlugin">ServerPlugin</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">a ServerPlugin that serves the svg file of a documents</p>
+    </li><li name="info.kwarc.mmt.api.web.Server" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ServerextendsHServerwithLogger"></a>
       <a id="Server:Server"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -72,12 +124,12 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Server.html"><span class="name">Server</span></a><span class="result"> extends <span class="extype" name="zgs.httpd.HServer">HServer</span></span>
+        <a href="Server.html"><span class="name">Server</span></a><span class="result"> extends <span class="extype" name="tiscaf.HServer">HServer</span> with <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
       </span>
       </h4>
       <p class="comment cmt">An HTTP RESTful server.</p>
     </li><li name="info.kwarc.mmt.api.web.ServerError" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ServerErrorextendsThrowablewithProductwithSerializable"></a>
+      <a id="ServerErrorextendsErrorwithProductwithSerializable"></a>
       <a id="ServerError:ServerError"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -85,7 +137,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="ServerError.html"><span class="name">ServerError</span></a><span class="params">(<span name="n">n: <span class="extype" name="scala.xml.Node">Node</span></span>)</span><span class="result"> extends <span class="extype" name="java.lang.Throwable">Throwable</span> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="ServerError.html"><span class="name">ServerError</span></a><span class="params">(<span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="../Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -94,14 +146,14 @@
       <a id="ServerPlugin:ServerPlugin"></a>
       <h4 class="signature">
       <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">trait</span>
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
       </span>
       <span class="symbol">
         <a href="ServerPlugin.html"><span class="name">ServerPlugin</span></a><span class="result"> extends <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></span>
       </span>
       </h4>
-      
+      <p class="comment cmt">An MMT extensions that handles certain requests in MMT's HTTP server.</p>
     </li></ol>
             </div>
 
@@ -109,7 +161,20 @@
 
         <div id="values" class="values members">
               <h3>Value Members</h3>
-              <ol><li name="info.kwarc.mmt.api.web.Util" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+              <ol><li name="info.kwarc.mmt.api.web.Server" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Server"></a>
+      <a id="Server:Server"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Server$.html"><span class="name">Server</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">helper object for constructing HTTP responses</p>
+    </li><li name="info.kwarc.mmt.api.web.Util" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Util"></a>
       <a id="Util:Util"></a>
       <h4 class="signature">

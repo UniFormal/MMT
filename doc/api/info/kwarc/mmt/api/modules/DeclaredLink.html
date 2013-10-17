@@ -40,14 +40,14 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <span class="name">DeclaredLink</span><span class="result"> extends <a href="Link.html" class="extype" name="info.kwarc.mmt.api.modules.Link">Link</a> with <a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a>[<a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>]</span>
+        <span class="name">DeclaredLink</span><span class="result"> extends <a href="Link.html" class="extype" name="info.kwarc.mmt.api.modules.Link">Link</a> with <a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A DeclaredLink represents an MMT link given by a set of assignments.</p><p>Declared links are constructed empty. <code> info.kwarc.mmt.api.modules.StatementSet[Assignment]</code> is derived to hold a set of name-indexed assignments.
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A DeclaredLink represents an MMT link given by a set of assignments.</p><p>Declared links are constructed empty. Body is derived to hold a set of name-indexed assignments.
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a>[<a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>], <a href="Link.html" class="extype" name="info.kwarc.mmt.api.modules.Link">Link</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a>, <a href="Link.html" class="extype" name="info.kwarc.mmt.api.modules.Link">Link</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
           <div class="subClasses hiddenContent"><a href="../symbols/DeclaredStructure.html" class="extype" name="info.kwarc.mmt.api.symbols.DeclaredStructure">DeclaredStructure</a>, <a href="DeclaredView.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredView">DeclaredView</a></div>
@@ -127,7 +127,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">outerComponents</span><span class="result">: <span class="extype" name="scala.List">List</span>[<a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a>]</span>
+        <span class="name">outerComponents</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a>]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">name, from, to, etc</p><div class="fullcomment"><div class="comment cmt"><p>name, from, to, etc</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="Link.html" class="extype" name="info.kwarc.mmt.api.modules.Link">Link</a></dd></dl></div>
@@ -197,7 +197,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -236,7 +236,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -254,15 +254,15 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#add" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="add(s:S):Unit"></a>
-      <a id="add(Assignment):Unit"></a>
+      <a id="add(s:info.kwarc.mmt.api.symbols.Symbol):Unit"></a>
+      <a id="add(Symbol):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">add</span><span class="params">(<span name="s">s: <a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">add</span><span class="params">(<span name="s">s: <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">adds a named or unnamed declaration, throws exception if name already declared</p><div class="fullcomment"><div class="comment cmt"><p>adds a named or unnamed declaration, throws exception if name already declared</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
@@ -288,10 +288,10 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -322,31 +322,19 @@
       </h4>
       <p class="shortcomment cmt">true iff a declaration for a name is present</p><div class="fullcomment"><div class="comment cmt"><p>true iff a declaration for a name is present</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#delete" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="delete(key:info.kwarc.mmt.api.MPath):Unit"></a>
-      <a id="delete(MPath):Unit"></a>
+      <a id="delete(name:info.kwarc.mmt.api.LocalName):Option[info.kwarc.mmt.api.symbols.Symbol]"></a>
+      <a id="delete(LocalName):Option[Symbol]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">delete</span><span class="params">(<span name="key">key: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">delete</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">deletes the unnamed declaration with a certain key</p><div class="fullcomment"><div class="comment cmt"><p>deletes the unnamed declaration with a certain key</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.modules.Body#delete" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="delete(name:info.kwarc.mmt.api.LocalName):Unit"></a>
-      <a id="delete(LocalName):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">delete</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">delete a named declaration (does not have to exist)</p><div class="fullcomment"><div class="comment cmt"><p>delete a named declaration (does not have to exist)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
+      <p class="shortcomment cmt">delete a named declaration (does not have to exist)</p><div class="fullcomment"><div class="comment cmt"><p>delete a named declaration (does not have to exist)</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>the deleted declaration
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#domain" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="domain:scala.collection.Set[info.kwarc.mmt.api.LocalName]"></a>
       <a id="domain:Set[LocalName]"></a>
@@ -359,7 +347,7 @@
         <span class="name">domain</span><span class="result">: <span class="extype" name="scala.collection.Set">Set</span>[<a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a>]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
+      <p class="shortcomment cmt">the set of names of all declarations</p><div class="fullcomment"><div class="comment cmt"><p>the set of names of all declarations</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -369,7 +357,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -398,46 +386,33 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#get" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="get(key:info.kwarc.mmt.api.MPath):Option[S]"></a>
-      <a id="get(MPath):Option[Assignment]"></a>
+      <a id="get(name:String):info.kwarc.mmt.api.symbols.Symbol"></a>
+      <a id="get(String):Symbol"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">get</span><span class="params">(<span name="key">key: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">gets the unnamed declaration with a certain key</p><div class="fullcomment"><div class="comment cmt"><p>gets the unnamed declaration with a certain key</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.modules.Body#get" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="get(name:String):S"></a>
-      <a id="get(String):Assignment"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">get</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a></span>
+        <span class="name">get</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">same as get(LocalName(name))</p><div class="fullcomment"><div class="comment cmt"><p>same as get(LocalName(name))</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#get" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="get(name:info.kwarc.mmt.api.LocalName):S"></a>
-      <a id="get(LocalName):Assignment"></a>
+      <a id="get(name:info.kwarc.mmt.api.LocalName):info.kwarc.mmt.api.symbols.Symbol"></a>
+      <a id="get(LocalName):Symbol"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">get</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result">: <a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a></span>
+        <span class="name">get</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result">: <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">retrieve a named declaration, may throw exception if not present</p><div class="fullcomment"><div class="comment cmt"><p>retrieve a named declaration, may throw exception if not present</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
@@ -455,68 +430,68 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#getDeclarations" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getDeclarations:List[S]"></a>
-      <a id="getDeclarations:List[Assignment]"></a>
+      <a id="getDeclarations:List[info.kwarc.mmt.api.symbols.Symbol]"></a>
+      <a id="getDeclarations:List[Symbol]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getDeclarations</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>]</span>
+        <span class="name">getDeclarations</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a>]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">the list of declarations in the order of addition, includes declarations generated by MMT</p><div class="fullcomment"><div class="comment cmt"><p>the list of declarations in the order of addition, includes declarations generated by MMT</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#getDeclarationsElaborated" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getDeclarationsElaborated:List[S]"></a>
-      <a id="getDeclarationsElaborated:List[Assignment]"></a>
+      <a id="getDeclarationsElaborated:List[info.kwarc.mmt.api.symbols.Symbol]"></a>
+      <a id="getDeclarationsElaborated:List[Symbol]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getDeclarationsElaborated</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>]</span>
+        <span class="name">getDeclarationsElaborated</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a>]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">the list of declarations using elaborated declarations where possible</p><div class="fullcomment"><div class="comment cmt"><p>the list of declarations using elaborated declarations where possible</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#getMostSpecific" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getMostSpecific(name:info.kwarc.mmt.api.LocalName,rest:info.kwarc.mmt.api.LocalName):Option[(S,info.kwarc.mmt.api.LocalName)]"></a>
-      <a id="getMostSpecific(LocalName,LocalName):Option[(Assignment,LocalName)]"></a>
+      <a id="getMostSpecific(name:info.kwarc.mmt.api.LocalName,rest:info.kwarc.mmt.api.LocalName):Option[(info.kwarc.mmt.api.symbols.Symbol,info.kwarc.mmt.api.LocalName)]"></a>
+      <a id="getMostSpecific(LocalName,LocalName):Option[(Symbol,LocalName)]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getMostSpecific</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="rest">rest: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a> = <span class="symbol"><span class="name"><a href="../../../../package.html">LocalName(Nil)</a></span></span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[(<a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>, <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a>)]</span>
+        <span class="name">getMostSpecific</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="rest">rest: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a> = <span class="symbol"><span class="name"><a href="../../../../package.html">LocalName(Nil)</a></span></span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[(<a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a>, <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a>)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">retrieves the most specific applicable declaration</p><div class="fullcomment"><div class="comment cmt"><p>retrieves the most specific applicable declaration</p></div><dl class="paramcmts block"><dt class="param">name</dt><dd class="cmt"><p>the name of the declaration</p></dd><dt class="param">rest</dt><dd class="cmt"><p>the suffix that has been split off so far; this argument should be omitted in calls from outside this class</p></dd><dt>returns</dt><dd class="cmt"><p>the most specific (longest prefix of name) known declaration (if any) and the remaining suffix
 </p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#getO" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getO(name:info.kwarc.mmt.api.LocalName):Option[S]"></a>
-      <a id="getO(LocalName):Option[Assignment]"></a>
+      <a id="getO(name:info.kwarc.mmt.api.LocalName):Option[info.kwarc.mmt.api.symbols.Symbol]"></a>
+      <a id="getO(LocalName):Option[Symbol]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getO</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>]</span>
+        <span class="name">getO</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a>]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">retrieve a declaration, None if not present</p><div class="fullcomment"><div class="comment cmt"><p>retrieve a declaration, None if not present</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#getPrimitiveDeclarations" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getPrimitiveDeclarations:List[S]"></a>
-      <a id="getPrimitiveDeclarations:List[Assignment]"></a>
+      <a id="getPrimitiveDeclarations:List[info.kwarc.mmt.api.symbols.Symbol]"></a>
+      <a id="getPrimitiveDeclarations:List[Symbol]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getPrimitiveDeclarations</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>]</span>
+        <span class="name">getPrimitiveDeclarations</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a>]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">the list of declarations in the order of addition, excludes declarations generated by MMT</p><div class="fullcomment"><div class="comment cmt"><p>the list of declarations in the order of addition, excludes declarations generated by MMT</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
@@ -533,29 +508,16 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.modules.Body#implicits" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="implicits:scala.collection.mutable.HashSet[S]"></a>
-      <a id="implicits:HashSet[Assignment]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">implicits</span><span class="result">: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[<a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the set of unnamed statement</p><div class="fullcomment"><div class="comment cmt"><p>the set of unnamed statement</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#innerComponents" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="innerComponents:List[S]"></a>
-      <a id="innerComponents:List[Assignment]"></a>
+      <a id="innerComponents:List[info.kwarc.mmt.api.symbols.Symbol]"></a>
+      <a id="innerComponents:List[Symbol]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">innerComponents</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>]</span>
+        <span class="name">innerComponents</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a>]</span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
@@ -625,15 +587,15 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#iterator" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="iterator:Iterator[S]"></a>
-      <a id="iterator:Iterator[Assignment]"></a>
+      <a id="iterator:Iterator[info.kwarc.mmt.api.symbols.Symbol]"></a>
+      <a id="iterator:Iterator[Symbol]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">iterator</span><span class="result">: <span class="extype" name="scala.collection.Iterator">Iterator</span>[<a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>]</span>
+        <span class="name">iterator</span><span class="result">: <span class="extype" name="scala.collection.Iterator">Iterator</span>[<a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a>]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">the list of declarations in the order of addition as an iterator</p><div class="fullcomment"><div class="comment cmt"><p>the list of declarations in the order of addition as an iterator</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
@@ -646,7 +608,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -677,41 +639,41 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#order" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="order:List[S]"></a>
-      <a id="order:List[Assignment]"></a>
+      <a id="order:List[info.kwarc.mmt.api.symbols.Symbol]"></a>
+      <a id="order:List[Symbol]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">var</span>
       </span>
       <span class="symbol">
-        <span class="name">order</span><span class="result">: <span class="extype" name="scala.List">List</span>[<a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>]</span>
+        <span class="name">order</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a>]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">all declarations in reverse order of addition</p><div class="fullcomment"><div class="comment cmt"><p>all declarations in reverse order of addition</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#replace" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="replace(name:info.kwarc.mmt.api.LocalName,decs:S*):Unit"></a>
-      <a id="replace(LocalName,Assignment*):Unit"></a>
+      <a id="replace(name:info.kwarc.mmt.api.LocalName,decs:info.kwarc.mmt.api.symbols.Symbol*):Unit"></a>
+      <a id="replace(LocalName,Symbol*):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">replace</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="decs">decs: <a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>*</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">replace</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="decs">decs: <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a>*</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">replaces a named declaration with others (preserving the order)</p><div class="fullcomment"><div class="comment cmt"><p>replaces a named declaration with others (preserving the order)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#statements" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="statements:scala.collection.mutable.HashMap[info.kwarc.mmt.api.LocalName,S]"></a>
-      <a id="statements:HashMap[LocalName,Assignment]"></a>
+      <a id="statements:scala.collection.mutable.HashMap[info.kwarc.mmt.api.LocalName,info.kwarc.mmt.api.symbols.Symbol]"></a>
+      <a id="statements:HashMap[LocalName,Symbol]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">statements</span><span class="result">: <span class="extype" name="scala.collection.mutable.HashMap">HashMap</span>[<a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a>, <a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>]</span>
+        <span class="name">statements</span><span class="result">: <span class="extype" name="scala.collection.mutable.HashMap">HashMap</span>[<a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a>, <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a>]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">the set of named statements, indexed by name
@@ -746,15 +708,15 @@ if a statement has an alternativeName, it occurs twice in this map
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Link.html" class="extype" name="info.kwarc.mmt.api.modules.Link">Link</a> → AnyRef → Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#update" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="update(s:S):Unit"></a>
-      <a id="update(Assignment):Unit"></a>
+      <a id="update(s:info.kwarc.mmt.api.symbols.Symbol):Unit"></a>
+      <a id="update(Symbol):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">update</span><span class="params">(<span name="s">s: <a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">update</span><span class="params">(<span name="s">s: <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">updates a named declaration (preserving the order)</p><div class="fullcomment"><div class="comment cmt"><p>updates a named declaration (preserving the order)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></dd></dl></div>
@@ -816,11 +778,11 @@ if a statement has an alternativeName, it occurs twice in this map
 
         <div id="inheritedMembers">
         <div class="parent" name="info.kwarc.mmt.api.modules.Body">
-              <h3>Inherited from <a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a>[<a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>]</h3>
+              <h3>Inherited from <a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></h3>
             </div><div class="parent" name="info.kwarc.mmt.api.modules.Link">
               <h3>Inherited from <a href="Link.html" class="extype" name="info.kwarc.mmt.api.modules.Link">Link</a></h3>
             </div><div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

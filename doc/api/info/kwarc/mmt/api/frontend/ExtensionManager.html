@@ -40,7 +40,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">ExtensionManager</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">ExtensionManager</span><span class="result"> extends <a href="Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
       </span>
       </h4>
       
@@ -49,7 +49,7 @@
  They are provided as plugins and registered via their qualified class name, which is instantiated by reflection.
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -67,7 +67,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.frontend.ExtensionManager"><span>ExtensionManager</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.frontend.ExtensionManager"><span>ExtensionManager</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Logger"><span>Logger</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -118,7 +118,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -157,7 +157,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -174,7 +174,33 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#addDefaultExtensions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="addDefaultExtensions:Unit"></a>
+      <a id="addDefaultExtensions:Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">addDefaultExtensions</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#addExtension" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="addExtension(ext:info.kwarc.mmt.api.frontend.Extension,args:List[String]):Unit"></a>
+      <a id="addExtension(Extension,List[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">addExtension</span><span class="params">(<span name="ext">ext: <a href="Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></span>, <span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">Nil</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">initializes and adds an extension</p>
+    </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#addExtension" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="addExtension(cls:String,args:List[String]):Unit"></a>
       <a id="addExtension(String,List[String]):Unit"></a>
       <h4 class="signature">
@@ -183,49 +209,11 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">addExtension</span><span class="params">(<span name="cls">cls: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="args">args: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">addExtension</span><span class="params">(<span name="cls">cls: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">adds an Importer and initializes it</p>
-    </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#addFoundation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="addFoundation(cls:String,args:List[String]):Unit"></a>
-      <a id="addFoundation(String,List[String]):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">addFoundation</span><span class="params">(<span name="cls">cls: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="args">args: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">adds a foundation, must be initialized already</p>
-    </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#addPlugin" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="addPlugin(cls:String,args:List[String]):Unit"></a>
-      <a id="addPlugin(String,List[String]):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">addPlugin</span><span class="params">(<span name="cls">cls: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="args">args: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#addPlugin" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="addPlugin(pl:info.kwarc.mmt.api.frontend.Plugin,args:List[String]):Unit"></a>
-      <a id="addPlugin(Plugin,List[String]):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">addPlugin</span><span class="params">(<span name="pl">pl: <a href="Plugin.html" class="extype" name="info.kwarc.mmt.api.frontend.Plugin">Plugin</a></span>, <span name="args">args: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      
+      <p class="shortcomment cmt">instantiates an extension, initializes it, and adds it</p><div class="fullcomment"><div class="comment cmt"><p>instantiates an extension, initializes it, and adds it</p></div><dl class="paramcmts block"><dt class="param">cls</dt><dd class="cmt"><p>qualified class name (e.g., org.my.Extension), must be on the class path at run time</p></dd><dt class="param">args</dt><dd class="cmt"><p>arguments that will be passed when initializing the extension
+</p></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -261,10 +249,10 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -277,7 +265,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -306,7 +294,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -323,19 +311,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#getCompiler" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="getCompiler(src:String):Option[info.kwarc.mmt.api.backend.Compiler]"></a>
-      <a id="getCompiler(String):Option[Compiler]"></a>
+    </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#getFoundation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getFoundation(thy:info.kwarc.mmt.api.objects.Term):Option[info.kwarc.mmt.api.libraries.Foundation]"></a>
+      <a id="getFoundation(Term):Option[Foundation]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getCompiler</span><span class="params">(<span name="src">src: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../backend/Compiler.html" class="extype" name="info.kwarc.mmt.api.backend.Compiler">Compiler</a>]</span>
+        <span class="name">getFoundation</span><span class="params">(<span name="thy">thy: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../libraries/Foundation.html" class="extype" name="info.kwarc.mmt.api.libraries.Foundation">Foundation</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">retrieves an applicable Compiler</p>
+      
     </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#getFoundation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="getFoundation(p:info.kwarc.mmt.api.MPath):Option[info.kwarc.mmt.api.libraries.Foundation]"></a>
       <a id="getFoundation(MPath):Option[Foundation]"></a>
@@ -348,7 +336,7 @@
         <span class="name">getFoundation</span><span class="params">(<span name="p">p: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../libraries/Foundation.html" class="extype" name="info.kwarc.mmt.api.libraries.Foundation">Foundation</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">retrieves an applicable Foundation</p>
+      <p class="shortcomment cmt">retrieves the closest Foundation that covers a theory, if any</p>
     </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#getMWS" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="getMWS:Option[info.kwarc.mmt.api.utils.URI]"></a>
       <a id="getMWS:Option[URI]"></a>
@@ -362,6 +350,19 @@
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#getParserExtension" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getParserExtension(se:info.kwarc.mmt.api.StructuralElement,keyword:String):Option[info.kwarc.mmt.api.parser.ParserExtension]"></a>
+      <a id="getParserExtension(StructuralElement,String):Option[ParserExtension]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getParserExtension</span><span class="params">(<span name="se">se: <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></span>, <span name="keyword">keyword: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../parser/ParserExtension.html" class="extype" name="info.kwarc.mmt.api.parser.ParserExtension">ParserExtension</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">retrieves an applicable parser extension</p>
     </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#getPresenter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="getPresenter(format:String):Option[info.kwarc.mmt.api.presentation.Presenter]"></a>
       <a id="getPresenter(String):Option[Presenter]"></a>
@@ -387,20 +388,33 @@
         <span class="name">getQueryTransformer</span><span class="params">(<span name="src">src: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../backend/QueryTransformer.html" class="extype" name="info.kwarc.mmt.api.backend.QueryTransformer">QueryTransformer</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">retrieves an applicable Compiler</p>
+      <p class="shortcomment cmt">retrieves an applicable query transformer</p>
     </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#getServerPlugin" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="getServerPlugin(uriComps:List[String]):Option[info.kwarc.mmt.api.web.ServerPlugin]"></a>
-      <a id="getServerPlugin(List[String]):Option[ServerPlugin]"></a>
+      <a id="getServerPlugin(cont:String):Option[info.kwarc.mmt.api.web.ServerPlugin]"></a>
+      <a id="getServerPlugin(String):Option[ServerPlugin]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getServerPlugin</span><span class="params">(<span name="uriComps">uriComps: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../web/ServerPlugin.html" class="extype" name="info.kwarc.mmt.api.web.ServerPlugin">ServerPlugin</a>]</span>
+        <span class="name">getServerPlugin</span><span class="params">(<span name="cont">cont: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../web/ServerPlugin.html" class="extype" name="info.kwarc.mmt.api.web.ServerPlugin">ServerPlugin</a>]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">retrieves an applicable server plugin</p>
+    </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#getTarget" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getTarget(src:String):Option[info.kwarc.mmt.api.archives.BuildTarget]"></a>
+      <a id="getTarget(String):Option[BuildTarget]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getTarget</span><span class="params">(<span name="src">src: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../archives/BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">retrieves an applicable Compiler</p>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
       <a id="hashCode():Int"></a>
@@ -436,10 +450,88 @@
         <span class="kind">var</span>
       </span>
       <span class="symbol">
-        <span class="name">lexerExtensions</span><span class="result">: <span class="extype" name="scala.List">List</span>[<a href="../parser/LexerExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexerExtension">LexerExtension</a>]</span>
+        <span class="name">lexerExtensions</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../parser/LexerExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexerExtension">LexerExtension</a>]</span>
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log(e:info.kwarc.mmt.api.Error):Unit"></a>
+      <a id="log(Error):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="params">(<span name="e">e: <a href="../Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log(s:=&gt;String):Unit"></a>
+      <a id="log(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logError(s:=&gt;String):Unit"></a>
+      <a id="logError(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logError</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logGroup" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logGroup[A](a:=&gt;A):A"></a>
+      <a id="logGroup[A](⇒A):A"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logGroup</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="a">a: ⇒ <span class="extype" name="info.kwarc.mmt.api.frontend.Logger.logGroup.A">A</span></span>)</span><span class="result">: <span class="extype" name="info.kwarc.mmt.api.frontend.Logger.logGroup.A">A</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#logPrefix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logPrefix:String"></a>
+      <a id="logPrefix:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logPrefix</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.frontend.ExtensionManager">ExtensionManager</a> → <a href="Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logTime" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logTime:Unit"></a>
+      <a id="logTime:Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logTime</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -449,7 +541,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -492,6 +584,19 @@
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#report" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="report:info.kwarc.mmt.api.frontend.Report"></a>
+      <a id="report:Report"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">report</span><span class="result">: <a href="Report.html" class="extype" name="info.kwarc.mmt.api.frontend.Report">Report</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.frontend.ExtensionManager">ExtensionManager</a> → <a href="Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#ruleStore" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ruleStore:info.kwarc.mmt.api.objects.RuleStore"></a>
       <a id="ruleStore:RuleStore"></a>
@@ -518,6 +623,19 @@
       </span>
       </h4>
       <p class="shortcomment cmt">sets the URL of the MathWebSearch backend</p>
+    </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager#stringDescription" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="stringDescription:String"></a>
+      <a id="stringDescription:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">stringDescription</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -601,8 +719,10 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+        <div class="parent" name="info.kwarc.mmt.api.frontend.Logger">
+              <h3>Inherited from <a href="Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></h3>
+            </div><div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

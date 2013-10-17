@@ -64,7 +64,7 @@
         <div id="types" class="types members">
               <h3>Type Members</h3>
               <ol><li name="info.kwarc.mmt.jedit.CompileActions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="CompileActionsextendsObject"></a>
+      <a id="CompileActionsextendsAnyRef"></a>
       <a id="CompileActions:CompileActions"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -72,7 +72,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="CompileActions.html"><span class="name">CompileActions</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="CompileActions.html"><span class="name">CompileActions</span></a><span class="result"> extends <a href="../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">This class is factored out from MMTPlugin to structure the code better.</p>
@@ -141,6 +141,19 @@
       </span>
       </h4>
       <p class="comment cmt">node in the sidekick outline tree: declarations</p>
+    </li><li name="info.kwarc.mmt.jedit.MMTHyperlink" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MMTHyperlinkextendsAbstractHyperlink"></a>
+      <a id="MMTHyperlink:MMTHyperlink"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="MMTHyperlink.html"><span class="name">MMTHyperlink</span></a><span class="result"> extends <span class="extype" name="gatchan.jedit.hyperlinks.AbstractHyperlink">AbstractHyperlink</span></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.jedit.MMTHyperlinkSource" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="MMTHyperlinkSourceextendsHyperlinkSource"></a>
       <a id="MMTHyperlinkSource:MMTHyperlinkSource"></a>
@@ -194,7 +207,7 @@
       </h4>
       
     </li><li name="info.kwarc.mmt.jedit.MMTPlugin" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="MMTPluginextendsEBPlugin"></a>
+      <a id="MMTPluginextendsEBPluginwithLogger"></a>
       <a id="MMTPlugin:MMTPlugin"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -202,7 +215,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="MMTPlugin.html"><span class="name">MMTPlugin</span></a><span class="result"> extends <span class="extype" name="org.gjt.sp.jedit.EBPlugin">EBPlugin</span></span>
+        <a href="MMTPlugin.html"><span class="name">MMTPlugin</span></a><span class="result"> extends <span class="extype" name="org.gjt.sp.jedit.EBPlugin">EBPlugin</span> with <a href="../api/frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
       </span>
       </h4>
       <p class="comment cmt">The main class of the MMTPlugin
@@ -234,19 +247,6 @@ after initialization, it creates a Controller and executes home/startup.</p>
       </h4>
       <p class="comment cmt">A TextAreaExtension that is added to every EditPane
  it can be used for custom painting, e.</p>
-    </li><li name="info.kwarc.mmt.jedit.MyHyperlink" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="MyHyperlinkextendsAbstractHyperlink"></a>
-      <a id="MyHyperlink:MyHyperlink"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="MyHyperlink.html"><span class="name">MyHyperlink</span></a><span class="result"> extends <span class="extype" name="gatchan.jedit.hyperlinks.AbstractHyperlink">AbstractHyperlink</span></span>
-      </span>
-      </h4>
-      
     </li><li name="info.kwarc.mmt.jedit.MyPosition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="MyPositionextendsPositionwithProductwithSerializable"></a>
       <a id="MyPosition:MyPosition"></a>
@@ -320,6 +320,19 @@ after initialization, it creates a Controller and executes home/startup.</p>
       </span>
       </h4>
       <p class="comment cmt">implements hiding-related functions</p>
+    </li><li name="info.kwarc.mmt.jedit.MMTHyperlink" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MMTHyperlink"></a>
+      <a id="MMTHyperlink:MMTHyperlink"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MMTHyperlink$.html"><span class="name">MMTHyperlink</span></a>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.jedit.MMTPlugin" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="MMTPlugin"></a>
       <a id="MMTPlugin:MMTPlugin"></a>

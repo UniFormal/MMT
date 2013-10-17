@@ -40,13 +40,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">TextNotation</span><span class="result"> extends <a href="../presentation/Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a></span>
+        <span class="name">TextNotation</span><span class="result"> extends <a href="../presentation/Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a> with <a href="../presentation/ComplexNotation.html" class="extype" name="info.kwarc.mmt.api.presentation.ComplexNotation">ComplexNotation</a></span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"></div><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A TextNotation is a Notation that can be used for parsing objects in text syntax</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="../presentation/Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a>, <a href="../PresentationElement.html" class="extype" name="info.kwarc.mmt.api.PresentationElement">PresentationElement</a>, <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a>, <a href="../metadata/HasMetaData.html" class="extype" name="info.kwarc.mmt.api.metadata.HasMetaData">HasMetaData</a>, <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../presentation/ComplexNotation.html" class="extype" name="info.kwarc.mmt.api.presentation.ComplexNotation">ComplexNotation</a>, <a href="../presentation/Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a>, <a href="../PresentationElement.html" class="extype" name="info.kwarc.mmt.api.PresentationElement">PresentationElement</a>, <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a>, <a href="../metadata/HasMetaData.html" class="extype" name="info.kwarc.mmt.api.metadata.HasMetaData">HasMetaData</a>, <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -64,7 +64,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.parser.TextNotation"><span>TextNotation</span></li><li class="in" name="info.kwarc.mmt.api.presentation.Notation"><span>Notation</span></li><li class="in" name="info.kwarc.mmt.api.PresentationElement"><span>PresentationElement</span></li><li class="in" name="info.kwarc.mmt.api.StructuralElement"><span>StructuralElement</span></li><li class="in" name="info.kwarc.mmt.api.metadata.HasMetaData"><span>HasMetaData</span></li><li class="in" name="info.kwarc.mmt.api.Content"><span>Content</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.parser.TextNotation"><span>TextNotation</span></li><li class="in" name="info.kwarc.mmt.api.presentation.ComplexNotation"><span>ComplexNotation</span></li><li class="in" name="info.kwarc.mmt.api.presentation.Notation"><span>Notation</span></li><li class="in" name="info.kwarc.mmt.api.PresentationElement"><span>PresentationElement</span></li><li class="in" name="info.kwarc.mmt.api.StructuralElement"><span>StructuralElement</span></li><li class="in" name="info.kwarc.mmt.api.metadata.HasMetaData"><span>HasMetaData</span></li><li class="in" name="info.kwarc.mmt.api.Content"><span>Content</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -85,7 +85,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.parser.TextNotation#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(name:info.kwarc.mmt.api.GlobalName,markers:List[info.kwarc.mmt.api.parser.Marker],precedence:info.kwarc.mmt.api.presentation.Precedence):info.kwarc.mmt.api.parser.TextNotation"></a>
+      <a id="&lt;init&gt;(name:info.kwarc.mmt.api.GlobalName,fixity:info.kwarc.mmt.api.parser.Fixity,precedence:info.kwarc.mmt.api.presentation.Precedence):info.kwarc.mmt.api.parser.TextNotation"></a>
       <a id="&lt;init&gt;:TextNotation"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -93,10 +93,10 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">TextNotation</span><span class="params">(<span name="name">name: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>, <span name="markers">markers: <span class="extype" name="scala.List">List</span>[<a href="Marker.html" class="extype" name="info.kwarc.mmt.api.parser.Marker">Marker</a>]</span>, <span name="precedence">precedence: <a href="../presentation/Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a></span>)</span>
+        <span class="name">TextNotation</span><span class="params">(<span name="name">name: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>, <span name="fixity">fixity: <a href="Fixity.html" class="extype" name="info.kwarc.mmt.api.parser.Fixity">Fixity</a></span>, <span name="precedence">precedence: <a href="../presentation/Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a></span>)</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">name</dt><dd class="cmt"><p>the symbol to which this notation applies</p></dd><dt class="param">markers</dt><dd class="cmt"><p>the Markers making up the notation</p></dd></dl></div>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">name</dt><dd class="cmt"><p>the symbol to which this notation applies</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -115,7 +115,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -154,7 +154,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -171,6 +171,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.TextNotation#arity" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="arity:info.kwarc.mmt.api.parser.Arity"></a>
+      <a id="arity:Arity"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">arity</span><span class="result">: <a href="Arity.html" class="extype" name="info.kwarc.mmt.api.parser.Arity">Arity</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>short cut and cache for the arity</p></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -193,23 +206,23 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="info.kwarc.mmt.api.Content#compNames" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="compNames:List[(String,Int)]"></a>
-      <a id="compNames:List[(String,Int)]"></a>
+      <a id="compNames:List[(info.kwarc.mmt.api.DeclarationComponent,Int)]"></a>
+      <a id="compNames:List[(DeclarationComponent,Int)]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">compNames</span><span class="result">: <span class="extype" name="scala.List">List</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>)]</span>
+        <span class="name">compNames</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[(<a href="../DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a>, <span class="extype" name="scala.Int">Int</span>)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">content items may provide short names for their components, Nil by default</p><div class="fullcomment"><div class="comment cmt"><p>content items may provide short names for their components, Nil by default</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
@@ -225,7 +238,8 @@
         <span class="name">components</span><span class="result">: <span class="extype" name="scala.collection.immutable.Nil">Nil</span>.type</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the components are an abstract definition of the children of a content item</p><div class="fullcomment"><div class="comment cmt"><p>the components are an abstract definition of the children of a content item</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../presentation/Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a> → <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
+      <p class="shortcomment cmt">the components are an abstract definition of the children of a content item that are used for presentation</p><div class="fullcomment"><div class="comment cmt"><p>the components are an abstract definition of the children of a content item that are used for presentation</p><p>Other algorithms than presentation should use the corresponding methods of ContentElement
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../presentation/Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a> → <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.Content#contComponents" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="contComponents:info.kwarc.mmt.api.presentation.ContentComponents"></a>
       <a id="contComponents:ContentComponents"></a>
@@ -248,7 +262,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -277,7 +291,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -291,19 +305,6 @@
       </span>
       <span class="symbol">
         <span class="name">firstDelimString</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.api.parser.TextNotation#getArity" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="getArity:info.kwarc.mmt.api.parser.Arity"></a>
-      <a id="getArity:Arity"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getArity</span><span class="result">: <a href="Arity.html" class="extype" name="info.kwarc.mmt.api.parser.Arity">Arity</a></span>
       </span>
       </h4>
       
@@ -347,18 +348,18 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.StructuralElement#governingPath" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="governingPath:Some[info.kwarc.mmt.api.Path]"></a>
-      <a id="governingPath:Some[Path]"></a>
+      <a id="governingPath:Option[info.kwarc.mmt.api.ContentPath]"></a>
+      <a id="governingPath:Option[ContentPath]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">governingPath</span><span class="result">: <span class="extype" name="scala.Some">Some</span>[<a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a>]</span>
+        <span class="name">governingPath</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../ContentPath.html" class="extype" name="info.kwarc.mmt.api.ContentPath">ContentPath</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the governingPath required by content is the path</p><div class="fullcomment"><div class="comment cmt"><p>the governingPath required by content is the path</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a> → <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
+      <p class="shortcomment cmt">the governingPath is used to define the owner of components in a CPath</p><div class="fullcomment"><div class="comment cmt"><p>the governingPath is used to define the owner of components in a CPath</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a> → <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
       <a id="hashCode():Int"></a>
@@ -424,6 +425,19 @@
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.parser.TextNotation#isRightOpen" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="isRightOpen:Boolean"></a>
+      <a id="isRightOpen:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isRightOpen</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.parser.TextNotation#key" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="key:info.kwarc.mmt.api.presentation.NotationKey"></a>
       <a id="key:NotationKey"></a>
@@ -450,19 +464,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../presentation/Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.parser.TextNotation#markers" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="markers:List[info.kwarc.mmt.api.parser.Marker]"></a>
-      <a id="markers:List[Marker]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">markers</span><span class="result">: <span class="extype" name="scala.List">List</span>[<a href="Marker.html" class="extype" name="info.kwarc.mmt.api.parser.Marker">Marker</a>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the Markers making up the notation</p>
     </li><li name="info.kwarc.mmt.api.metadata.HasMetaData#metadata" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="metadata:info.kwarc.mmt.api.metadata.MetaData"></a>
       <a id="metadata:MetaData"></a>
@@ -498,7 +499,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -541,29 +542,16 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.parser.TextNotation">TextNotation</a> → <a href="../presentation/Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.parser.TextNotation#oPrec" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="oPrec:Some[info.kwarc.mmt.api.presentation.Precedence]"></a>
-      <a id="oPrec:Some[Precedence]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">oPrec</span><span class="result">: <span class="extype" name="scala.Some">Some</span>[<a href="../presentation/Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a>]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.parser.TextNotation">TextNotation</a> → <a href="../presentation/Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.parser.TextNotation#openLeftArgs" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="openLeftArgs:Int"></a>
-      <a id="openLeftArgs:Int"></a>
+    </li><li name="info.kwarc.mmt.api.parser.TextNotation#openArgs" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="openArgs(fromRight:Boolean):Int"></a>
+      <a id="openArgs(Boolean):Int"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">openLeftArgs</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+        <span class="name">openArgs</span><span class="params">(<span name="fromRight">fromRight: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
       
@@ -580,6 +568,19 @@
       </span>
       </h4>
       <p class="shortcomment cmt">the containing knowledge item, a URL if none</p><div class="fullcomment"><div class="comment cmt"><p>the containing knowledge item, a URL if none</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../presentation/Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a> → <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.TextNotation#parsingMarkers" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="parsingMarkers:List[info.kwarc.mmt.api.parser.Marker]"></a>
+      <a id="parsingMarkers:List[Marker]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">parsingMarkers</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<a href="Marker.html" class="extype" name="info.kwarc.mmt.api.parser.Marker">Marker</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>the list of markers that should be used for parsing</p></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.presentation.Notation#path" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="path:info.kwarc.mmt.api.MPath"></a>
       <a id="path:MPath"></a>
@@ -593,7 +594,7 @@
       </span>
       </h4>
       <p class="shortcomment cmt">the MMT URI of the element</p><div class="fullcomment"><div class="comment cmt"><p>the MMT URI of the element</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../presentation/Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a> → <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.parser.TextNotation#precedence" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.parser.TextNotation#precedence" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="precedence:info.kwarc.mmt.api.presentation.Precedence"></a>
       <a id="precedence:Precedence"></a>
       <h4 class="signature">
@@ -605,20 +606,34 @@
         <span class="name">precedence</span><span class="result">: <a href="../presentation/Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a></span>
       </span>
       </h4>
-      
-    </li><li name="info.kwarc.mmt.api.parser.TextNotation#pres" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="pres:info.kwarc.mmt.api.presentation.PList"></a>
-      <a id="pres:PList"></a>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.parser.TextNotation">TextNotation</a> → <a href="../presentation/ComplexNotation.html" class="extype" name="info.kwarc.mmt.api.presentation.ComplexNotation">ComplexNotation</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.TextNotation#presentation" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="presentation(args:Int,vars:Int,scopes:Int,attrib:Boolean):info.kwarc.mmt.api.presentation.PList"></a>
+      <a id="presentation(Int,Int,Int,Boolean):PList"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">presentation</span><span class="params">(<span name="args">args: <span class="extype" name="scala.Int">Int</span></span>, <span name="vars">vars: <span class="extype" name="scala.Int">Int</span></span>, <span name="scopes">scopes: <span class="extype" name="scala.Int">Int</span></span>, <span name="attrib">attrib: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <a href="../presentation/PList.html" class="extype" name="info.kwarc.mmt.api.presentation.PList">PList</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">flattens and transforms markers into Presentation</p><div class="fullcomment"><div class="comment cmt"><p>flattens and transforms markers into Presentation</p></div><dl class="paramcmts block"><dt class="param">args</dt><dd class="cmt"><p>number of arguments</p></dd><dt class="param">vars</dt><dd class="cmt"><p>number of variables</p></dd><dt class="param">scopes</dt><dd class="cmt"><p>number of scopes</p></dd><dt>returns</dt><dd class="cmt"><p>Presentation that can be rendered using the <a href="../presentation/StyleBasedPresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.StyleBasedPresenter">presentation.StyleBasedPresenter</a>
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.parser.TextNotation">TextNotation</a> → <a href="../presentation/ComplexNotation.html" class="extype" name="info.kwarc.mmt.api.presentation.ComplexNotation">ComplexNotation</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.TextNotation#presentationMarkers" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="presentationMarkers:List[info.kwarc.mmt.api.parser.Marker]"></a>
+      <a id="presentationMarkers:List[Marker]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">lazy val</span>
       </span>
       <span class="symbol">
-        <span class="name">pres</span><span class="result">: <a href="../presentation/PList.html" class="extype" name="info.kwarc.mmt.api.presentation.PList">PList</a></span>
+        <span class="name">presentationMarkers</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Marker.html" class="extype" name="info.kwarc.mmt.api.parser.Marker">Marker</a>]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.parser.TextNotation">TextNotation</a> → <a href="../presentation/Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a></dd></dl></div>
+      
     </li><li name="info.kwarc.mmt.api.presentation.Notation#role" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="role:info.kwarc.mmt.api.Role_Notation.type"></a>
       <a id="role:Role_Notation.type"></a>
@@ -684,6 +699,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.parser.TextNotation">TextNotation</a> → AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.TextNotation#toText" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="toText:String"></a>
+      <a id="toText:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toText</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -732,19 +760,6 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.parser.TextNotation#wrap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="wrap:Boolean"></a>
-      <a id="wrap:Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">wrap</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.parser.TextNotation">TextNotation</a> → <a href="../presentation/Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a></dd></dl></div>
     </li></ol>
             </div>
 
@@ -754,7 +769,9 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="info.kwarc.mmt.api.presentation.Notation">
+        <div class="parent" name="info.kwarc.mmt.api.presentation.ComplexNotation">
+              <h3>Inherited from <a href="../presentation/ComplexNotation.html" class="extype" name="info.kwarc.mmt.api.presentation.ComplexNotation">ComplexNotation</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.presentation.Notation">
               <h3>Inherited from <a href="../presentation/Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a></h3>
             </div><div class="parent" name="info.kwarc.mmt.api.PresentationElement">
               <h3>Inherited from <a href="../PresentationElement.html" class="extype" name="info.kwarc.mmt.api.PresentationElement">PresentationElement</a></h3>
@@ -765,7 +782,7 @@
             </div><div class="parent" name="info.kwarc.mmt.api.Content">
               <h3>Inherited from <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></h3>
             </div><div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

@@ -40,13 +40,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">TheoryGraph</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">TheoryGraph</span><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>This class adds advanced queries on top of a RelStore that expose the theory graph structure</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -115,7 +115,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -154,7 +154,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -193,27 +193,40 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.ontology.TheoryGraph#edges" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="edges(from:info.kwarc.mmt.api.Path,to:info.kwarc.mmt.api.Path):List[info.kwarc.mmt.api.ontology.Edge]"></a>
-      <a id="edges(Path,Path):List[Edge]"></a>
+    </li><li name="info.kwarc.mmt.api.ontology.TheoryGraph#codomain" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="codomain(link:info.kwarc.mmt.api.Path):Option[info.kwarc.mmt.api.Path]"></a>
+      <a id="codomain(Path):Option[Path]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">edges</span><span class="params">(<span name="from">from: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>, <span name="to">to: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>)</span><span class="result">: <span class="extype" name="scala.List">List</span>[<a href="Edge.html" class="extype" name="info.kwarc.mmt.api.ontology.Edge">Edge</a>]</span>
+        <span class="name">codomain</span><span class="params">(<span name="link">link: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a>]</span>
       </span>
       </h4>
-      
-    </li><li name="info.kwarc.mmt.api.ontology.TheoryGraph#edgesFrom" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <p class="shortcomment cmt">return the codomain of this link, if any</p>
+    </li><li name="info.kwarc.mmt.api.ontology.TheoryGraph#domain" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="domain(link:info.kwarc.mmt.api.Path):Option[info.kwarc.mmt.api.Path]"></a>
+      <a id="domain(Path):Option[Path]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">domain</span><span class="params">(<span name="link">link: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">return the domain of this link, if any</p>
+    </li><li name="info.kwarc.mmt.api.ontology.TheoryGraph#edgesFrom" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="edgesFrom(from:info.kwarc.mmt.api.Path):List[(info.kwarc.mmt.api.Path,List[info.kwarc.mmt.api.ontology.EdgeTo])]"></a>
       <a id="edgesFrom(Path):List[(Path,List[EdgeTo])]"></a>
       <h4 class="signature">
@@ -222,10 +235,11 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">edgesFrom</span><span class="params">(<span name="from">from: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>)</span><span class="result">: <span class="extype" name="scala.List">List</span>[(<a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a>, <span class="extype" name="scala.List">List</span>[<a href="EdgeTo.html" class="extype" name="info.kwarc.mmt.api.ontology.EdgeTo">EdgeTo</a>])]</span>
+        <span class="name">edgesFrom</span><span class="params">(<span name="from">from: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>)</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[(<a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a>, <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="EdgeTo.html" class="extype" name="info.kwarc.mmt.api.ontology.EdgeTo">EdgeTo</a>])]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">returns all edges into or out of a theory</p><div class="fullcomment"><div class="comment cmt"><p>returns all edges into or out of a theory</p></div><dl class="paramcmts block"><dt class="param">from</dt><dd class="cmt"><p>the theory</p></dd><dt>returns</dt><dd class="cmt"><p>all edges, backwards is set for incoming edges
+</p></dd></dl></div>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -235,7 +249,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -252,32 +266,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.ontology.TheoryGraph#exportDot" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="exportDot(filename:info.kwarc.mmt.api.utils.File):Unit"></a>
-      <a id="exportDot(File):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">exportDot</span><span class="params">(<span name="filename">filename: <a href="../utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.api.ontology.TheoryGraph#exportGEXF" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="exportGEXF(filename:info.kwarc.mmt.api.utils.File):Unit"></a>
-      <a id="exportGEXF(File):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">exportGEXF</span><span class="params">(<span name="filename">filename: <a href="../utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
       <a id="finalize():Unit"></a>
@@ -290,7 +278,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -342,7 +330,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -355,10 +343,11 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">nodes</span><span class="result">: <span class="extype" name="scala.Iterator">Iterator</span>[<a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a>]</span>
+        <span class="name">nodes</span><span class="result">: <a href="../../../../../scala/package.html#Iterator[+A]=Iterator[A]" class="extmbr" name="scala.Iterator">Iterator</a>[<a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a>]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">provides the nodes of the graph
+</p>
     </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notify():Unit"></a>
       <a id="notify():Unit"></a>
@@ -398,32 +387,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.ontology.TheoryGraph#toDot" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="toDot:String"></a>
-      <a id="toDot:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">toDot</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.api.ontology.TheoryGraph#toGEXF" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="toGEXF:scala.xml.Node"></a>
-      <a id="toGEXF:Node"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">toGEXF</span><span class="result">: <span class="extype" name="scala.xml.Node">Node</span></span>
-      </span>
-      </h4>
-      
     </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
       <a id="toString():String"></a>
@@ -495,7 +458,7 @@
 
         <div id="inheritedMembers">
         <div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

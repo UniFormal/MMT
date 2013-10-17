@@ -40,14 +40,14 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">ObjToplevel</span><span class="params">(<span name="c">c: <a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></span>, <span name="opath">opath: <span class="extype" name="scala.Option">Option</span>[<a href="../objects/OPath.html" class="extype" name="info.kwarc.mmt.api.objects.OPath">OPath</a>]</span>)</span><span class="result"> extends <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">ObjToplevel</span><span class="params">(<span name="c">c: <a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></span>, <span name="cpath">cpath: <span class="extype" name="scala.Option">Option</span>[<a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a>]</span>)</span><span class="result"> extends <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A special presentable object that is wrapped around the math objects encountered during presentation</p></div><dl class="paramcmts block"><dt class="param">c</dt><dd class="cmt"><p>the presented object</p></dd><dt class="param">opath</dt><dd class="cmt"><p>the position of the object (if known)
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A special presentable object that is wrapped around the math objects encountered during presentation</p></div><dl class="paramcmts block"><dt class="param">c</dt><dd class="cmt"><p>the presented object</p></dd><dt class="param">cpath</dt><dd class="cmt"><p>the path of the object (if known)
 </p></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -86,7 +86,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.presentation.ObjToplevel#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(c:info.kwarc.mmt.api.objects.Obj,opath:Option[info.kwarc.mmt.api.objects.OPath]):info.kwarc.mmt.api.presentation.ObjToplevel"></a>
+      <a id="&lt;init&gt;(c:info.kwarc.mmt.api.objects.Obj,cpath:Option[info.kwarc.mmt.api.CPath]):info.kwarc.mmt.api.presentation.ObjToplevel"></a>
       <a id="&lt;init&gt;:ObjToplevel"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -94,10 +94,10 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">ObjToplevel</span><span class="params">(<span name="c">c: <a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></span>, <span name="opath">opath: <span class="extype" name="scala.Option">Option</span>[<a href="../objects/OPath.html" class="extype" name="info.kwarc.mmt.api.objects.OPath">OPath</a>]</span>)</span>
+        <span class="name">ObjToplevel</span><span class="params">(<span name="c">c: <a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></span>, <span name="cpath">cpath: <span class="extype" name="scala.Option">Option</span>[<a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a>]</span>)</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">c</dt><dd class="cmt"><p>the presented object</p></dd><dt class="param">opath</dt><dd class="cmt"><p>the position of the object (if known)
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">c</dt><dd class="cmt"><p>the presented object</p></dd><dt class="param">cpath</dt><dd class="cmt"><p>the path of the object (if known)
 </p></dd></dl></div>
     </li></ol>
             </div>
@@ -117,7 +117,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -156,7 +156,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -208,23 +208,23 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="info.kwarc.mmt.api.Content#compNames" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="compNames:List[(String,Int)]"></a>
-      <a id="compNames:List[(String,Int)]"></a>
+      <a id="compNames:List[(info.kwarc.mmt.api.DeclarationComponent,Int)]"></a>
+      <a id="compNames:List[(DeclarationComponent,Int)]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">compNames</span><span class="result">: <span class="extype" name="scala.List">List</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>)]</span>
+        <span class="name">compNames</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[(<a href="../DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a>, <span class="extype" name="scala.Int">Int</span>)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">content items may provide short names for their components, Nil by default</p><div class="fullcomment"><div class="comment cmt"><p>content items may provide short names for their components, Nil by default</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
@@ -240,7 +240,8 @@
         <span class="name">components</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the components are an abstract definition of the children of a content item</p><div class="fullcomment"><div class="comment cmt"><p>the components are an abstract definition of the children of a content item</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.presentation.ObjToplevel">ObjToplevel</a> → <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
+      <p class="shortcomment cmt">the components are an abstract definition of the children of a content item that are used for presentation</p><div class="fullcomment"><div class="comment cmt"><p>the components are an abstract definition of the children of a content item that are used for presentation</p><p>Other algorithms than presentation should use the corresponding methods of ContentElement
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.presentation.ObjToplevel">ObjToplevel</a> → <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.Content#contComponents" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="contComponents:info.kwarc.mmt.api.presentation.ContentComponents"></a>
       <a id="contComponents:ContentComponents"></a>
@@ -254,6 +255,20 @@
       </span>
       </h4>
       <p class="shortcomment cmt">this ContentComponents object permits accessing components by name</p><div class="fullcomment"><div class="comment cmt"><p>this ContentComponents object permits accessing components by name</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.presentation.ObjToplevel#cpath" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="cpath:Option[info.kwarc.mmt.api.CPath]"></a>
+      <a id="cpath:Option[CPath]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cpath</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the path of the object (if known)
+</p>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -263,7 +278,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -279,7 +294,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -308,7 +323,7 @@
         <span class="name">governingPath</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../ContentPath.html" class="extype" name="info.kwarc.mmt.api.ContentPath">ContentPath</a>]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.presentation.ObjToplevel">ObjToplevel</a> → <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
+      <p class="shortcomment cmt">the governingPath is used to define the owner of components in a CPath</p><div class="fullcomment"><div class="comment cmt"><p>the governingPath is used to define the owner of components in a CPath</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.presentation.ObjToplevel">ObjToplevel</a> → <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -331,7 +346,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -361,20 +376,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.presentation.ObjToplevel#opath" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="opath:Option[info.kwarc.mmt.api.objects.OPath]"></a>
-      <a id="opath:Option[OPath]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">opath</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../objects/OPath.html" class="extype" name="info.kwarc.mmt.api.objects.OPath">OPath</a>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the position of the object (if known)
-</p>
     </li><li name="info.kwarc.mmt.api.presentation.ObjToplevel#role" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="role:info.kwarc.mmt.api.Role"></a>
       <a id="role:Role"></a>
@@ -482,7 +483,7 @@
             </div><div class="parent" name="info.kwarc.mmt.api.Content">
               <h3>Inherited from <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></h3>
             </div><div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

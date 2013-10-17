@@ -40,13 +40,14 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">ParsingUnit</span><span class="params">(<span name="source">source: <a href="SourceRef.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRef">SourceRef</a></span>, <span name="scope">scope: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="context">context: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="term">term: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">ParsingUnit</span><span class="params">(<span name="source">source: <a href="SourceRef.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRef">SourceRef</a></span>, <span name="scope">scope: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="context">context: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="term">term: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="top">top: <span class="extype" name="scala.Option">Option</span>[<a href="TextNotation.html" class="extype" name="info.kwarc.mmt.api.parser.TextNotation">TextNotation</a>] = <span class="symbol">scala.None</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>a ParsingUnit represents a term that is to be parsed</p></div><dl class="paramcmts block"><dt class="param">scope</dt><dd class="cmt"><p>the theory against which to parse</p></dd><dt class="param">context</dt><dd class="cmt"><p>the context against which to parse</p></dd><dt class="param">term</dt><dd class="cmt"><p>the term to be parse</p></dd></dl><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>a ParsingUnit represents a term that is to be parsed</p></div><dl class="paramcmts block"><dt class="param">source</dt><dd class="cmt"><p>the source reference of the string to parse</p></dd><dt class="param">scope</dt><dd class="cmt"><p>the theory against which to parse</p></dd><dt class="param">context</dt><dd class="cmt"><p>the context against which to parse</p></dd><dt class="param">term</dt><dd class="cmt"><p>the term to parse</p></dd><dt class="param">top</dt><dd class="cmt"><p>an optional notation that the whole input must match; this can be used to parse a term that is known/required to have a certain form
+</p></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -85,7 +86,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.parser.ParsingUnit#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(source:info.kwarc.mmt.api.parser.SourceRef,scope:info.kwarc.mmt.api.objects.Term,context:info.kwarc.mmt.api.objects.Context,term:String):info.kwarc.mmt.api.parser.ParsingUnit"></a>
+      <a id="&lt;init&gt;(source:info.kwarc.mmt.api.parser.SourceRef,scope:info.kwarc.mmt.api.objects.Term,context:info.kwarc.mmt.api.objects.Context,term:String,top:Option[info.kwarc.mmt.api.parser.TextNotation]):info.kwarc.mmt.api.parser.ParsingUnit"></a>
       <a id="&lt;init&gt;:ParsingUnit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -93,10 +94,11 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">ParsingUnit</span><span class="params">(<span name="source">source: <a href="SourceRef.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRef">SourceRef</a></span>, <span name="scope">scope: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="context">context: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="term">term: <span class="extype" name="scala.Predef.String">String</span></span>)</span>
+        <span class="name">ParsingUnit</span><span class="params">(<span name="source">source: <a href="SourceRef.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRef">SourceRef</a></span>, <span name="scope">scope: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="context">context: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="term">term: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="top">top: <span class="extype" name="scala.Option">Option</span>[<a href="TextNotation.html" class="extype" name="info.kwarc.mmt.api.parser.TextNotation">TextNotation</a>] = <span class="symbol">scala.None</span></span>)</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">scope</dt><dd class="cmt"><p>the theory against which to parse</p></dd><dt class="param">context</dt><dd class="cmt"><p>the context against which to parse</p></dd><dt class="param">term</dt><dd class="cmt"><p>the term to be parse</p></dd></dl></div>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">source</dt><dd class="cmt"><p>the source reference of the string to parse</p></dd><dt class="param">scope</dt><dd class="cmt"><p>the theory against which to parse</p></dd><dt class="param">context</dt><dd class="cmt"><p>the context against which to parse</p></dd><dt class="param">term</dt><dd class="cmt"><p>the term to parse</p></dd><dt class="param">top</dt><dd class="cmt"><p>an optional notation that the whole input must match; this can be used to parse a term that is known/required to have a certain form
+</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -115,7 +117,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -154,7 +156,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -193,10 +195,10 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -222,7 +224,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -238,7 +240,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -277,7 +279,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -332,7 +334,7 @@
         <span class="name">source</span><span class="result">: <a href="SourceRef.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRef">SourceRef</a></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">the source reference of the string to parse</p>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -358,7 +360,21 @@
         <span class="name">term</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the term to be parse</p>
+      <p class="shortcomment cmt">the term to parse</p>
+    </li><li name="info.kwarc.mmt.api.parser.ParsingUnit#top" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="top:Option[info.kwarc.mmt.api.parser.TextNotation]"></a>
+      <a id="top:Option[TextNotation]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">top</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="TextNotation.html" class="extype" name="info.kwarc.mmt.api.parser.TextNotation">TextNotation</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">an optional notation that the whole input must match; this can be used to parse a term that is known/required to have a certain form
+</p>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -425,7 +441,7 @@
             </div><div class="parent" name="scala.Equals">
               <h3>Inherited from <span class="extype" name="scala.Equals">Equals</span></h3>
             </div><div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

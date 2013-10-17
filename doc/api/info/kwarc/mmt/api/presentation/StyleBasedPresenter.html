@@ -29,9 +29,9 @@
         </head>
         <body class="type">
       <div id="definition">
-        <img src="../../../../../lib/class_big.png" />
+        <a href="StyleBasedPresenter$.html" title="Go to companion"><img src="../../../../../lib/class_to_object_big.png" /></a>
         <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.api.presentation">presentation</a></p>
-        <h1>StyleBasedPresenter</h1>
+        <h1><a href="StyleBasedPresenter$.html" title="Go to companion">StyleBasedPresenter</a></h1>
       </div>
 
       <h4 id="signature" class="signature">
@@ -40,13 +40,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">StyleBasedPresenter</span><span class="result"> extends <a href="Presenter.html" class="extype" name="info.kwarc.mmt.api.presentation.Presenter">Presenter</a> with <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
+        <span class="name">StyleBasedPresenter</span><span class="result"> extends <a href="Presenter.html" class="extype" name="info.kwarc.mmt.api.presentation.Presenter">Presenter</a></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>The presentation class</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="Presenter.html" class="extype" name="info.kwarc.mmt.api.presentation.Presenter">Presenter</a>, <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="Presenter.html" class="extype" name="info.kwarc.mmt.api.presentation.Presenter">Presenter</a>, <a href="ObjectPresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.ObjectPresenter">ObjectPresenter</a>, <a href="StructurePresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.StructurePresenter">StructurePresenter</a>, <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a>, <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -64,7 +64,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.presentation.StyleBasedPresenter"><span>StyleBasedPresenter</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Logger"><span>Logger</span></li><li class="in" name="info.kwarc.mmt.api.presentation.Presenter"><span>Presenter</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Extension"><span>Extension</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.presentation.StyleBasedPresenter"><span>StyleBasedPresenter</span></li><li class="in" name="info.kwarc.mmt.api.presentation.Presenter"><span>Presenter</span></li><li class="in" name="info.kwarc.mmt.api.presentation.ObjectPresenter"><span>ObjectPresenter</span></li><li class="in" name="info.kwarc.mmt.api.presentation.StructurePresenter"><span>StructurePresenter</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Extension"><span>Extension</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Logger"><span>Logger</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -101,7 +101,23 @@
     </li></ol>
             </div>
 
-        
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="info.kwarc.mmt.api.frontend.Extension.LocalError" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LocalErrorextendsExtensionErrorwithProductwithSerializable"></a>
+      <a id="LocalError:LocalError"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="../frontend/Extension$LocalError.html"><span class="name">LocalError</span></a><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="../ExtensionError.html" class="extype" name="info.kwarc.mmt.api.ExtensionError">ExtensionError</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">a custom error class for this extension</p>
+    </li></ol>
+            </div>
 
         
 
@@ -116,7 +132,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -155,7 +171,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -184,7 +200,7 @@
         <span class="name">apply</span><span class="params">(<span name="o">o: <a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></span>, <span name="rh">rh: <a href="RenderingHandler.html" class="extype" name="info.kwarc.mmt.api.presentation.RenderingHandler">RenderingHandler</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.presentation.StyleBasedPresenter">StyleBasedPresenter</a> → <a href="Presenter.html" class="extype" name="info.kwarc.mmt.api.presentation.Presenter">Presenter</a></dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.presentation.StyleBasedPresenter">StyleBasedPresenter</a> → <a href="ObjectPresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.ObjectPresenter">ObjectPresenter</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.presentation.StyleBasedPresenter#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="apply(s:info.kwarc.mmt.api.StructuralElement,rh:info.kwarc.mmt.api.presentation.RenderingHandler):Unit"></a>
       <a id="apply(StructuralElement,RenderingHandler):Unit"></a>
@@ -197,7 +213,7 @@
         <span class="name">apply</span><span class="params">(<span name="s">s: <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></span>, <span name="rh">rh: <a href="RenderingHandler.html" class="extype" name="info.kwarc.mmt.api.presentation.RenderingHandler">RenderingHandler</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.presentation.StyleBasedPresenter">StyleBasedPresenter</a> → <a href="Presenter.html" class="extype" name="info.kwarc.mmt.api.presentation.Presenter">Presenter</a></dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.presentation.StyleBasedPresenter">StyleBasedPresenter</a> → <a href="StructurePresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.StructurePresenter">StructurePresenter</a></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -211,6 +227,32 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.presentation.ObjectPresenter#asString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asString(o:info.kwarc.mmt.api.objects.Obj):String"></a>
+      <a id="asString(Obj):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asString</span><span class="params">(<span name="o">o: <a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ObjectPresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.ObjectPresenter">ObjectPresenter</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.presentation.StructurePresenter#asString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asString(e:info.kwarc.mmt.api.StructuralElement):String"></a>
+      <a id="asString(StructuralElement):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asString</span><span class="params">(<span name="e">e: <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="StructurePresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.StructurePresenter">StructurePresenter</a></dd></dl></div>
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>
@@ -220,10 +262,10 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -240,6 +282,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#defaultPrefix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="defaultPrefix:String"></a>
+      <a id="defaultPrefix:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">defaultPrefix</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Extension#destroy" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="destroy:Unit"></a>
       <a id="destroy:Unit"></a>
@@ -252,7 +307,7 @@
         <span class="name">destroy</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">termination (empty by default)</p><div class="fullcomment"><div class="comment cmt"><p>termination (empty by default)</p><p>Extensions may create persistent data structures and processes,
+      <p class="shortcomment cmt">extension-specific cleanup (override as needed, empty by default)</p><div class="fullcomment"><div class="comment cmt"><p>extension-specific cleanup (override as needed, empty by default)</p><p>Extensions may create persistent data structures and processes,
 but they must clean up after themselves in this method
 </p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -264,7 +319,7 @@ but they must clean up after themselves in this method
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -281,6 +336,19 @@ but they must clean up after themselves in this method
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.presentation.StyleBasedPresenter#expandXRefs" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="expandXRefs:Boolean"></a>
+      <a id="expandXRefs:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">expandXRefs</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
       <a id="finalize():Unit"></a>
@@ -293,7 +361,7 @@ but they must clean up after themselves in this method
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -310,6 +378,19 @@ but they must clean up after themselves in this method
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.presentation.Presenter#getNotation" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getNotation(o:info.kwarc.mmt.api.objects.Obj):(info.kwarc.mmt.api.objects.Obj,List[info.kwarc.mmt.api.objects.Position],Option[info.kwarc.mmt.api.parser.TextNotation])"></a>
+      <a id="getNotation(Obj):(Obj,List[Position],Option[TextNotation])"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getNotation</span><span class="params">(<span name="o">o: <a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></span>)</span><span class="result">: (<a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a>, <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../objects/Position.html" class="extype" name="info.kwarc.mmt.api.objects.Position">Position</a>], <span class="extype" name="scala.Option">Option</span>[<a href="../parser/TextNotation.html" class="extype" name="info.kwarc.mmt.api.parser.TextNotation">TextNotation</a>])</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Presenter.html" class="extype" name="info.kwarc.mmt.api.presentation.Presenter">Presenter</a></dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
       <a id="hashCode():Int"></a>
@@ -323,19 +404,6 @@ but they must clean up after themselves in this method
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.frontend.Extension#init" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="init(controller:info.kwarc.mmt.api.frontend.Controller,args:List[String]):Unit"></a>
-      <a id="init(Controller,List[String]):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">init</span><span class="params">(<span name="controller">controller: <a href="../frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a></span>, <span name="args">args: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">initialization (empty by default)</p><div class="fullcomment"><div class="comment cmt"><p>initialization (empty by default)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.presentation.StyleBasedPresenter#isApplicable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isApplicable(format:String):Boolean"></a>
       <a id="isApplicable(String):Boolean"></a>
@@ -363,6 +431,19 @@ but they must clean up after themselves in this method
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log(e:info.kwarc.mmt.api.Error):Unit"></a>
+      <a id="log(Error):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="params">(<span name="e">e: <a href="../Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="log(s:=&gt;String):Unit"></a>
       <a id="log(⇒String):Unit"></a>
       <h4 class="signature">
@@ -372,6 +453,19 @@ but they must clean up after themselves in this method
       </span>
       <span class="symbol">
         <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logError(s:=&gt;String):Unit"></a>
+      <a id="logError(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logError</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
@@ -400,7 +494,20 @@ but they must clean up after themselves in this method
         <span class="name">logPrefix</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.presentation.StyleBasedPresenter">StyleBasedPresenter</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+      <p class="shortcomment cmt">the prefix used to identify this extension for logging, by default the class name</p><div class="fullcomment"><div class="comment cmt"><p>the prefix used to identify this extension for logging, by default the class name</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.presentation.StyleBasedPresenter">StyleBasedPresenter</a> → <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logTime" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logTime:Unit"></a>
+      <a id="logTime:Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logTime</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -410,7 +517,7 @@ but they must clean up after themselves in this method
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -441,7 +548,7 @@ but they must clean up after themselves in this method
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.presentation.StyleBasedPresenter#present" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="present(c:info.kwarc.mmt.api.Content,gpar:info.kwarc.mmt.api.presentation.GlobalParams,lpar:info.kwarc.mmt.api.presentation.LocalParams):Unit"></a>
+      <a id="present(c:info.kwarc.mmt.api.Content,gpar:info.kwarc.mmt.api.presentation.GlobalParams,lp:info.kwarc.mmt.api.presentation.LocalParams):Unit"></a>
       <a id="present(Content,GlobalParams,LocalParams):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -449,24 +556,27 @@ but they must clean up after themselves in this method
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">present</span><span class="params">(<span name="c">c: <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></span>, <span name="gpar">gpar: <a href="GlobalParams.html" class="extype" name="info.kwarc.mmt.api.presentation.GlobalParams">GlobalParams</a></span>, <span name="lpar">lpar: <a href="LocalParams.html" class="extype" name="info.kwarc.mmt.api.presentation.LocalParams">LocalParams</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">present</span><span class="params">(<span name="c">c: <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></span>, <span name="gpar">gpar: <a href="GlobalParams.html" class="extype" name="info.kwarc.mmt.api.presentation.GlobalParams">GlobalParams</a></span>, <span name="lp">lp: <a href="LocalParams.html" class="extype" name="info.kwarc.mmt.api.presentation.LocalParams">LocalParams</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the main presentation method</p><div class="fullcomment"><div class="comment cmt"><p>the main presentation method</p></div><dl class="paramcmts block"><dt class="param">c</dt><dd class="cmt"><p>the presented expression</p></dd><dt class="param">gpar</dt><dd class="cmt"><p>the parameters that do not change during rendering</p></dd><dt class="param">lpar</dt><dd class="cmt"><p>the parameters that change during rendering
-</p></dd></dl><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
+      <p class="shortcomment cmt">the main presentation method</p><div class="fullcomment"><div class="comment cmt"><p>the main presentation method</p></div><dl class="paramcmts block"><dt class="param">c</dt><dd class="cmt"><p>the presented expression</p></dd><dt class="param">gpar</dt><dd class="cmt"><p>the parameters that do not change during rendering</p></dd></dl><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
     </li><li name="info.kwarc.mmt.api.presentation.StyleBasedPresenter#render" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="render(pres:info.kwarc.mmt.api.presentation.Presentation,comps:info.kwarc.mmt.api.presentation.ContentComponents,ind:List[Int],gpar:info.kwarc.mmt.api.presentation.GlobalParams,lpar:info.kwarc.mmt.api.presentation.LocalParams):Unit"></a>
-      <a id="render(Presentation,ContentComponents,List[Int],GlobalParams,LocalParams):Unit"></a>
+      <a id="render(pres:info.kwarc.mmt.api.presentation.Presentation,comps:info.kwarc.mmt.api.presentation.ContentComponents,compPos:Option[List[info.kwarc.mmt.api.objects.Position]],ind:List[Int],gpar:info.kwarc.mmt.api.presentation.GlobalParams,lpar:info.kwarc.mmt.api.presentation.LocalParams):Unit"></a>
+      <a id="render(Presentation,ContentComponents,Option[List[Position]],List[Int],GlobalParams,LocalParams):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">render</span><span class="params">(<span name="pres">pres: <a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a></span>, <span name="comps">comps: <a href="ContentComponents.html" class="extype" name="info.kwarc.mmt.api.presentation.ContentComponents">ContentComponents</a></span>, <span name="ind">ind: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="gpar">gpar: <a href="GlobalParams.html" class="extype" name="info.kwarc.mmt.api.presentation.GlobalParams">GlobalParams</a></span>, <span name="lpar">lpar: <a href="LocalParams.html" class="extype" name="info.kwarc.mmt.api.presentation.LocalParams">LocalParams</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">render</span><span class="params">(<span name="pres">pres: <a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a></span>, <span name="comps">comps: <a href="ContentComponents.html" class="extype" name="info.kwarc.mmt.api.presentation.ContentComponents">ContentComponents</a></span>, <span name="compPos">compPos: <span class="extype" name="scala.Option">Option</span>[<a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../objects/Position.html" class="extype" name="info.kwarc.mmt.api.objects.Position">Position</a>]]</span>, <span name="ind">ind: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="gpar">gpar: <a href="GlobalParams.html" class="extype" name="info.kwarc.mmt.api.presentation.GlobalParams">GlobalParams</a></span>, <span name="lpar">lpar: <a href="LocalParams.html" class="extype" name="info.kwarc.mmt.api.presentation.LocalParams">LocalParams</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
+      <p class="shortcomment cmt">transform Presentation into output
+</p><div class="fullcomment"><div class="comment cmt"><p>transform Presentation into output
+</p></div><dl class="paramcmts block"><dt class="param">pres</dt><dd class="cmt"><p>the Presentation to render</p></dd><dt class="param">comps</dt><dd class="cmt"><p>the components (content objects) available for recursive rendering</p></dd><dt class="param">compPos</dt><dd class="cmt"><p>the positions that the components have within the object to be rendered (defaults to 0, 1, ...)
+  if given, its length must be the number of components</p></dd><dt class="param">ind</dt><dd class="cmt"><p>the list of indices in nested maps</p></dd><dt class="param">gpar</dt><dd class="cmt"><p>the global parameters, in particular the RenderingHandler</p></dd><dt class="param">lpar</dt><dd class="cmt"><p>the local parameters
+</p></dd></dl><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Extension#report" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="report:info.kwarc.mmt.api.frontend.Report"></a>
       <a id="report:Report"></a>
@@ -479,7 +589,20 @@ but they must clean up after themselves in this method
         <span class="name">report</span><span class="result">: <a href="../frontend/Report.html" class="extype" name="info.kwarc.mmt.api.frontend.Report">Report</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#start" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="start(args:List[String]):Unit"></a>
+      <a id="start(List[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">start</span><span class="params">(<span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">extension-specific initialization (override as needed, empty by default)</p><div class="fullcomment"><div class="comment cmt"><p>extension-specific initialization (override as needed, empty by default)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -563,14 +686,18 @@ but they must clean up after themselves in this method
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="info.kwarc.mmt.api.frontend.Logger">
-              <h3>Inherited from <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></h3>
-            </div><div class="parent" name="info.kwarc.mmt.api.presentation.Presenter">
+        <div class="parent" name="info.kwarc.mmt.api.presentation.Presenter">
               <h3>Inherited from <a href="Presenter.html" class="extype" name="info.kwarc.mmt.api.presentation.Presenter">Presenter</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.presentation.ObjectPresenter">
+              <h3>Inherited from <a href="ObjectPresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.ObjectPresenter">ObjectPresenter</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.presentation.StructurePresenter">
+              <h3>Inherited from <a href="StructurePresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.StructurePresenter">StructurePresenter</a></h3>
             </div><div class="parent" name="info.kwarc.mmt.api.frontend.Extension">
               <h3>Inherited from <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.frontend.Logger">
+              <h3>Inherited from <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></h3>
             </div><div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

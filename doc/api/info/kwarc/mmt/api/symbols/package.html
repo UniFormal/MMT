@@ -63,20 +63,7 @@
 
         <div id="types" class="types members">
               <h3>Type Members</h3>
-              <ol><li name="info.kwarc.mmt.api.symbols.Assignment" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="AssignmentextendsDeclaration"></a>
-      <a id="Assignment:Assignment"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">abstract </span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="Assignment.html"><span class="name">Assignment</span></a><span class="result"> extends <a href="Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>
-      </span>
-      </h4>
-      <p class="comment cmt">An Assignment represents an MMT assignment.</p>
-    </li><li name="info.kwarc.mmt.api.symbols.Constant" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+              <ol><li name="info.kwarc.mmt.api.symbols.Constant" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ConstantextendsSymbol"></a>
       <a id="Constant:Constant"></a>
       <h4 class="signature">
@@ -89,32 +76,6 @@
       </span>
       </h4>
       <p class="comment cmt">A Constant represents an MMT constant.</p>
-    </li><li name="info.kwarc.mmt.api.symbols.ConstantAssignment" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ConstantAssignmentextendsAssignment"></a>
-      <a id="ConstantAssignment:ConstantAssignment"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="ConstantAssignment.html"><span class="name">ConstantAssignment</span></a><span class="result"> extends <a href="Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a></span>
-      </span>
-      </h4>
-      <p class="comment cmt">A ConstantAssignment represents an MMT assignment to a constant.</p>
-    </li><li name="info.kwarc.mmt.api.symbols.Declaration" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="DeclarationextendsContentElement"></a>
-      <a id="Declaration:Declaration"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">abstract </span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="Declaration.html"><span class="name">Declaration</span></a><span class="result"> extends <a href="../ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a></span>
-      </span>
-      </h4>
-      <p class="comment cmt">Declaration unifies MMT symbols and MMT assignments.</p>
     </li><li name="info.kwarc.mmt.api.symbols.DeclaredStructure" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="DeclaredStructureextendsStructurewithDeclaredLink"></a>
       <a id="DeclaredStructure:DeclaredStructure"></a>
@@ -128,19 +89,6 @@
       </span>
       </h4>
       <p class="comment cmt">A DeclaredStructure represents an MMT structure given by a list of assignments.</p>
-    </li><li name="info.kwarc.mmt.api.symbols.DefLinkAssignment" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="DefLinkAssignmentextendsAssignment"></a>
-      <a id="DefLinkAssignment:DefLinkAssignment"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="DefLinkAssignment.html"><span class="name">DefLinkAssignment</span></a><span class="result"> extends <a href="Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a></span>
-      </span>
-      </h4>
-      <p class="comment cmt">A DefLinkAssignment represents an MMT assignment to a definitional link.</p>
     </li><li name="info.kwarc.mmt.api.symbols.DefinedStructure" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="DefinedStructureextendsStructurewithDefinedLink"></a>
       <a id="DefinedStructure:DefinedStructure"></a>
@@ -181,7 +129,7 @@
       </h4>
       <p class="comment cmt">A Structure represents an MMT structure.</p>
     </li><li name="info.kwarc.mmt.api.symbols.Symbol" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="SymbolextendsDeclaration"></a>
+      <a id="SymbolextendsContentElement"></a>
       <a id="Symbol:Symbol"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -189,10 +137,10 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Symbol.html"><span class="name">Symbol</span></a><span class="result"> extends <a href="Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>
+        <a href="Symbol.html"><span class="name">Symbol</span></a><span class="result"> extends <a href="../ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a></span>
       </span>
       </h4>
-      <p class="comment cmt">A Symbol represents an MMT symbol.</p>
+      <p class="comment cmt">Symbol unifies MMT symbols and MMT assignments.</p>
     </li><li name="info.kwarc.mmt.api.symbols.TGroup" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TGroupextendsContentElement"></a>
       <a id="TGroup:TGroup"></a>
@@ -207,7 +155,7 @@
       </h4>
       
     </li><li name="info.kwarc.mmt.api.symbols.TermContainer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="TermContainerextendsObject"></a>
+      <a id="TermContainerextendsComponentContainer"></a>
       <a id="TermContainer:TermContainer"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -215,12 +163,12 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="TermContainer.html"><span class="name">TermContainer</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="TermContainer.html"><span class="name">TermContainer</span></a><span class="result"> extends <a href="../ComponentContainer.html" class="extype" name="info.kwarc.mmt.api.ComponentContainer">ComponentContainer</a></span>
       </span>
       </h4>
       <p class="comment cmt">TermContainer acts as the interface between the structural and the object level</p>
     </li><li name="info.kwarc.mmt.api.symbols.TermDimension" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="TermDimensionextendsObject"></a>
+      <a id="TermDimensionextendsAnyRef"></a>
       <a id="TermDimension:TermDimension"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -228,7 +176,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="TermDimension.html"><span class="name">TermDimension</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="TermDimension.html"><span class="name">TermDimension</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">a mutable wrapper around a Term together with status information</p>
@@ -252,6 +200,45 @@
       </span>
       </h4>
       <p class="comment cmt">helper object</p>
+    </li><li name="info.kwarc.mmt.api.symbols.ConstantAssignment" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ConstantAssignment"></a>
+      <a id="ConstantAssignment:ConstantAssignment"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ConstantAssignment$.html"><span class="name">ConstantAssignment</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">An MMT assignment to a constant is a special case of a Constant.</p>
+    </li><li name="info.kwarc.mmt.api.symbols.DefLinkAssignment" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DefLinkAssignment"></a>
+      <a id="DefLinkAssignment:DefLinkAssignment"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DefLinkAssignment$.html"><span class="name">DefLinkAssignment</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">An MMT assignment to a definitional link is a special case of a DefinedStructure.</p>
+    </li><li name="info.kwarc.mmt.api.symbols.DefinedStructure" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DefinedStructure"></a>
+      <a id="DefinedStructure:DefinedStructure"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DefinedStructure$.html"><span class="name">DefinedStructure</span></a>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.symbols.Include" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Include"></a>
       <a id="Include:Include"></a>
@@ -304,6 +291,19 @@
       </span>
       </h4>
       <p class="comment cmt">helper object</p>
+    </li><li name="info.kwarc.mmt.api.symbols.ViewInclude" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ViewInclude"></a>
+      <a id="ViewInclude:ViewInclude"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ViewInclude$.html"><span class="name">ViewInclude</span></a>
+      </span>
+      </h4>
+      
     </li></ol>
             </div>
 

@@ -40,7 +40,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">Traverser</span><span class="tparams">[<span name="State">State</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">Traverser</span><span class="tparams">[<span name="A">A</span>]</span><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       
@@ -48,10 +48,10 @@
 During the traversal, a value of type State may be used to carry along state.
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a href="../libraries/Lookup$ApplyMorphs$.html" class="extype" name="info.kwarc.mmt.api.libraries.Lookup.ApplyMorphs">ApplyMorphs</a>, <a href="../libraries/Lookup$ExpandDefinitions$.html" class="extype" name="info.kwarc.mmt.api.libraries.Lookup.ExpandDefinitions">ExpandDefinitions</a>, <a href="Flatten$.html" class="extype" name="info.kwarc.mmt.api.objects.Flatten">Flatten</a>, <a href="PushMorphs$.html" class="extype" name="info.kwarc.mmt.api.objects.PushMorphs">PushMorphs</a>, <a href="StatelessTraverser.html" class="extype" name="info.kwarc.mmt.api.objects.StatelessTraverser">StatelessTraverser</a>, <a href="Substitute$.html" class="extype" name="info.kwarc.mmt.api.objects.Substitute">Substitute</a>, <a href="../uom/UOM.html" class="extype" name="info.kwarc.mmt.api.uom.UOM">UOM</a></div>
+          <div class="subClasses hiddenContent"><a href="../libraries/Lookup$ApplyMorphs$.html" class="extype" name="info.kwarc.mmt.api.libraries.Lookup.ApplyMorphs">ApplyMorphs</a>, <a href="../libraries/Lookup$ExpandDefinitions$.html" class="extype" name="info.kwarc.mmt.api.libraries.Lookup.ExpandDefinitions">ExpandDefinitions</a>, <a href="PushMorphs$.html" class="extype" name="info.kwarc.mmt.api.objects.PushMorphs">PushMorphs</a>, <a href="Validator$SimplifyInferred$.html" class="extype" name="info.kwarc.mmt.api.objects.Validator.SimplifyInferred">SimplifyInferred</a>, <a href="StatelessTraverser.html" class="extype" name="info.kwarc.mmt.api.objects.StatelessTraverser">StatelessTraverser</a>, <a href="../uom/UOM.html" class="extype" name="info.kwarc.mmt.api.uom.UOM">UOM</a></div>
         </div></div>
         
 
@@ -90,8 +90,8 @@ During the traversal, a value of type State may be used to carry along state.
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.objects.Traverser#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;():info.kwarc.mmt.api.objects.Traverser[State]"></a>
-      <a id="&lt;init&gt;:Traverser[State]"></a>
+      <a id="&lt;init&gt;():info.kwarc.mmt.api.objects.Traverser[A]"></a>
+      <a id="&lt;init&gt;:Traverser[A]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
@@ -105,20 +105,36 @@ During the traversal, a value of type State may be used to carry along state.
     </li></ol>
             </div>
 
-        
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="info.kwarc.mmt.api.objects.Traverser.State" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="State=A"></a>
+      <a id="State:State"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">type</span>
+      </span>
+      <span class="symbol">
+        <span class="name">State</span><span class="result"> = <span class="extype" name="info.kwarc.mmt.api.objects.Traverser.A">A</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
+    </li></ol>
+            </div>
 
         <div id="values" class="values members">
               <h3>Abstract Value Members</h3>
-              <ol><li name="info.kwarc.mmt.api.objects.Traverser#apply" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="apply(t:info.kwarc.mmt.api.objects.Term)(implicitcon:info.kwarc.mmt.api.objects.Context,implicitinit:State):info.kwarc.mmt.api.objects.Term"></a>
-      <a id="apply(Term)(Context,State):Term"></a>
+              <ol><li name="info.kwarc.mmt.api.objects.Traverser#traverse" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="traverse(t:info.kwarc.mmt.api.objects.Term)(implicitcon:info.kwarc.mmt.api.objects.Context,implicitinit:Traverser.this.State):info.kwarc.mmt.api.objects.Term"></a>
+      <a id="traverse(Term)(Context,State):Term"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="t">t: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="con">con: <a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="init">init: <span class="extype" name="info.kwarc.mmt.api.objects.Traverser.State">State</span></span>)</span><span class="result">: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
+        <span class="name">traverse</span><span class="params">(<span name="t">t: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="con">con: <a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="init">init: <a href="#State=A" class="extmbr" name="info.kwarc.mmt.api.objects.Traverser.State">State</a></span>)</span><span class="result">: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
       
@@ -136,7 +152,7 @@ During the traversal, a value of type State may be used to carry along state.
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -175,7 +191,7 @@ During the traversal, a value of type State may be used to carry along state.
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -193,7 +209,7 @@ During the traversal, a value of type State may be used to carry along state.
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.objects.Traverser#apply" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="apply(t:info.kwarc.mmt.api.objects.Term,init:State,con:info.kwarc.mmt.api.objects.Context):info.kwarc.mmt.api.objects.Term"></a>
+      <a id="apply(t:info.kwarc.mmt.api.objects.Term,init:Traverser.this.State,con:info.kwarc.mmt.api.objects.Context):info.kwarc.mmt.api.objects.Term"></a>
       <a id="apply(Term,State,Context):Term"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -201,7 +217,7 @@ During the traversal, a value of type State may be used to carry along state.
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="t">t: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="init">init: <span class="extype" name="info.kwarc.mmt.api.objects.Traverser.State">State</span></span>, <span name="con">con: <a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a> = <span class="symbol"><span class="name"><a href="Context$.html">Context()</a></span></span></span>)</span><span class="result">: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
+        <span class="name">apply</span><span class="params">(<span name="t">t: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="init">init: <a href="#State=A" class="extmbr" name="info.kwarc.mmt.api.objects.Traverser.State">State</a></span>, <span name="con">con: <a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a> = <span class="symbol"><span class="name"><a href="Context$.html">Context()</a></span></span></span>)</span><span class="result">: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">the main method to call the traverser, context defaults to empty</p>
@@ -227,10 +243,10 @@ During the traversal, a value of type State may be used to carry along state.
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -243,7 +259,7 @@ During the traversal, a value of type State may be used to carry along state.
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -272,7 +288,7 @@ During the traversal, a value of type State may be used to carry along state.
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -324,7 +340,7 @@ During the traversal, a value of type State may be used to carry along state.
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -438,7 +454,7 @@ During the traversal, a value of type State may be used to carry along state.
 
         <div id="inheritedMembers">
         <div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

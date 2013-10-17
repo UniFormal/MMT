@@ -40,13 +40,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">LogicWriter</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">LogicWriter</span><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -85,7 +85,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.lf.compile.LogicWriter#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;():info.kwarc.mmt.lf.compile.LogicWriter"></a>
+      <a id="&lt;init&gt;(ls:info.kwarc.mmt.lf.compile.LogicSyntax):info.kwarc.mmt.lf.compile.LogicWriter"></a>
       <a id="&lt;init&gt;:LogicWriter"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -93,7 +93,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">LogicWriter</span><span class="params">()</span>
+        <span class="name">LogicWriter</span><span class="params">(<span name="ls">ls: <a href="LogicSyntax.html" class="extype" name="info.kwarc.mmt.lf.compile.LogicSyntax">LogicSyntax</a></span>)</span>
       </span>
       </h4>
       
@@ -131,7 +131,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -170,7 +170,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -209,14 +209,14 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="info.kwarc.mmt.lf.compile.LogicWriter#compile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.lf.compile.LogicWriter#compile" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="compile(ls:info.kwarc.mmt.lf.compile.LogicSyntax,lname:String,hetsdir:String):Unit"></a>
       <a id="compile(LogicSyntax,String,String):Unit"></a>
       <h4 class="signature">
@@ -230,8 +230,11 @@
       </h4>
       <p class="shortcomment cmt">ls - logic syntax
 lname - logic name
-dir - Hets main directory
-</p>
+dir - Hets main directory</p><div class="fullcomment"><div class="comment cmt"><p>ls - logic syntax
+lname - logic name
+dir - Hets main directory</p><p>splits logic to files
+figure out what part of logic syntax a declaration is --&gt; compile an appropriate file name --&gt; write declaration to file
+</p></div></div>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -241,7 +244,7 @@ dir - Hets main directory
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -258,6 +261,19 @@ dir - Hets main directory
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.lf.compile.LogicWriter#files" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="files:List[String]"></a>
+      <a id="files:List[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">files</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<span class="extype" name="java.lang.String">String</span>]</span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.lf.compile.LogicWriter#fillTemplate" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="fillTemplate(template:java.io.File,cont:List[String]):List[LogicWriter.this.LogicWriterError]"></a>
       <a id="fillTemplate(File,List[String]):List[LogicWriterError]"></a>
@@ -267,7 +283,7 @@ dir - Hets main directory
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">fillTemplate</span><span class="params">(<span name="template">template: <span class="extype" name="java.io.File">File</span></span>, <span name="cont">cont: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.List">List</span>[<a href="LogicWriter$LogicWriterError.html" class="extype" name="info.kwarc.mmt.lf.compile.LogicWriter.LogicWriterError">LogicWriterError</a>]</span>
+        <span class="name">fillTemplate</span><span class="params">(<span name="template">template: <span class="extype" name="java.io.File">File</span></span>, <span name="cont">cont: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="LogicWriter$LogicWriterError.html" class="extype" name="info.kwarc.mmt.lf.compile.LogicWriter.LogicWriterError">LogicWriterError</a>]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">takes a file and content, fills in the content of the file, returns error list (unfilled tags)</p>
@@ -283,7 +299,7 @@ dir - Hets main directory
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -335,7 +351,7 @@ dir - Hets main directory
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -439,7 +455,7 @@ dir - Hets main directory
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="info.kwarc.mmt.lf.compile.LogicWriter#write" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.lf.compile.LogicWriter#write" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="write(logdir:String,cont:List[String],filename:String,templ:java.io.File):Unit"></a>
       <a id="write(String,List[String],String,File):Unit"></a>
       <h4 class="signature">
@@ -448,14 +464,17 @@ dir - Hets main directory
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">write</span><span class="params">(<span name="logdir">logdir: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="cont">cont: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="filename">filename: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="templ">templ: <span class="extype" name="java.io.File">File</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">write</span><span class="params">(<span name="logdir">logdir: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="cont">cont: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="filename">filename: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="templ">templ: <span class="extype" name="java.io.File">File</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">logdir - output directory
 cont - generated code
 filename - destination of generated code file name
-templ - template file
-</p>
+templ - template file</p><div class="fullcomment"><div class="comment cmt"><p>logdir - output directory
+cont - generated code
+filename - destination of generated code file name
+templ - template file</p><p>takes a list of DECLarations and an output file name, writes declarations to a file
+</p></div></div>
     </li></ol>
             </div>
 
@@ -466,7 +485,7 @@ templ - template file
 
         <div id="inheritedMembers">
         <div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

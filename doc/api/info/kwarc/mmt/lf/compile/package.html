@@ -72,7 +72,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="ADT.html"><span class="name">ADT</span></a><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="constructors">constructors: <span class="extype" name="scala.List">List</span>[<a href="CONS.html" class="extype" name="info.kwarc.mmt.lf.compile.CONS">CONS</a>] = <span class="symbol">immutable.this.Nil</span></span>)</span><span class="result"> extends <a href="DECL.html" class="extype" name="info.kwarc.mmt.lf.compile.DECL">DECL</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="ADT.html"><span class="name">ADT</span></a><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="constructors">constructors: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="CONS.html" class="extype" name="info.kwarc.mmt.lf.compile.CONS">CONS</a>] = <span class="symbol">immutable.this.Nil</span></span>)</span><span class="result"> extends <a href="DECL.html" class="extype" name="info.kwarc.mmt.lf.compile.DECL">DECL</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">abstract data types: name -&gt; id%%(args) | .</p>
@@ -85,7 +85,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="ADTRec.html"><span class="name">ADTRec</span></a><span class="params">(<span name="adts">adts: <span class="extype" name="scala.List">List</span>[<a href="ADT.html" class="extype" name="info.kwarc.mmt.lf.compile.ADT">ADT</a>]</span>)</span><span class="result"> extends <a href="DECL.html" class="extype" name="info.kwarc.mmt.lf.compile.DECL">DECL</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="ADTRec.html"><span class="name">ADTRec</span></a><span class="params">(<span name="adts">adts: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="ADT.html" class="extype" name="info.kwarc.mmt.lf.compile.ADT">ADT</a>]</span>)</span><span class="result"> extends <a href="DECL.html" class="extype" name="info.kwarc.mmt.lf.compile.DECL">DECL</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">a group of mutually recursive abstract data types</p>
@@ -98,10 +98,23 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="ALIST.html"><span class="name">ALIST</span></a><span class="params">(<span name="elems">elems: <span class="extype" name="scala.List">List</span>[<a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a>]</span>)</span><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="ALIST.html"><span class="name">ALIST</span></a><span class="params">(<span name="elems">elems: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a>]</span>)</span><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">a list</p>
+    </li><li name="info.kwarc.mmt.lf.compile.AND" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ANDextendsEXPwithProductwithSerializable"></a>
+      <a id="AND:AND"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="AND.html"><span class="name">AND</span></a><span class="params">(<span name="left">left: <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>, <span name="right">right: <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>)</span><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">conjunction</p>
     </li><li name="info.kwarc.mmt.lf.compile.APPLY" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="APPLYextendsEXPwithProductwithSerializable"></a>
       <a id="APPLY:APPLY"></a>
@@ -124,7 +137,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="ARECORD.html"><span class="name">ARECORD</span></a><span class="params">(<span name="tp">tp: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="fields">fields: <span class="extype" name="scala.List">List</span>[<a href="FIELD.html" class="extype" name="info.kwarc.mmt.lf.compile.FIELD">FIELD</a>]</span>)</span><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="ARECORD.html"><span class="name">ARECORD</span></a><span class="params">(<span name="tp">tp: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="fields">fields: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="FIELD.html" class="extype" name="info.kwarc.mmt.lf.compile.FIELD">FIELD</a>]</span>)</span><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">record value</p>
@@ -217,7 +230,7 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="CONS.html"><span class="name">CONS</span></a><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="args">args: <span class="extype" name="scala.List">List</span>[<a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a>] = <span class="symbol">immutable.this.Nil</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="CONS.html"><span class="name">CONS</span></a><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a>] = <span class="symbol">immutable.this.Nil</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">auxiliary class for constructors of an ADT</p>
@@ -257,12 +270,12 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="Category.html"><span class="name">Category</span></a><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="constructors">constructors: <span class="extype" name="scala.List">List</span>[<a href="Constructor.html" class="extype" name="info.kwarc.mmt.lf.compile.Constructor">Constructor</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Category.html"><span class="name">Category</span></a><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="constructors">constructors: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Constructor.html" class="extype" name="info.kwarc.mmt.lf.compile.Constructor">Constructor</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">a type (family) with constructors; possible type arguments are erased</p>
     </li><li name="info.kwarc.mmt.lf.compile.CodeGenerator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="CodeGeneratorextendsObject"></a>
+      <a id="CodeGeneratorextendsAnyRef"></a>
       <a id="CodeGenerator:CodeGenerator"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -270,7 +283,7 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="CodeGenerator.html"><span class="name">CodeGenerator</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="CodeGenerator.html"><span class="name">CodeGenerator</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">generates a LogicSyntax for a given LF theory</p>
@@ -296,7 +309,7 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="Connective.html"><span class="name">Connective</span></a><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="arguments">arguments: <span class="extype" name="scala.List">List</span>[<a href="CatRef.html" class="extype" name="info.kwarc.mmt.lf.compile.CatRef">CatRef</a>]</span>)</span><span class="result"> extends <a href="Constructor.html" class="extype" name="info.kwarc.mmt.lf.compile.Constructor">Constructor</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Connective.html"><span class="name">Connective</span></a><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="arguments">arguments: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="CatRef.html" class="extype" name="info.kwarc.mmt.lf.compile.CatRef">CatRef</a>]</span>)</span><span class="result"> extends <a href="Constructor.html" class="extype" name="info.kwarc.mmt.lf.compile.Constructor">Constructor</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">also works as a constructor for formulas, i.</p>
@@ -309,12 +322,12 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="ConstantSymbol.html"><span class="name">ConstantSymbol</span></a><span class="params">(<span name="pattern">pattern: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="arguments">arguments: <span class="extype" name="scala.List">List</span>[<a href="CatRef.html" class="extype" name="info.kwarc.mmt.lf.compile.CatRef">CatRef</a>]</span>)</span><span class="result"> extends <a href="Constructor.html" class="extype" name="info.kwarc.mmt.lf.compile.Constructor">Constructor</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="ConstantSymbol.html"><span class="name">ConstantSymbol</span></a><span class="params">(<span name="pattern">pattern: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="arguments">arguments: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="CatRef.html" class="extype" name="info.kwarc.mmt.lf.compile.CatRef">CatRef</a>]</span>)</span><span class="result"> extends <a href="Constructor.html" class="extype" name="info.kwarc.mmt.lf.compile.Constructor">Constructor</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">a (Connective-like) constructor declared in a pattern body with some argument types</p>
     </li><li name="info.kwarc.mmt.lf.compile.Constructor" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="ConstructorextendsObject"></a>
+      <a id="ConstructorextendsAnyRef"></a>
       <a id="Constructor:Constructor"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -322,7 +335,7 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Constructor.html"><span class="name">Constructor</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Constructor.html"><span class="name">Constructor</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">constructor for a Category</p>
@@ -335,12 +348,12 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="Context.html"><span class="name">Context</span></a><span class="params">(<span name="vars">vars: <span class="extype" name="scala.List">List</span>[(<span class="extype" name="scala.Predef.String">String</span>, <a href="Type.html" class="extype" name="info.kwarc.mmt.lf.compile.Type">Type</a>)]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Context.html"><span class="name">Context</span></a><span class="params">(<span name="vars">vars: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[(<span class="extype" name="scala.Predef.String">String</span>, <a href="Type.html" class="extype" name="info.kwarc.mmt.lf.compile.Type">Type</a>)]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
     </li><li name="info.kwarc.mmt.lf.compile.DECL" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="DECLextendsObject"></a>
+      <a id="DECLextendsAnyRef"></a>
       <a id="DECL:DECL"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -348,7 +361,7 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="DECL.html"><span class="name">DECL</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="DECL.html"><span class="name">DECL</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">declarations of a simple functional language</p>
@@ -375,7 +388,7 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="Declaration.html"><span class="name">Declaration</span></a><span class="params">(<span name="pattern">pattern: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="arguments">arguments: <span class="extype" name="scala.List">List</span>[<a href="CatRef.html" class="extype" name="info.kwarc.mmt.lf.compile.CatRef">CatRef</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Declaration.html"><span class="name">Declaration</span></a><span class="params">(<span name="pattern">pattern: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="arguments">arguments: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="CatRef.html" class="extype" name="info.kwarc.mmt.lf.compile.CatRef">CatRef</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">a pragmatic declaration with some argument types</p>
@@ -419,7 +432,7 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
       </h4>
       <p class="comment cmt">exception declaration; all exception take a single string argument</p>
     </li><li name="info.kwarc.mmt.lf.compile.EXP" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="EXPextendsObject"></a>
+      <a id="EXPextendsAnyRef"></a>
       <a id="EXP:EXP"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -427,7 +440,7 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="EXP.html"><span class="name">EXP</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="EXP.html"><span class="name">EXP</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">expressions of a simple functional language</p>
@@ -466,7 +479,7 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="FUNCTIONRec.html"><span class="name">FUNCTIONRec</span></a><span class="params">(<span name="funs">funs: <span class="extype" name="scala.List">List</span>[<a href="FUNCTION.html" class="extype" name="info.kwarc.mmt.lf.compile.FUNCTION">FUNCTION</a>]</span>)</span><span class="result"> extends <a href="DECL.html" class="extype" name="info.kwarc.mmt.lf.compile.DECL">DECL</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="FUNCTIONRec.html"><span class="name">FUNCTIONRec</span></a><span class="params">(<span name="funs">funs: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="FUNCTION.html" class="extype" name="info.kwarc.mmt.lf.compile.FUNCTION">FUNCTION</a>]</span>)</span><span class="result"> extends <a href="DECL.html" class="extype" name="info.kwarc.mmt.lf.compile.DECL">DECL</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">a group of mutually recursive functions</p>
@@ -479,7 +492,7 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="FUNCTYPE.html"><span class="name">FUNCTYPE</span></a><span class="params">(<span name="args">args: <span class="extype" name="scala.List">List</span>[<a href="ARG.html" class="extype" name="info.kwarc.mmt.lf.compile.ARG">ARG</a>]</span>, <span name="ret">ret: <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="FUNCTYPE.html"><span class="name">FUNCTYPE</span></a><span class="params">(<span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="ARG.html" class="extype" name="info.kwarc.mmt.lf.compile.ARG">ARG</a>]</span>, <span name="ret">ret: <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">auxiliary class for function types</p>
@@ -492,12 +505,12 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="FUNCVALUE.html"><span class="name">FUNCVALUE</span></a><span class="params">(<span name="args">args: <span class="extype" name="scala.List">List</span>[<a href="ARG.html" class="extype" name="info.kwarc.mmt.lf.compile.ARG">ARG</a>]</span>, <span name="ret">ret: <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>, <span name="body">body: <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="FUNCVALUE.html"><span class="name">FUNCVALUE</span></a><span class="params">(<span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="ARG.html" class="extype" name="info.kwarc.mmt.lf.compile.ARG">ARG</a>]</span>, <span name="ret">ret: <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>, <span name="body">body: <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">auxiliary class for anonymous functions</p>
     </li><li name="info.kwarc.mmt.lf.compile.FuncLang" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="FuncLang[A]extendsObject"></a>
+      <a id="FuncLang[A]extendsAnyRef"></a>
       <a id="FuncLang[A]:FuncLang[A]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -505,7 +518,7 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="FuncLang.html"><span class="name">FuncLang</span></a><span class="tparams">[<span name="A">A</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="FuncLang.html"><span class="name">FuncLang</span></a><span class="tparams">[<span name="A">A</span>]</span><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">a simple functional language represented as transformation functions from declarations and expressions to strings</p>
@@ -518,7 +531,7 @@ we assume that the LF types of all binders are of the form {x:a} (b x -&gt; s) -
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="FunctionalType.html"><span class="name">FunctionalType</span></a><span class="params">(<span name="args">args: <span class="extype" name="scala.List">List</span>[<a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a>]</span>, <span name="ret">ret: <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>)</span><span class="result"> extends <a href="Type.html" class="extype" name="info.kwarc.mmt.lf.compile.Type">Type</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="FunctionalType.html"><span class="name">FunctionalType</span></a><span class="params">(<span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a>]</span>, <span name="ret">ret: <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>)</span><span class="result"> extends <a href="Type.html" class="extype" name="info.kwarc.mmt.lf.compile.Type">Type</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -598,12 +611,12 @@ the empty identifier ID(&quot;&quot;) is reserved: it refers to the current decl
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="LogicSyntax.html"><span class="name">LogicSyntax</span></a><span class="params">(<span name="cats">cats: <span class="extype" name="scala.List">List</span>[<a href="Category.html" class="extype" name="info.kwarc.mmt.lf.compile.Category">Category</a>]</span>, <span name="form">form: <a href="CatRef.html" class="extype" name="info.kwarc.mmt.lf.compile.CatRef">CatRef</a></span>, <span name="decls">decls: <span class="extype" name="scala.List">List</span>[<a href="Declaration.html" class="extype" name="info.kwarc.mmt.lf.compile.Declaration">Declaration</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="LogicSyntax.html"><span class="name">LogicSyntax</span></a><span class="params">(<span name="cats">cats: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Category.html" class="extype" name="info.kwarc.mmt.lf.compile.Category">Category</a>]</span>, <span name="form">form: <a href="CatRef.html" class="extype" name="info.kwarc.mmt.lf.compile.CatRef">CatRef</a></span>, <span name="decls">decls: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Declaration.html" class="extype" name="info.kwarc.mmt.lf.compile.Declaration">Declaration</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">a logic syntax consists of some categories (one of which is the category of formulas) and declarations</p>
     </li><li name="info.kwarc.mmt.lf.compile.LogicWriter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="LogicWriterextendsObject"></a>
+      <a id="LogicWriterextendsAnyRef"></a>
       <a id="LogicWriter:LogicWriter"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -611,7 +624,7 @@ the empty identifier ID(&quot;&quot;) is reserved: it refers to the current decl
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="LogicWriter.html"><span class="name">LogicWriter</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="LogicWriter.html"><span class="name">LogicWriter</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       
@@ -637,10 +650,23 @@ the empty identifier ID(&quot;&quot;) is reserved: it refers to the current decl
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="MATCH.html"><span class="name">MATCH</span></a><span class="params">(<span name="arg">arg: <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>, <span name="cases">cases: <span class="extype" name="scala.List">List</span>[<a href="CASE.html" class="extype" name="info.kwarc.mmt.lf.compile.CASE">CASE</a>]</span>)</span><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="MATCH.html"><span class="name">MATCH</span></a><span class="params">(<span name="arg">arg: <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>, <span name="cases">cases: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="CASE.html" class="extype" name="info.kwarc.mmt.lf.compile.CASE">CASE</a>]</span>)</span><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">pattern matching</p>
+    </li><li name="info.kwarc.mmt.lf.compile.OPTION" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OPTIONextendsEXPwithProductwithSerializable"></a>
+      <a id="OPTION:OPTION"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="OPTION.html"><span class="name">OPTION</span></a><span class="params">(<span name="tp">tp: <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>)</span><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">type of options</p>
     </li><li name="info.kwarc.mmt.lf.compile.PLUS" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="PLUSextendsEXPwithProductwithSerializable"></a>
       <a id="PLUS:PLUS"></a>
@@ -663,7 +689,7 @@ the empty identifier ID(&quot;&quot;) is reserved: it refers to the current decl
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="PROD.html"><span class="name">PROD</span></a><span class="params">(<span name="tps">tps: <span class="extype" name="scala.List">List</span>[<a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a>]</span>)</span><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="PROD.html"><span class="name">PROD</span></a><span class="params">(<span name="tps">tps: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a>]</span>)</span><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">product type</p>
@@ -681,7 +707,7 @@ the empty identifier ID(&quot;&quot;) is reserved: it refers to the current decl
       </h4>
       <p class="comment cmt">projection out of a product</p>
     </li><li name="info.kwarc.mmt.lf.compile.Program" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="ProgramextendsObject"></a>
+      <a id="ProgramextendsAnyRef"></a>
       <a id="Program:Program"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -689,7 +715,7 @@ the empty identifier ID(&quot;&quot;) is reserved: it refers to the current decl
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Program.html"><span class="name">Program</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Program.html"><span class="name">Program</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       
@@ -702,7 +728,7 @@ the empty identifier ID(&quot;&quot;) is reserved: it refers to the current decl
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="RECORD.html"><span class="name">RECORD</span></a><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="fields">fields: <span class="extype" name="scala.List">List</span>[<a href="FIELD.html" class="extype" name="info.kwarc.mmt.lf.compile.FIELD">FIELD</a>] = <span class="symbol">immutable.this.Nil</span></span>)</span><span class="result"> extends <a href="DECL.html" class="extype" name="info.kwarc.mmt.lf.compile.DECL">DECL</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="RECORD.html"><span class="name">RECORD</span></a><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="fields">fields: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="FIELD.html" class="extype" name="info.kwarc.mmt.lf.compile.FIELD">FIELD</a>] = <span class="symbol">immutable.this.Nil</span></span>)</span><span class="result"> extends <a href="DECL.html" class="extype" name="info.kwarc.mmt.lf.compile.DECL">DECL</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">record type declaration: RECORD(n) <sup> c1 :: A1 </sup> .</p>
@@ -719,6 +745,19 @@ the empty identifier ID(&quot;&quot;) is reserved: it refers to the current decl
       </span>
       </h4>
       <p class="comment cmt">selection from a record</p>
+    </li><li name="info.kwarc.mmt.lf.compile.SOME" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SOMEextendsEXPwithProductwithSerializable"></a>
+      <a id="SOME:SOME"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="SOME.html"><span class="name">SOME</span></a><span class="params">(<span name="elem">elem: <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>)</span><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">a defined option</p>
     </li><li name="info.kwarc.mmt.lf.compile.STRING" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="STRINGextendsEXPwithProductwithSerializable"></a>
       <a id="STRING:STRING"></a>
@@ -780,7 +819,7 @@ the empty identifier ID(&quot;&quot;) is reserved: it refers to the current decl
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="TUPLE.html"><span class="name">TUPLE</span></a><span class="params">(<span name="tps">tps: <span class="extype" name="scala.List">List</span>[<a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a>]</span>)</span><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="TUPLE.html"><span class="name">TUPLE</span></a><span class="params">(<span name="tps">tps: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a>]</span>)</span><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">tuple</p>
@@ -798,7 +837,7 @@ the empty identifier ID(&quot;&quot;) is reserved: it refers to the current decl
       </h4>
       <p class="comment cmt">type definition</p>
     </li><li name="info.kwarc.mmt.lf.compile.Theory2LogicSyntax" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Theory2LogicSyntaxextendsObject"></a>
+      <a id="Theory2LogicSyntaxextendsAnyRef"></a>
       <a id="Theory2LogicSyntax:Theory2LogicSyntax"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -806,12 +845,12 @@ the empty identifier ID(&quot;&quot;) is reserved: it refers to the current decl
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Theory2LogicSyntax.html"><span class="name">Theory2LogicSyntax</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Theory2LogicSyntax.html"><span class="name">Theory2LogicSyntax</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       
     </li><li name="info.kwarc.mmt.lf.compile.Type" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="TypeextendsObject"></a>
+      <a id="TypeextendsAnyRef"></a>
       <a id="Type:Type"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -819,10 +858,23 @@ the empty identifier ID(&quot;&quot;) is reserved: it refers to the current decl
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Type.html"><span class="name">Type</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Type.html"><span class="name">Type</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.lf.compile.UNOPTION" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="UNOPTIONextendsEXPwithProductwithSerializable"></a>
+      <a id="UNOPTION:UNOPTION"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="UNOPTION.html"><span class="name">UNOPTION</span></a><span class="params">(<span name="sm">sm: <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>)</span><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">unwrap option</p>
     </li><li name="info.kwarc.mmt.lf.compile.Unsupported" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="UnsupportedextendsThrowablewithProductwithSerializable"></a>
       <a id="Unsupported:Unsupported"></a>
@@ -856,6 +908,19 @@ the empty identifier ID(&quot;&quot;) is reserved: it refers to the current decl
       </span>
       </h4>
       <p class="comment cmt">type of booleans</p>
+    </li><li name="info.kwarc.mmt.lf.compile.COMPOSE" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="COMPOSE"></a>
+      <a id="COMPOSE:COMPOSE"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="COMPOSE$.html"><span class="name">COMPOSE</span></a><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">shorthand for function composition</p>
     </li><li name="info.kwarc.mmt.lf.compile.Compiler" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Compiler"></a>
       <a id="Compiler:Compiler"></a>
@@ -960,6 +1025,19 @@ the empty identifier ID(&quot;&quot;) is reserved: it refers to the current decl
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.lf.compile.NONE" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NONE"></a>
+      <a id="NONE:NONE"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="NONE$.html"><span class="name">NONE</span></a><span class="result"> extends <a href="EXP.html" class="extype" name="info.kwarc.mmt.lf.compile.EXP">EXP</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">the empty option</p>
     </li><li name="info.kwarc.mmt.lf.compile.PL" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="PL"></a>
       <a id="PL:PL"></a>

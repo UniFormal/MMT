@@ -40,19 +40,19 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">Arity</span><span class="params">(<span name="arguments">arguments: <span class="extype" name="scala.List">List</span>[<a href="ArgumentComponent.html" class="extype" name="info.kwarc.mmt.api.parser.ArgumentComponent">ArgumentComponent</a>]</span>, <span name="variables">variables: <span class="extype" name="scala.List">List</span>[<a href="VariableComponent.html" class="extype" name="info.kwarc.mmt.api.parser.VariableComponent">VariableComponent</a>]</span>, <span name="scopes">scopes: <span class="extype" name="scala.List">List</span>[<a href="ScopeComponent.html" class="extype" name="info.kwarc.mmt.api.parser.ScopeComponent">ScopeComponent</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">Arity</span><span class="params">(<span name="arguments">arguments: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="ArgumentComponent.html" class="extype" name="info.kwarc.mmt.api.parser.ArgumentComponent">ArgumentComponent</a>]</span>, <span name="variables">variables: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="VariableComponent.html" class="extype" name="info.kwarc.mmt.api.parser.VariableComponent">VariableComponent</a>]</span>, <span name="scopes">scopes: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="ScopeComponent.html" class="extype" name="info.kwarc.mmt.api.parser.ScopeComponent">ScopeComponent</a>]</span>, <span name="attribution">attribution: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>the arity of a symbol describes what kind of objects can be formed from it</p><p>special cases and analogs in the OpenMath role system for a symbol s:
  no arguments, variables, scopes: constant, s
  some arguments, no variables, scopes: application OMA(s, args)
- no arguments, some variables, 1 scope: binder, OMBIND(s, vars, scope)
- some arguments, some variables, 1 scope: application+binder as in OMBIND(OMA(s, args), vars, scope), suggested by Kohlhase, Rabe, MiCS 2012
- as above but multiple scopes: generalized binders as suggested by Davenport, Kohlhase, MKM 2010
+ no arguments, some variables: binder, OMBINDC(s, vars, scopes)
+ some arguments, some variables: application+binder as in OMBINDC(OMA(s, args), vars, scopes), as suggested by Kohlhase, Rabe, MiCS 2012
+ as above but exactly 1 scope: usual binders, generalized binders as suggested by Davenport, Kohlhase, MKM 2010
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -91,7 +91,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.parser.Arity#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(arguments:List[info.kwarc.mmt.api.parser.ArgumentComponent],variables:List[info.kwarc.mmt.api.parser.VariableComponent],scopes:List[info.kwarc.mmt.api.parser.ScopeComponent]):info.kwarc.mmt.api.parser.Arity"></a>
+      <a id="&lt;init&gt;(arguments:List[info.kwarc.mmt.api.parser.ArgumentComponent],variables:List[info.kwarc.mmt.api.parser.VariableComponent],scopes:List[info.kwarc.mmt.api.parser.ScopeComponent],attribution:Boolean):info.kwarc.mmt.api.parser.Arity"></a>
       <a id="&lt;init&gt;:Arity"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -99,7 +99,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">Arity</span><span class="params">(<span name="arguments">arguments: <span class="extype" name="scala.List">List</span>[<a href="ArgumentComponent.html" class="extype" name="info.kwarc.mmt.api.parser.ArgumentComponent">ArgumentComponent</a>]</span>, <span name="variables">variables: <span class="extype" name="scala.List">List</span>[<a href="VariableComponent.html" class="extype" name="info.kwarc.mmt.api.parser.VariableComponent">VariableComponent</a>]</span>, <span name="scopes">scopes: <span class="extype" name="scala.List">List</span>[<a href="ScopeComponent.html" class="extype" name="info.kwarc.mmt.api.parser.ScopeComponent">ScopeComponent</a>]</span>)</span>
+        <span class="name">Arity</span><span class="params">(<span name="arguments">arguments: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="ArgumentComponent.html" class="extype" name="info.kwarc.mmt.api.parser.ArgumentComponent">ArgumentComponent</a>]</span>, <span name="variables">variables: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="VariableComponent.html" class="extype" name="info.kwarc.mmt.api.parser.VariableComponent">VariableComponent</a>]</span>, <span name="scopes">scopes: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="ScopeComponent.html" class="extype" name="info.kwarc.mmt.api.parser.ScopeComponent">ScopeComponent</a>]</span>, <span name="attribution">attribution: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span>
       </span>
       </h4>
       
@@ -121,7 +121,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -160,7 +160,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -186,7 +186,7 @@
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">arguments</span><span class="result">: <span class="extype" name="scala.List">List</span>[<a href="ArgumentComponent.html" class="extype" name="info.kwarc.mmt.api.parser.ArgumentComponent">ArgumentComponent</a>]</span>
+        <span class="name">arguments</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="ArgumentComponent.html" class="extype" name="info.kwarc.mmt.api.parser.ArgumentComponent">ArgumentComponent</a>]</span>
       </span>
       </h4>
       
@@ -203,6 +203,32 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.Arity#attribution" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="attribution:Boolean"></a>
+      <a id="attribution:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">attribution</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.parser.Arity#canHandle" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="canHandle(args:Int,vars:Int,scs:Int,att:Boolean):Boolean"></a>
+      <a id="canHandle(Int,Int,Int,Boolean):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">canHandle</span><span class="params">(<span name="args">args: <span class="extype" name="scala.Int">Int</span></span>, <span name="vars">vars: <span class="extype" name="scala.Int">Int</span></span>, <span name="scs">scs: <span class="extype" name="scala.Int">Int</span></span>, <span name="att">att: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>true if ComplexTerm(name, args, vars, scs) has enough components for this arity and provides for an attribution if necessary</p></dd></dl></div>
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>
@@ -212,10 +238,10 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -241,7 +267,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -257,10 +283,42 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.Arity#flatImplicitArguments" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="flatImplicitArguments(args:Int):List[info.kwarc.mmt.api.parser.ImplicitArg]"></a>
+      <a id="flatImplicitArguments(Int):List[ImplicitArg]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">flatImplicitArguments</span><span class="params">(<span name="args">args: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="ImplicitArg.html" class="extype" name="info.kwarc.mmt.api.parser.ImplicitArg">ImplicitArg</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">args</dt><dd class="cmt"><p>the number of total arguments</p></dd><dt>returns</dt><dd class="cmt"><p>the list of remapped implicit arguments
+</p></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.Arity#flatten" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="flatten(markers:List[info.kwarc.mmt.api.parser.Marker],args:Int,vars:Int,scs:Int,attrib:Boolean):List[info.kwarc.mmt.api.parser.Marker]"></a>
+      <a id="flatten(List[Marker],Int,Int,Int,Boolean):List[Marker]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">flatten</span><span class="params">(<span name="markers">markers: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Marker.html" class="extype" name="info.kwarc.mmt.api.parser.Marker">Marker</a>]</span>, <span name="args">args: <span class="extype" name="scala.Int">Int</span></span>, <span name="vars">vars: <span class="extype" name="scala.Int">Int</span></span>, <span name="scs">scs: <span class="extype" name="scala.Int">Int</span></span>, <span name="attrib">attrib: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Marker.html" class="extype" name="info.kwarc.mmt.api.parser.Marker">Marker</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">flattens all sequence arguments/variables of a notation according to a complex term
+</p><div class="fullcomment"><div class="comment cmt"><p>flattens all sequence arguments/variables of a notation according to a complex term
+</p></div><dl class="paramcmts block"><dt class="param">markers</dt><dd class="cmt"><p>the list of markers to flatten</p></dd><dt class="param">args</dt><dd class="cmt"><p>number of arguments</p></dd><dt class="param">vars</dt><dd class="cmt"><p>number of variables</p></dd><dt class="param">scs</dt><dd class="cmt"><p>number of scopes</p><p>if there is more than 1 sequence arguments, the available arguments are evenly distributed over the sequences
+remaining arguments are distributed in order of content position</p><p>multiple sequence variables are treated accordingly
+it is assumed there are no sequences in the scopes</p><p>pre: canHandle(args, vars, scs) == true
+</p></dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <a id="getClass():Class[_]"></a>
@@ -274,6 +332,34 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.Arity#groupArgs" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="groupArgs(args:List[info.kwarc.mmt.api.objects.Term]):List[List[info.kwarc.mmt.api.objects.Term]]"></a>
+      <a id="groupArgs(List[Term]):List[List[Term]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">groupArgs</span><span class="params">(<span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>)</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">groups a list of arguments into sequences according to distributeArgs
+</p>
+    </li><li name="info.kwarc.mmt.api.parser.Arity#groupVars" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="groupVars(cont:info.kwarc.mmt.api.objects.Context):List[info.kwarc.mmt.api.objects.Context]"></a>
+      <a id="groupVars(Context):List[Context]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">groupVars</span><span class="params">(<span name="cont">cont: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>)</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">groups a list of variable declarations into sequences according to distributeVars
+</p>
     </li><li name="info.kwarc.mmt.api.parser.Arity#isApplBinder" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="isApplBinder:Boolean"></a>
       <a id="isApplBinder:Boolean"></a>
@@ -297,6 +383,19 @@
       </span>
       <span class="symbol">
         <span class="name">isApplication</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.parser.Arity#isAttribution" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="isAttribution:Boolean"></a>
+      <a id="isAttribution:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isAttribution</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       
@@ -339,6 +438,45 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.Arity#isPlainApplBinder" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="isPlainApplBinder:Boolean"></a>
+      <a id="isPlainApplBinder:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isPlainApplBinder</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.parser.Arity#isPlainAttribution" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="isPlainAttribution:Boolean"></a>
+      <a id="isPlainAttribution:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isPlainAttribution</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.parser.Arity#isPlainBinder" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="isPlainBinder:Boolean"></a>
+      <a id="isPlainBinder:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isPlainBinder</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.parser.Arity#length" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="length:Int"></a>
       <a id="length:Int"></a>
@@ -361,7 +499,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -391,6 +529,71 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.Arity#numNormalArgs" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="numNormalArgs:Int"></a>
+      <a id="numNormalArgs:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">numNormalArgs</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.parser.Arity#numNormalScopes" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="numNormalScopes:Int"></a>
+      <a id="numNormalScopes:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">numNormalScopes</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.parser.Arity#numNormalVars" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="numNormalVars:Int"></a>
+      <a id="numNormalVars:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">numNormalVars</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.parser.Arity#numSeqArgs" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="numSeqArgs:Int"></a>
+      <a id="numSeqArgs:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">numSeqArgs</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.parser.Arity#numSeqVars" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="numSeqVars:Int"></a>
+      <a id="numSeqVars:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">numSeqVars</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.parser.Arity#scopes" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="scopes:List[info.kwarc.mmt.api.parser.ScopeComponent]"></a>
       <a id="scopes:List[ScopeComponent]"></a>
@@ -400,7 +603,7 @@
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">scopes</span><span class="result">: <span class="extype" name="scala.List">List</span>[<a href="ScopeComponent.html" class="extype" name="info.kwarc.mmt.api.parser.ScopeComponent">ScopeComponent</a>]</span>
+        <span class="name">scopes</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="ScopeComponent.html" class="extype" name="info.kwarc.mmt.api.parser.ScopeComponent">ScopeComponent</a>]</span>
       </span>
       </h4>
       
@@ -426,7 +629,7 @@
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">variables</span><span class="result">: <span class="extype" name="scala.List">List</span>[<a href="VariableComponent.html" class="extype" name="info.kwarc.mmt.api.parser.VariableComponent">VariableComponent</a>]</span>
+        <span class="name">variables</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="VariableComponent.html" class="extype" name="info.kwarc.mmt.api.parser.VariableComponent">VariableComponent</a>]</span>
       </span>
       </h4>
       
@@ -496,7 +699,7 @@
             </div><div class="parent" name="scala.Equals">
               <h3>Inherited from <span class="extype" name="scala.Equals">Equals</span></h3>
             </div><div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

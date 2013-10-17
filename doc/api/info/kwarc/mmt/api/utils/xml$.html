@@ -46,7 +46,7 @@
       
           <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -99,7 +99,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -138,7 +138,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -155,6 +155,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.utils.xml#addAttr" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="addAttr(N:scala.xml.Elem,key:String,value:String):scala.xml.Elem"></a>
+      <a id="addAttr(Elem,String,String):Elem"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">addAttr</span><span class="params">(<span name="N">N: <span class="extype" name="scala.xml.Elem">Elem</span></span>, <span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.xml.Elem">Elem</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">adds an attribute to a node</p>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -194,21 +207,20 @@
       </span>
       </h4>
       <p class="shortcomment cmt">returns attribute value, &quot;&quot; if attribute not present</p>
-    </li><li name="info.kwarc.mmt.api.utils.xml#checkKeys" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="checkKeys(md:scala.xml.MetaData,keys:List[String]):List[String]"></a>
-      <a id="checkKeys(MetaData,List[String]):List[String]"></a>
+    </li><li name="info.kwarc.mmt.api.utils.xml#attrInt" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="attrInt(N:scala.xml.Node,att:String,exc:String=&gt;Throwable):Int"></a>
+      <a id="attrInt(Node,String,(String)⇒Throwable):Int"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">checkKeys</span><span class="params">(<span name="md">md: <span class="extype" name="scala.xml.MetaData">MetaData</span></span>, <span name="keys">keys: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+        <span class="name">attrInt</span><span class="params">(<span name="N">N: <span class="extype" name="scala.xml.Node">Node</span></span>, <span name="att">att: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="exc">exc: (<span class="extype" name="scala.Predef.String">String</span>) ⇒ <a href="../../../../../scala/package.html#Throwable=Throwable" class="extmbr" name="scala.Throwable">Throwable</a></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Checks whether an XML element has illegal attribute keys.</p><div class="fullcomment"><div class="comment cmt"><p>Checks whether an XML element has illegal attribute keys.
-Prefixed attributes are ignored.</p></div><dl class="paramcmts block"><dt class="param">md</dt><dd class="cmt"><p>the attributes to be checked</p></dd><dt>returns</dt><dd class="cmt"><p>the illegal keys
-</p></dd></dl></div>
+      <p class="shortcomment cmt">like attr but forces integer value
+</p>
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>
@@ -218,10 +230,10 @@ Prefixed attributes are ignored.</p></div><dl class="paramcmts block"><dt class=
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -260,7 +272,7 @@ Prefixed attributes are ignored.</p></div><dl class="paramcmts block"><dt class=
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -289,7 +301,7 @@ Prefixed attributes are ignored.</p></div><dl class="paramcmts block"><dt class=
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -367,7 +379,7 @@ Prefixed attributes are ignored.</p></div><dl class="paramcmts block"><dt class=
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -411,15 +423,15 @@ Prefixed attributes are ignored.</p></div><dl class="paramcmts block"><dt class=
       </h4>
       
     </li><li name="info.kwarc.mmt.api.utils.xml#readFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="readFile(file:java.io.File):scala.xml.Node"></a>
-      <a id="readFile(java.io.File):Node"></a>
+      <a id="readFile(file:info.kwarc.mmt.api.utils.File):scala.xml.Node"></a>
+      <a id="readFile(File):Node"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">readFile</span><span class="params">(<span name="file">file: <span class="extype" name="java.io.File">java.io.File</span></span>)</span><span class="result">: <span class="extype" name="scala.xml.Node">Node</span></span>
+        <span class="name">readFile</span><span class="params">(<span name="file">file: <a href="File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result">: <span class="extype" name="scala.xml.Node">Node</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">reads an XML file and returns the first Node in it</p>
@@ -497,19 +509,20 @@ Prefixed attributes are ignored.</p></div><dl class="paramcmts block"><dt class=
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.utils.xml#writeFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="writeFile(N:scala.xml.Node,file:java.io.File):Unit"></a>
-      <a id="writeFile(Node,java.io.File):Unit"></a>
+    </li><li name="info.kwarc.mmt.api.utils.xml#writeFile" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="writeFile(N:scala.xml.Node,file:info.kwarc.mmt.api.utils.File):Unit"></a>
+      <a id="writeFile(Node,File):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">writeFile</span><span class="params">(<span name="N">N: <span class="extype" name="scala.xml.Node">Node</span></span>, <span name="file">file: <span class="extype" name="java.io.File">java.io.File</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">writeFile</span><span class="params">(<span name="N">N: <span class="extype" name="scala.xml.Node">Node</span></span>, <span name="file">file: <a href="File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">writes an XML Node to a file</p>
+      <p class="shortcomment cmt">writes an XML Node to a file</p><div class="fullcomment"><div class="comment cmt"><p>writes an XML Node to a file</p><p>overwrites existing files, creates directories if necessary
+</p></div></div>
     </li></ol>
             </div>
 
@@ -520,7 +533,7 @@ Prefixed attributes are ignored.</p></div><dl class="paramcmts block"><dt class=
 
         <div id="inheritedMembers">
         <div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

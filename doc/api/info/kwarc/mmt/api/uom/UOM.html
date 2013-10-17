@@ -40,13 +40,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">UOM</span><span class="result"> extends <a href="../objects/StatelessTraverser.html" class="extype" name="info.kwarc.mmt.api.objects.StatelessTraverser">StatelessTraverser</a></span>
+        <span class="name">UOM</span><span class="result"> extends <a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a>[<a href="UOMState.html" class="extype" name="info.kwarc.mmt.api.uom.UOMState">UOMState</a>] with <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A UOM applies DepthRule's and BreadthRule's exhaustively to simplify a Term</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="../objects/StatelessTraverser.html" class="extype" name="info.kwarc.mmt.api.objects.StatelessTraverser">StatelessTraverser</a>, <a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a>[<span class="extype" name="scala.Unit">Unit</span>], <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a>[<a href="UOMState.html" class="extype" name="info.kwarc.mmt.api.uom.UOMState">UOMState</a>], <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -64,7 +64,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.uom.UOM"><span>UOM</span></li><li class="in" name="info.kwarc.mmt.api.objects.StatelessTraverser"><span>StatelessTraverser</span></li><li class="in" name="info.kwarc.mmt.api.objects.Traverser"><span>Traverser</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.uom.UOM"><span>UOM</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Logger"><span>Logger</span></li><li class="in" name="info.kwarc.mmt.api.objects.Traverser"><span>Traverser</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -85,7 +85,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.uom.UOM#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(report:info.kwarc.mmt.api.frontend.Report):info.kwarc.mmt.api.uom.UOM"></a>
+      <a id="&lt;init&gt;(controller:info.kwarc.mmt.api.frontend.Controller):info.kwarc.mmt.api.uom.UOM"></a>
       <a id="&lt;init&gt;:UOM"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -93,14 +93,30 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">UOM</span><span class="params">(<span name="report">report: <a href="../frontend/Report.html" class="extype" name="info.kwarc.mmt.api.frontend.Report">Report</a></span>)</span>
+        <span class="name">UOM</span><span class="params">(<span name="controller">controller: <a href="../frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a></span>)</span>
       </span>
       </h4>
       
     </li></ol>
             </div>
 
-        
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="info.kwarc.mmt.api.objects.Traverser.State" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="State=A"></a>
+      <a id="State:State"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">type</span>
+      </span>
+      <span class="symbol">
+        <span class="name">State</span><span class="result"> = <a href="UOMState.html" class="extype" name="info.kwarc.mmt.api.uom.UOMState">UOMState</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a></dd></dl></div>
+    </li></ol>
+            </div>
 
         
 
@@ -115,7 +131,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -154,7 +170,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -171,44 +187,16 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.uom.UOM#abbrevRules" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="abbrevRules:info.kwarc.mmt.api.utils.HashMapToSet[info.kwarc.mmt.api.GlobalName,info.kwarc.mmt.api.uom.AbbrevRule]"></a>
-      <a id="abbrevRules:HashMapToSet[GlobalName,AbbrevRule]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">abbrevRules</span><span class="result">: <a href="../utils/HashMapToSet.html" class="extype" name="info.kwarc.mmt.api.utils.HashMapToSet">HashMapToSet</a>[<a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a>, <a href="AbbrevRule.html" class="extype" name="info.kwarc.mmt.api.uom.AbbrevRule">AbbrevRule</a>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the AbbrevRule's that this UOM will use, hashed by the abbreviating operator</p>
-    </li><li name="info.kwarc.mmt.api.uom.UOM#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="apply(t:info.kwarc.mmt.api.objects.Term)(implicitcon:info.kwarc.mmt.api.objects.Context,implicitinit:Unit):info.kwarc.mmt.api.objects.Term"></a>
-      <a id="apply(Term)(Context,Unit):Term"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="con">con: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="init">init: <span class="extype" name="scala.Unit">Unit</span></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the simplification method that is called internally during the traversal of a term
-users should not call this method (call simplify instead)</p><div class="fullcomment"><div class="comment cmt"><p>the simplification method that is called internally during the traversal of a term
-users should not call this method (call simplify instead)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.uom.UOM">UOM</a> → <a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.objects.Traverser#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="apply(t:info.kwarc.mmt.api.objects.Term,init:State,con:info.kwarc.mmt.api.objects.Context):info.kwarc.mmt.api.objects.Term"></a>
-      <a id="apply(Term,Unit,Context):Term"></a>
+      <a id="apply(t:info.kwarc.mmt.api.objects.Term,init:Traverser.this.State,con:info.kwarc.mmt.api.objects.Context):info.kwarc.mmt.api.objects.Term"></a>
+      <a id="apply(Term,State,Context):Term"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="init">init: <span class="extype" name="scala.Unit">Unit</span></span>, <span name="con">con: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a> = <span class="symbol"><span class="name"><a href="../objects/Context$.html">Context()</a></span></span></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
+        <span class="name">apply</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="init">init: <a href="#State=A" class="extmbr" name="info.kwarc.mmt.api.uom.UOM.State">State</a></span>, <span name="con">con: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a> = <span class="symbol"><span class="name"><a href="../objects/Context$.html">Context()</a></span></span></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">the main method to call the traverser, context defaults to empty</p><div class="fullcomment"><div class="comment cmt"><p>the main method to call the traverser, context defaults to empty</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a></dd></dl></div>
@@ -225,19 +213,6 @@ users should not call this method (call simplify instead)</p></div><dl class="at
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.uom.UOM#breadthRules" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="breadthRules:info.kwarc.mmt.api.utils.HashMapToSet[info.kwarc.mmt.api.GlobalName,info.kwarc.mmt.api.uom.BreadthRule]"></a>
-      <a id="breadthRules:HashMapToSet[GlobalName,BreadthRule]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">breadthRules</span><span class="result">: <a href="../utils/HashMapToSet.html" class="extype" name="info.kwarc.mmt.api.utils.HashMapToSet">HashMapToSet</a>[<a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a>, <a href="BreadthRule.html" class="extype" name="info.kwarc.mmt.api.uom.BreadthRule">BreadthRule</a>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the BreadthRule's that this UOM will use, hashed by (outer,inner) pairs</p>
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>
@@ -247,26 +222,13 @@ users should not call this method (call simplify instead)</p></div><dl class="at
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.uom.UOM#depthRules" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="depthRules:info.kwarc.mmt.api.utils.HashMapToSet[(info.kwarc.mmt.api.GlobalName,info.kwarc.mmt.api.GlobalName),info.kwarc.mmt.api.uom.DepthRule]"></a>
-      <a id="depthRules:HashMapToSet[(GlobalName,GlobalName),DepthRule]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">depthRules</span><span class="result">: <a href="../utils/HashMapToSet.html" class="extype" name="info.kwarc.mmt.api.utils.HashMapToSet">HashMapToSet</a>[(<a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a>, <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a>), <a href="DepthRule.html" class="extype" name="info.kwarc.mmt.api.uom.DepthRule">DepthRule</a>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the DepthRule's that this UOM will use, hashed by (outer,inner) pairs</p>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -276,7 +238,7 @@ users should not call this method (call simplify instead)</p></div><dl class="at
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -305,7 +267,7 @@ users should not call this method (call simplify instead)</p></div><dl class="at
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -348,6 +310,84 @@ users should not call this method (call simplify instead)</p></div><dl class="at
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log(e:info.kwarc.mmt.api.Error):Unit"></a>
+      <a id="log(Error):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="params">(<span name="e">e: <a href="../Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log(s:=&gt;String):Unit"></a>
+      <a id="log(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logError(s:=&gt;String):Unit"></a>
+      <a id="logError(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logError</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logGroup" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logGroup[A](a:=&gt;A):A"></a>
+      <a id="logGroup[A](⇒A):A"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logGroup</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="a">a: ⇒ <span class="extype" name="info.kwarc.mmt.api.frontend.Logger.logGroup.A">A</span></span>)</span><span class="result">: <span class="extype" name="info.kwarc.mmt.api.frontend.Logger.logGroup.A">A</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.uom.UOM#logPrefix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logPrefix:String"></a>
+      <a id="logPrefix:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logPrefix</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.uom.UOM">UOM</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logTime" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logTime:Unit"></a>
+      <a id="logTime:Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logTime</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -357,7 +397,7 @@ users should not call this method (call simplify instead)</p></div><dl class="at
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -387,60 +427,101 @@ users should not call this method (call simplify instead)</p></div><dl class="at
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.uom.UOM#register" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="register(rs:info.kwarc.mmt.api.uom.RuleSet):Unit"></a>
-      <a id="register(RuleSet):Unit"></a>
+    </li><li name="info.kwarc.mmt.api.uom.UOM#report" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="report:info.kwarc.mmt.api.frontend.Report"></a>
+      <a id="report:Report"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">report</span><span class="result">: <a href="../frontend/Report.html" class="extype" name="info.kwarc.mmt.api.frontend.Report">Report</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.uom.UOM">UOM</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.uom.UOM#saveLog" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="saveLog:Boolean"></a>
+      <a id="saveLog:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">saveLog</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.UOM#saveSimplificationResult" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="saveSimplificationResult(start:info.kwarc.mmt.api.uom.UOMState,end:info.kwarc.mmt.api.objects.Term):Unit"></a>
+      <a id="saveSimplificationResult(UOMState,Term):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">register</span><span class="params">(<span name="rs">rs: <a href="RuleSet.html" class="extype" name="info.kwarc.mmt.api.uom.RuleSet">RuleSet</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">saveSimplificationResult</span><span class="params">(<span name="start">start: <a href="UOMState.html" class="extype" name="info.kwarc.mmt.api.uom.UOMState">UOMState</a></span>, <span name="end">end: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">adds all Rule's of a RuleSet</p>
-    </li><li name="info.kwarc.mmt.api.uom.UOM#register" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="register(r:info.kwarc.mmt.api.uom.Rule):Unit"></a>
-      <a id="register(Rule):Unit"></a>
+      
+    </li><li name="info.kwarc.mmt.api.uom.UOM#saveSimplificationRule" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="saveSimplificationRule(rule:info.kwarc.mmt.api.objects.Rule):Unit"></a>
+      <a id="saveSimplificationRule(Rule):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">register</span><span class="params">(<span name="r">r: <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.uom.Rule">Rule</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">saveSimplificationRule</span><span class="params">(<span name="rule">rule: <a href="../objects/Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">adds a Rule to</p>
-    </li><li name="info.kwarc.mmt.api.uom.UOM#register" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="register(jarFileName:String):Unit"></a>
-      <a id="register(String):Unit"></a>
+      
+    </li><li name="info.kwarc.mmt.api.uom.UOM#simplificationLog" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="simplificationLog:List[(info.kwarc.mmt.api.uom.UOMState,info.kwarc.mmt.api.objects.Term,info.kwarc.mmt.api.objects.Rule)]"></a>
+      <a id="simplificationLog:List[(UOMState,Term,Rule)]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">def</span>
+        <span class="kind">var</span>
       </span>
       <span class="symbol">
-        <span class="name">register</span><span class="params">(<span name="jarFileName">jarFileName: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">simplificationLog</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[(<a href="UOMState.html" class="extype" name="info.kwarc.mmt.api.uom.UOMState">UOMState</a>, <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>, <a href="../objects/Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a>)]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">registers all Implementations provided by a jar file</p><div class="fullcomment"><div class="comment cmt"><p>registers all Implementations provided by a jar file</p></div><dl class="paramcmts block"><dt class="param">jarFileName</dt><dd class="cmt"><p>the name of the jar file
-</p></dd></dl></div>
+      
     </li><li name="info.kwarc.mmt.api.uom.UOM#simplify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="simplify(t:info.kwarc.mmt.api.objects.Term,context:info.kwarc.mmt.api.objects.Context):info.kwarc.mmt.api.objects.Term"></a>
-      <a id="simplify(Term,Context):Term"></a>
+      <a id="simplify(t:info.kwarc.mmt.api.objects.Term,scope:info.kwarc.mmt.api.objects.Term,context:info.kwarc.mmt.api.objects.Context):info.kwarc.mmt.api.objects.Term"></a>
+      <a id="simplify(Term,Term,Context):Term"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">simplify</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="context">context: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a> = <span class="symbol"><span class="name"><a href="../../../../package.html">Context()</a></span></span></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
+        <span class="name">simplify</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="scope">scope: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="context">context: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a> = <span class="symbol"><span class="name"><a href="../../../../package.html">Context()</a></span></span></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the main simplification method</p><div class="fullcomment"><div class="comment cmt"><p>the main simplification method</p></div><dl class="paramcmts block"><dt class="param">t</dt><dd class="cmt"><p>the term to simplify</p></dd><dt class="param">context</dt><dd class="cmt"><p>its context, if non-empty</p></dd><dt>returns</dt><dd class="cmt"><p>the simplified Term (if a sensible collection of rules is used that make this method terminate)
+      <p class="shortcomment cmt">the main simplification method</p><div class="fullcomment"><div class="comment cmt"><p>the main simplification method</p></div><dl class="paramcmts block"><dt class="param">t</dt><dd class="cmt"><p>the term to simplify</p></dd><dt class="param">context</dt><dd class="cmt"><p>its context, if non-empty</p></dd><dt>returns</dt><dd class="cmt"><p>the simplified Term (if a sensible collection of rules is used that make this method terminate)</p><p>The input term must be fully strictified, and so will be the output term.
+Applicability of rules is determined based on the pragmatic form (using controller.pragmatic.StrictOMA).
+Rules are passed strict terms and are expected to return strict terms.</p><p>The code uses <a href="Simple$.html" class="extype" name="info.kwarc.mmt.api.uom.Simple">Simple</a> to remember whether a term has been simplified.
+So multiple calls to this method do not cause multiple traversals.
 </p></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.uom.UOM#simplifyContext" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="simplifyContext(c:info.kwarc.mmt.api.objects.Context,scope:info.kwarc.mmt.api.objects.Term,outer:info.kwarc.mmt.api.objects.Context):info.kwarc.mmt.api.objects.Context"></a>
+      <a id="simplifyContext(Context,Term,Context):Context"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">simplifyContext</span><span class="params">(<span name="c">c: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="scope">scope: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="outer">outer: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a> = <span class="symbol"><span class="name"><a href="../../../../package.html">Context()</a></span></span></span>)</span><span class="result">: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">applies simplify to all terms in a context</p>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -467,6 +548,21 @@ users should not call this method (call simplify instead)</p></div><dl class="at
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.uom.UOM#traverse" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="traverse(t:info.kwarc.mmt.api.objects.Term)(implicitcon:info.kwarc.mmt.api.objects.Context,implicitinit:info.kwarc.mmt.api.uom.UOMState):info.kwarc.mmt.api.objects.Term"></a>
+      <a id="traverse(Term)(Context,UOMState):Term"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">traverse</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="con">con: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="init">init: <a href="UOMState.html" class="extype" name="info.kwarc.mmt.api.uom.UOMState">UOMState</a></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the simplification method that is called internally during the traversal of a term
+users should not call this method (call simplify instead)</p><div class="fullcomment"><div class="comment cmt"><p>the simplification method that is called internally during the traversal of a term
+users should not call this method (call simplify instead)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.uom.UOM">UOM</a> → <a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a></dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -524,12 +620,12 @@ users should not call this method (call simplify instead)</p></div><dl class="at
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="info.kwarc.mmt.api.objects.StatelessTraverser">
-              <h3>Inherited from <a href="../objects/StatelessTraverser.html" class="extype" name="info.kwarc.mmt.api.objects.StatelessTraverser">StatelessTraverser</a></h3>
+        <div class="parent" name="info.kwarc.mmt.api.frontend.Logger">
+              <h3>Inherited from <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></h3>
             </div><div class="parent" name="info.kwarc.mmt.api.objects.Traverser">
-              <h3>Inherited from <a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a>[<span class="extype" name="scala.Unit">Unit</span>]</h3>
+              <h3>Inherited from <a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a>[<a href="UOMState.html" class="extype" name="info.kwarc.mmt.api.uom.UOMState">UOMState</a>]</h3>
             </div><div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

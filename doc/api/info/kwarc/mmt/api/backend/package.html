@@ -64,7 +64,7 @@
         <div id="types" class="types members">
               <h3>Type Members</h3>
               <ol><li name="info.kwarc.mmt.api.backend.ArchiveCustomization" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="ArchiveCustomizationextendsObject"></a>
+      <a id="ArchiveCustomizationextendsAnyRef"></a>
       <a id="ArchiveCustomization:ArchiveCustomization"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -72,12 +72,12 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="ArchiveCustomization.html"><span class="name">ArchiveCustomization</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="ArchiveCustomization.html"><span class="name">ArchiveCustomization</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">Helper class to permit customizing archives</p>
     </li><li name="info.kwarc.mmt.api.backend.Backend" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="BackendextendsObject"></a>
+      <a id="BackendextendsLogger"></a>
       <a id="Backend:Backend"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -85,12 +85,12 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Backend.html"><span class="name">Backend</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Backend.html"><span class="name">Backend</span></a><span class="result"> extends <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
       </span>
       </h4>
       <p class="comment cmt">a Backend holds a list of Storages and uses them to dereference Paths</p>
     </li><li name="info.kwarc.mmt.api.backend.Compiler" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="CompilerextendsImporter"></a>
+      <a id="CompilerextendsTraversingBuildTarget"></a>
       <a id="Compiler:Compiler"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -98,7 +98,7 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="Compiler.html"><span class="name">Compiler</span></a><span class="result"> extends <a href="Importer.html" class="extype" name="info.kwarc.mmt.api.backend.Importer">Importer</a></span>
+        <a href="Compiler.html"><span class="name">Compiler</span></a><span class="result"> extends <a href="../archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></span>
       </span>
       </h4>
       <p class="comment cmt">A Compiler transforms source files into OMDoc files
@@ -126,19 +126,6 @@
       </span>
       <span class="symbol">
         <a href="Doc.html"><span class="name">Doc</span></a><span class="params">(<span name="base">base: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="p">p: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="q">q: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="OMQuery.html" class="extype" name="info.kwarc.mmt.api.backend.OMQuery">OMQuery</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.api.backend.Importer" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="ImporterextendsExtension"></a>
-      <a id="Importer:Importer"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">trait</span>
-      </span>
-      <span class="symbol">
-        <a href="Importer.html"><span class="name">Importer</span></a><span class="result"> extends <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></span>
       </span>
       </h4>
       
@@ -182,7 +169,7 @@
       </h4>
       <p class="comment cmt">Customization for Mizar</p>
     </li><li name="info.kwarc.mmt.api.backend.MMTCompiler" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="MMTCompilerextendsCompiler"></a>
+      <a id="MMTCompilerextendsTraversingBuildTargetwithCompiler"></a>
       <a id="MMTCompiler:MMTCompiler"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -190,10 +177,10 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="MMTCompiler.html"><span class="name">MMTCompiler</span></a><span class="result"> extends <a href="Compiler.html" class="extype" name="info.kwarc.mmt.api.backend.Compiler">Compiler</a></span>
+        <a href="MMTCompiler.html"><span class="name">MMTCompiler</span></a><span class="result"> extends <a href="../archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a> with <a href="Compiler.html" class="extype" name="info.kwarc.mmt.api.backend.Compiler">Compiler</a></span>
       </span>
       </h4>
-      <p class="comment cmt">a Compiler that uses the generic MMT functions</p>
+      <p class="comment cmt">a Compiler that uses the generic MMT functions to parse and check a file</p>
     </li><li name="info.kwarc.mmt.api.backend.Mod" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ModextendsOMQuerywithProductwithSerializable"></a>
       <a id="Mod:Mod"></a>
@@ -221,7 +208,7 @@
       </h4>
       <p class="comment cmt">a trait for URL-addressed Storages that can serve MMT document fragments</p>
     </li><li name="info.kwarc.mmt.api.backend.OMQuery" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="OMQueryextendsObject"></a>
+      <a id="OMQueryextendsAnyRef"></a>
       <a id="OMQuery:OMQuery"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -229,12 +216,12 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="OMQuery.html"><span class="name">OMQuery</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="OMQuery.html"><span class="name">OMQuery</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       
     </li><li name="info.kwarc.mmt.api.backend.QueryTransformer" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="QueryTransformerextendsImporter"></a>
+      <a id="QueryTransformerextendsExtension"></a>
       <a id="QueryTransformer:QueryTransformer"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -242,7 +229,7 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="QueryTransformer.html"><span class="name">QueryTransformer</span></a><span class="result"> extends <a href="Importer.html" class="extype" name="info.kwarc.mmt.api.backend.Importer">Importer</a></span>
+        <a href="QueryTransformer.html"><span class="name">QueryTransformer</span></a><span class="result"> extends <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></span>
       </span>
       </h4>
       
@@ -273,7 +260,7 @@
       </h4>
       <p class="comment cmt">a Storage that retrieves repository URIs over SVN connection</p>
     </li><li name="info.kwarc.mmt.api.backend.Storage" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="StorageextendsObject"></a>
+      <a id="StorageextendsAnyRef"></a>
       <a id="Storage:Storage"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -281,7 +268,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Storage.html"><span class="name">Storage</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Storage.html"><span class="name">Storage</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">Storage is an abstraction over backends that can provide MMT content
@@ -295,7 +282,7 @@ A storage declares a URI u and must answer to all URIs that start with u.</p>
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="TNTBase.html"><span class="name">TNTBase</span></a><span class="params">(<span name="scheme">scheme: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="authority">authority: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="prefix">prefix: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="ombase">ombase: <a href="../utils/URI.html" class="extype" name="info.kwarc.mmt.api.utils.URI">URI</a></span>, <span name="dp">dp: <span class="extype" name="scala.List">List</span>[<a href="OMQuery.html" class="extype" name="info.kwarc.mmt.api.backend.OMQuery">OMQuery</a>]</span>, <span name="mp">mp: <span class="extype" name="scala.List">List</span>[<a href="OMQuery.html" class="extype" name="info.kwarc.mmt.api.backend.OMQuery">OMQuery</a>]</span>, <span name="sp">sp: <span class="extype" name="scala.List">List</span>[<a href="OMQuery.html" class="extype" name="info.kwarc.mmt.api.backend.OMQuery">OMQuery</a>]</span>, <span name="ip">ip: <span class="extype" name="scala.List">List</span>[<a href="OMQuery.html" class="extype" name="info.kwarc.mmt.api.backend.OMQuery">OMQuery</a>]</span>)</span><span class="result"> extends <a href="OMBase.html" class="extype" name="info.kwarc.mmt.api.backend.OMBase">OMBase</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="TNTBase.html"><span class="name">TNTBase</span></a><span class="params">(<span name="scheme">scheme: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="authority">authority: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="prefix">prefix: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="ombase">ombase: <a href="../utils/URI.html" class="extype" name="info.kwarc.mmt.api.utils.URI">URI</a></span>, <span name="dp">dp: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="OMQuery.html" class="extype" name="info.kwarc.mmt.api.backend.OMQuery">OMQuery</a>]</span>, <span name="mp">mp: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="OMQuery.html" class="extype" name="info.kwarc.mmt.api.backend.OMQuery">OMQuery</a>]</span>, <span name="sp">sp: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="OMQuery.html" class="extype" name="info.kwarc.mmt.api.backend.OMQuery">OMQuery</a>]</span>, <span name="ip">ip: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="OMQuery.html" class="extype" name="info.kwarc.mmt.api.backend.OMQuery">OMQuery</a>]</span>)</span><span class="result"> extends <a href="OMBase.html" class="extype" name="info.kwarc.mmt.api.backend.OMBase">OMBase</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">a Storage that retrieves content from a TNTBase database</p>

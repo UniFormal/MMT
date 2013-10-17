@@ -64,7 +64,7 @@
         <div id="types" class="types members">
               <h3>Type Members</h3>
               <ol><li name="info.kwarc.mmt.api.frontend.Action" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="ActionextendsObject"></a>
+      <a id="ActionextendsAnyRef"></a>
       <a id="Action:Action"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -72,7 +72,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Action.html"><span class="name">Action</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Action.html"><span class="name">Action</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">Objects of type Action represent commands that can be executed by a Controller.</p>
@@ -98,23 +98,10 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="AddExtension.html"><span class="name">AddExtension</span></a><span class="params">(<span name="cls">cls: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="args">args: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result"> extends <a href="Action.html" class="extype" name="info.kwarc.mmt.api.frontend.Action">Action</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="AddExtension.html"><span class="name">AddExtension</span></a><span class="params">(<span name="cls">cls: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result"> extends <a href="Action.html" class="extype" name="info.kwarc.mmt.api.frontend.Action">Action</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">registers a compiler</p>
-    </li><li name="info.kwarc.mmt.api.frontend.AddFoundation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="AddFoundationextendsActionwithProductwithSerializable"></a>
-      <a id="AddFoundation:AddFoundation"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="AddFoundation.html"><span class="name">AddFoundation</span></a><span class="params">(<span name="cls">cls: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="args">args: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result"> extends <a href="Action.html" class="extype" name="info.kwarc.mmt.api.frontend.Action">Action</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">registers a foundation</p>
     </li><li name="info.kwarc.mmt.api.frontend.AddMWS" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="AddMWSextendsActionwithProductwithSerializable"></a>
       <a id="AddMWS:AddMWS"></a>
@@ -154,19 +141,6 @@
       </span>
       </h4>
       <p class="comment cmt">add catalog entry for a remote SVN repository</p>
-    </li><li name="info.kwarc.mmt.api.frontend.AddPlugin" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="AddPluginextendsActionwithProductwithSerializable"></a>
-      <a id="AddPlugin:AddPlugin"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="AddPlugin.html"><span class="name">AddPlugin</span></a><span class="params">(<span name="cls">cls: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="Action.html" class="extype" name="info.kwarc.mmt.api.frontend.Action">Action</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">adds a Plugin</p>
     </li><li name="info.kwarc.mmt.api.frontend.AddReportHandler" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="AddReportHandlerextendsActionwithProductwithSerializable"></a>
       <a id="AddReportHandler:AddReportHandler"></a>
@@ -215,7 +189,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="ArchiveBuild.html"><span class="name">ArchiveBuild</span></a><span class="params">(<span name="id">id: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="dim">dim: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="in">in: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="params">params: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">immutable.this.Nil</span></span>)</span><span class="result"> extends <a href="Action.html" class="extype" name="info.kwarc.mmt.api.frontend.Action">Action</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="ArchiveBuild.html"><span class="name">ArchiveBuild</span></a><span class="params">(<span name="id">id: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="dim">dim: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="modifier">modifier: <a href="../archives/BuildTargetModifier.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTargetModifier">BuildTargetModifier</a></span>, <span name="in">in: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="params">params: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">immutable.this.Nil</span></span>)</span><span class="result"> extends <a href="Action.html" class="extype" name="info.kwarc.mmt.api.frontend.Action">Action</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">builds a dimension in a previously opened archive</p>
@@ -245,6 +219,33 @@
       </span>
       </h4>
       <p class="comment cmt">send a browser command</p>
+    </li><li name="info.kwarc.mmt.api.frontend.CacheHandler" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CacheHandlerextendsReportHandler"></a>
+      <a id="CacheHandler:CacheHandler"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CacheHandler.html"><span class="name">CacheHandler</span></a><span class="result"> extends <a href="ReportHandler.html" class="extype" name="info.kwarc.mmt.api.frontend.ReportHandler">ReportHandler</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">remembers logged lines</p>
+    </li><li name="info.kwarc.mmt.api.frontend.ChangeListener" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ChangeListenerextendsExtension"></a>
+      <a id="ChangeListener:ChangeListener"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ChangeListener.html"><span class="name">ChangeListener</span></a><span class="result"> extends <a href="Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A ChangeListener is an Extension that is called on every Constant
+</p>
     </li><li name="info.kwarc.mmt.api.frontend.Check" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="CheckextendsActionwithProductwithSerializable"></a>
       <a id="Check:Check"></a>
@@ -367,7 +368,7 @@ the case where OUTPUT is not specifified
 concrete syntax: file file:FILE
 </p>
     </li><li name="info.kwarc.mmt.api.frontend.Extension" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="ExtensionextendsObject"></a>
+      <a id="ExtensionextendsLogger"></a>
       <a id="Extension:Extension"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -375,12 +376,12 @@ concrete syntax: file file:FILE
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="Extension.html"><span class="name">Extension</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Extension.html"><span class="name">Extension</span></a><span class="result"> extends <a href="Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
       </span>
       </h4>
       
     </li><li name="info.kwarc.mmt.api.frontend.ExtensionManager" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ExtensionManagerextendsObject"></a>
+      <a id="ExtensionManagerextendsLogger"></a>
       <a id="ExtensionManager:ExtensionManager"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -388,7 +389,7 @@ concrete syntax: file file:FILE
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="ExtensionManager.html"><span class="name">ExtensionManager</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="ExtensionManager.html"><span class="name">ExtensionManager</span></a><span class="result"> extends <a href="Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
       </span>
       </h4>
       <p class="comment cmt">An ExtensionManager maintains all language-specific extensions of MMT.</p>
@@ -444,8 +445,21 @@ concrete syntax: file file:FILE
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.frontend.InteractiveSimplifier" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="InteractiveSimplifierextendsAnyRef"></a>
+      <a id="InteractiveSimplifier:InteractiveSimplifier"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="InteractiveSimplifier.html"><span class="name">InteractiveSimplifier</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.frontend.Logger" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="LoggerextendsObject"></a>
+      <a id="LoggerextendsAnyRef"></a>
       <a id="Logger:Logger"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -453,7 +467,7 @@ concrete syntax: file file:FILE
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="Logger.html"><span class="name">Logger</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Logger.html"><span class="name">Logger</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">extended by all classes that use the logging aspect</p>
@@ -487,8 +501,35 @@ Some of the available groups are documented in Report.</p>
       <p class="comment cmt">switch on logging for a certain group
 concrete syntax: log+ group:STRING
 Some of the available groups are documented in Report.</p>
+    </li><li name="info.kwarc.mmt.api.frontend.MMTILoop" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MMTILoopextendsILoop"></a>
+      <a id="MMTILoop:MMTILoop"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="MMTILoop.html"><span class="name">MMTILoop</span></a><span class="result"> extends <span class="extype" name="scala.tools.nsc.interpreter.ILoop">ILoop</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">a wrapper around the interactive Scala interpreter
+</p>
+    </li><li name="info.kwarc.mmt.api.frontend.MMTInterpolator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MMTInterpolatorextendsAnyRef"></a>
+      <a id="MMTInterpolator:MMTInterpolator"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="MMTInterpolator.html"><span class="name">MMTInterpolator</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.frontend.MakeAbstract" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="MakeAbstractextendsObject"></a>
+      <a id="MakeAbstractextendsAnyRef"></a>
       <a id="MakeAbstract:MakeAbstract"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -496,13 +537,13 @@ Some of the available groups are documented in Report.</p>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="MakeAbstract.html"><span class="name">MakeAbstract</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="MakeAbstract.html"><span class="name">MakeAbstract</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">represent retrieval operations that return content elements
  These objects become Action commands by wrapping them in post-processing steps.</p>
     </li><li name="info.kwarc.mmt.api.frontend.MakeConcrete" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="MakeConcreteextendsObject"></a>
+      <a id="MakeConcreteextendsAnyRef"></a>
       <a id="MakeConcrete:MakeConcrete"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -510,7 +551,7 @@ Some of the available groups are documented in Report.</p>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="MakeConcrete.html"><span class="name">MakeConcrete</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="MakeConcrete.html"><span class="name">MakeConcrete</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">represents the first post-processing phase
@@ -528,6 +569,19 @@ Some of the available groups are documented in Report.</p>
       </span>
       </h4>
       <p class="comment cmt">Groups all stateful objects of the controller that store MMT data</p>
+    </li><li name="info.kwarc.mmt.api.frontend.Navigate" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NavigateextendsActionwithProductwithSerializable"></a>
+      <a id="Navigate:Navigate"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Navigate.html"><span class="name">Navigate</span></a><span class="params">(<span name="p">p: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>)</span><span class="result"> extends <a href="Action.html" class="extype" name="info.kwarc.mmt.api.frontend.Action">Action</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">navigate to knowledge item</p>
     </li><li name="info.kwarc.mmt.api.frontend.NotFound" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="NotFoundextendsThrowablewithProductwithSerializable"></a>
       <a id="NotFound:NotFound"></a>
@@ -542,7 +596,7 @@ Some of the available groups are documented in Report.</p>
       </h4>
       <p class="comment cmt">An exception that is throw when a needed knowledge item is not available.</p>
     </li><li name="info.kwarc.mmt.api.frontend.Output" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="OutputextendsObject"></a>
+      <a id="OutputextendsAnyRef"></a>
       <a id="Output:Output"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -550,12 +604,12 @@ Some of the available groups are documented in Report.</p>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Output.html"><span class="name">Output</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Output.html"><span class="name">Output</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">represents the final post-processing phase, which outputs concrete syntax</p>
     </li><li name="info.kwarc.mmt.api.frontend.Plugin" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="PluginextendsObject"></a>
+      <a id="PluginextendsExtension"></a>
       <a id="Plugin:Plugin"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -563,7 +617,7 @@ Some of the available groups are documented in Report.</p>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Plugin.html"><span class="name">Plugin</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Plugin.html"><span class="name">Plugin</span></a><span class="result"> extends <a href="Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></span>
       </span>
       </h4>
       <p class="comment cmt">the base class of all MMT plugins
@@ -596,7 +650,7 @@ e.</p>
       </h4>
       <p class="comment cmt">prints to STDOUT</p>
     </li><li name="info.kwarc.mmt.api.frontend.ROController" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="ROControllerextendsObject"></a>
+      <a id="ROControllerextendsAnyRef"></a>
       <a id="ROController:ROController"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -604,12 +658,12 @@ e.</p>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="ROController.html"><span class="name">ROController</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="ROController.html"><span class="name">ROController</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">An interface to a controller containing read-only methods.</p>
     </li><li name="info.kwarc.mmt.api.frontend.ROMemory" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="ROMemoryextendsObject"></a>
+      <a id="ROMemoryextendsAnyRef"></a>
       <a id="ROMemory:ROMemory"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -617,7 +671,7 @@ e.</p>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="ROMemory.html"><span class="name">ROMemory</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="ROMemory.html"><span class="name">ROMemory</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">A read-only abstraction of memory</p>
@@ -637,7 +691,7 @@ e.</p>
 concrete syntax: read file:FILE
 </p>
     </li><li name="info.kwarc.mmt.api.frontend.Report" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ReportextendsObject"></a>
+      <a id="ReportextendsAnyRef"></a>
       <a id="Report:Report"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -645,12 +699,12 @@ concrete syntax: read file:FILE
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Report.html"><span class="name">Report</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Report.html"><span class="name">Report</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">Instances of Report handle all output to the user</p>
     </li><li name="info.kwarc.mmt.api.frontend.ReportHandler" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="ReportHandlerextendsObject"></a>
+      <a id="ReportHandlerextendsAnyRef"></a>
       <a id="ReportHandler:ReportHandler"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -658,7 +712,7 @@ concrete syntax: read file:FILE
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="ReportHandler.html"><span class="name">ReportHandler</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="ReportHandler.html"><span class="name">ReportHandler</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       
@@ -706,7 +760,7 @@ concrete syntax: read file:FILE
 concrete syntax: base base:URI
 </p>
     </li><li name="info.kwarc.mmt.api.frontend.Shell" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ShellextendsObject"></a>
+      <a id="ShellextendsAnyRef"></a>
       <a id="Shell:Shell"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -714,12 +768,12 @@ concrete syntax: base base:URI
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Shell.html"><span class="name">Shell</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Shell.html"><span class="name">Shell</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">Creates a Controller and provides a shell interface to it.</p>
     </li><li name="info.kwarc.mmt.api.frontend.StructureTraverser" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="StructureTraverserextendsObject"></a>
+      <a id="StructureTraverserextendsAnyRef"></a>
       <a id="StructureTraverser:StructureTraverser"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -727,7 +781,7 @@ concrete syntax: base base:URI
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="StructureTraverser.html"><span class="name">StructureTraverser</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="StructureTraverser.html"><span class="name">StructureTraverser</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">This class can be used to conveniently apply the same operation to all terms in a structural element</p>
@@ -770,19 +824,6 @@ concrete syntax: base base:URI
       </span>
       </h4>
       <p class="comment cmt">takes a content element and renders it as text</p>
-    </li><li name="info.kwarc.mmt.api.frontend.ToText" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ToTextextendsMakeConcretewithProductwithSerializable"></a>
-      <a id="ToText:ToText"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="ToText.html"><span class="name">ToText</span></a><span class="params">(<span name="c">c: <a href="MakeAbstract.html" class="extype" name="info.kwarc.mmt.api.frontend.MakeAbstract">MakeAbstract</a></span>)</span><span class="result"> extends <a href="MakeConcrete.html" class="extype" name="info.kwarc.mmt.api.frontend.MakeConcrete">MakeConcrete</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      
     </li><li name="info.kwarc.mmt.api.frontend.ToWindow" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ToWindowextendsOutputwithProductwithSerializable"></a>
       <a id="ToWindow:ToWindow"></a>
@@ -905,6 +946,19 @@ concrete syntax: exit
       </h4>
       <p class="comment cmt">add a catalog entry for the local file system
 All URIs of the form file:///SUFFIX are mapped to SUFFIX</p>
+    </li><li name="info.kwarc.mmt.api.frontend.MMT2ScalaConv" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MMT2ScalaConv"></a>
+      <a id="MMT2ScalaConv:MMT2ScalaConv"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MMT2ScalaConv$.html"><span class="name">MMT2ScalaConv</span></a>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.frontend.NoAction" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="NoAction"></a>
       <a id="NoAction:NoAction"></a>
@@ -970,6 +1024,19 @@ All URIs of the form file:///SUFFIX are mapped to SUFFIX</p>
       </span>
       </h4>
       <p class="comment cmt">A shell, the default way to run MMT as an application</p>
+    </li><li name="info.kwarc.mmt.api.frontend.Scala" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Scala"></a>
+      <a id="Scala:Scala"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Scala$.html"><span class="name">Scala</span></a><span class="result"> extends <a href="Action.html" class="extype" name="info.kwarc.mmt.api.frontend.Action">Action</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.frontend.ServerOff" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ServerOff"></a>
       <a id="ServerOff:ServerOff"></a>

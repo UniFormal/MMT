@@ -63,46 +63,7 @@
 
         <div id="types" class="types members">
               <h3>Type Members</h3>
-              <ol><li name="info.kwarc.mmt.api.presentation.AppStyle" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="AppStyleextendsObject"></a>
-      <a id="AppStyle:AppStyle"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">sealed abstract </span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="AppStyle.html"><span class="name">AppStyle</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">The application style of a prefix of postfix notation determines how operator and arguments are connected.</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Argument" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ArgumentextendsTokenwithProductwithSerializable"></a>
-      <a id="Argument:Argument"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="Argument.html"><span class="name">Argument</span></a><span class="params">(<span name="pos">pos: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result"> extends <a href="Token.html" class="extype" name="info.kwarc.mmt.api.presentation.Token">Token</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.api.presentation.Associativity" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="AssociativityextendsObject"></a>
-      <a id="Associativity:Associativity"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">sealed abstract </span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="Associativity.html"><span class="name">Associativity</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">The associativity of an infix or interfix notation determines how brackets are restored.</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Attribute" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+              <ol><li name="info.kwarc.mmt.api.presentation.Attribute" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="AttributeextendsProductwithSerializable"></a>
       <a id="Attribute:Attribute"></a>
       <h4 class="signature">
@@ -115,16 +76,16 @@
       </span>
       </h4>
       <p class="comment cmt">produces an XML attribute</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Bindfix" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="BindfixextendsNotationPropertieswithProductwithSerializable"></a>
-      <a id="Bindfix:Bindfix"></a>
+    </li><li name="info.kwarc.mmt.api.presentation.BracketInfo" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BracketInfoextendsProductwithSerializable"></a>
+      <a id="BracketInfo:BracketInfo"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="Bindfix.html"><span class="name">Bindfix</span></a><span class="params">(<span name="impl">impl: <span class="extype" name="scala.Int">Int</span></span>, <span name="oPrec">oPrec: <span class="extype" name="scala.Option">Option</span>[<a href="Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a>]</span>)</span><span class="result"> extends <a href="NotationProperties.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationProperties">NotationProperties</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="BracketInfo.html"><span class="name">BracketInfo</span></a><span class="params">(<span name="prec">prec: <span class="extype" name="scala.Option">Option</span>[<a href="Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a>] = <span class="symbol">scala.None</span></span>, <span name="delimitation">delimitation: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>] = <span class="symbol">scala.None</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -142,7 +103,7 @@
       </h4>
       <p class="comment cmt">a content expression provides a key that yields a notation, which is rendered in the context of some components</p>
     </li><li name="info.kwarc.mmt.api.presentation.CIndex" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="CIndexextendsObject"></a>
+      <a id="CIndexextendsAnyRef"></a>
       <a id="CIndex:CIndex"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -150,23 +111,23 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="CIndex.html"><span class="name">CIndex</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="CIndex.html"><span class="name">CIndex</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       
-    </li><li name="info.kwarc.mmt.api.presentation.ComplexNotation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ComplexNotationextendsNotationwithProductwithSerializable"></a>
+    </li><li name="info.kwarc.mmt.api.presentation.ComplexNotation" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ComplexNotationextendsNotation"></a>
       <a id="ComplexNotation:ComplexNotation"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">case class</span>
+        <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="ComplexNotation.html"><span class="name">ComplexNotation</span></a><span class="params">(<span name="nset">nset: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>, <span name="key">key: <a href="NotationKey.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationKey">NotationKey</a></span>, <span name="props">props: <a href="NotationProperties.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationProperties">NotationProperties</a></span>)</span><span class="result"> extends <a href="Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="ComplexNotation.html"><span class="name">ComplexNotation</span></a><span class="result"> extends <a href="Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a></span>
       </span>
       </h4>
-      <p class="comment cmt">Representation of a declarative notation where the presentation is computed from parameters</p>
+      <p class="comment cmt">an interface for notations that can be used to present complex objects</p>
     </li><li name="info.kwarc.mmt.api.presentation.Components" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ComponentsextendsPresentationwithProductwithSerializable"></a>
       <a id="Components:Components"></a>
@@ -202,12 +163,12 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="ContentComponents.html"><span class="name">ContentComponents</span></a><span class="params">(<span name="comps">comps: <span class="extype" name="scala.List">List</span>[<a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a>]</span>, <span name="names">names: <span class="extype" name="scala.List">List</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>)] = <span class="symbol">immutable.this.Nil</span></span>, <span name="owner">owner: <span class="extype" name="scala.Option">Option</span>[<a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a>] = <span class="symbol">scala.None</span></span>, <span name="obj">obj: <span class="extype" name="scala.Option">Option</span>[<a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a>] = <span class="symbol">scala.None</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="ContentComponents.html"><span class="name">ContentComponents</span></a><span class="params">(<span name="comps">comps: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a>]</span>, <span name="names">names: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[(<a href="../DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a>, <span class="extype" name="scala.Int">Int</span>)] = <span class="symbol">immutable.this.Nil</span></span>, <span name="owner">owner: <span class="extype" name="scala.Option">Option</span>[<a href="../ContentPath.html" class="extype" name="info.kwarc.mmt.api.ContentPath">ContentPath</a>] = <span class="symbol">scala.None</span></span>, <span name="obj">obj: <span class="extype" name="scala.Option">Option</span>[<a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a>] = <span class="symbol">scala.None</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">Wrapper around components that permits named access of components</p>
     </li><li name="info.kwarc.mmt.api.presentation.Defaults" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="DefaultsextendsObject"></a>
+      <a id="DefaultsextendsAnyRef"></a>
       <a id="Defaults:Defaults"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -215,20 +176,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Defaults.html"><span class="name">Defaults</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.api.presentation.Delimiter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="DelimiterextendsTokenwithProductwithSerializable"></a>
-      <a id="Delimiter:Delimiter"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="Delimiter.html"><span class="name">Delimiter</span></a><span class="params">(<span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="Token.html" class="extype" name="info.kwarc.mmt.api.presentation.Token">Token</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Defaults.html"><span class="name">Defaults</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       
@@ -241,7 +189,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="Element.html"><span class="name">Element</span></a><span class="params">(<span name="prefix">prefix: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="label">label: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="attributes">attributes: <span class="extype" name="scala.List">List</span>[<a href="Attribute.html" class="extype" name="info.kwarc.mmt.api.presentation.Attribute">Attribute</a>]</span>, <span name="children">children: <span class="extype" name="scala.List">List</span>[<a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a>]</span>)</span><span class="result"> extends <a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Element.html"><span class="name">Element</span></a><span class="params">(<span name="prefix">prefix: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="label">label: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="attributes">attributes: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Attribute.html" class="extype" name="info.kwarc.mmt.api.presentation.Attribute">Attribute</a>]</span>, <span name="children">children: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a>]</span>)</span><span class="result"> extends <a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">produces an XML element</p>
@@ -284,19 +232,6 @@
       </span>
       </h4>
       <p class="comment cmt">integer</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Fixity" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="FixityextendsObject"></a>
-      <a id="Fixity:Fixity"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">sealed abstract </span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="Fixity.html"><span class="name">Fixity</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">The fixity of a notation determines the relative placement of operator and arguments.</p>
     </li><li name="info.kwarc.mmt.api.presentation.Fragment" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="FragmentextendsPresentationwithProductwithSerializable"></a>
       <a id="Fragment:Fragment"></a>
@@ -375,21 +310,8 @@
       </span>
       </h4>
       <p class="comment cmt">test whether pos is Obj with head Some(path) and branch accordingly</p>
-    </li><li name="info.kwarc.mmt.api.presentation.In" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="InextendsFixitywithProductwithSerializable"></a>
-      <a id="In:In"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="In.html"><span class="name">In</span></a><span class="params">(<span name="pos">pos: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result"> extends <a href="Fixity.html" class="extype" name="info.kwarc.mmt.api.presentation.Fixity">Fixity</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">infix: operator after a certain number of arguments</p>
     </li><li name="info.kwarc.mmt.api.presentation.InfInt" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="InfIntextendsObject"></a>
+      <a id="InfIntextendsOrdered[info.kwarc.mmt.api.presentation.InfInt]"></a>
       <a id="InfInt:InfInt"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -397,36 +319,10 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="InfInt.html"><span class="name">InfInt</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="InfInt.html"><span class="name">InfInt</span></a><span class="result"> extends <span class="extype" name="scala.math.Ordered">Ordered</span>[<a href="InfInt.html" class="extype" name="info.kwarc.mmt.api.presentation.InfInt">InfInt</a>]</span>
       </span>
       </h4>
       <p class="comment cmt">InfInt: integers with positive and negative infinity</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Infix" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="InfixextendsNotationPropertieswithProductwithSerializable"></a>
-      <a id="Infix:Infix"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="Infix.html"><span class="name">Infix</span></a><span class="params">(<span name="pos">pos: <span class="extype" name="scala.Int">Int</span></span>, <span name="impl">impl: <span class="extype" name="scala.Int">Int</span></span>, <span name="oPrec">oPrec: <span class="extype" name="scala.Option">Option</span>[<a href="Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a>]</span>)</span><span class="result"> extends <a href="NotationProperties.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationProperties">NotationProperties</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.api.presentation.Interfix" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="InterfixextendsNotationPropertieswithProductwithSerializable"></a>
-      <a id="Interfix:Interfix"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="Interfix.html"><span class="name">Interfix</span></a><span class="params">(<span name="assoc">assoc: <a href="Associativity.html" class="extype" name="info.kwarc.mmt.api.presentation.Associativity">Associativity</a></span>, <span name="impl">impl: <span class="extype" name="scala.Int">Int</span></span>, <span name="oPrec">oPrec: <span class="extype" name="scala.Option">Option</span>[<a href="Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a>]</span>)</span><span class="result"> extends <a href="NotationProperties.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationProperties">NotationProperties</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      
     </li><li name="info.kwarc.mmt.api.presentation.Literal" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="LiteralextendsContent"></a>
       <a id="Literal:Literal"></a>
@@ -451,20 +347,20 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="LocalParams.html"><span class="name">LocalParams</span></a><span class="params">(<span name="ids">ids: <span class="extype" name="scala.List">List</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>)]</span>, <span name="pos">pos: <a href="../objects/Position.html" class="extype" name="info.kwarc.mmt.api.objects.Position">Position</a></span>, <span name="inObject">inObject: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="iPrec">iPrec: <a href="Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a></span>, <span name="context">context: <span class="extype" name="scala.List">List</span>[<a href="VarData.html" class="extype" name="info.kwarc.mmt.api.presentation.VarData">VarData</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="LocalParams.html"><span class="name">LocalParams</span></a><span class="params">(<span name="ids">ids: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>)]</span>, <span name="owner">owner: <span class="extype" name="scala.Option">Option</span>[<a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a>]</span>, <span name="pos">pos: <a href="../objects/Position.html" class="extype" name="info.kwarc.mmt.api.objects.Position">Position</a></span>, <span name="source">source: <span class="extype" name="scala.Option">Option</span>[<a href="../parser/SourceRef.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRef">SourceRef</a>]</span>, <span name="inObject">inObject: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="bracketInfo">bracketInfo: <span class="extype" name="scala.Option">Option</span>[<a href="BracketInfo.html" class="extype" name="info.kwarc.mmt.api.presentation.BracketInfo">BracketInfo</a>]</span>, <span name="context">context: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="VarData.html" class="extype" name="info.kwarc.mmt.api.presentation.VarData">VarData</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">This class collects the parameters that vary locally during one presentation task.</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Mixfix" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="MixfixextendsNotationPropertieswithProductwithSerializable"></a>
-      <a id="Mixfix:Mixfix"></a>
+    </li><li name="info.kwarc.mmt.api.presentation.MathMLPresenter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MathMLPresenterextendsNotationBasedPresenter"></a>
+      <a id="MathMLPresenter:MathMLPresenter"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">case class</span>
+        <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Mixfix.html"><span class="name">Mixfix</span></a><span class="params">(<span name="format">format: <span class="extype" name="scala.List">List</span>[<a href="Token.html" class="extype" name="info.kwarc.mmt.api.presentation.Token">Token</a>]</span>, <span name="impl">impl: <span class="extype" name="scala.Int">Int</span></span>, <span name="oPrec">oPrec: <span class="extype" name="scala.Option">Option</span>[<a href="Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a>]</span>)</span><span class="result"> extends <a href="NotationProperties.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationProperties">NotationProperties</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="MathMLPresenter.html"><span class="name">MathMLPresenter</span></a><span class="result"> extends <a href="NotationBasedPresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationBasedPresenter">NotationBasedPresenter</a></span>
       </span>
       </h4>
       
@@ -490,7 +386,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="Neighbor.html"><span class="name">Neighbor</span></a><span class="params">(<span name="offset">offset: <span class="extype" name="scala.Int">Int</span></span>, <span name="prec">prec: <span class="extype" name="scala.Option">Option</span>[<a href="Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a>]</span>)</span><span class="result"> extends <a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Neighbor.html"><span class="name">Neighbor</span></a><span class="params">(<span name="offset">offset: <span class="extype" name="scala.Int">Int</span></span>, <span name="prec">prec: <a href="BracketInfo.html" class="extype" name="info.kwarc.mmt.api.presentation.BracketInfo">BracketInfo</a></span>)</span><span class="result"> extends <a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">recurses into a component</p>
@@ -521,6 +417,45 @@
       </h4>
       <p class="comment cmt">Abstract representation of notations
 </p>
+    </li><li name="info.kwarc.mmt.api.presentation.NotationBasedPresenter" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="NotationBasedPresenterextendsObjectPresenter"></a>
+      <a id="NotationBasedPresenter:NotationBasedPresenter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="NotationBasedPresenter.html"><span class="name">NotationBasedPresenter</span></a><span class="result"> extends <a href="ObjectPresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.ObjectPresenter">ObjectPresenter</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">This trait defines methods for presenting objects using notations.</p>
+    </li><li name="info.kwarc.mmt.api.presentation.NotationContainer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NotationContainerextendsComponentContainer"></a>
+      <a id="NotationContainer:NotationContainer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="NotationContainer.html"><span class="name">NotationContainer</span></a><span class="result"> extends <a href="../ComponentContainer.html" class="extype" name="info.kwarc.mmt.api.ComponentContainer">ComponentContainer</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A NotationContainer wraps around various notations that can be associated with a Symbol</p>
+    </li><li name="info.kwarc.mmt.api.presentation.NotationDimension" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NotationDimensionextendsAnyRef"></a>
+      <a id="NotationDimension:NotationDimension"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="NotationDimension.html"><span class="name">NotationDimension</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.presentation.NotationImport" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="NotationImportextendsPresentationElementwithProductwithSerializable"></a>
       <a id="NotationImport:NotationImport"></a>
@@ -547,21 +482,8 @@
       </span>
       </h4>
       <p class="comment cmt">A NotationKey identifies the situation when a notation should be applied.</p>
-    </li><li name="info.kwarc.mmt.api.presentation.NotationProperties" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="NotationPropertiesextendsHasMetaData"></a>
-      <a id="NotationProperties:NotationProperties"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">sealed abstract </span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="NotationProperties.html"><span class="name">NotationProperties</span></a><span class="result"> extends <a href="../metadata/HasMetaData.html" class="extype" name="info.kwarc.mmt.api.metadata.HasMetaData">HasMetaData</a></span>
-      </span>
-      </h4>
-      
     </li><li name="info.kwarc.mmt.api.presentation.NotationStore" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="NotationStoreextendsObject"></a>
+      <a id="NotationStoreextendsLogger"></a>
       <a id="NotationStore:NotationStore"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -569,7 +491,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="NotationStore.html"><span class="name">NotationStore</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="NotationStore.html"><span class="name">NotationStore</span></a><span class="result"> extends <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
       </span>
       </h4>
       <p class="comment cmt">The NotationStore holds all styles and notations.</p>
@@ -595,10 +517,23 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="ObjToplevel.html"><span class="name">ObjToplevel</span></a><span class="params">(<span name="c">c: <a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></span>, <span name="opath">opath: <span class="extype" name="scala.Option">Option</span>[<a href="../objects/OPath.html" class="extype" name="info.kwarc.mmt.api.objects.OPath">OPath</a>]</span>)</span><span class="result"> extends <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="ObjToplevel.html"><span class="name">ObjToplevel</span></a><span class="params">(<span name="c">c: <a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></span>, <span name="cpath">cpath: <span class="extype" name="scala.Option">Option</span>[<a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a>]</span>)</span><span class="result"> extends <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">A special presentable object that is wrapped around the math objects encountered during presentation</p>
+    </li><li name="info.kwarc.mmt.api.presentation.ObjectPresenter" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ObjectPresenterextendsAnyRef"></a>
+      <a id="ObjectPresenter:ObjectPresenter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ObjectPresenter.html"><span class="name">ObjectPresenter</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.presentation.PList" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="PListextendsPresentationwithProductwithSerializable"></a>
       <a id="PList:PList"></a>
@@ -608,25 +543,12 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="PList.html"><span class="name">PList</span></a><span class="params">(<span name="items">items: <span class="extype" name="scala.List">List</span>[<a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a>]</span>)</span><span class="result"> extends <a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="PList.html"><span class="name">PList</span></a><span class="params">(<span name="items">items: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a>]</span>)</span><span class="result"> extends <a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">groups a list of presentation expressions that are rendered in order into a single expressions</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Postfix" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="PostfixextendsNotationPropertieswithProductwithSerializable"></a>
-      <a id="Postfix:Postfix"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="Postfix.html"><span class="name">Postfix</span></a><span class="params">(<span name="appstyle">appstyle: <a href="AppStyle.html" class="extype" name="info.kwarc.mmt.api.presentation.AppStyle">AppStyle</a></span>, <span name="impl">impl: <span class="extype" name="scala.Int">Int</span></span>, <span name="oPrec">oPrec: <span class="extype" name="scala.Option">Option</span>[<a href="Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a>]</span>)</span><span class="result"> extends <a href="NotationProperties.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationProperties">NotationProperties</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      
     </li><li name="info.kwarc.mmt.api.presentation.Precedence" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="PrecedenceextendsProductwithSerializable"></a>
+      <a id="PrecedenceextendsOrdered[info.kwarc.mmt.api.presentation.Precedence]withProductwithSerializable"></a>
       <a id="Precedence:Precedence"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -634,25 +556,12 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="Precedence.html"><span class="name">Precedence</span></a><span class="params">(<span name="prec">prec: <a href="InfInt.html" class="extype" name="info.kwarc.mmt.api.presentation.InfInt">InfInt</a></span>, <span name="loseTie">loseTie: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Precedence.html"><span class="name">Precedence</span></a><span class="params">(<span name="prec">prec: <a href="InfInt.html" class="extype" name="info.kwarc.mmt.api.presentation.InfInt">InfInt</a></span>, <span name="loseTie">loseTie: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <span class="extype" name="scala.math.Ordered">Ordered</span>[<a href="Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">binding precedences of operators are represented</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Prefix" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="PrefixextendsNotationPropertieswithProductwithSerializable"></a>
-      <a id="Prefix:Prefix"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="Prefix.html"><span class="name">Prefix</span></a><span class="params">(<span name="appstyle">appstyle: <a href="AppStyle.html" class="extype" name="info.kwarc.mmt.api.presentation.AppStyle">AppStyle</a></span>, <span name="impl">impl: <span class="extype" name="scala.Int">Int</span></span>, <span name="oPrec">oPrec: <span class="extype" name="scala.Option">Option</span>[<a href="Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a>]</span>)</span><span class="result"> extends <a href="NotationProperties.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationProperties">NotationProperties</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      
     </li><li name="info.kwarc.mmt.api.presentation.Presentation" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="PresentationextendsObject"></a>
+      <a id="PresentationextendsAnyRef"></a>
       <a id="Presentation:Presentation"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -660,12 +569,12 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Presentation.html"><span class="name">Presentation</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Presentation.html"><span class="name">Presentation</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">This is the type of a simple language of presentation expressions that may be used in Notation and are evaluated by Presenter</p>
     </li><li name="info.kwarc.mmt.api.presentation.PresentationData" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="PresentationDataextendsObject"></a>
+      <a id="PresentationDataextendsAnyRef"></a>
       <a id="PresentationData:PresentationData"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -673,26 +582,26 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="PresentationData.html"><span class="name">PresentationData</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="PresentationData.html"><span class="name">PresentationData</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">information provided by a content expression about how it is to be presented</p>
     </li><li name="info.kwarc.mmt.api.presentation.Presenter" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="PresenterextendsExtension"></a>
+      <a id="PresenterextendsExtensionwithStructurePresenterwithObjectPresenter"></a>
       <a id="Presenter:Presenter"></a>
       <h4 class="signature">
       <span class="modifier_kind">
-        <span class="modifier">abstract </span>
-        <span class="kind">class</span>
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="Presenter.html"><span class="name">Presenter</span></a><span class="result"> extends <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></span>
+        <a href="Presenter.html"><span class="name">Presenter</span></a><span class="result"> extends <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a> with <a href="StructurePresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.StructurePresenter">StructurePresenter</a> with <a href="ObjectPresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.ObjectPresenter">ObjectPresenter</a></span>
       </span>
       </h4>
       <p class="comment cmt">A Presenter transforms MMT content into presentation
 </p>
     </li><li name="info.kwarc.mmt.api.presentation.RenderingHandler" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="RenderingHandlerextendsObject"></a>
+      <a id="RenderingHandlerextendsAnyRef"></a>
       <a id="RenderingHandler:RenderingHandler"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -700,7 +609,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="RenderingHandler.html"><span class="name">RenderingHandler</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="RenderingHandler.html"><span class="name">RenderingHandler</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">A RenderingHandler collects output generated during presentation</p>
@@ -717,32 +626,6 @@
       </span>
       </h4>
       
-    </li><li name="info.kwarc.mmt.api.presentation.SeqArgument" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="SeqArgumentextendsTokenwithProductwithSerializable"></a>
-      <a id="SeqArgument:SeqArgument"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="SeqArgument.html"><span class="name">SeqArgument</span></a><span class="params">(<span name="pos">pos: <span class="extype" name="scala.Int">Int</span></span>, <span name="separator">separator: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="Token.html" class="extype" name="info.kwarc.mmt.api.presentation.Token">Token</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.api.presentation.SimpleNotation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="SimpleNotationextendsNotationwithProductwithSerializable"></a>
-      <a id="SimpleNotation:SimpleNotation"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="SimpleNotation.html"><span class="name">SimpleNotation</span></a><span class="params">(<span name="nset">nset: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>, <span name="key">key: <a href="NotationKey.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationKey">NotationKey</a></span>, <span name="pres">pres: <a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a></span>, <span name="oPrec">oPrec: <span class="extype" name="scala.Option">Option</span>[<a href="Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a>]</span>, <span name="wrap">wrap: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <a href="Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">Main representation of a notation</p>
     </li><li name="info.kwarc.mmt.api.presentation.StrToplevel" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="StrToplevelextendsContentwithProductwithSerializable"></a>
       <a id="StrToplevel:StrToplevel"></a>
@@ -782,6 +665,32 @@
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.presentation.StructureAndObjectPresenter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="StructureAndObjectPresenterextendsPresenterwithNotationBasedPresenter"></a>
+      <a id="StructureAndObjectPresenter:StructureAndObjectPresenter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="StructureAndObjectPresenter.html"><span class="name">StructureAndObjectPresenter</span></a><span class="result"> extends <a href="Presenter.html" class="extype" name="info.kwarc.mmt.api.presentation.Presenter">Presenter</a> with <a href="NotationBasedPresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationBasedPresenter">NotationBasedPresenter</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">a notation-based presenter using the StructureParser syntax</p>
+    </li><li name="info.kwarc.mmt.api.presentation.StructurePresenter" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="StructurePresenterextendsAnyRef"></a>
+      <a id="StructurePresenter:StructurePresenter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="StructurePresenter.html"><span class="name">StructurePresenter</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.presentation.Style" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="StyleextendsPresentationElement"></a>
       <a id="Style:Style"></a>
@@ -796,7 +705,7 @@
       </h4>
       <p class="comment cmt">Stores a set of notations for presentation</p>
     </li><li name="info.kwarc.mmt.api.presentation.StyleBasedPresenter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="StyleBasedPresenterextendsPresenterwithLogger"></a>
+      <a id="StyleBasedPresenterextendsPresenter"></a>
       <a id="StyleBasedPresenter:StyleBasedPresenter"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -804,10 +713,23 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="StyleBasedPresenter.html"><span class="name">StyleBasedPresenter</span></a><span class="result"> extends <a href="Presenter.html" class="extype" name="info.kwarc.mmt.api.presentation.Presenter">Presenter</a> with <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
+        <a href="StyleBasedPresenter.html"><span class="name">StyleBasedPresenter</span></a><span class="result"> extends <a href="Presenter.html" class="extype" name="info.kwarc.mmt.api.presentation.Presenter">Presenter</a></span>
       </span>
       </h4>
       <p class="comment cmt">The presentation class</p>
+    </li><li name="info.kwarc.mmt.api.presentation.StyleNotation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="StyleNotationextendsNotationwithProductwithSerializable"></a>
+      <a id="StyleNotation:StyleNotation"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="StyleNotation.html"><span class="name">StyleNotation</span></a><span class="params">(<span name="nset">nset: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>, <span name="key">key: <a href="NotationKey.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationKey">NotationKey</a></span>, <span name="presentation">presentation: <a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a></span>, <span name="wrap">wrap: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <a href="Notation.html" class="extype" name="info.kwarc.mmt.api.presentation.Notation">Notation</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A notation in a style, used for rendering</p>
     </li><li name="info.kwarc.mmt.api.presentation.Text" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TextextendsPresentationwithProductwithSerializable"></a>
       <a id="Text:Text"></a>
@@ -834,32 +756,6 @@
       </span>
       </h4>
       <p class="comment cmt">collects the output as text, XML is converted to a string, does not specify what to do with that string</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Token" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="TokenextendsObject"></a>
-      <a id="Token:Token"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">sealed abstract </span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="Token.html"><span class="name">Token</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.api.presentation.Treefix" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="TreefixextendsNotationPropertieswithProductwithSerializable"></a>
-      <a id="Treefix:Treefix"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="Treefix.html"><span class="name">Treefix</span></a><span class="params">(<span name="impl">impl: <span class="extype" name="scala.Int">Int</span></span>, <span name="oPrec">oPrec: <span class="extype" name="scala.Option">Option</span>[<a href="Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a>]</span>)</span><span class="result"> extends <a href="NotationProperties.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationProperties">NotationProperties</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      
     </li><li name="info.kwarc.mmt.api.presentation.UseID" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="UseIDextendsPresentationwithProductwithSerializable"></a>
       <a id="UseID:UseID"></a>
@@ -945,34 +841,6 @@
       </span>
       </h4>
       
-    </li><li name="info.kwarc.mmt.api.presentation.AssocNone" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="AssocNone"></a>
-      <a id="AssocNone:AssocNone"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="AssocNone$.html"><span class="name">AssocNone</span></a><span class="result"> extends <a href="Associativity.html" class="extype" name="info.kwarc.mmt.api.presentation.Associativity">Associativity</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">associative, i.</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Bind" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Bind"></a>
-      <a id="Bind:Bind"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="Bind$.html"><span class="name">Bind</span></a><span class="result"> extends <a href="Fixity.html" class="extype" name="info.kwarc.mmt.api.presentation.Fixity">Fixity</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">a special fixity useful for binders:
-the operator has a hole that is filled with the arguments except for the last one, which is appended
-</p>
     </li><li name="info.kwarc.mmt.api.presentation.Brackets" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Brackets"></a>
       <a id="Brackets:Brackets"></a>
@@ -1012,19 +880,6 @@ the operator has a hole that is filled with the arguments except for the last on
       </span>
       </h4>
       <p class="comment cmt">writes text output to the console</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Defaults" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Defaults"></a>
-      <a id="Defaults:Defaults"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="Defaults$.html"><span class="name">Defaults</span></a>
-      </span>
-      </h4>
-      
     </li><li name="info.kwarc.mmt.api.presentation.EBrackets" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="EBrackets"></a>
       <a id="EBrackets:EBrackets"></a>
@@ -1063,7 +918,7 @@ the operator has a hole that is filled with the arguments except for the last on
         <a href="Id$.html"><span class="name">Id</span></a><span class="result"> extends <a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
-      <p class="comment cmt">produces the position of the current expression as a string, can be used for unique ids</p>
+      <p class="comment cmt">produces the position of the current expression in the content dimension as a string, can be used for unique ids</p>
     </li><li name="info.kwarc.mmt.api.presentation.IgnoresDefaults" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="IgnoresDefaults"></a>
       <a id="IgnoresDefaults:IgnoresDefaults"></a>
@@ -1142,19 +997,6 @@ the operator has a hole that is filled with the arguments except for the last on
       </span>
       </h4>
       <p class="comment cmt">positively infinite InfInt</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Inter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Inter"></a>
-      <a id="Inter:Inter"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="Inter$.html"><span class="name">Inter</span></a><span class="result"> extends <a href="Fixity.html" class="extype" name="info.kwarc.mmt.api.presentation.Fixity">Fixity</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">interfix: operator duplicated in between all arguments</p>
     </li><li name="info.kwarc.mmt.api.presentation.Iterate" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Iterate"></a>
       <a id="Iterate:Iterate"></a>
@@ -1168,33 +1010,6 @@ the operator has a hole that is filled with the arguments except for the last on
       </span>
       </h4>
       <p class="comment cmt">short hand to iterate over a list of components</p>
-    </li><li name="info.kwarc.mmt.api.presentation.LC" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="LC"></a>
-      <a id="LC:LC"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="LC$.html"><span class="name">LC</span></a><span class="result"> extends <a href="AppStyle.html" class="extype" name="info.kwarc.mmt.api.presentation.AppStyle">AppStyle</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">Lambda calculus application: a separator is placed between operator and arguments
- as in f a1 .</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Left" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Left"></a>
-      <a id="Left:Left"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="Left$.html"><span class="name">Left</span></a><span class="result"> extends <a href="Associativity.html" class="extype" name="info.kwarc.mmt.api.presentation.Associativity">Associativity</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">left-associative, i.</p>
     </li><li name="info.kwarc.mmt.api.presentation.LocalParams" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="LocalParams"></a>
       <a id="LocalParams:LocalParams"></a>
@@ -1208,19 +1023,6 @@ the operator has a hole that is filled with the arguments except for the last on
       </span>
       </h4>
       
-    </li><li name="info.kwarc.mmt.api.presentation.Math" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Math"></a>
-      <a id="Math:Math"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="Math$.html"><span class="name">Math</span></a><span class="result"> extends <a href="AppStyle.html" class="extype" name="info.kwarc.mmt.api.presentation.AppStyle">AppStyle</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">Mathematical application: the arguments are bracketed as in f(a1,.</p>
     </li><li name="info.kwarc.mmt.api.presentation.MathArgs" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="MathArgs"></a>
       <a id="MathArgs:MathArgs"></a>
@@ -1260,30 +1062,16 @@ the operator has a hole that is filled with the arguments except for the last on
       </span>
       </h4>
       
-    </li><li name="info.kwarc.mmt.api.presentation.Notation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Notation"></a>
-      <a id="Notation:Notation"></a>
+    </li><li name="info.kwarc.mmt.api.presentation.NotationContainer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NotationContainer"></a>
+      <a id="NotationContainer:NotationContainer"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="Notation$.html"><span class="name">Notation</span></a>
-      </span>
-      </h4>
-      <p class="comment cmt">Helper object for notations
-</p>
-    </li><li name="info.kwarc.mmt.api.presentation.NotationProperties" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="NotationProperties"></a>
-      <a id="NotationProperties:NotationProperties"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="NotationProperties$.html"><span class="name">NotationProperties</span></a>
+        <a href="NotationContainer$.html"><span class="name">NotationContainer</span></a>
       </span>
       </h4>
       
@@ -1299,8 +1087,7 @@ the operator has a hole that is filled with the arguments except for the last on
         <a href="OMDocPresenter$.html"><span class="name">OMDocPresenter</span></a><span class="result"> extends <a href="Presenter.html" class="extype" name="info.kwarc.mmt.api.presentation.Presenter">Presenter</a></span>
       </span>
       </h4>
-      <p class="comment cmt">A Presenter that returns XML based on the toNode method
-</p>
+      <p class="comment cmt">A Presenter that returns XML based on the toNode method</p>
     </li><li name="info.kwarc.mmt.api.presentation.Omitted" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Omitted"></a>
       <a id="Omitted:Omitted"></a>
@@ -1327,32 +1114,6 @@ the operator has a hole that is filled with the arguments except for the last on
       </span>
       </h4>
       
-    </li><li name="info.kwarc.mmt.api.presentation.Post" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Post"></a>
-      <a id="Post:Post"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="Post$.html"><span class="name">Post</span></a><span class="result"> extends <a href="Fixity.html" class="extype" name="info.kwarc.mmt.api.presentation.Fixity">Fixity</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">prefix: operator after arguments</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Pre" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Pre"></a>
-      <a id="Pre:Pre"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="Pre$.html"><span class="name">Pre</span></a><span class="result"> extends <a href="Fixity.html" class="extype" name="info.kwarc.mmt.api.presentation.Fixity">Fixity</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">prefix: operator before arguments</p>
     </li><li name="info.kwarc.mmt.api.presentation.Precedence" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Precedence"></a>
       <a id="Precedence:Precedence"></a>
@@ -1379,6 +1140,19 @@ the operator has a hole that is filled with the arguments except for the last on
       </span>
       </h4>
       <p class="comment cmt">Helper object for presentation s</p>
+    </li><li name="info.kwarc.mmt.api.presentation.Presenter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Presenter"></a>
+      <a id="Presenter:Presenter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Presenter$.html"><span class="name">Presenter</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">helper object</p>
     </li><li name="info.kwarc.mmt.api.presentation.Recurse" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Recurse"></a>
       <a id="Recurse:Recurse"></a>
@@ -1392,19 +1166,45 @@ the operator has a hole that is filled with the arguments except for the last on
       </span>
       </h4>
       <p class="comment cmt">short hand to recurse into the current component</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Right" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Right"></a>
-      <a id="Right:Right"></a>
+    </li><li name="info.kwarc.mmt.api.presentation.Source" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Source"></a>
+      <a id="Source:Source"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="Right$.html"><span class="name">Right</span></a><span class="result"> extends <a href="Associativity.html" class="extype" name="info.kwarc.mmt.api.presentation.Associativity">Associativity</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Source$.html"><span class="name">Source</span></a><span class="result"> extends <a href="Presentation.html" class="extype" name="info.kwarc.mmt.api.presentation.Presentation">Presentation</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
-      <p class="comment cmt">right-associative, i.</p>
+      <p class="comment cmt">produces the position of the current expression in the source</p>
+    </li><li name="info.kwarc.mmt.api.presentation.StyleBasedPresenter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="StyleBasedPresenter"></a>
+      <a id="StyleBasedPresenter:StyleBasedPresenter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="StyleBasedPresenter$.html"><span class="name">StyleBasedPresenter</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">static state for StyleBasedPresenter in order to avoid generating the same ID twice</p>
+    </li><li name="info.kwarc.mmt.api.presentation.StyleNotation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="StyleNotation"></a>
+      <a id="StyleNotation:StyleNotation"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="StyleNotation$.html"><span class="name">StyleNotation</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.presentation.TextPresenter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TextPresenter"></a>
       <a id="TextPresenter:TextPresenter"></a>
@@ -1417,8 +1217,7 @@ the operator has a hole that is filled with the arguments except for the last on
         <a href="TextPresenter$.html"><span class="name">TextPresenter</span></a><span class="result"> extends <a href="Presenter.html" class="extype" name="info.kwarc.mmt.api.presentation.Presenter">Presenter</a></span>
       </span>
       </h4>
-      <p class="comment cmt">A Presenter that returns text based on the toString method
-</p>
+      <p class="comment cmt">A Presenter that returns text based on the toString method</p>
     </li><li name="info.kwarc.mmt.api.presentation.TheNotationSet" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TheNotationSet"></a>
       <a id="TheNotationSet:TheNotationSet"></a>
@@ -1432,19 +1231,6 @@ the operator has a hole that is filled with the arguments except for the last on
       </span>
       </h4>
       <p class="comment cmt">produces the name of the used style</p>
-    </li><li name="info.kwarc.mmt.api.presentation.Tree" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Tree"></a>
-      <a id="Tree:Tree"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="Tree$.html"><span class="name">Tree</span></a><span class="result"> extends <a href="Fixity.html" class="extype" name="info.kwarc.mmt.api.presentation.Fixity">Fixity</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      
     </li><li name="info.kwarc.mmt.api.presentation.XMLError" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="XMLError"></a>
       <a id="XMLError:XMLError"></a>

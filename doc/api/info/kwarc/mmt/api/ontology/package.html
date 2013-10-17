@@ -76,6 +76,19 @@
       </span>
       </h4>
       <p class="comment cmt">the set of all elements of a certain concept in the MMT ontology</p>
+    </li><li name="info.kwarc.mmt.api.ontology.Analyze" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AnalyzeextendsQueryExtension"></a>
+      <a id="Analyze:Analyze"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Analyze.html"><span class="name">Analyze</span></a><span class="result"> extends <a href="QueryExtension.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryExtension">QueryExtension</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">type reconstruction of objects</p>
     </li><li name="info.kwarc.mmt.api.ontology.And" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="AndextendsPropwithProductwithSerializable"></a>
       <a id="And:And"></a>
@@ -90,7 +103,7 @@
       </h4>
       <p class="comment cmt">conjunction</p>
     </li><li name="info.kwarc.mmt.api.ontology.BaseType" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="BaseTypeextendsObject"></a>
+      <a id="BaseTypeextendsAnyRef"></a>
       <a id="BaseType:BaseType"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -98,7 +111,7 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="BaseType.html"><span class="name">BaseType</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="BaseType.html"><span class="name">BaseType</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">a trait for all concrete data types that can be returned by queries; atomic types are paths and objects</p>
@@ -116,7 +129,7 @@
       </h4>
       <p class="comment cmt">union of a collection of sets indexed by a set</p>
     </li><li name="info.kwarc.mmt.api.ontology.Binary" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="BinaryextendsObject"></a>
+      <a id="BinaryextendsAnyRef"></a>
       <a id="Binary:Binary"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -124,7 +137,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Binary.html"><span class="name">Binary</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Binary.html"><span class="name">Binary</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">An object of type Binary represents a binary predicate between MMT paths in the MMT ontology.</p>
@@ -181,7 +194,7 @@
         <a href="Component.html"><span class="name">Component</span></a><span class="params">(<span name="of">of: <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a></span>, <span name="component">component: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
-      <p class="comment cmt">component of a declaration with a certain Path</p>
+      
     </li><li name="info.kwarc.mmt.api.ontology.Comprehension" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ComprehensionextendsQuerywithProductwithSerializable"></a>
       <a id="Comprehension:Comprehension"></a>
@@ -204,7 +217,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="ESet.html"><span class="name">ESet</span></a><span class="params">(<span name="tp">tp: <span class="extype" name="scala.List">List</span>[<a href="QueryBaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryBaseType">QueryBaseType</a>]</span>)</span><span class="result"> extends <a href="QueryType.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryType">QueryType</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="ESet.html"><span class="name">ESet</span></a><span class="params">(<span name="tp">tp: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="QueryBaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryBaseType">QueryBaseType</a>]</span>)</span><span class="result"> extends <a href="QueryType.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryType">QueryType</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">type oa a query that returns a set of values of a base type</p>
@@ -217,12 +230,12 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="ESetResult.html"><span class="name">ESetResult</span></a><span class="params">(<span name="h">h: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[<span class="extype" name="scala.List">List</span>[<a href="BaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.BaseType">BaseType</a>]]</span>)</span><span class="result"> extends <a href="QueryResult.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryResult">QueryResult</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="ESetResult.html"><span class="name">ESetResult</span></a><span class="params">(<span name="h">h: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[<a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="BaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.BaseType">BaseType</a>]]</span>)</span><span class="result"> extends <a href="QueryResult.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryResult">QueryResult</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">result of a set query</p>
     </li><li name="info.kwarc.mmt.api.ontology.Edge" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="EdgeextendsObject"></a>
+      <a id="EdgeextendsAnyRef"></a>
       <a id="Edge:Edge"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -230,7 +243,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Edge.html"><span class="name">Edge</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Edge.html"><span class="name">Edge</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">types of edges in a theory multigraph; edges may have an id; there may be at most one edge without id between two nodes</p>
@@ -256,7 +269,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="Elem.html"><span class="name">Elem</span></a><span class="params">(<span name="tp">tp: <span class="extype" name="scala.List">List</span>[<a href="QueryBaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryBaseType">QueryBaseType</a>]</span>)</span><span class="result"> extends <a href="QueryType.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryType">QueryType</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Elem.html"><span class="name">Elem</span></a><span class="params">(<span name="tp">tp: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="QueryBaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryBaseType">QueryBaseType</a>]</span>)</span><span class="result"> extends <a href="QueryType.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryType">QueryType</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">type of query that returns an element of a base type</p>
@@ -269,7 +282,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="ElemResult.html"><span class="name">ElemResult</span></a><span class="params">(<span name="l">l: <span class="extype" name="scala.List">List</span>[<a href="BaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.BaseType">BaseType</a>]</span>)</span><span class="result"> extends <a href="QueryResult.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryResult">QueryResult</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="ElemResult.html"><span class="name">ElemResult</span></a><span class="params">(<span name="l">l: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="BaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.BaseType">BaseType</a>]</span>)</span><span class="result"> extends <a href="QueryResult.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryResult">QueryResult</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">result of an element query</p>
@@ -287,7 +300,7 @@
       </h4>
       <p class="comment cmt">equality of elements</p>
     </li><li name="info.kwarc.mmt.api.ontology.Evaluator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="EvaluatorextendsObject"></a>
+      <a id="EvaluatorextendsAnyRef"></a>
       <a id="Evaluator:Evaluator"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -295,7 +308,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Evaluator.html"><span class="name">Evaluator</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Evaluator.html"><span class="name">Evaluator</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">evaluates a query expression to a query result</p>
@@ -312,6 +325,19 @@
       </span>
       </h4>
       <p class="comment cmt">universal quantification over a set</p>
+    </li><li name="info.kwarc.mmt.api.ontology.GraphExporter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GraphExporterextendsAnyRef"></a>
+      <a id="GraphExporter:GraphExporter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="GraphExporter.html"><span class="name">GraphExporter</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">This class provides functions for rendering a theory graph in the gexf and dot graph formats.</p>
     </li><li name="info.kwarc.mmt.api.ontology.HasType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="HasTypeextendsRelationExpwithProductwithSerializable"></a>
       <a id="HasType:HasType"></a>
@@ -339,19 +365,19 @@
       </span>
       </h4>
       <p class="comment cmt">An object of type Individual represents a unary predicate in the ABox.</p>
-    </li><li name="info.kwarc.mmt.api.ontology.InferedType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="InferedTypeextendsQuerywithProductwithSerializable"></a>
-      <a id="InferedType:InferedType"></a>
+    </li><li name="info.kwarc.mmt.api.ontology.Infer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="InferextendsQueryExtension"></a>
+      <a id="Infer:Infer"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">case class</span>
+        <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="InferedType.html"><span class="name">InferedType</span></a><span class="params">(<span name="of">of: <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a></span>, <span name="found">found: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>)</span><span class="result"> extends <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Infer.html"><span class="name">Infer</span></a><span class="result"> extends <a href="QueryExtension.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryExtension">QueryExtension</a></span>
       </span>
       </h4>
-      <p class="comment cmt">type of an object</p>
+      <p class="comment cmt">type inference relative to a foundation</p>
     </li><li name="info.kwarc.mmt.api.ontology.IsA" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="IsAextendsPropwithProductwithSerializable"></a>
       <a id="IsA:IsA"></a>
@@ -404,6 +430,45 @@
       </span>
       </h4>
       <p class="comment cmt">element relation between elements and sets</p>
+    </li><li name="info.kwarc.mmt.api.ontology.Let" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LetextendsQuerywithProductwithSerializable"></a>
+      <a id="Let:Let"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Let.html"><span class="name">Let</span></a><span class="params">(<span name="value">value: <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a></span>, <span name="in">in: <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a></span>)</span><span class="result"> extends <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">let binder</p>
+    </li><li name="info.kwarc.mmt.api.ontology.Literal" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Literal[T&lt;:info.kwarc.mmt.api.ontology.BaseType]extendsQuerywithProductwithSerializable"></a>
+      <a id="Literal[T&lt;:BaseType]:Literal[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Literal.html"><span class="name">Literal</span></a><span class="tparams">[<span name="T">T &lt;: <a href="BaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.BaseType">BaseType</a></span>]</span><span class="params">(<span name="literal">literal: <span class="extype" name="info.kwarc.mmt.api.ontology.Literal.T">T</span></span>)</span><span class="result"> extends <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">iteral</p>
+    </li><li name="info.kwarc.mmt.api.ontology.Literals" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Literals[T&lt;:info.kwarc.mmt.api.ontology.BaseType]extendsQuerywithProductwithSerializable"></a>
+      <a id="Literals[T&lt;:BaseType]:Literals[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Literals.html"><span class="name">Literals</span></a><span class="tparams">[<span name="T">T &lt;: <a href="BaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.BaseType">BaseType</a></span>]</span><span class="params">(<span name="literals">literals: <span class="extype" name="info.kwarc.mmt.api.ontology.Literals.T">T</span>*</span>)</span><span class="result"> extends <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">set of literals</p>
     </li><li name="info.kwarc.mmt.api.ontology.Not" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="NotextendsPropwithProductwithSerializable"></a>
       <a id="Not:Not"></a>
@@ -417,6 +482,19 @@
       </span>
       </h4>
       <p class="comment cmt">negation</p>
+    </li><li name="info.kwarc.mmt.api.ontology.Parse" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ParseextendsQueryExtension"></a>
+      <a id="Parse:Parse"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Parse.html"><span class="name">Parse</span></a><span class="result"> extends <a href="QueryExtension.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryExtension">QueryExtension</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">parsing of strings into objects</p>
     </li><li name="info.kwarc.mmt.api.ontology.PrefixOf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="PrefixOfextendsPropwithProductwithSerializable"></a>
       <a id="PrefixOf:PrefixOf"></a>
@@ -431,18 +509,31 @@
       </h4>
       <p class="comment cmt">ancestor relation between paths</p>
     </li><li name="info.kwarc.mmt.api.ontology.Present" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="PresentextendsQuerywithProductwithSerializable"></a>
+      <a id="PresentextendsQueryExtension"></a>
       <a id="Present:Present"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">case class</span>
+        <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Present.html"><span class="name">Present</span></a><span class="params">(<span name="content">content: <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a></span>, <span name="style">style: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>)</span><span class="result"> extends <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Present.html"><span class="name">Present</span></a><span class="result"> extends <a href="QueryExtension.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryExtension">QueryExtension</a></span>
       </span>
       </h4>
-      <p class="comment cmt">the XML object arising from rendering an object</p>
+      <p class="comment cmt">XML rendering of objects</p>
+    </li><li name="info.kwarc.mmt.api.ontology.PresentDecl" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PresentDeclextendsQueryExtension"></a>
+      <a id="PresentDecl:PresentDecl"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="PresentDecl.html"><span class="name">PresentDecl</span></a><span class="result"> extends <a href="QueryExtension.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryExtension">QueryExtension</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">XML rendering of declarations</p>
     </li><li name="info.kwarc.mmt.api.ontology.Projection" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ProjectionextendsQuerywithProductwithSerializable"></a>
       <a id="Projection:Projection"></a>
@@ -455,9 +546,9 @@
         <a href="Projection.html"><span class="name">Projection</span></a><span class="params">(<span name="of">of: <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a></span>, <span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result"> extends <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
-      <p class="comment cmt">projectiong</p>
+      <p class="comment cmt">projection</p>
     </li><li name="info.kwarc.mmt.api.ontology.Prop" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="PropextendsObject"></a>
+      <a id="PropextendsAnyRef"></a>
       <a id="Prop:Prop"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -465,12 +556,12 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Prop.html"><span class="name">Prop</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Prop.html"><span class="name">Prop</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">propositions</p>
     </li><li name="info.kwarc.mmt.api.ontology.Query" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="QueryextendsObject"></a>
+      <a id="QueryextendsAnyRef"></a>
       <a id="Query:Query"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -478,12 +569,12 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Query.html"><span class="name">Query</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Query.html"><span class="name">Query</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">the expressions of the query language</p>
     </li><li name="info.kwarc.mmt.api.ontology.QueryBaseType" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="QueryBaseTypeextendsObject"></a>
+      <a id="QueryBaseTypeextendsAnyRef"></a>
       <a id="QueryBaseType:QueryBaseType"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -491,12 +582,38 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="QueryBaseType.html"><span class="name">QueryBaseType</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="QueryBaseType.html"><span class="name">QueryBaseType</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">base types, used in the formation of QueryType</p>
+    </li><li name="info.kwarc.mmt.api.ontology.QueryExtension" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="QueryExtensionextendsExtension"></a>
+      <a id="QueryExtension:QueryExtension"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="QueryExtension.html"><span class="name">QueryExtension</span></a><span class="result"> extends <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A QueryExtension provides the syntax and and semantics for an atomic function of the QMT query language</p>
+    </li><li name="info.kwarc.mmt.api.ontology.QueryFunctionApply" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="QueryFunctionApplyextendsQuerywithProductwithSerializable"></a>
+      <a id="QueryFunctionApply:QueryFunctionApply"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="QueryFunctionApply.html"><span class="name">QueryFunctionApply</span></a><span class="params">(<span name="function">function: <a href="QueryExtension.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryExtension">QueryExtension</a></span>, <span name="argument">argument: <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a></span>, <span name="param">param: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>)</span><span class="result"> extends <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">query that applies an atomic function</p>
     </li><li name="info.kwarc.mmt.api.ontology.QueryResult" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="QueryResultextendsObject"></a>
+      <a id="QueryResultextendsAnyRef"></a>
       <a id="QueryResult:QueryResult"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -504,12 +621,12 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="QueryResult.html"><span class="name">QueryResult</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="QueryResult.html"><span class="name">QueryResult</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">wrapper type for the result of a query</p>
     </li><li name="info.kwarc.mmt.api.ontology.QueryType" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="QueryTypeextendsObject"></a>
+      <a id="QueryTypeextendsAnyRef"></a>
       <a id="QueryType:QueryType"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -517,12 +634,12 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="QueryType.html"><span class="name">QueryType</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="QueryType.html"><span class="name">QueryType</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">the types of the query language</p>
     </li><li name="info.kwarc.mmt.api.ontology.RelStore" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="RelStoreextendsObject"></a>
+      <a id="RelStoreextendsAnyRef"></a>
       <a id="RelStore:RelStore"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -530,7 +647,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="RelStore.html"><span class="name">RelStore</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="RelStore.html"><span class="name">RelStore</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">An ABoxStore stores the abox of the loaded elements with respect to the MMT ontology.</p>
@@ -561,7 +678,7 @@
       </h4>
       <p class="comment cmt">An object of type Relation represents a binary predicate in the ABox.</p>
     </li><li name="info.kwarc.mmt.api.ontology.RelationExp" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="RelationExpextendsObject"></a>
+      <a id="RelationExpextendsAnyRef"></a>
       <a id="RelationExp:RelationExp"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -569,7 +686,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="RelationExp.html"><span class="name">RelationExp</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="RelationExp.html"><span class="name">RelationExp</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">binary relations between paths, i.</p>
@@ -586,6 +703,19 @@
       </span>
       </h4>
       <p class="comment cmt">the composition of a list of relations</p>
+    </li><li name="info.kwarc.mmt.api.ontology.Simplify" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SimplifyextendsQueryExtension"></a>
+      <a id="Simplify:Simplify"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Simplify.html"><span class="name">Simplify</span></a><span class="result"> extends <a href="QueryExtension.html" class="extype" name="info.kwarc.mmt.api.ontology.QueryExtension">QueryExtension</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">simplification of objects</p>
     </li><li name="info.kwarc.mmt.api.ontology.Singleton" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="SingletonextendsQuerywithProductwithSerializable"></a>
       <a id="Singleton:Singleton"></a>
@@ -599,16 +729,16 @@
       </span>
       </h4>
       <p class="comment cmt">singleton sets</p>
-    </li><li name="info.kwarc.mmt.api.ontology.StringResult" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="StringResultextendsBaseTypewithProductwithSerializable"></a>
-      <a id="StringResult:StringResult"></a>
+    </li><li name="info.kwarc.mmt.api.ontology.StringValue" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="StringValueextendsBaseTypewithProductwithSerializable"></a>
+      <a id="StringValue:StringValue"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="StringResult.html"><span class="name">StringResult</span></a><span class="params">(<span name="string">string: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="BaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.BaseType">BaseType</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="StringValue.html"><span class="name">StringValue</span></a><span class="params">(<span name="string">string: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="BaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.BaseType">BaseType</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -638,60 +768,8 @@
       </span>
       </h4>
       <p class="comment cmt">subobject of an object at a certain position</p>
-    </li><li name="info.kwarc.mmt.api.ontology.TheObject" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="TheObjectextendsQuerywithProductwithSerializable"></a>
-      <a id="TheObject:TheObject"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="TheObject.html"><span class="name">TheObject</span></a><span class="params">(<span name="a">a: <a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></span>)</span><span class="result"> extends <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">constant object</p>
-    </li><li name="info.kwarc.mmt.api.ontology.TheObjects" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="TheObjectsextendsQuerywithProductwithSerializable"></a>
-      <a id="TheObjects:TheObjects"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="TheObjects.html"><span class="name">TheObjects</span></a><span class="params">(<span name="as">as: <a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a>*</span>)</span><span class="result"> extends <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">finite set of objects</p>
-    </li><li name="info.kwarc.mmt.api.ontology.ThePath" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ThePathextendsQuerywithProductwithSerializable"></a>
-      <a id="ThePath:ThePath"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="ThePath.html"><span class="name">ThePath</span></a><span class="params">(<span name="a">a: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>)</span><span class="result"> extends <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">constant path</p>
-    </li><li name="info.kwarc.mmt.api.ontology.ThePaths" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ThePathsextendsQuerywithProductwithSerializable"></a>
-      <a id="ThePaths:ThePaths"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="ThePaths.html"><span class="name">ThePaths</span></a><span class="params">(<span name="as">as: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a>*</span>)</span><span class="result"> extends <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">finite set of paths</p>
     </li><li name="info.kwarc.mmt.api.ontology.TheoryGraph" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="TheoryGraphextendsObject"></a>
+      <a id="TheoryGraphextendsAnyRef"></a>
       <a id="TheoryGraph:TheoryGraph"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -699,7 +777,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="TheoryGraph.html"><span class="name">TheoryGraph</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="TheoryGraph.html"><span class="name">TheoryGraph</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">This class adds advanced queries on top of a RelStore that expose the theory graph structure</p>
@@ -751,12 +829,12 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="Tuple.html"><span class="name">Tuple</span></a><span class="params">(<span name="components">components: <span class="extype" name="scala.List">List</span>[<a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a>]</span>)</span><span class="result"> extends <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Tuple.html"><span class="name">Tuple</span></a><span class="params">(<span name="components">components: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a>]</span>)</span><span class="result"> extends <a href="Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">Query</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">tupling</p>
     </li><li name="info.kwarc.mmt.api.ontology.Unary" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="UnaryextendsObject"></a>
+      <a id="UnaryextendsAnyRef"></a>
       <a id="Unary:Unary"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -764,7 +842,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Unary.html"><span class="name">Unary</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Unary.html"><span class="name">Unary</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">An object of type Unary represents a unary predicate on MMT paths in the MMT ontology.</p>
@@ -807,16 +885,16 @@
       </span>
       </h4>
       <p class="comment cmt">named view</p>
-    </li><li name="info.kwarc.mmt.api.ontology.XMLResult" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="XMLResultextendsBaseTypewithProductwithSerializable"></a>
-      <a id="XMLResult:XMLResult"></a>
+    </li><li name="info.kwarc.mmt.api.ontology.XMLValue" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="XMLValueextendsBaseTypewithProductwithSerializable"></a>
+      <a id="XMLValue:XMLValue"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="XMLResult.html"><span class="name">XMLResult</span></a><span class="params">(<span name="node">node: <span class="extype" name="scala.xml.Node">Node</span></span>)</span><span class="result"> extends <a href="BaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.BaseType">BaseType</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="XMLValue.html"><span class="name">XMLValue</span></a><span class="params">(<span name="node">node: <span class="extype" name="scala.xml.Node">Node</span></span>)</span><span class="result"> extends <a href="BaseType.html" class="extype" name="info.kwarc.mmt.api.ontology.BaseType">BaseType</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -918,6 +996,19 @@
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.ontology.Evaluator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Evaluator"></a>
+      <a id="Evaluator:Evaluator"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Evaluator$.html"><span class="name">Evaluator</span></a>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.ontology.Extractor" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Extractor"></a>
       <a id="Extractor:Extractor"></a>
@@ -997,19 +1088,6 @@
       </span>
       </h4>
       
-    </li><li name="info.kwarc.mmt.api.ontology.IsAlias" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="IsAlias"></a>
-      <a id="IsAlias:IsAlias"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="IsAlias$.html"><span class="name">IsAlias</span></a><span class="result"> extends <a href="Unary.html" class="extype" name="info.kwarc.mmt.api.ontology.Unary">Unary</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      
     </li><li name="info.kwarc.mmt.api.ontology.IsAliasFor" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="IsAliasFor"></a>
       <a id="IsAliasFor:IsAliasFor"></a>
@@ -1085,19 +1163,6 @@
       </span>
       <span class="symbol">
         <a href="IsNotation$.html"><span class="name">IsNotation</span></a><span class="result"> extends <a href="Unary.html" class="extype" name="info.kwarc.mmt.api.ontology.Unary">Unary</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.api.ontology.IsOpen" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="IsOpen"></a>
-      <a id="IsOpen:IsOpen"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="IsOpen$.html"><span class="name">IsOpen</span></a><span class="result"> extends <a href="Unary.html" class="extype" name="info.kwarc.mmt.api.ontology.Unary">Unary</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -1244,6 +1309,19 @@
       </span>
       </h4>
       <p class="comment cmt">helper object for query expressions</p>
+    </li><li name="info.kwarc.mmt.api.ontology.QueryTypeConversion" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="QueryTypeConversion"></a>
+      <a id="QueryTypeConversion:QueryTypeConversion"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="QueryTypeConversion$.html"><span class="name">QueryTypeConversion</span></a>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.ontology.RefersTo" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="RefersTo"></a>
       <a id="RefersTo:RefersTo"></a>

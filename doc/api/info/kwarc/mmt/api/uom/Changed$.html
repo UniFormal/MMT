@@ -40,16 +40,15 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <span class="name">Changed</span>
+        <span class="name">Changed</span><span class="result"> extends <a href="BooleanTermProperty.html" class="extype" name="info.kwarc.mmt.api.uom.BooleanTermProperty">BooleanTermProperty</a></span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>apply/unapply methods that encapsulate functionality for attaching a Boolean clientProperty to a Term
-UOM uses it to remember whether a Term underwent a GlobalChange during simplification
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>UOM uses this to remember whether a Term underwent a GlobalChange during simplification
 this information is passed upwards during recursive simplification
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="BooleanTermProperty.html" class="extype" name="info.kwarc.mmt.api.uom.BooleanTermProperty">BooleanTermProperty</a>, <a href="../objects/TermProperty.html" class="extype" name="info.kwarc.mmt.api.objects.TermProperty">TermProperty</a>[<span class="extype" name="scala.Boolean">Boolean</span>], <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -67,7 +66,7 @@ this information is passed upwards during recursive simplification
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.uom.Changed"><span>Changed</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.uom.Changed"><span>Changed</span></li><li class="in" name="info.kwarc.mmt.api.uom.BooleanTermProperty"><span>BooleanTermProperty</span></li><li class="in" name="info.kwarc.mmt.api.objects.TermProperty"><span>TermProperty</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -102,7 +101,7 @@ this information is passed upwards during recursive simplification
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -141,7 +140,7 @@ this information is passed upwards during recursive simplification
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -158,7 +157,7 @@ this information is passed upwards during recursive simplification
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.uom.Changed#apply" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.uom.BooleanTermProperty#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="apply(t:info.kwarc.mmt.api.objects.Term):info.kwarc.mmt.api.objects.Term"></a>
       <a id="apply(Term):Term"></a>
       <h4 class="signature">
@@ -170,7 +169,7 @@ this information is passed upwards during recursive simplification
         <span class="name">apply</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
-      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BooleanTermProperty.html" class="extype" name="info.kwarc.mmt.api.uom.BooleanTermProperty">BooleanTermProperty</a></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -193,10 +192,10 @@ this information is passed upwards during recursive simplification
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -209,7 +208,7 @@ this information is passed upwards during recursive simplification
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -226,19 +225,19 @@ this information is passed upwards during recursive simplification
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.uom.Changed#eraseMarker" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="eraseMarker(t:info.kwarc.mmt.api.objects.Term):Unit"></a>
-      <a id="eraseMarker(Term):Unit"></a>
+    </li><li name="info.kwarc.mmt.api.objects.TermProperty#erase" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="erase(t:info.kwarc.mmt.api.objects.Term):Unit"></a>
+      <a id="erase(Term):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eraseMarker</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">erase</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../objects/TermProperty.html" class="extype" name="info.kwarc.mmt.api.objects.TermProperty">TermProperty</a></dd></dl></div>
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
       <a id="finalize():Unit"></a>
@@ -251,10 +250,23 @@ this information is passed upwards during recursive simplification
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.TermProperty#get" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="get(t:info.kwarc.mmt.api.objects.Term):Option[A]"></a>
+      <a id="get(Term):Option[Boolean]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">get</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">get the client property if defined</p><div class="fullcomment"><div class="comment cmt"><p>get the client property if defined</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../objects/TermProperty.html" class="extype" name="info.kwarc.mmt.api.objects.TermProperty">TermProperty</a></dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <a id="getClass():Class[_]"></a>
@@ -303,7 +315,7 @@ this information is passed upwards during recursive simplification
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -333,6 +345,32 @@ this information is passed upwards during recursive simplification
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.TermProperty#property" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="property:info.kwarc.mmt.api.utils.URI"></a>
+      <a id="property:URI"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">property</span><span class="result">: <a href="../utils/URI.html" class="extype" name="info.kwarc.mmt.api.utils.URI">URI</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../objects/TermProperty.html" class="extype" name="info.kwarc.mmt.api.objects.TermProperty">TermProperty</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.TermProperty#put" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="put(t:info.kwarc.mmt.api.objects.Obj,a:A):Unit"></a>
+      <a id="put(Obj,Boolean):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">put</span><span class="params">(<span name="t">t: <a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></span>, <span name="a">a: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">put the client property</p><div class="fullcomment"><div class="comment cmt"><p>put the client property</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../objects/TermProperty.html" class="extype" name="info.kwarc.mmt.api.objects.TermProperty">TermProperty</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -359,7 +397,7 @@ this information is passed upwards during recursive simplification
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.uom.Changed#unapply" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.uom.BooleanTermProperty#unapply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="unapply(t:info.kwarc.mmt.api.objects.Term):Option[info.kwarc.mmt.api.objects.Term]"></a>
       <a id="unapply(Term):Option[Term]"></a>
       <h4 class="signature">
@@ -371,7 +409,7 @@ this information is passed upwards during recursive simplification
         <span class="name">unapply</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
       </span>
       </h4>
-      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BooleanTermProperty.html" class="extype" name="info.kwarc.mmt.api.uom.BooleanTermProperty">BooleanTermProperty</a></dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -429,8 +467,12 @@ this information is passed upwards during recursive simplification
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+        <div class="parent" name="info.kwarc.mmt.api.uom.BooleanTermProperty">
+              <h3>Inherited from <a href="BooleanTermProperty.html" class="extype" name="info.kwarc.mmt.api.uom.BooleanTermProperty">BooleanTermProperty</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.objects.TermProperty">
+              <h3>Inherited from <a href="../objects/TermProperty.html" class="extype" name="info.kwarc.mmt.api.objects.TermProperty">TermProperty</a>[<span class="extype" name="scala.Boolean">Boolean</span>]</h3>
+            </div><div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

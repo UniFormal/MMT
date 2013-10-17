@@ -47,10 +47,10 @@
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>An InferenceRule infers the type of an expression
  It may recursively infer the types of components.</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a href="../../lf/ApplyTerm$.html" class="extype" name="info.kwarc.mmt.lf.ApplyTerm">ApplyTerm</a>, <a href="HoleTerm$.html" class="extype" name="info.kwarc.mmt.api.objects.HoleTerm">HoleTerm</a>, <a href="../../lf/LambdaTerm$.html" class="extype" name="info.kwarc.mmt.lf.LambdaTerm">LambdaTerm</a>, <a href="../../lf/PiTerm$.html" class="extype" name="info.kwarc.mmt.lf.PiTerm">PiTerm</a>, <a href="../../lf/UnivTerm$.html" class="extype" name="info.kwarc.mmt.lf.UnivTerm">UnivTerm</a></div>
+          <div class="subClasses hiddenContent"><a href="../../lf/ApplyTerm$.html" class="extype" name="info.kwarc.mmt.lf.ApplyTerm">ApplyTerm</a>, <a href="../../lf/EqualityTerm$.html" class="extype" name="info.kwarc.mmt.lf.EqualityTerm">EqualityTerm</a>, <a href="HoleTerm$.html" class="extype" name="info.kwarc.mmt.api.objects.HoleTerm">HoleTerm</a>, <a href="../../lf/LambdaTerm$.html" class="extype" name="info.kwarc.mmt.lf.LambdaTerm">LambdaTerm</a>, <a href="../../lf/PiTerm$.html" class="extype" name="info.kwarc.mmt.lf.PiTerm">PiTerm</a>, <a href="../../lf/UnivTerm$.html" class="extype" name="info.kwarc.mmt.lf.UnivTerm">UnivTerm</a></div>
         </div></div>
         
 
@@ -89,7 +89,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.objects.InferenceRule#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(head:info.kwarc.mmt.api.GlobalName):info.kwarc.mmt.api.objects.InferenceRule"></a>
+      <a id="&lt;init&gt;(head:info.kwarc.mmt.api.GlobalName,typOp:info.kwarc.mmt.api.GlobalName):info.kwarc.mmt.api.objects.InferenceRule"></a>
       <a id="&lt;init&gt;:InferenceRule"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -97,7 +97,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">InferenceRule</span><span class="params">(<span name="head">head: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>)</span>
+        <span class="name">InferenceRule</span><span class="params">(<span name="head">head: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>, <span name="typOp">typOp: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>)</span>
       </span>
       </h4>
       <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">head</dt><dd class="cmt"><p>the head of the term whose type this rule infers
@@ -110,15 +110,15 @@
         <div id="values" class="values members">
               <h3>Abstract Value Members</h3>
               <ol><li name="info.kwarc.mmt.api.objects.InferenceRule#apply" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
-      <a id="apply(solver:info.kwarc.mmt.api.objects.Solver)(tm:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack):Option[info.kwarc.mmt.api.objects.Term]"></a>
-      <a id="apply(Solver)(Term)(Stack):Option[Term]"></a>
+      <a id="apply(solver:info.kwarc.mmt.api.objects.Solver)(tm:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.objects.History):Option[info.kwarc.mmt.api.objects.Term]"></a>
+      <a id="apply(Solver)(Term)(Stack,History):Option[Term]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="solver">solver: <a href="Solver.html" class="extype" name="info.kwarc.mmt.api.objects.Solver">Solver</a></span>)</span><span class="params">(<span name="tm">tm: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
+        <span class="name">apply</span><span class="params">(<span name="solver">solver: <a href="Solver.html" class="extype" name="info.kwarc.mmt.api.objects.Solver">Solver</a></span>)</span><span class="params">(<span name="tm">tm: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.objects.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
       </span>
       </h4>
       <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">solver</dt><dd class="cmt"><p>provides callbacks to the currently solved system of judgments</p></dd><dt class="param">tm</dt><dd class="cmt"><p>the term</p></dd><dt>returns</dt><dd class="cmt"><p>the inferred type if inference was possible
@@ -137,7 +137,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -176,7 +176,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -215,10 +215,10 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -231,7 +231,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -260,7 +260,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -327,7 +327,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -357,6 +357,35 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Rule#parent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="parent:info.kwarc.mmt.api.objects.Term"></a>
+      <a id="parent:Term"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">parent</span><span class="result">: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the home theory in which this rule lives</p><div class="fullcomment"><div class="comment cmt"><p>the home theory in which this rule lives</p><p>a rule is only applicable if the home theory is included</p><p>by default, the theory of the head operator
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Rule#path" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="path:info.kwarc.mmt.api.GlobalName"></a>
+      <a id="path:GlobalName"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">path</span><span class="result">: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">an MMT URI that identifies the rule, by default the head
+</p><div class="fullcomment"><div class="comment cmt"><p>an MMT URI that identifies the rule, by default the head
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -370,7 +399,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.objects.Rule#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
       <a id="toString():String"></a>
       <h4 class="signature">
@@ -382,7 +411,20 @@
         <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a> → AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.InferenceRule#typOp" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="typOp:info.kwarc.mmt.api.GlobalName"></a>
+      <a id="typOp:GlobalName"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">typOp</span><span class="result">: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -443,7 +485,7 @@
         <div class="parent" name="info.kwarc.mmt.api.objects.Rule">
               <h3>Inherited from <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></h3>
             </div><div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

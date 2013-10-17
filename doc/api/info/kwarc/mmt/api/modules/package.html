@@ -64,20 +64,20 @@
         <div id="types" class="types members">
               <h3>Type Members</h3>
               <ol><li name="info.kwarc.mmt.api.modules.Body" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="Body[S&lt;:info.kwarc.mmt.api.symbols.Declaration]extendsObject"></a>
-      <a id="Body[S&lt;:Declaration]:Body[S]"></a>
+      <a id="BodyextendsAnyRef"></a>
+      <a id="Body:Body"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="Body.html"><span class="name">Body</span></a><span class="tparams">[<span name="S">S &lt;: <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Body.html"><span class="name">Body</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">Body represents the content of modules, i.</p>
     </li><li name="info.kwarc.mmt.api.modules.DeclaredLink" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="DeclaredLinkextendsLinkwithBody[info.kwarc.mmt.api.symbols.Assignment]"></a>
+      <a id="DeclaredLinkextendsLinkwithBody"></a>
       <a id="DeclaredLink:DeclaredLink"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -85,26 +85,26 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="DeclaredLink.html"><span class="name">DeclaredLink</span></a><span class="result"> extends <a href="Link.html" class="extype" name="info.kwarc.mmt.api.modules.Link">Link</a> with <a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a>[<a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>]</span>
+        <a href="DeclaredLink.html"><span class="name">DeclaredLink</span></a><span class="result"> extends <a href="Link.html" class="extype" name="info.kwarc.mmt.api.modules.Link">Link</a> with <a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></span>
       </span>
       </h4>
       <p class="comment cmt">A DeclaredLink represents an MMT link given by a set of assignments.</p>
     </li><li name="info.kwarc.mmt.api.modules.DeclaredModule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="DeclaredModule[S&lt;:info.kwarc.mmt.api.symbols.Declaration]extendsBody[S]"></a>
-      <a id="DeclaredModule[S&lt;:Declaration]:DeclaredModule[S]"></a>
+      <a id="DeclaredModuleextendsModulewithBody"></a>
+      <a id="DeclaredModule:DeclaredModule"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="DeclaredModule.html"><span class="name">DeclaredModule</span></a><span class="tparams">[<span name="S">S &lt;: <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>]</span><span class="result"> extends <a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a>[<span class="extype" name="info.kwarc.mmt.api.modules.DeclaredModule.S">S</span>]</span>
+        <a href="DeclaredModule.html"><span class="name">DeclaredModule</span></a><span class="result"> extends <a href="Module.html" class="extype" name="info.kwarc.mmt.api.modules.Module">Module</a> with <a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a></span>
       </span>
       </h4>
       <p class="comment cmt">Module given by a set of statements
 </p>
     </li><li name="info.kwarc.mmt.api.modules.DeclaredTheory" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="DeclaredTheoryextendsTheorywithDeclaredModule[info.kwarc.mmt.api.symbols.Symbol]"></a>
+      <a id="DeclaredTheoryextendsTheorywithDeclaredModule"></a>
       <a id="DeclaredTheory:DeclaredTheory"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -112,12 +112,12 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="DeclaredTheory.html"><span class="name">DeclaredTheory</span></a><span class="result"> extends <a href="Theory.html" class="extype" name="info.kwarc.mmt.api.modules.Theory">Theory</a> with <a href="DeclaredModule.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredModule">DeclaredModule</a>[<a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a>]</span>
+        <a href="DeclaredTheory.html"><span class="name">DeclaredTheory</span></a><span class="result"> extends <a href="Theory.html" class="extype" name="info.kwarc.mmt.api.modules.Theory">Theory</a> with <a href="DeclaredModule.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredModule">DeclaredModule</a></span>
       </span>
       </h4>
       <p class="comment cmt">A Theory represents an MMT theory.</p>
     </li><li name="info.kwarc.mmt.api.modules.DeclaredView" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="DeclaredViewextendsViewwithDeclaredModule[info.kwarc.mmt.api.symbols.Assignment]withDeclaredLink"></a>
+      <a id="DeclaredViewextendsViewwithDeclaredModulewithDeclaredLink"></a>
       <a id="DeclaredView:DeclaredView"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -125,7 +125,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="DeclaredView.html"><span class="name">DeclaredView</span></a><span class="result"> extends <a href="View.html" class="extype" name="info.kwarc.mmt.api.modules.View">View</a> with <a href="DeclaredModule.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredModule">DeclaredModule</a>[<a href="../symbols/Assignment.html" class="extype" name="info.kwarc.mmt.api.symbols.Assignment">Assignment</a>] with <a href="DeclaredLink.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredLink">DeclaredLink</a></span>
+        <a href="DeclaredView.html"><span class="name">DeclaredView</span></a><span class="result"> extends <a href="View.html" class="extype" name="info.kwarc.mmt.api.modules.View">View</a> with <a href="DeclaredModule.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredModule">DeclaredModule</a> with <a href="DeclaredLink.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredLink">DeclaredLink</a></span>
       </span>
       </h4>
       <p class="comment cmt">A DeclaredView represents an MMT view given by a list of assignments.</p>
@@ -183,7 +183,7 @@
       </h4>
       <p class="comment cmt">A DefinedView represents an MMT view given by an existing morphism.</p>
     </li><li name="info.kwarc.mmt.api.modules.Link" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="LinkextendsObject"></a>
+      <a id="LinkextendsAnyRef"></a>
       <a id="Link:Link"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -191,7 +191,7 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="Link.html"><span class="name">Link</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Link.html"><span class="name">Link</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">A Link represents an MMT link unifying structures and views.</p>
@@ -209,7 +209,7 @@
       </h4>
       <p class="comment cmt">A Module represents an MMT module.</p>
     </li><li name="info.kwarc.mmt.api.modules.ModuleDefiniens" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="ModuleDefiniensextendsObject"></a>
+      <a id="ModuleDefiniensextendsAnyRef"></a>
       <a id="ModuleDefiniens:ModuleDefiniens"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -217,7 +217,7 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="ModuleDefiniens.html"><span class="name">ModuleDefiniens</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="ModuleDefiniens.html"><span class="name">ModuleDefiniens</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">A Module or Link given by existing modules/morphisms
@@ -253,7 +253,36 @@
 
         
 
-        
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="info.kwarc.mmt.api.modules.DefinedTheory" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DefinedTheory"></a>
+      <a id="DefinedTheory:DefinedTheory"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DefinedTheory$.html"><span class="name">DefinedTheory</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.modules.DefinedView" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DefinedView"></a>
+      <a id="DefinedView:DefinedView"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DefinedView$.html"><span class="name">DefinedView</span></a>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
 
         
 

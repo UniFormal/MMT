@@ -72,7 +72,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="AbbrevRule.html"><span class="name">AbbrevRule</span></a><span class="params">(<span name="op">op: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>, <span name="term">term: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.uom.Rule">Rule</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="AbbrevRule.html"><span class="name">AbbrevRule</span></a><span class="params">(<span name="head">head: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>, <span name="term">term: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="../objects/Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">An AbbrevRule expands a symbol into a term
@@ -125,10 +125,24 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="BooleanLattice.html"><span class="name">BooleanLattice</span></a><span class="result"> extends <a href="RuleSet.html" class="extype" name="info.kwarc.mmt.api.uom.RuleSet">RuleSet</a></span>
+        <a href="BooleanLattice.html"><span class="name">BooleanLattice</span></a><span class="result"> extends <a href="../objects/RuleSet.html" class="extype" name="info.kwarc.mmt.api.objects.RuleSet">RuleSet</a></span>
       </span>
       </h4>
       <p class="comment cmt">A BooleanLattice packages the simplification rules that yield normalization in a Boolean lattice</p>
+    </li><li name="info.kwarc.mmt.api.uom.BooleanTermProperty" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BooleanTermPropertyextendsTermProperty[Boolean]"></a>
+      <a id="BooleanTermProperty:BooleanTermProperty"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="BooleanTermProperty.html"><span class="name">BooleanTermProperty</span></a><span class="result"> extends <a href="../objects/TermProperty.html" class="extype" name="info.kwarc.mmt.api.objects.TermProperty">TermProperty</a>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">apply/unapply methods that encapsulate functionality for attaching a Boolean clientProperty to a Term
+</p>
     </li><li name="info.kwarc.mmt.api.uom.BoundedSemiLattice" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="BoundedSemiLatticeextendsMonoid"></a>
       <a id="BoundedSemiLattice:BoundedSemiLattice"></a>
@@ -151,7 +165,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="BreadthRule.html"><span class="name">BreadthRule</span></a><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.uom.Rule">Rule</a></span>
+        <a href="BreadthRule.html"><span class="name">BreadthRule</span></a><span class="result"> extends <a href="../objects/Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></span>
       </span>
       </h4>
       <p class="comment cmt">A BreadthRule looks at all arguments of an operator, but usually does not look inside them</p>
@@ -182,7 +196,7 @@
       </h4>
       <p class="comment cmt">A CRing packages the simplification rules that yield normalization in a commutative ring (as a sum of products).</p>
     </li><li name="info.kwarc.mmt.api.uom.Change" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="ChangeextendsObject"></a>
+      <a id="ChangeextendsAnyRef"></a>
       <a id="Change:Change"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -190,7 +204,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Change.html"><span class="name">Change</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Change.html"><span class="name">Change</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">The return type of a simplification rule</p>
@@ -234,7 +248,7 @@
       </h4>
       <p class="comment cmt">Complementation</p>
     </li><li name="info.kwarc.mmt.api.uom.ConstantScala" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="ConstantScalaextendsObject"></a>
+      <a id="ConstantScalaextendsAnyRef"></a>
       <a id="ConstantScala:ConstantScala"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -242,7 +256,7 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="ConstantScala.html"><span class="name">ConstantScala</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="ConstantScala.html"><span class="name">ConstantScala</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       
@@ -255,7 +269,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="DepthRule.html"><span class="name">DepthRule</span></a><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.uom.Rule">Rule</a></span>
+        <a href="DepthRule.html"><span class="name">DepthRule</span></a><span class="result"> extends <a href="../objects/Rule.html" class="extype" name="info.kwarc.mmt.api.objects.Rule">Rule</a></span>
       </span>
       </h4>
       <p class="comment cmt">A DepthRule looks one level deep into the structure of one of the arguments of an operator</p>
@@ -286,7 +300,7 @@
       </h4>
       <p class="comment cmt">Distributivity</p>
     </li><li name="info.kwarc.mmt.api.uom.DocumentScala" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="DocumentScalaextendsObject"></a>
+      <a id="DocumentScalaextendsAnyRef"></a>
       <a id="DocumentScala:DocumentScala"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -294,7 +308,7 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="DocumentScala.html"><span class="name">DocumentScala</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="DocumentScala.html"><span class="name">DocumentScala</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       
@@ -390,7 +404,7 @@
       </h4>
       <p class="comment cmt">a self-inverse function</p>
     </li><li name="info.kwarc.mmt.api.uom.Lambda" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="LambdaextendsObject"></a>
+      <a id="LambdaextendsAnyRef"></a>
       <a id="Lambda:Lambda"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -398,7 +412,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Lambda.html"><span class="name">Lambda</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Lambda.html"><span class="name">Lambda</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">beta and eta reduction</p>
@@ -411,7 +425,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="LocalChange.html"><span class="name">LocalChange</span></a><span class="params">(<span name="inside">inside: <span class="extype" name="scala.List">List</span>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>)</span><span class="result"> extends <a href="Change.html" class="extype" name="info.kwarc.mmt.api.uom.Change">Change</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="LocalChange.html"><span class="name">LocalChange</span></a><span class="params">(<span name="inside">inside: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>)</span><span class="result"> extends <a href="Change.html" class="extype" name="info.kwarc.mmt.api.uom.Change">Change</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">A LocalChange leaves the structure of a term unchanged, but changes its arguments</p>
@@ -480,32 +494,6 @@
       </span>
       </h4>
       <p class="comment cmt">A Ring packages the simplification rules that yield normalization in a ring (as a sum of products).</p>
-    </li><li name="info.kwarc.mmt.api.uom.Rule" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="RuleextendsObject"></a>
-      <a id="Rule:Rule"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">sealed abstract </span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="Rule.html"><span class="name">Rule</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">a type to unify BreadRule's and DepthRule's</p>
-    </li><li name="info.kwarc.mmt.api.uom.RuleSet" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="RuleSetextendsObject"></a>
-      <a id="RuleSet:RuleSet"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">abstract </span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="RuleSet.html"><span class="name">RuleSet</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">A RuleSet groups some Rule's.</p>
     </li><li name="info.kwarc.mmt.api.uom.Semigroup" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="SemigroupextendsRuleSet"></a>
       <a id="Semigroup:Semigroup"></a>
@@ -515,7 +503,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Semigroup.html"><span class="name">Semigroup</span></a><span class="result"> extends <a href="RuleSet.html" class="extype" name="info.kwarc.mmt.api.uom.RuleSet">RuleSet</a></span>
+        <a href="Semigroup.html"><span class="name">Semigroup</span></a><span class="result"> extends <a href="../objects/RuleSet.html" class="extype" name="info.kwarc.mmt.api.objects.RuleSet">RuleSet</a></span>
       </span>
       </h4>
       <p class="comment cmt">A Semigroup packages the simplification rules that yield normalization in a semigroup.</p>
@@ -546,7 +534,7 @@
       </h4>
       <p class="comment cmt">Signs in a product</p>
     </li><li name="info.kwarc.mmt.api.uom.TheoryScala" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="TheoryScalaextendsObject"></a>
+      <a id="TheoryScalaextendsAnyRef"></a>
       <a id="TheoryScala:TheoryScala"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -554,25 +542,12 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="TheoryScala.html"><span class="name">TheoryScala</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.api.uom.TheoryScalaAux" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="TheoryScalaAuxextendsObject"></a>
-      <a id="TheoryScalaAux:TheoryScalaAux"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">trait</span>
-      </span>
-      <span class="symbol">
-        <a href="TheoryScalaAux.html"><span class="name">TheoryScalaAux</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="TheoryScala.html"><span class="name">TheoryScala</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       
     </li><li name="info.kwarc.mmt.api.uom.UOM" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="UOMextendsStatelessTraverser"></a>
+      <a id="UOMextendsTraverser[info.kwarc.mmt.api.uom.UOMState]withLogger"></a>
       <a id="UOM:UOM"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -580,7 +555,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="UOM.html"><span class="name">UOM</span></a><span class="result"> extends <a href="../objects/StatelessTraverser.html" class="extype" name="info.kwarc.mmt.api.objects.StatelessTraverser">StatelessTraverser</a></span>
+        <a href="UOM.html"><span class="name">UOM</span></a><span class="result"> extends <a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a>[<a href="UOMState.html" class="extype" name="info.kwarc.mmt.api.uom.UOMState">UOMState</a>] with <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
       </span>
       </h4>
       <p class="comment cmt">A UOM applies DepthRule's and BreadthRule's exhaustively to simplify a Term</p>
@@ -597,8 +572,21 @@
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.uom.UOMState" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="UOMStateextendsAnyRef"></a>
+      <a id="UOMState:UOMState"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="UOMState.html"><span class="name">UOMState</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.uom.UnaryInverse" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="UnaryInverseextendsObject"></a>
+      <a id="UnaryInverseextendsAnyRef"></a>
       <a id="UnaryInverse:UnaryInverse"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -606,7 +594,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="UnaryInverse.html"><span class="name">UnaryInverse</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="UnaryInverse.html"><span class="name">UnaryInverse</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">A class that defines several rules for a unary inverse operator in an algebraic theory</p>
@@ -632,7 +620,7 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="ViewScala.html"><span class="name">ViewScala</span></a><span class="result"> extends <a href="RuleSet.html" class="extype" name="info.kwarc.mmt.api.uom.RuleSet">RuleSet</a> with <a href="TheoryScala.html" class="extype" name="info.kwarc.mmt.api.uom.TheoryScala">TheoryScala</a></span>
+        <a href="ViewScala.html"><span class="name">ViewScala</span></a><span class="result"> extends <a href="../objects/RuleSet.html" class="extype" name="info.kwarc.mmt.api.objects.RuleSet">RuleSet</a> with <a href="TheoryScala.html" class="extype" name="info.kwarc.mmt.api.uom.TheoryScala">TheoryScala</a></span>
       </span>
       </h4>
       
@@ -652,11 +640,10 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="Changed$.html"><span class="name">Changed</span></a>
+        <a href="Changed$.html"><span class="name">Changed</span></a><span class="result"> extends <a href="BooleanTermProperty.html" class="extype" name="info.kwarc.mmt.api.uom.BooleanTermProperty">BooleanTermProperty</a></span>
       </span>
       </h4>
-      <p class="comment cmt">apply/unapply methods that encapsulate functionality for attaching a Boolean clientProperty to a Term
-UOM uses it to remember whether a Term underwent a GlobalChange during simplification
+      <p class="comment cmt">UOM uses this to remember whether a Term underwent a GlobalChange during simplification
 this information is passed upwards during recursive simplification
 </p>
     </li><li name="info.kwarc.mmt.api.uom.ConstantScala" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
@@ -695,6 +682,19 @@ this information is passed upwards during recursive simplification
       </span>
       <span class="symbol">
         <a href="Implementation$.html"><span class="name">Implementation</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.uom.Integrator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Integrator"></a>
+      <a id="Integrator:Integrator"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Integrator$.html"><span class="name">Integrator</span></a>
       </span>
       </h4>
       
@@ -737,34 +737,34 @@ this information is passed upwards during recursive simplification
       </span>
       </h4>
       
-    </li><li name="info.kwarc.mmt.api.uom.Simplified" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Simplified"></a>
-      <a id="Simplified:Simplified"></a>
+    </li><li name="info.kwarc.mmt.api.uom.Simple" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Simple"></a>
+      <a id="Simple:Simple"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="Simplified$.html"><span class="name">Simplified</span></a>
+        <a href="Simple$.html"><span class="name">Simple</span></a><span class="result"> extends <a href="BooleanTermProperty.html" class="extype" name="info.kwarc.mmt.api.uom.BooleanTermProperty">BooleanTermProperty</a></span>
       </span>
       </h4>
-      <p class="comment cmt">apply/unapply methods that encapsulate functionality for attaching a Boolean clientProperty to a Term
-UOM uses it to remember that a Term has been simplified already to avoid recursing into it again
+      <p class="comment cmt">UOM uses this to remember that a Term has been simplified already to avoid recursing into it again
 </p>
-    </li><li name="info.kwarc.mmt.api.uom.Synthesizer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Synthesizer"></a>
-      <a id="Synthesizer:Synthesizer"></a>
+    </li><li name="info.kwarc.mmt.api.uom.SimplificationResult" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SimplificationResult"></a>
+      <a id="SimplificationResult:SimplificationResult"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="Synthesizer$.html"><span class="name">Synthesizer</span></a>
+        <a href="SimplificationResult$.html"><span class="name">SimplificationResult</span></a><span class="result"> extends <a href="../objects/TermProperty.html" class="extype" name="info.kwarc.mmt.api.objects.TermProperty">TermProperty</a>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">UOM uses this to store the result of simplifying a Term in the original term so that it can be reused
+</p>
     </li><li name="info.kwarc.mmt.api.uom.UnitConvImplems" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="UnitConvImplems"></a>
       <a id="UnitConvImplems:UnitConvImplems"></a>

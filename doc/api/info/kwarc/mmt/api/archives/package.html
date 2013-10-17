@@ -64,7 +64,7 @@
         <div id="types" class="types members">
               <h3>Type Members</h3>
               <ol><li name="info.kwarc.mmt.api.archives.Archive" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ArchiveextendsWritableArchivewithCompilableArchivewithValidatedArchivewithIndexedArchivewithScalaArchivewithZipArchive"></a>
+      <a id="ArchiveextendsWritableArchivewithValidatedArchivewithScalaArchivewithZipArchive"></a>
       <a id="Archive:Archive"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -72,20 +72,73 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Archive.html"><span class="name">Archive</span></a><span class="result"> extends <a href="WritableArchive.html" class="extype" name="info.kwarc.mmt.api.archives.WritableArchive">WritableArchive</a> with <a href="CompilableArchive.html" class="extype" name="info.kwarc.mmt.api.archives.CompilableArchive">CompilableArchive</a> with <a href="ValidatedArchive.html" class="extype" name="info.kwarc.mmt.api.archives.ValidatedArchive">ValidatedArchive</a> with <a href="IndexedArchive.html" class="extype" name="info.kwarc.mmt.api.archives.IndexedArchive">IndexedArchive</a> with <a href="ScalaArchive.html" class="extype" name="info.kwarc.mmt.api.archives.ScalaArchive">ScalaArchive</a> with <a href="ZipArchive.html" class="extype" name="info.kwarc.mmt.api.archives.ZipArchive">ZipArchive</a></span>
+        <a href="Archive.html"><span class="name">Archive</span></a><span class="result"> extends <a href="WritableArchive.html" class="extype" name="info.kwarc.mmt.api.archives.WritableArchive">WritableArchive</a> with <a href="ValidatedArchive.html" class="extype" name="info.kwarc.mmt.api.archives.ValidatedArchive">ValidatedArchive</a> with <a href="ScalaArchive.html" class="extype" name="info.kwarc.mmt.api.archives.ScalaArchive">ScalaArchive</a> with <a href="ZipArchive.html" class="extype" name="info.kwarc.mmt.api.archives.ZipArchive">ZipArchive</a></span>
       </span>
       </h4>
       <p class="comment cmt">archive management</p>
-    </li><li name="info.kwarc.mmt.api.archives.CompilableArchive" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="CompilableArchiveextendsWritableArchive"></a>
-      <a id="CompilableArchive:CompilableArchive"></a>
+    </li><li name="info.kwarc.mmt.api.archives.BuildResult" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="BuildResultextendsAnyRef"></a>
+      <a id="BuildResult:BuildResult"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="BuildResult.html"><span class="name">BuildResult</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">auxiliary type to represent the result of building a file/directory</p>
+    </li><li name="info.kwarc.mmt.api.archives.BuildTarget" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="BuildTargetextendsExtension"></a>
+      <a id="BuildTarget:BuildTarget"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="BuildTarget.html"><span class="name">BuildTarget</span></a><span class="result"> extends <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A BuildTarget provides build/update/clean methods that generate one or more dimensions in an <a href="Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a>
+ from an input dimension.</p>
+    </li><li name="info.kwarc.mmt.api.archives.BuildTargetModifier" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="BuildTargetModifierextendsAnyRef"></a>
+      <a id="BuildTargetModifier:BuildTargetModifier"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="BuildTargetModifier.html"><span class="name">BuildTargetModifier</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.archives.BuiltDir" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BuiltDirextendsBuildResultwithProductwithSerializable"></a>
+      <a id="BuiltDir:BuiltDir"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">trait</span>
+        <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="CompilableArchive.html"><span class="name">CompilableArchive</span></a><span class="result"> extends <a href="WritableArchive.html" class="extype" name="info.kwarc.mmt.api.archives.WritableArchive">WritableArchive</a></span>
+        <a href="BuiltDir.html"><span class="name">BuiltDir</span></a><span class="params">(<span name="inPath">inPath: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="outFile">outFile: <a href="../utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result"> extends <a href="BuildResult.html" class="extype" name="info.kwarc.mmt.api.archives.BuildResult">BuildResult</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.archives.BuiltFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BuiltFileextendsBuildResultwithProductwithSerializable"></a>
+      <a id="BuiltFile:BuiltFile"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="BuiltFile.html"><span class="name">BuiltFile</span></a><span class="params">(<span name="inPath">inPath: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="outFile">outFile: <a href="../utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result"> extends <a href="BuildResult.html" class="extype" name="info.kwarc.mmt.api.archives.BuildResult">BuildResult</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -102,6 +155,19 @@
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.archives.ContentExporter" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ContentExporterextendsBuildTargetwithGenericTraversingBuildTarget"></a>
+      <a id="ContentExporter:ContentExporter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ContentExporter.html"><span class="name">ContentExporter</span></a><span class="result"> extends <a href="BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a> with <a href="GenericTraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.GenericTraversingBuildTarget">GenericTraversingBuildTarget</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A BuildTarget that traverses the content dimension and applies continuation functions to each module.</p>
     </li><li name="info.kwarc.mmt.api.archives.Current" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="CurrentextendsProductwithSerializable"></a>
       <a id="Current:Current"></a>
@@ -111,23 +177,114 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="Current.html"><span class="name">Current</span></a><span class="params">(<span name="file">file: <a href="../utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>, <span name="path">path: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Current.html"><span class="name">Current</span></a><span class="params">(<span name="file">file: <a href="../utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>, <span name="path">path: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">convenience class for traversing an Archive</p>
-    </li><li name="info.kwarc.mmt.api.archives.IndexedArchive" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="IndexedArchiveextendsWritableArchive"></a>
-      <a id="IndexedArchive:IndexedArchive"></a>
+    </li><li name="info.kwarc.mmt.api.archives.ErrorManager" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ErrorManagerextendsAnyRef"></a>
+      <a id="ErrorManager:ErrorManager"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ErrorManager.html"><span class="name">ErrorManager</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.archives.FoundedExporter" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="FoundedExporterextendsContentExporter"></a>
+      <a id="FoundedExporter:FoundedExporter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="FoundedExporter.html"><span class="name">FoundedExporter</span></a><span class="result"> extends <a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A ContentExporter that exports relative to a bifoundation</p>
+    </li><li name="info.kwarc.mmt.api.archives.GenericTraversingBuildTarget" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="GenericTraversingBuildTargetextendsBuildTarget"></a>
+      <a id="GenericTraversingBuildTarget:GenericTraversingBuildTarget"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="IndexedArchive.html"><span class="name">IndexedArchive</span></a><span class="result"> extends <a href="WritableArchive.html" class="extype" name="info.kwarc.mmt.api.archives.WritableArchive">WritableArchive</a></span>
+        <a href="GenericTraversingBuildTarget.html"><span class="name">GenericTraversingBuildTarget</span></a><span class="result"> extends <a href="BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a></span>
       </span>
       </h4>
-      <p class="comment cmt">This trait adds indexing operations to Archive's</p>
+      <p class="comment cmt">This trait provides common functionality for BuildTargets that traverse all files in the input dimension.</p>
+    </li><li name="info.kwarc.mmt.api.archives.GraphViz" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GraphVizextendsTraversingBuildTarget"></a>
+      <a id="GraphViz:GraphViz"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="GraphViz.html"><span class="name">GraphViz</span></a><span class="result"> extends <a href="TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.archives.HTMLExporter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="HTMLExporterextendsContentExporter"></a>
+      <a id="HTMLExporter:HTMLExporter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="HTMLExporter.html"><span class="name">HTMLExporter</span></a><span class="result"> extends <a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.archives.IndentedExporter" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="IndentedExporterextendsContentExporter"></a>
+      <a id="IndentedExporter:IndentedExporter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="IndentedExporter.html"><span class="name">IndentedExporter</span></a><span class="result"> extends <a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.archives.Index" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="IndexextendsBuildTarget"></a>
+      <a id="Index:Index"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Index.html"><span class="name">Index</span></a><span class="result"> extends <a href="BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">the build target for indexing an Archive</p>
+    </li><li name="info.kwarc.mmt.api.archives.LatexExporter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LatexExporterextendsContentExporterwithIndentedExporter"></a>
+      <a id="LatexExporter:LatexExporter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="LatexExporter.html"><span class="name">LatexExporter</span></a><span class="result"> extends <a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a> with <a href="IndentedExporter.html" class="extype" name="info.kwarc.mmt.api.archives.IndentedExporter">IndentedExporter</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">an unfinished exporter that generates latex presentations of modules</p>
     </li><li name="info.kwarc.mmt.api.archives.MMTArchive" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="MMTArchiveextendsWritableArchive"></a>
       <a id="MMTArchive:MMTArchive"></a>
@@ -141,8 +298,21 @@
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.archives.MWSHarvestExporter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MWSHarvestExporterextendsContentExporter"></a>
+      <a id="MWSHarvestExporter:MWSHarvestExporter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="MWSHarvestExporter.html"><span class="name">MWSHarvestExporter</span></a><span class="result"> extends <a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.archives.Modification" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="ModificationextendsObject"></a>
+      <a id="ModificationextendsAnyRef"></a>
       <a id="Modification:Modification"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -150,7 +320,20 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Modification.html"><span class="name">Modification</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Modification.html"><span class="name">Modification</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.archives.PythonExporter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PythonExporterextendsContentExporterwithIndentedExporter"></a>
+      <a id="PythonExporter:PythonExporter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="PythonExporter.html"><span class="name">PythonExporter</span></a><span class="result"> extends <a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a> with <a href="IndentedExporter.html" class="extype" name="info.kwarc.mmt.api.archives.IndentedExporter">IndentedExporter</a></span>
       </span>
       </h4>
       
@@ -193,8 +376,21 @@
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.archives.TimestampManager" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TimestampManagerextendsAnyRef"></a>
+      <a id="TimestampManager:TimestampManager"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TimestampManager.html"><span class="name">TimestampManager</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.archives.Timestamps" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="TimestampsextendsObject"></a>
+      <a id="TimestampsextendsAnyRef"></a>
       <a id="Timestamps:Timestamps"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -202,7 +398,20 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Timestamps.html"><span class="name">Timestamps</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Timestamps.html"><span class="name">Timestamps</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="TraversingBuildTargetextendsBuildTargetwithGenericTraversingBuildTarget"></a>
+      <a id="TraversingBuildTarget:TraversingBuildTarget"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TraversingBuildTarget.html"><span class="name">TraversingBuildTarget</span></a><span class="result"> extends <a href="BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a> with <a href="GenericTraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.GenericTraversingBuildTarget">GenericTraversingBuildTarget</a></span>
       </span>
       </h4>
       
@@ -278,6 +487,32 @@
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.archives.Build" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Build"></a>
+      <a id="Build:Build"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Build$.html"><span class="name">Build</span></a><span class="result"> extends <a href="BuildTargetModifier.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTargetModifier">BuildTargetModifier</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.archives.Clean" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Clean"></a>
+      <a id="Clean:Clean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Clean$.html"><span class="name">Clean</span></a><span class="result"> extends <a href="BuildTargetModifier.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTargetModifier">BuildTargetModifier</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.archives.Deleted" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Deleted"></a>
       <a id="Deleted:Deleted"></a>
@@ -327,6 +562,19 @@
       </span>
       <span class="symbol">
         <a href="Unmodified$.html"><span class="name">Unmodified</span></a><span class="result"> extends <a href="Modification.html" class="extype" name="info.kwarc.mmt.api.archives.Modification">Modification</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.archives.Update" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Update"></a>
+      <a id="Update:Update"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Update$.html"><span class="name">Update</span></a><span class="result"> extends <a href="BuildTargetModifier.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTargetModifier">BuildTargetModifier</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       

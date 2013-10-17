@@ -40,14 +40,14 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">LocalParams</span><span class="params">(<span name="ids">ids: <span class="extype" name="scala.List">List</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>)]</span>, <span name="pos">pos: <a href="../objects/Position.html" class="extype" name="info.kwarc.mmt.api.objects.Position">Position</a></span>, <span name="inObject">inObject: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="iPrec">iPrec: <a href="Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a></span>, <span name="context">context: <span class="extype" name="scala.List">List</span>[<a href="VarData.html" class="extype" name="info.kwarc.mmt.api.presentation.VarData">VarData</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">LocalParams</span><span class="params">(<span name="ids">ids: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>)]</span>, <span name="owner">owner: <span class="extype" name="scala.Option">Option</span>[<a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a>]</span>, <span name="pos">pos: <a href="../objects/Position.html" class="extype" name="info.kwarc.mmt.api.objects.Position">Position</a></span>, <span name="source">source: <span class="extype" name="scala.Option">Option</span>[<a href="../parser/SourceRef.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRef">SourceRef</a>]</span>, <span name="inObject">inObject: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="bracketInfo">bracketInfo: <span class="extype" name="scala.Option">Option</span>[<a href="BracketInfo.html" class="extype" name="info.kwarc.mmt.api.presentation.BracketInfo">BracketInfo</a>]</span>, <span name="context">context: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="VarData.html" class="extype" name="info.kwarc.mmt.api.presentation.VarData">VarData</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>This class collects the parameters that vary locally during one presentation task.</p></div><dl class="paramcmts block"><dt class="param">pos</dt><dd class="cmt"><p>the current position within the presented expressions</p></dd><dt class="param">inObject</dt><dd class="cmt"><p>a flag to indicate whether the presented expression is a declaration or an object
-</p></dd><dt class="param">iPrec</dt><dd class="cmt"><p>the input precedence possible provided by the parent level (used for bracket generation)</p></dd><dt class="param">context</dt><dd class="cmt"><p>some information about how to present the free variables that were bound on higher levels</p></dd></dl><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>This class collects the parameters that vary locally during one presentation task.</p></div><dl class="paramcmts block"><dt class="param">ids</dt><dd class="cmt"><p>generated ids</p></dd><dt class="param">owner</dt><dd class="cmt"><p>the CPath governing the current subobject (if any)</p></dd><dt class="param">pos</dt><dd class="cmt"><p>the current position within the current object</p></dd><dt class="param">source</dt><dd class="cmt"><p>the source location (if any)</p></dd><dt class="param">inObject</dt><dd class="cmt"><p>a flag to indicate whether the presented expression is a declaration or an object</p></dd><dt class="param">bracketInfo</dt><dd class="cmt"><p>information to help decide whether to place brackets around the current subobject</p></dd><dt class="param">context</dt><dd class="cmt"><p>some information about how to present the free variables that were bound on higher levels
+</p></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -86,7 +86,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.presentation.LocalParams#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(ids:List[(String,String)],pos:info.kwarc.mmt.api.objects.Position,inObject:Boolean,iPrec:info.kwarc.mmt.api.presentation.Precedence,context:List[info.kwarc.mmt.api.presentation.VarData]):info.kwarc.mmt.api.presentation.LocalParams"></a>
+      <a id="&lt;init&gt;(ids:List[(String,String)],owner:Option[info.kwarc.mmt.api.CPath],pos:info.kwarc.mmt.api.objects.Position,source:Option[info.kwarc.mmt.api.parser.SourceRef],inObject:Boolean,bracketInfo:Option[info.kwarc.mmt.api.presentation.BracketInfo],context:List[info.kwarc.mmt.api.presentation.VarData]):info.kwarc.mmt.api.presentation.LocalParams"></a>
       <a id="&lt;init&gt;:LocalParams"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -94,11 +94,11 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">LocalParams</span><span class="params">(<span name="ids">ids: <span class="extype" name="scala.List">List</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>)]</span>, <span name="pos">pos: <a href="../objects/Position.html" class="extype" name="info.kwarc.mmt.api.objects.Position">Position</a></span>, <span name="inObject">inObject: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="iPrec">iPrec: <a href="Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a></span>, <span name="context">context: <span class="extype" name="scala.List">List</span>[<a href="VarData.html" class="extype" name="info.kwarc.mmt.api.presentation.VarData">VarData</a>]</span>)</span>
+        <span class="name">LocalParams</span><span class="params">(<span name="ids">ids: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>)]</span>, <span name="owner">owner: <span class="extype" name="scala.Option">Option</span>[<a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a>]</span>, <span name="pos">pos: <a href="../objects/Position.html" class="extype" name="info.kwarc.mmt.api.objects.Position">Position</a></span>, <span name="source">source: <span class="extype" name="scala.Option">Option</span>[<a href="../parser/SourceRef.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRef">SourceRef</a>]</span>, <span name="inObject">inObject: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="bracketInfo">bracketInfo: <span class="extype" name="scala.Option">Option</span>[<a href="BracketInfo.html" class="extype" name="info.kwarc.mmt.api.presentation.BracketInfo">BracketInfo</a>]</span>, <span name="context">context: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="VarData.html" class="extype" name="info.kwarc.mmt.api.presentation.VarData">VarData</a>]</span>)</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">pos</dt><dd class="cmt"><p>the current position within the presented expressions</p></dd><dt class="param">inObject</dt><dd class="cmt"><p>a flag to indicate whether the presented expression is a declaration or an object
-</p></dd><dt class="param">iPrec</dt><dd class="cmt"><p>the input precedence possible provided by the parent level (used for bracket generation)</p></dd><dt class="param">context</dt><dd class="cmt"><p>some information about how to present the free variables that were bound on higher levels</p></dd></dl></div>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">ids</dt><dd class="cmt"><p>generated ids</p></dd><dt class="param">owner</dt><dd class="cmt"><p>the CPath governing the current subobject (if any)</p></dd><dt class="param">pos</dt><dd class="cmt"><p>the current position within the current object</p></dd><dt class="param">source</dt><dd class="cmt"><p>the source location (if any)</p></dd><dt class="param">inObject</dt><dd class="cmt"><p>a flag to indicate whether the presented expression is a declaration or an object</p></dd><dt class="param">bracketInfo</dt><dd class="cmt"><p>information to help decide whether to place brackets around the current subobject</p></dd><dt class="param">context</dt><dd class="cmt"><p>some information about how to present the free variables that were bound on higher levels
+</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -117,7 +117,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -156,7 +156,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -199,6 +199,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.presentation.LocalParams#bracketInfo" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="bracketInfo:Option[info.kwarc.mmt.api.presentation.BracketInfo]"></a>
+      <a id="bracketInfo:Option[BracketInfo]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">bracketInfo</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="BracketInfo.html" class="extype" name="info.kwarc.mmt.api.presentation.BracketInfo">BracketInfo</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">information to help decide whether to place brackets around the current subobject</p>
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>
@@ -208,10 +221,10 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -224,10 +237,11 @@
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">context</span><span class="result">: <span class="extype" name="scala.List">List</span>[<a href="VarData.html" class="extype" name="info.kwarc.mmt.api.presentation.VarData">VarData</a>]</span>
+        <span class="name">context</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="VarData.html" class="extype" name="info.kwarc.mmt.api.presentation.VarData">VarData</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">some information about how to present the free variables that were bound on higher levels</p>
+      <p class="shortcomment cmt">some information about how to present the free variables that were bound on higher levels
+</p>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -237,7 +251,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -253,7 +267,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -270,19 +284,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.presentation.LocalParams#iPrec" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="iPrec:info.kwarc.mmt.api.presentation.Precedence"></a>
-      <a id="iPrec:Precedence"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">iPrec</span><span class="result">: <a href="Precedence.html" class="extype" name="info.kwarc.mmt.api.presentation.Precedence">Precedence</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the input precedence possible provided by the parent level (used for bracket generation)</p>
     </li><li name="info.kwarc.mmt.api.presentation.LocalParams#ids" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ids:List[(String,String)]"></a>
       <a id="ids:List[(String,String)]"></a>
@@ -292,10 +293,10 @@
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">ids</span><span class="result">: <span class="extype" name="scala.List">List</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>)]</span>
+        <span class="name">ids</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>)]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">generated ids</p>
     </li><li name="info.kwarc.mmt.api.presentation.LocalParams#inObject" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="inObject:Boolean"></a>
       <a id="inObject:Boolean"></a>
@@ -308,8 +309,7 @@
         <span class="name">inObject</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">a flag to indicate whether the presented expression is a declaration or an object
-</p>
+      <p class="shortcomment cmt">a flag to indicate whether the presented expression is a declaration or an object</p>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -332,7 +332,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -362,6 +362,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.presentation.LocalParams#owner" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="owner:Option[info.kwarc.mmt.api.CPath]"></a>
+      <a id="owner:Option[CPath]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">owner</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the CPath governing the current subobject (if any)</p>
     </li><li name="info.kwarc.mmt.api.presentation.LocalParams#pos" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="pos:info.kwarc.mmt.api.objects.Position"></a>
       <a id="pos:Position"></a>
@@ -374,7 +387,20 @@
         <span class="name">pos</span><span class="result">: <a href="../objects/Position.html" class="extype" name="info.kwarc.mmt.api.objects.Position">Position</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the current position within the presented expressions</p>
+      <p class="shortcomment cmt">the current position within the current object</p>
+    </li><li name="info.kwarc.mmt.api.presentation.LocalParams#source" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="source:Option[info.kwarc.mmt.api.parser.SourceRef]"></a>
+      <a id="source:Option[SourceRef]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">source</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../parser/SourceRef.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRef">SourceRef</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the source location (if any)</p>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -454,7 +480,7 @@
             </div><div class="parent" name="scala.Equals">
               <h3>Inherited from <span class="extype" name="scala.Equals">Equals</span></h3>
             </div><div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

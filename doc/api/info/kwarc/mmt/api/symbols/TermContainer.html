@@ -40,7 +40,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">TermContainer</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">TermContainer</span><span class="result"> extends <a href="../ComponentContainer.html" class="extype" name="info.kwarc.mmt.api.ComponentContainer">ComponentContainer</a></span>
       </span>
       </h4>
       
@@ -50,7 +50,7 @@ It also stores additional status information.</p><p>The representations are read
 Setting a representation marks the higher representations as dirty.
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../ComponentContainer.html" class="extype" name="info.kwarc.mmt.api.ComponentContainer">ComponentContainer</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -68,7 +68,7 @@ Setting a representation marks the higher representations as dirty.
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.symbols.TermContainer"><span>TermContainer</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.symbols.TermContainer"><span>TermContainer</span></li><li class="in" name="info.kwarc.mmt.api.ComponentContainer"><span>ComponentContainer</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -119,7 +119,7 @@ Setting a representation marks the higher representations as dirty.
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -158,7 +158,7 @@ Setting a representation marks the higher representations as dirty.
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -200,6 +200,19 @@ Setting a representation marks the higher representations as dirty.
         <span title="gt4s: analyzed_$eq" class="name">analyzed_=</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
+      
+    </li><li name="info.kwarc.mmt.api.symbols.TermContainer#analyzed_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="analyzed_=(t:Option[info.kwarc.mmt.api.objects.Term]):Unit"></a>
+      <a id="analyzed_=(Option[Term]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: analyzed_$eq" class="name">analyzed_=</span><span class="params">(<span name="t">t: <span class="extype" name="scala.Option">Option</span>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
       <p class="shortcomment cmt">setter for the analyzed representation</p>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
@@ -223,13 +236,39 @@ Setting a representation marks the higher representations as dirty.
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.symbols.TermContainer#delete" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="delete:Unit"></a>
+      <a id="delete:Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">delete</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">delete this component</p><div class="fullcomment"><div class="comment cmt"><p>delete this component</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.symbols.TermContainer">TermContainer</a> → <a href="../ComponentContainer.html" class="extype" name="info.kwarc.mmt.api.ComponentContainer">ComponentContainer</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.symbols.TermContainer#dependsOn" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="dependsOn:scala.collection.mutable.HashSet[info.kwarc.mmt.api.CPath]"></a>
+      <a id="dependsOn:HashSet[CPath]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">dependsOn</span><span class="result">: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[<a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">stores the set of components that analysis depended on</p>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -239,7 +278,7 @@ Setting a representation marks the higher representations as dirty.
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -268,7 +307,7 @@ Setting a representation marks the higher representations as dirty.
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -311,6 +350,32 @@ Setting a representation marks the higher representations as dirty.
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.symbols.TermContainer#isAnalyzedDirty" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="isAnalyzedDirty:Boolean"></a>
+      <a id="isAnalyzedDirty:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isAnalyzedDirty</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">true if the term must be (re)analyzed</p>
+    </li><li name="info.kwarc.mmt.api.symbols.TermContainer#isDefined" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isDefined:Boolean"></a>
+      <a id="isDefined:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isDefined</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">true if any dimension is present, i.</p><div class="fullcomment"><div class="comment cmt"><p>true if any dimension is present, i.e., if the component is present</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.symbols.TermContainer">TermContainer</a> → <a href="../ComponentContainer.html" class="extype" name="info.kwarc.mmt.api.ComponentContainer">ComponentContainer</a></dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -324,6 +389,45 @@ Setting a representation marks the higher representations as dirty.
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.symbols.TermContainer#isParsedDirty" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="isParsedDirty:Boolean"></a>
+      <a id="isParsedDirty:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isParsedDirty</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">true if the term must still be (re)parsed</p>
+    </li><li name="info.kwarc.mmt.api.symbols.TermContainer#lastChangeAnalyzed" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="lastChangeAnalyzed:Long"></a>
+      <a id="lastChangeAnalyzed:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">lastChangeAnalyzed</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">time of the last change</p>
+    </li><li name="info.kwarc.mmt.api.symbols.TermContainer#lastChangeParsed" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="lastChangeParsed:Long"></a>
+      <a id="lastChangeParsed:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">lastChangeParsed</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">time of the last change</p>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -333,7 +437,7 @@ Setting a representation marks the higher representations as dirty.
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -388,6 +492,19 @@ Setting a representation marks the higher representations as dirty.
         <span title="gt4s: parsed_$eq" class="name">parsed_=</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
+      
+    </li><li name="info.kwarc.mmt.api.symbols.TermContainer#parsed_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="parsed_=(t:Option[info.kwarc.mmt.api.objects.Term]):Unit"></a>
+      <a id="parsed_=(Option[Term]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: parsed_$eq" class="name">parsed_=</span><span class="params">(<span name="t">t: <span class="extype" name="scala.Option">Option</span>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
       <p class="shortcomment cmt">setter for the parsed representation without further analysis</p>
     </li><li name="info.kwarc.mmt.api.symbols.TermContainer#read" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="read:Option[String]"></a>
@@ -414,7 +531,33 @@ Setting a representation marks the higher representations as dirty.
         <span title="gt4s: read_$eq" class="name">read_=</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
+      
+    </li><li name="info.kwarc.mmt.api.symbols.TermContainer#read_=" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="read_=(s:Option[String]):Unit"></a>
+      <a id="read_=(Option[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: read_$eq" class="name">read_=</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
       <p class="shortcomment cmt">setter for the unparsed string representation</p>
+    </li><li name="info.kwarc.mmt.api.symbols.TermContainer#setAnalyzedDirty" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="setAnalyzedDirty:Unit"></a>
+      <a id="setAnalyzedDirty:Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">setAnalyzedDirty</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">marks this term for reanalyzation</p>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -428,7 +571,7 @@ Setting a representation marks the higher representations as dirty.
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.symbols.TermContainer#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
       <a id="toString():String"></a>
       <h4 class="signature">
@@ -440,7 +583,24 @@ Setting a representation marks the higher representations as dirty.
         <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.symbols.TermContainer">TermContainer</a> → AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.symbols.TermContainer#update" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="update(tc:info.kwarc.mmt.api.ComponentContainer):Unit"></a>
+      <a id="update(ComponentContainer):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">update</span><span class="params">(<span name="tc">tc: <a href="../ComponentContainer.html" class="extype" name="info.kwarc.mmt.api.ComponentContainer">ComponentContainer</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">copies over the components of another TermContainer
+ dependent dimensions that are not part of tc become dirty
+</p><div class="fullcomment"><div class="comment cmt"><p>copies over the components of another TermContainer
+ dependent dimensions that are not part of tc become dirty
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.symbols.TermContainer">TermContainer</a> → <a href="../ComponentContainer.html" class="extype" name="info.kwarc.mmt.api.ComponentContainer">ComponentContainer</a></dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -498,8 +658,10 @@ Setting a representation marks the higher representations as dirty.
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+        <div class="parent" name="info.kwarc.mmt.api.ComponentContainer">
+              <h3>Inherited from <a href="../ComponentContainer.html" class="extype" name="info.kwarc.mmt.api.ComponentContainer">ComponentContainer</a></h3>
+            </div><div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

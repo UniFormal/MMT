@@ -40,13 +40,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">BackendPane</span><span class="result"> extends <span class="extype" name="javax.swing.JTextArea">JTextArea</span></span>
+        <span class="name">BackendPane</span><span class="result"> extends <span class="extype" name="javax.swing.JScrollPane">JScrollPane</span></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="javax.swing.JTextArea">JTextArea</span>, <span class="extype" name="javax.swing.text.JTextComponent">JTextComponent</span>, <span class="extype" name="javax.accessibility.Accessible">Accessible</span>, <span class="extype" name="javax.swing.Scrollable">Scrollable</span>, <span class="extype" name="javax.swing.JComponent">JComponent</span>, <span class="extype" name="javax.swing.TransferHandler.HasGetTransferHandler">HasGetTransferHandler</span>, <span class="extype" name="java.awt.Container">Container</span>, <span class="extype" name="java.awt.Component">Component</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="java.awt.MenuContainer">MenuContainer</span>, <span class="extype" name="java.awt.image.ImageObserver">ImageObserver</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><span class="extype" name="javax.swing.JScrollPane">JScrollPane</span>, <span class="extype" name="javax.accessibility.Accessible">Accessible</span>, <span class="extype" name="javax.swing.ScrollPaneConstants">ScrollPaneConstants</span>, <span class="extype" name="javax.swing.JComponent">JComponent</span>, <span class="extype" name="javax.swing.TransferHandler.HasGetTransferHandler">HasGetTransferHandler</span>, <span class="extype" name="java.awt.Container">Container</span>, <span class="extype" name="java.awt.Component">Component</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="java.awt.MenuContainer">MenuContainer</span>, <span class="extype" name="java.awt.image.ImageObserver">ImageObserver</span>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -64,7 +64,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.gui.BackendPane"><span>BackendPane</span></li><li class="in" name="javax.swing.JTextArea"><span>JTextArea</span></li><li class="in" name="javax.swing.text.JTextComponent"><span>JTextComponent</span></li><li class="in" name="javax.accessibility.Accessible"><span>Accessible</span></li><li class="in" name="javax.swing.Scrollable"><span>Scrollable</span></li><li class="in" name="javax.swing.JComponent"><span>JComponent</span></li><li class="in" name="javax.swing.TransferHandler.HasGetTransferHandler"><span>HasGetTransferHandler</span></li><li class="in" name="java.awt.Container"><span>Container</span></li><li class="in" name="java.awt.Component"><span>Component</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="java.awt.MenuContainer"><span>MenuContainer</span></li><li class="in" name="java.awt.image.ImageObserver"><span>ImageObserver</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.gui.BackendPane"><span>BackendPane</span></li><li class="in" name="javax.swing.JScrollPane"><span>JScrollPane</span></li><li class="in" name="javax.accessibility.Accessible"><span>Accessible</span></li><li class="in" name="javax.swing.ScrollPaneConstants"><span>ScrollPaneConstants</span></li><li class="in" name="javax.swing.JComponent"><span>JComponent</span></li><li class="in" name="javax.swing.TransferHandler.HasGetTransferHandler"><span>HasGetTransferHandler</span></li><li class="in" name="java.awt.Container"><span>Container</span></li><li class="in" name="java.awt.Component"><span>Component</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="java.awt.MenuContainer"><span>MenuContainer</span></li><li class="in" name="java.awt.image.ImageObserver"><span>ImageObserver</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -141,32 +141,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.JTextArea.AccessibleJTextArea" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="AccessibleJTextAreaextendsJTextComponent.this.AccessibleJTextComponent"></a>
-      <a id="AccessibleJTextArea:AccessibleJTextArea"></a>
+    </li><li name="javax.swing.JScrollPane.AccessibleJScrollPane" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="AccessibleJScrollPaneextendsJComponent.this.AccessibleJComponentwithChangeListenerwithPropertyChangeListener"></a>
+      <a id="AccessibleJScrollPane:AccessibleJScrollPane"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">AccessibleJTextArea</span><span class="result"> extends <span class="extype" name="javax.swing.text.JTextComponent.AccessibleJTextComponent">AccessibleJTextComponent</span></span>
+        <span class="name">AccessibleJScrollPane</span><span class="result"> extends <span class="extype" name="javax.swing.JComponent.AccessibleJComponent">AccessibleJComponent</span> with <span class="extype" name="javax.swing.event.ChangeListener">ChangeListener</span> with <span class="extype" name="java.beans.PropertyChangeListener">PropertyChangeListener</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent.AccessibleJTextComponent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="AccessibleJTextComponentextendsJComponent.this.AccessibleJComponentwithAccessibleTextwithCaretListenerwithDocumentListenerwithAccessibleActionwithAccessibleEditableTextwithAccessibleExtendedText"></a>
-      <a id="AccessibleJTextComponent:AccessibleJTextComponent"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <span class="name">AccessibleJTextComponent</span><span class="result"> extends <span class="extype" name="javax.swing.JComponent.AccessibleJComponent">AccessibleJComponent</span> with <span class="extype" name="javax.accessibility.AccessibleText">AccessibleText</span> with <span class="extype" name="javax.swing.event.CaretListener">CaretListener</span> with <span class="extype" name="javax.swing.event.DocumentListener">DocumentListener</span> with <span class="extype" name="javax.accessibility.AccessibleAction">AccessibleAction</span> with <span class="extype" name="javax.accessibility.AccessibleEditableText">AccessibleEditableText</span> with <span class="extype" name="javax.accessibility.AccessibleExtendedText">AccessibleExtendedText</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
     </li><li name="javax.swing.JComponent.ActionStandin" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ActionStandinextendsAction"></a>
       <a id="ActionStandin:ActionStandin"></a>
@@ -179,7 +166,7 @@
         <span class="name">ActionStandin</span><span class="result"> extends <span class="extype" name="javax.swing.Action">Action</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>private[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>private[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
     </li><li name="java.awt.Component.BltBufferStrategy" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="BltBufferStrategyextendsBufferStrategy"></a>
       <a id="BltBufferStrategy:BltBufferStrategy"></a>
@@ -193,19 +180,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent.ComposedTextCaret" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="ComposedTextCaretextendsDefaultCaretwithSerializable"></a>
-      <a id="ComposedTextCaret:ComposedTextCaret"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <span class="name">ComposedTextCaret</span><span class="result"> extends <span class="extype" name="javax.swing.text.DefaultCaret">DefaultCaret</span> with <span class="extype" name="java.io.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>private[<span class="extype" name="javax.swing.text">javax.swing.text</span>] </dd><dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="java.awt.Component.FlipBufferStrategy" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="FlipBufferStrategyextendsBufferStrategy"></a>
       <a id="FlipBufferStrategy:FlipBufferStrategy"></a>
@@ -219,19 +193,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent.InputMethodRequestsHandler" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="InputMethodRequestsHandlerextendsInputMethodRequestswithDocumentListener"></a>
-      <a id="InputMethodRequestsHandler:InputMethodRequestsHandler"></a>
+    </li><li name="javax.swing.JScrollPane.ScrollBar" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ScrollBarextendsJScrollBarwithUIResource"></a>
+      <a id="ScrollBar:ScrollBar"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">InputMethodRequestsHandler</span><span class="result"> extends <span class="extype" name="java.awt.im.InputMethodRequests">InputMethodRequests</span> with <span class="extype" name="javax.swing.event.DocumentListener">DocumentListener</span></span>
+        <span class="name">ScrollBar</span><span class="result"> extends <span class="extype" name="javax.swing.JScrollBar">JScrollBar</span> with <span class="extype" name="javax.swing.plaf.UIResource">UIResource</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>private[<span class="extype" name="javax.swing.text">javax.swing.text</span>] </dd><dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
     </li></ol>
             </div>
 
@@ -248,7 +222,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -287,7 +261,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -395,19 +369,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#addCaretListener" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="addCaretListener(x$1:javax.swing.event.CaretListener):Unit"></a>
-      <a id="addCaretListener(CaretListener):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">addCaretListener</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.event.CaretListener">CaretListener</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="java.awt.Component#addComponentListener" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="addComponentListener(x$1:java.awt.event.ComponentListener):Unit"></a>
       <a id="addComponentListener(ComponentListener):Unit"></a>
@@ -485,8 +446,8 @@
         <span class="name">addImpl</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Component">Component</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Any">Any</span></span>, <span name="arg2">arg2: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.awt">java.awt</span>] </dd><dt>Definition Classes</dt><dd>Container</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#addInputMethodListener" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$awt.html" class="extype" name="java.awt">java.awt</a>] </dd><dt>Definition Classes</dt><dd>Container</dd></dl></div>
+    </li><li name="java.awt.Component#addInputMethodListener" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="addInputMethodListener(x$1:java.awt.event.InputMethodListener):Unit"></a>
       <a id="addInputMethodListener(InputMethodListener):Unit"></a>
       <h4 class="signature">
@@ -498,7 +459,7 @@
         <span class="name">addInputMethodListener</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.event.InputMethodListener">InputMethodListener</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent → Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
     </li><li name="java.awt.Component#addKeyListener" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="addKeyListener(x$1:java.awt.event.KeyListener):Unit"></a>
       <a id="addKeyListener(KeyListener):Unit"></a>
@@ -603,19 +564,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#append" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="append(x$1:String):Unit"></a>
-      <a id="append(String):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">append</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.lang.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
     </li><li name="java.awt.Container#applyComponentOrientation" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="applyComponentOrientation(x$1:java.awt.ComponentOrientation):Unit"></a>
       <a id="applyComponentOrientation(ComponentOrientation):Unit"></a>
@@ -690,10 +638,10 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -709,7 +657,7 @@
         <span class="name">coalesceEvents</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.AWTEvent">AWTEvent</span></span>, <span name="arg1">arg1: <span class="extype" name="java.awt.AWTEvent">AWTEvent</span></span>)</span><span class="result">: <span class="extype" name="java.awt.AWTEvent">AWTEvent</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.awt">java.awt</span>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$awt.html" class="extype" name="java.awt">java.awt</a>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
     </li><li name="javax.swing.JComponent#computeVisibleRect" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="computeVisibleRect(x$1:java.awt.Rectangle):Unit"></a>
       <a id="computeVisibleRect(Rectangle):Unit"></a>
@@ -749,32 +697,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#copy" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="copy():Unit"></a>
-      <a id="copy():Unit"></a>
+    </li><li name="javax.swing.JScrollPane#createHorizontalScrollBar" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="createHorizontalScrollBar():javax.swing.JScrollBar"></a>
+      <a id="createHorizontalScrollBar():JScrollBar"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">copy</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">createHorizontalScrollBar</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.JScrollBar">JScrollBar</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#createDefaultModel" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="createDefaultModel():javax.swing.text.Document"></a>
-      <a id="createDefaultModel():Document"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">createDefaultModel</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.text.Document">Document</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
     </li><li name="java.awt.Component#createImage" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="createImage(x$1:Int,x$2:Int):java.awt.Image"></a>
       <a id="createImage(Int,Int):Image"></a>
@@ -814,6 +749,32 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#createVerticalScrollBar" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="createVerticalScrollBar():javax.swing.JScrollBar"></a>
+      <a id="createVerticalScrollBar():JScrollBar"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">createVerticalScrollBar</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.JScrollBar">JScrollBar</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#createViewport" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="createViewport():javax.swing.JViewport"></a>
+      <a id="createViewport():JViewport"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">createViewport</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.JViewport">JViewport</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
     </li><li name="java.awt.Component#createVolatileImage" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="createVolatileImage(x$1:Int,x$2:Int,x$3:java.awt.ImageCapabilities):java.awt.image.VolatileImage"></a>
       <a id="createVolatileImage(Int,Int,ImageCapabilities):VolatileImage"></a>
@@ -843,19 +804,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#cut" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="cut():Unit"></a>
-      <a id="cut():Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">cut</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="java.awt.Component#disableEvents" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="disableEvents(x$1:Long):Unit"></a>
       <a id="disableEvents(Long):Unit"></a>
@@ -868,7 +816,7 @@
         <span class="name">disableEvents</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.awt">java.awt</span>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$awt.html" class="extype" name="java.awt">java.awt</a>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
     </li><li name="java.awt.Component#dispatchEvent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="dispatchEvent(x$1:java.awt.AWTEvent):Unit"></a>
       <a id="dispatchEvent(AWTEvent):Unit"></a>
@@ -907,7 +855,7 @@
         <span class="name">enableEvents</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.awt">java.awt</span>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$awt.html" class="extype" name="java.awt">java.awt</a>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
     </li><li name="java.awt.Component#enableInputMethods" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="enableInputMethods(x$1:Boolean):Unit"></a>
       <a id="enableInputMethods(Boolean):Unit"></a>
@@ -930,7 +878,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -959,7 +907,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -989,19 +937,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Container</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#fireCaretUpdate" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="fireCaretUpdate(x$1:javax.swing.event.CaretEvent):Unit"></a>
-      <a id="fireCaretUpdate(CaretEvent):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">fireCaretUpdate</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.event.CaretEvent">CaretEvent</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing.text">javax.swing.text</span>] </dd><dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#firePropertyChange" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="firePropertyChange(x$1:String,x$2:Char,x$3:Char):Unit"></a>
       <a id="firePropertyChange(String,Char,Char):Unit"></a>
@@ -1118,7 +1053,7 @@
         <span class="name">firePropertyChange</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.lang.String">String</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Any">Any</span></span>, <span name="arg2">arg2: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.awt">java.awt</span>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$awt.html" class="extype" name="java.awt">java.awt</a>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
     </li><li name="javax.swing.JComponent#fireVetoableChange" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="fireVetoableChange(x$1:String,x$2:Any,x$3:Any):Unit"></a>
       <a id="fireVetoableChange(String,Any,Any):Unit"></a>
@@ -1131,11 +1066,11 @@
         <span class="name">fireVetoableChange</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.lang.String">String</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Any">Any</span></span>, <span name="arg2">arg2: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getAccessibleContext" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="javax.swing.JScrollPane#getAccessibleContext" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getAccessibleContext():javax.accessibility.AccessibleContext"></a>
       <a id="getAccessibleContext():AccessibleContext"></a>
       <h4 class="signature">
@@ -1147,7 +1082,7 @@
         <span class="name">getAccessibleContext</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.accessibility.AccessibleContext">AccessibleContext</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea → JTextComponent → Accessible → JComponent → Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane → Accessible → JComponent → Component</dd></dl></div>
     </li><li name="javax.swing.JComponent#getActionForKeyStroke" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getActionForKeyStroke(x$1:javax.swing.KeyStroke):java.awt.event.ActionListener"></a>
       <a id="getActionForKeyStroke(KeyStroke):ActionListener"></a>
@@ -1174,19 +1109,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getActions" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getActions():Array[javax.swing.Action]"></a>
-      <a id="getActions():Array[Action]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getActions</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="javax.swing.Action">Action</span>]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#getAlignmentX" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getAlignmentX():Float"></a>
       <a id="getAlignmentX():Float"></a>
@@ -1320,64 +1242,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getCaret" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getCaret():javax.swing.text.Caret"></a>
-      <a id="getCaret():Caret"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getCaret</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.text.Caret">Caret</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd><dt>Annotations</dt><dd>
-                <span class="name">@Transient</span><span class="args">()</span>
-              
-        </dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getCaretColor" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getCaretColor():java.awt.Color"></a>
-      <a id="getCaretColor():Color"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getCaretColor</span><span class="params">()</span><span class="result">: <span class="extype" name="java.awt.Color">Color</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getCaretListeners" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getCaretListeners():Array[javax.swing.event.CaretListener]"></a>
-      <a id="getCaretListeners():Array[CaretListener]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getCaretListeners</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="javax.swing.event.CaretListener">CaretListener</span>]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getCaretPosition" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getCaretPosition():Int"></a>
-      <a id="getCaretPosition():Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getCaretPosition</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd><dt>Annotations</dt><dd>
-                <span class="name">@Transient</span><span class="args">()</span>
-              
-        </dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <a id="getClass():Class[_]"></a>
@@ -1400,7 +1264,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getClientProperty</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">getClientProperty</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
@@ -1417,32 +1281,22 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getColumnWidth" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getColumnWidth():Int"></a>
-      <a id="getColumnWidth():Int"></a>
+    </li><li name="javax.swing.JScrollPane#getColumnHeader" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getColumnHeader():javax.swing.JViewport"></a>
+      <a id="getColumnHeader():JViewport"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getColumnWidth</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+        <span class="name">getColumnHeader</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.JViewport">JViewport</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getColumns" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getColumns():Int"></a>
-      <a id="getColumns():Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getColumns</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd><dt>Annotations</dt><dd>
+                <span class="name">@Transient</span><span class="args">()</span>
+              
+        </dd></dl></div>
     </li><li name="java.awt.Container#getComponent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getComponent(x$1:Int):java.awt.Component"></a>
       <a id="getComponent(Int):Component"></a>
@@ -1507,7 +1361,7 @@
         <span class="name">getComponentGraphics</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Graphics">Graphics</span></span>)</span><span class="result">: <span class="extype" name="java.awt.Graphics">Graphics</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
     </li><li name="java.awt.Component#getComponentListeners" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getComponentListeners():Array[java.awt.event.ComponentListener]"></a>
       <a id="getComponentListeners():Array[ComponentListener]"></a>
@@ -1599,6 +1453,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Container</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#getCorner" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getCorner(x$1:String):java.awt.Component"></a>
+      <a id="getCorner(String):Component"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getCorner</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.lang.String">String</span></span>)</span><span class="result">: <span class="extype" name="java.awt.Component">Component</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
     </li><li name="java.awt.Component#getCursor" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getCursor():java.awt.Cursor"></a>
       <a id="getCursor():Cursor"></a>
@@ -1625,71 +1492,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getDisabledTextColor" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getDisabledTextColor():java.awt.Color"></a>
-      <a id="getDisabledTextColor():Color"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getDisabledTextColor</span><span class="params">()</span><span class="result">: <span class="extype" name="java.awt.Color">Color</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getDocument" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getDocument():javax.swing.text.Document"></a>
-      <a id="getDocument():Document"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getDocument</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.text.Document">Document</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getDragEnabled" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getDragEnabled():Boolean"></a>
-      <a id="getDragEnabled():Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getDragEnabled</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getDropLocation" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getDropLocation():javax.swing.text.JTextComponent.DropLocation"></a>
-      <a id="getDropLocation():DropLocation"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getDropLocation</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.text.JTextComponent.DropLocation">DropLocation</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getDropMode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getDropMode():javax.swing.DropMode"></a>
-      <a id="getDropMode():DropMode"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getDropMode</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.DropMode">DropMode</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="java.awt.Component#getDropTarget" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getDropTarget():java.awt.dnd.DropTarget"></a>
       <a id="getDropTarget():DropTarget"></a>
@@ -1703,19 +1505,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getFocusAccelerator" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getFocusAccelerator():Char"></a>
-      <a id="getFocusAccelerator():Char"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getFocusAccelerator</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Char">Char</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="java.awt.Component#getFocusCycleRootAncestor" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getFocusCycleRootAncestor():java.awt.Container"></a>
       <a id="getFocusCycleRootAncestor():Container"></a>
@@ -1891,19 +1680,35 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getHighlighter" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getHighlighter():javax.swing.text.Highlighter"></a>
-      <a id="getHighlighter():Highlighter"></a>
+    </li><li name="javax.swing.JScrollPane#getHorizontalScrollBar" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getHorizontalScrollBar():javax.swing.JScrollBar"></a>
+      <a id="getHorizontalScrollBar():JScrollBar"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getHighlighter</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.text.Highlighter">Highlighter</span></span>
+        <span class="name">getHorizontalScrollBar</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.JScrollBar">JScrollBar</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd><dt>Annotations</dt><dd>
+                <span class="name">@Transient</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#getHorizontalScrollBarPolicy" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getHorizontalScrollBarPolicy():Int"></a>
+      <a id="getHorizontalScrollBarPolicy():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getHorizontalScrollBarPolicy</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
     </li><li name="java.awt.Component#getIgnoreRepaint" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getIgnoreRepaint():Boolean"></a>
       <a id="getIgnoreRepaint():Boolean"></a>
@@ -1982,7 +1787,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getInputMethodRequests" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="java.awt.Component#getInputMethodRequests" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getInputMethodRequests():java.awt.im.InputMethodRequests"></a>
       <a id="getInputMethodRequests():InputMethodRequests"></a>
       <h4 class="signature">
@@ -1994,7 +1799,7 @@
         <span class="name">getInputMethodRequests</span><span class="params">()</span><span class="result">: <span class="extype" name="java.awt.im.InputMethodRequests">InputMethodRequests</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent → Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
     </li><li name="javax.swing.JComponent#getInputVerifier" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getInputVerifier():javax.swing.InputVerifier"></a>
       <a id="getInputVerifier():InputVerifier"></a>
@@ -2047,19 +1852,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getKeymap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getKeymap():javax.swing.text.Keymap"></a>
-      <a id="getKeymap():Keymap"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getKeymap</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.text.Keymap">Keymap</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="java.awt.Container#getLayout" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getLayout():java.awt.LayoutManager"></a>
       <a id="getLayout():LayoutManager"></a>
@@ -2073,80 +1865,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Container</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getLineCount" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getLineCount():Int"></a>
-      <a id="getLineCount():Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getLineCount</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getLineEndOffset" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getLineEndOffset(x$1:Int):Int"></a>
-      <a id="getLineEndOffset(Int):Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getLineEndOffset</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
-              
-        </dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getLineOfOffset" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getLineOfOffset(x$1:Int):Int"></a>
-      <a id="getLineOfOffset(Int):Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getLineOfOffset</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
-              
-        </dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getLineStartOffset" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getLineStartOffset(x$1:Int):Int"></a>
-      <a id="getLineStartOffset(Int):Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getLineStartOffset</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
-              
-        </dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getLineWrap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getLineWrap():Boolean"></a>
-      <a id="getLineWrap():Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getLineWrap</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
     </li><li name="javax.swing.JComponent#getListeners" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getListeners[T&lt;:java.util.EventListener](x$1:Class[T]):Array[T]"></a>
       <a id="getListeners[T&lt;:EventListener](Class[T]):Array[T]"></a>
@@ -2212,19 +1930,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getMargin" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getMargin():java.awt.Insets"></a>
-      <a id="getMargin():Insets"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getMargin</span><span class="params">()</span><span class="result">: <span class="extype" name="java.awt.Insets">Insets</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#getMaximumSize" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getMaximumSize():java.awt.Dimension"></a>
       <a id="getMaximumSize():Dimension"></a>
@@ -2341,19 +2046,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getNavigationFilter" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getNavigationFilter():javax.swing.text.NavigationFilter"></a>
-      <a id="getNavigationFilter():NavigationFilter"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getNavigationFilter</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.text.NavigationFilter">NavigationFilter</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="java.awt.Component#getParent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getParent():java.awt.Container"></a>
       <a id="getParent():Container"></a>
@@ -2380,20 +2072,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getPreferredScrollableViewportSize" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getPreferredScrollableViewportSize():java.awt.Dimension"></a>
-      <a id="getPreferredScrollableViewportSize():Dimension"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getPreferredScrollableViewportSize</span><span class="params">()</span><span class="result">: <span class="extype" name="java.awt.Dimension">Dimension</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea → JTextComponent → Scrollable</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getPreferredSize" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="javax.swing.JComponent#getPreferredSize" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getPreferredSize():java.awt.Dimension"></a>
       <a id="getPreferredSize():Dimension"></a>
       <h4 class="signature">
@@ -2405,20 +2084,10 @@
         <span class="name">getPreferredSize</span><span class="params">()</span><span class="result">: <span class="extype" name="java.awt.Dimension">Dimension</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea → JComponent → Container → Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getPrintable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getPrintable(x$1:java.text.MessageFormat,x$2:java.text.MessageFormat):java.awt.print.Printable"></a>
-      <a id="getPrintable(MessageFormat,MessageFormat):Printable"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getPrintable</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.text.MessageFormat">MessageFormat</span></span>, <span name="arg1">arg1: <span class="extype" name="java.text.MessageFormat">MessageFormat</span></span>)</span><span class="result">: <span class="extype" name="java.awt.print.Printable">Printable</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent → Container → Component</dd><dt>Annotations</dt><dd>
+                <span class="name">@Transient</span><span class="args">()</span>
+              
+        </dd></dl></div>
     </li><li name="java.awt.Component#getPropertyChangeListeners" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getPropertyChangeListeners(x$1:String):Array[java.beans.PropertyChangeListener]"></a>
       <a id="getPropertyChangeListeners(String):Array[PropertyChangeListener]"></a>
@@ -2471,152 +2140,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getRowHeight" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getRowHeight():Int"></a>
-      <a id="getRowHeight():Int"></a>
+    </li><li name="javax.swing.JScrollPane#getRowHeader" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getRowHeader():javax.swing.JViewport"></a>
+      <a id="getRowHeader():JViewport"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getRowHeight</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+        <span class="name">getRowHeader</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.JViewport">JViewport</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getRows" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getRows():Int"></a>
-      <a id="getRows():Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getRows</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getScrollableBlockIncrement" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getScrollableBlockIncrement(x$1:java.awt.Rectangle,x$2:Int,x$3:Int):Int"></a>
-      <a id="getScrollableBlockIncrement(Rectangle,Int,Int):Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getScrollableBlockIncrement</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Rectangle">Rectangle</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>, <span name="arg2">arg2: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent → Scrollable</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getScrollableTracksViewportHeight" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getScrollableTracksViewportHeight():Boolean"></a>
-      <a id="getScrollableTracksViewportHeight():Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getScrollableTracksViewportHeight</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent → Scrollable</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getScrollableTracksViewportWidth" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getScrollableTracksViewportWidth():Boolean"></a>
-      <a id="getScrollableTracksViewportWidth():Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getScrollableTracksViewportWidth</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea → JTextComponent → Scrollable</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getScrollableUnitIncrement" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getScrollableUnitIncrement(x$1:java.awt.Rectangle,x$2:Int,x$3:Int):Int"></a>
-      <a id="getScrollableUnitIncrement(Rectangle,Int,Int):Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getScrollableUnitIncrement</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Rectangle">Rectangle</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>, <span name="arg2">arg2: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea → JTextComponent → Scrollable</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getSelectedText" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getSelectedText():String"></a>
-      <a id="getSelectedText():String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getSelectedText</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getSelectedTextColor" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getSelectedTextColor():java.awt.Color"></a>
-      <a id="getSelectedTextColor():Color"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getSelectedTextColor</span><span class="params">()</span><span class="result">: <span class="extype" name="java.awt.Color">Color</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getSelectionColor" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getSelectionColor():java.awt.Color"></a>
-      <a id="getSelectionColor():Color"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getSelectionColor</span><span class="params">()</span><span class="result">: <span class="extype" name="java.awt.Color">Color</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getSelectionEnd" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getSelectionEnd():Int"></a>
-      <a id="getSelectionEnd():Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getSelectionEnd</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd><dt>Annotations</dt><dd>
-                <span class="name">@Transient</span><span class="args">()</span>
-              
-        </dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getSelectionStart" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getSelectionStart():Int"></a>
-      <a id="getSelectionStart():Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getSelectionStart</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd><dt>Annotations</dt><dd>
                 <span class="name">@Transient</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -2646,48 +2182,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getTabSize" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getTabSize():Int"></a>
-      <a id="getTabSize():Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getTabSize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getText" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getText():String"></a>
-      <a id="getText():String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getText</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getText" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getText(x$1:Int,x$2:Int):String"></a>
-      <a id="getText(Int,Int):String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getText</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
-              
-        </dd></dl></div>
     </li><li name="javax.swing.JComponent#getToolTipLocation" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getToolTipLocation(x$1:java.awt.event.MouseEvent):java.awt.Point"></a>
       <a id="getToolTipLocation(MouseEvent):Point"></a>
@@ -2701,7 +2195,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getToolTipText" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="javax.swing.JComponent#getToolTipText" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getToolTipText(x$1:java.awt.event.MouseEvent):String"></a>
       <a id="getToolTipText(MouseEvent):String"></a>
       <h4 class="signature">
@@ -2713,7 +2207,7 @@
         <span class="name">getToolTipText</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.event.MouseEvent">MouseEvent</span></span>)</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent → JComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#getToolTipText" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getToolTipText():String"></a>
       <a id="getToolTipText():String"></a>
@@ -2775,24 +2269,24 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getTreeLock</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">getTreeLock</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#getUI" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getUI():javax.swing.plaf.TextUI"></a>
-      <a id="getUI():TextUI"></a>
+    </li><li name="javax.swing.JScrollPane#getUI" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getUI():javax.swing.plaf.ScrollPaneUI"></a>
+      <a id="getUI():ScrollPaneUI"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getUI</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.plaf.TextUI">TextUI</span></span>
+        <span class="name">getUI</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.plaf.ScrollPaneUI">ScrollPaneUI</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getUIClassID" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#getUIClassID" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getUIClassID():String"></a>
       <a id="getUIClassID():String"></a>
       <h4 class="signature">
@@ -2804,7 +2298,7 @@
         <span class="name">getUIClassID</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea → JComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane → JComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#getVerifyInputWhenFocusTarget" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getVerifyInputWhenFocusTarget():Boolean"></a>
       <a id="getVerifyInputWhenFocusTarget():Boolean"></a>
@@ -2818,6 +2312,35 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#getVerticalScrollBar" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getVerticalScrollBar():javax.swing.JScrollBar"></a>
+      <a id="getVerticalScrollBar():JScrollBar"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getVerticalScrollBar</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.JScrollBar">JScrollBar</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd><dt>Annotations</dt><dd>
+                <span class="name">@Transient</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#getVerticalScrollBarPolicy" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getVerticalScrollBarPolicy():Int"></a>
+      <a id="getVerticalScrollBarPolicy():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getVerticalScrollBarPolicy</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
     </li><li name="javax.swing.JComponent#getVetoableChangeListeners" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getVetoableChangeListeners():Array[java.beans.VetoableChangeListener]"></a>
       <a id="getVetoableChangeListeners():Array[VetoableChangeListener]"></a>
@@ -2831,6 +2354,45 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#getViewport" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getViewport():javax.swing.JViewport"></a>
+      <a id="getViewport():JViewport"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getViewport</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.JViewport">JViewport</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#getViewportBorder" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getViewportBorder():javax.swing.border.Border"></a>
+      <a id="getViewportBorder():Border"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getViewportBorder</span><span class="params">()</span><span class="result">: <span class="extype" name="javax.swing.border.Border">Border</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#getViewportBorderBounds" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getViewportBorderBounds():java.awt.Rectangle"></a>
+      <a id="getViewportBorderBounds():Rectangle"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getViewportBorderBounds</span><span class="params">()</span><span class="result">: <span class="extype" name="java.awt.Rectangle">Rectangle</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
     </li><li name="javax.swing.JComponent#getVisibleRect" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getVisibleRect():java.awt.Rectangle"></a>
       <a id="getVisibleRect():Rectangle"></a>
@@ -2857,19 +2419,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent → Component</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#getWrapStyleWord" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getWrapStyleWord():Boolean"></a>
-      <a id="getWrapStyleWord():Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getWrapStyleWord</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
     </li><li name="javax.swing.JComponent#getX" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getX():Int"></a>
       <a id="getX():Int"></a>
@@ -2948,19 +2497,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component → ImageObserver</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#insert" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="insert(x$1:String,x$2:Int):Unit"></a>
-      <a id="insert(String,Int):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">insert</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.lang.String">String</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
     </li><li name="java.awt.Container#invalidate" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="invalidate():Unit"></a>
       <a id="invalidate():Unit"></a>
@@ -3039,19 +2575,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent → Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#isEditable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="isEditable():Boolean"></a>
-      <a id="isEditable():Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">isEditable</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="java.awt.Component#isEnabled" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isEnabled():Boolean"></a>
       <a id="isEnabled():Boolean"></a>
@@ -3272,7 +2795,7 @@
         <span class="name">isPaintingOrigin</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#isPaintingTile" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isPaintingTile():Boolean"></a>
       <a id="isPaintingTile():Boolean"></a>
@@ -3338,7 +2861,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.JComponent#isValidateRoot" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="javax.swing.JScrollPane#isValidateRoot" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isValidateRoot():Boolean"></a>
       <a id="isValidateRoot():Boolean"></a>
       <h4 class="signature">
@@ -3350,7 +2873,7 @@
         <span class="name">isValidateRoot</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent → Container</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane → JComponent → Container</dd></dl></div>
     </li><li name="java.awt.Component#isVisible" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isVisible():Boolean"></a>
       <a id="isVisible():Boolean"></a>
@@ -3367,6 +2890,19 @@
                 <span class="name">@Transient</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#isWheelScrollingEnabled" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isWheelScrollingEnabled():Boolean"></a>
+      <a id="isWheelScrollingEnabled():Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isWheelScrollingEnabled</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
     </li><li name="java.awt.Container#list" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="list(x$1:java.io.PrintWriter,x$2:Int):Unit"></a>
       <a id="list(PrintWriter,Int):Unit"></a>
@@ -3432,35 +2968,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#modelToView" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="modelToView(x$1:Int):java.awt.Rectangle"></a>
-      <a id="modelToView(Int):Rectangle"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">modelToView</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="java.awt.Rectangle">Rectangle</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
-              
-        </dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#moveCaretPosition" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="moveCaretPosition(x$1:Int):Unit"></a>
-      <a id="moveCaretPosition(Int):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">moveCaretPosition</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -3470,7 +2977,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -3538,7 +3045,7 @@
         <span class="name">paintBorder</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Graphics">Graphics</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#paintChildren" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="paintChildren(x$1:java.awt.Graphics):Unit"></a>
       <a id="paintChildren(Graphics):Unit"></a>
@@ -3551,7 +3058,7 @@
         <span class="name">paintChildren</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Graphics">Graphics</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#paintComponent" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="paintComponent(x$1:java.awt.Graphics):Unit"></a>
       <a id="paintComponent(Graphics):Unit"></a>
@@ -3564,7 +3071,7 @@
         <span class="name">paintComponent</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Graphics">Graphics</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
     </li><li name="java.awt.Container#paintComponents" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="paintComponents(x$1:java.awt.Graphics):Unit"></a>
       <a id="paintComponents(Graphics):Unit"></a>
@@ -3604,7 +3111,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#paramString" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="javax.swing.JScrollPane#paramString" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="paramString():String"></a>
       <a id="paramString():String"></a>
       <h4 class="signature">
@@ -3616,20 +3123,7 @@
         <span class="name">paramString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JTextArea → JTextComponent → JComponent → Container → Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#paste" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="paste():Unit"></a>
-      <a id="paste():Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">paste</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JScrollPane → JComponent → Container → Component</dd></dl></div>
     </li><li name="java.awt.Component#prepareImage" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="prepareImage(x$1:java.awt.Image,x$2:Int,x$3:Int,x$4:java.awt.image.ImageObserver):Boolean"></a>
       <a id="prepareImage(Image,Int,Int,ImageObserver):Boolean"></a>
@@ -3656,54 +3150,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#print" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="print(x$1:java.text.MessageFormat,x$2:java.text.MessageFormat,x$3:Boolean,x$4:javax.print.PrintService,x$5:javax.print.attribute.PrintRequestAttributeSet,x$6:Boolean):Boolean"></a>
-      <a id="print(MessageFormat,MessageFormat,Boolean,PrintService,PrintRequestAttributeSet,Boolean):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">print</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.text.MessageFormat">MessageFormat</span></span>, <span name="arg1">arg1: <span class="extype" name="java.text.MessageFormat">MessageFormat</span></span>, <span name="arg2">arg2: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="arg3">arg3: <span class="extype" name="javax.print.PrintService">PrintService</span></span>, <span name="arg4">arg4: <span class="extype" name="javax.print.attribute.PrintRequestAttributeSet">PrintRequestAttributeSet</span></span>, <span name="arg5">arg5: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
-              
-        </dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#print" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="print(x$1:java.text.MessageFormat,x$2:java.text.MessageFormat):Boolean"></a>
-      <a id="print(MessageFormat,MessageFormat):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">print</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.text.MessageFormat">MessageFormat</span></span>, <span name="arg1">arg1: <span class="extype" name="java.text.MessageFormat">MessageFormat</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
-              
-        </dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#print" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="print():Boolean"></a>
-      <a id="print():Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">print</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
-              
-        </dd></dl></div>
     </li><li name="javax.swing.JComponent#print" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="print(x$1:java.awt.Graphics):Unit"></a>
       <a id="print(Graphics):Unit"></a>
@@ -3742,7 +3188,7 @@
         <span class="name">printBorder</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Graphics">Graphics</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#printChildren" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="printChildren(x$1:java.awt.Graphics):Unit"></a>
       <a id="printChildren(Graphics):Unit"></a>
@@ -3755,7 +3201,7 @@
         <span class="name">printChildren</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Graphics">Graphics</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#printComponent" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="printComponent(x$1:java.awt.Graphics):Unit"></a>
       <a id="printComponent(Graphics):Unit"></a>
@@ -3768,7 +3214,7 @@
         <span class="name">printComponent</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Graphics">Graphics</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
     </li><li name="java.awt.Container#printComponents" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="printComponents(x$1:java.awt.Graphics):Unit"></a>
       <a id="printComponents(Graphics):Unit"></a>
@@ -3794,7 +3240,7 @@
         <span class="name">processComponentEvent</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.event.ComponentEvent">ComponentEvent</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.awt">java.awt</span>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$awt.html" class="extype" name="java.awt">java.awt</a>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
     </li><li name="javax.swing.JComponent#processComponentKeyEvent" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="processComponentKeyEvent(x$1:java.awt.event.KeyEvent):Unit"></a>
       <a id="processComponentKeyEvent(KeyEvent):Unit"></a>
@@ -3807,7 +3253,7 @@
         <span class="name">processComponentKeyEvent</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.event.KeyEvent">KeyEvent</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
     </li><li name="java.awt.Container#processContainerEvent" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="processContainerEvent(x$1:java.awt.event.ContainerEvent):Unit"></a>
       <a id="processContainerEvent(ContainerEvent):Unit"></a>
@@ -3820,7 +3266,7 @@
         <span class="name">processContainerEvent</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.event.ContainerEvent">ContainerEvent</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.awt">java.awt</span>] </dd><dt>Definition Classes</dt><dd>Container</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$awt.html" class="extype" name="java.awt">java.awt</a>] </dd><dt>Definition Classes</dt><dd>Container</dd></dl></div>
     </li><li name="java.awt.Container#processEvent" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="processEvent(x$1:java.awt.AWTEvent):Unit"></a>
       <a id="processEvent(AWTEvent):Unit"></a>
@@ -3833,7 +3279,7 @@
         <span class="name">processEvent</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.AWTEvent">AWTEvent</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.awt">java.awt</span>] </dd><dt>Definition Classes</dt><dd>Container → Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$awt.html" class="extype" name="java.awt">java.awt</a>] </dd><dt>Definition Classes</dt><dd>Container → Component</dd></dl></div>
     </li><li name="java.awt.Component#processFocusEvent" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="processFocusEvent(x$1:java.awt.event.FocusEvent):Unit"></a>
       <a id="processFocusEvent(FocusEvent):Unit"></a>
@@ -3846,7 +3292,7 @@
         <span class="name">processFocusEvent</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.event.FocusEvent">FocusEvent</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.awt">java.awt</span>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$awt.html" class="extype" name="java.awt">java.awt</a>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
     </li><li name="java.awt.Component#processHierarchyBoundsEvent" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="processHierarchyBoundsEvent(x$1:java.awt.event.HierarchyEvent):Unit"></a>
       <a id="processHierarchyBoundsEvent(HierarchyEvent):Unit"></a>
@@ -3859,7 +3305,7 @@
         <span class="name">processHierarchyBoundsEvent</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.event.HierarchyEvent">HierarchyEvent</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.awt">java.awt</span>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$awt.html" class="extype" name="java.awt">java.awt</a>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
     </li><li name="java.awt.Component#processHierarchyEvent" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="processHierarchyEvent(x$1:java.awt.event.HierarchyEvent):Unit"></a>
       <a id="processHierarchyEvent(HierarchyEvent):Unit"></a>
@@ -3872,8 +3318,8 @@
         <span class="name">processHierarchyEvent</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.event.HierarchyEvent">HierarchyEvent</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.awt">java.awt</span>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#processInputMethodEvent" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$awt.html" class="extype" name="java.awt">java.awt</a>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
+    </li><li name="java.awt.Component#processInputMethodEvent" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="processInputMethodEvent(x$1:java.awt.event.InputMethodEvent):Unit"></a>
       <a id="processInputMethodEvent(InputMethodEvent):Unit"></a>
       <h4 class="signature">
@@ -3885,7 +3331,7 @@
         <span class="name">processInputMethodEvent</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.event.InputMethodEvent">InputMethodEvent</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing.text">javax.swing.text</span>] </dd><dt>Definition Classes</dt><dd>JTextComponent → Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$awt.html" class="extype" name="java.awt">java.awt</a>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
     </li><li name="javax.swing.JComponent#processKeyBinding" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="processKeyBinding(x$1:javax.swing.KeyStroke,x$2:java.awt.event.KeyEvent,x$3:Int,x$4:Boolean):Boolean"></a>
       <a id="processKeyBinding(KeyStroke,KeyEvent,Int,Boolean):Boolean"></a>
@@ -3898,7 +3344,7 @@
         <span class="name">processKeyBinding</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.KeyStroke">KeyStroke</span></span>, <span name="arg1">arg1: <span class="extype" name="java.awt.event.KeyEvent">KeyEvent</span></span>, <span name="arg2">arg2: <span class="extype" name="scala.Int">Int</span></span>, <span name="arg3">arg3: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#processKeyEvent" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="processKeyEvent(x$1:java.awt.event.KeyEvent):Unit"></a>
       <a id="processKeyEvent(KeyEvent):Unit"></a>
@@ -3911,7 +3357,7 @@
         <span class="name">processKeyEvent</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.event.KeyEvent">KeyEvent</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent → Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent → Component</dd></dl></div>
     </li><li name="javax.swing.JComponent#processMouseEvent" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="processMouseEvent(x$1:java.awt.event.MouseEvent):Unit"></a>
       <a id="processMouseEvent(MouseEvent):Unit"></a>
@@ -3924,7 +3370,7 @@
         <span class="name">processMouseEvent</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.event.MouseEvent">MouseEvent</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent → Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent → Component</dd></dl></div>
     </li><li name="javax.swing.JComponent#processMouseMotionEvent" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="processMouseMotionEvent(x$1:java.awt.event.MouseEvent):Unit"></a>
       <a id="processMouseMotionEvent(MouseEvent):Unit"></a>
@@ -3937,7 +3383,7 @@
         <span class="name">processMouseMotionEvent</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.event.MouseEvent">MouseEvent</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent → Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent → Component</dd></dl></div>
     </li><li name="java.awt.Component#processMouseWheelEvent" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="processMouseWheelEvent(x$1:java.awt.event.MouseWheelEvent):Unit"></a>
       <a id="processMouseWheelEvent(MouseWheelEvent):Unit"></a>
@@ -3950,7 +3396,7 @@
         <span class="name">processMouseWheelEvent</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.event.MouseWheelEvent">MouseWheelEvent</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.awt">java.awt</span>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$awt.html" class="extype" name="java.awt">java.awt</a>] </dd><dt>Definition Classes</dt><dd>Component</dd></dl></div>
     </li><li name="javax.swing.JComponent#putClientProperty" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="putClientProperty(x$1:Any,x$2:Any):Unit"></a>
       <a id="putClientProperty(Any,Any):Unit"></a>
@@ -3964,22 +3410,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#read" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="read(x$1:java.io.Reader,x$2:Any):Unit"></a>
-      <a id="read(Reader,Any):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">read</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.io.Reader">Reader</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
-              
-        </dd></dl></div>
     </li><li name="javax.swing.JComponent#registerKeyboardAction" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="registerKeyboardAction(x$1:java.awt.event.ActionListener,x$2:javax.swing.KeyStroke,x$3:Int):Unit"></a>
       <a id="registerKeyboardAction(ActionListener,KeyStroke,Int):Unit"></a>
@@ -4071,19 +3501,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#removeCaretListener" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="removeCaretListener(x$1:javax.swing.event.CaretListener):Unit"></a>
-      <a id="removeCaretListener(CaretListener):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">removeCaretListener</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.event.CaretListener">CaretListener</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="java.awt.Component#removeComponentListener" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="removeComponentListener(x$1:java.awt.event.ComponentListener):Unit"></a>
       <a id="removeComponentListener(ComponentListener):Unit"></a>
@@ -4214,7 +3631,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#removeNotify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="javax.swing.JComponent#removeNotify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="removeNotify():Unit"></a>
       <a id="removeNotify():Unit"></a>
       <h4 class="signature">
@@ -4226,7 +3643,7 @@
         <span class="name">removeNotify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent → JComponent → Container → Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent → Container → Component</dd></dl></div>
     </li><li name="java.awt.Component#removePropertyChangeListener" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="removePropertyChangeListener(x$1:String,x$2:java.beans.PropertyChangeListener):Unit"></a>
       <a id="removePropertyChangeListener(String,PropertyChangeListener):Unit"></a>
@@ -4331,32 +3748,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#replaceRange" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="replaceRange(x$1:String,x$2:Int,x$3:Int):Unit"></a>
-      <a id="replaceRange(String,Int,Int):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">replaceRange</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.lang.String">String</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>, <span name="arg2">arg2: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#replaceSelection" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="replaceSelection(x$1:String):Unit"></a>
-      <a id="replaceSelection(String):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">replaceSelection</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.lang.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#requestFocus" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="requestFocus(x$1:Boolean):Boolean"></a>
       <a id="requestFocus(Boolean):Boolean"></a>
@@ -4395,7 +3786,7 @@
         <span class="name">requestFocusInWindow</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent → Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent → Component</dd></dl></div>
     </li><li name="javax.swing.JComponent#requestFocusInWindow" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="requestFocusInWindow():Boolean"></a>
       <a id="requestFocusInWindow():Boolean"></a>
@@ -4422,19 +3813,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#restoreComposedText" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="restoreComposedText():Unit"></a>
-      <a id="restoreComposedText():Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">restoreComposedText</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing.text">javax.swing.text</span>] </dd><dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#revalidate" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="revalidate():Unit"></a>
       <a id="revalidate():Unit"></a>
@@ -4448,19 +3826,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent → Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#saveComposedText" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="saveComposedText(x$1:Int):Boolean"></a>
-      <a id="saveComposedText(Int):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">saveComposedText</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing.text">javax.swing.text</span>] </dd><dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#scrollRectToVisible" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="scrollRectToVisible(x$1:java.awt.Rectangle):Unit"></a>
       <a id="scrollRectToVisible(Rectangle):Unit"></a>
@@ -4474,32 +3839,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#select" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="select(x$1:Int,x$2:Int):Unit"></a>
-      <a id="select(Int,Int):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">select</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#selectAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="selectAll():Unit"></a>
-      <a id="selectAll():Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">selectAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.gui.BackendPane#set" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="set:Unit"></a>
       <a id="set:Unit"></a>
@@ -4617,59 +3956,33 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setCaret" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setCaret(x$1:javax.swing.text.Caret):Unit"></a>
-      <a id="setCaret(Caret):Unit"></a>
+    </li><li name="javax.swing.JScrollPane#setColumnHeader" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setColumnHeader(x$1:javax.swing.JViewport):Unit"></a>
+      <a id="setColumnHeader(JViewport):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">setCaret</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.text.Caret">Caret</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">setColumnHeader</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.JViewport">JViewport</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setCaretColor" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setCaretColor(x$1:java.awt.Color):Unit"></a>
-      <a id="setCaretColor(Color):Unit"></a>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#setColumnHeaderView" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setColumnHeaderView(x$1:java.awt.Component):Unit"></a>
+      <a id="setColumnHeaderView(Component):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">setCaretColor</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Color">Color</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">setColumnHeaderView</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Component">Component</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setCaretPosition" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setCaretPosition(x$1:Int):Unit"></a>
-      <a id="setCaretPosition(Int):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setCaretPosition</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#setColumns" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setColumns(x$1:Int):Unit"></a>
-      <a id="setColumns(Int):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setColumns</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setComponentOrientation" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#setComponentOrientation" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setComponentOrientation(x$1:java.awt.ComponentOrientation):Unit"></a>
       <a id="setComponentOrientation(ComponentOrientation):Unit"></a>
       <h4 class="signature">
@@ -4681,7 +3994,7 @@
         <span class="name">setComponentOrientation</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.ComponentOrientation">ComponentOrientation</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent → Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane → Component</dd></dl></div>
     </li><li name="javax.swing.JComponent#setComponentPopupMenu" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setComponentPopupMenu(x$1:javax.swing.JPopupMenu):Unit"></a>
       <a id="setComponentPopupMenu(JPopupMenu):Unit"></a>
@@ -4708,6 +4021,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Container</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#setCorner" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setCorner(x$1:String,x$2:java.awt.Component):Unit"></a>
+      <a id="setCorner(String,Component):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">setCorner</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.lang.String">String</span></span>, <span name="arg1">arg1: <span class="extype" name="java.awt.Component">Component</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
     </li><li name="java.awt.Component#setCursor" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setCursor(x$1:java.awt.Cursor):Unit"></a>
       <a id="setCursor(Cursor):Unit"></a>
@@ -4734,32 +4060,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setDisabledTextColor" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setDisabledTextColor(x$1:java.awt.Color):Unit"></a>
-      <a id="setDisabledTextColor(Color):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setDisabledTextColor</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Color">Color</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setDocument" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setDocument(x$1:javax.swing.text.Document):Unit"></a>
-      <a id="setDocument(Document):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setDocument</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.text.Document">Document</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#setDoubleBuffered" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setDoubleBuffered(x$1:Boolean):Unit"></a>
       <a id="setDoubleBuffered(Boolean):Unit"></a>
@@ -4773,32 +4073,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setDragEnabled" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setDragEnabled(x$1:Boolean):Unit"></a>
-      <a id="setDragEnabled(Boolean):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setDragEnabled</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setDropMode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setDropMode(x$1:javax.swing.DropMode):Unit"></a>
-      <a id="setDropMode(DropMode):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setDropMode</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.DropMode">DropMode</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="java.awt.Component#setDropTarget" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setDropTarget(x$1:java.awt.dnd.DropTarget):Unit"></a>
       <a id="setDropTarget(DropTarget):Unit"></a>
@@ -4812,19 +4086,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setEditable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setEditable(x$1:Boolean):Unit"></a>
-      <a id="setEditable(Boolean):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setEditable</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#setEnabled" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setEnabled(x$1:Boolean):Unit"></a>
       <a id="setEnabled(Boolean):Unit"></a>
@@ -4838,19 +4099,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent → Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setFocusAccelerator" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setFocusAccelerator(x$1:Char):Unit"></a>
-      <a id="setFocusAccelerator(Char):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setFocusAccelerator</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Char">Char</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="java.awt.Container#setFocusCycleRoot" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setFocusCycleRoot(x$1:Boolean):Unit"></a>
       <a id="setFocusCycleRoot(Boolean):Unit"></a>
@@ -4929,7 +4177,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#setFont" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="javax.swing.JComponent#setFont" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setFont(x$1:java.awt.Font):Unit"></a>
       <a id="setFont(Font):Unit"></a>
       <h4 class="signature">
@@ -4941,7 +4189,7 @@
         <span class="name">setFont</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Font">Font</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea → JComponent → Container → Component</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent → Container → Component</dd></dl></div>
     </li><li name="javax.swing.JComponent#setForeground" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setForeground(x$1:java.awt.Color):Unit"></a>
       <a id="setForeground(Color):Unit"></a>
@@ -4955,19 +4203,32 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent → Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setHighlighter" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setHighlighter(x$1:javax.swing.text.Highlighter):Unit"></a>
-      <a id="setHighlighter(Highlighter):Unit"></a>
+    </li><li name="javax.swing.JScrollPane#setHorizontalScrollBar" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setHorizontalScrollBar(x$1:javax.swing.JScrollBar):Unit"></a>
+      <a id="setHorizontalScrollBar(JScrollBar):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">setHighlighter</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.text.Highlighter">Highlighter</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">setHorizontalScrollBar</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.JScrollBar">JScrollBar</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#setHorizontalScrollBarPolicy" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setHorizontalScrollBarPolicy(x$1:Int):Unit"></a>
+      <a id="setHorizontalScrollBarPolicy(Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">setHorizontalScrollBarPolicy</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
     </li><li name="java.awt.Component#setIgnoreRepaint" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setIgnoreRepaint(x$1:Boolean):Unit"></a>
       <a id="setIgnoreRepaint(Boolean):Unit"></a>
@@ -5020,20 +4281,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setKeymap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setKeymap(x$1:javax.swing.text.Keymap):Unit"></a>
-      <a id="setKeymap(Keymap):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setKeymap</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.text.Keymap">Keymap</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="java.awt.Container#setLayout" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="javax.swing.JScrollPane#setLayout" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setLayout(x$1:java.awt.LayoutManager):Unit"></a>
       <a id="setLayout(LayoutManager):Unit"></a>
       <h4 class="signature">
@@ -5045,20 +4293,7 @@
         <span class="name">setLayout</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.LayoutManager">LayoutManager</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Container</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#setLineWrap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setLineWrap(x$1:Boolean):Unit"></a>
-      <a id="setLineWrap(Boolean):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setLineWrap</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane → Container</dd></dl></div>
     </li><li name="java.awt.Component#setLocale" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setLocale(x$1:java.util.Locale):Unit"></a>
       <a id="setLocale(Locale):Unit"></a>
@@ -5098,19 +4333,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setMargin" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setMargin(x$1:java.awt.Insets):Unit"></a>
-      <a id="setMargin(Insets):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setMargin</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Insets">Insets</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#setMaximumSize" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setMaximumSize(x$1:java.awt.Dimension):Unit"></a>
       <a id="setMaximumSize(Dimension):Unit"></a>
@@ -5150,19 +4372,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setNavigationFilter" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setNavigationFilter(x$1:javax.swing.text.NavigationFilter):Unit"></a>
-      <a id="setNavigationFilter(NavigationFilter):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setNavigationFilter</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.text.NavigationFilter">NavigationFilter</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#setOpaque" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setOpaque(x$1:Boolean):Unit"></a>
       <a id="setOpaque(Boolean):Unit"></a>
@@ -5202,71 +4411,32 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#setRows" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setRows(x$1:Int):Unit"></a>
-      <a id="setRows(Int):Unit"></a>
+    </li><li name="javax.swing.JScrollPane#setRowHeader" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setRowHeader(x$1:javax.swing.JViewport):Unit"></a>
+      <a id="setRowHeader(JViewport):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">setRows</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">setRowHeader</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.JViewport">JViewport</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setSelectedTextColor" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setSelectedTextColor(x$1:java.awt.Color):Unit"></a>
-      <a id="setSelectedTextColor(Color):Unit"></a>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#setRowHeaderView" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setRowHeaderView(x$1:java.awt.Component):Unit"></a>
+      <a id="setRowHeaderView(Component):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">setSelectedTextColor</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Color">Color</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">setRowHeaderView</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Component">Component</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setSelectionColor" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setSelectionColor(x$1:java.awt.Color):Unit"></a>
-      <a id="setSelectionColor(Color):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setSelectionColor</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Color">Color</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setSelectionEnd" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setSelectionEnd(x$1:Int):Unit"></a>
-      <a id="setSelectionEnd(Int):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setSelectionEnd</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setSelectionStart" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setSelectionStart(x$1:Int):Unit"></a>
-      <a id="setSelectionStart(Int):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setSelectionStart</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
     </li><li name="java.awt.Component#setSize" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setSize(x$1:java.awt.Dimension):Unit"></a>
       <a id="setSize(Dimension):Unit"></a>
@@ -5293,32 +4463,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#setTabSize" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setTabSize(x$1:Int):Unit"></a>
-      <a id="setTabSize(Int):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setTabSize</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setText" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setText(x$1:String):Unit"></a>
-      <a id="setText(String):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setText</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.lang.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#setToolTipText" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setToolTipText(x$1:String):Unit"></a>
       <a id="setToolTipText(String):Unit"></a>
@@ -5345,19 +4489,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#setUI" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setUI(x$1:javax.swing.plaf.TextUI):Unit"></a>
-      <a id="setUI(TextUI):Unit"></a>
+    </li><li name="javax.swing.JScrollPane#setUI" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setUI(x$1:javax.swing.plaf.ScrollPaneUI):Unit"></a>
+      <a id="setUI(ScrollPaneUI):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">setUI</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.plaf.TextUI">TextUI</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">setUI</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.plaf.ScrollPaneUI">ScrollPaneUI</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
     </li><li name="javax.swing.JComponent#setUI" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setUI(x$1:javax.swing.plaf.ComponentUI):Unit"></a>
       <a id="setUI(ComponentUI):Unit"></a>
@@ -5370,7 +4514,7 @@
         <span class="name">setUI</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.plaf.ComponentUI">ComponentUI</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="javax.swing">javax.swing</span>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../javax$swing.html" class="extype" name="javax.swing">javax.swing</a>] </dd><dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
     </li><li name="javax.swing.JComponent#setVerifyInputWhenFocusTarget" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setVerifyInputWhenFocusTarget(x$1:Boolean):Unit"></a>
       <a id="setVerifyInputWhenFocusTarget(Boolean):Unit"></a>
@@ -5384,6 +4528,71 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#setVerticalScrollBar" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setVerticalScrollBar(x$1:javax.swing.JScrollBar):Unit"></a>
+      <a id="setVerticalScrollBar(JScrollBar):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">setVerticalScrollBar</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.JScrollBar">JScrollBar</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#setVerticalScrollBarPolicy" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setVerticalScrollBarPolicy(x$1:Int):Unit"></a>
+      <a id="setVerticalScrollBarPolicy(Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">setVerticalScrollBarPolicy</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#setViewport" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setViewport(x$1:javax.swing.JViewport):Unit"></a>
+      <a id="setViewport(JViewport):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">setViewport</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.JViewport">JViewport</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#setViewportBorder" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setViewportBorder(x$1:javax.swing.border.Border):Unit"></a>
+      <a id="setViewportBorder(Border):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">setViewportBorder</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="javax.swing.border.Border">Border</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
+    </li><li name="javax.swing.JScrollPane#setViewportView" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setViewportView(x$1:java.awt.Component):Unit"></a>
+      <a id="setViewportView(Component):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">setViewportView</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Component">Component</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
     </li><li name="javax.swing.JComponent#setVisible" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setVisible(x$1:Boolean):Unit"></a>
       <a id="setVisible(Boolean):Unit"></a>
@@ -5397,19 +4606,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent → Component</dd></dl></div>
-    </li><li name="javax.swing.JTextArea#setWrapStyleWord" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="setWrapStyleWord(x$1:Boolean):Unit"></a>
-      <a id="setWrapStyleWord(Boolean):Unit"></a>
+    </li><li name="javax.swing.JScrollPane#setWheelScrollingEnabled" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="setWheelScrollingEnabled(x$1:Boolean):Unit"></a>
+      <a id="setWheelScrollingEnabled(Boolean):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">setWrapStyleWord</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">setWheelScrollingEnabled</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextArea</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane</dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -5423,6 +4632,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.gui.BackendPane#ta" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ta:javax.swing.JTextArea"></a>
+      <a id="ta:JTextArea"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ta</span><span class="result">: <span class="extype" name="javax.swing.JTextArea">JTextArea</span></span>
+      </span>
+      </h4>
+      
     </li><li name="java.awt.Component#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
       <a id="toString():String"></a>
@@ -5514,7 +4736,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent → Container → Component</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#updateUI" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="javax.swing.JScrollPane#updateUI" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="updateUI():Unit"></a>
       <a id="updateUI():Unit"></a>
       <h4 class="signature">
@@ -5526,7 +4748,7 @@
         <span class="name">updateUI</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent → JComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JScrollPane → JComponent</dd></dl></div>
     </li><li name="java.awt.Container#validate" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="validate():Unit"></a>
       <a id="validate():Unit"></a>
@@ -5552,20 +4774,7 @@
         <span class="name">validateTree</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.awt">java.awt</span>] </dd><dt>Definition Classes</dt><dd>Container</dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#viewToModel" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="viewToModel(x$1:java.awt.Point):Int"></a>
-      <a id="viewToModel(Point):Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">viewToModel</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.awt.Point">Point</span></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$awt.html" class="extype" name="java.awt">java.awt</a>] </dd><dt>Definition Classes</dt><dd>Container</dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -5611,22 +4820,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
-              
-        </dd></dl></div>
-    </li><li name="javax.swing.text.JTextComponent#write" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="write(x$1:java.io.Writer):Unit"></a>
-      <a id="write(Writer):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">write</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="java.io.Writer">Writer</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JTextComponent</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -5835,7 +5028,7 @@
                 <span class="name">@deprecated</span>
               
         </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version )</i> see corresponding Javadoc for more information.</p></dd></dl></div>
-    </li><li name="java.awt.Component#hide" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="javax.swing.JComponent#hide" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hide():Unit"></a>
       <a id="hide():Unit"></a>
       <h4 class="signature">
@@ -5847,7 +5040,7 @@
         <span class="name deprecated" title="Deprecated: (Since version ) see corresponding Javadoc for more information.">hide</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Component</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>JComponent → Component</dd><dt>Annotations</dt><dd>
                 <span class="name">@Deprecated</span>
               
                 <span class="name">@deprecated</span>
@@ -6380,14 +5573,12 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="javax.swing.JTextArea">
-              <h3>Inherited from <span class="extype" name="javax.swing.JTextArea">JTextArea</span></h3>
-            </div><div class="parent" name="javax.swing.text.JTextComponent">
-              <h3>Inherited from <span class="extype" name="javax.swing.text.JTextComponent">JTextComponent</span></h3>
+        <div class="parent" name="javax.swing.JScrollPane">
+              <h3>Inherited from <span class="extype" name="javax.swing.JScrollPane">JScrollPane</span></h3>
             </div><div class="parent" name="javax.accessibility.Accessible">
               <h3>Inherited from <span class="extype" name="javax.accessibility.Accessible">Accessible</span></h3>
-            </div><div class="parent" name="javax.swing.Scrollable">
-              <h3>Inherited from <span class="extype" name="javax.swing.Scrollable">Scrollable</span></h3>
+            </div><div class="parent" name="javax.swing.ScrollPaneConstants">
+              <h3>Inherited from <span class="extype" name="javax.swing.ScrollPaneConstants">ScrollPaneConstants</span></h3>
             </div><div class="parent" name="javax.swing.JComponent">
               <h3>Inherited from <span class="extype" name="javax.swing.JComponent">JComponent</span></h3>
             </div><div class="parent" name="javax.swing.TransferHandler.HasGetTransferHandler">
@@ -6403,7 +5594,7 @@
             </div><div class="parent" name="java.awt.image.ImageObserver">
               <h3>Inherited from <span class="extype" name="java.awt.image.ImageObserver">ImageObserver</span></h3>
             </div><div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

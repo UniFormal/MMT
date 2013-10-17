@@ -29,9 +29,9 @@
         </head>
         <body class="type">
       <div id="definition">
-        <img src="../../../../../lib/class_big.png" />
+        <a href="Solver$.html" title="Go to companion"><img src="../../../../../lib/class_to_object_big.png" /></a>
         <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.api.objects">objects</a></p>
-        <h1>Solver</h1>
+        <h1><a href="Solver$.html" title="Go to companion">Solver</a></h1>
       </div>
 
       <h4 id="signature" class="signature">
@@ -51,7 +51,7 @@ the solution is a Substitution that provides a closed Term for every unknown var
 If the unknown variables are untyped and rules require a certain type, the Solver adds the type.</p><p>Unsolvable constraints are delayed and reactivated if later solving of unknowns provides further information.
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -122,7 +122,7 @@ If the unknown variables are untyped and rules require a certain type, the Solve
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -161,7 +161,7 @@ If the unknown variables are untyped and rules require a certain type, the Solve
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -178,35 +178,25 @@ If the unknown variables are untyped and rules require a certain type, the Solve
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.objects.Solver.Delay" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Delay"></a>
-      <a id="Delay:Delay"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="Solver$Delay$.html"><span class="name">Delay</span></a><span class="result"> extends <span class="extype" name="java.lang.Throwable">Throwable</span> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      
     </li><li name="info.kwarc.mmt.api.objects.Solver#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="apply(j:info.kwarc.mmt.api.objects.Judgement):Boolean"></a>
-      <a id="apply(Judgement):Boolean"></a>
+      <a id="apply(j:info.kwarc.mmt.api.objects.Judgement,history:info.kwarc.mmt.api.objects.History):Boolean"></a>
+      <a id="apply(Judgement,History):Boolean"></a>
       <h4 class="signature">
       <span class="modifier_kind">
-        <span class="modifier"></span>
+        <span class="modifier">final </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="j">j: <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">apply</span><span class="params">(<span name="j">j: <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a></span>, <span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.objects.History">History</a> = <span class="symbol"><span class="name"><a href="History.html">new History(Nil)</a></span></span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">applies this Solver to one Judgement
  This method can be called multiple times to solve a system of constraints.</p><div class="fullcomment"><div class="comment cmt"><p>applies this Solver to one Judgement
  This method can be called multiple times to solve a system of constraints.</p></div><dl class="paramcmts block"><dt class="param">j</dt><dd class="cmt"><p>the Judgement</p></dd><dt>returns</dt><dd class="cmt"><p>false if the Judgment is definitely not provable; true if it has been proved or delayed
-</p></dd></dl></div>
+</p></dd></dl><dl class="attributes block"> <dt>Annotations</dt><dd>
+                <span class="name">@tailrec</span><span class="args">()</span>
+              
+        </dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -220,61 +210,21 @@ If the unknown variables are untyped and rules require a certain type, the Solve
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.objects.Solver#checkEquality" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="checkEquality(tm1:info.kwarc.mmt.api.objects.Term,tm2:info.kwarc.mmt.api.objects.Term,tpOpt:Option[info.kwarc.mmt.api.objects.Term])(implicitstack:info.kwarc.mmt.api.objects.Stack):Boolean"></a>
-      <a id="checkEquality(Term,Term,Option[Term])(Stack):Boolean"></a>
+    </li><li name="info.kwarc.mmt.api.objects.Solver#check" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="check(j:info.kwarc.mmt.api.objects.Judgement)(implicithistory:info.kwarc.mmt.api.objects.History):Boolean"></a>
+      <a id="check(Judgement)(History):Boolean"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">checkEquality</span><span class="params">(<span name="tm1">tm1: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tm2">tm2: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tpOpt">tpOpt: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">check</span><span class="params">(<span name="j">j: <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.objects.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">proves an Equality Judgment by recursively applying EqualityRule's and other Rule's.</p><div class="fullcomment"><div class="comment cmt"><p>proves an Equality Judgment by recursively applying EqualityRule's and other Rule's.</p></div><dl class="paramcmts block"><dt class="param">tm1</dt><dd class="cmt"><p>the first term</p></dd><dt class="param">tm2</dt><dd class="cmt"><p>the second term</p></dd><dt class="param">tpOpt</dt><dd class="cmt"><p>their type; if given it is used as guidance for the selection of Rule's
-  The well-typedness of tm1 and tm2 is neither assumed nor guaranteed;
-  however, if tpOpt is given and the terms are well-typed, they must type-check against tpOpt.</p></dd><dt>returns</dt><dd class="cmt"><p>false if the Judgment is definitely not provable; true if it has been proved or delayed</p><p>This method should not be called by users (instead, call apply). It is only public because it serves as a callback for Rule's.
-</p></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.objects.Solver#checkMorphism" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="checkMorphism(mor:info.kwarc.mmt.api.objects.Term,from:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack):Boolean"></a>
-      <a id="checkMorphism(Term,Term)(Stack):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">checkMorphism</span><span class="params">(<span name="mor">mor: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="from">from: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.api.objects.Solver#checkTyping" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="checkTyping(tm:info.kwarc.mmt.api.objects.Term,tp:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack):Boolean"></a>
-      <a id="checkTyping(Term,Term)(Stack):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">checkTyping</span><span class="params">(<span name="tm">tm: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tp">tp: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">proves a Typing Judgement by recursively applying TypingRule's and InferenceRule's.</p><div class="fullcomment"><div class="comment cmt"><p>proves a Typing Judgement by recursively applying TypingRule's and InferenceRule's. Takes reflection into account, so it needs frames</p></div></div>
-    </li><li name="info.kwarc.mmt.api.objects.Solver#checkUniverse" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="checkUniverse(univ:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack):Boolean"></a>
-      <a id="checkUniverse(Term)(Stack):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">checkUniverse</span><span class="params">(<span name="univ">univ: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      
+      <p class="shortcomment cmt">checks a judgement</p><div class="fullcomment"><div class="comment cmt"><p>checks a judgement</p><p>This is the method that should be used to recurse into a hypothesis.
+It handles logging and error reporting and delegates to specific methods based on the judgement.</p><p>The apply method is similar but additionally simplifies the judgment.
+</p></div></div>
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>
@@ -284,10 +234,10 @@ If the unknown variables are untyped and rules require a certain type, the Solve
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -313,7 +263,7 @@ If the unknown variables are untyped and rules require a certain type, the Solve
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -330,6 +280,19 @@ If the unknown variables are untyped and rules require a certain type, the Solve
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Solver#error" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="error(message:=&gt;String)(implicithistory:info.kwarc.mmt.api.objects.History):Boolean"></a>
+      <a id="error(⇒String)(History):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">error</span><span class="params">(<span name="message">message: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.objects.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">registers an error and returns false</p>
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
       <a id="finalize():Unit"></a>
@@ -342,7 +305,7 @@ If the unknown variables are untyped and rules require a certain type, the Solve
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -360,18 +323,60 @@ If the unknown variables are untyped and rules require a certain type, the Solve
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.objects.Solver#getConstraints" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getConstraints:List[info.kwarc.mmt.api.objects.Judgement]"></a>
-      <a id="getConstraints:List[Judgement]"></a>
+      <a id="getConstraints:List[info.kwarc.mmt.api.objects.DelayedConstraint]"></a>
+      <a id="getConstraints:List[DelayedConstraint]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getConstraints</span><span class="result">: <span class="extype" name="scala.List">List</span>[<a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a>]</span>
+        <span class="name">getConstraints</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="DelayedConstraint.html" class="extype" name="info.kwarc.mmt.api.objects.DelayedConstraint">DelayedConstraint</a>]</span>
       </span>
       </h4>
       <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>the current list of unresolved constraints
+</p></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Solver#getDef" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getDef(p:info.kwarc.mmt.api.GlobalName):Option[info.kwarc.mmt.api.objects.Term]"></a>
+      <a id="getDef(GlobalName):Option[Term]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDef</span><span class="params">(<span name="p">p: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">retrieves the definiens of a constant and registers the dependency</p><div class="fullcomment"><div class="comment cmt"><p>retrieves the definiens of a constant and registers the dependency</p><p>returns nothing if the type could not be reconstructed
+</p></div></div>
+    </li><li name="info.kwarc.mmt.api.objects.Solver#getDependencies" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getDependencies:List[info.kwarc.mmt.api.CPath]"></a>
+      <a id="getDependencies:List[CPath]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDependencies</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>the current list of dependencies
+</p></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Solver#getErrors" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getErrors:List[info.kwarc.mmt.api.objects.History]"></a>
+      <a id="getErrors:List[History]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getErrors</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="History.html" class="extype" name="info.kwarc.mmt.api.objects.History">History</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>the current list of errors and their history
 </p></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.objects.Solver#getPartialSolution" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getPartialSolution:info.kwarc.mmt.api.objects.Context"></a>
@@ -401,6 +406,35 @@ This solution may contain unsolved variables, and there may be unresolved constr
       </span>
       </h4>
       <p class="shortcomment cmt">the solution to the constraint problem</p><div class="fullcomment"><div class="comment cmt"><p>the solution to the constraint problem</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>None if there are unresolved constraints or unsolved variables; Some(solution) otherwise
+</p></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Solver#getType" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getType(p:info.kwarc.mmt.api.GlobalName):Option[info.kwarc.mmt.api.objects.Term]"></a>
+      <a id="getType(GlobalName):Option[Term]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getType</span><span class="params">(<span name="p">p: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">retrieves the type type of a constant and registers the dependency</p><div class="fullcomment"><div class="comment cmt"><p>retrieves the type type of a constant and registers the dependency</p><p>returns nothing if the type could not be reconstructed
+</p></div></div>
+    </li><li name="info.kwarc.mmt.api.objects.Solver#getUnsolvedVariables" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getUnsolvedVariables:info.kwarc.mmt.api.objects.Context"></a>
+      <a id="getUnsolvedVariables:Context"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getUnsolvedVariables</span><span class="result">: <a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>the context containing only the unsolved variables
+This solution may contain unsolved variables, and there may be unresolved constraints.
 </p></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.objects.Solver#hasUnresolvedConstraints" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="hasUnresolvedConstraints:Boolean"></a>
@@ -442,18 +476,19 @@ This solution may contain unsolved variables, and there may be unresolved constr
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.objects.Solver#inferType" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="inferType(tm:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack):Option[info.kwarc.mmt.api.objects.Term]"></a>
-      <a id="inferType(Term)(Stack):Option[Term]"></a>
+      <a id="inferType(tm:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.objects.History):Option[info.kwarc.mmt.api.objects.Term]"></a>
+      <a id="inferType(Term)(Stack,History):Option[Term]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">inferType</span><span class="params">(<span name="tm">tm: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
+        <span class="name">inferType</span><span class="params">(<span name="tm">tm: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.objects.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">infers the type of a term by applying InferenceRule's</p><div class="fullcomment"><div class="comment cmt"><p>infers the type of a term by applying InferenceRule's</p></div><dl class="paramcmts block"><dt class="param">tm</dt><dd class="cmt"><p>the term</p></dd><dt>returns</dt><dd class="cmt"><p>the inferred type, if inference succeeded</p><p>This method should not be called by users (instead, call apply to a typing judgement with an unknown type). It is only public because it serves as a callback for Rule's.
+      <p class="shortcomment cmt">infers the type of a term by applying InferenceRule's</p><div class="fullcomment"><div class="comment cmt"><p>infers the type of a term by applying InferenceRule's</p></div><dl class="paramcmts block"><dt class="param">tm</dt><dd class="cmt"><p>the term</p></dd><dt class="param">stack</dt><dd class="cmt"><p>its Context</p></dd><dt>returns</dt><dd class="cmt"><p>the inferred type, if inference succeeded</p><p>This method should not be called by users (instead, use object Solver.check).
+It is only public because it serves as a callback for Rule's.</p><p>pre: context is covered</p><p>post: if result, typing judgment is covered
 </p></dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -469,6 +504,19 @@ This solution may contain unsolved variables, and there may be unresolved constr
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log(e:info.kwarc.mmt.api.Error):Unit"></a>
+      <a id="log(Error):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="params">(<span name="e">e: <a href="../Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="log(s:=&gt;String):Unit"></a>
       <a id="log(⇒String):Unit"></a>
       <h4 class="signature">
@@ -478,6 +526,19 @@ This solution may contain unsolved variables, and there may be unresolved constr
       </span>
       <span class="symbol">
         <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logError(s:=&gt;String):Unit"></a>
+      <a id="logError(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logError</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
@@ -507,6 +568,34 @@ This solution may contain unsolved variables, and there may be unresolved constr
       </span>
       </h4>
       <p class="shortcomment cmt">prefix used when logging</p><div class="fullcomment"><div class="comment cmt"><p>prefix used when logging</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.objects.Solver">Solver</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Solver#logState" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logState(prefix:String):Unit"></a>
+      <a id="logState(String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logState</span><span class="params">(<span name="prefix">prefix: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol"><span class="name"><a href="#logPrefix:String">logPrefix</a></span></span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">logs a string representation of the current state</p><div class="fullcomment"><div class="comment cmt"><p>logs a string representation of the current state</p></div><dl class="paramcmts block"><dt class="param">prefix</dt><dd class="cmt"><p>the log prefix to use (the normal one by default)
+(occasionally it's useful to use a different prefix, e.g., &quot;error&quot; or when the normal prefix is not logged but the result should be)
+</p></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logTime" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logTime:Unit"></a>
+      <a id="logTime:Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logTime</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -516,7 +605,7 @@ This solution may contain unsolved variables, and there may be unresolved constr
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -546,6 +635,19 @@ This solution may contain unsolved variables, and there may be unresolved constr
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Solver#presentObj" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="presentObj:info.kwarc.mmt.api.objects.Obj=&gt;String"></a>
+      <a id="presentObj:(Obj)⇒String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">presentObj</span><span class="result">: (<a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a>) ⇒ <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">used for rendering objects, should be used by rules if they want to log</p>
     </li><li name="info.kwarc.mmt.api.objects.Solver#report" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="report:info.kwarc.mmt.api.frontend.Report"></a>
       <a id="report:Report"></a>
@@ -559,20 +661,37 @@ This solution may contain unsolved variables, and there may be unresolved constr
       </span>
       </h4>
       <p class="shortcomment cmt">for Logger</p><div class="fullcomment"><div class="comment cmt"><p>for Logger</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.objects.Solver">Solver</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.objects.Solver#simplify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="simplify(tm:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack):info.kwarc.mmt.api.objects.Term"></a>
-      <a id="simplify(Term)(Stack):Term"></a>
+    </li><li name="info.kwarc.mmt.api.objects.Solver#solve" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="solve(name:info.kwarc.mmt.api.LocalName,value:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.objects.History):Boolean"></a>
+      <a id="solve(LocalName,Term)(Stack,History):Boolean"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">simplify</span><span class="params">(<span name="tm">tm: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>)</span><span class="result">: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
+        <span class="name">solve</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="value">value: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.objects.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">applies ComputationRule's at toplevel until no further rules are applicable.</p><div class="fullcomment"><div class="comment cmt"><p>applies ComputationRule's at toplevel until no further rules are applicable.</p></div><dl class="paramcmts block"><dt class="param">tm</dt><dd class="cmt"><p>the term</p></dd><dt>returns</dt><dd class="cmt"><p>the simplified Term</p><p>This method should not be called by users. It is only public because it serves as a callback for Rule's.
+      <p class="shortcomment cmt">registers the solution for an unknown variable</p><div class="fullcomment"><div class="comment cmt"><p>registers the solution for an unknown variable</p><p>If a solution exists already, their equality is checked.</p></div><dl class="paramcmts block"><dt class="param">name</dt><dd class="cmt"><p>the solved variable</p></dd><dt class="param">value</dt><dd class="cmt"><p>the solution; must not contain object variables, but may contain meta-variables that are declared before the solved variable</p></dd><dt>returns</dt><dd class="cmt"><p>true unless the solution differs from an existing one
+precondition: value is well-typed if the overall check succeeds
 </p></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.Solver#solveEquality" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="solveEquality(tm1:info.kwarc.mmt.api.objects.Term,tm2:info.kwarc.mmt.api.objects.Term,tpOpt:Option[info.kwarc.mmt.api.objects.Term])(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.objects.History):Boolean"></a>
+      <a id="solveEquality(Term,Term,Option[Term])(Stack,History):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">solveEquality</span><span class="params">(<span name="tm1">tm1: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tm2">tm2: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tpOpt">tpOpt: <span class="extype" name="scala.Option">Option</span>[<a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.objects.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">tries to solve an unknown occurring as the torso of tm1 in terms of tm2.</p><div class="fullcomment"><div class="comment cmt"><p>tries to solve an unknown occurring as the torso of tm1 in terms of tm2.</p><p>This method should not be called by users (instead, use check(Equality(tm1,tm2,...))).
+It is only public because it serves as a callback for SolutionRule's.
+(SolutionRule's should not recurse into check(Equality(...)) because it tends to lead to cycles.)
+</p></div></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -586,7 +705,7 @@ This solution may contain unsolved variables, and there may be unresolved constr
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.objects.Solver#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
       <a id="toString():String"></a>
       <h4 class="signature">
@@ -598,7 +717,7 @@ This solution may contain unsolved variables, and there may be unresolved constr
         <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>a string representation of the current state</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.objects.Solver">Solver</a> → AnyRef → Any</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -659,7 +778,7 @@ This solution may contain unsolved variables, and there may be unresolved constr
         <div class="parent" name="info.kwarc.mmt.api.frontend.Logger">
               <h3>Inherited from <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></h3>
             </div><div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

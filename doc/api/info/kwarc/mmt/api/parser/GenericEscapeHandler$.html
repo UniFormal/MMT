@@ -40,13 +40,13 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <span class="name">GenericEscapeHandler</span><span class="result"> extends <a href="AsymmetricEscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler">AsymmetricEscapeHandler</a></span>
+        <span class="name">GenericEscapeHandler</span><span class="result"> extends <a href="AsymmetricEscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler">AsymmetricEscapeHandler</a> with <a href="SemiFormalParser.html" class="extype" name="info.kwarc.mmt.api.parser.SemiFormalParser">SemiFormalParser</a></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="AsymmetricEscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler">AsymmetricEscapeHandler</a>, <a href="EscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.EscapeHandler">EscapeHandler</a>, <a href="LexerExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexerExtension">LexerExtension</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="SemiFormalParser.html" class="extype" name="info.kwarc.mmt.api.parser.SemiFormalParser">SemiFormalParser</a>, <a href="AsymmetricEscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler">AsymmetricEscapeHandler</a>, <a href="EscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.EscapeHandler">EscapeHandler</a>, <a href="LexerExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexerExtension">LexerExtension</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -64,7 +64,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.parser.GenericEscapeHandler"><span>GenericEscapeHandler</span></li><li class="in" name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler"><span>AsymmetricEscapeHandler</span></li><li class="in" name="info.kwarc.mmt.api.parser.EscapeHandler"><span>EscapeHandler</span></li><li class="in" name="info.kwarc.mmt.api.parser.LexerExtension"><span>LexerExtension</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.parser.GenericEscapeHandler"><span>GenericEscapeHandler</span></li><li class="in" name="info.kwarc.mmt.api.parser.SemiFormalParser"><span>SemiFormalParser</span></li><li class="in" name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler"><span>AsymmetricEscapeHandler</span></li><li class="in" name="info.kwarc.mmt.api.parser.EscapeHandler"><span>EscapeHandler</span></li><li class="in" name="info.kwarc.mmt.api.parser.LexerExtension"><span>LexerExtension</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -99,7 +99,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -138,7 +138,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -168,19 +168,6 @@
       </span>
       </h4>
       <p class="shortcomment cmt">determines whether an Escaped token begins at s(i)</p><div class="fullcomment"><div class="comment cmt"><p>determines whether an Escaped token begins at s(i)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="AsymmetricEscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler">AsymmetricEscapeHandler</a> → <a href="EscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.EscapeHandler">EscapeHandler</a> → <a href="LexerExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexerExtension">LexerExtension</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="apply(s:String,index:Int):(String,String,String)"></a>
-      <a id="apply(String,Int):(String,String,String)"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: (<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.lang.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>)</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">return initial escape sequence, actual text, and terminal escape sequence</p><div class="fullcomment"><div class="comment cmt"><p>return initial escape sequence, actual text, and terminal escape sequence</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="AsymmetricEscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler">AsymmetricEscapeHandler</a> → <a href="EscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.EscapeHandler">EscapeHandler</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.parser.EscapeHandler#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="apply(s:String,i:Int,firstPosition:info.kwarc.mmt.api.parser.SourcePosition):info.kwarc.mmt.api.parser.CFExternalToken"></a>
       <a id="apply(String,Int,SourcePosition):CFExternalToken"></a>
@@ -219,10 +206,10 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -235,7 +222,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -264,10 +251,23 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.GenericEscapeHandler#formatOpt" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="formatOpt:None.type"></a>
+      <a id="formatOpt:None.type"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">formatOpt</span><span class="result">: <span class="extype" name="scala.None">None</span>.type</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.parser.GenericEscapeHandler">GenericEscapeHandler</a> → <a href="SemiFormalParser.html" class="extype" name="info.kwarc.mmt.api.parser.SemiFormalParser">SemiFormalParser</a></dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <a id="getClass():Class[_]"></a>
@@ -307,6 +307,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler#lex" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="lex(s:String,index:Int):(String,String,String)"></a>
+      <a id="lex(String,Int):(String,String,String)"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">lex</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: (<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.lang.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>)</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">return initial escape sequence, actual text, and terminal escape sequence</p><div class="fullcomment"><div class="comment cmt"><p>return initial escape sequence, actual text, and terminal escape sequence</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="AsymmetricEscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler">AsymmetricEscapeHandler</a> → <a href="EscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.EscapeHandler">EscapeHandler</a></dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -316,7 +329,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -346,6 +359,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.SemiFormalParser#parse" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="parse(begin:String,text:String,end:String):info.kwarc.mmt.api.objects.Term"></a>
+      <a id="parse(String,String,String):Term"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">parse</span><span class="params">(<span name="begin">begin: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="text">text: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="end">end: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="SemiFormalParser.html" class="extype" name="info.kwarc.mmt.api.parser.SemiFormalParser">SemiFormalParser</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -429,14 +455,16 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler">
+        <div class="parent" name="info.kwarc.mmt.api.parser.SemiFormalParser">
+              <h3>Inherited from <a href="SemiFormalParser.html" class="extype" name="info.kwarc.mmt.api.parser.SemiFormalParser">SemiFormalParser</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler">
               <h3>Inherited from <a href="AsymmetricEscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler">AsymmetricEscapeHandler</a></h3>
             </div><div class="parent" name="info.kwarc.mmt.api.parser.EscapeHandler">
               <h3>Inherited from <a href="EscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.EscapeHandler">EscapeHandler</a></h3>
             </div><div class="parent" name="info.kwarc.mmt.api.parser.LexerExtension">
               <h3>Inherited from <a href="LexerExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexerExtension">LexerExtension</a></h3>
             </div><div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>

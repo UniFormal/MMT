@@ -98,7 +98,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="CPath.html"><span class="name">CPath</span></a><span class="params">(<span name="parent">parent: <a href="ContentPath.html" class="extype" name="info.kwarc.mmt.api.ContentPath">ContentPath</a></span>, <span name="component">component: <a href="objects/DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.objects.DeclarationComponent">DeclarationComponent</a></span>)</span><span class="result"> extends <a href="Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="CPath.html"><span class="name">CPath</span></a><span class="params">(<span name="parent">parent: <a href="ContentPath.html" class="extype" name="info.kwarc.mmt.api.ContentPath">ContentPath</a></span>, <span name="component">component: <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a></span>)</span><span class="result"> extends <a href="Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -114,9 +114,22 @@
         <a href="ComplexStep.html"><span class="name">ComplexStep</span></a><span class="params">(<span name="path">path: <a href="MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>)</span><span class="result"> extends <a href="LNStep.html" class="extype" name="info.kwarc.mmt.api.LNStep">LNStep</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
-      <p class="comment cmt">an include declaration; these are unnamed and identified by the imported theory</p>
+      <p class="comment cmt">an include declaration; ComplexStep(fromPath) acts as the name of an unnamed structure</p>
+    </li><li name="info.kwarc.mmt.api.ComponentContainer" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ComponentContainerextendsAnyRef"></a>
+      <a id="ComponentContainer:ComponentContainer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ComponentContainer.html"><span class="name">ComponentContainer</span></a><span class="result"> extends <a href="../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A ComponentContainer holds the data keyed by a DeclarationComponent</p>
     </li><li name="info.kwarc.mmt.api.Content" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="ContentextendsObject"></a>
+      <a id="ContentextendsAnyRef"></a>
       <a id="Content:Content"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -124,7 +137,7 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="Content.html"><span class="name">Content</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Content.html"><span class="name">Content</span></a><span class="result"> extends <a href="../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">The trait Content is mixed into any class that can be rendered using notations.</p>
@@ -168,6 +181,19 @@
       </span>
       </h4>
       <p class="comment cmt">A DPath represents an MMT document level path.</p>
+    </li><li name="info.kwarc.mmt.api.DeclarationComponent" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="DeclarationComponentextendsAnyRef"></a>
+      <a id="DeclarationComponent:DeclarationComponent"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="DeclarationComponent.html"><span class="name">DeclarationComponent</span></a><span class="result"> extends <a href="../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A DeclarationComponent identifies a component of a Declaration.</p>
     </li><li name="info.kwarc.mmt.api.DeleteError" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="DeleteErrorextendsErrorwithProductwithSerializable"></a>
       <a id="DeleteError:DeleteError"></a>
@@ -194,19 +220,32 @@
       </span>
       </h4>
       <p class="comment cmt">The superclass of all Errors generated by MMT</p>
-    </li><li name="info.kwarc.mmt.api.ExtensionError" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ExtensionErrorextendsErrorwithProductwithSerializable"></a>
+    </li><li name="info.kwarc.mmt.api.ExtensionError" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ExtensionErrorextendsError"></a>
       <a id="ExtensionError:ExtensionError"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ExtensionError.html"><span class="name">ExtensionError</span></a><span class="result"> extends <a href="Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">base class for errors that are thrown by an extension</p>
+    </li><li name="info.kwarc.mmt.api.GeneratedBy" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GeneratedByextendsOriginwithProductwithSerializable"></a>
+      <a id="GeneratedBy:GeneratedBy"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="ExtensionError.html"><span class="name">ExtensionError</span></a><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="GeneratedBy.html"><span class="name">GeneratedBy</span></a><span class="params">(<span name="by">by: <a href="../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result"> extends <a href="Origin.html" class="extype" name="info.kwarc.mmt.api.Origin">Origin</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
-      <p class="comment cmt">errors that occur when registering extensions</p>
+      <p class="comment cmt">generated by some agent</p>
     </li><li name="info.kwarc.mmt.api.GetError" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="GetErrorextendsErrorwithProductwithSerializable"></a>
       <a id="GetError:GetError"></a>
@@ -297,9 +336,22 @@
         <a href="InvalidObject.html"><span class="name">InvalidObject</span></a><span class="params">(<span name="obj">obj: <a href="objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></span>, <span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="Invalid.html" class="extype" name="info.kwarc.mmt.api.Invalid">Invalid</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
-      <p class="comment cmt">errors that occur when structural elements are invalide</p>
+      <p class="comment cmt">errors that occur when objects are invalid</p>
+    </li><li name="info.kwarc.mmt.api.InvalidUnit" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="InvalidUnitextendsInvalidwithProductwithSerializable"></a>
+      <a id="InvalidUnit:InvalidUnit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="InvalidUnit.html"><span class="name">InvalidUnit</span></a><span class="params">(<span name="unit">unit: <a href="objects/ValidationUnit.html" class="extype" name="info.kwarc.mmt.api.objects.ValidationUnit">ValidationUnit</a></span>, <span name="history">history: <a href="objects/History.html" class="extype" name="info.kwarc.mmt.api.objects.History">History</a></span>)</span><span class="result"> extends <a href="Invalid.html" class="extype" name="info.kwarc.mmt.api.Invalid">Invalid</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">errors that occur when judgement do not hold</p>
     </li><li name="info.kwarc.mmt.api.LNStep" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="LNStepextendsObject"></a>
+      <a id="LNStepextendsAnyRef"></a>
       <a id="LNStep:LNStep"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -307,7 +359,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="LNStep.html"><span class="name">LNStep</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="LNStep.html"><span class="name">LNStep</span></a><span class="result"> extends <a href="../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">a step in a LocalName</p>
@@ -320,7 +372,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="LocalName.html"><span class="name">LocalName</span></a><span class="params">(<span name="steps">steps: <span class="extype" name="scala.List">List</span>[<a href="LNStep.html" class="extype" name="info.kwarc.mmt.api.LNStep">LNStep</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="LocalName.html"><span class="name">LocalName</span></a><span class="params">(<span name="steps">steps: <a href="../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="LNStep.html" class="extype" name="info.kwarc.mmt.api.LNStep">LNStep</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">A LocalName represents a local MMT symbol-level declarations (relative to a module).</p>
@@ -333,7 +385,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="LocalPath.html"><span class="name">LocalPath</span></a><span class="params">(<span name="fragments">fragments: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="LocalPath.html"><span class="name">LocalPath</span></a><span class="params">(<span name="fragments">fragments: <a href="../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">A LocalPath represents a local MMT module (relative to a document).</p>
@@ -346,7 +398,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="LocalRef.html"><span class="name">LocalRef</span></a><span class="params">(<span name="segments">segments: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="absolute">absolute: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="LocalRef.html"><span class="name">LocalRef</span></a><span class="params">(<span name="segments">segments: <a href="../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="absolute">absolute: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">A LocalRef represents a possibly relative LocalName or LocalPath</p>
@@ -359,7 +411,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="LookupError.html"><span class="name">LookupError</span></a><span class="params">(<span name="name">name: <a href="LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result"> extends <a href="Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="LookupError.html"><span class="name">LookupError</span></a><span class="params">(<span name="name">name: <a href="LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="context">context: <a href="objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>)</span><span class="result"> extends <a href="Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -389,8 +441,21 @@
       </span>
       </h4>
       <p class="comment cmt">A NarrativeElement is any OMDoc element that is used to represent narration and document structure.</p>
+    </li><li name="info.kwarc.mmt.api.NotationComponent" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="NotationComponentextendsDeclarationComponent"></a>
+      <a id="NotationComponent:NotationComponent"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="NotationComponent.html"><span class="name">NotationComponent</span></a><span class="result"> extends <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.Origin" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="OriginextendsObject"></a>
+      <a id="OriginextendsAnyRef"></a>
       <a id="Origin:Origin"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -398,7 +463,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Origin.html"><span class="name">Origin</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Origin.html"><span class="name">Origin</span></a><span class="result"> extends <a href="../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">describes the origin of a generated knowledge item</p>
@@ -454,8 +519,21 @@
       </span>
       </h4>
       <p class="comment cmt">errors that occur when presenting a knowledge item</p>
+    </li><li name="info.kwarc.mmt.api.RegistrationError" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RegistrationErrorextendsErrorwithProductwithSerializable"></a>
+      <a id="RegistrationError:RegistrationError"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="RegistrationError.html"><span class="name">RegistrationError</span></a><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">errors that occur when registering extensions</p>
     </li><li name="info.kwarc.mmt.api.RelationalElement" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="RelationalElementextendsObject"></a>
+      <a id="RelationalElementextendsAnyRef"></a>
       <a id="RelationalElement:RelationalElement"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -463,12 +541,12 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="RelationalElement.html"><span class="name">RelationalElement</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="RelationalElement.html"><span class="name">RelationalElement</span></a><span class="result"> extends <a href="../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">A RelationalElement is any element that is used in the relational representation of MMT content.</p>
     </li><li name="info.kwarc.mmt.api.Role" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="RoleextendsObject"></a>
+      <a id="RoleextendsAnyRef"></a>
       <a id="Role:Role"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -476,7 +554,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Role.html"><span class="name">Role</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Role.html"><span class="name">Role</span></a><span class="result"> extends <a href="../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
       <p class="comment cmt">Roles of expressions, corresponding to productions of the abstract grammar.</p>
@@ -541,7 +619,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="SourceError.html"><span class="name">SourceError</span></a><span class="params">(<span name="origin">origin: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="ref">ref: <a href="parser/SourceRef.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRef">SourceRef</a></span>, <span name="mainMessage">mainMessage: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="extraMessages">extraMessages: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">immutable.this.Nil</span></span>, <span name="warning">warning: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="fatal">fatal: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>)</span><span class="result"> extends <a href="Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="SourceError.html"><span class="name">SourceError</span></a><span class="params">(<span name="origin">origin: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="ref">ref: <a href="parser/SourceRef.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRef">SourceRef</a></span>, <span name="mainMessage">mainMessage: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="extraMessages">extraMessages: <a href="../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">immutable.this.Nil</span></span>, <span name="warning">warning: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="fatal">fatal: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>)</span><span class="result"> extends <a href="Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">syntax errors in source files</p>
@@ -656,6 +734,19 @@
       </span>
       </h4>
       <p class="comment cmt">This permits the syntax mod ?? name in patterns.</p>
+    </li><li name="info.kwarc.mmt.api.CodComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="CodComponent"></a>
+      <a id="CodComponent:CodComponent"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="CodComponent$.html"><span class="name">CodComponent</span></a><span class="result"> extends <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">codomain of a link</p>
     </li><li name="info.kwarc.mmt.api.CompilerError" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="CompilerError"></a>
       <a id="CompilerError:CompilerError"></a>
@@ -669,6 +760,32 @@
       </span>
       </h4>
       <p class="comment cmt">errors that occur during compiling</p>
+    </li><li name="info.kwarc.mmt.api.DeclarationComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DeclarationComponent"></a>
+      <a id="DeclarationComponent:DeclarationComponent"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DeclarationComponent$.html"><span class="name">DeclarationComponent</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.DefComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DefComponent"></a>
+      <a id="DefComponent:DefComponent"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DefComponent$.html"><span class="name">DefComponent</span></a><span class="result"> extends <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">definitiens of Constant, DefinedTheory, DefinedView, DefinedStructure; target of an Assignment</p>
     </li><li name="info.kwarc.mmt.api.DocumentSkeleton" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="DocumentSkeleton"></a>
       <a id="DocumentSkeleton:DocumentSkeleton"></a>
@@ -682,6 +799,19 @@
       </span>
       </h4>
       <p class="comment cmt">obtained by replacing document parts with references</p>
+    </li><li name="info.kwarc.mmt.api.DomComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DomComponent"></a>
+      <a id="DomComponent:DomComponent"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DomComponent$.html"><span class="name">DomComponent</span></a><span class="result"> extends <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">domain of a Link, meta-theory of a theory</p>
     </li><li name="info.kwarc.mmt.api.Elaborated" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Elaborated"></a>
       <a id="Elaborated:Elaborated"></a>
@@ -722,6 +852,19 @@
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.MetaDataComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MetaDataComponent"></a>
+      <a id="MetaDataComponent:MetaDataComponent"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MetaDataComponent$.html"><span class="name">MetaDataComponent</span></a><span class="result"> extends <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.MetaInclude" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="MetaInclude"></a>
       <a id="MetaInclude:MetaInclude"></a>
@@ -735,6 +878,32 @@
       </span>
       </h4>
       <p class="comment cmt">include generated from meta-theory relation</p>
+    </li><li name="info.kwarc.mmt.api.OneDimNotationComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OneDimNotationComponent"></a>
+      <a id="OneDimNotationComponent:OneDimNotationComponent"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="OneDimNotationComponent$.html"><span class="name">OneDimNotationComponent</span></a><span class="result"> extends <a href="NotationComponent.html" class="extype" name="info.kwarc.mmt.api.NotationComponent">NotationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">one-dimensional notation of a symbol</p>
+    </li><li name="info.kwarc.mmt.api.ParamsComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ParamsComponent"></a>
+      <a id="ParamsComponent:ParamsComponent"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ParamsComponent$.html"><span class="name">ParamsComponent</span></a><span class="result"> extends <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.Path" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Path"></a>
       <a id="Path:Path"></a>
@@ -748,6 +917,19 @@
       </span>
       </h4>
       <p class="comment cmt">helper object for paths</p>
+    </li><li name="info.kwarc.mmt.api.PatternBodyComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PatternBodyComponent"></a>
+      <a id="PatternBodyComponent:PatternBodyComponent"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="PatternBodyComponent$.html"><span class="name">PatternBodyComponent</span></a><span class="result"> extends <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.Role" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Role"></a>
       <a id="Role:Role"></a>
@@ -1242,6 +1424,45 @@
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.TermComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TermComponent"></a>
+      <a id="TermComponent:TermComponent"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="TermComponent$.html"><span class="name">TermComponent</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.TwoDimNotationComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TwoDimNotationComponent"></a>
+      <a id="TwoDimNotationComponent:TwoDimNotationComponent"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="TwoDimNotationComponent$.html"><span class="name">TwoDimNotationComponent</span></a><span class="result"> extends <a href="NotationComponent.html" class="extype" name="info.kwarc.mmt.api.NotationComponent">NotationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">two-dimensional notation of a symbol</p>
+    </li><li name="info.kwarc.mmt.api.TypeComponent" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TypeComponent"></a>
+      <a id="TypeComponent:TypeComponent"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="TypeComponent$.html"><span class="name">TypeComponent</span></a><span class="result"> extends <a href="DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">type of a Constant</p>
     </li><li name="info.kwarc.mmt.api.Unelaborated" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Unelaborated"></a>
       <a id="Unelaborated:Unelaborated"></a>
@@ -1473,6 +1694,19 @@
       </span>
       <span class="symbol">
         <a href="symbols/package.html"><span class="name">symbols</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.test" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="test"></a>
+      <a id="test:test"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="test/package.html"><span class="name">test</span></a>
       </span>
       </h4>
       

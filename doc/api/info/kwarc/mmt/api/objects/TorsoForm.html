@@ -40,15 +40,18 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">TorsoForm</span><span class="params">(<span name="torso">torso: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="apps">apps: <span class="extype" name="scala.List">List</span>[<a href="Appendages.html" class="extype" name="info.kwarc.mmt.api.objects.Appendages">Appendages</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">TorsoForm</span><span class="params">(<span name="torso">torso: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="apps">apps: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Appendage.html" class="extype" name="info.kwarc.mmt.api.objects.Appendage">Appendage</a>]</span>)</span><span class="result"> extends <a href="../utils/HashEquality.html" class="extype" name="info.kwarc.mmt.api.utils.HashEquality">HashEquality</a>[<a href="" class="extype" name="info.kwarc.mmt.api.objects.TorsoForm">TorsoForm</a>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>The torso form of a term is named akin to the head normal forms.</p><p> For example, OMA(h1, OMA(h2, tr, ext2), ext1) is in torso form with tr as the torso and
- (h1,ext1) and (h2,ext2) as Appendages that are attached to the torso.</p><p> Its torso normal form is TorsoNormalForm(c, Appendages(h1, ext1) :: Appendages(h2, ext2) :: Nil)</p><p> The torso form is relevant when h1, h2, ... are repeated applications of elimination operations to an atomic torso.</p><p> These usually extract parts of the information stored in the torso, e.g., chained method invocation on a torso representing an object (in the OO sense).</p><p> For example, OMA(@,OMA(pi1,c),a) arises from the constant c (of product type) by first projection out a component (a function) and then applying it to a.
+ (h1,ext1) and (h2,ext2) as Appendages that are attached to the torso.</p><p> Its torso normal form is TorsoNormalForm(c, Appendage(h1, ext1) :: Appendage(h2, ext2) :: Nil)</p><p> The point of the torso normal form is understood by considering a type theory, whose constructor are paired into introduction and elimination operators.
+ Then the torso form is a useful representation for a series h1, h2, ... of eliminators applied to a term (the torso).
+ The torso is either atomic or a sequence of introductors.
+ In the latter case, a reduction rule (e.g., beta) can be applied, which eventually yields an atomic torso.</p><p> For example, OMA(@,OMA(pi1,c),a) arises from the constant c (of product type) by first projection out a component (a function) and then applying it to a.
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <a href="../utils/HashEquality.html" class="extype" name="info.kwarc.mmt.api.utils.HashEquality">HashEquality</a>[<a href="" class="extype" name="info.kwarc.mmt.api.objects.TorsoForm">TorsoForm</a>], <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -66,7 +69,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.objects.TorsoForm"><span>TorsoForm</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.Product"><span>Product</span></li><li class="in" name="scala.Equals"><span>Equals</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.objects.TorsoForm"><span>TorsoForm</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.Product"><span>Product</span></li><li class="in" name="scala.Equals"><span>Equals</span></li><li class="in" name="info.kwarc.mmt.api.utils.HashEquality"><span>HashEquality</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -87,7 +90,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.objects.TorsoForm#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(torso:info.kwarc.mmt.api.objects.Term,apps:List[info.kwarc.mmt.api.objects.Appendages]):info.kwarc.mmt.api.objects.TorsoForm"></a>
+      <a id="&lt;init&gt;(torso:info.kwarc.mmt.api.objects.Term,apps:List[info.kwarc.mmt.api.objects.Appendage]):info.kwarc.mmt.api.objects.TorsoForm"></a>
       <a id="&lt;init&gt;:TorsoForm"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -95,7 +98,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">TorsoForm</span><span class="params">(<span name="torso">torso: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="apps">apps: <span class="extype" name="scala.List">List</span>[<a href="Appendages.html" class="extype" name="info.kwarc.mmt.api.objects.Appendages">Appendages</a>]</span>)</span>
+        <span class="name">TorsoForm</span><span class="params">(<span name="torso">torso: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="apps">apps: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Appendage.html" class="extype" name="info.kwarc.mmt.api.objects.Appendage">Appendage</a>]</span>)</span>
       </span>
       </h4>
       
@@ -117,7 +120,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -156,7 +159,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -174,15 +177,15 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.objects.TorsoForm#apps" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="apps:List[info.kwarc.mmt.api.objects.Appendages]"></a>
-      <a id="apps:List[Appendages]"></a>
+      <a id="apps:List[info.kwarc.mmt.api.objects.Appendage]"></a>
+      <a id="apps:List[Appendage]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">apps</span><span class="result">: <span class="extype" name="scala.List">List</span>[<a href="Appendages.html" class="extype" name="info.kwarc.mmt.api.objects.Appendages">Appendages</a>]</span>
+        <span class="name">apps</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Appendage.html" class="extype" name="info.kwarc.mmt.api.objects.Appendage">Appendage</a>]</span>
       </span>
       </h4>
       
@@ -208,10 +211,10 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -224,7 +227,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -240,7 +243,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -257,6 +260,32 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.utils.HashEquality#hash" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="hash:Int"></a>
+      <a id="hash:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hash</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the hash code</p><div class="fullcomment"><div class="comment cmt"><p>the hash code</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../utils/HashEquality.html" class="extype" name="info.kwarc.mmt.api.utils.HashEquality">HashEquality</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.utils.HashEquality#hasheq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="hasheq(that:info.kwarc.mmt.api.utils.HashEquality[A]):Boolean"></a>
+      <a id="hasheq(HashEquality[TorsoForm]):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hasheq</span><span class="params">(<span name="that">that: <a href="../utils/HashEquality.html" class="extype" name="info.kwarc.mmt.api.utils.HashEquality">HashEquality</a>[<a href="" class="extype" name="info.kwarc.mmt.api.objects.TorsoForm">TorsoForm</a>]</span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">this hasheq that is the same as this == that, but fails immediately if false</p><div class="fullcomment"><div class="comment cmt"><p>this hasheq that is the same as this == that, but fails immediately if false</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../utils/HashEquality.html" class="extype" name="info.kwarc.mmt.api.utils.HashEquality">HashEquality</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.objects.TorsoForm#heads" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="heads:List[info.kwarc.mmt.api.GlobalName]"></a>
       <a id="heads:List[GlobalName]"></a>
@@ -292,7 +321,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
@@ -426,8 +455,10 @@
               <h3>Inherited from <span class="extype" name="scala.Product">Product</span></h3>
             </div><div class="parent" name="scala.Equals">
               <h3>Inherited from <span class="extype" name="scala.Equals">Equals</span></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.utils.HashEquality">
+              <h3>Inherited from <a href="../utils/HashEquality.html" class="extype" name="info.kwarc.mmt.api.utils.HashEquality">HashEquality</a>[<a href="" class="extype" name="info.kwarc.mmt.api.objects.TorsoForm">TorsoForm</a>]</h3>
             </div><div class="parent" name="scala.AnyRef">
-              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
             </div>
