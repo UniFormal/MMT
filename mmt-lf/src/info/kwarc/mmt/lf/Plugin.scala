@@ -5,9 +5,8 @@ import frontend._
 
 class Plugin extends frontend.Plugin {
    val dependencies = List("info.kwarc.mmt.lf.TypedPlugin")
-   override def init(c: Controller, args: List[String]) {
-      super.init(c, args)
-      val em = c.extman
+   override def start(args: List[String]) {
+      val em = controller.extman
       // type reconstruction rules
       em.ruleStore.add(PiType,PiTerm,ApplyTerm,LambdaTerm,
             Beta,Extensionality,PiCongruence,LambdaCongruence,
@@ -18,14 +17,16 @@ class Plugin extends frontend.Plugin {
       em.ruleStore.add(PiIntroRule, PiElimRule, ArrowIntroRule, ArrowElimRule)
       // pragmatic features
       em.pragmaticStore.add(LFHOAS, LFTyping)
+      // content enhancers
+      em.addExtension(new NotationGenerator)
+      em.addExtension(new SimplificationRuleGenerator)
    }
 }
 
 class TypedPlugin extends frontend.Plugin {
    val dependencies = Nil
-   override def init(c: Controller, args: List[String]) {
-      super.init(c, args)
-      val em = c.extman
+   override def start(args: List[String]) {
+      val em = controller.extman
       em.ruleStore.add(UniverseType,UniverseKind,UnivTerm)
    }
 }
@@ -33,9 +34,8 @@ class TypedPlugin extends frontend.Plugin {
 /* A temporary Plugin that provides pragmatic notations for the LF produced by Twelf */
 class OldLFPlugin extends frontend.Plugin {
    val dependencies = Nil
-   override def init(c: Controller, args: List[String]) {
-      super.init(c, args)
-      val em = c.extman
+   override def start(args: List[String]) {
+      val em = controller.extman
       em.pragmaticStore.add(OldLFHOAS)
    }
 }
