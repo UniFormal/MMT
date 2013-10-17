@@ -540,7 +540,10 @@ class StructureAndObjectChecker(controller: Controller) extends StructureChecker
     * (if changed) marks depending components as dirty
     */
    override def unitCont(vu: ValidationUnit) {
-      val tc = controller.globalLookup.getComponent(vu.component)
+      val tc = controller.globalLookup.getComponent(vu.component) match {
+         case tc: TermContainer => tc
+         case _ => throw ImplementationError("not a TermContainer")
+      }
       tc.dependsOn.clear
       val (success,analyzed) = vdt.apply(vu)(errorCont, tc.dependsOn += _)
       val changed = Some(analyzed) != tc.analyzed
@@ -548,7 +551,7 @@ class StructureAndObjectChecker(controller: Controller) extends StructureChecker
       if (! success) tc.setAnalyzedDirty // revisit failed declarations
       if (changed) {
          log("changed")
-         controller.memory.content.notifyUpdated(vu.component)
+         controller.memory.content.notifyUpdated(vu.component) //TODO: this could be cleaner if taken care of by the onCheck method
       } else
          log("not changed")
    }

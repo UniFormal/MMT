@@ -68,13 +68,19 @@ class QueryServer extends ServerPlugin("query") {
 
 /** Plugin for MMT actions */
 class AdminServer extends ServerPlugin("admin") {
+   private val logCache = new CacheHandler("admin")
+   override def start(args: List[String]) {
+      report.addHandler(logCache)
+   }
+   override def destroy {
+      report.removeHandler("admin")
+   }
    def apply(path: List[String], query: String, body: Body) = {
-      controller.report.record
       val c = query.replace("%20", " ")
       val act = frontend.Action.parseAct(c, controller.getBase, controller.getHome)
       controller.handle(act)
-      val r = controller.report.recall
-      controller.report.clear
+      val r = logCache.recall
+      logCache.clear
       Server.XmlResponse(Util.div(r reverseMap Util.div))
    }
 }

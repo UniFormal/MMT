@@ -30,7 +30,7 @@ var hovering = {
 		//hover on OMS: show jobad:href and select the smallest proper superexpression
 		var target = targetObj[0];
 		if (target.hasAttribute('jobad:href')) {			
-			var mr = $(target).closest('mrow');
+			var mr = targetObj.closest('mrow');
 			var select = (mr.length == 0) ? target : mr[0];
 			mmt.setSelected(select);
 			this.selectSource(select);
@@ -45,7 +45,7 @@ var hovering = {
 		// hover on variable: select declaration
 		if (target.hasAttribute('jobad:varref')) {
 			var v = $(target).parents('mrow').find('mrow').filter(function() {
-                return $(this).attr('jobad:mmtref') == target.attr('jobad:varref');
+                return $(this).attr('jobad:mmtref') == targetObj.attr('jobad:varref');
 			})
 			mmt.setSelected(v[0]);
 			this.selectSource(v[0]);

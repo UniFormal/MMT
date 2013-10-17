@@ -9,6 +9,10 @@ abstract class ChangeListener extends Extension {
    def onAdd(c: ContentElement) {}
    /** called after deleting the element */
    def onDelete(path: Path) {}
+   /** called after updating the element
+    *  @param newElem the element after its update
+    */
+   def onUpdate(newElem: ContentElement) {}
    /** called after clearing the Constant */
    def onClear {}
    /** called after checking the element */

@@ -39,7 +39,7 @@ abstract class Lookup(val report : frontend.Report) {
      get(path) match {case e : PatternAssignment => e case _ => throw GetError(msg(path))} 
    def getPattern(path : GlobalName, msg: Path => String = defmsg) : Pattern = 
      get(path) match {case e : Pattern => e case _ => throw GetError(msg(path))}
-   def getComponent(path: CPath, msg: Path => String = defmsg) : TermContainer = {
+   def getComponent(path: CPath, msg: Path => String = defmsg) : ComponentContainer = {
       val se = getO(path.parent).getOrElse(throw GetError(msg(path.parent)))
       se.getComponent(path.component) getOrElse {
          throw GetError("illegal component: " + path)

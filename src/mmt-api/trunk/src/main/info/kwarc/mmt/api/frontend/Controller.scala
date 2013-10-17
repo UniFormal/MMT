@@ -222,11 +222,8 @@ class Controller extends ROController with Logger {
                   //     if no reactivatable element exists, we append at the end
                   if (old.compatible(nw)) {
                      log("activating " + old.path)
-                     // deactivate all children and components
+                     // deactivate all children
                      old.getDeclarations.foreach {_.inactive = true}
-                     old.getComponents.foreach {case (_, cont) =>
-                        if (cont.isDefined) cont.inactive = true
-                     }
                      // merge metadata and components of the new one into the old one
                      old.metadata = nw.metadata
                      nw.getComponents.foreach {case (comp, cont) =>
@@ -234,6 +231,9 @@ class Controller extends ROController with Logger {
                      }
                      // activate the old one
                      old.inactive = false
+                     extman.changeListeners foreach {l =>
+                        l.onUpdate(nw)
+                     }
                   } else {
                      // delete the deactivated old one, and add the new one
                      log("deleting deactivated " + old.path)
@@ -318,10 +318,6 @@ class Controller extends ROController with Logger {
       ce.foreachDeclaration {d => if (d.inactive) {
          log("deleting deactivated " + d.path)
          delete(d.path)
-      }}
-      ce.foreachComponent {case (cp,cont) => if (cont.inactive) {
-         log("deleting deactivated " + cp)
-         delete(cp)
       }}
    }
    /** reads a file containing a document and returns the Path of the document found in it

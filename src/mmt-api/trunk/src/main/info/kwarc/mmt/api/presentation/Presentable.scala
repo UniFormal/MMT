@@ -31,7 +31,7 @@ case object Omitted extends Literal {
 }
 
 /** Wrapper around components that permits named access of components */
-case class ContentComponents(comps : List[Content], names: List[(String, Int)] = Nil, owner: Option[Path] = None, obj: Option[Obj] = None) {
+case class ContentComponents(comps : List[Content], names: List[(DeclarationComponent, Int)] = Nil, owner: Option[ContentPath] = None, obj: Option[Obj] = None) {
    def apply(i: Int) : Content = apply(NumberedIndex(i))
    def apply(s: String) : Content = apply(NamedIndex(s))
    def apply(i: CIndex): Content = resolve(i).map(x => comps(x)).getOrElse(throw GetError("undefined component: " + i))
@@ -39,8 +39,8 @@ case class ContentComponents(comps : List[Content], names: List[(String, Int)] =
       case NumberedIndex(n) => Some(n)
       case NamedIndex(s) => names.find(_._1 == s).map(_._2)
    }
-   def getObjectPath(i:Int) : Option[OPath] = owner flatMap {p => 
-      names.find(_._2 == i).map(x => OPath(p, x._1))
+   def getObjectPath(i:Int) : Option[CPath] = owner flatMap {p => 
+      names.find(_._2 == i).map(x => CPath(p, x._1))
    }
    def length = comps.length
 }

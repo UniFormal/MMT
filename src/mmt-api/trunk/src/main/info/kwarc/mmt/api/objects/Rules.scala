@@ -321,7 +321,7 @@ abstract class SolutionRule(val head: GlobalName) extends Rule {
    def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Boolean
 }
 
-/** A continuation returned by [[info.kwarc.mmt.api.objects.ProvingRule]] */
+/** A continuation returned by [[IntroProvingRule]] and [[IntroProvingRule]] */
 abstract class ApplicableProvingRule {
   def label: String
   //def ranking: Int

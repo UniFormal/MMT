@@ -14,8 +14,7 @@ class GraphViz extends TraversingBuildTarget {
    private var graphviz: String = null
    
    /** expects one argument: the path to graphviz */
-   override def init(controller: frontend.Controller, args: List[String]) {
-      super.init(controller,args)
+   override def start(args: List[String]) {
       tg = new ontology.TheoryGraph(controller.depstore)
       args match {
          case hd::Nil =>

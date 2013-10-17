@@ -22,7 +22,7 @@ case class InvalidNotation(msg: String) extends java.lang.Throwable
  * 
  * if the only marker is SeqArg, it must hold that OMA(name, List(x)) = x because sequences of length 1 are parsed as themselves 
  */
-case class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precedence) extends ComplexNotation {
+class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precedence) extends ComplexNotation {
    /** @return the list of markers that should be used for parsing */
    lazy val parsingMarkers = fixity.markers.filter {
       case _:PresentationMarker => false // there should not be any presentation markers in notations used for parsing
@@ -46,7 +46,7 @@ case class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Pr
     * @param args number of arguments
     * @param vars number of variables
     * @param scopes number of scopes
-    * @return Presentation that can be rendered using the [[StyleBasedPresenter]]  
+    * @return Presentation that can be rendered using the [[presentation.StyleBasedPresenter]]  
     */
    def presentation(args: Int, vars: Int, scopes: Int, attrib: Boolean) = {
      val flatMarkers = arity.flatten(presentationMarkers, args, vars, scopes, attrib)
@@ -55,7 +55,7 @@ case class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Pr
            if (fixity.markers contains i)
               Nil // skip arguments that are explicitly placed by the notation
            else
-              List(Fragment("implicit", ArgSep() + Component(NumberedIndex(n), BracketInfo())))
+              List(ArgSep(), Component(NumberedIndex(n), BracketInfo()))
      }
      var implicitsToDo = ! implicitsP.isEmpty
      /** translates a list of Markers into old-style presentation that can be handed off */
@@ -69,7 +69,7 @@ case class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Pr
              if (implicitsToDo && numDelimsSeen == 1) {
                 implicitsToDo = false
                 // add all implicit arguments after the first delimiter
-                delim = NoBrackets(delim + PList(implicitsP))
+                delim = NoBrackets(delim + Fragment("implicit", PList(implicitsP)))
              }
              if (i+1<ms.length)
                 delim += ArgSep()
@@ -93,15 +93,29 @@ case class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Pr
                 Component(NumberedIndex(0), BracketInfo(Some(Precedence.neginfinite)))
           case SeqArg(n,sep) => throw ImplementationError("non-flat marker")
           case Var(n,_,Some(sep)) => throw ImplementationError("non-flat marker")
-          case GroupMarker(ms) => PList(translateMarkers(ms))
+          case GroupMarker(ms) => aux(ms)
           case ScriptMarker(main, sup, sub, over, under) =>
-             Fragment("scripted", PList(translateMarkers(List(main))), aux(under), aux(over), aux(sub), aux(sup))
-          case TableMarker(_,_) => PText("to do: table marker")
+             Fragment("scripted", aux(List(main)),
+                                  aux(under.toList), aux(over.toList), aux(sub.toList), aux(sup.toList))
+          case FractionMarker(a,b,_) =>
+             Fragment("fraction", aux(a, true), aux(b, true))
+          case InferenceMarker => Compute(None, "infer")
         }}
      }
-     def aux(mOpt: Option[Marker]) : Presentation = mOpt match {
-        case None => ArgSep()
-        case Some(m) => PList(translateMarkers(List(m), true))
+     /**
+      * @param ms markers to translate
+      * @param separated if true, inserts separator in between all translated markers
+      * @param translated markers, separator if empty
+      */
+     def aux(ms: List[Marker], separated: Boolean = false) : Presentation = {
+        val msT = translateMarkers(ms, true)
+        msT match {
+           case Nil => ArgSep()
+           case hd::Nil => hd
+           case l =>
+              val msTS = if (separated) msT.head :: msT.tail.flatMap(p => List(ArgSep(), p)) else msT
+              NoBrackets(PList(msTS))
+        }
      }
      val tokens = translateMarkers(flatMarkers)
      PList(tokens)
@@ -137,7 +151,7 @@ object TextNotation {
          case m: Marker => m
          case s: String => Marker.parse(name, s)
       }
-      TextNotation(name, Mixfix(markers), prec)
+      new TextNotation(name, Mixfix(markers), prec)
    }
    
    /** the precedence of the notation ( 1 )

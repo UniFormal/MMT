@@ -78,7 +78,7 @@ class HTMLExporter extends ContentExporter {
                        def toggle(label: String) {
                           span("compToggle", s"toggle(this,'$label')") {rh(label)}
                        }
-                       d.getComponents.foreach {case (comp, tc) => if (tc.get.isDefined) 
+                       d.getComponents.foreach {case (comp, tc) => if (tc.isDefined) 
                           toggle(comp.toString)
                        }
                        if (! d.metadata.getTags.isEmpty)
@@ -87,12 +87,15 @@ class HTMLExporter extends ContentExporter {
                           toggle("metadata")
                     }
                }
-               d.getComponents.foreach {case (comp, tc) =>
-                  tr(comp.toString) {
-                        tc.get.foreach {t =>
-                            doComponent(comp, t)
-                        }
-                  }
+               d.getComponents.foreach {
+                  case (comp, tc: TermContainer) =>
+                     tr(comp.toString) {
+                           tc.get.foreach {t =>
+                               doComponent(comp, t)
+                           }
+                     }
+                  case (comp, nc: NotationContainer) =>
+                     //TODO render notations
                }
                if (! d.metadata.getTags.isEmpty) tr("tags") {
                   td {rh("tags")}
