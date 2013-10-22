@@ -9,7 +9,7 @@ import backend._
 import objects._
 import utils._
 
-class MWSHarvestExporter extends ContentExporter {
+class MWSHarvestContentExporter extends ContentExporter {
   val outDim = "mws-harvest"
   val key = "mws-harvest"
   
