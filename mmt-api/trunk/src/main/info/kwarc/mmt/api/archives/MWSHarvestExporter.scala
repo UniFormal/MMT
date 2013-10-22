@@ -10,9 +10,10 @@ import objects._
 import utils._
 
 class MWSHarvestContentExporter extends ContentExporter {
-  val outDim = "mws-harvest"
-  val key = "mws-harvest"
-  
+  val outDim = "mws-content"
+  val key = "mws-content"
+  override val outExt = "mws"
+
   val custom : ArchiveCustomization = new DefaultCustomization    
     
   def doTheory(t: DeclaredTheory) { 
