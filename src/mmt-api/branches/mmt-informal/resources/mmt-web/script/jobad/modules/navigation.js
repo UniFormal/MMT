@@ -10,19 +10,24 @@ var navigation = {
 	},
 	
 	init: function(JOBADInstance) {
-		//updateVisibility(document.documentElement);
 		$('#currentstyle').text(mmt.notstyle.split("?").pop());
 		var query = window.location.search.substring(1);
-		this.navigate(query);
+		if (query != "")
+		   this.navigate(query);
 	},
 
-	navigate : function (uri) {
+	navigate: function (uri) {
 		// main div
 		var url = mmt.adaptMMTURI(uri, '', true);
 		mmt.ajaxReplaceIn(url, 'main');
 		// breadcrumbs
 		var bcurl = '/:breadcrumbs?' + uri;
 		mmt.ajaxReplaceIn(bcurl, 'breadcrumbs');
+	},
+	
+	navigateServer: function(uri) {
+	   url = '/:admin?navigate ' + uri
+	   $.ajax({'url': url});
 	},
 
 	leftClick: function(target, JOBADInstance) {
@@ -51,26 +56,24 @@ var navigation = {
 		if (target.hasAttribute('jobad:href')) {
 			var mr = $(target).closest('mrow');
 			var select = (mr.length == 0) ? target[0] : mr[0];
-			mmt.setSelected(select);
-			return true;
+			return true; // do nothing for now
 		}
-		// highlight bracketed expression
-		if (mmt.getTagName(target[0]) == 'mfenced') {
-			mmt.setSelected(target[0]);
-			return true;
-		}
-		// highlight variable declaration
-		if (target.hasAttribute('jobad:varref')) {
-			/* var v = $(target).parents('mrow').children().filter('[jobad:mmtref=' +  target.attr('jobad:varref') + ']');
-			   this.setSelected(v[0]);*/
-			alert("Unsupported");
-			return true;
-		}
-		
 		mmt.unsetSelected();	
 		return true;	//we did stuff also
 	},
-  
+
+	contextMenuEntries: function(targetArray, JOBADInstance) {
+	   target = targetArray[0];
+		var res = {};
+		var me = this;
+		if (target.hasAttribute('jobad:href')) {
+		   res["remote navigation"] = function() {
+		         var r = target.getAttribute('jobad:href');
+		         me.navigateServer(r);
+		   };
+		}
+      return res;
+   },
 };
 
 JOBAD.modules.register(navigation);

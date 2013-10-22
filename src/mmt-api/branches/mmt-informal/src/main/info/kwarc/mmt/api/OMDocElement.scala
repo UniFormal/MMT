@@ -9,8 +9,7 @@ import scala.xml.Node
 trait StructuralElement extends Content with metadata.HasMetaData {
    /** the MMT URI of the element */
    def path : Path
-   /** the governingPath required by content is the path */
-   def governingPath = Some(path)
+   def governingPath = path match {case c: ContentPath => Some(c) case _ => None}
    /** the containing knowledge item, a URL if none */
    def parent : Path
    /** If a StructuralElement has been generated (as opposed to being physically present in the document),
@@ -44,7 +43,7 @@ trait ContentElement extends StructuralElement {
    /** returns all children of this elements */
    def getDeclarations: List[ContentElement]
    /** returns all term components of this elements */
-   def getComponents: List[(DeclarationComponent,symbols.TermContainer)]
+   def getComponents: List[(DeclarationComponent,ComponentContainer)]
    /** returns a specific component if present */
    def getComponent(c: DeclarationComponent) = getComponents find (_._1 == c) map (_._2)
    /** recursively applies a function to all declarations in this element (in declaration order) */
@@ -53,7 +52,7 @@ trait ContentElement extends StructuralElement {
       getDeclarations foreach {d => d.foreachDeclaration(f)}
    }
    /** recursively applies a function to all components in this element (in declaration order) */
-   def foreachComponent(f: (CPath,symbols.TermContainer) => Unit) {
+   def foreachComponent(f: (CPath,ComponentContainer) => Unit) {
       getComponents foreach {case (c,t) => f(path $ c,t)}
       getDeclarations foreach {d => d.foreachComponent(f)}
    }
@@ -62,7 +61,7 @@ trait ContentElement extends StructuralElement {
     */  
    def compatible(that: ContentElement) = {(this, that) match {
       case (a: symbols.Constant, b: symbols.Constant) =>
-         a.path == b.path && a.alias == b.alias && a.rl == b.rl && a.not == b.not
+         a.path == b.path && a.alias == b.alias && a.rl == b.rl
       case (a: modules.DeclaredTheory, b: modules.DeclaredTheory) =>
          a.path == b.path && a.meta == b.meta
       case (a: modules.DeclaredView, b: modules.DeclaredView) =>
@@ -106,7 +105,8 @@ trait Content {
    def toNode : Node
    /** the role, the non-terminal in the MMT grammar producing this item */  
    def role : Role
-   def governingPath : Option[Path]
+   /** the governingPath is used to define the owner of components in a CPath */
+   def governingPath : Option[ContentPath]
    /**
     * the components are an abstract definition of the children of a content item that are used for presentation 
     *
@@ -114,7 +114,7 @@ trait Content {
     */
    def components : List[Content]
    /** content items may provide short names for their components, Nil by default */
-   def compNames : List[(String,Int)] = Nil
+   def compNames : List[(DeclarationComponent,Int)] = Nil
    /** this ContentComponents object permits accessing components by name */
    def contComponents = ContentComponents(components, compNames, governingPath)
 }

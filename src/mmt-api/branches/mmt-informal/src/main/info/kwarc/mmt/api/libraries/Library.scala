@@ -411,14 +411,15 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
    def notifyUpdated(p: CPath) {
       log("updated: " + p)
       logGroup {
-         modules.values.foreach {
-            case m: Module =>
-               m.foreachComponent {case (comp,termCont) =>
-                  if (termCont.dependsOn contains p) {
+         modules.values.foreach {case m: Module =>
+            m.foreachComponent {
+               case (comp,tc: TermContainer) =>
+                  if (tc.dependsOn contains p) {
                      log("setting dirty: " + comp)
-                     termCont.setAnalyzedDirty
+                     tc.setAnalyzedDirty
                   }
-               }
+               case _ =>
+            }
          }
       }
    }

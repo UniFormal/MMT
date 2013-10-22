@@ -6,11 +6,17 @@ import info.kwarc.mmt.api._
  */
 abstract class ChangeListener extends Extension {
    /** called after adding the element */
-   def onAdd(c: ContentElement)
+   def onAdd(c: ContentElement) {}
    /** called after deleting the element */
-   def onDelete(path: Path)
+   def onDelete(path: Path) {}
+   /** called after updating the element
+    *  @param newElem the element after its update
+    */
+   def onUpdate(newElem: ContentElement) {}
    /** called after clearing the Constant */
-   def onClear
+   def onClear {}
    /** called after checking the element */
-   def onCheck(c: ContentElement)
+   def onCheck(c: ContentElement) {}
+   /** called when navigating to an element */
+   def onNavigate(p: Path) {}
 }

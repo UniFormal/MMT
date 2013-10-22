@@ -122,7 +122,7 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
     * Applicability of rules is determined based on the pragmatic form (using controller.pragmatic.StrictOMA).
     * Rules are passed strict terms and are expected to return strict terms.
     * 
-    * The code use [[Simplified]] to remember whether a term has been simplified.
+    * The code uses [[Simple]] to remember whether a term has been simplified.
     * So multiple calls to this method do not cause multiple traversals. 
     */
    def simplify(t: Term, scope: Term, context: Context = Context()) = {

@@ -63,7 +63,7 @@ object Server {
   }
 
   /**
-   * A Json response that the server sends back to the browser
+   * A Json response that the server sends back to the browser 
    * @param json the Json message that is sent in the HTTP body
    */
   def JsonResponse(json: JSONType): HLet = new HSimpleLet {
@@ -121,7 +121,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
      controller.report("tiscaf", s)
   }
   override def onError(e: Throwable) {
-     throw ServerError("unknown error in underlying server").setCausedBy(e)
+     logError("error in underlying server: " + e.getClass + ":" + e.getMessage + "\n" + e.getStackTrace.map(_.toString).mkString("","\n",""))
   }
   protected def ports = Set(port) // port to listen to
   protected def apps = List(new RequestHandler) // RequestHandler is defined below
@@ -143,21 +143,6 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
           val mmtpath = Path.parse(req.query, controller.getBase)
           val node = scala.xml.Utility.trim(Util.breadcrumbs(mmtpath))
           Some(XmlResponse(node))
-        case ":admin" :: _ =>
-          try {
-            controller.report.record
-            val c = req.query.replace("%20", " ")
-            val act = frontend.Action.parseAct(c, controller.getBase, controller.getHome)
-            controller.handle(act)
-            val r = controller.report.recall
-            controller.report.clear
-            Some(XmlResponse(Util.div(r reverseMap Util.div)))
-          } catch {
-            case e: Error =>
-              controller.report(e)
-              controller.report.clear
-              Some(XmlResponse(Util.div("error: " + e.longMsg)))
-          }
         case ":tree" :: _ => Some(TreeResponse)
         case ":change" :: _ => Some(ChangeResponse)
         case ":search" :: _ => Some(MwsResponse)

@@ -25,12 +25,15 @@ trait Extension extends Logger {
    /** a custom error class for this extension */
    case class LocalError(s: String) extends ExtensionError(logPrefix, s)
    
-   /** initialization (empty by default) */
-   def init(controller: Controller, args: List[String]) {
+   /** MMT initialization */
+   private[api] def init(controller: Controller) {
       this.controller = controller
       report = controller.report
    }
-   /** termination (empty by default)
+   
+   /** extension-specific initialization (override as needed, empty by default) */
+   def start(args: List[String]) {}
+   /** extension-specific cleanup (override as needed, empty by default)
     *
     * Extensions may create persistent data structures and processes,
     * but they must clean up after themselves in this method
@@ -78,19 +81,20 @@ class ExtensionManager(controller: Controller) extends Logger {
       lexerExtensions ::= QuoteHandler
       lexerExtensions ::= new PrefixEscapeHandler('\\')
       lexerExtensions ::= new NumberLiteralHandler(true)
-      serverPlugins   ::= new web.SVGServer
-      serverPlugins   ::= new web.QueryServer
-      
+      serverPlugins   :::= List(new web.SVGServer, new web.QueryServer, new web.AdminServer)
       queryExtensions :::= List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
                                 new ontology.Present, new ontology.PresentDecl) 
       
       // initialize all extensions
-      getAll.foreach(_.init(controller, Nil))
+      getAll.foreach(_.init(controller))
    }
 
-   /** adds an Importer and initializes it */
+   /** instantiates an extension, initializes it, and adds it
+    *  @param cls qualified class name (e.g., org.my.Extension), must be on the class path at run time
+    *  @param args arguments that will be passed when initializing the extension
+    */
    def addExtension(cls: String, args: List[String]) {
-       log("adding extension " + cls)
+       log("trying to create extension " + cls)
        val clsJ = java.lang.Class.forName(cls)
        val ext = try {
           val Ext = clsJ.asInstanceOf[java.lang.Class[Extension]]
@@ -98,13 +102,18 @@ class ExtensionManager(controller: Controller) extends Logger {
        } catch {
           case e : java.lang.Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e) 
        }
+       addExtension(ext, args)
+   }
+   /** initializes and adds an extension */
+   def addExtension(ext: Extension, args: List[String] = Nil) {
+       log("adding extension " + ext.getClass.toString)
+       ext.init(controller)
        if (ext.isInstanceOf[Plugin]) {
           log("  ... as plugin")
           val pl = ext.asInstanceOf[Plugin]
           loadedPlugins ::= pl
           pl.dependencies foreach {d => if (! loadedPlugins.exists(_.getClass == java.lang.Class.forName(d))) addExtension(d, Nil)}
        }
-       ext.init(controller, args)
        if (ext.isInstanceOf[Foundation]) {
           log("  ... as foundation")
           foundations ::= ext.asInstanceOf[Foundation]
@@ -130,13 +139,14 @@ class ExtensionManager(controller: Controller) extends Logger {
           parserExtensions ::= ext.asInstanceOf[ParserExtension]
        }
        if (ext.isInstanceOf[QueryExtension]) {
-          log("  ... as parser extension")
+          log("  ... as query extension")
           queryExtensions ::= ext.asInstanceOf[QueryExtension]
        }
        if (ext.isInstanceOf[ServerPlugin]) {
           log("  ... as server plugin")
           serverPlugins ::= ext.asInstanceOf[ServerPlugin]
        }
+       ext.start(args)
    }
 
    /** retrieves an applicable Compiler */
@@ -149,8 +159,13 @@ class ExtensionManager(controller: Controller) extends Logger {
    def getServerPlugin(cont : String) : Option[ServerPlugin] = serverPlugins.find(_.isApplicable(cont))
    /** retrieves an applicable parser extension */
    def getParserExtension(se: StructuralElement, keyword: String) : Option[ParserExtension] = parserExtensions find {_.isApplicable(se, keyword)}
-   /** retrieves an applicable Foundation */
-   def getFoundation(p: MPath) : Option[Foundation] = foundations find {_.foundTheory == p}
+   /** retrieves the closest Foundation that covers a theory, if any */
+   def getFoundation(p: MPath) : Option[Foundation] = foundations find {_.foundTheory == p} orElse {
+      val mt = objects.TheoryExp.meta(objects.OMMOD(p))(controller.globalLookup)
+      mt flatMap getFoundation
+   }
+   def getFoundation(thy: objects.Term) : Option[Foundation] =
+      objects.TheoryExp.meta(thy)(controller.globalLookup) flatMap getFoundation
 
    /** sets the URL of the MathWebSearch backend */
    def setMWS(uri: URI) {mws = Some(uri)}
@@ -165,12 +180,12 @@ class ExtensionManager(controller: Controller) extends Logger {
          if (es.isEmpty) "" else label + "\n" + es.map("  " + _.toString + "\n").mkString("") + "\n\n"
       mkL("foundations", foundations) +
       mkL("build targets", targets) +
-      mkL("querytransformers", querytransformers) +
+      mkL("query transformers", querytransformers) +
       mkL("change listeners", changeListeners) +
       mkL("presenters", presenters) +
-      mkL("serverPlugins", serverPlugins) +
-      mkL("parserExtensions", parserExtensions)
-      mkL("queryExtensions", queryExtensions)
+      mkL("server plugins", serverPlugins) +
+      mkL("parser extensions", parserExtensions)
+      mkL("query extensions", queryExtensions)
       mkL("plugins", loadedPlugins) +
       "rules\n" + ruleStore.stringDescription 
    }

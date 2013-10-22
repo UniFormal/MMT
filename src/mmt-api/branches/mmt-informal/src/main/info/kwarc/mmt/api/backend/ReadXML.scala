@@ -70,7 +70,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
 	         val r = SRef(docParent.get, Path.parseS(t,modParent), false)
 	         add(r)
          case <plain-narration>{_*}</plain-narration> => 
-             val r = NarrativeObject.fromXML(m.child.head)
+             val r = Narration.parseNarrativeObject(m.child.head)(docParent.get)
              add(new PlainNarration(docParent.get, r))
          case <definition>{_*}</definition> => 
              val targetsS = xml.attr(m, "for").split(" ")
@@ -104,9 +104,9 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
         	     add(t, md)
         	     docParent map (dp => add(MRef(dp, tpath, true)))
               body.foreach {d => 
-        	              report.indent
-                       readSymbols(OMMOD(tpath), tpath, d)
-        	              report.unindent
+        	        logGroup {
+                    readSymbols(OMMOD(tpath), tpath, d)
+        	        }
         	     }
 	         case (base : DPath, <view>{_*}</view>) =>
 	            log("view " + name + " found")
@@ -124,9 +124,9 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
 	            add(v, md)
 	            docParent map (dp => add(MRef(dp, vpath, true)))
 			      body.foreach {d =>
-	               report.indent
-	               readSymbols(OMMOD(vpath), to.toMPath, d) //TODO relative names will be resolved wrong
-	               report.unindent
+	               logGroup {
+	                  readSymbols(OMMOD(vpath), to.toMPath, d) //TODO relative names will be resolved wrong
+	               }
 	            }
 	         case (_, <rel>{_*}</rel>) => 
 	            //ignoring logical relations, produced by Twelf, but not implemented yet

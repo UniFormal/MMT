@@ -8,30 +8,21 @@ object Narration {
   def parseNarrativeObject(n : scala.xml.Node)(implicit dpath : DPath) : NarrativeObject = n.label match {
     case "#PCDATA" => new NarrativeText(n.toString)
     case "OMOBJ" => new NarrativeTerm(Obj.parseTerm(n, dpath))
-  
-    case "ref" => 
+    case "ref" if n.prefix == "omdoc" => 
       val targetS = (n \ "@target").text
       val target = Path.parse(targetS, dpath)
-      val text = n.child.head.toString
+      val text = n.child.mkString(" ")
       new NarrativeRef(target, text)
     case _ => 
       val child = n.child.map(parseNarrativeObject)
       new NarrativeNode(n, child.toList)
-  }
-  
+  } 
 }
 
 trait NarrativeObject extends Content {
   def toNode : scala.xml.Node 
   def role = Role_NarrativeObject
   def governingPath = None
-}
-
-object NarrativeObject {
-  def fromXML(n : scala.xml.Node) : NarrativeObject = n.label match {
-    case "#PCDATA" => new NarrativeText(n.toString)
-    case _ => new NarrativeNode(n, n.child.map(fromXML).toList)
-  }
 }
 
 class NarrativeText(val text : String) extends NarrativeObject {
@@ -45,7 +36,7 @@ class NarrativeTerm(val term : Term) extends NarrativeObject {
 }
 
 class NarrativeRef(val target : Path, val text : String) extends NarrativeObject {
-  def toNode = <om:ref target={target.toPath}> {text} </om:ref>
+  def toNode = <omdoc:ref target={target.toPath}> {text} </omdoc:ref>
   def toHTML = <span jobad:href={target.toPath}> {text} </span>
   def components = presentation.StringLiteral(text) :: Nil
 }

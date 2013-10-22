@@ -28,12 +28,3 @@ object Position {
    }
 
 }
-
-
-/** A path in an object
- *  @param parent the knowledge item
- *  @param component an object that's part of the parent's declaration. Example: if component is "type", then it refers to the type of the parent
- *  @param pos position in the syntax tree (default is the root, i.e. the component) */
-case class OPath(parent: Path, component: String, pos: Position = Position.Init) {
-   def /(i: Int) = OPath(parent, component, pos / i)
-}

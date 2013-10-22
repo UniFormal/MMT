@@ -11,7 +11,7 @@ import utils._
 class HTMLExporter extends ContentExporter {
    val outDim = "html"
    val key = "html"
-   private lazy val mmlPres = new MathMLPresenter(controller) // must be lazy because controller is provided in init only
+   private lazy val mmlPres = new presentation.MathMLPresenter(controller) // must be lazy because controller is provided in init only
    private def optAttr(key: String, value: String) = if (value == "") "" else s""" $key="$value""""
    private def html(body: => Unit) {
       rh("<html>")
@@ -78,7 +78,7 @@ class HTMLExporter extends ContentExporter {
                        def toggle(label: String) {
                           span("compToggle", s"toggle(this,'$label')") {rh(label)}
                        }
-                       d.getComponents.foreach {case (comp, tc) => if (tc.get.isDefined) 
+                       d.getComponents.foreach {case (comp, tc) => if (tc.isDefined) 
                           toggle(comp.toString)
                        }
                        if (! d.metadata.getTags.isEmpty)
@@ -87,12 +87,15 @@ class HTMLExporter extends ContentExporter {
                           toggle("metadata")
                     }
                }
-               d.getComponents.foreach {case (comp, tc) =>
-                  tr(comp.toString) {
-                        tc.get.foreach {t =>
-                            doComponent(comp, t)
-                        }
-                  }
+               d.getComponents.foreach {
+                  case (comp, tc: TermContainer) =>
+                     tr(comp.toString) {
+                           tc.get.foreach {t =>
+                               doComponent(comp, t)
+                           }
+                     }
+                  case (comp, nc: NotationContainer) =>
+                     //TODO render notations
                }
                if (! d.metadata.getTags.isEmpty) tr("tags") {
                   td {rh("tags")}
@@ -136,33 +139,5 @@ class HTMLExporter extends ContentExporter {
             }
          }
       }}
-   }
-}
-
-class MathMLPresenter(val controller: Controller) extends presentation.NotationBasedPresenter {
-   def getNotation(o: Obj) = Presenter.getNotation(controller, o)
-   override def doIdentifier(p: ContentPath)(implicit rh : RenderingHandler) {
-      val s = p match {
-         case OMMOD(m) % name => name.toPath  //not parsable if there are name clashes 
-         case _ => p.toPath
-      }
-      val n = <mo jobad:xref={p.toPath}>{s}</mo>
-      rh(n)
-   }
-   override def doVariable(n: LocalName)(implicit rh : RenderingHandler) {
-      val node = <mi>{n.toPath}</mi>
-      rh(node)
-   }
-   override def doOperator(s: String)(implicit rh : RenderingHandler) {
-      val n = <mo>{s}</mo>
-      rh(n)
-   }
-   override def doDelimiter(p: GlobalName, d: parser.Delimiter)(implicit rh : RenderingHandler) {
-      val n = <mo jobad:xref={p.toPath}>{d.text}</mo>
-      rh(n)
-   }
-   override def doSpace(level: Int)(implicit rh : RenderingHandler) {
-      val n = <mspace/>
-      rh(n)
    }
 }

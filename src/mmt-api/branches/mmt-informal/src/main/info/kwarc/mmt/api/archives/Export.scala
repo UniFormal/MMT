@@ -4,6 +4,39 @@ import info.kwarc.mmt.api._
 import modules._
 import presentation._
 import utils._
+import documents._
+
+/** A BuildTarget that traverses the content dimension and applies continuation functions to each module.
+ *
+ *  Deriving this class is well-suited for writing exporters that transform MMT content into other formats.
+ */
+abstract class NarrationExporter extends GenericTraversingBuildTarget {
+
+   /** must be set correctly before any of the abstract methods are called */
+   private var _rh: RenderingHandler = null
+   /** @return the RenderingHandler to which all produced output must be sent */ 
+   protected def rh = _rh 
+   
+   /** applied to each theory */
+   def doDocument(doc: Document)
+
+   val inDim = "narration"
+   def includeFile(name: String) = name.endsWith(".omdoc")
+   
+   def buildFile(a: Archive, inFile: File, inPath: List[String], outFile: File): List[Error] = {
+      try {
+        val dp = DPath(a.narrationBase / inPath)
+        val doc = controller.getDocument(dp)
+        _rh = new presentation.FileWriter(outFile)
+        doDocument(doc)
+        rh.done
+        Nil
+      } catch {
+        case e : Error => List(e)
+      }
+   }
+}
+
 
 /** A BuildTarget that traverses the content dimension and applies continuation functions to each module.
  *

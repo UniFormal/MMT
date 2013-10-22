@@ -4,6 +4,8 @@ import info.kwarc.mmt.api._
 import frontend._
 import objects._
 
+import QueryTypeConversion._
+
 /** A QueryExtension provides the syntax and and semantics for an atomic function of the QMT query language
  *  
  *  All functions are unary from one BaseType to another. All are actually families of functions, parametrized by an MPath.
@@ -12,14 +14,14 @@ import objects._
  *  @param in the input type
  *  @param out output type
  */
-abstract class QueryExtension(val name: String, val in: QueryBaseType, val out: QueryBaseType) extends Extension {
+abstract class QueryExtension(val name: String, val in: QueryType, val out: QueryType) extends Extension {
    protected lazy val extman = controller.extman // must be lazy because controller is initially null
    protected lazy val lup = controller.globalLookup
    /** the semantics of this function
     *  @param the evaluation of the argument
     *  @param param the MPath this family of functions is parametrized by
     */
-   def evaluate(argument: BaseType, param: MPath): BaseType
+   def evaluate(argument: BaseType, param: MPath): List[BaseType]
 }
 
 /** parsing of strings into objects */
@@ -50,7 +52,7 @@ class Infer extends QueryExtension("infer", ObjType, ObjType) {
 
 
 /** type reconstruction of objects */
-class Analyze extends QueryExtension("analyze", ObjType, ObjType) {
+class Analyze extends QueryExtension("analyze", ObjType, List(ObjType,ObjType)) {
    def evaluate(argument: BaseType, param: MPath) = {
       argument match { 
          case t: Term =>
@@ -58,8 +60,8 @@ class Analyze extends QueryExtension("analyze", ObjType, ObjType) {
             val (tR, tpR) = Solver.check(controller, stack, t).getOrElse {
                throw InvalidObject(t, "term was parsed but did not type-check")
             }
-            tR
-         case o: Obj => o
+            List(tR,tpR)
+         case o: Obj => o // ill-typed
          case _ => throw ImplementationError("evaluation of ill-typed query")
       }
    }

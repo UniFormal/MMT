@@ -81,6 +81,7 @@ sealed trait ContentPath extends Path {
    /** checks if the path is a generic MMT path */
    def isGeneric : Boolean
    def $(comp: DeclarationComponent) = CPath(this, comp)
+   def module : Term
 }
 
 /**
@@ -103,6 +104,7 @@ case class MPath(parent : DPath, name : LocalPath) extends ContentPath {
    def ?(n : String) : GlobalName = this ? LocalName(n)
    def components : List[Content] = List(StringLiteral(doc.uri.toString), StringLiteral(name.flat),Omitted, StringLiteral(toPathEscaped))
    def isGeneric = (this == mmt.mmtcd)
+   def module = OMMOD(this)
 }
 
 /** A GlobalName represents the MMT URI of a symbol-level declaration.

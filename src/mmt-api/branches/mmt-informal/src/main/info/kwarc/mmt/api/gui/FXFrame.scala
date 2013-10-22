@@ -1,4 +1,4 @@
-/*
+
 package info.kwarc.mmt.api.gui
 
 import javafx.application.Platform
@@ -49,36 +49,46 @@ import FXHelpers._
  * and may not be valid yet (null) immediately after object creation.
  */
 class FXPanel extends JFXPanel {
-   private var sceneVar: MyScene = null  // valid only after calling init
+   private var _scene: MyScene = null  // valid only after calling init
    /** the scene in the FX component */
-   def scene = sceneVar
+   def scene = _scene
 
-   private var engineVar: WebEngine = null  // valid only after calling init
+   private var _engine: WebEngine = null  // valid only after calling init
    /** the FX web engine */
-   def engine = engineVar
+   def engine = _engine
 
-   /** initializes the FXFrame */
+   /** initializes the FXPanel */
    private def init {
      wrap {
        val wv = new WebView
        setScene(new Scene(wv))
-       engineVar = wv.getEngine
-       sceneVar = MyScene(getScene)
+       _engine = wv.getEngine
+       _scene = MyScene(getScene)
      }
-     //setVisible(true)
    }
    
    /** a wrapper around engine.loadContent, runs on the FX application thread */
-   def loadContent(html: scala.xml.Node) {
-      val page = <html><body>{html}</body></html>
-      //println(page.toString)
+   def load(html: scala.xml.Node) {
       wrap {
-         engine.loadContent(page.toString)
+         engine.loadContent(html.toString)
       }
+   }
+   def loadBody(html: scala.xml.Node) {
+      val page = <html><body>{html}</body></html>
+      load(page)
+   }
+   def loadBody(s: String) {
+      loadBody(scala.xml.Text(s))
    }
    
    // initialize the instance
    init
 }
 
-*/
+/** a JFrame containing a single FXPanel
+ */
+class FXFrame extends JFrame("MMT-FX") {
+   val panel = new FXPanel
+   add(panel)
+   setVisible(true)
+}
