@@ -1,0 +1,148 @@
+<h1 id="AModuleSystemforTwelf">A Module System for Twelf</h1>
+
+<p>
+Together with Carsten Schürmann, I have designed and implemented a module system for <a href="http://www.twelf.org/">Twelf</a>. Implementation and documentation can be found in the <a href="https://cvs.concert.cs.cmu.edu/twelf/branches/twelf-mod">mod branch of Twelf</a>.
+The research paper on the module system is available <a href="http://kwarc.info/frabe/Research/RS_twelfmod_09.pdf">here</a>.
+</p>
+
+<p>
+The Twelf module system combines the advantages of the operational semantics of a programming language module system such as SML with the denotational semantics of a structured algebraic specification language such as ASL.
+Moreover, it features namespce management that combines the advantages of phyiscal and logical addressing of modules that are spread over multiple files.
+</p>
+
+<p>
+The Twelf module system is inspired by MMT and used extensively in the <a href="https://trac.omdoc.org/LATIN">LATIN</a> project.
+</p>
+
+<h2 id="Usage">Usage</h1>
+
+<p>
+Usage instructions are available <a href="https://svn.kwarc.info/repos/MMT/deploy/jedit-plugin/twelf.txt">here</a>.
+</p>
+
+<p>
+I strongly recommend using my student Alin Iacob's catalog with Twelf, which is available <a href="https://svn.kwarc.info/repos/MMT/deploy/lfcatalog">here</a>.
+</p>
+
+<p>
+Moreover, I strongly recommend using my jEdit plugin for Twelf, which includes the catalog automatically. Installation instructions are <a href="https://svn.kwarc.info/repos/MMT/deploy/jedit-plugin/instructions.txt">here</a>.
+</p>
+
+<h2 id="Features">Features</h2>
+
+<p>
+Signatures and views are intended as the toplevel declarations (but see Backwards compatibility below).
+</p>
+
+<ul>
+<li>Signatures (%sig) encapsulate a list of declarations. They may include or instantiate other signatures (%include and %struct), and such structured signatures are elaborated into non-modular signatures. Thus, the module system is conservative. This part was inspired by Kevin Watkins's earlier work.</li>
+<li>Views (%view) define morphisms in the category of LF signatures (i.e., compositional typing-preserving translations of expressions). They can be modular in the same way as signatures.
+Their expressivity is comparable to SML-style functors, and to some extent they can be emulated using structures. Therefore, this feature has proved controversial in the past, and it would be worth a separate thread if there is interest in a deeper discussion.</li>
+<li>The toplevel signatures and views are grouped into namespaces (%namespace), which are identified by URIs. Thus, the pair of a URI and a signature/view name yields a globally unique logical identifiers.
+Optionally, Twelf can locate required signatures dynamically using an external catalog that translates logical identifiers into physical locations.</li>
+</ul>
+
+<h2 id="Documentation">Documentation</h2>
+
+<p>
+<a class="missing changeset" title="No default repository defined">[1]</a> includes the updated user's guide. So far all users have interacted with me personally so that I have not focussed on providing more documentation. I can write more according to demand.
+</p>
+
+<p>
+<a class="missing changeset" title="No default repository defined">[2]</a> is a self-contained introduction to the core features (%sig, %struct, %view). Carsten and I are working on a revised and expanded version of <a class="missing changeset" title="No default repository defined">[2]</a>. One can also study the examples (see (3)), some of which are accompanied by mature papers.
+</p>
+
+<p>
+Twe Twelf module system arises as the instantiation of my generic MMT language <a class="missing changeset" title="No default repository defined">[7]</a> with LF. Thus, many of the extensive discussions in <a class="missing changeset" title="No default repository defined">[7]</a> apply to Twelf as well.
+</p>
+
+<h2 id="ExamplesandCaseStudies">Examples and Case Studies</h2>
+
+<p>
+My logic group at Jacobs University is systematically applying the module system to obtain a comprehensive suite of encodings of logics, type theories, and set theories, as well as of translations between them. This is inspired by the Logosphere project but also includes encodings of model theory.
+</p>
+
+<p>
+This is an ongoing effort currently comprising several hundred modules. All encodings can be found at <a class="missing changeset" title="No default repository defined">[3]</a>. We've published some of them in <a class="missing source" title="No default repository defined">[4,5,6]</a>.
+</p>
+
+<h2 id="Backwardscompatibility">Backwards compatibility</h2>
+
+<p>
+The implementation required substantial changes to the fundamental data structures (IntSyn), which affected almost every source file. Apart from that, we've tried to keep the changes minimally invasive.
+</p>
+
+<p>
+In particular, the module system permits nested signatures, and the toplevel is always implicitly a signature. Thus, modular Twelf can handle all legacy content (including meta-theory) naturally, and we did not see a decrease in performance.
+</p>
+
+<p>
+The only exception is Flit, which is currently disabled. I don't expect any difficulties in adapting the Flit code, but I would need the help of someone familiar with it.
+</p>
+
+<h2 id="Metatheory">Meta theory</h2>
+
+<p>
+Currently the module system is not related to the meta-theory (%total, etc.), and this is the biggest impediment for users who consider migrating to modular Twelf.
+</p>
+
+<p>
+We did preserve the invariants regarding the subordination relation. But we did not implement anything beyond that. Therefore, if meta-theory and module system are combined, Twelf may or may not behave as expected.
+</p>
+
+<p>
+This is an obvious item for future work. But there are two problems:
+
+<ol>
+<li>Design. If a signature S with some meta-theorems is imported into T, some but not necessarily all meta-theorems of S will remain valid in T. There are two ways to handle this:
+<ol type="i">
+<li>dynamic checking: check an S-meta-theorem when S is imported<br/>
+Here we translate all S-meta-theorems to T and recheck them in T.
+</li>
+<li>static checking: investigate the conditions under which S-meta-theorems are preserved in T<br/>
+Here we check meta-theorems in S; if the import from S to T satisfies certain conditions, the meta-theorems are guaranteed to hold in T as well, and no rechecking is necessary.
+</li>
+</ol>
+Theoretically, (ii) is more appealing because it leads to a theory of modular meta-theory. But it still requires further research. (i), on the other hand, is more useful in the short term, but it would still be non-trivial to specify and implement.
+</li>
+<li>Manpower. I'm not aware of anybody who has the expertise, time, and interest to pursue (i) or (ii) at the moment. I don't use the Twelf meta-theory myself so that I have little expertise and interest for (i), and I'm interested in (ii) but have little time for it.<br/>
+Carsten and I looked at (ii) for a simple special case, which would cover many practically relevant cases. But so far we haven't had the time to work out the details. Karl Crary and others had some ideas how to do (i).</li>
+</ol>
+
+I'm interested in discussing this further. And I would be happy to collaborate if someone else is willing to take the lead on this.
+</p>
+
+<h2 id="References">References</h2>
+
+<p>
+<a class="missing changeset" title="No default repository defined">[1]</a>  SVN: <a href="https://cvs.concert.cs.cmu.edu/twelf/branches/twelf-mod">https://cvs.concert.cs.cmu.edu/twelf/branches/twelf-mod</a>
+</p>
+
+<p>
+<a class="missing changeset" title="No default repository defined">[2]</a>  Rabe, Schürmann. A Practical Module System for LF. LFMTP 2009.
+</p>
+
+<p>
+<a class="missing changeset" title="No default repository defined">[3]</a>  LATIN
+</p>
+
+<p>
+project homepage: <a href="https://trac.omdoc.org/LATIN">https://trac.omdoc.org/LATIN</a>
+LF encodings: <a href="https://svn.kwarc.info/repos/twelf">https://svn.kwarc.info/repos/twelf</a>
+</p>
+
+<p>
+<a class="missing changeset" title="No default repository defined">[4]</a>  Dumbrava, Horozal, Sojakova. A Case Study on Formalizing Algebra in a Module System. MLPA 2009.
+</p>
+
+<p>
+<a class="missing changeset" title="No default repository defined">[5]</a>  Iancu, Rabe. Formalizing Foundations of Mathematics. MSCS 21(4):883-911.
+</p>
+
+<p>
+<a class="missing changeset" title="No default repository defined">[6]</a>  Horozal, Rabe. Representing Model Theory in a Type-Theoretical Logical Framework. TCS 412(37):4919-4945.
+</p>
+
+<p>
+<a class="missing changeset" title="No default repository defined">[7]</a>  Rabe, Kohlhase. A Scalable Module System. <a href="http://arxiv.org/abs/1105.0548">http://arxiv.org/abs/1105.0548</a>
+</p>

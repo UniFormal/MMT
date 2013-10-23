@@ -1,0 +1,53 @@
+All project folders are built into one jar file "projectname.jar" each (Exception: jEdit is built into MMTPlugin.jar to comply with jEdit conventions.).<br/>
+These are deployed in the deploy/ folder, from where they can be <a href="run.html">run</a> directly.<br/>
+
+Each project folder contain eclipse projects, which can be imported into eclipse, and ant build files for building from the command line.
+
+<h2>Building with Eclipse</h2>
+
+<p>
+All projects are committed together with eclipse project files.<br/>
+These permit importing the needed projects into Eclipse via "Import - Existing Projects into Workspace".
+(Do not copy the source into your workspace.)
+</p>
+
+<p>
+Most projects depend on the special project "deploy-wrapper" in the deploy directory.<br/>
+In that case, you have to import "deploy-wrapper" as well.<br/>
+This dummy project contains no code and only depends on the MMT jars. This trick is used to conveniently import the jars of the other projects.
+</p>
+
+All projects receive their dependencies
+ <ul>
+  <li>for project-specific external dependencies: the project's lib directory</li>
+  <li>for other MMT projects: through the deploy-wrapper project<br/>
+    Thus, each project can be built individually. (Exception: Occassionally, projects have a direct dependency on mmt-api.)</li>
+ </ul>
+
+<h2>Building with ant</h2>
+    
+<p>
+All projects are committed together with ant build files (of name build.xml).
+</p>
+
+<p>
+These permit building each project using simply "ant" (which defaults to using build.xml, which in turn defaults to the deploy target).<br/>
+The available targets are compile, build (produces the jar), and deploy (builds and copies the jar to the deploy folder).
+</p>
+
+<p>
+All build scripts receive their dependencies (including the used Scala compiler) from the deploy directory.<br/>
+Thus, when building a project, all dependencies must be built (and deployed) first.
+</p>
+
+<p>
+There is also a master build file in the src/ folder, which can be used to build and deploy multiple projects respecting dependencies.<br/>
+</p>
+
+<h2>Building the API Documentation</h2>
+
+The built target scaladoc in the master build file builds the API documentation into the folder doc/api.<br/>
+It is advisable to delete this folder first.
+<br/>
+
+If you have added files and plan to commit the API documentation to SVN, make sure your SVN client automatically sets the MIME type of all added files correctly (e.g., html, css, and js). Otherwise, the SVN HTTP server will not serve them properly.

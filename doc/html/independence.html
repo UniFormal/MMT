@@ -1,0 +1,21 @@
+MMT goes out of its way to be be generic and reusable. It does not commit to a particular that is implemented, and it does not commit to a particular application that this implementation is used for.  
+
+<h2>Application Independence</h2>
+
+MMT is an API and as such not committed to particular applications.<br/>
+
+The MMT system includes several <a href="systems.html">MMT-based applications</a> that yield, e.g., build tools for MMT archives, a jEdit-based text editor, or a web server for MMT content.
+
+<h2>Logic Independence</h2>
+
+MMT is logic-independent, i.e., it is not commited to a particular logic.<br/>
+Therefore, MMT users have to define their logic in MMT or work import a logic defined by someone else.<br/>
+MMT beginners should check out the following two MMT archives
+<ul>
+<li>svn co ​https://tntbase.mathweb.org/repos/oaff/urtheories<br/>
+    This archive defines several basic languages, in particular the logical framework LF.
+</li>
+<li>svn co ​https://tntbase.mathweb.org/repos/oaff/empty-archive<br/>
+This is an example archive that uses LF to define some logics. It include a sample startup file that can be used to load these two archives.
+</li>
+</ul>

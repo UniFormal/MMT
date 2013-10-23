@@ -1,0 +1,36 @@
+MMT is a language for formal mathematics that pays special attention to foundation-independence, scalability, and modularity. MMT is also a sublanguage of the ​OMDoc format for open mathematical documents and will be integrated into the upcoming OMDoc 2 format.
+
+The goals of OMDoc and MMT are to provide a web-scalable environment in which all mathematics can be represented in a way that supports both rigorous mathematical and logical tools as well as knowledge management services (e.g., databases, notation management, document management, change management).
+
+
+MMT Language
+
+The key features of the MMT language are
+
+    a module system for declarative languages that combines expressivity with simplicity,
+    a foundation- and logic-independent semantics,
+    a design that incorporates web-scalability. 
+
+The central concepts of the MMT syntax are
+
+    module level declarations
+        (structured) theories encapsulate mathematical contexts.
+        theory morphisms translate between theories either by representation (views) or by inheritance (structures),
+        styles are sets of notations to render MMT expressions for humans or systems. 
+    symbol level declarations
+        constants represent mathematical objects as possibly typed, possibly defined entities akin to Pure Type Systems.
+        Axiom and theorem declarations are treated as special cases of symbols via the Curry-Howard correspondence.
+        notations state transformation rules in styles. 
+    object level expressions
+        MMT integrates the OpenMath syntax for expressions but extends it with notions of theories and contexts.
+        morphisms are compositions of inclusions, views, and structures and are treated like objects in MMT. 
+
+Based on MMT, a number of knowledge management services have been implemented such as
+
+    notation-based presentation,
+    interactive web-browisng,
+    MMT-aware databases with custom indexing and retrieval,
+    project-based abstraction and work flows for building, distribution, and sharing,
+    management of change,
+    querying integrating hierarchic, relational, and unification-based paradigms,
+    the universal OpenMath machine based on registering custom implementations with the MMT server. 

@@ -1,0 +1,24 @@
+<h2>Running the MMT Shell</h2>
+
+The deploy/ folder includes 2 run scripts (with .bat/.sh file endings to be used on Windows/Unix):
+<ul>
+ <li>run-plain.sh: opens an empty MMT shell</li>
+ <li>run-file.sh:  runs the MMT script provided as the only command line argument</li>
+</ul>
+
+An MMT script is a text file containing one shell command per line. (Empty lines are allowed.)<br/>
+The customary file ending for MMT scripts is msl.<br/>
+
+Users may wish to
+<ul>
+ <li>add the deploy folder to the PATH enviroment variable or to define 'mmt' as an alias for run-file.sh</li>
+ <li>assciate msl files with the run-file scripts</li>
+</ul> 
+
+<h2>Shell Commands</h2>
+
+The language of shell commands is implemented by the <a href="../api/index.html#info.kwarc.mmt.api.frontend.Action">info.kwarc.mmt.api.frontend.Action</a> class.<br/>
+
+Each subclass comes with scaladoc and can be best understood by browsing the known subclasses in the API documentation.<br/>
+
+The up-to-date context-free grammar for shell commands is part of the constructor parser in the corresponding source file.

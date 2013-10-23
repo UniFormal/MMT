@@ -1,0 +1,24 @@
+The base URL of the MMT repository is <a href="https://svn.kwarc.info/repos/MMT">https://svn.kwarc.info/repos/MMT</a>.<br/>
+
+The content of the subdirectories is as follows:
+<ul>
+<li>deploy/: The jar files ready to be used without building. This directory is self-contained, i.e., includes all its dependencies (except for the Java runtime of course).<br/>
+Their status is somewhat between release and nightly build: I commit new builts frequently, and they are usually stable.<br/>
+The subfolders are
+<ul>
+  <li>mmt: all jar files of MMT projects</li>
+  <li>lib: all jar files that MMT depends on, including the Scala library
+    The only extenal dependency is the JVM itself. For most parts, Java 6 is fine; occassionally Java 7 is needed.
+    The <a href="run.html">run scripts</a> automatically put all necessary jars on the Java classpath.
+  </li>
+  <li>lfcatalog:    the jar files of the LF catalog, to be used with Twelf</li>
+  <li>jedit-plugin: all jar and other files needed for the <a href="jedit.html">plugin for jEdit</a></li>
+  <li>informal-mmt: jar files for the mmt-informal branch of mmt-api</li>
+</ul>
+</li>
+<li>doc/: All documentation including</li>
+<li>src/: All sources.</li>
+<li>styles/: The styles for presentation MathML generation. This is currently needed for rendering but meant to become obsolete in the future.</li>
+</ul>
+
+MMT is divided into various <a href="projects.html">sub-projects</a>. Each project name occurs as the name of a subfolder in src/ and of a jar file in deploy/.
