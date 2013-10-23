@@ -1,23 +1,18 @@
-3) MMT Archives
+<p>
+MMT is <a href="independenc.html">language-independent</a>. Therefore, it can only do anything after defining a language in MMT.<br/>
 
-   MMT archives correspond to software projects and are the primary means to maintain and distribute MMT content.
-   
-   A number of MMT archives is available at https://tntbase.mathweb.org/repos/oaff/
-   
-   In particular, beginners should do
-     mkdir archives
-     cd archives
-     svn co https://tntbase.mathweb.org/repos/oaff/urtheories
+In MMT, both languages and their their theories are represented as MMT theories. Thus, there is no conceptual distinction between, e.g., the logical framework LF, first-order logic defined in LF, and monoids defined in first-order logic.
+All are MMT theories. 
+</p>
 
-   The urtheories archive defines among other languages the logical framework LF. And empty-archive provides an example of some MMT theories using LF.  
-   
-5) Writing MMT Archives
+<p>
+Various MMT theories are available at https://tntbase.mathweb.org/repos/oaff/<br/>
 
-   Use
-     svn co https://tntbase.mathweb.org/repos/oaff/empty-archive
-   to obtain an empty example archive to play with and adapt.
-   
-   Use 
-     run-file.sh empty-archive/build.msl
-   when you are done with your changes.
-
+In particular, this repository includes subfolders for the following <a href="archives.html">MMT archives</a>: 
+<ul>
+<li>empty-archive: an example archive for beginners (depends on urtheories)</li>
+<li>urtheories: This defines various top level languages, in particular the logical framework LF.</li>
+<li>latin: the LATIN logic atlas defined in LF</li>
+<li>MML: an import of the Mizar Mathematical Library</li>
+<li>tptp: an import of the TPTP problem library</li>
+</ul>
