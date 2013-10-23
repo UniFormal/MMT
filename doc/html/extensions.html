@@ -1,0 +1,46 @@
+<p>
+The MMT API provides a number of extension interfaces that permit injecting customizing the behavior of MMT algorithms.<br/>
+
+All these interfaces inherit from <a href="../api/index.html#info.kwarc.mmt.api.frontend.Extension">info.kwarc.mmt.api.frontend.Extension</a> and can be studied by browsing the know abstract subclasses in the API documentation.<br/>
+
+The API also includes numerous concrete subclasses.
+</p>
+
+<h2>Loading Extensions</h2>
+
+Users load extensions with the extension <a href="shell.html">shell</a> command.<br/>
+
+Programmers load them using the appropriate method of the <a href="../api/index.html#info.kwarc.mmt.api.frontend.ExtensionManager">ExtensionManager</a>, which maintains all loaded extensions.
+
+<h2>Writing Extensions</h2>
+
+To write an extension, simply subclass the desired extension interface in Java or Scala.<br/>
+
+The subclass must have a single constructor that takes no arguments.<br/>
+
+Extensions are persistent and have full access to the MMT controller.
+
+<h2>Extension Interfaces</h2>
+
+The extension interfaces include
+<ul>
+<li><a href="../api/index.html#info.kwarc.mmt.api.frontend.plugin">frontend.plugin</a>
+adds general purpose functionality. In particular, plugins can be used to bundle multiple extensions or perform other customizations.</li>
+<li><a href="../api/index.html#info.kwarc.mmt.api.parser.ParserExtension">parser.ParserExtension</a>
+adds new keywords to MMT's native text syntax. The MMT parser will relegate processing of declarations to the appropriate extension based on the keyword.
+</li>
+<li><a href="../api/index.html#info.kwarc.mmt.api.libraries.Foundation">libraries.Foundation</a>
+adds stand-alone type checking for a particular language.</li>
+<li><a href="../api/index.html#info.kwarc.mmt.api.archives.BuildTarget">archives.BuildTarget</a>
+adds targets to the <a href="applications/build.html">build tool</a>.<br/>
+Extension developers only have to implement the action on a single file, and MMT takes care of recursion and change management.</li>
+<li><a href="../api/index.html#info.kwarc.mmt.api.presentation.Presenter">presentation.Presenter</a> implements rendering methods for new output formats.</li>
+<li><a href="../api/index.html#info.kwarc.mmt.api.web.ServerPlugin">web.ServerPlugin</a>
+adds functionality to the HTTP server. Each ServerPlugin provides a key and serves requests to the URL /:key.<br/>
+Extension developers only have to implement the function, and MMT handles the HTTP protocol.
+</li>
+<li><a href="../api/index.html#info.kwarc.mmt.api.frontend.ChangeListener">frontend.ChangeListener</a>
+adds general purpose change-listening functionality. The methods of these extensions are called when MMT content is added, updated, etc.</li>
+<li><a href="../api/index.html#info.kwarc.mmt.api.ontology.QueryExtension">ontology.QueryExtension</a>
+adds a new atomic function to the MMT <a href="query.html">query language</a>.</li>
+</ul>
