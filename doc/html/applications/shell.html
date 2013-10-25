@@ -1,5 +1,8 @@
 <h2>Running the MMT Shell</h2>
 
+<link rel="stylesheet" type="text/css" href="../style.css"/>
+
+
 The deploy/ folder includes 2 run scripts (with .bat/.sh file endings to be used on Windows/Unix):
 <ul>
  <li>run-plain.sh: opens an empty MMT shell</li>
@@ -21,4 +24,138 @@ The language of shell commands is implemented by the <a href="../../api/index.ht
 
 Each subclass comes with scaladoc and can be best understood by browsing the known subclasses in the API documentation.<br/>
 
-The up-to-date context-free grammar for shell commands is part of the constructor parser in the corresponding source file.
+The up-to-date context-free grammar for shell commands is part of the constructor parser in the companion object <a href="/api/info/kwarc/mmt/api/frontend/Action$.html">Action</a> and can be best understood by reading the source code.<br/>
+
+<h2>Individual Shell Commands</h2>
+
+The following documents some important individual commands.<br/>
+This documentation uses upper case names for argument types.<br/>
+Some common argument types are:
+<ul>
+<li>FILE: a file name (relative to the current directory)</li>
+<li>U: an <a href="../uri.html">MMT URI</a> (relative to the current base URI)</li>
+<li>STRING: a string</li>
+</ul>
+
+<h3>Basic Commands</h3>
+
+<div class="code">exit</div>
+exits the shell.
+
+<div class="code">extension STRING</div>
+registers the <a href="../extensions.html">extension</a> whose qualified Java class name is STRING.
+The class must be on the class Java path already.
+
+<div class="code">file FILE</div>
+runs the shell file FILE.
+
+<div class="code">base URI</div>
+sets the base URI to U.
+
+<div class="code">scala</div>
+drops to the scala shell.
+Within the scala shell, some special features are available:
+<ul>
+<li>The variable <span class="code">controller</span> is bound to the MMT <a href="controller.html">controller</a>, which gives users full access to the internal MMT state.</li>
+<li>MMT interpolations is active: for example, the string mmt"TERM" parses TERM as an MMT term and returns the resulting object.</li>
+</ul>
+
+<h3>Logging</h3>
+
+See <a href="log.html">log</a> for the logging model.
+
+<div class="code">log console</div>
+adds standard output as a logging receiver.
+
+<div class="code">log file FILE</div>
+adds the file FILE as a logging receiver.
+
+<div class="code">log filets FILE</div>
+as above but adds timestamps to all log messages.
+
+<div class="code">log+ STRING</div>
+switches logging on for the component with id STRING.
+
+<div class="code">log- STRING</div>
+switches logging off for the component with id STRING.
+
+<h3>Working with MMT content</h3>
+
+MMT reads content automatically by searching for the needed <a href="../uri.html">MMT URI</a> on the math path.<br/>
+Therefore, there are only a few commands for directly accessing content.
+
+<div class="code">read FILE</div>
+reads a file into memory. Usually this is not necessary because resources are read automatically on demand.
+
+<div class="code">get U [CONTENT] [PRESENT] OUTPUT</div>
+retrieves the resource with MMT URI U and applies various operations to it.
+This command is largely superseded by the <a href="http.html">HTTP interface</a> but occasionally useful to run on the shell.
+<ul>
+   <li><span class="code">CONTENT</span> can be
+      <ul>
+         <li>omitted: simply retrieves U</li>
+         <li><span class="code">closure</span>: computes the dependency closure of U</li>
+         <li><span class="code">elaborate</span>: elaborates the U</li>
+         <li><span class="code">component STRING</span>: retrieves the component STRING of U</li>
+      </ul>
+   </li>
+   <li><span class="code">PRESENT</span> can be
+      <ul>
+         <li>omitted: presentation as text</li>
+         <li><span class="code">present STYLE</span>: presentation using the style STYLE</li>
+      </ul>
+   </li>
+   <li><span class="code">OUTPUT</span> can be
+      <ul>
+         <li><span class="code">print</span>: print to console</li>
+         <li><span class="code">write FILE</span>: write to console</li>
+         <li><span class="code">window STRING</span>: output to a separate window with id STRING</li>
+         <li><span class="code">respond</span>: no output (useful for programmers who wish to access the result programmatically)</li>
+      </ul>
+   </li>
+</ul>
+
+<div class="code">navigate U</div>
+does nothing itself but sends the navigation event to all registered change listener <a href="extensions.html">extensions</a>, which include the <a href="gui.html">GUI</a> (if started).
+
+<div class="code">clear</div>
+removes all content from memory.
+
+<h3>The Math Path</h3>
+
+The math path maintains a catalog that maps <a href="../uri.html">MMT URI</a> to physical locations.<br/>
+
+Several commands exist to add entries to the math path.
+
+<div class="code">mathpath archive FILE</div>
+adds the location of an MMT <a href="../archives.html">archive</a>.
+
+<div class="code">mathpath local</div>
+adds the local file system, i.e., file:// URIs are mapped to themselves.
+
+<div class="code">mathpath fs FILE U</div>
+adds a catalog entry that maps every URI of the form U/REST to the physical location FILE/REST on the local file system. 
+
+<div class="code">mathpath svn U</div>
+adds a catalog entry for a remore SVN repository at URI U.
+Every URI U/REST is mapped to itself.
+
+<h3>Building</h3>
+
+<div class="code">build ARCHIVE TARGET [P/A/T/H]</div>
+runs the build target TARGET on the subfolder P/A/T/H of the archive with id ARCHIVE.
+See the documentation of the <a href="build.html">build tool</a> for details.
+
+<h3>Applications</h3>
+
+<div class="code">server on PORT</div>
+starts the <a href="http.html">HTTP server</a> at the port PORT. 
+
+<div class="code">server off</div>
+stops the <a href="http.html">HTTP server</a>. 
+
+<div class="code">gui on</div>
+starts the <a href="gui.html">MMT GUI</a>. 
+
+<div class="code">gui off</div>
+stops the <a href="gui.html">MMT GUI</a>.

@@ -24,7 +24,7 @@ Extensions are persistent and have full access to the MMT controller.
 
 The extension interfaces include
 <ul>
-<li><a href="../api/index.html#info.kwarc.mmt.api.frontend.plugin">frontend.plugin</a>
+<li><a href="../api/index.html#info.kwarc.mmt.api.frontend.Plugin">frontend.Plugin</a>
 adds general purpose functionality. In particular, plugins can be used to bundle multiple extensions or perform other customizations.</li>
 <li><a href="../api/index.html#info.kwarc.mmt.api.parser.ParserExtension">parser.ParserExtension</a>
 adds new keywords to MMT's native text syntax. The MMT parser will relegate processing of declarations to the appropriate extension based on the keyword.
@@ -44,3 +44,6 @@ adds general purpose change-listening functionality. The methods of these extens
 <li><a href="../api/index.html#info.kwarc.mmt.api.ontology.QueryExtension">ontology.QueryExtension</a>
 adds a new atomic function to the MMT <a href="query.html">query language</a>.</li>
 </ul>
+
+Some extension interface come with abstract subclasses that specialize on certain functionality.
+For example, archives.BuildTarget is extended by <a href="../api/index.html#info.kwarc.mmt.api.archives.ContentExporter">archives.ContentExporter</a>, which can be used to conveniently export MMT projects in any format.

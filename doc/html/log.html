@@ -1,0 +1,29 @@
+MMT provides a generic logging infrastructure that all MMT components use and that is available to all <a href="extensions.html">extensions</a>.<br/>
+
+<p>
+A logging <b>producer</b> is any object that inherits from <a href="../api/info/kwarc/mmt/api/frontend/Logger.html">Logger</a>.<br/>
+
+These instances must set the value logPrefix to a unique string.<br/>
+This string is used as the argument of the <span class="code">log+</span> and <span class="code">log-</span> <a href="applications/shell.html">shell</a> commands and occurs as a prefix in every log entry.
+</p>
+
+<p>
+Predefined log prefixes are <span class="code">user</span>, which mirrors user input on the shell, and <span class="code">error</span> for error messages.<br/>
+
+These are the only prefixes for which logging is switched on by default. 
+</p>
+
+<p>
+A logging <b>consumer</b> is any object that inherits from <a href="../api/info/kwarc/mmt/api/frontend/ReportHandler.html">ReportHandler</a>.<br/>
+
+These receive log messages for printing, archiving, etc.
+</p>
+
+<p>
+The class <a href="../api/info/kwarc/mmt/api/frontend/Report.html">Report</a> acts as a controller between producers and consumers.<br/>
+Producers must have access to an instance of this class, and consumers must be registered with it.<br/>
+
+All <a href="../api/info/kwarc/mmt/api/frontend/Logger.html">Loggers</a> send their messages here, and this class decides (based on whether logging is switched on or off for this Logger) whether the log message is forwarded.<br/>
+
+If so, the message if sent to all registered <a href="../api/info/kwarc/mmt/api/frontend/ReportHandler.html">ReportHandlers</a>.
+</p>

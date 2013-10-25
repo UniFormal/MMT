@@ -1,0 +1,10 @@
+.code {
+   font-family: monospace; 
+   color: gray;
+}
+
+div.code {
+   border:solid;
+   border-width: 1;
+   margin-top: 5px;
+}
