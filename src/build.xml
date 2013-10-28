@@ -24,4 +24,34 @@
     </target>
 
     <target name="clean" depends="clean-api,clean-lf,clean-jedit"/>
+
+    <path id="classpath">
+        <fileset dir="../deploy/lib/">
+          <include name="*.jar"/>
+        </fileset>
+        <fileset dir="mmt-owl/lib/">
+          <include name="*.jar"/>
+        </fileset>
+        <fileset dir="jEdit-mmt/lib/">
+          <include name="*.jar"/>
+        </fileset>
+        <fileset dir="mmt-tptp/lib/">
+          <include name="*.jar"/>
+        </fileset>
+    	  <pathelement location="mmt-api/trunk/lib/jfxrt.jar"/>
+        <pathelement location="../deploy/lfcatalog/lfcatalog.jar"/>
+    </path>
+    <taskdef resource="scala/tools/ant/antlib.xml" classpathref="classpath"/>
+    <target name="scaladoc">
+        <mkdir dir="../doc/api"/>
+        <scaladoc destdir="../doc/api" doctitle="MMT" srcdir="." classpathref="classpath">
+          <include name="mmt-api/trunk/src/**/*.scala"/>
+          <include name="mmt-lf/src/**/*.scala"/>
+        	 <include name="jEdit-mmt/src/**/*.scala"/>
+        	 <exclude name="latex-mmt/src/**/*.scala"/>
+          <exclude name="mmt-mizar/trunk/src/**/*.scala"/>
+          <include name="mmt-owl/src/**/*.scala"/>
+          <include name="mmt-tptp/src/**/*.scala"/>
+        </scaladoc>
+    </target>
 </project>
