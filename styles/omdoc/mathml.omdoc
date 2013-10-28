@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<omdoc xmlns="http://omdoc.org/ns" xmlns:l="mmt:literal">
+<omdoc xmlns="http://omdoc.org/ns" xmlns:l="mmt:literal" xmlns:jobad="http://omdoc.org/presentation">
 
 <style name="html5">
 
@@ -281,6 +281,7 @@
   <notation role="module" wrap="true">
     <element name="mo">
       <attribute prefix="jobad" name="mmtref"><id/></attribute>
+      <attribute prefix="jobad" name="mmtsrc"><source/></attribute>
       <attribute prefix="jobad" name="href">
         <component index="3"/>
       </attribute>
@@ -290,9 +291,8 @@
 
   <notation role="constant structure" wrap="true">
     <element name="mo">
-      <attribute prefix="jobad" name="mmtref">
-        <id/>
-      </attribute>
+      <attribute prefix="jobad" name="mmtref"><id/></attribute>
+      <attribute prefix="jobad" name="mmtsrc"><source/></attribute>
       <attribute prefix="jobad" name="href">
         <component index="3"/>
       </attribute>
@@ -302,9 +302,8 @@
 
   <notation role="fragment:constant">
     <element name="mo">
-      <attribute prefix="jobad" name="mmtref">
-        <id/>
-      </attribute>
+      <attribute prefix="jobad" name="mmtref"><id/></attribute>
+      <attribute prefix="jobad" name="mmtsrc"><source/></attribute>
       <attribute prefix="jobad" name="href">
         <hole index="0"/>
       </attribute>
@@ -314,9 +313,8 @@
 
   <notation role="complex-constant">
     <element name="mrow">
-      <attribute prefix="jobad" name="mmtref">
-        <id/>
-      </attribute>
+      <attribute prefix="jobad" name="mmtref"><id/></attribute>
+      <attribute prefix="jobad" name="mmtsrc"><source/></attribute>
       <component index="0"/>
       <element name="mo"><text value="%"/></element>
       <component index="1"/>
@@ -325,9 +323,8 @@
 
   <notation role="Variable">
     <element name="mrow">
-      <attribute prefix="jobad" name="mmtref">
-        <id/>
-      </attribute>
+      <attribute prefix="jobad" name="mmtref"><id/></attribute>
+      <attribute prefix="jobad" name="mmtsrc"><source/></attribute>
       <element name="mi">
          <component index="0"/>
       </element>
@@ -358,11 +355,10 @@
 
   <notation role="variable" wrap="true">
     <element name="mi">
-      <attribute prefix="jobad" name="mmtref">
-        <id/>
-      </attribute>
-      <attribute prefix="jobad" name="varref">
-        <component index="2"/>
+       <attribute prefix="jobad" name="mmtref"><id/></attribute>
+       <attribute prefix="jobad" name="mmtsrc"><source/></attribute>
+       <attribute prefix="jobad" name="varref">
+       <component index="2"/>
       </attribute>
       <hole><component index="0"/></hole>
     </element>
@@ -383,6 +379,7 @@
   <notation role="fragment:brackets">
       <l:mrow>
         <attribute prefix="jobad" name="mmtref"><id/></attribute>
+        <attribute prefix="jobad" name="mmtsrc"><source/></attribute>
         <l:mo class="operator"><text value="("/></l:mo>
         <hole/>
         <l:mo class="operator"><text value=")"/></l:mo>
@@ -391,6 +388,7 @@
   <notation role="fragment:ebrackets">
       <l:mrow>
         <attribute prefix="jobad" name="mmtref"><id/></attribute>
+        <attribute prefix="jobad" name="mmtsrc"><source/></attribute>
         <l:mo class="operator brackets brackets-hidden"><text value="("/></l:mo>
         <hole/>
         <l:mo class="operator brackets brackets-hidden"><text value=")"/></l:mo>
@@ -399,7 +397,8 @@
   <notation role="fragment:nobrackets">
       <l:mrow>
         <attribute prefix="jobad" name="mmtref"><id/></attribute>
-          <hole/>
+        <attribute prefix="jobad" name="mmtsrc"><source/></attribute>
+        <hole/>
       </l:mrow>
   </notation>
   <notation role="fragment:opsep">
@@ -418,6 +417,25 @@
         <hole/>
      </l:mrow>
   </notation>
+  <notation role="fragment:scripted">
+    <l:msubsup>
+     <l:munderover>
+        <hole index="0"/>
+        <hole index="1"/>
+        <hole index="2"/>
+     </l:munderover>
+     <hole index="3"/>
+     <hole index="4"/>
+    </l:msubsup>
+  </notation>
+
+  <notation role="fragment:fraction">
+   <l:mfrac>
+    <hole index="0"/>
+    <hole index="1"/>
+   </l:mfrac>
+  </notation> 
+  
   <notation role="fragment:tree">
     <l:mrow>
 	    <l:mfrac>
@@ -451,13 +469,15 @@
   </notation>
  
   <notation role="toplevel">
-    <element name="math">
-	  <attribute name="xmlns" value="http://www.w3.org/1998/Math/MathML"/>
+    <l:math>
+	   <attribute name="xmlns" value="http://www.w3.org/1998/Math/MathML"/>
       <attribute prefix="xmlns" name="jobad" value="http://omdoc.org/presentation"/>
       <attribute prefix="jobad" name="owner"><component index="1"/></attribute>
       <attribute prefix="jobad" name="component"><component index="2"/></attribute>
-      <component index="0"/>
-    </element>
+      <l:mstyle displaystyle="true">
+         <component index="0"/>
+      </l:mstyle>
+    </l:math>
   </notation>
   <notation role="fragment:modname">
        <hole index="0"/>
