@@ -1,1 +1,100 @@
-Demo videos about MMT can be found in my <a href="http://www.youtube.com/channel/UCyjmPlL6LPs6oVmUMluWwRw">Youtube channel</a>.
+<style>
+img.small {
+   width:50%;
+   height:auto;
+   border-style: solid;
+   border-width: thin;
+}
+</style>
+
+
+<h2>Parsing and Type-checking</h2>
+
+<h2>Editing</h2>
+
+These screenshots are taken from the <a href="applications/jedit.html">jEdit-based MMT IDE</a>.<br/>
+Many of these features are also shown in a <a href="http://www.youtube.com/watch?v=tdd45Uv7j_g">demo video</a> about the IDE.
+
+<p>
+<img class="small" src="img/jedit-sidebar-errors.jpg"/><br/>
+Parsing and type-checking are run in the background and populate sidebar and error list.<br/>
+<a href="img/jedit-sidebar-errors.jpg">big image</a>
+</p>
+
+<p>
+</p>
+
+<p>
+<img class="small" src="img/jEdit-navigate-small.jpg"/><br/>
+Control-hovering over an operator (here: the arrow symbol) shows its logical URI and control-click navigates to the physical location of its declaration.
+</p>
+
+<p>
+<img class="small" src="img/jEdit-infer-type-small.jpg"/><br/>
+Clicking an operator (here: impI) selects the closest subexpression based on the abstract syntax tree<br/>
+Hovering over a selected expression shows its dynamically infered type
+</p>
+
+<p>
+<img class="small" src="img/jEdit-implicit-arguments-small.jpg"/><br/>
+Hovering over an operator (here: impI) shows its infered arguments
+</p>
+
+<p>
+<img class="small" src="img/jEdit-variable-type-small.jpg"/><br/>
+Hovering over a variable shows its infered type
+</p>
+
+<p>
+<img class="small" src="img/jedit-open-goals-small.jpg"/><br/>
+Open proof goals can be entered and are displayed using double angular brackets.<br/>
+Context-sensitive auto-completion: Only operators whose return type matches the current goal are shown, and choosing a completion option inserts the new goal(s) automatically.<br/>
+
+Technically, the above uses a special term missing(T) with notation ≪T≫ and type T. This operator is not hard-coded in MMT -- it is parsed and checked like any other constant, and its semantics is defined by a plugin.
+</p>
+
+<h2>Browsing</h2>
+
+These screenshots are taken from the <a href="applications/http.html">web interface</a> of MMT.<br/>
+Many of these features are also shown in a <a href="http://www.youtube.com/watch?v=MPTzW86voI4">demo video</a> about the server.
+
+<p>
+Presentation is run dynamically to produce HTML5 using presentation MathML.
+</p>
+
+<p>
+Two-dimensional notations: 2-dimensional notations can be given explicitly or can be computed by the system.
+
+The notation language permits, among other things, type inference.  
+</p>
+
+<p>
+Dynamic type inference:
+<img src="img/web-infer-type-small.jpg"/>
+<a href="img/web-infer-type.jpg">big image</a>
+</p>
+
+<p>
+Definition lookup:
+</p>
+
+<p>
+Hovering selects the closest subexpression based on the abstract syntax tree.
+</p>
+
+<p>
+MMT as a generic calculator.
+</p>
+
+<h2>Integration with other Tools</h2>
+
+Because MMT is <a href="independence.html">application-independent</a>, it behaves very well when using MMT functionality from other systems. 
+
+<h3>JavaScript</h3>
+
+<h3>LaTeX</h3>
+
+<img src="img/latex-mmt-small.jpg"/>
+<a href="img/latex-mmt.jpg">big image</a>
+
+<h3>Navigation Listeners</h3>

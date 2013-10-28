@@ -1,0 +1,15 @@
+   The MMT code is distributed over multiple components, and this class creates one instance of each component.<br/>
+   These components include the following:
+     <ul>
+      <li>The <a href="../api/info/kwarc/mmt/api/frontend/Memory.html">memory</a> stores all known instances of data structures of the MMT language, i.e., documents, theories, etc. It provides methods for retrieving, adding, updating, and deleting knowledge items identified by their <a href="uris.html">MMT URI</a>.<br/>
+      The same methods are present on the Controller class. High-level requests should always go through the Controller to benefit from transparent retrieval and change management.
+      </li>
+      <li>The <a href="../api/info/kwarc/mmt/api/backend/Backend.html">backend</a> maintains connections to all known physical locations of MMT content. When retrieving a knowledge item by its MMT URI that is not held in memory, it is transparently retrieved by the backend and stored in the memory.</li>
+      <li>The <a href="../api/info/kwarc/mmt/api/frontend/ExtensionManager.html">extension manager</a> maintains all registered <a href="extensions.html">extensions</a>.</li>
+      <li>The <a href="../api/info/kwarc/mmt/api/parser/StructureAndObjectParser.html">parser</a> reads data structures in native MMT text syntax.</li>
+      <li>The <a href="../api/info/kwarc/mmt/api/libraries/StructureAndObjectChecker.html">checker</a> validates MMT data structures.</li>
+      <li>The <a href="../api/info/kwarc/mmt/api/ontology/Evaluator.html">evaluator</a> evaluates queries of the MMT <a href="query.html">query language</a>.</li>
+      <li>The <a href="../api/info/kwarc/mmt/api/uom/UOM.html">simplifier</a> is a rewriting-like engine for MMT expressions that performs simplification and computation.</li>
+     </ul>
+      No static part of the MMT code maintains state: All stateful objects are maintained by the Controller or by one of the components maintained by the Controller.<br/>
+      Components that must communicate with the Controller or with other components are passed the appropriate instance as a constructor argument.

@@ -8,3 +8,17 @@ div.code {
    border-width: 1;
    margin-top: 5px;
 }
+
+.frame {
+   background:lightgray;
+}
+
+.sidebargroup {
+  color:olive;
+  list-style-type: none;
+}
+
+.sidebarelement {
+  color:blue;
+  text-decoration:underline;
+}

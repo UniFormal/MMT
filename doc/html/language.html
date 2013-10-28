@@ -1,36 +1,54 @@
-MMT is a language for formal mathematics that pays special attention to foundation-independence, scalability, and modularity. MMT is also a sublanguage of the ​OMDoc format for open mathematical documents and will be integrated into the upcoming OMDoc 2 format.
+<p>
+MMT is a language for formal mathematics that pays special attention to foundation-independence, scalability, and modularity.<br/>
 
+MMT follows the <a href="http://www.omdoc.org">OMDoc</a> philosophy and will be integrated into the upcoming OMDoc 2 format.
+</p>
+
+<p>
 The goals of OMDoc and MMT are to provide a web-scalable environment in which all mathematics can be represented in a way that supports both rigorous mathematical and logical tools as well as knowledge management services (e.g., databases, notation management, document management, change management).
+</p>
 
-
-MMT Language
-
+<p>
 The key features of the MMT language are
+<ul>
+  <li>a module system for declarative languages that combines expressivity with simplicity,</li>
+  <li>a foundation- and logic-independent semantics,</li>
+  <li>a design that incorporates web-scalability.</li> 
+</ul>
+</p>
 
-    a module system for declarative languages that combines expressivity with simplicity,
-    a foundation- and logic-independent semantics,
-    a design that incorporates web-scalability. 
-
-The central concepts of the MMT syntax are
-
-    module level declarations
-        (structured) theories encapsulate mathematical contexts.
-        theory morphisms translate between theories either by representation (views) or by inheritance (structures),
-        styles are sets of notations to render MMT expressions for humans or systems. 
-    symbol level declarations
-        constants represent mathematical objects as possibly typed, possibly defined entities akin to Pure Type Systems.
-        Axiom and theorem declarations are treated as special cases of symbols via the Curry-Howard correspondence.
-        notations state transformation rules in styles. 
-    object level expressions
-        MMT integrates the OpenMath syntax for expressions but extends it with notions of theories and contexts.
-        morphisms are compositions of inclusions, views, and structures and are treated like objects in MMT. 
-
-Based on MMT, a number of knowledge management services have been implemented such as
-
-    notation-based presentation,
-    interactive web-browisng,
-    MMT-aware databases with custom indexing and retrieval,
-    project-based abstraction and work flows for building, distribution, and sharing,
-    management of change,
-    querying integrating hierarchic, relational, and unification-based paradigms,
-    the universal OpenMath machine based on registering custom implementations with the MMT server. 
+<p>
+The central concepts of the MMT language are
+<ul>
+<li>
+ documents: Documents are semantically transparent groupings of modules.<br/>
+ In the simplest case, they serve as namespaces giving the modules declared in them globally unique MMT URIs. 
+</li>
+<li>module level declarations: Modules are the semantically relevant toplevel declarations.
+  <ul>
+    <li>Theories encapsulate mathematical contexts.</li>
+    <li>Theory morphisms translate between theories either by representation (views) or by inheritance (structures).</li>
+  </ul>
+  The body of a module is a list of symbol declarations.<br/>
+  The module system permits combining, translating, instantiating modules. The semantics of the module system is defined by flattening, i.e., computing the induced body.  
+</li>
+<li>symbol level declarations: Symbols are the smallest fragments of a document that have semantically relevant identifiers.
+   <ul>
+     <li>constants represent named atomic mathematical objects such as function symbols, predicate symbols, sort/type symbols, axioms, theorems, judgments, inference rules</li>
+     <li>structures are instantiations of other modules</li>
+   </ul>
+</li>
+<li>objects: Objects differ from declarations in that they do not have an <a href="uris.html">MMT URI</a>.
+  They are mathematical expressions formed from
+    <ul>
+     <li>the symbols that are in scope (referenced via MMT URI)</li>
+     <li>application, binding, and similar operations</li>
+     <li>context that introduce bound variables and substitutions for them</li>
+     <li>the variables in context (referenced by their name)</li>
+     <li>literals such as integer, floats, etc.</li>
+    </ul>
+    MMT follows the <a href="http://www.openmath.org/">OpenMath</a> data model for objects.<br/>
+    However, contrary to OpenMath, MMT uses formal theories and type systems that determine the well-typed objects. 
+</li>
+</ul>
+</p>
