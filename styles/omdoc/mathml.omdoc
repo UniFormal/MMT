@@ -368,6 +368,18 @@
     </element>
   </notation>
   
+
+  <notation role="application">
+      <l:mrow>
+        <attribute prefix="jobad" name="mmtref"><id/></attribute>
+        <components begin="0" end="-1">
+          <separator>
+            <fragment name="argsep"/> 
+          </separator>
+        </components>
+      </l:mrow>
+  </notation>
+
   <notation role="fragment:brackets">
       <l:mrow>
         <attribute prefix="jobad" name="mmtref"><id/></attribute>
