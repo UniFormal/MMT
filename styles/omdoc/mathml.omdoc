@@ -435,6 +435,24 @@
     <hole index="1"/>
    </l:mfrac>
   </notation> 
+
+  <notation role="fragment:mtd">
+    <l:mtr>
+      <hole index="0"/>
+    </l:mtr>
+  </notation> 
+  
+  <notation role="fragment:mtr">
+    <l:mtr>
+      <hole index="0"/>
+    </l:mtr>
+  </notation> 
+  
+  <notation role="fragment:mtable">
+    <l:mtr>
+      <hole index="0"/>
+    </l:mtr>
+  </notation> 
   
   <notation role="fragment:tree">
     <l:mrow>
