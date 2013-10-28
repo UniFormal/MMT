@@ -149,6 +149,25 @@ case class FractionMarker(above: List[Marker], below: List[Marker], line: Boolea
       FractionMarker(above.flatMap(f), below.flatMap(f), line)
    }
 }
+/** a marker based on mathml mtd elements, representing table cells */
+case class TdMarker(content : List[Marker]) extends PresentationMarker {
+   def flatMap(f : Marker => List[Marker]) = {
+     TdMarker(content.flatMap(f))
+   } 
+}
+/** a marker based on mathml mtd elements, representing table rows */
+case class TrMarker(content : List[Marker]) extends PresentationMarker {
+   def flatMap(f : Marker => List[Marker]) = {
+     TdMarker(content.flatMap(f))
+   } 
+}
+/** a marker based on mathml mtd elements, representing tables */
+case class TableMarker(content : List[Marker]) extends PresentationMarker {
+   def flatMap(f : Marker => List[Marker]) = {
+     TdMarker(content.flatMap(f))
+   } 
+}
+
 /** a marker for type of the presented object */
 case object InferenceMarker extends PresentationMarker {
    def flatMap(f: Marker => List[Marker]) = InferenceMarker
