@@ -34,4 +34,19 @@
 		   info.kwarc.mmt.jedit.Hider.hideshow(textArea);
 		</CODE>
 	</ACTION>
+	<ACTION NAME="mmt-insert-US">
+		<CODE>
+		   info.kwarc.mmt.jedit.Inserter.insertUSorTab(textArea);
+		</CODE>
+	</ACTION>
+	<ACTION NAME="mmt-insert-RS">
+		<CODE>
+		   info.kwarc.mmt.jedit.Inserter.insertRSorReturn(textArea);
+		</CODE>
+	</ACTION>
+	<ACTION NAME="mmt-insert-GS">
+		<CODE>
+		   info.kwarc.mmt.jedit.Inserter.insertGSorReturn(textArea);
+		</CODE>
+	</ACTION>
 </ACTIONS>

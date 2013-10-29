@@ -360,8 +360,13 @@ object MMTSideKick {
       var path = pd.getTreePathForPosition(begin)
       var asset: MMTAsset = null
       while ({
-         asset = path.getLastPathComponent.asInstanceOf[DefaultMutableTreeNode].getUserObject.asInstanceOf[MMTAsset]
-         asset.getEnd.getOffset < end
+         val a = path.getLastPathComponent.asInstanceOf[DefaultMutableTreeNode].getUserObject
+         a match {
+            case m: MMTAsset =>
+               asset = m
+               m.getEnd.getOffset < end
+            case _ => false
+         }
       }) {
          path = path.getParentPath
       }
