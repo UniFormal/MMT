@@ -105,6 +105,22 @@ Because MMT is <a href="independence.html">application-independent</a>, it behav
 
 <h3>JavaScript</h3>
 
+Because the MMT exposes many of its API functions in the QMT <a href="query.html">query language</a> (which is itself exposed via an HTTP interface), it is straightforward to call MMT algorithms remotely.<br/>
+
+Here is an example of how to use MMT to convert a string into a presentation MathML object.<br/>
+As an extra, we use simplification in between parsing and presenting:
+
+<pre>
+   var query = qmt.present(qmt.simplify(qmt.parse(qmt.literalString(INPUTSTRING))))
+   qmt.exec(query,
+      function(mathml){
+         // this function is run as soon as the Ajax query to the QMT server has returned
+      }
+   )
+</pre>
+
+This uses the qmt object, which is a part of the MMT web server. 
+
 <h3>LaTeX</h3>
 
 <img src="img/latex-mmt-small.jpg"/>
