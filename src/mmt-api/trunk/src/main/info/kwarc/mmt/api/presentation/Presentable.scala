@@ -37,7 +37,9 @@ case class ContentComponents(comps : List[Content], names: List[(DeclarationComp
    def apply(i: CIndex): Content = resolve(i).map(x => comps(x)).getOrElse(throw GetError("undefined component: " + i))
    def resolve(i: CIndex) : Option[Int] = i match {
       case NumberedIndex(n) => Some(n)
-      case NamedIndex(s) => names.find(_._1 == s).map(_._2)
+      case NamedIndex(s) =>
+         val comp = DeclarationComponent.parse(s)
+         names.find(_._1 == comp).map(_._2)
    }
    def getObjectPath(i:Int) : Option[CPath] = owner flatMap {p => 
       names.find(_._2 == i).map(x => CPath(p, x._1))

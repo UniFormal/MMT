@@ -502,7 +502,7 @@ class Controller extends ROController with Logger {
 	         report("response", "base: " + base)
 	      case ServerOn(port) => server match {
             case Some(serv) => logError("server already started on port " + serv.port)
-            case None if (Util.isTaken(port)) => logError("port " + port + " is taken, server not started.")
+            case None if Util.isTaken(port) => logError("port " + port + " is taken, server not started.")
             case _ =>
               val serv = new Server(port, this)
               serv.start
@@ -545,7 +545,6 @@ class Controller extends ROController with Logger {
 	         extman.changeListeners foreach {l =>
 	            l.onNavigate(p)
 	         }
-	      case DefaultGet(p) => GetAction(Print(p)).make(this)
 	      case a : GetAction => a.make(this)
 	      case PrintAllXML => report("response", "\n" + library.toNode.toString)
 	      case PrintAll => report("response", "\n" + library.toString)

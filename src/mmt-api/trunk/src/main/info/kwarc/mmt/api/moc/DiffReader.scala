@@ -43,7 +43,7 @@ class DiffReader(controller : Controller) {
         case c : ContentPath => c
         case p => throw ImplementationError("Expected content path found : " + p.toPath)
       }      
-      val compName = DeclarationComponent((n \ "@name").text)
+      val compName = DeclarationComponent.parse((n \ "@name").text)
       val oldXMLO = n.child.find(x => x.label == "old")
       val newXMLO = n.child.find(x => x.label == "new")
       val old = oldXMLO.map(Obj.parseTerm(_, base))

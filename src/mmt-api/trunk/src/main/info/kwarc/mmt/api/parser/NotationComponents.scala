@@ -218,7 +218,7 @@ object PresentationMarker {
             case Delim("/") =>
                if (sofar.isEmpty) sofar ::= Delim(" ")
                val enum = sofar.head
-               val (denom, rest) = splitOffOne(left)
+               val (denom, rest) = splitOffOne(left.tail)
                left = rest
                val newHead = FractionMarker(List(enum), List(denom), true)
                sofar = newHead :: sofar.tail

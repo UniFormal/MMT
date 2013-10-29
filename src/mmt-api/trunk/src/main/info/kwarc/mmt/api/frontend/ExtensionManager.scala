@@ -81,7 +81,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       lexerExtensions ::= QuoteHandler
       lexerExtensions ::= new PrefixEscapeHandler('\\')
       lexerExtensions ::= new NumberLiteralHandler(true)
-      serverPlugins   :::= List(new web.SVGServer, new web.QueryServer, new web.AdminServer)
+      serverPlugins   :::= List(new web.ActionServer, new web.SVGServer, new web.QueryServer, new web.AdminServer)
       queryExtensions :::= List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
                                 new ontology.Present, new ontology.PresentDecl) 
       
@@ -184,8 +184,8 @@ class ExtensionManager(controller: Controller) extends Logger {
       mkL("change listeners", changeListeners) +
       mkL("presenters", presenters) +
       mkL("server plugins", serverPlugins) +
-      mkL("parser extensions", parserExtensions)
-      mkL("query extensions", queryExtensions)
+      mkL("parser extensions", parserExtensions) +
+      mkL("query extensions", queryExtensions) +
       mkL("plugins", loadedPlugins) +
       "rules\n" + ruleStore.stringDescription 
    }

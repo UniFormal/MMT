@@ -147,7 +147,6 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
         case ":search" :: _ => Some(MwsResponse)
         case ":parse" :: _ => Some(ParserResponse)
         case ":post" :: _ => Some(PostResponse)
-        case ":mmt" :: _ => Some(MmtResponse)
         case hd::tl if hd.startsWith(":") =>
           controller.extman.getServerPlugin(hd.substring(1)) match {
             case Some(pl) =>
@@ -394,54 +393,6 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
   }
 
   
-  /** Response when the first path component is :mmt */
-  private def MmtResponse: HLet = new HLet {
-    def aact(tk: HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
-      val comps = tk.req.query.split("\\?", -1)
-      val (doc, mod, sym, act) = comps.length match {
-        case 1 => (comps(0), "", "", "")
-        case 2 => (comps(0), comps(1), "", "")
-        case 3 => (comps(0), comps(1), comps(2), "")
-        case _ =>
-          val rest = comps.drop(3).mkString("", "?", "")
-          (comps(0), comps(1), comps(2), rest.replace("_", " "))
-      }
-      val textresponse: Boolean = try {
-        Action.parseAct(doc + "?" + mod + "?" + sym + " " + act, controller.getBase, controller.getHome) match {
-          case DefaultGet(p) => p match {
-            case frontend.Present(_, _) => tk.req.header("Accept") match {
-              case Some("text/xml") => false
-              case _ => false // TODO could be determined based on the presentation style
-            }
-            case ToNode(_) | Deps(_) => false
-            case ToString(_) => true
-          }
-          case _ => false
-        }
-      } catch {
-        case _ : Throwable => false
-      }
-      try {
-          val action = frontend.Action.parseAct(doc + "?" + mod + "?" + sym + " " + act, controller.getBase, controller.getHome)
-          log(action.toString)
-          val node: scala.xml.Node = action match {
-             case frontend.DefaultGet(p) => frontend.Respond(p, "").get(controller)
-             case GetAction(a: frontend.ToWindow) =>
-                a.make(controller)
-                <done action={a.toString}/>
-             case GetAction(a: frontend.Respond) => a.get(controller)
-             case a => <error action={ a.toString }/>
-          }
-          log("done")
-          if (textresponse)
-            TextResponse(node.toString).aact(tk)
-          else
-            XmlResponse(node).aact(tk)
-      } catch {
-        case e: Error => errorResponse(e).aact(tk)
-      }
-    }
-  }
 
 
   private def TreeResponse = new HLet {
@@ -485,9 +436,6 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
      }
   }
 }
-
-
-
 
   /*
   def kindToColor(kind: String) : String = kind match {
