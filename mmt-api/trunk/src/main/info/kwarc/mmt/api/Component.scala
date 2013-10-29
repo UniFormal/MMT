@@ -16,7 +16,7 @@ abstract class DeclarationComponent(s : String) {
 }
 
 object DeclarationComponent {
-  def apply(s : String) : DeclarationComponent = s match {
+  def parse(s : String) : DeclarationComponent = s match {
     case "type" => TypeComponent
     case "definition" => DefComponent
     case "domain" => DomComponent

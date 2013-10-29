@@ -106,7 +106,10 @@ object TokenList {
 class TokenList(private var tokens: List[TokenListElem]) {
    /** returns a Token in a given position */
    def apply(n: Int) =
-      tokens(n)
+      if (n >= tokens.length)
+         throw ParseError("uncaught error while reducing")
+      else
+         tokens(n)
    /** returns a sublist of elements */
    def apply(from: Int, to: Int) = tokens.slice(from, to)
    /** returns all tokens */

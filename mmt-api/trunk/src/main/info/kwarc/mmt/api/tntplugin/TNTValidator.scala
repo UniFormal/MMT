@@ -19,7 +19,7 @@ class TNTValidation extends Controller with TntIntegrationPlugin[String] {
       val p = Path.parse(s, base)
       val files = con.getValue("name").asInstanceOf[java.util.List[String]] // list of files in current transaction
       get(p)
-      val deps = Respond(Deps(p.doc), "").get(this) //TODO does not work anymore as dependencies are not stored by default
+      val deps = Respond(Deps(p.doc)).get(this) //TODO does not work anymore as dependencies are not stored by default
       deps.toString
    }
 }
