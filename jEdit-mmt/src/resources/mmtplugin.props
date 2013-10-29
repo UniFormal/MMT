@@ -28,6 +28,9 @@ plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.3=plugin gatchan.jedit.hyperlinks.H
 # labels for actions defined in actions.xml
 mmt-dockable-show.label=Show Dockable
 mmt-compile.label=Compile current buffer
+mmt-insert-US.label=Insert Object Terminator (US)
+mmt-insert-RS.label=Insert Declaration Terminator (RS)
+mmt-insert-GS.label=Insert Module Terminator (MS)
 mmt-show.label=show hidable parts
 mmt-hide.label=hide hidable parts
 mmt-hideshow.label=toggle hidable parts
@@ -39,7 +42,10 @@ mmt-browser-compile.label=Compile
 
 # menu items for jEdit views
 plugin.info.kwarc.mmt.jedit.MMTPlugin.menu.label=MMT
-plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=mmt-dockable-show mmt-compile mmt-show mmt-hide mmt-hideshow mmt-hideCurrent mmt-makeHidable
+plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=\
+mmt-dockable-show mmt-compile \
+- mmt-insert-US mmt-insert-RS mmt-insert-GS \
+- mmt-show mmt-hide mmt-hideshow mmt-hideCurrent mmt-makeHidable
 
 # menu items for file system browsers
 plugin.info.kwarc.mmt.jedit.MMTPlugin.browser-menu=mmt-browser-compile
