@@ -8,7 +8,15 @@ img.small {
 </style>
 
 
-<h2>Parsing and Type-checking</h2>
+<h2>Generic Parse-Analyze-Compute-Present</h2>
+
+<img class ="small" src="img/web-parse-render.jpg"/><br/>
+The MMT parser for objects supports precedences, variable binding, and sequence arguments. Here, e.g. {} is used for Pi-binding, set comprehension, and set replacement.<br/>
+Analysis infers omitted types (here: overlined) and implicit arguments (here: underlined).<br/>
+Computation simplifies the term where possible (here: none).<br/>
+Presentation renders terms as presentation MathML (here: displayed in Firefox).<br/>
+
+All 4 algorithms are <a href="independence.html">language-independent</a> and fully customizable by parsing, typing, equality, and presentation rules.
 
 <h2>Editing</h2>
 
@@ -59,31 +67,36 @@ These screenshots are taken from the <a href="applications/http.html">web interf
 Many of these features are also shown in a <a href="http://www.youtube.com/watch?v=MPTzW86voI4">demo video</a> about the server.
 
 <p>
-Presentation is run dynamically to produce HTML5 using presentation MathML.
+<img class="small" src="img/web-proof-tree.jpg"/><br/>
+Two-dimensional notations: 2-dimensional notations can be given explicitly or can be computed by the system.<br/>
+The LF plugin automatically adds 2-dimensional notations for proof rules, which build proof trees (including the necessary type inference of every subterm).
 </p>
 
 <p>
-Two-dimensional notations: 2-dimensional notations can be given explicitly or can be computed by the system.
-
-The notation language permits, among other things, type inference.  
+<img class="small" src="img/web-fold-before-after.jpg"/><br/>
+Any subterm can be folded.
 </p>
 
 <p>
-Dynamic type inference:
-<img src="img/web-infer-type-small.jpg"/>
-<a href="img/web-infer-type.jpg">big image</a>
+<img class="small" src="img/web-display-before-after.jpg"/><br/>
+A subexpression's inferred types, arguments, and brackets can be displayed on demand.
 </p>
 
 <p>
-Definition lookup:
+<img class="small" src="img/web-infer-type-before-after.jpg"/><br/>
+The type of every subexpression can be inferred on demand.<br/>
+This interaction is by sending Ajax/QMT <a href="query.html">query</a> to the MMT server.
 </p>
 
 <p>
-Hovering selects the closest subexpression based on the abstract syntax tree.
+<img class="small" src="img/web-lookup-before-after.jpg"/><br/>
+The type and definition of an operator can be retrieved on demand.
 </p>
 
 <p>
-MMT as a generic calculator.
+<img class="small" src="img/web-edit-objects.jpg"/><br/>
+The MMT web server as an OpenMath/MathML editor: entered objects are parsed, type-checked, and simplified relative to the selected theory and finally presented.<br/>
+While typing, the focus/selection in the source and the presentation are synchronized - and synchronized is preserved even terms are rearranged during simplification.
 </p>
 
 <h2>Integration with other Tools</h2>
