@@ -146,16 +146,16 @@ var mmt = {
 	
 	/*
 	 * adaptMMTURI - convert MMTURI to URL using current catalog and possibly notation style
-	 * act: String: action to call on MMTURI
+	 * act: String: additional action to call after "get uri"
 	 * present: Boolean: add presentation to action
 	 */
 	adaptMMTURI : function (uri, act, present) {
 		var arr = this.splitMMTURI(uri);
 		if (present && this.notstyle !== null)
-			var pres = "_present_" + this.notstyle;
+			var pres = " present " + this.notstyle;
 		else
 			var pres = '';
-		var relativeURL = '/:mmt?' + arr[0] + '?' + arr[1] + '?' + arr[2] + '?' + act + pres;
+		var relativeURL = '/:mmt?get ' + arr[0] + '?' + arr[1] + '?' + arr[2] + ' ' + act + pres + " respond";
 		return this.makeURL(relativeURL);
 	},
 

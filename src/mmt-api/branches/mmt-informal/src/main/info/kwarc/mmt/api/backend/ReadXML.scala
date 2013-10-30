@@ -170,37 +170,39 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             case a => Some(LocalName.parse(a))
          }
          val (s2, md) = MetaData.parseMetaDataChild(s, base) 
-         def doCon(t : Option[Node], d : Option[Node], xmlNotation : NodeSeq) {
+         s2 match {
+         case <constant>{comps @_*}</constant> =>
             log("constant " + name.toString + " found")
-            val tp = t.map(Obj.parseTerm(_, base))
-            val df = d.map(Obj.parseTerm(_, base))
-            val notation = NotationContainer.parse(xmlNotation, home.toMPath ? name)
-            val rl = xml.attr(s,"role") match {
+            var tp: Option[Term] = None
+            var df: Option[Term] = None
+            var notC: Option[NotationContainer] = None
+            comps foreach {
+               case <type>{t}</type> => tp match {
+                  case None =>
+                     tp = Some(Obj.parseTerm(t, base))
+                  case Some(_) =>
+                     throw ParseError("multiple types in " + s2)
+               }
+               case <definition>{d}</definition> => df match {
+                  case None =>
+                     df = Some(Obj.parseTerm(d, base))
+                  case Some(_) =>
+                     throw ParseError("multiple definitions in " + s2)
+               }
+               case <notation>{ns @ _*}</notation> => notC match {
+                  case None =>
+                     notC = Some(NotationContainer.parse(ns, home.toMPath ? name))
+                  case Some(_) =>
+                     throw ParseError("multiple notations in " + s2)
+               }
+               case c => throw ParseError("illegal child in constant " + c)
+            }
+            val rl = xml.attr(s2,"role") match {
                case "" => None
                case r => Some(r)
             }
-            val c = Constant(home, name, alias, tp, df, rl, notation)
+            val c = Constant(home, name, alias, tp, df, rl, notC.getOrElse(NotationContainer()))
             add(c,md)
-         }
-         s2 match {
-         case <constant><type>{t}</type><definition>{d}</definition><notation>{ns @ _*}</notation></constant> =>
-            doCon(Some(t),Some(d), ns)
-         case <constant><type>{t}</type><definition>{d}</definition></constant> =>
-            doCon(Some(t),Some(d), Nil)
-         case <constant><definition>{d}</definition><type>{t}</type></constant> =>
-            doCon(Some(t),Some(d), Nil)
-         case <constant><type>{t}</type></constant> =>
-            doCon(Some(t),None, Nil)
-         case <constant><type>{t}</type><notation>{ns @ _*}</notation></constant> =>
-           doCon(Some(t),None, ns)
-         case <constant><definition>{d}</definition></constant> =>
-            doCon(None,Some(d), Nil)
-         case <constant><definition>{d}</definition><notation>{ns @ _*}</notation></constant> =>
-            doCon(None,Some(d), ns)
-         case <constant><notation>{ns @ _*}</notation></constant> =>
-            doCon(None, None, ns)
-         case <constant/> =>
-            doCon(None,None,Nil)
          case <import>{seq @ _*}</import> =>
             log("import " + name + " found")
             val (rest, from) = XMLReader.getTheoryFromAttributeOrChild(s2, "from", base)
@@ -222,7 +224,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             }
          case <alias/> =>
             //TODO: remove this case when Twelf exports correctly
-            log("warning: ignoring deprecated alias declaration")
+            logError("warning: ignoring deprecated alias declaration")
          case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations></pattern> =>
             log("pattern with name " + name + " found")
             doPat(name, Some(params), decls, Nil, md)

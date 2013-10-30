@@ -8,12 +8,12 @@ import frontend._
 import backend._
 import objects._
 import utils._
+import documents._
 
 class MWSHarvestContentExporter extends ContentExporter {
   val outDim = "mws-content"
   val key = "mws-content"
   override val outExt = "mws"
-
   val custom : ArchiveCustomization = new DefaultCustomization    
     
   def doTheory(t: DeclaredTheory) { 
@@ -46,5 +46,36 @@ class MWSHarvestContentExporter extends ContentExporter {
   def doNamespace(dpath: DPath, namespaces: List[(BuiltDir,DPath)], modules: List[(BuiltFile,MPath)]) {
     //Nothing to do, no MathML in directly in namespaces
   }
+}
 
+class MWSHarvestNarrationExporter extends NarrationExporter {
+  val outDim = "mws-narration"
+  val key = "mws-narration"
+  override val outExt = "mws"
+    
+  val custom : ArchiveCustomization = new DefaultCustomization    
+   
+  def doDocument(doc: Document) {
+    rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+    rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
+    try {
+      def narrToCML(n : NarrativeObject) : List[scala.xml.Node] = n match {
+        case nt : NarrativeTerm => List(custom.prepareQuery(nt.term))
+        case nn : NarrativeNode => nn.child.flatMap(narrToCML)
+        case _ => Nil
+      }
+      doc.components collect {
+        case n : Narration =>  
+          val exprs = narrToCML(n.content)
+          val url = custom.mwsurl(doc.path)
+          exprs foreach {cml =>
+            val out = <mws:expr url={url}>{cml}</mws:expr>
+            rh(out.toString + "\n")
+          }        
+      }
+    } catch {
+      case e : GetError => //doc not found, can safely ignore 
+    }   
+    rh("</mws:harvest>\n")
+  } 
 }

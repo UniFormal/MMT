@@ -99,6 +99,12 @@ class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precede
                                   aux(under.toList), aux(over.toList), aux(sub.toList), aux(sup.toList))
           case FractionMarker(a,b,_) =>
              Fragment("fraction", aux(a, true), aux(b, true))
+          case TdMarker(a) => 
+             Fragment("mtd", aux(a))
+          case TrMarker(a) => 
+             Fragment("mtr", aux(a))
+          case TableMarker(a) => 
+             Fragment("mtable", aux(a))
           case InferenceMarker => Compute(None, "infer")
         }}
      }

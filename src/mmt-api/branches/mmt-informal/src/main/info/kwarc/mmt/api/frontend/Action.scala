@@ -24,7 +24,7 @@ object Action extends RegexParsers {
    private def empty = "\\s*"r
    private def comment = "//.*"r
    private def action = log | mathpath | archive | extension | mws | server | windowaction | execfile | scala |
-      setbase | read | graph | check | navigate | printall | printallxml | clear | exit | getaction // getaction must be at end for default get
+      setbase | read | graph | check | navigate | printall | printallxml | diff | clear | exit | getaction // getaction must be at end for default get
 
    private def log = logfile | logconsole | logon | logoff
      private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new FileHandler(f, false))}
@@ -32,13 +32,16 @@ object Action extends RegexParsers {
      private def logconsole = "log console" ^^ {case _ => AddReportHandler(ConsoleHandler)}
      private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
      private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
-   private def mathpath = "mathpath" ~> (mathpathLocal | mathpathFS | mathpathSVN | mathpathTNT)
+     
+   private def mathpath = "mathpath" ~> (mathpathArchive | mathpathLocal | mathpathFS | mathpathSVN | mathpathTNT)
+     private def mathpathArchive = "archive" ~> file ^^ {f => AddArchive(f)}
      private def mathpathLocal = "local" ^^ {case _ => Local}
      private def mathpathFS = "fs" ~> uri ~ file ^^ {case u ~ f => AddMathPathFS(u,f)}
      private def mathpathSVN = "svn" ~> uri ~ int ~ (str ?) ~ (str ?) ^^ {case uri ~ rev ~ user ~ pass => AddMathPathSVN(uri, rev, user, pass)}
      private def mathpathTNT = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
+
    private def archive = archopen | archdim | archmar | archpres | svnarchopen | archbuild
-     private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)}
+     private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)} //deprecated, use mathpath archive
      private def svnarchopen = "SVNArchive" ~> "add" ~> str ~ int ^^ {case url ~ rev => AddSVNArchive(url,rev)}
      private def archbuild = "build" ~> str ~ str ~ (str ?) ~ (str *) ^^ {
        case id ~ keymod ~ in ~ args =>
@@ -64,11 +67,14 @@ object Action extends RegexParsers {
      private def dimension = "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
            "relational" | "notation" | "source-terms" | "source-structure" | "delete" | "clean" | "extract" | "integrate" | "register" | "test" | "close"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
+
    private def extension = "extension" ~> str ~ (strMaybeQuoted *) ^^ {case c ~ args => AddExtension(c, args)}
    private def mws = "mws" ~> uri ^^ {u => AddMWS(u)}
+
    private def server = serveron | serveroff
      private def serveron = "server" ~> "on" ~> int ^^ {i => ServerOn(i)}
      private def serveroff = "server" ~> "off" ^^ {_ => ServerOff}
+
    private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
    private def scala = "scala" ^^ {_ => Scala}
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
@@ -80,29 +86,31 @@ object Action extends RegexParsers {
    private def printallxml = "printXML" ^^ {case _ => PrintAllXML}
    private def clear = "clear" ^^ {case _ => Clear}
    private def exit = "exit" ^^ {case _ => Exit}
+   private def diff = path ~ ("diff" ~> int) ^^ {case p ~ i => Compare(p, i)}
 
-   private def getaction = diff | tofile | towindow | respond | print | defaultget 
-      private def diff = path ~ ("diff" ~> int) ^^ {case p ~ i => Compare(p, i)}
+   private def getaction = tofile | towindow | respond | print // print is default
       private def tofile = presentation ~ ("write" ~> file) ^^ {case p ~ f => GetAction(ToFile(p,f))}
       private def towindow = presentation ~ ("window" ~> str) ^^ {case p ~ w => GetAction(ToWindow(p,w))}
-      private def print = presentation <~ "print" ^^ {p => GetAction(Print(p))}
-      private def defaultget = presentation ^^ {p => DefaultGet(p)}
-      private def respond = (presentation <~ "respond") ~ str ^^ {case p ~ s => GetAction(Respond(p,s))}
-      private def presentation = present | deps | defaultPresent
+      private def respond = (presentation <~ "respond") ^^ {case p => GetAction(Respond(p))}
+      private def print = presentation ^^ {p => GetAction(Print(p))}
+
+   private def presentation = present | deps | defaultPresent
       private def present = content ~ ("present" ~> str) ^^ {case c ~ p => Present(c,p)}
       private def deps = path <~ "deps" ^^ {case p => Deps(p)}
       private def defaultPresent = content ^^ {c => Present(c, "text")}
-      private def content = closure | elaboration | component | get
+      
+   private def content = "get" ~> (closure | elaboration | component | get)
       private def closure = path <~ "closure" ^^ {p => Closure(p)}
       private def elaboration = path <~ "elaboration" ^^ {p => Elaboration(p)}   
       private def component = (path <~ "component") ~ str ^^ {case p ~ s => Component(p, s)}
       private def get = path ^^ {p => Get(p)}
    
-   private def windowaction = windowclose | windowpos | browser
+   private def windowaction = windowclose | windowpos | gui
       private def windowclose = "window" ~> str <~ "close" ^^ {s => WindowClose(s)}
       private def windowpos   = ("window" ~> str <~ "position") ~ int ~ int ^^ {case s ~ x ~ y => WindowPosition(s, x, y)}
-      private def browser = "browser" ~> ("on" | "off") ^^ {s => BrowserAction(s)}
+      private def gui = "gui" ~> ("on" | "off") ^^ {s => BrowserAction(s)}
    
+   /* common non-terminals */
    private def path = str ^^ {s => Path.parse(s, base)}
    private def mpath = str ^^ {s => Path.parseM(s, base)}
    private def file = str ^^ {s => File(home.resolve(s))}
@@ -305,7 +313,7 @@ case class WindowPosition(window: String, x:Int, y: Int) extends Action {
  * @param command on or off
  */
 case class BrowserAction(command: String) extends Action {
-  override def toString = "browser " + command
+  override def toString = "gui " + command
 }
 
 /** Objects of type GetAction represent commands that
@@ -315,24 +323,17 @@ case class BrowserAction(command: String) extends Action {
  *  @param o the instance of Output that executes all three steps.
  *  
  *  The concrete syntax is described by the following grammar:
- *  ABSTRACT [CONCRETE] [OUTPUT]
+ *  get ABSTRACT [CONCRETE] [OUTPUT]
  *  where
  *  ABSTRACT ::= URI | URI component STRING | URI closure | URI elaboration
- *  CONCRETE ::= xml | present URI | text | deps
- *  OUTPUT   ::= write FILE | print | window | respond
- *  The productions for ABSTRACT, CONCRETE, OUTPUT correspond to
- *  the instances of MakeAbstract, MakeConcrete, and Output.
+ *  CONCRETE ::= present param | deps
+ *  OUTPUT   ::= write FILE | window | respond | CONCRETE
+ *  The productions for ABSTRACT, CONCRETE, OUTPUT correspond to the instances of MakeAbstract, MakeConcrete, and Output.
  */ 
 case class GetAction(o: Output) extends Action {
    /** implement the Action using the provided Controller */
    def make(controller : Controller) = o.make(controller)
-}
-
-/** execute the Controller-specific default Action associated with a presentable element
- * the case where OUTPUT is not specifified
- */
-case class DefaultGet(pres : MakeConcrete) extends Action {
-   override def toString = pres.toString
+   override def toString = o.toString
 }
 
 /** represent retrieval operations that return content elements
@@ -390,16 +391,6 @@ case class Elaboration(p : Path) extends MakeAbstract {
 abstract class MakeConcrete {
    /** takes a Controller, executes the rendering and passes it to a RenderingHandler */
    def make(controller : Controller, rb : RenderingHandler)
-}
-/** takes a content element and renders it as XML */
-case class ToNode(c : MakeAbstract) extends MakeConcrete {
-   def make(controller : Controller, rb : RenderingHandler) {rb(c.make(controller).toNode)}
-   override def toString = c + " xml"
-}
-/** takes a content element and renders it as text */
-case class ToString(c : MakeAbstract) extends MakeConcrete {
-   def make(controller : Controller, rb : RenderingHandler) {rb(c.make(controller).toString)}
-   override def toString = c.toString
 }
 
 /** takes a content element and renders it using notations */
@@ -466,12 +457,12 @@ case class ToWindow(pres : MakeConcrete, window: String) extends Output {
 /** produces the result and throws it away
  *  call get to keep it in memory and retrieve it
  */
-case class Respond(pres : MakeConcrete, param : String) extends Output {
+case class Respond(pres : MakeConcrete) extends Output {
    def get(controller : Controller) : scala.xml.Node = {
       val rb = new XMLBuilder // TODO try a to-be-written StringBuilder instead of XMLBuilder for speed
       pres.make(controller, rb)
       rb.get
    }
    def make (controller : Controller) {get(controller)}
-   override def toString = pres.toString + " respond" + (if (param == "") "" else " " + param)
+   override def toString = pres.toString + " respond"
 }
