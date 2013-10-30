@@ -222,12 +222,65 @@ object PresentationMarker {
                left = rest
                val newHead = FractionMarker(List(enum), List(denom), true)
                sofar = newHead :: sofar.tail
+            case Delim("&") => 
+              get_until(List("&", "\\\\", "]]"), left) match {
+               case None => //end not found, ignoring
+                 sofar ::= left.head
+                 left = left.tail
+               case Some((taken, end)) => 
+                 val processed = introducePresentationMarkers(taken)
+                 sofar ::= TdMarker(processed)
+               	 left = end
+             }
+            case Delim("\\\\") => 
+               get_until(List("\\\\", "]]"), left) match {
+               case None => //end not found, ignoring
+                 sofar ::= left.head
+                 left = left.tail
+               case Some((taken, end)) => 
+                 val processed = introducePresentationMarkers(taken)
+                 sofar ::= TrMarker(processed)
+               	 left = end
+             }
+            case Delim("[[") =>
+             get_until(List("]]"), left, true) match {
+               case None => //end not found, ignoring
+                 sofar ::= left.head
+                 left = left.tail
+               case Some((taken, end)) => 
+                 val processed = introducePresentationMarkers(taken)
+                 sofar ::= TableMarker(processed)
+               	 left = end
+             }
             case m =>
                sofar ::= m
                left = left.tail
          }
       }
       sofar.reverse
+   }
+   
+   def get_until(delims : List[String], markers : List[Marker], dropLast : Boolean = false) : Option[(List[Marker], List[Marker])] = {
+     var left = markers
+     var sofar : List[Marker] = Nil
+     var found = false
+     while (left != Nil && !found) {
+       left.head match {
+         case Delim(s) if delims.contains(s) =>
+           found = true
+           if (dropLast) 
+             left = left.tail
+         case _ =>
+           sofar ::= left.head
+           left = left.tail
+       }
+     }
+     if (found) {
+       Some(sofar, left)
+     } else {
+       None
+     }
+     
    }
 }
 /**
