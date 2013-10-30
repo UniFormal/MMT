@@ -437,9 +437,9 @@
   </notation> 
 
   <notation role="fragment:mtd">
-    <l:mtr>
+    <l:mtd>
       <hole index="0"/>
-    </l:mtr>
+    </l:mtd>
   </notation> 
   
   <notation role="fragment:mtr">
@@ -449,9 +449,9 @@
   </notation> 
   
   <notation role="fragment:mtable">
-    <l:mtr>
+    <l:mtable>
       <hole index="0"/>
-    </l:mtr>
+    </l:mtable>
   </notation> 
   
   <notation role="fragment:tree">
