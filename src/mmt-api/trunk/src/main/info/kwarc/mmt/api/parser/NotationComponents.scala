@@ -222,8 +222,8 @@ object PresentationMarker {
                left = rest
                val newHead = FractionMarker(List(enum), List(denom), true)
                sofar = newHead :: sofar.tail
-            case Delim("&") => 
-              get_until(List("&", "\\\\", "]]"), left) match {
+            case Delim("[&") => 
+              get_until(List("&]"), left, true) match {
                case None => //end not found, ignoring
                  sofar ::= left.head
                  left = left.tail
@@ -232,8 +232,8 @@ object PresentationMarker {
                  sofar ::= TdMarker(processed)
                	 left = end
              }
-            case Delim("\\\\") => 
-               get_until(List("\\\\", "]]"), left) match {
+            case Delim("[\\") => 
+               get_until(List("\\]"), left, true) match {
                case None => //end not found, ignoring
                  sofar ::= left.head
                  left = left.tail
