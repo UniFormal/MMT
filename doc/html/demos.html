@@ -30,9 +30,6 @@ Parsing and type-checking are run in the background and populate sidebar and err
 </p>
 
 <p>
-</p>
-
-<p>
 <img class="small" src="img/jEdit-navigate-small.jpg"/><br/>
 Control-hovering over an operator (here: the arrow symbol) shows its logical URI and control-click navigates to the physical location of its declaration.
 </p>
@@ -40,7 +37,8 @@ Control-hovering over an operator (here: the arrow symbol) shows its logical URI
 <p>
 <img class="small" src="img/jEdit-infer-type-small.jpg"/><br/>
 Clicking an operator (here: impI) selects the closest subexpression based on the abstract syntax tree<br/>
-Hovering over a selected expression shows its dynamically infered type
+Hovering over a selected expression shows its dynamically infered type.<br/>
+This works even for ill-formed expressions, for which MMT infers types as well as possible. 
 </p>
 
 <p>
@@ -61,10 +59,17 @@ Context-sensitive auto-completion: Only operators whose return type matches the 
 Technically, the above uses a special term missing(T) with notation ≪T≫ and type T. This operator is not hard-coded in MMT -- it is parsed and checked like any other constant, and its semantics is defined by a plugin.
 </p>
 
+<h2>Theory Graphs</h2>
+
+
+
 <h2>Browsing</h2>
 
+<p>
 These screenshots are taken from the <a href="applications/http.html">web interface</a> of MMT.<br/>
-Many of these features are also shown in a <a href="http://www.youtube.com/watch?v=MPTzW86voI4">demo video</a> about the server.
+Many of these features are also shown in a <a href="http://www.youtube.com/watch?v=MPTzW86voI4">demo video</a> about the server.<br/>
+A live instance of the MMT server can be found at <a href="http://cds.omdoc.org:8080/">http://cds.omdoc.org:8080/</a>
+</p>
 
 <p>
 <img class="small" src="img/web-proof-tree.jpg"/><br/>
