@@ -63,7 +63,11 @@ Context-sensitive auto-completion: Only operators whose return type matches the 
 
 <h2>Theory Graphs</h2>
 
+<object data="img/graphs-example.svg" type="image/svg+xml"></object><br/>
 
+Theory graphs are layouted using <a href="http://www.graphviz.org/">GraphViz</a> and served as SVG.<br/>
+
+Here nodes of the focused document (syntax of first order logic) appear in white and the rest of the known library in gray.
 
 <h2>Browsing</h2>
 
@@ -133,4 +137,11 @@ This uses the qmt object, which is a part of the MMT web server.
 <img src="img/latex-mmt-small.jpg"/>
 <a href="img/latex-mmt.jpg">big image</a>
 
-<h3>Navigation Listeners</h3>
+<h3>Joint Navigation</h3>
+
+MMT provides an event listener infrastructure, which permits applications to react to content and focus changes.<br/>
+
+IDE, theory graph, and web browser are connected so that they can control each other's focus.<br/>
+
+For example, users can click on a node in the theory graph to navigate to its web page and then click in the web page to navigate to its source in the IDE.  
+
