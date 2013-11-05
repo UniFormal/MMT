@@ -36,9 +36,9 @@ Control-hovering over an operator (here: the arrow symbol) shows its logical URI
 
 <p>
 <img class="small" src="img/jEdit-infer-type-small.jpg"/><br/>
-Clicking an operator (here: impI) selects the closest subexpression based on the abstract syntax tree<br/>
+Doubleclicking an operator (here: impI) selects the closest subexpression based on the abstract syntax tree<br/>
 Hovering over a selected expression shows its dynamically infered type.<br/>
-This works even for ill-formed expressions, for which MMT infers types as well as possible. 
+This works even for ill-formed expressions, which MMT analyzes as much as possible. 
 </p>
 
 <p>
@@ -53,10 +53,12 @@ Hovering over a variable shows its infered type
 
 <p>
 <img class="small" src="img/jedit-open-goals-small.jpg"/><br/>
-Open proof goals can be entered and are displayed using double angular brackets.<br/>
-Context-sensitive auto-completion: Only operators whose return type matches the current goal are shown, and choosing a completion option inserts the new goal(s) automatically.<br/>
+The ErrorsPlugin adds special objects for open proof goals together with notations and typing rules for them.<br/>
+</p>
 
-Technically, the above uses a special term missing(T) with notation ≪T≫ and type T. This operator is not hard-coded in MMT -- it is parsed and checked like any other constant, and its semantics is defined by a plugin.
+<p>
+<img class="small" src="img/jedit-complete-before.jpg"/><br/>
+Context-sensitive auto-completion: Only operators whose return type matches the current goal are shown, and choosing a completion option inserts the new goal(s) automatically.
 </p>
 
 <h2>Theory Graphs</h2>
