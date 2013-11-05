@@ -43,13 +43,13 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
            log("document with base " + path + " found")
            val d = new Document(location)
            add(d)
-           readModules(path, Some(location), modules)
+           readInDocument(path, Some(location), modules)
         case _ => throw ParseError("document expected: " + D)
       }
    }
    
    /** calls docParent.get if on document elements */
-   def readModules(modParent : DPath, docParent : Option[DPath], modules : NodeSeq)(implicit cont: StructuralElement => Unit) {
+   def readInDocument(modParent : DPath, docParent : Option[DPath], modules : NodeSeq)(implicit cont: StructuralElement => Unit) {
       for (modmd <- modules) {
          val (m, md) = MetaData.parseMetaDataChild(modmd, modParent)
          m match {
@@ -67,8 +67,8 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
          case scala.xml.Comment(_) =>
          case <metadata>{_*}</metadata> => //TODO
          case _ =>
-           val name = Path.parseName(xml.attr(m,"name")).toLocalPath
            val base = Path.parse(xml.attr(m,"base"), modParent)
+           val name = Path.parseName(xml.attr(m,"name")).toLocalName(base)
            (base, m) match {
 	         case (base : DPath, <theory>{seq @ _*}</theory>) =>
 		         log("theory " + name + " found")
@@ -90,7 +90,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
         	     docParent map (dp => add(MRef(dp, tpath, true)))
               body.foreach {d => 
         	        logGroup {
-                    readSymbols(OMMOD(tpath), tpath, d)
+                    readInTheory(tpath, tpath, d)
         	        }
         	     }
 	         case (base : DPath, <view>{_*}</view>) =>
@@ -110,7 +110,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
 	            docParent map (dp => add(MRef(dp, vpath, true)))
 			      body.foreach {d =>
 	               logGroup {
-	                  readSymbols(OMMOD(vpath), to.toMPath, d) //TODO relative names will be resolved wrong
+	                  readInTheory(vpath, to.toMPath, d) //TODO relative names will be resolved wrong
 	               }
 	            }
 	         case (_, <rel>{_*}</rel>) => 
@@ -128,7 +128,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                  val dpath = docParent.get / name
                  val doc = new Document(dpath)
                  add(DRef(docParent.get, dpath, true), md)
-                 readModules(base, Some(dpath), mods)
+                 readInDocument(base, Some(dpath), mods)
              case (base : MPath, <notation>{_*}</notation>) =>
                  readNotations(base, base, m)
 	         case (_,_) => throw ParseError("module level element expected: " + m)
@@ -136,7 +136,8 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
       }
    }
    //TODO if a notation is used in a Structure, its path is computed wrong
-   def readSymbols(home: Term, base: Path, symbols : NodeSeq)(implicit cont: StructuralElement => Unit) {
+   def readInTheory(home: MPath, base: Path, symbols : NodeSeq)(implicit cont: StructuralElement => Unit) {
+      val homeTerm = OMMOD(home)
       def doPat(name : LocalName, parOpt : Option[Node], con : Node, xmlNotation : NodeSeq, md: Option[MetaData]) {
     	  log("pattern " + name.toString + " found")
     	  val pr = parOpt match {
@@ -144,8 +145,8 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
     	 	  case None      => Context()
     	  }
     	  val cn = Context.parse(con, base)
-        val notation = NotationContainer.parse(xmlNotation, home.toMPath ? name)
-    	  val p = new Pattern(home, name, pr, cn, notation)
+        val notation = NotationContainer.parse(xmlNotation, home ? name)
+    	  val p = new Pattern(homeTerm, name, pr, cn, notation)
     	  add(p, md)
       }
       for (s <- symbols) {
@@ -176,7 +177,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                }
                case <notation>{ns @ _*}</notation> => notC match {
                   case None =>
-                     notC = Some(NotationContainer.parse(ns, home.toMPath ? name))
+                     notC = Some(NotationContainer.parse(ns, home ? name))
                   case Some(_) =>
                      throw ParseError("multiple notations in " + s2)
                }
@@ -186,7 +187,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                case "" => None
                case r => Some(r)
             }
-            val c = Constant(home, name, alias, tp, df, rl, notC.getOrElse(NotationContainer()))
+            val c = Constant(homeTerm, name, alias, tp, df, rl, notC.getOrElse(NotationContainer()))
             add(c,md)
          case <import>{seq @ _*}</import> =>
             log("import " + name + " found")
@@ -200,12 +201,35 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             rest.child match {
                case <definition>{d}</definition> :: Nil =>
                   val df = Obj.parseTerm(d, base)
-                  val s = DefinedStructure(home, adjustedName, fromPath, df, isImplicit)
+                  val s = DefinedStructure(homeTerm, adjustedName, fromPath, df, isImplicit)
                   add(s,md)
                case assignments =>
-                  val s = new DeclaredStructure(home, adjustedName, fromPath, isImplicit)
+                  val s = new DeclaredStructure(homeTerm, adjustedName, fromPath, isImplicit)
                   add(s,md)
-                  readSymbols(s.toTerm, base, assignments) 
+                  readInTheory(home / name, base, assignments)
+            }
+         case <theory>{decs @_*}</theory> =>
+            val parent = home.parent
+            val tname = home.name / name
+            val (t, body) = decs match {
+               case <definition>{d}</definition> =>
+                  val df = Obj.parseTerm(d, base)
+                  (DefinedTheory(parent, tname, df), None)
+               case _ =>
+                  val meta = xml.attr(s2, "meta") match {
+                     case "" => None
+                     case mt =>
+                        log("meta-theory " + mt + " found")
+                        Some(Path.parseM(mt, base))
+                  }
+                  (new DeclaredTheory(parent, tname, meta), Some(symbols))
+            }
+            val nm = new NestedModule(t)
+            add(nm, md)
+            logGroup {
+               body.foreach {d => 
+                  readInTheory(parent ? tname, parent ? tname, d)
+               }
             }
          case <alias/> =>
             //TODO: remove this case when Twelf exports correctly
@@ -226,7 +250,7 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
             val p = xml.attr(s2,"pattern")
          	log("instance " + name.toString + " of pattern " + p + " found")
          	val args = ns map (Obj.parseTerm(_, base))
-            val inst = new Instance(home,name,Path.parseS(p,base),args.toList)
+            val inst = new Instance(homeTerm,name,Path.parseS(p,base),args.toList)
             add(inst, md)
          case scala.xml.Comment(_) =>
          case _ => throw new ParseError("symbol level element expected: " + s2)

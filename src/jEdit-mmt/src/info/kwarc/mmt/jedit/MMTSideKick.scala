@@ -49,7 +49,7 @@ class MMTElemAsset(val elem : StructuralElement, name: String, reg: SourceRegion
       case c : ContentElement => c match {
         case t: DeclaredTheory => Some(objects.OMMOD(t.path))
         case v: modules.View => None //would have to be parsed to be available
-        case d: Symbol => Some(d.home)
+        case d: Declaration => Some(d.home)
         case _ => None
       }
    }
@@ -133,7 +133,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    // gets jEdit's instance of MMTPlugin, jEdit will load the plugin if it is not loaded yet
    val mmt : MMTPlugin = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).asInstanceOf[MMTPlugin]
    val controller = mmt.controller
-   val logPrefix = "jedit-parse"
+   val logPrefix = "jedit-sidekick"
    val report = controller.report
       
    private def getRegion(e: metadata.HasMetaData) : Option[SourceRegion] = SourceRef.get(e).map(_.region)
@@ -162,7 +162,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       }
    }
    /* build the sidekick outline tree: declaration (in a module) node */
-   private def buildTree(node: DefaultMutableTreeNode, dec: Symbol, defaultReg: SourceRegion) {
+   private def buildTree(node: DefaultMutableTreeNode, dec: Declaration, defaultReg: SourceRegion) {
       val label = dec match {
          case PlainInclude(from,_) => "include " + from.last
          case PlainViewInclude(_,_,incl) => "include " + incl.last
@@ -309,9 +309,10 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    override def complete(editPane: EditPane, caret : Int) : SideKickCompletion = {
       val textArea = editPane.getTextArea
       val view = editPane.getView
-      val asset = MMTSideKick.getAssetAtOffset(view,caret)
+      val asset = MMTSideKick.getAssetAtOffset(view,caret).getOrElse(return null)
       asset match {
          case a: MMTObjAsset =>
+            log(a.obj.toString)
             a.obj match {
                case Hole(t) =>
                   val rules = prover.applicable(t)(Stack(Frame(a.getTheory, a.context)))
@@ -352,7 +353,10 @@ object MMTSideKick {
    /** @return the asset at the specified position */
    def getAssetAtOffset(view: org.gjt.sp.jedit.View, caret: Int) = {
       val pd = SideKickParsedData.getParsedData(view)
-      pd.getAssetAtOffset(caret).asInstanceOf[MMTAsset]
+      pd.getAssetAtOffset(caret) match {
+         case ma : MMTAsset => Some(ma)
+         case _ => None
+      }
    }
    /** @return the smallest asset covering the specified range */
    def getAssetAtRange(view: org.gjt.sp.jedit.View, begin: Int, end: Int) = {

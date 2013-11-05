@@ -12,8 +12,8 @@ class MMTMouseAdapter(editPane: EditPane) extends MouseAdapter {
       if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount == 2) {
          val as = MMTSideKick.getAssetAtOffset(view, textArea.getCaretPosition)
          as match {
-            case _: MMTObjAsset =>
-               val sel = new Selection.Range(as.region.start.offset, as.region.end.offset)
+            case Some(ma: MMTObjAsset) =>
+               val sel = new Selection.Range(ma.region.start.offset, ma.region.end.offset)
                textArea.setSelection(sel)
                //textArea.selectToMatchingBracket
             case _ =>

@@ -5,7 +5,10 @@ import frontend._
 import objects._
 
 class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter {
-   def getNotation(o: Obj) = Presenter.getNotation(controller, o)
+   def getNotation(o: Obj) = {
+      val (oP, pos, ncOpt) = Presenter.getNotation(controller, o)
+      (oP, pos, ncOpt.flatMap(_.getPresent))
+   }
    override def doIdentifier(p: ContentPath)(implicit rh : RenderingHandler) {
       val s = p match {
          case OMMOD(m) % name => name.toPath  //not parsable if there are name clashes 

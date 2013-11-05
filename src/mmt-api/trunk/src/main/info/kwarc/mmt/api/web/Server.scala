@@ -325,7 +325,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
       tk.req.query.split("\\?").toList match {
         case strDPath :: strThy :: Nil =>
           val dpath = DPath(URI(strDPath))
-          val mpath = dpath ? LocalPath(strThy :: Nil)
+          val mpath = dpath ? strThy
           val ctrl = new Controller(controller.report)
           val reader = new TextReader(controller, ctrl.add)
           val res = reader.readDocument(text, dpath)(controller.termParser.apply)

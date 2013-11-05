@@ -58,6 +58,14 @@ class Reader(val jr: java.io.BufferedReader) {
       offset = s.offset
    }
    private var ignoreLineFeed = false
+   /** reads the next n characters without advancing the read position */
+   private def lookAhead(n: Int): String = {
+      jr.mark(n)
+      val s = new StringBuilder
+      Range(0,n).foreach(_ => s.append(jr.read.toChar))
+      jr.reset
+      s.result
+   }
    /** read one character
     * \n, \r, and \r\n are read as \n
     */
@@ -140,7 +148,35 @@ class Reader(val jr: java.io.BufferedReader) {
    def readObject = readUntil(US,RS,GS,FS)
    /** reads until end of current Token, terminated by whitespace
     */
-   def readToken = readUntil(32,US,RS,GS,FS)
+   def readToSpace = readUntil(32,US,RS,GS,FS)
+   
+   /** reads until end of current Token, terminated by whitespace or by switch from letter-like to symbol-like characters 
+    */
+   def readToken = {
+      val start = sourcePosition 
+      val s = new StringBuilder
+      var stop = false
+      var needLetterLike = true
+      do {
+         val c = lookAhead(1)(0)
+         if (TokenList.isWhitespace(c)) {
+            stop = true
+            lastDelimiter = c 
+         } else { 
+            val letterLike = TokenList.isLetter(c) || TokenList.isNumber(c) || TokenList.isConnector(c)
+            if (s.isEmpty || (needLetterLike && letterLike) || (!needLetterLike && !letterLike)) {
+               if (! s.isEmpty)
+                  needLetterLike = letterLike
+               s.append(read.toChar)
+            } else {
+               stop = true
+               lastDelimiter = 65536
+            }
+         }
+      } while (! stop)
+      val end = sourcePosition
+      (s.result, SourceRegion(start, end))
+   }
    /** reads until EOF
     */
    def readAll = readUntil()

@@ -63,9 +63,8 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
     */
    def get(p: Path, error: String => Nothing) : ContentElement = p match {
       case doc : DPath => throw ImplementationError("getting documents from library impossible")
-      case doc ? !(mod) => modulesGetNF(doc ? mod)
+      case mp: MPath => modulesGetNF(mp)
       //case doc ? t / !(str)) => getStructure(doc ? t ? str)    
-      case doc ? _ => throw GetError("retrieval of complex module name " + p + " not possible")
       //lookup in atomic modules
       case OMMOD(p) % name => get(p, error) match {
          case t: DefinedTheory =>
@@ -176,7 +175,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
    }
 
    /** translate a Symbol along a morphism */
-   def translate(e: Symbol, morph: Term, error: String => Nothing) : Symbol = morph match {
+   def translate(e: Declaration, morph: Term, error: String => Nothing) : Declaration = morph match {
       case OMMOD(v) =>
          val link = getView(v)
          translateByLink(e, link, error)
@@ -195,7 +194,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
    }
    
    /** auxiliary method of translate to unify translation along structures and views */
-   private def translateByLink(s: Symbol, l: Link, error: String => Nothing) : Symbol = l match {
+   private def translateByLink(s: Declaration, l: Link, error: String => Nothing) : Declaration = l match {
       case l: DefinedLink => translate(s, l.df, error)
       case l: DeclaredLink =>
           //compute e such that the home theory of e is the domain of l by inserting an implicit morphism 
@@ -346,8 +345,8 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
       case (par % ln, _) =>
          val c = getContainer(par, msg => throw AddError("illegal parent: " + msg))
          (c,e) match {
-            case (t: DeclaredTheory, e: Symbol) => t.add(e)
-            case (l: DeclaredLink, e: Symbol) => l.add(e)
+            case (b: Body, e: Declaration) =>
+               b.add(e)
             case _ => throw AddError("only addition of symbols to declared theories or assignments to declared links allowed")
          }
     }
@@ -360,6 +359,9 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
                 implicitGraph(OMMOD(m), t.toTerm) = OMIDENT(t.toTerm)
              case None =>
           }
+          case e: NestedModule =>
+             add(e.module)
+             implicitGraph(e.home, e.module.toTerm) = OMIDENT(e.module.toTerm)
           case _ =>
           //TODO add equational axioms
        }

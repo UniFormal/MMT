@@ -3,10 +3,13 @@ import info.kwarc.mmt.api._
 import objects.Term
 import utils.MyList._
 
-
 /** helper object */
 object TokenList {
    import java.lang.Character._
+   def isLetter(c: Char) = c.isLetter || List(COMBINING_SPACING_MARK, ENCLOSING_MARK, NON_SPACING_MARK).contains(c.getType)
+   def isWhitespace(c: Char) = c.isWhitespace
+   def isNumber(c: Char) = List(DECIMAL_DIGIT_NUMBER, LETTER_NUMBER, OTHER_NUMBER) contains c.getType
+   def isConnector(c: Char) = c.getType == CONNECTOR_PUNCTUATION
    /** the Tokenizer
     * @param the string to tokenize
     * @param first the position of the first character (defaults to 0)
@@ -50,7 +53,7 @@ object TokenList {
                endToken
                tokens ::= escaped
                skipEscaped = escaped.length-1
-           case None => if (c.isWhitespace) {
+           case None => if (isWhitespace(c)) {
             // whitespace always starts a new Token, 
             endToken
             whitespace = true
@@ -62,17 +65,13 @@ object TokenList {
                   current += c
                   connect = false
                // letters, marks, and numbers continue the Token
-               case _ if c.isLetter =>
+               case _ if isLetter(c) || isNumber(c) =>
                   current += c
                // the special MMT delimiters continue a multi-character Token
                case _ if (c == '?' || c == '/') && current != "" =>
                   current += c
-               case COMBINING_SPACING_MARK | ENCLOSING_MARK | NON_SPACING_MARK =>
-                  current += c
-               case DECIMAL_DIGIT_NUMBER | LETTER_NUMBER | OTHER_NUMBER =>
-                  current += c               
                // connectors are remembered
-               case CONNECTOR_PUNCTUATION =>
+               case _ if isConnector(c) =>
                   current += c
                   connect = true
                // everything else:
@@ -81,7 +80,7 @@ object TokenList {
                   endToken
                   // look ahead: if a connector follows, start a multi-character Token
                   // otherwise, create a single-character Token
-                  if (i.offset < l-1 && s(i.offset-first.offset+1).getType == CONNECTOR_PUNCTUATION) {
+                  if (i.offset < l-1 && isConnector(s(i.offset-first.offset+1))) {
                      current += c
                   } else {
                      tokens ::= Token(c.toString, i, whitespace)

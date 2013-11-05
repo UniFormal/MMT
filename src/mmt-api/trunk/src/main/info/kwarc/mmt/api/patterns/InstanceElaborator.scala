@@ -44,7 +44,7 @@ class InstanceElaborator(controller: Controller) extends Elaborator with Logger 
         if (i.getOrigin != Elaborated) {
            i.setOrigin(Elaborated)
            apply(i) {
-              case s: Symbol => thy.add(s)
+              case s: Declaration => thy.add(s)
               case _ => //does not occur
            }
         }

@@ -225,7 +225,7 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
       val fpath = root / "presentation" / nset.last / {
         val uri = in.parent.uri
         val schemeString = uri.scheme.map(_ + "..").getOrElse("")
-        (schemeString + uri.authority.getOrElse("NONE")) :: uri.path ::: List(Archive.escape(in.name.flat) + ".xhtml")
+        (schemeString + uri.authority.getOrElse("NONE")) :: uri.path ::: List(Archive.escape(in.name.toPath) + ".xhtml")
       }
       
       val src = scala.io.Source.fromFile(fpath)
@@ -345,7 +345,7 @@ object Archive {
     def MMTPathToContentPath(m: MPath) : List[String] = {            // TODO: Use narrationBase instead of "NONE"?
        val uri = m.parent.uri
        val schemeString = uri.scheme.map(_ + "..").getOrElse("")
-       (schemeString + uri.authority.getOrElse("NONE")) :: uri.path ::: List(escape(m.name.flat) + ".omdoc")
+       (schemeString + uri.authority.getOrElse("NONE")) :: uri.path ::: List(escape(m.name.toPath) + ".omdoc")
     }
    /**
     * Makes sure that a path refers to a file, not to a folder, using .extension files to store information about folders  

@@ -3,7 +3,7 @@ import info.kwarc.mmt.api._
 import scala.xml.{Node}
 
   
-class TGroup(val parent: Path, val path: MPath, cs : List[Symbol]) extends ContentElement {
+class TGroup(val parent: Path, val path: MPath, cs : List[Declaration]) extends ContentElement {
    def toNode : Node = <tgroup>{cs.map(_.toNode)}</tgroup>
    def role : Role = Role_TGroup
    def components : List[Content] = cs

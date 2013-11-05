@@ -15,7 +15,7 @@ import info.kwarc.mmt.api.presentation._
  * @param name the name of the view
  * @param from the domain theory
  */
-abstract class Structure extends Symbol with Link {
+abstract class Structure extends Declaration with Link {
    val fromPath : MPath
    val from = OMMOD(fromPath)
    val to = home

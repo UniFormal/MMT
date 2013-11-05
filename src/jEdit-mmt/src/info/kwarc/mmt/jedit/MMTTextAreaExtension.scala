@@ -44,14 +44,13 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
                case ta: MMTObjAsset =>
                   ta.obj match {
                      case t: Term =>
-                        log(asString(t))
                         val found = controller.extman.getFoundation(ta.getTheory).getOrElse(return "no foundation")
                         val tp = try {found.inference(t, ta.context)(controller.globalLookup)}
                         catch {case e : Throwable => return e.getMessage}
                         asString(tp)
-                     case _ => return b.toString + ":" + e.toString
+                     case _ => return null
                   }
-               case _ => return "mm" + b.toString + ":" + e.toString
+               case _ => return null
             }
          case None => 
             val as = MMTSideKick.getAssetAtOffset(view,offset)

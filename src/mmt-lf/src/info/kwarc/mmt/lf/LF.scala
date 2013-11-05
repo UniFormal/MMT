@@ -293,7 +293,10 @@ class LFF extends Foundation {
 	   s match {
 	   		case Univ(1) => Univ(2)
 	   		case OMS(path) => lookuptype(path)
-	   		case OMV(name) => G(name).tp.get // modify it as in check
+	   		case OMV(name) => G(name).tp match {
+	   		   case Some(t) => t
+	   		   case None => throw LFError("type of " + name + " not known")
+	   		}
 	   		case Lambda(name, tp, body) =>
 	   			val G2 = G ++ OMV(name) % tp
 	   			Pi(name,tp,infer(body, G2))
@@ -309,8 +312,8 @@ class LFF extends Foundation {
 	   				case Pi(x,a,b) =>
 	   					if (equal(argtype, a, G))	
 	   						b ^ G.id ++ OMV(x)/arg
-	   					else throw LFError("ill-formed")	  
-	   				case _ => throw LFError("ill-formed")
+	   					else throw LFError("argument type mismatch")
+	   				case _ => throw LFError("application of non-function")
 	   			}
 	   		case _ => throw LFError("ill-formed")
 	 	}

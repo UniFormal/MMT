@@ -18,7 +18,7 @@ import scala.io.Source
  * @param params the parameters of the declaration patterns
  * @param body   the body of the declaration pattern that consists of symbol declarations             
  */
-class Pattern(val home: Term, val name : LocalName, val params: Context, val body : Context, val notC: presentation.NotationContainer) extends Symbol {
+class Pattern(val home: Term, val name : LocalName, val params: Context, val body : Context, val notC: presentation.NotationContainer) extends Declaration {
    override val parameters = params
    def not = notC.oneDim
    def toNode =
@@ -55,7 +55,7 @@ case class PatternApp(pattern : PatternExpression, args : Substitution) extends 
 case class PatternFrag(body : Context) extends PatternExpression
 
 
-class Instance(val home : Term, val name : LocalName, val pattern : GlobalName, val matches : List[Term]) extends Symbol {
+class Instance(val home : Term, val name : LocalName, val pattern : GlobalName, val matches : List[Term]) extends Declaration {
    def tp = pattern(matches)
    def toNode = 
      <instance name={name.toPath} pattern={pattern.toPath}>

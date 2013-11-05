@@ -30,10 +30,10 @@ class DiffReader(controller : Controller) {
       level match {
         case "module" =>  
           val path = Path.parseM((n \ "@path").text, base)
-          controller.xmlReader.readModules(path.doc, None, n.child)(cont)
+          controller.xmlReader.readInDocument(path.doc, None, n.child)(cont)
         case "declaration" => 
           val path = Path.parseS((n \ "@path").text, base)
-          controller.xmlReader.readSymbols(path.module, base, n.child)(cont)
+          controller.xmlReader.readInTheory(path.module.toMPath, base, n.child)(cont)
       }
       changes = changes.reverse
       changes

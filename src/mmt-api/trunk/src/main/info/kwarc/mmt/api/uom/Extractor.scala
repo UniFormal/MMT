@@ -90,7 +90,6 @@ object Extractor {
    }
    private def nameToScalaQ(p: GlobalName) = (p.module.toMPath.name.toPath + "_" + p.name.toPath).replace("/", "__")
    private def nameToScala(l: LocalName) = escape(l.toPath.replace("/","."))
-   private def nameToScala(l: LocalPath) = escape(l.toPath.replace("/","."))
    /** package URI */
    def dpathToScala(d: DPath) = {
       val u = d.uri
