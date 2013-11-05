@@ -41,12 +41,12 @@
 	</ACTION>
 	<ACTION NAME="mmt-insert-RS">
 		<CODE>
-		   info.kwarc.mmt.jedit.Inserter.insertRSorReturn(textArea);
+		   info.kwarc.mmt.jedit.Inserter.insertRSReturn(textArea);
 		</CODE>
 	</ACTION>
 	<ACTION NAME="mmt-insert-GS">
 		<CODE>
-		   info.kwarc.mmt.jedit.Inserter.insertGSorReturn(textArea);
+		   info.kwarc.mmt.jedit.Inserter.insertGSReturn(textArea);
 		</CODE>
 	</ACTION>
 </ACTIONS>

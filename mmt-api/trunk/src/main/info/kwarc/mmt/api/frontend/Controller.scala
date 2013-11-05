@@ -68,7 +68,7 @@ class Controller extends ROController with Logger {
    val docstore = memory.narration
 
    /** text-based presenter for error messages, logging, etc. */
-   val presenter = new StructureAndObjectPresenter(this)
+   val presenter = new StructureAndObjectPresenter
    
    /** maintains all customizations for specific languages */
    val extman = new ExtensionManager(this)
@@ -115,7 +115,7 @@ class Controller extends ROController with Logger {
        } catch {
          case e : Throwable => elem match {
            case m : Module => List(AddModule(m))
-           case d : Symbol => List(AddDeclaration(d))
+           case d : Declaration => List(AddDeclaration(d))
            case _ => throw ImplementationError("Updating element not supported for " + elem.toString)
          }   
        }
@@ -224,7 +224,7 @@ class Controller extends ROController with Logger {
                      log("activating " + old.path)
                      // deactivate all children
                      old.getDeclarations.foreach {_.inactive = true}
-                     // merge metadata and components of the new one into the old one
+                     // update metadata and components
                      old.metadata = nw.metadata
                      nw.getComponents.foreach {case (comp, cont) =>
                         old.getComponent(comp).foreach {_.update(cont)}
@@ -429,8 +429,6 @@ class Controller extends ROController with Logger {
             val s = SVNRepo(uri.schemeNull, uri.authorityNull, uri.pathAsString, repos, rev)
             backend.addStore(s)
 	      case AddExtension(c, args) => extman.addExtension(c, args)
-	      case AddTNTBase(f) =>
-	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
 	      case Local =>
 	          val currentDir = (new java.io.File(".")).getCanonicalFile
 	          val b = URI.fromJava(currentDir.toURI)

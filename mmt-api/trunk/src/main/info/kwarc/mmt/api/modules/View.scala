@@ -15,18 +15,18 @@ import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
  * @param from the domain theory
  * @param to the codomain theory
  */
-abstract class View(doc : DPath, name : LocalPath)
+abstract class View(doc : DPath, name : LocalName)
          extends Module(doc, name) with Link {
-   protected def outerComponents = List(StringLiteral(name.flat), from, to)
+   protected def outerComponents = List(StringLiteral(name.toPath), from, to)
    protected def outerString = path + " : " + from.toString + " -> " + to.toString
    def toNode = (from, to) match {
 	   case (OMMOD(p), OMMOD(q)) =>
-         <view name={name.flat} base={doc.toPath} from={p.toPath} to={q.toPath} implicit={if (isImplicit) "true" else null}>
+         <view name={name.toPath} base={doc.toPath} from={p.toPath} to={q.toPath} implicit={if (isImplicit) "true" else null}>
            {getMetaDataNode}
            {innerNodes}
          </view>
 	   case _ => 
-         <view name={name.flat} base={doc.toPath}>
+         <view name={name.toPath} base={doc.toPath}>
            {getMetaDataNode}
            <from>{from.toOBJNode}</from><to>{to.toOBJNode}</to>
            {innerNodes}
@@ -43,7 +43,7 @@ abstract class View(doc : DPath, name : LocalPath)
   * @param to the codomain theory
   * @param isImplicit true iff the link is implicit
   */
-class DeclaredView(doc : DPath, name : LocalPath, val from : Term, val to : Term, val isImplicit : Boolean)
+class DeclaredView(doc : DPath, name : LocalName, val from : Term, val to : Term, val isImplicit : Boolean)
       extends View(doc, name) with DeclaredModule with DeclaredLink {
    def role = info.kwarc.mmt.api.Role_View
    def getIncludes: List[MPath] = getDeclarations.flatMap {
@@ -62,12 +62,12 @@ class DeclaredView(doc : DPath, name : LocalPath, val from : Term, val to : Term
    * @param df the definiens
    * @param isImplicit true iff the link is implicit
    */
-class DefinedView(doc : DPath, name : LocalPath, val from : Term, val to : Term, val dfC : TermContainer, val isImplicit : Boolean)
+class DefinedView(doc : DPath, name : LocalName, val from : Term, val to : Term, val dfC : TermContainer, val isImplicit : Boolean)
       extends View(doc, name) with DefinedModule with DefinedLink {
    def role = info.kwarc.mmt.api.Role_DefinedView
 }
 
 object DefinedView {
-   def apply(doc : DPath, name : LocalPath, from : Term, to : Term, df : Term, isImplicit: Boolean) =
+   def apply(doc : DPath, name : LocalName, from : Term, to : Term, df : Term, isImplicit: Boolean) =
       new DefinedView(doc, name, from, to, TermContainer(df), isImplicit)
 }

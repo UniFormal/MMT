@@ -55,7 +55,7 @@ object Differ {
 	
 	def diff(old : StructuralElement, nw : StructuralElement) : StrictDiff = (old,nw) match {
 	  case (o : Module, n : Module) => compareModules(o, n)
-	  case (o : Symbol, n : Symbol) => compareDeclarations(o, n)
+	  case (o : Declaration, n : Declaration) => compareDeclarations(o, n)
 	  case _ => throw ImplementationError("Cannot diff between " + old.toString + " and " + nw.toString)	  
 	}
 
@@ -149,7 +149,7 @@ object Differ {
    * @param nw the second declaration
    * @return the (strict) diff representing the difference between old and nw 
    */
-  private def compareDeclarations(old : Symbol, nw : Symbol) : StrictDiff = {
+  private def compareDeclarations(old : Declaration, nw : Declaration) : StrictDiff = {
     (old,nw) match {
       case (o : Constant, n : Constant) =>
         compareConstants(o,n)

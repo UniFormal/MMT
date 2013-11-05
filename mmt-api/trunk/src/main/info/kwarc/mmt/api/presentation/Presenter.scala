@@ -27,7 +27,6 @@ trait ObjectPresenter {
  */
 trait Presenter extends frontend.Extension with StructurePresenter with ObjectPresenter {
    def isApplicable(format: String): Boolean
-   def getNotation(o: Obj) = Presenter.getNotation(controller, o)
 }
 
 /** helper object */
@@ -69,18 +68,21 @@ object Presenter {
       }
    }
    
-   private def  getNotation(controller: frontend.Controller, p: ContentPath) =
+   private def getNotation(controller: frontend.Controller, p: ContentPath) : Option[NotationContainer] = {
       controller.globalLookup.getO(p) flatMap {
-         case c: symbols.Constant => c.notC.getPresent
-         case p: patterns.Pattern => p.notC.getPresent
+         case c: symbols.Constant => if (c.notC.isDefined) Some(c.notC) else None
+         case p: patterns.Pattern => if (p.notC.isDefined) Some(p.notC) else None
          case _ => None
       }
+   }
    
    /** transforms into pragmatic form and tries to retrieve a notation
     *  
-    *  if the term but not the pragmatic form has a notation, the strict form is retained 
+    *  if the term but not the pragmatic form has a notation, the strict form is retained
+    *  
+    *  @param parsing if true return a parsing notation even if a presentation notation is available 
     */
-   def getNotation(controller: frontend.Controller, o: Obj) : (Obj, List[Position], Option[TextNotation]) = {
+   def getNotation(controller: frontend.Controller, o: Obj) : (Obj, List[Position], Option[NotationContainer]) = {
       //TODO: try (lib.preImage(p) flatMap (q => getDefault(NotationKey(Some(q), key.role)))
       def tryTerm(t: Term) = t match {
          case ComplexTerm(p, args, vars, scs) => getNotation(controller, p)

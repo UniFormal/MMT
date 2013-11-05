@@ -33,12 +33,11 @@ object Action extends RegexParsers {
      private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
      private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
      
-   private def mathpath = "mathpath" ~> (mathpathArchive | mathpathLocal | mathpathFS | mathpathSVN | mathpathTNT)
+   private def mathpath = "mathpath" ~> (mathpathArchive | mathpathLocal | mathpathFS | mathpathSVN)
      private def mathpathArchive = "archive" ~> file ^^ {f => AddArchive(f)}
      private def mathpathLocal = "local" ^^ {case _ => Local}
      private def mathpathFS = "fs" ~> uri ~ file ^^ {case u ~ f => AddMathPathFS(u,f)}
      private def mathpathSVN = "svn" ~> uri ~ int ~ (str ?) ~ (str ?) ^^ {case uri ~ rev ~ user ~ pass => AddMathPathSVN(uri, rev, user, pass)}
-     private def mathpathTNT = "tntbase" ~> file ^^ {f => AddTNTBase(f)}
 
    private def archive = archopen | archdim | archmar | archpres | svnarchopen | archbuild
      private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)} //deprecated, use mathpath archive
@@ -225,14 +224,6 @@ case class AddMathPathSVN(uri: URI, rev: Int, user: Option[String], password: Op
       (if (rev == -1) "" else " " + rev) +
       (user.map(" " + _).getOrElse("") + password.map(" " + _).getOrElse(""))
 }
-
-/** add a catalog entry for an MMT-aware database such as TNTBase
- *  @param file the configuration file for TNTBase access
- *  Mapping as specified by the configuration file.
- *  
- *  concrete syntax: mathpath tntbase file:FILE
- */
-case class AddTNTBase(file : File) extends Action {override def toString = "tntbase " + file}
 
 /** registers a compiler
  * @param cls the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"

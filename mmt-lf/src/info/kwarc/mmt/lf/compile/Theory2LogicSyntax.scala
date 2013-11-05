@@ -13,7 +13,6 @@ import frontend._
 import patterns._
 import presentation._
 //import scala.sys.process._
-import frontend.ToString
 
 /*
  * translates an mmt theory to a logic syntax
@@ -61,7 +60,7 @@ class Theory2LogicSyntax {
 	/*
 	 * Declaration parser
 	 */
-	def getDecls(sl : List[Symbol]) : List[Declaration] = {
+	def getDecls(sl : List[symbols.Declaration]) : List[Declaration] = {
 	  sl.mapPartial{
 	    case a : Pattern => {
 	      val name = a.name.toString
@@ -76,7 +75,7 @@ class Theory2LogicSyntax {
 	}
 	
 	// have so cat : Category, get connectives/functions of that Category
-	def getCat(sl : List[Symbol], cat : CatRef) : Category = {
+	def getCat(sl : List[symbols.Declaration], cat : CatRef) : Category = {
 	  
 	  // get connectives of category cat
 	  val cons = sl mapPartial {
@@ -133,7 +132,7 @@ class Theory2LogicSyntax {
 	}
 	
 	
-	def getCatRefs(sl : List[Symbol]) : List[CatRef] = {
+	def getCatRefs(sl : List[symbols.Declaration]) : List[CatRef] = {
 	  sl mapPartial {
 	    case a : Constant =>  a.tp match {
 	      	case Some(FunType(in, out)) => 
@@ -154,7 +153,7 @@ class Theory2LogicSyntax {
 	    case _ => false
 	  }
 	}
-	def getFormCat(ls : List[Symbol]) : CatRef = {
+	def getFormCat(ls : List[symbols.Declaration]) : CatRef = {
 	  ls foreach { x => x match {
 	    	case x : Constant => if (isFormCat(x)) return CatRef(x.name.toString)
 	    	case _ =>  

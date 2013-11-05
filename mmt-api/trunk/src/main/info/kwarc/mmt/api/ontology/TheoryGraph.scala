@@ -65,7 +65,7 @@ class GraphExporter(theories: Iterable[Path], views: Iterable[Path], tg: TheoryG
    private def dotNode(id:Path, tp: String, external: Boolean) = {
       val label = id match {
          case utils.mmt.mmtbase ? !(name) =>
-            objects.TheoryExp.toString(objects.Obj.fromPathEncoding(name))
+            objects.TheoryExp.toString(objects.Obj.fromPathEncoding(name.toString))
          case _ =>
             id.last
       }

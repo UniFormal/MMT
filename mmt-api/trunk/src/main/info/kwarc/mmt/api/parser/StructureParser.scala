@@ -137,18 +137,6 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
          throw makeError(reg, "invalid identifier: " + e.getMessage)
       }
    }
-   /** read a LocalPath from the stream
-    * @throws SourceError iff ill-formed or empty
-    */
-   def readLocalPath(implicit state: ParserState) : LocalPath = {
-      val (s, reg) = state.reader.readToken
-      if (s == "")
-         throw makeError(reg, "module name expected")
-      try {Path.parseLocal(s).toLocalPath}
-      catch {case e: ParseError => 
-         throw makeError(reg, "invalid identifier: " + e.getMessage)
-      }
-   }
    /** read a DPath from the stream
     * @throws SourceError iff ill-formed or empty
     */
@@ -204,40 +192,106 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
    
    def readParsedObject(scope: Term, context: Context = Context())(implicit state: ParserState) = {
       val (obj, reg) = state.reader.readObject
-      val pu = ParsingUnit(SourceRef(state.container.uri, reg), scope, Context(), obj)
+      val pu = ParsingUnit(SourceRef(state.container.uri, reg), scope, context, obj)
       val parsed = puCont(pu)
       (obj,reg,parsed)
    }
   
+  /** like seCont but may wrap in NestedModule if parent is MPath */
+  private def moduleCont(m: Module, parent: Path)(implicit state: ParserState) {
+      parent match {
+         case _: DPath => seCont(m)
+         case _: MPath => seCont(new NestedModule(m))
+         case _ => throw ImplementationError("bad parent")
+      }
+   } 
+  /** auxiliary function to read Theories */
+  private def readTheory(parent: Path)(implicit state: ParserState) {
+      val rname = readName
+      val (ns,name) = parent match {
+         case doc: DPath =>
+            val ns = DPath(state.namespaces.default)
+            val mref = MRef(doc, ns ? rname, true)
+            seCont(mref)
+            (ns, rname)
+         case mp: MPath =>
+            (mp.doc, mp.name / rname)
+         case _ => throw ImplementationError("bad parent")
+      }
+      val tpath = ns ? name
+      var delim = state.reader.readToken
+      if (delim._1 == "abbrev") {
+         val (_,_,df) = readParsedObject(OMMOD(tpath))
+         val thy = DefinedTheory(ns, name, df)
+         moduleCont(thy, parent)
+      } else {
+         val meta = if (delim._1 == ":") {
+            val p = readMPath(tpath)
+            delim = state.reader.readToken
+            Some(p)
+         } else
+            None
+         val t = new DeclaredTheory(ns, name, meta)
+         moduleCont(t, parent)
+         if (delim._1 == "=") {
+            val patterns: List[(String,GlobalName)] = meta match {
+               case None => Nil
+               case Some(mt) =>
+                  try {
+                     //TODO this does not cover imported patterns
+                     controller.globalLookup.getDeclaredTheory(mt).getPatterns.map {
+                        p => (p.name.toPath, p.path)
+                     }
+                  } catch {case e: Error =>
+                     errorCont(makeError(delim._2, "error while retrieving patterns, continuing without patterns"))
+                     Nil
+                  }
+            }
+            logGroup {
+               readInModule(t, patterns)
+            }
+            end(t)
+         } else {
+            throw makeError(delim._2, "':' or '=' or 'abbrev' expected")
+         }
+      }
+   }
+   /** auxiliary function to unify "view" and "implicit view" */
+   private def readView(parent: Path, isImplicit: Boolean)(implicit state: ParserState) {
+      val rname = readName
+      val (ns,name) = parent match {
+         case doc: DPath =>
+            val ns = DPath(state.namespaces.default)
+            val mref = MRef(doc, ns ? rname, true)
+            seCont(mref)
+            (ns, rname)
+         case mp: MPath =>
+            (mp.doc, mp.name / rname)
+         case _ => throw ImplementationError("bad parent")
+      }
+      val vpath = ns ? name
+      readDelimiter(":")
+      val from = readMPath(vpath)
+      readDelimiter("->","→")
+      val to = readMPath(vpath)
+      readDelimiter("abbrev", "=") match {
+         case "abbrev" =>
+            val (_,_,df) = readParsedObject(OMMOD(vpath))
+            val v = DefinedView(ns, name, OMMOD(from), OMMOD(to), df, isImplicit)
+            moduleCont(v, parent)
+         case "=" =>
+            val v = new DeclaredView(ns, name, OMMOD(from), OMMOD(to), isImplicit)
+            moduleCont(v, parent)
+            logGroup {
+               readInModule(v, Nil)
+            }
+            end(v)
+      }
+   }
    /** the main loop for reading declarations that can occur in documents
     * @param doc the containing Document (must be in the controller already)
     */
    private def readInDocument(doc: Document)(implicit state: ParserState) {
-      //auxiliary function to unify "view" and "implicit view"
-      def doView(isImplicit: Boolean) {
-         val name = readLocalPath
-         val ns = DPath(state.namespaces.default)
-         val vpath = ns ? name
-         val mref = MRef(doc.path, vpath, true)
-         seCont(mref)
-         readDelimiter(":")
-         val from = readMPath(vpath)
-         readDelimiter("->","→")
-         val to = readMPath(vpath)
-         readDelimiter("abbrev", "=") match {
-            case "abbrev" =>
-               val (_,_,df) = readParsedObject(OMMOD(vpath))
-               val v = DefinedView(ns, name, OMMOD(from), OMMOD(to), df, isImplicit)
-               seCont(v)
-            case "=" =>
-               val v = new DeclaredView(ns, name, OMMOD(from), OMMOD(to), isImplicit)
-               seCont(v)
-               logGroup {
-                  readInModule(v, Nil)
-               }
-               end(v)
-         }
-      }
       if (state.reader.endOfDocument) return
       val (keyword, reg) = state.reader.readToken
       state.startPosition = reg.start
@@ -249,7 +303,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                } else
                   throw makeError(reg, "keyword expected, within document " + doc).copy(fatal = true)
             case "document" =>
-               val name = readLocalPath
+               val name = readName
                val dpath = doc.path / name
                val d = new Document(dpath)
                seCont(d)
@@ -267,53 +321,12 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                val (n,_) = state.reader.readToken
                val ns = readDPath(DPath(state.namespaces.default))
                state.namespaces.prefixes(n) = ns.uri
-            case "theory" =>
-               val name = readLocalPath
-               val ns = DPath(state.namespaces.default)
-               val tpath = ns ? name
-               val mref = MRef(doc.path, tpath, true)
-               seCont(mref)
-               var delim = state.reader.readToken
-               if (delim._1 == "abbrev") {
-                  val (_,_,df) = readParsedObject(OMMOD(tpath))
-                  val thy = DefinedTheory(ns, name, df)
-                  seCont(thy)
-               } else {
-                  val meta = if (delim._1 == ":") {
-                     val p = readMPath(tpath)
-                     delim = state.reader.readToken
-                     Some(p)
-                  } else
-                     None
-                  val t = new DeclaredTheory(ns, name, meta)
-                  seCont(t)
-                  if (delim._1 == "=") {
-                     val patterns: List[(String,GlobalName)] = meta match {
-                        case None => Nil
-                        case Some(mt) =>
-                           try {
-                              //TODO this does not cover imported patterns
-                              controller.globalLookup.getDeclaredTheory(mt).getPatterns.map {
-                                 p => (p.name.toPath, p.path)
-                              }
-                           } catch {case e: Error =>
-                              errorCont(makeError(reg, "error while retrieving patterns, continuing without patterns"))
-                              Nil
-                           }
-                     }
-                     logGroup {
-                        readInModule(t, patterns)
-                     }
-                     end(t)
-                  } else {
-                     throw makeError(delim._2, "':' or '=' or 'abbrev' expected")
-                  }
-               }
-            case "view" | "morphism" => doView(false)
+            case "theory" => readTheory(doc.path)
+            case "view" | "morphism" => readView(doc.path, false)
             case "implicit" =>
                val (keyword2, reg2) = state.reader.readToken
                keyword2 match {
-                  case "view" | "morphism" => doView(true)
+                  case "view" | "morphism" => readView(doc.path, true)
                   case _ => throw makeError(reg2, "only views can be implicit here")
                }
             case k =>
@@ -384,6 +397,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                      val as = PlainViewInclude(link.toTerm, from, incl)
                      seCont(as)
                }
+            case "theory" => readTheory(mod.path)
             //Pattern
             case "pattern" =>
               mod match {

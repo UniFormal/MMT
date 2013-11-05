@@ -161,7 +161,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
 
 
               if (p == t.path) {    // view from this theory
-              val nwIndThy = new DeclaredTheory(v.to.toMPath.parent, LocalPath(List(v.to.toMPath.name.last + "^" +  escape(v.path.toPath) + "^" + escape(t.path.toPath))), t.meta)
+              val nwIndThy = new DeclaredTheory(v.to.toMPath.parent, LocalName(v.to.toMPath.name.last + "^" +  escape(v.path.toPath) + "^" + escape(t.path.toPath)), t.meta)
                 newDecs foreach { c =>
                   val nc = Constant(c.home, c.name, c.alias, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.notC)
                   nwIndThy.add(nc)
@@ -174,7 +174,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
                     case OMMOD(path) =>
                       if (p == path) {    // view from some imported theory
 
-                      val nwIndThy = new DeclaredTheory(t.parent, LocalPath(List(v.to.toMPath.name.last + "^" +  escape(v.path.toPath) + "^" + escape(t.path.toPath))), t.meta)
+                      val nwIndThy = new DeclaredTheory(t.parent, LocalName(v.to.toMPath.name.last + "^" +  escape(v.path.toPath) + "^" + escape(t.path.toPath)), t.meta)
                         newDecs foreach { c =>
                           val nc = Constant(c.home, c.name, c.alias, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.notC)
 

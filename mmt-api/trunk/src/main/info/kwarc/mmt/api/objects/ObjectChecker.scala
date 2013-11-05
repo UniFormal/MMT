@@ -747,7 +747,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
           case OMMOD(p) => controller.globalLookup.getTheory(p) match {
             case thdf : DefinedTheory =>  checkMorphism(mor, thdf.df)
             case thd : DeclaredTheory =>
-              val clist : List[Symbol] = thd.getDeclarations filter (p => !p.isInstanceOf[Structure])  // list of constants in the domain theory
+              val clist : List[Declaration] = thd.getDeclarations filter (p => !p.isInstanceOf[Structure])  // list of constants in the domain theory
               //val oclist : List[Declaration] = clist.sortWith((x,y) => x.name.toString() <= y.name.toString()) //ordered list of constants in the domain theory
               mor match {
                 case ExplicitMorph(rec, dom) =>

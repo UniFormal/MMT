@@ -163,18 +163,18 @@ case class OMID(path: ContentPath) extends Term {
    }
    def components = path match {
       case m: MPath => m.components
-      case OMMOD(doc ? mod) % ln => List(StringLiteral(doc.toPath), StringLiteral(mod.flat),
+      case OMMOD(doc ? mod) % ln => List(StringLiteral(doc.toPath), StringLiteral(mod.toString),
                                  StringLiteral(ln.toString), StringLiteral(path.toPathEscaped))
       case thy % name => List(thy, StringLiteral(name.toString))
    }
    override def toString = path match {
-      case doc ? mod => doc + "?" + mod.flat
-      case OMMOD(mod) % name => mod.name.flat + "?" + name.toString
+      case doc ? mod => doc + "?" + mod.toString
+      case OMMOD(mod) % name => mod.name.toString + "?" + name.toString
       case thy % name => "[" + thy.toString + "]?" + name.toString
    }
    def toNode = path match {
       case doc ? mod => <om:OMS base={doc.toPath} module={mod.toPath}>{mdNode}</om:OMS>
-      case OMMOD(doc ? mod) % name => <om:OMS base={doc.toPath} module={mod.flat} name={name.toPath}>{mdNode}</om:OMS>
+      case OMMOD(doc ? mod) % name => <om:OMS base={doc.toPath} module={mod.toPath} name={name.toPath}>{mdNode}</om:OMS>
       case thy % name => <om:OMS name={name.toPath}>{mdNode}{thy.toNode}</om:OMS>
    }
    def toCML = <csymbol>{path.toPath}</csymbol>   //TODO ContentMathML syntax for complex identifiers
