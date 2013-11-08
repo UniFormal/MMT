@@ -20,10 +20,14 @@ class STeXImporter extends Compiler with Logger {
   override val logPrefix = "steximporter"    
  
     
+  override def init(controller : Controller) {
+    this.controller = controller
+    report = controller.report
+  }
+    
   def includeFile(name : String) : Boolean = name.endsWith(".omdoc") //stex/latexml generated omdoc
   
   def buildOne(inFile : File, dpath : DPath, outFile : File) : List[Error] = {
-    println("TRANSLATING: " + inFile)
     val src = scala.io.Source.fromFile(inFile.toString)
 	val cp = scala.xml.parsing.ConstructingParser.fromSource(src, false)
 	val node : Node = cp.document()(0)
@@ -38,6 +42,10 @@ class STeXImporter extends Compiler with Logger {
     out.write(pp.format(docXML))
 
     out.close()
+    errors foreach (throw _)
+    if (errors != Nil) {
+      log("Errors: " + errors.mkString("\n"))
+    }
     errors
   }
   
@@ -102,7 +110,10 @@ class STeXImporter extends Compiler with Logger {
         case "omgroup" => 
           val errs = n.child.map(translateTheory)
           errors ++= errs.flatten
-        case _ => //ignore for now (e.g. div)
+        case _ =>           
+          val no = translateCMP(n)(doc.path, mmt.mmtcd) //defaulting to mmtcd for context in parsing objects
+          val nr = new PlainNarration(doc.path, no)
+          doc.add(nr)
       }
     } catch {
       case e : Error => errors ::= e
@@ -110,13 +121,19 @@ class STeXImporter extends Compiler with Logger {
     errors
   }
   
+  def _tmp_translate_hardcoded_uris(fromS : String) : String = fromS match {
+    case "../../../slides/extcds/omstd/arith1.omdoc#arith1" => "http://docs.omdoc.org/smglo/sTeX/arith.omdoc#arith"
+    case "../../../slides/extcds/omstd/relation1.omdoc#relation1" => "http://docs.omdoc.org/smglo/sTeX/relation.omdoc#relation"
+    case _ => fromS
+  }  
   
   private def translateDeclaration(n : Node)(implicit doc : Document, mpath : MPath) : List[Error] = {
     var errors : List[Error] = Nil 
     try {
       n.label match {
         case "imports" => //omdoc import -> mmt (plain) include
-          val fromS = (n \ "@from").text
+          var fromS = (n \ "@from").text
+          fromS = _tmp_translate_hardcoded_uris(fromS)
           val from = fromS.split("#").toList match {
             case dpathS :: localPathS :: Nil =>
               val dpath = if (dpathS.startsWith("..//") && dpathS(4).isLetter) {
@@ -127,8 +144,10 @@ class STeXImporter extends Compiler with Logger {
               dpath ? LocalPath(List(localPathS))
             case _ => throw ParseError("invalid stex mpath: " + fromS)
           }
-          val include = PlainInclude(from, mpath)
-          controller.add(include)
+          if (from != mpath) {
+            val include = PlainInclude(from, mpath)
+            controller.add(include)
+          }
         case "symbol" => //omdoc symbol -> mmt constant
           val nameS = (n \ "@name").text
           val name = LocalName(nameS)
@@ -138,7 +157,6 @@ class STeXImporter extends Compiler with Logger {
           val nameS =  (n \ s"@{$xmlNS}id").text
           val name = LocalName(nameS)
           val targetsS = (n \ "@for").text.split(" ")
-          log(" " + targetsS.toList)
           val targets = targetsS map {s =>
             mpath ? LocalName(s) //TODO handle non-local references 
           }
@@ -150,11 +168,10 @@ class STeXImporter extends Compiler with Logger {
               val dfn = new Definition(doc.path, targets.toList, cmp)
               doc.add(dfn)
           }
-        case "notation" => 
-          val prototype = n.child(0)
-          val rendering = n.child(1)
+        case "notation" =>
+          val prototype = n.child.find(_.label == "prototype").get
+          val rendering = n.child.find(_.label == "rendering").get
           val notation = makeNotation(prototype.child.head, rendering.child.head)(doc.path, mpath)
-          
           val cd = (n \ "@cd").text
           val name = (n \ "@name").text
           val refPath = Path.parseM("?" + cd, doc.path)
@@ -163,12 +180,14 @@ class STeXImporter extends Compiler with Logger {
           val const = new Constant(c.home, c.name, c.alias, c.tpC, c.dfC, c.rl, presentation.NotationContainer(notation))
           controller.memory.content.update(const) 
           val res = controller.memory.content.getConstant(refName, p => "Notation for nonexistent constant " + p)
-          
-        case _ => 
-          val nr = new PlainNarration(doc.path, NarrativeObject.fromXML(n))
+        
+        case "metadata" => //TODO  
+        case _ =>
+          val nr = new PlainNarration(doc.path, Narration.parseNarrativeObject(n)(doc.path))
           doc.add(nr)
       }
     } catch {
+      case e : Throwable => throw e //uncomment in debug mode
       case e : Error => errors ::= e
       case e : Throwable => log("WARNING: declaration ignored because of error " + e.getMessage() + "\n" + n.toString)
     }
@@ -176,7 +195,7 @@ class STeXImporter extends Compiler with Logger {
   }
   
   def makeNotation(proto : scala.xml.Node, rendering : scala.xml.Node)(implicit dpath : DPath, mpath : MPath) : parser.TextNotation = {
-	val argMap : collection.mutable.Map[String, Int] = new collection.mutable.HashMap() 
+    val argMap : collection.mutable.Map[String, Int] = new collection.mutable.HashMap() 
     val symName = proto.label match {
       case "OMA" => 
         val n = proto.child.head
@@ -207,7 +226,6 @@ class STeXImporter extends Compiler with Logger {
    } catch {
      case _ : Exception => 1
    }
-   
    new TextNotation(symName, Mixfix(markers), presentation.Precedence.integer(precS))
   }
   
@@ -221,6 +239,15 @@ class STeXImporter extends Compiler with Logger {
     case "mi" => makeDelim(n.child.mkString) :: Nil //for now treated exactly like mo        
     case "mn" => makeDelim(n.child.mkString) :: Nil //for now treated exactly like mo
     case "mtext" => makeDelim(n.child.mkString) :: Nil
+    case "text" => makeDelim(n.child.mkString) :: Nil
+    case "mfrac" => 
+      val above = parseRenderingMarkers(n.child(0), argMap)
+      val below = parseRenderingMarkers(n.child(0), argMap)
+      val fraction = FractionMarker(above, below, true) //true => render line
+      List(fraction)
+    case "mtd" => Delim("[&") :: n.child.toList.flatMap(parseRenderingMarkers(_, argMap)) ::: List(Delim("&]"))
+    case "mtr" => Delim("[/") :: n.child.toList.flatMap(parseRenderingMarkers(_, argMap)) ::: List(Delim("/]")) 
+    case "mtable" => Delim("[[") :: n.child.toList.flatMap(parseRenderingMarkers(_, argMap)) ::: List(Delim("]]")) 
     case "render" => 
       val argName = (n \ "@name").text
       val argNr = argMap(argName)
@@ -231,8 +258,13 @@ class STeXImporter extends Compiler with Logger {
       n.child.find(_.label == "separator") match {
         case None => SeqArg(argNr, makeDelim(",")) :: Nil
         case Some(sep) => 
-          val delim = parseRenderingMarkers(sep, argMap).mkString(" ")
-          SeqArg(argNr, makeDelim(delim)) :: Nil
+          sep.child.toList match {
+            case Nil => 
+              SeqArg(argNr, makeDelim(" ")) :: Nil
+            case hd :: tl =>
+              val delim = parseRenderingMarkers(hd, argMap).mkString(" ")
+              SeqArg(argNr, makeDelim(delim)) :: Nil
+          } 
         }
     case "none" => Nil
   }
@@ -242,6 +274,48 @@ class STeXImporter extends Compiler with Logger {
       case "…" => Delim("...")
       case _ => Delim(s)
     }
+  }
+  
+  def parseSourceRef(n : scala.xml.Node) : SourceRegion = {
+    val srcrefS = n.attributes.asAttrMap("stex:srcref")
+    val trangeIdx = srcrefS.indexOf("#textrange") + "#textrange".length
+    val trangeS = srcrefS.substring(trangeIdx)
+    val fromto = trangeS.split(",").toList
+    fromto match { //(from=4;1,to=12;16)
+      case fromS :: toS :: Nil => 
+       val frangeIdx = fromS.indexOf("from=") + "from=".length
+       val frangeS = fromS.substring(frangeIdx)
+       val fvalsS = frangeS.split(";").toList
+       val (fl, fr) = fvalsS match {
+         case lS :: rS :: Nil => 
+           val l = lS.toInt 
+           val r = rS.toInt
+           (l,r)
+         case _ => throw new Exception("Invalid STeX source reference " + srcrefS)
+       }
+       val trangeIdx = toS.indexOf("from=") + "from=".length
+       val trangeS = toS.substring(trangeIdx)
+       val tvalsS = trangeS.split(";").toList
+       val (tl, tr) = tvalsS match {
+         case lS :: rS :: Nil => 
+           val l = lS.toInt 
+           val r = rS.toInt
+           (l,r)
+         case _ => throw new Exception("Invalid STeX source reference " + srcrefS)
+       }
+       
+       
+       
+    
+
+       
+       
+       
+          
+      case _ => throw new Exception("Invalid STeX source reference " + srcrefS)
+    }
+    
+    throw new Exception("TODO")
   }
   
   def translateCMP(n : scala.xml.Node)(implicit dpath : DPath, mpath : MPath) : NarrativeObject = n.label match {
@@ -263,15 +337,24 @@ class STeXImporter extends Compiler with Logger {
   def translateTerm(n : scala.xml.Node)(implicit dpath : DPath, mpath : MPath) : Term = {
     def rewriteNode(node : scala.xml.Node) : scala.xml.Node = node.label match {
       case "OMS" => 
-        val cd =  xml.attr(node, "cd")
+        var cd =  xml.attr(node, "cd")
+        cd = _tmp_hardcoded_cd_rewrite(cd)
         val name = xml.attr(node, "name")
         val docName = cd + ".omdoc"
-        val doc = dpath.^! / docName //smglo library uses same name for doc and theories
+        val doc = mpath.doc.^! / docName 
         <om:OMS base={doc.toPath} module={cd} name={name}/>
       case "#PCDATA" => new scala.xml.Text(node.toString)
       case _ => new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, node.child.map(rewriteNode) :_*)
     }
+    println(rewriteNode(n))
     Obj.parseTerm(rewriteNode(n), dpath)
+  }
+  
+  
+  def _tmp_hardcoded_cd_rewrite(cd : String) : String  = cd match {
+    case "arith1" => "arith"
+    case "relation1" => "relation"    
+    case _ => cd
   }
   
   
