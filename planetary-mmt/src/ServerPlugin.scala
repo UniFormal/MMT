@@ -7,7 +7,6 @@ import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.stex._
-import info.kwarc.mmt.lf._
 
 
 import scala.util.parsing.json._
@@ -21,11 +20,7 @@ case class PlanetaryError(val text : String) extends Error(text)
 class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
   
   override val logPrefix = "planetary"
-
-    
      /** Server */   
-
-   
    def apply(uriComps: List[String], query: String, body : Body): HLet = {
      try {
        log("got here" + uriComps)
@@ -99,7 +94,6 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
      }
    }
    
-   
    private def getCompiledResponse : HLet = new HLet {
      def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
        val reqS = bodyAsString(tk)
@@ -115,7 +109,7 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
        format match {
          case "stex" => 
           val comp = new STeXImporter()
-          comp.init(controller, Nil)
+          comp.init(controller)
           val (response,errors) = comp.compileOne(bodyS, dpath)
           JsonResponse(response, errors.mkString("\n")).aact(tk)
          case "mmt" => 
@@ -123,9 +117,8 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
           val (doc,state) = controller.textParser(reader, dpath)
           
           val response = doc.toNodeResolved(controller.memory.content).toString    
-          println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
 
-          JsonResponse(response, "Success").aact(tk)
+          JsonResponse(response, "").aact(tk)
          case "elf" => 
            //val comp = new Twelf()
            //comp.init(controller, List("/home/mihnea/kwarc/data/twelf-mod/bin/twelf-server")) //TODO take from extension list
@@ -174,7 +167,7 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
        presenter.apply(doc, rb)
        val response = rb.get()
        log("Sending Response: " + response)
-       JsonResponse(response.toString, "Success").aact(tk)
+       JsonResponse(response.toString, "").aact(tk)
      } catch {
         case e : Error => 
          log(e.longMsg)
@@ -259,7 +252,13 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
   private def JsonResponse(content : String, errors : String) : HSimpleLet = {
       val response = new collection.mutable.HashMap[String, Any]()
       response("content") = content
-      response("log") = errors
+      if (errors == "") { //no errors
+        response("log") = "Success"
+        response("success") = "true"
+      } else {
+        response("log") = errors
+        response("success") = "false"
+      }
       log("Sending Response: " + response)
       JsonResponse(JSONObject(response.toMap))     
   }
