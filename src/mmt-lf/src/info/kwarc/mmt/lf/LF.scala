@@ -26,13 +26,13 @@ import objects.Conversions._
 case class LFError(msg : String) extends java.lang.Throwable(msg)
 
 object LF {
-   val lfbase = DPath(utils.URI("http", "cds.omdoc.org") / "urtheories")
-   val lftheory = lfbase ? "LF"
-   def constant(name : String) = OMS(lftheory ? name)
+   val _base = Typed._base
+   val _path = _base ? "LF"
+   def constant(name : String) = OMS(_path ? name)
 }
 
 class LFSym(name: String) {
-   val path = LF.lftheory ? name
+   val path = LF._path ? name
    val term = OMS(path)
 }
 
@@ -162,7 +162,7 @@ object ApplyGeneral {
 /** The LF foundation. Implements type checking and equality */
 class LFF extends Foundation {
    override val logPrefix = "lf"
-   val foundTheory = LF.lftheory
+   val foundTheory = LF._path
    def typing(tm : Option[Term], tp : Option[Term], G : Context = Context())(implicit fl : FoundationLookup) : Boolean = {
       log("typing\n" + tm.toString + "\n" + tp.toString)
       (tm, tp) match {

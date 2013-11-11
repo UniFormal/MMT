@@ -65,8 +65,8 @@ class Twelf extends Compiler {
      * @param dpath unused (could be passed to Twelf as the default namespace in the future)
      * @param out the file in which to put the generated OMDoc
      */
-   def buildOne(in: File, dpath: DPath, out: File) : List[SourceError] = {
-      File(out.getParent).mkdirs
+   def buildOne(bf: BuiltFile) = {
+      File(bf.outFile.getParent).mkdirs
       val procBuilder = new java.lang.ProcessBuilder(path.toString)
       procBuilder.redirectErrorStream()
       val proc = procBuilder.start()
@@ -75,11 +75,10 @@ class Twelf extends Compiler {
       input.println("set chatter " + chatter)
       input.println("set unsafe " + unsafe)
       input.println("set catalog " + catalog.queryURI)
-      input.println("loadFile " + in)
-      input.println("Print.OMDoc.printDoc " + in + " " + out.setExtension("omdoc"))
+      input.println("loadFile " + bf.inPath)
+      input.println("Print.OMDoc.printDoc " + bf.inPath + " " + bf.outFile.setExtension("omdoc"))
       input.println("OS.exit")
       var line : String = null
-      var errors : List[SourceError] = Nil
       while ({line = output.readLine; line != null}) {
          line = line.trim
          val (treat, dropChars, warning) =
@@ -92,23 +91,24 @@ class Twelf extends Compiler {
             do {
                msg ::= output.readLine
             } while (! msg.head.startsWith("%%"))
-            errors ::= CompilerError(r, msg.reverse, warning)
+            bf.errors ::= CompilerError(r, msg.reverse, warning)
          }
       }
-      errors.reverse
+      bf.errors = bf.errors.reverse
    }
    
-   def compileOne(inText : String, dpath : DPath) : (String, List[SourceError]) = {
+   def compileOne(inText : String, dpath : DPath) : (String, List[Error]) = {
      val inFileName = "/tmp/in.elf"
      val outFileName = "/tmp/out.omdoc"
      val in = new PrintWriter("/tmp/in.elf")
      in.write(inText)
      in.close()
-     val errors = buildOne(File(inFileName), dpath, File(outFileName))
+     val bf = new archives.BuiltFile(File(inFileName), List("string"), dpath, File(outFileName))
+     buildOne(bf)
      val source = scala.io.Source.fromFile(outFileName)
      val lines = source.getLines.mkString("\n")
      source.close()     
-     (lines, errors)
+     (lines, bf.errors)
    }
    
 }
