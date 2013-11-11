@@ -146,9 +146,16 @@ class Controller extends ROController with Logger {
       def preImage(p : GlobalName) = library.preImage(p)
       def getDeclarationsInScope(mod : Term) = library.getDeclarationsInScope(mod)
    }
+   private val self = this
    /** a lookup that loads missing modules dynamically */
    val globalLookup = new Lookup(report) {
-      def get(path : Path) = iterate {library.get(path)}
+      def get(path : Path) = {
+         val se = iterate {self.get(path)}
+         se match {
+            case ce: ContentElement => ce
+            case _ => throw GetError(path + " exists but is not a content element")
+         }
+      }
       //def imports(from: Term, to: Term) = iterate {library.imports(from, to)}
       def visible(to: Term) = iterate {library.visible(to)}
       def getImplicit(from: Term, to: Term) = library.getImplicit(from,to)
@@ -167,8 +174,7 @@ class Controller extends ROController with Logger {
            }
          } catch {
             case BackendError(p) =>
-               log("retrieval failed for " + p)
-               throw GetError("retrieval failed for " + p) 
+               throw GetError("backend cannot retrieve " + p) 
          }
       }
       log("retrieved " + path)
@@ -187,15 +193,35 @@ class Controller extends ROController with Logger {
    private def iterate[A](a : => A, previous : List[Path]) : A = {
       try {a}
       catch {
-         case NotFound(p : Path) if ! previous.exists(_ == p) => retrieve(p); iterate(a, p :: previous)
-         case NotFound(p : Path) => throw GetError("retrieval failed for " + p) 
+         case NotFound(p : Path) =>
+            if (previous.exists(_ == p))
+               throw GetError("retrieval failed for " + p)
+            else {
+               retrieve(p)
+               iterate(a, p :: previous)
+            }
+          
       }
    }
    /** retrieves a knowledge item */
    def get(path : Path) : StructuralElement = {
       path match {
          case p : DPath => iterate (docstore.get(p))
-         case p : MPath => iterate (try {library.get(p)} catch {case _: java.lang.Exception => notstore.get(p)})
+         case p : MPath =>
+             try {iterate(library.get(p))}
+             catch {
+                case _: GetError =>
+                   try {iterate(notstore.get(p))}
+                   catch {
+                      // check if the MPath refers to a Realization given as a Scala class; if so, add it as a module
+                      case e: GetError =>
+                         log("trying to find realization for " + p + " on classpath")
+                         Realization.fromScala(p) match {
+                            case Some(r) => add(r); r
+                            case None => throw e
+                         }
+                   }
+             }
          case p : GlobalName => iterate (library.get(p))
          case _ : CPath => throw ImplementationError("cannot retrieve component paths")
       }
@@ -466,7 +492,6 @@ class Controller extends ROController with Logger {
                case "mws"          => arch.produceMWS(in, "content")
                case "mws-flat"     => arch.produceMWS(in, "mws-flat")
                case "mws-enriched" => arch.produceMWS(in, "mws-enriched")
-               case "extract"      => arch.extractScala(this, in)
                case "integrate"    => arch.integrateScala(this, in)
                case "register"     =>
                   if (in.length != 1)

@@ -9,6 +9,7 @@ import ontology.QueryExtension
 import parser._
 import utils._
 import web._
+import utils.MyList._
 
 trait Extension extends Logger {
    protected var controller : Controller = null
@@ -69,18 +70,17 @@ class ExtensionManager(controller: Controller) extends Logger {
    def addDefaultExtensions {
       targets    ::= new MMTCompiler
       targets    ::= new archives.Index
-      targets    ::= new archives.HTMLExporter
-      targets    ::= new archives.PythonExporter
+      targets    :::= List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter)
       presenters ::= TextPresenter
       presenters ::= OMDocPresenter
       presenters ::= controller.presenter
+      changeListeners ::= new modules.RealizationListener
       parserExtensions ::= parser.MetadataParser
       parserExtensions ::= parser.CommentIgnorer
       //parserExtensions ::= new ControlParser
-      lexerExtensions ::= GenericEscapeHandler
-      lexerExtensions ::= QuoteHandler
-      lexerExtensions ::= new PrefixEscapeHandler('\\')
-      lexerExtensions ::= new NumberLiteralHandler(true)
+      lexerExtensions ::= GenericEscapeLexer
+      lexerExtensions ::= QuoteLexer
+      lexerExtensions ::= new PrefixedTokenLexer('\\')
       serverPlugins   :::= List(new web.ActionServer, new web.SVGServer, new web.QueryServer, new web.AdminServer)
       queryExtensions :::= List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
                                 new ontology.Present, new ontology.PresentDecl) 
@@ -123,7 +123,7 @@ class ExtensionManager(controller: Controller) extends Logger {
           changeListeners ::= ext.asInstanceOf[ChangeListener]
        }
        if (ext.isInstanceOf[BuildTarget]) {
-          log("  ... as compiler")
+          log("  ... as build target")
           targets ::= ext.asInstanceOf[BuildTarget]
        }
        if (ext.isInstanceOf[QueryTransformer]) {
@@ -161,11 +161,11 @@ class ExtensionManager(controller: Controller) extends Logger {
    def getParserExtension(se: StructuralElement, keyword: String) : Option[ParserExtension] = parserExtensions find {_.isApplicable(se, keyword)}
    /** retrieves the closest Foundation that covers a theory, if any */
    def getFoundation(p: MPath) : Option[Foundation] = foundations find {_.foundTheory == p} orElse {
-      val mt = objects.TheoryExp.meta(objects.OMMOD(p))(controller.globalLookup)
-      mt flatMap getFoundation
+      val mt = objects.TheoryExp.metas(objects.OMMOD(p))(controller.globalLookup)
+      mt mapFind getFoundation
    }
    def getFoundation(thy: objects.Term) : Option[Foundation] =
-      objects.TheoryExp.meta(thy)(controller.globalLookup) flatMap getFoundation
+      objects.TheoryExp.metas(thy)(controller.globalLookup) mapFind getFoundation
 
    /** sets the URL of the MathWebSearch backend */
    def setMWS(uri: URI) {mws = Some(uri)}

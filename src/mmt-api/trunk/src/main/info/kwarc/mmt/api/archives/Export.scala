@@ -23,16 +23,14 @@ abstract class NarrationExporter extends GenericTraversingBuildTarget {
    val inDim = "narration"
    def includeFile(name: String) = name.endsWith(".omdoc")
    
-   def buildFile(a: Archive, inFile: File, inPath: List[String], outFile: File): List[Error] = {
+   def buildFile(a: Archive, bf: BuiltFile) = {
       try {
-        val dp = DPath(a.narrationBase / inPath)
-        val doc = controller.getDocument(dp)
-        _rh = new presentation.FileWriter(outFile)
+        val doc = controller.getDocument(bf.dpath)
+        _rh = new presentation.FileWriter(bf.outFile)
         doDocument(doc)
         rh.done
-        Nil
       } catch {
-        case e : Error => List(e)
+        case e : Error => bf.errors ::= e
       }
    }
 }
@@ -50,47 +48,43 @@ abstract class ContentExporter extends GenericTraversingBuildTarget {
    protected def rh = _rh 
    
    /** applied to each theory */
-   def doTheory(t: DeclaredTheory)
+   def doTheory(t: DeclaredTheory, bf: BuiltFile)
    /** applied to each view */
-   def doView(v: DeclaredView)
+   def doView(v: DeclaredView, bf: BuiltFile)
    /** applied to every namespace
     *  @param dpath the namespace
     *  @param namespaces the sub-namespace in this namespace
     *  @param modules the modules in this namespace
-    *  @param the intended output file
     */
    def doNamespace(dpath: DPath, namespaces: List[(BuiltDir,DPath)], modules: List[(BuiltFile,MPath)])
    
    val inDim = "content"
    def includeFile(name: String) = name.endsWith(".omdoc")
    
-   override def buildDir(a: Archive, inDir: File, inPath: List[String],
-                         builtChildren: List[BuildResult], outFile: File): List[Error] = {
-      val dp = Archive.ContentPathToDPath(inPath)
+   override def buildDir(a: Archive, bd: BuiltDir, builtChildren: List[BuildResult]) = {
+      val dp = Archive.ContentPathToDPath(bd.inPath)
       val nss = builtChildren flatMap {
-         case bd: BuiltDir => List((bd, Archive.ContentPathToDPath(bd.inPath)))
+         case d: BuiltDir if ! d.skipped => List((d, Archive.ContentPathToDPath(d.inPath)))
          case _ => Nil
       }
       val mps = builtChildren flatMap {
-         case bf: BuiltFile => List((bf, Archive.ContentPathToMMTPath(bf.inPath)))
+         case f: BuiltFile if ! f.skipped => List((f, Archive.ContentPathToMMTPath(f.inPath)))
          case _ => Nil
       }
-      _rh = new presentation.FileWriter(outFile)
+      _rh = new presentation.FileWriter(bd.outFile)
       doNamespace(dp, nss, mps)
       _rh.done
-      Nil
    }
-   def buildFile(a: Archive, inFile: File, inPath: List[String], outFile: File): List[Error] = {
-      val mp = Archive.ContentPathToMMTPath(inPath)
+   def buildFile(a: Archive, bf: BuiltFile) = {
+      val mp = Archive.ContentPathToMMTPath(bf.inPath)
       val mod = controller.globalLookup.getModule(mp)
-      _rh = new presentation.FileWriter(outFile)
+      _rh = new presentation.FileWriter(bf.outFile)
       mod match {
-         case t: DeclaredTheory => doTheory(t)
-         case v: DeclaredView => doView(v)
+         case t: DeclaredTheory => doTheory(t, bf)
+         case v: DeclaredView => doView(v, bf)
          case _ =>
       }
       _rh.done
-      Nil
    }
 }
 
@@ -117,19 +111,33 @@ trait IndentedExporter extends ContentExporter {
  *  @param found the semantic domain, e.g., the foundation or programming language
  */
 abstract class FoundedExporter(meta: MPath, found: MPath) extends ContentExporter {
-   def doTheory(t: DeclaredTheory, outFile: File) {
-      if (t.meta == Some(meta))
-         doCoveredTheory(t, outFile)
+   protected def covered(m: MPath): Boolean = {
+      objects.TheoryExp.metas(objects.OMMOD(m))(controller.globalLookup) contains meta
    }
-   def doView(v: DeclaredView, outFile: File) {
-      
+   def doTheory(t: DeclaredTheory, bf: BuiltFile) {
+      if (covered(t.path))
+         doCoveredTheory(t)
+      else
+         bf.skipped = true
+   }
+   def doView(v: DeclaredView, bf: BuiltFile) {
+      if (covered(v.from.toMPath)) {
+         val to = v.to.toMPath
+         if (to == found)
+            doRealization(v) //TODO check if v includes certain fixed morphism
+         else if (covered(to))
+            doFunctor(v)
+         else
+            bf.skipped = true
+      } else
+         bf.skipped = true
    }
    
    /** called on covered theories, i.e., theories with meta-theory meta */
-   def doCoveredTheory(t: DeclaredTheory, outFile: File)
+   def doCoveredTheory(t: DeclaredTheory)
    /** called on views between covered theories */
-   def doCoveredView(v: DeclaredView, outFile: File)
+   def doFunctor(v: DeclaredView)
    /** called on realizations, i.e., views from a covered theory to found, e.g., models or implementations */
-   def doRealization(r: DeclaredView, outFile: File)
+   def doRealization(r: DeclaredView)
 
 }

@@ -79,10 +79,28 @@ abstract class BuildTarget extends Extension {
    }
 }
 
-/** auxiliary type to represent the result of building a file/directory */
-sealed abstract class BuildResult
-case class BuiltFile(inPath: List[String], outFile: File) extends BuildResult
-case class BuiltDir(inPath: List[String], outFile: File) extends BuildResult {
+/** auxiliary type to represent the parameters and result of building a file/directory */
+abstract class BuildResult {
+   /** the list of errors, built targets should append their errors here */
+   var errors: List[Error] = Nil
+   /** build targets should set this to true if they skipped the file so that it is not passed on to the parent directory */
+   var skipped = false
+}
+/**
+ * passed when building a file
+ * @param inFile the input file
+ * @param inPath the path of the input file inside the archive, relative to the input dimension
+ * @param dpath the base to use for resolving relative names
+ * @param outFile the intended output file
+ */
+class BuiltFile(val inFile: File, val inPath: List[String], val dpath: DPath, val outFile: File) extends BuildResult
+/**
+ * passed when building a directory
+ * @param inFile the input file
+ * @param inPath the path of the input file inside the archive, relative to the input dimension
+ * @param outFile the intended output file
+ */
+class BuiltDir(val inFile: File, val inPath: List[String], val outFile: File) extends BuildResult {
    def dirName = outFile.segments.init.last
 }
 
@@ -122,7 +140,7 @@ trait GenericTraversingBuildTarget extends BuildTarget {
      * @param inPath the path in the archive to the input file
      * @param outFile the output file
      */ 
-   def buildFile(a: Archive, inFile: File, inPath: List[String], outFile: File): List[Error]
+   def buildFile(a: Archive, bf: BuiltFile)
 
    /** similar to buildOne but called on every directory (after all its children have been processed)
      * @param a the containing archive  
@@ -132,8 +150,7 @@ trait GenericTraversingBuildTarget extends BuildTarget {
      * @param outFile the output file
      * This does nothing by default and can be overridden if needed.
      */ 
-   def buildDir(a: Archive, inDir: File, inPath: List[String], buildChildren: List[BuildResult], outFile: File): List[Error] =
-      Nil
+   def buildDir(a: Archive, bd: BuiltDir, buildChildren: List[BuildResult]) {}
    
    /** entry point for recursive building */
    def build(a: Archive, args: List[String], in: List[String] = Nil) {
@@ -174,27 +191,29 @@ trait GenericTraversingBuildTarget extends BuildTarget {
        //build every file
        val prefix = "[" + inDim + " -> " + outDim + "] "
        a.traverse[BuildResult](inDim, in, includeFile) ({case Current(inFile,inPath) =>
-         val outFile = outPath(a.root, inPath)
-         log(prefix + inFile + " -> " + outFile)
-         val errors = buildFile(a, inFile, inPath, outFile)
-           errorMap(inPath) = errors
-           if (! errors.isEmpty) {
+           val outFile = outPath(a.root, inPath)
+           log(prefix + inFile + " -> " + outFile)
+           val bf = new BuiltFile(inFile, inPath, DPath(a.narrationBase / inPath), outFile)
+           buildFile(a, bf)
+           errorMap(inPath) = bf.errors
+           if (! bf.errors.isEmpty) {
              log("errors follow")
-             errors foreach log
+             bf.errors foreach log
            }
            a.timestamps(key).set(inPath)
-           BuiltFile(inPath, outFile)
+           bf
        }, {
           case (Current(inDir, inPath), buildChildren) =>
              val outFile = a.root / outDim / inPath / (folderName + "." + outExt)
-             buildDir(a, inDir, inPath, buildChildren, outFile)
-             BuiltDir(inPath, outFile)
+             val bd = new BuiltDir(inDir, inPath, outFile) 
+             buildDir(a, bd, buildChildren)
+             bd
        })
     }
 }
 
 abstract class TraversingBuildTarget extends GenericTraversingBuildTarget {
-   def buildOne(inFile: File, dpath: DPath, outFile: File): List[Error]
-   def buildFile(a: Archive, inFile: File, in: List[String], outFile: File) =
-      buildOne(inFile, DPath(a.narrationBase / in), outFile)
+   def buildOne(bf: BuiltFile)
+   def buildFile(a: Archive, bf: BuiltFile) =
+      buildOne(bf)
 }

@@ -61,10 +61,13 @@ class Reader(val jr: java.io.BufferedReader) {
    /** reads the next n characters without advancing the read position */
    private def lookAhead(n: Int): String = {
       jr.mark(n)
-      val s = new StringBuilder
-      Range(0,n).foreach(_ => s.append(jr.read.toChar))
+      var s = ""
+      Range(0,n).foreach {_ =>
+         val c = jr.read
+         if (c != -1) s += c.toChar
+      }
       jr.reset
-      s.result
+      s
    }
    /** read one character
     * \n, \r, and \r\n are read as \n
@@ -149,33 +152,40 @@ class Reader(val jr: java.io.BufferedReader) {
    /** reads until end of current Token, terminated by whitespace
     */
    def readToSpace = readUntil(32,US,RS,GS,FS)
-   
+
+   import TokenList._
+   private def canFollow(before: Char, after: Char) = 
+      ! isWhitespace(after) &&
+      (isConnector(before) || isConnector(after) || 
+         (isLetter(before) || isNumber(before)) == (isLetter(after) || isNumber(after))
+      )
    /** reads until end of current Token, terminated by whitespace or by switch from letter-like to symbol-like characters 
     */
    def readToken = {
       val start = sourcePosition 
-      val s = new StringBuilder
+      var s = ""
+      var i = readSkipWS
       var stop = false
-      var needLetterLike = true
-      do {
-         val c = lookAhead(1)(0)
-         if (TokenList.isWhitespace(c)) {
+      if (List(-1,FS,RS,GS,US).contains(i)) {
+         stop = true
+         lastDelimiter = i
+      }
+      while (! stop) {
+         s += i.toChar
+         val l = lookAhead(1)
+         if (l == "") {
             stop = true
-            lastDelimiter = c 
-         } else { 
-            val letterLike = TokenList.isLetter(c) || TokenList.isNumber(c) || TokenList.isConnector(c)
-            if (s.isEmpty || (needLetterLike && letterLike) || (!needLetterLike && !letterLike)) {
-               if (! s.isEmpty)
-                  needLetterLike = letterLike
-               s.append(read.toChar)
-            } else {
-               stop = true
-               lastDelimiter = 65536
-            }
+            lastDelimiter = -1
+         } else if (! canFollow(i.toChar, l(0))) {
+            stop = true
+            val j = l(0).toInt
+            lastDelimiter = if (List(FS,RS,GS,US).contains(j)) j else 32
+         } else {
+            i = read
          }
-      } while (! stop)
+      }
       val end = sourcePosition
-      (s.result, SourceRegion(start, end))
+      (s, SourceRegion(start, end))
    }
    /** reads until EOF
     */

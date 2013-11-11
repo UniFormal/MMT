@@ -467,6 +467,9 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
                 case Some(d) => inferType(d) // expand defined constant
               }
             }
+          case l: OMLIT =>
+             // structurally well-formed literals carry their type
+             return Some(OMS(l.rt.synType))
           case _ => None
         }
         //foundation-dependent cases if necessary
@@ -530,6 +533,11 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
       // 1) base cases, e.g., identical terms, solving unknowns
       // identical terms
       if (tm1S hasheq tm2S) return true
+      // different literals are always non-equal
+      (tm1S, tm2S) match {
+         case (l1: OMLIT, l2: OMLIT) => if (l1.value != l2.value) return false
+         case _ =>
+      }
       // solve an unknown
       val solved = solveEquality(tm1S, tm2S, tpOpt) || solveEquality(tm2S, tm1S, tpOpt)
       if (solved) return true

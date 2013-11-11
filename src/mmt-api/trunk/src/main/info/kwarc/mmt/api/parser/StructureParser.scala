@@ -141,7 +141,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * @throws SourceError iff ill-formed or empty
     */
    def readDPath(base: Path)(implicit state: ParserState) : DPath = {
-      val (s, reg) = state.reader.readToken
+      val (s, reg) = state.reader.readToSpace
       if (s == "")
          throw makeError(reg, "MMT URI expected")
       val sexp = state.namespaces.expand(s)
@@ -154,7 +154,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * @throws SourceError iff ill-formed or empty
     */
   def readMPath(base: Path)(implicit state: ParserState) : MPath = {
-      val (s, reg) = state.reader.readToken
+      val (s, reg) = state.reader.readToSpace
       if (s == "")
          throw makeError(reg, "MMT URI expected")
       val sexp = state.namespaces.expand(s)
@@ -167,7 +167,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * @throws SourceError iff ill-formed or empty
     */
   def readSPath(base: MPath)(implicit state: ParserState) : GlobalName = {
-      val (s, reg) = state.reader.readToken
+      val (s, reg) = state.reader.readToSpace
       if (s == "")
          throw makeError(reg, "MMT URI expected")
       val sexp = state.namespaces.expand(s)
@@ -321,7 +321,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                val (n,_) = state.reader.readToken
                val ns = readDPath(DPath(state.namespaces.default))
                state.namespaces.prefixes(n) = ns.uri
-            case "theory" => readTheory(doc.path)
+            case "theory" =>
+               readTheory(doc.path)
             case "view" | "morphism" => readView(doc.path, false)
             case "implicit" =>
                val (keyword2, reg2) = state.reader.readToken
@@ -553,7 +554,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                      parser(this, state.copy(reader), cons, k)
                   case None =>
                      if (! state.reader.endOfDeclaration) {
-                        errorCont(makeError(treg, "expected " + keyString))
+                        errorCont(makeError(treg, "expected " + keyString + ", found " + k))
                      } else if (k != "") { 
                         if (! state.reader.endOfObject)
                            state.reader.readObject

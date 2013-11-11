@@ -51,7 +51,7 @@ class LabeledHashRelation[N,E] {
  * thrown if the uniqueness condition of UniqueGraph is violated
  *  @param value the existing value
  */
-case class AlreadyDefined[E](value: E) extends java.lang.Throwable
+case class AlreadyDefined[E](old: E, nw: E) extends java.lang.Throwable
 
 /** A diagram of theories and morphisms.
  *  i.e., edges between two nodes must be equal. 
@@ -64,16 +64,15 @@ class UniqueGraph extends LabeledHashRelation[Term,Term] {
     */
    override def update(from: Term, to: Term, morph: Term) {
       val morphN = Morph.simplify(morph)
-      apply(from,to) match {
-         case Some(m) =>
-           if (m == morphN)
+      var current = apply(from,to)
+      if (current.isEmpty && TheoryExp.importsDefinitely(from,to))
+         current = Some(OMCOMP())
+      if (current.isDefined) {
+           if (current.get == morphN)
               return
            else
-              throw AlreadyDefined(m)
-         case None =>
+              throw AlreadyDefined(current.get, morphN)
       }
-      if (TheoryExp.importsDefinitely(from,to))
-        throw AlreadyDefined(OMIDENT(from))
       super.update(from, to, morphN)
    }
 }

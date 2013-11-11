@@ -43,7 +43,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
    /**
     * called by doDefaultTerm to render literals
     */
-   def doLiteral(l: OMLiteral)(implicit rh : RenderingHandler) {
+   def doLiteral(l: OMLIT)(implicit rh : RenderingHandler) {
       rh(l.toString)
    }
    /**
@@ -163,7 +163,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
             }
          }
          1
-      case l: OMLiteral =>
+      case l: OMLIT =>
          doLiteral(l)
          -1
       case OMSemiFormal(parts) => parts.foreach {

@@ -28,7 +28,7 @@ class PythonExporter extends ContentExporter with IndentedExporter {
       nl
    }
    
-   def doTheory(t: DeclaredTheory) {
+   def doTheory(t: DeclaredTheory, bf: BuiltFile) {
       cls(t.name.toPath) {
          var fields: List[String] = Nil
          t.getPrimitiveDeclarations.foreach {
@@ -48,7 +48,7 @@ class PythonExporter extends ContentExporter with IndentedExporter {
       }
    }
    
-   def doView(v: DeclaredView) {}
+   def doView(v: DeclaredView, bf: BuiltFile) {}
    
    def doNamespace(dpath: DPath, namespaces: List[(BuiltDir,DPath)], modules: List[(BuiltFile,MPath)]) {
          namespaces.foreach {case (bd, dp) =>

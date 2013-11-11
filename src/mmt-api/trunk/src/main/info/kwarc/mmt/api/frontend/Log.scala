@@ -49,7 +49,7 @@ class Report {
    /** increase indentation */
    private[frontend] def indent {ind += "  "}
    /** decrease indentation */
-   private[frontend] def unindent {ind = ind.substring(2)}
+   private[frontend] def unindent {if (ind.length >= 2) ind = ind.substring(2)}
    /** flushes all handlers */
    def flush {
       handlers foreach {_.flush}

@@ -480,10 +480,31 @@ class StructureChecker(controller: Controller) extends Logger {
                val argR = checkTerm(from, context, arg) // using the same context because variable attributions are ignored anyway
                OMM(argR, morph).from(s)
             } else s
+         case l: OMLIT =>
+            content.getO(l.rt.path) match {
+               case Some(rc: RealizedTypeConstant) =>
+                  if (! content.hasImplicit(rc.home, home))
+                     errorCont(InvalidObject(s, "realized type " + rc.path + " is not imported into home theory " + home))
+                  if (rc.real != l.rt)
+                     errorCont(InvalidObject(s, "illegal literal - " + l.rt.path + " is not the right realized type"))
+               case Some(_) =>
+                  errorCont(InvalidObject(s, "illegal literal - " + l.rt.path + " exists but is not a realized type"))
+               case None =>
+                  errorCont(InvalidObject(s, "illegal literal - realized type " + l.rt.path + " is unknown"))
+            }
+            l
+         // resolve type and parse unknown literal, return OMLIT
+         case UnknownOMLIT(v, tp) => 
+            content.getO(tp) match {
+               case Some(rc: RealizedTypeConstant) =>
+                  if (! content.hasImplicit(rc.home, home))
+                     errorCont(InvalidObject(s, "realized type " + rc.path + " is not imported into home theory " + home))
+                  rc.real.parse(v).from(s)
+               case _ =>
+                  errorCont(InvalidObject(s, "unknown literal type"))
+                  s
+            }
          case OMFOREIGN(node) => s //TODO
-         case OMI(i) => s //TODO check if integers are permitted
-         case OMSTR(str) => s //TODO check if strings are permitted
-         case OMF(d) => s //TODO check if floats are permitted
          case OMSemiFormal(t) => s //TODO
          //case _ => s
       }

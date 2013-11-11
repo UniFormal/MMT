@@ -27,23 +27,29 @@ class EscapeManager(handlers: List[LexerExtension]) {
  * A LexerExtension bypasses the default lexing algorithm
  */
 abstract class LexerExtension {
-   /** determines whether an accepted token begins at s(i) */
+   /**
+    * @param s the string to lex
+    * @param i the current character
+    * @return true iff this extension accepts a Token that begins at s(i)
+    */
    def applicable(s: String, i: Int): Boolean
    /** pre: applicable(s,i) == true
-    * 
-    * @return the Token
+    * @param s the string to lex
+    * @param i the current character
+    * @param firstPosition the SourcePosition of the first character
+    * @return the lexed Token
     */
    def apply(s: String, i: Int, firstPosition: SourcePosition): PrimitiveTokenListElem
 }
 
 /**
- * a LexerExtension that detects ids (letter sequences) Tokens prefixed by delim
+ * a LexerExtension that detects id (letter sequences) Tokens prefixed by delim
  * 
  * @param delim the begin Char
  * 
- * typical example: PrefixEscapeHandler(\)
+ * typical example: PrefixedTokenLexer(\)
  */
-class PrefixEscapeHandler(delim: Char) extends LexerExtension {
+class PrefixedTokenLexer(delim: Char) extends LexerExtension {
   def applicable(s: String, i: Int) = s(i) == delim
   def apply(s: String, index: Int, firstPosition: SourcePosition) = {
      var i = index+1
@@ -55,6 +61,43 @@ class PrefixEscapeHandler(delim: Char) extends LexerExtension {
   }
 }
 
+/** the lexing part of a [[LexParseExtension]] */
+abstract class LexFunction {
+   /**
+    * @param s the string to lex
+    * @param i the current character
+    * @return true iff this extension accepts a Token that begins at s(i)
+    */
+   def applicable(s: String, i: Int): Boolean
+   /** @param s the string to lex
+    *  @param i the current position in s
+    *  @return initial escape sequence, actual text, and terminal escape sequence
+    */
+   def apply(s: String, i: Int): (String,String,String)   
+}
+
+/** the parsing part of a [[LexParseExtension]] */
+abstract class ParseFunction {
+   /** @param begin as returned by lex
+    *  @param text as returned by lex
+    *  @param end as returned by lex
+    *  @return the parsed Term
+    */
+   def apply(begin: String, text: String, end: String): Term
+}
+
+/**
+ * A LexParseExtension is a LexerExtension with a lex and a parse component.
+ */
+class LexParseExtension(lc: LexFunction, pc: ParseFunction) extends LexerExtension {
+   def applicable(s: String, i: Int) = lc.applicable(s, i) 
+   def apply(s: String, i: Int, firstPosition: SourcePosition): CFExternalToken = {
+      val (begin,text,end) = lc(s, i)
+      val t = pc(begin, text, end)
+      CFExternalToken(begin+text+end, firstPosition, t)
+   }
+}
+
 /**
  * A LexerExtension that lexes undelimited number literals
  * 
@@ -62,7 +105,7 @@ class PrefixEscapeHandler(delim: Char) extends LexerExtension {
  * 
  * @param floatAllowed if true, also accepts nonLetter digit* . digit*
  */
-class NumberLiteralHandler(floatAllowed: Boolean) extends LexerExtension {
+class NumberLiteralLexer(floatAllowed: Boolean) extends LexFunction {
   def applicable(s: String, i: Int) = {
      val previousOK = if (i == 0)
         true
@@ -72,25 +115,121 @@ class NumberLiteralHandler(floatAllowed: Boolean) extends LexerExtension {
      }
      s(i).isDigit && previousOK
   }
-  def apply(s: String, index: Int, firstPosition: SourcePosition) = {
+  def apply(s: String, index: Int) = {
      var i = index
      while (i < s.length && s(i).isDigit) {
         i += 1
      }
      if (floatAllowed && i < s.length && s(i) == '.') {
-         i += 1
-    	 while (i < s.length && s(i).isDigit) { //continuing
-    		 i += 1
-    	 }
-         val text = s.substring(index,i)         	 
-         CFExternalToken(text, firstPosition, objects.OMF(text.toFloat))
-
-     } else {
-    	 val text = s.substring(index,i)        			 
-    	 CFExternalToken(text, firstPosition, objects.OMI(text.toInt))
+        i += 1
+        while (i < s.length && s(i).isDigit) { //continuing
+           i += 1
+        }
+        i
      }
+     ("", s.substring(index,i), "")
   }
 }
+
+/** parses the numbers lexed by NumberLiteralLexer into OMI or OMF */
+object NumberLiteralParser extends ParseFunction {
+   def apply(begin: String, text: String, end: String) =
+      if (text.contains("."))
+         OMF(text.toFloat)
+      else
+         OMI(text.toInt)
+}
+
+/** groups a NumberLiteralLexer and a NumberLiteralParser */
+class NumberLiterals(floatAllowed: Boolean) extends LexParseExtension(new NumberLiteralLexer(floatAllowed), NumberLiteralParser)
+
+/**
+ * an EscapeHandler that detects tokens delimited by begin and end
+ * 
+ * nested escapes are allowed
+ * 
+ * typical example: AsymmetricEscapeHandler(/*, */)
+ */
+class AsymmetricEscapeLexer(begin: String, end: String) extends LexFunction {
+  def applicable(s: String, i: Int) = s.substring(i).startsWith(begin)
+  def apply(s: String, index: Int) = {
+     var level = 1
+     var i = index+1
+     while (i < s.length && level > 0) {
+        if (s.substring(i).startsWith(begin)) {
+           level += 1
+           i += begin.length
+        } else if (s.substring(i).startsWith(end)) {
+           level -= 1
+           i += end.length
+        } else 
+           i += 1
+     }
+     val text = s.substring(index+begin.length,i-end.length)
+     (begin, text, end)
+  }
+}
+
+/**
+ * an EscapeHandler that detects tokens delimited by delim
+ * 
+ * @param delim the begin and end Char
+ * @param exceptAfter the escape character to used delim within the escaped text
+ * 
+ * typical example: SymmetricEscapeHandler(", \)
+ */
+class SymmetricEscapeLexer(delim: Char, exceptAfter: Char) extends LexFunction  {
+  def applicable(s: String, i: Int) = s(i) == delim
+  def apply(s: String, index: Int) = {
+     var i = index+1
+     while (i < s.length && s(i) != delim) {
+        if (s.substring(i).startsWith(exceptAfter.toString + delim)) {
+           i += 2
+        } else
+           i += 1
+     }
+     val text = s.substring(index+1,i-1)
+     (delim.toString, text, delim.toString)
+  }
+}
+
+class LiteralParser(rt: RealizedType) extends ParseFunction {
+   def apply(begin: String, text: String, end: String) = rt.parse(text)
+}
+
+class FixedLengthLiteralLexer(rt: RealizedType, begin: String, length: Int) extends LexerExtension {
+   def applicable(s: String, i: Int) = s.substring(i).startsWith(begin)
+   def apply(s: String, i: Int, firstPosition: SourcePosition) = {
+      val from = i+begin.length
+      val text = s.substring(from, from+length)
+      val t = rt.parse(text)
+      CFExternalToken(begin+text, firstPosition, t)
+   }
+}
+
+class SemiFormalParser(formatOpt: Option[String]) extends ParseFunction {
+   def apply(begin: String, text: String, end: String): Term = {
+      formatOpt match {
+         case Some(format) =>
+            OMSemiFormal(objects.Text(format, text))
+         case None => 
+            val r = Reader(text)
+            val (format,_) = r.readToken
+            val (rest,_) = r.readAll
+            r.close
+            OMSemiFormal(objects.Text(format, rest))
+      }
+   }
+}
+
+object GenericEscapeLexer extends LexParseExtension(
+   new AsymmetricEscapeLexer(Reader.escapeChar.toString, Reader.unescapeChar.toString),
+   new SemiFormalParser(None)
+)
+
+object QuoteLexer extends LexParseExtension(
+   new SymmetricEscapeLexer('\"', '\\'), new SemiFormalParser(Some("quoted"))
+)
 
 abstract class QuoteEvalPart
 case class QuotePart(text: String) extends QuoteEvalPart
@@ -141,7 +280,7 @@ class QuoteEval(bQ: String, eQ: String, bE: String, eE: String) extends LexerExt
            val parsed: List[Term] = parts map {
               case QuotePart(q) =>
                  current = current.after(q + bE) 
-                 val t = OMSTR(q)
+                 val t = OMSTR(q.asInstanceOf[OMSTR.univ])
                  SourceRef.update(t, outer.source.copy(region = SourceRegion(current, current.after(q))))
                  t
               case EvalPart(e) =>
@@ -155,103 +294,4 @@ class QuoteEval(bQ: String, eQ: String, bE: String, eE: String) extends LexerExt
         }
      }
   }
-}
-
-
-/**
- * An EscapeHandler detects foreign tokens, which parse into semi-formal objects
- */
-trait EscapeHandler extends LexerExtension {
-   /** determines whether an Escaped token begins at s(i) */
-   def applicable(s: String, i: Int): Boolean
-   /** return initial escape sequence, actual text, and terminal escape sequence */
-   def lex(s: String, i: Int): (String,String,String)
-   def parse(begin: String, text: String, end: String): Term
-   /** pre: applicable(s,i) == true
-    * 
-    * @return the Escaped Token
-    */
-   def apply(s: String, i: Int, firstPosition: SourcePosition): CFExternalToken = {
-      val (begin,text,end) = lex(s, i)
-      val t = parse(begin, text, end)
-      CFExternalToken(begin+text+end, firstPosition, t)
-   }
-}
-
-trait SemiFormalParser {
-   val formatOpt: Option[String]
-   def parse(begin: String, text: String, end: String): Term = {
-      formatOpt match {
-         case Some(format) =>
-            OMSemiFormal(objects.Text(format, text))
-         case None => 
-            val r = Reader(text)
-            val (format,_) = r.readToken
-            val (rest,_) = r.readAll
-            r.close
-            OMSemiFormal(objects.Text(format, rest))
-      }
-   }
-}
-
-/**
- * an EscapeHandler that detects tokens delimited by begin and end
- * 
- * nested escapes are allowed
- * 
- * typical example: AsymmetricEscapeHandler(/*, */)
- */
-abstract class AsymmetricEscapeHandler(begin: String, end: String) extends EscapeHandler {
-  def applicable(s: String, i: Int) = s.substring(i).startsWith(begin)
-  def lex(s: String, index: Int) = {
-     var level = 1
-     var i = index+1
-     while (i < s.length && level > 0) {
-        if (s.substring(i).startsWith(begin)) {
-           level += 1
-           i += begin.length
-        } else if (s.substring(i).startsWith(end)) {
-           level -= 1
-           i += end.length
-        } else 
-           i += 1
-     }
-     val text = s.substring(index+begin.length,i-end.length)
-     (begin, text, end)
-  }
-}
-
-/**
- * an EscapeHandler that detects tokens delimited by delim
- * 
- * @param delim the begin and end Char
- * @param exceptAfter the escape character to used delim within the escaped text
- * 
- * typical example: SymmetricEscapeHandler(", \)
- */
-abstract class SymmetricEscapeHandler(delim: Char, exceptAfter: Char) extends EscapeHandler  {
-  def applicable(s: String, i: Int) = s(i) == delim
-  def lex(s: String, index: Int) = {
-     var i = index+1
-     while (i < s.length && s(i) != delim) {
-        if (s.substring(i).startsWith(exceptAfter.toString + delim)) {
-           i += 2
-        } else
-           i += 1
-     }
-     val text = s.substring(index+1,i-1)
-     (delim.toString, text, delim.toString)
-  }
-}
-
-
-object GenericEscapeHandler extends AsymmetricEscapeHandler(Reader.escapeChar.toString, Reader.unescapeChar.toString) with SemiFormalParser {
-   val formatOpt = None
-}
-object QuoteHandler extends SymmetricEscapeHandler('\"', '\\') with SemiFormalParser {
-   val formatOpt = Some("quoted")
-}
-
-object IEEEFloatLiteral extends AsymmetricEscapeHandler("f\"", "\"") {
-   def parse(begin: String, text: String, end: String): Term = ???
 }
