@@ -3,7 +3,8 @@ import info.kwarc.mmt.api._
 import objects._
 
 object Typed {
-   val path = DPath(utils.URI("http", "cds.omdoc.org") / "urtheories") ? "Typed"
+   val _base = DPath(utils.URI("http", "cds.omdoc.org") / "urtheories")
+   val path = _base ? "Typed"
    /** the MMT URI of type */
    val ktype = path ? "type"
    /** the MMT URI of kind */
@@ -18,7 +19,7 @@ object OfType {
 /** provides apply/unapply methods for the LF equality symbol */
 object LFEquality {
    /** the MMT URI of -> */
-   val path = LF.lftheory ? "equality"
+   val path = LF._path ? "equality"
    def apply(t1 : Term, t2 : Term) = OMA(OMID(path),List(t1,t2))
    def unapply(t : Term) : Option[(Term,Term)] = t match {
       case OMA(OMID(this.path), List(a,b)) => Some((a, b))

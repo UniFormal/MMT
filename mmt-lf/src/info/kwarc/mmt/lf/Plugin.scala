@@ -20,6 +20,8 @@ class Plugin extends frontend.Plugin {
       // content enhancers
       em.addExtension(new NotationGenerator)
       em.addExtension(new SimplificationRuleGenerator)
+      // build targets
+      em.addExtension(new ScalaExporter)
    }
 }
 
@@ -31,11 +33,3 @@ class TypedPlugin extends frontend.Plugin {
    }
 }
 
-/* A temporary Plugin that provides pragmatic notations for the LF produced by Twelf */
-class OldLFPlugin extends frontend.Plugin {
-   val dependencies = Nil
-   override def start(args: List[String]) {
-      val em = controller.extman
-      em.pragmaticStore.add(OldLFHOAS)
-   }
-}
