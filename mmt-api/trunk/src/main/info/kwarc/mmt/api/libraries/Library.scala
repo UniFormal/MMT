@@ -35,10 +35,9 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
    private val implicitGraph = new ThinGeneratedCategory
    
    private def modulesGetNF(p : MPath) : Module =
-      try {modules(p)}
-      catch {case _ : Throwable => if (false) throw GetError("module does not exist: " + p)
-                       else     throw new frontend.NotFound(p)
-            }
+      modules.get(p).getOrElse {
+         throw new frontend.NotFound(p)
+      }
    val logPrefix = "library"
    
    /**
@@ -295,7 +294,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
          case OMMOD(p: MPath) => getTheory(p)            // exists already
          case exp =>                 // create a new theory and return it
             val path = exp.toMPath
-            val meta = TheoryExp.meta(exp)(this)
+            val meta = TheoryExp.metas(exp, false)(this).headOption
             val thy = new DeclaredTheory(path.parent, path.name, meta)
             exp match {
                case TheoryExp.Empty => thy 
@@ -356,17 +355,17 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
                 implicitGraph(l.from, l.to) = l.toTerm
           case t: DeclaredTheory => t.meta match {
              case Some(m) =>
-                implicitGraph(OMMOD(m), t.toTerm) = OMIDENT(t.toTerm)
+                implicitGraph(OMMOD(m), t.toTerm) = OMIDENT(OMMOD(m))
              case None =>
           }
           case e: NestedModule =>
              add(e.module)
-             implicitGraph(e.home, e.module.toTerm) = OMIDENT(e.module.toTerm)
+             implicitGraph(e.home, e.module.toTerm) = OMIDENT(e.home)
           case _ =>
           //TODO add equational axioms
        }
-    } catch {case AlreadyDefined(m) =>
-       throw AddError("implicit link induced by " + e.path + " in conflict with existing implicit morphism " + m)
+    } catch {case AlreadyDefined(old, nw) =>
+       throw AddError(s"implicit morphism $nw induced by ${e.path} in conflict with existing implicit morphism $old")
     }
   }
 

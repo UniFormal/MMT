@@ -33,26 +33,6 @@ trait ScalaArchive extends WritableArchive {
        }
     }
   
-    /** Extract scala from a dimension */
-    def extractScala(controller: Controller, in : List[String] = Nil) {
-       traverse[String]("content", in, Archive.extensionIs("omdoc")) ({
-           //files
-           case Current(inFile,inPath) => 
-                 val mpath = Archive.ContentPathToMMTPath(inPath)
-                 val mod = controller.globalLookup.getModule(mpath)
-                 val outFile = (root / "scala" / inPath).setExtension("scala")
-                 uom.Extractor.doModule(controller, mod, outFile)
-       }, {
-           //directories
-          (curr: Current, results: List[String]) =>
-             if (! curr.path.isEmpty) {
-                val dpath = Archive.ContentPathToDPath(curr.path)
-                val outFile = (root / "scala" / curr.path / "NAMESPACE.scala")
-                uom.Extractor.doFolder(dpath, results, outFile)
-             } else ""
-       })
-    }
-    
     /** Integrate scala into a dimension */
     def integrateScala(controller: Controller, in : List[String] = Nil) {
        traverse("content", in, Archive.extensionIs("omdoc")) {case Current(inFile, inPath) =>

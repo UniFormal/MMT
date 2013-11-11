@@ -1,11 +1,23 @@
 package info.kwarc.mmt.api.uom
 
 import info.kwarc.mmt.api._
-import objects.Term
+import objects._
 
-trait TheoryScala {
-   val _base : DPath
-   val _path : MPath
+trait RealizationInScala extends objects.RuleSet {
+   val _domain: TheoryScala
+   lazy val _path = _domain._path
+   lazy val _name = _domain._name
+   
+   private[api] var _types : List[Unit => (GlobalName, RealizedType)] = Nil
+   private[api] var _opers : List[Unit => RealizedOperator] = Nil
+   
+   /** add a realization of synType as rt (argument must be lazy because declares is called in initializer of trait) */
+   def declares(synType: GlobalName)(rt: => RealizedType) {
+      _types ::= (_ => (synType,rt))
+   }
+   /** add a realization of r.op as r (argument must be lazy because declares is called in initializer of trait) */
+   def declares(r: => RealizedOperator) {_opers ::= (_ => r)}
+   
    var _axioms: List[(String, Unit => Term, Term => Boolean)] = Nil
    def _assert(name: String, term: Unit => Term, assertion: Term => Boolean) {_axioms ::= ((name, term, assertion))}
    def _test(controller: frontend.Controller, log: String => Unit) {
@@ -28,6 +40,12 @@ trait TheoryScala {
    }
 }
 
+trait TheoryScala {
+   val _base : DPath
+   val _name : LocalName
+   lazy val _path = _base ? _name
+}
+
 trait ConstantScala {
    val parent: MPath
    val name: String
@@ -35,33 +53,30 @@ trait ConstantScala {
    lazy val term = objects.OMID(path)
 }
 
-trait ViewScala extends objects.RuleSet with TheoryScala
+trait ViewScala extends TheoryScala
 
 object ConstantScala {
    implicit def constantToTerm(c: ConstantScala) = c.term
 }
 
 trait DocumentScala {
-   private var theories: List[TheoryScala] = Nil
-   private var views: List[ViewScala] = Nil
+   private var realizations: List[RealizationInScala] = Nil
    private var documents : List[DocumentScala] = Nil
-   def addTheory(t: TheoryScala) {
-      theories = theories ::: List(t)
-   }
-   def addView(v: ViewScala) {
-      views = views ::: List(v)
+   def addRealization(r: RealizationInScala) {
+      realizations ::= r
    }
    def addDocument(d: DocumentScala) {
-      documents = documents ::: List(d)
+      documents ::= d
    }
    def register(rs: objects.RuleStore) {
       documents.foreach(_.register(rs))
-      views.foreach {v =>
+      realizations.foreach {v =>
          rs.add(v)
       }
    }
    def test(controller: frontend.Controller, log: String => Unit) {
       documents.foreach {_.test(controller, log)}
-      views.foreach {_._test(controller, log)}
+      realizations.foreach {_._test(controller, log)}
    }
 }
+

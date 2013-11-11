@@ -136,7 +136,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
     //override def buffered = true
     override def chunked = true // Content-Length is not set at the beginning of the response, so we can stream info while computing/reading from disk
     def resolve(req: HReqData): Option[HLet] = {
-      log("request: /" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query)
+      log("request for /" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query)
       Util.getComponents(req.uriPath) match {
         case ":breadcrumbs" :: _ =>
           val mmtpath = Path.parse(req.query, controller.getBase)

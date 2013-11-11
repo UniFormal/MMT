@@ -48,13 +48,13 @@ object Integrator {
      val lp = code.indexOf("(") + 1
      val rp = code.indexOf(")")
      val args = code.substring(lp, rp).replace(" ", "").split(",")
-     val body = Scala(code.substring(code.indexOf("{") + 1, code.length - 1))
+     val body = Scala.Opaque(code.substring(code.indexOf("{") + 1, code.length - 1))
      var con = Context()
      if (args(0) == "") {
        body
      } else {
        args.foreach(con ++= mkVarDecl(_))
-       ScalaLambda(con, body)
+       Scala.Lambda(con, body)
      }
    }
 

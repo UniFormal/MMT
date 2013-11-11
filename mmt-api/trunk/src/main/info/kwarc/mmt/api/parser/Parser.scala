@@ -25,14 +25,14 @@ trait AbstractObjectParser {
 
 /** helper object */
 object AbstractObjectParser {
-  def getNotations(controller : Controller, scope : Term) : List[TextNotation] = {
+  def getNotations(controller : Controller, scope : Term) : (List[TextNotation], List[LexerExtension]) = {
      val closer = new libraries.Closer(controller)
      closer(scope.toMPath)
      val includes = controller.library.visible(scope)
      val decls = includes.toList flatMap {tm =>
         controller.localLookup.getDeclaredTheory(tm.toMPath).getDeclarations
      }
-     decls.flatMap {
+     val nots = decls.flatMap {
         case c: Constant =>
            var names = (c.name :: c.alias.toList).map(_.toString) //the names that can refer to this constant
            if (c.name.last == "_") names ::= c.name.init.toString
@@ -43,7 +43,13 @@ object AbstractObjectParser {
            p.not.toList
         case _ => Nil
      }
-   }
+     val les = decls.flatMap {
+        case r: RealizedTypeConstant =>
+           r.real.lexerExtension.toList
+        case _ => Nil
+     }
+     (nots, les)
+  }
   val unknown = utils.mmt.mmtcd ? "unknown"
   def splitOffUnknowns(t: Term) = t match {
      case OMBIND(OMID(AbstractObjectParser.unknown), us, s) => (us, s)
@@ -73,8 +79,8 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
     * and the scope (base path) of the parsing unit
     * returned list is sorted (in increasing order) by priority
     */
-   protected def buildNotations(scope : Term) : List[(Precedence,List[TextNotation])] = {
-      val notations = TextNotation.bracketNotation :: AbstractObjectParser.getNotations(controller, scope)  
+   protected def tableNotations(nots: List[TextNotation]) : List[(Precedence,List[TextNotation])] = {
+      val notations = TextNotation.bracketNotation :: nots  
       val qnotations = notations.groupBy(x => x.precedence).toList
 //      log("notations in scope: " + qnotations)
       qnotations.sortWith((p1,p2) => p1._1 < p2._1)
@@ -317,9 +323,10 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
   /**
    * @param pu the parsing unit
    */
-  def apply(pu : ParsingUnit) : Term = {    
-    //gathering notations in scope
-    val qnotations = buildNotations(pu.scope)
+  def apply(pu : ParsingUnit) : Term = {
+    //gathering notations and lexer extensions in scope
+    val (nots, les) = AbstractObjectParser.getNotations(controller, pu.scope)
+    val qnotations = tableNotations(nots)
     resetVarGenerator
     log("parsing: " + pu.term)
     log("notations:")
@@ -327,8 +334,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
        qnotations.map(o => log(o.toString))
     }
 
-    //TODO get escape handlers from meta-theory, remove PrefixEscapeHandler, ?SyntaxPlugin
-    val escMan = new EscapeManager(controller.extman.lexerExtensions)
+    val escMan = new EscapeManager(controller.extman.lexerExtensions ::: les)
     val tl = TokenList(pu.term, pu.source.region.start, escMan)
     if (tl.length == 0) makeError("no tokens found: " + pu.term, pu.source.region)(pu)
     

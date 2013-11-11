@@ -134,11 +134,24 @@ case class LocalName(steps: List[LNStep]) {
    def head = steps.head
    def last = steps.last
    def length = steps.length
-   //def prefixes : List[LocalPath] = if (length <= 1) List(this) else this :: tail.prefixes
+   /** removes repeated complex steps, keeping the later one */
+   def simplify: LocalName = {
+      var complexBefore = false
+      val stepsRS = steps.reverse filter {
+         case s: SimpleStep => true
+         case c: ComplexStep =>
+            val res = ! complexBefore 
+            complexBefore = true
+            res
+      }
+      LocalName(stepsRS.reverse)
+   }
+   /** returns the list of all names contained in this one, starting with the shortest */
+   def prefixes : List[LocalName] = if (length <= 1) List(this) else init.prefixes ::: List(this)
    /** machine-oriented string representation of this name, parsable and official */
-   def toPath : String = steps.map(s => xml.encodeURI(s.toString)).mkString("", "/", "")
+   def toPath : String = steps.map(_.toPath).mkString("", "/", "")
   /** human-oriented string representation of this name, no encoding, possibly shortened */
-   override def toString : String = steps.map(_.toPath).mkString("", "/", "")
+   override def toString : String = steps.map(_.toString).mkString("", "/", "")
 }
 object LocalName {
    def apply(step: LNStep) : LocalName = LocalName(List(step))
@@ -155,18 +168,19 @@ object LocalName {
 /** a step in a LocalName */
 abstract class LNStep {
    def toPath : String
-   override def toString = toPath
    def unary_! = LocalName(this)
    def /(n: LocalName) = LocalName(this) / n
    def /(n: LNStep) = LocalName(this) / n
 }
 /** constant or structure declaration */
 case class SimpleStep(name: String) extends LNStep {
-   def toPath = name
+   def toPath = xml.encodeURI(name)
+   override def toString = name
 }
 /** an include declaration; ComplexStep(fromPath) acts as the name of an unnamed structure */
 case class ComplexStep(path: MPath) extends LNStep {
    def toPath = "[" + path.toPath + "]"
+   override def toString = toPath
 }
 
 case class CPath(parent: ContentPath, component: DeclarationComponent) extends Path {
