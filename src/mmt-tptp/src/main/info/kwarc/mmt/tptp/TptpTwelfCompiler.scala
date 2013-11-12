@@ -31,23 +31,21 @@ class TptpTwelfCompiler extends Compiler {
   }
   
   def includeFile(n: String) : Boolean = n.endsWith(".tptp")
-  def buildOne(in: File, dpath: DPath, out: File) : List[SourceError] = {
-    var errors: List[SourceError] = Nil    
-   
+  def buildOne(bf: archives.BuiltFile) {
    // should be  .../TPTP/TPTP2X  
     var tptp2Xpath : String = tptppath.substring(0, tptppath.indexOf("MMT")) + "TPTP2X/"    
     // compiled file name
-    var fileName : String = in.toString().substring(in.toString().lastIndexOf("/"))    
+    var fileName : String = bf.inFile.toString().substring(bf.inFile.toString().lastIndexOf("/"))    
     // output file
-     var outFile : String = out.toString()      
+    var outFile : String = bf.outFile.toString()      
     // output dir
-    var outDir : String = out.toString().substring(0,out.toString().lastIndexOf("/"))
+    var outDir : String = bf.outFile.toString().substring(0,bf.outFile.toString().lastIndexOf("/"))
 //    set file extension
-    val fileout = out.setExtension("elf")
+    val fileout = bf.outFile.setExtension("elf")
          
     log("running tptp2X script on file " + fileName + " .....")
     log(fileout.toString())
-    log(in.toString)
+    log(bf.inFile.toString)
     /* 
      * runs tptp2X script
      * 
@@ -58,7 +56,7 @@ class TptpTwelfCompiler extends Compiler {
      */    
     val tptp2xcomp = "tptp2X"
     val flags : String = "-flf -d- -q2"
-    val cmd : String = "tcsh " + tptp2Xpath + tptp2xcomp + " " + flags + " " + in.toString()
+    val cmd : String = "tcsh " + tptp2Xpath + tptp2xcomp + " " + flags + " " + bf.inFile.toString()
   
 //    log("about to run!!!")
 //     check if file already exists, overwrite!  
@@ -77,8 +75,6 @@ class TptpTwelfCompiler extends Compiler {
 //    a nice way of dealing with concrete files should be found
 //    right now the compiler is called with the same inFile as during the first compilation
 //    i.e. .elf is sought even after 
-    outFile
-    errors
   }
   
 }

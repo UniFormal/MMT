@@ -30,7 +30,10 @@ object AbstractObjectParser {
      closer(scope.toMPath)
      val includes = controller.library.visible(scope)
      val decls = includes.toList flatMap {tm =>
-        controller.localLookup.getDeclaredTheory(tm.toMPath).getDeclarations
+        controller.localLookup.getO(tm.toMPath) match {
+           case Some(d: modules.DeclaredTheory) => d.getDeclarations
+           case _ => None
+        }
      }
      val nots = decls.flatMap {
         case c: Constant =>

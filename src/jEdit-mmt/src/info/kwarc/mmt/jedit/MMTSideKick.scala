@@ -149,11 +149,16 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
            buildTree(child, controller.localLookup.getModule(m.target), reg)
       }
    }
+   
+   private def moduleLabel(m: Module) = m match {
+      case _ : Theory => "theory"
+      case _: modules.View => "view"
+   }
+   
    /* build the sidekick outline tree: module node */
    private def buildTree(node: DefaultMutableTreeNode, mod: Module, defaultReg: SourceRegion) {
-      val keyword = mod match {case _ : Theory => "theory"; case _: modules.View => "view"}
       val reg = getRegion(mod) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
-      val child = new DefaultMutableTreeNode(new MMTElemAsset(mod, keyword + " " + mod.path.last, reg))
+      val child = new DefaultMutableTreeNode(new MMTElemAsset(mod, moduleLabel(mod) + " " + mod.path.last, reg))
       node.add(child)
       mod match {
          case m: DeclaredModule =>
@@ -163,20 +168,25 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    }
    /* build the sidekick outline tree: declaration (in a module) node */
    private def buildTree(node: DefaultMutableTreeNode, dec: Declaration, defaultReg: SourceRegion) {
+      val reg = getRegion(dec) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
+      dec match {
+         case nm: NestedModule =>
+            buildTree(node, nm.module, reg)
+            return
+         case _ =>
+      }
       val label = dec match {
          case PlainInclude(from,_) => "include " + from.last
          case PlainViewInclude(_,_,incl) => "include " + incl.last
          case s: Structure => "structure " + s.name.toString
          case c: Constant => c.name.toString
+         case d => d.name.toString
       }
-      val reg = getRegion(dec) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
       val child = new DefaultMutableTreeNode(new MMTElemAsset(dec, label, reg))
       node.add(child)
-      dec match {
-         //TODO: should be done with a generic function that returns the list of components
-         case c: Constant =>
-             c.tp foreach {t => buildTree(child, dec.path $ TypeComponent, t, reg)}
-             c.df foreach {t => buildTree(child, dec.path $ DefComponent, t, reg)}
+      dec.getComponents foreach {
+         case (comp, cont: TermContainer) if cont.get.isDefined =>
+             buildTree(child, dec.path $ comp, cont.get.get, reg)
          case _ =>
       }
    }

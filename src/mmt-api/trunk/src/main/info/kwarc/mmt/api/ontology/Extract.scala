@@ -52,6 +52,7 @@ object Extractor {
                         f(HasCodomain(s.path, TheoryExp.simplify(s.to).toMPath))
                         f(IsStructure(s.path))
                      }
+                  case nm: NestedModule => apply(nm.module)
                   case p: Pattern =>
                      f(dec)
                      f(IsPattern(p.path))

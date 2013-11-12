@@ -99,6 +99,7 @@ class StructureChecker(controller: Controller) extends Logger {
             checkTheory(v.from)
             checkTheory(v.to)
             checkMorphism(v.df, Some(v.from), v.to)
+         case nm: NestedModule => check(nm.module)
          case s: DeclaredStructure =>
             checkTheory(s.from)
             s.getPrimitiveDeclarations foreach check

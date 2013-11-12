@@ -162,9 +162,9 @@ class Reader(val jr: java.io.BufferedReader) {
    /** reads until end of current Token, terminated by whitespace or by switch from letter-like to symbol-like characters 
     */
    def readToken = {
-      val start = sourcePosition 
       var s = ""
       var i = readSkipWS
+      val start = sourcePosition
       var stop = false
       if (List(-1,FS,RS,GS,US).contains(i)) {
          stop = true

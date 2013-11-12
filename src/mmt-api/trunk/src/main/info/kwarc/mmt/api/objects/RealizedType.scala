@@ -27,7 +27,7 @@ abstract class SemanticType {
    /** converts strings into values */
    def fromString(s: String) : univ
    /** converts values into strings */
-   def toString(u: univ) : String
+   def toString(u: univ) : String = u.toString
    /** convenience method to construct a lexer for this type */
    def quotedLiteral(key: String) = Some(new AsymmetricEscapeLexer(key+"\"", "\""))
    /** convenience method to construct a lexer for this type */
@@ -82,5 +82,5 @@ abstract class RealizedType extends SemanticType {
 class Product(val left: SemanticType, val right: SemanticType) extends SemanticType {
    type univ = (left.univ, right.univ)
    def fromString(s: String) = null // TODO
-   def toString(u: univ) = "(" + left.toString(u._1) + "," + right.toString(u._2) + ")"
+   override def toString(u: univ) = "(" + left.toString(u._1) + "," + right.toString(u._2) + ")"
 } 

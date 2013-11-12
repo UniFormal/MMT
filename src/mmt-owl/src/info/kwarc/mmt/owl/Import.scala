@@ -44,7 +44,7 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 	
 	def IRItoMMTURI(i: IRI) : MPath = {
 		val dpath = DPath(utils.URI.fromJava(i.toURI)) 
-		MPath(dpath, LocalPath(List(i.toString + "?" + "_"))) // mmturi
+		dpath ? i.toString / "_"
 	}
 	
 	def ontologyToLF(ontology : OWLOntology) : DPath = {
@@ -59,7 +59,7 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 	    val document = new Document(docDPath) // phys
 		controller.add(document)
 		
-		val theory = new DeclaredTheory(ontoDPath, LocalPath(List("_")), Some(OWL2OMS.path ? "OWL2")) //log. base, name, meta //it was OWL2Full
+		val theory = new DeclaredTheory(ontoDPath, LocalName("_"), Some(OWL2OMS.path ? "OWL2")) //log. base, name, meta //it was OWL2Full
 		controller.add(theory)
 		currThy = theory.path
 		controller.add(MRef(docDPath,currThy, true)) // phys, log
@@ -577,7 +577,7 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 	
 	def annotationValueToLF(av : OWLAnnotationValue) : Term = { 
 		av match {
-		   case	av : IRI => OMURI(av.toURI)
+		   case	av : IRI => URILiteral(av.toURI)
 		   case av : OWLLiteral => literalToLF(av)
 		   case av : OWLAnonymousIndividual => individualToLF(av)
 		}
@@ -596,9 +596,9 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 class OWLCompiler extends Compiler {
    val key = "owl-omdoc"
    override def includeFile(f:  String) = f.endsWith("owl")
-   def buildOne(in: File, dpath: DPath, out: File): List[Error] = {
-       val source : File = in
-       val target : File = out.setExtension("omdoc")
+   def buildOne(bf: archives.BuiltFile) {
+       val source : File = bf.inFile
+       val target : File = bf.outFile.setExtension("omdoc")
       
 	   val controller = new Controller
 	   controller.handle(ExecFile(new java.io.File("startup.mmt"))) 
@@ -617,8 +617,6 @@ class OWLCompiler extends Compiler {
 	   val file = File.Writer(target)
 	   file.write(doc.toString)
 	   file.close
-	   
-	   Nil
    }
 }
 

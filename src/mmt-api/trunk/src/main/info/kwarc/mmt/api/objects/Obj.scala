@@ -401,7 +401,7 @@ object OMLIT {
 /** degenerate case of OMLIT when no RealizedType was known to parse a literal
  *  
  *  This class is awkward but necessary to permit a lookup-free parser, which delays parsing of literals to a later phase.
- *  UnknownOMLITs are replaced with OMLITs in the [[libraries.Checker]].
+ *  UnknownOMLITs are replaced with OMLITs in the [[libraries.StructureChecker]].
  */
 case class UnknownOMLIT(value: String, synType: GlobalName) extends Term with OMLITTrait {
    override def toString = value 

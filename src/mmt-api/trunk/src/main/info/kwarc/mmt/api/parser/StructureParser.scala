@@ -301,7 +301,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                if (state.reader.endOfDocument) {
                   return
                } else
-                  throw makeError(reg, "keyword expected, within document " + doc).copy(fatal = true)
+                  throw makeError(reg, "keyword expected, within " + doc).copy(fatal = true)
             case "document" =>
                val name = readName
                val dpath = doc.path / name
@@ -362,8 +362,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * this function handles one declaration if possible, then calls itself recursively
     */
    private def readInModule(mod: DeclaredModule, patterns: List[(String,GlobalName)])(implicit state: ParserState) {
-      //this case occurs if lower methods have already read the GS marker
-      if (state.reader.endOfModule) return
+      //This would make the last RS marker of a module optional, but it's problematic with nested modules.
+      //if (state.reader.endOfModule) return
       val scope = mod match {
          case t: DeclaredTheory => OMMOD(t.path)
          case l: DeclaredLink => l.to 

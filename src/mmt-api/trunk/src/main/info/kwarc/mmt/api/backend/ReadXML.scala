@@ -208,10 +208,10 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                   add(s,md)
                   readInTheory(home / name, base, assignments)
             }
-         case <theory>{decs @_*}</theory> =>
+         case <theory>{body @_*}</theory> =>
             val parent = home.parent
             val tname = home.name / name
-            val (t, body) = decs match {
+            val (t, decsO) = body match {
                case <definition>{d}</definition> =>
                   val df = Obj.parseTerm(d, base)
                   (DefinedTheory(parent, tname, df), None)
@@ -222,13 +222,13 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
                         log("meta-theory " + mt + " found")
                         Some(Path.parseM(mt, base))
                   }
-                  (new DeclaredTheory(parent, tname, meta), Some(symbols))
+                  (new DeclaredTheory(parent, tname, meta), Some(body))
             }
             val nm = new NestedModule(t)
             add(nm, md)
             logGroup {
-               body.foreach {d => 
-                  readInTheory(parent ? tname, parent ? tname, d)
+               decsO.foreach {decs => 
+                  readInTheory(parent ? tname, parent ? tname, decs)
                }
             }
          case <alias/> =>
