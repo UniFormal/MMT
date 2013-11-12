@@ -35,8 +35,8 @@ adds stand-alone type checking for a particular language.</li>
 adds targets to the <a href="applications/build.html">build tool</a>.<br/>
 Extension developers only have to implement the action on a single file, and MMT takes care of recursion and change management.</li>
 <li><a href="../api/index.html#info.kwarc.mmt.api.presentation.Presenter">presentation.Presenter</a> implements rendering methods for new output formats.</li>
-<li><a href="../api/index.html#info.kwarc.mmt.api.web.ServerPlugin">web.ServerPlugin</a>
-adds functionality to the HTTP server. Each ServerPlugin provides a key and serves requests to the URL /:key.<br/>
+<li><a href="../api/index.html#info.kwarc.mmt.api.web.ServerExtension">web.ServerExtension</a>
+adds functionality to the <a href="applications/http.html">HTTP server</a>. Each ServerPlugin provides a key and serves requests to the URL /:key.<br/>
 Extension developers only have to implement the function, and MMT handles the HTTP protocol.
 </li>
 <li><a href="../api/index.html#info.kwarc.mmt.api.frontend.ChangeListener">frontend.ChangeListener</a>

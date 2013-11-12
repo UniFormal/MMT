@@ -1,6 +1,20 @@
-After or while creating archives, you can run the MMT webserver to serve the contents.
-This is achieved by using the command 'server on PORT' in an msl file.
+The MMT HTTP server is started using the command 'server on PORT' in the <a href="shell.html">shell</a>.
+'server off' switches it off.<br/>
 
-An example msl files with that effect is provided in the example archive:
-run-file.sh empty-archive/serve.msl
+Individual services are available as 'localhost:PORT/:SERVICE'. These may take arguments via a ?QUERY or via the HTTP BODY.<br/>
 
+Each SERVICE is defined by a Server <a href="../extensions.html">extension</a>.
+
+<h2>Services</h2>
+
+Some services are available by default, which can be browsed in the <a href="../api/index.html#info.kwarc.mmt.api.web.ServerExtension">API documentation</a>.
+
+<ul>
+<li>mmt: retrieves the knowledge item whose MMT URI is QUERY. The URI may be followed with 'present STYLE
+ to choose a presentation style. The default is OMDoc XML.</li>
+<li>query: interprets the BODY as a <a href="../query.html">QMT query</a> and returns the results.</li>
+<li>svg: serves the theory graph as an SVG element for the MMT document whose URI is QUERY.</li>
+<li>admin: interprets the query as an MMT <a href="shell.html">shell</a> command and executes it</li>
+</ul>
+
+Note that logical algorithms like parsing, computation, etc. are exposed as special cases of QMT queries.
