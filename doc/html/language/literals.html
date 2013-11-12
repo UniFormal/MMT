@@ -21,10 +21,7 @@ MMT literals are
     U points to an extralinguistic catalog defining the syntax and semantics of a particular type of literals, i.e., the legal values and how S is parsed into a value.
 </li>
 <li>Abstract Scala syntax: Literals are represented by the class <a href="../../api/index.html#info.kwarc.mmt.api.objects.OMLIT">OMLIT</a>. They are essentially a dependent pair of a Scala type and a value of that type.<br/>
-Technically, the class <a href="../../api/index.html#info.kwarc.mmt.api.objects.RealizedType">RealizedType</a> is used to represent a type of literals: It bundles a Scala type with toString/fromString methods.<br/>
-It also defines generically Scala-style apply/unapply methods to easily construct and pattern-match literals.
-This has the effect that any kind of literal can be used as if it were a primitive language element.
-For example, the RealizedType <a href="../../api/index.html#info.kwarc.mmt.api.objects.OMI">OMI</a> permits writing OMI(1) to construct/pattern-match integer literals.
+Technically, the class <a href="../../api/index.html#info.kwarc.mmt.api.objects.RealizedType">RealizedType</a> is used to represent a type of literals: It bundles a Scala type with methods for lexing, parsing, etc.<br/>
 </li>
 <li>Concrete text syntax: A RealizedType can optionally define a LexerExtension, which is used to add lexing support for literals.<br/>
 The available classes make it very easy to build LexerExtensions. For example, lexers for number literals are provided, and lexers for escaped literals (e.g., quoted strings) can be built by choosing the escape character.
@@ -46,14 +43,15 @@ Instead, RealizedTypeConstants can be created by reflecting external models of M
 We can think of a model M of an MMT theory T as a theory that
  <ul>
   <li>imports T</li>
-  <li>declares an infinite set of constants - one for every element of every universe: these are our literals</li>
-  <li>declares an infinite set of computation rules - one for application of a T-symbol of to M-literals</li>
+  <li>declares an infinite set of constants - one for every element of every universe<br/>
+    these constant are the literals of MMT</li>
+  <li>declares an infinite set of computation rules - one for every application of a T-symbol of to M-literals</li>
  </ul>
 Such a theory is sometimes called the diagram of M.<br/>
 
 <h3>Reflecting Scala Models as MMT Theories</h3>
 
-The <a href="../../api/index.html#info.kwarc.mmt.lf.ScalaExporter">lf.ScalaExporter</a> build target permits exporting an MMT theory graph with as a Scala library.<br/>
+The <a href="../../api/index.html#info.kwarc.mmt.lf.ScalaExporter">lf.ScalaExporter</a> <a href="../applications/build.html">build target</a> permits exporting an MMT theory graph with as a Scala library.<br/>
 
 This translates every
 <ul>
