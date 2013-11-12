@@ -490,6 +490,20 @@ content between balanced PU1 and PU2 is skipped</p></div></div>
       </h4>
       <p class="shortcomment cmt">reads until end of current object, terminated by the ASCII character RS, GS, FS, or US (decimal 28-31)
 </p>
+    </li><li name="info.kwarc.mmt.api.parser.Reader#readToSpace" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="readToSpace:(String,info.kwarc.mmt.api.parser.SourceRegion)"></a>
+      <a id="readToSpace:(String,SourceRegion)"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readToSpace</span><span class="result">: (<span class="extype" name="scala.Predef.String">String</span>, <a href="SourceRegion.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRegion">SourceRegion</a>)</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">reads until end of current Token, terminated by whitespace
+</p>
     </li><li name="info.kwarc.mmt.api.parser.Reader#readToken" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="readToken:(String,info.kwarc.mmt.api.parser.SourceRegion)"></a>
       <a id="readToken:(String,SourceRegion)"></a>
@@ -499,10 +513,10 @@ content between balanced PU1 and PU2 is skipped</p></div></div>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">readToken</span><span class="result">: (<span class="extype" name="scala.Predef.String">String</span>, <a href="SourceRegion.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRegion">SourceRegion</a>)</span>
+        <span class="name">readToken</span><span class="result">: (<span class="extype" name="java.lang.String">String</span>, <a href="SourceRegion.html" class="extype" name="info.kwarc.mmt.api.parser.SourceRegion">SourceRegion</a>)</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">reads until end of current Token, terminated by whitespace
+      <p class="shortcomment cmt">reads until end of current Token, terminated by whitespace or by switch from letter-like to symbol-like characters
 </p>
     </li><li name="info.kwarc.mmt.api.parser.Reader#setSourcePosition" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setSourcePosition(s:info.kwarc.mmt.api.parser.SourcePosition):Unit"></a>

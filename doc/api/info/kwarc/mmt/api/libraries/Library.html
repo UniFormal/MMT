@@ -448,15 +448,15 @@ The well-formedness of the objects in the declarations is not guaranteed.
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Lookup.html" class="extype" name="info.kwarc.mmt.api.libraries.Lookup">Lookup</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.libraries.Lookup#getDomain" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getDomain(a:info.kwarc.mmt.api.symbols.Symbol):(info.kwarc.mmt.api.modules.DeclaredTheory,Option[info.kwarc.mmt.api.modules.DeclaredLink])"></a>
-      <a id="getDomain(Symbol):(DeclaredTheory,Option[DeclaredLink])"></a>
+      <a id="getDomain(a:info.kwarc.mmt.api.symbols.Declaration):(info.kwarc.mmt.api.modules.DeclaredTheory,Option[info.kwarc.mmt.api.modules.DeclaredLink])"></a>
+      <a id="getDomain(Declaration):(DeclaredTheory,Option[DeclaredLink])"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getDomain</span><span class="params">(<span name="a">a: <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></span>)</span><span class="result">: (<a href="../modules/DeclaredTheory.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredTheory">DeclaredTheory</a>, <span class="extype" name="scala.Option">Option</span>[<a href="../modules/DeclaredLink.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredLink">DeclaredLink</a>])</span>
+        <span class="name">getDomain</span><span class="params">(<span name="a">a: <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>)</span><span class="result">: (<a href="../modules/DeclaredTheory.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredTheory">DeclaredTheory</a>, <span class="extype" name="scala.Option">Option</span>[<a href="../modules/DeclaredLink.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredLink">DeclaredLink</a>])</span>
       </span>
       </h4>
       <p class="shortcomment cmt">gets the domain in which a Constant was declared</p><div class="fullcomment"><div class="comment cmt"><p>gets the domain in which a Constant was declared</p><p>This can be used to retrieve the source of an assignment declared in a DeclaredLink.
@@ -582,15 +582,15 @@ It is also the official way to test whether a Constant is an assignment.</p></di
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Lookup.html" class="extype" name="info.kwarc.mmt.api.libraries.Lookup">Lookup</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.libraries.Lookup#getSymbol" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getSymbol(path:info.kwarc.mmt.api.GlobalName,msg:info.kwarc.mmt.api.Path=&gt;String):info.kwarc.mmt.api.symbols.Symbol"></a>
-      <a id="getSymbol(GlobalName,(Path)⇒String):Symbol"></a>
+      <a id="getSymbol(path:info.kwarc.mmt.api.GlobalName,msg:info.kwarc.mmt.api.Path=&gt;String):info.kwarc.mmt.api.symbols.Declaration"></a>
+      <a id="getSymbol(GlobalName,(Path)⇒String):Declaration"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getSymbol</span><span class="params">(<span name="path">path: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>, <span name="msg">msg: (<a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a>) ⇒ <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">defmsg</span></span>)</span><span class="result">: <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></span>
+        <span class="name">getSymbol</span><span class="params">(<span name="path">path: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>, <span name="msg">msg: (<a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a>) ⇒ <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">defmsg</span></span>)</span><span class="result">: <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Lookup.html" class="extype" name="info.kwarc.mmt.api.libraries.Lookup">Lookup</a></dd></dl></div>
@@ -870,15 +870,15 @@ In that case, this method may be called additionally to maintain invariants.</p>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.libraries.Library">Library</a> → AnyRef → Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.libraries.Library#translate" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="translate(e:info.kwarc.mmt.api.symbols.Symbol,morph:info.kwarc.mmt.api.objects.Term,error:String=&gt;Nothing):info.kwarc.mmt.api.symbols.Symbol"></a>
-      <a id="translate(Symbol,Term,(String)⇒Nothing):Symbol"></a>
+      <a id="translate(e:info.kwarc.mmt.api.symbols.Declaration,morph:info.kwarc.mmt.api.objects.Term,error:String=&gt;Nothing):info.kwarc.mmt.api.symbols.Declaration"></a>
+      <a id="translate(Declaration,Term,(String)⇒Nothing):Declaration"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">translate</span><span class="params">(<span name="e">e: <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></span>, <span name="morph">morph: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="error">error: (<span class="extype" name="scala.Predef.String">String</span>) ⇒ <span class="extype" name="scala.Nothing">Nothing</span></span>)</span><span class="result">: <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></span>
+        <span class="name">translate</span><span class="params">(<span name="e">e: <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>, <span name="morph">morph: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="error">error: (<span class="extype" name="scala.Predef.String">String</span>) ⇒ <span class="extype" name="scala.Nothing">Nothing</span></span>)</span><span class="result">: <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>
       </span>
       </h4>
       <p class="shortcomment cmt">translate a Symbol along a morphism</p>

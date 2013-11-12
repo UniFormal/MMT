@@ -40,13 +40,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">Pattern</span><span class="result"> extends <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></span>
+        <span class="name">Pattern</span><span class="result"> extends <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a>, <a href="../ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a>, <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a>, <a href="../metadata/HasMetaData.html" class="extype" name="info.kwarc.mmt.api.metadata.HasMetaData">HasMetaData</a>, <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a>, <a href="../ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a>, <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a>, <a href="../metadata/HasMetaData.html" class="extype" name="info.kwarc.mmt.api.metadata.HasMetaData">HasMetaData</a>, <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -64,7 +64,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.patterns.Pattern"><span>Pattern</span></li><li class="in" name="info.kwarc.mmt.api.symbols.Symbol"><span>Symbol</span></li><li class="in" name="info.kwarc.mmt.api.ContentElement"><span>ContentElement</span></li><li class="in" name="info.kwarc.mmt.api.StructuralElement"><span>StructuralElement</span></li><li class="in" name="info.kwarc.mmt.api.metadata.HasMetaData"><span>HasMetaData</span></li><li class="in" name="info.kwarc.mmt.api.Content"><span>Content</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.patterns.Pattern"><span>Pattern</span></li><li class="in" name="info.kwarc.mmt.api.symbols.Declaration"><span>Declaration</span></li><li class="in" name="info.kwarc.mmt.api.ContentElement"><span>ContentElement</span></li><li class="in" name="info.kwarc.mmt.api.StructuralElement"><span>StructuralElement</span></li><li class="in" name="info.kwarc.mmt.api.metadata.HasMetaData"><span>HasMetaData</span></li><li class="in" name="info.kwarc.mmt.api.Content"><span>Content</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -171,7 +171,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.symbols.Symbol#alternativeName" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.symbols.Declaration#alternativeName" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="alternativeName:Option[info.kwarc.mmt.api.LocalName]"></a>
       <a id="alternativeName:Option[LocalName]"></a>
       <h4 class="signature">
@@ -184,7 +184,7 @@
       </span>
       </h4>
       <p class="shortcomment cmt">an alternative name</p><div class="fullcomment"><div class="comment cmt"><p>an alternative name</p><p> None by default; overridden in particular by Constant
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></dd></dl></div>
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -496,8 +496,8 @@ if they have the same type, same Path, and agree in all parts that are TermConta
       </h4>
       <p class="shortcomment cmt">the containing module</p><div class="fullcomment"><div class="comment cmt"><p>the containing module</p><p>this is almost always OMMOD(p:MPath),
 the main exception are generated anonymous modules
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.patterns.Pattern">Pattern</a> → <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.symbols.Symbol#implicitKey" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.patterns.Pattern">Pattern</a> → <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.symbols.Declaration#implicitKey" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="implicitKey:Option[info.kwarc.mmt.api.MPath]"></a>
       <a id="implicitKey:Option[MPath]"></a>
       <h4 class="signature">
@@ -509,7 +509,7 @@ the main exception are generated anonymous modules
         <span class="name">implicitKey</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the component used to identify anonymous declarations, e.</p><div class="fullcomment"><div class="comment cmt"><p>the component used to identify anonymous declarations, e.g., the from of an import, None by default but may be overridden</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></dd></dl></div>
+      <p class="shortcomment cmt">the component used to identify anonymous declarations, e.</p><div class="fullcomment"><div class="comment cmt"><p>the component used to identify anonymous declarations, e.g., the from of an import, None by default but may be overridden</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.StructuralElement#inElaborated" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="inElaborated:Boolean"></a>
       <a id="inElaborated:Boolean"></a>
@@ -575,7 +575,7 @@ the main exception are generated anonymous modules
       </span>
       </h4>
       <p class="shortcomment cmt">the local name in the containing module</p><div class="fullcomment"><div class="comment cmt"><p>the local name in the containing module</p><p> for symbols: the name of the symbols</p><p> for assignments: the name of the symbols to which a value is assigned
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.patterns.Pattern">Pattern</a> → <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></dd></dl></div>
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.patterns.Pattern">Pattern</a> → <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -657,7 +657,7 @@ the main exception are generated anonymous modules
 empty by default, may be overridden when constructing instances
 </p><div class="fullcomment"><div class="comment cmt"><p>every MMT symbol takes a list of parameters
 empty by default, may be overridden when constructing instances
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.patterns.Pattern">Pattern</a> → <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></dd></dl></div>
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.patterns.Pattern">Pattern</a> → <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.patterns.Pattern#params" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="params:info.kwarc.mmt.api.objects.Context"></a>
       <a id="params:Context"></a>
@@ -671,20 +671,20 @@ empty by default, may be overridden when constructing instances
       </span>
       </h4>
       
-    </li><li name="info.kwarc.mmt.api.symbols.Symbol#parent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.symbols.Declaration#parent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="parent:info.kwarc.mmt.api.MPath"></a>
       <a id="parent:MPath"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">lazy val</span>
       </span>
       <span class="symbol">
         <span class="name">parent</span><span class="result">: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the containing module</p><div class="fullcomment"><div class="comment cmt"><p>the containing module</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a> → <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.symbols.Symbol#path" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <p class="shortcomment cmt">the containing module</p><div class="fullcomment"><div class="comment cmt"><p>the containing module</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a> → <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.symbols.Declaration#path" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="path:info.kwarc.mmt.api.GlobalName"></a>
       <a id="path:GlobalName"></a>
       <h4 class="signature">
@@ -696,7 +696,7 @@ empty by default, may be overridden when constructing instances
         <span class="name">path</span><span class="result">: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the full MMT URI, parent ? name</p><div class="fullcomment"><div class="comment cmt"><p>the full MMT URI, parent ? name</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a> → <a href="../ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a> → <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></dd></dl></div>
+      <p class="shortcomment cmt">the full MMT URI, parent ? name</p><div class="fullcomment"><div class="comment cmt"><p>the full MMT URI, parent ? name</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a> → <a href="../ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a> → <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.patterns.Pattern#role" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="role:info.kwarc.mmt.api.Role_Pattern.type"></a>
       <a id="role:Role_Pattern.type"></a>
@@ -819,8 +819,8 @@ empty by default, may be overridden when constructing instances
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="info.kwarc.mmt.api.symbols.Symbol">
-              <h3>Inherited from <a href="../symbols/Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></h3>
+        <div class="parent" name="info.kwarc.mmt.api.symbols.Declaration">
+              <h3>Inherited from <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></h3>
             </div><div class="parent" name="info.kwarc.mmt.api.ContentElement">
               <h3>Inherited from <a href="../ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a></h3>
             </div><div class="parent" name="info.kwarc.mmt.api.StructuralElement">

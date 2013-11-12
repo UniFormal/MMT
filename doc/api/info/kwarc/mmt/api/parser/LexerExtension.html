@@ -50,7 +50,7 @@
           <div class="superTypes hiddenContent"><a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a href="AsymmetricEscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler">AsymmetricEscapeHandler</a>, <a href="EscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.EscapeHandler">EscapeHandler</a>, <a href="GenericEscapeHandler$.html" class="extype" name="info.kwarc.mmt.api.parser.GenericEscapeHandler">GenericEscapeHandler</a>, <a href="IEEEFloatLiteral$.html" class="extype" name="info.kwarc.mmt.api.parser.IEEEFloatLiteral">IEEEFloatLiteral</a>, <a href="NumberLiteralHandler.html" class="extype" name="info.kwarc.mmt.api.parser.NumberLiteralHandler">NumberLiteralHandler</a>, <a href="PrefixEscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.PrefixEscapeHandler">PrefixEscapeHandler</a>, <a href="QuoteEval.html" class="extype" name="info.kwarc.mmt.api.parser.QuoteEval">QuoteEval</a>, <a href="QuoteHandler$.html" class="extype" name="info.kwarc.mmt.api.parser.QuoteHandler">QuoteHandler</a>, <a href="SymmetricEscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.SymmetricEscapeHandler">SymmetricEscapeHandler</a></div>
+          <div class="subClasses hiddenContent"><a href="FixedLengthLiteralLexer.html" class="extype" name="info.kwarc.mmt.api.parser.FixedLengthLiteralLexer">FixedLengthLiteralLexer</a>, <a href="GenericEscapeLexer$.html" class="extype" name="info.kwarc.mmt.api.parser.GenericEscapeLexer">GenericEscapeLexer</a>, <a href="LexParseExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexParseExtension">LexParseExtension</a>, <a href="NumberLiterals.html" class="extype" name="info.kwarc.mmt.api.parser.NumberLiterals">NumberLiterals</a>, <a href="PrefixedTokenLexer.html" class="extype" name="info.kwarc.mmt.api.parser.PrefixedTokenLexer">PrefixedTokenLexer</a>, <a href="QuoteEval.html" class="extype" name="info.kwarc.mmt.api.parser.QuoteEval">QuoteEval</a>, <a href="QuoteLexer$.html" class="extype" name="info.kwarc.mmt.api.parser.QuoteLexer">QuoteLexer</a></div>
         </div></div>
         
 
@@ -108,7 +108,7 @@
 
         <div id="values" class="values members">
               <h3>Abstract Value Members</h3>
-              <ol><li name="info.kwarc.mmt.api.parser.LexerExtension#applicable" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+              <ol><li name="info.kwarc.mmt.api.parser.LexerExtension#applicable" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
       <a id="applicable(s:String,i:Int):Boolean"></a>
       <a id="applicable(String,Int):Boolean"></a>
       <h4 class="signature">
@@ -120,7 +120,8 @@
         <span class="name">applicable</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="i">i: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">determines whether an accepted token begins at s(i)</p>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">s</dt><dd class="cmt"><p>the string to lex</p></dd><dt class="param">i</dt><dd class="cmt"><p>the current character</p></dd><dt>returns</dt><dd class="cmt"><p>true iff this extension accepts a Token that begins at s(i)
+</p></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.parser.LexerExtension#apply" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
       <a id="apply(s:String,i:Int,firstPosition:info.kwarc.mmt.api.parser.SourcePosition):info.kwarc.mmt.api.parser.PrimitiveTokenListElem"></a>
       <a id="apply(String,Int,SourcePosition):PrimitiveTokenListElem"></a>
@@ -133,9 +134,7 @@
         <span class="name">apply</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="i">i: <span class="extype" name="scala.Int">Int</span></span>, <span name="firstPosition">firstPosition: <a href="SourcePosition.html" class="extype" name="info.kwarc.mmt.api.parser.SourcePosition">SourcePosition</a></span>)</span><span class="result">: <a href="PrimitiveTokenListElem.html" class="extype" name="info.kwarc.mmt.api.parser.PrimitiveTokenListElem">PrimitiveTokenListElem</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">pre: applicable(s,i) == true
-</p><div class="fullcomment"><div class="comment cmt"><p>pre: applicable(s,i) == true
-</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>the Token
+      <p class="shortcomment cmt">pre: applicable(s,i) == true</p><div class="fullcomment"><div class="comment cmt"><p>pre: applicable(s,i) == true</p></div><dl class="paramcmts block"><dt class="param">s</dt><dd class="cmt"><p>the string to lex</p></dd><dt class="param">i</dt><dd class="cmt"><p>the current character</p></dd><dt class="param">firstPosition</dt><dd class="cmt"><p>the SourcePosition of the first character</p></dd><dt>returns</dt><dd class="cmt"><p>the lexed Token
 </p></dd></dl></div>
     </li></ol>
             </div>

@@ -167,19 +167,6 @@
       </span>
       </h4>
       <p class="comment cmt">add a SVN Archive</p>
-    </li><li name="info.kwarc.mmt.api.frontend.AddTNTBase" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="AddTNTBaseextendsActionwithProductwithSerializable"></a>
-      <a id="AddTNTBase:AddTNTBase"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="AddTNTBase.html"><span class="name">AddTNTBase</span></a><span class="params">(<span name="file">file: <a href="../utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result"> extends <a href="Action.html" class="extype" name="info.kwarc.mmt.api.frontend.Action">Action</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">add a catalog entry for an MMT-aware database such as TNTBase</p>
     </li><li name="info.kwarc.mmt.api.frontend.ArchiveBuild" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ArchiveBuildextendsActionwithProductwithSerializable"></a>
       <a id="ArchiveBuild:ArchiveBuild"></a>
@@ -311,21 +298,6 @@
       </span>
       </h4>
       <p class="comment cmt">A Controller is the central class maintaining all MMT knowledge items.</p>
-    </li><li name="info.kwarc.mmt.api.frontend.DefaultGet" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="DefaultGetextendsActionwithProductwithSerializable"></a>
-      <a id="DefaultGet:DefaultGet"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="DefaultGet.html"><span class="name">DefaultGet</span></a><span class="params">(<span name="pres">pres: <a href="MakeConcrete.html" class="extype" name="info.kwarc.mmt.api.frontend.MakeConcrete">MakeConcrete</a></span>)</span><span class="result"> extends <a href="Action.html" class="extype" name="info.kwarc.mmt.api.frontend.Action">Action</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">execute the Controller-specific default Action associated with a presentable element
-the case where OUTPUT is not specifified
-</p>
     </li><li name="info.kwarc.mmt.api.frontend.Deps" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="DepsextendsMakeConcretewithProductwithSerializable"></a>
       <a id="Deps:Deps"></a>
@@ -725,7 +697,7 @@ concrete syntax: read file:FILE
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="Respond.html"><span class="name">Respond</span></a><span class="params">(<span name="pres">pres: <a href="MakeConcrete.html" class="extype" name="info.kwarc.mmt.api.frontend.MakeConcrete">MakeConcrete</a></span>, <span name="param">param: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="Output.html" class="extype" name="info.kwarc.mmt.api.frontend.Output">Output</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Respond.html"><span class="name">Respond</span></a><span class="params">(<span name="pres">pres: <a href="MakeConcrete.html" class="extype" name="info.kwarc.mmt.api.frontend.MakeConcrete">MakeConcrete</a></span>)</span><span class="result"> extends <a href="Output.html" class="extype" name="info.kwarc.mmt.api.frontend.Output">Output</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">produces the result and throws it away
@@ -798,32 +770,6 @@ concrete syntax: base base:URI
       </span>
       </h4>
       <p class="comment cmt">writes to a file</p>
-    </li><li name="info.kwarc.mmt.api.frontend.ToNode" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ToNodeextendsMakeConcretewithProductwithSerializable"></a>
-      <a id="ToNode:ToNode"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="ToNode.html"><span class="name">ToNode</span></a><span class="params">(<span name="c">c: <a href="MakeAbstract.html" class="extype" name="info.kwarc.mmt.api.frontend.MakeAbstract">MakeAbstract</a></span>)</span><span class="result"> extends <a href="MakeConcrete.html" class="extype" name="info.kwarc.mmt.api.frontend.MakeConcrete">MakeConcrete</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">takes a content element and renders it as XML</p>
-    </li><li name="info.kwarc.mmt.api.frontend.ToString" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ToStringextendsMakeConcretewithProductwithSerializable"></a>
-      <a id="ToString:ToString"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="ToString.html"><span class="name">ToString</span></a><span class="params">(<span name="c">c: <a href="MakeAbstract.html" class="extype" name="info.kwarc.mmt.api.frontend.MakeAbstract">MakeAbstract</a></span>)</span><span class="result"> extends <a href="MakeConcrete.html" class="extype" name="info.kwarc.mmt.api.frontend.MakeConcrete">MakeConcrete</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
-      </span>
-      </h4>
-      <p class="comment cmt">takes a content element and renders it as text</p>
     </li><li name="info.kwarc.mmt.api.frontend.ToWindow" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ToWindowextendsOutputwithProductwithSerializable"></a>
       <a id="ToWindow:ToWindow"></a>

@@ -81,14 +81,14 @@
       <a id="BuildResult:BuildResult"></a>
       <h4 class="signature">
       <span class="modifier_kind">
-        <span class="modifier">sealed abstract </span>
+        <span class="modifier">abstract </span>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
         <a href="BuildResult.html"><span class="name">BuildResult</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
       </h4>
-      <p class="comment cmt">auxiliary type to represent the result of building a file/directory</p>
+      <p class="comment cmt">auxiliary type to represent the parameters and result of building a file/directory</p>
     </li><li name="info.kwarc.mmt.api.archives.BuildTarget" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="BuildTargetextendsExtension"></a>
       <a id="BuildTarget:BuildTarget"></a>
@@ -117,31 +117,31 @@
       </h4>
       
     </li><li name="info.kwarc.mmt.api.archives.BuiltDir" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="BuiltDirextendsBuildResultwithProductwithSerializable"></a>
+      <a id="BuiltDirextendsBuildResult"></a>
       <a id="BuiltDir:BuiltDir"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">case class</span>
+        <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="BuiltDir.html"><span class="name">BuiltDir</span></a><span class="params">(<span name="inPath">inPath: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="outFile">outFile: <a href="../utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result"> extends <a href="BuildResult.html" class="extype" name="info.kwarc.mmt.api.archives.BuildResult">BuildResult</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="BuiltDir.html"><span class="name">BuiltDir</span></a><span class="result"> extends <a href="BuildResult.html" class="extype" name="info.kwarc.mmt.api.archives.BuildResult">BuildResult</a></span>
       </span>
       </h4>
-      
+      <p class="comment cmt">passed when building a directory</p>
     </li><li name="info.kwarc.mmt.api.archives.BuiltFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="BuiltFileextendsBuildResultwithProductwithSerializable"></a>
+      <a id="BuiltFileextendsBuildResult"></a>
       <a id="BuiltFile:BuiltFile"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">case class</span>
+        <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="BuiltFile.html"><span class="name">BuiltFile</span></a><span class="params">(<span name="inPath">inPath: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="outFile">outFile: <a href="../utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result"> extends <a href="BuildResult.html" class="extype" name="info.kwarc.mmt.api.archives.BuildResult">BuildResult</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="BuiltFile.html"><span class="name">BuiltFile</span></a><span class="result"> extends <a href="BuildResult.html" class="extype" name="info.kwarc.mmt.api.archives.BuildResult">BuildResult</a></span>
       </span>
       </h4>
-      
+      <p class="comment cmt">passed when building a file</p>
     </li><li name="info.kwarc.mmt.api.archives.CompilationStep" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="CompilationStepextendsProductwithSerializable"></a>
       <a id="CompilationStep:CompilationStep"></a>
@@ -298,16 +298,16 @@
       </span>
       </h4>
       
-    </li><li name="info.kwarc.mmt.api.archives.MWSHarvestExporter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="MWSHarvestExporterextendsContentExporter"></a>
-      <a id="MWSHarvestExporter:MWSHarvestExporter"></a>
+    </li><li name="info.kwarc.mmt.api.archives.MWSHarvestContentExporter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MWSHarvestContentExporterextendsContentExporter"></a>
+      <a id="MWSHarvestContentExporter:MWSHarvestContentExporter"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="MWSHarvestExporter.html"><span class="name">MWSHarvestExporter</span></a><span class="result"> extends <a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a></span>
+        <a href="MWSHarvestContentExporter.html"><span class="name">MWSHarvestContentExporter</span></a><span class="result"> extends <a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a></span>
       </span>
       </h4>
       
@@ -324,6 +324,19 @@
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.archives.NarrationExporter" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="NarrationExporterextendsBuildTargetwithGenericTraversingBuildTarget"></a>
+      <a id="NarrationExporter:NarrationExporter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="NarrationExporter.html"><span class="name">NarrationExporter</span></a><span class="result"> extends <a href="BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a> with <a href="GenericTraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.GenericTraversingBuildTarget">GenericTraversingBuildTarget</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A BuildTarget that traverses the content dimension and applies continuation functions to each module.</p>
     </li><li name="info.kwarc.mmt.api.archives.PythonExporter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="PythonExporterextendsContentExporterwithIndentedExporter"></a>
       <a id="PythonExporter:PythonExporter"></a>

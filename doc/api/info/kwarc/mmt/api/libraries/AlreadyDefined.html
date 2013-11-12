@@ -40,12 +40,11 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">AlreadyDefined</span><span class="tparams">[<span name="E">E</span>]</span><span class="params">(<span name="value">value: <span class="extype" name="info.kwarc.mmt.api.libraries.AlreadyDefined.E">E</span></span>)</span><span class="result"> extends <span class="extype" name="java.lang.Throwable">Throwable</span> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">AlreadyDefined</span><span class="tparams">[<span name="E">E</span>]</span><span class="params">(<span name="old">old: <span class="extype" name="info.kwarc.mmt.api.libraries.AlreadyDefined.E">E</span></span>, <span name="nw">nw: <span class="extype" name="info.kwarc.mmt.api.libraries.AlreadyDefined.E">E</span></span>)</span><span class="result"> extends <span class="extype" name="java.lang.Throwable">Throwable</span> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>thrown if the uniqueness condition of UniqueGraph is violated</p></div><dl class="paramcmts block"><dt class="param">value</dt><dd class="cmt"><p>the existing value
-</p></dd></dl><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>thrown if the uniqueness condition of UniqueGraph is violated</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <span class="extype" name="java.lang.Throwable">Throwable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
@@ -85,8 +84,8 @@
         <div id="allMembers">
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
-              <ol><li name="info.kwarc.mmt.api.libraries.AlreadyDefined#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(value:E):info.kwarc.mmt.api.libraries.AlreadyDefined[E]"></a>
+              <ol><li name="info.kwarc.mmt.api.libraries.AlreadyDefined#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(old:E,nw:E):info.kwarc.mmt.api.libraries.AlreadyDefined[E]"></a>
       <a id="&lt;init&gt;:AlreadyDefined[E]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -94,11 +93,10 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">AlreadyDefined</span><span class="params">(<span name="value">value: <span class="extype" name="info.kwarc.mmt.api.libraries.AlreadyDefined.E">E</span></span>)</span>
+        <span class="name">AlreadyDefined</span><span class="params">(<span name="old">old: <span class="extype" name="info.kwarc.mmt.api.libraries.AlreadyDefined.E">E</span></span>, <span name="nw">nw: <span class="extype" name="info.kwarc.mmt.api.libraries.AlreadyDefined.E">E</span></span>)</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">value</dt><dd class="cmt"><p>the existing value
-</p></dd></dl></div>
+      <p class="shortcomment cmt"></p>
     </li></ol>
             </div>
 
@@ -400,6 +398,32 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.libraries.AlreadyDefined#nw" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="nw:E"></a>
+      <a id="nw:E"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">nw</span><span class="result">: <span class="extype" name="info.kwarc.mmt.api.libraries.AlreadyDefined.E">E</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.api.libraries.AlreadyDefined#old" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="old:E"></a>
+      <a id="old:E"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">old</span><span class="result">: <span class="extype" name="info.kwarc.mmt.api.libraries.AlreadyDefined.E">E</span></span>
+      </span>
+      </h4>
+      
     </li><li name="java.lang.Throwable#printStackTrace" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="printStackTrace(x$1:java.io.PrintWriter):Unit"></a>
       <a id="printStackTrace(PrintWriter):Unit"></a>
@@ -478,20 +502,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Throwable → AnyRef → Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.libraries.AlreadyDefined#value" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="value:E"></a>
-      <a id="value:E"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">value</span><span class="result">: <span class="extype" name="info.kwarc.mmt.api.libraries.AlreadyDefined.E">E</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the existing value
-</p>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>

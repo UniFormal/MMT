@@ -304,7 +304,8 @@
       </span>
       </h4>
       <p class="shortcomment cmt">a sound but not complete approximation of imports that does not make use of any lookups
- and uses only the information given in the theory expressions themselves</p>
+ and uses only the information given in the theory expressions themselves
+</p>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -318,19 +319,20 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.objects.TheoryExp#meta" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="meta(thy:info.kwarc.mmt.api.objects.Term)(implicitlib:info.kwarc.mmt.api.libraries.Lookup):Option[info.kwarc.mmt.api.MPath]"></a>
-      <a id="meta(Term)(Lookup):Option[MPath]"></a>
+    </li><li name="info.kwarc.mmt.api.objects.TheoryExp#metas" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="metas(thy:info.kwarc.mmt.api.objects.Term,all:Boolean)(implicitlib:info.kwarc.mmt.api.libraries.Lookup):List[info.kwarc.mmt.api.MPath]"></a>
+      <a id="metas(Term,Boolean)(Lookup):List[MPath]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">meta</span><span class="params">(<span name="thy">thy: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="lib">lib: <a href="../libraries/Lookup.html" class="extype" name="info.kwarc.mmt.api.libraries.Lookup">Lookup</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a>]</span>
+        <span class="name">metas</span><span class="params">(<span name="thy">thy: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="all">all: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">true</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="lib">lib: <a href="../libraries/Lookup.html" class="extype" name="info.kwarc.mmt.api.libraries.Lookup">Lookup</a></span>)</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">computes the meta-theory of a theory</p>
+      <p class="shortcomment cmt">computes the meta-theories of a theory, nearest one first</p><div class="fullcomment"><div class="comment cmt"><p>computes the meta-theories of a theory, nearest one first</p></div><dl class="paramcmts block"><dt class="param">all</dt><dd class="cmt"><p>if true, stop after the first meta-theory, false by default
+</p></dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>

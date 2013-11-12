@@ -424,19 +424,32 @@
       </span>
       </h4>
       <p class="shortcomment cmt">parses a sequence of documents (xml.</p><div class="fullcomment"><div class="comment cmt"><p>parses a sequence of documents (xml.Node) into the controller</p></div></div>
-    </li><li name="info.kwarc.mmt.api.backend.XMLReader#readModules" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="readModules(modParent:info.kwarc.mmt.api.DPath,docParent:Option[info.kwarc.mmt.api.DPath],modules:scala.xml.NodeSeq)(implicitcont:info.kwarc.mmt.api.StructuralElement=&gt;Unit):Unit"></a>
-      <a id="readModules(DPath,Option[DPath],NodeSeq)((StructuralElement)⇒Unit):Unit"></a>
+    </li><li name="info.kwarc.mmt.api.backend.XMLReader#readInDocument" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="readInDocument(modParent:info.kwarc.mmt.api.DPath,docParent:Option[info.kwarc.mmt.api.DPath],modules:scala.xml.NodeSeq)(implicitcont:info.kwarc.mmt.api.StructuralElement=&gt;Unit):Unit"></a>
+      <a id="readInDocument(DPath,Option[DPath],NodeSeq)((StructuralElement)⇒Unit):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">readModules</span><span class="params">(<span name="modParent">modParent: <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a></span>, <span name="docParent">docParent: <span class="extype" name="scala.Option">Option</span>[<a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a>]</span>, <span name="modules">modules: <span class="extype" name="scala.xml.NodeSeq">NodeSeq</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="cont">cont: (<a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a>) ⇒ <span class="extype" name="scala.Unit">Unit</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">readInDocument</span><span class="params">(<span name="modParent">modParent: <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a></span>, <span name="docParent">docParent: <span class="extype" name="scala.Option">Option</span>[<a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a>]</span>, <span name="modules">modules: <span class="extype" name="scala.xml.NodeSeq">NodeSeq</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="cont">cont: (<a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a>) ⇒ <span class="extype" name="scala.Unit">Unit</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">calls docParent.</p><div class="fullcomment"><div class="comment cmt"><p>calls docParent.get if on document elements</p></div></div>
+    </li><li name="info.kwarc.mmt.api.backend.XMLReader#readInTheory" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="readInTheory(home:info.kwarc.mmt.api.MPath,base:info.kwarc.mmt.api.Path,symbols:scala.xml.NodeSeq)(implicitcont:info.kwarc.mmt.api.StructuralElement=&gt;Unit):Unit"></a>
+      <a id="readInTheory(MPath,Path,NodeSeq)((StructuralElement)⇒Unit):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readInTheory</span><span class="params">(<span name="home">home: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>, <span name="base">base: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>, <span name="symbols">symbols: <span class="extype" name="scala.xml.NodeSeq">NodeSeq</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="cont">cont: (<a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a>) ⇒ <span class="extype" name="scala.Unit">Unit</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.backend.XMLReader#readNotations" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="readNotations(nset:info.kwarc.mmt.api.MPath,base:info.kwarc.mmt.api.Path,notations:scala.xml.NodeSeq)(implicitcont:info.kwarc.mmt.api.StructuralElement=&gt;Unit):Unit"></a>
       <a id="readNotations(MPath,Path,NodeSeq)((StructuralElement)⇒Unit):Unit"></a>
@@ -447,19 +460,6 @@
       </span>
       <span class="symbol">
         <span class="name">readNotations</span><span class="params">(<span name="nset">nset: <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a></span>, <span name="base">base: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>, <span name="notations">notations: <span class="extype" name="scala.xml.NodeSeq">NodeSeq</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="cont">cont: (<a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a>) ⇒ <span class="extype" name="scala.Unit">Unit</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.api.backend.XMLReader#readSymbols" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="readSymbols(home:info.kwarc.mmt.api.objects.Term,base:info.kwarc.mmt.api.Path,symbols:scala.xml.NodeSeq)(implicitcont:info.kwarc.mmt.api.StructuralElement=&gt;Unit):Unit"></a>
-      <a id="readSymbols(Term,Path,NodeSeq)((StructuralElement)⇒Unit):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">readSymbols</span><span class="params">(<span name="home">home: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="base">base: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>, <span name="symbols">symbols: <span class="extype" name="scala.xml.NodeSeq">NodeSeq</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="cont">cont: (<a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a>) ⇒ <span class="extype" name="scala.Unit">Unit</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       

@@ -119,30 +119,31 @@
         <span class="name">doNamespace</span><span class="params">(<span name="dpath">dpath: <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a></span>, <span name="namespaces">namespaces: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[(<a href="BuiltDir.html" class="extype" name="info.kwarc.mmt.api.archives.BuiltDir">BuiltDir</a>, <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a>)]</span>, <span name="modules">modules: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[(<a href="BuiltFile.html" class="extype" name="info.kwarc.mmt.api.archives.BuiltFile">BuiltFile</a>, <a href="../MPath.html" class="extype" name="info.kwarc.mmt.api.MPath">MPath</a>)]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">applied to every namespace</p><div class="fullcomment"><div class="comment cmt"><p>applied to every namespace</p></div><dl class="paramcmts block"><dt class="param">dpath</dt><dd class="cmt"><p>the namespace</p></dd><dt class="param">namespaces</dt><dd class="cmt"><p>the sub-namespace in this namespace</p></dd><dt class="param">modules</dt><dd class="cmt"><p>the modules in this namespace</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a></dd></dl></div>
+      <p class="shortcomment cmt">applied to every namespace</p><div class="fullcomment"><div class="comment cmt"><p>applied to every namespace</p></div><dl class="paramcmts block"><dt class="param">dpath</dt><dd class="cmt"><p>the namespace</p></dd><dt class="param">namespaces</dt><dd class="cmt"><p>the sub-namespace in this namespace</p></dd><dt class="param">modules</dt><dd class="cmt"><p>the modules in this namespace
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.archives.ContentExporter#doTheory" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
-      <a id="doTheory(t:info.kwarc.mmt.api.modules.DeclaredTheory):Unit"></a>
-      <a id="doTheory(DeclaredTheory):Unit"></a>
+      <a id="doTheory(t:info.kwarc.mmt.api.modules.DeclaredTheory,bf:info.kwarc.mmt.api.archives.BuiltFile):Unit"></a>
+      <a id="doTheory(DeclaredTheory,BuiltFile):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">doTheory</span><span class="params">(<span name="t">t: <a href="../modules/DeclaredTheory.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredTheory">DeclaredTheory</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">doTheory</span><span class="params">(<span name="t">t: <a href="../modules/DeclaredTheory.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredTheory">DeclaredTheory</a></span>, <span name="bf">bf: <a href="BuiltFile.html" class="extype" name="info.kwarc.mmt.api.archives.BuiltFile">BuiltFile</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">applied to each theory</p><div class="fullcomment"><div class="comment cmt"><p>applied to each theory</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.archives.ContentExporter#doView" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
-      <a id="doView(v:info.kwarc.mmt.api.modules.DeclaredView):Unit"></a>
-      <a id="doView(DeclaredView):Unit"></a>
+      <a id="doView(v:info.kwarc.mmt.api.modules.DeclaredView,bf:info.kwarc.mmt.api.archives.BuiltFile):Unit"></a>
+      <a id="doView(DeclaredView,BuiltFile):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">doView</span><span class="params">(<span name="v">v: <a href="../modules/DeclaredView.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredView">DeclaredView</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">doView</span><span class="params">(<span name="v">v: <a href="../modules/DeclaredView.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredView">DeclaredView</a></span>, <span name="bf">bf: <a href="BuiltFile.html" class="extype" name="info.kwarc.mmt.api.archives.BuiltFile">BuiltFile</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">applied to each view</p><div class="fullcomment"><div class="comment cmt"><p>applied to each view</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a></dd></dl></div>
@@ -313,34 +314,31 @@
       </h4>
       <p class="shortcomment cmt">entry point for recursive building</p><div class="fullcomment"><div class="comment cmt"><p>entry point for recursive building</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="GenericTraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.GenericTraversingBuildTarget">GenericTraversingBuildTarget</a> → <a href="BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.archives.ContentExporter#buildDir" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="buildDir(a:info.kwarc.mmt.api.archives.Archive,inDir:info.kwarc.mmt.api.utils.File,inPath:List[String],builtChildren:List[info.kwarc.mmt.api.archives.BuildResult],outFile:info.kwarc.mmt.api.utils.File):List[info.kwarc.mmt.api.Error]"></a>
-      <a id="buildDir(Archive,File,List[String],List[BuildResult],File):List[Error]"></a>
+      <a id="buildDir(a:info.kwarc.mmt.api.archives.Archive,bd:info.kwarc.mmt.api.archives.BuiltDir,builtChildren:List[info.kwarc.mmt.api.archives.BuildResult]):Unit"></a>
+      <a id="buildDir(Archive,BuiltDir,List[BuildResult]):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">buildDir</span><span class="params">(<span name="a">a: <a href="Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="inDir">inDir: <a href="../utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>, <span name="inPath">inPath: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="builtChildren">builtChildren: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="BuildResult.html" class="extype" name="info.kwarc.mmt.api.archives.BuildResult">BuildResult</a>]</span>, <span name="outFile">outFile: <a href="../utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a>]</span>
+        <span class="name">buildDir</span><span class="params">(<span name="a">a: <a href="Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="bd">bd: <a href="BuiltDir.html" class="extype" name="info.kwarc.mmt.api.archives.BuiltDir">BuiltDir</a></span>, <span name="builtChildren">builtChildren: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="BuildResult.html" class="extype" name="info.kwarc.mmt.api.archives.BuildResult">BuildResult</a>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">similar to buildOne but called on every directory (after all its children have been processed)</p><div class="fullcomment"><div class="comment cmt"><p>similar to buildOne but called on every directory (after all its children have been processed)</p></div><dl class="paramcmts block"><dt class="param">a</dt><dd class="cmt"><p>the containing archive</p></dd><dt class="param">inDir</dt><dd class="cmt"><p>the input directory</p></dd><dt class="param">inPath</dt><dd class="cmt"><p>the path in the archive to the input file</p></dd><dt class="param">outFile</dt><dd class="cmt"><p>the output file
-This does nothing by default and can be overridden if needed.
-</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a> → <a href="GenericTraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.GenericTraversingBuildTarget">GenericTraversingBuildTarget</a></dd></dl></div>
+      <p class="shortcomment cmt">similar to buildOne but called on every directory (after all its children have been processed)</p><div class="fullcomment"><div class="comment cmt"><p>similar to buildOne but called on every directory (after all its children have been processed)</p></div><dl class="paramcmts block"><dt class="param">a</dt><dd class="cmt"><p>the containing archive</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a> → <a href="GenericTraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.GenericTraversingBuildTarget">GenericTraversingBuildTarget</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.archives.ContentExporter#buildFile" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="buildFile(a:info.kwarc.mmt.api.archives.Archive,inFile:info.kwarc.mmt.api.utils.File,inPath:List[String],outFile:info.kwarc.mmt.api.utils.File):List[info.kwarc.mmt.api.Error]"></a>
-      <a id="buildFile(Archive,File,List[String],File):List[Error]"></a>
+      <a id="buildFile(a:info.kwarc.mmt.api.archives.Archive,bf:info.kwarc.mmt.api.archives.BuiltFile):Unit"></a>
+      <a id="buildFile(Archive,BuiltFile):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">buildFile</span><span class="params">(<span name="a">a: <a href="Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="inFile">inFile: <a href="../utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>, <span name="inPath">inPath: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="outFile">outFile: <a href="../utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a>]</span>
+        <span class="name">buildFile</span><span class="params">(<span name="a">a: <a href="Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="bf">bf: <a href="BuiltFile.html" class="extype" name="info.kwarc.mmt.api.archives.BuiltFile">BuiltFile</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the main abstract method that implementations must provide: builds one file</p><div class="fullcomment"><div class="comment cmt"><p>the main abstract method that implementations must provide: builds one file</p></div><dl class="paramcmts block"><dt class="param">a</dt><dd class="cmt"><p>the containing archive</p></dd><dt class="param">inFile</dt><dd class="cmt"><p>the input file</p></dd><dt class="param">inPath</dt><dd class="cmt"><p>the path in the archive to the input file</p></dd><dt class="param">outFile</dt><dd class="cmt"><p>the output file
-</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a> → <a href="GenericTraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.GenericTraversingBuildTarget">GenericTraversingBuildTarget</a></dd></dl></div>
+      <p class="shortcomment cmt">the main abstract method that implementations must provide: builds one file</p><div class="fullcomment"><div class="comment cmt"><p>the main abstract method that implementations must provide: builds one file</p></div><dl class="paramcmts block"><dt class="param">a</dt><dd class="cmt"><p>the containing archive</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ContentExporter.html" class="extype" name="info.kwarc.mmt.api.archives.ContentExporter">ContentExporter</a> → <a href="GenericTraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.GenericTraversingBuildTarget">GenericTraversingBuildTarget</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.archives.GenericTraversingBuildTarget#clean" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clean(a:info.kwarc.mmt.api.archives.Archive,args:List[String],in:List[String]):Unit"></a>
       <a id="clean(Archive,List[String],List[String]):Unit"></a>

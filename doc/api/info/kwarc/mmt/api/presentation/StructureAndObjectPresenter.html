@@ -44,7 +44,7 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>a notation-based presenter using the StructureParser syntax</p><p>this class must be initialized after instantiation to set the controller
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>a notation-based presenter using the StructureParser syntax and parsing notations</p><p>this class must be initialized after instantiation to set the controller
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a href="NotationBasedPresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationBasedPresenter">NotationBasedPresenter</a>, <a href="Presenter.html" class="extype" name="info.kwarc.mmt.api.presentation.Presenter">Presenter</a>, <a href="ObjectPresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.ObjectPresenter">ObjectPresenter</a>, <a href="StructurePresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.StructurePresenter">StructurePresenter</a>, <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a>, <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
@@ -86,7 +86,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.presentation.StructureAndObjectPresenter#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(controller:info.kwarc.mmt.api.frontend.Controller):info.kwarc.mmt.api.presentation.StructureAndObjectPresenter"></a>
+      <a id="&lt;init&gt;():info.kwarc.mmt.api.presentation.StructureAndObjectPresenter"></a>
       <a id="&lt;init&gt;:StructureAndObjectPresenter"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -94,7 +94,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">StructureAndObjectPresenter</span><span class="params">(<span name="controller">controller: <a href="../frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a></span>)</span>
+        <span class="name">StructureAndObjectPresenter</span><span class="params">()</span>
       </span>
       </h4>
       
@@ -282,6 +282,19 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#controller" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="controller:info.kwarc.mmt.api.frontend.Controller"></a>
+      <a id="controller:Controller"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">controller</span><span class="result">: <a href="../frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Extension#defaultPrefix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="defaultPrefix:String"></a>
       <a id="defaultPrefix:String"></a>
@@ -393,15 +406,15 @@ but they must clean up after themselves in this method
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="NotationBasedPresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationBasedPresenter">NotationBasedPresenter</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.presentation.NotationBasedPresenter#doLiteral" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="doLiteral(l:info.kwarc.mmt.api.objects.OMLiteral)(implicitrh:info.kwarc.mmt.api.presentation.RenderingHandler):Unit"></a>
-      <a id="doLiteral(OMLiteral)(RenderingHandler):Unit"></a>
+      <a id="doLiteral(l:info.kwarc.mmt.api.objects.OMLIT)(implicitrh:info.kwarc.mmt.api.presentation.RenderingHandler):Unit"></a>
+      <a id="doLiteral(OMLIT)(RenderingHandler):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">doLiteral</span><span class="params">(<span name="l">l: <a href="../objects/OMLiteral.html" class="extype" name="info.kwarc.mmt.api.objects.OMLiteral">OMLiteral</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="rh">rh: <a href="RenderingHandler.html" class="extype" name="info.kwarc.mmt.api.presentation.RenderingHandler">RenderingHandler</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">doLiteral</span><span class="params">(<span name="l">l: <a href="../objects/OMLIT.html" class="extype" name="info.kwarc.mmt.api.objects.OMLIT">OMLIT</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="rh">rh: <a href="RenderingHandler.html" class="extype" name="info.kwarc.mmt.api.presentation.RenderingHandler">RenderingHandler</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">called by doDefaultTerm to render literals
@@ -546,7 +559,7 @@ but they must clean up after themselves in this method
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.presentation.Presenter#getNotation" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.presentation.StructureAndObjectPresenter#getNotation" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getNotation(o:info.kwarc.mmt.api.objects.Obj):(info.kwarc.mmt.api.objects.Obj,List[info.kwarc.mmt.api.objects.Position],Option[info.kwarc.mmt.api.parser.TextNotation])"></a>
       <a id="getNotation(Obj):(Obj,List[Position],Option[TextNotation])"></a>
       <h4 class="signature">
@@ -558,7 +571,10 @@ but they must clean up after themselves in this method
         <span class="name">getNotation</span><span class="params">(<span name="o">o: <a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a></span>)</span><span class="result">: (<a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a>, <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../objects/Position.html" class="extype" name="info.kwarc.mmt.api.objects.Position">Position</a>], <span class="extype" name="scala.Option">Option</span>[<a href="../parser/TextNotation.html" class="extype" name="info.kwarc.mmt.api.parser.TextNotation">TextNotation</a>])</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Presenter.html" class="extype" name="info.kwarc.mmt.api.presentation.Presenter">Presenter</a></dd></dl></div>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">o</dt><dd class="cmt"><p>the object to be presented</p></dd><dt>returns</dt><dd class="cmt"><p>an object o' that is presented instead (e.g., o itself)
+        one position p for each component c of o' such that the c is the p-subobject of o
+        a notation to use for presenting o'
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.presentation.StructureAndObjectPresenter">StructureAndObjectPresenter</a> → <a href="NotationBasedPresenter.html" class="extype" name="info.kwarc.mmt.api.presentation.NotationBasedPresenter">NotationBasedPresenter</a></dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
       <a id="hashCode():Int"></a>

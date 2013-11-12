@@ -169,16 +169,16 @@
       </span>
       </h4>
       <p class="comment cmt">see <a href="Arity.html" class="extype" name="info.kwarc.mmt.api.parser.Arity">Arity</a></p>
-    </li><li name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="AsymmetricEscapeHandlerextendsLexerExtensionwithEscapeHandler"></a>
-      <a id="AsymmetricEscapeHandler:AsymmetricEscapeHandler"></a>
+    </li><li name="info.kwarc.mmt.api.parser.AsymmetricEscapeLexer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AsymmetricEscapeLexerextendsLexFunction"></a>
+      <a id="AsymmetricEscapeLexer:AsymmetricEscapeLexer"></a>
       <h4 class="signature">
       <span class="modifier_kind">
-        <span class="modifier">abstract </span>
+        <span class="modifier"></span>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="AsymmetricEscapeHandler.html"><span class="name">AsymmetricEscapeHandler</span></a><span class="result"> extends <a href="LexerExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexerExtension">LexerExtension</a> with <a href="EscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.EscapeHandler">EscapeHandler</a></span>
+        <a href="AsymmetricEscapeLexer.html"><span class="name">AsymmetricEscapeLexer</span></a><span class="result"> extends <a href="LexFunction.html" class="extype" name="info.kwarc.mmt.api.parser.LexFunction">LexFunction</a></span>
       </span>
       </h4>
       <p class="comment cmt">an EscapeHandler that detects tokens delimited by begin and end</p>
@@ -247,20 +247,6 @@
       </span>
       </h4>
       <p class="comment cmt">Markers that are delimiters</p>
-    </li><li name="info.kwarc.mmt.api.parser.EscapeHandler" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="EscapeHandlerextendsLexerExtension"></a>
-      <a id="EscapeHandler:EscapeHandler"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">trait</span>
-      </span>
-      <span class="symbol">
-        <a href="EscapeHandler.html"><span class="name">EscapeHandler</span></a><span class="result"> extends <a href="LexerExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexerExtension">LexerExtension</a></span>
-      </span>
-      </h4>
-      <p class="comment cmt">An EscapeHandler detects foreign tokens, which parse into semi-formal objects
-</p>
     </li><li name="info.kwarc.mmt.api.parser.EscapeManager" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="EscapeManagerextendsAnyRef"></a>
       <a id="EscapeManager:EscapeManager"></a>
@@ -301,6 +287,19 @@
       </span>
       </h4>
       <p class="comment cmt">An ExternalToken is anything produced by an EscapeHandler</p>
+    </li><li name="info.kwarc.mmt.api.parser.FixedLengthLiteralLexer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="FixedLengthLiteralLexerextendsLexerExtension"></a>
+      <a id="FixedLengthLiteralLexer:FixedLengthLiteralLexer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="FixedLengthLiteralLexer.html"><span class="name">FixedLengthLiteralLexer</span></a><span class="result"> extends <a href="LexerExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexerExtension">LexerExtension</a></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.parser.Fixity" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="FixityextendsAnyRef"></a>
       <a id="Fixity:Fixity"></a>
@@ -457,6 +456,32 @@
       </span>
       </h4>
       
+    </li><li name="info.kwarc.mmt.api.parser.LexFunction" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="LexFunctionextendsAnyRef"></a>
+      <a id="LexFunction:LexFunction"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="LexFunction.html"><span class="name">LexFunction</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">the lexing part of a <a href="LexParseExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexParseExtension">LexParseExtension</a></p>
+    </li><li name="info.kwarc.mmt.api.parser.LexParseExtension" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LexParseExtensionextendsLexerExtension"></a>
+      <a id="LexParseExtension:LexParseExtension"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="LexParseExtension.html"><span class="name">LexParseExtension</span></a><span class="result"> extends <a href="LexerExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexerExtension">LexerExtension</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A LexParseExtension is a LexerExtension with a lex and a parse component.</p>
     </li><li name="info.kwarc.mmt.api.parser.LexerExtension" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="LexerExtensionextendsAnyRef"></a>
       <a id="LexerExtension:LexerExtension"></a>
@@ -471,6 +496,19 @@
       </h4>
       <p class="comment cmt">A LexerExtension bypasses the default lexing algorithm
 </p>
+    </li><li name="info.kwarc.mmt.api.parser.LiteralParser" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LiteralParserextendsParseFunction"></a>
+      <a id="LiteralParser:LiteralParser"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="LiteralParser.html"><span class="name">LiteralParser</span></a><span class="result"> extends <a href="ParseFunction.html" class="extype" name="info.kwarc.mmt.api.parser.ParseFunction">ParseFunction</a></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.parser.Marker" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="MarkerextendsAnyRef"></a>
       <a id="Marker:Marker"></a>
@@ -510,19 +548,32 @@
       </span>
       </h4>
       <p class="comment cmt">the simplest Fixity consisting of a list of Marker's</p>
-    </li><li name="info.kwarc.mmt.api.parser.NumberLiteralHandler" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="NumberLiteralHandlerextendsLexerExtension"></a>
-      <a id="NumberLiteralHandler:NumberLiteralHandler"></a>
+    </li><li name="info.kwarc.mmt.api.parser.NumberLiteralLexer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NumberLiteralLexerextendsLexFunction"></a>
+      <a id="NumberLiteralLexer:NumberLiteralLexer"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="NumberLiteralHandler.html"><span class="name">NumberLiteralHandler</span></a><span class="result"> extends <a href="LexerExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexerExtension">LexerExtension</a></span>
+        <a href="NumberLiteralLexer.html"><span class="name">NumberLiteralLexer</span></a><span class="result"> extends <a href="LexFunction.html" class="extype" name="info.kwarc.mmt.api.parser.LexFunction">LexFunction</a></span>
       </span>
       </h4>
       <p class="comment cmt">A LexerExtension that lexes undelimited number literals</p>
+    </li><li name="info.kwarc.mmt.api.parser.NumberLiterals" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NumberLiteralsextendsLexParseExtension"></a>
+      <a id="NumberLiterals:NumberLiterals"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="NumberLiterals.html"><span class="name">NumberLiterals</span></a><span class="result"> extends <a href="LexParseExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexParseExtension">LexParseExtension</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">groups a NumberLiteralLexer and a NumberLiteralParser</p>
     </li><li name="info.kwarc.mmt.api.parser.ObjectParser" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ObjectParserextendsAbstractObjectParserwithLogger"></a>
       <a id="ObjectParser:ObjectParser"></a>
@@ -537,6 +588,19 @@
       </h4>
       <p class="comment cmt">A notation based parser
 </p>
+    </li><li name="info.kwarc.mmt.api.parser.ParseFunction" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ParseFunctionextendsAnyRef"></a>
+      <a id="ParseFunction:ParseFunction"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ParseFunction.html"><span class="name">ParseFunction</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">the parsing part of a <a href="LexParseExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexParseExtension">LexParseExtension</a></p>
     </li><li name="info.kwarc.mmt.api.parser.ParserExtension" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="ParserExtensionextendsExtension"></a>
       <a id="ParserExtension:ParserExtension"></a>
@@ -592,19 +656,19 @@ to extend MMT's concrete syntax with new keywords
       </span>
       </h4>
       <p class="comment cmt">special delimiters that are expanded to a string based on the declaration that the notation occurs in</p>
-    </li><li name="info.kwarc.mmt.api.parser.PrefixEscapeHandler" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="PrefixEscapeHandlerextendsLexerExtension"></a>
-      <a id="PrefixEscapeHandler:PrefixEscapeHandler"></a>
+    </li><li name="info.kwarc.mmt.api.parser.PrefixedTokenLexer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PrefixedTokenLexerextendsLexerExtension"></a>
+      <a id="PrefixedTokenLexer:PrefixedTokenLexer"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="PrefixEscapeHandler.html"><span class="name">PrefixEscapeHandler</span></a><span class="result"> extends <a href="LexerExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexerExtension">LexerExtension</a></span>
+        <a href="PrefixedTokenLexer.html"><span class="name">PrefixedTokenLexer</span></a><span class="result"> extends <a href="LexerExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexerExtension">LexerExtension</a></span>
       </span>
       </h4>
-      <p class="comment cmt">a LexerExtension that detects ids (letter sequences) Tokens prefixed by delim
+      <p class="comment cmt">a LexerExtension that detects id (letter sequences) Tokens prefixed by delim
 </p>
     </li><li name="info.kwarc.mmt.api.parser.PresentationMarker" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="PresentationMarkerextendsMarker"></a>
@@ -737,16 +801,16 @@ to extend MMT's concrete syntax with new keywords
       </span>
       </h4>
       <p class="comment cmt">decorates a marker with various scripts</p>
-    </li><li name="info.kwarc.mmt.api.parser.SemiFormalParser" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="SemiFormalParserextendsAnyRef"></a>
+    </li><li name="info.kwarc.mmt.api.parser.SemiFormalParser" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SemiFormalParserextendsParseFunction"></a>
       <a id="SemiFormalParser:SemiFormalParser"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">trait</span>
+        <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="SemiFormalParser.html"><span class="name">SemiFormalParser</span></a><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+        <a href="SemiFormalParser.html"><span class="name">SemiFormalParser</span></a><span class="result"> extends <a href="ParseFunction.html" class="extype" name="info.kwarc.mmt.api.parser.ParseFunction">ParseFunction</a></span>
       </span>
       </h4>
       
@@ -881,20 +945,46 @@ defers to continuation functions for the found StructuralElement, ParsingUnits, 
       </span>
       </h4>
       <p class="comment cmt">expands to the name of the symbol</p>
-    </li><li name="info.kwarc.mmt.api.parser.SymmetricEscapeHandler" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="SymmetricEscapeHandlerextendsLexerExtensionwithEscapeHandler"></a>
-      <a id="SymmetricEscapeHandler:SymmetricEscapeHandler"></a>
+    </li><li name="info.kwarc.mmt.api.parser.SymmetricEscapeLexer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SymmetricEscapeLexerextendsLexFunction"></a>
+      <a id="SymmetricEscapeLexer:SymmetricEscapeLexer"></a>
       <h4 class="signature">
       <span class="modifier_kind">
-        <span class="modifier">abstract </span>
+        <span class="modifier"></span>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="SymmetricEscapeHandler.html"><span class="name">SymmetricEscapeHandler</span></a><span class="result"> extends <a href="LexerExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexerExtension">LexerExtension</a> with <a href="EscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.EscapeHandler">EscapeHandler</a></span>
+        <a href="SymmetricEscapeLexer.html"><span class="name">SymmetricEscapeLexer</span></a><span class="result"> extends <a href="LexFunction.html" class="extype" name="info.kwarc.mmt.api.parser.LexFunction">LexFunction</a></span>
       </span>
       </h4>
       <p class="comment cmt">an EscapeHandler that detects tokens delimited by delim
 </p>
+    </li><li name="info.kwarc.mmt.api.parser.TableMarker" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TableMarkerextendsPresentationMarkerwithProductwithSerializable"></a>
+      <a id="TableMarker:TableMarker"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="TableMarker.html"><span class="name">TableMarker</span></a><span class="params">(<span name="content">content: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Marker.html" class="extype" name="info.kwarc.mmt.api.parser.Marker">Marker</a>]</span>)</span><span class="result"> extends <a href="PresentationMarker.html" class="extype" name="info.kwarc.mmt.api.parser.PresentationMarker">PresentationMarker</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">a marker based on mathml mtd elements, representing tables</p>
+    </li><li name="info.kwarc.mmt.api.parser.TdMarker" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TdMarkerextendsPresentationMarkerwithProductwithSerializable"></a>
+      <a id="TdMarker:TdMarker"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="TdMarker.html"><span class="name">TdMarker</span></a><span class="params">(<span name="content">content: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Marker.html" class="extype" name="info.kwarc.mmt.api.parser.Marker">Marker</a>]</span>)</span><span class="result"> extends <a href="PresentationMarker.html" class="extype" name="info.kwarc.mmt.api.parser.PresentationMarker">PresentationMarker</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">a marker based on mathml mtd elements, representing table cells</p>
     </li><li name="info.kwarc.mmt.api.parser.TextNotation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TextNotationextendsNotationwithComplexNotation"></a>
       <a id="TextNotation:TextNotation"></a>
@@ -961,6 +1051,19 @@ defers to continuation functions for the found StructuralElement, ParsingUnits, 
       </span>
       </h4>
       <p class="comment cmt">A reference to a sublist of a TokenList that does not copy the element</p>
+    </li><li name="info.kwarc.mmt.api.parser.TrMarker" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TrMarkerextendsPresentationMarkerwithProductwithSerializable"></a>
+      <a id="TrMarker:TrMarker"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="TrMarker.html"><span class="name">TrMarker</span></a><span class="params">(<span name="content">content: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Marker.html" class="extype" name="info.kwarc.mmt.api.parser.Marker">Marker</a>]</span>)</span><span class="result"> extends <a href="PresentationMarker.html" class="extype" name="info.kwarc.mmt.api.parser.PresentationMarker">PresentationMarker</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">a marker based on mathml mtd elements, representing table rows</p>
     </li><li name="info.kwarc.mmt.api.parser.UnmatchedList" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="UnmatchedListextendsTokenListElem"></a>
       <a id="UnmatchedList:UnmatchedList"></a>
@@ -1151,29 +1254,16 @@ defers to continuation functions for the found StructuralElement, ParsingUnits, 
       </span>
       </h4>
       <p class="comment cmt">helper object</p>
-    </li><li name="info.kwarc.mmt.api.parser.GenericEscapeHandler" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="GenericEscapeHandler"></a>
-      <a id="GenericEscapeHandler:GenericEscapeHandler"></a>
+    </li><li name="info.kwarc.mmt.api.parser.GenericEscapeLexer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GenericEscapeLexer"></a>
+      <a id="GenericEscapeLexer:GenericEscapeLexer"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="GenericEscapeHandler$.html"><span class="name">GenericEscapeHandler</span></a><span class="result"> extends <a href="AsymmetricEscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler">AsymmetricEscapeHandler</a> with <a href="SemiFormalParser.html" class="extype" name="info.kwarc.mmt.api.parser.SemiFormalParser">SemiFormalParser</a></span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.api.parser.IEEEFloatLiteral" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="IEEEFloatLiteral"></a>
-      <a id="IEEEFloatLiteral:IEEEFloatLiteral"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="IEEEFloatLiteral$.html"><span class="name">IEEEFloatLiteral</span></a><span class="result"> extends <a href="AsymmetricEscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.AsymmetricEscapeHandler">AsymmetricEscapeHandler</a></span>
+        <a href="GenericEscapeLexer$.html"><span class="name">GenericEscapeLexer</span></a><span class="result"> extends <a href="LexParseExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexParseExtension">LexParseExtension</a></span>
       </span>
       </h4>
       
@@ -1242,6 +1332,19 @@ defers to continuation functions for the found StructuralElement, ParsingUnits, 
       </span>
       </h4>
       <p class="comment cmt">defines some implicit conversions to produce Markers</p>
+    </li><li name="info.kwarc.mmt.api.parser.NumberLiteralParser" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NumberLiteralParser"></a>
+      <a id="NumberLiteralParser:NumberLiteralParser"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="NumberLiteralParser$.html"><span class="name">NumberLiteralParser</span></a><span class="result"> extends <a href="ParseFunction.html" class="extype" name="info.kwarc.mmt.api.parser.ParseFunction">ParseFunction</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">parses the numbers lexed by NumberLiteralLexer into OMI or OMF</p>
     </li><li name="info.kwarc.mmt.api.parser.PresentationMarker" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="PresentationMarker"></a>
       <a id="PresentationMarker:PresentationMarker"></a>
@@ -1255,16 +1358,16 @@ defers to continuation functions for the found StructuralElement, ParsingUnits, 
       </span>
       </h4>
       
-    </li><li name="info.kwarc.mmt.api.parser.QuoteHandler" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="QuoteHandler"></a>
-      <a id="QuoteHandler:QuoteHandler"></a>
+    </li><li name="info.kwarc.mmt.api.parser.QuoteLexer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="QuoteLexer"></a>
+      <a id="QuoteLexer:QuoteLexer"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="QuoteHandler$.html"><span class="name">QuoteHandler</span></a><span class="result"> extends <a href="SymmetricEscapeHandler.html" class="extype" name="info.kwarc.mmt.api.parser.SymmetricEscapeHandler">SymmetricEscapeHandler</a> with <a href="SemiFormalParser.html" class="extype" name="info.kwarc.mmt.api.parser.SemiFormalParser">SemiFormalParser</a></span>
+        <a href="QuoteLexer$.html"><span class="name">QuoteLexer</span></a><span class="result"> extends <a href="LexParseExtension.html" class="extype" name="info.kwarc.mmt.api.parser.LexParseExtension">LexParseExtension</a></span>
       </span>
       </h4>
       

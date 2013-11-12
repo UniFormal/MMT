@@ -29,7 +29,7 @@
         </head>
         <body class="type">
       <div id="definition">
-        <img src="../../../../../lib/trait_big.png" />
+        <img src="../../../../../lib/class_big.png" />
         <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.api.parser">parser</a></p>
         <h1>SemiFormalParser</h1>
       </div>
@@ -37,19 +37,16 @@
       <h4 id="signature" class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">trait</span>
+        <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">SemiFormalParser</span><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+        <span class="name">SemiFormalParser</span><span class="result"> extends <a href="ParseFunction.html" class="extype" name="info.kwarc.mmt.api.parser.ParseFunction">ParseFunction</a></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
-        </div><div class="toggleContainer block">
-          <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a href="GenericEscapeHandler$.html" class="extype" name="info.kwarc.mmt.api.parser.GenericEscapeHandler">GenericEscapeHandler</a>, <a href="QuoteHandler$.html" class="extype" name="info.kwarc.mmt.api.parser.QuoteHandler">QuoteHandler</a></div>
+          <div class="superTypes hiddenContent"><a href="ParseFunction.html" class="extype" name="info.kwarc.mmt.api.parser.ParseFunction">ParseFunction</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -67,7 +64,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.parser.SemiFormalParser"><span>SemiFormalParser</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.parser.SemiFormalParser"><span>SemiFormalParser</span></li><li class="in" name="info.kwarc.mmt.api.parser.ParseFunction"><span>ParseFunction</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -85,30 +82,30 @@
 
       <div id="template">
         <div id="allMembers">
-        
-
-        
-
-        <div id="values" class="values members">
-              <h3>Abstract Value Members</h3>
-              <ol><li name="info.kwarc.mmt.api.parser.SemiFormalParser#formatOpt" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="formatOpt:Option[String]"></a>
-      <a id="formatOpt:Option[String]"></a>
+        <div id="constructors" class="members">
+              <h3>Instance Constructors</h3>
+              <ol><li name="info.kwarc.mmt.api.parser.SemiFormalParser#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(formatOpt:Option[String]):info.kwarc.mmt.api.parser.SemiFormalParser"></a>
+      <a id="&lt;init&gt;:SemiFormalParser"></a>
       <h4 class="signature">
       <span class="modifier_kind">
-        <span class="modifier">abstract </span>
-        <span class="kind">val</span>
+        <span class="modifier"></span>
+        <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">formatOpt</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+        <span class="name">SemiFormalParser</span><span class="params">(<span name="formatOpt">formatOpt: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span>
       </span>
       </h4>
       
     </li></ol>
             </div>
 
+        
+
+        
+
         <div id="values" class="values members">
-              <h3>Concrete Value Members</h3>
+              <h3>Value Members</h3>
               <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="!=(x$1:AnyRef):Boolean"></a>
       <a id="!=(AnyRef):Boolean"></a>
@@ -174,6 +171,20 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.parser.SemiFormalParser#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="apply(begin:String,text:String,end:String):info.kwarc.mmt.api.objects.Term"></a>
+      <a id="apply(String,String,String):Term"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">apply</span><span class="params">(<span name="begin">begin: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="text">text: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="end">end: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">begin</dt><dd class="cmt"><p>as returned by lex</p></dd><dt class="param">text</dt><dd class="cmt"><p>as returned by lex</p></dd><dt class="param">end</dt><dd class="cmt"><p>as returned by lex</p></dd><dt>returns</dt><dd class="cmt"><p>the parsed Term
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.parser.SemiFormalParser">SemiFormalParser</a> → <a href="ParseFunction.html" class="extype" name="info.kwarc.mmt.api.parser.ParseFunction">ParseFunction</a></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -323,19 +334,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.parser.SemiFormalParser#parse" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="parse(begin:String,text:String,end:String):info.kwarc.mmt.api.objects.Term"></a>
-      <a id="parse(String,String,String):Term"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">parse</span><span class="params">(<span name="begin">begin: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="text">text: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="end">end: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
-      </span>
-      </h4>
-      
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -419,7 +417,9 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="scala.AnyRef">
+        <div class="parent" name="info.kwarc.mmt.api.parser.ParseFunction">
+              <h3>Inherited from <a href="ParseFunction.html" class="extype" name="info.kwarc.mmt.api.parser.ParseFunction">ParseFunction</a></h3>
+            </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>

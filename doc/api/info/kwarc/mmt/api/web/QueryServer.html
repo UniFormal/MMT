@@ -40,13 +40,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">QueryServer</span><span class="result"> extends <a href="ServerPlugin.html" class="extype" name="info.kwarc.mmt.api.web.ServerPlugin">ServerPlugin</a></span>
+        <span class="name">QueryServer</span><span class="result"> extends <a href="ServerExtension.html" class="extype" name="info.kwarc.mmt.api.web.ServerExtension">ServerExtension</a></span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Plugin for QMT query requests</p></div><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>interprets the body as a QMT <a href="../ontology/Query.html" class="extype" name="info.kwarc.mmt.api.ontology.Query">ontology.Query</a> and evaluates it</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="ServerPlugin.html" class="extype" name="info.kwarc.mmt.api.web.ServerPlugin">ServerPlugin</a>, <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a>, <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="ServerExtension.html" class="extype" name="info.kwarc.mmt.api.web.ServerExtension">ServerExtension</a>, <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a>, <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -64,7 +64,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.web.QueryServer"><span>QueryServer</span></li><li class="in" name="info.kwarc.mmt.api.web.ServerPlugin"><span>ServerPlugin</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Extension"><span>Extension</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Logger"><span>Logger</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.web.QueryServer"><span>QueryServer</span></li><li class="in" name="info.kwarc.mmt.api.web.ServerExtension"><span>ServerExtension</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Extension"><span>Extension</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Logger"><span>Logger</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -199,7 +199,7 @@
         <span class="name">apply</span><span class="params">(<span name="path">path: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="query">query: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="body">body: <a href="Body.html" class="extype" name="info.kwarc.mmt.api.web.Body">Body</a></span>)</span><span class="result">: <span class="extype" name="tiscaf.HLet">HLet</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">path</dt><dd class="cmt"><p>ignored</p></dd><dt class="param">query</dt><dd class="cmt"><p>ignored</p></dd><dt class="param">body</dt><dd class="cmt"><p>the query as XML</p></dd><dt>returns</dt><dd class="cmt"><p>the HTTP response</p><p>Implementing classes can and should use Server.XmlResponse etc to construct responses conveniently.</p><p>Errors thrown by this method are caught and sent back to the browser.</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.web.QueryServer">QueryServer</a> → <a href="ServerPlugin.html" class="extype" name="info.kwarc.mmt.api.web.ServerPlugin">ServerPlugin</a></dd></dl></div>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">path</dt><dd class="cmt"><p>ignored</p></dd><dt class="param">query</dt><dd class="cmt"><p>ignored</p></dd><dt class="param">body</dt><dd class="cmt"><p>the query as XML</p></dd><dt>returns</dt><dd class="cmt"><p>the HTTP response</p><p>Implementing classes can and should use Server.XmlResponse etc to construct responses conveniently.</p><p>Errors thrown by this method are caught and sent back to the browser.</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.web.QueryServer">QueryServer</a> → <a href="ServerExtension.html" class="extype" name="info.kwarc.mmt.api.web.ServerExtension">ServerExtension</a></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -338,7 +338,7 @@ but they must clean up after themselves in this method
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.web.ServerPlugin#isApplicable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.web.ServerExtension#isApplicable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isApplicable(cont:String):Boolean"></a>
       <a id="isApplicable(String):Boolean"></a>
       <h4 class="signature">
@@ -351,7 +351,7 @@ but they must clean up after themselves in this method
       </span>
       </h4>
       <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">cont</dt><dd class="cmt"><p>the context of the request</p></dd><dt>returns</dt><dd class="cmt"><p>true if cont is equal to this.context
-</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ServerPlugin.html" class="extype" name="info.kwarc.mmt.api.web.ServerPlugin">ServerPlugin</a></dd></dl></div>
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ServerExtension.html" class="extype" name="info.kwarc.mmt.api.web.ServerExtension">ServerExtension</a></dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -591,8 +591,8 @@ but they must clean up after themselves in this method
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="info.kwarc.mmt.api.web.ServerPlugin">
-              <h3>Inherited from <a href="ServerPlugin.html" class="extype" name="info.kwarc.mmt.api.web.ServerPlugin">ServerPlugin</a></h3>
+        <div class="parent" name="info.kwarc.mmt.api.web.ServerExtension">
+              <h3>Inherited from <a href="ServerExtension.html" class="extype" name="info.kwarc.mmt.api.web.ServerExtension">ServerExtension</a></h3>
             </div><div class="parent" name="info.kwarc.mmt.api.frontend.Extension">
               <h3>Inherited from <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></h3>
             </div><div class="parent" name="info.kwarc.mmt.api.frontend.Logger">

@@ -47,9 +47,6 @@
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>a trait for URL-addressed Storages that can serve MMT document fragments</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a href="Storage.html" class="extype" name="info.kwarc.mmt.api.backend.Storage">Storage</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
-        </div><div class="toggleContainer block">
-          <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a href="TNTBase.html" class="extype" name="info.kwarc.mmt.api.backend.TNTBase">TNTBase</a></div>
         </div></div>
         
 
@@ -88,7 +85,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.backend.OMBase#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(scheme:String,authority:String,prefix:String,ombase:info.kwarc.mmt.api.utils.URI,dpats:List[info.kwarc.mmt.api.backend.OMQuery],mpats:List[info.kwarc.mmt.api.backend.OMQuery],spats:List[info.kwarc.mmt.api.backend.OMQuery],ipats:List[info.kwarc.mmt.api.backend.OMQuery]):info.kwarc.mmt.api.backend.OMBase"></a>
+      <a id="&lt;init&gt;(scheme:String,authority:String,prefix:String,ombase:info.kwarc.mmt.api.utils.URI):info.kwarc.mmt.api.backend.OMBase"></a>
       <a id="&lt;init&gt;:OMBase"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -96,7 +93,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">OMBase</span><span class="params">(<span name="scheme">scheme: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="authority">authority: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="prefix">prefix: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="ombase">ombase: <a href="../utils/URI.html" class="extype" name="info.kwarc.mmt.api.utils.URI">URI</a></span>, <span name="dpats">dpats: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="OMQuery.html" class="extype" name="info.kwarc.mmt.api.backend.OMQuery">OMQuery</a>]</span>, <span name="mpats">mpats: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="OMQuery.html" class="extype" name="info.kwarc.mmt.api.backend.OMQuery">OMQuery</a>]</span>, <span name="spats">spats: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="OMQuery.html" class="extype" name="info.kwarc.mmt.api.backend.OMQuery">OMQuery</a>]</span>, <span name="ipats">ipats: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="OMQuery.html" class="extype" name="info.kwarc.mmt.api.backend.OMQuery">OMQuery</a>]</span>)</span>
+        <span class="name">OMBase</span><span class="params">(<span name="scheme">scheme: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="authority">authority: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="prefix">prefix: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="ombase">ombase: <a href="../utils/URI.html" class="extype" name="info.kwarc.mmt.api.utils.URI">URI</a></span>)</span>
       </span>
       </h4>
       
@@ -107,7 +104,23 @@
 
         <div id="values" class="values members">
               <h3>Abstract Value Members</h3>
-              <ol><li name="info.kwarc.mmt.api.backend.OMBase#handleResponse" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+              <ol><li name="info.kwarc.mmt.api.backend.OMBase#get" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="get(path:info.kwarc.mmt.api.Path)(implicitcont:(info.kwarc.mmt.api.utils.URI,scala.xml.NodeSeq)=&gt;Unit):Unit"></a>
+      <a id="get(Path)((URI,NodeSeq)⇒Unit):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">get</span><span class="params">(<span name="path">path: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="cont">cont: (<a href="../utils/URI.html" class="extype" name="info.kwarc.mmt.api.utils.URI">URI</a>, <span class="extype" name="scala.xml.NodeSeq">NodeSeq</span>) ⇒ <span class="extype" name="scala.Unit">Unit</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">dereferences a path and sends the content to a reader
+a storage may send more content than the path references, e.</p><div class="fullcomment"><div class="comment cmt"><p>dereferences a path and sends the content to a reader
+a storage may send more content than the path references, e.g., the whole file or a dependency closure
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.backend.OMBase">OMBase</a> → <a href="Storage.html" class="extype" name="info.kwarc.mmt.api.backend.Storage">Storage</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.backend.OMBase#handleResponse" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="handleResponse(msg:=&gt;String,N:scala.xml.NodeSeq):scala.xml.NodeSeq"></a>
       <a id="handleResponse(⇒String,NodeSeq):NodeSeq"></a>
       <h4 class="signature">
@@ -219,19 +232,6 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.backend.OMBase#dpats" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="dpats:List[info.kwarc.mmt.api.backend.OMQuery]"></a>
-      <a id="dpats:List[OMQuery]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">dpats</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="OMQuery.html" class="extype" name="info.kwarc.mmt.api.backend.OMQuery">OMQuery</a>]</span>
-      </span>
-      </h4>
-      
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -274,22 +274,6 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.backend.OMBase#get" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="get(path:info.kwarc.mmt.api.Path)(implicitcont:(info.kwarc.mmt.api.utils.URI,scala.xml.NodeSeq)=&gt;Unit):Unit"></a>
-      <a id="get(Path)((URI,NodeSeq)⇒Unit):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">get</span><span class="params">(<span name="path">path: <a href="../Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="cont">cont: (<a href="../utils/URI.html" class="extype" name="info.kwarc.mmt.api.utils.URI">URI</a>, <span class="extype" name="scala.xml.NodeSeq">NodeSeq</span>) ⇒ <span class="extype" name="scala.Unit">Unit</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">dereferences a path and sends the content to a reader
-a storage may send more content than the path references, e.</p><div class="fullcomment"><div class="comment cmt"><p>dereferences a path and sends the content to a reader
-a storage may send more content than the path references, e.g., the whole file or a dependency closure
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.backend.OMBase">OMBase</a> → <a href="Storage.html" class="extype" name="info.kwarc.mmt.api.backend.Storage">Storage</a></dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <a id="getClass():Class[_]"></a>

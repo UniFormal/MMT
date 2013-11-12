@@ -45,13 +45,12 @@
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Objects of type GetAction represent commands that</p><ul><li>retrieve knowledge items in abstract/internal syntax</li><li>post-process them to obtain concrete/external syntax</li><li>then output the concrete form in various ways.</li></ul></div><dl class="paramcmts block"><dt class="param">o</dt><dd class="cmt"><p>the instance of Output that executes all three steps.</p><p> The concrete syntax is described by the following grammar:
- ABSTRACT [CONCRETE] [OUTPUT]
+ get ABSTRACT [CONCRETE] [OUTPUT]
  where
  ABSTRACT ::= URI | URI component STRING | URI closure | URI elaboration
- CONCRETE ::= xml | present URI | text | deps
- OUTPUT   ::= write FILE | print | window | respond
- The productions for ABSTRACT, CONCRETE, OUTPUT correspond to
- the instances of MakeAbstract, MakeConcrete, and Output.
+ CONCRETE ::= present param | deps
+ OUTPUT   ::= write FILE | window | respond | CONCRETE
+ The productions for ABSTRACT, CONCRETE, OUTPUT correspond to the instances of MakeAbstract, MakeConcrete, and Output.
 </p></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <a href="Action.html" class="extype" name="info.kwarc.mmt.api.frontend.Action">Action</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
@@ -105,13 +104,12 @@
       </span>
       </h4>
       <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">o</dt><dd class="cmt"><p>the instance of Output that executes all three steps.</p><p> The concrete syntax is described by the following grammar:
- ABSTRACT [CONCRETE] [OUTPUT]
+ get ABSTRACT [CONCRETE] [OUTPUT]
  where
  ABSTRACT ::= URI | URI component STRING | URI closure | URI elaboration
- CONCRETE ::= xml | present URI | text | deps
- OUTPUT   ::= write FILE | print | window | respond
- The productions for ABSTRACT, CONCRETE, OUTPUT correspond to
- the instances of MakeAbstract, MakeConcrete, and Output.
+ CONCRETE ::= present param | deps
+ OUTPUT   ::= write FILE | window | respond | CONCRETE
+ The productions for ABSTRACT, CONCRETE, OUTPUT correspond to the instances of MakeAbstract, MakeConcrete, and Output.
 </p></dd></dl></div>
     </li></ol>
             </div>
@@ -336,13 +334,12 @@
       </span>
       </h4>
       <p class="shortcomment cmt">the instance of Output that executes all three steps.</p><div class="fullcomment"><div class="comment cmt"><p>the instance of Output that executes all three steps.</p><p> The concrete syntax is described by the following grammar:
- ABSTRACT [CONCRETE] [OUTPUT]
+ get ABSTRACT [CONCRETE] [OUTPUT]
  where
  ABSTRACT ::= URI | URI component STRING | URI closure | URI elaboration
- CONCRETE ::= xml | present URI | text | deps
- OUTPUT   ::= write FILE | print | window | respond
- The productions for ABSTRACT, CONCRETE, OUTPUT correspond to
- the instances of MakeAbstract, MakeConcrete, and Output.
+ CONCRETE ::= present param | deps
+ OUTPUT   ::= write FILE | window | respond | CONCRETE
+ The productions for ABSTRACT, CONCRETE, OUTPUT correspond to the instances of MakeAbstract, MakeConcrete, and Output.
 </p></div></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
@@ -357,6 +354,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.GetAction#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toString():String"></a>
+      <a id="toString():String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.frontend.GetAction">GetAction</a> → AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>

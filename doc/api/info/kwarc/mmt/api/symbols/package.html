@@ -64,7 +64,7 @@
         <div id="types" class="types members">
               <h3>Type Members</h3>
               <ol><li name="info.kwarc.mmt.api.symbols.Constant" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ConstantextendsSymbol"></a>
+      <a id="ConstantextendsDeclaration"></a>
       <a id="Constant:Constant"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -72,10 +72,23 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Constant.html"><span class="name">Constant</span></a><span class="result"> extends <a href="Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></span>
+        <a href="Constant.html"><span class="name">Constant</span></a><span class="result"> extends <a href="Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>
       </span>
       </h4>
       <p class="comment cmt">A Constant represents an MMT constant.</p>
+    </li><li name="info.kwarc.mmt.api.symbols.Declaration" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="DeclarationextendsContentElement"></a>
+      <a id="Declaration:Declaration"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Declaration.html"><span class="name">Declaration</span></a><span class="result"> extends <a href="../ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Declaration unifies MMT symbols and MMT assignments.</p>
     </li><li name="info.kwarc.mmt.api.symbols.DeclaredStructure" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="DeclaredStructureextendsStructurewithDeclaredLink"></a>
       <a id="DeclaredStructure:DeclaredStructure"></a>
@@ -102,8 +115,21 @@
       </span>
       </h4>
       <p class="comment cmt">A DefinedStructure represents an MMT structure given by an existing morphism.</p>
+    </li><li name="info.kwarc.mmt.api.symbols.NestedModule" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NestedModuleextendsDeclaration"></a>
+      <a id="NestedModule:NestedModule"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="NestedModule.html"><span class="name">NestedModule</span></a><span class="result"> extends <a href="Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.symbols.PragConst" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="PragConstextendsSymbol"></a>
+      <a id="PragConstextendsDeclaration"></a>
       <a id="PragConst:PragConst"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -111,12 +137,52 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="PragConst.html"><span class="name">PragConst</span></a><span class="result"> extends <a href="Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a></span>
+        <a href="PragConst.html"><span class="name">PragConst</span></a><span class="result"> extends <a href="Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>
       </span>
       </h4>
       <p class="comment cmt">A Constant represents an MMT constant.</p>
+    </li><li name="info.kwarc.mmt.api.symbols.RealizedConstant" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="RealizedConstantextendsDeclaration"></a>
+      <a id="RealizedConstant:RealizedConstant"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="RealizedConstant.html"><span class="name">RealizedConstant</span></a><span class="result"> extends <a href="Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A RealizedConstant is a semantic entity whose precise structure is not accessible to the syntax
+ but which exposes functionality that the syntax can make use of.</p>
+    </li><li name="info.kwarc.mmt.api.symbols.RealizedOperatorConstant" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RealizedOperatorConstantextendsRealizedConstant"></a>
+      <a id="RealizedOperatorConstant:RealizedOperatorConstant"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="RealizedOperatorConstant.html"><span class="name">RealizedOperatorConstant</span></a><span class="result"> extends <a href="RealizedConstant.html" class="extype" name="info.kwarc.mmt.api.symbols.RealizedConstant">RealizedConstant</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A RealizedConstant representing the hidden realization of an operator/function</p>
+    </li><li name="info.kwarc.mmt.api.symbols.RealizedTypeConstant" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RealizedTypeConstantextendsRealizedConstant"></a>
+      <a id="RealizedTypeConstant:RealizedTypeConstant"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="RealizedTypeConstant.html"><span class="name">RealizedTypeConstant</span></a><span class="result"> extends <a href="RealizedConstant.html" class="extype" name="info.kwarc.mmt.api.symbols.RealizedConstant">RealizedConstant</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">A RealizedConstant representing the hidden realization of a type</p>
     </li><li name="info.kwarc.mmt.api.symbols.Structure" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="StructureextendsSymbolwithLink"></a>
+      <a id="StructureextendsDeclarationwithLink"></a>
       <a id="Structure:Structure"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -124,23 +190,10 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Structure.html"><span class="name">Structure</span></a><span class="result"> extends <a href="Symbol.html" class="extype" name="info.kwarc.mmt.api.symbols.Symbol">Symbol</a> with <a href="../modules/Link.html" class="extype" name="info.kwarc.mmt.api.modules.Link">Link</a></span>
+        <a href="Structure.html"><span class="name">Structure</span></a><span class="result"> extends <a href="Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a> with <a href="../modules/Link.html" class="extype" name="info.kwarc.mmt.api.modules.Link">Link</a></span>
       </span>
       </h4>
       <p class="comment cmt">A Structure represents an MMT structure.</p>
-    </li><li name="info.kwarc.mmt.api.symbols.Symbol" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="SymbolextendsContentElement"></a>
-      <a id="Symbol:Symbol"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">abstract </span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="Symbol.html"><span class="name">Symbol</span></a><span class="result"> extends <a href="../ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a></span>
-      </span>
-      </h4>
-      <p class="comment cmt">Symbol unifies MMT symbols and MMT assignments.</p>
     </li><li name="info.kwarc.mmt.api.symbols.TGroup" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TGroupextendsContentElement"></a>
       <a id="TGroup:TGroup"></a>
