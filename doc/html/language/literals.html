@@ -1,0 +1,204 @@
+<link rel="stylesheet" type="text/css" href="../style.css"/>
+
+<h2>Generic Literals</h2>
+
+MMT uses generic literals. That means that the MMT syntax does not commit to a particular set of literals.<br/>
+
+This is a deviation from OpenMath (which fixes - somewhat arbitrarily - integers, floating point numbers, strings, and byte arrays).
+<br/>
+
+MMT literals are
+<ul>
+<li>extensible: any type of literals can be added</li>
+<li>local: only theories that explicitly declare a type of literals may use them</li>
+<li>subject to computation: a type of literals can define computation rules for them, e.g., to simplify 1+1 into 2</li>
+</ul>
+
+<h3>Syntax</h3>
+
+<ul>
+<li>Concrete XML syntax: Literals are represented as pairs of a string S and a MMT symbol URI U.<br/>
+    U points to an extralinguistic catalog defining the syntax and semantics of a particular type of literals, i.e., the legal values and how S is parsed into a value.
+</li>
+<li>Abstract Scala syntax: Literals are represented by the class <a href="../../api/index.html#info.kwarc.mmt.api.objects.OMLIT">OMLIT</a>. They are essentially a dependent pair of a Scala type and a value of that type.<br/>
+Technically, the class <a href="../../api/index.html#info.kwarc.mmt.api.objects.RealizedType">RealizedType</a> is used to represent a type of literals: It bundles a Scala type with toString/fromString methods.<br/>
+It also defines generically Scala-style apply/unapply methods to easily construct and pattern-match literals.
+This has the effect that any kind of literal can be used as if it were a primitive language element.
+For example, the RealizedType <a href="../../api/index.html#info.kwarc.mmt.api.objects.OMI">OMI</a> permits writing OMI(1) to construct/pattern-match integer literals.
+</li>
+<li>Concrete text syntax: A RealizedType can optionally define a LexerExtension, which is used to add lexing support for literals.<br/>
+The available classes make it very easy to build LexerExtensions. For example, lexers for number literals are provided, and lexers for escaped literals (e.g., quoted strings) can be built by choosing the escape character.
+</li>
+</ul>
+
+<h3>Validity</h3>
+
+A literal is valid if the respective type of literals is available to the current theory.<br/>
+
+To declare literals, MMT provides the symbol level declaration <a href="../../api/index.html#info.kwarc.mmt.api.symbols.RealizedTypeConstant">RealizedTypeConstant</a>.<br/>
+
+The concrete MMT syntax does not permit declaring RealizedTypeConstants. It would not make sense because a declarative language can hardly define literals in appropriate generality.<br/>
+
+Instead, RealizedTypeConstants can be created by reflecting external models of MMT theories.
+
+<h3>Models as Infinite Theories</h3>
+
+We can think of a model M of an MMT theory T as a theory that
+ <ul>
+  <li>imports T</li>
+  <li>declares an infinite set of constants - one for every element of every universe: these are our literals</li>
+  <li>declares an infinite set of computation rules - one for application of a T-symbol of to M-literals</li>
+ </ul>
+Such a theory is sometimes called the diagram of M.<br/>
+
+<h3>Reflecting Scala Models as MMT Theories</h3>
+
+The <a href="../../api/index.html#info.kwarc.mmt.lf.ScalaExporter">lf.ScalaExporter</a> build target permits exporting an MMT theory graph with as a Scala library.<br/>
+
+This translates every
+<ul>
+<li>theory with meta-theory LF into a Scala trait</li>
+<li>include between theories into Scala inheritance</li>
+<li>named import between theories into a Scala field</li>
+<li>type-level declaration into a Scala type declaration (technically, a field declaring a RealizedType)</li>
+<li>term-level declaration into a Scala function declaration</li>
+</ul>
+
+Every Scala object implementing any of these generated traits can be regarded as a model of the corresponding theory.<br/>
+
+Moreover, MMT permits importing these models as if they were MMT theories.
+Every include referencing a Scala model (which must be on the classpath) is processed by generating a theory declaring RealizedTypeConstants and RealizedOperatorConstants (i.e., computation rules).<br/>
+
+Thus, a Scala model can be treated like an MMT theory, and if imported declares literals and computation rules for them.
+
+<h3>Example: Natural Number Literals</h3>
+
+<ol>
+<li>
+We declare an LF-theory of natural numbers:
+
+<pre>
+theory Nat : http://cds.omdoc.org/urtheories?LF =
+  nat   : type
+  zero  : nat            
+  one   : nat            
+  succ  : nat → nat      
+  plus  : nat → nat → nat
+  times : nat → nat → nat
+</pre>
+ 
+This theory acts as an interface between Scala models and MMT theories using them.
+</li>
+<li>
+We generate Scala classes by running <span class="code">archive NAME lf-scala</span>, which results in
+
+<pre>
+package lf
+
+trait Nat extends RealizationInScala {
+  val Nat_nat : RealizedType
+  declares(Nat.nat.path)(Nat_nat)
+
+  def Nat_zero: Nat_nat.univ
+  declares(RealizedOperator(Nat.zero.path, Nat_nat)(Nat_zero))
+
+  def Nat_one: Nat_nat.univ
+  declares(RealizedOperator(Nat.one.path, Nat_nat)(Nat_one))
+
+  def Nat_succ(x0: Nat_nat.univ): Nat_nat.univ
+  declares(RealizedOperator(Nat.succ.path, Nat_nat, Nat_nat)(Nat_succ))
+
+  def Nat_plus(x0: Nat_nat.univ, x1: Nat_nat.univ): Nat_nat.univ
+  declares(RealizedOperator(Nat.plus.path, Nat_nat, Nat_nat, Nat_nat)(Nat_plus))
+
+  def Nat_times(x0: Nat_nat.univ, x1: Nat_nat.univ): Nat_nat.univ
+  declares(RealizedOperator(Nat.times.path, Nat_nat, Nat_nat, Nat_nat)(Nat_times))
+}
+</pre>
+
+Here, <span class="code">RealizationInScala</span> is an MMT class that organizes the reflection.<br/>
+
+Every Scala declaration is coupled with a call to <span class="code">declares</span>, which determines which fields will be reflected. This permits adding fields either to the trait or to its subclasses, which will not be reflected.<br/>
+</li>
+
+<li>
+We implement the generated trait:
+
+<pre>
+package models
+
+object StandardNat extends lf.Nat {
+
+  val Nat_nat = new info.kwarc.mmt.api.objects.RealizedType {
+     type univ = BigInt
+     override def valid(u: BigInt) = u >= 0
+     def fromString(s: String) = s.toInt
+     override def lex = Some(new info.kwarc.mmt.api.parser.NumberLiteralLexer(false))
+  }
+
+  def Nat_zero: Nat_nat.univ = 0
+  def Nat_one: Nat_nat.univ = 1
+  def Nat_succ(x0: Nat_nat.univ): Nat_nat.univ = x0 + 1
+  
+  def Nat_plus(x0: Nat_nat.univ, x1: Nat_nat.univ) = x0 + x1
+  def Nat_times(x0: Nat_nat.univ, x1: Nat_nat.univ) = x0 * x1
+}
+</pre>
+
+Here all term-level constants are implemented in the obvious way.<br/>
+
+The type is implemented by creating a new instance of RealizedType:
+<ul>
+  <li>The underlying universe is Scala's <span class="code">BigInt</span></li>
+  <li>The validity function is overridden to create the subtype of positive integers.<br/>
+    In general, RealizedTypes can be subtype and/or quotients of Scala types. Quotients are obtained by overriding <span class="code">normalform</span>.
+  </li>
+  <li>The <span class="code">fromString</span> method, which is needed for parsing, is implemented in some reasonable way.
+  <li>The corresponding <span class="code">toString</span> method exists as well, but usually the default implementation can be retained.</li>  
+  </li>
+  <li>We override <span class="code">lex</span> to set a lexer.<br/>
+   Here, we reuse MMT's <a href="../../api/index.html#info.kwarc.mmt.api.parser.NumberLiteralLexer">default number literal lexer</a>.
+  </li>
+</ul>
+</li>
+
+<li>
+We reflect the model in an MMT theory:
+<pre>
+theory NatWithLiterals : http://cds.omdoc.org/urtheories?LF =
+  include ?Nat
+  include model?StandardNat
+
+  test  : nat = 4+3
+</pre>
+
+Not only, is <span class="code">4+3</span> well-typed at type <span class="code">nat</span>, it is also simplified to <span class="code">7</span> during type-checking.
+</li>
+
+<li>
+Other literal types can be defined accordingly.<br/>
+
+Here is an example type for URI literals:
+
+<pre>
+object URILiteral extends RealizedType {
+   type univ = java.net.URI
+   def fromString(s: String) = new java.net.URI(s)
+   override def lex = Some(new AsymmetricEscapeLexer("uri'", "'"))
+}
+</pre>
+
+This lets us use URI literals in MMT as <span class="code">uri'http://localhost/'</span>.<br/>
+
+And we can use them in Scala via the apply/unapply methods of RealizedType:
+
+<pre>
+  val uri = new java.net.URI("http://localhost/")
+
+  val uriLiteral: OMLIT = URILiteral(uri)
+  uriLiteral match {
+     case URILiteral(u) => println(u.toString)
+  }
+</pre>
+</li>
+</ol>
