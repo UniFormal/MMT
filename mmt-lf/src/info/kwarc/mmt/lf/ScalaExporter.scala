@@ -12,13 +12,15 @@ class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) 
    val key = "lf-scala"
    override val packageSep = List("lf")
    
+   private object IllFormed extends Throwable
    private def typeEras(t: Term): (List[GlobalName],GlobalName) = t match {
       case OMS(a) => (Nil, a)
       case ApplySpine(OMS(a),_) => (Nil, a)
       case FunType(args, ret) if ! args.isEmpty =>
          val argsE = args.map {case (_,t) => typeEras(t)._2}
          val retE = typeEras(ret)._2
-         (argsE, retE) 
+         (argsE, retE)
+      case _ => throw IllFormed
    }
    
    private def typeToScala(t: Term) : String = t match {
@@ -28,7 +30,7 @@ class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) 
          val argsS = args.map(a => typeToScala(a._2))
          val retS = typeToScala(ret)
          argsS.mkString("(", " => ", " => ") + retS + ")"
-      case _ => "error"
+      case _ => throw IllFormed
    }
       
    def doCoveredTheory(t: DeclaredTheory) {
@@ -36,7 +38,8 @@ class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) 
       outputTrait(t){c =>
          c.tp match {
             case None => ""
-            case Some(tp) =>
+            case _ if c.df.isDefined => ""
+            case Some(tp) => try {
                val synName = nameToScala(t.name) + "." + nameToScala(c.name) + ".path"
                val semName = nameToScalaQ(c.path)
                val Some((args,ret)) = FunType.unapply(tp)
@@ -72,6 +75,7 @@ class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) 
                   val df = scalaDef(c.path, argsS, typeToScala(ret))
                   */
                }
+            } catch {case IllFormed => "// skipping ill-formed " + c.name} 
          }
       }
       outputCompanionObject(t){c => ""}

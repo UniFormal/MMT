@@ -11,7 +11,7 @@ import info.kwarc.mmt.api.libraries._
  */
 abstract class Declaration extends ContentElement {
    /** the containing module */
-   val parent = home.toMPath
+   lazy val parent = home.toMPath
    /** the containing module
     * 
     * this is almost always OMMOD(p:MPath),

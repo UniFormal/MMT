@@ -51,22 +51,22 @@ class SimplificationRuleGenerator extends ChangeListener {
        	          if (controller.globalLookup.getConstant(eq).rl == Some("Eq"))
        	             generateRule(c, argls)
                    else
-                      error("not of eq-args shape")
+                      error(e, "not of eq-args shape")
                case ApplySpine(OMS(ded), List(ApplySpine(OMS(eq), argls))) if argls.length >= 2 =>
                    if (controller.globalLookup.getConstant(ded).rl == Some("Judgment") &&
                        controller.globalLookup.getConstant(eq).rl == Some("Eq"))
                       generateRule(c, argls)
                    else
-                      error("not of ded-eq-args shape")
+                      error(e, "not of ded-eq-args shape")
                case _ =>
-                  error("not a depth rule")
+                  error(e, "not a depth rule")
        	    }
            case _ =>
-              error("not a depth rule")
+              error(e, "not a depth rule")
        }
   }
-  private def error(msg: String) {
-     logError(msg)
+  private def error(e: ContentElement, msg: String) {
+     logError(e.path + ": " + msg)
   }
   /** @param args implicit ::: List(t1, t2) for a rule t1 ~> t2 */
   private def generateRule(c: symbols.Constant, args: List[Term]) {
@@ -131,7 +131,7 @@ class SimplificationRuleGenerator extends ChangeListener {
               bfr.reverse, ins.reverse, aft.reverse, implArgsOut, implArgsIn, t2)
       	  controller.extman.ruleStore.add(simplify)
            log("succesfully registered rule: " + ruleName)
-         case _ => error("no outer op")
+         case _ => error(c, "no outer op")
        }
      } catch {
         case e : DoesNotMatch => logError(e.msg)

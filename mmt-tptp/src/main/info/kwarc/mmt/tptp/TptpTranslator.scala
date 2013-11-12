@@ -58,7 +58,7 @@ class TptpTranslator {
     val d = new Document(new DPath(baseURI / theoryDir))
     
     // handle theory
-    val t = new DeclaredTheory(d.path, LocalPath(theory::Nil), Some(fofTh))
+    val t = new DeclaredTheory(d.path, LocalName(theory), Some(fofTh))
     this.theoryPath = t.path
     try {
       TptpTranslator.controller.get(t.path)
@@ -81,7 +81,7 @@ class TptpTranslator {
       val targetPath = targetBase + newTheory
       log("...importing/translating " + targetPath)
       translator.translate(theoryDir, newTheory, File(targetPath))
-      imports += MPath(d.path, LocalPath(newTheory::Nil))
+      imports += d.path ? newTheory
     }
     
     // parses the input file
@@ -132,7 +132,7 @@ class TptpTranslator {
     this.theoryDir = UNKNOWN
     this.theory = UNKNOWN
     val d = new Document(new DPath(baseURI / theoryDir))
-    val t = new DeclaredTheory(d.path, LocalPath(theory::Nil), Some(fofTh))
+    val t = new DeclaredTheory(d.path, LocalName(theory), Some(fofTh))
     this.theoryPath = t.path
     
     val parser = new TptpParser(tptpFormula)
@@ -178,7 +178,7 @@ class TptpTranslator {
     val included = item.getFileName.substring(1, item.getFileName.length - 1)
     val theoryDir = included.substring(0, included.lastIndexOf("/"));
     val theoryName = included.substring(included.lastIndexOf("/") + 1);
-    val targetTheory = MPath(DPath(baseURI / theoryDir), LocalPath(theoryName::Nil))
+    val targetTheory = DPath(baseURI / theoryDir) ? theoryName
     imports += targetTheory
 
     // translate the target theory (if it hasn't been already)'

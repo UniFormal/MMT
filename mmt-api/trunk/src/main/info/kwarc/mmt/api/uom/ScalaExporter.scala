@@ -75,11 +75,18 @@ trait GenericScalaExporter extends ContentExporter {
     * @param typeToScala yields the input and output type for a constant
     */ 
    protected def outputTrait(t: DeclaredTheory)(doCon: Constant => String) {
-     val includes = t.getIncludesWithoutMeta.map(i => " with " + mpathToScala(i, packageSep)).mkString("")
+     val includes = t.getIncludesWithoutMeta.filter {i =>
+        controller.globalLookup.getO(i) match {
+           // we only take basic theories for now
+           case Some(d: DeclaredTheory) => d.name.length == 1
+           case _ => false
+        } 
+     }
+     val includesS = includes.map(i => " with " + mpathToScala(i, packageSep)).mkString("")
      val tpathS = t.path.toString
      val name = nameToScala(t.name)
      rh.writeln(s"/** The type of realizations of the theory $tpathS */")
-     rh.writeln(s"trait $name extends RealizationInScala$includes {")
+     rh.writeln(s"trait $name extends RealizationInScala$includesS {")
      val domainOver = if (includes == "") "" else "override " // override included values
      rh.writeln(s"  ${domainOver}val _domain: TheoryScala = $name\n")
      t.getDeclarations foreach {

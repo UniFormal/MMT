@@ -12,8 +12,9 @@ class Closer(controller: Controller) {
     * recursive loads all theories included into p
     */
    def apply(p: MPath) {
-       lup.get(p) match {
-          case d: DeclaredTheory =>
+       val d = lup.getO(p)
+       d match {
+          case Some(d: DeclaredTheory) =>
              d.getIncludes foreach apply
              elab.elaborate(d)
           case _ =>

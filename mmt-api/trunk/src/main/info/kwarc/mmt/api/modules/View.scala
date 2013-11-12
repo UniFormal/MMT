@@ -21,12 +21,12 @@ abstract class View(doc : DPath, name : LocalName)
    protected def outerString = path + " : " + from.toString + " -> " + to.toString
    def toNode = (from, to) match {
 	   case (OMMOD(p), OMMOD(q)) =>
-         <view name={name.toPath} base={doc.toPath} from={p.toPath} to={q.toPath} implicit={if (isImplicit) "true" else null}>
+         <view name={name.last.toPath} base={doc.toPath} from={p.toPath} to={q.toPath} implicit={if (isImplicit) "true" else null}>
            {getMetaDataNode}
            {innerNodes}
          </view>
 	   case _ => 
-         <view name={name.toPath} base={doc.toPath}>
+         <view name={name.last.toPath} base={doc.toPath}>
            {getMetaDataNode}
            <from>{from.toOBJNode}</from><to>{to.toOBJNode}</to>
            {innerNodes}

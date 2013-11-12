@@ -53,7 +53,7 @@ class ExtensionManager(controller: Controller) extends Logger {
    private[api] var querytransformers : List[QueryTransformer] = Nil
    private[api] var changeListeners   : List[ChangeListener]  = Nil
    private[api] var presenters    : List[Presenter]    = Nil
-   private[api] var serverPlugins : List[ServerPlugin] = Nil
+   private[api] var serverPlugins : List[ServerExtension] = Nil
    private[api] var loadedPlugins : List[Plugin]       = Nil
    private[api] var parserExtensions : List[ParserExtension] = Nil
    private[api] var queryExtensions : List[QueryExtension] = Nil
@@ -142,9 +142,9 @@ class ExtensionManager(controller: Controller) extends Logger {
           log("  ... as query extension")
           queryExtensions ::= ext.asInstanceOf[QueryExtension]
        }
-       if (ext.isInstanceOf[ServerPlugin]) {
+       if (ext.isInstanceOf[ServerExtension]) {
           log("  ... as server plugin")
-          serverPlugins ::= ext.asInstanceOf[ServerPlugin]
+          serverPlugins ::= ext.asInstanceOf[ServerExtension]
        }
        ext.start(args)
    }
@@ -156,7 +156,7 @@ class ExtensionManager(controller: Controller) extends Logger {
    /** retrieves an applicable Presenter */
    def getPresenter(format: String) : Option[Presenter] = presenters.find(_.isApplicable(format))
    /** retrieves an applicable server plugin */
-   def getServerPlugin(cont : String) : Option[ServerPlugin] = serverPlugins.find(_.isApplicable(cont))
+   def getServerPlugin(cont : String) : Option[ServerExtension] = serverPlugins.find(_.isApplicable(cont))
    /** retrieves an applicable parser extension */
    def getParserExtension(se: StructuralElement, keyword: String) : Option[ParserExtension] = parserExtensions find {_.isApplicable(se, keyword)}
    /** retrieves the closest Foundation that covers a theory, if any */

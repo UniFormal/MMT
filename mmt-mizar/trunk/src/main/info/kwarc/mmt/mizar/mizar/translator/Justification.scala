@@ -10,7 +10,7 @@ object JustificationTranslator {
   
   def translateJustification(j : MizJustification) : Term = j match {
     case i : MizInference => translateInference(i)
-    case s : MizSkippedProof => OMHID //TODO
+    case s : MizSkippedProof => Mizar.constant("skipped")
     case p : MizProof => translateProof(p)
   } 
   
@@ -18,7 +18,7 @@ object JustificationTranslator {
   def translateInference(i : MizInference) : Term = i match {
     case by : MizBy => translateBy(by)
     case from : MizFrom => translateFrom(from)
-    case ei : MizErrorInf => OMHID //TODO
+    case ei : MizErrorInf => Mizar.constant("error")
   }
   
   def translateBy(by : MizBy) : Term = {
@@ -51,10 +51,10 @@ object ReasoningTranslator {
   }
   
   def translateProofSteps(pfSteps : List[MizProofItem]) : Term = pfSteps match {
-    case Nil => OMHID //TODO case hd :: Nil ?
+    case Nil => ??? //TODO case hd :: Nil ?
     case (hd : MizSkeletonItem) :: tl => translateSkeletonItem(hd, tl)
     case (hd : MizAuxiliaryItem) :: tl => translateAuxiliaryItem(hd, tl)
-    case _ => OMHID //TODO
+    case _ => ??? //TODO
   }
   
   def translateSkeletonItem(sk : MizProofItem, rest : List[MizProofItem]) : Term = sk match {

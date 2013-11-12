@@ -20,12 +20,11 @@ class TptpCompiler extends Compiler with QueryTransformer {
   val key = "tptp-omdoc"  
 
   def includeFile(n: String) : Boolean = n.endsWith(".tptp")
-  def buildOne(in: File, dpath: DPath, out: File) : List[SourceError] = {
-    var errors: List[SourceError] = Nil
-    val fileName = in.toJava.getName
+  def buildOne(bf: archives.BuiltFile) {
+    val fileName = bf.inFile.toJava.getName
     if (!fileName.contains(TptpUtils.FORM))
-      return errors
-    val path = in.toJava.getPath
+      return
+    val path = bf.inFile.toJava.getPath
     
     // compute TPTP directory in which the input file is (e.g. Axioms/SET007/inputFile)
     var fileDir = ""
@@ -33,18 +32,16 @@ class TptpCompiler extends Compiler with QueryTransformer {
       fileDir = path.substring(path.lastIndexOf("Axioms"), path.lastIndexOf("/"))
     else
       fileDir = path.substring(path.lastIndexOf("Problems"), path.lastIndexOf("/"))
-    val dir = out.toJava.getParentFile
+    val dir = bf.outFile.toJava.getParentFile
     if (!dir.exists)
       dir.mkdirs
     
     // translate the input file to OMDoc
     val translator = new TptpTranslator()
-    translator.translate(fileDir, fileName, in)
+    translator.translate(fileDir, fileName, bf.inFile)
     
     // write to output file
-    write(out.setExtension("omdoc"), fileDir, fileName)
-    
-    errors
+    write(bf.outFile.setExtension("omdoc"), fileDir, fileName)
   }
   
 	def write(out: File, fileDir: String, name: String) {

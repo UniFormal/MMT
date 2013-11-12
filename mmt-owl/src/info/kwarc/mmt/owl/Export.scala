@@ -33,13 +33,13 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
     def globalNameToIRI(gname : GlobalName) : IRI = {
     	println("globalname" + gname)
         gname match {
-	    	case OMMOD(doc ? !("_")) % name => IRI.create(doc.toPath + "/" + name.toPath) //flat
+	    	case OMMOD(doc ? !(SimpleStep("_"))) % name => IRI.create(doc.toPath + "/" + name.toPath) //flat
 	    	case _ => IRI.create(gname.toPath)
         }
     }
         
     def modNameToIRI(m: MPath) : IRI = {
-        if (m.name == LocalPath(List("_")))
+        if (m.name == LocalName("_"))
 	  	   IRI.create(m.doc.toPath)
 	    else 
 	  	   IRI.create(m.toPath)
@@ -515,7 +515,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	
 	def annotationValueToOWL(t : Term) : OWLAnnotationValue = { 
 		t match {
-		  case OMURI(i) => IRI.create(i.toString) 
+		  case URILiteral(i) => IRI.create(i.toString) 
 		  case OMSTR(lt) => literalToOWL(t) 
 		  case OMF(lt) => literalToOWL(t)
 		  case OMI(lt) => literalToOWL(t)

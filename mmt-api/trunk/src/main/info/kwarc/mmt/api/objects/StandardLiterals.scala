@@ -7,7 +7,6 @@ import uom.OpenMath
 trait IntegerLiteral extends SemanticType {
    type univ = BigInt
    def fromString(s: String) = s.toInt
-   def toString(u: univ) = u.toString
    override def lex = Some(new parser.NumberLiteralLexer(false))
 }
 
@@ -21,7 +20,6 @@ object OMF extends RealizedType {
    init(OpenMath.OMF.path, OpenMath._path)
    type univ = Double
    def fromString(s: String) = s.toDouble
-   def toString(u: univ) = u.toString
    override def lex = Some(new parser.NumberLiteralLexer(true))
 }
 
@@ -30,7 +28,6 @@ object OMSTR extends RealizedType {
    init(OpenMath.OMSTR.path, OpenMath._path)
    type univ = String
    def fromString(s: String) = s
-   def toString(u: univ) = u
    override def lex = quotedLiteral("")
 }
 
@@ -39,7 +36,6 @@ object URILiteral extends RealizedType {
    init(OpenMath.OMSTR.path, OpenMath._path)
    type univ = utils.URI
    def fromString(s: String) = utils.URI(s)
-   def toString(u: univ) = u.toString
    override def lex = quotedLiteral("uri")
 }
 
@@ -47,7 +43,13 @@ object URILiteral extends RealizedType {
  *  
  *  synType must still be set as desired after creating an instance
  */
-class StandardNat extends RealizedType with IntegerLiteral {
+class StandardInt extends RealizedType with IntegerLiteral
+
+/** standard natural numbers
+ *  
+ *  synType must still be set as desired after creating an instance
+ */
+class StandardNat extends StandardInt {
    override def valid(u: BigInt) = u >= 0
 }
 

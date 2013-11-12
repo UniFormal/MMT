@@ -34,7 +34,7 @@ object TranslationController {
 	var currentVersion : Int = -1
     var currentAid : String = null
     
-    def localPath = LocalPath(currentAid :: Nil)
+   def localPath = LocalName(currentAid)
 	def currentDocument : DPath = DPath(Mizar.mmlBase / currentVersion.toString)
 	def currentTheory : MPath = currentDocument ? localPath
 	def currentSource = currentBase + "/source/" + currentVersion.toInt + "/" + currentAid + "/miz"
