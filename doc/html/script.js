@@ -4,7 +4,7 @@ function goto(s) {
   var cssTag = document.createElement("link");
   cssTag.setAttribute("rel", "stylesheet");
   cssTag.setAttribute("type", "text/css");
-  cssTag.setAttribute("href", filename);
+  cssTag.setAttribute("href", 'style.css');
   frames[1].document.head.appendChild(cssTag)
 }
 
