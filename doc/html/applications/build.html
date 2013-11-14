@@ -1,8 +1,60 @@
-MMT can be used as a build tool.
+<h2>Calling Build Targets</h2>
 
-Atomic operations include compiling (parsing, type checking, and export as OMDoc), indexing, and various exports (HTML, SVG, ...).
-   
-After checking the archives from above, users should do
-run-file.sh urtheories/build.msl
-to make the urtheories archive available to other archives.
+MMT can be used as a build tool using a special <a href="shell.html">shell</a> command.<br/>
 
+<div class="code">build ARCHIVE TARGET [P/A/T/H]</div>
+runs the build target <span class="code">TARGET</span> on the archive with id <span class="code">ARCHIVE</span>.
+Optionally, the operation can be restricted to the subfolder <span class="code">P/A/T/H</span>.<br/>
+
+<h2>Defining Build Targets</h2>
+
+The collection of build targets is maintained by the <a href="extensions.html">extension manager</a>. New build targets are defined by implementing the <a href="../../api/index.html#info.kwarc.mmt.api.archives.BuildTarget">archives.BuildTarget</a> class.<br/>
+
+Build target modfiers and change management are supported for automatically for every build target.
+
+<h2>Build Target Modifiers</h2>
+
+The target <span class="code">TARGET*</span> only operates on input files that have been modified since the last build.<br/>
+
+The target <span class="code">-TARGET</span> cleans, i.e., deletes the generated files.<br/>
+
+The file-properties of the operating system are used to detect changes. Timestamps for the previous build are stored in <span class="code">META-INF/timestamps</span>.
+
+<h2>Individual Build Targets</h2>
+
+Many build targets work with input and/or output dimensions. Those are the top level folders within an archive.<br/>
+
+The most important build targets (which are available by default) include:
+<table border="1">
+<tr>
+<th>Target</th><th>Input dimension</th><th>Output dimension</th><th>Provided by</th><th>Description</th>
+</tr>
+<tr>
+    <td>mmt-omdoc</td><td>source</td><td>compiled</td><td>api</td>
+    <td>parses, type-checks, and exports as OMDoc</td>
+</tr>
+<tr>
+    <td>twelf-omdoc</td><td>source</td><td>compiled</td><td>LF plugin</td>
+    <td>like mmt-omdoc but for Twelf syntax</td>
+</tr>
+<tr>
+    <td>index</td><td>compiled</td><td>content, narration, relational</td><td>api</td>
+    <td>indexes and prepares for MMT lookups, the produced dimensions are from where MMT retrieves content, documents, and the ontology, respectively</td>
+</tr>
+<tr>
+    <td>html</td><td>narration</td><td>html</td><td>api</td>
+    <td>produces html website, which relates to source roughly as JavaDoc does to Java</td>
+</tr>
+<tr>
+    <td>svg</td><td>narration</td><td>svg</td><td>api</td>
+    <td>produces theory graphs</td>
+</tr>
+<tr>
+    <td>scala</td><td>content</td><td>scala</td><td>api</td>
+    <td>produces Scala stubs for all MMT theories</td>
+</tr>
+<tr>
+    <td>lf-scala</td><td>content</td><td>lf-scala</td><td>LF plugin</td>
+    <td>produces LF-aware typed Scala stubs</td>
+</tr>
+</table>
