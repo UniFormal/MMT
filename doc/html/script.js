@@ -1,6 +1,8 @@
 function goto(s) {
   $('#content').attr('src',s)
+}
 
+function addStyle() {
   var cssTag = document.createElement("link");
   cssTag.setAttribute("rel", "stylesheet");
   cssTag.setAttribute("type", "text/css");
