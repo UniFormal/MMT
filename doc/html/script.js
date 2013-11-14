@@ -1,5 +1,11 @@
 function goto(s) {
-   $('#content').attr('src',s)
+  $('#content').attr('src',s)
+
+  var cssTag = document.createElement("link");
+  cssTag.setAttribute("rel", "stylesheet");
+  cssTag.setAttribute("type", "text/css");
+  cssTag.setAttribute("href", filename);
+  frames[1].document.head.appendChild(cssTag)
 }
 
 $(function() {
