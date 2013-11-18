@@ -1,7 +1,8 @@
 <p>
 The MMT API provides a number of extension interfaces that permit injecting customizing the behavior of MMT algorithms.<br/>
+All extensions are persistent and have full access to the MMT controller.<br/>
 
-All these interfaces inherit from <a href="../api/index.html#info.kwarc.mmt.api.frontend.Extension">info.kwarc.mmt.api.frontend.Extension</a> and can be studied by browsing the know abstract subclasses in the API documentation.<br/>
+All extensions inherit from <a href="../api/index.html#info.kwarc.mmt.api.frontend.Extension">info.kwarc.mmt.api.frontend.Extension</a> and can be studied by browsing the know abstract subclasses in the API documentation.<br/>
 
 The API also includes numerous concrete subclasses.
 </p>
@@ -17,8 +18,9 @@ Programmers load them using the appropriate method of the <a href="../api/index.
 To write an extension, simply subclass the desired extension interface in Java or Scala.<br/>
 
 The subclass must have a single constructor that takes no arguments.<br/>
+It may override the <span class="code">start</span> and <span class="code">destroy</span> methods to perform arbitrary .<br/>
+The former also receives a list of strings as arguments, which users can pass when registering the extension.<br/>
 
-Extensions are persistent and have full access to the MMT controller.
 
 <h2>Extension Interfaces</h2>
 
