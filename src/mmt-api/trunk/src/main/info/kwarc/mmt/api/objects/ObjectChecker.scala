@@ -14,12 +14,6 @@ import scala.collection.mutable.{HashSet,HashMap}
  *   but what if there are unknowns whose type cannot be inferred? Is that even possible?
  * limitedSimplify must include computation, definition expansion, but can stop on GlobalChange; but safety is usually needed
  * constants have equality rule: injectivity and implicit arguments used to obtain necessary/sufficient condition (not preserved by morphism); congruence if no rule applicable
- * 
- * if an unknown type is a Pi but the variable only occurs applied, the unknown cannot be solved
- *   we get stuck on a constraint like x: A, f: ? x |- f x : B
- *   and cannot progress into |- f: Pi x:A. B
- *   and neither from there into ? x = Pi x:A .B and solve for ?
- *   solution: perform variable transformation in ApplyTerm rule
  */
 
 /** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
@@ -116,9 +110,9 @@ object InferredType extends TermProperty[Term](utils.mmt.baseURI / "clientProper
  * 
  * Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.  
  */
-class Solver(val controller: Controller, theory: Term, unknowns: Context) extends Logger {
+class Solver(val controller: Controller, theory: Term, initUnknowns: Context) extends Logger {
    /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */ 
-   private var solution : Context = unknowns
+   private var solution : Context = initUnknowns
    /** the unknowns that were solved since the last call of activate (used to determine which constraints are activatable) */
    private var newsolutions : List[LocalName] = Nil
    /** tracks the delayed constraints, in any order */ 
@@ -174,7 +168,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
    /** the SubstitutionApplier to be used throughout */
    private implicit val sa = new MemoizedSubstitutionApplier
    /** shortcut for UOM simplification */
-   private def simplify(t : Term) = controller.uom.simplify(t, theory, unknowns)
+   private def simplify(t : Term) = controller.uom.simplify(t, theory, solution)
    /** used for rendering objects, should be used by rules if they want to log */
    implicit val presentObj : Obj => String = controller.presenter.asString
    
@@ -190,7 +184,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
          }
       }
       logGroup {
-         report(prefix, "unknowns: " + unknowns.toString)
+         report(prefix, "unknowns: " + initUnknowns.toString)
          report(prefix, "solution: " + solution.toString)
          val unsolved = solution.variables.filter(_.df.isEmpty).map(_.name)
          if (! unsolved.isEmpty)
@@ -287,18 +281,26 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     */
    def solve(name: LocalName, value: Term)(implicit stack: Stack, history: History) : Boolean = {
       log("solving " + name + " as " + value)
-      val valueS = simplify(value)
-      parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
       val (left, solved :: right) = solution.span(_.name != name)
-      if (solved.df.isDefined)
-         check(Equality(stack, valueS, solved.df.get, solved.tp))(history + "solution must be equal to previously found solution") //TODO
-      else {
-         val valueSS = valueS ^^ left.toPartialSubstitution // substitute solutions of earlier variables that have been found already
-         val rightS = right ^^ (OMV(name) / valueSS) // substitute in solutions of later variables that have been found already
-         solution = left ::: solved.copy(df = Some(valueSS)) :: rightS
+      if (solved.df.isDefined) {
+         check(Equality(stack, value, solved.df.get, solved.tp))(history + "solution must be equal to previously found solution") //TODO
+      } else {
+         val valueS = simplify(value ^^ left.toPartialSubstitution) // substitute solutions of earlier variables that have been found already
+         parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
+         val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of later variables that have been found already
+         solution = left ::: solved.copy(df = Some(valueS)) :: rightS
          newsolutions = name :: newsolutions
          true
       }
+   }
+   /**
+    * @param newVars new unknowns; creating new unknowns during checking permits variable transformations
+    * @param before the variable before which to insert the new ones 
+    */
+   def addUnknowns(newVars: Context, before: LocalName): Boolean = {
+      val (left, right) = solution.span(_.name != before)
+      solution = left ::: newVars ::: right
+      true
    }
    /** registers the solved type for a variable
     * 
@@ -338,7 +340,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
      val subs = solution.toPartialSubstitution
      def prepare(t: Term) = simplify(t ^^ subs)
      def prepareS(s: Stack) =
-        Stack(s.frames.map(f => Frame(f.theory, controller.uom.simplifyContext(f.context ^^ subs, theory, unknowns))))
+        Stack(s.frames.map(f => Frame(f.theory, controller.uom.simplifyContext(f.context ^^ subs, theory, solution))))
      val mayhold = j match {
         case Typing(stack, tm, tp, typS) =>
            val tmS = tm ^^ subs
@@ -401,9 +403,9 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
      implicit val stack = j.stack
      tm match {
        // the foundation-independent cases
-       case OMV(x) => (unknowns ++ stack.context)(x).tp match {
+       case OMV(x) => (solution ++ stack.context)(x).tp match {
          case None =>
-            if (unknowns.isDeclared(x))
+            if (solution.isDeclared(x))
               solveType(x, tp) //TODO: check for occurrences of bound variables?
             else
               false //untyped variable type-checks against nothing
@@ -429,7 +431,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
                case Some(itp) =>
                   check(Equality(stack, itp, tpS, None))(history + ("inferred type must be equal to expected type; the term is: " + presentObj(tm)))
                case None =>
-                  delay(Typing(stack, tm, tpS, j.tpSymb))
+                  delay(Typing(stack, tm, tpS, j.tpSymb))(history + "type inference failed")
              }
          }
      }
@@ -450,24 +452,28 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
    def inferType(tm: Term)(implicit stack: Stack, history: History): Option[Term] = {
      log("inference: " + presentObj(tm) + " : ?")
      history += "inferring type of " + presentObj(tm)
-     // return previously inferred type, if any
+     // return previously inferred type, if any (previously unsolved variables are substituted)
      InferredType.get(tm) match {
-        case s @ Some(_) => return s
+        case s @ Some(_) => return s.map(_ ^^ solution.toPartialSubstitution)
         case _ =>
      }
      val res = logGroup {
         log("in context: " + presentObj(stack.context))
         val resFoundInd = tm match {
           //foundation-independent cases
-          case OMV(x) => (unknowns ++ stack.context)(x).tp
+          case OMV(x) =>
+             history += "lookup in context"
+             (solution ++ stack.context)(x).tp
           case OMS(p) =>
-            getType(p) orElse {
-              getDef(p) match {
-                case None => None
-                case Some(d) => inferType(d) // expand defined constant
-              }
-            }
+             history += "lookup in theory"
+             getType(p) orElse {
+               getDef(p) match {
+                 case None => None
+                 case Some(d) => inferType(d) // expand defined constant
+               }
+             }
           case l: OMLIT =>
+             history += "lookup in literal"
              // structurally well-formed literals carry their type
              return Some(OMS(l.rt.synType))
           case _ => None
@@ -477,7 +483,9 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
         resFoundInd orElse {
             val (tmS, ruleOpt) = limitedSimplify(tm,ruleStore.inferenceRules)
             ruleOpt match {
-              case Some(rule) => rule(this)(tmS)
+              case Some(rule) =>
+                 history += ("applying rule for " + rule.head.name.toString)
+                 rule(this)(tmS)
               case None => None
             }
         }
@@ -583,16 +591,25 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     * @param t a term whose torso should be expanded
     * @return (t', changed) where t' is the resulting term and changed is true if an expansion occurred
     */ 
-   private def expandTorsoDef(t: TorsoForm) : (TorsoForm, Boolean) = t.torso match {
+   private def expandTorsoDef(t: TorsoForm, safe: Boolean = false) : (TorsoForm, Boolean) = t.torso match {
       case OMS(c) =>
          getDef(c) match {
             case Some(df) =>
                val tE = TorsoForm(df, t.apps).toHeadForm
-               val tES = simplify(tE)
+               val tES = if (safe) tE else simplify(tE)
                (TorsoForm.fromHeadForm(tES), true)
             case None => (t, false)
          }
       case _ => (t, false)
+   }
+   /**
+    * like expandTorsoDef but for Terms
+    */ 
+   private def expandTorsoDef(t: Term) : (Term, Boolean) =  {
+      val tf = TorsoForm.fromHeadForm(t)
+      val (tfS, b) = expandTorsoDef(tf, true)
+      if (b) (tfS.toHeadForm, true)
+      else (t, false)
    }
    
    /**
@@ -715,14 +732,14 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
       tm1 match {
          //foundation-independent case: direct solution of an unknown variable
          case OMV(m) =>
-            val mIndex = unknowns.index(m).getOrElse {
+            val mIndex = solution.index(m).getOrElse {
                // if m is not declared in unknowns, i.e., is a bound variable, nothing to do 
                return false
             }
             // fvsEarlier: all unknowns in tm2 are declared before m
             val fvs = tm2.freeVars
             val fvsEarlier = fvs.forall {v =>
-               unknowns.index(v) match {
+               solution.index(v) match {
                   case Some(vIndex) => vIndex > mIndex
                   case None => false
                }
@@ -737,7 +754,7 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
                // meta-variable solution has free variable --> type error unless free variable disappears later
                // note: tm2 should be simplified - that may make a free variable disappear
          //apply a foundation-dependent solving rule selected by the head of tm1
-         case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if unknowns.isDeclared(m) && ! tm2.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
+         case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tm2.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
             ruleStore.solutionRules.get(h) match {
                case None => false
                case Some(rule) => rule(this)(tm1, tm2)
@@ -787,9 +804,9 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     * @param priority exactly the rules with this Priority are applied */
    //TODO call this method at appropriate times
    private def forwardRules(priority: ForwardSolutionRule.Priority)(implicit stack: Stack, history: History): Boolean = {
-      val results = unknowns.zipWithIndex map {
+      val results = solution.zipWithIndex map {
          case (vd @ VarDecl(x, Some(tp), None), i) =>
-            implicit val con : Context = unknowns.take(i)
+            implicit val con : Context = solution.take(i)
             limitedSimplify(tp, ruleStore.forwardSolutionRules) match {
                case (tpS, Some(rule)) if rule.priority == priority => rule(this)(vd)
                case _ => false 
@@ -815,24 +832,30 @@ class Solver(val controller: Controller, theory: Term, unknowns: Context) extend
     *  @param stack the context of tm
     *  @return (tmS, Some(a)) if tmS is simple and simple(tm)=tmS; (tmS, None) if tmS is not simple but no further simplification rules are applicable
     */
-    //TODO test for definition expansion, simplification in types - when/how to do it?
-   private def limitedSimplify[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term,Option[A]) = {
+    //TODO test for deep definition expansion
+   def limitedSimplify[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term,Option[A]) = {
       simple(tm) match {
          case Some(a) => (tm,Some(a))
          case None => tm.head match {
-            case None => (tm, None)
             case Some(h) =>
                val rOpt = ruleStore.computationRules.get(h)
                rOpt match {
-                  case None => (tm, None)
+                  case None =>
+                     val (tmS, changed) = expandTorsoDef(tm)
+                     if (changed) limitedSimplify(tmS)(simple)
+                     else (tmS, None)
                   case Some(rule) =>
                      rule(this)(tm) match {
                         case Some(tmS) =>
                            log("simplified: " + tm + " ~~> " + tmS)
                            limitedSimplify(tmS.from(tm))(simple)
-                        case None => (tm, None) 
+                        case None => 
+                           val (tmS, changed) = expandTorsoDef(tm)
+                           if (changed) limitedSimplify(tmS)(simple)
+                           else (tmS, None)
                      }
                }
+            case None => (tm, None)
          }
       }
    }

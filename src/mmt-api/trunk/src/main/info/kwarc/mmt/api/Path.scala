@@ -292,7 +292,8 @@ object Path {
    /** splits /-separated sequence of (String | "[" String "]") into its components
     * []-wrappers are preserved
     * []-wrapped components may contain /
-    * components may be empty
+    * components may be empty, initial or final / causes empty component
+    * empty string is parsed as Nil
     */
    private def splitName(s: String): List[String] = {
       var left : String = s            //string that is left to parse
@@ -303,7 +304,7 @@ object Path {
       //called when the next character is appended to the current segment
       def charDone {current = current + left(0); left = left.substring(1)}
       //parses s segment-wise; if a segment starts with [, pass control to complex
-      def start {   if (left == "")            {if (current != "") segmentDone}
+      def start {   if (left == "")            {if (current != "" || ! seen.isEmpty) segmentDone}
                else if (left.startsWith("/[")) {segmentDone; left = left.substring(1); complex}
                else if (left.startsWith("/"))  {segmentDone; left = left.substring(1); start}
                else                            {charDone; start}
@@ -324,8 +325,6 @@ object Path {
       var l = splitName(n)
       if (relative)
          l = l.drop(1)
-      if (l.exists(_ == ""))
-         throw ParseError("cannot parse " + n + " (local path may not have empty component or end in slash)")
       l = l map xml.decodeURI
       LocalRef(l, ! relative)
    }

@@ -341,7 +341,8 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
                  val found = controller.extman.getFoundation(meta).getOrElse(throw PresentationError("no foundation found"))
                  try {
                     val tp = found.inference(o, lpar.asContext)(controller.globalLookup)
-                    present(tp, gpar, lpar)
+                    val tpS = controller.uom.simplify(tp, meta, lpar.asContext)
+                    present(tpS, gpar, lpar)
                  } catch {case e : Throwable => gpar.rh(e.getMessage)}
                  
               case c => throw PresentationError("cannot infer type of " + c)

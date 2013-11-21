@@ -31,7 +31,7 @@ object Realization {
       val real = new Realization(mp.parent, mp.name, r._domain._path)
       r._types foreach {rtL =>
          val (synType, rt) = rtL()   
-         rt.init(synType, mp)
+         if (rt.synType == null) rt.init(synType, mp) // included RealizedTypes are already initialized
          val rc = new RealizedTypeConstant(real.toTerm, synType.name, rt)
          real.add(rc)
       }
