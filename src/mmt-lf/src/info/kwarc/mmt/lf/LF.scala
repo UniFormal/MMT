@@ -237,16 +237,16 @@ class LFF extends Foundation {
  	 				case Some(t) => equal(OMS(d), t, G) //flipping the order so that if both c and d have definitions, d is expanded next 
  	 			}
  	 		}
- 	 		case (Lambda(x1,a1,t1), Lambda(x2,a2,t2)) => 
- 	 			val G2 = G ++ OMV(x1) % a1
- 	 			equal(a1, a2, G) && equal(t1, t2^(OMV(x2)/OMV(x1)), G2)
+ 	 		case (Lambda(x1,a1,t1), Lambda(x2,a2,t2)) =>
+ 	 		   val x = if (x1 == x2) x1 else x1/""
+ 	 			val G2 = G ++ OMV(x) % a1
+ 	 			equal(a1, a2, G) && equal(t1^(OMV(x1)/OMV(x)), t2^(OMV(x2)/OMV(x)), G2)
  	 		case (Pi(x1,a1,t1), Pi(x2,a2,t2)) => 
- 	 			val G2 = G ++ OMV(x1) % a1
- 	 			equal(a1, a2, G) && equal(t1, t2^(OMV(x2)/OMV(x1)), G2)
+ 	 		   val x = if (x1 == x2) x1 else x1/""
+ 	 			val G2 = G ++ OMV(x) % a1
+ 	 			equal(a1, a2, G) && equal(t1^(OMV(x1)/OMV(x)), t2^(OMV(x2)/OMV(x)), G2)
  	 		case (Apply(f1,arg1), Apply(f2,arg2)) => {
  	 			if (equal(f1, f2, G) && equal(arg1, arg2, G)) true else {
-        		//val tm1r = reduce(tm1, Context())  // why empty context?
-        		//val tm2r = reduce(tm2, Context())
  	 				val tm1r = reduce(tm1, G)
  	 				val tm2r = reduce(tm2, G)
  	 				if (tm1r != tm1 || tm2r != tm2) {
@@ -310,9 +310,9 @@ class LFF extends Foundation {
 	   			val r = reduce(funtype, G)
 	   			r match {
 	   				case Pi(x,a,b) =>
-	   					if (equal(argtype, a, G))	
+	   					   if (equal(argtype, a, G))	
 	   						b ^ G.id ++ OMV(x)/arg
-	   					else throw LFError("argument type mismatch")
+	   					else throw LFError("argument type mismatch: " + argtype + "   !=  " + a)
 	   				case _ => throw LFError("application of non-function")
 	   			}
 	   		case _ => throw LFError("ill-formed")
