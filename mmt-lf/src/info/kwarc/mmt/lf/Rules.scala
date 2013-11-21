@@ -9,6 +9,39 @@ object Common {
    /** convenience function for recursively checking the judgement |- a: type */
    def isType(solver: Solver, a: Term)(implicit stack: Stack, history: History) =
       solver.check(Typing(stack, a, OMS(Typed.ktype), Some(OfType.path)))(history + "type of bound variable must be a type")
+
+   /** performs safe simplifications and variable transformation to force the argument to become a Pi
+    * @param solver the Solver
+    * @param tp the function type
+    * @return a type equal to tp that may have Pi shape  
+    */
+   def makePi(solver: Solver, tp: Term)(implicit stack: Stack, history: History): Term = {
+      val tpS = solver.limitedSimplify(tp)(Pi.unapply)._1
+      tpS match {
+         case Pi(x,a,b) => tpS
+         case ApplyGeneral(OMV(m), args) =>
+           // check that tp is unknown applied to variables 
+           if (! solver.getUnsolvedVariables.isDeclared(m))
+              return tpS
+           args foreach {
+              case OMV(u) => 
+              case _ => return tpS
+           }
+           val mD = OMV(m/"d")
+           val mC = OMV(m/"c")
+           val mV = OMV(m/"v")
+           val mSol = Pi(mV.name, ApplyGeneral(mD, args), ApplyGeneral(mC, args ::: List(mV)))
+           // if we have not done the variable transformation before, add the new unknowns
+           if (! solver.getPartialSolution.isDeclared(mD.name)) {
+              val newVars = Context(VarDecl(mD.name, None, None), VarDecl(mC.name, None, None))
+              solver.addUnknowns(newVars, m)
+           }
+           // solve m in terms of newVars
+           val success = solver.check(Equality(stack, tpS, mSol, Some(OMS(Typed.ktype))))
+           if (success) mSol else tpS
+         case _ => tpS 
+      }
+   }
 }
 
 import Common._
@@ -52,15 +85,25 @@ object LambdaTerm extends InferenceRule(Lambda.path, OfType.path) {
 object ApplyTerm extends InferenceRule(Apply.path, OfType.path) {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Term] = tm match {
      case Apply(f,t) =>
-        solver.inferType(f)(stack, history.branch) flatMap {
-           case tp @ Pi(x,a,b) =>
-               history += "function type is: " + solver.presentObj(tp) 
-               solver.check(Typing(stack, t, a))(history + "argument must have domain type")
-               Some(b ^ (x / t))
-           case _ =>
-              // TODO: definition expansion, simplification, to turn into Pi
-              // definition expansion must also consider unknown variables whose definitions are not known yet
+        history += "inferring type of function"
+        val fTOpt = solver.inferType(f)(stack, history.branch)
+        fTOpt match {
+           case None =>
+              history += "failed"
               None
+           case Some(fT) =>
+              history += "function type is: " + solver.presentObj(fT)
+              val fTPi = Common.makePi(solver, fT)
+              if (fTPi != fT)
+                 history += "function type is: " + solver.presentObj(fTPi)
+              fTPi match {
+                 case Pi(x,a,b) =>
+                    solver.check(Typing(stack, t, a))(history + "argument must have domain type")
+                    Some(b ^ (x / t))
+                 case _ =>
+                    // definition expansion must also consider unknown variables whose definitions are not known yet
+                    None
+              }
         }
      case _ => None // should be impossible
    }
@@ -269,7 +312,7 @@ object Solve extends SolutionRule(Apply.path) {
                    newCon = newCon ++ vd
                 }
              }
-             // check whether weakening is applicable: dropped variables may not occur t or Lambda(x,a,tm2)
+             // check whether weakening is applicable: dropped variables may not occur in t or Lambda(x,a,tm2)
              if (t.freeVars.exists(dropped.contains _))
                 // most important special case: x occurs free in t so that eta is not applicable
                 return false
