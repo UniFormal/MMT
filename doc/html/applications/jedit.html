@@ -1,8 +1,135 @@
 The jEdit plugin based on MMT yields an IDE for MMT content.<br/>
 
-See jedit-plugin/ for information on how to set up the MMT plugin for jEdit.<br/>
-
-While using jEdit, it will constantly build the written files in memory.<br/>
-
+While using jEdit, the current files are constantly checked and maintained in memory.
 To create hard drive images of the build results, use the <a href="build.html">build tool</a>.
+<br/>
 
+<h2>Installation</h2>
+
+<ol>
+<li><a href="obtain.html">Obtain</a> MMT, the deploy folder is enough</li>
+<li>Install jEdit, for example from <a href="http://www.jedit.org/">http://www.jedit.org/</a>.<br/>
+   Using the jEdit plugin manager, install (at least) the following plugins
+   <ul>
+   <li>ErrorList</li>
+   <li>Console</li>
+   <li>SideKick</li>
+   <li>Hyperlinks</li>
+   </ul>
+</li>
+<li>Add the MMT plugin to jEdit: Locate your jedit settings folder -- call it JEDIT -- and run
+    <span class="code">cd deploy/jedit-plugin</span>
+    and
+    <span class="code">setup.sh install JEDIT</span>.<br/>
+   
+   <span class="code">setup.bat</span> words accordingly on Windows.
+   Both can also be used with <span class="code">uninstall</span> instead of <span class="code">install</span> to remove the MMT plugin.<br/>
+
+   jEdit experts may want to know what the setup tool does in detail:
+   <ul>
+   <li>It copies all jars from plugin/jars into JEDIT/jars</li>
+   <li>It copies the content of plugin/plugins/info.kwarc.mmt.jedit.MMTPlugin to JEDIT/plugins/info.kwarc.mmt.jedit.MMTPlugin</li>
+   <li>It copies the modes from plugin/modes to JEDIT/modes and adds the mode catalog entries in the file plugin/modes/catalog to the file JEDIT/modes/catalog.</li>
+   <li>It appends the abbreviations in the file plugin/abbrevs to JEDIT/abbrevs.</li>
+   </ul>
+</li>
+
+<li>Load the plugin:
+   Run jEdit, open the plugin manager dialog, and select the MMT plugin.
+   After doing that once, the plugin will be loaded automatically when jEdit is started.</li>
+   
+<li>Unicode font: Install a font on your system that includes
+   <ul>
+     <li>a good amount of unicode characters,</li>
+     <li>readable glyphs for the characters ASCII 27-31, which MMT uses as delimiters.</li>
+   </ul>
+   An example of such a font is GNU unifont.<br/>
+   Set this font as the font for jEdit text areas. 
+</li> 
+
+<li>To configure the MMT plugin, go to the MMT pane of the jEdit plugin options dialog.
+
+The startup file gives a path to an MMT script that is run when the MMT plugin is loaded (usually when jEdit is started).
+
+A commented example is provided by the file startup.mmt in this directory.
+</li>
+</ol>
+
+<h3>Updating</h3>
+
+To update the plugin, use the uninstall option and then the install option.
+Then restart jEdit or reload all changed jars via jEdit's plugin manager dialog.
+
+<h2>jEdit Tips</h2>
+
+It is advisable to make the following general jEdit configurations:
+<ul>
+<li>Abbreviations: Select the setting 'expand abbreviations on space' to activate the abbreviations that come with the plugin.</li>
+<li>Parsing: Select the setting of the Sidekick plugin to automatically parse the buffer. This activates the parsing/type-checking of the MMT plugin and populates the SideKick tree and the ErrorList list.</li>
+<li>Plugins: Browse the plugin manager and install all additional plugins you fancy. I recommend BufferTabs, CandyFolds, DirtyGutter, SuperAbbrevs, WhiteSpace, and XML.</li>
+<li>Encoding: Set UTF-8 as your default encoding in the Options/Encodings.</li>
+</ul>
+
+<h2>Functionality</h2>
+
+<h3>The MMT Mode</h3>
+
+The mode "mmt" is added for MMT files, which includes syntax highlighting.
+Mode-specific options including the appearance of the syntax highlighting can be configured via the generic jEdit options dialog.
+Most importantly, the mode assigns the token types OPERATOR and KEYWORDn.
+The token types LITERAL1 to LITERAL4 are assigned to brackets at different levels.
+The token type COMMENT4 is reseved by MMT. It is assigned to all hidden, i.e., invisible, parts. Changes to its text style are ignored and overwritten.
+
+<h3>Abbreviations</h3>
+
+The files abbrevs contains a number of useful abbreviations to produce Unicode characters using Latex-like commands.
+For example, "jPi" expands like "\Pi". The details can be configured in jEdit's Options/Abbreviations dialog or by editing the JEDIT/abbrevs file.
+
+<h3>Interaction with Other Components</h3>
+
+The MMT plugin integrates with jEdit core components and a number of other plugins.
+Many of these provided "dockable windows". These are subwindows of the jEdit window, which you open separately via the respective plugin.
+
+<h4>File System Browser</h4>
+
+  The plugin provides actions specific to jEdit file system browser.
+  These are available in the browser's plugin menu.
+  This includes in particular actions for compiling files.
+  Files do not have to be opened for this, and all errors will appear in the ErrorList.
+
+<h4>Sidekick</h4>
+
+The plugin provides a Sidekick parser (called "mmt").
+  Thus, the dockable window of the sidekick plugin provides an outline view and autocompletion for MMT files,
+  both of which are synchronized with the current caret position.
+  Parsing errors appear in the dockable window of the ErrorList plugin.
+
+<h4>ErrorList</h4>
+
+The plugin provides an ErrorList error source (called "mmt"), which maintains compilation errors.
+  These errors appear in the same dockable window of the ErrorList plugin.
+
+<h4>Hyperlinks</h4>
+
+The plugin provides a Hyperlink source (called "mmt").
+  This displays the MMT URI of the identifier under the cursor and permits jumping to its declaration.
+  Jumping only works if the parser has read the file already.
+  you can enforce the latter by parsing the respective files in your MMT startup script (see below).
+
+<h4>Console</h4>
+
+The plugin provides a Console (named "mmt") for the Console plugin.
+  This permits direct access to the MMT shell in the dockable Console window.
+  See the MMT manual for the documentation of the MMT shell.
+
+<h4>Hiding</h4>
+
+All text enclosed in %{SHOW }% is hidable and shown. All text enclosed in %{HIDE }% is hidable and hidden.
+  The delimiters themselves are always hidden.
+  Hiding is achieved by reducing the font size to 0, i.e., the hidden parts are still in the buffer and treated as usual in all situations except for displaying.
+ 
+<h4>Actions</h4>
+
+The plugin provides a number of jEdit actions.
+These can be bound to any key, menu item, or toolbar button via the generic jEdit options dialog.
+By default, they are available in the MMT plugin menu.
