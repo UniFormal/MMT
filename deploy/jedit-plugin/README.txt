@@ -1,0 +1,1 @@
+See ../../doc/html/index.html?applications/jedit.html for documentation.
