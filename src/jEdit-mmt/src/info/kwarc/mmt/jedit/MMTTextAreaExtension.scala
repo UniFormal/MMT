@@ -55,7 +55,7 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
          case None => 
             val as = MMTSideKick.getAssetAtOffset(view,offset)
             as match {
-               case ta: MMTObjAsset =>
+               case Some(ta: MMTObjAsset) =>
                   ta.obj match {
                     case OMV(n) =>
                       asString(ta.context(n))

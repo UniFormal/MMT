@@ -66,7 +66,11 @@ object AbstractObjectParser {
 
 /** A default parser that parses any string into an OMSemiFormal object. */
 object DefaultObjectParser extends AbstractObjectParser {
-   def apply(pu: ParsingUnit): Term = OMSemiFormal(objects.Text(pu.scope.toMPath.toPath, pu.term))
+   def apply(pu: ParsingUnit): Term = {
+      val t = OMSemiFormal(objects.Text(pu.scope.toMPath.toPath, pu.term))
+      SourceRef.update(t, pu.source)
+      t
+   }
 }
 
 /**

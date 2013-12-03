@@ -167,6 +167,8 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
    private val ruleStore = controller.extman.ruleStore
    /** the SubstitutionApplier to be used throughout */
    private implicit val sa = new MemoizedSubstitutionApplier
+   /** a DefinitionExpander to be used throughout */
+   private val defExp = new uom.DefinitionExpander(controller)
    /** shortcut for UOM simplification */
    private def simplify(t : Term) = controller.uom.simplify(t, theory, solution)
    /** used for rendering objects, should be used by rules if they want to log */
@@ -577,56 +579,30 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
          case (tpS, None) =>
             // this is either a base type or an equality rule is missing
             // TorsoNormalForm is useful to inspect terms of base type
-            val tm1T = TorsoForm.fromHeadForm(tm1S)
-            val tm2T = TorsoForm.fromHeadForm(tm2S)
-            checkEqualityExpandDef(List(tm1T), List(tm2T), false)(stack, history, tp)
+            //val tm1T = TorsoForm.fromHeadForm(tm1S)
+            //val tm2T = TorsoForm.fromHeadForm(tm2S)
+            checkEqualityExpandDef(List(tm1S), List(tm2S), false)(stack, history, tp)
       }
    }
    
    /* ********************** auxiliary methods of checkEquality ***************************/ 
    
    /**
-    * definition expansion for the torso of a term
-    * the result is immediately simplified
-    * @param t a term whose torso should be expanded
-    * @return (t', changed) where t' is the resulting term and changed is true if an expansion occurred
-    */ 
-   private def expandTorsoDef(t: TorsoForm, safe: Boolean = false) : (TorsoForm, Boolean) = t.torso match {
-      case OMS(c) =>
-         getDef(c) match {
-            case Some(df) =>
-               val tE = TorsoForm(df, t.apps).toHeadForm
-               val tES = if (safe) tE else simplify(tE)
-               (TorsoForm.fromHeadForm(tES), true)
-            case None => (t, false)
-         }
-      case _ => (t, false)
-   }
-   /**
-    * like expandTorsoDef but for Terms
-    */ 
-   private def expandTorsoDef(t: Term) : (Term, Boolean) =  {
-      val tf = TorsoForm.fromHeadForm(t)
-      val (tfS, b) = expandTorsoDef(tf, true)
-      if (b) (tfS.toHeadForm, true)
-      else (t, false)
-   }
-   
-   /**
     * finds a TermBasedEqualityRule that applies to t1 and any of the terms in t2
     * rules are looked up based on the torsos of the terms
     * first found rule is returned
     */
-   private def findEqRule(t1: TorsoForm, others: List[TorsoForm])(implicit stack : Stack, history: History, tp: Term) : Option[Continue[Boolean]] = {
-      OMS.unapply(t1.torso) foreach {c1 =>
-         others foreach {o => 
-            OMS.unapply(o.torso) foreach {c2 =>
+   private def findEqRule(t1: Term, others: List[Term])(implicit stack : Stack, history: History, tp: Term) : Option[Continue[Boolean]] = {
+      t1 match {
+         case TorsoNormalForm(OMS(c1), _) => others foreach {o => o match {
+            case TorsoNormalForm(OMS(c2), _) => 
                ruleStore.termBasedEqualityRules(c1,c2) foreach {rule =>
-                  val contOpt = rule(this)(t1.toHeadForm, o.toHeadForm, Some(tp))
+                  val contOpt = rule(this)(t1, o, Some(tp))
                   if (contOpt.isDefined) return contOpt
                }
-            }
-         }
+            case _ =>
+         }}
+         case _ =>
       }
       return None
    }
@@ -642,36 +618,39 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
     *   This parameter is not semantically necessary but carried around to undo flipping when calling other functions.
     * @return true if equal 
     */
-   private def checkEqualityExpandDef(torsos1: List[TorsoForm], torsos2: List[TorsoForm], t2Final: Boolean, flipped: Boolean = false)(implicit stack : Stack, history: History, tp: Term) : Boolean = {
-       log("equality (expanding definitions): " + torsos1.head.toHeadForm + " = " + torsos2.head.toHeadForm)
-       val t1 = torsos1.head
-       // see if we can expand the head of t1
-       val (tE, changed) = expandTorsoDef(t1)
+   private def checkEqualityExpandDef(terms1: List[Term], terms2: List[Term], t2Final: Boolean, flipped: Boolean = false)(implicit stack : Stack, history: History, tp: Term) : Boolean = {
+       log("equality (expanding definitions): " + terms1.head + " = " + terms2.head)
+       val t1 = terms1.head
+       // see if we can expand t1
+       val t1E = defExp(t1, Context())
+       val t1EL = limitedSimplify(t1E)(_ => None)._1
+       val t1ES = simplify(t1EL)
+       val changed = t1E hashneq t1
        if (changed) {
-          log("left term expanded and simplified to " + tE)
+          log("left term expanded and simplified to " + t1ES)
           // check if it is identical to one of the terms known to be equal to t2
-          if (torsos2.exists(_ hasheq tE)) {
+          if (terms2.exists(_ hasheq t1ES)) {
              log("success by identity")
              return true
           }
           // check if there is a TermBasedEqualityRule that applies to the new torso of t1 and the torso of a term equal to t2 
-          val contOpt = findEqRule(t1, torsos2)
+          val contOpt = findEqRule(t1ES, terms2)
           contOpt foreach {cont => return cont.apply()}
        }
        // if we failed to prove equality, we have multiple options:
        (changed, t2Final) match {
           // t1 expanded, t2 cannot be expanded anymore --> keep expanding t1
-          case (true, true)      => checkEqualityExpandDef(tE::torsos1, torsos2, true, flipped)
+          case (true, true)      => checkEqualityExpandDef(t1ES::terms1, terms2, true, flipped)
           // t1 expanded, t2 can still be expanded anymore --> continue expanding t2
-          case (true, false)     => checkEqualityExpandDef(torsos2, tE::torsos1, false, ! flipped)
+          case (true, false)     => checkEqualityExpandDef(terms2, t1ES::terms2, false, ! flipped)
           // t1 cannot be expanded anymore but t2 can ---> continue expanding t2
-          case (false, false)    => checkEqualityExpandDef(torsos2, torsos1, true, ! flipped)
+          case (false, false)    => checkEqualityExpandDef(terms2, terms1, true, ! flipped)
           // neither term can be expanded --> try congruence rule as last resort
           case (false, true)     =>
              // if necessary, we undo the flipping of t1 and t2
-             val s1 = if (flipped) torsos2.head else t1
-             val s2 = if (flipped) t1 else torsos2.head
-             val j = Equality(stack, s1.toHeadForm, s2.toHeadForm, Some(tp))
+             val s1 = if (flipped) terms2.head else t1
+             val s2 = if (flipped) t1 else terms2.head
+             val j = Equality(stack, s1, s2, Some(tp))
              if (currentLevel < 1)
                 delay(j, 1)
              else
@@ -679,9 +658,10 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
                 //until a simplification-rule becomes applicable at toplevel
                 //That is necessary if a rule becomes applicable eventually.
                 //But it is a huge overhead if we don't actually want to simplify here. 
-                checkEqualityCongruence(s1, s2)
+                checkEqualityCongruence(TorsoForm.fromHeadForm(s1), TorsoForm.fromHeadForm(s2))
        }
    }
+
    /**
     * tries to prove equality using basic congruence rule
     * torso and heads must be identical, checkEquality is called in remaining cases 
@@ -832,29 +812,24 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
     *  @param stack the context of tm
     *  @return (tmS, Some(a)) if tmS is simple and simple(tm)=tmS; (tmS, None) if tmS is not simple but no further simplification rules are applicable
     */
-    //TODO test for deep definition expansion
    def limitedSimplify[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term,Option[A]) = {
       simple(tm) match {
          case Some(a) => (tm,Some(a))
          case None => tm.head match {
             case Some(h) =>
                val rOpt = ruleStore.computationRules.get(h)
-               rOpt match {
-                  case None =>
-                     val (tmS, changed) = expandTorsoDef(tm)
-                     if (changed) limitedSimplify(tmS)(simple)
-                     else (tmS, None)
-                  case Some(rule) =>
-                     rule(this)(tm) match {
-                        case Some(tmS) =>
-                           log("simplified: " + tm + " ~~> " + tmS)
-                           limitedSimplify(tmS.from(tm))(simple)
-                        case None => 
-                           val (tmS, changed) = expandTorsoDef(tm)
-                           if (changed) limitedSimplify(tmS)(simple)
-                           else (tmS, None)
-                     }
+               rOpt foreach {rule =>
+                  rule(this)(tm) match {
+                     case Some(tmS) =>
+                        log("simplified: " + tm + " ~~> " + tmS)
+                        return limitedSimplify(tmS.from(tm))(simple)
+                     case None =>
+                  }
                }
+               // no rule or rule not applicable, expand a definition
+               val tmE = defExp(tm,Context())
+               if (tmE hashneq tm) limitedSimplify(tmE)(simple)
+               else (tmE, None)
             case None => (tm, None)
          }
       }

@@ -10,6 +10,18 @@ trait ComponentContainer {
    def isDefined: Boolean
 }
 
+trait AbstractTermContainer extends ComponentContainer {
+   def get: Option[objects.Term]
+}
+
+/** a dummy container for a term that cannot be changed anymore */ 
+class FinalTermContainer(t: objects.Term) extends AbstractTermContainer {
+   def update(nw: ComponentContainer) {}
+   def delete {}
+   def isDefined = true
+   def get = Some(t) 
+}
+
 /** A DeclarationComponent identifies a component of a Declaration. It is used in CPath's */
 abstract class DeclarationComponent(s : String) {
    override def toString = s
