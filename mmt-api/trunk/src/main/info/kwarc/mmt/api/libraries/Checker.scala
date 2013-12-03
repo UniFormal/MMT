@@ -305,9 +305,9 @@ class StructureChecker(controller: Controller) extends Logger {
               case Some(thy: Theory) =>
                  pCont(p)
               case Some(_) =>
-                 errorCont(InvalidObject(t, "not a valid theory"))
+                 errorCont(InvalidObject(t, "not a theory identifier" + p.toPath))
               case None =>
-                 errorCont(InvalidObject(t, "not a valid identifier"))
+                 errorCont(InvalidObject(t, "unknown identifier: " + p.toPath))
            }
            t
         case OMS(mmt.tempty) => t

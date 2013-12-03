@@ -9,9 +9,9 @@ import info.kwarc.mmt.api.utils._
  */
 trait Link {
    /** the domain of the link */
-   val from : Term
+   def from : Term
    /** the codomain of the link */
-   val to : Term
+   def to : Term
    def toTerm : Term
    def path : ContentPath
    val isImplicit : Boolean

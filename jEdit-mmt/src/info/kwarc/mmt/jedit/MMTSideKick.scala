@@ -185,7 +185,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val child = new DefaultMutableTreeNode(new MMTElemAsset(dec, label, reg))
       node.add(child)
       dec.getComponents foreach {
-         case (comp, cont: TermContainer) if cont.get.isDefined =>
+         case (comp, cont: AbstractTermContainer) if cont.get.isDefined =>
              buildTree(child, dec.path $ comp, cont.get.get, reg)
          case _ =>
       }
@@ -245,11 +245,15 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    
    def parse(buffer: Buffer, errorSource: DefaultErrorSource) : SideKickParsedData = {
       val path = File(buffer.getPath)
+      val dpath = controller.backend.resolvePhysical(path) match {
+         case None => DPath(utils.FileURI(path))
+         case Some((a,p)) => DPath(a.narrationBase / p)
+      }
       log("parsing " + path)
       val tree = new SideKickParsedData(path.toJava.getName)
       val root = tree.root
       try {
-         val (doc,errors) = controller.read(buffer.getText, DPath(utils.FileURI(path)))
+         val (doc,errors) = controller.read(buffer.getText, dpath)
          val checker = controller.checker //new StructureChecker(controller) 
          val errors2 = checker(doc)
          // add narrative structure of doc to outline tree

@@ -35,83 +35,6 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
   private val rs = controller.extman.ruleStore
   private val StrictOMA = controller.pragmatic.StrictOMA
 
-  private def inScope(currentTheory: Term, ruleTheory: Term): Boolean = {
-     controller.memory.content.hasImplicit(ruleTheory, currentTheory)
-  }
-  
-   /** applies all DepthRule's that are applicable at toplevel of an OMA
-    * for each arguments, all rules are tried
-    * if a rule leads to a GlobalChange, we stop; otherwise, we go to the next argument
-    * @param outer the toplevel symbol
-    * @param before the arguments that have been checked already
-    * @param after the arguments that still need to be checked
-    * @return GlobalChange if a rule led to it; LocalChange otherwise (even if no rule was applicable)
-    */
-   private def applyDepthRules(outer: GlobalName, before: List[Term], after: List[Term])(implicit state: UOMState): Change = {
-      after match {
-         case Nil => LocalChange(before) //we don't know if 'before' has a change; but if not, returning NoChange would not actually help in applyAux anyway
-         case arg::afterRest =>
-            //auxiliary pattern-matcher to unify the cases for OMA and OMS
-            //in order to permit distinguishing OMA(OMS(p),Nil) and OMS(p), a boolean is returned
-            //that indicates which case applied
-            object OMAorOMS {
-               def unapply(t: Term) = t match {
-                  case StrictOMA(strApps, p, args) => Some((p, args, false))
-                  case OMS(p) => Some((p, Nil, true))
-                  case _ => None
-               } 
-            }
-            arg match {
-               case OMAorOMS(inner, inside, isOMS) =>
-                  rs.depthRules.getOrElse((outer,inner), Nil) foreach {rule =>
-                     if (inScope(state.scope, rule.parent)) {
-                        val ch = rule.apply(before, inside, afterRest)
-                        //log("rule " + rule + ": " + ch)
-                        ch match {
-                           case NoChange =>
-                           case LocalChange(args) =>
-                              //saveSimplificationRule(rule)
-                              return applyDepthRules(outer, before, args ::: afterRest)
-                           //return immediately upon GlobalChange
-                           case GlobalChange(tS) =>
-                              //saveSimplificationRule(rule)
-                              return GlobalChange(tS)
-                        }
-                     }
-                  }
-                  applyDepthRules(outer, before ::: List(arg), afterRest)
-               case _ =>
-                 applyDepthRules(outer, before ::: List(arg), afterRest)
-            }
-      }
-   }
-   /** applies all BreadthRule's that are applicable at toplevel of an OMA
-    * @param outer the toplevel symbol
-    * @param args the arguments
-    * */
-   private def applyBreadthRules(op: GlobalName, inside: List[Term])(implicit state: UOMState): Change = {
-      var insideS = inside
-      var changed = false
-      rs.breadthRules.getOrElse(op,Nil) foreach {rule =>
-         if (inScope(state.scope, rule.parent)) {
-            val ch = rule.apply(insideS)
-            //log("rule " + rule + ": " + ch)
-            ch match {
-               case NoChange =>
-               case LocalChange(args) =>
-                  insideS = args
-                  changed = true
-                  //saveSimplificationRule(rule)
-   
-               case GlobalChange(t) => 
-                 //saveSimplificationRule(rule)
-                 return GlobalChange(t)
-            }
-         }
-      }
-      //we have to check for insideS == inside here in case a BreadthRule falsely thinks it changed the term (such as commutativity when the arguments are already in normal order)
-      if (! changed || insideS == inside) NoChange else LocalChange(insideS)
-   }
    
    /** the main simplification method
     * @param t the term to simplify
@@ -122,8 +45,8 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
     * Applicability of rules is determined based on the pragmatic form (using controller.pragmatic.StrictOMA).
     * Rules are passed strict terms and are expected to return strict terms.
     * 
-    * The code uses [[Simple]] to remember whether a term has been simplified.
-    * So multiple calls to this method do not cause multiple traversals. 
+    * The code uses [[Simple]] and [[SimplificationResult]] to remember whether a term has been simplified.
+    * Therefore, structure sharing or multiple calls to this method do not cause multiple traversals. 
     */
    def simplify(t: Term, scope: Term, context: Context = Context()) = {
      simplificationLog = Nil
@@ -141,7 +64,7 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
     * users should not call this method (call simplify instead) */
    // by marking with and testing for Simplified(_), we avoid traversing a term twice
    // Note that certain operations remove the simplified marker: changing the toplevel, substitution application 
-   def traverse(t: Term)(implicit con : Context, init: UOMState) : Term =  t match {
+   def traverse(t: Term)(implicit con : Context, init: UOMState) : Term = t match {
       // this term is the result of simplification
       case Simple(t) =>
          log("not simplifying " + controller.presenter.asString(t))
@@ -193,7 +116,7 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
                // go back to state (1), remember that a global change was produced
                applyAux(tS, true)
             case NoChange =>
-               // applyDepthRules returns a LocalChange if no depth rule was applicable
+               // applyDepthRules returns a LocalChange even if no depth rule was applicable
                throw ImplementationError("impossible case")
             case LocalChange(argsS) =>
                // state (2) 
@@ -225,6 +148,86 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
          }
       // no rules applicable
       case _ => (t, globalChange)
+   }
+  
+   /** determines applicability of a rule */
+   private def inScope(currentTheory: Term, ruleTheory: Term): Boolean = {
+     controller.memory.content.hasImplicit(ruleTheory, currentTheory)
+   }
+  
+   /** applies all DepthRule's that are applicable at toplevel of an OMA
+    * for each arguments, all rules are tried
+    * if a rule leads to a GlobalChange, we stop; otherwise, we go to the next argument
+    * @param outer the toplevel symbol
+    * @param before the arguments that have been checked already
+    * @param after the arguments that still need to be checked
+    * @return GlobalChange if a rule led to it; LocalChange otherwise (even if no rule was applicable)
+    */
+   private def applyDepthRules(outer: GlobalName, before: List[Term], after: List[Term])(implicit state: UOMState): Change = {
+      after match {
+         case Nil => LocalChange(before) //we don't know if 'before' has a change; but if not, returning NoChange would not actually help in applyAux anyway
+         case arg::afterRest =>
+            //auxiliary pattern-matcher to unify the cases for OMA and OMS
+            //in order to permit distinguishing OMA(OMS(p),Nil) and OMS(p), a boolean is returned
+            //that indicates which case applied
+            object OMAorOMS {
+               def unapply(t: Term) = t match {
+                  case StrictOMA(strApps, p, args) => Some((p, args, false))
+                  case OMS(p) => Some((p, Nil, true))
+                  case _ => None
+               } 
+            }
+            arg match {
+               case OMAorOMS(inner, inside, isOMS) =>
+                  rs.depthRules.getOrElse((outer,inner), Nil) foreach {rule =>
+                     if (inScope(state.scope, rule.parent)) {
+                        val ch = rule.apply(before, inside, afterRest)
+                        //log("rule " + rule + ": " + ch)
+                        ch match {
+                           case NoChange =>
+                           case LocalChange(args) =>
+                              //saveSimplificationRule(rule)
+                              return applyDepthRules(outer, before, args ::: afterRest)
+                           //return immediately upon GlobalChange
+                           case GlobalChange(tS) =>
+                              //saveSimplificationRule(rule)
+                              return GlobalChange(tS)
+                        }
+                     }
+                  }
+                  applyDepthRules(outer, before ::: List(arg), afterRest)
+               case _ =>
+                 applyDepthRules(outer, before ::: List(arg), afterRest)
+            }
+      }
+   }
+   
+   /** applies all BreadthRule's that are applicable at toplevel of an OMA
+    * @param outer the toplevel symbol
+    * @param args the arguments
+    * */
+   private def applyBreadthRules(op: GlobalName, inside: List[Term])(implicit state: UOMState): Change = {
+      var insideS = inside
+      var changed = false
+      rs.breadthRules.getOrElse(op,Nil) foreach {rule =>
+         if (inScope(state.scope, rule.parent)) {
+            val ch = rule.apply(insideS)
+            //log("rule " + rule + ": " + ch)
+            ch match {
+               case NoChange =>
+               case LocalChange(args) =>
+                  insideS = args
+                  changed = true
+                  //saveSimplificationRule(rule)
+   
+               case GlobalChange(t) => 
+                 //saveSimplificationRule(rule)
+                 return GlobalChange(t)
+            }
+         }
+      }
+      //we have to check for insideS == inside here in case a BreadthRule falsely thinks it changed the term (such as commutativity when the arguments are already in normal order)
+      if (! changed || insideS == inside) NoChange else LocalChange(insideS)
    }
 }
 
