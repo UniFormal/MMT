@@ -554,6 +554,9 @@ class StructureChecker(controller: Controller) extends Logger {
    }
 }
 
+/**
+ * combines a [[StructureChecker]] for structural checking with a [[Validator]] for object checking.
+ */
 class StructureAndObjectChecker(controller: Controller) extends StructureChecker(controller) {
    private val vdt = new Validator(controller)
    /**

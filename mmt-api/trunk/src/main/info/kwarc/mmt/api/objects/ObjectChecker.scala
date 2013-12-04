@@ -625,7 +625,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
        val t1E = defExp(t1, Context())
        val t1EL = limitedSimplify(t1E)(_ => None)._1
        val t1ES = simplify(t1EL)
-       val changed = t1E hashneq t1
+       val changed = t1ES hashneq t1
        if (changed) {
           log("left term expanded and simplified to " + t1ES)
           // check if it is identical to one of the terms known to be equal to t2
@@ -648,8 +648,8 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
           // neither term can be expanded --> try congruence rule as last resort
           case (false, true)     =>
              // if necessary, we undo the flipping of t1 and t2
-             val s1 = if (flipped) terms2.head else t1
-             val s2 = if (flipped) t1 else terms2.head
+             val s1 = if (flipped) terms2.head else t1ES
+             val s2 = if (flipped) t1ES else terms2.head
              val j = Equality(stack, s1, s2, Some(tp))
              if (currentLevel < 1)
                 delay(j, 1)
