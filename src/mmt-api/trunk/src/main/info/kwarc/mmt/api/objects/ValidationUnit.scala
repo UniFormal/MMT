@@ -3,11 +3,32 @@ import info.kwarc.mmt.api._
 import objects._
 import frontend._
 
+/**
+ * A validation unit encapsulates the proof obligations produced by the [[libraries.StructureChecker]] and passed on to the [[Solver]].
+ * 
+ * Each validation unit validates a single term that is part of a WFJudgement, i.e.,
+ * the other parts of the judgement are assumed to be valid.
+ * 
+ * @param component the term component that is validated, e.g., namespace?theory?symbol?type
+ * @param unknowns the unknowns parts of the expressions that should be inferred during validation
+ * @param judgement the typing judegment to validate
+ */
 case class ValidationUnit(component: CPath, unknowns: Context, judgement: WFJudgement)
 
+/**
+ * A Validator is a stateless convenience data structure that provides a function for a validating [[ValidationUnit]]s.
+ * It can manage errors and dependencies.  
+ */
 class Validator(controller: Controller) extends Logger {
       val logPrefix = "validator"
       val report = controller.report
+      /**
+       * @param v the validation unit to validate
+       * @param errorCont a continuation that will be called on every validation error
+       * @param depCont a continuation that will be called on every component that the validation depends on
+       * @return (b,t) where b is true iff validation succeeded and
+       * t is the result of substituting for the solved variables in the validated term 
+       */
       def apply(v: ValidationUnit)(errorCont: Invalid => Unit, depCont: CPath => Unit): (Boolean,Term) = {
          log("validation unit " + v.component + ": " + v.judgement.present(controller.presenter.asString))
          val solver = new Solver(controller, v.judgement.stack.theory, v.unknowns)
