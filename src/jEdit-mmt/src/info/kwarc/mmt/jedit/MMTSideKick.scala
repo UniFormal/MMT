@@ -301,7 +301,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
                extraMessages foreach {m => error.addExtraMessage(m)}
                errorSource.addError(error)
             case e: Error =>
-               // other error, should not happen
+               // other errors, should not happen
                val error = new DefaultErrorSource.DefaultError(
                    errorSource, ErrorSource.ERROR, path.toString, 0, 0, 1, e.getMessage
                )
