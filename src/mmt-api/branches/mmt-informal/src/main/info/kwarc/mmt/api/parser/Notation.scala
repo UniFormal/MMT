@@ -100,11 +100,11 @@ class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precede
           case FractionMarker(a,b,_) =>
              Fragment("fraction", aux(a, true), aux(b, true))
           case TdMarker(a) => 
-             Fragment("mtd", aux(a))
+             Fragment("mtd", translateMarkers(a) :_*)
           case TrMarker(a) => 
-             Fragment("mtr", aux(a))
+             Fragment("mtr", translateMarkers(a) :_*)
           case TableMarker(a) => 
-             Fragment("mtable", aux(a))
+             Fragment("mtable", translateMarkers(a) :_*)
           case InferenceMarker => Compute(None, "infer")
         }}
      }

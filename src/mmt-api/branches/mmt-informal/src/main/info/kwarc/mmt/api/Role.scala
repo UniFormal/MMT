@@ -15,6 +15,7 @@ case object Role_DRef                extends Role("DRef")
 case object Role_MRef                extends Role("MRef")
 case object Role_SRef                extends Role("SRef")
 case object Role_Narration           extends Role("Narration")
+case object Role_Narrative_Def       extends Role("NarrativeDefinition")
 case object Role_NarrativeObject     extends Role("NarrativeObject")
 case object Role_DeclaredTheory      extends Role("Theory", ("name", 0), ("meta", 1))
 case object Role_DefinedTheory       extends Role("Theory", ("name", 0), ("definiens", 1))
@@ -61,6 +62,7 @@ object Role {
    def parse(s : String) = s match {
       case "Document" => Role_Document
       case "Narration" => Role_Narration
+      case "NarrativeDefinition" => Role_Narrative_Def
       case "NarrativeObject" => Role_NarrativeObject
       case "DRef" => Role_DRef
       case "MRef" => Role_MRef

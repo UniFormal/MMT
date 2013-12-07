@@ -158,13 +158,13 @@ case class TdMarker(content : List[Marker]) extends PresentationMarker {
 /** a marker based on mathml mtd elements, representing table rows */
 case class TrMarker(content : List[Marker]) extends PresentationMarker {
    def flatMap(f : Marker => List[Marker]) = {
-     TdMarker(content.flatMap(f))
+     TrMarker(content.flatMap(f))
    } 
 }
 /** a marker based on mathml mtd elements, representing tables */
 case class TableMarker(content : List[Marker]) extends PresentationMarker {
    def flatMap(f : Marker => List[Marker]) = {
-     TdMarker(content.flatMap(f))
+     TableMarker(content.flatMap(f))
    } 
 }
 
@@ -222,8 +222,8 @@ object PresentationMarker {
                left = rest
                val newHead = FractionMarker(List(enum), List(denom), true)
                sofar = newHead :: sofar.tail
-            case Delim("&") => 
-              get_until(List("&", "\\\\", "]]"), left) match {
+            case Delim("[&") => 
+              get_until(List("&]"), left.tail, true) match {
                case None => //end not found, ignoring
                  sofar ::= left.head
                  left = left.tail
@@ -232,8 +232,8 @@ object PresentationMarker {
                  sofar ::= TdMarker(processed)
                	 left = end
              }
-            case Delim("\\\\") => 
-               get_until(List("\\\\", "]]"), left) match {
+            case Delim("[/") => 
+               get_until(List("/]"), left.tail, true) match {
                case None => //end not found, ignoring
                  sofar ::= left.head
                  left = left.tail
@@ -243,7 +243,7 @@ object PresentationMarker {
                	 left = end
              }
             case Delim("[[") =>
-             get_until(List("]]"), left, true) match {
+             get_until(List("]]"), left.tail, true) match {
                case None => //end not found, ignoring
                  sofar ::= left.head
                  left = left.tail
@@ -257,6 +257,7 @@ object PresentationMarker {
                left = left.tail
          }
       }
+
       sofar.reverse
    }
    
@@ -276,7 +277,7 @@ object PresentationMarker {
        }
      }
      if (found) {
-       Some(sofar, left)
+       Some(sofar.reverse, left)
      } else {
        None
      }
