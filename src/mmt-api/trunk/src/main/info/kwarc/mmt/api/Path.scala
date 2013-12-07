@@ -325,7 +325,7 @@ object Path {
       var l = splitName(n)
       if (relative)
          l = l.drop(1)
-      l = l map xml.decodeURI
+      l = try {l map xml.decodeURI} catch {case xml.XMLError(s) => throw ParseError(s)}
       LocalRef(l, ! relative)
    }
    /** as parseLocal but fails on relative results */

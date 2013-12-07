@@ -118,7 +118,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
    }
 
    /** convenience function to create SourceError's */
-   private def makeError(reg: SourceRegion, s: String)(implicit state: ParserState) =
+   protected def makeError(reg: SourceRegion, s: String)(implicit state: ParserState) =
       SourceError("structure-parser", SourceRef(state.container.uri, reg), s)
   
    /** the region from the start of the current structural element to the current position */
@@ -725,6 +725,10 @@ class StructureAndObjectParser(controller: Controller) extends StructureParser(c
          case e: SourceError =>
             errorCont(e)
             DefaultObjectParser(pu)
+         case e: Error =>
+            val se = makeError(pu.source.region, e.getMessage)
+            errorCont(se)
+            DefaultObjectParser(pu)
       }
       obj
    }
@@ -734,8 +738,13 @@ class StructureAndObjectParser(controller: Controller) extends StructureParser(c
    def seCont(se: StructuralElement)(implicit state: ParserState) {
       log(se.toString)
       //log(se.toNode.toString)
-      SourceRef.update(se, SourceRef(state.container.uri,currentSourceRegion))
-      controller.add(se)
+      val reg = currentSourceRegion
+      SourceRef.update(se, SourceRef(state.container.uri,reg))
+      try {controller.add(se)}
+      catch {case e: Error =>
+         val se = makeError(reg, e.getMessage)
+         errorCont(se)
+      }
    }
 }
 

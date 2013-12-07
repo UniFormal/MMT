@@ -14,7 +14,7 @@ import presentation._
 import scala.xml.{Node,NodeSeq}
 
 /** A Reader parses XML/MMT and calls controller.add(e) on every found content element e */
-class XMLReader(controller : frontend.Controller) extends Reader(controller) {
+class XMLReader(val report: frontend.Report) extends frontend.Logger {
    val logPrefix = "reader"
    /** calls the continuation function */
    private def add(e : StructuralElement)(implicit cont: StructuralElement => Unit) {
@@ -36,14 +36,14 @@ class XMLReader(controller : frontend.Controller) extends Reader(controller) {
       documents foreach {readDocument(location, _)}
    }
    /** parses a document (xml.Node) and forwards its declarations into the continuation function */
-   def readDocument(location : DPath, D : Node)(implicit cont: StructuralElement => Unit) {
+   def readDocument(base : DPath, D : Node)(implicit cont: StructuralElement => Unit) {
       D match {
         case <omdoc>{modules @ _*}</omdoc> =>
-           val path = Path.parseD(xml.attr(D, "base"), location)
+           val path = Path.parseD(xml.attr(D, "base"), base)
            log("document with base " + path + " found")
-           val d = new Document(location)
+           val d = new Document(base)
            add(d)
-           readInDocument(path, Some(location), modules)
+           readInDocument(path, Some(base), modules)
         case _ => throw ParseError("document expected: " + D)
       }
    }

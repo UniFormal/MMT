@@ -66,7 +66,7 @@ class Controller extends ROController with Logger {
    val library = memory.content
    val notstore = memory.presentation
    val docstore = memory.narration
-
+   
    /** text-based presenter for error messages, logging, etc. */
    val presenter = new StructureAndObjectPresenter
    
@@ -77,7 +77,7 @@ class Controller extends ROController with Logger {
    /** the http server */
    var server : Option[Server] = None
    /** the MMT parser (XML syntax) */
-   val xmlReader = new XMLReader(this)
+   val xmlReader = new XMLReader(report)
    /** the MMT term parser */
    val termParser = new ObjectParser(this)
    /** the MMT parser (native MMT text syntax) */
@@ -85,7 +85,7 @@ class Controller extends ROController with Logger {
    /** a basic structure checker */
    val checker = new StructureAndObjectChecker(this)
    /** the MMT parser (Twelf text syntax) */
-   val textReader = new TextReader(this)
+   val textReader = new TextReader(this, this.add)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(extman, report)
    /** the query engine */
