@@ -10,14 +10,14 @@ import documents._
  *
  *  Deriving this class is well-suited for writing exporters that transform MMT content into other formats.
  */
-abstract class NarrationExporter extends GenericTraversingBuildTarget {
+abstract class NarrationExporter extends TraversingBuildTarget {
 
    /** must be set correctly before any of the abstract methods are called */
    private var _rh: RenderingHandler = null
    /** @return the RenderingHandler to which all produced output must be sent */ 
    protected def rh = _rh 
    
-   /** applied to each theory */
+   /** applied to each leaf document (i.e., .omdoc file) */
    def doDocument(doc: Document)
 
    val inDim = "narration"
@@ -40,7 +40,7 @@ abstract class NarrationExporter extends GenericTraversingBuildTarget {
  *
  *  Deriving this class is well-suited for writing exporters that transform MMT content into other formats.
  */
-abstract class ContentExporter extends GenericTraversingBuildTarget {
+abstract class ContentExporter extends TraversingBuildTarget {
 
    /** must be set correctly before any of the abstract methods are called */
    private var _rh: RenderingHandler = null

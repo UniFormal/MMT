@@ -2,6 +2,9 @@ package info.kwarc.mmt.api.utils
 import scala.xml.{Node, PrettyPrinter}
 
 object xml {
+   
+   case class XMLError(s: String) extends java.lang.Throwable(s)
+   
    /** reads an XML file and returns the first Node in it */
    def readFile(file : File) : scala.xml.Node = {
       val src = scala.io.Source.fromFile(file.toJava, "utf-8") // utf-8 forced due to error with default codec
@@ -54,7 +57,8 @@ object xml {
       while (in != "") {
          val c = in(0)
          if (c == '%') {
-            val hh = Integer.parseInt(in.substring(1,3), 16).toChar
+            val hh = try {Integer.parseInt(in.substring(1,3), 16).toChar}
+                     catch {case _ : Exception => throw XMLError("error decoding URI " + s)}
             in = in.substring(3)
             out = out + hh
          }

@@ -57,7 +57,7 @@ object FileURI {
    def apply(f: File) = URI(Some("file"), None, f.segments, f.isAbsolute)
    def unapply(u: URI) : Option[File] =
      if (u.scheme == Some("file") && (u.authority == None || u.authority == Some("")))
-       Some(File(new java.io.File(u)))
+       Some(File(new java.io.File(u.copy(authority = None)))) // empty authority makes some Java versions throw error
      else None
 }
 

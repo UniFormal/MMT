@@ -69,7 +69,7 @@ class ExtensionManager(controller: Controller) extends Logger {
    
    def addDefaultExtensions {
       targets    ::= new MMTCompiler
-      targets    ::= new archives.Index
+      targets    ::= new archives.OMDocImporter
       targets    :::= List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter)
       presenters ::= TextPresenter
       presenters ::= OMDocPresenter
