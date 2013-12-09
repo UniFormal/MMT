@@ -126,10 +126,22 @@
   </notation>
 
 
-    <notation role="Narration">
+  <notation role="Narration">
     <element name="tr">
       <attribute name="class" value="omdoc-symbol"/>
       <element name="td"><component index="0"/></element>
+    </element>
+  </notation>
+
+  <notation role="NarrativeDefinition">
+    <element name="tr">
+      <attribute name="class" value="omdoc-symbol"/>
+      <element name="td">
+        <l:b>
+          <text value="Definition:"/>
+        </l:b>
+        <component index="0"/>
+      </element>
     </element>
   </notation>
   
@@ -438,19 +450,19 @@
 
   <notation role="fragment:mtd">
     <l:mtd>
-      <hole index="0"/>
+      <components begin="1" end="-1"/>
     </l:mtd>
   </notation> 
   
   <notation role="fragment:mtr">
     <l:mtr>
-      <hole index="0"/>
+      <components begin="1" end="-1"/>
     </l:mtr>
   </notation> 
   
   <notation role="fragment:mtable">
     <l:mtable>
-      <hole index="0"/>
+      <components begin="1" end="-1"/>
     </l:mtable>
   </notation> 
   
