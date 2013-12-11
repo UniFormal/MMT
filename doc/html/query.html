@@ -7,13 +7,13 @@ It was first described in the corresponding <a href="http://kwarc.info/frabe/Res
 <p>
 QMT uses three basic concepts: types, queries, and propositions.<br/>
 <ul>
- <li>Types inherit from <a href="/api/info/kwarc/mmt/api/ontology/QueryType.html">QueryType</a>.
- Composed types are either products of <a href="/api/info/kwarc/mmt/api/ontology/QueryBaseType.html">QueryBaseTypes</a> or the power type of such a product.</li>
+ <li>Types inherit from <a href="../api/info/kwarc/mmt/api/ontology/QueryType.html">QueryType</a>.
+ Types are either products of <a href="../api/info/kwarc/mmt/api/ontology/QueryBaseType.html">QueryBaseTypes</a> or the power type of such a product.</li>
  <li>
-  Queries inherit from <a href="/api/info/kwarc/mmt/api/ontology/Query.html">Query</a>.
+  Queries inherit from <a href="../api/info/kwarc/mmt/api/ontology/Query.html">Query</a>.
   They are typed expressions.
  </li>
- <li>Propositions inherit from <a href="/api/info/kwarc/mmt/api/ontology/Prop.html">Prop</a>
+ <li>Propositions inherit from <a href="../api/info/kwarc/mmt/api/ontology/Prop.html">Prop</a>
  They are expressions that are used as side conditions within queries.
  </li>
 </ul>
@@ -24,23 +24,23 @@ The specific types, queries, and propositions can be best understood by browsing
 <p>
 At the moment the only concrete syntax for queries is an ad hoc XML format.<br/>
 
-The algorithms for parsing, type inference, and validity checking for queries are straightforward and defined in the respective companion objects <a href="/api/info/kwarc/mmt/api/ontology/Query$.html">Query</a> and <a href="/api/info/kwarc/mmt/api/ontology/Prop$.html">Prop</a>.
+The algorithms for parsing, type inference, and validity checking for queries are straightforward and defined in the respective companion objects <a href="../api/info/kwarc/mmt/api/ontology/Query$.html">Query</a> and <a href="../api/info/kwarc/mmt/api/ontology/Prop$.html">Prop</a>.
 </p>
 
 <h2>Evaluation</h2>
 
-The evaluation of queries is implemented in the <a href="/api/info/kwarc/mmt/api/ontology/Evaluator.html">Evaluator</a>.<br/>
+The evaluation of queries is implemented in the <a href="../api/info/kwarc/mmt/api/ontology/Evaluator.html">Evaluator</a>.<br/>
 
 According to its type, every query evaluates to a tuple of base values or to a set of such tuples.<br/>
 
-For each <a href="/api/info/kwarc/mmt/api/ontology/QueryType.html">QueryType</a>, there is a corresponding subclass of <a href="/api/info/kwarc/mmt/api/ontology/BaseType.html">BaseType</a>, from which the return type of evaluation is built.<br/>
+For each <a href="../api/info/kwarc/mmt/api/ontology/QueryType.html">QueryType</a>, there is a corresponding subclass of <a href="../api/info/kwarc/mmt/api/ontology/BaseType.html">BaseType</a>, from which the return type of evaluation is built.<br/>
 
 Evaluation results can be used in the API or exported in ad-hoc XML syntax.
 
 <h2>Extending the Query Language</h2>
 
 There is an <a href="extensions.html">extension</a> for adding new atomic functions to the query language.<br/>
-Several such functions expose basic algorithms (parsing, type checking, presentation, etc.) to the query language. See the documentation of <a href="/api/info/kwarc/mmt/api/ontology/QueryExtension.html ">QueryExtension.html</a>.
+Several such functions expose basic algorithms (parsing, type checking, presentation, etc.) to the query language. See the documentation of <a href="../api/info/kwarc/mmt/api/ontology/QueryExtension.html ">QueryExtension.html</a>.
 
 <h2>Querying from JavaScript</h2>
 
