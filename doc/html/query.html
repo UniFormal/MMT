@@ -7,13 +7,13 @@ It was first described in the corresponding <a href="http://kwarc.info/frabe/Res
 <p>
 QMT uses three basic concepts: types, queries, and propositions.<br/>
 <ul>
- <li>Types inherit from <a href="../api/info/kwarc/mmt/api/ontology/QueryType.html">QueryType</a>.
+ <li><b>Types</b> inherit from <a href="../api/info/kwarc/mmt/api/ontology/QueryType.html">QueryType</a>.
  Types are either products of <a href="../api/info/kwarc/mmt/api/ontology/QueryBaseType.html">QueryBaseTypes</a> or the power type of such a product.</li>
  <li>
-  Queries inherit from <a href="../api/info/kwarc/mmt/api/ontology/Query.html">Query</a>.
+  <b>Queries</b> inherit from <a href="../api/info/kwarc/mmt/api/ontology/Query.html">Query</a>.
   They are typed expressions.
  </li>
- <li>Propositions inherit from <a href="../api/info/kwarc/mmt/api/ontology/Prop.html">Prop</a>
+ <li><b>Propositions</b> inherit from <a href="../api/info/kwarc/mmt/api/ontology/Prop.html">Prop</a>
  They are expressions that are used as side conditions within queries.
  </li>
 </ul>
@@ -25,6 +25,29 @@ The specific types, queries, and propositions can be best understood by browsing
 At the moment the only concrete syntax for queries is an ad hoc XML format.<br/>
 
 The algorithms for parsing, type inference, and validity checking for queries are straightforward and defined in the respective companion objects <a href="../api/info/kwarc/mmt/api/ontology/Query$.html">Query</a> and <a href="../api/info/kwarc/mmt/api/ontology/Prop$.html">Prop</a>.
+</p>
+
+<h2>The MMT Ontology (T-Box)</h2>
+
+The MMT ontology is a fragment of the query language.<br/>
+
+The QueryBaseType <a href="../api/info/kwarc/mmt/api/ontology/PathType.html">PathType</a> is the type of MMT URIs.<br/>
+
+<b>Concepts</b>, i.e., unary predicates on this type, are the subclasses of <a href="../api/info/kwarc/mmt/api/ontology/Unary.html">Unary</a>.<br/>
+
+<b>Relations</b>, i.e., binary relations between MMT URIs, are the subclasses of <a href="../api/info/kwarc/mmt/api/ontology/Binary.html">Binary</a>.
+
+<h2>Maintenance of the Relational Knowledge (A-Box)</h2>
+
+<p>
+On disk, the dimension <span class="code">relational</span> of an MMT <a href="archives.html">archive</a> maintains the relational knowledge, i.e., the set of known URIs and the instances of the unary and binary predicates.<br/>
+In memory, this is done by the class <a href="../api/info/kwarc/mmt/api/ontology/RelStore.html">RelStore</a> maintains the A-Box.
+</p>
+
+<p>
+The <span class="code">relational</span> dimension is written automatically when an import <a href="applications/build.html">build target</a> is used.<br/>
+
+To load an archive's relational knowledge into memory, the <a href="applications/shell.html">shell</a> command <span class="code">relational</span> can be used.
 </p>
 
 <h2>Evaluation</h2>
@@ -41,6 +64,38 @@ Evaluation results can be used in the API or exported in ad-hoc XML syntax.
 
 There is an <a href="extensions.html">extension</a> for adding new atomic functions to the query language.<br/>
 Several such functions expose basic algorithms (parsing, type checking, presentation, etc.) to the query language. See the documentation of <a href="../api/info/kwarc/mmt/api/ontology/QueryExtension.html ">QueryExtension.html</a>.
+
+<h2>Querying via HTTP</h2>
+
+The MMT <a href="applications/http.html">HTTP interface</a> opens a QMT query server that accepts a QMT query in XML encoding as the body of an HTTP POST request.<br/>
+
+Some example queries are:
+
+<div class="code">
+&lt;uris concept=&quot;C&quot;/&gt;
+</div>
+retrieves all known MMT URIs of concept <span class="code">C</span>.
+
+<div class="code">
+<pre>&lt;related&gt;
+  &lt;literal uri=&quot;T&quot;/&gt;
+  &lt;toobject relation=&quot;Declares&quot;/&gt;
+&lt;/related&gt;</pre>
+</div>
+retrieves all declarations of theory <span class="code">T</span>.
+
+<div class="code">
+<pre>&lt;related&gt;
+  &lt;literal uri=&quot;T&quot;/&gt;
+  &lt;sequence&gt;
+    &lt;transitive&gt;
+       &lt;toobject relation=&quot;Includes&quot;/&gt;
+    &lt;/transitive&gt;
+    &lt;toobject relation=&quot;Declares&quot;/&gt;
+  &lt;/sequence&gt;
+&lt;/related&gt;</pre>
+</div>
+retrieves all declarations of any theory included into theory <span class="code">T</span>.
 
 <h2>Querying from JavaScript</h2>
 

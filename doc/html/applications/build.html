@@ -30,16 +30,16 @@ The most important build targets (which are available by default) include:
 <th>Target</th><th>Input dimension</th><th>Output dimension</th><th>Provided by</th><th>Description</th>
 </tr>
 <tr>
-    <td>mmt-omdoc</td><td>source</td><td>compiled</td><td>api</td>
-    <td>parses, type-checks, and exports as OMDoc</td>
+    <td>index</td><td>source</td><td>content, narration, relational</td><td>api</td>
+    <td>indexes and prepares OMDoc source files for MMT lookups, the produced dimensions are from where MMT retrieves content, documents, and the ontology, respectively</td>
 </tr>
 <tr>
-    <td>twelf-omdoc</td><td>source</td><td>compiled</td><td>LF plugin</td>
+    <td>mmt-omdoc</td><td>source</td><td>as index</td><td>api</td>
+    <td>like index but parses and type-checks MMT source files instead of OMDoc files</td>
+</tr>
+<tr>
+    <td>twelf-omdoc</td><td>source</td><td>as index</td><td>LF plugin</td>
     <td>like mmt-omdoc but for Twelf syntax</td>
-</tr>
-<tr>
-    <td>index</td><td>compiled</td><td>content, narration, relational</td><td>api</td>
-    <td>indexes and prepares for MMT lookups, the produced dimensions are from where MMT retrieves content, documents, and the ontology, respectively</td>
 </tr>
 <tr>
     <td>html</td><td>narration</td><td>html</td><td>api</td>
