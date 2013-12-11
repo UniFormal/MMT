@@ -68,7 +68,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
       var i = currentIndex+1
       while (i < len) {
          tl(i) match {
-            case Token(w,_,false) if w.length == 1 =>
+            case Token(w,_,false,_) if w.length == 1 =>
                delim += w
                i += 1
             case _ => return delim

@@ -162,7 +162,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
    /** for Logger */ 
    val report = controller.report
    /** prefix used when logging */ 
-   val logPrefix = "object-checker"
+   var logPrefix = "object-checker"
    /** shortcut for the RuleStore of the controller; used to retrieve Rule's */
    private val ruleStore = controller.extman.ruleStore
    /** the SubstitutionApplier to be used throughout */

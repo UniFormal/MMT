@@ -30,7 +30,7 @@ class Parse extends QueryExtension("parse", StringType, ObjType) {
       argument match { 
          case StringValue(s) =>
            val pu = parser.ParsingUnit(parser.SourceRef.anonymous(s), OMMOD(param), Context(), s) 
-           controller.termParser(pu)
+           controller.termParser(pu, throw _)
          case _ => throw ImplementationError("evaluation of ill-typed query")
       }
    }

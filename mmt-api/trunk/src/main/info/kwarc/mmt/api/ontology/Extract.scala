@@ -39,7 +39,7 @@ object Extractor {
                d match {
                   case c: Constant =>
                      f(dec)
-                     f(IsConstant(c.rl).apply(c.path))
+                     f(IsConstant(c.path))
                      c.alias foreach {a =>
                        f(IsAliasFor(c.home % a, c.path))
                      }

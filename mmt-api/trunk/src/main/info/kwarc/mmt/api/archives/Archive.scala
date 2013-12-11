@@ -49,12 +49,13 @@ abstract class WritableArchive extends ROArchive {
     val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
    
     val sourceDim = properties.get("source").getOrElse("source")
-    val compiledDim = properties.get("compiled").getOrElse("compiled")
     val sourceDir = root / sourceDim
-    val narrationDir = root / "narration"
-    val contentDir = root / "content"
-    val relDir = root / "relational"
-    val svgDir = root / "svg"
+    val narrationDim = properties.get("narration").getOrElse("narration")
+    val narrationDir = root / narrationDim
+    val contentDim = properties.get("content").getOrElse("content")
+    val contentDir = root / contentDim
+    val relDim = properties.get("relational").getOrElse("relational")
+    val relDir = root / relDim
     val flatDir = root / "flat"
     
     val timestamps = new TimestampManager(this, root / "META-INF" / "timestamps" )
@@ -208,7 +209,7 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
       val inFile = contentDir / in
       log("to do: [CONT -> PRES]        -> " + inFile)
 
-      traverse("content", in, Archive.extensionIs("omdoc")) { case Current(inFile, inPath) =>
+      traverse(contentDim, in, Archive.extensionIs("omdoc")) { case Current(inFile, inPath) =>
         val outFile = (root / "presentation" / param / inPath).setExtension("xhtml")
         controller.read(inFile,None)
         val mpath = Archive.ContentPathToMMTPath(inPath)
@@ -240,7 +241,7 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
 
     def readRelational(in: List[String] = Nil, controller: Controller, kd: String) {
        if (relDir.exists) {
-          traverse("relational", in, Archive.extensionIs(kd)) {case Current(inFile, inPath) =>
+          traverse(relDim, in, Archive.extensionIs(kd)) {case Current(inFile, inPath) =>
              ontology.RelationalElementReader.read(inFile, DPath(narrationBase), controller.depstore)
           }
           //TODO this should only add implicits for the dependencies it read
@@ -265,7 +266,7 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
         val sourceDim = dim match {
           case "mws-flat" => "flat"
           case "mws-enriched" => "enriched"
-          case _ => "content"
+          case _ => contentDim
         }
         traverse(sourceDim, in, Archive.extensionIs("omdoc")) {case Current(inFile, inPath) =>
            val outFile = (root / "mws" / dim / inPath).setExtension("mws")

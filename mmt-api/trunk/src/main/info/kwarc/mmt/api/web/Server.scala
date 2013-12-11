@@ -241,7 +241,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
              val termParser = controller.termParser
              val tm = try {
                val str = body.asString
-               termParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), scope, objects.Context(), str))
+               termParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), scope, objects.Context(), str), throw _)
              } catch {
                case e : Throwable =>
                  println(e)
@@ -328,7 +328,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
           val mpath = dpath ? strThy
           val ctrl = new Controller(controller.report)
           val reader = new TextReader(controller, ctrl.add)
-          val res = reader.readDocument(text, dpath)(controller.termParser.apply)
+          val res = reader.readDocument(text, dpath)(pu => controller.termParser.apply(pu, throw _))
           res._2.toList match {
             case Nil => //no error -> parsing successful
               try {
@@ -391,9 +391,6 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
       }
     }
   }
-
-  
-
 
   private def TreeResponse = new HLet {
      def aact(tk: HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {

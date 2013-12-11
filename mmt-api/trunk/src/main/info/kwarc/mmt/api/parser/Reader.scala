@@ -153,12 +153,6 @@ class Reader(val jr: java.io.BufferedReader) {
     */
    def readToSpace = readUntil(32,US,RS,GS,FS)
 
-   import TokenList._
-   private def canFollow(before: Char, after: Char) = 
-      ! isWhitespace(after) &&
-      (isConnector(before) || isConnector(after) || 
-         (isLetter(before) || isNumber(before)) == (isLetter(after) || isNumber(after))
-      )
    /** reads until end of current Token, terminated by whitespace or by switch from letter-like to symbol-like characters 
     */
    def readToken = {
@@ -176,7 +170,7 @@ class Reader(val jr: java.io.BufferedReader) {
          if (l == "") {
             stop = true
             lastDelimiter = -1
-         } else if (! canFollow(i.toChar, l(0))) {
+         } else if (! TokenList.canFollow(i.toChar, l(0))) {
             stop = true
             val j = l(0).toInt
             lastDelimiter = if (List(FS,RS,GS,US).contains(j)) j else 32
