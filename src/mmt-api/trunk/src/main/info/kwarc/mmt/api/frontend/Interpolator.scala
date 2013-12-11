@@ -63,7 +63,7 @@ class MMTInterpolator(controller: frontend.Controller) {
         }
         val str = buf.toString
         val pu = ParsingUnit(SourceRef.anonymous(str), theory, cont, str, top) 
-        val t = controller.termParser(pu)
+        val t = controller.termParser(pu, throw _)
         val tI = t ^ cont.toPartialSubstitution
         if (check) {
 	        val stack = Stack(theory, cont)

@@ -66,7 +66,7 @@ class NotationStore(mem : ROMemory, val report : frontend.Report) extends Logger
               val roles : List[Role] = r match {
                  case Role_application(None) => 
                    mem.ontology.getType(p) match {
-                       case Some(ontology.IsConstant(rl)) => List(Role_application(rl), r) // application of constants may differ depending on their role, if given 
+                       case Some(ontology.IsConstant) => List(Role_application(None), r) // application of constants may differ depending on their role, if given 
                        case _ => List(r)
                     }
                  case Role_Constant(Some(s)) => List(r, Role_Constant(None))

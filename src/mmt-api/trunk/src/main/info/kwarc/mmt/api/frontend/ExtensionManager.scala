@@ -80,6 +80,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       //parserExtensions ::= new ControlParser
       lexerExtensions ::= GenericEscapeLexer
       lexerExtensions ::= QuoteLexer
+      lexerExtensions ::= UnicodeReplacer
       lexerExtensions ::= new PrefixedTokenLexer('\\')
       serverPlugins   :::= List(new web.ActionServer, new web.SVGServer, new web.QueryServer, new web.AdminServer)
       queryExtensions :::= List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,

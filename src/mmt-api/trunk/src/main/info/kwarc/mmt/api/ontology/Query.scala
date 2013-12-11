@@ -62,7 +62,7 @@ case class Component(of: Query, component: String) extends Query
 case class SubObject(of: Query, position: Position) extends Query
 /** the set of all elements related to a certain path by a certain relation */
 case class Related(to: Query, by: RelationExp) extends Query
-/** iteral */
+/** literal */
 case class Literal[T <: BaseType](literal: T) extends Query
 
 /** set of literals */
@@ -71,8 +71,8 @@ case class Literals[T <: BaseType](literals: T*) extends Query
 case class Let(value: Query, in: Query) extends Query
 /** singleton sets */
 case class Singleton(e: Query) extends Query
-/** the set of all elements of a certain concept in the MMT ontology */ 
-case class AllThatAre(tp: Unary) extends Query
+/** the set of all URIs of a certain concept in the MMT ontology */ 
+case class Paths(tp: Unary) extends Query
 /** unification query; returns all objects in the database that unify with a certain object and the respective substitutions */
 case class Unifies(wth: Obj) extends Query
 /** dependency closure of a path */
@@ -247,7 +247,7 @@ object Query {
             case Elem(t) => ESet(t)
             case _ => throw ParseError("expected element query, found set query " + q)
          }
-      case AllThatAre(_) => ESet(PathType)
+      case Paths(_) => ESet(PathType)
       case Unifies(_) => ESet(ObjType)
       case Closure(of) =>
          check(of, Elem(PathType))
@@ -297,7 +297,7 @@ object Query {
          Literal(StringValue(l.text))
       case <bound/> => Bound(xml.attrInt(n, "index", ParseError(_)))
       case <let>{v}{in}</let> => Let(parse(v), parse(in))
-      case <concept/> => AllThatAre(Unary.parse(xml.attr(n, "name")))
+      case <uris/> => Paths(Unary.parse(xml.attr(n, "concept")))
       case <component>{o}</component> => Component(parse(o), xml.attr(n, "index"))
       case <subobject>{o}</subobject> => SubObject(parse(o), Position.parse(xml.attr(n, "position")))
       case <related>{to}{by}</related> => Related(parse(to), RelationExp.parse(by))

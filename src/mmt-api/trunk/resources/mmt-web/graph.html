@@ -9,7 +9,7 @@
        mainWindow.navigation.navigate(to);
     };
     function navigateGraph(doc){
-       mmt.ajaxReplaceIn('/:graph?' + doc, 'svgParent', false);
+       mmt.ajaxReplaceIn('/:svg?' + doc, 'svgParent', false);
        setSVGPanRoot($('svg')[0]);
     }
     $(function(){

@@ -61,6 +61,56 @@ class PrefixedTokenLexer(delim: Char) extends LexerExtension {
   }
 }
 
+/**
+ * replaces words during lexing
+ * @param maps a list of pairs (a,b) such that a will be lexed as the Token b
+ */
+abstract class WordReplacer extends LexerExtension {
+   val maps: List[(String,String)]
+   /** caches the result of applicable so that apply does not have to traverse the list again */
+   private var memory: Option[(String,Int,(String,String))] = None
+   def applicable(s: String, i: Int) = {
+      val si = s.substring(i)
+      val km = maps mapFind {case (k,m) =>
+         if (si.startsWith(k)) {
+            val next = i+k.length
+            if (next == s.length || ! TokenList.canFollow(k.last, s(next)))
+               Some((k,m))
+            else None
+         } else
+            None
+      }
+      if (km.isDefined) {
+         memory = Some((s,i,km.get))
+         true
+      } else
+         false
+   }
+   def apply(s: String, i: Int, firstPosition: SourcePosition): Token = {
+      val (k,m) = memory match {
+         case Some((ms, mi, km)) if ms == s && mi == i => km
+         case _ =>
+            applicable(s, i)
+            memory.get._3
+      }
+      val wsBefore = i == 0 || TokenList.isWhitespace(s(i-1))
+      Token(m, firstPosition, wsBefore, Some(k))
+   }
+}
+
+/** replaces typical multi-symbol operators (e.g., arrows and double brackets) with the corresponding Unicode symbol */
+object UnicodeReplacer extends WordReplacer {
+   val maps = List("->" -> "→", "<-" -> "←", "<->" -> "↔",
+                   "=>" -> "⇒", "<=" -> "⇐", "<=>" -> "⇔",
+                   "-->" -> "⟶", "<--" -> "⟵", "<-->" -> "⟷",
+                   "==>" -> "⟹", "<==" -> "⟸","<==>" -> "⟺",
+                   "=<" -> "≤", ">=" -> "≥",
+                   "<<" -> "⟪", ">>" -> "⟫", "[[" -> "⟦", "]]" -> "⟧",
+                   "\\/" -> "∧", "/\\" -> "∨",
+                   "!=" -> "≠"
+              )
+}
+
 /** the lexing part of a [[LexParseExtension]] */
 abstract class LexFunction {
    /**
@@ -288,7 +338,7 @@ class QuoteEval(bQ: String, eQ: String, bE: String, eE: String) extends LexerExt
                  val ref = outer.source.copy(region = SourceRegion(current, current.after(e)))
                  current = current.after(e + eE) 
                  val pu = ParsingUnit(ref, outer.scope, cont, e)
-                 parser(pu)
+                 parser(pu, throw _)
            }
            OMSemiFormal(parsed.map(Formal(_)))
         }

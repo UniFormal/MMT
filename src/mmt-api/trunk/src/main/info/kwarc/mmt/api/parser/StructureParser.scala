@@ -720,11 +720,8 @@ class StructureAndObjectParser(controller: Controller) extends StructureParser(c
     */
    def puCont(pu: ParsingUnit)(implicit state: ParserState): Term = {
       val obj = try {
-         controller.termParser(pu)  
+         controller.termParser(pu, errorCont _)  
       } catch {
-         case e: SourceError =>
-            errorCont(e)
-            DefaultObjectParser(pu)
          case e: Error =>
             val se = makeError(pu.source.region, e.getMessage)
             errorCont(se)

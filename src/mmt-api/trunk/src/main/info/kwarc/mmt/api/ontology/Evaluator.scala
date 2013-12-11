@@ -100,7 +100,7 @@ class Evaluator(controller: Controller) {
          val res = empty
          res += evaluateElem(e)
          res
-      case AllThatAre(c) =>
+      case Paths(c) =>
          val res = empty
          rs.getInds(c) foreach {res += _}
          res

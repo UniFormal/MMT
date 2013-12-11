@@ -83,6 +83,7 @@ class FileHandler(val filename : File, timestamps: Boolean) extends ReportHandle
          val t = if (timestamps) Report.time + "\t" else ""
          val m = t + ind + group + ": " + msg
          file.println(m)
+         flush
    }
    override def flush {file.flush}
    override def toString = "file " + filename

@@ -17,7 +17,7 @@ case object IsTheory extends Unary("theory")
 case object IsView extends Unary("view")
 case object IsStyle extends Unary("style")
 case object IsStructure extends Unary("structure")
-case class IsConstant(rl: Option[String]) extends Unary("constant" + rl.mkString(":",null,""))
+case object IsConstant extends Unary("constant")
 case object IsPattern extends Unary("pattern")
 case object IsInstance extends Unary("instance")
 case object IsConAss extends Unary("conass")
@@ -26,11 +26,10 @@ case object IsNotation extends Unary("notation")
 
 /** helper object for unary items */ 
 object Unary {
-   private val all = List(IsDocument,IsTheory,IsView,IsStyle,IsStructure,IsConAss,
+   private val all = List(IsDocument,IsTheory,IsView,IsStyle,IsConstant,IsStructure,IsConAss,
                           IsStrAss,IsNotation,IsPattern,IsInstance)
    def parse(s: String) : Unary = s match {
-      case "constant" => IsConstant(None)
-      case s if s.startsWith("constant:") => IsConstant(Some(s.substring(9)))
+      case s if s.startsWith("constant:") => IsConstant //TODO remove
       case s => all.find(_.toString == s).getOrElse {
          throw ParseError("unary predicate expected, found: " + s)
       }

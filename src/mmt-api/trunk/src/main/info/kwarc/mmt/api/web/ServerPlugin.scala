@@ -70,7 +70,7 @@ class SVGServer extends ServerExtension("svg") {
          throw LocalError("illegal path: " + query)
       }
       val inPathFile = archives.Archive.narrationSegmentsAsFile(inPath, "omdoc")
-      val svgFile = (arch.svgDir / inPathFile).setExtension("svg")
+      val svgFile = (arch.root / "svg" / inPathFile).setExtension("svg")
       log("serving svg from " + svgFile)
       val node = utils.xml.readFile(svgFile)
       Server.XmlResponse(node)

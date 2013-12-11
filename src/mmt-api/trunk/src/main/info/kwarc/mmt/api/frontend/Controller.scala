@@ -374,7 +374,7 @@ class Controller extends ROController with Logger {
             (doc, Nil)
          case Some("elf") =>
             val source = scala.io.Source.fromFile(f, "UTF-8")
-            val (doc, errorList) = textReader.readDocument(source, dpath)(termParser.apply)
+            val (doc, errorList) = textReader.readDocument(source, dpath)(pu => termParser.apply(pu, throw _))
             source.close
             if (!errorList.isEmpty)
               log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
@@ -469,17 +469,10 @@ class Controller extends ROController with Logger {
             key match {
                case "check" => arch.check(in, this)
                case "validate" => arch.validate(in, this)
-               case "clean" => List("compiled", "narration", "content", "relational", "notation") foreach {arch.clean(in, _)}
                case "flat" => arch.produceFlat(in, this)
                case "enrich" =>
                  val me = new ModuleElaborator(this)
                  arch.produceEnriched(in,me, this)
-               case "source-terms" | "source-structure" => arch match {
-                  case arch: archives.MMTArchive =>
-                     arch.readSource(in, this, key.endsWith("-terms"))
-                     log("done reading source")
-                  case _ => log("archive is not an MMT archive")
-               }
                case "relational" =>
                   arch.readRelational(in, this, "rel")
                   arch.readRelational(in, this, "occ")
@@ -489,7 +482,7 @@ class Controller extends ROController with Logger {
                   arch.readNotation(in, this)
                   log("done reading notation index")
                 */
-               case "mws"          => arch.produceMWS(in, "content")
+               case "mws"          => arch.produceMWS(in, arch.contentDim)
                case "mws-flat"     => arch.produceMWS(in, "mws-flat")
                case "mws-enriched" => arch.produceMWS(in, "mws-enriched")
                case "integrate"    => arch.integrateScala(this, in)
