@@ -6,7 +6,7 @@ import info.kwarc.mmt.api._
 import documents._
 import utils._
 import frontend._
-import backend._
+import archives._
 import symbols._
 import libraries._
 import modules._
@@ -23,15 +23,18 @@ import scala.sys.process._ // need this to execute shell commands
 /**
  * TPTP twelf Compiler, translates TPTP sources to twelf using tptp2x
  */
-class TptpTwelfCompiler extends Compiler {
+class TptpTwelfCompiler extends TraversingBuildTarget {
   val key = "tptp-twelf"
+  val inDim = "source"
+  val outDim = "twelf"
+
   private var tptppath : String = null
   override def start(args: List[String]) {
      tptppath = args(0)     
   }
   
   def includeFile(n: String) : Boolean = n.endsWith(".tptp")
-  def buildOne(bf: archives.BuiltFile) {
+  def buildFile(a: Archive, bf: BuiltFile) {
    // should be  .../TPTP/TPTP2X  
     var tptp2Xpath : String = tptppath.substring(0, tptppath.indexOf("MMT")) + "TPTP2X/"    
     // compiled file name
