@@ -213,7 +213,8 @@ object ArticleTranslator {
 	def translateLemma(l : MizLemma) = {
 	  val name = TranslationController.getLmName(l.prop.nr)
 	  TranslationController.addGlobalProp(l.prop.nr, name)
-	  val matches = ("prop" / PropositionTranslator.translateProposition(l.prop))
+	  //val matches = ("prop" / PropositionTranslator.translateProposition(l.prop))
+	  val matches = List(PropositionTranslator.translateProposition(l.prop))
 	  val pattern = artPatterns.Lemma
 	  val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 	  TranslationController.addSourceRef(i, l)

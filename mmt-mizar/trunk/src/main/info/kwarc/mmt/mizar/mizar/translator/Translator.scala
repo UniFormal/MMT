@@ -16,7 +16,10 @@ import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.lf._
 //import scala.xml._
 
-class MizarCompiler extends Compiler {
+class MizarCompiler extends archives.Compiler {
+   val key = "mizar-omdoc"
+   def includeFile(s: String) = s.endsWith(".miz")
+   
 	val lib : collection.mutable.Map[Int,List[String]] = new collection.mutable.HashMap[Int,List[String]]
 	def addToLib(version : Int, article : String) {
 	  if (!lib.contains(version)) {
@@ -51,7 +54,7 @@ class MizarCompiler extends Compiler {
 		input
 	}
 	
-	
+	/*
 	def printArticle(mml : String, version : Int, aid : String) {
 		val docPath = mml + "/compiled/" + version + "/" + aid + ".omdoc"
 		val base = Mizar.mmlBase / version.toString
@@ -70,22 +73,11 @@ class MizarCompiler extends Compiler {
 		val docNode = pp.format(nd)
 		out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + docNode.toString)
 		out.close
-		
-	}
+	}*/
 
-override def init(cont : Controller, args : List[String] = Nil) {
-	this.controller = cont
-    report = controller.report
-    //controller-init
+override def start(args : List[String] = Nil) {
 	//TranslationController.controller.handle(ExecFile(File(new java.io.File("m2o-startup.mmt"))))
-    TranslationController.controller = cont
-}
-
-
-def isApplicable(src : String) : Boolean = {
-  //val len = src.length
-  //src.substring(len-4,len) == ".miz"
-  src == "mizar"
+   TranslationController.controller = controller
 }
 
 def getBase(f : File) : String = {
@@ -109,12 +101,12 @@ def getAid(f : File) : String = {
 
 }
 
-override def compile(in : File, out : File) : List[SourceError] = {
-  val base = getBase(in)
-  val version = getVersion(in)
-  val aid = getAid(in)
-  translateArticle(base, version, aid.toUpperCase())
-  Nil
+def buildOne(bf: archives.BuiltFile) : Document = {
+  val base = getBase(bf.inFile)
+  val version = getVersion(bf.inFile)
+  val aid = getAid(bf.inFile)
+  val dOpt = translateArticle(base, version, aid.toUpperCase())
+  dOpt.get // TODO can this ever return None -- FR when changing to skip compiled folder
 }
 
 def compileLibrary(files : List[File]) : List[SourceError] = {
@@ -123,10 +115,12 @@ def compileLibrary(files : List[File]) : List[SourceError] = {
 }
 
 
-def translateArticle(mml : String, version : Int, aid : String) : Unit = {
+def translateArticle(mml : String, version : Int, aid : String) : Option[Document] = {
 	val name = aid.toLowerCase()
 	//println("attempting to translate article " + name)
-	if (!isInLib(version, aid)) {
+	if (isInLib(version, aid)) {
+	   None
+	} else {
 		//files
 		val xmlabs = mml + "/export/" + version.toString + "/" + name + ".xmlabs" //TODO perhaps replace
 		val dcx = mml + "/export/" + version.toString + "/" + name + ".dcx"
@@ -172,23 +166,12 @@ def translateArticle(mml : String, version : Int, aid : String) : Unit = {
 		
 		TranslationController.controller.add(MRef(d.path, th.path, true))
 		ArticleTranslator.translateArticle(article)
-	    
-		printArticle(mml, version, article.title)
-		addToLib(version, aid)
-		
-		TranslationController.clear()
-		ParsingController.dictionary.clear()
-		//TranslationController.controller.presenter(TranslationController.controller.get(new DPath(new xml.URI(article.title))), GlobalParams(ConsoleWriter, new DPath(new xml.URI("foundations/lf/ascii.omdoc")) ? "ascii" ))
-		
-		//println("pm : " + TranslationController.pm)
-		//println("pi : " + TranslationController.pi)
-		//println("fm : " + TranslationController.fm)
-		//println("fi : " + TranslationController.fi)
-		//println("mm : " + TranslationController.mm)
-		//println("mi : " + TranslationController.mi)
-		//println("am : " + TranslationController.am)
-		//println("ai : " + TranslationController.ai)
-		
+      TranslationController.clear()
+      ParsingController.dictionary.clear()
+      addToLib(version, aid)
+		Some(d)
+		// FR: removed when integrating change to skip "compiled" folder
+		// printArticle(mml, version, article.title)
 	}
 }
 }

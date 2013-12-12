@@ -32,9 +32,8 @@ object SchemeRegTranslator {
 		val typ = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateTyp(rc.typ)))
 		val cluster = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(rc.cluster)))
 	
-		val matches = (OMV("n") / OMI(argNr)) ++ (OMV("argTypes") / Sequence(argTypes :_*)) ++ 
-					(OMV("typ") / typ) ++ (OMV("cluster") / cluster)
-	
+		//val matches = (OMV("n") / OMI(argNr)) ++ (OMV("argTypes") / Sequence(argTypes :_*)) ++ (OMV("typ") / typ) ++ (OMV("cluster") / cluster)
+	   val matches = List(OMI(argNr), Sequence(argTypes :_*), typ, cluster)
 		val pattern = RegPatterns.MizExistentialReg
 		val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 		TranslationController.clearLocusVarContext()
@@ -51,9 +50,8 @@ object SchemeRegTranslator {
 		val functor = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateTerm(fc.functor)))
 		val cluster = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(fc.cluster)))
 	
-		val matches = (OMV("n") / OMI(argNr)) ++ (OMV("argTypes") / Sequence(argTypes : _*)) ++ 
-					(OMV("functor") / functor) ++ (OMV("cluster") / cluster)
-	
+		//val matches = (OMV("n") / OMI(argNr)) ++ (OMV("argTypes") / Sequence(argTypes : _*)) ++ (OMV("functor") / functor) ++ (OMV("cluster") / cluster)
+	   val matches = List(OMI(argNr), Sequence(argTypes : _*), functor, cluster)
 		val pattern = RegPatterns.MizFunctionalReg
 		val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 		
@@ -75,8 +73,8 @@ object SchemeRegTranslator {
 		val first = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(cc.first)))
 		val second = MMTUtils.args("x", argTypes.length, MMTUtils.argTypes("x", argTypes, argTypes.length, TypeTranslator.translateCluster(cc.second)))
 
-		val matches = (OMV("n") / OMI(argNr)) ++ (OMV("argTypes") / Sequence(argTypes : _*)) ++ 
-					(OMV("typ") / typ) ++ (OMV("first") / first) ++ (OMV("second") / second)
+		//val matches = (OMV("n") / OMI(argNr)) ++ (OMV("argTypes") / Sequence(argTypes : _*)) ++ (OMV("typ") / typ) ++ (OMV("first") / first) ++ (OMV("second") / second)
+      val matches = List(OMI(argNr),  Sequence(argTypes : _*), typ, first,  second)
 	
 		val pattern = RegPatterns.MizConditionalReg
 		val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
@@ -116,9 +114,8 @@ object SchemeRegTranslator {
 	  //pattern
 	  val inst = {
 	    val pattern = SchemePatterns.MizSchemeDef
-	    val matches = ("n" / OMI(args.length)) ++ (OMV("args") / Sequence(args : _*)) ++
-	    			  ("m" / OMI(premises.length)) ++ (OMV("premises") / Sequence(premises :_ *)) ++
-	    			  ("prop" / prop)
+	    //val matches = ("n" / OMI(args.length)) ++ (OMV("args") / Sequence(args : _*)) ++ ("m" / OMI(premises.length)) ++ (OMV("premises") / Sequence(premises :_ *)) ++ ("prop" / prop)
+       val matches = List(OMI(args.length), Sequence(args : _*), OMI(premises.length), Sequence(premises :_ *), prop)
 	    val i = new Instance(OMMOD(TranslationController.currentTheory), LocalName(name), pattern.home.toMPath ? pattern.name, matches)
 	    TranslationController.clearLocusVarContext()
 	    TranslationController.addSourceRef(i, s)

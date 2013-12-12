@@ -77,7 +77,7 @@ object ReasoningTranslator {
       context ++= VarDecl(name, Some(tm), None)
     }
     //TODO more precise encoding 
-    Mizar.apply(Mizar.constant("forI"), OMBIND(LF.lambda, context, translateProofSteps(rest)))
+    Mizar.apply(Mizar.constant("forI"), Lambda(context, translateProofSteps(rest)))
   }
   
   //miz inference
@@ -93,7 +93,7 @@ object ReasoningTranslator {
       VarDecl(name, Some(Mizar.proof(t)), None)
     }
     
-    Mizar.apply(Mizar.constant("impI"), OMBIND(LF.lambda, Context(decls :_*) , translateProofSteps(rest)))
+    Mizar.apply(Mizar.constant("impI"), Lambda(Context(decls :_*) , translateProofSteps(rest)))
   }
   
   //existsE
@@ -116,7 +116,7 @@ object ReasoningTranslator {
     val con = Context(VarDecl(varName, Some(Mizar.proof(exProp)), None))
     val exE = Mizar.apply(Mizar.constant("exE"),
         OMV(varName), 
-        OMBIND(LF.lambda, Context(tpDecls ++ propDecls : _*), translateProofSteps(rest)))
+        Lambda(Context(tpDecls ++ propDecls : _*), translateProofSteps(rest)))
     
     Mizar.apply(Mizar.constant("impI"), Lambda(con, exE))
   }

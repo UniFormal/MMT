@@ -205,73 +205,73 @@ object MMTAttrMeansElab {
 /* Patterns */
 object DefPatterns {	
 		
-	val MizPredMeansPartialDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizPredMeansPartialDef"), 
+	val MizPredMeansPartialDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizPredMeansPartialDef"), 
 		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", Some("default")), 
 						MMTDefElab("pred","n",Mizar.prop) ++ MMTArgTypesElab("pred","n", "args", Mizar.prop) ++ MMTMeansElab("pred","n", "args", "m", "cases", "results", Some("default"))
 		  )
-	val MizPredMeansCompleteDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizPredMeansCompleteDef"), 
+	val MizPredMeansCompleteDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizPredMeansCompleteDef"), 
 		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", None), 
 						MMTDefElab("pred","n",Mizar.prop) ++ MMTArgTypesElab("pred", "n", "args", Mizar.prop) ++ MMTMeansElab("pred","n", "args", "m", "cases", "results", None)
 		  )
 	
-	val MizPredIsPartialDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizPredIsPartialDef"), 
+	val MizPredIsPartialDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizPredIsPartialDef"), 
 		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", Some("default")), 
 						MMTDefElab("pred","n",Mizar.prop) ++ MMTArgTypesElab("pred","n", "args", Mizar.prop) ++ MMTIsElab("pred","n", "args", "m", "cases", "results", Some("default"))
 		  )
-	val MizPredIsCompleteDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizPredIsCompleteDef"), 
+	val MizPredIsCompleteDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizPredIsCompleteDef"), 
 		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", None), 
 						MMTDefElab("pred","n",Mizar.prop) ++ MMTArgTypesElab("pred","n", "args", Mizar.prop) ++ MMTIsElab("pred","n", "args", "m", "cases", "results", None)
 		  )
 	
 	
-	val MizFuncMeansPartialDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizFuncMeansPartialDef"), 
+	val MizFuncMeansPartialDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizFuncMeansPartialDef"), 
 		   			    MMTArgs("n", "args", Some("retType")) ++ MMTCases("m", "cases", "results", Some("default")), 
 						MMTDefElab("func","n",Mizar.any) ++ MMTArgTypesElab("func","n", "args", "retType") ++ MMTMeansElab("func","n", "args", "m", "cases", "results", Some("default"))
 		  )
-	val MizFuncMeansCompleteDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizFuncMeansCompleteDef"), 
+	val MizFuncMeansCompleteDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizFuncMeansCompleteDef"), 
 		   			    MMTArgs("n", "args", Some("retType")) ++ MMTCases("m", "cases", "results", None), 
 						MMTDefElab("func","n",Mizar.any) ++ MMTArgTypesElab("func","n", "args", "retType") ++ MMTMeansElab("func","n", "args", "m", "cases", "results", None)
 		  )
 	
-	val MizFuncIsPartialDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizFuncIsPartialDef"), 
+	val MizFuncIsPartialDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizFuncIsPartialDef"), 
 		   			    MMTArgs("n", "args", Some("retType")) ++ MMTCases("m", "cases", "results", Some("default")), 
 						MMTDefElab("func","n",Mizar.any) ++ MMTArgTypesElab("func","n", "args", "retType") ++ MMTIsElab("func","n", "args", "m", "cases", "results", Some("default"))
 		  )
-	val MizFuncIsCompleteDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizFuncIsCompleteDef"), 
+	val MizFuncIsCompleteDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizFuncIsCompleteDef"), 
 		   			    MMTArgs("n", "args", Some("retType")) ++ MMTCases("m", "cases", "results", None), 
 						MMTDefElab("func","n",Mizar.any) ++ MMTArgTypesElab("func","n", "args", "retType") ++ MMTIsElab("func","n", "args", "m", "cases", "results", None)
 		  )
-	val MizModeMeansPartialDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizModeMeansPartialDef"), 
+	val MizModeMeansPartialDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizModeMeansPartialDef"), 
 		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", Some("default")), 
 						MMTDefElab("mode","n",Mizar.tp) ++ MMTArgTypesElab("mode","n", "args", Mizar.tp) ++ MMTMeansElab("mode","n", "args", "m", "cases", "results", Some("default"))
 		  )
-	val MizModeMeansCompleteDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizModeMeansCompleteDef"), 
+	val MizModeMeansCompleteDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizModeMeansCompleteDef"), 
 		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", None), 
 						MMTDefElab("mode","n",Mizar.tp) ++ MMTArgTypesElab("mode","n", "args", Mizar.tp) ++ MMTMeansElab("mode","n", "args", "m", "cases", "results", None)
 		  )
 	
-	val MizModeIsPartialDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizModeIsPartialDef"), 
+	val MizModeIsPartialDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizModeIsPartialDef"), 
 		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", Some("default")), 
 						MMTDefElab("mode","n",Mizar.tp) ++ MMTArgTypesElab("mode","n", "args", Mizar.tp) ++ MMTIsElab("mode","n", "args", "m", "cases", "results", Some("default"))
 		  )
-	val MizModeIsCompleteDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizModeIsCompleteDef"), 
+	val MizModeIsCompleteDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizModeIsCompleteDef"), 
 		   			    MMTArgs("n", "args", None) ++ MMTCases("m", "cases", "results", None), 
 						MMTDefElab("mode","n",Mizar.tp) ++ MMTArgTypesElab("mode","n", "args", Mizar.tp) ++ MMTIsElab("mode","n", "args", "m", "cases", "results", None)
 		  )
 	
-	val MizAttrMeansPartialDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizAttrMeansPartialDef"), 
+	val MizAttrMeansPartialDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizAttrMeansPartialDef"), 
 		   			    MMTArgs("n", "args", None) ++ Context(VarDecl("mType", Some(Mizar.tp), None)) ++MMTCases("m", "cases", "results", Some("default")), 
 						MMTDefElab("attr","n",Mizar.attr(OMV("mType"))) ++ MMTAttrTypingElab("n", "args", "mType") ++ MMTAttrMeansElab("n", "args", "mType", "m", "cases", "results", Some("default"))
 		  )
-	val MizAttrMeansCompleteDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizAttrMeansCompleteDef"), 
+	val MizAttrMeansCompleteDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizAttrMeansCompleteDef"), 
 		   			    MMTArgs("n", "args", None) ++ Context(VarDecl("mType", Some(Mizar.tp), None)) ++MMTCases("m", "cases", "results", None), 
 						MMTDefElab("attr","n",Mizar.attr(OMV("mType"))) ++ MMTAttrTypingElab("n", "args", "mType") ++ MMTAttrMeansElab("n", "args", "mType", "m", "cases", "results", None)
 		  )
-	val MizAttrIsPartialDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizAttrIsPartialDef"), 
+	val MizAttrIsPartialDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizAttrIsPartialDef"), 
 		   			    MMTArgs("n", "args", None) ++ Context(VarDecl("mType", Some(Mizar.tp), None)) ++MMTCases("m", "cases", "results", Some("default")), 
 						MMTDefElab("attr","n",Mizar.attr(OMV("mType"))) ++ MMTAttrTypingElab("n", "args", "mType") ++ MMTAttrIsElab("n", "args", "mType", "m", "cases", "results", Some("default"))
 		  )
-	val MizAttrIsCompleteDef : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizAttrIsCompleteDef"), 
+	val MizAttrIsCompleteDef : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizAttrIsCompleteDef"), 
 		   			    MMTArgs("n", "args", None) ++ Context(VarDecl("mType", Some(Mizar.tp), None)) ++MMTCases("m", "cases", "results", None), 
 						MMTDefElab("attr","n",Mizar.attr(OMV("mType"))) ++ MMTAttrTypingElab("n", "args", "mType") ++ MMTAttrIsElab("n", "args", "mType", "m", "cases", "results", None)
 		  )
@@ -293,7 +293,7 @@ object DefPatterns {
 	
 	
 	def MizStructDef(nrMS : Int) : Pattern = {
-	  new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizStructDef" + nrMS),
+	  Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizStructDef" + nrMS),
 						MMTArgs("n","args",None) ++ genMSDecl(nrMS),
 						Context(VarDecl("struct",Some(MMTUtils.args("x", "n", MMTUtils.argTypes("x", "args", "n",Mizar.tp))) , None),
 						  VarDecl("aggr", Some(MMTUtils.args("x", "n", MMTUtils.argTypes("p","x", "args", "n",Mizar.set))), None),
@@ -304,7 +304,7 @@ object DefPatterns {
 	}
 	
 	
-	val MizSelDef : Pattern =  new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizSelector"),
+	val MizSelDef : Pattern =  Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("MizSelector"),
 			Context(VarDecl("mType", Some(Mizar.tp), None),
 			    	VarDecl("retType", Some(Mizar.tp), None)),
 			Context(VarDecl("sel", Some(Arrow(Mizar.any, Mizar.any)), None),

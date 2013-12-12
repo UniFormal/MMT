@@ -97,7 +97,7 @@ object TranslationController {
 	    val name = LocalName("p" + nr)
 	    propContext(nr) = OMV(name)
 	    name
-      case _ => LocalName.Anon
+      case _ => OMV.anonymous
 	}
 	
 	def addGlobalProp(nrO : Option[Int], sName : String) = nrO match {
@@ -191,7 +191,7 @@ object TranslationController {
 	}
 	
 	def makeConstant(n: LocalName, t: Term) =
-      new Constant(OMMOD(currentTheory), n, None, TermContainer(t), TermContainer(None), None, None)
+      Constant(OMMOD(currentTheory), n, None, Some(t), None, None)
    def makeConstant(n: LocalName, t: Term, d: Term) =
-      new Constant(OMMOD(currentTheory), n, None, TermContainer(t), TermContainer(d), None, None)
+      Constant(OMMOD(currentTheory), n, None, Some(t), Some(d), None)
 }

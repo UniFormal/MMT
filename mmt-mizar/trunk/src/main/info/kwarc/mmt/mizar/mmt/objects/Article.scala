@@ -22,7 +22,7 @@ object artPatterns {
    * Notations
    */
   
-  val SynonymicNotation : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("SynonymicNotation"),
+  val SynonymicNotation : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("SynonymicNotation"),
       Context(
           VarDecl("nr", None, None),
           VarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None),
@@ -31,7 +31,7 @@ object artPatterns {
       Context(VarDecl("notation",Some(OMV("ref")), None))
   )
   
-  val AntonymicNotation : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("AntonymicNotation"),
+  val AntonymicNotation : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("AntonymicNotation"),
       Context(
           VarDecl("nr", None, None),
           VarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None),
@@ -41,7 +41,7 @@ object artPatterns {
   )
   
   
-  val Lemma : Pattern = new Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("Lemma"),
+  val Lemma : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("Lemma"),
       Context(VarDecl("prop", Some(Mizar.constant("prop")),None)),
       Context(VarDecl("lemma", Some(Mizar.apply(Mizar.constant("proof"), OMV("prop"))), None)))
   
