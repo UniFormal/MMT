@@ -51,23 +51,27 @@ class TptpTranslator {
   /**
    * Translate TPTP file theory in the TPTP distribution dir theoryDir to OMDoc.
    */
-  def translate(theoryDir: String, theory: String, file: File) {
+  def translate(theoryDir: String, theory: String, file: File): Document = {
     log("Translating file: " + theory)
     
-    // handle document
-    val d = new Document(new DPath(baseURI / theoryDir))
-    
-    // handle theory
-    val t = new DeclaredTheory(d.path, LocalName(theory), Some(fofTh))
-    this.theoryPath = t.path
+    val dpath = new DPath(baseURI / theoryDir)
     try {
-      TptpTranslator.controller.get(t.path)
-      log("..." + t.path.toString + " already translated")
-      return
+      TptpTranslator.controller.get(dpath ? theory)
+      log("..." + theory + " already translated")
+      return TptpTranslator.controller.getDocument(dpath)
     } catch {
-      case _ => TptpTranslator.add(d); TptpTranslator.add(t)
+      case _: Exception => 
     }
+    // handle document
+    val d = new Document(dpath)
+    TptpTranslator.add(d)
+    // handle theory
+    val t = new DeclaredTheory(dpath, LocalName(theory), Some(fofTh))
+    TptpTranslator.add(t)
+    val mr = MRef(dpath, t.path)
+    TptpTranslator.add(mr)
     
+    this.theoryPath = t.path
     this.theoryDir = theoryDir
     this.theory = theory
     this.file = file
@@ -120,6 +124,7 @@ class TptpTranslator {
           }
       }
     }
+    d
   }
   
   /**
