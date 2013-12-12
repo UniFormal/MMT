@@ -10,7 +10,6 @@ import scala.collection.JavaConversions._ //
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.api.backend.{Compiler}
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.libraries._
@@ -593,10 +592,10 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 	
 }
 
-class OWLCompiler extends Compiler {
+class OWLCompiler extends archives.Compiler {
    val key = "owl-omdoc"
    override def includeFile(f:  String) = f.endsWith("owl")
-   def buildOne(bf: archives.BuiltFile) {
+   def buildOne(bf: archives.BuiltFile): Document = {
        val source : File = bf.inFile
        val target : File = bf.outFile.setExtension("omdoc")
       
@@ -610,13 +609,9 @@ class OWLCompiler extends Compiler {
 
 	   //manager.getOntologies.foreach {onto => ontologyToLF(manager, controller, onto )} sor ?
 	   val dpath : DPath = importer.ontologyToLF(ontology)
-	   val doc = controller.getDocument(dpath).toNodeResolved(controller.library)
+	   val doc = controller.getDocument(dpath)
 	  /* println(doc.toString)*/
-		
-	   target.getParentFile.mkdirs
-	   val file = File.Writer(target)
-	   file.write(doc.toString)
-	   file.close
+		doc
    }
 }
 

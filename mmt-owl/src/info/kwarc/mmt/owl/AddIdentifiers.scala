@@ -11,7 +11,6 @@ import scala.collection.JavaConversions._ //
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.api.backend.{Compiler}
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.libraries._
