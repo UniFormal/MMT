@@ -13,7 +13,7 @@
       <script type="text/javascript" src="../lib/jquery-ui.js"></script>
       <script type="text/javascript" src="../lib/template.js"></script>
       <script type="text/javascript" src="../lib/tools.tooltip.js"></script>
-      
+      <script type="text/javascript" src="../lib/modernizr.custom.js"></script><script type="text/javascript" src="../lib/diagrams.js" id="diagrams-js"></script>
       <script type="text/javascript">
          if(top === self) {
             var url = '../index.html';
@@ -87,7 +87,7 @@
         <div id="types" class="types members">
               <h3>Type Members</h3>
               <ol><li name="scala.::" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="::[A&lt;:&lt;?&gt;]=scala.collection.immutable.::[A]"></a>
+      <a id="::[A]=scala.collection.immutable.::[A]"></a>
       <a id="::[A]:::[A]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -165,7 +165,7 @@
       </h4>
       
     </li><li name="scala.BufferedIterator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="BufferedIterator[+A&lt;:&lt;?&gt;]=scala.collection.BufferedIterator[A]"></a>
+      <a id="BufferedIterator[+A]=scala.collection.BufferedIterator[A]"></a>
       <a id="BufferedIterator[+A]:BufferedIterator[A]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -191,7 +191,7 @@
       </h4>
       
     </li><li name="scala.Either" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Either[+A&lt;:&lt;?&gt;,+B&lt;:&lt;?&gt;]=scala.util.Either[A,B]"></a>
+      <a id="Either[+A,+B]=scala.util.Either[A,B]"></a>
       <a id="Either[+A,+B]:Either[A,B]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -204,7 +204,7 @@
       </h4>
       
     </li><li name="scala.Equiv" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Equiv[T&lt;:&lt;?&gt;]=scala.math.Equiv[T]"></a>
+      <a id="Equiv[T]=scala.math.Equiv[T]"></a>
       <a id="Equiv[T]:Equiv[T]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -243,7 +243,7 @@
       </h4>
       
     </li><li name="scala.Fractional" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Fractional[T&lt;:&lt;?&gt;]=scala.math.Fractional[T]"></a>
+      <a id="Fractional[T]=scala.math.Fractional[T]"></a>
       <a id="Fractional[T]:Fractional[T]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -282,7 +282,7 @@
       </h4>
       
     </li><li name="scala.IndexedSeq" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="IndexedSeq[+A&lt;:&lt;?&gt;]=IndexedSeq[A]"></a>
+      <a id="IndexedSeq[+A]=IndexedSeq[A]"></a>
       <a id="IndexedSeq[+A]:IndexedSeq[A]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -295,7 +295,7 @@
       </h4>
       
     </li><li name="scala.Integral" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Integral[T&lt;:&lt;?&gt;]=scala.math.Integral[T]"></a>
+      <a id="Integral[T]=scala.math.Integral[T]"></a>
       <a id="Integral[T]:Integral[T]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -347,7 +347,7 @@
       </h4>
       
     </li><li name="scala.Left" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Left[+A&lt;:&lt;?&gt;,+B&lt;:&lt;?&gt;]=scala.util.Left[A,B]"></a>
+      <a id="Left[+A,+B]=scala.util.Left[A,B]"></a>
       <a id="Left[+A,+B]:Left[A,B]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -425,7 +425,7 @@
       </h4>
       
     </li><li name="scala.Ordered" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Ordered[T&lt;:&lt;?&gt;]=scala.math.Ordered[T]"></a>
+      <a id="Ordered[T]=scala.math.Ordered[T]"></a>
       <a id="Ordered[T]:Ordered[T]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -451,7 +451,7 @@
       </h4>
       
     </li><li name="scala.PartialOrdering" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="PartialOrdering[T&lt;:&lt;?&gt;]=scala.math.PartialOrdering[T]"></a>
+      <a id="PartialOrdering[T]=scala.math.PartialOrdering[T]"></a>
       <a id="PartialOrdering[T]:PartialOrdering[T]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -464,7 +464,7 @@
       </h4>
       
     </li><li name="scala.PartiallyOrdered" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="PartiallyOrdered[T&lt;:&lt;?&gt;]=scala.math.PartiallyOrdered[T]"></a>
+      <a id="PartiallyOrdered[T]=scala.math.PartiallyOrdered[T]"></a>
       <a id="PartiallyOrdered[T]:PartiallyOrdered[T]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -490,7 +490,7 @@
       </h4>
       
     </li><li name="scala.Right" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Right[+A&lt;:&lt;?&gt;,+B&lt;:&lt;?&gt;]=scala.util.Right[A,B]"></a>
+      <a id="Right[+A,+B]=scala.util.Right[A,B]"></a>
       <a id="Right[+A,+B]:Right[A,B]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -529,7 +529,7 @@
       </h4>
       
     </li><li name="scala.Stream" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Stream[+A&lt;:&lt;?&gt;]=scala.collection.immutable.Stream[A]"></a>
+      <a id="Stream[+A]=scala.collection.immutable.Stream[A]"></a>
       <a id="Stream[+A]:Stream[A]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -581,7 +581,7 @@
       </h4>
       
     </li><li name="scala.Traversable" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="Traversable[+A&lt;:&lt;?&gt;]=Traversable[A]"></a>
+      <a id="Traversable[+A]=Traversable[A]"></a>
       <a id="Traversable[+A]:Traversable[A]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -594,7 +594,7 @@
       </h4>
       
     </li><li name="scala.TraversableOnce" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="TraversableOnce[+A&lt;:&lt;?&gt;]=scala.collection.TraversableOnce[A]"></a>
+      <a id="TraversableOnce[+A]=scala.collection.TraversableOnce[A]"></a>
       <a id="TraversableOnce[+A]:TraversableOnce[A]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
