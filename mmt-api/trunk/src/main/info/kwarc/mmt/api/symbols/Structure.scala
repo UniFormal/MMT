@@ -41,7 +41,7 @@ abstract class Structure extends Declaration with Link {
 /**
  * A DeclaredStructure represents an MMT structure given by a list of assignments.<p>
  * 
- * @param home the [[Term]] representing the parent theory
+ * @param home the [[objects.Term]] representing the parent theory
  * @param name the name of the structure
  * @param from the domain theory
  * @param isImplicit true iff the link is implicit
@@ -56,7 +56,7 @@ class DeclaredStructure(val home : Term, val name : LocalName, val fromPath : MP
  /**
   * A DefinedStructure represents an MMT structure given by an existing morphism.
   * 
-  * @param home the [[Term]] representing the parent theory
+  * @param home the [[objects.Term]] representing the parent theory
   * @param name the name of the structure
   * @param from the domain theory
   * @param df the definiens (the target if we see this as an assignment to a structure)
