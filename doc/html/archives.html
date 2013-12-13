@@ -22,3 +22,20 @@ The MMT <a href="applications/build.html">build tool</a> can be used to build MM
 This is necessary to make the content available to othe MMT applications.<br/>
 </p>
 
+<h2>Manifest</h2>
+
+MMT archives are inspired by Java archives (which are directory trees zipped into jar files).
+In particular, there must be a <span class="code">META-INF</span> directory containing <span class="code">a MANIFEST.MF</span> file.<br/>
+
+The manifest contains a list of key-value pairs.
+The syntax is one <span class="code">key : value</span> instance per line.<br/>
+
+Archive and application developers are free to introduce keys as they see fit as long as the key contains a <span class="code">.</span> character. (It is recommended to use URIs, e.g., <span class="code">org.mytool.mmt</span> for user-defined keys.<br/>
+
+The following keys are predefined by MMT:
+<table border="1">
+<tr><th>Key(s)</th><th>Meaning</th></tr>
+<tr><td>id</td><td>unique identifier of the archive, used to refer to the archive in <a href="applications/shell.html">shell</a> commands</td></tr>
+<tr><td>content-base</td><td>the default namespace in place when entering a source file; this only affects the MMT URIs of the modules in these source files</td></tr>
+<tr><td>narration-base</td><td>the URI prefix prepended to the file paths inside the archives to form document URIs</td></tr>
+<tr><td>source, content, narration, relational</td><td>custom folder names for specific dimensions (see the <a href="applications/build.html">build tool</a> for details)</td></tr></table>
