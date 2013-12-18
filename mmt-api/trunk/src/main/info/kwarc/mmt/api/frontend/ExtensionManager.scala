@@ -101,7 +101,7 @@ class ExtensionManager(controller: Controller) extends Logger {
           val Ext = clsJ.asInstanceOf[java.lang.Class[Extension]]
           Ext.newInstance
        } catch {
-          case e : java.lang.Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e) 
+          case e : Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e) 
        }
        addExtension(ext, args)
    }
@@ -114,6 +114,11 @@ class ExtensionManager(controller: Controller) extends Logger {
           val pl = ext.asInstanceOf[Plugin]
           loadedPlugins ::= pl
           pl.dependencies foreach {d => if (! loadedPlugins.exists(_.getClass == java.lang.Class.forName(d))) addExtension(d, Nil)}
+       }
+       try {
+          ext.start(args)
+       } catch {
+          case e: Exception => throw RegistrationError("error while starting extension: " + e.getMessage)
        }
        if (ext.isInstanceOf[Foundation]) {
           log("  ... as foundation")
@@ -147,7 +152,6 @@ class ExtensionManager(controller: Controller) extends Logger {
           log("  ... as server plugin")
           serverPlugins ::= ext.asInstanceOf[ServerExtension]
        }
-       ext.start(args)
    }
 
    /** retrieves an applicable Compiler */
