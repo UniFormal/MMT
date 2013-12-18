@@ -26,7 +26,7 @@ object Twelf {
 
 /** Utility for starting the catalog and calling the Twelf compiler
   */
-class Twelf extends Compiler {
+class Twelf extends Importer {
    val key = "twelf-omdoc"
    
    def includeFile(n: String) : Boolean = n.endsWith(".elf")
@@ -65,18 +65,19 @@ class Twelf extends Compiler {
      * @param dpath unused (could be passed to Twelf as the default namespace in the future)
      * @param out the file in which to put the generated OMDoc
      */
-   def buildOne(bf: BuiltFile) = {
+   def buildOne(bf: BuildFile, seCont: documents.Document => Unit) = {
       File(bf.outFile.getParent).mkdirs
       val procBuilder = new java.lang.ProcessBuilder(path.toString)
       procBuilder.redirectErrorStream()
       val proc = procBuilder.start()
       val input = new PrintWriter(proc.getOutputStream(), true)
       val output = new BufferedReader(new InputStreamReader(proc.getInputStream()))
+      val outFile = bf.outFile.setExtension("omdoc")
       input.println("set chatter " + chatter)
       input.println("set unsafe " + unsafe)
       input.println("set catalog " + catalog.queryURI)
       input.println("loadFile " + bf.inPath)
-      input.println("Print.OMDoc.printDoc " + bf.inPath + " " + bf.outFile.setExtension("omdoc"))
+      input.println("Print.OMDoc.printDoc " + bf.inPath + " " + outFile)
       input.println("OS.exit")
       var line : String = null
       while ({line = output.readLine; line != null}) {
@@ -95,19 +96,18 @@ class Twelf extends Compiler {
          }
       }
       bf.errors = bf.errors.reverse
+      val (doc,_) = controller.read(outFile, Some(bf.dpath))
+      seCont(doc)
    }
    
    def compileOne(inText : String, dpath : DPath) : (String, List[Error]) = {
-     val inFileName = "/tmp/in.elf"
-     val outFileName = "/tmp/out.omdoc"
-     val in = new PrintWriter("/tmp/in.elf")
-     in.write(inText)
-     in.close()
-     val bf = new archives.BuiltFile(File(inFileName), List("string"), dpath, File(outFileName))
-     buildOne(bf)
-     val source = scala.io.Source.fromFile(outFileName)
-     val lines = source.getLines.mkString("\n")
-     source.close()     
+     val tmp = File(System.getProperty("java.io.tmpdir"))
+     val inFileName = tmp / "in.elf"
+     val outFileName = tmp / "out.omdoc"
+     utils.File.write(inFileName,inText)
+     val bf = new archives.BuildFile(File(inFileName), List("string"), dpath, File(outFileName))
+     buildOne(bf, doc => ())
+     val lines = utils.File.read(outFileName)
      (lines, bf.errors)
    }
    

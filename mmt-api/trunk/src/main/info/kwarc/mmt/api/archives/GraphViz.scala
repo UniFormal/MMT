@@ -27,7 +27,7 @@ class GraphViz extends TraversingBuildTarget {
     *
     *  the resulting theory graph contains all modules declared anywhere in this document  
     */
-   def buildFile(a: Archive, bf: BuiltFile) = {
+   def buildFile(a: Archive, bf: BuildFile) = {
       val theories = controller.depstore.querySet(bf.dpath, Transitive(+Declares) * HasType(IsTheory))
       val views = controller.depstore.querySet(bf.dpath, Transitive(+Declares) * HasType(IsView))
       val dotFile = bf.outFile.setExtension("dot")
@@ -46,8 +46,8 @@ class GraphViz extends TraversingBuildTarget {
    }
    
    /** same as buildOne but for the document given by the directory */
-   override def buildDir(a: Archive, bd: BuiltDir, buildChildren: List[BuildResult]) = {
-      val bf = new BuiltFile(bd.inFile, bd.inPath, DPath(a.narrationBase / bd.inPath), bd.outFile)
+   override def buildDir(a: Archive, bd: BuildDir, buildChildren: List[BuildTask]) = {
+      val bf = new BuildFile(bd.inFile, bd.inPath, DPath(a.narrationBase / bd.inPath), bd.outFile)
       buildFile(a,bf)
       bd.errors = bf.errors
    }

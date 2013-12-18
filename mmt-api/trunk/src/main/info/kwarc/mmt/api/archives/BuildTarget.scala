@@ -79,11 +79,11 @@ abstract class BuildTarget extends Extension {
 }
 
 /** auxiliary type to represent the parameters and result of building a file/directory */
-abstract class BuildResult {
-   /** the list of errors, built targets should append their errors here */
-   var errors: List[Error] = Nil
+abstract class BuildTask {
    /** build targets should set this to true if they skipped the file so that it is not passed on to the parent directory */
    var skipped = false
+   /** build targets should add all errors here */
+   var errors : List[Error] = Nil
 }
 /**
  * passed when building a file
@@ -92,14 +92,14 @@ abstract class BuildResult {
  * @param dpath the base to use for resolving relative names
  * @param outFile the intended output file
  */
-class BuiltFile(val inFile: File, val inPath: List[String], val dpath: DPath, val outFile: File) extends BuildResult
+class BuildFile(val inFile: File, val inPath: List[String], val dpath: DPath, val outFile: File) extends BuildTask
 /**
  * passed when building a directory
  * @param inFile the input file
  * @param inPath the path of the input file inside the archive, relative to the input dimension
  * @param outFile the intended output file
  */
-class BuiltDir(val inFile: File, val inPath: List[String], val outFile: File) extends BuildResult {
+class BuildDir(val inFile: File, val inPath: List[String], val outFile: File) extends BuildTask {
    def dirName = outFile.segments.init.last
 }
 
@@ -131,7 +131,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
      * @param a the containing archive  
      * @param bfFile information about input/output file etc
      */ 
-   def buildFile(a: Archive, bf: BuiltFile)
+   def buildFile(a: Archive, bf: BuildFile)
 
    /** similar to buildOne but called on every directory (after all its children have been processed)
      * @param a the containing archive  
@@ -139,7 +139,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
      * @param buildChildren results from building the children
      * This does nothing by default and can be overridden if needed.
      */ 
-   def buildDir(a: Archive, bd: BuiltDir, builtChildren: List[BuildResult]) {}
+   def buildDir(a: Archive, bd: BuildDir, builtChildren: List[BuildTask]) {}
    
    /** entry point for recursive building */
    def build(a: Archive, args: List[String], in: List[String] = Nil) {
@@ -152,10 +152,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
        a.traverse(inDim, in, includeFile, false) {case Current(_,inPath) => errorMap(inPath) = Nil}
        //build every file
        val prefix = "[" + inDim + " -> " + outDim + "] "
-       a.traverse[BuildResult](inDim, in, includeFile) ({case Current(inFile,inPath) =>
+       a.traverse[BuildTask](inDim, in, includeFile) ({case Current(inFile,inPath) =>
            val outFile = outPath(a.root, inPath)
            log(prefix + inFile + " -> " + outFile)
-           val bf = new BuiltFile(inFile, inPath, DPath(a.narrationBase / inPath), outFile)
+           val bf = new BuildFile(inFile, inPath, DPath(a.narrationBase / inPath), outFile)
            buildFile(a, bf)
            errorMap(inPath) = bf.errors
            if (! bf.errors.isEmpty) {
@@ -167,7 +167,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
        }, {
           case (Current(inDir, inPath), builtChildren) =>
              val outFile = folderOutPath(a.root, inPath)
-             val bd = new BuiltDir(inDir, inPath, outFile) 
+             val bd = new BuildDir(inDir, inPath, outFile) 
              buildDir(a, bd, builtChildren)
              bd
        })
@@ -219,7 +219,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
        }, {case (c @ Current(inDir, inPath), childChanged) =>
           if (childChanged.exists(_ == true)) {
              val outFile = folderOutPath(a.root, inPath)
-             val bd = new BuiltDir(inDir, inPath, outFile) 
+             val bd = new BuildDir(inDir, inPath, outFile) 
              buildDir(a, bd, Nil) // TODO pass proper builtChildren
              false
           } else

@@ -10,17 +10,15 @@ import scala.collection.mutable.HashSet
  *  
  *  the produced OMDoc is already validated
  */
-class MMTCompiler extends archives.Compiler {
+class MMTCompiler extends archives.Importer {
   val key = "mmt-omdoc"
 
   def includeFile(n: String) : Boolean = n.endsWith(".mmt") || n.endsWith(".elf")
     
-  def buildOne(bf: archives.BuiltFile) = {
+  def buildOne(bf: archives.BuildFile, seCont: documents.Document => Unit) {
     val (doc, strucErrors) = controller.read(bf.inFile, Some(bf.dpath))
     val invErrors = controller.checker(doc)
     bf.errors = strucErrors ::: invErrors
-    doc
-    //val outFile = bf.outFile.setExtension("omdoc")
-    //File.write(outFile, doc.toNodeResolved(controller.localLookup).toString)
+    seCont(doc)
   }
 }

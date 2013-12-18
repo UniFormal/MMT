@@ -587,15 +587,12 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 	    val value = annotationValueToLF(an.getValue) //Obj or a term
 	    new MetaDatum(key, value)
 	}
-	
-	
-	
 }
 
-class OWLCompiler extends archives.Compiler {
+class OWLCompiler extends archives.Importer {
    val key = "owl-omdoc"
    override def includeFile(f:  String) = f.endsWith("owl")
-   def buildOne(bf: archives.BuiltFile): Document = {
+   def buildOne(bf: archives.BuildFile, seCont: documents.Document => Unit) {
        val source : File = bf.inFile
        val target : File = bf.outFile.setExtension("omdoc")
       
@@ -611,7 +608,7 @@ class OWLCompiler extends archives.Compiler {
 	   val dpath : DPath = importer.ontologyToLF(ontology)
 	   val doc = controller.getDocument(dpath)
 	  /* println(doc.toString)*/
-		doc
+		seCont(doc)
    }
 }
 
