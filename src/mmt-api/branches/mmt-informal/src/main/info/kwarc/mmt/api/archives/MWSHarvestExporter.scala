@@ -16,7 +16,7 @@ class MWSHarvestContentExporter extends ContentExporter {
   override val outExt = "mws"
   val custom : ArchiveCustomization = new DefaultCustomization    
     
-  def doTheory(t: DeclaredTheory, bf: BuiltFile) { 
+  def doTheory(t: DeclaredTheory, bf: BuildFile) { 
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
     t.getDeclarations foreach {  
@@ -38,12 +38,12 @@ class MWSHarvestContentExporter extends ContentExporter {
     rh("</mws:harvest>\n")
   }
   
-  def doView(v: DeclaredView, bf: BuiltFile) { 
+  def doView(v: DeclaredView, bf: BuildFile) { 
     //excluding expressions from views for now
   }
   
   
-  def doNamespace(dpath: DPath, namespaces: List[(BuiltDir,DPath)], modules: List[(BuiltFile,MPath)]) {
+  def doNamespace(dpath: DPath, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
     //Nothing to do, no MathML in directly in namespaces
   }
 }

@@ -2,7 +2,10 @@ package info.kwarc.mmt.api.utils
 import java.io._
 
 
-/** File wraps around java.io.File to extend it with convenience methods */
+/** File wraps around java.io.File to extend it with convenience methods
+ *  
+ *  see also [[FileConversion]] for implicit conversions with java.io.File
+ */
 case class File(toJava: java.io.File) {
    /** resolves an absolute or relative path string against this */
    def resolve(s: String) = {
@@ -61,7 +64,7 @@ object FileURI {
      else None
 }
 
-/** Auxiliary methods to manage files */
+/** This defines some very useful methods to interact with text files at a high abstraction level. */
 object File {
    /** constructs a File from a string, using the java.io.File parser */  
    def apply(s: String) : File = File(new java.io.File(s))

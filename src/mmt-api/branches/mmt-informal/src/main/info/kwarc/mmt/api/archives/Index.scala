@@ -16,19 +16,23 @@ import utils.FileConversion._
  * OMDoc produced by [[Compiler]]s is indexed automatically.
  *  
  */
-abstract class Compiler extends TraversingBuildTarget {
+abstract class Importer extends TraversingBuildTarget {
    val inDim = "source"
    val outDim = "narration"
    override val outExt = "omdoc"
 
-   def buildOne(bf: BuiltFile) : Document
+   /** the main abstract method to be implemented by importers
+    *  
+    *  @param information about the input document and error reporting
+    *  @param seCont a continuation function to be called on every generated document
+    */
+   def buildOne(bf: BuildFile, seCont: Document => Unit)
 
-   def buildFile(a: Archive, bf: BuiltFile) {
-      val doc = buildOne(bf)
-      indexDocument(a, doc, bf.inPath)
+   def buildFile(a: Archive, bf: BuildFile) {
+      buildOne(bf, doc => indexDocument(a, doc, bf.inPath))
    }
    
-   override def buildDir(a: Archive, bd: BuiltDir, builtChildren: List[BuildResult]) {
+   override def buildDir(a: Archive, bd: BuildDir, builtChildren: List[BuildTask]) {
       val doc = controller.get(DPath(a.narrationBase / bd.inPath)).asInstanceOf[Document]
       val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
       writeToRel(doc, a.relDir / inPathFile)
@@ -88,14 +92,25 @@ abstract class Compiler extends TraversingBuildTarget {
     }
 }
 
+/** An StringBasedImporter is a more flexible importer whose input does not have to be a file */
+abstract class StringBasedImporter extends Importer {
+   /** the main abstract method to import a document given by its content */
+   def importOne(base: DPath, input: String, seCont: Document => Unit)
+
+   def buildOne(bf: BuildFile, seCont: Document => Unit) {
+      val input = utils.File.read(bf.inFile)
+      importOne(bf.dpath, input, seCont)
+   }
+}
+
 /** a trivial importer that reads OMDoc documents and returns them */
-class OMDocImporter extends Compiler {
+class OMDocImporter extends Importer {
    val key = "index"
    def includeFile(s: String) = s.endsWith(".omdoc")
    
-   def buildOne(bf: BuiltFile) = {
+   def buildOne(bf: BuildFile, seCont: Document => Unit) = {
       log("[COMP ->  ]  " + bf.inFile)
       val (doc,_) = controller.read(bf.inFile, Some(bf.dpath))
-      doc
+      seCont(doc)
    }
 }
