@@ -32,37 +32,6 @@ abstract class Storage {
 
 /** convenience methods for backends */
 object Storage {
-   /** reads an OMBase description file and returns the described OMBases */
-   def fromOMBaseCatalog(file : java.io.File) : List[OMBase] = {
-      val N = utils.xml.readFile(file)
-      N.child.toList mapPartial {
-         case n @ <ombase>{c @ _*}</ombase> =>
-            val scheme = xml.attr(n, "scheme")
-            val authority = xml.attr(n, "authority")
-            val prefix = xml.attr(n, "prefix")
-            val ombase = URI(xml.attr(n, "ombase"))
-            var dpats : List[OMQuery] = Nil
-            var mpats : List[OMQuery] = null
-            var spats : List[OMQuery] = null
-            var ipats : List[OMQuery] = Nil
-            c map {n =>
-               val qs = n.child.toList.mapPartial(OMQuery.parse)
-               n match {
-                  case <document>{_*}</document> => dpats = qs
-                  case <module>{_*}</module> => mpats = qs
-                  case <symbol>{_*}</symbol> => spats = qs
-                  case <init>{_*}</init> => ipats = qs
-                  case scala.xml.Comment(_) => 
-                  case n => throw ParseError("illegal child of ombase: " + n)
-               }
-            }
-            if (mpats == null) mpats = dpats
-            if (spats == null) spats = mpats
-            Some(TNTBase(scheme, authority, prefix, ombase, dpats, mpats, spats, ipats))
-         case scala.xml.Comment(_) => None
-         case n => throw ParseError("illegal ombase: " + n)
-      }
-   }
    def virtDoc(entries : List[String], prefix : String) =
       <omdoc>{entries.map(n => <dref target={prefix + n}/>)}</omdoc>
    def getSuffix(base : utils.URI, uri : utils.URI) : String = {
@@ -75,34 +44,8 @@ object Storage {
       }
 }
 
-object OMQuery {
-   def parse(n : Node) : Option[OMQuery] = {
-      val p = xml.attr(n, "path")
-      val q = xml.attr(n, "body")
-      n match {
-         case <documents/> => Some(Doc(xml.attr(n, "base"),p, q))
-         case <modules/> => Some(Mod(p, q))
-         case scala.xml.Comment(_) => None
-         case _ => throw ParseError("illegal query type: " + n)
-      }
-   }
-   def replace(s : String, p : Path) : String = {
-       val s1 = s.replace("%doc%", p.doc.toPath).replace("%path%", p.doc.uri.pathAsString).replace("%full%", p.toPath)
-       p match {
-          case p: DPath => s1 
-          case p: MPath => s1.replace("%mod%", p.name.flat)
-          case p: GlobalName => s1.replace("%mod%", p.module.toMPath.name.flat).replace("%name%", p.name.toPath)
-          case _: CPath => s1 //TODO: check
-       }
-   }
-}
-sealed abstract class OMQuery(val path : String, val query : String)
-case class Doc(base : String, p : String, q : String) extends OMQuery(p, q)
-case class Mod(p : String, q : String) extends OMQuery(p, q)
-
 /** a trait for URL-addressed Storages that can serve MMT document fragments */
-abstract class OMBase(scheme : String, authority : String, prefix : String, ombase : URI,
-                      val dpats : List[OMQuery], mpats : List[OMQuery], spats : List[OMQuery], ipats : List[OMQuery])
+abstract class OMBase(scheme : String, authority : String, prefix : String, ombase : URI)
          extends Storage {
      def sendRequest(p : String, b : String) : NodeSeq = {
         val url = new java.net.URI(ombase.scheme.getOrElse(null), ombase.authority.getOrElse(null), ombase.pathAsString + p, null, null).toURL
@@ -127,25 +70,7 @@ abstract class OMBase(scheme : String, authority : String, prefix : String, omba
         }
      }
      def handleResponse(msg : => String, N : NodeSeq) : NodeSeq
-     def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {
-        val qs = path match {
-           case p : DPath => dpats
-           case p : MPath => mpats
-           case p : GlobalName => spats
-           case _ : CPath => Nil //TODO: check
-        }
-        qs.foreach {q =>
-           val qpath = OMQuery.replace(q.path, path)
-           val qbody = OMQuery.replace(q.query, path)
-           val N = handleResponse("path " + qpath + " and body " + qbody, sendRequest(qpath,qbody))
-           q match {
-              case Doc(b, _, _) =>
-                 val base = URI(OMQuery.replace(b, path))
-                 cont(base, N)
-              case Mod(_, _) => cont(path.doc.uri, N)
-           }
-        }
-     }
+     def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit)
 }
 
 /** a Storage that retrieves file URIs from the local system */
@@ -213,29 +138,6 @@ case class SVNRepo(scheme : String, authority : String, prefix : String, reposit
       cont(uri, N)
    }
 }
-
-
-/** a Storage that retrieves content from a TNTBase database */
-case class TNTBase(scheme : String, authority : String, prefix : String, ombase : URI,
-                   dp : List[OMQuery], mp : List[OMQuery], sp : List[OMQuery], ip : List[OMQuery])
-           extends OMBase(scheme, authority, prefix, ombase, dp, mp, sp, ip) {
-   def handleResponse(msg : => String, N : NodeSeq) : NodeSeq = {
-      N(0) match {
-         case <results>{child @ _*}</results> => child map {
-            case <error>{_*}</error> =>
-               throw GetError("TNTBase returned error for query\n" + msg + "\n" + N)
-            case <result>{r}</result> => r 
-         }
-         case <omdoc>{_*}</omdoc> => N(0)
-         case <directory>{entries @ _*}</directory> =>
-            var p = xml.attr(N(0), "path")
-            if (p.endsWith("/")) p = p.substring(0,p.length - 1)
-            val prefix = p.split("/").toList.last + "/" //prefix is directory name + "/" or "/" if root
-            Storage.virtDoc(entries.toList.map(e => xml.attr(e, "name")), prefix)
-      }
-   }
-}
-
 
 /** a Backend holds a list of Storages and uses them to dereference Paths */
 class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend.Report) extends Logger {

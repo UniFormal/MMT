@@ -29,8 +29,8 @@ abstract class Lookup(val report : frontend.Report) {
      get(path) match {case v: View => v case _ => throw GetError(msg(path))}
    def getLink(path : ContentPath, msg : Path => String = defmsg) : Link =
      get(path) match {case e : Link => e case _ => throw GetError(msg(path))}
-   def getSymbol(path : GlobalName, msg : Path => String = defmsg) : Symbol =
-     get(path) match {case e : Symbol => e case _ => throw GetError(msg(path))} 
+   def getSymbol(path : GlobalName, msg : Path => String = defmsg) : Declaration =
+     get(path) match {case e : Declaration => e case _ => throw GetError(msg(path))} 
    def getConstant(path : GlobalName, msg : Path => String = defmsg) : Constant =
      get(path) match {case e : Constant => e case _ => throw GetError(msg(path))} 
    def getStructure(path : GlobalName, msg : Path => String = defmsg) : Structure =
@@ -73,7 +73,7 @@ abstract class Lookup(val report : frontend.Report) {
     * @param a the Constant declaration/assignment
     * @return if assignment: the source theory and the containing link; if declaration: the containing theory
     */
-   def getDomain(a: Symbol) : (DeclaredTheory,Option[DeclaredLink]) = {
+   def getDomain(a: Declaration) : (DeclaredTheory,Option[DeclaredLink]) = {
       val p = a.home match {
          case OMMOD(p) => p
          case OMDL(OMMOD(p), name) => OMMOD(p) % name 

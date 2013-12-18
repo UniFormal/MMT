@@ -67,7 +67,7 @@ class HTMLExporter extends ContentExporter {
       td {rh(s"<span>${comp.toString}</span>")}
       td {doMath(t)}
    }
-   def doTheory(t: DeclaredTheory) {
+   def doTheory(t: DeclaredTheory, bf: BuiltFile) {
       html {div("theory") {
          div("theory-header") {doName(t.name.toPath)}
          t.getPrimitiveDeclarations.foreach {
@@ -120,7 +120,7 @@ class HTMLExporter extends ContentExporter {
          }
       }}
    }
-   def doView(v: DeclaredView) {}
+   def doView(v: DeclaredView, bf: BuiltFile) {}
    def doNamespace(dpath: DPath, namespaces: List[(BuiltDir,DPath)], modules: List[(BuiltFile,MPath)]) {
       html {div("namespace") {
          namespaces.foreach {case (bd, dp) =>

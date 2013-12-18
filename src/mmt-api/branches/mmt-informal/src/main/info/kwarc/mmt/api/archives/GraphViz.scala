@@ -27,13 +27,13 @@ class GraphViz extends TraversingBuildTarget {
     *
     *  the resulting theory graph contains all modules declared anywhere in this document  
     */
-   def buildOne(inFile: File, dpath: DPath, outFile: File): List[Error] = {
-      val theories = controller.depstore.querySet(dpath, Transitive(+Declares) * HasType(IsTheory))
-      val views = controller.depstore.querySet(dpath, Transitive(+Declares) * HasType(IsView))
-      val dotFile = outFile.setExtension("dot")
+   def buildFile(a: Archive, bf: BuiltFile) = {
+      val theories = controller.depstore.querySet(bf.dpath, Transitive(+Declares) * HasType(IsTheory))
+      val views = controller.depstore.querySet(bf.dpath, Transitive(+Declares) * HasType(IsView))
+      val dotFile = bf.outFile.setExtension("dot")
       val gv = new ontology.GraphExporter(theories, views, tg)
       gv.exportDot(dotFile)
-      val command : List[String] = List("\"" + graphviz + "\"", "-Tsvg", "-o" + outFile, dotFile.toString)
+      val command : List[String] = List("\"" + graphviz + "\"", "-Tsvg", "-o" + bf.outFile, dotFile.toString)
       log(command.mkString(" "))
       val proc = new java.lang.ProcessBuilder(command: _*).start() // use .inheritIO() for debugging
       proc.waitFor
@@ -41,13 +41,14 @@ class GraphViz extends TraversingBuildTarget {
       if (ev != 0) {
          val scanner = new java.util.Scanner(proc.getErrorStream).useDelimiter("\\A")
          val message = if (scanner.hasNext) scanner.next else ""
-         List(LocalError(message))
-      } else
-         Nil
+         bf.errors ::= LocalError(message)
+      }
    }
    
    /** same as buildOne but for the document given by the directory */
-   override def buildDir(a: Archive, inDir: File, inPath: List[String], buildChildren: List[BuildResult], outFile: File): List[Error] = {
-      buildOne(inDir, DPath(a.narrationBase / inPath), outFile)
+   override def buildDir(a: Archive, bd: BuiltDir, buildChildren: List[BuildResult]) = {
+      val bf = new BuiltFile(bd.inFile, bd.inPath, DPath(a.narrationBase / bd.inPath), bd.outFile)
+      buildFile(a,bf)
+      bd.errors = bf.errors
    }
 }

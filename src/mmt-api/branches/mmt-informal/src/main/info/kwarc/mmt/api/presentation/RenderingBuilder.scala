@@ -9,6 +9,8 @@ import scala.xml._
 abstract class RenderingHandler {
    /** output a string */
    def apply(s : String)
+   /** output a string with line ending */
+   def writeln(s: String) {apply(s + "\n")}
    /** output an XML node */
    def apply(N : Node)
    /** output a literal */

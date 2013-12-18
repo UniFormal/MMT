@@ -163,18 +163,18 @@ case class OMID(path: ContentPath) extends Term {
    }
    def components = path match {
       case m: MPath => m.components
-      case OMMOD(doc ? mod) % ln => List(StringLiteral(doc.toPath), StringLiteral(mod.flat),
+      case OMMOD(doc ? mod) % ln => List(StringLiteral(doc.toPath), StringLiteral(mod.toString),
                                  StringLiteral(ln.toString), StringLiteral(path.toPathEscaped))
       case thy % name => List(thy, StringLiteral(name.toString))
    }
    override def toString = path match {
-      case doc ? mod => doc + "?" + mod.flat
-      case OMMOD(mod) % name => mod.name.flat + "?" + name.toString
+      case doc ? mod => doc + "?" + mod.toString
+      case OMMOD(mod) % name => mod.name.toString + "?" + name.toString
       case thy % name => "[" + thy.toString + "]?" + name.toString
    }
    def toNode = path match {
       case doc ? mod => <om:OMS base={doc.toPath} module={mod.toPath}>{mdNode}</om:OMS>
-      case OMMOD(doc ? mod) % name => <om:OMS base={doc.toPath} module={mod.flat} name={name.toPath}>{mdNode}</om:OMS>
+      case OMMOD(doc ? mod) % name => <om:OMS base={doc.toPath} module={mod.toPath} name={name.toPath}>{mdNode}</om:OMS>
       case thy % name => <om:OMS name={name.toPath}>{mdNode}{thy.toNode}</om:OMS>
    }
    def toCML = <csymbol>{path.toPath}</csymbol>   //TODO ContentMathML syntax for complex identifiers
@@ -348,6 +348,65 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
 
 }
 
+/** The joint methods of OMLIT and UnknownOMLIT */
+sealed trait OMLITTrait extends Term {
+   def synType: GlobalName
+   def head = Some(synType)
+   def role = Role_value
+   def components = List(StringLiteral(toString))
+   def toNode = <om:OMLIT value={toString} type={synType.toPath}/>
+   def toCML = <m:lit value={toString} type={synType.toPath}/>
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
+   private[objects] def freeVars_ = Nil
+}
+
+/**
+ * A literal consists of a RealizedType rt and a value:rt.univ.
+ * 
+ * OMLIT is abstract due to subtleties of the Scala type system. equals is overridden accordingly. 
+ * 
+ * Literals can be constructed conveniently using OMLIT.apply or RealizedType.apply 
+ *
+ * invariant for structurally well-formed literals: the value is valid and normal, i.e,
+ *   rt.valid(value) and rt.normalform(value) == value
+ */
+sealed abstract class OMLIT(val rt: RealizedType) extends Term with OMLITTrait {
+   override def equals(that: Any) = that match {
+      case l: OMLIT => rt == l.rt && value == l.value
+      case _ => false
+   }
+   val value: rt.univ
+   def synType = rt.synType
+   override def toString = rt.toString(value)
+}
+
+object OMLIT {
+   /**
+    * the canonical way to construct literals
+    * the value is always normalized and checked for validity
+    */
+   def apply(rt: RealizedType)(v: rt.univ) = {
+      new OMLIT(rt) {
+         val value = {
+            // This always type checks, but the Scala compiler cannot prove it and needs a type cast
+            val vN = rt.normalform(v.asInstanceOf[rt.univ])
+            if (! rt.valid(vN))
+               throw ParseError("invalid literal value")
+            vN
+         }
+      }
+   }
+}
+
+/** degenerate case of OMLIT when no RealizedType was known to parse a literal
+ *  
+ *  This class is awkward but necessary to permit a lookup-free parser, which delays parsing of literals to a later phase.
+ *  UnknownOMLITs are replaced with OMLITs in the [[libraries.StructureChecker]].
+ */
+case class UnknownOMLIT(value: String, synType: GlobalName) extends Term with OMLITTrait {
+   override def toString = value 
+}
+
 /**
  * An OMFOREIGN represents an OpenMath foreign object.
  * @param node the XML element holding the foreign object
@@ -361,49 +420,7 @@ case class OMFOREIGN(node : Node) extends Term {
    private[objects] def freeVars_ = Nil
    def toCML = <m:apply><m:csymbol>OMFOREIGN</m:csymbol>{node}</m:apply>
 }
-/** OpenMath literals
- *  integers, floats, and strings (we omit byte arrays)
- *  we add URIs
- */
-abstract class OMLiteral extends Term {
-   def head = None
-   def role = Role_value
-   def components = List(StringLiteral(value.toString))
-   val value : Any
-   def tag: String
-   override def toString = value.toString
-   def toNode =
-      scala.xml.Elem("om", tag, scala.xml.Null, scala.xml.TopScope, true, mdNode ++ List(scala.xml.Text(value.toString)) :_*) 
-   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
-   private[objects] def freeVars_ = Nil
-}
 
-/** An integer literal */
-case class OMI(value : BigInt) extends OMLiteral {
-   def tag = "OMI"
-   def toCML = <m:cn>{value}</m:cn>
-}
-
-/** A float literal */
-case class OMF(value : Double) extends OMLiteral {
-   def tag = "OMF"
-   override def toNode = <om:OMF dec={value.toString}/>
-   def toCML = <m:cn>{value}</m:cn>
-
-}
-
-/** A string literal */
-case class OMSTR(value : String) extends OMLiteral {
-   def tag = "OMSTR"
-   def toCML = <m:cn>{value}</m:cn>
-}
-
-/** A URI literal (not part of the OpenMath standard) */
-case class OMURI(value: URI) extends OMLiteral {
-   def tag = "OMURI"
-   def toCML = <m:cn>{value}</m:cn>
-
-}
 
 //TODO: could this be merged with presentation.Literal?
 /** An OMSemiFormal represents a mathematical object that mixes formal and informal components */
@@ -515,9 +532,13 @@ object Obj {
                case n => Formal(parseTerm(n, nbase))
             }
             OMSemiFormal(sf)
-         case <OMI>{i}</OMI> => OMI(BigInt(i.toString))
-         case <OMSTR>{s @ _*}</OMSTR> => OMSTR(s.text)
-         case <OMF/> => OMF(xml.attr(N, "dec").toDouble) //TODO hex encoding
+         case <OMI>{i}</OMI> => OMI.parse(i.toString)
+         case <OMSTR>{s @ _*}</OMSTR> => OMSTR.parse(s.toString)
+         case <OMF/> => OMF.parse(xml.attr(N, "dec"))
+         case <OMLIT/> =>
+            val tp = Path.parseS(xml.attr(N, "type"), base)
+            val v = xml.attr(N, "value")
+            UnknownOMLIT(v, tp)
          case <OMOBJ>{o}</OMOBJ> => parseTerm(o, nbase)
          case <OMMOR>{o}</OMMOR> => parseTerm(o, nbase) //TODO this should be deprecated
          case <OMTHY>{o}</OMTHY> => parseTerm(o, nbase) //TODO this should be deprecated
@@ -527,8 +548,7 @@ object Obj {
       mdOpt.foreach {md => o.metadata = md}
       o
    }
-  
-  private def parseOMS(N : Node, base : Path) : Path = N match {
+   private def parseOMS(N : Node, base : Path) : Path = N match {
       case <OMS/> =>
         val doc = URI(xml.attr(N,"base"))
         val mod = xml.attr(N,"module")
@@ -608,5 +628,49 @@ object Obj {
    }
 }
 
+/* old treatment of literals
 
+  OpenMath literals
+ *  integers, floats, and strings (we omit byte arrays)
+ *  we add URIs
+ 
+abstract class OMLiteral extends Term {
+   def head = None
+   def role = Role_value
+   def components = List(StringLiteral(value.toString))
+   val value : Any
+   def tag: String
+   override def toString = value.toString
+   def toNode =
+      scala.xml.Elem("om", tag, scala.xml.Null, scala.xml.TopScope, true, mdNode ++ List(scala.xml.Text(value.toString)) :_*) 
+   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
+   private[objects] def freeVars_ = Nil
+}
 
+/** An integer literal */
+case class OMI(value : BigInt) extends OMLiteral {
+   def tag = "OMI"
+   def toCML = <m:cn>{value}</m:cn>
+}
+
+/** A float literal */
+case class OMF(value : Double) extends OMLiteral {
+   def tag = "OMF"
+   override def toNode = <om:OMF dec={value.toString}/>
+   def toCML = <m:cn>{value}</m:cn>
+
+}
+
+/** A string literal */
+case class OMSTR(value : String) extends OMLiteral {
+   def tag = "OMSTR"
+   def toCML = <m:cn>{value}</m:cn>
+}
+
+/** A URI literal (not part of the OpenMath standard) */
+case class OMURI(value: URI) extends OMLiteral {
+   def tag = "OMURI"
+   def toCML = <m:cn>{value}</m:cn>
+
+}
+ */

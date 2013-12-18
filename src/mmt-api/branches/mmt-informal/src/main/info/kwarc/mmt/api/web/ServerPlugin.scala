@@ -10,7 +10,7 @@ import tiscaf._
  * 
  * @param cont the CONTEXT
  */
-abstract class ServerPlugin(context: String) extends Extension {
+abstract class ServerExtension(context: String) extends Extension {
   /**
    * @param cont the context of the request
    * @return true if cont is equal to this.context
@@ -30,8 +30,8 @@ abstract class ServerPlugin(context: String) extends Extension {
   def apply(path: List[String], query: String, body: Body): HLet
 }
 
-/** execute the query as an MMT [[Action]] */
-class ActionServer extends ServerPlugin("mmt") {
+/** execute the query as an MMT [[frontend.GetAction]] */
+class ActionServer extends ServerExtension("mmt") {
     def apply(path: List[String], query: String, body: Body) = {
        val action = Action.parseAct(query, controller.getBase, controller.getHome)
         val node: scala.xml.Node = action match {
@@ -57,8 +57,8 @@ class ActionServer extends ServerPlugin("mmt") {
     }
 }
 
-/** a ServerPlugin that serves the svg file of a documents */
-class SVGServer extends ServerPlugin("svg") {
+/** interpretes the query as an MMT document URI and returns the SVG representation of the theory graph */
+class SVGServer extends ServerExtension("svg") {
    /**
     *  @param path ignored
     *  @param query the document path
@@ -70,15 +70,15 @@ class SVGServer extends ServerPlugin("svg") {
          throw LocalError("illegal path: " + query)
       }
       val inPathFile = archives.Archive.narrationSegmentsAsFile(inPath, "omdoc")
-      val svgFile = (arch.svgDir / inPathFile).setExtension("svg")
+      val svgFile = (arch.root / "svg" / inPathFile).setExtension("svg")
       log("serving svg from " + svgFile)
       val node = utils.xml.readFile(svgFile)
       Server.XmlResponse(node)
    } 
 }
 
-/** Plugin for QMT query requests */
-class QueryServer extends ServerPlugin("query") {
+/** interprets the body as a QMT [[ontology.Query]] and evaluates it */
+class QueryServer extends ServerExtension("query") {
    /**
     *  @param path ignored
     *  @param query ignored
@@ -94,8 +94,8 @@ class QueryServer extends ServerPlugin("query") {
    }
 }
 
-/** Plugin for MMT actions */
-class AdminServer extends ServerPlugin("admin") {
+/** interprets the query as an MMT [[frontend.Action]] and executes it */
+class AdminServer extends ServerExtension("admin") {
    private val logCache = new CacheHandler("admin")
    override def start(args: List[String]) {
       report.addHandler(logCache)

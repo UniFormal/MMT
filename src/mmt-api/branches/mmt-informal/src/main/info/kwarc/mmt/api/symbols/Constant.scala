@@ -16,7 +16,7 @@ import presentation.{StringLiteral, Omitted,NotationContainer}
  * @param rl the role of the constant
  */
 class Constant(val home : Term, val name : LocalName, val alias: Option[LocalName],
-               val tpC : TermContainer, val dfC : TermContainer, val rl : Option[String], val notC: NotationContainer) extends Symbol {
+               val tpC : TermContainer, val dfC : TermContainer, val rl : Option[String], val notC: NotationContainer) extends Declaration {
   override val alternativeName = alias
   def toTerm = OMID(path)
 

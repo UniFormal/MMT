@@ -43,7 +43,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
    /**
     * called by doDefaultTerm to render literals
     */
-   def doLiteral(l: OMLiteral)(implicit rh : RenderingHandler) {
+   def doLiteral(l: OMLIT)(implicit rh : RenderingHandler) {
       rh(l.toString)
    }
    /**
@@ -163,7 +163,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
             }
          }
          1
-      case l: OMLiteral =>
+      case l: OMLIT =>
          doLiteral(l)
          -1
       case OMSemiFormal(parts) => parts.foreach {
@@ -300,24 +300,28 @@ trait NotationBasedPresenter extends ObjectPresenter {
                      }
                   }
                   val br = bracket(not)
-                  val markers = not.arity.flatten(not.presentationMarkers,args.length, context.length, scopes.length, attributee.isDefined)
+                  val flatMarkers = not.arity.flatten(not.presentationMarkers,args.length, context.length, scopes.length, attributee.isDefined)
                   br match {
-                     case n if n > 0 => doBracketedGroup { doMarkers(markers) }
-                     case 0 =>          doOptionallyBracketedGroup { doMarkers(markers) }
-                     case n if n < 0 => doUnbracketedGroup { doMarkers(markers) }
+                     case n if n > 0 => doBracketedGroup { doMarkers(flatMarkers) }
+                     case 0 =>          doOptionallyBracketedGroup { doMarkers(flatMarkers) }
+                     case n if n < 0 => doUnbracketedGroup { doMarkers(flatMarkers) }
                   }
                   br
             }
    }
 }
 
-/** a notation-based presenter using the StructureParser syntax
+/** a notation-based presenter using the StructureParser syntax and parsing notations
  * 
  * this class must be initialized after instantiation to set the controller
  */
-class StructureAndObjectPresenter(controller: frontend.Controller) extends Presenter with NotationBasedPresenter {
+class StructureAndObjectPresenter extends Presenter with NotationBasedPresenter {
    def isApplicable(format: String) = format == "text/notations"
    def apply(e : StructuralElement, rh : RenderingHandler) {apply(e, 0)(rh)}
+   def getNotation(o: Obj) = {
+      val (oP, pos, ncOpt) = Presenter.getNotation(controller,o)
+      (oP, pos, ncOpt.flatMap(_.getParse))
+   }
    
    private def apply(e : StructuralElement, indent: Int)(implicit rh : RenderingHandler) {
       def doIndent {

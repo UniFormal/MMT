@@ -15,7 +15,7 @@ import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
  * @param role the role of the constant
  */
 class PragConst(val home : Term, val name : LocalName,
-               val by : List[Constant], val means : List[Constant], val rl : Option[String]) extends Symbol {
+               val by : List[Constant], val means : List[Constant], val rl : Option[String]) extends Declaration {
   def toTerm = OMID(path)
 
   def role = Role_Constant(rl)

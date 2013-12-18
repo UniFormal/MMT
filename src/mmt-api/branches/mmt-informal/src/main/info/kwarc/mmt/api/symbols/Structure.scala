@@ -6,18 +6,22 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation._
 
 /**
- * A Structure represents an MMT structure.<p>
+ * A Structure represents an MMT structure.
  * 
  * Structures be declared (given by a list of assignments) or defined (given by an existing morphism).
  * These cases are distinguished by which subtrait of Link is mixed in.
  * 
- * @param parent the {@link info.kwarc.mmt.api.names.Path} of the parent theory (also the codomain of the link)
+ * @param parent the [[Path]] of the parent theory (also the codomain of the link)
  * @param name the name of the view
  * @param from the domain theory
  */
-abstract class Structure extends Symbol with Link {
+abstract class Structure extends Declaration with Link {
    val fromPath : MPath
-   val from = OMMOD(fromPath)
+   def from = {
+      val t = OMMOD(fromPath)
+      parser.SourceRef.get(this) foreach {r => parser.SourceRef.update(t, r)}
+      t
+   }
    val to = home
    def toTerm = if (isAnonymous) OMIDENT(to) else OMDL(home, name)
    def isAnonymous = name == LocalName(fromPath)
@@ -31,28 +35,28 @@ abstract class Structure extends Symbol with Link {
          <import name={if (isAnonymous) null else name.toPath} from={fromPath.toPath} implicit={if (! isAnonymous && isImplicit) "true" else null}>
             {getMetaDataNode}
             {innerNodes}
-          </import>
+         </import>
 }
 
 /**
  * A DeclaredStructure represents an MMT structure given by a list of assignments.<p>
  * 
- * @param home the [[info.kwarc.mmt.api.objects.Term]] representing the parent theory
+ * @param home the [[objects.Term]] representing the parent theory
  * @param name the name of the structure
  * @param from the domain theory
  * @param isImplicit true iff the link is implicit
  */
 class DeclaredStructure(val home : Term, val name : LocalName, val fromPath : MPath, val isImplicit : Boolean)
       extends Structure with DeclaredLink {
-   def role = info.kwarc.mmt.api.Role_Structure
+   def role = Role_Structure
    /** the domain is not part of the term components because it is just a Path */ 
-   def getComponents = Nil
+   def getComponents = List((DomComponent, new FinalTermContainer(from)))
 }
 
  /**
-  * A DefinedStructure represents an MMT structure given by an existing morphism.<p>
+  * A DefinedStructure represents an MMT structure given by an existing morphism.
   * 
-  * @param home the [[info.kwarc.mmt.api.objects.Term]] representing the parent theory
+  * @param home the [[objects.Term]] representing the parent theory
   * @param name the name of the structure
   * @param from the domain theory
   * @param df the definiens (the target if we see this as an assignment to a structure)
@@ -60,7 +64,7 @@ class DeclaredStructure(val home : Term, val name : LocalName, val fromPath : MP
   */
 class DefinedStructure(val home : Term, val name : LocalName, val fromPath : MPath, val dfC : TermContainer, val isImplicit : Boolean)
       extends Structure with DefinedLink {
-   def role = info.kwarc.mmt.api.Role_DefinedStructure
+   def role = Role_DefinedStructure
 }
 
 object DefinedStructure {

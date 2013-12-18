@@ -9,6 +9,7 @@ import ontology.QueryExtension
 import parser._
 import utils._
 import web._
+import utils.MyList._
 
 trait Extension extends Logger {
    protected var controller : Controller = null
@@ -52,7 +53,7 @@ class ExtensionManager(controller: Controller) extends Logger {
    private[api] var querytransformers : List[QueryTransformer] = Nil
    private[api] var changeListeners   : List[ChangeListener]  = Nil
    private[api] var presenters    : List[Presenter]    = Nil
-   private[api] var serverPlugins : List[ServerPlugin] = Nil
+   private[api] var serverPlugins : List[ServerExtension] = Nil
    private[api] var loadedPlugins : List[Plugin]       = Nil
    private[api] var parserExtensions : List[ParserExtension] = Nil
    private[api] var queryExtensions : List[QueryExtension] = Nil
@@ -68,19 +69,19 @@ class ExtensionManager(controller: Controller) extends Logger {
    
    def addDefaultExtensions {
       targets    ::= new MMTCompiler
-      targets    ::= new archives.Index
-      targets    ::= new archives.HTMLExporter
-      targets    ::= new archives.PythonExporter
+      targets    ::= new archives.OMDocImporter
+      targets    :::= List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter)
       presenters ::= TextPresenter
       presenters ::= OMDocPresenter
       presenters ::= controller.presenter
+      changeListeners ::= new modules.RealizationListener
       parserExtensions ::= parser.MetadataParser
       parserExtensions ::= parser.CommentHandler
       //parserExtensions ::= new ControlParser
-      lexerExtensions ::= GenericEscapeHandler
-      lexerExtensions ::= QuoteHandler
-      lexerExtensions ::= new PrefixEscapeHandler('\\')
-      lexerExtensions ::= new NumberLiteralHandler(true)
+      lexerExtensions ::= GenericEscapeLexer
+      lexerExtensions ::= QuoteLexer
+      lexerExtensions ::= UnicodeReplacer
+      lexerExtensions ::= new PrefixedTokenLexer('\\')
       serverPlugins   :::= List(new web.ActionServer, new web.SVGServer, new web.QueryServer, new web.AdminServer)
       queryExtensions :::= List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
                                 new ontology.Present, new ontology.PresentDecl) 
@@ -123,7 +124,7 @@ class ExtensionManager(controller: Controller) extends Logger {
           changeListeners ::= ext.asInstanceOf[ChangeListener]
        }
        if (ext.isInstanceOf[BuildTarget]) {
-          log("  ... as compiler")
+          log("  ... as build target")
           targets ::= ext.asInstanceOf[BuildTarget]
        }
        if (ext.isInstanceOf[QueryTransformer]) {
@@ -142,9 +143,9 @@ class ExtensionManager(controller: Controller) extends Logger {
           log("  ... as query extension")
           queryExtensions ::= ext.asInstanceOf[QueryExtension]
        }
-       if (ext.isInstanceOf[ServerPlugin]) {
+       if (ext.isInstanceOf[ServerExtension]) {
           log("  ... as server plugin")
-          serverPlugins ::= ext.asInstanceOf[ServerPlugin]
+          serverPlugins ::= ext.asInstanceOf[ServerExtension]
        }
        ext.start(args)
    }
@@ -156,16 +157,16 @@ class ExtensionManager(controller: Controller) extends Logger {
    /** retrieves an applicable Presenter */
    def getPresenter(format: String) : Option[Presenter] = presenters.find(_.isApplicable(format))
    /** retrieves an applicable server plugin */
-   def getServerPlugin(cont : String) : Option[ServerPlugin] = serverPlugins.find(_.isApplicable(cont))
+   def getServerPlugin(cont : String) : Option[ServerExtension] = serverPlugins.find(_.isApplicable(cont))
    /** retrieves an applicable parser extension */
    def getParserExtension(se: StructuralElement, keyword: String) : Option[ParserExtension] = parserExtensions find {_.isApplicable(se, keyword)}
    /** retrieves the closest Foundation that covers a theory, if any */
    def getFoundation(p: MPath) : Option[Foundation] = foundations find {_.foundTheory == p} orElse {
-      val mt = objects.TheoryExp.meta(objects.OMMOD(p))(controller.globalLookup)
-      mt flatMap getFoundation
+      val mt = objects.TheoryExp.metas(objects.OMMOD(p))(controller.globalLookup)
+      mt mapFind getFoundation
    }
    def getFoundation(thy: objects.Term) : Option[Foundation] =
-      objects.TheoryExp.meta(thy)(controller.globalLookup) flatMap getFoundation
+      objects.TheoryExp.metas(thy)(controller.globalLookup) mapFind getFoundation
 
    /** sets the URL of the MathWebSearch backend */
    def setMWS(uri: URI) {mws = Some(uri)}

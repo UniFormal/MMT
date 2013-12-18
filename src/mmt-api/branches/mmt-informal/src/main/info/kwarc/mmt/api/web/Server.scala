@@ -137,7 +137,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
     //override def buffered = true
     override def chunked = true // Content-Length is not set at the beginning of the response, so we can stream info while computing/reading from disk
     def resolve(req: HReqData): Option[HLet] = {
-      log("request: /" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query)
+      log("request for /" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query)
       Util.getComponents(req.uriPath) match {
         case ":breadcrumbs" :: _ =>
           val mmtpath = Path.parse(req.query, controller.getBase)
@@ -242,7 +242,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
              val termParser = controller.termParser
              val tm = try {
                val str = body.asString
-               termParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), scope, objects.Context(), str))
+               termParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), scope, objects.Context(), str), throw _)
              } catch {
                case e : Throwable =>
                  println(e)
@@ -326,10 +326,10 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
       tk.req.query.split("\\?").toList match {
         case strDPath :: strThy :: Nil =>
           val dpath = DPath(URI(strDPath))
-          val mpath = dpath ? LocalPath(strThy :: Nil)
+          val mpath = dpath ? strThy
           val ctrl = new Controller(controller.report)
           val reader = new TextReader(controller, ctrl.add)
-          val res = reader.readDocument(text, dpath)(controller.termParser.apply)
+          val res = reader.readDocument(text, dpath)(pu => controller.termParser.apply(pu, throw _))
           res._2.toList match {
             case Nil => //no error -> parsing successful
               try {
@@ -392,9 +392,6 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
       }
     }
   }
-
-  
-
 
   private def TreeResponse = new HLet {
      def aact(tk: HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {

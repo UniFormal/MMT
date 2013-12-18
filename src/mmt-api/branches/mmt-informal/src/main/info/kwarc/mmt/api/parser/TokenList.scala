@@ -3,10 +3,23 @@ import info.kwarc.mmt.api._
 import objects.Term
 import utils.MyList._
 
-
 /** helper object */
 object TokenList {
    import java.lang.Character._
+   /** @return true if c is considered to be a letter */
+   def isLetter(c: Char) = c.isLetter || List(COMBINING_SPACING_MARK, ENCLOSING_MARK, NON_SPACING_MARK).contains(c.getType)
+   /** @return true if c is considered to be whitespace */
+   def isWhitespace(c: Char) = c.isWhitespace
+   /** @return true if c is considered to be a number */
+   def isNumber(c: Char) = List(DECIMAL_DIGIT_NUMBER, LETTER_NUMBER, OTHER_NUMBER) contains c.getType
+   /** @return true if c is considered a connector, i.e., a character that never breaks a word */
+   def isConnector(c: Char) = c.getType == CONNECTOR_PUNCTUATION
+   /** @return true if there is no word break between before and after */
+   def canFollow(before: Char, after: Char) = 
+      ! isWhitespace(after) &&
+      (isConnector(before) || isConnector(after) || 
+         (isLetter(before) || isNumber(before)) == (isLetter(after) || isNumber(after))
+      )
    /** the Tokenizer
     * @param the string to tokenize
     * @param first the position of the first character (defaults to 0)
@@ -50,7 +63,7 @@ object TokenList {
                endToken
                tokens ::= escaped
                skipEscaped = escaped.length-1
-           case None => if (c.isWhitespace) {
+           case None => if (isWhitespace(c)) {
             // whitespace always starts a new Token, 
             endToken
             whitespace = true
@@ -62,17 +75,13 @@ object TokenList {
                   current += c
                   connect = false
                // letters, marks, and numbers continue the Token
-               case _ if c.isLetter =>
+               case _ if isLetter(c) || isNumber(c) =>
                   current += c
                // the special MMT delimiters continue a multi-character Token
                case _ if (c == '?' || c == '/') && current != "" =>
                   current += c
-               case COMBINING_SPACING_MARK | ENCLOSING_MARK | NON_SPACING_MARK =>
-                  current += c
-               case DECIMAL_DIGIT_NUMBER | LETTER_NUMBER | OTHER_NUMBER =>
-                  current += c               
                // connectors are remembered
-               case CONNECTOR_PUNCTUATION =>
+               case _ if isConnector(c) =>
                   current += c
                   connect = true
                // everything else:
@@ -81,7 +90,7 @@ object TokenList {
                   endToken
                   // look ahead: if a connector follows, start a multi-character Token
                   // otherwise, create a single-character Token
-                  if (i.offset < l-1 && s(i.offset-first.offset+1).getType == CONNECTOR_PUNCTUATION) {
+                  if (i.offset < l-1 && isConnector(s(i.offset-first.offset+1))) {
                      current += c
                   } else {
                      tokens ::= Token(c.toString, i, whitespace)
@@ -166,8 +175,11 @@ case class TokenSlice(tokens: TokenList, start: Int, next: Int) {
 
 /** the type of objects that may occur in a [[info.kwarc.mmt.api.parser.TokenList]] */
 trait TokenListElem {
+   /** the first position included in this token */
    def firstPosition: SourcePosition
+   /** the last position included in this token */
    def lastPosition: SourcePosition
+   /** the region covered by this token */
    def region = SourceRegion(firstPosition,lastPosition)
 }
 
@@ -175,22 +187,22 @@ trait TokenListElem {
 abstract class PrimitiveTokenListElem(text: String) extends TokenListElem {
    override def toString = text //+ "@" + first.toString
    val length = text.length
-   /** the region spanned by this Token, from first to last character */
    val lastPosition = {
-      SourcePosition(firstPosition.offset+length, firstPosition.line, firstPosition.column+length-1)
+      SourcePosition(firstPosition.offset+length-1, firstPosition.line, firstPosition.column+length-1)
    }
 }
 
 /** A Token is the basic TokenListElem
  * @param word the characters making up the Token (excluding whitespace)
- * @param first the index of the first character
- * @param whitespaceBefore true iff the Token was preceded by whitespace (true for the first Token, too)
  * @param firstPosition the SourcePosition of the first character
-*  */
-case class Token(word: String, firstPosition: SourcePosition, whitespaceBefore: Boolean) extends PrimitiveTokenListElem(word)
+ * @param whitespaceBefore true iff the Token was preceded by whitespace (true for the first Token, too)
+ * @param text the text lexed into this token, if different from word
+ */
+case class Token(word: String, firstPosition: SourcePosition, whitespaceBefore: Boolean, text:Option[String] = None)
+     extends PrimitiveTokenListElem(text.getOrElse(word))
 
-/** An ExternalToken is anything produced by an EscapeHandler
- * @param text the characters making up the literal
+/** An ExternalToken can be anything produced by a [[LexerExtension]]
+ * @param text the characters making up the token
  * @param firstPosition the SourcePosition of the first character
  */
 abstract class ExternalToken(text:String) extends PrimitiveTokenListElem(text) {

@@ -12,4 +12,6 @@ trait HashEquality[A] {
    lazy val hash: Int = hashCode
    /** this hasheq that is the same as this == that, but fails immediately if false */
    def hasheq(that: HashEquality[A]) : Boolean = this.hash == that.hash && this == that
+   /** this hasheq that is the same as this == that, but fails immediately if false */
+   def hashneq(that: HashEquality[A]) : Boolean = this.hash != that.hash || this != that
 }

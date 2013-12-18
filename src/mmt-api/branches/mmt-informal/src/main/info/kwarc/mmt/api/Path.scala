@@ -40,7 +40,7 @@ sealed abstract class Path extends ontology.BaseType {
    /** the last components of the path, useful for short displays */
    def last : String
    /** breaks an MMT URI reference into its components, all of which are optional */
-   def toTriple : (Option[DPath], Option[LocalPath], Option[LocalName]) = this match {
+   def toTriple : (Option[DPath], Option[LocalName], Option[LocalName]) = this match {
       case mod % name =>
          val mp = mod.toMPath
          (Some(mp.parent), Some(mp.name), Some(name))
@@ -61,10 +61,10 @@ case class DPath(uri : URI) extends Path {
    def doc = this
    def last = uri.path match {case Nil | List("") => uri.authority.getOrElse("") case l => l.last}
    def /(n : String) = DPath(uri / n)
-   def /(n : LocalPath) = DPath(n.fragments.foldLeft(uri)( _ / _))
+   def /(n : LocalName) = DPath(uri / n.steps.map(_.toPath))
    def ^! = DPath(uri ^)
-   def ?(n : String) : MPath = this ? new LocalPath(n)
-   def ?(n : LocalPath) = MPath(this, n)
+   def ?(n : String) : MPath = this ? LocalName(n)
+   def ?(n : LocalName) = MPath(this, n)
    def version : Option[String] = uri.path match {
        case Nil => None
        case l => l.last.indexOf(";") match {
@@ -89,20 +89,20 @@ sealed trait ContentPath extends Path {
  * @param parent the path of the parent document
  * @param name the name of the module
  */
-case class MPath(parent : DPath, name : LocalPath) extends ContentPath {
+case class MPath(parent : DPath, name : LocalName) extends ContentPath {
    def doc = parent
-   def last = name.fragments.last
+   def last = name.steps.last.toPath
    /** go up to containing document */
    def ^ : MPath = parent ? name.init
    def ^^ : DPath = parent
-   def ^! = if (name.isNative) ^^ else ^
+   def ^! = if (name.length <= 1) ^^ else ^
    def /(n : String) : MPath = MPath(parent, name / n)
    /** go down to a submodule */
-   def /(n : LocalPath) = MPath(parent, name / n)
+   def /(n : LocalName) = MPath(parent, name / n)
    /** go down to a symbol */
    def ?(n : LocalName) : GlobalName = OMID(this) % n
    def ?(n : String) : GlobalName = this ? LocalName(n)
-   def components : List[Content] = List(StringLiteral(doc.uri.toString), StringLiteral(name.flat),Omitted, StringLiteral(toPathEscaped))
+   def components : List[Content] = List(StringLiteral(doc.uri.toString), StringLiteral(name.toPath),Omitted, StringLiteral(toPathEscaped))
    def isGeneric = (this == mmt.mmtcd)
    def module = OMMOD(this)
 }
@@ -122,27 +122,6 @@ case class GlobalName(module: Term, name: LocalName) extends ContentPath {
 }
 
 /**
- * A LocalPath represents a local MMT module (relative to a document).
- * @param fragments the non-empty list of (in MMT: slash-separated) components
- */
-case class LocalPath(fragments : List[String]) {
-   def this(n : String) = {this(List(n))}
-   def /(n: String) = LocalPath(fragments ::: List(n)) 
-   def /(that: LocalPath) = LocalPath(fragments ::: that.fragments)
-   def isNative = fragments.length == 1
-   def init = LocalPath(fragments.init)
-   def tail = LocalPath(fragments.tail)
-   def head = fragments.head
-   def last = fragments.last
-   def length = fragments.length
-   def prefixes : List[LocalPath] = if (length <= 1) List(this) else this :: tail.prefixes
-   implicit def toList : List[String] = fragments
-   def flat : String = fragments.mkString("", "/","")
-   def toPath : String = fragments.map(xml.encodeURI).mkString("", "/", "")
-   override def toString = flat
-}
-
-/**
  * A LocalName represents a local MMT symbol-level declarations (relative to a module).
  * @param steps the list of (in MMT: slash-separated) components
  */
@@ -155,10 +134,24 @@ case class LocalName(steps: List[LNStep]) {
    def head = steps.head
    def last = steps.last
    def length = steps.length
+   /** removes repeated complex steps, keeping the later one */
+   def simplify: LocalName = {
+      var complexBefore = false
+      val stepsRS = steps.reverse filter {
+         case s: SimpleStep => true
+         case c: ComplexStep =>
+            val res = ! complexBefore 
+            complexBefore = true
+            res
+      }
+      LocalName(stepsRS.reverse)
+   }
+   /** returns the list of all names contained in this one, starting with the shortest */
+   def prefixes : List[LocalName] = if (length <= 1) List(this) else init.prefixes ::: List(this)
    /** machine-oriented string representation of this name, parsable and official */
-   def toPath : String = steps.map(s => xml.encodeURI(s.toString)).mkString("", "/", "")
-   /** human-oriented string representation of this name, no encoding, possibly shortened */
-   override def toString : String = steps.map(_.toPath).mkString("", "/", "")
+   def toPath : String = steps.map(_.toPath).mkString("", "/", "")
+  /** human-oriented string representation of this name, no encoding, possibly shortened */
+   override def toString : String = steps.map(_.toString).mkString("", "/", "")
 }
 object LocalName {
    def apply(step: LNStep) : LocalName = LocalName(List(step))
@@ -175,18 +168,19 @@ object LocalName {
 /** a step in a LocalName */
 abstract class LNStep {
    def toPath : String
-   override def toString = toPath
    def unary_! = LocalName(this)
    def /(n: LocalName) = LocalName(this) / n
    def /(n: LNStep) = LocalName(this) / n
 }
 /** constant or structure declaration */
 case class SimpleStep(name: String) extends LNStep {
-   def toPath = name
+   def toPath = xml.encodeURI(name)
+   override def toString = name
 }
 /** an include declaration; ComplexStep(fromPath) acts as the name of an unnamed structure */
 case class ComplexStep(path: MPath) extends LNStep {
    def toPath = "[" + path.toPath + "]"
+   override def toString = toPath
 }
 
 case class CPath(parent: ContentPath, component: DeclarationComponent) extends Path {
@@ -217,7 +211,6 @@ case class LocalRef(segments : List[String], absolute : Boolean) {
                                }
       LocalName(steps)
    }
-   def toLocalPath = LocalPath(segments)
    override def toString = segments.mkString(if (absolute) "/" else "","/","")
 }
 
@@ -234,12 +227,7 @@ object Path {
    }
    // merge(x,y) merges the URI or LocalPath x with the relative or absolute reference y
    private def mergeD(bd : Option[DPath], d : DPath) : DPath = if (bd.isEmpty) d else DPath(bd.get.uri.resolve(d.uri)) 
-   private def mergeM(bl : Option[LocalPath], l : LocalRef) : LocalPath =
-      if (bl.isEmpty || l.absolute)
-         l.toLocalPath
-      else
-         bl.get / l.toLocalPath
-   private def mergeS(base: Path, bl : Option[LocalName], l : LocalRef) : LocalName =
+   private def mergeN(base: Path, bl : Option[LocalName], l : LocalRef) : LocalName =
       if (bl.isEmpty || l.absolute)
          l.toLocalName(base)
       else
@@ -255,13 +243,13 @@ object Path {
       val (bdoc, bmod, bname) = base.toTriple
       //now explicit case distinctions to be sure that all cases are covered
       val path = (bdoc, bmod, bname, doc, mod, name) match {
-         case (Some(bd), Some(bm), _, None,    None,    Some(n)) => bd ? bm ? mergeS(base, bname, n)
-         case (Some(bd), _       , _, None,    Some(m), None   ) => bd ? mergeM(bmod, m)
-         case (Some(bd), _       , _, None,    Some(m), Some(n)) => bd ? mergeM(bmod, m) ? n.toLocalName(base)
+         case (Some(bd), Some(bm), _, None,    None,    Some(n)) => bd ? bm ? mergeN(base, bname, n)
+         case (Some(bd), _       , _, None,    Some(m), None   ) => bd ? mergeN(base, bmod, m)
+         case (Some(bd), _       , _, None,    Some(m), Some(n)) => bd ? mergeN(base, bmod, m) ? n.toLocalName(base)
          case (_       , _       , _, None,    None,    None   ) => base
          case (_       , _       , _, Some(d), None,    None   ) => mergeD(bdoc, d)
-         case (_       , _       , _, Some(d), Some(m), None   ) => mergeD(bdoc, d) ? m.toLocalPath
-         case (_       , _       , _, Some(d), Some(m), Some(n)) => mergeD(bdoc, d) ? m.toLocalPath ? n.toLocalName(base)
+         case (_       , _       , _, Some(d), Some(m), None   ) => mergeD(bdoc, d) ? m.toLocalName(base)
+         case (_       , _       , _, Some(d), Some(m), Some(n)) => mergeD(bdoc, d) ? m.toLocalName(base) ? n.toLocalName(base)
          case _ => throw ParseError("(" + doc + ", " + mod + ", " + name + ") cannot be resolved against " + base) 
       }
       if (comp == "") path else path match {
@@ -304,7 +292,8 @@ object Path {
    /** splits /-separated sequence of (String | "[" String "]") into its components
     * []-wrappers are preserved
     * []-wrapped components may contain /
-    * components may be empty
+    * components may be empty, initial or final / causes empty component
+    * empty string is parsed as Nil
     */
    private def splitName(s: String): List[String] = {
       var left : String = s            //string that is left to parse
@@ -315,7 +304,7 @@ object Path {
       //called when the next character is appended to the current segment
       def charDone {current = current + left(0); left = left.substring(1)}
       //parses s segment-wise; if a segment starts with [, pass control to complex
-      def start {   if (left == "")            {if (current != "") segmentDone}
+      def start {   if (left == "")            {if (current != "" || ! seen.isEmpty) segmentDone}
                else if (left.startsWith("/[")) {segmentDone; left = left.substring(1); complex}
                else if (left.startsWith("/"))  {segmentDone; left = left.substring(1); start}
                else                            {charDone; start}
@@ -336,9 +325,7 @@ object Path {
       var l = splitName(n)
       if (relative)
          l = l.drop(1)
-      if (l.exists(_ == ""))
-         throw ParseError("cannot parse " + n + " (local path may not have empty component or end in slash)")
-      l = l map xml.decodeURI
+      l = try {l map xml.decodeURI} catch {case xml.XMLError(s) => throw ParseError(s)}
       LocalRef(l, ! relative)
    }
    /** as parseLocal but fails on relative results */
@@ -354,7 +341,7 @@ object Path {
  * This permits the syntax doc ? mod in patterns. 
  */
 object ? {
-   def unapply(p : Path) : Option[(DPath,LocalPath)] = p match {
+   def unapply(p : Path) : Option[(DPath,LocalName)] = p match {
       case MPath(doc, name) => Some((doc, name))
       case _ => None
    }
@@ -384,7 +371,6 @@ object % {
  * This permits the syntax head / tail in patterns. 
  */
 object / {
-   def unapply(l : LocalPath) : Option[(String,LocalPath)] = if (l.isNative) None else Some((l.head,l.tail))
    def unapply(l : LocalName) : Option[(LNStep,LocalName)] = if (l.length <= 1) None else Some((l.head,l.tail))
 }
 
@@ -393,7 +379,6 @@ object / {
  * This permits the syntax init \ last in patterns. 
  */
 object \ {
-   def unapply(l : LocalPath) : Option[(LocalPath,String)] = if (l.isNative) None else Some((l.init,l.last))
    def unapply(l : LocalName) : Option[(LocalName,LNStep)] = if (l.length <= 1) None else Some((l.init,l.last))
 }
 
@@ -401,6 +386,5 @@ object \ {
  * This permits the syntax !(n) in patterns to match atomic local names. 
  */
 object ! {
-   def unapply(l : LocalPath) : Option[String] = if (l.isNative) Some(l.head) else None
    def unapply(l : LocalName) : Option[LNStep] = if (l.length == 1) Some(l.head) else None
 }

@@ -49,7 +49,7 @@ class Report {
    /** increase indentation */
    private[frontend] def indent {ind += "  "}
    /** decrease indentation */
-   private[frontend] def unindent {ind = ind.substring(2)}
+   private[frontend] def unindent {if (ind.length >= 2) ind = ind.substring(2)}
    /** flushes all handlers */
    def flush {
       handlers foreach {_.flush}
@@ -83,6 +83,7 @@ class FileHandler(val filename : File, timestamps: Boolean) extends ReportHandle
          val t = if (timestamps) Report.time + "\t" else ""
          val m = t + ind + group + ": " + msg
          file.println(m)
+         flush
    }
    override def flush {file.flush}
    override def toString = "file " + filename

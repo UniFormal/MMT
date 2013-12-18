@@ -66,9 +66,9 @@ class Controller extends ROController with Logger {
    val library = memory.content
    val notstore = memory.presentation
    val docstore = memory.narration
-
+   
    /** text-based presenter for error messages, logging, etc. */
-   val presenter = new StructureAndObjectPresenter(this)
+   val presenter = new StructureAndObjectPresenter
    
    /** maintains all customizations for specific languages */
    val extman = new ExtensionManager(this)
@@ -77,7 +77,7 @@ class Controller extends ROController with Logger {
    /** the http server */
    var server : Option[Server] = None
    /** the MMT parser (XML syntax) */
-   val xmlReader = new XMLReader(this)
+   val xmlReader = new XMLReader(report)
    /** the MMT term parser */
    val termParser = new ObjectParser(this)
    /** the MMT parser (native MMT text syntax) */
@@ -85,7 +85,7 @@ class Controller extends ROController with Logger {
    /** a basic structure checker */
    val checker = new StructureAndObjectChecker(this)
    /** the MMT parser (Twelf text syntax) */
-   val textReader = new TextReader(this)
+   val textReader = new TextReader(this, this.add)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(extman, report)
    /** the query engine */
@@ -115,7 +115,7 @@ class Controller extends ROController with Logger {
        } catch {
          case e : Throwable => elem match {
            case m : Module => List(AddModule(m))
-           case d : Symbol => List(AddDeclaration(d))
+           case d : Declaration => List(AddDeclaration(d))
            case _ => throw ImplementationError("Updating element not supported for " + elem.toString)
          }   
        }
@@ -146,9 +146,16 @@ class Controller extends ROController with Logger {
       def preImage(p : GlobalName) = library.preImage(p)
       def getDeclarationsInScope(mod : Term) = library.getDeclarationsInScope(mod)
    }
+   private val self = this
    /** a lookup that loads missing modules dynamically */
    val globalLookup = new Lookup(report) {
-      def get(path : Path) = iterate {library.get(path)}
+      def get(path : Path) = {
+         val se = iterate {self.get(path)}
+         se match {
+            case ce: ContentElement => ce
+            case _ => throw GetError(path + " exists but is not a content element")
+         }
+      }
       //def imports(from: Term, to: Term) = iterate {library.imports(from, to)}
       def visible(to: Term) = iterate {library.visible(to)}
       def getImplicit(from: Term, to: Term) = library.getImplicit(from,to)
@@ -167,8 +174,7 @@ class Controller extends ROController with Logger {
            }
          } catch {
             case BackendError(p) =>
-               log("retrieval failed for " + p)
-               throw GetError("retrieval failed for " + p) 
+               throw GetError("backend cannot retrieve " + p) 
          }
       }
       log("retrieved " + path)
@@ -187,8 +193,14 @@ class Controller extends ROController with Logger {
    private def iterate[A](a : => A, previous : List[Path]) : A = {
       try {a}
       catch {
-         case NotFound(p : Path) if ! previous.exists(_ == p) => retrieve(p); iterate(a, p :: previous)
-         case NotFound(p : Path) => throw GetError("retrieval failed for " + p) 
+         case NotFound(p : Path) =>
+            if (previous.exists(_ == p))
+               throw GetError("retrieval failed for " + p)
+            else {
+               retrieve(p)
+               iterate(a, p :: previous)
+            }
+          
       }
    }
    
@@ -196,7 +208,21 @@ class Controller extends ROController with Logger {
    def get(path : Path) : StructuralElement = {
       path match {
          case p : DPath => iterate (docstore.get(p))
-         case p : MPath => iterate (try {library.get(p)} catch {case _: java.lang.Exception => notstore.get(p)})
+         case p : MPath =>
+             try {iterate(library.get(p))}
+             catch {
+                case _: GetError =>
+                   try {iterate(notstore.get(p))}
+                   catch {
+                      // check if the MPath refers to a Realization given as a Scala class; if so, add it as a module
+                      case e: GetError =>
+                         log("trying to find realization for " + p + " on classpath")
+                         Realization.fromScala(p) match {
+                            case Some(r) => add(r); r
+                            case None => throw e
+                         }
+                   }
+             }
          case p : GlobalName => iterate (library.get(p))
          case _ : CPath => throw ImplementationError("cannot retrieve component paths")
       }
@@ -225,7 +251,7 @@ class Controller extends ROController with Logger {
                      log("activating " + old.path)
                      // deactivate all children
                      old.getDeclarations.foreach {_.inactive = true}
-                     // merge metadata and components of the new one into the old one
+                     // update metadata and components
                      old.metadata = nw.metadata
                      nw.getComponents.foreach {case (comp, cont) =>
                         old.getComponent(comp).foreach {_.update(cont)}
@@ -349,7 +375,7 @@ class Controller extends ROController with Logger {
             (doc, Nil)
          case Some("elf") =>
             val source = scala.io.Source.fromFile(f, "UTF-8")
-            val (doc, errorList) = textReader.readDocument(source, dpath)(termParser.apply)
+            val (doc, errorList) = textReader.readDocument(source, dpath)(pu => termParser.apply(pu, throw _))
             source.close
             if (!errorList.isEmpty)
               log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
@@ -430,8 +456,6 @@ class Controller extends ROController with Logger {
             val s = SVNRepo(uri.schemeNull, uri.authorityNull, uri.pathAsString, repos, rev)
             backend.addStore(s)
 	      case AddExtension(c, args) => extman.addExtension(c, args)
-	      case AddTNTBase(f) =>
-	         backend.addStore(Storage.fromOMBaseCatalog(f) : _*)
 	      case Local =>
 	          val currentDir = (new java.io.File(".")).getCanonicalFile
 	          val b = URI.fromJava(currentDir.toURI)
@@ -446,17 +470,10 @@ class Controller extends ROController with Logger {
             key match {
                case "check" => arch.check(in, this)
                case "validate" => arch.validate(in, this)
-               case "clean" => List("compiled", "narration", "content", "relational", "notation") foreach {arch.clean(in, _)}
                case "flat" => arch.produceFlat(in, this)
                case "enrich" =>
                  val me = new ModuleElaborator(this)
                  arch.produceEnriched(in,me, this)
-               case "source-terms" | "source-structure" => arch match {
-                  case arch: archives.MMTArchive =>
-                     arch.readSource(in, this, key.endsWith("-terms"))
-                     log("done reading source")
-                  case _ => log("archive is not an MMT archive")
-               }
                case "relational" =>
                   arch.readRelational(in, this, "rel")
                   arch.readRelational(in, this, "occ")
@@ -466,10 +483,9 @@ class Controller extends ROController with Logger {
                   arch.readNotation(in, this)
                   log("done reading notation index")
                 */
-               case "mws"          => arch.produceMWS(in, "content")
+               case "mws"          => arch.produceMWS(in, arch.contentDim)
                case "mws-flat"     => arch.produceMWS(in, "mws-flat")
                case "mws-enriched" => arch.produceMWS(in, "mws-enriched")
-               case "extract"      => arch.extractScala(this, in)
                case "integrate"    => arch.integrateScala(this, in)
                case "register"     =>
                   if (in.length != 1)

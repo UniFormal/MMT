@@ -132,7 +132,7 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
     
     //declaration paths
     mod.components collect {
-      case dec : Symbol => cpaths ++= containedPaths(dec)
+      case dec : Declaration => cpaths ++= containedPaths(dec)
     }
     
     //component paths
@@ -151,7 +151,7 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
    * and its component paths
    * @param dec : the declaration
    */
-  private def containedPaths(dec : Symbol) : HashSet[Path] = {
+  private def containedPaths(dec : Declaration) : HashSet[Path] = {
     val h = new HashSet[Path]()
     dec match {
       case c : Constant => h + dec.path + CPath(c.path, TypeComponent) + CPath(c.path, DefComponent)

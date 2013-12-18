@@ -40,7 +40,7 @@ trait ValidatedArchive extends WritableArchive {
     
     /** checks modules in content structurally and then validates all ValidationUnits */
     def validate(in: List[String] = Nil, controller: Controller) {
-      traverse("content", in, Archive.extensionIs("omdoc")) {case Current(_, inPath) =>
+      traverse(contentDim, in, Archive.extensionIs("omdoc")) {case Current(_, inPath) =>
          val mpath = Archive.ContentPathToMMTPath(inPath)
          val errors = controller.checker(mpath)
          logGroup {

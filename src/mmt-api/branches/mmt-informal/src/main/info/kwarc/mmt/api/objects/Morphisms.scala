@@ -62,7 +62,12 @@ object Morph {
      val mS = OMCOMP(associateComposition(m))
      mS match {
         case OMMOD(p) => OMMOD(p)
-        case OMDL(h,n) => OMDL(h,n)
+        case OMDL(h,ln) =>
+           val lnS = ln.simplify
+           if (lnS.length == 1 && lnS.head.isInstanceOf[ComplexStep])
+              OMCOMP()
+           else
+              OMDL(h, lnS)
         case OMIDENT(t) => OMCOMP()
         case Morph.Empty => Morph.Empty
         case OMCOMP(ms) =>
@@ -132,18 +137,24 @@ object TheoryExp {
   }
   /** checks equality of two theory expression using simplify */
   def equal(s: Term, t: Term) = simplify(s) == simplify(t)
-  /** computes the meta-theory of a theory */
-  def meta(thy: Term)(implicit lib: Lookup) : Option[MPath] = thy match {
+  /** computes the meta-theories of a theory, nearest one first
+   *  @param all if true, stop after the first meta-theory, false by default
+   */
+  def metas(thy: Term, all: Boolean = true)(implicit lib: Lookup) : List[MPath] = thy match {
       case OMMOD(p) => lib.getTheory(p) match {
-         case t: DeclaredTheory => t.meta
-         case t: DefinedTheory => meta(t.df)
+         case t: DeclaredTheory => t.meta match {
+            case None => Nil
+            case Some(m) => if (all) m :: metas(OMMOD(m)) else List(m)
+         }
+         case t: DefinedTheory => metas(t.df)
       }
-      case TheoryExp.Empty => None
+      case TheoryExp.Empty => Nil
       case TUnion(ts) =>
-         val ms = ts map {t => meta(t)}
+         val ms = ts map {t => metas(t)}
          if (ms forall {m => m == ms.head}) ms.head
-         else None
+         else Nil
    }
+  
    /** checks whether "from" is included into "to", relative to a base function that handles the case where both theory expressions are atomic */
    def imports(from: Term, to: Term)(implicit atomic: (MPath,MPath) => Boolean) : Boolean = {
       if (from == to) true else (from, to) match {
@@ -156,7 +167,8 @@ object TheoryExp {
       }
    }
    /** a sound but not complete approximation of imports that does not make use of any lookups
-    *  and uses only the information given in the theory expressions themselves */ 
+    *  and uses only the information given in the theory expressions themselves
+    */ 
    def importsDefinitely(from: Term, to: Term) = imports(from,to) {(f,t) => f == t}
    
    /** returns a human-oriented (short) String representation of a theory expression */
@@ -265,18 +277,3 @@ object ExplicitMorph {
     case _ => None
   }
 }
-
-
-/*
-case class OMUNIONPIM(push: Morph, along: Morph, wth: Morph) extends Morph with ComposedModuleObject {
-   def role = Role_pushout_im
-   def components = List(push, along, wth)
-   override def toString = push.toString + " + " + along.toString + " with " + wth.toString 
-}
-
-case class OMPIW(raise: Morph, to: TheoryObj) extends Morph with ComposedModuleObject {
-   def role = Role_pushout_iim
-   def components = List(raise, to)
-   override def toString = raise.toString + " * " + to.toString
-}
-*/

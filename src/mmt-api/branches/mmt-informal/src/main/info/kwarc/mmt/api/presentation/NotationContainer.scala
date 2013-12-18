@@ -7,7 +7,7 @@ class NotationDimension {
    var not : Option[TextNotation] = None
 }
 
-/** A NotationContainer wraps around various notations that can be associated with a Symbol */
+/** A NotationContainer wraps around various notations that can be associated with a Declaration */
 class NotationContainer extends ComponentContainer {
    private val _oneDim = new NotationDimension
    private val _twoDim = new NotationDimension

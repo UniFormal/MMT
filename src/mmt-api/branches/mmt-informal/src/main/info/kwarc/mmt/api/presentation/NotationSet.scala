@@ -8,7 +8,7 @@ case object ImportsDefaults extends Defaults("use")
 case object IgnoresDefaults extends Defaults("ignore")
 
 /** Stores a set of notations for presentation */
-class Style(val parent : DPath, name : LocalPath, val from : Path, val to : Path)
+class Style(val parent : DPath, name : LocalName, val from : Path, val to : Path)
                 extends PresentationElement {
    private val notations = new scala.collection.mutable.HashMap[NotationKey,StyleNotation]
    def path = parent ? name
@@ -21,7 +21,7 @@ class Style(val parent : DPath, name : LocalPath, val from : Path, val to : Path
    val components = Nil //TODO
    override def toString = "style " + name + notations.values.map("\t" + _.toString).mkString(" {\n","\n","\n}")
    def toNode =
-      <style name={name.flat} from={from.toPath} to={to.toPath}>
+      <style name={name.toPath} from={from.toPath} to={to.toPath}>
          {notations.iterator.map(_._2.toNode)}
       </style>
 }

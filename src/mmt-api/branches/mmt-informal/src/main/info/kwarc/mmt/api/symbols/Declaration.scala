@@ -5,13 +5,13 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.libraries._
 
 /**
- * Symbol unifies MMT symbols and MMT assignments.
+ * Declaration unifies MMT symbols and MMT assignments.
  * 
  * These are the named statements living in [[info.kwarc.mmt.api.modules.Module]]s
  */
-abstract class Symbol extends ContentElement {
+abstract class Declaration extends ContentElement {
    /** the containing module */
-   val parent = home.toMPath
+   lazy val parent = home.toMPath
    /** the containing module
     * 
     * this is almost always OMMOD(p:MPath),
@@ -38,4 +38,19 @@ abstract class Symbol extends ContentElement {
     * empty by default, may be overridden when constructing instances
     */
    val parameters = Context()
+}
+
+class NestedModule(val module: Module) extends Declaration {
+   val home = OMMOD(module.parent ? module.name.init)
+   val name = LocalName(module.name.last)
+   
+   def components: List[Content] = module.components
+   def role = module.role
+   def toNode = module.toNode
+   override def toString = module.toString
+   def getComponents = module.getComponents 
+   def getDeclarations = module.getDeclarations
+
+   // bend over metadata pointer
+   this.metadata = module.metadata
 }

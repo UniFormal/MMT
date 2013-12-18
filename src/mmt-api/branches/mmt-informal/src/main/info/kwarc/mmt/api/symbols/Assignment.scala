@@ -37,7 +37,7 @@ object ViewInclude {
 object PlainViewInclude {
    /** pre: included is  view with domain from */
    def apply(home: Term, from: MPath, included: MPath) = ViewInclude(home, from, OMMOD(included))
-   def unapply(s: Symbol) : Option[(Term, MPath, MPath)] = {
+   def unapply(s: Declaration) : Option[(Term, MPath, MPath)] = {
       s match {
          case d : DefinedStructure => d.name match {
             case LocalName(List(ComplexStep(from))) => d.df match {

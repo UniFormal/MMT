@@ -12,9 +12,8 @@ import scala.collection.mutable._
 
 // TODO second phase should update from fields in structures, as well as all aliases with the correct references. Currently aliases point to originatingLink?name
 /** A TextReader parses Twelf (for now) and calls controller.add(e) on every found content element e */
-class TextReader(controller : frontend.Controller, cont : StructuralElement => Unit) extends Reader(controller) {
-  def this(ctrl : frontend.Controller) = this(ctrl, ctrl.add)
-
+class TextReader(val controller: frontend.Controller, cont : StructuralElement => Unit) extends frontend.Logger {
+  val report = controller.report
   val logPrefix = "textReader"
 
   // ------------------------------- private vars -------------------------------

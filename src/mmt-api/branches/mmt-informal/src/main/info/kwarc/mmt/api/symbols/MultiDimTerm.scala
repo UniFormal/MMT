@@ -29,7 +29,7 @@ class TermDimension {
  * The representations are read < parsed < analyzed.
  * Setting a representation marks the higher representations as dirty.
  */
-class TermContainer extends ComponentContainer {
+class TermContainer extends AbstractTermContainer {
    private var _read     : Option[String] = None
    private val _parsed   = new TermDimension
    private val _analyzed = new TermDimension

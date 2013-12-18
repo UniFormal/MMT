@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.objects._
  * @param doc the {@link info.kwarc.mmt.api.names.Path} of the parent document
  * @param name the name of the module
  */
-abstract class Module(val parent : DPath, val name : LocalPath) extends ContentElement {
+abstract class Module(val parent : DPath, val name : LocalName) extends ContentElement {
    def path: MPath = parent ? name
    def toTerm = OMMOD(path)
 }

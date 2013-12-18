@@ -120,9 +120,9 @@ object MetaDatum {
 
 /** Helper object to distinguish MetaDatum's whose objects are URIs (<link>) from other ones (<meta>) */
 object Link {
-   def apply(key: GlobalName, uri: utils.URI) = new MetaDatum(key, OMURI(uri))
+   def apply(key: GlobalName, uri: utils.URI) = new MetaDatum(key, URILiteral(uri))
    def unapply(d: MetaDatum) : Option[(GlobalName, utils.URI)] = d.value match {
-      case OMURI(uri) => Some((d.key, uri))
+      case URILiteral(uri) => Some((d.key, uri))
       case _ => None
    }
 }

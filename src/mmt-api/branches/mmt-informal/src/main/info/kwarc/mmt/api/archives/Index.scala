@@ -9,11 +9,31 @@ import ontology._
 import utils._
 import utils.FileConversion._
 
-/** the build target for indexing an Archive */
-class Index extends BuildTarget {
-    val inDim = "compiled"
-    val key = "index"
+/**
+ * a build target for importing an archive in some source syntax
+ * 
+ * This should only be needed when OMDoc is received from a third party.
+ * OMDoc produced by [[Compiler]]s is indexed automatically.
+ *  
+ */
+abstract class Compiler extends TraversingBuildTarget {
+   val inDim = "source"
+   val outDim = "narration"
+   override val outExt = "omdoc"
 
+   def buildOne(bf: BuiltFile) : Document
+
+   def buildFile(a: Archive, bf: BuiltFile) {
+      val doc = buildOne(bf)
+      indexDocument(a, doc, bf.inPath)
+   }
+   
+   override def buildDir(a: Archive, bd: BuiltDir, builtChildren: List[BuildResult]) {
+      val doc = controller.get(DPath(a.narrationBase / bd.inPath)).asInstanceOf[Document]
+      val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
+      writeToRel(doc, a.relDir / inPathFile)
+   }
+    
     /** Write a module to content folder */
     private def writeToContent(a: Archive, mod: Module) {
        val contFile = a.MMTPathToContentPath(mod.path)
@@ -21,6 +41,7 @@ class Index extends BuildTarget {
        val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{mod.toNode}</omdoc>
        xml.writeFile(omdocNode, contFile)
     }
+    /** extract and write the relational information about a knowledge item */
     private def writeToRel(se: StructuralElement, file: File) {
        val relFile = file.setExtension("rel")
        log("[  -> REL ]     " + relFile.getPath)
@@ -30,79 +51,51 @@ class Index extends BuildTarget {
        }
        relFileHandle.close
     }
-    
-    private def writeDoc(a: Archive, doc: Document, inPath: List[String]) {
+    /** index a document */
+    private def indexDocument(a: Archive, doc: Document, inPath: List[String]) {
         // write narration file
-        val narrFile = a.narrationDir / inPath
+        val narrFile = (a.narrationDir / inPath).setExtension("omdoc")
         log("[  -> NARR]     " + narrFile)
         xml.writeFile(doc.toNode, narrFile)
         // write relational file
         writeToRel(doc, a.relDir / inPath)
-    }
-
-    /** Generate content, narration, and relational from compiled */
-   def build(a: Archive, args: List[String], in: List[String] = Nil) {
-        val indexTimestamps = a.timestamps("index")
-        a.traverse[Unit](a.compiledDim, in, Archive.extensionIs("omdoc")) ({case Current(inFile, inPath) =>
-           log("[COMP ->  ]  " + inFile)
-           val (doc,_) = controller.read(inFile, Some(DPath(a.narrationBase / inPath)))
-           writeDoc(a, doc, inPath)
-           doc.getModulesResolved(controller.library) foreach {mod => {
-              // write content file
-              writeToContent(a, mod)
-              // write relational file
-              writeToRel(mod, a.relDir / Archive.MMTPathToContentPath(mod.path))
-           }}
-           indexTimestamps.set(inPath)
-        }, {case (Current(_, inPath), _) => buildDir(a, inPath)
-        })
-    }
-    
-   private def buildDir(a: Archive, inPath: List[String]) {
-        val doc = controller.get(DPath(a.narrationBase / inPath)).asInstanceOf[Document]
-        val inPathFile = Archive.narrationSegmentsAsFile(inPath, "omdoc")
-        writeToRel(doc, a.relDir / inPathFile)
-   }
-    
-    /** deletes content, narration, notation, and relational; argument is treated as paths in narration */
-    def clean (a: Archive, args: List[String], in: List[String] = Nil) {
+        doc.getModulesResolved(controller.library) foreach {mod => {
+           // write content file
+           writeToContent(a, mod)
+           // write relational file
+           writeToRel(mod, a.relDir / Archive.MMTPathToContentPath(mod.path))
+        }}
+   }    
+   /** deletes content, narration, notation, and relational */
+   override def cleanFile(a: Archive, curr: Current) {
        val controller = new Controller(report)
-       a.traverse("narration", in, Archive.extensionIs("omdoc")) {case Current(inFile, inPath) =>
-          val (doc,_) = controller.read(inFile, Some(DPath(a.narrationBase / inPath)))
-          //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly 
-          doc.getItems foreach {
-             case r: documents.MRef =>
-                val cPath = Archive.MMTPathToContentPath(r.target)
-                delete(a.contentDir / cPath)
-                delete((a.relDir / cPath).setExtension("rel"))
-             case r: documents.DRef => //TODO recursively delete subdocuments
-          }
-          delete(inFile)
+       val Current(inFile, inPath) = curr
+       val (doc,_) = controller.read(inFile, Some(DPath(a.narrationBase / inPath)))
+       //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly 
+       doc.getItems foreach {
+          case r: documents.MRef =>
+             val cPath = Archive.MMTPathToContentPath(r.target)
+             delete(a.contentDir / cPath)
+             delete((a.relDir / cPath).setExtension("rel"))
+          case r: documents.DRef => //TODO recursively delete subdocuments
        }
+       delete((a.relDir / inPath).setExtension("rel"))
+       delete(inFile)
     }
-    /** partially reruns produceNarrCont using the time stamps and the system's last-modified information */  
-    def update(a: Archive, args: List[String], in: List[String] = Nil) {
-       val indexTimestamps = a.timestamps("index")
-       a.traverse[Boolean](a.compiledDim, in, _ => true) ({case Current(_, inPath) =>
-          //we return true if a file was added or deleted so that the directory can be rebuilt
-          indexTimestamps.modified(inPath) match {
-             case Deleted =>
-                clean(a, args, inPath)
-                true
-             case Added =>
-                build(a, args, inPath)
-                true
-             case Modified =>
-                clean(a, args, inPath)
-                build(a, args, inPath)
-                false
-             case Unmodified => //nothing to do
-                false
-          }
-       }, {case (Current(_, inPath), childChanged) =>
-          if (childChanged.exists(_ == true))
-             buildDir(a, inPath)
-          false
-       })
+    override def cleanDir(a: Archive, curr: Current) {
+       val inPathFile = Archive.narrationSegmentsAsFile(curr.path, "omdoc")
+       delete((a.relDir / inPathFile).setExtension("rel"))
     }
+}
+
+/** a trivial importer that reads OMDoc documents and returns them */
+class OMDocImporter extends Compiler {
+   val key = "index"
+   def includeFile(s: String) = s.endsWith(".omdoc")
+   
+   def buildOne(bf: BuiltFile) = {
+      log("[COMP ->  ]  " + bf.inFile)
+      val (doc,_) = controller.read(bf.inFile, Some(bf.dpath))
+      doc
+   }
 }

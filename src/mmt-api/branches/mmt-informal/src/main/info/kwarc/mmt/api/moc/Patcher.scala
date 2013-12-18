@@ -47,7 +47,7 @@ object Patcher {
   
   private def copyDecls(old : DeclaredModule, nw : DeclaredModule) {
     old.getDeclarations collect {
-      case s : Symbol => nw.add(s)
+      case s : Declaration => nw.add(s)
     }
   }
   

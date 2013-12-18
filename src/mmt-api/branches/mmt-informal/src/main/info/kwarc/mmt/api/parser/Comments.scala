@@ -15,7 +15,6 @@ object CommentHandler extends ParserExtension {
   
   def apply(sp: StructureParser, s: ParserState, se: StructuralElement, k: String) {
     val (commentS, _) = s.reader.readAll
-    
     val narr = new PlainNarration(s.container, new NarrativeText(commentS))
     controller.add(narr)    
   }
