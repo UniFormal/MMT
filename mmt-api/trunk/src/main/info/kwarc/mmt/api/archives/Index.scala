@@ -92,6 +92,17 @@ abstract class Importer extends TraversingBuildTarget {
     }
 }
 
+/** An StringBasedImporter is a more flexible importer whose input does not have to be a file */
+abstract class StringBasedImporter extends Importer {
+   /** the main abstract method to import a document given by its content */
+   def importOne(base: DPath, input: String, seCont: Document => Unit)
+
+   def buildOne(bf: BuildFile, seCont: Document => Unit) {
+      val input = utils.File.read(bf.inFile)
+      importOne(bf.dpath, input, seCont)
+   }
+}
+
 /** a trivial importer that reads OMDoc documents and returns them */
 class OMDocImporter extends Importer {
    val key = "index"
