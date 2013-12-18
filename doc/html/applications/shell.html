@@ -1,4 +1,4 @@
-<h2>Running the MMT Shell</h2>
+write<h2>Running the MMT Shell</h2>
 
 The deploy/ folder includes 2 run scripts (with .bat/.sh file endings to be used on Windows/Unix):
 <ul>
@@ -91,8 +91,8 @@ This command is largely superseded by the <a href="http.html">HTTP interface</a>
    <li><span class="code">CONTENT</span> can be
       <ul>
          <li>omitted: simply retrieves U</li>
-         <li><span class="code">closure</span>: computes the dependency closure of U</li>
-         <li><span class="code">elaborate</span>: elaborates the U</li>
+         <li><span class="code">closure</span>: computes the dependency closure of U and retrieves all elements in it</li>
+         <li><span class="code">elaborate</span>: retrieves U and elaborates it</li>
          <li><span class="code">component STRING</span>: retrieves the component STRING of U</li>
       </ul>
    </li>
@@ -104,9 +104,10 @@ This command is largely superseded by the <a href="http.html">HTTP interface</a>
    </li>
    <li><span class="code">OUTPUT</span> can be
       <ul>
-         <li><span class="code">print</span>: print to console</li>
-         <li><span class="code">write FILE</span>: write to console</li>
-         <li><span class="code">window STRING</span>: output to a separate window with id STRING</li>
+         <li><span class="code">print</span>: print to standard output</li>
+         <li><span class="code">write FILE</span>: write to file FILE</li>
+         <li><span class="code">window STRING</span>: output to a separate window with id STRING<br/>
+         if the id has not been used before, a new window is created; size and position of the created windows can be controlled by other shell commands</li>
          <li><span class="code">respond</span>: no output (useful for programmers who wish to access the result programmatically)</li>
       </ul>
    </li>
