@@ -1,3 +1,5 @@
+<h2>Overview</h2>
+
 <p>
 The MMT API is the core of MMT. It provides a​Scala-based reference API for the MMT data structures with various frontend, backends, and MMT-based algorithms.<br/>
 
@@ -16,4 +18,51 @@ Good starting points for browsing the API are the following classes
  <li>
    <a href="../api/info/kwarc/mmt/api/documents/Document.html">documents.Document</a>, <a href="../api/info/kwarc/mmt/api/modules/Module.html">modules.Module</a>, <a href="../api/info/kwarc/mmt/api/symbols/Symbol.html">symbols.Symbol</a>, and <a href="../api/info/kwarc/mmt/api/objects/Obj.html">objects.Obj</a> are the base classes of the 4 levels of knowledge items of the <a href="language.html">MMT language</a>.
  </li>
+</ul>
+
+<h2>Operators and Conversions</h2>
+
+This is a reference to some abbreviations in the code that are very useful when writing and reading code, but can be hard to find in the API Documentation.
+
+These consists of symbolic method names which give rise to unary/binary operators, implicit conversions, overloading, apply/unapply methods.
+
+<h3>URIs</h3>
+
+<ul>
+<li>File / List[String] : File °</li>
+<li>URI / List[String] : URI</li>
+<li>DPath / LocalName : DPath °</li>
+<li>DPath ? LocalName : MPath °</li>
+<li>MPath / LocalName : MPath °</li>
+<li>MPath ? LocalName : GlobalName °</li>
+<li>LocalName / LocalName : LocalName °</li>
+</ul>
+
+° The second arguments can also be a string, which counts as path of length 1.
+
+<h3>Objects</h3>
+
+<ul>
+<li>GlobalName(argument-sequence) : OMA</li>
+<li>OMV / Term : Substitution // substituting for a variable °</li> 
+<li>OMV % Term : Context      // typed variable °</li>
+<li>Context ++ Context : Context // concatenation</li>
+<li>Substitution ++ Substitution : Substitution  // concatenation</li>
+<li>Substitution ^ Substitution : Substitution  // composition</li>
+<li>Context.id : Substitution   // identity</li>
+<li>Term ^ Substitution : Term  // substitution application, computed recursively</li>
+</ul>
+
+Both contexts and substitutions convert back and forth with lists by importing <span class="code">objects.Conversions._</span><br/>
+
+° A string can be used instead of an OMV by importing <span class="code">objects.Conversions._</span>
+
+<h3>Queries</h3>
+
+<ul>
+<li>+ Relation : Query  // forward step along a relation</li>
+<li>- Relation : Query  // backward step along a relation</li>
+<li>Query | Query : Query // alternative</li>
+<li>Query * Query : Query // Concatenation</li>
+<li>- Query : Query // inverse</li>
 </ul>
