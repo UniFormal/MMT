@@ -44,7 +44,7 @@
     <taskdef resource="scala/tools/ant/antlib.xml" classpathref="classpath"/>
     <target name="scaladoc">
         <mkdir dir="../doc/api"/>
-        <scaladoc destdir="../doc/api" doctitle="MMT" srcdir="." classpathref="classpath">
+        <scaladoc destdir="../doc/api" doctitle="MMT" srcdir="." classpathref="classpath" docsourceurl="file:/€{FILE_PATH}.scala" diagrams="yes">
           <include name="mmt-api/trunk/src/**/*.scala"/>
           <include name="mmt-lf/src/**/*.scala"/>
         	 <include name="jEdit-mmt/src/**/*.scala"/>
