@@ -190,7 +190,7 @@ object Test {
     cont.handleLine("archive mmt compile")
     println("reading file " + sourceFile1)
     val file = scala.io.Source.fromFile(sourceFile1)
-    val (doc, errl) = cont.textReader.readDocument(file,DPath(utils.URI("")))(cont.termParser.apply(_))
+    val (doc, errl) = cont.textReader.readDocument(file,DPath(utils.URI("")))(pu => cont.termParser.apply(pu, throw _))
     println("errors: " + errl.toString)
     val path = DPath(utils.URI("http://cds.omdoc.org/foundational"))
 //    println(cont.globalLookup.getAllPaths().toString)

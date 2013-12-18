@@ -16,11 +16,11 @@ import presentation._
 /**
  * TPTP Compiler, translates TPTP sources to OMDoc
  */
-class TptpCompiler extends Compiler with backend.QueryTransformer {
+class TptpCompiler extends Importer with backend.QueryTransformer {
   val key = "tptp-omdoc"  
 
   def includeFile(n: String) : Boolean = n.endsWith(".tptp") && n.contains(TptpUtils.FORM)
-  def buildOne(bf: archives.BuiltFile): Document = {
+  def buildOne(bf: archives.BuildFile, seCont: documents.Document => Unit) {
     val fileName = bf.inFile.toJava.getName
     val path = bf.inFile.toJava.getPath
     
@@ -36,7 +36,8 @@ class TptpCompiler extends Compiler with backend.QueryTransformer {
     
     // translate the input file to OMDoc
     val translator = new TptpTranslator()
-    translator.translate(fileDir, fileName, bf.inFile)    
+    val d = translator.translate(fileDir, fileName, bf.inFile)
+    seCont(d)
   }
 	
 	def transformSearchQuery(n: scala.xml.Node, params : List[String]) : List[scala.xml.Node] = {

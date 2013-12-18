@@ -34,7 +34,7 @@ class TptpTwelfCompiler extends TraversingBuildTarget {
   }
   
   def includeFile(n: String) : Boolean = n.endsWith(".tptp")
-  def buildFile(a: Archive, bf: BuiltFile) {
+  def buildFile(a: Archive, bf: BuildFile) {
    // should be  .../TPTP/TPTP2X  
     var tptp2Xpath : String = tptppath.substring(0, tptppath.indexOf("MMT")) + "TPTP2X/"    
     // compiled file name

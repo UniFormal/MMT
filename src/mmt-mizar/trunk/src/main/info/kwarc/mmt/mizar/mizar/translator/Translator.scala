@@ -16,7 +16,7 @@ import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.lf._
 //import scala.xml._
 
-class MizarCompiler extends archives.Compiler {
+class MizarCompiler extends archives.Importer {
    val key = "mizar-omdoc"
    def includeFile(s: String) = s.endsWith(".miz")
    
@@ -101,77 +101,73 @@ def getAid(f : File) : String = {
 
 }
 
-def buildOne(bf: archives.BuiltFile) : Document = {
+def buildOne(bf: archives.BuildFile, seCont: documents.Document => Unit) {
   val base = getBase(bf.inFile)
   val version = getVersion(bf.inFile)
   val aid = getAid(bf.inFile)
-  val dOpt = translateArticle(base, version, aid.toUpperCase())
-  dOpt.get // TODO can this ever return None -- FR when changing to skip compiled folder
+  translateArticle(base, version, aid.toUpperCase(), seCont)
 }
 
+/*
 def compileLibrary(files : List[File]) : List[SourceError] = {
   files.map(f => translateArticle(getBase(f), getVersion(f), getAid(f).toUpperCase()))
   Nil 
 }
+*/
 
-
-def translateArticle(mml : String, version : Int, aid : String) : Option[Document] = {
+def translateArticle(mml : String, version : Int, aid : String, seCont: documents.Document => Unit) {
 	val name = aid.toLowerCase()
 	//println("attempting to translate article " + name)
-	if (isInLib(version, aid)) {
-	   None
-	} else {
-		//files
-		val xmlabs = mml + "/export/" + version.toString + "/" + name + ".xmlabs" //TODO perhaps replace
-		val dcx = mml + "/export/" + version.toString + "/" + name + ".dcx"
-		val idx = mml + "/export/" + version.toString + "/" + name + ".idx"
-		val frx = mml + "/export/" + version.toString + "/" + name + ".frx"
-		val sgl = mml + "/export/" + version.toString + "/" + name + ".sgl"
-		
-		var voc : List[String] = Nil
-		scala.io.Source.fromFile(sgl).getLines().foreach(s => if (s.charAt(0).isLetter) voc = voc :+ s)
+	if (isInLib(version, aid))
+	   return
+	//files
+	val xmlabs = mml + "/export/" + version.toString + "/" + name + ".xmlabs" //TODO perhaps replace
+	val dcx = mml + "/export/" + version.toString + "/" + name + ".dcx"
+	val idx = mml + "/export/" + version.toString + "/" + name + ".idx"
+	val frx = mml + "/export/" + version.toString + "/" + name + ".frx"
+	val sgl = mml + "/export/" + version.toString + "/" + name + ".sgl"
+	
+	var voc : List[String] = Nil
+	scala.io.Source.fromFile(sgl).getLines().foreach(s => if (s.charAt(0).isLetter) voc = voc :+ s)
 
-		//parseVocabularies(getNode(vcl))
-		val fv = voc.filter(s => s != aid)
-		fv.map(s => translateArticle(mml, version, s))	
+	//parseVocabularies(getNode(vcl))
+	val fv = voc.filter(s => s != aid)
+	fv.map(s => translateArticle(mml, version, s, seCont))	
 
-		println("Translating article " +  name) //TODO use logger
-		TranslationController.currentBase = mml
-        TranslationController.currentVersion = version
-        TranslationController.currentAid = aid
+	log("Translating article " +  name)
+	TranslationController.currentBase = mml
+   TranslationController.currentVersion = version
+   TranslationController.currentAid = aid
 
-		UtilsReader.parseSymbols(getNode(dcx))
-		UtilsReader.parseSymbols(getNode(idx))
-		UtilsReader.parseFormats(getNode(frx))
-		
-		ParsingController.selectors(aid) = new scala.collection.mutable.HashMap[Int,Tuple2[Int,Int]]
-		ParsingController.attributes(aid) = new scala.collection.mutable.HashMap[Int,Int]
+	UtilsReader.parseSymbols(getNode(dcx))
+	UtilsReader.parseSymbols(getNode(idx))
+	UtilsReader.parseFormats(getNode(frx))
+	
+	ParsingController.selectors(aid) = new scala.collection.mutable.HashMap[Int,Tuple2[Int,Int]]
+	ParsingController.attributes(aid) = new scala.collection.mutable.HashMap[Int,Int]
 
-		//sets TranslationController.currentAid as article.title
-		ArticleParser.parseArticle(getNode(xmlabs))
-		val article = ParsingController.buildArticle()
-		
-		val path = TranslationController.currentDocument
-		val d = new Document(path)
-		
-		TranslationController.add(d)
+	//sets TranslationController.currentAid as article.title
+	ArticleParser.parseArticle(getNode(xmlabs))
+	val article = ParsingController.buildArticle()
+	
+	val path = TranslationController.currentDocument
+	val d = new Document(path)
+	
+	TranslationController.add(d)
 
-		val th = new DeclaredTheory(TranslationController.currentDocument, TranslationController.localPath, Some(Mizar.MizarPatternsTh))	
+	val th = new DeclaredTheory(TranslationController.currentDocument, TranslationController.localPath, Some(Mizar.MizarPatternsTh))	
 
-		TranslationController.add(th)
-		fv.map(x => {if (x != "HIDDEN" && !TranslationController.controller.library.imports(OMMOD(MMTUtils.getTheoryPath(x)),OMMOD(th.path)))
-			TranslationController.add(PlainInclude(MMTUtils.getTheoryPath(x) , th.path))
-		})
-		//TranslationController.add(PlainInclude(Mizar.HiddenTh, th.path))
-		
-		TranslationController.controller.add(MRef(d.path, th.path, true))
-		ArticleTranslator.translateArticle(article)
-      TranslationController.clear()
-      ParsingController.dictionary.clear()
-      addToLib(version, aid)
-		Some(d)
-		// FR: removed when integrating change to skip "compiled" folder
-		// printArticle(mml, version, article.title)
-	}
+	TranslationController.add(th)
+	fv.map(x => {if (x != "HIDDEN" && !TranslationController.controller.library.imports(OMMOD(MMTUtils.getTheoryPath(x)),OMMOD(th.path)))
+		TranslationController.add(PlainInclude(MMTUtils.getTheoryPath(x) , th.path))
+	})
+	//TranslationController.add(PlainInclude(Mizar.HiddenTh, th.path))
+	
+	TranslationController.controller.add(MRef(d.path, th.path, true))
+	ArticleTranslator.translateArticle(article)
+   TranslationController.clear()
+   ParsingController.dictionary.clear()
+   addToLib(version, aid)
+	seCont(d)
 }
 }

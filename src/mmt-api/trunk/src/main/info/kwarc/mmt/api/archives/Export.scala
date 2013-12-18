@@ -23,7 +23,7 @@ abstract class NarrationExporter extends TraversingBuildTarget {
    val inDim = "narration"
    def includeFile(name: String) = name.endsWith(".omdoc")
    
-   def buildFile(a: Archive, bf: BuiltFile) = {
+   def buildFile(a: Archive, bf: BuildFile) = {
       try {
         val doc = controller.getDocument(bf.dpath)
         _rh = new presentation.FileWriter(bf.outFile)
@@ -48,34 +48,34 @@ abstract class ContentExporter extends TraversingBuildTarget {
    protected def rh = _rh 
    
    /** applied to each theory */
-   def doTheory(t: DeclaredTheory, bf: BuiltFile)
+   def doTheory(t: DeclaredTheory, bf: BuildFile)
    /** applied to each view */
-   def doView(v: DeclaredView, bf: BuiltFile)
+   def doView(v: DeclaredView, bf: BuildFile)
    /** applied to every namespace
     *  @param dpath the namespace
     *  @param namespaces the sub-namespace in this namespace
     *  @param modules the modules in this namespace
     */
-   def doNamespace(dpath: DPath, namespaces: List[(BuiltDir,DPath)], modules: List[(BuiltFile,MPath)])
+   def doNamespace(dpath: DPath, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)])
    
    val inDim = "content"
    def includeFile(name: String) = name.endsWith(".omdoc")
    
-   override def buildDir(a: Archive, bd: BuiltDir, builtChildren: List[BuildResult]) = {
+   override def buildDir(a: Archive, bd: BuildDir, builtChildren: List[BuildTask]) = {
       val dp = Archive.ContentPathToDPath(bd.inPath)
       val nss = builtChildren flatMap {
-         case d: BuiltDir if ! d.skipped => List((d, Archive.ContentPathToDPath(d.inPath)))
+         case d: BuildDir if ! d.skipped => List((d, Archive.ContentPathToDPath(d.inPath)))
          case _ => Nil
       }
       val mps = builtChildren flatMap {
-         case f: BuiltFile if ! f.skipped => List((f, Archive.ContentPathToMMTPath(f.inPath)))
+         case f: BuildFile if ! f.skipped => List((f, Archive.ContentPathToMMTPath(f.inPath)))
          case _ => Nil
       }
       _rh = new presentation.FileWriter(bd.outFile)
       doNamespace(dp, nss, mps)
       _rh.done
    }
-   def buildFile(a: Archive, bf: BuiltFile) = {
+   def buildFile(a: Archive, bf: BuildFile) = {
       val mp = Archive.ContentPathToMMTPath(bf.inPath)
       val mod = controller.globalLookup.getModule(mp)
       _rh = new presentation.FileWriter(bf.outFile)
@@ -114,13 +114,13 @@ abstract class FoundedExporter(meta: MPath, found: MPath) extends ContentExporte
    protected def covered(m: MPath): Boolean = {
       objects.TheoryExp.metas(objects.OMMOD(m))(controller.globalLookup) contains meta
    }
-   def doTheory(t: DeclaredTheory, bf: BuiltFile) {
+   def doTheory(t: DeclaredTheory, bf: BuildFile) {
       if (covered(t.path))
          doCoveredTheory(t)
       else
          bf.skipped = true
    }
-   def doView(v: DeclaredView, bf: BuiltFile) {
+   def doView(v: DeclaredView, bf: BuildFile) {
       if (covered(v.from.toMPath)) {
          val to = v.to.toMPath
          if (to == found)
