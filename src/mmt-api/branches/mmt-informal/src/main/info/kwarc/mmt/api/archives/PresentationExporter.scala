@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import presentation._
 import modules._
+import documents._
 
 /**
  * This class turns a [[Presenter]] into a ContentExporter.
@@ -11,19 +12,23 @@ import modules._
  * 
  * If no presenter is found, a [[StyleBasedPresenter]] is created.
  */
-class PresentationExporter extends ContentExporter {
+class PresentationContentExporter extends ContentExporter {
     private var format : String = null
     private var presenter : Presenter = null
     lazy val key = "present_" + format 
     lazy val outDim = "present_" + format
     
     override def start(args: List[String]) {
-       if (args.length != 1)
-          throw LocalError("wrong number of arguments, expected 1")
-       format = args(0)
-       presenter = controller.extman.getPresenter(format) getOrElse {
-         val nset = Path.parseM(format, controller.getBase)
-         new StyleBasedPresenter(controller, nset)
+       args.length match {
+          case 1 => 
+       	    format = args(0)
+       		presenter = controller.extman.getPresenter(format) getOrElse {throw LocalError("Presenter not found for format " + format)}
+		 case 2 => 
+         	val format = args(0)
+			val nset = Path.parseM(args(1), controller.getBase)
+         	new StyleBasedPresenter(controller, nset) 
+		 case _ => 
+		    throw LocalError("wrong number of arguments, expected 1 or 2")
        }
     }
     
@@ -34,5 +39,30 @@ class PresentationExporter extends ContentExporter {
     }
     def doView(v: DeclaredView, bf: BuildFile) {
        presenter(v, rh)
+    } 
+}
+
+class PresentationNarrationExporter extends NarrationExporter {
+    private var format : String = null
+    private var presenter : Presenter = null
+    lazy val key = "narration_present_" + format 
+    lazy val outDim = "narration_present_" + format
+    
+    override def start(args: List[String]) {
+       args.length match {
+          case 1 => 
+       	    format = args(0)
+       		presenter = controller.extman.getPresenter(format) getOrElse {throw LocalError("Presenter not found for format " + format)}
+		 case 2 => 
+         	val format = args(0)
+			val nset = Path.parseM(args(1), controller.getBase)
+         	new StyleBasedPresenter(controller, nset) 
+		 case _ => 
+		    throw LocalError("wrong number of arguments, expected 1 or 2")
+       }
+    }
+    
+    def doDocument(doc : Document) {
+    	presenter(doc, rh)
     }
 }
