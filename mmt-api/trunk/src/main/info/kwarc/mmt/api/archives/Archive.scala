@@ -49,21 +49,29 @@ abstract class WritableArchive extends ROArchive {
     val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
    
     val sourceDim = properties.get("source").getOrElse("source")
-    val sourceDir = root / sourceDim
     val narrationDim = properties.get("narration").getOrElse("narration")
-    val narrationDir = root / narrationDim
     val contentDim = properties.get("content").getOrElse("content")
-    val contentDir = root / contentDim
     val relDim = properties.get("relational").getOrElse("relational")
-    val relDir = root / relDim
     val flatDir = root / "flat"
+    
+    /**
+     * @param dim a dimension in the archive
+     * @return the relative path to that
+     */
+    def /(dim: ArchiveDimension) : File = dim match {
+       case `source` => root / sourceDim
+       case `content` => root / contentDim
+       case `narration` => root / narrationDim
+       case `relational` => root / relDim
+       case Dim(path@_*) => root / path.toList
+    }
     
     val timestamps = new TimestampManager(this, root / "META-INF" / "timestamps" )
     val errors     = new ErrorManager(this)
     
     def includeDir(n: String) : Boolean = n != ".svn"
 
-    val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, narrationDir)
+    val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, this/narration)
     /** Get a module from content folder */ 
     def get(m: MPath) : scala.xml.Node = {
        val p = MMTPathToContentPath(m)
@@ -90,12 +98,12 @@ abstract class WritableArchive extends ROArchive {
       * @param m the MPath of the module 
       * @return the File descriptor of the destination  file in the content folder
       */
-    def MMTPathToContentPath(m: MPath) : File = contentDir / Archive.MMTPathToContentPath(m)
+    def MMTPathToContentPath(m: MPath) : File = this/content / Archive.MMTPathToContentPath(m)
 
     /** traverses a dimension calling continuations on files and subdirectories */
-    def traverse[A](dim: String, in: List[String], filter: String => Boolean, sendLog: Boolean = true)
+    def traverse[A](dim: ArchiveDimension, in: List[String], filter: String => Boolean, sendLog: Boolean = true)
                      (onFile: Current => A, onDir: (Current,List[A]) => A = (_:Current,_:List[A]) => ()) : Option[A] = { 
-        val inFile = root / dim / in
+        val inFile = this / dim / in
         if (inFile.isDirectory) {
            if (sendLog) log("entering " + inFile)
            val results = inFile.list flatMap {n =>
@@ -135,7 +143,7 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
 
    val rootString = root.toString
    def clean(in: List[String] = Nil, dim: String) {
-       traverse(dim, in, _ => true) {case Current(inFile, inPath) =>
+       traverse(Dim(dim), in, _ => true) {case Current(inFile, inPath) =>
          deleteFile(inFile)
        }
     }
@@ -146,7 +154,7 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
    * @param controller the controller
    */
     def produceFlat(in: List[String], controller: Controller) {
-       val inFile = contentDir / in
+       val inFile = this/content/ in
        log("to do: [CONT -> FLAT]        -> " + inFile)
        if (inFile.isDirectory) {
            inFile.list foreach {n =>
@@ -177,7 +185,7 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
    * @param controller the controller
    */
   def produceEnriched(in : List[String], modElab : ModuleElaborator, controller: Controller) {
-    val inFile= contentDir / in
+    val inFile= this/content / in
     //val modElab = new ModuleElaborator(controller)
     val enrichedDir = root / "enriched"
     log("to do: [CONT -> FLAT]       -> " + inFile)
@@ -206,10 +214,10 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
 
     /** Generate presentation from content */
     def producePres(in : List[String] = Nil, param : String, controller : Controller) {
-      val inFile = contentDir / in
+      val inFile = this/content / in
       log("to do: [CONT -> PRES]        -> " + inFile)
 
-      traverse(contentDim, in, Archive.extensionIs("omdoc")) { case Current(inFile, inPath) =>
+      traverse(content, in, Archive.extensionIs("omdoc")) { case Current(inFile, inPath) =>
         val outFile = (root / "presentation" / param / inPath).setExtension("xhtml")
         controller.read(inFile,None)
         val mpath = Archive.ContentPathToMMTPath(inPath)
@@ -240,8 +248,8 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
     }
 
     def readRelational(in: List[String] = Nil, controller: Controller, kd: String) {
-       if (relDir.exists) {
-          traverse(relDim, in, Archive.extensionIs(kd)) {case Current(inFile, inPath) =>
+       if ((this/relational).exists) {
+          traverse(relational, in, Archive.extensionIs(kd)) {case Current(inFile, inPath) =>
              ontology.RelationalElementReader.read(inFile, DPath(narrationBase), controller.depstore)
           }
           //TODO this should only add implicits for the dependencies it read
@@ -268,7 +276,7 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
           case "mws-enriched" => "enriched"
           case _ => contentDim
         }
-        traverse(sourceDim, in, Archive.extensionIs("omdoc")) {case Current(inFile, inPath) =>
+        traverse(source, in, Archive.extensionIs("omdoc")) {case Current(inFile, inPath) =>
            val outFile = (root / "mws" / dim / inPath).setExtension("mws")
            log("[  -> MWS]  " + inFile + " -> " + outFile)
            val controller = new Controller

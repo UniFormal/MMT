@@ -155,7 +155,7 @@ trait GenericScalaExporter extends ContentExporter {
 }
    
 class ScalaExporter extends GenericScalaExporter {
-   val outDim = "scala"
+   val outDim = Dim("export", "scala")
    val key = "scala"
       
    private def arityToScala(arity: Arity) : List[(String,String)] = arity.components.map {

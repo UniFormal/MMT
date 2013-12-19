@@ -5,7 +5,7 @@ import modules._
 import symbols._
 
 class PythonExporter extends ContentExporter with IndentedExporter {
-   val outDim = "python"
+   val outDim = Dim("export", "python")
    override val outExt = "py"
    val key = "python"
    override val folderName = "__init__"

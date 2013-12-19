@@ -6,23 +6,24 @@ import presentation._
 import utils._
 import documents._
 
+trait Exporter extends TraversingBuildTarget {
+   /** must be set correctly before any of the abstract methods are called */
+   protected var _rh: RenderingHandler = null
+   /** @return the RenderingHandler to which all produced output must be sent */ 
+   protected def rh = _rh 
+   def includeFile(name: String) = name.endsWith(".omdoc")
+}
+
 /** A BuildTarget that traverses the content dimension and applies continuation functions to each module.
  *
  *  Deriving this class is well-suited for writing exporters that transform MMT content into other formats.
  */
-abstract class NarrationExporter extends TraversingBuildTarget {
+trait NarrationExporter extends Exporter {
+   val inDim = narration
 
-   /** must be set correctly before any of the abstract methods are called */
-   private var _rh: RenderingHandler = null
-   /** @return the RenderingHandler to which all produced output must be sent */ 
-   protected def rh = _rh 
-   
    /** applied to each leaf document (i.e., .omdoc file) */
    def doDocument(doc: Document, bt: BuildTask)
 
-   val inDim = "narration"
-   def includeFile(name: String) = name.endsWith(".omdoc")
-   
    def buildFile(a: Archive, bf: BuildFile) = {
       val doc = controller.getDocument(bf.dpath)
       _rh = new presentation.FileWriter(bf.outFile)
@@ -36,13 +37,9 @@ abstract class NarrationExporter extends TraversingBuildTarget {
  *
  *  Deriving this class is well-suited for writing exporters that transform MMT content into other formats.
  */
-abstract class ContentExporter extends TraversingBuildTarget {
+trait ContentExporter extends Exporter  {
+   val inDim = content
 
-   /** must be set correctly before any of the abstract methods are called */
-   private var _rh: RenderingHandler = null
-   /** @return the RenderingHandler to which all produced output must be sent */ 
-   protected def rh = _rh 
-   
    /** applied to each theory */
    def doTheory(t: DeclaredTheory, bf: BuildFile)
    /** applied to each view */
@@ -53,9 +50,6 @@ abstract class ContentExporter extends TraversingBuildTarget {
     *  @param modules the modules in this namespace
     */
    def doNamespace(dpath: DPath, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)])
-   
-   val inDim = "content"
-   def includeFile(name: String) = name.endsWith(".omdoc")
    
    override def buildDir(a: Archive, bd: BuildDir, builtChildren: List[BuildTask]) = {
       val dp = Archive.ContentPathToDPath(bd.inPath)

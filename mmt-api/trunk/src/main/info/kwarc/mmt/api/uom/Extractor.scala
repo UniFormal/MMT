@@ -55,8 +55,8 @@ case class ExtractError(s: String) extends Error(s)
 import GenericScalaExporter._
 
 class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path) {
-   val key = "om-scala"
-   val outDim = "om-scala"
+   val key = "scala_om"
+   val outDim = Dim("export", "scala", "om")
    override val outExt = "scala"
    override protected val folderName = "NAMESPACE"
    

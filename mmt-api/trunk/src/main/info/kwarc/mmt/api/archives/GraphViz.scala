@@ -5,9 +5,9 @@ import ontology._
 import utils._
 
 class GraphViz extends TraversingBuildTarget {
-   val inDim = "narration"
+   val inDim = narration
    val key = "narration-svg"
-   val outDim = "svg"
+   val outDim = Dim("export","svg")
    def includeFile(name: String) : Boolean = name.endsWith(".omdoc")
    
    private var tg : ontology.TheoryGraph = null

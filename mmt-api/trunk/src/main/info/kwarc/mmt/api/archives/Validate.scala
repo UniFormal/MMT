@@ -24,14 +24,14 @@ trait ValidatedArchive extends WritableArchive {
             controller.memory.ontology += r
          }
       }
-      traverse("content", in, Archive.extensionIs("omdoc")) {case Current(_, inPath) =>
+      traverse(content, in, Archive.extensionIs("omdoc")) {case Current(_, inPath) =>
          rels.clear
          val mpath = Archive.ContentPathToMMTPath(inPath)
          val errors = checker(mpath)
          logGroup {
             errors foreach {e => log(e.getMessage)}
          }
-         val relFile = (relDir / inPath).setExtension("occ")
+         val relFile = (this/relational / inPath).setExtension("occ")
          val relFileHandle = File.Writer(relFile)
          rels foreach {r => relFileHandle.write(r.toPath + "\n")}
          relFileHandle.close
@@ -40,7 +40,7 @@ trait ValidatedArchive extends WritableArchive {
     
     /** checks modules in content structurally and then validates all ValidationUnits */
     def validate(in: List[String] = Nil, controller: Controller) {
-      traverse(contentDim, in, Archive.extensionIs("omdoc")) {case Current(_, inPath) =>
+      traverse(content, in, Archive.extensionIs("omdoc")) {case Current(_, inPath) =>
          val mpath = Archive.ContentPathToMMTPath(inPath)
          val errors = controller.checker(mpath)
          logGroup {

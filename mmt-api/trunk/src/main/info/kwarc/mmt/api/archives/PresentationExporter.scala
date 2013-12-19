@@ -13,12 +13,11 @@ import documents._
  * If no presenter is found, a [[StyleBasedPresenter]] is created.
  * 
  */
-trait PresentationExporter extends frontend.Extension {
+trait PresentationExporter extends Exporter {
     protected var format : String = null
     protected var presenter : Presenter = null
-    def formatPrefix : String
-    lazy val key = formatPrefix + format 
-    lazy val outDim = formatPrefix + format
+    lazy val key = "present" + "_" + inDim + "_" + format 
+    lazy val outDim = Dim("presentation", inDim.toString, format)
     
     override def start(args: List[String]) {
        args.length match {
@@ -41,8 +40,10 @@ trait PresentationExporter extends frontend.Extension {
  * This class turns a [[Presenter]] into a ContentExporter.
  */
 class PresentationContentExporter extends ContentExporter with PresentationExporter {
-    val formatPrefix = "cont_present_"
-    def doNamespace(dpath: DPath,namespaces: List[(BuildDir, DPath)], modules: List[(BuildFile,MPath)]) {}
+    def doNamespace(dpath: DPath,namespaces: List[(BuildDir, DPath)], modules: List[(BuildFile,MPath)]) {
+       val doc = controller.getDocument(dpath)
+       presenter(doc, rh)
+    }
 
     def doTheory(t: DeclaredTheory, bf: BuildFile) {
        presenter(t, rh)
@@ -56,7 +57,6 @@ class PresentationContentExporter extends ContentExporter with PresentationExpor
  * This class turns a [[Presenter]] into a NarrationExporter.
  */
 class PresentationNarrationExporter extends NarrationExporter with PresentationExporter {
-    val formatPrefix = "narr_present_"
     def doDocument(doc : Document, bt: BuildTask) {
     	 presenter(doc, rh)
     }
