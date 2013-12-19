@@ -8,8 +8,8 @@ import objects._
 import uom.GenericScalaExporter._
 
 class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) with uom.GenericScalaExporter {
-   val outDim = "lf-scala"
-   val key = "lf-scala"
+   val outDim = archives.Dim("export", "scala", "lf")
+   val key = "scala_lf"
    override val packageSep = List("lf")
    
    private object IllFormed extends Throwable
