@@ -18,20 +18,16 @@ abstract class NarrationExporter extends TraversingBuildTarget {
    protected def rh = _rh 
    
    /** applied to each leaf document (i.e., .omdoc file) */
-   def doDocument(doc: Document)
+   def doDocument(doc: Document, bt: BuildTask)
 
    val inDim = "narration"
    def includeFile(name: String) = name.endsWith(".omdoc")
    
    def buildFile(a: Archive, bf: BuildFile) = {
-      try {
-        val doc = controller.getDocument(bf.dpath)
-        _rh = new presentation.FileWriter(bf.outFile)
-        doDocument(doc)
-        rh.done
-      } catch {
-        case e : Error => bf.errors ::= e
-      }
+      val doc = controller.getDocument(bf.dpath)
+      _rh = new presentation.FileWriter(bf.outFile)
+      doDocument(doc, bf)
+      rh.done
    }
 }
 

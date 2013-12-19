@@ -88,7 +88,7 @@ class HTMLExporter extends ContentExporter {
                     }
                }
                d.getComponents.foreach {
-                  case (comp, tc: TermContainer) =>
+                  case (comp, tc: AbstractTermContainer) =>
                      tr(comp.toString) {
                            tc.get.foreach {t =>
                                doComponent(comp, t)

@@ -47,6 +47,12 @@ trait NotationBasedPresenter extends ObjectPresenter {
       rh(l.toString)
    }
    /**
+    * called by doDefaultTerm to render unknown literals
+    */
+   def doUnknownLiteral(l: UnknownOMLIT)(implicit rh : RenderingHandler) {
+      rh(l.value)
+   }
+   /**
     * called by various methods to render MMT-level operators, such as ,:=()
     */
    def doOperator(s: String)(implicit rh : RenderingHandler) {
@@ -165,6 +171,9 @@ trait NotationBasedPresenter extends ObjectPresenter {
          1
       case l: OMLIT =>
          doLiteral(l)
+         -1
+      case l: UnknownOMLIT =>
+         doUnknownLiteral(l)
          -1
       case OMSemiFormal(parts) => parts.foreach {
          case Formal(t) => apply(t, rh)

@@ -154,8 +154,8 @@ class ExtensionManager(controller: Controller) extends Logger {
        }
    }
 
-   /** retrieves an applicable Compiler */
-   def getTarget(src: String) : Option[BuildTarget] = targets.find(_.isApplicable(src))
+   /** retrieves an applicable build target */
+   def getTarget(key: String) : Option[BuildTarget] = targets.find(t => t.isApplicable(key))
    /** retrieves an applicable query transformer */
    def getQueryTransformer(src: String) : Option[QueryTransformer] = querytransformers.find(_.isApplicable(src))
    /** retrieves an applicable Presenter */
