@@ -125,26 +125,6 @@
       </if>
   </notation>
 
-
-  <notation role="Narration">
-    <element name="tr">
-      <attribute name="class" value="omdoc-symbol"/>
-      <element name="td"><component index="0"/></element>
-    </element>
-  </notation>
-
-  <notation role="NarrativeDefinition">
-    <element name="tr">
-      <attribute name="class" value="omdoc-symbol"/>
-      <element name="td">
-        <l:b>
-          <text value="Definition:"/>
-        </l:b>
-        <component index="0"/>
-      </element>
-    </element>
-  </notation>
-  
   <notation role="Pattern">
     <element name="tr">
       <element name="td">
@@ -521,8 +501,26 @@
      </element>
     </element>
   </notation>
-</style>
+  <notation role="Narration">
+    <element name="tr">
+      <attribute name="class" value="omdoc-symbol"/>
+      <element name="td"><component index="0"/></element>
+    </element>
+  </notation>
 
+  <notation role="NarrativeDefinition">
+    <element name="tr">
+      <attribute name="class" value="omdoc-symbol"/>
+      <element name="td">
+        <l:b>
+          <text value="Definition:"/>
+        </l:b>
+        <component index="0"/>
+      </element>
+    </element>
+  </notation>
+
+</style>
 </omdoc>
 
 
