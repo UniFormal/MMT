@@ -23,11 +23,11 @@ case object Build  extends BuildTargetModifier {
  */
 abstract class BuildTarget extends Extension {
    /** the input dimension/archive folder */
-   val inDim:  String
+   def inDim:  String
 
    /** a string identifying this build target, used for parsing commands, logging, error messages
     */
-   val key: String
+   def key: String
    
    /** defaults to the key */
    override def logPrefix = key
@@ -110,7 +110,7 @@ class BuildDir(val inFile: File, val inPath: List[String], val outFile: File) ex
  */
 abstract class TraversingBuildTarget extends BuildTarget {
    /** the output archive folder */
-   val outDim: String
+   def outDim: String
    /** the file extension used for generated files, defaults to outDim, override as needed */
    def outExt: String = outDim
    /** the name that is used for the special file representing the containing folder, empty by default */
