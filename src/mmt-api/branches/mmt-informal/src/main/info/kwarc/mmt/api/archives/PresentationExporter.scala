@@ -44,25 +44,27 @@ class PresentationContentExporter extends ContentExporter {
 
 class PresentationNarrationExporter extends NarrationExporter {
     private var format : String = null
-    private var presenter : Presenter = null
+    private var presenter : StyleBasedPresenter = null
     lazy val key = "narration_present_" + format 
     lazy val outDim = "narration_present_" + format
     
     override def start(args: List[String]) {
        args.length match {
-          case 1 => 
-       	    format = args(0)
-       		presenter = controller.extman.getPresenter(format) getOrElse {throw LocalError("Presenter not found for format " + format)}
-		 case 2 => 
-         	val format = args(0)
+    	 case 2 => 
+         	format = args(0)
 			val nset = Path.parseM(args(1), controller.getBase)
-         	new StyleBasedPresenter(controller, nset) 
+         	val p = new StyleBasedPresenter(controller, nset)
+         	p.expandXRefs = true
+         	presenter = p
 		 case _ => 
 		    throw LocalError("wrong number of arguments, expected 1 or 2")
        }
     }
     
     def doDocument(doc : Document) {
-    	presenter(doc, rh)
+      val rb = new XMLBuilder()
+      presenter(doc, rb)
+      val response = rb.get()
+      rh(response)
     }
 }

@@ -1,10 +1,12 @@
 package info.kwarc.mmt.api.archives
 
+
 import info.kwarc.mmt.api._
 import modules._
 import presentation._
 import utils._
 import documents._
+import backend._
 
 /** A BuildTarget that traverses the content dimension and applies continuation functions to each module.
  *
@@ -25,12 +27,18 @@ abstract class NarrationExporter extends TraversingBuildTarget {
    
    def buildFile(a: Archive, bf: BuildFile) = {
       try {
-        val doc = controller.getDocument(bf.dpath)
+        val docS = File.read(bf.inFile)
+        val reader = new XMLReader(controller.report)
+        val bodyXML  = scala.xml.Utility.trim(scala.xml.XML.loadString(docS))
+        val cont = controller //new Controller
+        reader.readDocument(bf.dpath, bodyXML)(cont.add)
+        val doc : Document = cont.getDocument(bf.dpath, dp => "doc not found at path " + dp)
         _rh = new presentation.FileWriter(bf.outFile)
         doDocument(doc)
         rh.done
       } catch {
         case e : Error => bf.errors ::= e
+        case e : Throwable => bf.errors ::= LocalError(e.getMessage())
       }
    }
 }
