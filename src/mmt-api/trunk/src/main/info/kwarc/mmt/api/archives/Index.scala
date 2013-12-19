@@ -17,8 +17,8 @@ import utils.FileConversion._
  *  
  */
 abstract class Importer extends TraversingBuildTarget {
-   val inDim = "source"
-   val outDim = "narration"
+   val inDim = source
+   val outDim = narration
    override val outExt = "omdoc"
 
    /** the main abstract method to be implemented by importers
@@ -35,7 +35,7 @@ abstract class Importer extends TraversingBuildTarget {
    override def buildDir(a: Archive, bd: BuildDir, builtChildren: List[BuildTask]) {
       val doc = controller.get(DPath(a.narrationBase / bd.inPath)).asInstanceOf[Document]
       val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
-      writeToRel(doc, a.relDir / inPathFile)
+      writeToRel(doc, a/relational / inPathFile)
    }
     
     /** Write a module to content folder */
@@ -58,16 +58,16 @@ abstract class Importer extends TraversingBuildTarget {
     /** index a document */
     private def indexDocument(a: Archive, doc: Document, inPath: List[String]) {
         // write narration file
-        val narrFile = (a.narrationDir / inPath).setExtension("omdoc")
+        val narrFile = (a/narration / inPath).setExtension("omdoc")
         log("[  -> NARR]     " + narrFile)
         xml.writeFile(doc.toNode, narrFile)
         // write relational file
-        writeToRel(doc, a.relDir / inPath)
+        writeToRel(doc, a/relational / inPath)
         doc.getModulesResolved(controller.library) foreach {mod => {
            // write content file
            writeToContent(a, mod)
            // write relational file
-           writeToRel(mod, a.relDir / Archive.MMTPathToContentPath(mod.path))
+           writeToRel(mod, a/relational / Archive.MMTPathToContentPath(mod.path))
         }}
    }    
    /** deletes content, narration, notation, and relational */
@@ -79,16 +79,16 @@ abstract class Importer extends TraversingBuildTarget {
        doc.getItems foreach {
           case r: documents.MRef =>
              val cPath = Archive.MMTPathToContentPath(r.target)
-             delete(a.contentDir / cPath)
-             delete((a.relDir / cPath).setExtension("rel"))
+             delete(a/content / cPath)
+             delete((a/relational / cPath).setExtension("rel"))
           case r: documents.DRef => //TODO recursively delete subdocuments
        }
-       delete((a.relDir / inPath).setExtension("rel"))
+       delete((a/relational / inPath).setExtension("rel"))
        delete(inFile)
     }
     override def cleanDir(a: Archive, curr: Current) {
        val inPathFile = Archive.narrationSegmentsAsFile(curr.path, "omdoc")
-       delete((a.relDir / inPathFile).setExtension("rel"))
+       delete((a/relational / inPathFile).setExtension("rel"))
     }
 }
 

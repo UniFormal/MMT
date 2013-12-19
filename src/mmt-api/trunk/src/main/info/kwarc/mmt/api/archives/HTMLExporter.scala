@@ -3,72 +3,48 @@ package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import modules._
 import symbols._
+import documents._
 import presentation._
 import frontend._
 import objects._
 import utils._
 
-class HTMLExporter extends ContentExporter {
-   val outDim = "html"
-   val key = "html"
+class HTMLContentExporter extends ContentExporter {
+   val key = "content-html"
+   val outDim = Dim("export", "html", "content")
+   override val outExt = "html"
    private lazy val mmlPres = new presentation.MathMLPresenter(controller) // must be lazy because controller is provided in init only
-   private def optAttr(key: String, value: String) = if (value == "") "" else s""" $key="$value""""
-   private def html(body: => Unit) {
-      rh("<html>")
-      rh("<head>")
-      rh("""<link rel="stylesheet" type="text/css" href="file:///c:/other/oaff/test/html.css"></link>""")
-      rh("""<script type="text/javascript" src="file:/c:/other/oaff/test/html.js"></script>""")
-      rh("""<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>""")
-      rh("</style>")
-      rh("</head>")
-      rh("<body>")
-      body
-      rh("</body></html>")
-   }
-   private def div(cls: String)(body: => Unit) {
-      rh(s"""<div class="$cls">""")
-      body
-      rh("</div>")
-   }
-   private def span(cls: String, onclick : String = "", title: String = "")(body: => Unit) {
-      rh(s"""<span${optAttr("class", cls)}${optAttr("onclick", onclick)}${optAttr("title", title)}>""")
-      body
-      rh("</span>")
-   }
-   private def a(ref: String)(body: => Unit) {
-      rh(s"""<a href="$ref">""")
-      body
-      rh("</a>")
-   }
-   private def table(cls: String)(body: => Unit) {
-      rh(s"""<table${optAttr("class", cls)}>""")
-      body
-      rh("</table>")
-   }
-   private def tr(cls: String)(body: => Unit) {
-      rh(s"""<tr${optAttr("class", cls)}>""")
-      body
-      rh("</tr>")
-   }
-   private def td(body: => Unit) {
-      rh("<td>")
-      body
-      rh("</td>")
-   }
+
+   // provides easy-to-use HTML markup inside Scala code
+   private val htmlRh = new utils.HTML(s => rh(s))
+   import htmlRh._
+   
    private def doName(s: String) {
-      rh(s"""<span class="name">$s</span>""")
+      span("name") {rh(s)}
    }
    private def doMath(t: Obj) {
-      rh("<math>")
-      rh(mmlPres.asString(t))
-      rh("</math>")
+      math {
+        rh(mmlPres.asString(t))
+      }
    }
    private def doComponent(comp: DeclarationComponent, t: Obj) {
-      td {rh(s"<span>${comp.toString}</span>")}
+      td {span {rh(comp.toString)}}
       td {doMath(t)}
    }
+   private def doHTML(b: => Unit) {
+      html {
+        head {
+         css("file:///c:/other/oaff/test/html.css")
+         javascript("file:/c:/other/oaff/test/html.js")
+         javascript("http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js")
+        }
+        body {
+           b
+        }
+      }
+   }
    def doTheory(t: DeclaredTheory, bf: BuildFile) {
-      html {div("theory") {
+      doHTML {div("theory") {
          div("theory-header") {doName(t.name.toPath)}
          t.getPrimitiveDeclarations.foreach {
             d => table("constant") {
@@ -76,7 +52,7 @@ class HTMLExporter extends ContentExporter {
                     td {doName(d.name.toPath)}
                     td {
                        def toggle(label: String) {
-                          span("compToggle", s"toggle(this,'$label')") {rh(label)}
+                          span("compToggle", onclick = s"toggle(this,'$label')") {rh(label)}
                        }
                        d.getComponents.foreach {case (comp, tc) => if (tc.isDefined) 
                           toggle(comp.toString)
@@ -122,7 +98,7 @@ class HTMLExporter extends ContentExporter {
    }
    def doView(v: DeclaredView, bf: BuildFile) {}
    def doNamespace(dpath: DPath, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
-      html {div("namespace") {
+      doHTML {div("namespace") {
          namespaces.foreach {case (bd, dp) =>
             div("subnamespace") {
                val name = bd.dirName + "/" + bd.outFile.segments.last
@@ -139,5 +115,37 @@ class HTMLExporter extends ContentExporter {
             }
          }
       }}
+   }
+}
+
+class HTMLNarrationExporter extends NarrationExporter {
+   val key = "narration-html"
+   val outDim = Dim("export", "html", "narration")
+   override val outExt = "html"
+   private lazy val mmlPres = new presentation.MathMLPresenter(controller) // must be lazy because controller is provided in init only
+
+   // provides easy-to-use HTML markup inside Scala code
+   private val htmlRh = new utils.HTML(s => rh(s))
+   import htmlRh._
+   
+   def doDocument(doc: Document, bt: BuildTask) {
+      html {
+         body {
+            ul {doc.getItems foreach {
+               case d: DRef =>
+                  li("dref") {
+                     a(d.target.toPath) {
+                        rh(d.target.last)
+                     }
+                  }
+               case m: MRef =>
+                  li("mref") {
+                     a(m.target.toPath) {
+                        rh(m.target.last)
+                     }
+                  }
+            }}
+         }
+      }
    }
 }

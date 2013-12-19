@@ -10,7 +10,7 @@ import objects._
 import utils._
 
 class MWSHarvestContentExporter extends ContentExporter {
-  val outDim = "mws-content"
+  val outDim = Dim("export", "mws", "content")
   val key = "mws-content"
   override val outExt = "mws"
 
