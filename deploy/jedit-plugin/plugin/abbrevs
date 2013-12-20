@@ -43,7 +43,7 @@ jstar|★
 jcdot|⋅
 jcirc|∘
 jbullet|∙
-jtimes|⨯
+jtimes|×
 jpm|±
 jmp|∓
 jwedge|∧
@@ -110,9 +110,9 @@ jtriangleright|▷
 jtriangleleft|◁
 jblacktriangleright|▶
 jblacktriangleleft|◀
-jder|⊦
-jvdash|⊦
-jdashv|
+jder|⊢
+jvdash|⊢
+jdashv|⊣
 jmodels|⊧
 jtop|⊤
 jbot|⊥
