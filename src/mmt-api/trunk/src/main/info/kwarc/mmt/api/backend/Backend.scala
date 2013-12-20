@@ -306,6 +306,16 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
    /** retrieves all Stores */
    def getStores : List[Storage] = stores
    
+   /**
+    * @param p a module URI
+    * @return an archive defining it (the corresponding file exists in content dimension)
+    */
+   def findOwningArchive(p: MPath) : Option[Archive] = {
+      val cp = Archive.MMTPathToContentPath(p)
+      getArchives find {a => 
+        (a/content/cp).exists
+      }
+   }
    /** splits a logical document URI into the Archive holding it and the relative path in that archive leading to it */
    def resolveLogical(uri: URI) : Option[(Archive, List[String])] = {
       getArchives find {a => 

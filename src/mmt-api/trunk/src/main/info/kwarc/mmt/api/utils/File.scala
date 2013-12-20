@@ -16,6 +16,12 @@ case class File(toJava: java.io.File) {
          new java.io.File(toJava, s)
       File(newfile.getCanonicalPath)
    }
+   /** makes a file relative to this one */
+   def relativize(f: File) = {
+      val relURI = FileURI(this).relativize(FileURI(f))
+      val FileURI(rel) = relURI
+      rel
+   }
    /** appends one path segment */
    def /(s:String) : File = File(new java.io.File(toJava, s))
    /** appends a list of path segments */
@@ -59,8 +65,8 @@ case class File(toJava: java.io.File) {
 object FileURI {
    def apply(f: File) = URI(Some("file"), None, f.segments, f.isAbsolute)
    def unapply(u: URI) : Option[File] =
-     if (u.scheme == Some("file") && (u.authority == None || u.authority == Some("")))
-       Some(File(new java.io.File(u.copy(authority = None)))) // empty authority makes some Java versions throw error
+     if ((u.scheme == None || u.scheme == Some("file")) && (u.authority == None || u.authority == Some("")))
+       Some(File(new java.io.File(u.copy(scheme = Some("file"), authority = None)))) // empty authority makes some Java versions throw error
      else None
 }
 

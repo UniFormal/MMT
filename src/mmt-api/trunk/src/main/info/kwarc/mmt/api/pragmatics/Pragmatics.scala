@@ -82,7 +82,7 @@ class Pragmatics(controller: Controller) {
       pragmaticHeadAux(t, Nil, Position.positions(t))
    }
    private def pragmaticHeadAux(t: Term, apps: List[Application], pos: List[Position]) : (Term, List[Application], List[Position]) = t match {
-      case OMA(OMS(apply @ OMMOD(meta) % _), fun :: args) =>
+      case OMA(OMS(apply @ OMMOD(meta) % _), fun :: args) if fun.head.isDefined =>
          ps.getApplication(meta) match {
             case Some(a) =>
                if (a.apply == apply) {

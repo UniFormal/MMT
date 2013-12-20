@@ -38,10 +38,10 @@ class TermProperty[A](val property: utils.URI) {
    }
    /** get the client property if defined */
    def get(t: Term): Option[A] = t.clientProperty.get(property) match {
-      case Some(a: A) => Some(a)
+      case Some(a: A) => Some(a) // :A is unchecked but true if put was used to set the property
       case None => None
       case Some(_) =>
-         throw ImplementationError("client property has bad type") // impossible if put was used to set the property
+         throw ImplementationError("client property has bad type") // impossible if put was used
    }
    def erase(t: Term) {
       t.clientProperty -= property
@@ -106,6 +106,7 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
                case _ => throw GetError("position " + pos + " not valid in " + this)
             }
       }
+   /* the constructor or constant used to form this term */
    def head : Option[ContentPath]
    /** the governing path required by Content is the head, if any */
    def governingPath = head
@@ -351,7 +352,7 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
 /** The joint methods of OMLIT and UnknownOMLIT */
 sealed trait OMLITTrait extends Term {
    def synType: GlobalName
-   def head = Some(synType)
+   def head = None
    def role = Role_value
    def components = List(StringLiteral(toString))
    def toNode = <om:OMLIT value={toString} type={synType.toPath}/>
@@ -626,50 +627,3 @@ object Obj {
            None
    }
 }
-
-/* old treatment of literals
-
-  OpenMath literals
- *  integers, floats, and strings (we omit byte arrays)
- *  we add URIs
- 
-abstract class OMLiteral extends Term {
-   def head = None
-   def role = Role_value
-   def components = List(StringLiteral(value.toString))
-   val value : Any
-   def tag: String
-   override def toString = value.toString
-   def toNode =
-      scala.xml.Elem("om", tag, scala.xml.Null, scala.xml.TopScope, true, mdNode ++ List(scala.xml.Text(value.toString)) :_*) 
-   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
-   private[objects] def freeVars_ = Nil
-}
-
-/** An integer literal */
-case class OMI(value : BigInt) extends OMLiteral {
-   def tag = "OMI"
-   def toCML = <m:cn>{value}</m:cn>
-}
-
-/** A float literal */
-case class OMF(value : Double) extends OMLiteral {
-   def tag = "OMF"
-   override def toNode = <om:OMF dec={value.toString}/>
-   def toCML = <m:cn>{value}</m:cn>
-
-}
-
-/** A string literal */
-case class OMSTR(value : String) extends OMLiteral {
-   def tag = "OMSTR"
-   def toCML = <m:cn>{value}</m:cn>
-}
-
-/** A URI literal (not part of the OpenMath standard) */
-case class OMURI(value: URI) extends OMLiteral {
-   def tag = "OMURI"
-   def toCML = <m:cn>{value}</m:cn>
-
-}
- */
