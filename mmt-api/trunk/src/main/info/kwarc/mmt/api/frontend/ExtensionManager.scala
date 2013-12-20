@@ -118,6 +118,7 @@ class ExtensionManager(controller: Controller) extends Logger {
        try {
           ext.start(args)
        } catch {
+          case e: Error => throw RegistrationError("error while starting extension: " + e.getMessage).setCausedBy(e)
           case e: Exception => throw RegistrationError("error while starting extension: " + e.getMessage)
        }
        if (ext.isInstanceOf[Foundation]) {

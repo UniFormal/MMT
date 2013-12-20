@@ -11,8 +11,9 @@ import java.util.zip._
 import java.util.jar._
 
 trait ZipArchive extends WritableArchive {
-    /** Add a file to a MAR file (only used internally by toMar)
-      * @throws java.io.IOException */
+    /** 
+     * add a file to a MAR file
+     */
     private def addFileToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte]) {
         var bytesRead = 0
         val in = new FileInputStream(f)
@@ -27,12 +28,10 @@ trait ZipArchive extends WritableArchive {
     }
       
     
-    /** Add a folder to a MAR file (only used internally by toMar). Caution: empty folders are not put in the archive.
-      * @throws java.io.IOException */
+    /** 
+     * recursively add all files in a folder to a mar file
+     */
     private def addFolderToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte]) {
-        // if the folder is empty, add a special entry for it
-        //if (childList.isEmpty)
-        //    out.putNextEntry(new ZipEntry(f.getPath.substring(base.getPath.length + 1)))
         f.listFiles foreach {child =>
             if (child.isDirectory) {
                 if (includeDir(child.getName)) addFolderToMar(child, base, out, buffer)
@@ -41,8 +40,10 @@ trait ZipArchive extends WritableArchive {
         }
     }
     
-    /** Pack everything in a MAR archive. Caution: empty folders are not put in the archive.
-      * @param target the target MAR file. Default is <name>.mar in the root folder, where <name> is the name of the root */
+    /** 
+     * pack everything in a mar zip archive.
+     * @param target the target mar file. Default is <name>.mar in the root folder, where <name> is the name of the root
+     */
     def toMar(target: java.io.File = root / (root.getName + ".mar")) {
         log("building math archive at " + target.getPath)
         val out = new ZipOutputStream(new FileOutputStream(target))
@@ -53,7 +54,7 @@ trait ZipArchive extends WritableArchive {
                     addFolderToMar(root/dim, root, out, buffer)
             }
         } catch {
-            case e: java.io.IOException => log("error when packing into a mar file: " + (if (e.getCause == null) "" else e.getCause))
+            case e: java.io.IOException => logError("error while packing into a mar file: " + (if (e.getCause == null) "" else e.getCause))
         }
         log("done")
         out.close
@@ -66,7 +67,7 @@ trait ZipArchive extends WritableArchive {
            try {
               addFolderToMar(root/"bin", root/"bin", outJar, buffer)
            } catch {
-              case e: java.io.IOException => log("error when packing into a jar file: " + (if (e.getCause == null) "" else e.getCause))
+              case e: java.io.IOException => logError("error while packing into a jar file: " + (if (e.getCause == null) "" else e.getCause))
            }
            log("done")
            outJar.close

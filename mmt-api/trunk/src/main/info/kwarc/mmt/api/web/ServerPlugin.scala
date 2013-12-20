@@ -57,7 +57,7 @@ class ActionServer extends ServerExtension("mmt") {
     }
 }
 
-/** interpretes the query as an MMT document URI and returns the SVG representation of the theory graph */
+/** interprets the query as an MMT document URI and returns the SVG representation of the theory graph */
 class SVGServer extends ServerExtension("svg") {
    /**
     *  @param path ignored
@@ -106,9 +106,9 @@ class AdminServer extends ServerExtension("admin") {
    def apply(path: List[String], query: String, body: Body) = {
       val c = query.replace("%20", " ")
       val act = frontend.Action.parseAct(c, controller.getBase, controller.getHome)
+      logCache.clear
       controller.handle(act)
       val r = logCache.recall
-      logCache.clear
       Server.XmlResponse(Util.div(r reverseMap Util.div))
    }
 }
