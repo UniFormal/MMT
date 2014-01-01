@@ -8,36 +8,32 @@ import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.stex._
 
-
 import scala.util.parsing.json._
 import tiscaf._
 import scala.concurrent._
 
-
 case class PlanetaryError(val text : String) extends Error(text)
 
 
-class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
+class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   
   override val logPrefix = "planetary"
      /** Server */   
    def apply(uriComps: List[String], query: String, body : Body): HLet = {
      try {
-       log("got here" + uriComps)
        uriComps match {
-         case "getArchives" :: _ => getArchivesResponse
          case "getPaths" :: _ => getPathsResponse
          case "getPresentation" :: _ => getPresentationResponse
          case "getCompiled" :: _ => getCompiledResponse
          case "getContentPres" :: _ => getContentPres
-         case _ => errorResponse("Invalid request: " + uriComps.mkString("/"))
+         case _ => errorResponse("Invalid request: " + uriComps.mkString("/"), List(new PlanetaryError("Invalid Request")))
        }
      } catch {
        case e : Error => 
          log(e.longMsg) 
-         errorResponse(e.longMsg)
+         errorResponse(e.longMsg, List(e))
        case e : Exception => 
-         errorResponse("Exception occured : " + e.getMessage())
+         errorResponse("Exception occured : " + e.getStackTrace(), List(e))
      }
    }
    
@@ -51,20 +47,6 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
      }
    }
    
-   private def getArchivesResponse : HLet = new HLet {
-     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-        val archives = controller.backend.getArchives map { a => (a.id, DPath(a.narrationBase))}
-        val result = archives.map(p =>  p._1 + " " +  p._2).mkString("\n")
-        log("getArchives returning: " + result)
-        TextResponse(result).aact(tk)
-     } catch {
-       case e : Error => 
-         log(e.longMsg)
-         errorResponse(e.longMsg).aact(tk)
-       case e : Exception => 
-         errorResponse("Exception occured : " + e.getMessage()).aact(tk)
-     }
-   }
    
    private def getContentPres : HLet = new HLet {
      def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
@@ -111,30 +93,26 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
           val comp = new STeXImporter()
           comp.init(controller)
           val (response,errors) = comp.compileOne(bodyS, dpath)
-          JsonResponse(response, errors.mkString("\n")).aact(tk)
+          JsonResponse(response, errors.map(e => e.getStackTrace().mkString("\n")).mkString("\n\n"), errors).aact(tk)
          case "mmt" => 
           val reader = parser.Reader(bodyS)
-          val (doc,state) = controller.textParser(reader, dpath)
-          
+          val (doc,state) = controller.textParser(reader, dpath) 
           val response = doc.toNodeResolved(controller.memory.content).toString    
-
-          JsonResponse(response, "").aact(tk)
+          JsonResponse(response, "", Nil).aact(tk)
          case "elf" => 
            //val comp = new Twelf()
            //comp.init(controller, List("/home/mihnea/kwarc/data/twelf-mod/bin/twelf-server")) //TODO take from extension list
-           //val (response,errors) = comp.compileOne(bodyS, dpath)
-           
+           //val (response,errors) = comp.compileOne(bodyS, dpath)       
            val response = controller.get(dpath).toNode.toString
-           val errors = Nil
-           JsonResponse(response, errors.mkString("\n")).aact(tk)
+           val errors : List[Error] = Nil
+           JsonResponse(response, errors.map(e => e.getStackTrace().mkString("\n")).mkString("\n\n"), errors).aact(tk)
        }
      } catch {
        case e : Error => 
          log(e.longMsg)
-         errorResponse(e.longMsg).aact(tk)
+         errorResponse(e.longMsg, List(e)).aact(tk)
        case e : Exception => 
-         errorResponse("Exception occured : " + e.getMessage() + e.getStackTrace().mkString("\n")).aact(tk)
-  
+         errorResponse("Exception occured : " + e.getStackTrace().mkString("\n"), List(e)).aact(tk)
      }
    }
    
@@ -157,23 +135,23 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
          p.expandXRefs = true
          p
        }
-       val reader = new XMLReader(controller)
-       val bodyXML  = scala.xml.Utility.trim(scala.xml.XML.loadString(bodyS))
+       val reader = new XMLReader(controller.report)
+       val bodyXML = scala.xml.Utility.trim(scala.xml.XML.loadString(bodyS))
        
-       val cont = new Controller
+       val cont = controller //new Controller
        reader.readDocument(dpath, bodyXML)(cont.add)
        val doc : Document = cont.getDocument(dpath, dp => "doc not found at path " + dp)
        val rb = new XMLBuilder()
        presenter.apply(doc, rb)
        val response = rb.get()
        log("Sending Response: " + response)
-       JsonResponse(response.toString, "").aact(tk)
+       JsonResponse(response.toString, "", Nil).aact(tk)
      } catch {
         case e : Error => 
          log(e.longMsg)
-         errorResponse(e.longMsg).aact(tk)
+         errorResponse(e.longMsg, List(e)).aact(tk)
        case e : Exception => 
-         errorResponse("Exception occured : " + e.getMessage() + e.getStackTrace().mkString("\n")).aact(tk)
+         errorResponse("Exception occured : "  + e.getStackTrace().mkString("\n"), List(e)).aact(tk)
      }
      
    }
@@ -187,20 +165,12 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
        }
        val response = lines.mkString("\n")
        TextResponse(response).aact(tk)
-        /* //old implementation, still around for documentation for now, to be removed soon
-         
-        val archives = controller.backend.getArchives map { a => (a.id, DPath(a.narrationBase))}
-        val result = archives.map(p => ((p._1 + " " + p._2.toPath) :: getDescendants(p._2).tail).mkString("\n")).mkString("\n")
-        log("getPaths returning: " + result)
-        TextResponse(result).act(tk)
-        * 
-        */
      } catch {
        case e : Error => 
          log(e.longMsg)
-         errorResponse(e.shortMsg).aact(tk)
+         errorResponse(e.shortMsg, List(e)).aact(tk)
        case e : Exception => 
-         errorResponse("Exception occured : " + e.getMessage()).aact(tk)
+         errorResponse("Exception occured : " + e.getStackTrace(), List(e)).aact(tk)
      }
    }
    
@@ -245,19 +215,52 @@ class PlanetaryPlugin extends ServerPlugin("planetary") with Logger {
     new String(bodyArray, "UTF-8")
   }
   
-  private def errorResponse(text : String) : HSimpleLet = {
-    JsonResponse("", s"MMT Error in Planetary extension: $text ")
+  private def errorResponse(text : String, errors : List[Throwable]) : HSimpleLet = {
+    JsonResponse("", s"MMT Error in Planetary extension: $text ", errors)
   }
   
-  private def JsonResponse(content : String, errors : String) : HSimpleLet = {
+  private def JsonResponse(content : String, info : String, errors : List[Throwable]) : HSimpleLet = {
       val response = new collection.mutable.HashMap[String, Any]()
       response("content") = content
-      if (errors == "") { //no errors
-        response("log") = "Success"
-        response("success") = "true"
+      if (errors == Nil) { //no errors
+        val status = new collection.mutable.HashMap[String, Any]()
+        status("conversion") = 0 //success
+        val messages = new collection.mutable.HashMap[String, Any]()
+        if (info != "") {
+          val message = new collection.mutable.HashMap[String, Any]()
+          message("type") = "Info"
+          message("shortMsg") = info
+          message("longMsg") = info
+          //no srcref
+          messages("0") = JSONObject(message.toMap)
+        }
+        status("messages") = JSONObject(messages.toMap)
+        response("status") = JSONObject(status.toMap)        
       } else {
-        response("log") = errors
-        response("success") = "false"
+        val status = new collection.mutable.HashMap[String, Any]()
+        status("conversion") = 2 //failed with errors
+        val messages = new collection.mutable.HashMap[String, Any]()
+
+        errors.zipWithIndex foreach { p => 
+          val message = new collection.mutable.HashMap[String, Any]()
+          p._1 match {
+            case se : SourceError =>
+              message("type") = "Error"
+              message("shortMsg") = se.mainMessage
+              message("longMsg") = se.getStackTraceString
+              message("srcref") = JSONObject(List("from" -> JSONObject(List("line" -> se.ref.region.start.line, "col" -> se.ref.region.start.column).toMap), 
+                                   "to" -> JSONObject(List("line" -> se.ref.region.end.line, "col" -> se.ref.region.end.column).toMap)).toMap)
+                
+            case e =>
+              message("type") = "Error"
+              message("shortMsg") = e.getMessage
+              message("longMsg") = e.getStackTraceString
+              //no srcref :(
+          }
+          messages(p._2.toString) = JSONObject(message.toMap)
+        }
+        status("messages") = JSONObject(messages.toMap)
+        response("status") = JSONObject(status.toMap)
       }
       log("Sending Response: " + response)
       JsonResponse(JSONObject(response.toMap))     
