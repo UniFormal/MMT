@@ -15,7 +15,7 @@ class HTMLContentExporter extends ContentExporter {
    override val outExt = "html"
    private lazy val mmlPres = new presentation.MathMLPresenter(controller) // must be lazy because controller is provided in init only
 
-   // provides easy-to-use HTML markup inside Scala code
+   // easy-to-use HTML markup
    private val htmlRh = new utils.HTML(s => rh(s))
    import htmlRh._
    
@@ -23,19 +23,18 @@ class HTMLContentExporter extends ContentExporter {
       span("name") {rh(s)}
    }
    private def doMath(t: Obj) {
-      math {
         rh(mmlPres.asString(t))
-      }
    }
    private def doComponent(comp: DeclarationComponent, t: Obj) {
       td {span {rh(comp.toString)}}
       td {doMath(t)}
    }
-   private def doHTML(b: => Unit) {
+   private def doHTML(depth: Int)(b: => Unit) {
+      val pref = Range(0,depth).map(_ => "../").mkString("")
       html {
         head {
-         css("file:///c:/other/oaff/test/html.css")
-         javascript("file:/c:/other/oaff/test/html.js")
+         css(pref + "html.css")
+         javascript(pref + "html.js")
          javascript("http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js")
         }
         body {
@@ -44,7 +43,7 @@ class HTMLContentExporter extends ContentExporter {
       }
    }
    def doTheory(t: DeclaredTheory, bf: BuildFile) {
-      doHTML {div("theory") {
+      doHTML(bf.inPath.length - 1) {div("theory") {
          div("theory-header") {doName(t.name.toPath)}
          t.getPrimitiveDeclarations.foreach {
             d => table("constant") {
@@ -97,8 +96,8 @@ class HTMLContentExporter extends ContentExporter {
       }}
    }
    def doView(v: DeclaredView, bf: BuildFile) {}
-   def doNamespace(dpath: DPath, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
-      doHTML {div("namespace") {
+   def doNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+      doHTML(bd.inPath.length-1) {div("namespace") {
          namespaces.foreach {case (bd, dp) =>
             div("subnamespace") {
                val name = bd.dirName + "/" + bd.outFile.segments.last

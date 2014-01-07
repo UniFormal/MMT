@@ -43,7 +43,7 @@ class MWSHarvestContentExporter extends ContentExporter {
   }
   
   
-  def doNamespace(dpath: DPath, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+  def doNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
     //Nothing to do, no MathML in directly in namespaces
   }
 

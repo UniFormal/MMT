@@ -40,7 +40,7 @@ trait PresentationExporter extends Exporter {
  * This class turns a [[Presenter]] into a ContentExporter.
  */
 class PresentationContentExporter extends ContentExporter with PresentationExporter {
-    def doNamespace(dpath: DPath,namespaces: List[(BuildDir, DPath)], modules: List[(BuildFile,MPath)]) {
+    def doNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir, DPath)], modules: List[(BuildFile,MPath)]) {
        val doc = controller.getDocument(dpath)
        presenter(doc, rh)
     }

@@ -261,7 +261,7 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
      rh.writeln(s"object ${nameToScala(v.name)} extends ${nameToScala(v.name)}\n")
    }
    
-   def doNamespace(dpath: DPath, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+   def doNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
       val pack = dpathToScala(dpath)
       rh.writeln("//Source file generated MMT\n")
       rh.writeln(s"package $pack")

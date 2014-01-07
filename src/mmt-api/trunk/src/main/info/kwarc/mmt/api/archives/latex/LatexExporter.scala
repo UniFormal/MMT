@@ -134,7 +134,7 @@ class LatexExporter extends ContentExporter {
    def doView(v: DeclaredView, bf: BuildFile) {
       rh("%% view omitted")
    }
-   def doNamespace(dpath: DPath, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+   def doNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
       rh("%% namespace omitted")
    }
 }
