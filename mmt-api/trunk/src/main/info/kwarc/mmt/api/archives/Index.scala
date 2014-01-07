@@ -17,7 +17,8 @@ import utils.FileConversion._
  *  
  */
 abstract class Importer extends TraversingBuildTarget {
-   val inDim = source
+   protected var _inDim: ArchiveDimension = source
+   def inDim = _inDim
    val outDim = narration
    override val outExt = "omdoc"
 
@@ -58,7 +59,7 @@ abstract class Importer extends TraversingBuildTarget {
     /** index a document */
     private def indexDocument(a: Archive, doc: Document, inPath: List[String]) {
         // write narration file
-        val narrFile = (a/narration / inPath).setExtension("omdoc")
+        val narrFile = outPath(a, inPath)
         log("[  -> NARR]     " + narrFile)
         xml.writeFile(doc.toNode, narrFile)
         // write relational file
@@ -74,7 +75,8 @@ abstract class Importer extends TraversingBuildTarget {
    override def cleanFile(a: Archive, curr: Current) {
        val controller = new Controller(report)
        val Current(inFile, inPath) = curr
-       val (doc,_) = controller.read(inFile, Some(DPath(a.narrationBase / inPath)))
+       val narrFile = outPath(a, inPath)
+       val (doc,_) = controller.read(narrFile, Some(DPath(a.narrationBase / inPath)))
        //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly 
        doc.getItems foreach {
           case r: documents.MRef =>
@@ -84,7 +86,7 @@ abstract class Importer extends TraversingBuildTarget {
           case r: documents.DRef => //TODO recursively delete subdocuments
        }
        delete((a/relational / inPath).setExtension("rel"))
-       delete(inFile)
+       delete(narrFile)
     }
     override def cleanDir(a: Archive, curr: Current) {
        val inPathFile = Archive.narrationSegmentsAsFile(curr.path, "omdoc")
@@ -107,6 +109,17 @@ abstract class StringBasedImporter extends Importer {
 class OMDocImporter extends Importer {
    val key = "index"
    def includeFile(s: String) = s.endsWith(".omdoc")
+   
+   /**
+    * 1 argument - the input dimension, defaults to source
+    */
+   override def start(args: List[String]) {
+      args match {
+         case Nil =>
+         case a :: Nil => _inDim = Dim(a)
+         case _ => throw LocalError("too many arguments") 
+      }
+   }
    
    def buildOne(bf: BuildFile, seCont: Document => Unit) = {
       log("[COMP ->  ]  " + bf.inFile)

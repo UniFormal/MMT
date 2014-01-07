@@ -32,6 +32,10 @@ trait Extension extends Logger {
       report = controller.report
    }
    
+   protected def checkNumberOfArguments(min: Int, max: Int, args: List[String]) {
+      if (args.length < min || args.length > max)
+         throw LocalError("bad number of arguments: " + args.mkString(" ") + "; expected: " + min + " to " + max)
+   }
    /** extension-specific initialization (override as needed, empty by default) */
    def start(args: List[String]) {}
    /** extension-specific cleanup (override as needed, empty by default)
@@ -69,7 +73,6 @@ class ExtensionManager(controller: Controller) extends Logger {
    
    def addDefaultExtensions {
       targets    ::= new MMTCompiler
-      targets    ::= new archives.OMDocImporter
       targets    :::= List(new archives.HTMLContentExporter, new archives.HTMLNarrationExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter)
       presenters ::= TextPresenter
       presenters ::= OMDocPresenter

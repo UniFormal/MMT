@@ -120,8 +120,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
    /** the name that is used for the special file representing the containing folder, empty by default */
    protected val folderName = ""
    
-   private def outPath(a: Archive, inPath: List[String]) = (a / outDim / inPath).setExtension(outExt)
-   private def folderOutPath(a: Archive, inPath: List[String]) = a / outDim / inPath / (folderName + "." + outExt)
+   protected def outPath(a: Archive, inPath: List[String]) = (a / outDim / inPath).setExtension(outExt)
+   protected def folderOutPath(a: Archive, inPath: List[String]) = a / outDim / inPath / (folderName + "." + outExt)
    
    /**
     * there is no inExt, instead we test to check which files should be used; 
