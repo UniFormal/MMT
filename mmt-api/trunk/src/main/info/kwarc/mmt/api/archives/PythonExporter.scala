@@ -50,7 +50,7 @@ class PythonExporter extends ContentExporter with IndentedExporter {
    
    def doView(v: DeclaredView, bf: BuildFile) {}
    
-   def doNamespace(dpath: DPath, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+   def doNamespace(dpath: DPath, nsbd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
          namespaces.foreach {case (bd, dp) =>
             comment {rh("package " + bd.dirName)}
          }

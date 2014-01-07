@@ -4,33 +4,109 @@ import info.kwarc.mmt.api._
 import frontend._
 import objects._
 
+import utils.xml._
+
+/**
+ * This overrides the appropriate methods present objects as MathML.
+ * 
+ * The MathML carries additional attributes
+ * 
+ * math: jobad:owner ([[ContentPath]]) and jobad:component ([[DeclarationComponent]])
+ * 
+ * mrow, mo, mi, mn: jobad:mmtsrc ([[SourceRef]]) and jobad:mmtref ([[Position]])
+ * 
+ * mo (from OMS or delimiter): jobad:href ([[ContentPath]])
+ * 
+ * mi: jobad:varref ([[Position]]) pointing to its declaration 
+ */
 class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter {
+   private val jobadns = namespace("jobad")
+   private def jobadattribs(implicit pc: PresentationContext) = {
+      var ret = List("jobad:mmtref" -> pc.pos.toString)
+      pc.source.foreach {r =>
+         ret ::= ("jobad:mmtsrc" -> r.toString)
+      }
+      ret
+   }
    def getNotation(o: Obj) = {
       val (oP, pos, ncOpt) = Presenter.getNotation(controller, o)
       (oP, pos, ncOpt.flatMap(_.getPresent))
    }
-   override def doIdentifier(p: ContentPath)(implicit rh : RenderingHandler) {
+   override def doIdentifier(p: ContentPath)(implicit pc : PresentationContext) {
       val s = p match {
          case OMMOD(m) % name => name.toPath  //not parsable if there are name clashes 
          case _ => p.toPath
       }
-      val n = <mo jobad:xref={p.toPath}>{s}</mo>
-      rh(n)
+      val mo = utils.xml.element("mo", ("jobad:href" -> p.toPath) :: jobadattribs, s)
+      pc.out(mo)
    }
-   override def doVariable(n: LocalName)(implicit rh : RenderingHandler) {
-      val node = <mi>{n.toPath}</mi>
-      rh(node)
+   override def doVariable(n: LocalName)(implicit pc : PresentationContext) {
+      val vdAtt = pc.context.find(_.decl.name == n) match {
+         case None => Nil
+         case Some(vd) => List("jobad:varref" -> vd.declpos.toString)
+      }
+      val mi = element("mi", vdAtt ::: jobadattribs, n.toPath)
+      pc.out(mi)
    }
-   override def doOperator(s: String)(implicit rh : RenderingHandler) {
-      val n = <mo>{s}</mo>
-      rh(n)
+   override def doLiteral(l: OMLITTrait)(implicit pc: PresentationContext) {
+      val mn = element("mn", jobadattribs, l.toString)
+      pc.out(mn)
    }
-   override def doDelimiter(p: GlobalName, d: parser.Delimiter)(implicit rh : RenderingHandler) {
-      val n = <mo jobad:xref={p.toPath}>{d.text}</mo>
-      rh(n)
+   override def doOperator(s: String)(implicit pc : PresentationContext) {
+      val mo = element("mo", Nil, s)
+      pc.out(mo)
    }
-   override def doSpace(level: Int)(implicit rh : RenderingHandler) {
-      val n = <mspace/>
-      rh(n)
+   override def doDelimiter(p: GlobalName, d: parser.Delimiter)(implicit pc : PresentationContext) {
+      val mo = element("mo", ("jobad:href" -> p.toPath) :: jobadattribs, d.text)
+      pc.out(mo)
    }
+   override def doSpace(level: Int)(implicit pc : PresentationContext) {
+      val ms = element("mspace", List(("width", "." + (2*level).toString + "em")), "")
+      pc.out(ms)
+   }
+   override def doToplevel(body: => Unit)(implicit pc: PresentationContext) {
+      val nsAtts = List("xmlns" -> namespace("mathml"), "xmlns:jobad" -> jobadns)
+      val mmtAtts = pc.owner match {
+         case None => Nil
+         case Some(cp) => List("jobad:owner" -> cp.parent.toPath, "jobad:component" -> cp.component.toString)
+      }
+      // <mstyle displaystyle="true">
+      pc.out(openTag("math", nsAtts ::: mmtAtts))
+      body
+      pc.out(closeTag("math"))
+   }
+   private def bracket(hidden: Boolean, open: Boolean) = {
+      val cls = if (hidden) " brackets-hidden" else ""
+      val brack = if (open) "(" else ")"
+      element("mo", List(("class", "operator brackets" + cls)), brack)
+   }
+   /**
+    * wraps brackets around argument
+    * @param brackets None/Some(true)/Some(false) for no/hidden/shown brackets
+    */
+   private def mrow(brackets: Option[Boolean], body: => Unit)(implicit pc: PresentationContext) {
+      pc.out(openTag("mrow", jobadattribs))
+      brackets foreach {b => pc.out(bracket(b, true))}
+      body
+      brackets foreach {b => pc.out(bracket(b, false))}
+      pc.out(closeTag("mrow"))
+   }
+   override def doBracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
+      mrow(Some(false), body)
+   }
+   override def doUnbracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
+      mrow(None, body)
+   }
+   override def doOptionallyBracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
+      mrow(Some(true), body)
+   }
+   override def doImplicit(body: => Unit)(implicit pc: PresentationContext) {
+      pc.out(openTag("mrow", List(("class", "implicit-arg implicit-arg-hidden"))))
+      body
+      pc.out(closeTag("mrow"))
+   }
+   //TODO   
+   //override def doScript(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext)
+   //TODO
+   //override def doFraction(above: List[Cont], below: List[Cont], line: Boolean)(implicit pc: PresentationContext)
 }

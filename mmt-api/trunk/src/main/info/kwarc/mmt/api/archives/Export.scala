@@ -49,7 +49,7 @@ trait ContentExporter extends Exporter  {
     *  @param namespaces the sub-namespace in this namespace
     *  @param modules the modules in this namespace
     */
-   def doNamespace(dpath: DPath, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)])
+   def doNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)])
    
    override def buildDir(a: Archive, bd: BuildDir, builtChildren: List[BuildTask]) = {
       val dp = Archive.ContentPathToDPath(bd.inPath)
@@ -62,7 +62,7 @@ trait ContentExporter extends Exporter  {
          case _ => Nil
       }
       _rh = new presentation.FileWriter(bd.outFile)
-      doNamespace(dp, nss, mps)
+      doNamespace(dp, bd, nss, mps)
       _rh.done
    }
    def buildFile(a: Archive, bf: BuildFile) = {

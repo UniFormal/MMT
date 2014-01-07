@@ -2,7 +2,16 @@ package info.kwarc.mmt.api.utils
 import scala.xml.{Node, PrettyPrinter}
 
 object xml {
-   
+
+   def openTag(label: String, atts: List[(String,String)], close: Boolean = false) = {
+      val attsS = atts.map(a => " " + a._1 + "=\"" + a._2 + "\"").mkString("")
+      "<" + label + attsS + (if (close) "/" else "") + ">"
+   }
+   def closeTag(label: String) = "</" + label + ">" 
+   def element(label: String, atts: List[(String,String)], body: String) = {
+      openTag(label, atts) + body + closeTag(label)
+   }
+
    case class XMLError(s: String) extends java.lang.Throwable(s)
    
    /** reads an XML file and returns the first Node in it */
