@@ -29,7 +29,7 @@ class Constant(val home : Term, val name : LocalName, val alias: Option[LocalNam
   override def compNames = List((TypeComponent,1), (DefComponent, 2))
   def components = List(StringLiteral(name.toPath), tp.getOrElse(Omitted), df.getOrElse(Omitted),
                                     rl.map(StringLiteral(_)).getOrElse(Omitted))
-  def getComponents = List((TypeComponent, tpC), (DefComponent, dfC))
+  def getComponents = List((TypeComponent, tpC), (DefComponent, dfC)) ::: notC.getComponents
   def getDeclarations = Nil
   
   def toNode =

@@ -29,13 +29,32 @@ class HTMLContentExporter extends ContentExporter {
       td {span {rh(comp.toString)}}
       td {doMath(t)}
    }
-   private def doHTML(depth: Int)(b: => Unit) {
-      val pref = Range(0,depth).map(_ => "../").mkString("")
+   private def doNotComponent(comp: NotationComponent, tn: parser.TextNotation) {
+      td {span {rh(comp.toString)}}
+      td {span {rh(tn.toText)}}
+   }
+   private val scriptbase = "https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/script/"
+   private val cssbase    = "https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/css/"
+   /*
+    * @param dpath identifies the directory (needed for relative paths)
+    */
+   private def doHTML(dpath: DPath)(b: => Unit) {
+      val pref = Range(0,dpath.uri.path.length+2).map(_ => "../").mkString("")
       html {
         head {
-         css(pref + "html.css")
-         javascript(pref + "html.js")
-         javascript("http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js")
+          css(cssbase+"mmt.css")
+          css(cssbase+"JOBAD.css")
+          css(cssbase+"jquery/jquery-ui.css")
+          css(pref + "html.css")
+          javascript(scriptbase + "jquery/jquery.js")
+          javascript(scriptbase + "jquery/jquery-ui.js")
+          javascript(scriptbase + "jobad/deps/underscore-min.js")
+          javascript(scriptbase + "jobad/JOBAD.js")
+          javascript(scriptbase + "jobad/mmt-html.js")
+          javascript(scriptbase + "jobad/modules/navigation.js")
+          javascript(scriptbase + "jobad/modules/hovering.js")
+          javascript(scriptbase + "jobad/modules/interactive-viewing.js")
+          javascript(pref + "html.js")
         }
         body {
            b
@@ -43,10 +62,10 @@ class HTMLContentExporter extends ContentExporter {
       }
    }
    def doTheory(t: DeclaredTheory, bf: BuildFile) {
-      doHTML(bf.inPath.length - 1) {div("theory") {
+      doHTML(t.path.doc) {div("theory") {
          div("theory-header") {doName(t.name.toPath)}
          t.getPrimitiveDeclarations.foreach {
-            d => table("constant") {
+            d => div("constant") {table("constant") {
                tr("constant-header") {
                     td {doName(d.name.toPath)}
                     td {
@@ -65,12 +84,16 @@ class HTMLContentExporter extends ContentExporter {
                d.getComponents.foreach {
                   case (comp, tc: AbstractTermContainer) =>
                      tr(comp.toString) {
-                           tc.get.foreach {t =>
-                               doComponent(comp, t)
-                           }
+                        tc.get.foreach {t =>
+                            doComponent(comp, t)
+                        }
                      }
-                  case (comp, nc: NotationContainer) =>
-                     //TODO render notations
+                  case (comp: NotationComponent, nc: NotationContainer) =>
+                     tr(comp.toString) {
+                        nc(comp).foreach {n =>
+                           doNotComponent(comp, n)
+                         }
+                     }
                }
                if (! d.metadata.getTags.isEmpty) tr("tags") {
                   td {rh("tags")}
@@ -92,12 +115,12 @@ class HTMLContentExporter extends ContentExporter {
                   }
                }
             }
-         }
+         }}
       }}
    }
    def doView(v: DeclaredView, bf: BuildFile) {}
    def doNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
-      doHTML(bd.inPath.length-1) {div("namespace") {
+      doHTML(dpath) {div("namespace") {
          namespaces.foreach {case (bd, dp) =>
             div("subnamespace") {
                val name = bd.dirName + "/" + bd.outFile.segments.last

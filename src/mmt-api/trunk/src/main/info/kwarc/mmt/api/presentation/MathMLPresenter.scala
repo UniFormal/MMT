@@ -105,8 +105,36 @@ class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter
       body
       pc.out(closeTag("mrow"))
    }
-   //TODO   
-   //override def doScript(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext)
-   //TODO
-   //override def doFraction(above: List[Cont], below: List[Cont], line: Boolean)(implicit pc: PresentationContext)
+   /** wraps continuations in mrow to make sure they produce a single element */
+   private def R(c: Cont)(implicit pc: PresentationContext) = pc.html.mrow {c()} 
+   override def doScript(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext) {
+      import pc.html._
+      def underover(mbp: Cont) {
+         (under, over) match {
+            case (Some(u), Some(o)) => munderover {mbp(); R(u); R(o)}
+            case (Some(u), None)    => munder     {mbp(); R(u)}
+            case (None, Some(o))    => mover      {mbp(); R(o)}
+            case (None,None)        => mbp()
+         }
+      }
+      def subsup(x: Unit) {
+         (sub, sup) match {
+            case (Some(b), Some(p)) => pc.html.msubsup {main; R(b); R(p)}
+            case (Some(b), None)    => pc.html.msub    {main; R(b)}
+            case (None, Some(p))    => pc.html.msup    {main; R(p)}
+            case (None,None)        => main
+         }
+      }
+      underover {subsup _}
+   }
+   override def doFraction(above: List[Cont], below: List[Cont], line: Boolean)(implicit pc: PresentationContext) {
+      pc.html.mfrac {
+         pc.html.mrow(attributes = List("linethickness" -> (if (line) "" else "0px"))) {
+            above foreach {a => a()}
+         }
+         pc.html.mrow {
+            below foreach {b => b()}
+         }
+      }
+   }
 }
