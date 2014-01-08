@@ -49,10 +49,23 @@ class HTML(out: String => Unit) {
    val head = new Element("head")
    val body = new Element("body")
    
-   val div = new Element("div")
+   val div  = new Element("div")
    val span = new Element("span")
+   
+   val pre  = new Element("pre")
 
-   val math = new Element("math")
+   val math       = new Element("math")
+   val mo         = new Element("mo")
+   val mi         = new Element("mi")
+   val mn         = new Element("mn")
+   val mrow       = new Element("mrow")
+   val munder     = new Element("munder")
+   val mover      = new Element("mover")
+   val munderover = new Element("munderover")
+   val msub       = new Element("msub")
+   val msup       = new Element("msup")
+   val msubsup    = new Element("msubsup")
+   val mfrac      = new Element("mfrac")
    
    val table = new Element("table")
    val tr = new Element("tr")

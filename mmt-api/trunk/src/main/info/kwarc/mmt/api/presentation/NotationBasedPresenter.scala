@@ -14,6 +14,7 @@ case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: 
       source: Option[SourceRef], pos : Position, context : List[VarData]) {
    def out(s: String) {rh(s)}
    def child(i: Int, addCon: List[VarData] = Nil) = copy(pos = pos / i, context = context ::: addCon)
+   val html = new utils.HTML(out _)
 }
 
 /** 
