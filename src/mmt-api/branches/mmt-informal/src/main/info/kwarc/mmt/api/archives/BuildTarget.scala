@@ -23,11 +23,11 @@ case object Build  extends BuildTargetModifier {
  */
 abstract class BuildTarget extends Extension {
    /** the input dimension/archive folder */
-   val inDim:  String
+   def inDim:  ArchiveDimension
 
    /** a string identifying this build target, used for parsing commands, logging, error messages
     */
-   val key: String
+   def key: String
    
    /** defaults to the key */
    override def logPrefix = key
@@ -65,7 +65,7 @@ abstract class BuildTarget extends Extension {
    
    /** registers an archive with this target */
    def register(arch: Archive) {
-      arch.timestamps.add(key, inDim)
+      arch.timestamps.add(key, inDim.toString)
       arch.errors.add(key)
    }
    /** unregisters an archive with this target */
@@ -110,14 +110,18 @@ class BuildDir(val inFile: File, val inPath: List[String], val outFile: File) ex
  */
 abstract class TraversingBuildTarget extends BuildTarget {
    /** the output archive folder */
-   val outDim: String
+   def outDim: ArchiveDimension
+   
    /** the file extension used for generated files, defaults to outDim, override as needed */
-   def outExt: String = outDim
+   def outExt: String = outDim match {
+      case Dim(path@_*) => path.last
+      case d => d.toString
+   }
    /** the name that is used for the special file representing the containing folder, empty by default */
    protected val folderName = ""
    
-   private def outPath(root: File, inPath: List[String]) = (root / outDim / inPath).setExtension(outExt)
-   private def folderOutPath(root: File, inPath: List[String]) = root / outDim / inPath / (folderName + "." + outExt)
+   protected def outPath(a: Archive, inPath: List[String]) = (a / outDim / inPath).setExtension(outExt)
+   protected def folderOutPath(a: Archive, inPath: List[String]) = a / outDim / inPath / (folderName + "." + outExt)
    
    /**
     * there is no inExt, instead we test to check which files should be used; 
@@ -153,7 +157,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
        //build every file
        val prefix = "[" + inDim + " -> " + outDim + "] "
        a.traverse[BuildTask](inDim, in, includeFile) ({case Current(inFile,inPath) =>
-           val outFile = outPath(a.root, inPath)
+           val outFile = outPath(a, inPath)
            log(prefix + inFile + " -> " + outFile)
            val bf = new BuildFile(inFile, inPath, DPath(a.narrationBase / inPath), outFile)
            buildFile(a, bf)
@@ -166,7 +170,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
            bf
        }, {
           case (Current(inDir, inPath), builtChildren) =>
-             val outFile = folderOutPath(a.root, inPath)
+             val outFile = folderOutPath(a, inPath)
              val bd = new BuildDir(inDir, inPath, outFile) 
              buildDir(a, bd, builtChildren)
              bd
@@ -201,14 +205,14 @@ abstract class TraversingBuildTarget extends BuildTarget {
        a.traverse[Boolean](inDim, in, _ => true) ({case c @ Current(inFile, inPath) =>
           a.timestamps(key).modified(inPath) match {
              case Deleted =>
-                val outFile = outPath(a.root, inPath)
+                val outFile = outPath(a, inPath)
                 cleanFile(a, c)
                 true
              case Added =>
                 buildAux(inPath)(a)
                 true
              case Modified =>
-                val outFile = outPath(a.root, inPath)
+                val outFile = outPath(a, inPath)
                 cleanFile(a, c)
                 buildAux(inPath)(a)
                 false
@@ -218,7 +222,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
           }
        }, {case (c @ Current(inDir, inPath), childChanged) =>
           if (childChanged.exists(_ == true)) {
-             val outFile = folderOutPath(a.root, inPath)
+             val outFile = folderOutPath(a, inPath)
              val bd = new BuildDir(inDir, inPath, outFile) 
              buildDir(a, bd, Nil) // TODO pass proper builtChildren
              false

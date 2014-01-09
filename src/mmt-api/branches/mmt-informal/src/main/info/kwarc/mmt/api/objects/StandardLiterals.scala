@@ -74,3 +74,10 @@ class StandardRat extends Product(new StandardNat, new StandardNat) {
       (uS._1 / gcd, uS._2 / gcd).asInstanceOf[univ]
    }
 }
+
+/** rational complex numbers
+ *  
+ *  synType must still be set as desired after creating an instance
+ */
+class ComplexRat extends Product(new StandardRat, new StandardRat) {
+}

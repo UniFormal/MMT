@@ -11,7 +11,7 @@ import utils._
 import documents._
 
 class MWSHarvestContentExporter extends ContentExporter {
-  val outDim = "mws-content"
+  val outDim = Dim("export", "mws", "content")
   val key = "mws-content"
   override val outExt = "mws"
   val custom : ArchiveCustomization = new DefaultCustomization    
@@ -43,7 +43,7 @@ class MWSHarvestContentExporter extends ContentExporter {
   }
   
   
-  def doNamespace(dpath: DPath, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+  def doNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
     //Nothing to do, no MathML in directly in namespaces
   }
 }

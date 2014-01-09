@@ -55,8 +55,8 @@ case class ExtractError(s: String) extends Error(s)
 import GenericScalaExporter._
 
 class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path) {
-   val key = "om-scala"
-   val outDim = "om-scala"
+   val key = "scala_om"
+   val outDim = Dim("export", "scala", "om")
    override val outExt = "scala"
    override protected val folderName = "NAMESPACE"
    
@@ -261,7 +261,7 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
      rh.writeln(s"object ${nameToScala(v.name)} extends ${nameToScala(v.name)}\n")
    }
    
-   def doNamespace(dpath: DPath, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+   def doNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
       val pack = dpathToScala(dpath)
       rh.writeln("//Source file generated MMT\n")
       rh.writeln(s"package $pack")

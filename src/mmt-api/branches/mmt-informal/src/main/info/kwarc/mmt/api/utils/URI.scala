@@ -34,9 +34,13 @@ case class URI(scheme: Option[String], authority: Option[String], path: List[Str
           if (scheme != u.scheme) u
      else if (authority != u.authority) URI(None, u.authority, u.path, u.absolute, u.query, u.fragment)
      else if (path != u.path) {
-        if (absolute == u.absolute && path != Nil && u.path.startsWith(path.init))
-           URI(None, None, u.path.drop(path.length-1), false, u.query, u.fragment)
-        else
+        if (absolute == u.absolute && path != Nil) {
+           val max = path.length - 1
+           var i = 0
+           while (i <= max && u.path.startsWith(path.take(i+1))) i += 1
+           // now path.take(i) == u.path.take(i)
+           URI(None, None, Range(0,max-i).toList.map(_ => "..") ::: u.path.drop(i), false, u.query, u.fragment)
+        } else
            URI(None, None, u.path, u.absolute, u.query, u.fragment)
      } else if (query != u.query) URI(None, None, Nil, false, u.query, u.fragment)
      else if (fragment != u.fragment) URI(None, None, Nil, false, None, u.fragment)

@@ -81,6 +81,26 @@ abstract class RealizedType extends SemanticType {
 
 class Product(val left: SemanticType, val right: SemanticType) extends SemanticType {
    type univ = (left.univ, right.univ)
+   override def valid(u: univ) = left.valid(u._1) && right.valid(u._2)
+   override def normalform(u: univ) = (left.normalform(u._1), right.normalform(u._2))
    def fromString(s: String) = null // TODO
    override def toString(u: univ) = "(" + left.toString(u._1) + "," + right.toString(u._2) + ")"
-} 
+}
+
+object Subtype {
+   def apply(of: SemanticType)(by: of.univ => Boolean) = new SemanticType {
+      type univ = of.univ
+      override def valid(u: of.univ) = of.valid(u) && by(u)
+      override def normalform(u: of.univ) = of.normalform(u)
+      def fromString(s: String) = of.fromString(s)
+   }
+}
+
+object Quotient {
+   def apply(of: SemanticType)(by: of.univ => of.univ) = new SemanticType {
+      type univ = of.univ
+      override def valid(u: of.univ) = of.valid(u)
+      override def normalform(u: of.univ) = by(of.normalform(u))
+      def fromString(s: String) = of.fromString(s)
+   }
+}

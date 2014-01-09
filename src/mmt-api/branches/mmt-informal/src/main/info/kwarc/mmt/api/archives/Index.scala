@@ -17,8 +17,9 @@ import utils.FileConversion._
  *  
  */
 abstract class Importer extends TraversingBuildTarget {
-   val inDim = "source"
-   val outDim = "narration"
+   protected var _inDim: ArchiveDimension = source
+   def inDim = _inDim
+   val outDim = narration
    override val outExt = "omdoc"
 
    /** the main abstract method to be implemented by importers
@@ -35,7 +36,7 @@ abstract class Importer extends TraversingBuildTarget {
    override def buildDir(a: Archive, bd: BuildDir, builtChildren: List[BuildTask]) {
       val doc = controller.get(DPath(a.narrationBase / bd.inPath)).asInstanceOf[Document]
       val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
-      writeToRel(doc, a.relDir / inPathFile)
+      writeToRel(doc, a/relational / inPathFile)
    }
     
     /** Write a module to content folder */
@@ -58,37 +59,38 @@ abstract class Importer extends TraversingBuildTarget {
     /** index a document */
     private def indexDocument(a: Archive, doc: Document, inPath: List[String]) {
         // write narration file
-        val narrFile = (a.narrationDir / inPath).setExtension("omdoc")
+        val narrFile = outPath(a, inPath)
         log("[  -> NARR]     " + narrFile)
         xml.writeFile(doc.toNode, narrFile)
         // write relational file
-        writeToRel(doc, a.relDir / inPath)
+        writeToRel(doc, a/relational / inPath)
         doc.getModulesResolved(controller.library) foreach {mod => {
            // write content file
            writeToContent(a, mod)
            // write relational file
-           writeToRel(mod, a.relDir / Archive.MMTPathToContentPath(mod.path))
+           writeToRel(mod, a/relational / Archive.MMTPathToContentPath(mod.path))
         }}
    }    
    /** deletes content, narration, notation, and relational */
    override def cleanFile(a: Archive, curr: Current) {
        val controller = new Controller(report)
        val Current(inFile, inPath) = curr
-       val (doc,_) = controller.read(inFile, Some(DPath(a.narrationBase / inPath)))
+       val narrFile = outPath(a, inPath)
+       val (doc,_) = controller.read(narrFile, Some(DPath(a.narrationBase / inPath)))
        //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly 
        doc.getItems foreach {
           case r: documents.MRef =>
              val cPath = Archive.MMTPathToContentPath(r.target)
-             delete(a.contentDir / cPath)
-             delete((a.relDir / cPath).setExtension("rel"))
+             delete(a/content / cPath)
+             delete((a/relational / cPath).setExtension("rel"))
           case r: documents.DRef => //TODO recursively delete subdocuments
        }
-       delete((a.relDir / inPath).setExtension("rel"))
-       delete(inFile)
+       delete((a/relational / inPath).setExtension("rel"))
+       delete(narrFile)
     }
     override def cleanDir(a: Archive, curr: Current) {
        val inPathFile = Archive.narrationSegmentsAsFile(curr.path, "omdoc")
-       delete((a.relDir / inPathFile).setExtension("rel"))
+       delete((a/relational / inPathFile).setExtension("rel"))
     }
 }
 
@@ -107,6 +109,17 @@ abstract class StringBasedImporter extends Importer {
 class OMDocImporter extends Importer {
    val key = "index"
    def includeFile(s: String) = s.endsWith(".omdoc")
+   
+   /**
+    * 1 argument - the input dimension, defaults to source
+    */
+   override def start(args: List[String]) {
+      args match {
+         case Nil =>
+         case a :: Nil => _inDim = Dim(a)
+         case _ => throw LocalError("too many arguments") 
+      }
+   }
    
    def buildOne(bf: BuildFile, seCont: Document => Unit) = {
       log("[COMP ->  ]  " + bf.inFile)

@@ -1,45 +1,34 @@
 package info.kwarc.mmt.api.archives
 
-
 import info.kwarc.mmt.api._
 import modules._
 import presentation._
 import utils._
 import documents._
-import backend._
+
+trait Exporter extends TraversingBuildTarget {
+   /** must be set correctly before any of the abstract methods are called */
+   protected var _rh: RenderingHandler = null
+   /** @return the RenderingHandler to which all produced output must be sent */ 
+   protected def rh = _rh 
+   def includeFile(name: String) = name.endsWith(".omdoc")
+}
 
 /** A BuildTarget that traverses the content dimension and applies continuation functions to each module.
  *
  *  Deriving this class is well-suited for writing exporters that transform MMT content into other formats.
  */
-abstract class NarrationExporter extends TraversingBuildTarget {
+trait NarrationExporter extends Exporter {
+   val inDim = narration
 
-   /** must be set correctly before any of the abstract methods are called */
-   private var _rh: RenderingHandler = null
-   /** @return the RenderingHandler to which all produced output must be sent */ 
-   protected def rh = _rh 
-   
    /** applied to each leaf document (i.e., .omdoc file) */
-   def doDocument(doc: Document)
+   def doDocument(doc: Document, bt: BuildTask)
 
-   val inDim = "narration"
-   def includeFile(name: String) = name.endsWith(".omdoc")
-   
    def buildFile(a: Archive, bf: BuildFile) = {
-      try {
-        val docS = File.read(bf.inFile)
-        val reader = new XMLReader(controller.report)
-        val bodyXML  = scala.xml.Utility.trim(scala.xml.XML.loadString(docS))
-        val cont = controller //new Controller
-        reader.readDocument(bf.dpath, bodyXML)(cont.add)
-        val doc : Document = cont.getDocument(bf.dpath, dp => "doc not found at path " + dp)
-        _rh = new presentation.FileWriter(bf.outFile)
-        doDocument(doc)
-        rh.done
-      } catch {
-        case e : Error => bf.errors ::= e
-        case e : Throwable => bf.errors ::= LocalError(e.getMessage())
-      }
+      val doc = controller.getDocument(bf.dpath)
+      _rh = new presentation.FileWriter(bf.outFile)
+      doDocument(doc, bf)
+      rh.done
    }
 }
 
@@ -48,13 +37,9 @@ abstract class NarrationExporter extends TraversingBuildTarget {
  *
  *  Deriving this class is well-suited for writing exporters that transform MMT content into other formats.
  */
-abstract class ContentExporter extends TraversingBuildTarget {
+trait ContentExporter extends Exporter  {
+   val inDim = content
 
-   /** must be set correctly before any of the abstract methods are called */
-   private var _rh: RenderingHandler = null
-   /** @return the RenderingHandler to which all produced output must be sent */ 
-   protected def rh = _rh 
-   
    /** applied to each theory */
    def doTheory(t: DeclaredTheory, bf: BuildFile)
    /** applied to each view */
@@ -64,10 +49,7 @@ abstract class ContentExporter extends TraversingBuildTarget {
     *  @param namespaces the sub-namespace in this namespace
     *  @param modules the modules in this namespace
     */
-   def doNamespace(dpath: DPath, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)])
-   
-   val inDim = "content"
-   def includeFile(name: String) = name.endsWith(".omdoc")
+   def doNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)])
    
    override def buildDir(a: Archive, bd: BuildDir, builtChildren: List[BuildTask]) = {
       val dp = Archive.ContentPathToDPath(bd.inPath)
@@ -80,7 +62,7 @@ abstract class ContentExporter extends TraversingBuildTarget {
          case _ => Nil
       }
       _rh = new presentation.FileWriter(bd.outFile)
-      doNamespace(dp, nss, mps)
+      doNamespace(dp, bd, nss, mps)
       _rh.done
    }
    def buildFile(a: Archive, bf: BuildFile) = {

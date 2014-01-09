@@ -43,6 +43,8 @@ class NotationContainer extends ComponentContainer {
       twoDim = None
    }
    def isDefined = oneDim.isDefined || twoDim.isDefined
+   def getComponents = oneDim.toList.map(_ => (OneDimNotationComponent, this)) :::
+                       twoDim.toList.map(_ => (TwoDimNotationComponent, this))
    
    /** @return an appropriate notation for presentation, if any */
    def getPresent: Option[TextNotation] = twoDim orElse oneDim

@@ -32,6 +32,10 @@ trait Extension extends Logger {
       report = controller.report
    }
    
+   protected def checkNumberOfArguments(min: Int, max: Int, args: List[String]) {
+      if (args.length < min || args.length > max)
+         throw LocalError("bad number of arguments: " + args.mkString(" ") + "; expected: " + min + " to " + max)
+   }
    /** extension-specific initialization (override as needed, empty by default) */
    def start(args: List[String]) {}
    /** extension-specific cleanup (override as needed, empty by default)
@@ -69,8 +73,7 @@ class ExtensionManager(controller: Controller) extends Logger {
    
    def addDefaultExtensions {
       targets    ::= new MMTCompiler
-      targets    ::= new archives.OMDocImporter
-      targets    :::= List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter)
+      targets    :::= List(new archives.HTMLContentExporter, new archives.HTMLNarrationExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter)
       presenters ::= TextPresenter
       presenters ::= OMDocPresenter
       presenters ::= controller.presenter
@@ -118,6 +121,7 @@ class ExtensionManager(controller: Controller) extends Logger {
        try {
           ext.start(args)
        } catch {
+          case e: Error => throw RegistrationError("error while starting extension: " + e.getMessage).setCausedBy(e)
           case e: Exception => throw RegistrationError("error while starting extension: " + e.getMessage)
        }
        if (ext.isInstanceOf[Foundation]) {
@@ -154,8 +158,8 @@ class ExtensionManager(controller: Controller) extends Logger {
        }
    }
 
-   /** retrieves an applicable Compiler */
-   def getTarget(src: String) : Option[BuildTarget] = targets.find(_.isApplicable(src))
+   /** retrieves an applicable build target */
+   def getTarget(key: String) : Option[BuildTarget] = targets.find(t => t.isApplicable(key))
    /** retrieves an applicable query transformer */
    def getQueryTransformer(src: String) : Option[QueryTransformer] = querytransformers.find(_.isApplicable(src))
    /** retrieves an applicable Presenter */
