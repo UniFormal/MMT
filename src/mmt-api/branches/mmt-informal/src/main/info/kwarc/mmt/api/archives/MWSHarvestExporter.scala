@@ -49,13 +49,13 @@ class MWSHarvestContentExporter extends ContentExporter {
 }
 
 class MWSHarvestNarrationExporter extends NarrationExporter {
-  val outDim = "mws-narration"
+  val outDim = Dim("mws-narration")
   val key = "mws-narration"
   override val outExt = "mws"
     
   val custom : ArchiveCustomization = new DefaultCustomization    
    
-  def doDocument(doc: Document) {
+  def doDocument(doc: Document, bt : BuildTask) {
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
     try {
