@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
+import objects.Conversions._
 
 /** A path in the syntax tree of an object */
 case class Position(indices : List[Int]) {

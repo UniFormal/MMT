@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import symbols._
 import objects._
+import objects.Conversions._
 
 /**
  * traverses the syntax tree (depth first, argument order) and expands (only) the first defined constant it encounters
@@ -17,16 +18,16 @@ class DefinitionExpander(controller: frontend.Controller) extends StatelessTrave
       t match {
          case DefinitionsExpanded(tE) => tE
          case ComplexTerm(p, args, cont, scopes) =>
-            args.zipWithIndex foreach {case (a,i) =>
+            args.zipWithIndex foreach {case (Sub(l,a),i) =>
                val aE = traverse(a)
                if (aE hashneq a)
-                  return ComplexTerm(p, args.take(i) ::: aE :: args.drop(i+1), cont, scopes).from(t)
+                  return ComplexTerm(p, args.take(i) ::: Sub(l,aE) :: args.drop(i+1), cont, scopes).from(t)
             }
-            /* scopes.zipWithIndex foreach {case (s,i) =>
+            scopes.zipWithIndex foreach {case (s,i) =>
                val sE = traverse(s)
                if (sE hashneq s)
                   return ComplexTerm(p, args, cont, scopes.take(i) ::: sE :: scopes.drop(i+1))
-            }*/
+            }
             DefinitionsExpanded(t)
          case OMS(p) => expSym(p) match {
             case Some(tE) => tE.from(t)

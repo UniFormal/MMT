@@ -42,14 +42,14 @@ abstract class Importer extends TraversingBuildTarget {
     /** Write a module to content folder */
     private def writeToContent(a: Archive, mod: Module) {
        val contFile = a.MMTPathToContentPath(mod.path)
-       log("[  -> CONT]     " + contFile.getPath)
+       log("[  -> content   ]     " + contFile.getPath)
        val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{mod.toNode}</omdoc>
        xml.writeFile(omdocNode, contFile)
     }
     /** extract and write the relational information about a knowledge item */
     private def writeToRel(se: StructuralElement, file: File) {
        val relFile = file.setExtension("rel")
-       log("[  -> REL ]     " + relFile.getPath)
+       log("[  -> relational]     " + relFile.getPath)
        val relFileHandle = File.Writer(relFile)
        ontology.Extractor(se) {
           r => relFileHandle.write(r.toPath + "\n")
@@ -60,7 +60,7 @@ abstract class Importer extends TraversingBuildTarget {
     private def indexDocument(a: Archive, doc: Document, inPath: List[String]) {
         // write narration file
         val narrFile = outPath(a, inPath)
-        log("[  -> NARR]     " + narrFile)
+        log("[  -> narration ]     " + narrFile)
         xml.writeFile(doc.toNode, narrFile)
         // write relational file
         writeToRel(doc, a/relational / inPath)
@@ -122,7 +122,6 @@ class OMDocImporter extends Importer {
    }
    
    def buildOne(bf: BuildFile, seCont: Document => Unit) = {
-      log("[COMP ->  ]  " + bf.inFile)
       val (doc,_) = controller.read(bf.inFile, Some(bf.dpath))
       seCont(doc)
    }

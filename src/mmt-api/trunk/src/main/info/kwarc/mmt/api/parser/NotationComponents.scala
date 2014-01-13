@@ -63,7 +63,7 @@ case class SymbolName(path: GlobalName) extends PlaceholderDelimiter {
    def text = if (path.name.length < 1) "" else path.name.last.toPath
 }
 
-sealed abstract class ArgumentMarker extends Marker with ArgumentComponent with ScopeComponent
+sealed abstract class ArgumentMarker extends Marker with ArgumentComponent
 
 /** an argument
  * @param n absolute value is the argument position, negative iff it is in the binding scope
@@ -294,7 +294,7 @@ sealed trait ArityComponent {
 }
 sealed trait ArgumentComponent extends ArityComponent
 sealed trait VariableComponent extends ArityComponent
-sealed trait ScopeComponent extends ArityComponent
+//sealed trait ScopeComponent extends ArityComponent
 
 object Marker {
    def parse(name: GlobalName, s: String) = s match {
@@ -349,7 +349,7 @@ object Marker {
             try {
                val n = s.toInt
                //n ---> arguments, no sequence
-               Arg(n)
+               Arg(n.abs) //TODO deprecate negative positions
             } catch {case e: Throwable =>
                //other string ---> delimiter
                Delim(s)

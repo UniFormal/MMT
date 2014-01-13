@@ -7,45 +7,36 @@ import utils._
 //TODO definition expansion everywhere
 
 object Morph {
-   val Empty = OMID(mmt.mempty) 
+   val empty = ComplexMorphism(Substitution()) 
    /** pre: m is a well-structured morphism */
-	def domain(m : Term)(implicit lib : Lookup) : Term = m match {
-      case OMIDENT(t) => t
-      case OMCOMP(Nil) => throw InvalidObject(m, "cannot infer domain of empty composition")
+	def domain(m : Term)(implicit lib : Lookup) : Option[Term] = m match {
+      case OMIDENT(t) => Some(t)
       case OMCOMP(n :: _) => domain(n)
-      case Morph.Empty => throw InvalidObject(m, "cannot infer domain of empty union")
-      case MUnion(ms) => TUnion(ms map domain)
       case OMMOD(path) => try {
-         lib.get(path) match {case l: Link => l.from}
+         lib.get(path) match {case l: Link => Some(l.from)}
       } catch {
          case _ : Throwable => throw InvalidObject(m, "not a well-formed morphism")
       }
       case OMDL(h,n) => try {
          val structure = lib.getStructure(h % n)
-         structure.from
+         Some(structure.from)
       } catch {
          case _ : Throwable => throw InvalidObject(m, "not a well-formed morphism")
       }
-      case _ => throw InvalidObject(m, "not a well-formed morphism: " + m)
+      case _ => None
     }
 
   /** pre: m is a well-structured morphism */
-   def codomain(m : Term)(implicit lib : Lookup) : Term = m match {
-      case OMIDENT(t) => t
-      case OMCOMP(Nil) => throw InvalidObject(m, "cannot infer codomain of empty composition")
-      case OMCOMP(l) => codomain(l.last)
-      case Morph.Empty => throw InvalidObject(m, "cannot infer codomain of empty union")
-      case MUnion(ms) =>
-         val cs = ms map codomain
-         if (cs.forall(_ == cs.head)) cs.head
-         else TUnion(cs)
+   def codomain(m : Term)(implicit lib : Lookup) : Option[Term] = m match {
+      case OMIDENT(t) => Some(t)
+      case OMCOMP(l) if !l.isEmpty => codomain(l.last)
       case OMMOD(path) => try {
-         lib.get(path) match {case l: Link => l.to}
+         lib.get(path) match {case l: Link => Some(l.to)}
       } catch {
          case _ : Throwable => throw throw InvalidObject(m, "not a well-formed morphism: " + m)
       }
-      case OMDL(t, _ ) => t
-      case _ => throw throw InvalidObject(m, "not a well-formed morphism: " + m)
+      case OMDL(t, _ ) => Some(t)
+      case _ => None
    }
    
    /** transform a morphism into a list of morphisms by using associativity of composition */ 
@@ -69,7 +60,6 @@ object Morph {
            else
               OMDL(h, lnS)
         case OMIDENT(t) => OMCOMP()
-        case Morph.Empty => Morph.Empty
         case OMCOMP(ms) =>
            val msS = (ms map simplify) filter {
              case OMIDENT(_) => false
@@ -83,9 +73,9 @@ object Morph {
            }
         case MUnion(ms) =>
                                    //  associativity             neutrality           idempotence  commutativity
-           val msS = (ms map simplify).flatMap(MUnion.associate).filterNot(_ == Morph.Empty).distinct.sortBy(_.hashCode)
+           val msS = (ms map simplify).flatMap(MUnion.associate).filterNot(_ == Morph.empty).distinct.sortBy(_.hashCode)
            msS match {
-             case Nil => Morph.Empty
+             case Nil => Morph.empty
              case m :: Nil => m
              case ms => MUnion(ms)
            }
@@ -121,16 +111,14 @@ object Morph {
 }
 
 object TheoryExp {
-  val Empty = OMID(mmt.tempty)
+  val empty = ComplexTheory(Context())
   /** simplifies a theory expression using basic algebraic laws, e.g., commutativity of union */
   def simplify(thy: Term): Term = thy match {
      case OMMOD(p) => OMMOD(p)
-     case TheoryExp.Empty => TheoryExp.Empty
      case TUnion(ts) =>
-                                   //  associativity          neutrality           idempotence  commutativity
-        val tsS = (ts map simplify).flatMap(TUnion.associate).filterNot(_ == TheoryExp.Empty).distinct.sortBy(_.hashCode)
+                                   //  associativity          idempotence  commutativity
+        val tsS = (ts map simplify).flatMap(TUnion.associate).distinct.sortBy(_.hashCode)
         tsS match {
-          case Nil => TheoryExp.Empty
           case t :: Nil => t
           case ts => TUnion(ts)
         }
@@ -148,10 +136,9 @@ object TheoryExp {
          }
          case t: DefinedTheory => metas(t.df)
       }
-      case TheoryExp.Empty => Nil
       case TUnion(ts) =>
          val ms = ts map {t => metas(t)}
-         if (ms forall {m => m == ms.head}) ms.head
+         if (!ms.isEmpty && ms.forall(m => m == ms.head)) ms.head
          else Nil
    }
   
@@ -159,8 +146,6 @@ object TheoryExp {
    def imports(from: Term, to: Term)(implicit atomic: (MPath,MPath) => Boolean) : Boolean = {
       if (from == to) true else (from, to) match {
          case (OMMOD(f), OMMOD(t)) => atomic(f,t)
-         case (TheoryExp.Empty, _ ) => true
-         case (_, TheoryExp.Empty) => false
          case (_, TUnion(ts)) => ts exists {t => imports(from, t)}
          case (TUnion(ts), _) => ts forall {t => imports(t, from)}
          case _ => false // catches semiformal theories, which may be generated by the parser
@@ -174,7 +159,6 @@ object TheoryExp {
    /** returns a human-oriented (short) String representation of a theory expression */
    def toString(t: Term) : String = t match {
       case OMMOD(f) => f.last
-      case TheoryExp.Empty => "empty"
       case TUnion(ts) => ts.map(toString).mkString("", " + ", "")
    }
 }
@@ -193,12 +177,12 @@ object OMMOD {
 
 object TUnion {
    def apply(thys: List[Term]) : Term = thys match {
-     case Nil => TheoryExp.Empty
      case hd :: Nil => hd
-     case hd :: tl => OMA(OMID(mmt.tunion), tl.toList)
+     case _ => OMA(OMID(mmt.tunion), thys)
    }
    def unapply(union: Term) : Option[List[Term]] = union match {
-     case OMA(OMID(mmt.tunion), thys) if (thys.forall(_.isInstanceOf[Term])) => Some(thys.asInstanceOf[List[Term]])
+     case OMA(OMID(mmt.tunion), thys) => Some(thys)
+     
      case _ => None
    }
    /** applies associativity of union by merging nested TUnion */
@@ -208,6 +192,14 @@ object TUnion {
    }
 }
 
+object ComplexTheory {
+   def apply(body: Context) = OMBINDC(OMID(mmt.tunion), body, Nil)
+   def unapply(t: Term) : Option[Context] = t match {
+      case OMBINDC(OMID(mmt.tunion), body, Nil) => Some(body)
+      case OMMOD(p) => Some(Context(IncludeVarDecl(p)))
+      case _ => None
+   }
+}
 /**
  * An OMDL represents a structure
  */
@@ -253,9 +245,17 @@ object OMIDENT {
    }
 }
 
+object ComplexMorphism {
+   def apply(body: Substitution) = ComplexTerm(mmt.munion, body, Context(), Nil)
+   def unapply(t: Term) : Option[Substitution] = t match {
+      case ComplexTerm(mmt.munion, sub, Context(), Nil) => Some(sub)
+      case _ => None
+   }
+}
+
 object MUnion {
    def apply(morphs: List[Term]) : Term = morphs match {
-      case Nil => Morph.Empty
+      case Nil => Morph.empty
       case hd :: Nil => hd
       case hd :: tl => OMA(OMID(mmt.munion), morphs)
    }
@@ -270,10 +270,3 @@ object MUnion {
    }
 }
 
-object ExplicitMorph {
-  def apply(rec : Record, dom : Term) : Term = OMA(OMID(mmt.explmorph), List(dom, OMREC(rec)))
-  def unapply(m : Term) : Option[(Record, Term)] = m match {
-    case OMA(OMID(mmt.explmorph), List(dom, OMREC(rec))) => Some((rec, dom))
-    case _ => None
-  }
-}

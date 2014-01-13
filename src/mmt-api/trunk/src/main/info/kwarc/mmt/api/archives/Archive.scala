@@ -113,7 +113,7 @@ abstract class WritableArchive extends ROArchive {
               } else
                  Nil
            }
-           val result = onDir(Current(inFile,in), results.toList.reverse)
+           val result = onDir(Current(inFile,in), results.toList)
            if (sendLog) log("leaving  " + inFile)
            Some(result)
         } else {
@@ -212,64 +212,24 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
     log("done:  [CONT -> FLAT]       -> " + inFile)
   }
 
-    /** Generate presentation from content */
-    def producePres(in : List[String] = Nil, param : String, controller : Controller) {
-      val inFile = this/content / in
-      log("to do: [CONT -> PRES]        -> " + inFile)
-
-      traverse(content, in, Archive.extensionIs("omdoc")) { case Current(inFile, inPath) =>
-        val outFile = (root / "presentation" / param / inPath).setExtension("xhtml")
-        controller.read(inFile,None)
-        val mpath = Archive.ContentPathToMMTPath(inPath)
-        val file = File(outFile)
-        val fs = new presentation.FileWriter(file)
-        frontend.Present(Get(mpath),param).make(controller, fs)
-        fs.done
-      }
-      log("done:  [CONT -> PRES]        -> " + inFile)
-    }
-    
-    def getPresentation(in : MPath, controller: Controller, nset : MPath) : Option[scala.xml.Node] = {
-      try {
-      val fpath = root / "presentation" / nset.last / {
-        val uri = in.parent.uri
-        val schemeString = uri.scheme.map(_ + "..").getOrElse("")
-        (schemeString + uri.authority.getOrElse("NONE")) :: uri.path ::: List(Archive.escape(in.name.toPath) + ".xhtml")
-      }
-      
-      val src = scala.io.Source.fromFile(fpath)
-      val cp = scala.xml.parsing.ConstructingParser.fromSource(src, false)
-      val input : scala.xml.Node = cp.document()(0)
-      src.close
-      Some(input)
-      } catch {
-        case _ : Throwable => None
-      }
-    }
-
-    def readRelational(in: List[String] = Nil, controller: Controller, kd: String) {
+  def readRelational(in: List[String] = Nil, controller: Controller, kd: String) {
        if ((this/relational).exists) {
           traverse(relational, in, Archive.extensionIs(kd)) {case Current(inFile, inPath) =>
-             ontology.RelationalElementReader.read(inFile, DPath(narrationBase), controller.depstore)
-          }
-          //TODO this should only add implicits for the dependencies it read
-          controller.depstore.getDeps foreach {
-             case Relation(Includes, to: MPath, from: MPath) => controller.library.addImplicit(OMMOD(from), OMMOD(to), OMIDENT(OMMOD(to)))
-             case Relation(HasMeta, thy: MPath, meta: MPath) => controller.library.addImplicit(OMMOD(meta), OMMOD(thy), OMIDENT(OMMOD(thy)))
-             case _ => 
-          }
-       }
-    }
-/*
-    def readNotation(in: List[String] = Nil, controller: Controller) {
-       if ((root / "notation").exists) {
-          traverse("notation", in, Archive.extensionIs("not")) {case Current(inFile, inPath) =>
-             val thy = Archive.ContentPathToMMTPath(inPath)
-             File.ReadLineWise(inFile) {line => controller.notstore.add(presentation.Notation.parseString(line, thy))}
+             utils.File.ReadLineWise(inFile) {line => 
+               val re = RelationalElement.parse(line, DPath(narrationBase))
+               re match {
+                   case Relation(Includes, to: MPath, from: MPath) =>
+                      controller.library.addImplicit(OMMOD(from), OMMOD(to), OMIDENT(OMMOD(to)))
+                   case Relation(HasMeta, thy: MPath, meta: MPath) =>
+                      controller.library.addImplicit(OMMOD(meta), OMMOD(thy), OMIDENT(OMMOD(thy)))
+                   case _ => 
+               }
+               controller.depstore += re
+            }
           }
        }
     }
-*/
+    
     def produceMWS(in : List[String] = Nil, dim: String) {
         val sourceDim = dim match {
           case "mws-flat" => "flat"

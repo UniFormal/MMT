@@ -153,18 +153,16 @@ case class LocalName(steps: List[LNStep]) {
   /** human-oriented string representation of this name, no encoding, possibly shortened */
    override def toString : String = steps.map(_.toString).mkString("", "/", "")
 }
+
 object LocalName {
    def apply(step: LNStep) : LocalName = LocalName(List(step))
    def apply(step: String) : LocalName = LocalName(SimpleStep(step))
    def apply(p: MPath) : LocalName = LocalName(ComplexStep(p))
-   /** parses a LocalName that has no []-wrapped segments */
-   def parse(s:String) = {
-      val ref = Path.parseLocal(s)
-      LocalName(ref.segments.map(SimpleStep(_)))
-   }
    /** parses a LocalName, complex segments are parsed relative to base */
-   def parse(base: Path, s: String) = Path.parseLocal(s).toLocalName(base)
+   def parse(s: String, base: Path): LocalName = LocalRef.parse(s).toLocalName(base)
+   def parse(s:String): LocalName = parse(s, utils.mmt.mmtbase)
 }
+
 /** a step in a LocalName */
 abstract class LNStep {
    def toPath : String
@@ -200,18 +198,62 @@ object LNEmpty {
 */
 
 /**
- * A LocalRef represents a possibly relative LocalName or LocalPath
- * @param segments the list of (in MMT: slash-separated) components
- * @param absolute a flag whether the reference is absolute (in MMT: starts with a slash)
+ * A LocalRef represents a possibly relative LocalName
+ * @param segments the list of (slash-separated) components
+ * @param absolute a flag whether the reference is absolute (i.e., starts with a slash)
  */
 case class LocalRef(segments : List[String], absolute : Boolean) {
    def toLocalName(base: Path) = {
-      val steps = segments map {s => if (s.startsWith("[")) ComplexStep(Path.parseM(s.substring(1,s.length - 1), base))
-                                     else SimpleStep(s)
-                               }
+      val steps = segments map {s =>
+         if (s.startsWith("["))
+            ComplexStep(Path.parseM(s.substring(1,s.length - 1), base))
+         else
+            SimpleStep(s)
+      }
       LocalName(steps)
    }
    override def toString = segments.mkString(if (absolute) "/" else "","/","")
+}
+
+object LocalRef {
+   /** splits /-separated sequence of (String | "[" String "]") into its components
+    * []-wrappers are preserved
+    * []-wrapped components may contain /
+    * components may be empty, initial or final / causes empty component
+    * empty string is parsed as Nil
+    */
+   private def splitName(s: String): List[String] = {
+      var left : String = s            //string that is left to parse
+      var seen : List[String] = Nil    //segments that have been parsed
+      var current : String = ""        //the part of the current segment that has been parsed
+      //called when the end of the current segment has been detected
+      def segmentDone {seen ::= current; current = ""}
+      //called when the next character is appended to the current segment
+      def charDone {current = current + left(0); left = left.substring(1)}
+      //parses s segment-wise; if a segment starts with [, pass control to complex
+      def start {   if (left == "")            {if (current != "" || ! seen.isEmpty) segmentDone}
+               else if (left.startsWith("[") && current == "")
+                                               {complex}
+               else if (left.startsWith("/"))  {segmentDone; left = left.substring(1); start}
+               else                            {charDone; start}
+      } //TODO accept only balanced nestings of []?
+      //parses a complex segment of the form [URI] (assumes [ has been parsed already)
+      def complex {if (left.isEmpty)           {throw ParseError("unclosed '[' in " + s)}
+               else if (left == "]")           {charDone; segmentDone}
+               else if (left.startsWith("]/")) {charDone; segmentDone; left = left.substring(1); start}
+               else                            {charDone; complex}
+      }
+      start
+      return seen.reverse
+   }
+   def parse(n : String) : LocalRef = {
+      val relative = n.startsWith("/")
+      var l = splitName(n)
+      if (relative)
+         l = l.drop(1)
+      l = try {l map xml.decodeURI} catch {case xml.XMLError(s) => throw ParseError(s)}
+      LocalRef(l, ! relative)
+   }
 }
 
 /** helper object for paths */
@@ -237,8 +279,8 @@ object Path {
       //to make the case distinctions simpler, all omitted (= empty) components become None
       val doc = if (d.scheme == None && d.authority == None && d.path == Nil) None else Some(DPath(d))
       def wrap(l : LocalRef) = if (l.segments.isEmpty) None else Some(l)
-      val mod = wrap(parseLocal(m))
-      val name = wrap(parseLocal(n))
+      val mod = wrap(LocalRef.parse(m))
+      val name = wrap(LocalRef.parse(n))
       //get the base as a triple of three Options (first component will never be None)
       val (bdoc, bmod, bname) = base.toTriple
       //now explicit case distinctions to be sure that all cases are covered
@@ -261,17 +303,31 @@ object Path {
    }
    /** splits uri?mod?name?component into (uri, mod, name, component) */
    private def split(s : String) : (URI, String, String, String) = {
-      if (s.indexOf("#") != -1)
-         throw new ParseError("MMT-URI may not have fragment: " + s)
-      val comps = s.split("\\?",-1)
-      val doc = URI(comps(0))  //note: split returns at least List(""), never Nil
-      comps.length match {
-         case 1 => (doc, "", "", "")
-         case 2 => (doc, comps(1), "", "")
-         case 3 => (doc, comps(1), comps(2), "")
-         case 4 => (doc, comps(1), comps(2), comps(3))
-         case _ => throw ParseError("MMT-URI may have at most three ?s: " + s)
+      var left = s
+      val comp = Array("", "", "", "") // Array(uri, mod, name, component)
+      var current = 0
+      while (left != "") {
+         left(0) match {
+            case '?' =>
+               if (current == 3)
+                  throw ParseError("MMT-URI may have at most three ?s: " + s)
+               else
+                  current += 1
+            case '#' => throw ParseError("MMT-URI may not have fragment: " + s)
+            case '[' if current == 2 =>
+               val pos = left.indexOf("]")
+               if (pos == -1)
+                  comp(current) += '[' //unclosed [ not treated specially
+               else {
+                  comp(current) += left.substring(0,pos+1)
+                  left = left.substring(pos) //one more character chopped below
+               }
+            case c =>
+               comp(current) += c
+         }
+         left = left.substring(1)
       }
+      (URI(comp(0)), comp(1), comp(2), comp(3))
    }
    /** as parse but fails if the result is not a symbol level URI */
    def parseS(s : String, base : Path) : GlobalName = parse(s,base) match {
@@ -287,53 +343,6 @@ object Path {
    def parseD(s : String, base : Path) : DPath = parse(s,base) match {
       case p : DPath => p
       case p => throw ParseError("document path expected: " + p) 
-   }
-   
-   /** splits /-separated sequence of (String | "[" String "]") into its components
-    * []-wrappers are preserved
-    * []-wrapped components may contain /
-    * components may be empty, initial or final / causes empty component
-    * empty string is parsed as Nil
-    */
-   private def splitName(s: String): List[String] = {
-      var left : String = s            //string that is left to parse
-      var seen : List[String] = Nil    //segments that have been parsed
-      var current : String = ""        //the part of the current segment that has been parsed
-      //called when the end of the current segment has been detected
-      def segmentDone {seen ::= current; current = ""}
-      //called when the next character is appended to the current segment
-      def charDone {current = current + left(0); left = left.substring(1)}
-      //parses s segment-wise; if a segment starts with [, pass control to complex
-      def start {   if (left == "")            {if (current != "" || ! seen.isEmpty) segmentDone}
-               else if (left.startsWith("/[")) {segmentDone; left = left.substring(1); complex}
-               else if (left.startsWith("/"))  {segmentDone; left = left.substring(1); start}
-               else                            {charDone; start}
-      } //TODO accept only balanced nestings of []?
-      //parses a complex segment of the form [URI] (assumes [ has been parsed already)
-      def complex {if (left.isEmpty)           {throw ParseError("unclosed '[' in " + s)}
-               else if (left == "]")           {charDone; segmentDone}
-               else if (left.startsWith("]/")) {charDone; segmentDone; left = left.substring(1); start}
-               else                            {charDone; complex}
-      }
-      start
-      return seen.reverse
-   }
-   
-   /** parses a possibly relative LocalPath or LocalName */
-   def parseLocal(n : String) : LocalRef = {
-      val relative = n.startsWith("/")
-      var l = splitName(n)
-      if (relative)
-         l = l.drop(1)
-      l = try {l map xml.decodeURI} catch {case xml.XMLError(s) => throw ParseError(s)}
-      LocalRef(l, ! relative)
-   }
-   /** as parseLocal but fails on relative results */
-   def parseName(n : String) : LocalRef = {
-      val r = parseLocal(n)
-      if (! r.absolute)
-         throw ParseError("cannot parse " + n + " (local path may not start with slash)")
-      r
    }
 }
 

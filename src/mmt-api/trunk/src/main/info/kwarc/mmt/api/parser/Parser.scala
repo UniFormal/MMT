@@ -303,6 +303,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                         prag.strictBinding(con.module.toMPath, head, context, scopes.map(_._2))
                      } else {
                         //some args and some vars --> OMBINDC with OMA
+                        //TODO does not work with new ComplexTerm semantics (named arguments)
                         val binder = prag.strictApplication(con.module.toMPath, head, finalArgs)
                         prag.strictBinding(con.module.toMPath, binder, context, scopes.map(_._2))
                      }

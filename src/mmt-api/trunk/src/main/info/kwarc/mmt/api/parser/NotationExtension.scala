@@ -47,18 +47,11 @@ abstract class Fixity(val fixityString: String) {
    def getArity = {
       var args: List[ArgumentComponent] = Nil
       var vars : List[VariableComponent] = Nil
-      var scopes : List[ScopeComponent] = Nil
       var attrib : Int = 0
       //collect components from markers
       markers foreach {
-         case a : ArgumentMarker =>
-            if (a.number > 0)
-               args ::= a
-            else if (a.number < 0)
-               scopes ::= a
-            else {
-               throw InvalidNotation("illegal marker: " + a)
-            }
+         case a: ArgumentComponent =>
+            args ::= a
          case v: VariableComponent =>
             vars ::= v
          case AttributedObject =>
@@ -68,10 +61,9 @@ abstract class Fixity(val fixityString: String) {
       // sort by component number
       args = args.sortBy(_.number)
       vars = vars.sortBy(_.number)
-      scopes = scopes.sortBy(_.number)
       // args with all implicit argument components added
       var argsWithImpl: List[ArgumentComponent] = Nil
-      var i = 1
+      var i = vars.lastOption.map(_.number).getOrElse(0) + 1 // the first expected argument position
       args foreach {a =>
          while (i < a.number) {
             //add implicit argument in front of the current one
@@ -82,15 +74,17 @@ abstract class Fixity(val fixityString: String) {
          i += 1
       }
       //TODO: check all args.number < vars.number < scopes.numbers; no gaps in variables or scopes
+/*    arguments are behind the variables now
       //add implicit arguments after the last one (the first variable tells us if there are implicit arguments after the last one)
       val totalArgs = vars.headOption.map(_.number).getOrElse(i) - 1
       while (i <= totalArgs) {
          argsWithImpl ::= ImplicitArg(i)
          i += 1
-      }
+      }*/
       args = argsWithImpl.reverse
+      // the attribution
       val attribution = attrib > 0
-      Arity(args, vars, scopes, attribution)
+      Arity(vars, args, attribution)
    }
 }
 

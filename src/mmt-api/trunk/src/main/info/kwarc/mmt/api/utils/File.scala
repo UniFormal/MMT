@@ -112,11 +112,11 @@ object File {
     * convenience method for reading a file into a string
     * 
     * @param f the source file
-    * @return s the file content
+    * @return s the file content (line terminators are \n)
     */
    def read(f: File): String = {
       var s : String = ""
-      ReadLineWise(f) {l => s += l}
+      ReadLineWise(f) {l => s += l + "\n"}
       s
    }
    /** convenience method to obtain a typical (buffered, UTF-8) reader for a file */
@@ -128,14 +128,12 @@ object File {
    def ReadLineWise(f: File)(proc: String => Unit) {
       val r = Reader(f)
       var line : String = null
-      while ({line = r.readLine; line != null}) {
-         try {
+      try {
+         while ({line = r.readLine; line != null})
             proc(line)
-         } catch {
-            case e : Throwable => r.close; throw e 
-         }
+      } finally {
+         r.close
       }
-      r.close
    }
 }
 

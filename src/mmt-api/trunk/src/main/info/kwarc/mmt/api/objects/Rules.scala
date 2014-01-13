@@ -264,7 +264,8 @@ class CongruenceRule(head: GlobalName) extends TermBasedEqualityRule(head,head) 
          case (ComplexTerm(this.head, args1, cont1, scps1), ComplexTerm(this.head, args2, cont2, scps2)) =>
             if (args1.length == args2.length && cont1.length == cont2.length && scps1.length == scps2.length) {
                val cont = Continue {
-                  val args = (args1 zip args2) forall {case (a1,a2) => solver.check(Equality(stack,a1,a2,None))}
+                  val args = (args1 zip args2) forall {case (Sub(l1,a1),Sub(l2,a2)) =>
+                     l1 == l2 && solver.check(Equality(stack,a1,a2,None))}
                   val argsCont = args && solver.check(EqualityContext(stack, cont1, cont2))
                   val alpha = (cont2 alpha cont1).get // defined because cont1.length == cont2.length
                   val argsContScps = argsCont && (scps1 zip scps2).forall {case (s1,s2) =>

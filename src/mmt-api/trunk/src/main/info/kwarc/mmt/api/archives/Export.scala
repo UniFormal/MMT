@@ -70,8 +70,10 @@ trait ContentExporter extends Exporter  {
       val mod = controller.globalLookup.getModule(mp)
       _rh = new presentation.FileWriter(bf.outFile)
       mod match {
-         case t: DeclaredTheory => doTheory(t, bf)
-         case v: DeclaredView => doView(v, bf)
+         case t: DeclaredTheory =>
+            doTheory(t, bf)
+         case v: DeclaredView =>
+            doView(v, bf)
          case _ =>
       }
       _rh.done

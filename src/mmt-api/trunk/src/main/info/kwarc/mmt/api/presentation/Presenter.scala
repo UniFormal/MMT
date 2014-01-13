@@ -85,7 +85,7 @@ object Presenter {
    def getNotation(controller: frontend.Controller, o: Obj) : (Obj, List[Position], Option[NotationContainer]) = {
       //TODO: try (lib.preImage(p) flatMap (q => getDefault(NotationKey(Some(q), key.role)))
       def tryTerm(t: Term) = t match {
-         case ComplexTerm(p, args, vars, scs) => getNotation(controller, p)
+         case ComplexTerm(p, sub, vars, args) => getNotation(controller, p)
          case OMID(p) => getNotation(controller, p)
          case _ => None
       }

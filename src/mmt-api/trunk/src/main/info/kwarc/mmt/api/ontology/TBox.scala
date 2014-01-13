@@ -75,6 +75,31 @@ object Binary {
    }
 }
 
+/** A RelationalElement is any element that is used in the relational representation of MMT content.
+ * These include the unary and binary predicates occurring in an MMT ABox.
+ * They do not correspond to XML elements in an OMDoc element and thus do not extend StructuralElement. 
+ */
+abstract class RelationalElement {
+   /** the URL from which this item originated, currently not implemented */
+   //val parent : Path = null //TODO origin of relational items
+   /** the MMTURI of the "about" item in the RDF sense */
+   val path : Path
+   /** XML representation */
+   def toNode : scala.xml.Node
+   /** text representation */
+   def toPath : String
+}
+
+object RelationalElement {
+   def parse(s: String, base: Path) : RelationalElement = {try{
+      s.split(" ").toList match {
+         case List(tp, ind) => Individual(Path.parse(ind, base), Unary.parse(tp))
+         case List(rel, subj, obj) => Relation(Binary.parse(rel), Path.parse(subj, base), Path.parse(obj, base))
+         case _ => throw ParseError("not a valid relational element: " + s)
+      }}catch {case e => println(s); throw e}
+   }
+}
+
 /**
  * An object of type Individual represents a unary predicate in the ABox.
  */
@@ -93,37 +118,3 @@ case class Relation(dep : Binary, subj : Path, obj : Path) extends RelationalEle
    override def toString = subj.toString + " " + dep.toString + " " + obj.toString
    def toPath = dep.toString + " " + subj.toPath + " " + obj.toPath
 }
-
-/** 
- * classes for changes to the relstore
- * will be returned by the checker when checking a change
- * and then applied by the controller to the relstore to mantain its adequacy
- */
-/*
-abstract class RelationsChange
-
-/** adds a list of relations to the relstore */
-case class AddRelations(rels : List[RelationalElement]) extends RelationsChange {
-  def toNode = <addrel>{rels.map(_.toNode)}</addrel>
-}
-
-/** removes from the relstore all relations for which p is subject */ 
-case class DeleteRelations(p : Path) extends RelationsChange {
-  def toNode = <delrel path={p.toPath}></delrel>
-}
-
-/** removes from the relstore all relations for which p is subject, then adds rels */
-case class UpdateRelations(rels : List[RelationalElement], p : Path) extends RelationsChange {
-  def toNode = <uprel path={p.toPath}>{rels.map(_.toNode)}</uprel>
-}
-
-/** replaces in the relstore, in all relations for which old is subject, old with nw */
-case class RenameRelations(old : Path, nw : Path) extends RelationsChange {
-  def toNode = <rerel old={old.toPath} new={nw.toPath}/>
-}
-
-/** does nothing */
-case class IdenticalRelations() extends RelationsChange {
-  def toNode = <idrel/>
-}
-*/

@@ -12,6 +12,7 @@ import info.kwarc.mmt.api.objects._
 abstract class Module(val parent : DPath, val name : LocalName) extends ContentElement {
    def path: MPath = parent ? name
    def toTerm = OMMOD(path)
+   def superModule: Term = if (name.length > 1) OMMOD(parent ? name.tail) else TheoryExp.empty
 }
 
 /**

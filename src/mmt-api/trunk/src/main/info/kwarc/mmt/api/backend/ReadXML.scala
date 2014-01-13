@@ -68,7 +68,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
          case <metadata>{_*}</metadata> => //TODO
          case _ =>
            val base = Path.parse(xml.attr(m,"base"), modParent)
-           val name = Path.parseName(xml.attr(m,"name")).toLocalName(base)
+           val name = LocalName.parse(xml.attr(m,"name"),base)
            (base, m) match {
 	         case (base : DPath, <theory>{seq @ _*}</theory>) =>
 		         log("theory " + name + " found")

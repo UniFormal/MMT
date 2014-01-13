@@ -15,7 +15,6 @@ object mmt {
    val inferedTypeTag = mmtsymbol("infered")
    val morphismapplication = mmtsymbol("morphismapplication")
    val substitutionapplication = mmtsymbol("substitutionapplication")
-   val tempty = mmtsymbol("theory-empty")
    val mempty = mmtsymbol("morphism-empty")
    val tunion = mmtsymbol("theory-union")
    val munion = mmtsymbol("morphism-union")
@@ -25,17 +24,8 @@ object mmt {
    val poi = mmtsymbol("theory-with")
    val poim = mmtsymbol("morphism-with")
    val poiw = mmtsymbol("morphism-extend") */
-/*
-   val jokerbinder = mmtsymbol("joker")
-   val ellipsis = mmtsymbol("ellipsis")
-   val index = mmtsymbol("index")
-   val seqmap = mmtsymbol("seqmap")   
-   val seq = mmtsymbol("seq")
-   val nat = mmtsymbol("nat")
-   val plus = mmtsymbol("plus")
-   val minus = mmtsymbol("minus")
-   val times = mmtsymbol("times")*/
    val explmorph = mmtsymbol("explicitmorphism")
+   val label = mmtbase ? "label"
    val functorapplication = mmtsymbol("functorapplication")
    val mimeBase = DPath(URI("http://www.iana.org/assignments/media-types/"))
 }

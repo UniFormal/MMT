@@ -64,8 +64,9 @@ trait NotationBasedPresenter extends ObjectPresenter {
     * called on every delimiter that is rendered through a notation
     * @param p the path of the rendered notation
     * @param d the delimiter
+    * @param implicits implicit arguments of the rendered term that are not explicitly placed by the notation (added to first delimiter)
     */
-   def doDelimiter(p: GlobalName, d: parser.Delimiter)(implicit pc: PresentationContext) {
+   def doDelimiter(p: GlobalName, d: parser.Delimiter, implicits: List[Cont])(implicit pc: PresentationContext) {
       pc.out(d.text)
    }
    /**
@@ -111,6 +112,11 @@ trait NotationBasedPresenter extends ObjectPresenter {
     * @param body the argument
     */
    def doImplicit(body: => Unit)(implicit pc: PresentationContext) {}
+   /**
+    * called to wrap around infered types of bound variables
+    * @param body the argument
+    */
+   def doInferredType(body: => Unit)(implicit pc: PresentationContext) {}
    
    /** auxiliary type for a continuation function */
    type Cont = Unit => Unit
@@ -137,19 +143,24 @@ trait NotationBasedPresenter extends ObjectPresenter {
    def doFraction(above: List[Cont], below: List[Cont], line: Boolean)(implicit pc: PresentationContext) {
       doBracketedGroup {
          above.head()
-         above.foreach {
-            e => doSpace(1)
+         above.foreach {e => 
+            doSpace(1)
             e()
          }
       }
       doOperator("/")
       doBracketedGroup {
-         below.foreach {
-            e => doSpace(1)
+         below.foreach {e => 
+            doSpace(1)
             e()
          }
       }
    }
+   
+   /** needed to look up notations */
+   protected def controller : frontend.Controller
+   /** 1 or 2-dimensional notations, true by default */
+   def twoDimensional : Boolean = true
    
    /**
     * @param o the object to be presented
@@ -157,7 +168,10 @@ trait NotationBasedPresenter extends ObjectPresenter {
     *         one position p for each component c of o' such that the c is the p-subobject of o
     *         a notation to use for presenting o'
     */ 
-   def getNotation(o: Obj): (Obj, List[Position], Option[TextNotation])
+   protected def getNotation(o: Obj): (Obj, List[Position], Option[TextNotation]) = {
+      val (oP, pos, ncOpt) = Presenter.getNotation(controller, o)
+      (oP, pos, ncOpt.flatMap(nc => if (twoDimensional) nc.getPresent else nc.getParse))
+   }
    /**
     * called on objects for which no notation is available
     * @return 1/0/-1 depending on the type of bracketing applied (yes/optional/no)
@@ -204,17 +218,23 @@ trait NotationBasedPresenter extends ObjectPresenter {
          }
          1
       case OMSemiFormal(parts) => parts.foreach {
-         case Formal(t) => recurse(t)
-         case objects.Text(format, t) => pc.out(t)
-         case XMLNode(n) => pc.out(n.toString)
-      }
-      1
-      //TODO other cases
+            case Formal(t) => recurse(t)
+            case objects.Text(format, t) => pc.out(t)
+            case XMLNode(n) => pc.out(n.toString)
+         }
+         1
       case VarDecl(n,tp,df) =>
          doVariable(n)
          tp foreach {t =>
-            doOperator(":")
-            recurse(t, noBrackets)(pc.child(1))
+            if (o.metadata.getTags contains utils.mmt.inferedTypeTag) {
+               doInferredType {
+                  doOperator(":")
+                  recurse(t, noBrackets)(pc.child(1))
+               }
+            } else {
+               doOperator(":")
+               recurse(t, noBrackets)(pc.child(1))
+            }
          }
          df foreach {d =>
             doOperator("=")
@@ -269,13 +289,16 @@ trait NotationBasedPresenter extends ObjectPresenter {
                case None =>
                   doDefault(objP)(pc)
                case Some(not) =>
-                  val (args, context, scopes, attributee) = objP match { 
+                  if (not.name.toString.endsWith("Pi"))
+                     true
+                  // TODO: args is currently not used - Arg(n) and Arg(-n) take scopes(n)
+                  val (subargs, context, args, attributee) = objP match { 
                      // try to render using notation, defaults to doDefault for some errors
-                     case ComplexTerm(_, args, context, scopes) => (args, context, scopes, None)
-                     case OMID(p) => (Nil,Context(),Nil,None)
+                     case ComplexTerm(_, sub, context, args) => (sub, context, args, None)
+                     case OMID(p) => (Substitution(),Context(),Nil,None)
                      case _ => return doDefault(objP)(pc)
                   }
-                  if (! not.arity.canHandle(args.length, context.length, scopes.length, attributee.isDefined))
+                  if (! not.arity.canHandle(context.length, args.length, attributee.isDefined))
                      return doDefault(objP)(pc)
    
                   /*
@@ -297,6 +320,9 @@ trait NotationBasedPresenter extends ObjectPresenter {
                      val newVarData = newCont.map {v => VarData(v, Some(not.name), pc.pos)}
                      recurse(child, brack)(pc.child(ac.number.abs, newVarData))
                   }
+                  // all implicit arguments that are not placed by the notation, they are added to the first delimiter
+                  val unplacedImplicits = not.arity.flatImplicitArguments(args.length).filter(i => ! not.fixity.markers.contains(i))
+                  var unplacedImplicitsDone = false
                   /* processes a list of markers left-to-right
                    *   for ArgumentMarkers, renders argument via doChild
                    *   for DelimiterMarkers, renders delimiter via doDelimiter
@@ -316,19 +342,16 @@ trait NotationBasedPresenter extends ObjectPresenter {
                         val compFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.ArgumentMarker]
                         //val delimFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.Delimiter]
                         current match {
-                           case c @ Arg(n) if n > 0 =>
-                              doChild(c, args(n-1), currentPosition)
+                           case c @ Arg(n) =>
+                              doChild(c, args(n-context.length-1), currentPosition)
                               if (compFollows) doSpace(1)
                            case c @ ImplicitArg(n) =>
                               doImplicit {
-                                 doChild(c, args(n-1), currentPosition)
+                                 doChild(c, args(n-context.length-1), currentPosition)
                                  if (compFollows) doSpace(1)
                               }
-                           case c @ Arg(n) if n < 0 =>
-                              doChild(c, scopes(-n-args.length-context.length-1), currentPosition)
-                              if (compFollows) doSpace(1)
                            case c @ Var(n, typed, _) => //sequence variables impossible due to flattening
-                              doChild(c, context(n-args.length-1), currentPosition)
+                              doChild(c, context(n-1), currentPosition)
                               if (compFollows) doSpace(1)
                            case AttributedObject =>
                               // we know attributee.isDefined due to flattening
@@ -337,9 +360,13 @@ trait NotationBasedPresenter extends ObjectPresenter {
                               }
                               if (compFollows) doSpace(1)
                            case d: parser.Delimiter =>
+                              val unpImps = if (unplacedImplicitsDone) Nil else unplacedImplicits map {
+                                 case c @ ImplicitArg(n) =>
+                                     (_: Unit) => doChild(c, args(n-context.length-1), 0); ()
+                              }
                               val letters = d.text.exists(_.isLetter)
                               if (letters && previous.isDefined) doSpace(1)
-                              doDelimiter(not.name, d)
+                              doDelimiter(not.name, d, unpImps)(pc.copy(pos = pc.pos / 0))
                               numDelimsSeen += 1
                               if (letters && !markersLeft.isEmpty) doSpace(1)
                            case s: SeqArg => //impossible due to flattening
@@ -357,7 +384,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
                      }
                   }
                   val br = bracket(not)
-                  val flatMarkers = not.arity.flatten(not.presentationMarkers,args.length, context.length, scopes.length, attributee.isDefined)
+                  val flatMarkers = not.arity.flatten(not.presentationMarkers,context.length, args.length, attributee.isDefined)
                   br match {
                      case n if n > 0 => doBracketedGroup { doMarkers(flatMarkers) }
                      case 0 =>          doOptionallyBracketedGroup { doMarkers(flatMarkers) }
@@ -375,10 +402,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
 class StructureAndObjectPresenter extends Presenter with NotationBasedPresenter {
    def isApplicable(format: String) = format == "text/notations"
    def apply(e : StructuralElement, rh: RenderingHandler) {apply(e, 0)(rh)}
-   def getNotation(o: Obj) = {
-      val (oP, pos, ncOpt) = Presenter.getNotation(controller,o)
-      (oP, pos, ncOpt.flatMap(_.getParse))
-   }
+   override def twoDimensional = false
    
    private def apply(e : StructuralElement, indent: Int)(implicit rh: RenderingHandler) {
       def doIndent {
