@@ -39,7 +39,7 @@ object Action extends RegexParsers {
      private def mathpathFS = "fs" ~> uri ~ file ^^ {case u ~ f => AddMathPathFS(u,f)}
      private def mathpathSVN = "svn" ~> uri ~ int ~ (str ?) ~ (str ?) ^^ {case uri ~ rev ~ user ~ pass => AddMathPathSVN(uri, rev, user, pass)}
 
-   private def archive = archopen | archdim | archmar | archpres | svnarchopen | archbuild
+   private def archive = archopen | archdim | archmar | svnarchopen | archbuild
      private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)} //deprecated, use mathpath archive
      private def svnarchopen = "SVNArchive" ~> "add" ~> str ~ int ^^ {case url ~ rev => AddSVNArchive(url,rev)}
      private def archbuild = "build" ~> str ~ str ~ (str ?) ~ (str *) ^^ {
@@ -58,13 +58,8 @@ object Action extends RegexParsers {
             val segs = MyList.fromString(s.getOrElse(""), "/")
             ArchiveBuild(id, dim, archives.Build, segs)
      }
-     private def archpres = "archive" ~> str ~ ("present" ~> str) ~ (str ?) ^^ { 
-        case id ~ p ~ s =>
-           val segs = MyList.fromString(s.getOrElse(""), "/")
-           ArchiveBuild(id, "present", archives.Build, segs, List(p))
-        }
      private def dimension = "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
-           "relational" | "notation" | "delete" | "integrate" | "register" | "test" | "close"
+           "relational" | "delete" | "integrate" | "register" | "test" | "close"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
 
    private def extension = "extension" ~> str ~ (strMaybeQuoted *) ^^ {case c ~ args => AddExtension(c, args)}
@@ -408,7 +403,7 @@ case class Deps(path : Path) extends MakeConcrete {
      rb("http://omdoc.org/abox")
      rb.attributeEnd
      (controller.depstore.getInds ++ controller.depstore.getDeps).foreach(
-         (d : RelationalElement) => if (path <= d.path) rb(d.toNode)
+         (d : ontology.RelationalElement) => if (path <= d.path) rb(d.toNode)
      )
      rb.elementEnd
    }

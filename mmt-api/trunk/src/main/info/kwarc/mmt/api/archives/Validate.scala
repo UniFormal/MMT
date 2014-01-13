@@ -18,19 +18,20 @@ trait ValidatedArchive extends WritableArchive {
    /** checks modules in content structurally and generates term-level dependency relation in .occ files */
    def check(in: List[String] = Nil, controller: Controller) {
       val rels = new HashSet[RelationalElement]
+      val alog: (=> String) => Unit = log _
       val checker = new StructureChecker(controller) {
-         override def reCont(r : RelationalElement) = {
+         override def reCont(r : RelationalElement) {
             rels += r
             controller.memory.ontology += r
+         }
+         override def errorCont(e: Invalid) {
+            alog(e.getMessage)
          }
       }
       traverse(content, in, Archive.extensionIs("omdoc")) {case Current(_, inPath) =>
          rels.clear
          val mpath = Archive.ContentPathToMMTPath(inPath)
-         val errors = checker(mpath)
-         logGroup {
-            errors foreach {e => log(e.getMessage)}
-         }
+         checker(mpath)
          val relFile = (this/relational / inPath).setExtension("occ")
          val relFileHandle = File.Writer(relFile)
          rels foreach {r => relFileHandle.write(r.toPath + "\n")}

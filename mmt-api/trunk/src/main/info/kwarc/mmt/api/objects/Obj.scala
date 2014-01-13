@@ -346,7 +346,20 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMATTR(arg ^^ sub, key, value ^^ sub).from(this)
    private[objects] def freeVars_ = arg.freeVars_ ::: value.freeVars_
    def toCML = <m:apply><csymbol>OMATTR</csymbol>{arg.toCML}{key.toCML}{value.toCML}</m:apply>
+}
 
+/** apply/unapply methods for a list of attributions */
+object OMATTRMany {
+   def apply(arg: Term, attrs: List[(OMID,Term)]) = attrs.foldLeft(arg){
+      case (sofar, (k,v)) => OMATTR(sofar, k, v)
+   }
+   /** always matches */
+   def unapply(t: Term) : Option[(Term, List[(OMID, Term)])] = t match {
+      case OMATTR(a, k, v) =>
+         val Some((arg, kvs)) = unapply(a)
+         Some((a, kvs:::List((k,v))))
+      case t => Some(t, Nil)
+   }
 }
 
 /** The joint methods of OMLIT and UnknownOMLIT */
@@ -444,22 +457,30 @@ object OMSemiFormal {
 }
 
 /**
- * ComplexTerm provides apply/unapply methods to unify OMA and OMBINDC as well as complex binder
+ * ComplexTerm provides apply/unapply methods to unify OMA and OMBINDC as well as named arguments and complex binders
  * 
  * It does not subsume the OMID case
  */
 object ComplexTerm {
-   def apply(p: GlobalName, args: List[Term], con: Context, scopes: List[Term]) =
-      if (args.isEmpty && con.isEmpty && scopes.isEmpty) OMS(p)
-      else if (con.isEmpty && scopes.isEmpty) OMA(OMS(p), args)
-      else
-         if (args.isEmpty) OMBINDC(OMS(p), con,scopes)
-         else OMBINDC(OMA(OMS(p), args), con, scopes)
-   def unapply(t: Term) : Option[(GlobalName, List[Term], Context, List[Term])] = t match {
+   object LabelledTerms {
+      def apply(sub: Substitution) = sub.map {case Sub(l,t) => (OMS(utils.mmt.label ? l), t)}
+      def unapply(ts: List[(OMID,Term)]): Option[Substitution] = ts match {
+         case Nil => Some(Nil)
+         case (OMS(utils.mmt.label ? l), t) :: rest =>
+            unapply(rest) map {case sub => Sub(l,t) ++ sub}  
+      }
+   }
+   def apply(p: GlobalName, sub: Substitution, con: Context, args: List[Term]) = {
+      val psub = OMATTRMany(OMS(p), LabelledTerms(sub))
+      if (con.isEmpty && args.isEmpty) psub
+      else if (con.isEmpty) OMA(psub, args)
+      else OMBINDC(psub, con, args)
+   }
+   def unapply(t: Term) : Option[(GlobalName, Substitution, Context, List[Term])] = t match {
       //case OMS(p) => Some((p, Nil, Context(), Nil))
-      case OMA(OMS(p), args) => Some(p, args, Context(), Nil)
-      case OMBIND(OMS(p), con, scope) => Some((p, Nil, con, List(scope)))
-      case OMBIND(OMA(OMS(p), args), con, scope) => Some((p, args, con, List(scope)))
+      case OMATTRMany(OMS(p), LabelledTerms(sub)) if ! sub.isEmpty => Some((p, sub, Context(), Nil))
+      case OMA(OMATTRMany(OMS(p), LabelledTerms(sub)), args) => Some((p, sub, Context(), args))
+      case OMBINDC(OMATTRMany(OMS(p), LabelledTerms(sub)), con, scopes) => Some((p, sub, con, scopes))
       case _ => None
    }
 }

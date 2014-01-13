@@ -6,6 +6,7 @@ import symbols._
 import objects._
 import parser._
 import archives._
+import objects.Conversions._
 
 import LatexExporter._
 
@@ -31,7 +32,7 @@ class LatexExporter extends ContentExporter {
       case ComplexTerm(p, args, con, scopes) =>
          var res = doConstantName(p)
          //TODO group arguments and variables into ,-separated sequences
-         args.foreach {a => res += "{" + doTerm(a) + "}"}
+         args.foreach {case Sub(l,t) => res += "{\\mmtlabel{" + l.toPath + "}{" + doTerm(t) + "}"}
          con.variables.foreach {case VarDecl(n, tp, df) =>
             val nL = n.toPath
             val tpL = tp match {

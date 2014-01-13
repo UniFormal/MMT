@@ -63,11 +63,11 @@ class HTMLContentExporter extends ContentExporter {
    }
    def doTheory(t: DeclaredTheory, bf: BuildFile) {
       doHTML(t.path.doc) {div("theory") {
-         div("theory-header") {doName(t.name.toPath)}
+         div("theory-header") {doName(t.name.toString)}
          t.getPrimitiveDeclarations.foreach {
             d => div("constant") {table("constant") {
                tr("constant-header") {
-                    td {doName(d.name.toPath)}
+                    td {doName(d.name.toString)}
                     td {
                        def toggle(label: String) {
                           span("compToggle", onclick = s"toggle(this,'$label')") {rh(label)}
