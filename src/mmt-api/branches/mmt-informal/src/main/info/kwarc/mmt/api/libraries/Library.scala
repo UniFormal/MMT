@@ -12,6 +12,15 @@ import ontology._
 import scala.xml.{Node,NodeSeq}
 import collection.mutable.HashSet
 
+/** auxiliary class of [[Library]] to permit more readable toString output for debugging */
+class ModuleHashMap extends scala.collection.mutable.HashMap[MPath,Module] {
+   override def toString = {
+      toList.sortBy(_._2.name.toPath).map {case (mp, mod) =>
+         mp.toString + "\n" + mod.toString
+      }.mkString("\n")
+   }
+}
+
 /*abstract class ContentMessage
 case class Add(e : ContentElement) extends ContentMessage
 case class Get(path : Path) extends ContentMessage
@@ -31,7 +40,7 @@ case class Delete(path : Path) extends ContentMessage
  * The well-formedness of the objects in the declarations is not guaranteed.
  */
 class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) with Logger {
-   private val modules = new scala.collection.mutable.HashMap[MPath,Module]
+   private val modules = new ModuleHashMap
    private val implicitGraph = new ThinGeneratedCategory
    
    private def modulesGetNF(p : MPath) : Module =
@@ -106,13 +115,12 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
                case PartialLink() => get(v.from % name) match {
                   // return default assignment
                   case c:Constant => ConstantAssignment(v.toTerm, name, None, None)
-                  case s:Structure => DefLinkAssignment(v.toTerm, name, s.fromPath, Morph.Empty)
+                  case s:Structure => DefLinkAssignment(v.toTerm, name, s.fromPath, Morph.empty)
                   case _ => throw ImplementationError("unimplemented default assignment")
                }
             }
       }
       // lookup in complex modules
-      case TheoryExp.Empty % name => throw GetError("empty theory has no declarations")
       case TUnion(ts) % name => ts mapFind {t =>
          getO(t % name)
       } match {
@@ -144,7 +152,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
          case c: Constant =>  ConstantAssignment(m, name, None, Some(c.toTerm))
          case l: Structure =>  DefLinkAssignment(m, name, l.fromPath, l.toTerm)
       }
-      case Morph.Empty % name => throw GetError("empty morphism has no assignments")
+      case Morph.empty % name => throw GetError("empty morphism has no assignments")
       case MUnion(ms) % name => ms mapFind {
          m => getO(m % name)
       } match {
@@ -273,7 +281,6 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
             case t: DefinedTheory => importsTo(t.df)
             case t: DeclaredTheory => t.getIncludes.map(OMMOD(_)).iterator
          }
-      case TheoryExp.Empty => Iterator.empty
       case TUnion(ts) => (ts flatMap importsTo).iterator //TODO remove duplicates
    }
 
@@ -297,7 +304,6 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
             val meta = TheoryExp.metas(exp, false)(this).headOption
             val thy = new DeclaredTheory(path.parent, path.name, meta)
             exp match {
-               case TheoryExp.Empty => thy 
                case TUnion(ts) =>
                   ts foreach {
                     case OMMOD(p) => thy.add(Include(exp, p))

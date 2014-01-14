@@ -29,10 +29,10 @@ class Shell() extends {
          // default behavior: execute command line arguments, read further commands from standard input
          case _ =>
       }
-      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
-      val command = args.mkString("", " ", "")
+      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()) // standard GUI configuration
+      val commands = args.toList.mkString(" ").split(" ; ")
       try {
-         controller.handleLine(command)
+         commands foreach controller.handleLine
          if (shell)
             println("This is the MMT shell\nSee https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.frontend.Action for the available commands\n\n")
          val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))

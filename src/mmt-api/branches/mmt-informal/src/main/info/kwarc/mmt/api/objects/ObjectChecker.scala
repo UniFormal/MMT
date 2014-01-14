@@ -753,27 +753,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
             case thdf : DefinedTheory =>  checkMorphism(mor, thdf.df)
             case thd : DeclaredTheory =>
               val clist : List[Declaration] = thd.getDeclarations filter (p => !p.isInstanceOf[Structure])  // list of constants in the domain theory
-              //val oclist : List[Declaration] = clist.sortWith((x,y) => x.name.toString() <= y.name.toString()) //ordered list of constants in the domain theory
-              mor match {
-                case ExplicitMorph(rec, dom) =>
-                  if (from == dom)
-                  {
-                    val ocassig = rec.fields.sortWith((x,y) => x._1.toString() <=  y._1.toString()) //ordered list of constants in the morphism
-                    if (clist.map(_.name) == ocassig.map(_._1)) { //testing that the local names of the constants in the domain theory are the same as those in the morphism
-                      (clist zip ocassig) forall (pair =>
-                       {
-                        inferType(OMID(pair._1.path)) match {    //matching type of constant from domain theory
-                          case Some(tp) => checkTyping(Typing(stack, pair._2._2,OMM(tp,mor), None))
-                          case None => true
-                        }
-                      })
-                    }
-                    else false
-                  }
-                 else false
-                case _ => false
-              }
-            case _ => false
+              false //TODO
           }
           case _ => false
         }

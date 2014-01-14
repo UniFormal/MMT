@@ -22,7 +22,7 @@ case class InvalidNotation(msg: String) extends java.lang.Throwable
  * 
  * if the only marker is SeqArg, it must hold that OMA(name, List(x)) = x because sequences of length 1 are parsed as themselves 
  */
-class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precedence) extends ComplexNotation {
+class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Precedence) extends ComplexNotation {
    /** @return the list of markers that should be used for parsing */
    lazy val parsingMarkers = fixity.markers.filter {
       case _:PresentationMarker => false // there should not be any presentation markers in notations used for parsing
@@ -48,8 +48,8 @@ class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precede
     * @param scopes number of scopes
     * @return Presentation that can be rendered using the [[presentation.StyleBasedPresenter]]  
     */
-   def presentation(args: Int, vars: Int, scopes: Int, attrib: Boolean) = {
-     val flatMarkers = arity.flatten(presentationMarkers, args, vars, scopes, attrib)
+   def presentation(vars: Int, args: Int, attrib: Boolean) = {
+     val flatMarkers = arity.flatten(presentationMarkers, vars, args, attrib)
      val implicitsP = arity.flatImplicitArguments(args) flatMap {
         case i @ ImplicitArg(n) =>
            if (fixity.markers contains i)
@@ -80,7 +80,7 @@ class TextNotation(val name: GlobalName, fixity: Fixity, val precedence: Precede
                    val delimitation = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
                    BracketInfo(Some(precedence), Some(delimitation))
                 }
-             Component(NumberedIndex(p.abs), bi)
+             Component(NumberedIndex(p), bi)
           case ImplicitArg(n) =>
              val bi = if (suppressBrackets) BracketInfo(Some(Precedence.neginfinite))
                 else { 

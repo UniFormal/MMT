@@ -121,7 +121,7 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
      // def apply(...) : Term = ...
      val app = if (arity.isApplication)
          s"    def apply($argtpString) = OMA(OMID(this.path), $argListString)\n"
-     else if (arity.isBinder)
+     else if (arity.isPlainBinder)
          s"    def apply(vs1: Context, s2: Term) = OMBIND(OMID(this.path), vs1, s2)\n"
      else
          "  // no apply method generated for this arity\n"
@@ -131,7 +131,7 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
          s"      case OMA(OMID(this.path), $argListString) => Some($argTupleString)\n" +
          s"      case _ => None\n" +
          s"    }\n"
-     else if (arity.isBinder)
+     else if (arity.isPlainBinder)
          s"    def unapply(t: Term): Option[(Context, Term)] = t match {\n" +
          s"      case OMBIND(OMID(this.path), vs1, s2) => Some((vs1, s2))\n" +
          s"      case _ => None\n" +

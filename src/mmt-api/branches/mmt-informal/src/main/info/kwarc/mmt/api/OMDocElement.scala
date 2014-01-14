@@ -82,21 +82,6 @@ trait PresentationElement extends StructuralElement
  */
 trait NarrativeElement extends StructuralElement
 
-/** A RelationalElement is any element that is used in the relational representation of MMT content.
- * These include the unary and binary predicates occurring in an MMT ABox.
- * They do not correspond to XML elements in an OMDoc element and thus do not extend StructuralElement. 
- */
-trait RelationalElement {
-   /** the URL from which this item originated, currently not implemented */
-   //val parent : Path = null //TODO origin of relational items
-   /** the MMTURI of the "about" item in the RDF sense */
-   val path : Path
-   /** XML representation */
-   def toNode : scala.xml.Node
-   /** text representation */
-   def toPath : String
-}
-
 /**
  * The trait Content is mixed into any class that can be rendered using notations.
  */

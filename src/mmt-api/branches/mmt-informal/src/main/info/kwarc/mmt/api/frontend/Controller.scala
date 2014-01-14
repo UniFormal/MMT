@@ -497,7 +497,6 @@ class Controller extends ROController with Logger {
                      logError("exactly 1 parameter required for test command, found " + in.mkString(""))
                   else
                      arch.loadJava(this, in(0), false, true)
-               case "present"      => args.foreach(p => arch.producePres(Nil,p, this))
                case "close"        =>
                   val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
                   extman.targets.foreach {t => t.register(arch)}
@@ -541,7 +540,7 @@ class Controller extends ROController with Logger {
 	         var line : String = null
 	         val oldHome = home
 	         home = f.getParentFile
-            File.ReadLineWise(f)(handleLine)
+            File.read(f).split("\\n").foreach(handleLine)
 	         home = oldHome
 	      case AddReportHandler(h) => report.addHandler(h)
 	      case LoggingOn(g) => report.groups += g

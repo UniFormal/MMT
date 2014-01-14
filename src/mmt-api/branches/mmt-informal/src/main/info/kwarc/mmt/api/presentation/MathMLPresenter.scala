@@ -28,13 +28,9 @@ class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter
       }
       ret
    }
-   def getNotation(o: Obj) = {
-      val (oP, pos, ncOpt) = Presenter.getNotation(controller, o)
-      (oP, pos, ncOpt.flatMap(_.getPresent))
-   }
    override def doIdentifier(p: ContentPath)(implicit pc : PresentationContext) {
       val s = p match {
-         case OMMOD(m) % name => name.toPath  //not parsable if there are name clashes 
+         case OMMOD(m) % name => name.toString  //not parsable if there are name clashes 
          case _ => p.toPath
       }
       val mo = utils.xml.element("mo", ("jobad:href" -> p.toPath) :: jobadattribs, s)
@@ -45,7 +41,7 @@ class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter
          case None => Nil
          case Some(vd) => List("jobad:varref" -> vd.declpos.toString)
       }
-      val mi = element("mi", vdAtt ::: jobadattribs, n.toPath)
+      val mi = element("mi", vdAtt ::: jobadattribs, n.toString)
       pc.out(mi)
    }
    override def doLiteral(l: OMLITTrait)(implicit pc: PresentationContext) {
@@ -56,9 +52,19 @@ class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter
       val mo = element("mo", Nil, s)
       pc.out(mo)
    }
-   override def doDelimiter(p: GlobalName, d: parser.Delimiter)(implicit pc : PresentationContext) {
+   override def doDelimiter(p: GlobalName, d: parser.Delimiter, implicits: List[Cont])(implicit pc : PresentationContext) {
       val mo = element("mo", ("jobad:href" -> p.toPath) :: jobadattribs, d.text)
-      pc.out(mo)
+      if (! implicits.isEmpty) {
+         pc.html.mrow {
+            doImplicit {implicits.head}
+            implicits.tail.foreach {i =>
+               doSpace(1)
+               doImplicit {i()}
+            }
+            pc.out(mo)
+         }
+      } else
+         pc.out(mo)
    }
    override def doSpace(level: Int)(implicit pc : PresentationContext) {
       val ms = element("mspace", List(("width", "." + (2*level).toString + "em")), "")
@@ -84,7 +90,7 @@ class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter
     * wraps brackets around argument
     * @param brackets None/Some(true)/Some(false) for no/hidden/shown brackets
     */
-   private def mrow(brackets: Option[Boolean], body: => Unit)(implicit pc: PresentationContext) {
+   private def wrapBrackets(brackets: Option[Boolean], body: => Unit)(implicit pc: PresentationContext) {
       pc.out(openTag("mrow", jobadattribs))
       brackets foreach {b => pc.out(bracket(b, true))}
       body
@@ -92,19 +98,26 @@ class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter
       pc.out(closeTag("mrow"))
    }
    override def doBracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
-      mrow(Some(false), body)
+      wrapBrackets(Some(false), body)
    }
    override def doUnbracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
-      mrow(None, body)
+      wrapBrackets(None, body)
    }
    override def doOptionallyBracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
-      mrow(Some(true), body)
+      wrapBrackets(Some(true), body)
    }
-   override def doImplicit(body: => Unit)(implicit pc: PresentationContext) {
-      pc.out(openTag("mrow", List(("class", "implicit-arg implicit-arg-hidden"))))
+   private def doOptional(group: String, body: => Unit)(implicit pc: PresentationContext) {
+      pc.out(openTag("mrow", List(("class", s"$group $group-hidden"))))
       body
       pc.out(closeTag("mrow"))
    }
+   override def doImplicit(body: => Unit)(implicit pc: PresentationContext) {
+      doOptional("implicit-arg", body)
+   }
+   override def doInferredType(body: => Unit)(implicit pc: PresentationContext) {
+      doOptional("reconstructed", body)      
+   }
+
    /** wraps continuations in mrow to make sure they produce a single element */
    private def R(c: Cont)(implicit pc: PresentationContext) = pc.html.mrow {c()} 
    override def doScript(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext) {

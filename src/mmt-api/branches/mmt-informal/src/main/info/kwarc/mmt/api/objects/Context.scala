@@ -48,11 +48,19 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term]) exten
    def components =
       List(StringLiteral(name.toString), tp.getOrElse(Omitted), df.getOrElse(Omitted)) :::
       //temporary hack: if any other attribution is present, the type is assumed to be reconstructed
-      //and returning a 4th components indicates that 
+      //and returning a 4th components indicates that
       (if (metadata.getTags contains utils.mmt.inferedTypeTag) List(StringLiteral("")) else Nil)
    override def toString = name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
    private def tpN = tp.map(t => <type>{t.toNode}</type>).getOrElse(Nil)
    private def dfN = df.map(t => <definition>{t.toNode}</definition>).getOrElse(Nil)
+}
+
+object IncludeVarDecl {
+   def apply(p: MPath) = VarDecl(LocalName(ComplexStep(p)), Some(OMMOD(p)), None)
+   def unapply(vd: VarDecl) = vd match {
+      case VarDecl(LocalName(List(ComplexStep(p))), Some(OMMOD(q)), None) if p == q => Some(p)
+      case _ => None
+   }
 }
 
 /** represents an MMT context as a list of variable declarations */

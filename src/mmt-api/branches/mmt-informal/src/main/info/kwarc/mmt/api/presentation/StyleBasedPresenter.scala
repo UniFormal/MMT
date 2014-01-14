@@ -180,13 +180,12 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
             }
             implicit def convert(i:Int) = NumberedIndex(i)
             val presentation = o match {
-               case ComplexTerm(p, args, vars, scs) =>
+               case ComplexTerm(p, _, vars, args) =>
                   val numArgs = args.length
                   val numVars = vars.length
-                  val numScs  = scs.length
                   notationOpt match {
                      case Some(notation) =>
-                        val pres = notation.presentation(numArgs, numVars, numScs, false)
+                        val pres = notation.presentation(numVars, numArgs, false)
                         lpar.bracketInfo match {
                            case None => NoBrackets(pres)
                            case Some(BracketInfo(precOpt, delOpt)) =>
@@ -201,9 +200,8 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
                         // default presentation
                         val bi = BracketInfo(Some(Precedence.infinite)) // maximal bracketing since we don't know anything
                         var pres: Presentation = Component(0,bi)
-                        if (numArgs > 0) pres += OpSep() + Iterate(1, numArgs, ArgSep(), bi)
-                        if (numVars > 0) pres += OpSep() + Iterate(numArgs+1, numArgs+numVars, ArgSep(), bi)
-                        if (numScs > 0)  pres += OpSep() + Iterate(numArgs+numVars+1, -1, ArgSep(), bi)
+                        if (numVars > 0) pres += OpSep() + Iterate(1, numVars, ArgSep(), bi)
+                        if (numArgs > 0)  pres += OpSep() + Iterate(numVars+1, -1, ArgSep(), bi)
                         Brackets(pres)
                   }
                case OMID(p) if notationOpt.isDefined =>
@@ -211,7 +209,7 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
                      case m: MPath => m.name.toString
                      case g: GlobalName => g.name.toString
                   }
-                  Fragment("constant", Text(p.toPathEscaped), notationOpt.get.presentation(0,0,0,false))
+                  Fragment("constant", Text(p.toPathEscaped), notationOpt.get.presentation(0,0,false))
                case _ =>
                   val notation = controller.get(gpar.nset, key)
                   notation.presentation
