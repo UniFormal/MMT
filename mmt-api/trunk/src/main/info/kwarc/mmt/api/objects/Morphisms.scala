@@ -110,6 +110,15 @@ object Morph {
    def equal(a: Term, b: Term): Boolean = simplify(a) == simplify(b)
 }
 
+/**
+ * an auxiliary class to store domains of [[Context]]s and theory expressions (see [[TheoryExp]])
+
+ * @param name the name
+ * @param defined true if name has a definiens (including [[DefinedStructure]]s)
+ * @param subdomain the imported theory and the instantiated names (for [[DeclaredStructure]])
+ */
+case class DomainElement(name: LocalName, defined: Boolean, subdomain: Option[(MPath,List[LocalName])])
+
 object TheoryExp {
   val empty = ComplexTheory(Context())
   /** simplifies a theory expression using basic algebraic laws, e.g., commutativity of union */
@@ -140,6 +149,37 @@ object TheoryExp {
          val ms = ts map {t => metas(t)}
          if (!ms.isEmpty && ms.forall(m => m == ms.head)) ms.head
          else Nil
+   }
+   /**
+    * @param t a theory expression
+    * @return t as a Context
+    */
+   def toContext(t: Term) = t match {
+      case OMMOD(p) => Context(IncludeVarDecl(p))
+      case ComplexTheory(body) => body
+   }
+   /** 
+    *  @param t a theory
+    *  @return the list of elements in the domain of t (not flattened)
+    */
+   def getDomain(t: Term)(implicit lib: Lookup): List[DomainElement] = t match {
+      case OMMOD(p) => lib.getTheory(p) match {
+         case d: DeclaredTheory =>
+            d.getPrimitiveDeclarations.map {
+               case s: symbols.DefinedStructure =>
+                  DomainElement(s.name, true, Some((s.fromPath, Nil)))
+               case s: symbols.DeclaredStructure =>
+                  val defined = s.getPrimitiveDeclarations.map(_.name)
+                  DomainElement(s.name, false, Some((s.fromPath, defined)))
+               case c: symbols.Constant =>
+                  DomainElement(d.name, c.df.isDefined, None)
+               case d =>
+                  DomainElement(d.name, true, None) //by default, no map allowed
+            }
+         case d: DefinedTheory => getDomain(d.df)
+      }
+      case ComplexTheory(body) =>
+         body.getDomain
    }
   
    /** checks whether "from" is included into "to", relative to a base function that handles the case where both theory expressions are atomic */

@@ -134,6 +134,12 @@ case class LocalName(steps: List[LNStep]) {
    def head = steps.head
    def last = steps.last
    def length = steps.length
+   /**
+    * @return if this == p / l, then Some(p), else None
+    */
+   def hasPrefix(l: LocalName): Option[LocalName] =
+      if (steps.startsWith(l.steps)) Some(LocalName(steps.drop(l.length)))
+      else None
    /** removes repeated complex steps, keeping the later one */
    def simplify: LocalName = {
       var complexBefore = false

@@ -218,7 +218,8 @@ class StructureChecker(controller: Controller) extends Logger {
                   errorCont(InvalidElement(i,"invalid pattern: " + i.pattern,e))
                   None
             }
-            ptOpt foreach {pt => checkSubstitution(i.home, Context(), pt.getSubstitution(i), pt.params, Context())}
+            ptOpt foreach {pt =>
+               checkSubstitutionRealization(i.home, Context(), pt.getSubstitution(i), pt.params)}
             //TODO mihnea's instances already refer to their elaboration in their matches
          case _ =>
             //succeed for everything else
@@ -311,13 +312,14 @@ class StructureChecker(controller: Controller) extends Logger {
               }
         }
         case ComplexMorphism(body) =>
+           // get domain and codomain as contexts
            val from = ComplexTheory.unapply(dom) getOrElse {
               throw InvalidObject(m, "domain is not a theory")
            }
            val to = ComplexTheory.unapply(cod) getOrElse {
               throw InvalidObject(m, "codomain is not a theory")
            }
-           val bodyR = checkSubstitution(home, context, body, from, to)
+           val bodyR = checkSubstitution(home, context, body, from, to, false)
            (ComplexMorphism(bodyR), dom, cod)
       }
       val implDom = content.getImplicit(dom, domI)
@@ -438,15 +440,25 @@ class StructureChecker(controller: Controller) extends Logger {
     * if context is valid, then this succeeds iff context ++ con is valid
     */
    def checkContext(home: Term, context: Context, con: Context)(implicit pCont: Path => Unit) : Context = {
-      con.mapVarDecls {case (c, vd @ VarDecl(name, tp, df)) =>
+      con.mapVarDecls {case (c, vd) =>
            val currentContext = context ++ c
-           tp match {
-              case Some(OMMOD(t)) =>
-                 //TODO check theory, partial morphism 
-                 vd
-              case Some(ComplexTheory(body)) =>
-                 vd
-              case _ =>
+           vd match {
+              case StructureVarDecl(name, tp, df) =>
+                 // a variable that imports another theory
+                 // type must be a theory
+                 val tpR = checkTheory(home, currentContext, tp) 
+                 // definiens must be a partial substitution
+                 val dfR = df map {
+                    case ComplexMorphism(subs) =>
+                       val subsR = checkSubstitution(home, currentContext, subs, TheoryExp.toContext(tpR), Context(), true)
+                       ComplexMorphism(subsR)
+                    case o =>
+                       errorCont(InvalidObject(vd, "definiens of theory-level variable must be a partial substitution, found " + o))
+                       o
+                 }
+                 StructureVarDecl(name, tpR, dfR)
+              case VarDecl(name, tp, df) =>
+                 // a normal variable
           	     val tpR = tp.map(x => checkTerm(home, currentContext, x)) 
           	     val dfR = df.map(x => checkTerm(home, currentContext, x)) 
           	     val vdR = VarDecl(name, tpR, dfR)
@@ -455,6 +467,7 @@ class StructureChecker(controller: Controller) extends Logger {
            }
       }
    }
+   
    /**
     * Checks structural well-formedness of a substitution relative to a home theory.
     * @param home the home theory
@@ -462,23 +475,81 @@ class StructureChecker(controller: Controller) extends Logger {
     * @param subs the substitution
     * @param from the context declaring the variables to be substituted
     * @param to the context in which the substituting terms live
+    * @param allowPartial if true, do not require totality of subs
     * @return the reconstructed substitution
     */
-   def checkSubstitution(home: Term, context: Context, subs: Substitution, from: Context, to: Context)(implicit pCont: Path => Unit) : Substitution = {
-      if (from.length != subs.length) {
-         errorCont(InvalidObject(subs, "substitution has wrong number of cases for context " + from))
-         subs
-      } else {
-         (from zip subs) map {       
-       	  case (VarDecl(n,tp,df), Sub(m,t)) if n == m =>
-       	     val tR = checkTerm(home,to,t)
-       	     Sub(m,tR)
-       	  case (v,s) =>
-       	     errorCont(InvalidObject(subs, "illegal case " + s + " for declaration " + v))
-       	     s
+   def checkSubstitution(home: Term, context: Context, subs: Substitution, from: Context, to: Context, allowPartial: Boolean)(implicit pCont: Path => Unit) : Substitution = {
+      // collect all names to be mapped
+      var fromDomain = from.getDomain
+      var subsDomain = subs.asContext.getDomain
+      /* intuitively: subs is partial/total substitution if
+       *    fromDomain without defined elemnts subsumes/is equal to subsDomain
+       * but we also allow names in fromDf or subsDf that are more specific than names in fromTp
+       *    in that case, we replace the name in fromTp with its subdomain
+       */
+      /* invariants:
+       *   fromDomain contains the declaring DomainElements that must still be mapped
+       *   subsDomain contains the mapping DomainElements that have not been considered yet
+       */
+      while (! subsDomain.isEmpty) {
+         val DomainElement(n, _, _) = subsDomain.head
+         subsDomain = subsDomain.tail
+         val matchingDomElems = fromDomain.filter {case de => n.hasPrefix(de.name).isDefined}.toList
+         matchingDomElems match {
+            case List(de @ DomainElement(p, defined, subdomainOpt)) =>
+               if (defined)
+                  errorCont(InvalidObject(subs, "found map for " + n + ", but domain already has definition for " + p))
+               else {
+                  // n maps p: remove de from fromDomain
+                  if (p == n) {
+                     fromDomain = fromDomain.filter(_ != de)
+                  } else {
+                     subdomainOpt match {
+                        case Some((tpath, defs)) =>
+                           // n maps a part of p, which imports tpath: replace de with domain elements for tpath
+                           val tpathDomElems = TheoryExp.getDomain(OMMOD(tpath)).map {d =>
+                              d.copy(name = p / d.name)
+                           }
+                           fromDomain = fromDomain.filter(_ != de) ::: tpathDomElems
+                           // the definitions of de act like the elements of subsDomain: add them
+                           //TODO this does not cover the case where a Structure(VarDecl) has an assignment using a non-total ComplexMorhism
+                           // for that, a DomainElement would need the whole substitution domain, not just the List[LocalName]
+                           subsDomain :::= defs.map(ln => DomainElement(p / ln, true, None))
+                        case None =>
+                           errorCont(InvalidObject(subs, "found map for " + n + ", but domain declares basic name " + p))
+                     }
+                  }
+               }
+            case Nil =>
+               errorCont(InvalidObject(subs, "found map for " + n + ", but domain declares no matching name (may also happen if a substitution declares multiple maps for the same name)"))
+            case ns =>
+               errorCont(InvalidObject(subs, "found map for " + n + ", but domain declares " + ns.mkString(", ")))
          }
       }
+      // subs is total if all names in fromDomain have been removed or are defined to begin with
+      if (! allowPartial) {
+         if (fromDomain.forall(_.defined))
+            errorCont(InvalidObject(subs, "not total, missing cases for " + fromDomain.map(_.name).mkString(", ")))
+      }
+      // finally, check the individual maps in subs
+      subs.map {
+         case Sub(n, t) =>
+            // for each one, we look up the declaration of n and check t
+            val tR = content.deepLookup(from, n) match {
+               case StructureVarDecl(n, from, _) =>
+                  checkMorphism(home, context, t, Some(from), Some(ComplexTheory(to)))._1
+               case _ =>
+                  // we could generate a typing obligation here
+                  checkTerm(home,to,t)
+            }
+            Sub(n, tR)
+      }
    }
+   /** 
+    *  special case of checkSubstitution for total substitutions into the empty context
+    */
+   def checkSubstitutionRealization(home: Term, context: Context, subs: Substitution, from: Context)(implicit pCont: Path => Unit) =
+      checkSubstitution(home, context, subs, from, Context(), false)
 }
 
 /**
