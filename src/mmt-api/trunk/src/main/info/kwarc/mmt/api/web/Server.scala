@@ -63,6 +63,18 @@ object Server {
   }
 
   /**
+   * An XML response that the server sends back to the browser
+   * @param node the XML message that is sent in the HTTP body
+   */
+  def XmlResponse(s: String): HLet = new HSimpleLet {
+    def act(tk: HTalk) {
+      val out: Array[Byte] = s.getBytes("UTF-8")
+      checkCORS(tk).setContentLength(out.size) // if not buffered
+        .setContentType("text/xml; charset=utf8")
+        .write(out)
+    }
+  }
+  /**
    * A Json response that the server sends back to the browser 
    * @param json the Json message that is sent in the HTTP body
    */
@@ -341,7 +353,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
                   mod
                 }
                 val presenter = new presentation.StyleBasedPresenter(controller,nset) 
-                presenter(module, rb)
+                presenter(module)(rb)
                 val thyXML = rb.get()
                 val response = new collection.mutable.HashMap[String,Any]()
                 response("success") = "true"                                      

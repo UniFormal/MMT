@@ -22,18 +22,12 @@ case object Build  extends BuildTargetModifier {
  *  from an input dimension.
  */
 abstract class BuildTarget extends Extension {
-   /** the input dimension/archive folder */
-   def inDim:  ArchiveDimension
-
    /** a string identifying this build target, used for parsing commands, logging, error messages
     */
    def key: String
    
    /** defaults to the key */
    override def logPrefix = key
-
-   /** determines whether this builder can be used to build a certain target; by default: if it is the key */
-   def isApplicable(k: String) = k == key
 
    /** number of required arguments, defaults to 0, override as needed */
    def requiredArguments(m: BuildTargetModifier): Int = 0
@@ -64,10 +58,7 @@ abstract class BuildTarget extends Extension {
    }
    
    /** registers an archive with this target */
-   def register(arch: Archive) {
-      arch.timestamps.add(key, inDim.toString)
-      arch.errors.add(key)
-   }
+   def register(arch: Archive) {}
    /** unregisters an archive with this target */
    def unregister(arch: Archive) {}
 
@@ -109,8 +100,15 @@ class BuildDir(val inFile: File, val inPath: List[String], val outFile: File) ex
  * It implements BuildTarget in terms of a single abstract method called to build a path in the archive.
  */
 abstract class TraversingBuildTarget extends BuildTarget {
-   /** the output archive folder */
+  /** the input dimension/archive folder */
+   def inDim:  ArchiveDimension 
+  /** the output archive folder */
    def outDim: ArchiveDimension
+   
+   override def register(arch : Archive) {
+      arch.timestamps.add(key, inDim.toString)
+      arch.errors.add(key)
+   }
    
    /** the file extension used for generated files, defaults to outDim, override as needed */
    def outExt: String = outDim match {

@@ -31,9 +31,7 @@ class InteractiveSimplifier(controller : Controller, intp : tools.nsc.interprete
   }
   
   def render(t : Term) : String = {
-    val rb = new presentation.StringBuilder
-	controller.presenter(t, rb)
-	rb.get
+	controller.presenter.asString(t)
   }
   
   def solve(t : Term) = {

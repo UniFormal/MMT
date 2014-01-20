@@ -387,8 +387,8 @@ case class Present(c : MakeAbstract, param : String) extends MakeConcrete {
          new StyleBasedPresenter(controller, nset)
       }
       c.make(controller) match {
-         case s: StructuralElement => presenter(s, rb)
-         case o: Obj => presenter(o, rb)
+         case s: StructuralElement => presenter(s)(rb)
+         case o: Obj => presenter(o)(rb)
       }
    }
    override def toString = c + " present " + param
@@ -444,8 +444,8 @@ case class ToWindow(pres : MakeConcrete, window: String) extends Output {
  *  call get to keep it in memory and retrieve it
  */
 case class Respond(pres : MakeConcrete) extends Output {
-   def get(controller : Controller) : scala.xml.Node = {
-      val rb = new XMLBuilder // TODO try a to-be-written StringBuilder instead of XMLBuilder for speed
+   def get(controller : Controller) : String = {
+      val rb = new StringBuilder // TODO try a to-be-written StringBuilder instead of XMLBuilder for speed
       pres.make(controller, rb)
       rb.get
    }

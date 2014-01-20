@@ -34,26 +34,16 @@ abstract class ServerExtension(context: String) extends Extension {
 class ActionServer extends ServerExtension("mmt") {
     def apply(path: List[String], query: String, body: Body) = {
        val action = Action.parseAct(query, controller.getBase, controller.getHome)
-        val node: scala.xml.Node = action match {
+        val resp: String = action match {
           case GetAction(a: ToWindow) =>
              a.make(controller)
-             <done action={a.toString}/>
+             <done action={a.toString}/>.toString
           case GetAction(a: Respond) =>
              a.get(controller)
           case _ =>
-             <notallowed action={action.toString}/>
+             <notallowed action={action.toString}/>.toString
         }
-        val textresponse = action match {
-          case GetAction(Respond(p)) => p match {
-             case Present(_, param) => param.startsWith("text") 
-             case _ => false
-          }
-          case _ => false
-        }
-        if (textresponse)
-            Server.TextResponse(node.toString)
-        else
-            Server.XmlResponse(node)
+        Server.XmlResponse(resp)
     }
 }
 

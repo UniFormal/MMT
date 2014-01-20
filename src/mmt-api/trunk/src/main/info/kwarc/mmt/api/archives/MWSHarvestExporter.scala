@@ -8,15 +8,16 @@ import frontend._
 import backend._
 import objects._
 import utils._
+import documents._
 
-class MWSHarvestContentExporter extends ContentExporter {
-  val outDim = Dim("export", "mws", "content")
-  val key = "mws-content"
+class MWSHarvestExporter extends Exporter {
+  val outDim = Dim("export", "mws")
+  val key = "mws-harvest"
   override val outExt = "mws"
 
   val custom : ArchiveCustomization = new DefaultCustomization    
     
-  def doTheory(t: DeclaredTheory, bf: BuildFile) { 
+  def exportTheory(t: DeclaredTheory, bf: BuildFile) { 
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
     t.getDeclarations foreach {  
@@ -38,13 +39,17 @@ class MWSHarvestContentExporter extends ContentExporter {
     rh("</mws:harvest>\n")
   }
   
-  def doView(v: DeclaredView, bf: BuildFile) { 
+  def exportView(v: DeclaredView, bf: BuildFile) { 
     //excluding expressions from views for now
   }
   
   
-  def doNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+  def exportNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
     //Nothing to do - MathML in namespaces
+  }
+  
+  def exportDocument(doc : Document, bt: BuildTask) {
+       //Nothing to do - no MathML at document level
   }
 
 }

@@ -6,12 +6,13 @@ import symbols._
 import objects._
 import parser._
 import archives._
+import documents._
 import objects.Conversions._
 
 import LatexExporter._
 
 /** an unfinished exporter that generates latex presentations of modules */
-class LatexExporter extends ContentExporter {
+class LatexExporter extends Exporter {
    val key = "mmt-latex"
    val outDim = Dim("export", "latex")
    override val outExt = "tex"
@@ -85,7 +86,7 @@ class LatexExporter extends ContentExporter {
             s"\\RequirePackage{\\currfiledir $relSty}"
       }
    }
-   def doTheory(t: DeclaredTheory, bf: BuildFile) {
+   def exportTheory(t: DeclaredTheory, bf: BuildFile) {
       val styFile = utils.File.Writer(bf.outFile.setExtension("sty"))
       def sty(s: String) = styFile.println(s)
       def tex(s: String) = rh.writeln(s)
@@ -132,12 +133,14 @@ class LatexExporter extends ContentExporter {
       tex("\\end{document}")
       styFile.close
    }
-   def doView(v: DeclaredView, bf: BuildFile) {
+   def exportView(v: DeclaredView, bf: BuildFile) {
       rh("%% view omitted")
    }
-   def doNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+   def exportNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
       rh("%% namespace omitted")
    }
+   def exportDocument(doc : Document, bf:BuildTask) {}
+   
 }
 
 object LatexExporter {

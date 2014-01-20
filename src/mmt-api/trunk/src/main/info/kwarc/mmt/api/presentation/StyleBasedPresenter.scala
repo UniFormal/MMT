@@ -62,21 +62,42 @@ case class ObjToplevel(c: Obj, cpath: Option[CPath]) extends Content {
  * @param controller the controller storing all information about MMT expressions and notations
  * @param style the notation style used for presentation
  */
-class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
-   init(c)
-   //TODO expandXRefs is a bit of a hack, can be set by callees to presend with refs expanded. 
+class StyleBasedPresenter extends Presenter {
+  private var style : MPath = null
+  def this(c : Controller, style : MPath) {
+    this 
+    init(c)
+    this.style = style
+  }
+  
+  override def outExt = "html"
+    
+  override def start(args : List[String]) {
+    args.length match {
+      case 1 => 
+        val nset = Path.parseM(args(0), controller.getBase)
+        this.style = nset
+      case n => 
+        throw LocalError("Wrong number of arguments, " + n + " in " + args + ". Expected 1.")
+    }
+  }
+  
+  //TODO expandXRefs is a bit of a hack, can be set by callees to presend with refs expanded. 
    //Any other solution requires changing the APIs
    var expandXRefs = false 
    override val logPrefix = "presenter"
-   
+   val key = "present-style-based"
+   val outDim = archives.Dim("export", "presentation", "style-based")
+  
+     
    def isApplicable(format: String) = format == style.toPath
-   def apply(s : StructuralElement, rh: RenderingHandler) {
+   def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {
       val gpar = GlobalParams(rh, style)
       val lpar = LocalParams.objectTop.copy(inObject = false)
       val lparS = lpar.copy(source = SourceRef.get(s))
       present(StrToplevel(s), gpar, lpar)
    }
-   def apply(o: Obj, rh: RenderingHandler) {
+   def apply(o: Obj)(implicit rh : RenderingHandler) {
       val gpar = GlobalParams(rh, style)
       val lpar = LocalParams.objectTop
       present(ObjToplevel(o, None), gpar, lpar)
@@ -97,7 +118,7 @@ class StyleBasedPresenter(c : Controller, style: MPath) extends Presenter {
         case m : documents.XRef if expandXRefs => 
          	val s = controller.get(m.target)
             val rb = new XMLBuilder()
-            this.apply(s, rb)
+            this.apply(s)(rb)
             val response = rb.get()
             gpar.rh(response)
          case StrToplevel(c) => 

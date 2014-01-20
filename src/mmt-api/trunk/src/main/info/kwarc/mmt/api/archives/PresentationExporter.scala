@@ -6,7 +6,7 @@ import modules._
 import documents._
 
 /**
- * common code for turning a [[Presenter]] into an exporter
+ * this class turns a [[Presenter]] into an exporter
  * 
  * The Presenter must have been registered before and is identified by passing the format as an argument to the start method.
  * 
@@ -16,9 +16,11 @@ import documents._
 trait PresentationExporter extends Exporter {
     protected var format : String = null
     protected var presenter : Presenter = null
+    // to remove
+    val inDim = content
     lazy val key = "present" + "_" + inDim + "_" + format 
     lazy val outDim = Dim("presentation", inDim.toString, format)
-    
+    private implicit val rhI = rh
     override def start(args: List[String]) {
        args.length match {
           case 1 =>
@@ -34,30 +36,19 @@ trait PresentationExporter extends Exporter {
              throw LocalError("wrong number of arguments, expected 1 or 2")
        }
     }
-}
-
-/**
- * This class turns a [[Presenter]] into a ContentExporter.
- */
-class PresentationContentExporter extends ContentExporter with PresentationExporter {
     def doNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir, DPath)], modules: List[(BuildFile,MPath)]) {
        val doc = controller.getDocument(dpath)
-       presenter(doc, rh)
+       presenter(doc)
     }
 
     def doTheory(t: DeclaredTheory, bf: BuildFile) {
-       presenter(t, rh)
+       presenter(t)
     }
     def doView(v: DeclaredView, bf: BuildFile) {
-       presenter(v, rh)
-    } 
-}
-
-/**
- * This class turns a [[Presenter]] into a NarrationExporter.
- */
-class PresentationNarrationExporter extends NarrationExporter with PresentationExporter {
+       presenter(v)
+    }
     def doDocument(doc : Document, bt: BuildTask) {
-    	 presenter(doc, rh)
+    	 presenter(doc)
     }
 }
+

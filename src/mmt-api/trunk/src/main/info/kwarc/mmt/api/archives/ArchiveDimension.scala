@@ -6,4 +6,6 @@ case object content extends ArchiveDimension("content")
 case object narration extends ArchiveDimension("narration")
 case object relational extends ArchiveDimension("relational")
 
-case class Dim(path: String*) extends ArchiveDimension(path.mkString("/"))
+case class Dim(path: String*) extends ArchiveDimension(path.mkString("/")) {
+  def /(s: String) = Dim(path :+ s :_*)
+}
