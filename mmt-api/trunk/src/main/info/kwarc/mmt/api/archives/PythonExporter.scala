@@ -3,8 +3,9 @@ package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import modules._
 import symbols._
+import documents._
 
-class PythonExporter extends ContentExporter with IndentedExporter {
+class PythonExporter extends Exporter with IndentedExporter {
    val outDim = Dim("export", "python")
    override val outExt = "py"
    val key = "python"
@@ -28,7 +29,7 @@ class PythonExporter extends ContentExporter with IndentedExporter {
       nl
    }
    
-   def doTheory(t: DeclaredTheory, bf: BuildFile) {
+   def exportTheory(t: DeclaredTheory, bf: BuildFile) {
       cls(t.name.toPath) {
          var fields: List[String] = Nil
          t.getPrimitiveDeclarations.foreach {
@@ -48,9 +49,9 @@ class PythonExporter extends ContentExporter with IndentedExporter {
       }
    }
    
-   def doView(v: DeclaredView, bf: BuildFile) {}
+   def exportView(v: DeclaredView, bf: BuildFile) {}
    
-   def doNamespace(dpath: DPath, nsbd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+   def exportNamespace(dpath: DPath, nsbd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
          namespaces.foreach {case (bd, dp) =>
             comment {rh("package " + bd.dirName)}
          }
@@ -58,4 +59,9 @@ class PythonExporter extends ContentExporter with IndentedExporter {
             comment {rh("module " + bf.outFile.segments.last)}
          }
    }
+   
+   def exportDocument(doc: Document, bt: BuildTask) {
+     
+   }
+   
 }

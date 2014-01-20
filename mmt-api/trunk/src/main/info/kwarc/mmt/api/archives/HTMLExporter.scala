@@ -9,12 +9,28 @@ import frontend._
 import objects._
 import utils._
 
-class HTMLContentExporter extends ContentExporter {
-   val key = "content-html"
-   val outDim = Dim("export", "html", "content")
+class HTMLPresenter extends Presenter with NotationBasedPresenter {
+   val key = "html"
+   val outDim = Dim("export", "html")
    override val outExt = "html"
    private lazy val mmlPres = new presentation.MathMLPresenter(controller) // must be lazy because controller is provided in init only
-
+     
+   def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) = {
+     this._rh = rh
+     s match { 
+       case doc : Document => 
+         doHTMLOrNot(doc.path, standalone) {doDocument(doc)}
+       case thy : DeclaredTheory => 
+         doHTMLOrNot(thy.path.doc, standalone) {doTheory(thy)}
+       case view : DeclaredView =>
+         doHTMLOrNot(view.path.doc, standalone) {doView(view)}
+       case _ => rh("TODO: Not implemented yet, presentation function for " + s.getClass().toString())
+     }
+     //TODO? reset this._rh 
+   }
+   
+   def isApplicable(format : String) = format == "html"
+   
    // easy-to-use HTML markup
    private val htmlRh = new utils.HTML(s => rh(s))
    import htmlRh._
@@ -38,7 +54,8 @@ class HTMLContentExporter extends ContentExporter {
    /*
     * @param dpath identifies the directory (needed for relative paths)
     */
-   private def doHTML(dpath: DPath)(b: => Unit) {
+   private def doHTMLOrNot(dpath: DPath, doit: Boolean)(b: => Unit) {
+      if (! doit) return b
       val pref = Range(0,dpath.uri.path.length+2).map(_ => "../").mkString("")
       html {
         head {
@@ -61,8 +78,8 @@ class HTMLContentExporter extends ContentExporter {
         }
       }
    }
-   def doTheory(t: DeclaredTheory, bf: BuildFile) {
-      doHTML(t.path.doc) {div("theory") {
+   def doTheory(t: DeclaredTheory) {
+      div("theory") {
          div("theory-header") {doName(t.name.toString)}
          t.getPrimitiveDeclarations.foreach {
             d => div("constant") {table("constant") {
@@ -116,11 +133,11 @@ class HTMLContentExporter extends ContentExporter {
                }
             }
          }}
-      }}
+      }
    }
-   def doView(v: DeclaredView, bf: BuildFile) {}
-   def doNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
-      doHTML(dpath) {div("namespace") {
+   def doView(v: DeclaredView) {}
+   override def exportNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+      doHTMLOrNot(dpath, true) {div("namespace") {
          namespaces.foreach {case (bd, dp) =>
             div("subnamespace") {
                val name = bd.dirName + "/" + bd.outFile.segments.last
@@ -138,19 +155,7 @@ class HTMLContentExporter extends ContentExporter {
          }
       }}
    }
-}
-
-class HTMLNarrationExporter extends NarrationExporter {
-   val key = "narration-html"
-   val outDim = Dim("export", "html", "narration")
-   override val outExt = "html"
-   private lazy val mmlPres = new presentation.MathMLPresenter(controller) // must be lazy because controller is provided in init only
-
-   // provides easy-to-use HTML markup inside Scala code
-   private val htmlRh = new utils.HTML(s => rh(s))
-   import htmlRh._
-   
-   def doDocument(doc: Document, bt: BuildTask) {
+   def doDocument(doc: Document) {
       html {
          body {
             ul {doc.getItems foreach {
@@ -171,3 +176,4 @@ class HTMLNarrationExporter extends NarrationExporter {
       }
    }
 }
+

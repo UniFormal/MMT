@@ -124,7 +124,7 @@ class TreePane(controller: Controller) extends JPanel {
                      new presentation.StyleBasedPresenter(controller,style)
                   }
                   val rb = new presentation.XMLBuilder
-                  presenter(se, rb)
+                  presenter(se)(rb)
                   content.setText(rb.get.toString) // content.load(rb.get) 
                }
             case (MouseEvent.BUTTON1, 2) =>

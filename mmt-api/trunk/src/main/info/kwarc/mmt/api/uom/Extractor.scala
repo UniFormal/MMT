@@ -143,7 +143,7 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
    }
    
    /** translates a theory T: OpenMath to a Scala trait */
-   def doCoveredTheory(t: DeclaredTheory) {
+   def exportCoveredTheory(t: DeclaredTheory) {
      val pack = dpathToScala(t.parent.doc)
      rh.writeln("package " + pack)
      rh.writeln(imports)
@@ -196,10 +196,10 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
    }
    
    /** currently skipped */
-   def doFunctor(v: DeclaredView) {}
+   def exportFunctor(v: DeclaredView) {}
    
    /** translates a view from (T: OpenMath) -> Scala to a Scala object implementing T */
-   def doRealization(v: DeclaredView) {
+   def exportRealization(v: DeclaredView) {
      val from = controller.globalLookup.getDeclaredTheory(v.from.toMPath) 
      val pack = dpathToScala(v.parent.doc)
      rh.writeln("package " + pack)
@@ -261,7 +261,7 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
      rh.writeln(s"object ${nameToScala(v.name)} extends ${nameToScala(v.name)}\n")
    }
    
-   def doNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+   def exportNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
       val pack = dpathToScala(dpath)
       rh.writeln("//Source file generated MMT\n")
       rh.writeln(s"package $pack")
@@ -284,6 +284,8 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
       }
       rh.writeln("}")
    }
+   def exportDocument(doc : Document, bt : BuildTask) {}
+
 }
 
 
