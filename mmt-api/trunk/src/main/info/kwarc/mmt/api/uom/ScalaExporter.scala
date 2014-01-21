@@ -132,6 +132,7 @@ trait GenericScalaExporter extends Exporter {
      rh.writeln("\n}")
    }
    
+   /** produces code to instantiate [[uom.DocumentScala]] to iterate over all content */
    def exportNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
       var pack = dpathToScala(dpath, packageSep)
       if (pack == "") pack = "content" // dpath is empty URI for the content folder
@@ -153,6 +154,8 @@ trait GenericScalaExporter extends Exporter {
       }
       rh.writeln("}")
    }
+   /** do nothing by default */
+   def exportDocument(doc : Document, bt : BuildTask) {}
 }
    
 class ScalaExporter extends GenericScalaExporter {
@@ -226,5 +229,4 @@ class ScalaExporter extends GenericScalaExporter {
    }
    
    def exportView(v: DeclaredView, bf: BuildFile) {}
-   def exportDocument(doc : Document, bt : BuildTask) {}
 }

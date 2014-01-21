@@ -182,29 +182,23 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                val pos = newBVars.indexWhere(_ == (vm, name))
                newBVarNames.take(pos)
             }
-            //stores the argument list in concrete syntax order, together with their position in the abstract syntax
-            var args : List[(Int,Term)] = Nil 
             //stores the variable declaration list (name + type) in concrete syntax order together with their position in the abstract syntax
             var vars : List[(Var,SourceRegion,LocalName,Option[Term])] = Nil
-            //stores the scope list in concrete syntax order together with their positions in the abstract syntax
-            var scopes : List[(Int, Term)] = Nil
+            //stores the argument list in concrete syntax order, together with their position in the abstract syntax
+            var args : List[(Int,Term)] = Nil 
             // We walk through found, computing arguments/variable declarations/scopes
             // by recursively processing the respective TokenListElem in ml.tokens
             var i = 0 //the position of the next TokenListElem in ml.tokens
             found foreach {
                case _:FoundDelim =>
                case FoundArg(_,n) =>
-                  if (n>0)
-                     //a normal argument
-                     args ::= (n,makeTerm(ml.tokens(i), boundVars))
-                  else
-                     //a scope, all newBVars are added to the context
-                     scopes ::= (-n,makeTerm(ml.tokens(i), boundVars ::: newBVarNames))
+                     //an argument, all newBVars are added to the context
+                     args ::= (n,makeTerm(ml.tokens(i), boundVars ::: newBVarNames))
                   i += 1
                case FoundSeqArg(n, fas) =>
                   // a sequence argument, so take as many TokenListElement as the sequence has elements
                   val toks = ml.tokens.slice(i, i+fas.length)
-                  args = args ::: toks.map(t => (n,makeTerm(t, boundVars)))
+                  args = args ::: toks.map(t => (n,makeTerm(t, boundVars ::: newBVarNames)))
                   i += fas.length
                case fv: FoundVar =>
                   fv.getVars foreach {case SingleFoundVar(pos, nameToken, tpOpt) =>
@@ -232,19 +226,19 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
             val head = OMID(con)
             //construct a Term according to args, vars, and scopes
             //this includes sorting args and vars according to the abstract syntax
-            if (arity.isConstant && args == Nil && vars == Nil && scopes == Nil) {
+            if (arity.isConstant && args == Nil && vars == Nil) {
                //no args, vars, scopes --> OMID
                head
             } else {
-                  // order the arguments
-                  val orderedArgs = args.sortBy(_._1)
                   // order the variables
                   val orderedVars = vars.sortBy(_._1.number)
+                  // order the arguments
+                  val orderedArgs = args.sortBy(_._1)
                   // compute the arguments, first insert 'null' for each implicit argument
                   var finalArgs : List[Term] = Nil
                   orderedArgs.foreach {case (i,arg) =>
                      // add implicit arguments as needed
-                     while (i > finalArgs.length + 1) {
+                     while (i > vars.length + finalArgs.length + 1) {
                         finalArgs ::= null
                      }
                      finalArgs ::= arg
@@ -292,26 +286,14 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                         SourceRef.update(vd, pu.source.copy(region = reg))
                         vd
                   }
-                  if (finalVars == Nil && scopes == Nil) {
-                     // no vars, scopes --> OMA
+                  if (finalVars == Nil) {
+                     // no vars --> OMA
                      // finalArgs may be Nil
                      prag.strictApplication(con.module.toMPath, head, finalArgs)
-                  } else if (finalVars != Nil) {
-                     val context = Context(finalVars : _*)
-                     if (finalArgs == Nil) {
-                        //some vars --> OMBINDC
-                        prag.strictBinding(con.module.toMPath, head, context, scopes.map(_._2))
-                     } else {
-                        //some args and some vars --> OMBINDC with OMA
-                        //TODO does not work with new ComplexTerm semantics (named arguments)
-                        val binder = prag.strictApplication(con.module.toMPath, head, finalArgs)
-                        prag.strictBinding(con.module.toMPath, binder, context, scopes.map(_._2))
-                     }
                   } else {
-                     //some args, no vars, some scopes
-                     //this should only happen for ill-formed notations
-                     makeError("ill-formed notation", te.region)
-                     head
+                     //some vars --> OMBINDC
+                     val context = Context(finalVars : _*)
+                     prag.strictBinding(con.module.toMPath, head, context, finalArgs)
                   }
                }}
          case ul : UnmatchedList =>
