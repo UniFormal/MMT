@@ -78,20 +78,23 @@ class SimplificationRuleGenerator extends ChangeListener {
        // match lhs to OMA(op, (var,...,var,OMA/OMID,var,...,var))
        t1 match {
          case ApplySpine(OMS(outer), args) =>
+           // we will try break args into bfr ::: OMA(inr, ins) ::: aft
            var bfr : List[LocalName] = Nil
            var inr : GlobalName = null
            var ins : List[LocalName] = Nil
            var aft : List[LocalName] = Nil
-           var isBefore = true
-           var implicitArgs : List[OMV] = Nil
-           var implArgsOut = List.empty[ImplicitArg]
-           var implArgsIn = List.empty[ImplicitArg]
-           controller.globalLookup.getConstant(outer).not match {
-             case Some(n) => implArgsOut ++= n.arity.flatImplicitArguments(args.length)
-             case None => Nil
+           var isBefore = true // true if we are in bfr, false if we are in aft
+           // the implicit arguments of the outer operator
+           val implArgsOuter = controller.globalLookup.getConstant(outer).not match {
+              case Some(n) => n.arity.flatImplicitArguments(args.length)
+              case None => Nil
            }
-           val omvs = args.zipWithIndex.map { case (arg, i) =>
-              if (!implArgsOut.contains(ImplicitArg(i+1))) { 
+           // the implicit arguments of the outer operator
+           var implArgsInner : List[ImplicitArg] = Nil // will be set once we know what the inner operator is
+           // iterate through args to break it up
+           args.zipWithIndex.foreach { case (arg, i) =>
+              // no need to match the implicit arguments, so skip them
+              if (! implArgsOuter.contains(ImplicitArg(i+1))) { 
                  arg match {    	                  
                	  case OMV(x) =>
                	    if (isBefore)
@@ -99,17 +102,19 @@ class SimplificationRuleGenerator extends ChangeListener {
                	    else
                	       aft ::= x
                	  case ApplyGeneral(OMS(inner), args) =>
-               	    controller.globalLookup.getConstant(inner).not match {
-               	    	case Some(n) => implArgsIn ++= n.arity.flatImplicitArguments(args.length)
-               	    	case None => Nil
+               	    implArgsInner = controller.globalLookup.getConstant(inner).not match {
+               	    	   case Some(n) => n.arity.flatImplicitArguments(args.length)
+               	    	   case None => Nil
                	    }
                	    if (isBefore) {
                   	    inr = inner
-                  	    args.zipWithIndex foreach { a =>
-                     	    if (!implArgsIn.contains(ImplicitArg(a._2+1))) {
+                  	    args.zipWithIndex foreach {case (a,j) =>
+                     	    if (! implArgsInner.contains(ImplicitArg(j+1))) {
                	              a match {
-               	                case (OMV(x),vi) => ins ::= x
-               	                case (e, _) => throw DoesNotMatch(controller.presenter.asString(e) + " not a variable for inner operation " + controller.presenter.asString(OMID(inner)))
+               	                case OMV(x) =>
+               	                   ins ::= x
+               	                case e =>
+               	                   throw DoesNotMatch(controller.presenter.asString(e) + " not a variable for inner operation " + controller.presenter.asString(OMID(inner)))
                	              }
                	          }
                   	    }
@@ -119,16 +124,16 @@ class SimplificationRuleGenerator extends ChangeListener {
                   }
               }
            }
-           if (isBefore) throw DoesNotMatch("no inner operator detected in " + ruleName) // check that inner OMA was detected
+           if (isBefore)
+              throw DoesNotMatch("no inner operator detected in " + ruleName)
            // check that all var names are different
            val varls = (bfr ++ ins ++ aft)
-           val unique = varls.distinct
-           if (varls.length != unique.length)
+           if (varls.length != varls.distinct.length)
               throw DoesNotMatch("there are some non-unique variables in " + ruleName + " : " + varls)
            val desc = ruleName + " simplify " +   
               controller.presenter.asString(t1) + "  ~~>  " + controller.presenter.asString(t2)
            val simplify = new GeneratedDepthRule(outer, inr, c, desc,
-              bfr.reverse, ins.reverse, aft.reverse, implArgsOut, implArgsIn, t2)
+              bfr.reverse, ins.reverse, aft.reverse, implArgsOuter, implArgsInner, t2)
       	  controller.extman.ruleStore.add(simplify)
            log("succesfully registered rule: " + ruleName)
          case _ => error(c, "no outer op")

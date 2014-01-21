@@ -72,7 +72,7 @@ object Pi extends LFSym ("Pi") {
          else
             apply(Context(rest:_*), s)
          Some(n,t,newScope)
-	   case OMA(Arrow.term,args) =>
+	   case OMA(Arrow.term,args) if args.length >= 2 =>
 	      val name = OMV.anonymous
 	      if (args.length > 2)
 	     	 Some((name, args(0), OMA(Arrow.term, args.tail)))
@@ -89,7 +89,7 @@ object Arrow extends LFSym("arrow") {
 	def apply(t1 : Term, t2 : Term) = OMA(this.term,List(t1,t2))
 	def apply(in: List[Term], out: Term) = if (in.isEmpty) out else OMA(this.term, in ::: List(out))
 	def unapply(t : Term) : Option[(Term,Term)] = t match {
-		case OMA(this.term, hd :: tl) => Some((hd, apply(tl.init, tl.last)))
+		case OMA(this.term, hd :: tl) if !tl.isEmpty => Some((hd, apply(tl.init, tl.last)))
 		case _ => None
 	}
 }
@@ -102,7 +102,8 @@ object Apply extends LFSym("apply") {
 	def unapply(t: Term) : Option[(Term,Term)] = t match {
 		case OMA(this.term, f :: a) => 
 		   if (a.length > 1) Some((OMA(this.term, f :: a.init), a.last))
-			else Some((f,a.head))
+			else if (a.length == 1) Some((f,a.head))
+			else None
 		case _ => None
 	}
 }
@@ -144,7 +145,8 @@ object FunType {
          Some((nm, tp) :: remainingArgs, ultimateScope)
       case Arrow(t1, t2) =>
          val (remainingArgs,ultimateScope) = unapply(t2).get //always returns non-None
-         Some((None, t1) :: remainingArgs, ultimateScope) 
+         Some((None, t1) :: remainingArgs, ultimateScope)
+      case OMA(Arrow.term, List(a)) => Some((Nil, a)) 
       case t => Some(Nil,t)
   }
 }
