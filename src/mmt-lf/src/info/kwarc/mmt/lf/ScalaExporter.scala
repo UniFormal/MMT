@@ -33,7 +33,7 @@ class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) 
       case _ => throw IllFormed
    }
       
-   def doCoveredTheory(t: DeclaredTheory) {
+   def exportCoveredTheory(t: DeclaredTheory) {
       outputHeader(t.parent.doc)
       outputTrait(t){c =>
          c.tp match {
@@ -81,7 +81,7 @@ class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) 
       outputCompanionObject(t){c => ""}
    }
    
-   def doFunctor(v: DeclaredView) {}
+   def exportFunctor(v: DeclaredView) {}
 
-   def doRealization(v: DeclaredView) {}
+   def exportRealization(v: DeclaredView) {}
 }
