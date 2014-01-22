@@ -1,0 +1,22 @@
+span.name {
+  font-weight: bold;
+}
+
+tr.definition, tr.type, tr.domain, tr.codomain,
+tr.onedim-notation, tr.twodim-notation {
+  display: none;
+}
+tr.tags, tr.metadata {
+  display: none;
+}
+
+div.constant {
+}
+
+table.constant {
+}
+
+span.compToggle {
+  color: blue;
+  margin-right: 10px;
+}
