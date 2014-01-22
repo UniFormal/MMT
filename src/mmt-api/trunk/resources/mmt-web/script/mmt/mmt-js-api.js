@@ -151,8 +151,10 @@ var mmt = {
 	 */
 	adaptMMTURI : function (uri, act, present) {
 		var arr = this.splitMMTURI(uri);
-		if (present && this.notstyle !== null)
-			var pres = " present " + this.notstyle;
+		if (present && this.notstyle !== null) {
+			var pres = " present " + this.notstyle; //use this for style-based presenter
+		    //pres = " present html"; //uncomment this to use html presenter (currently experimental)
+		}
 		else
 			var pres = '';
 		var relativeURL = '/:mmt?get ' + arr[0] + '?' + arr[1] + '?' + arr[2] + ' ' + act + pres + " respond";

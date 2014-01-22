@@ -72,8 +72,8 @@ class HTML(out: String => Unit) {
    val td = new Element("td")
 
    val ul = new Element("ul")
-   val ol = new Element("ul")
-   val li = new Element("ul")
+   val ol = new Element("ol")
+   val li = new Element("li")
    
    val h1 = new Element("h1")
    val h2 = new Element("h2")
