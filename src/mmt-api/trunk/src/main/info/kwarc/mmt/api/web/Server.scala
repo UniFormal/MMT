@@ -32,7 +32,7 @@ object Server {
   private def checkCORS(tk : HTalk) : HTalk = tk.req.header("Origin")  match {
     case None => tk
     case Some(s) => CORS_AllowOrigin(s) match {
-      case true => tk.setHeader(" Access-Control-Allow-Origin", s)
+      case true => tk.setHeader("Access-Control-Allow-Origin", s)
       case false => tk
     }
   }
