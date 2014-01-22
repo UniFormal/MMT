@@ -7,6 +7,7 @@ import Conversions._
 
 import scala.xml.Node
 
+
 //TODO: add optional notation
 /** represents an MMT term variable declaration
  * @param name name
@@ -16,8 +17,7 @@ import scala.xml.Node
  */
 case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term]) extends Obj {
    type ThisType = VarDecl
-   /** self-written copy method that does not allow changing attributions
-    * (because sequence arguments and copy do not work together) */
+   /** self-written copy method to copy metadata */
    def copy(name : LocalName = this.name, tp : Option[Term] = this.tp, df : Option[Term] = this.df) = {
       val vd = VarDecl(name, tp, df)
       vd.copyFrom(this)
@@ -63,6 +63,17 @@ object IncludeVarDecl {
    }
 }
 
+object StructureVarDecl {
+   def apply(n: LocalName, from: Term, df: Option[Term]) =
+      VarDecl(n, Some(from), df)
+   def unapply(vd: VarDecl) : Option[(LocalName, Term, Option[Term])] =
+      vd.tp match {
+         case Some(tp @ ComplexTheory(_)) =>
+            Some((vd.name, tp, vd.df))
+         case _ => None
+   }
+}
+
 /** represents an MMT context as a list of variable declarations */
 case class Context(variables : VarDecl*) extends Obj {
    type ThisType = Context
@@ -72,7 +83,10 @@ case class Context(variables : VarDecl*) extends Obj {
    def ++(that : Context) : Context = this ::: that
    /** look up a variable by name, throws LookupError if not declared */
    def apply(name : LocalName) : VarDecl = {
-      variables.reverse.find(_.name == name).getOrElse(throw LookupError(name, this))
+      variables.reverse.foreach {vd =>
+         if (vd.name == name) return vd
+      }
+      throw LookupError(name, this)
    }
    def isDeclared(name : LocalName) = index(name).isDefined
    /** returns the de Bruijn index of a variable, starting from 0 */
@@ -80,6 +94,45 @@ case class Context(variables : VarDecl*) extends Obj {
 	   case -1 => None
 	   case i => Some(variables.length - i - 1) 
    }
+   
+   /**
+    * @return domain of this context, flattening nested ComplexTheories and ComplexMorphisms
+    *
+    * Due to ComplexMorphism's, names may erroneously be defined but not declared.
+    */
+   def getDomain: List[DomainElement] = {
+      var des : List[DomainElement] = Nil
+      variables foreach {
+         case StructureVarDecl(name, tp, df) =>
+            val (total, definedAt) : (Boolean, List[LocalName]) = df match {
+               case None =>
+                  // no definition for any declaration in tp 
+                  (false, Nil)
+               case Some(ComplexMorphism(subs)) =>
+                  // partial morphism, defined at dom
+                  //TODO this does not cover the morphism case because tp with be empty
+                  val dom = subs.asContext.getDomain.map {de => de.name / name}
+                  (false, dom)
+               case Some(morph) =>
+                  // everything else is a total morphism from tp, i.e., everything is defined
+                  (true, Nil) // second component is irrelevant
+            }
+            tp match {
+               case OMMOD(p) =>
+                  des ::= DomainElement(name, total, Some((p, definedAt)))
+               case ComplexTheory(body) =>
+                  val bodyDes = body.getDomain
+                  bodyDes.foreach {case DomainElement(n, defined, subdOpt) =>
+                     val subdOptNew = subdOpt map {case (p,ds) => (p, ds ::: definedAt)}
+                     des ::= DomainElement(name / n, defined, subdOptNew)
+                  }
+            }
+         case VarDecl(n, _, df) =>
+            des ::= DomainElement(n, df.isDefined, None)
+      }
+      des.reverse
+   }
+   
    /** the identity substitution of this context */
    def id : Substitution = this map {
 	   case VarDecl(n, _, _) => Sub(n,OMV(n))

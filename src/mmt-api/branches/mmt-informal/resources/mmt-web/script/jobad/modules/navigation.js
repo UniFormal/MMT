@@ -32,7 +32,7 @@ var navigation = {
 
 	leftClick: function(target, JOBADInstance) {
 	   //handling clicks on parts of the document
-      if(target.hasAttribute('mmtlink')) {
+        if(target.hasAttribute('mmtlink')) {
 			var uri = target.attr('mmtlink');
 			console.log(uri);
 			this.navigate(uri);
@@ -53,11 +53,18 @@ var navigation = {
 		if(target.hasAttribute('foldable')) {
 			var content = $(target).parent().find('table').toggle();				
 		}
+		if (target.hasClass("loadable")) {
+			var elem = target.get(0); 
+			var ref = mmt.load(elem);
+			$(elem).replaceWith(ref);
+		}
+
 		if (target.hasAttribute('jobad:href')) {
 			var mr = $(target).closest('mrow');
 			var select = (mr.length == 0) ? target[0] : mr[0];
 			return true; // do nothing for now
 		}
+
 		mmt.unsetSelected();	
 		return true;	//we did stuff also
 	},

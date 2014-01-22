@@ -267,7 +267,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
          -1
    }
    
-   def apply(o: Obj, rh: RenderingHandler) = apply(o, None, rh)
+   def apply(o: Obj)(implicit rh : RenderingHandler) = apply(o, None, rh)
    
    def apply(obj: Obj, owner: Option[CPath], rh: RenderingHandler) {
       implicit val pc = PresentationContext(rh, owner, Nil, None, Position.Init, Nil)
@@ -401,8 +401,12 @@ trait NotationBasedPresenter extends ObjectPresenter {
  * this class must be initialized after instantiation to set the controller
  */
 class StructureAndObjectPresenter extends Presenter with NotationBasedPresenter {
+   val key = "present-text-notations"
+   val outDim = archives.Dim("export", "presentation", "text-notations")
+   override def outExt = "mmt"
+  
    def isApplicable(format: String) = format == "text/notations"
-   def apply(e : StructuralElement, rh: RenderingHandler) {apply(e, 0)(rh)}
+   def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {apply(e, 0)(rh)}
    override def twoDimensional = false
    
    private def apply(e : StructuralElement, indent: Int)(implicit rh: RenderingHandler) {

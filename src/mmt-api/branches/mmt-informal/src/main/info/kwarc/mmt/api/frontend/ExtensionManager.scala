@@ -72,25 +72,24 @@ class ExtensionManager(controller: Controller) extends Logger {
    val pragmaticStore = new pragmatics.PragmaticStore
    
    def addDefaultExtensions {
-      targets    ::= new MMTCompiler
-      targets    :::= List(new archives.HTMLContentExporter, new archives.HTMLNarrationExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter)
-      presenters ::= TextPresenter
-      presenters ::= OMDocPresenter
-      presenters ::= controller.presenter
-      changeListeners ::= new modules.RealizationListener
-      parserExtensions ::= parser.MetadataParser
-      parserExtensions ::= parser.CommentHandler
+      //targets and presenters
+      addExtension(new MMTCompiler)
+      List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter,
+           TextPresenter, OMDocPresenter, controller.presenter).foreach {
+        e => addExtension(e)
+      }
+      //changeListeners
+      List(new modules.RealizationListener, parser.MetadataParser, parser.CommentIgnorer).foreach(addExtension(_))
       //parserExtensions ::= new ControlParser
+      //serverPlugins
+      List(new web.ActionServer, new web.SVGServer, new web.QueryServer, new web.AdminServer).foreach(addExtension(_))
+      //queryExtensions
+      List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
+                                new ontology.Present, new ontology.PresentDecl).foreach(addExtension(_))
       lexerExtensions ::= GenericEscapeLexer
       lexerExtensions ::= QuoteLexer
       lexerExtensions ::= UnicodeReplacer
       lexerExtensions ::= new PrefixedTokenLexer('\\')
-      serverPlugins   :::= List(new web.ActionServer, new web.SVGServer, new web.QueryServer, new web.AdminServer)
-      queryExtensions :::= List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
-                                new ontology.Present, new ontology.PresentDecl) 
-      
-      // initialize all extensions
-      getAll.foreach(_.init(controller))
    }
 
    /** instantiates an extension, initializes it, and adds it
@@ -159,7 +158,7 @@ class ExtensionManager(controller: Controller) extends Logger {
    }
 
    /** retrieves an applicable build target */
-   def getTarget(key: String) : Option[BuildTarget] = targets.find(t => t.isApplicable(key))
+   def getTarget(key: String) : Option[BuildTarget] = targets.find(t => t.key == key)
    /** retrieves an applicable query transformer */
    def getQueryTransformer(src: String) : Option[QueryTransformer] = querytransformers.find(_.isApplicable(src))
    /** retrieves an applicable Presenter */
