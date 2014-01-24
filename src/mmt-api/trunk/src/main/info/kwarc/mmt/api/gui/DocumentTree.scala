@@ -91,22 +91,74 @@ class TreePane(controller: Controller) extends JPanel {
 
    val items = List(Item("plain", "text"), Item("text", "text/notations"), Item("XML", "xml"), Item("rendered", "pres"))
    val styleTextArea = new JTextField(style.toPath, 30)
+   private val toolbar = new JPanel
    private val buttons = Swing.RadioButtonPanel(items : _*){id =>
       mode = id
       if (mode == "pres")
          try {style = Path.parseM(styleTextArea.getText, style)}
          catch {case _ : Throwable => styleTextArea.setText("error: " + styleTextArea.getText)}
    }
+   private def back {
+      if (current+1 < history.length) {
+         current += 1
+         setCurrentElement
+      }
+   }
+   private def forward {
+      if (current-1 >= 0) {
+         current -= 1
+         setCurrentElement
+      }
+   }
+   toolbar.add(buttons)
+   toolbar.add(Swing.Button("back")(back))
+   toolbar.add(Swing.Button("forward")(forward))
    
    buttons.add(styleTextArea)
-   add(buttons, BorderLayout.NORTH)
 
    private val content = new JTextArea // FXPanel 
    private val scrollContent = new JScrollPane(content)
-   scrollContent.setPreferredSize(new java.awt.Dimension(700,700))
 
+   val ontologyPane = new JPanel
+   ontologyPane.setLayout(new BoxLayout(ontologyPane, BoxLayout.PAGE_AXIS))
+   
    private val tree = new JTree(new MMTTreeModel(controller))
    tree.setRootVisible(false)
+   
+   private var history: List[StructuralElement] = Nil
+   private var current = 0
+   private def setNewElement(p: Path) {
+      val se = controller.get(p)
+      setNewElement(se)
+   }
+   private def setNewElement(se: StructuralElement) {
+      history = history.take(current) ::: se :: history.drop(current)
+      setCurrentElement
+   }
+   private def setCurrentElement {
+      val se = history(current)
+      val presenter = controller.extman.getPresenter(mode) getOrElse {
+         new presentation.StyleBasedPresenter(controller,style)
+      }
+      val rb = new presentation.XMLBuilder
+      presenter(se)(rb)
+      content.setText(rb.get.toString) // content.load(rb.get)
+      ontologyPane.removeAll
+      val p = se.path
+      ontology.Binary.all.foreach {b =>
+         val qs = controller.depstore.queryList(p, -b)
+         if (! qs.isEmpty) {
+            ontologyPane.add(new JLabel(b.toString))
+            val qsPanel = new JPanel
+            qs.foreach {q =>
+               val b = Swing.Button(q.toString)(setNewElement(q))
+               qsPanel.add(b)
+            }
+            ontologyPane.add(qsPanel)
+         }
+      }
+      revalidate
+   }
    val ml = new MouseAdapter() {
       override def mousePressed(e: MouseEvent) {
          val jpath = tree.getPathForLocation(e.getX, e.getY)
@@ -119,14 +171,7 @@ class TreePane(controller: Controller) extends JPanel {
          }
          (e.getButton, e.getClickCount) match {
             case (MouseEvent.BUTTON1, 1) =>
-               if (se != null) {
-                  val presenter = controller.extman.getPresenter(mode) getOrElse {
-                     new presentation.StyleBasedPresenter(controller,style)
-                  }
-                  val rb = new presentation.XMLBuilder
-                  presenter(se)(rb)
-                  content.setText(rb.get.toString) // content.load(rb.get) 
-               }
+               if (se != null) setNewElement(se)
             case (MouseEvent.BUTTON1, 2) =>
                if (se != null) {
                   val act = Navigate(se.path)
@@ -137,7 +182,11 @@ class TreePane(controller: Controller) extends JPanel {
    }
    tree.addMouseListener(ml)
    private val scrollTree = new JScrollPane(tree)
-   scrollTree.setPreferredSize(new java.awt.Dimension(300,700))
+   //scrollTree.setPreferredSize(new java.awt.Dimension(300,300))
+   //scrollContent.setPreferredSize(new java.awt.Dimension(700,300))
+
+   add(toolbar, BorderLayout.NORTH)
    add(scrollTree, BorderLayout.WEST)
    add(scrollContent, BorderLayout.CENTER)
+   add(ontologyPane, BorderLayout.SOUTH)
 }

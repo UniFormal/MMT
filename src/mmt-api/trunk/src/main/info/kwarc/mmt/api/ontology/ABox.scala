@@ -128,6 +128,3 @@ class RelStore(report : frontend.Report) {
       types.clear
    }
 }
-
-object RelationalElementReader {
-}
