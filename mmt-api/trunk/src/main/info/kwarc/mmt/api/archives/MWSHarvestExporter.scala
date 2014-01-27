@@ -20,13 +20,13 @@ class MWSHarvestExporter extends Exporter {
   def exportTheory(t: DeclaredTheory, bf: BuildFile) { 
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
-    t.getDeclarations foreach {  
+    t.getDeclarations foreach {
       case c: Constant =>
         List(c.tp,c.df).map(tO => tO map { 
           t =>
             val url = custom.mwsurl(c.path)
             val cml = custom.prepareQuery(t)
-            val node = <mws:expr url={url}>{cml}</mws:expr>
+            val node = <mws:expr url={url}><content>{cml}</content></mws:expr>
             rh(node.toString + "\n")
         })
       /*case i : Instance => {
