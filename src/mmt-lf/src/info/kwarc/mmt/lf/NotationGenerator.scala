@@ -49,7 +49,7 @@ class NotationGenerator extends ChangeListener {
             val parseMarkers = SymbolName(c.path) ::
                 Range(0,numImplicitArgs).map {i => ImplicitArg(i+1)}.toList :::
                 Range(numImplicitArgs,numTotalArgs).map {i => Arg(i+1)}.toList
-            val nt = new TextNotation(c.path, Mixfix(parseMarkers), Precedence.integer(0))
+            val nt = new TextNotation(c.path, Mixfix(parseMarkers), Precedence.integer(0), LF._path)
             nt.setOrigin(GeneratedBy(this))
             c.notC.oneDim = Some(nt)
          }
@@ -60,7 +60,7 @@ class NotationGenerator extends ChangeListener {
             }
             val presentationMarkers : List[Marker] = tree ::: SymbolName(c.path) ::
                Range(0,numImplicitArgs).map {i => ImplicitArg(i+1)}.toList
-            val nt = new TextNotation(c.path, Mixfix(presentationMarkers), Precedence.integer(0))
+            val nt = new TextNotation(c.path, Mixfix(presentationMarkers), Precedence.integer(0), LF._path)
             nt.setOrigin(GeneratedBy(this))
             c.notC.twoDim = Some(nt)
          }
