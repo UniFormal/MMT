@@ -9,9 +9,9 @@ import info.kwarc.mmt.api.utils._
  */
 case class SourceRegion(start: SourcePosition, end: SourcePosition) {
   /** inverse of SourceRegion.parse */
-  override def toString = start.toString + "-" + end.toString
+  override def toString = start.toString + ":" + end.toString
   /** l.c-l.c*/
-  def twoDimString = start.twoDimString + "-" + end.twoDimString
+  def twoDimString = start.twoDimString + ":" + end.twoDimString
   /** number of characters in this region */
   def length = end.offset - start.offset + 1
 }
@@ -20,7 +20,7 @@ case class SourceRegion(start: SourcePosition, end: SourcePosition) {
 object SourceRegion {
   /** parses the format start-end */
   def parse(s: String) : SourceRegion = {
-      val parts = s.split("-").toList
+      val parts = if (s.contains(':')) s.split(":").toList else s.split("-").toList 
       if (parts.length == 2) SourceRegion(SourcePosition.parse(parts(0)), SourcePosition.parse(parts(1)))
       else throw ParseError("illegal source region: " + s)
    }

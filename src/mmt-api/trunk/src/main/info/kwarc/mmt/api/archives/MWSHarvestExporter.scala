@@ -13,7 +13,7 @@ import documents._
 class MWSHarvestExporter extends Exporter {
   val outDim = Dim("export", "mws")
   val key = "mws-harvest"
-  override val outExt = "mws"
+  override val outExt = "harvest"
 
   val custom : ArchiveCustomization = new DefaultCustomization    
     
