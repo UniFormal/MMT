@@ -335,6 +335,11 @@ object Path {
       }
       (URI(comp(0)), comp(1), comp(2), comp(3))
    }
+   /** as parse but fails if the result is not a component level URI */
+   def parseC(s : String, base : Path) : CPath = parse(s,base) match {
+      case p : CPath => p
+      case p => throw ParseError("component path expected: " + p) 
+   }
    /** as parse but fails if the result is not a symbol level URI */
    def parseS(s : String, base : Path) : GlobalName = parse(s,base) match {
       case p : GlobalName => p
