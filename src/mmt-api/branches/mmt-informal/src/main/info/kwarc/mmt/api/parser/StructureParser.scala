@@ -373,7 +373,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
          state.startPosition = reg.start
          def fail(s: String) = throw makeError(reg,s)
          keyword match {
-            //this case occurs if we read the GS or marker
+            //this case occurs if we read the GS marker
             case "" =>
                if (state.reader.endOfModule) {
                   return

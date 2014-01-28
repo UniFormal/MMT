@@ -14,24 +14,19 @@ import flexiformal._
 class MWSHarvestExporter extends Exporter {
   val outDim = Dim("export", "mws")
   val key = "mws-harvest"
-  override val outExt = "mws"
+  override val outExt = "harvest"
   val custom : ArchiveCustomization = new DefaultCustomization    
     
   def exportTheory(t: DeclaredTheory, bf: BuildFile) { 
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
-    def narrToCML(n : NarrativeObject) : List[scala.xml.Node] = n match {
-        case nt : NarrativeTerm => List(custom.prepareQuery(nt.term))
-        case nn : NarrativeNode => nn.child.flatMap(narrToCML)
-        case _ => Nil
-    }
-    t.getDeclarations foreach {  
+    t.getDeclarations foreach {
       case c: Constant =>
         List(c.tp,c.df).map(tO => tO map { 
           t =>
             val url = custom.mwsurl(c.path)
             val cml = custom.prepareQuery(t)
-            val node = <mws:expr url={url}>{cml}</mws:expr>
+            val node = <mws:expr url={url}><content>{cml}</content></mws:expr>
             rh(node.toString + "\n")
         })
       /*case i : Instance => {

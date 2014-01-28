@@ -31,4 +31,15 @@ object Swing {
       }
       jp
    }
+   
+   def Button(label: String)(action: => Unit): JButton = {
+      val b = new JButton(label)
+      val al = new ActionListener {
+         def actionPerformed(e: ActionEvent) {
+            action
+         }
+      }
+      b.addActionListener(al)
+      b
+   }
 }

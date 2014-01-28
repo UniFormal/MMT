@@ -22,7 +22,7 @@ case class InvalidNotation(msg: String) extends java.lang.Throwable
  * 
  * if the only marker is SeqArg, it must hold that OMA(name, List(x)) = x because sequences of length 1 are parsed as themselves 
  */
-class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Precedence) extends ComplexNotation {
+class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Precedence, val meta: MPath) extends ComplexNotation {
    /** @return the list of markers that should be used for parsing */
    lazy val parsingMarkers = fixity.markers.filter {
       case _:PresentationMarker => false // there should not be any presentation markers in notations used for parsing
@@ -151,13 +151,13 @@ class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Pre
 }
 
 object TextNotation {
-   def apply(name: GlobalName, prec: Precedence)(ms: Any*): TextNotation = {
+   def apply(name: GlobalName, prec: Precedence, meta: MPath)(ms: Any*): TextNotation = {
       val markers : List[Marker] = ms.toList map {
          case i: Int => Arg(i)
          case m: Marker => m
          case s: String => Marker.parse(name, s)
       }
-      new TextNotation(name, Mixfix(markers), prec)
+      new TextNotation(name, Mixfix(markers), prec, meta)
    }
    
    /** the precedence of the notation ( 1 )
@@ -169,8 +169,8 @@ object TextNotation {
     * a special Notation for utils.mmt.brackets
     * matches ( 1 ) with precedence bracketLevel
     */
-   val bracketNotation = new TextNotation(utils.mmt.brackets, Mixfix(List(Delim("("),Arg(1),Delim(")"))), bracketLevel)
-   val contextNotation = new TextNotation(utils.mmt.context, Mixfix(List(Delim("["), Var(1,true,Some(Delim(","))), Delim("]"))), bracketLevel)
+   val bracketNotation = new TextNotation(utils.mmt.brackets, Mixfix(List(Delim("("),Arg(1),Delim(")"))), bracketLevel, utils.mmt.mmtcd)
+   val contextNotation = new TextNotation(utils.mmt.context, Mixfix(List(Delim("["), Var(1,true,Some(Delim(","))), Delim("]"))), bracketLevel, utils.mmt.mmtcd)
    
    /** XML parsing methods */
    def parse(n : scala.xml.Node, name : GlobalName) : TextNotation = n match {
@@ -179,6 +179,10 @@ object TextNotation {
       val precedence = utils.xml.attr(n, "precedence") match {
          case "" => Precedence.integer(0)
          case s => Precedence.parse(s)
+      }
+      val meta: MPath = utils.xml.attr(n, "meta") match {
+         case "" => nameP.module.toMPath
+         case s => Path.parseM(s, name)
       }
       val (fixityString, arguments) = {
          val markers = utils.xml.attr(n, "markers")
@@ -200,7 +204,7 @@ object TextNotation {
          }
       }
       val fixity = FixityParser.parse(name, fixityString, arguments)
-      new TextNotation(name, fixity, precedence)
+      new TextNotation(name, fixity, precedence, meta)
     case _ => throw ParseError("invalid notation:\n" + n)
   }
   
@@ -231,7 +235,8 @@ object TextNotation {
           ("mixfix", tokens)
        }
        val fixity = FixityParser.parse(name, fixityString, arguments)
-       new TextNotation(name, fixity, prec)
+       val meta = name.module.toMPath //TODO should be parsed
+       new TextNotation(name, fixity, prec, meta)
   }
 }
 

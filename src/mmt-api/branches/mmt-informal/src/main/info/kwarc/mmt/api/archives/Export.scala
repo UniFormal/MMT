@@ -65,6 +65,17 @@ trait Exporter extends BuildTarget { self =>
      narrationExporter.register(arch)
    }
    
+   /** closes the FileWriter and removes the file if it is empty */
+   private def done(rh: RenderingHandler) {
+      rh.done
+      rh match {
+         case fw: presentation.FileWriter => 
+            if (fw.filename.toJava.length == 0)
+               fw.filename.toJava.delete
+         case _ =>
+      }
+   }
+   
    /** A BuildTarget that traverses the content dimension and applies continuation functions to each module.
     *
     *  Deriving this class is well-suited for writing exporters that transform MMT content into other formats.
@@ -89,7 +100,7 @@ trait Exporter extends BuildTarget { self =>
             exportView(v, bf)
           case _ =>
         }
-        _rh.done
+        done(_rh)
       }
       
       override def buildDir(a: Archive, bd: BuildDir, builtChildren: List[BuildTask]) = {
@@ -104,7 +115,7 @@ trait Exporter extends BuildTarget { self =>
         }
         _rh = new presentation.FileWriter(bd.outFile)
         exportNamespace(dp, bd, nss, mps)
-        _rh.done
+        done(_rh)
       }
       
       def includeFile(name: String) = self.includeFile(name)
@@ -127,7 +138,7 @@ trait Exporter extends BuildTarget { self =>
         val doc = controller.getDocument(bf.dpath)
         _rh = new presentation.FileWriter(bf.outFile)
         exportDocument(doc, bf)
-        rh.done
+        done(_rh)
       }
       def includeFile(name : String) = self.includeFile(name)
    }
