@@ -10,6 +10,7 @@ import patterns._
 import utils._
 import ontology._
 import presentation._
+import flexiformal._
 
 import scala.xml.{Node,NodeSeq}
 
@@ -69,16 +70,8 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
              log("mref to " + t + " found")
 	         val r = SRef(docParent.get, Path.parseS(t,modParent), false)
 	         add(r)
-         case <plain-narration>{_*}</plain-narration> => 
-             val r = Narration.parseNarrativeObject(m.child.head)(docParent.get)
-             add(new PlainNarration(docParent.get, r))
-         case <definition>{_*}</definition> => 
-             val targetsS = xml.attr(m, "for").split(" ")
-             val targets = targetsS.map(st => Path.parseS(st, modParent))
-             val contentXML = m.child.find(_.label == "CMP").getOrElse(throw ParseError("Expected CMP inside definition"))
-             val content = Narration.parseNarrativeObject(contentXML)(modParent)
-             val d = new Definition(modParent, targets.toList, content)
-             add(d)
+         case <flexiformal>{decl}</flexiformal> => //by default adding to anonymous theory
+             readInTheory(modParent ? LocalName.anonName,  modParent, decl :: Nil)
          case scala.xml.Comment(_) =>
          case <metadata>{_*}</metadata> => //TODO
          case _ =>
@@ -267,6 +260,8 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
          	val args = ns map (Obj.parseTerm(_, base))
             val inst = new Instance(homeTerm,name,Path.parseS(p,base),args.toList)
             add(inst, md)
+         case <flexiformal>{decl}</flexiformal> =>
+            FlexiformalDeclaration.parseDeclaration(decl, home, base)
          case scala.xml.Comment(_) =>
          case _ => throw new ParseError("symbol level element expected: " + s2)
          }

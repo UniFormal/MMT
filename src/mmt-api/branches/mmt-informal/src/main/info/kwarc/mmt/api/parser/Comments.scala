@@ -1,6 +1,5 @@
 package info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.documents._
 
 object CommentIgnorer extends ParserExtension {
    private val keywords = List("//")
@@ -15,7 +14,8 @@ object CommentHandler extends ParserExtension {
   
   def apply(sp: StructureParser, s: ParserState, se: StructuralElement, k: String) {
     val (commentS, _) = s.reader.readAll
-    val narr = new PlainNarration(s.container, new NarrativeText(commentS))
+    val container = s.container ? LocalName.anonName
+    val narr = new flexiformal.PlainNarration(objects.OMMOD(container), new flexiformal.NarrativeText(commentS))
     controller.add(narr)    
   }
 }

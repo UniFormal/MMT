@@ -6,6 +6,7 @@ import objects.Conversions._
 import utils._
 import parser._
 import documents._
+import flexiformal._
 
 /** This class collects the parameters that are globally fixed during one presentation task.
  * @param rh the rendering handler that collects the generated output
@@ -136,7 +137,7 @@ class StyleBasedPresenter extends Presenter {
             render(notation.presentation, ContentComponents(c :: cpComps), None, List(0), gpar, lpar.copy(owner = cpath))
          case l: Literal =>
             gpar.rh(l)
-         case n:Narration => 
+         case n: flexiformal.FlexiformalDeclaration => 
            val key = NotationKey(None,n.role)
            val notation = controller.get(gpar.nset, key)
            render(notation.presentation, n.contComponents, None, List(0), gpar, lpar)

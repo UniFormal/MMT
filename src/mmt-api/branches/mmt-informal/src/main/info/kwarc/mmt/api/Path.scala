@@ -167,6 +167,7 @@ object LocalName {
    /** parses a LocalName, complex segments are parsed relative to base */
    def parse(s: String, base: Path): LocalName = LocalRef.parse(s).toLocalName(base)
    def parse(s:String): LocalName = parse(s, utils.mmt.mmtbase)
+   val anonName = LocalName(Nil)
 }
 
 /** a step in a LocalName */

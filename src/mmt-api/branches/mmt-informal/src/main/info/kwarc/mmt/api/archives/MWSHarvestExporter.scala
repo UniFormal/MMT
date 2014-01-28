@@ -9,6 +9,7 @@ import backend._
 import objects._
 import utils._
 import documents._
+import flexiformal._
 
 class MWSHarvestExporter extends Exporter {
   val outDim = Dim("export", "mws")
@@ -19,6 +20,11 @@ class MWSHarvestExporter extends Exporter {
   def exportTheory(t: DeclaredTheory, bf: BuildFile) { 
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
+    def narrToCML(n : NarrativeObject) : List[scala.xml.Node] = n match {
+        case nt : NarrativeTerm => List(custom.prepareQuery(nt.term))
+        case nn : NarrativeNode => nn.child.flatMap(narrToCML)
+        case _ => Nil
+    }
     t.getDeclarations foreach {  
       case c: Constant =>
         List(c.tp,c.df).map(tO => tO map { 
@@ -33,6 +39,13 @@ class MWSHarvestExporter extends Exporter {
           val node = <mws:expr url={url}>{i.matches.toCML}</mws:expr>
           outStream.write(node.toString + "\n")
         }*/
+      case n : flexiformal.FlexiformalDeclaration =>  
+          val exprs = narrToCML(n.content)
+          val url = custom.mwsurl(t.path)
+          exprs foreach {cml =>
+            val out = <mws:expr url={url}>{cml}</mws:expr>
+            rh(out.toString + "\n")
+          }        
       case _ => 
     }
     rh("</mws:harvest>\n")
@@ -51,22 +64,11 @@ class MWSHarvestExporter extends Exporter {
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
     try {
-      def narrToCML(n : NarrativeObject) : List[scala.xml.Node] = n match {
-        case nt : NarrativeTerm => List(custom.prepareQuery(nt.term))
-        case nn : NarrativeNode => nn.child.flatMap(narrToCML)
-        case _ => Nil
-      }
       doc.components collect {
-        case n : Narration =>  
-          val exprs = narrToCML(n.content)
-          val url = custom.mwsurl(doc.path)
-          exprs foreach {cml =>
-            val out = <mws:expr url={url}>{cml}</mws:expr>
-            rh(out.toString + "\n")
-          }        
+        case _ =>
       }
     } catch {
-      case e : GetError => //doc not found, can safely ignore 
+      case e : GetError => //doc not found, can ignore 
     }   
     rh("</mws:harvest>\n")
   }
