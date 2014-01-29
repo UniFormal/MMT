@@ -26,11 +26,30 @@ This is a reference to some abbreviations in the code that are very useful when 
 
 These consists of symbolic method names which give rise to unary/binary operators, implicit conversions, overloading, apply/unapply methods.
 
-<h3>URIs</h3>
+<h3>URIs and Files</h3>
+
+Throughout the MMT code, the classes utils.File and utils.URI replace Java's java.io.File and java.net.URI.<br/>
+
+utils.FileConversion and utils.URI define implicit conversions between Java and MMT files and URIs.<br/>
+
+/ for files and /, ?, and ## for URIs can be used to form new new File and URI objects in the intuitive way: 
 
 <ul>
-<li>File / List[String] : File °</li>
+<li>File / List[String] : File</li>
 <li>URI / List[String] : URI</li>
+<li>URI ? String : URI</li>
+<li>URI ## String : URI</li>
+</ul>
+
+utils.FileURI defines apply/unapply methods to convert between files and file-URIs.<br/>
+
+utils.File defines useful methods for reading and writing text files.
+
+<h3>MMT URIs</h3>
+
+/ and ? can be used to form MMT URIs in the intuitive way:
+
+<ul>
 <li>DPath / LocalName : DPath °</li>
 <li>DPath ? LocalName : MPath °</li>
 <li>MPath / LocalName : MPath °</li>
