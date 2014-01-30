@@ -36,18 +36,18 @@ trait HTMLPresenter extends Presenter {
    import htmlRh._
    
    private def doName(s: String) {
-      span("name") {rh(s)}
+      span("name") {text(s)}
    }
    private def doMath(t: Obj) {
         rh(mmlPres.asString(t))
    }
    private def doComponent(comp: DeclarationComponent, t: Obj) {
-      td {span {rh(comp.toString)}}
+      td {span {text(comp.toString)}}
       td {doMath(t)}
    }
    private def doNotComponent(comp: NotationComponent, tn: parser.TextNotation) {
-      td {span {rh(comp.toString)}}
-      td {span {rh(tn.toText)}}
+      td {span {text(comp.toString)}}
+      td {span {text(tn.toText)}}
    }
    private val scriptbase = "https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/script/"
    private val cssbase    = "https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/css/"
@@ -89,7 +89,7 @@ trait HTMLPresenter extends Presenter {
                     td {doName(d.name.toString)}
                     td {
                        def toggle(label: String) {
-                          span("compToggle", onclick = s"toggle(this,'$label')") {rh(label)}
+                          span("compToggle", onclick = s"toggle(this,'$label')") {text(label)}
                        }
                        d.getComponents.foreach {case (comp, tc) => if (tc.isDefined) 
                           toggle(comp.toString)
@@ -115,18 +115,18 @@ trait HTMLPresenter extends Presenter {
                      }
                }
                if (! d.metadata.getTags.isEmpty) tr("tags") {
-                  td {rh("tags")}
+                  td {text("tags")}
                   td {d.metadata.getTags.foreach {
-                     k => div("tag") {rh(k.toPath)}
+                     k => div("tag") {text(k.toPath)}
                   }}
                }
                def doKey(k: GlobalName) {
-                  td{span("key", title=k.toPath) {rh(k.toString)}}
+                  td{span("key", title=k.toPath) {text(k.toString)}}
                }
                d.metadata.getAll.foreach {
                   case metadata.Link(k,u) => tr("link metadata") {
                      doKey(k)
-                     td {a(u.toString) {rh(u.toString)}}
+                     td {a(u.toString) {text(u.toString)}}
                   }
                   case md: metadata.MetaDatum => tr("metadatum metadata") {
                      doKey(md.key)
@@ -144,14 +144,14 @@ trait HTMLPresenter extends Presenter {
             div("subnamespace") {
                val name = bd.dirName + "/" + bd.outFile.segments.last
                a(name) {
-                  rh(dp.toPath)
+                  text(dp.toPath)
                }
             }
          }
          modules.foreach {case (bf, mp) =>
             div("submodule") {
                a(bf.outFile.segments.last) {
-                  rh(mp.toPath)
+                  text(mp.toPath)
                }
             }
          }
@@ -161,19 +161,19 @@ trait HTMLPresenter extends Presenter {
    def doDocument(doc: Document) {
      div("document") {
        span("name") {
-         rh(doc.path.last)
+         text(doc.path.last)
        }
        ul { doc.getItems foreach {
          case d: DRef => 
            li("dref") {
              span(cls = "name loadable", attributes=List("jobad:load" -> d.target.toPath)) {
-               rh(d.target.last)
+               text(d.target.last)
              }
            }
          case m : MRef =>
            li("mref") {
              span(cls = "name loadable", attributes=List("jobad:load" -> m.target.toPath)) {
-               rh(m.target.last)
+               text(m.target.last)
              }
            }
        }}
@@ -199,13 +199,13 @@ class MMTDocExporter extends HTMLPresenter {
                case d: DRef =>
                   li("dref") {
                      a(d.target.toPath) {
-                        rh(d.target.last)
+                        text(d.target.last)
                      }
                   }
                case m: MRef =>
                   li("mref") {
                      a(m.target.toPath) {
-                        rh(m.target.last)
+                        text(m.target.last)
                      }
                   }
             }}
