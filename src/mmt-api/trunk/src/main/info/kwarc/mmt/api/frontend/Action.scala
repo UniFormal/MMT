@@ -398,14 +398,13 @@ case class Present(c : MakeAbstract, param : String) extends MakeConcrete {
 /** retrieves all relational elements about a certain path and renders them as XML */
 case class Deps(path : Path) extends MakeConcrete {
    def make(controller : Controller, rb : RenderingHandler) {
-     rb.elementStart("","mmtabox")
-     rb.attributeStart("", "xmlns")
-     rb("http://omdoc.org/abox")
-     rb.attributeEnd
+     rb.beginTag("","mmtabox")
+     rb.writeAttribute("", "xmlns", "http://omdoc.org/abox")
+     rb.finishTag()
      (controller.depstore.getInds ++ controller.depstore.getDeps).foreach(
          (d : ontology.RelationalElement) => if (path <= d.path) rb(d.toNode)
      )
-     rb.elementEnd
+     rb.writeEndTag("", "mmtabox")
    }
    override def toString = path.toString + " deps"
 }
@@ -433,10 +432,10 @@ case class ToFile(pres : MakeConcrete, file : java.io.File) extends Output {
 /** displays content in a window */
 case class ToWindow(pres : MakeConcrete, window: String) extends Output {
    def make(controller : Controller) {
-      val rb = new XMLBuilder
+      val rb = new StringBuilder
       pres.make(controller, rb)
       val res = rb.get
-      controller.winman.getWindow(window).set(res.toString)
+      controller.winman.getWindow(window).set(res)
    }
    override def toString = pres + " window " + window
 }

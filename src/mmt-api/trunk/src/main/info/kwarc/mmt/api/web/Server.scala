@@ -346,7 +346,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
               try {
                 val mod = ctrl.memory.content.getModule(mpath)
                 val nset = DPath(URI("http://cds.omdoc.org/styles/lf/mathml.omdoc")) ? "twelf"  //TODO get style from server js use ExtensionManager.getPresenter
-                val rb = new presentation.XMLBuilder()
+                val rb = new presentation.StringBuilder()
                 val module = if(save) {
                   controller.get(mpath)
                 } else {
@@ -354,7 +354,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
                 }
                 val presenter = new presentation.StyleBasedPresenter(controller,nset) 
                 presenter(module)(rb)
-                val thyXML = rb.get()
+                val thyString = rb.get
                 val response = new collection.mutable.HashMap[String,Any]()
                 response("success") = "true"                                      
                 val sdiff = controller.detectChanges(List(mod))
@@ -362,7 +362,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
                   case false => //just detecting refinements
                     val refs = controller.detectRefinements(sdiff)
                     response("info") = JSONArray(refs)
-                    response("pres") =  thyXML.toString
+                    response("pres") =  thyString
                   case true => //updating and returning list of done updates
                     val pchanges = tk.req.param("pchanges").map(_.split("\n").toList).getOrElse(Nil)       
                     val boxedPaths = controller.update(sdiff, pchanges)

@@ -89,9 +89,9 @@ class Present extends QueryExtension("present", ObjType, XMLType) {
    def evaluate(argument: BaseType, param: MPath) = {
       argument match {
         case o : Obj =>
-           val rb = new presentation.XMLBuilder
+           val rb = new presentation.StringBuilder
            (new presentation.StyleBasedPresenter(controller,param)).apply(o)(rb)
-           XMLValue(rb.get)
+           XMLValue(scala.xml.XML.loadString(rb.get))
         case _ => throw ImplementationError("evaluation of ill-typed query")
      }
    }
@@ -102,10 +102,10 @@ class PresentDecl extends QueryExtension("presentDecl", PathType, XMLType) {
    def evaluate(argument: BaseType, param: MPath) = {
       argument match {
         case p: Path => 
-           val rb = new presentation.XMLBuilder
+           val rb = new presentation.StringBuilder
            val e = controller.get(p)
            (new presentation.StyleBasedPresenter(controller,param)).apply(e)(rb)
-           XMLValue(rb.get)
+           XMLValue(scala.xml.XML.loadString(rb.get))
         case _ => throw ImplementationError("evaluation of ill-typed query")
      }
    }

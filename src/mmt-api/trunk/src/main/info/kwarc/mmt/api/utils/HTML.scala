@@ -1,5 +1,7 @@
 package info.kwarc.mmt.api.utils
 
+import scala.xml.Utility
+
 /**
  * a partial implementation of HTML designed for easily building and emitting HTML documents
  * @param out a continuation function called on the text snippets making up the HTML document
@@ -83,13 +85,17 @@ class HTML(out: String => Unit) {
    val h6 = new Element("h6")
    val h7 = new Element("h7")
    val p  = new Element("p")
-
+   
    def br {out("<br/>")} 
    def a(ref: String)(body: => Unit) {
       out(s"""<a href="$ref">""")
       body
       out("</a>")
    }
+   def text(s : String) {
+     out(scala.xml.Utility.escape(s))
+   }
+   
    /**
     * produces a script tag pointing to a javascript file
     * @param src the src attribute (i.e., the javascript file)
