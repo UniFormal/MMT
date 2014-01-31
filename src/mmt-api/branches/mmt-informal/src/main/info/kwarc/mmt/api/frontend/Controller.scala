@@ -483,9 +483,6 @@ class Controller extends ROController with Logger {
                   arch.readNotation(in, this)
                   log("done reading notation index")
                 */
-               case "mws"          => arch.produceMWS(in, arch.contentDim)
-               case "mws-flat"     => arch.produceMWS(in, "mws-flat")
-               case "mws-enriched" => arch.produceMWS(in, "mws-enriched")
                case "integrate"    => arch.integrateScala(this, in)
                case "register"     =>
                   if (in.length != 1)

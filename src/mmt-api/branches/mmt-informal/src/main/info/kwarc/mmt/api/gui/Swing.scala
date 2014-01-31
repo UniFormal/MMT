@@ -42,4 +42,17 @@ object Swing {
       b.addActionListener(al)
       b
    }
+   
+   def HorizontalPanel: java.awt.Container = {
+      val panel = new JPanel()
+      val layout = new BoxLayout(panel, BoxLayout.LINE_AXIS)
+      panel.setLayout(layout)
+      panel
+   }
+   def VerticalPanel: java.awt.Container = {
+      val panel = new JPanel
+      val layout = new BoxLayout(panel, BoxLayout.PAGE_AXIS)
+      panel.setLayout(layout)
+      panel
+   }
 }

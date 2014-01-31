@@ -60,6 +60,8 @@ object Extractor {
                      f(dec)
                      f(IsInstance(i.path))
                      f(IsInstanceOf(i.path, i.pattern))
+                  case fd : flexiformal.FlexiformalDeclaration =>
+                    //TODO
                }
             }}
          case _ =>

@@ -140,9 +140,9 @@ class TreePane(controller: Controller) extends JPanel {
       val presenter = controller.extman.getPresenter(mode) getOrElse {
          new presentation.StyleBasedPresenter(controller,style)
       }
-      val rb = new presentation.XMLBuilder
+      val rb = new presentation.StringBuilder
       presenter(se)(rb)
-      content.setText(rb.get.toString) // content.load(rb.get)
+      content.setText(rb.get) 
       ontologyPane.removeAll
       val p = se.path
       ontology.Binary.all.foreach {b =>

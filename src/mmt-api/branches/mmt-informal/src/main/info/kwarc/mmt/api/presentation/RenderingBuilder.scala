@@ -7,12 +7,14 @@ import scala.xml._
  * @tparam A the return type, possibly Unit
  */
 abstract class RenderingHandler {
+   /** writes a string, to be implemented by subclasses */
+   def write(s : String) : Unit
    /** output a string */
-   def apply(s : String)
-   /** output a string with line ending */
-   def writeln(s: String) {apply(s + "\n")}
+   def apply(s : String) {
+     write(s)
+   }
    /** output an XML node */
-   def apply(N : Node)
+   def apply(N : Node) {apply(N.toString)}
    /** output a literal */
    def apply(l : Literal) : Unit = l match {
       case StringLiteral(s) => apply(s)
@@ -20,18 +22,49 @@ abstract class RenderingHandler {
       case ValueLiteral(v) => apply(v.toString)
       case Omitted => ()
    }
-   /** start an XML element, use empty prefix for unprefixed elements, content is provided by succeeding calls */
-   def elementStart(prefix : String, label : String)
-   /** start an XML attribute, use empty prefix for unprefixed attributes, value is provided by succeeding calls */
-   def attributeStart(prefix : String, name : String)
-/*   def procinstr(target : String, text : String)
-   def xmldecl(version : String, encoding : String) */
-   /** end the current attribute */
-   def attributeEnd()
-   /** end the current element */
-   def elementEnd()
+   
+   // Convenience methods for rendering text
+   /** output a string with line ending */
+   def writeln(s: String) {apply(s + "\n")}
+ 
+   // Convenience methods for rendering XML
+   /** begins an XML element, use empty prefix for unprefixed elements, content is provided by succeeding calls */ 
+   def beginTag(prefix : String, label : String) {
+     write("<" + getQualifiedName(prefix, label))
+   }
+   /** finishes an XML tag, assumes an open one exists */
+   def finishTag() {
+     write(">\n")
+   }
+   /** begins an XML attribute, assumes inside open tag, always starts with space separating from previous output */
+   def beginAttribute(prefix : String, name : String) {
+     write(s""" ${getQualifiedName(prefix, name)}="""")
+   }
+   /** finishes an XML attribute, assumes inside open tag and open attribute */
+   def finishAttribute() {
+     write("\"")
+   }
+   /** write an XML attribute at once, assumes inside open tag, always starts with space separating from previous output, can also be used for namespace bindings */
+   def writeAttribute(prefix : String, name : String, value : String) {
+     write(s""" ${getQualifiedName(prefix, name)}="$value"""")
+   }
+   /** write an XML start tag at once, including attributes and scope */
+   def writeStartTag(prefix : String, label : String, attributes : MetaData, scope : NamespaceBinding) {
+     write("<")
+     write(getQualifiedName(prefix, label))
+     write(attributes.toString) //starts with a space
+     write(scope.toString) //starts with a space
+     write(">\n")
+   }
+   /** write an XML end tag */
+   def writeEndTag(prefix : String, label : String) {
+     write(s"</${getQualifiedName(prefix, label)}>\n")
+   }
    /** releases all resources, empty by default */
    def done {}
+   /** returns a qualified name from a prefix and a local part */
+   private def getQualifiedName(prefix : String, name: String) =
+     if (prefix == "" || prefix == null) name else (prefix + ":" + name)
 }
 
 trait RenderingResult[A] extends RenderingHandler {
@@ -41,61 +74,13 @@ trait RenderingResult[A] extends RenderingHandler {
    override def done {get} 
 }
 
-/** collects the output as text, XML is converted to a string, does not specify what to do with that string */
-abstract class TextHandler extends RenderingHandler {
-   private var openTag : Boolean = false
-   private var openAtt : Boolean = false
-   private var openElements : List[String] = Nil
-   protected def prefixOpt(s: String) = if (s == "") "" else (s + ":")
-   def write(s: String) : Unit 
-   def apply(N : Node) {apply(N.toString)}
-   def apply(s: String) {
-      if (openTag && ! openAtt) {
-        write(">\n")
-        openTag = false
-      }
-      val escape = if (openElements != Nil) scala.xml.Utility.escape(s) else s
-      write(escape)
-   }
-/*   def xmldecl(version : String, encoding : String) {
-      write("<?xml version=\"" + version + "\" encoding=\"" + encoding + "\"?>")
-   }
-   def procinstr(target : String, text : String) {
-      write("<?" + target + " " + text + "?>")
-   } */
-   def elementStart(prefix : String, label : String) {
-      if (openAtt) attributeEnd
-      if (openTag) write(">\n")
-      val pl = prefixOpt(prefix) + label
-      write("<" + pl + "\n")
-      openTag = true
-      openElements = pl :: openElements
-   }
-   def elementEnd() {
-      if (openElements == Nil) return
-      if (openTag) write("\n/>\n")
-      else write("\n</" + openElements.head + ">\n")
-      openTag = false
-      openElements = openElements.tail
-   }
-   def attributeStart(prefix : String, name : String) {
-      if (openAtt) attributeEnd
-      write(prefixOpt(prefix) + name + "=\"")
-      openAtt = true
-   }
-   def attributeEnd() {
-      write("\"\n")
-      openAtt = false
-   }
-}
-
 /** writes text output to the console */
-object ConsoleWriter extends TextHandler {
+object ConsoleWriter extends RenderingHandler {
    def write(s : String) {print(s)}
 }
 
 /** writes text output to a file */
-class FileWriter(val filename : File) extends TextHandler {
+class FileWriter(val filename : File) extends RenderingHandler {
    private val file = utils.File.Writer(filename)
 	def write(s : String) {
 	  file.print(s)
@@ -104,93 +89,8 @@ class FileWriter(val filename : File) extends TextHandler {
 }
 
 /** writes text output to a StringBuilder */
-class StringBuilder extends TextHandler with RenderingResult[String] {
+class StringBuilder extends RenderingHandler with RenderingResult[String] {
    private var sb = new scala.collection.mutable.StringBuilder(5000)
    def write(s: String) {sb.append(s)}
    def get = sb.result
-}
-
-/** excpetion thrown by XML builder if methods are called that would lead to ill-formed XML */
-case object XMLError extends java.lang.Throwable
-
-/** collects the output as XML and stores it in memory */
-class XMLBuilder extends RenderingHandler with RenderingResult[Node] {
-   private var preamble = ""
-   private var state : List[Elem] = Nil
-   private var inAttribute : Option[(String,String)] = None
-   private var attribute = ""
-   protected def prefixOpt(s: String) = if (s == "") null else s
-   def apply(str : String) =
-      inAttribute match {
-         case None => state match {
-            case Nil => preamble = preamble + str
-            case Elem(p,l,a,s,c @ _*) :: rest => state = Elem(p,l,a,s, false, c ++ List(scala.xml.Text(str)) : _*) :: rest
-         }
-         case Some(_) => attribute = attribute + str
-      }
-   def apply(N : Node) =
-      inAttribute match {
-         case None => state match {
-            case Nil => N match {
-               case e : Elem => state = List(e)
-               case _ => preamble = preamble + N.toString
-            }
-            case Elem(p,l,a,s,c @ _*) :: rest => state = Elem(p,l,a,s, false, c ++ List(N) : _*) :: rest
-         }
-      case Some(_) => throw XMLError
-   }
-   
-/*   def xmldecl(version : String, encoding : String) {
-      document.version = Some(version)
-      document.encoding = Some(encoding)
-   }
-   def procinstr(target : String, text : String) {
-      if (state.length > 0) throw XMLError
-      document.children = document.children ++ scala.xml.ProcInstr(target, text) 
-   } */
-   def elementStart(prefix : String, label : String) {
-      inAttribute match {
-         case None => state = Elem(prefixOpt(prefix), label, Null, TopScope, false) :: state
-         case Some(_) => throw XMLError
-      }
-      
-   }
-   def elementEnd() {
-      inAttribute match {
-         case None =>
-           state match {
-             case Nil => ()
-             case _ :: Nil => ()
-             case e :: Elem(p,l,a,s,c @ _*) :: rest => state = Elem(p,l,a,s, false, c ++ List(e) : _*) :: rest
-           }
-         case _ => throw XMLError
-      }
-   }
-   def attributeStart(prefix : String, name : String) {
-      inAttribute match {
-         case None => 
-            inAttribute = Some(prefix, name)
-            attribute = ""
-         case Some(_) => throw XMLError
-      }
-   }
-   def attributeEnd() {
-      inAttribute match {
-         case None => throw XMLError
-         case Some((prefix, name)) => state match {
-            case Nil => throw XMLError
-            case e :: rest =>
-               val att = if (prefix == "") new UnprefixedAttribute(name, attribute, Null)
-                         else new PrefixedAttribute(prefix, name, attribute, Null)
-               state = (e % att) :: rest
-         }
-      }
-      inAttribute = None
-   }
-   /** returns the output XML node */
-   def get() : Node = {
-     if (inAttribute != None || state.length > 1) throw XMLError
-     if (state == Nil) return scala.xml.Text(preamble)
-     state(0) //TO DO: print preamble
-   }
 }

@@ -229,53 +229,6 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
           }
        }
     }
-    
-    def produceMWS(in : List[String] = Nil, dim: String) {
-        val sourceDim = dim match {
-          case "mws-flat" => "flat"
-          case "mws-enriched" => "enriched"
-          case _ => contentDim
-        }
-        traverse(source, in, Archive.extensionIs("omdoc")) {case Current(inFile, inPath) =>
-           val outFile = (root / "mws" / dim / inPath).setExtension("mws")
-           log("[  -> MWS]  " + inFile + " -> " + outFile)
-           val controller = new Controller
-           controller.read(inFile,None)
-           val mpath = Archive.ContentPathToMMTPath(inPath)
-           val mod = controller.localLookup.getModule(mpath)
-           mod match {
-              case thy : DeclaredTheory =>
-                 outFile.toJava.getParentFile().mkdirs()
-                 val outStream = new java.io.FileWriter(outFile)
-                 def writeEntry(t: Term, url: String) {
-                   val node = <mws:expr url={url}>{t.toCML}</mws:expr> 
-                   outStream.write(node.toString + "\n")
-                 }
-                 outStream.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-                 outStream.write("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
-                 thy.getDeclarations foreach {
-                    case c: Constant =>
-                       List(c.tp,c.df).map(tO => tO map { 
-                          t =>
-                            val url = custom.mwsurl(c.path) 
-                            val cml = custom.prepareQuery(t)
-                            val node = <mws:expr url={url}>{cml}</mws:expr> 
-                            outStream.write(node.toString + "\n")
-                            //writeEntry(t, mwsbase + "/" + c.name.flat)
-                       })
-                    /*case i : Instance => {
-                      val url = mwsbase + "/" + thy.name + ".html" + "#" + i.name.flat
-                      val node = <mws:expr url={url}>{i.matches.toCML}</mws:expr>
-                      outStream.write(node.toString + "\n")
-                    }*/
-                    case _ =>
-                 }
-                 outStream.write("</mws:harvest>\n")
-                 outStream.close
-              case _ => //TODO index other modules
-           }
-        }
-    }
 }
 
 

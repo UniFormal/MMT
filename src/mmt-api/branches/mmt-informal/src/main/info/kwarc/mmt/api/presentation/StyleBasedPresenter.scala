@@ -119,9 +119,9 @@ class StyleBasedPresenter extends Presenter {
       c match {
          case m : documents.XRef if expandXRefs => 
          	val s = controller.get(m.target)
-            val rb = new XMLBuilder()
+            val rb = new StringBuilder()
             this.apply(s)(rb)
-            val response = rb.get()
+            val response = rb.get
             gpar.rh(response)
           case StrToplevel(c) => 
             val key = NotationKey(None, Role_StrToplevel)
@@ -143,22 +143,15 @@ class StyleBasedPresenter extends Presenter {
            render(notation.presentation, n.contComponents, None, List(0), gpar, lpar)
          case no:NarrativeObject => no match {
            case nd : NarrativeNode => 
-             gpar.rh.elementStart("", nd.node.label)
-             var attrs = nd.node.attributes 
-             attrs foreach {m => 
-               m.key
-               gpar.rh.attributeStart("", m.key)
-               gpar.rh(m.value.toString)
-               gpar.rh.attributeEnd()
-             }
+             gpar.rh.writeStartTag(nd.node.prefix, nd.node.label, nd.node.attributes, nd.node.scope)
              nd.child.map(ch => present(ch, gpar, lpar))
-             gpar.rh.elementEnd()
+             gpar.rh.writeEndTag(nd.node.prefix, nd.node.label)
            case nt: NarrativeText =>
              gpar.rh(" ")
              gpar.rh(nt.text)
              gpar.rh(" ")
            case nr: NarrativeRef =>
-             gpar.rh(nr.toHTML) //todo style to jobad compatible markup
+             gpar.rh(<span jobad:href={nr.target.toPath}> {nr.text} </span>) 
            case nr: NarrativeTerm => 
              present(nr.term, gpar, lpar)             
          }
@@ -272,14 +265,15 @@ class StyleBasedPresenter extends Presenter {
             }
             gpar.rh(t)
         case Element(prefix, label, attributes, children) =>
-            gpar.rh.elementStart(prefix, label)
+            gpar.rh.beginTag(prefix, label)
             attributes.foreach {case Attribute(prefix, name, value) =>
-               gpar.rh.attributeStart(prefix, name)
+               gpar.rh.beginAttribute(prefix, name)
                recurse(value)
-               gpar.rh.attributeEnd
+               gpar.rh.finishAttribute()
             }
+            gpar.rh.finishTag()
             children.foreach(recurse)
-            gpar.rh.elementEnd
+            gpar.rh.writeEndTag(prefix, label)
         case PList(items) =>
             items.foreach(recurse)  
         case If(cind, test, yes, no) =>

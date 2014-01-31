@@ -6,6 +6,8 @@ import objects._
 import collection._
 import symbols._
 import modules._
+import frontend._
+import presentation._
 import xml.{Node}
 
 abstract class FlexiformalRelation
@@ -45,10 +47,14 @@ object FlexiformalDeclaration {
   }
 }
 
-trait NarrativeObject extends Content {
+sealed trait NarrativeObject extends Content with ComponentContainer {
   def toNode : scala.xml.Node 
   def role = Role_NarrativeObject
   def governingPath = None
+  def delete: Unit = throw ImplementationError("Cannot delete narrative object")
+  def isDefined: Boolean = true
+  def update(nw: ComponentContainer) = throw ImplementationError("cannot update : " + nw)
+  
 }
 
 class NarrativeText(val text : String) extends NarrativeObject {
@@ -59,21 +65,18 @@ class NarrativeText(val text : String) extends NarrativeObject {
 class NarrativeTerm(val term : Term) extends NarrativeObject {
   def toNode = new scala.xml.Elem("om", "OMOBJ", new scala.xml.PrefixedAttribute("xmlns","om", "http://www.openmath.org/OpenMath", scala.xml.Null), scala.xml.TopScope, false, term.toNode)
   def components = term :: Nil
+ 
 }
 
 class NarrativeRef(val target : Path, val text : String, val self : Boolean = false) extends NarrativeObject { //self is true e.g. for subjects of definitions "A 'prime number' p is ..."
   def toNode = <omdoc:ref target={target.toPath} self={self.toString}> {text} </omdoc:ref>
-  def toHTML = self match {
-    case false => <span jobad:href={target.toPath}> {text} </span>
-    case true => <u><i> <span jobad:href={target.toPath}> {text} </span> </i></u>
-  }
   
   def components = presentation.StringLiteral(text) :: Nil
 }
 
 class NarrativeNode(val node : scala.xml.Node,val child : List[NarrativeObject]) extends NarrativeObject {
   def toNode = new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, child.map(_.toNode) :_ *)
-  def components = child
+  def components = child    
 }
 
 
@@ -95,7 +98,7 @@ class PlainNarration(home : Term, content : NarrativeObject) extends Flexiformal
       {content.toNode}
     </flexiformal>
   def components = content :: Nil //TODO
-  def getComponents: List[(info.kwarc.mmt.api.DeclarationComponent, info.kwarc.mmt.api.ComponentContainer)] = Nil //TODO
+  def getComponents = (DefComponent -> content) :: Nil 
 }
 
 class Definition(home : Term, val targets : List[GlobalName], content : NarrativeObject) extends FlexiformalDeclaration(home, content) {
@@ -107,7 +110,7 @@ class Definition(home : Term, val targets : List[GlobalName], content : Narrativ
       {content.toNode} 
     </flexiformal>  
   def components =  content :: Nil //TODO  
-  def getComponents = Nil //TODO
+  def getComponents = (DefComponent -> content) :: Nil
 }
 
 class Example(home : Term, val targets : List[GlobalName], content : NarrativeObject) extends FlexiformalDeclaration(home, content) {
@@ -119,7 +122,7 @@ class Example(home : Term, val targets : List[GlobalName], content : NarrativeOb
       {content.toNode} 
     </flexiformal>  
   def components =  XMLLiteral(content.toNode) :: Nil //TODO
-  def getComponents = Nil //TODO
+  def getComponents = (DefComponent -> content) :: Nil
 }
 
 class Assertion(home : Term, val targets : List[GlobalName], content : NarrativeObject) extends FlexiformalDeclaration(home, content) {
@@ -131,5 +134,5 @@ class Assertion(home : Term, val targets : List[GlobalName], content : Narrative
       {content.toNode} 
     </flexiformal>
   def components =  XMLLiteral(content.toNode) :: Nil //TODO      
-  def getComponents = Nil //TODO
+  def getComponents = (DefComponent -> content) :: Nil
 }

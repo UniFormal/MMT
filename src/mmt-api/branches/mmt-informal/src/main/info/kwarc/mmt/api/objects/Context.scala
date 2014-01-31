@@ -42,7 +42,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term]) exten
       }
    }
    def toNode = <om:OMV name={name.toPath}>{mdNode}{tpN}{dfN}</om:OMV> 
-   def toCML = toOpenMath.toCML
+   def toCMLQVars(implicit qvars: Context) = <m:bvar><m:ci>{name.toPath}</m:ci>{(tp.toList:::df.toList).map(_.toCMLQVars)}</m:bvar>
    def role = Role_Variable
    def head = tp.flatMap(_.head)
    def components =
@@ -202,8 +202,8 @@ case class Context(variables : VarDecl*) extends Obj {
    override def toString = this.map(_.toString).mkString("",", ","")
    def toNode =
      <om:OMBVAR>{mdNode}{this.zipWithIndex.map({case (v,i) => v.toNode})}</om:OMBVAR>
-   def toCML = 
-     <m:bvar>{this.map(v => v.toCML)}</m:bvar>
+   def toCMLQVars(implicit qvars: Context) = 
+     <m:apply>{this.map(v => v.toCMLQVars)}</m:apply>
    def head = None
    def role : Role = Role_context
    def components = variables.toList 
@@ -220,7 +220,7 @@ case class Sub(name : LocalName, target : Term) extends Obj {
    private[objects] def freeVars_ = target.freeVars_
    def role : Role = Role_termsub
    def toNode: Node = <om:OMV name={name.toString}>{mdNode}{target.toNode}</om:OMV>
-   def toCML : Node = <m:mi name={name.toPath}>{target.toCML}</m:mi>
+   def toCMLQVars(implicit qvars: Context) : Node = <m:mi name={name.toPath}>{target.toCMLQVars}</m:mi>
    def components = List(StringLiteral(name.toString), target)
    override def toString = name + ":=" + target.toString
    def head = None
@@ -253,7 +253,7 @@ case class Substitution(subs : Sub*) extends Obj {
    override def toString = this.map(_.toString).mkString("",", ","")
    def toNode =
       <om:OMBVAR>{mdNode}{subs.zipWithIndex.map(x => x._1.toNode)}</om:OMBVAR>
-   def toCML = asContext.toCML
+   def toCMLQVars(implicit qvars: Context) = asContext.toCMLQVars
    def head = None
    def role : Role = Role_substitution
    def components = subs.toList

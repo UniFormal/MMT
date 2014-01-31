@@ -28,6 +28,9 @@ class GUIPanel(controller: Controller) extends JPanel {
    private val tree = new TreePane(controller)
    tabbed.addTab("Tree", null, tree, "the content tree")
 
+   private val searchpane = new SearchPane(controller)
+   tabbed.addTab("Search", null, searchpane, "MathWebSearch")
+   
    //private val logpane = LogPane(controller)
    //tabbed.addTab("Log (still buggy)", null, logpane, "configure logging options")
 
@@ -36,6 +39,6 @@ class GUIPanel(controller: Controller) extends JPanel {
 
    private val empane = new ExtManPane(controller.extman)
    tabbed.addTab("Extensions", null, empane, "registered extensions")
-   
+
    add(tabbed, BorderLayout.CENTER)
 }
