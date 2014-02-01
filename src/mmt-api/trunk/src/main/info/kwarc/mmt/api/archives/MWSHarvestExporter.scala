@@ -73,7 +73,6 @@ class MathWebSearch(url: java.net.URL) {
     *  @return MathWebSearch's reply
     */
    def apply(query: MathWebSearchQuery): List[MathWebSearchAnswer] = {
-      println(query.term)
       val responseXML = utils.xml.post(url, queryToXML(query))
       val response = responseXML match {
          case <mws:answset>{answs @_*}</mws:answset> =>
@@ -82,11 +81,10 @@ class MathWebSearch(url: java.net.URL) {
                   val p = Path.parseC(utils.xml.attr(n, "uri"), utils.mmt.mmtbase)
                   val xpS = utils.xml.attr(n, "xpath")
                   // xpath has format "/*[Int].../*[Int]
-                  val xp = xpS.substring(3, xpS.length-4).split("]/*[").toList.map(_.toInt)
+                  val xp = xpS.substring(3, xpS.length-1).split("\\]/\\*\\[").toList.map(_.toInt - 1).tail
                   MathWebSearchAnswer(p, Position(xp))
             }
       }
-      println(response)
       response
    }
 }

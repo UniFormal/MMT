@@ -143,14 +143,16 @@ class TreePane(controller: Controller) extends JPanel {
       val rb = new presentation.StringBuilder
       presenter(se)(rb)
       content.setText(rb.get) 
+      val qsPanelWidth = ontologyPane.getSize().width
       ontologyPane.removeAll
       val p = se.path
+      ontologyPane.add(Swing.centeredLabel(p.toString + " ..."))
       ontology.Binary.all.foreach {b =>
          val qs = controller.depstore.queryList(p, -b)
          if (! qs.isEmpty) {
-            ontologyPane.add(new JLabel(b.toString))
-            val qsPanel = new JPanel
-            qs.foreach {q =>
+            ontologyPane.add(Swing.centeredLabel("... " + b.backwardsDesc))
+            val qsPanel = new JPanel(new WrapLayout(qsPanelWidth))
+            qs.sortBy(_.toString).foreach {q =>
                val b = Swing.Button(q.toString)(setNewElement(q))
                qsPanel.add(b)
             }

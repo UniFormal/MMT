@@ -40,7 +40,7 @@ object Unary {
  * An object of type Binary represents a binary predicate between MMT paths in the MMT ontology.
  * The semantics of these objects is given by their name
  */
-sealed abstract class Binary(val desc : String) {
+sealed abstract class Binary(val desc : String, val backwardsDesc: String) {
    /** yields the corresponding relational item that classifies p */ 
    def apply(subj : Path, obj : Path) = Relation(this, subj, obj)
    /** syntactic sugar for queries: ToSubject(this) */
@@ -50,21 +50,21 @@ sealed abstract class Binary(val desc : String) {
 }
 
 // module - module, component - component
-case object DependsOn extends Binary("S depends on O")
+case object DependsOn extends Binary("depends on", "depended on by")
 // theory - theory
-case object HasMeta extends Binary("S has meta-theory O")
-case object Includes extends Binary("S includes O")
+case object HasMeta extends Binary("has meta-theory", "is meta-theory of")
+case object Includes extends Binary("includes", "included by")
 //link - theory, style - any
-case object HasDomain extends Binary("S has domain O")
-case object HasCodomain extends Binary("S has codomain O")
+case object HasDomain extends Binary("has domain", "is domain of")
+case object HasCodomain extends Binary("has codomain", "is codomain of")
 // constant - constant (not used yet)
-case object IsInstanceOf extends Binary("S is instance of O")
+case object IsInstanceOf extends Binary("is instance of", "instantiates")
 //path - path
-case object RefersTo extends Binary("S refers to O")
+case object RefersTo extends Binary("refers to", "is refered to by")
 //parent - child (many-many relation because a declaration may be referenced in other documents)
-case object Declares extends Binary("S contains declaration of O")
+case object Declares extends Binary("contains declaration of", "is declared in")
 // symbol - symbol, module - module
-case object IsAliasFor extends Binary("S is alias for O") 
+case object IsAliasFor extends Binary("is alias for", "has alias") 
 
 /** helper methods for Binary items */
 object Binary {

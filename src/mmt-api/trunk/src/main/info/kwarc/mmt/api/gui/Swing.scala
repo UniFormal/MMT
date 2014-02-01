@@ -55,4 +55,66 @@ object Swing {
       panel.setLayout(layout)
       panel
    }
+   def centeredLabel(s: String) = {
+      val l = new JLabel(s)
+      l.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT)
+      l
+   }
+}
+
+import java.awt._
+
+/**
+ *  Modified FlowLayout that wraps lines properly
+ *  
+ *  This follows the ideas of WrapLayout.java but adds a defaultWidth
+ */
+class WrapLayout(defaultWidth: Int, align: Int = FlowLayout.CENTER, hgap: Int = 5, vgap: Int = 5)
+      extends FlowLayout(align, hgap, vgap) {
+   private var preferredLayoutSize: Dimension = null
+
+   override def preferredLayoutSize(target: Container) = layoutSize(target, true)
+   override def minimumLayoutSize(target: Container) = {
+      val minimum = layoutSize(target, false)
+      minimum.width -= getHgap + 1
+      minimum
+   }
+   private def layoutSize(target: Container, preferred: Boolean) = {
+      var targetWidth = target.getSize.width
+      if (targetWidth == 0) targetWidth = defaultWidth
+      val hgap = getHgap
+      val vgap = getVgap
+      val insets = target.getInsets
+      val horizontalInsetsAndGap = insets.left + insets.right + (hgap * 2)
+      val maxWidth = targetWidth - horizontalInsetsAndGap
+      val dim = new Dimension(0, 0)
+      var rowWidth = 0
+      var rowHeight = 0
+      val nmembers = target.getComponents.foreach {m =>
+         if (m.isVisible) {
+            val d = if (preferred) m.getPreferredSize else m.getMinimumSize
+            if (rowWidth + d.width > maxWidth) {
+               addRow(dim, rowWidth, rowHeight)
+               rowWidth = 0
+               rowHeight = 0
+            } else
+               rowWidth += hgap
+            rowWidth += d.width;
+            rowHeight = Math.max(rowHeight, d.height)
+         }
+      }
+      addRow(dim, rowWidth, rowHeight)
+      dim.width += horizontalInsetsAndGap
+      dim.height += insets.top + insets.bottom + vgap * 2
+      if (SwingUtilities.getAncestorOfClass(classOf[JScrollPane], target) != null && target.isValid)
+         dim.width -= (hgap + 1)
+      dim
+   }
+
+   private def addRow(dim: Dimension, rowWidth: Int, rowHeight: Int) {
+      dim.width = Math.max(dim.width, rowWidth)
+      if (dim.height > 0)
+         dim.height += getVgap
+      dim.height += rowHeight
+   }
 }
