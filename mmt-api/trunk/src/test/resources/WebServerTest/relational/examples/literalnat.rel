@@ -1,0 +1,3 @@
+document http://docs.omdoc.org/test/examples/literalnat.mmt
+Declares http://docs.omdoc.org/test/examples/literalnat.mmt http://cds.omdoc.org/examples?NatLiterals
+Declares http://docs.omdoc.org/test/examples/literalnat.mmt http://cds.omdoc.org/examples?IntLiterals
