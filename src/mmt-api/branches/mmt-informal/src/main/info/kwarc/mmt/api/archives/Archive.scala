@@ -203,8 +203,6 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
             xml.writeFile(collapsedOMDoc, enrichedDir / Archive.MMTPathToContentPath(m.path))
           case _ => None
         }
-
-        //controller.delete(mpath)
       } catch {
         case e : Throwable => log("ERR : " + e)
       }

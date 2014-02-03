@@ -94,9 +94,9 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
    lazy val freeVars : List[LocalName] = freeVars_.distinct
    /** helper function for freeVars that computes the free variables without eliminating repetitions */ 
    private[objects] def freeVars_ : List[LocalName]
-   /** returns the subobject at a given position and its context; first index of pos is always 0 and is ignored */
+   /** returns the subobject at a given position and its context; first index of pos used to be always 0 but not anymore */
    def subobject(pos: Position) : (Context, Obj) =
-     pos.indices.tail.foldLeft((Context(),this)) {
+     pos.indices.foldLeft((Context(),this)) {
          case ((con,obj), i) =>
             val newContext = obj match {
                case OMBINDC(_,context,_) => con ++ context.take(i)

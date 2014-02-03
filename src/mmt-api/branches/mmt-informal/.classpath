@@ -9,5 +9,6 @@
 	<classpathentry kind="lib" path="/deploy-wrapper/lib/scala-compiler.jar"/>
 	<classpathentry kind="lib" path="/deploy-wrapper/lib/tiscaf.jar"/>
 	<classpathentry kind="lib" path="lib/jfxrt.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/scalatest_2.10-2.0.jar"/>
 	<classpathentry kind="output" path="build/main"/>
 </classpath>
