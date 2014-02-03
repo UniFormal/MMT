@@ -236,7 +236,7 @@ case class AddSVNArchive(url : String,  rev : Int) extends Action {override def 
 
 /** builds a dimension in a previously opened archive */
 case class ArchiveBuild(id: String, dim: String, modifier: archives.BuildTargetModifier, in : List[String], params: List[String] = Nil) extends Action {
-   override def toString = "archive " + id + " " + modifier.toString(dim) + " " + in.mkString(" ","/","")
+   override def toString = "build " + id + " " + modifier.toString(dim) + " " + in.mkString(" ","/","")
 }
 
 /** builds a dimension in a previously opened archive */

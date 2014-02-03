@@ -12,6 +12,7 @@ import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.web._
 import info.kwarc.mmt.api.parser._
+import info.kwarc.mmt.api.flexiformal._
 import scala.xml.{Node,Elem,NamespaceBinding}
 
 class STeXImporter extends Importer with Logger {
@@ -39,13 +40,13 @@ class STeXImporter extends Importer with Logger {
       cont(doc)
     } catch {
       case e : Throwable => 
-        log("WARNING: Skipping article due to error: " + e.toString()) //skipping declaration
+        log("WARNING: Skipping article due to error: " + e.toString() + " \n" + e.getStackTraceString) //skipping declaration
     }
   }
   
   def compileOne(inText : String, dpath : DPath) : (String, List[Error]) = {
    
-    val node = scala.xml.XML.loadString(clearXmlNS(inText))    
+    val node = scala.xml.XML.loadString(inText) //clearXmlNS(    
     val cleanNode = scala.xml.Utility.trim(node)
     val errors = translateArticle(cleanNode)(dpath)
     
@@ -60,10 +61,12 @@ class STeXImporter extends Importer with Logger {
   
   //just fixing here an latexml bug, to be removed when it's fixed there
   //removing bad xmlns reference that conflicts with MMT's xmlns
+  /*
   def clearXmlNS(s : String) : String = {
    val s1 = s.replaceAll("xmlns=\"http://www.w3.org/1999/xhtml\"","")   
    s1.replaceFirst("xmlns=\"http://omdoc.org/ns\"","xmlns=\"http://www.w3.org/1999/xhtml\"")   
   }
+  */
   
   val xmlNS = "http://www.w3.org/XML/1998/namespace"
   val omdocNS = "http://omdoc.org/ns"
@@ -75,6 +78,8 @@ class STeXImporter extends Importer with Logger {
         case "omdoc" => 
           implicit val doc = new Document(dpath)
           controller.add(doc)
+          val anonthy = new DeclaredTheory(dpath, LocalName.anonName, None) //no meta for now
+          controller.add(anonthy)
           errors ++= n.child.map(translateTheory).flatten
       }
     } catch {
@@ -101,9 +106,9 @@ class STeXImporter extends Importer with Logger {
           val errs = n.child.map(translateTheory)
           errors ++= errs.flatten
         case _ =>           
-          val no = translateCMP(n)(doc.path, mmt.mmtcd) //defaulting to mmtcd for context in parsing objects
-          val nr = new PlainNarration(doc.path, no)
-          doc.add(nr)
+          val no = translateCMP(cleanNamespaces(n))(doc.path, mmt.mmtcd) //defaulting to mmtcd for context in parsing objects
+          val nr = new PlainNarration(OMMOD(doc.path ? LocalName.anonName), no)
+          controller.add(nr)
       }
     } catch {
       case e : Error => errors ::= e
@@ -143,7 +148,7 @@ class STeXImporter extends Importer with Logger {
           val nameS = (n \ "@name").text
           val name = LocalName(nameS)
           val tpWrapperO = n.child.find(_.label == "type")
-          val tpO = tpWrapperO.map(tpN => translateTerm(tpN.child.head))
+          val tpO = tpWrapperO.map(tpN => translateTerm(cleanNamespaces(tpN.child.head)))
           val dfO = None //TODO, get also def
           val const = new Constant(OMMOD(mpath), name, None, TermContainer(tpO), TermContainer(dfO), None, presentation.NotationContainer())
           
@@ -161,10 +166,11 @@ class STeXImporter extends Importer with Logger {
             n.child.find(_.label == "CMP") match {
               case None => log("no CMP: " + n.child.mkString("\n"))//nothing to do  
               case Some(cmpXML) =>
-                val cmp = translateCMP(cmpXML)(doc.path, mpath)
-                val dfn = new Definition(doc.path, targets.toList, cmp)
+                val cmp = translateCMP(cleanNamespaces(cmpXML.child.head))(doc.path, mpath)
+                
+                val dfn = new Definition(OMMOD(mpath), targets.toList, cmp)
                 SourceRef.update(dfn, sref)
-                doc.add(dfn)
+                controller.add(dfn)
             }
           } catch {
             case e : Error => //throw CompilerError(sref, List(e.shortMsg), false)
@@ -185,13 +191,13 @@ class STeXImporter extends Importer with Logger {
         
         case "metadata" => //TODO  
         case _ =>
-          val nr = new PlainNarration(doc.path, Narration.parseNarrativeObject(rewriteNode(n))(doc.path))
-          doc.add(nr)
+          val nr = new PlainNarration(OMMOD(mpath), FlexiformalDeclaration.parseNarrativeObject(rewriteNode(cleanNamespaces(n)))(doc.path))
+          controller.add(nr)
       }
     } catch {
       //case e : Throwable => throw e //uncomment in debug mode
       case e : Error => errors ::= e
-      case e : Throwable => log("WARNING: declaration ignored because of error " + e.getMessage() + "\n" + n.toString)
+      case e : Throwable => log("WARNING: declaration ignored because of error " + e.getMessage() + "\n" + e.getStackTrace() + "\n" + n.toString)
     }
     errors
   }
@@ -228,7 +234,7 @@ class STeXImporter extends Importer with Logger {
    } catch {
      case _ : Exception => 1
    }
-   new TextNotation(symName, Mixfix(markers), presentation.Precedence.integer(precS))
+   new TextNotation(symName, Mixfix(markers), presentation.Precedence.integer(precS), mmt.mmtcd) //TODO to be replaced with None once arg becomes Option[MPath]
   }
   
   def parseRenderingMarkers(n : scala.xml.Node,argMap : Map[String, Int])(implicit dpath : DPath, mpath : MPath) : List[Marker] = n.label match {
@@ -335,7 +341,6 @@ class STeXImporter extends Importer with Logger {
   def rewriteNode(node : scala.xml.Node)(implicit mpath : MPath) : scala.xml.Node = node.label match {
       case "OMS" => 
         var cd =  xml.attr(node, "cd")
-        cd = _tmp_hardcoded_cd_rewrite(cd)
         val name = xml.attr(node, "name")
         val docName = cd + ".omdoc"
         val doc = mpath.doc.^! / docName 
@@ -349,9 +354,24 @@ class STeXImporter extends Importer with Logger {
   }
   
   
-  def _tmp_hardcoded_cd_rewrite(cd : String) : String  = cd match {
-    case "arith1" => "arith"
-    case "relation1" => "relation"    
-    case _ => cd
+  private def cleanNamespaces(node : scala.xml.Node) : Node = node match {
+    case el : Elem => 
+      val scope = _cleanNamespaces(el.scope, Nil)
+      new scala.xml.Elem(el.prefix, el.label, el.attributes, scope, el.minimizeEmpty, el.child : _*)
+    case _ => node
   }
+  
+  private def _cleanNamespaces(scope : NamespaceBinding, prefixes : List[String] = Nil) : NamespaceBinding = {
+    if (scope == scala.xml.TopScope) {
+      scope
+    } else {
+      if (prefixes.contains(scope.prefix)) {
+        _cleanNamespaces(scope.parent, prefixes)
+      } else {
+        NamespaceBinding(scope.prefix, scope.uri, _cleanNamespaces(scope.parent, scope.prefix :: prefixes))
+      }
+    }
+  }
+  
+  
 }
