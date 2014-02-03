@@ -65,13 +65,12 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
        }
        val path = Path.parse(pathS)
        val elem = controller.get(path)
-       val rb = new XMLBuilder()
-       presenter.apply(elem, rb)
-       val response = rb.get()
-       
+       val rb = new StringBuilder()
+       presenter.apply(elem)(rb)
+       val response = rb.get
        
        log("Sending Response: " + response)
-       TextResponse(response.toString).aact(tk)
+       TextResponse(response).aact(tk)
 
      }
    }
@@ -141,11 +140,11 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
        val cont = controller //new Controller
        reader.readDocument(dpath, bodyXML)(cont.add)
        val doc : Document = cont.getDocument(dpath, dp => "doc not found at path " + dp)
-       val rb = new XMLBuilder()
-       presenter.apply(doc, rb)
-       val response = rb.get()
+       val rb = new StringBuilder()
+       presenter.apply(doc)(rb)
+       val response = rb.get
        log("Sending Response: " + response)
-       JsonResponse(response.toString, "", Nil).aact(tk)
+       JsonResponse(response, "", Nil).aact(tk)
      } catch {
         case e : Error => 
          log(e.longMsg)
@@ -153,7 +152,6 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
        case e : Exception => 
          errorResponse("Exception occured : "  + e.getStackTrace().mkString("\n"), List(e)).aact(tk)
      }
-     
    }
    
    private def getPathsResponse : HLet = new HLet {
