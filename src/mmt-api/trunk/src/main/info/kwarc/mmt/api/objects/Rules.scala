@@ -45,6 +45,7 @@ class RuleStore {
    val inferenceRules = new RuleMap[InferenceRule]
    val computationRules = new RuleMap[ComputationRule]
    val universeRules = new RuleMap[UniverseRule]
+   val inhabitableRules = new RuleMap[InhabitableRule]
    val typeBasedEqualityRules = new RuleMap[TypeBasedEqualityRule]
    val termBasedEqualityRules = new RuleSetMap2[TermBasedEqualityRule]
    val solutionRules = new RuleMap[SolutionRule]
@@ -208,18 +209,22 @@ abstract class ComputationRule(val head: GlobalName) extends Rule {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History): Option[Term]
 }
 
-/** A UniverseRule checks if a term is a universe
- *  @param head the head of the universe expression 
+/** A UnaryTermRule checks a [[UnaryTermJudgement]]
+ *  @param head the head of the term 
  */
-abstract class UniverseRule(val head: GlobalName) extends Rule {
+abstract class UnaryTermRule(val head: GlobalName) extends Rule {
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
-    *  @param univ the Term
+    *  @param term the Term
     *  @param stack its context
     *  @return true iff the judgment holds
     */
-   def apply(solver: Solver)(univ: Term)(implicit stack: Stack, history: History): Boolean
+   def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Boolean
 }
+/** checks an [[Inhabitable]] judgement */
+abstract class InhabitableRule(head: GlobalName) extends UnaryTermRule(head)
+/** checks a [[Universe]] judgement */
+abstract class UniverseRule(head: GlobalName) extends UnaryTermRule(head)
 
 /** A TypeBasedEqualityRule checks the equality of two terms based on the head of their type
  *  @param head the head of the type of the two terms 

@@ -33,6 +33,9 @@ class DelayedConstraint(val constraint: Judgement, private var currentLevel: Int
   override def toString = constraint.toString
 }
 
+/** experimental: delay a continuation function until the type of a term can be inferred */
+class DelayedInference(val stack: Stack, val history: History, val tm: Term, val cont: Term => Boolean) extends UnaryObjJudegment(stack, tm, "delayed inference")
+
 /** wrapper for classes that can occur in the [[History]] */
 trait HistoryEntry {
    /** for user-facing rendering */
@@ -349,8 +352,10 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
            check(Typing(prepareS(stack), tmS, prepare(tp), typS))
         case Equality(stack, tm1, tm2, tp) =>
            check(Equality(prepareS(stack), prepare(tm1), prepare(tm2), tp map prepare))
-        case Universe(stack, tm, isIn) =>
-           check(Universe(prepareS(stack), tm ^^ subs, isIn))
+        case Universe(stack, tm) =>
+           check(Universe(prepareS(stack), tm ^^ subs))
+        case Inhabitable(stack, tm) =>
+           check(Inhabitable(prepareS(stack), tm ^^ subs))
         case IsMorphism(stack, mor, from) =>
            checkMorphism(mor ^^ subs, prepare(from))(prepareS(stack), history)
      }
@@ -386,6 +391,12 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
             case j: Typing   => checkTyping(j)
             case j: Equality => checkEquality(j)
             case j: Universe => checkUniverse(j)
+            case j: Inhabitable => checkInhabitable(j)
+            case di: DelayedInference =>
+               inferType(di.tm)(di.stack, di.history) match {
+                  case Some(tp) => di.cont(tp)
+                  case None => delay(di)
+               }
          }
       }
    }
@@ -504,24 +515,35 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
     *
     * pre: context is covered
     *
-    * post: universe judgment is covered
+    * post: j is covered
     */
    private def checkUniverse(j : Universe)(implicit history: History): Boolean = {
      implicit val stack = j.stack
-     if (j.isIn) {
-         // the meaning of the judgement is u:U for some universe U, we infer U and recurse
-         inferType(j.univ)(stack, history + "inferring universe") match {
+     limitedSimplify(j.univ, ruleStore.universeRules) match {
+        case (uS, Some(rule)) => rule(this)(uS)
+        case (uS, None) => delay(Universe(stack, uS))  
+     }
+   }
+   
+   /** proves an Inhabitable Judgment
+    * @param j the judgment
+    * @return true if succeeded or delayed
+    *
+    * pre: context is covered
+    *
+    * post: j is covered
+    */
+   private def checkInhabitable(j : Inhabitable)(implicit history: History): Boolean = {
+     implicit val stack = j.stack
+     limitedSimplify(j.wfo, ruleStore.inhabitableRules) match {
+        case (uS, Some(rule)) => rule(this)(uS)
+        case (uS, None) =>
+           inferType(j.wfo)(stack, history + "inferring universe") match {
              case None =>
-                delay(j)
-             case Some(univI) =>
-                check(Universe(stack, univI, false))
+                delay(Inhabitable(stack, uS))
+             case Some(univ) =>
+                check(Universe(stack, univ))
           }
-     } else {
-        // the meaning of the judgement is that u itself is a universe U, we apply universe rules
-        limitedSimplify(j.univ, ruleStore.universeRules) match {
-           case (uS, Some(rule)) => rule(this)(uS)
-           case (uS, None) => delay(Universe(j.stack, uS, false))  
-        }
      }
    }
    
