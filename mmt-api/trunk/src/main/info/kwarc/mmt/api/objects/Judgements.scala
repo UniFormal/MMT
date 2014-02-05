@@ -21,7 +21,7 @@ abstract class Judgement extends utils.HashEquality[Judgement] with HistoryEntry
 }
 
 /** A WFJudgment defines well-formed objects */
-abstract class WFJudgement extends Judgement {
+trait WFJudgement extends Judgement {
    val wfo: Term
 }
 
@@ -73,55 +73,41 @@ case class Typing(stack: Stack, tm: Term, tp: Term, tpSymb : Option[GlobalName] 
 }
 
 /**
- *  The universe judgement determines whether a term may be used as a type, i.e., may occur on the right side of a Typing judgement. 
- *  
- *  There are 2 closely related variants of this judgement, which we merge into one:
- *  In the typing judgement, t:A:U, the universe judgement can be called on A (being in a universe) or U (being a universe).
- *  @param isIn if true: univ=A; if false, univ=U
+ *  Common code for some judgements
  */
-case class Universe(stack: Stack, univ: Term, isIn: Boolean) extends WFJudgement {
+abstract class UnaryObjJudegment(stack: Stack, obj: Obj, label: String) extends Judgement {
    lazy val freeVars = {
     val ret = new HashSet[LocalName]
-    val fvs = stack.context.freeVars_ ::: univ.freeVars_
+    val fvs = stack.context.freeVars_ ::: obj.freeVars_
     fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
     ret
   }
-  val wfo = univ
   override def presentSucceedent(implicit cont: Obj => String): String =
-      cont(univ) + " UNIVERSE"
+      cont(obj) + " " + label
 }
 
-case class Inhabitation(stack: Stack, tp: Term) extends Judgement {
-   lazy val freeVars = {
-    val ret = new HashSet[LocalName]
-    val fvs = stack.context.freeVars_ ::: tp.freeVars_
-    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
-    ret
-  }   
+/**
+ *  A term univ is a universe if all its inhabitants are [[Inhabitable]].
+ */
+case class Universe(stack: Stack, wfo: Term) extends UnaryObjJudegment(stack, wfo, "UNIVERSE") with WFJudgement {
+   def univ = wfo
 }
 
-case class IsTheory(stack: Stack, theory: Term) extends Judgement {
-  lazy val freeVars = {
-    val ret = new HashSet[LocalName]
-    val fvs = stack.context.freeVars_ ::: theory.freeVars_
-    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
-    ret
-  }
-}
+/**
+ *  A term tp is inhabitable if it can occur on the right side of a Typing judgement.
+ *  Such terms can be used as the types of constants and variables. 
+ */
+case class Inhabitable(stack: Stack, wfo: Term) extends UnaryObjJudegment(stack, wfo, "INHABITABLE") with WFJudgement
+
+case class Inhabited(stack: Stack, wfo: Term) extends UnaryObjJudegment(stack, wfo, "INHABITED") with WFJudgement
+case class IsTheory(stack: Stack, wfo: Term) extends UnaryObjJudegment(stack, wfo, "Theory")
+case class IsContext(stack: Stack, context: Context) extends UnaryObjJudegment(stack, context, "Context")
 
 case class IsMorphism(stack: Stack, morphism: Term, from: Term) extends Judgement {
   lazy val freeVars = {
     val ret = new HashSet[LocalName]
     val fvs = stack.context.freeVars_ ::: morphism.freeVars_ ::: from.freeVars_
     fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
-    ret
-  }
-}
-
-case class IsContext(stack: Stack, context: Context) extends Judgement {
-  lazy val freeVars = {
-    val ret = new HashSet[LocalName]
-    val fvs = stack.context.freeVars_ ::: context.freeVars_
     ret
   }
 }
