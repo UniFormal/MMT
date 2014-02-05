@@ -54,7 +54,7 @@ object UnivTerm extends InferenceRule(Typed.ktype, OfType.path) {
    }
 }
 
-/** the type inference rule |- A : X, |- B : Y, |- X = Y ---> |- A = B : kind
+/** the type inference rule |- A : X, |- B : Y, |- X = Y ---> |- (A = B) : kind for identity kinds
  * This rule goes beyond LF but it does not harm because it only adds kinds and thus do not affect types and terms   
  */
 object EqualityTerm extends InferenceRule(LFEquality.path, OfType.path) {

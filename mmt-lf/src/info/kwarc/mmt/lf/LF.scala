@@ -149,6 +149,11 @@ object FunType {
       case OMA(Arrow.term, List(a)) => Some((Nil, a)) 
       case t => Some(Nil,t)
   }
+  
+  def argsAsContext(args: List[(Option[LocalName], Term)]): Context = args.map {
+     case (Some(n), t) => VarDecl(n, Some(t), None)
+     case (None, t) => VarDecl(OMV.anonymous, Some(t), None)
+  } 
 }
 
 /**
