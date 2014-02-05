@@ -115,8 +115,8 @@ object PiType extends TypingRule(Pi.path) {
       (tm,tp) match {
          case (Lambda(x1,a1,t),Pi(x2,a2,b)) =>
             //checking of t:type necessary because checkEquality does not check typing
-            isType(solver,a1)
-            solver.check(Equality(stack,a1,a2,Some(OMS(Typed.ktype))))(history+"domains must be equal")
+            //isType(solver,a1)
+            solver.check(Equality(stack,a1,a2,None))(history+"domains must be equal")
             // solver.checkTyping(a2,LF.ktype)(stack) is redundant after the above have succeeded, but checking it anyway might help solve variables
             val (xn,sub1) = Context.pickFresh(stack.context, x1)
             val sub2 = x2 / OMV(xn)
