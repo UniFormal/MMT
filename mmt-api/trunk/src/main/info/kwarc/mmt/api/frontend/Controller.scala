@@ -173,8 +173,8 @@ class Controller extends ROController with Logger {
               case (u,n) => xmlReader.readDocuments(DPath(u), n) {e => add(e)}
            }
          } catch {
-            case BackendError(p) =>
-               throw GetError("backend cannot retrieve " + p) 
+            case b : BackendError =>
+               throw GetError("backend: " + b.getMessage) 
          }
       }
       log("retrieved " + path)
