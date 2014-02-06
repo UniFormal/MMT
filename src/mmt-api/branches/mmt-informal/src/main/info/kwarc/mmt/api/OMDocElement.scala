@@ -102,4 +102,6 @@ trait Content {
    def compNames : List[(DeclarationComponent,Int)] = Nil
    /** this ContentComponents object permits accessing components by name */
    def contComponents = ContentComponents(components, compNames, governingPath)
+   /** the children of this content element, used for fragmentPaths */
+   def children : List[Content]
 }

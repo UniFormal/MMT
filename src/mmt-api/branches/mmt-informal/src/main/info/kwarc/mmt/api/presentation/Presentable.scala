@@ -13,6 +13,7 @@ case class ByNotation(key : NotationKey, components : ContentComponents, lpar : 
 abstract class Literal extends Content {
    /** Nil */
    def components = Nil
+   def children = Nil
    /** None */
    def governingPath = None
    /** role is null */

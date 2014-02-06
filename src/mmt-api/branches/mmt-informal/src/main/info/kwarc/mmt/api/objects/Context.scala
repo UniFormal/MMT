@@ -50,6 +50,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term]) exten
       //temporary hack: if any other attribution is present, the type is assumed to be reconstructed
       //and returning a 4th components indicates that
       (if (metadata.getTags contains utils.mmt.inferedTypeTag) List(StringLiteral("")) else Nil)
+   def children = List(tp,df).flatten
    override def toString = name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
    private def tpN = tp.map(t => <type>{t.toNode}</type>).getOrElse(Nil)
    private def dfN = df.map(t => <definition>{t.toNode}</definition>).getOrElse(Nil)
@@ -206,7 +207,8 @@ case class Context(variables : VarDecl*) extends Obj {
      <m:apply>{this.map(v => v.toCMLQVars)}</m:apply>
    def head = None
    def role : Role = Role_context
-   def components = variables.toList 
+   def components = variables.toList
+   def children = variables.toList
 }
 
 /** a case in a substitution */		
@@ -222,6 +224,7 @@ case class Sub(name : LocalName, target : Term) extends Obj {
    def toNode: Node = <om:OMV name={name.toString}>{mdNode}{target.toNode}</om:OMV>
    def toCMLQVars(implicit qvars: Context) : Node = <m:mi name={name.toPath}>{target.toCMLQVars}</m:mi>
    def components = List(StringLiteral(name.toString), target)
+   def children = List(target)
    override def toString = name + ":=" + target.toString
    def head = None
 }
@@ -257,6 +260,7 @@ case class Substitution(subs : Sub*) extends Obj {
    def head = None
    def role : Role = Role_substitution
    def components = subs.toList
+   def children = subs.toList
    def isEmpty = components.isEmpty
 }
 

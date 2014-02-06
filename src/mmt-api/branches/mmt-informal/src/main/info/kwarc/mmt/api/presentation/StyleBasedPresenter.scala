@@ -45,6 +45,7 @@ case class VarData(decl : VarDecl, binder : Option[GlobalName], declpos : Positi
  */
 case class StrToplevel(c: Content) extends Content {
    def components = List(c)
+   def children = List(c)
    def role = c.role
    def governingPath = c.governingPath
    def toNode = c.toNode
@@ -55,6 +56,7 @@ case class StrToplevel(c: Content) extends Content {
  */
 case class ObjToplevel(c: Obj, cpath: Option[CPath]) extends Content {
    def components = List(c)
+   def children = List(c)
    def role = c.role
    def governingPath = c.governingPath
    def toNode = c.toNode

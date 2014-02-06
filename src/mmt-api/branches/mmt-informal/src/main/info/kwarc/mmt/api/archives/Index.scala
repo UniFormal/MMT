@@ -34,6 +34,7 @@ abstract class Importer extends TraversingBuildTarget {
    }
    
    override def buildDir(a: Archive, bd: BuildDir, builtChildren: List[BuildTask]) {
+      bd.outFile.toJava.getParentFile().mkdirs()
       val doc = controller.get(DPath(a.narrationBase / bd.inPath)).asInstanceOf[Document]
       val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
       writeToRel(doc, a/relational / inPathFile)

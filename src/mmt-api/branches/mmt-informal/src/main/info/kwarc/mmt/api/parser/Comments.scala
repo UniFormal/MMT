@@ -15,7 +15,7 @@ object CommentHandler extends ParserExtension {
   def apply(sp: StructureParser, s: ParserState, se: StructuralElement, k: String) {
     val (commentS, _) = s.reader.readAll
     val container = s.container ? LocalName.anonName
-    val narr = new flexiformal.PlainNarration(objects.OMMOD(container), new flexiformal.NarrativeText(commentS))
-    controller.add(narr)    
+    //val narr = new flexiformal.PlainNarration(objects.OMMOD(container), new flexiformal.NarrativeText(commentS))
+    //controller.add(narr)    
   }
 }

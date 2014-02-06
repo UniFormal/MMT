@@ -58,6 +58,23 @@ var navigation = {
 			var ref = mmt.load(elem);
 			$(elem).replaceWith(ref);
 		}
+		if (target.hasAttribute("jobad:href")) {
+			$.ajax({
+				'type':'post',
+				'url':'/:immt/query',
+				'contentType':'application/json',
+				'processData':false,
+				'data': '{ ' + 
+ 					'"subject":"' + target.attr("jobad:href") + '",' +
+  					'"relation":"isDefinedBy",' + 
+  					'"return":"ihtml"' + 
+				'}',
+				'dataType':'html',
+				'success':function(data) {
+					target.popover({'content':data, 'placement':'top', html:true});				
+				}
+			});						
+		}
 
 		if (target.hasAttribute('jobad:href')) {
 			var mr = $(target).closest('mrow');

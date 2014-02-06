@@ -20,6 +20,7 @@ class PragConst(val home : Term, val name : LocalName,
 
   def role = Role_Constant(rl)
   def components = List(OMID(path))//
+  def children = by ::: means
   def getComponents = Nil //TODO
   def getDeclarations = Nil
   def toNode =

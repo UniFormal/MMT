@@ -5,6 +5,7 @@ import modules._
 import symbols._
 import patterns._
 import objects._
+import flexiformal._
 
 /** The Extractor produces the declaration-level relational representation of a SructuralElement
  */
@@ -60,8 +61,15 @@ object Extractor {
                      f(dec)
                      f(IsInstance(i.path))
                      f(IsInstanceOf(i.path, i.pattern))
-                  case fd : flexiformal.FlexiformalDeclaration =>
-                    //TODO
+                  case fd : FlexiformalDeclaration => 
+                    fd match {
+                      case  p : PlainNarration => //nothing to do
+                      case  d : Definition => 
+                        d.targets foreach {target => 
+                          f(isDefinedBy(target, d.fragPath))
+                        }
+                    
+                    }
                }
             }}
          case _ =>

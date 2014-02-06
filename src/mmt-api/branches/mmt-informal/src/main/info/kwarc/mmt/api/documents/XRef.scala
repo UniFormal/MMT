@@ -14,6 +14,7 @@ import presentation._
 sealed abstract class XRef(val parent : DPath, val target : Path) extends NarrativeElement with DocumentItem {
    val path = parent
    def components = List(StringLiteral(target.toString), StringLiteral(target.last))
+   def children = Nil
    def toNode : scala.xml.Node
    override def toString = "ref " +  target.toPath
 }

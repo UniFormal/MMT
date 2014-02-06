@@ -36,17 +36,20 @@ object Unary {
    }
 }
 
+abstract class GenericBinary(val desc : String, val backwardsDesc : String)
+
 /**
  * An object of type Binary represents a binary predicate between MMT paths in the MMT ontology.
  * The semantics of these objects is given by their name
  */
-sealed abstract class Binary(val desc : String, val backwardsDesc: String) {
-   /** yields the corresponding relational item that classifies p */ 
-   def apply(subj : Path, obj : Path) = Relation(this, subj, obj)
-   /** syntactic sugar for queries: ToSubject(this) */
-   def unary_- = ToSubject(this)
-   /** syntactic sugar for queries: ToObject(this) */
-   def unary_+ = ToObject(this)
+sealed abstract class Binary(desc : String, backwardsDesc: String) 
+	extends GenericBinary(desc, backwardsDesc){
+  /** yields the corresponding relational item that classifies p */ 
+  def apply(subj : Path, obj : Path) = Relation(this, subj, obj)
+  /** syntactic sugar for queries: ToSubject(this) */
+  def unary_- = ToSubject(this)
+  /** syntactic sugar for queries: ToObject(this) */
+  def unary_+ = ToObject(this)
 }
 
 // module - module, component - component
@@ -75,6 +78,7 @@ object Binary {
    }
 }
 
+
 /** A RelationalElement is any element that is used in the relational representation of MMT content.
  * These include the unary and binary predicates occurring in an MMT ABox.
  * They do not correspond to XML elements in an OMDoc element and thus do not extend StructuralElement. 
@@ -95,10 +99,16 @@ object RelationalElement {
       s.split(" ").toList match {
          case List(tp, ind) => Individual(Path.parse(ind, base), Unary.parse(tp))
          case List(rel, subj, obj) => Relation(Binary.parse(rel), Path.parse(subj, base), Path.parse(obj, base))
+         case List(relS, subjS, obj_pathS, obj_posS) =>
+           val rel = flexiformal.FlexiformalBinary.parse(relS)
+           val subj = Path.parse(subjS, base)
+           val obj = flexiformal.FragPath(Path.parse(obj_pathS, base), objects.Position.parse(obj_posS))
+           flexiformal.FlexiformalRelation(rel, subj, obj)
          case _ => throw ParseError("not a valid relational element: " + s)
       }}catch {case e => println(s); throw e}
    }
 }
+
 
 /**
  * An object of type Individual represents a unary predicate in the ABox.

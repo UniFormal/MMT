@@ -173,8 +173,8 @@ class Controller extends ROController with Logger {
               case (u,n) => xmlReader.readDocuments(DPath(u), n) {e => add(e)}
            }
          } catch {
-            case BackendError(p) =>
-               throw GetError("backend cannot retrieve " + p) 
+            case b : BackendError =>
+               throw GetError("backend: " + b.getMessage) 
          }
       }
       log("retrieved " + path)
@@ -202,6 +202,15 @@ class Controller extends ROController with Logger {
             }
           
       }
+   }
+   
+   def get(fpath : flexiformal.FragPath) : Content = {
+     def getFrag(c : Content, indices : List[Int]) : Content = indices match {
+       case Nil => c
+       case hd :: tl => getFrag(c.children(hd), tl)
+     }
+     val s= get(fpath.path)
+     getFrag(s, fpath.fragment.indices)
    }
    
    /** retrieves a knowledge item */

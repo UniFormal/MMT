@@ -20,6 +20,7 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath])
       extends Theory(doc, name) with DeclaredModule {
    def role = Role_DeclaredTheory
    def components = OMID(path) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents
+   def children = innerComponents
    /** convenience method to obtain all constants */
    def getConstants:List[Constant] = getDeclarations.flatMap {
       case c: Constant => List(c)
@@ -65,6 +66,7 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath])
 class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) extends Theory(doc, name) with DefinedModule {
    def role = Role_DefinedTheory
    def components = StringLiteral(name.toPath) :: innerComponents
+   def children = innerComponents
    override def toString = path + innerString
    def toNode = 
     <theory name={name.last.toPath} base={doc.toPath}>

@@ -11,6 +11,7 @@ case class NotationImport(from : MPath, to : MPath) extends PresentationElement 
    val parent = to
    val role = Role_Include
    val components = List(objects.OMMOD(from),objects.OMMOD(to))
+   def children = Nil
    def toNode = <include from={from.toPath}/>
 }
 
@@ -22,6 +23,7 @@ abstract class Notation extends PresentationElement {
    val key : NotationKey
    val role = Role_Notation
    val components = Nil //TODO
+   val children = Nil //TODO
    val path = nset
    val parent = nset
    def maintoString = "notation for " + key
@@ -47,6 +49,7 @@ trait ComplexNotation extends Notation {
 case class StyleNotation(nset : MPath, key : NotationKey, presentation : Presentation, wrap : Boolean) extends Notation {
    override def toString = maintoString + " " + presentation.toString
    def toNode = <notation wrap={if (wrap) "true" else null}>{presentation.toNode}</notation>
+   
 }
 
 object StyleNotation {

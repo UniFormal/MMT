@@ -8,6 +8,7 @@ import objects._
  */
 abstract class RealizedConstant extends Declaration {
    def components = List(presentation.StringLiteral(name.toPath))
+   def children = Nil
    def role = Role_Constant(None)
    def toNode = <realizedconstant name={name.toPath}/>
    override def toString = name.toString

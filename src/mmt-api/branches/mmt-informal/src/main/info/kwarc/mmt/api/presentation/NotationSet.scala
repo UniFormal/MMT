@@ -19,6 +19,7 @@ class Style(val parent : DPath, name : LocalName, val from : Path, val to : Path
    def get(key : NotationKey) : Option[StyleNotation] = {notations.get(key)}
    val role = Role_Notationset
    val components = Nil //TODO
+   def children = Nil
    override def toString = "style " + name + notations.values.map("\t" + _.toString).mkString(" {\n","\n","\n}")
    def toNode =
       <style name={name.toPath} from={from.toPath} to={to.toPath}>

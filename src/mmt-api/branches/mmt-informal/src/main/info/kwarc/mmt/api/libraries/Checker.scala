@@ -164,7 +164,7 @@ class StructureChecker(controller: Controller) extends Logger {
             getTermToCheck(c.tpC, "type") foreach {t =>
                val (unknowns, tR, valid) = prepareTerm(t)
                if (valid) {
-                  val j = Universe(Stack(scope, parR), tR, true)
+                  val j = Inhabitable(Stack(scope, parR), tR)
                   unitCont(ValidationUnit(c.path $ TypeComponent, unknowns, j))
                }
             }

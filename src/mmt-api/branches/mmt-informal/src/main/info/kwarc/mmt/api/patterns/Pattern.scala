@@ -31,6 +31,7 @@ class Pattern(val home: Term, val name : LocalName, val params: Context, val bod
      </pattern>    
    def role = info.kwarc.mmt.api.Role_Pattern
    def components = OMID(path) :: params ::: body
+   def children = params :: body :: not.toList
    def getComponents = Nil //TODO
    def getDeclarations = Nil
    override def toString = 
@@ -70,6 +71,7 @@ class Instance(val home : Term, val name : LocalName, val pattern : GlobalName, 
      </instance>
    def role = info.kwarc.mmt.api.Role_Instance
    def components = List(OMID(path), OMID(pattern)) ::: matches
+   def children = matches
    def getComponents = Nil //TODO
    def getDeclarations = Nil
    override def toString = 

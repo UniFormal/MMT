@@ -169,6 +169,7 @@ case class OMID(path: ContentPath) extends Term {
                                  StringLiteral(ln.toString), StringLiteral(path.toPathEscaped))
       case thy % name => List(thy, StringLiteral(name.toString))
    }
+   def children = Nil
    override def toString = path match {
       case doc ? mod => doc + "?" + mod.toString
       case OMMOD(mod) % name => mod.name.toString + "?" + name.toString
@@ -207,6 +208,7 @@ case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends
       }
       binderComps ::: context.toList ::: scopes
    }
+   def children = binder :: context :: scopes
    def role = Role_binding
    def toNode = 
       <om:OMBIND>{mdNode}
@@ -248,6 +250,7 @@ case class OMM(arg : Term, via : Term) extends Term {
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMM(arg ^^ sub, via ^^ sub).from(this)
    private[objects] def freeVars_ = arg.freeVars_ ::: via.freeVars_
    def components = OMID(path) :: args
+   def children = args
    def head = Some(path)
    def role = Role_application(None)
    def toNode =
@@ -269,6 +272,7 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
    def head = fun.head
    def role = Role_application(None)
    def components = fun :: args
+   def children = fun :: args
    override def toString = (fun :: args).map(_.toString).mkString("(", " ", ")")
    def toNode =
       <om:OMA>{mdNode}
@@ -297,6 +301,7 @@ case class OMV(name : LocalName) extends Term {
    def head = None
    def role = Role_VariableRef
    def components = List(StringLiteral(name.toString)) 
+   def children = Nil
    /** the substutition this/s */
    def /(s : Term) = Sub(name, s)
    def ->(s: Term) = Sub(name, s)
@@ -340,6 +345,7 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
    def head = key.head
    def role = Role_attribution
    def components = List(key, arg, value)
+   def children = List(key, arg, value)
    override def strip = arg.strip
    override def toString = "{" + arg + " : " + key + " -> " + value + "}"
    def toNode = 
@@ -371,6 +377,7 @@ sealed trait OMLITTrait extends Term {
    def head = None
    def role = Role_value
    def components = List(StringLiteral(toString))
+   def children = Nil
    def toNode = <om:OMLIT value={toString} type={synType.toPath}/>
    def toCMLQVars(implicit qvars: Context) = <m:lit value={toString} type={synType.toPath}/>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
@@ -432,6 +439,7 @@ case class OMFOREIGN(node : Node) extends Term {
    def head = None
    def role = Role_foreign
    def components = List(XMLLiteral(node))
+   def children = Nil
    def toNode = <om:OMFOREIGN>{node}</om:OMFOREIGN> 
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil

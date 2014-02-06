@@ -49,6 +49,7 @@ class Document(val path : DPath) extends NarrativeElement {
    val parent = path ^!
    val role = Role_Document
    def components = StringLiteral(path.toString) :: StringLiteral(path.last) :: items
+   def children = items
    override def toString = "document " + path + items.map(_.toString).mkString("\n\t","\n\t","")
    def toNode = <omdoc base={path.toPath}>{items.map(_.toNode)}</omdoc>
    /** prints document with all generated module references expanded (document references are not expanded) */

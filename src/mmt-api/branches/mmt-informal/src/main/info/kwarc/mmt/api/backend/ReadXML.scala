@@ -157,7 +157,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
     	  val p = new Pattern(homeTerm, name, pr, cn, notation)
     	  add(p, md)
       }
-      for (s <- symbols) {
+      for ((s,i) <- symbols.zipWithIndex) {
          val name = LocalName.parse(xml.attr(s,"name"))
          val alias = xml.attr(s, "alias") match {
             case "" => None
@@ -261,7 +261,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
             val inst = new Instance(homeTerm,name,Path.parseS(p,base),args.toList)
             add(inst, md)
          case <flexiformal>{decl}</flexiformal> =>
-            FlexiformalDeclaration.parseDeclaration(decl, home, base)
+            FlexiformalDeclaration.parseDeclaration(decl, Position(i) , home, base)
          case scala.xml.Comment(_) =>
          case _ => throw new ParseError("symbol level element expected: " + s2)
          }

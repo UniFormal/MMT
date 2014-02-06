@@ -166,9 +166,9 @@ trait HOAS extends Application {
 //what about the other typing judgements - often there is more than one
 trait Typing extends Feature {
    val hastype : GlobalName 
-   def makeStrict(j: objects.Typing) = Inhabitation(j.stack, OMA(OMID(hastype), List(j.tm, j.tp)))
+   def makeStrict(j: objects.Typing) = Inhabited(j.stack, OMA(OMID(hastype), List(j.tm, j.tp)))
    def makePragmatic(j: Judgement) = j match {
-      case Inhabitation(stack, OMA(OMID(this.hastype), List(tm, tp))) => Typing(stack, tm, tp, Some(this.hastype))
+      case Inhabited(stack, OMA(OMID(this.hastype), List(tm, tp))) => Typing(stack, tm, tp, Some(this.hastype))
       case _ => j
    }
 }

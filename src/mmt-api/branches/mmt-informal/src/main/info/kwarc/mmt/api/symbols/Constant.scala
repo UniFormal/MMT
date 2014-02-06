@@ -31,7 +31,7 @@ class Constant(val home : Term, val name : LocalName, val alias: Option[LocalNam
                                     rl.map(StringLiteral(_)).getOrElse(Omitted))
   def getComponents = List((TypeComponent, tpC), (DefComponent, dfC)) ::: notC.getComponents
   def getDeclarations = Nil
-  
+  def children = List(tp,df, not).flatten
   def toNode =
      <constant name={name.toPath} alias={alias.map(_.toPath).getOrElse(null)} role={rl.getOrElse(null)}>
        {getMetaDataNode}

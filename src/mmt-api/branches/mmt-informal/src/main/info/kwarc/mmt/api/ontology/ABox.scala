@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.utils.MyList.fromList
 import info.kwarc.mmt.api.objects._
 import scala.collection.mutable.{HashSet,HashMap}
+import info.kwarc.mmt.api.flexiformal._
 
 /**
  * An ABoxStore stores the abox of the loaded elements with respect to the MMT ontology.
@@ -16,9 +17,10 @@ import scala.collection.mutable.{HashSet,HashMap}
 class RelStore(report : frontend.Report) {
    private val individuals = new HashMapToSet[Unary, Path]
    private val types = new HashMap[Path,Unary]
-   private val subjects = new HashMapToSet[(Binary,Path), Path]
-   private val objects = new HashMapToSet[(Path,Binary), Path]
-   private val dependencies = new HashMapToSet[(Path,Path), Binary]
+   private val subjects = new HashMapToSet[(GenericBinary,FragPath), Path]
+   private val objects = new HashMapToSet[(Path,GenericBinary), FragPath]
+   private val dependencies = new HashMapToSet[(Path,FragPath), GenericBinary]
+
    private def log(msg : => String) = report("abox", msg)
    /** retrieves all Individual declarations */
    def getInds : Iterator[Individual] = individuals.pairs map {case (t,p) => Individual(p,t)}
@@ -27,22 +29,30 @@ class RelStore(report : frontend.Report) {
    /** retrieves type of an Individual */
    def getType(p: Path) : Option[Unary] = types.get(p)
    /** retrieves all Relation declarations */
-   def getDeps : Iterator[Relation] = dependencies.pairs map {case ((p,q), d) => Relation(d,p,q)}
+   def getDeps : Iterator[Relation] = dependencies.pairs collect {case ((p,q), d : Binary) => Relation(d,p,q.path)}
 
    //def getObjects(d : Binary) = subjects.keys.filter(_._1 == d).map(_._2).toSet
    //def getSubjects(d : Binary) = objects.keys.filter(_._2 == d).map(_._1).toSet
+   
+   def getSubjects(rel : GenericBinary, obj : FragPath) = subjects(rel -> obj)
+   def getObjects(subj : Path, rel : GenericBinary) = objects(subj -> rel)
+   def getDependencies(subj : Path, obj : FragPath) = dependencies(subj -> obj)
 
    /** adds a RelationalElement */
    def +=(d : RelationalElement) {
       log(d.toString)
       d match {
-        case Relation(dep, subj, obj) =>                  
-           subjects += ((dep, obj), subj)
-           objects += ((subj, dep), obj)           
-           dependencies += ((subj, obj), dep)
+        case Relation(dep, subj, obj) =>
+           subjects += ((dep, FragPath(obj)), subj)
+           objects += ((subj, dep), FragPath(obj))
+           dependencies += ((subj, FragPath(obj)), dep)
         case Individual(p, tp) =>
            types(p) = tp
            individuals += (tp, p)
+        case FlexiformalRelation(rel, subj, obj) => 
+           subjects += ((rel, obj), subj)
+           objects += ((subj, rel), obj)           
+           dependencies += ((subj, obj), rel)
       }
    }
    
@@ -80,8 +90,11 @@ class RelStore(report : frontend.Report) {
     * @param add a continuation called on every element in the result set (in topological order, duplicate calls possible)
     */
    def query(start : Path, q : RelationExp)(implicit add : Path => Unit) {q match {
-      case ToObject(d) => objects(start, d).foreach(add)   //all paths related to start via d 
-      case ToSubject(d) => subjects(d, start).foreach(add) //all paths inversely related to start via d
+      case ToObject(d) => objects(start, d) foreach { _.toPathO match {
+        case Some(p) => add(p) //all paths related to start via d 
+        case _ =>  //nothing to do
+      }}
+      case ToSubject(d) => subjects(d, FragPath(start)).foreach(add) //all paths inversely related to start via d
       //only start itself
       case Reflexive => add(start)
       //the set of paths related to start via arbitrarily many q-steps (depth-first, children before parent)

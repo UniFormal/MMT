@@ -79,18 +79,3 @@ span.operator {
    font-weight: bold;
 }
 
-span.keyword {
-   color: black;
-   font-weight: bold;
-   cursor: pointer;
-   padding-left: 3px;
-   padding-right : 3px;
-}
-
-span.keyword:hover {
-   background: #d3d3d3;
-}
-
-span.keyword:active {
-  cursor: progress;
-}

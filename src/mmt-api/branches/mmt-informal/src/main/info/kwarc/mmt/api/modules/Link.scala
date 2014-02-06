@@ -26,6 +26,7 @@ trait Link {
    /** innerComponents as a string */
    protected def innerString : String
    def components = outerComponents ::: innerComponents
+   def children = innerComponents
    override def toString = outerString + innerString
 }
 
