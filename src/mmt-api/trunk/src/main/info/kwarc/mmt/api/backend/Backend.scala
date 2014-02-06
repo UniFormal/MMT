@@ -96,7 +96,7 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
           val entries = target.list().toList.filter(x => x != ".svn" && x != ".omdoc") //TODO: should be an exclude pattern
           val relativePrefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
           Storage.virtDoc(entries, relativePrefix)
-        } else throw BackendError(path)
+        } else throw BackendError("file/folder " + target + " not found or not accessible", path)
       cont(uri, N)
    }
 }
@@ -133,7 +133,7 @@ case class SVNRepo(scheme : String, authority : String, prefix : String, reposit
             }
           }
           Storage.virtDoc(strEntries.reverse.map(x => x.getURL.getPath), prefix) //TODO check if path is correct
-        case SVNNodeKind.NONE => throw BackendError(path)
+        case SVNNodeKind.NONE => throw BackendError("not found or not accessible", path)
       }
       cont(uri, N)
    }
@@ -281,7 +281,7 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
    /** look up a path in the first Storage that is applicable and send the content to the reader */
    def get(p : Path)(implicit cont: (URI,NodeSeq) => Unit) = {
       def getInList(l : List[Storage], p : Path) {l match {
-         case Nil => throw BackendError(p)
+         case Nil => throw BackendError("no applicable backend available", p)
          case hd :: tl =>
             log("trying " + hd)
       	    try {hd.get(p)}
