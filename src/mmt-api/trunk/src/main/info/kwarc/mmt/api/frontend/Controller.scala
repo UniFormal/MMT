@@ -174,7 +174,7 @@ class Controller extends ROController with Logger {
            }
          } catch {
             case b : BackendError =>
-               throw GetError("backend: " + b.getMessage) 
+               throw GetError("backend: " + b.getMessage).setCausedBy(b) 
          }
       }
       log("retrieved " + path)

@@ -34,11 +34,11 @@ abstract class Storage {
 object Storage {
    def virtDoc(entries : List[String], prefix : String) =
       <omdoc>{entries.map(n => <dref target={prefix + n}/>)}</omdoc>
-   def getSuffix(base : utils.URI, uri : utils.URI) : String = {
-      val b = base.pathAsString
-      val u = uri.pathAsString
+   def getSuffix(base : utils.URI, uri : utils.URI) : List[String] = {
+      val b = base.pathNoTrailingSlash
+      val u = uri.pathNoTrailingSlash
       if (uri.scheme == base.scheme && uri.authority == base.authority && u.startsWith(b))
-         u.substring(b.length)
+         u.drop(b.length)
       else
          throw NotApplicable
       }
@@ -78,7 +78,7 @@ case class LocalSystem(base : URI) extends Storage {
    val localBase = URI(Some("file"), None, Nil, true, None, None)
    def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {
       val uri = base.resolve(path.doc.uri)
-      val test = Storage.getSuffix(localBase, uri)
+      val _ = Storage.getSuffix(localBase, uri)
       val file = new java.io.File(uri.toJava)
       val N = utils.xml.readFile(file)
       cont(uri, N)
@@ -86,11 +86,11 @@ case class LocalSystem(base : URI) extends Storage {
 }
 
 /** a Storage that retrieves repository URIs from the local working copy */
-case class LocalCopy(scheme : String, authority : String, prefix : String, base : java.io.File) extends Storage  {
+case class LocalCopy(scheme : String, authority : String, prefix : String, base : File) extends Storage  {
    def localBase = URI(scheme + "://" + authority + prefix) 
    def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {
       val uri = path.doc.uri
-      val target = new java.io.File(base, Storage.getSuffix(localBase,uri))
+      val target = base / Storage.getSuffix(localBase,uri)
       val N = if (target.isFile) utils.xml.readFile(target)
         else if (target.isDirectory) {
           val entries = target.list().toList.filter(x => x != ".svn" && x != ".omdoc") //TODO: should be an exclude pattern
@@ -108,7 +108,7 @@ case class SVNRepo(scheme : String, authority : String, prefix : String, reposit
    def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {get(path, defaultRev)}
    def get(path : Path, rev: Int)(implicit cont: (URI,NodeSeq) => Unit) {
       val uri = path.doc.uri
-      val target = Storage.getSuffix(localBase, uri)
+      val target = Storage.getSuffix(localBase, uri).mkString("/")
       
       val revision = path.doc.version match {
         case None => rev
