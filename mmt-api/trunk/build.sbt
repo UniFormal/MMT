@@ -1,3 +1,7 @@
+import AssemblyKeys._ 
+
+assemblySettings
+
 name := "mmt-api"
 
 version := "1.0"
