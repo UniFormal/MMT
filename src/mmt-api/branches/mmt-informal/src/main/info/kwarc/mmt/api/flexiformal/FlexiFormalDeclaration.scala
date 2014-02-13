@@ -8,7 +8,7 @@ import symbols._
 import modules._
 import frontend._
 import presentation._
-import xml.{Node}
+import xml.{Node, NamespaceBinding, Elem}
 
 object FlexiformalDeclaration {
   def parseNarrativeObject(n : scala.xml.Node)(implicit base : Path) : NarrativeObject = n.label match {
@@ -38,6 +38,25 @@ object FlexiformalDeclaration {
       val contentXML = n.child.find(_.label == "CMP").getOrElse(throw ParseError("Expected CMP inside definition"))
       val content = parseNarrativeObject(contentXML)(base)
       new Definition(OMMOD(mpath), position, targets.toList, content)    
+  }
+  
+  def cleanNamespaces(node : scala.xml.Node) : Node = node match {
+    case el : Elem => 
+      val scope = _cleanNamespaces(el.scope, Nil)
+      new scala.xml.Elem(el.prefix, el.label, el.attributes, scope, el.minimizeEmpty, el.child : _*)
+    case _ => node
+  }
+  
+  private def _cleanNamespaces(scope : NamespaceBinding, prefixes : List[String] = Nil) : NamespaceBinding = {
+    if (scope == scala.xml.TopScope) {
+      scope
+    } else {
+      if (prefixes.contains(scope.prefix)) {
+        _cleanNamespaces(scope.parent, prefixes)
+      } else {
+        NamespaceBinding(scope.prefix, scope.uri, _cleanNamespaces(scope.parent, scope.prefix :: prefixes))
+      }
+    }
   }
 }
 
@@ -71,7 +90,8 @@ class NarrativeRef(val target : Path, val text : String, val self : Boolean = fa
   def children = Nil
 }
 
-class NarrativeNode(val node : scala.xml.Node,val child : List[NarrativeObject]) extends NarrativeObject {
+class NarrativeNode(dirtyNode : scala.xml.Node,val child : List[NarrativeObject]) extends NarrativeObject {
+  val node = FlexiformalDeclaration.cleanNamespaces(dirtyNode)
   def toNode = new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, child.map(_.toNode) :_ *)
   def components = child
   def children = child
@@ -112,6 +132,18 @@ class Definition(home : Term, position : Position, val targets : List[GlobalName
       {content.toNode} 
     </flexiformal>  
   def components =  content :: Nil //TODO  
+  def getComponents = (DefComponent -> content) :: Nil
+}
+
+class NotationDefinition(home: Term, position : Position, val target : GlobalName, notation : List[String]) 
+	extends FlexiformalDeclaration(home, position, new NarrativeText(notation.mkString)) {
+  val name = LocalName.anonName
+  def role = Role_Narration
+  def toNode = 
+    <notation-definition>
+  		TODO
+    </notation-definition>
+  def components = content :: Nil
   def getComponents = (DefComponent -> content) :: Nil
 }
 

@@ -20,15 +20,15 @@ class MizarCompiler extends archives.Importer {
    val key = "mizar-omdoc"
    def includeFile(s: String) = s.endsWith(".miz")
    
-	val lib : collection.mutable.Map[Int,List[String]] = new collection.mutable.HashMap[Int,List[String]]
-	def addToLib(version : Int, article : String) {
+	val lib : collection.mutable.Map[String,List[String]] = new collection.mutable.HashMap[String,List[String]]
+	def addToLib(version : String, article : String) {
 	  if (!lib.contains(version)) {
 	    lib(version) = "HIDDEN" :: Nil //default initialization
 	  }
 	  lib(version) ::= article
 	}
 	
-	def isInLib(version : Int, article : String) : Boolean = {
+	def isInLib(version : String, article : String) : Boolean = {
 	  if (lib.contains(version)) {
 	    lib(version).contains(article)
 	  } else {
@@ -87,10 +87,10 @@ def getBase(f : File) : String = {
   }
 }
 
-def getVersion(f : File) : Int = {
+def getVersion(f : File) : String = {
   f.toJava.getParentFile().getName() match {
-    case null => 1132
-    case s => s.toInt
+    case null => "5.22"
+    case s => s
   }
 }
 
@@ -102,10 +102,17 @@ def getAid(f : File) : String = {
 }
 
 def buildOne(bf: archives.BuildFile, seCont: documents.Document => Unit) {
-  val base = getBase(bf.inFile)
+  val mmlBase = getBase(bf.inFile)
   val version = getVersion(bf.inFile)
   val aid = getAid(bf.inFile)
-  translateArticle(base, version, aid.toUpperCase(), seCont)
+  translateArticle(mmlBase, version, aid.toUpperCase(), bf.dpath.^!)
+  val doc = controller.getDocument(bf.dpath)
+  println("INDEXING ARTICLE: " + bf.dpath.last)
+  seCont(doc)
+}
+
+def getDPath(docBase : DPath, name : String) : DPath = {
+  docBase / (name + ".miz")
 }
 
 /*
@@ -115,30 +122,29 @@ def compileLibrary(files : List[File]) : List[SourceError] = {
 }
 */
 
-def translateArticle(mml : String, version : Int, aid : String, seCont: documents.Document => Unit) {
+def translateArticle(mml : String, version : String, aid : String, docBase : DPath) {
 	val name = aid.toLowerCase()
-	//println("attempting to translate article " + name)
-	if (isInLib(version, aid))
-	   return
+	if (isInLib(version, aid)) //already translated it
+	  return
 	//files
-	val xmlabs = mml + "/export/" + version.toString + "/" + name + ".xmlabs" //TODO perhaps replace
-	val dcx = mml + "/export/" + version.toString + "/" + name + ".dcx"
-	val idx = mml + "/export/" + version.toString + "/" + name + ".idx"
-	val frx = mml + "/export/" + version.toString + "/" + name + ".frx"
-	val sgl = mml + "/export/" + version.toString + "/" + name + ".sgl"
+	val xmlabs = mml + "/source/" + version.toString + "/" + name + ".xmlabs" //TODO perhaps replace
+	val dcx = mml + "/source/" + version.toString + "/" + name + ".dcx"
+	val idx = mml + "/source/" + version.toString + "/" + name + ".idx"
+	val frx = mml + "/source/" + version.toString + "/" + name + ".frx"
+	val sgl = mml + "/source/" + version.toString + "/" + name + ".sgl"
 	
 	var voc : List[String] = Nil
 	scala.io.Source.fromFile(sgl).getLines().foreach(s => if (s.charAt(0).isLetter) voc = voc :+ s)
 
 	//parseVocabularies(getNode(vcl))
 	val fv = voc.filter(s => s != aid)
-	fv.map(s => translateArticle(mml, version, s, seCont))	
+	fv.foreach(s => translateArticle(mml, version, s, docBase))	
 
-	log("Translating article " +  name)
+	println("Translating article " +  name)
+	
 	TranslationController.currentBase = mml
-   TranslationController.currentVersion = version
-   TranslationController.currentAid = aid
-
+    TranslationController.currentVersion = version
+    TranslationController.currentAid = aid
 	UtilsReader.parseSymbols(getNode(dcx))
 	UtilsReader.parseSymbols(getNode(idx))
 	UtilsReader.parseFormats(getNode(frx))
@@ -150,24 +156,21 @@ def translateArticle(mml : String, version : Int, aid : String, seCont: document
 	ArticleParser.parseArticle(getNode(xmlabs))
 	val article = ParsingController.buildArticle()
 	
-	val path = TranslationController.currentDocument
-	val d = new Document(path)
+	val dpath = getDPath(docBase, name)
+	val doc = new Document(dpath)
 	
-	TranslationController.add(d)
-
-	val th = new DeclaredTheory(TranslationController.currentDocument, TranslationController.localPath, Some(Mizar.MizarPatternsTh))	
+	TranslationController.add(doc)
+	val th = new DeclaredTheory(TranslationController.currentThyBase, TranslationController.localPath, Some(Mizar.MizarPatternsTh))	
 
 	TranslationController.add(th)
 	fv.map(x => {if (x != "HIDDEN" && !TranslationController.controller.library.imports(OMMOD(MMTUtils.getTheoryPath(x)),OMMOD(th.path)))
 		TranslationController.add(PlainInclude(MMTUtils.getTheoryPath(x) , th.path))
 	})
 	//TranslationController.add(PlainInclude(Mizar.HiddenTh, th.path))
-	
-	TranslationController.controller.add(MRef(d.path, th.path, true))
+	TranslationController.controller.add(MRef(doc.path, th.path, true))
 	ArticleTranslator.translateArticle(article)
-   TranslationController.clear()
-   ParsingController.dictionary.clear()
-   addToLib(version, aid)
-	seCont(d)
-}
+    TranslationController.clear()   
+    ParsingController.dictionary.clear()
+    addToLib(version, aid)
+  }
 }

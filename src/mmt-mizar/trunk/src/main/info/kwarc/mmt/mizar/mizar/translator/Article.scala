@@ -94,7 +94,7 @@ object ArticleTranslator {
 	  }
 	  val df = Lambda(Context(con :_*), TypeTranslator.translateTerm(f.term))
 	  
-	  val c = makeConstant(name, tp, df)
+	  val c = makeConstant(name, Some(tp), Some(df))
 	  TranslationController.add(c)	  	  
 	}
 	
@@ -110,7 +110,7 @@ object ArticleTranslator {
 	  }
 	  val df = Lambda(Context(con :_*), PropositionTranslator.translateFormula(p.form))
 	  
-	  val c = makeConstant(name, tp, df)
+	  val c = makeConstant(name, Some(tp), Some(df))
 	  TranslationController.add(c)
 	}
 	
@@ -137,7 +137,7 @@ object ArticleTranslator {
 	  val tm = TypeTranslator.translateTerm(s.term)
 	  val tp = TypeTranslator.translateTyp(s.typ)
 	  val name = TranslationController.addGlobalConst(s.constnr, "C")
-	  val c = makeConstant(name, tp, tm)
+	  val c = makeConstant(name, Some(tp), Some(tm))
 	  TranslationController.add(c) 
 	}
 	
@@ -151,7 +151,6 @@ object ArticleTranslator {
 	  var i : Int = 0
 	  while (i < typs.length) {
 	    val name = TranslationController.addGlobalConst(startnr + i, "C")
-	    println(name)
 	    val const = makeConstant(name, typs(i))
 	    TranslationController.add(const)
 	    i += 1
@@ -176,7 +175,7 @@ object ArticleTranslator {
 	  var i : Int = 0
 	  while (i < tms.length) {
 	    val name = TranslationController.addGlobalConst(startnr + i, "C")
-       val const = makeConstant(name, tms(i)._1, tms(i)._2)
+       val const = makeConstant(name, Some(tms(i)._1), Some(tms(i)._2))
 	    TranslationController.add(const)
 	    
 	    val propname = name + "_prop"
@@ -200,11 +199,10 @@ object ArticleTranslator {
 	def translateJustifiedTheorem(j : MizJustifiedTheorem) {
 	    val name = "T" + j.nr
 	    TranslationController.addGlobalProp(j.prop.nr, name)
-	    println(name)
 		val tp = Mizar.compact(Mizar.proof(PropositionTranslator.translateProposition(j.prop)))
-		val df = Mizar.compact(JustificationTranslator.translateJustification(j.just))
+		val df = None //Mizar.compact(JustificationTranslator.translateJustification(j.just))
 		
-		val jt = makeConstant(LocalName(name), tp, df)
+		val jt = makeConstant(LocalName(name), Some(tp), df)
 		
 	    TranslationController.addSourceRef(jt, j)
 		TranslationController.add(jt)

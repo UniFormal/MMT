@@ -31,13 +31,14 @@ object TranslationController {
 	
     //set during translation
     var currentBase : String = null
-	var currentVersion : Int = -1
+	var currentVersion : String = null
     var currentAid : String = null
+    var currentDoc : Document = null
     
-   def localPath = LocalName(currentAid)
-	def currentDocument : DPath = DPath(Mizar.mmlBase / currentVersion.toString)
-	def currentTheory : MPath = currentDocument ? localPath
-	def currentSource = currentBase + "/source/" + currentVersion.toInt + "/" + currentAid + "/miz"
+    def localPath = LocalName(currentAid)
+	def currentThyBase : DPath = DPath(Mizar.mmlBase / currentVersion.toString)
+	def currentTheory : MPath = currentThyBase ? localPath
+	def currentSource = currentBase + "/source/" + currentVersion + "/" + currentAid + ".miz"
 	
 	var anonConstNr = 0
 	var defs = 0
@@ -56,7 +57,7 @@ object TranslationController {
 	def clear() = {
      constContext = mutable.HashMap()
      propContext = mutable.HashMap()
-     controller.clear
+     //controller.clear
      anonConstNr = 0
     }
     
@@ -192,6 +193,6 @@ object TranslationController {
 	
 	def makeConstant(n: LocalName, t: Term) =
       Constant(OMMOD(currentTheory), n, None, Some(t), None, None)
-   def makeConstant(n: LocalName, t: Term, d: Term) =
-      Constant(OMMOD(currentTheory), n, None, Some(t), Some(d), None)
+   def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term]) =
+      Constant(OMMOD(currentTheory), n, None, tO, dO, None)
 }

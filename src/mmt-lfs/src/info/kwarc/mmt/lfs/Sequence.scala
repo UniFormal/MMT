@@ -24,16 +24,16 @@ object SeqMap {
 	def apply (seq : Term, index : LocalName, to : Term) : Term = 
 	  OMBIND(OMA(OMS(LFS.seqmap),List(to)),Context(VarDecl(index,None,None)),seq)
 	def unapply(t : Term) : Option[(Term,LocalName,Term)] = t match {
-		case OMBIND(OMA(OMS(LFS.seqmap),List(to)),Context(VarDecl(index,_,_,_*)),seq) => Some((seq,index,to))
+		case OMBIND(OMA(OMS(LFS.seqmap),List(to)),Context(VarDecl(index,_,_)),seq) => Some((seq,index,to))
 		case _ => None
 	}
 }
 
 object Rep {
 	def apply (seq : Term, to : Term) : Term = 
-	  SeqMap(seq,LocalName.Anon,to)
+	  SeqMap(seq,OMV.anonymous,to)
 	def unapply(t : Term) : Option[(Term,Term)] = t match {
-		case SeqMap(seq,LocalName.Anon,to) => Some((seq,to))
+		case SeqMap(seq,OMV.anonymous,to) => Some((seq,to))
 		case _ => None
 	}
 }
@@ -137,7 +137,6 @@ object SeqNormalize {
 	    case OMATTR(arg,key,value) => OMATTR(normalize(arg),key,normalize(value))
 	    case OMM(arg,via) => OMM(normalize(arg),normalize(via)) 
 	    case OMA(func,args) => OMA(normalize(func),args map normalize)
-	    case OME(err, args) => OME(normalize(err),args map normalize)
 	    case OMBIND(bin,con,body) => 
 	      val (conN,sub) = normalize(con)
 	      OMBIND(normalize(bin),conN,normalize(body ^ sub))
@@ -147,26 +146,26 @@ object SeqNormalize {
   
   def normalize(cont : Context)(implicit lookup : Lookup, context : Context) : (Context,Substitution) = {
     cont match {
-      case con ++ VarDecl(x,tpO,dfO,attrs @_*) =>
+      case con ++ VarDecl(x,tpO,dfO) =>
         val (conN, sub) = normalize(con)
         val tpN = tpO map {tp => normalize(tp ^ sub)}
         val dfN = dfO map {df => normalize(df ^ sub)}                
         val (vds,t) = (tpN,dfN) match {
           case (Some(Sequence(tps)),None) => 
             val lpair = tps.zipWithIndex map {
-              case (tp,i) => (VarDecl(x / i.toString,Some(tp),None,attrs :_*),OMV(x / i.toString))
+              case (tp,i) => (VarDecl(x / i.toString,Some(tp),None),OMV(x / i.toString))
             }
             val (vds,vs) = lpair.unzip
             (vds,Sequence(vs :_*))            
           case (None,Some(Sequence(dfs))) => 
             val lpair = dfs.zipWithIndex map {
-              case (df,i) => (VarDecl(x / i.toString,None,Some(df),attrs :_*),OMV(x / i.toString))
+              case (df,i) => (VarDecl(x / i.toString,None,Some(df)),OMV(x / i.toString))
             }
             val (vds,vs) = lpair.unzip
             (vds,Sequence(vs :_*))            
-          case (None,None) => (List(VarDecl(x,None,None,attrs :_*)),OMV(x))
-          case (Some(Sequence(tps)),Some(Sequence(dfs))) => (List(VarDecl(x,tpN,dfN,attrs :_*)),OMV(x)) //TODO Fix this case.
-          case (_,_) => (List(VarDecl(x,tpN,dfN,attrs :_*)),OMV(x))
+          case (None,None) => (List(VarDecl(x,None,None)),OMV(x))
+          case (Some(Sequence(tps)),Some(Sequence(dfs))) => (List(VarDecl(x,tpN,dfN)),OMV(x)) //TODO Fix this case.
+          case (_,_) => (List(VarDecl(x,tpN,dfN)),OMV(x))
         }        
         (conN ++ vds, sub ++ OMV(x) / t)
       case Context() => (Context(),Substitution())

@@ -54,7 +54,6 @@ object DefinitionTranslator {
       case None => getName(p.prefix ,"R", p.absnr)
       case Some(s) => s
     }
-    println(name, p.dts.length)
     p.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
     TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: "pred" :: Nil))
 
@@ -88,7 +87,6 @@ object DefinitionTranslator {
       case None => getName(p.prefix ,"R", p.absnr)
       case Some(s) => s
     }
-    println(name, p.dts.length)
     p.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
 
     val args = p.args.map(x => TypeTranslator.translateTyp(x._2))
@@ -116,7 +114,6 @@ object DefinitionTranslator {
       case None => getName(f.prefix, f.kind, f.absnr)
       case Some(s) => s
     }
-    println(name, f.dts.length)
     
     f.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
     TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: "func" :: Nil))
@@ -146,7 +143,6 @@ object DefinitionTranslator {
       case None => getName(f.prefix, f.kind, f.absnr)
       case Some(s) => s
     }
-    println(name, f.dts.length)
     f.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
 
     val args = f.args.map(x => TypeTranslator.translateTyp(x._2))
@@ -175,7 +171,6 @@ object DefinitionTranslator {
       case None => getName(m.prefix, "M", m.absnr)
       case Some(s) => s
     }
-    println(name, m.dts.length)
     m.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
     TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: "mode" :: Nil))
 
@@ -204,7 +199,6 @@ object DefinitionTranslator {
       case None => getName(m.prefix, "M", m.absnr)
       case Some(s) => s
     }
-    println(name, m.dts.length)
 
     m.args.zipWithIndex.foreach(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
 
@@ -234,7 +228,6 @@ object DefinitionTranslator {
       case None => getName(a.prefix, "V", a.absnr)
       case Some(s) => s
     }
-    println(name, a.dts.length)
     a.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
     TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: "attr" :: Nil))
 
@@ -264,7 +257,6 @@ object DefinitionTranslator {
       case None => getName(a.prefix, "V", a.absnr)
       case Some(s) => s
     }
-    println(name, a.dts.length)
     
     a.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
     TranslationController.addRetTerm(MMTUtils.getPath(TranslationController.currentAid, name :: "attr" :: Nil))
@@ -295,7 +287,6 @@ object DefinitionTranslator {
       case None => getName("", "NM", m.absnr)
       case Some(s) => s
     }
-    println(name)
     m.args.zipWithIndex.map(p => TranslationController.addLocusVarBinder(Index(OMV("x"), OMI(p._2 + 1))))
     val args = m.args.map(x => TypeTranslator.translateTyp(x._2))
     val exp = TypeTranslator.translateTyp(m.exp)
@@ -303,7 +294,7 @@ object DefinitionTranslator {
     val con = Context(VarDecl("x", Some(Sequence(args : _*)), None))
     val df = Lambda(con, exp)
     
-    val const = makeConstant(name, tp, df)
+    val const = makeConstant(name, Some(tp), Some(df))
     
     TranslationController.clearLocusVarContext()
   }

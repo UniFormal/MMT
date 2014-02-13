@@ -68,6 +68,8 @@ object Extractor {
                         d.targets foreach {target => 
                           f(isDefinedBy(target, d.fragPath))
                         }
+                      case n : NotationDefinition => 
+                        f(isDenotedBy(n.target, n.fragPath))
                     
                     }
                }
