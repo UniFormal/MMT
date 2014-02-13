@@ -3,6 +3,7 @@ package info.kwarc.mmt.lfs
 import info.kwarc.mmt.api._
 import objects._
 
+/*
 object InferConcat extends InferenceRule(LFS.seq) {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack) : Option[Term] = {
       //tm is of the form OMA(OMID(LFS.seq), args)
@@ -17,7 +18,7 @@ object InferConcat extends InferenceRule(LFS.seq) {
       }
    }
 }
-
+*/
 /*
 // trivial, naive
 object Oracle extends EqualityRule(Nat.nat) {

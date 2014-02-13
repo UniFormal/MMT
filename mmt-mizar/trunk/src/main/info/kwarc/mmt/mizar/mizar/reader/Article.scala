@@ -46,7 +46,7 @@ object ArticleParser{
 		  ParsingController.addToArticle(JustificationParser.parseAuxiliaryItem(n))		
 		case "Proof" | "By" | "From" | "Reservation" |"Section"  => None
 		case _ => {
-			println("TODO: " + n.label)
+			//println("TODO: " + n.label)
 		}
 	}
 	
