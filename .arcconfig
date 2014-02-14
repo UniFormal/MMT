@@ -1,5 +1,4 @@
  {
   "project_id" : "mmt",
-  "conduit_uri" : "http://phab.code4fun.de/",
-  "lint.engine" : "ArcanistExtensionBasedLintEngine"
+  "conduit_uri" : "http://phab.code4fun.de/"
  }
