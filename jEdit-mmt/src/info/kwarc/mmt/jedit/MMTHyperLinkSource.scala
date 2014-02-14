@@ -2,6 +2,7 @@ package info.kwarc.mmt.jedit
 
 import info.kwarc.mmt.api._
 import parser._
+import archives.source
 import utils._
 
 import org.gjt.sp.jedit._
@@ -25,7 +26,7 @@ object MMTHyperlink {
           else {
              //resolve logical document id in an archive
              controller.backend.resolveLogical(c) map {
-               case (archive, path) => r.copy(container = FileURI(archive.sourceDir / path)) 
+               case (archive, path) => r.copy(container = FileURI(archive/source / path)) 
              }
           }
        }
