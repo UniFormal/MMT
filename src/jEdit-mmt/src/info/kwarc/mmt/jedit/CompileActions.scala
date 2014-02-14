@@ -5,6 +5,7 @@ import org.gjt.sp.jedit._
 import errorlist._
 
 import info.kwarc.mmt.api._
+import archives.source
 import utils._
 import utils.FileConversion._
 
@@ -22,7 +23,7 @@ class CompileActions(mmtplugin: MMTPlugin) {
       // call build method on the respective archive
       controller.handle(frontend.ArchiveBuild(archive, "mmt-omdoc", archives.Build, path, Nil))
       // read out the errors
-      arch.traverse("source", path, _ => true, false) {case archives.Current(inFile, inPath) =>
+      arch.traverse(source, path, _ => true, false) {case archives.Current(inFile, inPath) =>
          errorSource.removeFileErrors(inFile.toString)
          arch.errors("mmt-omdoc")(inPath) foreach {case SourceError("compiler", ref, hd, tl, warn, fatal) =>
             val tp = if (warn) ErrorSource.WARNING else ErrorSource.ERROR
@@ -37,7 +38,7 @@ class CompileActions(mmtplugin: MMTPlugin) {
    }
    /** compiles a buffer or directory */
    def compile(file: String) {
-      controller.backend.getArchives find {a => file.startsWith((a.sourceDir).toString)} match {
+      controller.backend.getArchives find {a => file.startsWith((a/source).toString)} match {
          case None =>
            log("not compiling buffer/directory " + file)
          case Some(a) =>

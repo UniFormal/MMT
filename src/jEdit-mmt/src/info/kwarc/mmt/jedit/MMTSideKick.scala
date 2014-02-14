@@ -8,6 +8,7 @@ import sidekick._
 
 import info.kwarc.mmt.api._
 import parser._
+import archives.source
 import frontend._
 import libraries._
 import modules._
@@ -266,7 +267,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
                val pos = s.ref.region.start
                // We permit the case that errors are found in other files than the current one. So we compute the file path
                val file = controller.backend.resolveLogical(s.ref.container) match {
-                  case Some((a,p)) => (a.sourceDir / p).toString
+                  case Some((a,p)) => (a/source / p).toString
                   case None => s.ref.container match {
                      case utils.FileURI(file) => file.toString
                      case u => u.toString 
