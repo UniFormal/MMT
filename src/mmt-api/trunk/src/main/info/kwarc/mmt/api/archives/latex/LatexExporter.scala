@@ -27,7 +27,7 @@ class LatexExporter extends Exporter {
    private def doDelim(d: Delimiter) =
       if (d.text == "%w" || d.text == " ") "\\;" else translate(d.text, delimEscapes ::: UnicodeConverter.maps)
    /** convert a term into a LaTeX expression (using lots of \ { and }) */
-   private def doTerm(t: Term): String = controller.pragmatic.pragmaticHead(t) match {
+   private def doTerm(t: Term): String = controller.pragmatic.mostPragmatic(t) match {
       case OMS(p) => doConstantName(p)
       case OMV(n) => n.toPath
       case ComplexTerm(p, args, con, scopes) =>

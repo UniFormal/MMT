@@ -55,7 +55,7 @@ import parser._
 class MathWebSearch(url: java.net.URL) {
    val qvarBinder = utils.mmt.mmtcd ? "qvar"
    private val qvarMarkers = List(Delim("$"), Var(1, false, Some(Delim(","))), Delim(":"), Arg(2))
-   val qvarNot = new TextNotation(qvarBinder, Mixfix(qvarMarkers), presentation.Precedence.infinite, utils.mmt.mmtcd)
+   val qvarNot = new TextNotation(qvarBinder, Mixfix(qvarMarkers), presentation.Precedence.infinite, None)
 
    private def queryToXML(query: MathWebSearchQuery) = {
       val queryCML = query.term match {

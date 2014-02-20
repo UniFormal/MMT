@@ -19,6 +19,7 @@ object Position {
       Position(l)
    }
 	val Init = Position(Nil)
+	/** = Init / i */
 	def apply(i: Int) : Position = Position(List(i))
    /** @return the positions of the subobjects of t */
    def positions(t: Obj) = t match {

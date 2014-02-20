@@ -142,8 +142,7 @@ class StyleBasedPresenter extends Presenter {
          case s:SemiFormalObject =>
             s.components.foreach(c => present(c, gpar, lpar)) //could be much better
          case o1: Obj =>
-            val (o, posP, ncOpt) = Presenter.getNotation(controller,o1)
-            val notationOpt = ncOpt.flatMap(_.getPresent)
+            val (o, posP, notationOpt) = Presenter.getNotation(controller,o1, true)
             //default values
             var key = NotationKey(o.head, o.role)
             var newlpar = lpar

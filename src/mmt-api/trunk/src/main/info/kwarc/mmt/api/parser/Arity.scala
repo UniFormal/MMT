@@ -6,25 +6,33 @@ import objects._
 /**
  * the arity of a symbol describes what kind of objects can be formed from it
  * 
+ * @param variables the variable positions in order
+ * @param arguments the argument positions in order
+ * @param attribution true if it can attribute an object
+ * 
  * special cases and analogs in the OpenMath role system for a symbol s:
- *  no arguments, variables, scopes: constant, s
- *  some arguments, no variables, scopes: application OMA(s, args)
- *  no arguments, some variables: binder, OMBINDC(s, vars, scopes)
- *  some arguments, some variables: application+binder as in OMBINDC(OMA(s, args), vars, scopes), as suggested by Kohlhase, Rabe, MiCS 2012
- *  as above but exactly 1 scope: usual binders, generalized binders as suggested by Davenport, Kohlhase, MKM 2010
+ *  no arguments, variables: constant, s
+ *  some arguments, no variables: application OMA(s, args)
+ *  some arguments, some variables: binder, OMBINDC(s, vars, args)
+ *  as above but exactly 1 argument: usual binders, generalized binders as suggested by Davenport, Kohlhase, MKM 2010
  */
-case class Arity(variables: List[VariableComponent],
+case class Arity(subargs: List[ArgumentComponent],
+                 variables: List[VariableComponent],
                  arguments: List[ArgumentComponent], attribution: Boolean) {
    def components = variables ::: arguments
    def length = components.length
    def isConstant    = (! attribution) &&    arguments.isEmpty  &&    variables.isEmpty
-   def isApplication = (! attribution) && (! arguments.isEmpty) &&    variables.isEmpty
-   def isAttribution = attribution && variables.isEmpty
-   def isPlainAttribution = isAttribution && arguments.length == 1
-   def isPlainBinder = (! attribution) && (! variables.isEmpty) && arguments.length == 1
+   def isApplication = (! attribution) && (subargs.isEmpty) && variables.isEmpty && (! arguments.isEmpty)
+   def isPlainBinder = (! attribution) && (subargs.isEmpty) && (! variables.isEmpty) && arguments.length == 1
+   def numSeqSubs = subargs.count(_.isInstanceOf[SeqArg])
    def numSeqArgs = arguments.count(_.isInstanceOf[SeqArg])
    def numSeqVars = variables.count {
       case Var(_,_, Some(_)) => true
+      case _ => false
+   }
+   def numNormalSubs = subargs.count {
+      case Arg(n) => true
+      case ImplicitArg(_) => true
       case _ => false
    }
    def numNormalArgs = arguments.count {
@@ -126,10 +134,11 @@ case class Arity(variables: List[VariableComponent],
       }
       result.reverse
    }
-   /** @return true if ComplexTerm(name, args, vars, scs) has enough components for this arity and provides for an attribution if necessary */
-   def canHandle(vars: Int, args: Int, att: Boolean) = {
-      numNormalArgs <= args &&
-      numNormalVars <= vars &&
+   /** @return true if ComplexTerm(name, subs, vars, args) has enough components for this arity and provides for an attribution if necessary */
+   def canHandle(subs: Int, vars: Int, args: Int, att: Boolean) = {
+      (numNormalSubs == subs || (numNormalSubs < subs && numSeqSubs >= 1)) &&
+      (numNormalArgs == args || (numNormalArgs < args && numSeqArgs >= 1)) &&
+      (numNormalVars == vars || (numNormalVars < vars && numSeqVars >= 1)) &&
       (! att || attribution)
    }
   /**
@@ -191,9 +200,9 @@ case class Arity(variables: List[VariableComponent],
 }
 
 object Arity {
-   def constant = Arity(Nil,Nil,false)
-   def plainApplication = Arity(Nil, List(SeqArg(1,Delim(""))), false)
-   def plainBinder = Arity(List(Var(1,false,Some(Delim("")))), List(Arg(2)), false)
-   def attribution = Arity(Nil, List(Arg(1)),true)
+   def constant = Arity(Nil,Nil, Nil,false)
+   def plainApplication = Arity(Nil, Nil, List(SeqArg(1,Delim(""))), false)
+   def plainBinder = Arity(Nil, List(Var(1,false,Some(Delim("")))), List(Arg(2)), false)
+   def attribution = Arity(Nil, Nil, List(Arg(1)),true)
 }
 

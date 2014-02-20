@@ -22,7 +22,7 @@ case class InvalidNotation(msg: String) extends java.lang.Throwable
  * 
  * if the only marker is SeqArg, it must hold that OMA(name, List(x)) = x because sequences of length 1 are parsed as themselves 
  */
-class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Precedence, val meta: MPath) extends ComplexNotation {
+class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Precedence, val meta: Option[MPath]) extends ComplexNotation {
    /** @return the list of markers that should be used for parsing */
    lazy val parsingMarkers = fixity.markers.filter {
       case _:PresentationMarker => false // there should not be any presentation markers in notations used for parsing
@@ -151,7 +151,7 @@ class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Pre
 }
 
 object TextNotation {
-   def apply(name: GlobalName, prec: Precedence, meta: MPath)(ms: Any*): TextNotation = {
+   def apply(name: GlobalName, prec: Precedence, meta: Option[MPath])(ms: Any*): TextNotation = {
       val markers : List[Marker] = ms.toList map {
          case i: Int => Arg(i)
          case m: Marker => m
@@ -169,8 +169,8 @@ object TextNotation {
     * a special Notation for utils.mmt.brackets
     * matches ( 1 ) with precedence bracketLevel
     */
-   val bracketNotation = new TextNotation(utils.mmt.brackets, Mixfix(List(Delim("("),Arg(1),Delim(")"))), bracketLevel, utils.mmt.mmtcd)
-   val contextNotation = new TextNotation(utils.mmt.context, Mixfix(List(Delim("["), Var(1,true,Some(Delim(","))), Delim("]"))), bracketLevel, utils.mmt.mmtcd)
+   val bracketNotation = new TextNotation(utils.mmt.brackets, Mixfix(List(Delim("("),Arg(1),Delim(")"))), bracketLevel, None)
+   val contextNotation = new TextNotation(utils.mmt.context, Mixfix(List(Delim("["), Var(1,true,Some(Delim(","))), Delim("]"))), bracketLevel, None)
    
    /** XML parsing methods */
    def parse(n : scala.xml.Node, name : GlobalName) : TextNotation = n match {
@@ -180,9 +180,9 @@ object TextNotation {
          case "" => Precedence.integer(0)
          case s => Precedence.parse(s)
       }
-      val meta: MPath = utils.xml.attr(n, "meta") match {
-         case "" => nameP.module.toMPath
-         case s => Path.parseM(s, name)
+      val meta = utils.xml.attr(n, "meta") match {
+         case "" => None
+         case s => Some(Path.parseM(s, name))
       }
       val (fixityString, arguments) = {
          val markers = utils.xml.attr(n, "markers")
@@ -215,6 +215,14 @@ object TextNotation {
     */
    def parse(str : String, name : GlobalName) : TextNotation = {
        var tokens = str.split("\\s+").toList.filter(_ != "")
+       val meta = tokens match {
+          case "meta" :: mt :: rest =>
+             tokens = rest
+             Some(Path.parseM(mt, utils.mmt.mmtcd))
+          case "meta" :: Nil =>
+             throw ParseError("theory expected")
+          case _ => None
+       }
        val i = tokens.indexOf("prec")
        val prec = if (i != -1) {
           val rest = tokens.drop(i)
@@ -235,7 +243,6 @@ object TextNotation {
           ("mixfix", tokens)
        }
        val fixity = FixityParser.parse(name, fixityString, arguments)
-       val meta = name.module.toMPath //TODO should be parsed
        new TextNotation(name, fixity, prec, meta)
   }
 }
