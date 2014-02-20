@@ -194,6 +194,8 @@ class ScalaExporter extends GenericScalaExporter {
          s"    def apply($argtpString) = OMA(OMID(this.path), $argListString)\n"
      else if (arity.isPlainBinder)
          s"    def apply(vs1: Context, s2: Term) = OMBIND(OMID(this.path), vs1, s2)\n"
+     else if (arity.isConstant)
+        ""
      else
          "  // no apply method generated for this arity\n"
      // def unapply(t: Term): Option[...] = ...
@@ -207,6 +209,8 @@ class ScalaExporter extends GenericScalaExporter {
          s"      case OMBIND(OMID(this.path), vs1, s2) => Some((vs1, s2))\n" +
          s"      case _ => None\n" +
          s"    }\n"
+     else if (arity.isConstant)
+        ""
      else
          "  // no unapply methods generated for this arity\n"
      

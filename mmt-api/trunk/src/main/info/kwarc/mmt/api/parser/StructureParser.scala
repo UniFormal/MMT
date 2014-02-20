@@ -579,7 +579,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
          }
       } else { 
          val (obj,reg,tm) = readParsedObject(OMMOD(tpath))
-         controller.pragmatic.pragmaticHead(tm) match {
+         controller.pragmatic.mostPragmatic(tm) match {
             case OMA(OMS(pat), args) =>
                pattern = pat
                arguments = args

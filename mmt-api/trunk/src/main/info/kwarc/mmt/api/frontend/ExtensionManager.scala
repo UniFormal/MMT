@@ -61,7 +61,9 @@ class ExtensionManager(controller: Controller) extends Logger {
    private[api] var loadedPlugins : List[Plugin]       = Nil
    private[api] var parserExtensions : List[ParserExtension] = Nil
    private[api] var queryExtensions : List[QueryExtension] = Nil
+
    var lexerExtensions : List[LexerExtension] = Nil
+   var pragmaticConstructors: List[pragmatics.PragmaticConstructor] = Nil
 
    private var mws : Option[URI] = None
 
@@ -69,7 +71,6 @@ class ExtensionManager(controller: Controller) extends Logger {
    val logPrefix = "extman"
 
    val ruleStore = new objects.RuleStore
-   val pragmaticStore = new pragmatics.PragmaticStore
    
    def addDefaultExtensions {
       //targets and presenters

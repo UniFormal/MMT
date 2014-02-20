@@ -1596,7 +1596,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
      }
      else
         (OMS(pattern), i)
-     val matches = controller.pragmatic.pragmaticHead(t) match {
+     val matches = controller.pragmatic.mostPragmatic(t) match {
         case OMA(OMID(`pattern`), args) => args
         case OMID(`pattern`) => Nil
         case p : OMID => List(p)

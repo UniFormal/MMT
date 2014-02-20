@@ -17,19 +17,15 @@ import scala.collection.mutable.{HashSet,HashMap}
  */
 
 /** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
-class DelayedConstraint(val constraint: Judgement, private var currentLevel: Int, until: Int, val history: History) {
+class DelayedConstraint(val constraint: Judgement, val history: History, val incomplete: Boolean = false) {
   private val freeVars = constraint.freeVars
   private var activatable = false
   /** This must be called whenever a variable that may occur free in this constraint has been solved */
   def solved(names: List[LocalName]) {
      if (! activatable && (names exists {name => freeVars contains name})) activatable = true
   }
-  /** @return true iff, since delaying, a variable has been solved that occurs free in this Constraint */
-  def isActivatable(level: Int): Boolean = {
-     val newLevel = level > currentLevel
-     currentLevel = level // we assume the level increases monotonously
-     (level >= until) && (newLevel || activatable)
-  }
+  /** @return true if since delaying, a variable has been solved that occurs free in this Constraint */
+  def isActivatable = activatable
   override def toString = constraint.toString
 }
 
@@ -124,13 +120,6 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
    private var errors: List[History] = Nil
    /** tracks the dependecnies in reverse order of encountering */
    private var dependencies : List[CPath] = Nil
-   /** currentLevel increases during checking, at higher levels more operations are applicable
-    *  currently: level 0 for sufficient-necessary rules
-    *             level 1 for only sufficient rules
-    */
-   private var currentLevel = 0
-   /** the highest level, if nothing is applicable at this level, we give up */
-   private val highestLevel = 1
    /** true if unresolved constraints are left */
    def hasUnresolvedConstraints : Boolean = ! delayed.isEmpty
    /** true if unsolved variables are left */
@@ -204,7 +193,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
             }
          }
          if (! delayed.isEmpty) {
-            report(prefix, "constraints (current level is " + currentLevel + "):")
+            report(prefix, "constraints:")
             logGroup {
                delayed.foreach {d =>
                   report(prefix, d.constraint.present)
@@ -241,18 +230,18 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
    }
 
    /** delays a constraint for future processing
-    * @param c the Judgement to be delayed
-    * @param until the level at which to activate (must satisfy 0 <= until <= highestLevel)
+    * @param j the Judgement to be delayed
+    * @param activatable true if the judgment can be activated immediately
     * @return true (i.e., delayed Judgment's always return success)
     */
-   private def delay(j: Judgement, until: Int = currentLevel)(implicit history: History): Boolean = {
+   private def delay(j: Judgement, incomplete: Boolean = false)(implicit history: History): Boolean = {
       // testing if the same judgement has been delayed already
       if (delayed.exists(d => d.constraint hasheq j)) {
          log("delaying (exists already): " + j.present)
       } else {
-         log("delaying until level " + until + ": " + j.present)
+         log("delaying: " + j.present)
          history += "(delayed)"
-         val dc = new DelayedConstraint(j, currentLevel, until, history)
+         val dc = new DelayedConstraint(j, history, incomplete)
          delayed ::= dc
       }
       true
@@ -264,17 +253,9 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
    private def activatable: Option[DelayedConstraint] = {
       delayed foreach {_.solved(newsolutions)}
       newsolutions = Nil
-      delayed find {_.isActivatable(currentLevel)} match {
-         case None =>
-            if (currentLevel >= highestLevel) {
-               None
-            } else {
-               currentLevel += 1
-               log("switching to level " + currentLevel)
-               activatable
-            }
-         case Some(dc) => Some(dc)
-      }
+      delayed.find {_.isActivatable} orElse
+      // no activatable judgement left, try incomplete reasoning
+      delayed.find {_.incomplete} 
    }
    /** registers the solution for an unknown variable
     * 
@@ -600,10 +581,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
          case (tpS, Some(rule)) => rule(this)(tm1S, tm2S, tpS)
          case (tpS, None) =>
             // this is either a base type or an equality rule is missing
-            // TorsoNormalForm is useful to inspect terms of base type
-            //val tm1T = TorsoForm.fromHeadForm(tm1S)
-            //val tm2T = TorsoForm.fromHeadForm(tm2S)
-            checkEqualityExpandDef(List(tm1S), List(tm2S), false)(stack, history, tp)
+            checkEqualityTermBased(List(tm1S), List(tm2S), false)(stack, history, tp)
       }
    }
    
@@ -630,26 +608,26 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
    }
    
    /**
-    * checks equality t1 = t2 at an atomic type by expanding the defined constant in the torso
+    * checks equality t1 = t2 at an atomic type by simplification
     * 
     * Both t1 and t2 are remembered as the chain of terms resulting from repeated definition expansion 
-    * @param torsos1 the chain of terms that led to t1, starting with L (must be non-empty)
-    * @param torsos2 the chain of terms that led to t2, starting with L (must be non-empty)
-    * @param t2Final if true, the definition expansion is not applicable to the torso of t2
+    * @param terms1 the chain of terms that led to t1 (must be non-empty)
+    * @param terms2 the chain of terms that led to t2 (must be non-empty)
+    * @param t2Final if true, no simplification possible anymore
     * @param flipped if true, t1 and t2 have been flipped during recursive calls (false by default)
     *   This parameter is not semantically necessary but carried around to undo flipping when calling other functions.
-    * @return true if equal 
+    * @return true if equal
     */
-   private def checkEqualityExpandDef(terms1: List[Term], terms2: List[Term], t2Final: Boolean, flipped: Boolean = false)(implicit stack : Stack, history: History, tp: Term) : Boolean = {
-       log("equality (expanding definitions): " + terms1.head + " = " + terms2.head)
+   private def checkEqualityTermBased(terms1: List[Term], terms2: List[Term], t2Final: Boolean, flipped: Boolean = false)(implicit stack : Stack, history: History, tp: Term) : Boolean = {
+       log("equality (rewriting): " + terms1.head + " = " + terms2.head)
        val t1 = terms1.head
-       // see if we can expand t1
+       // see if we can expand a definition in t1
        val t1E = defExp(t1, Context())
        val t1EL = limitedSimplify(t1E)(_ => None)._1
        val t1ES = simplify(t1EL)
        val changed = t1ES hashneq t1
        if (changed) {
-          log("left term expanded and simplified to " + t1ES)
+          log("left term rewritten to " + t1ES)
           // check if it is identical to one of the terms known to be equal to t2
           if (terms2.exists(_ hasheq t1ES)) {
              log("success by identity")
@@ -662,24 +640,21 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
        // if we failed to prove equality, we have multiple options:
        (changed, t2Final) match {
           // t1 expanded, t2 cannot be expanded anymore --> keep expanding t1
-          case (true, true)      => checkEqualityExpandDef(t1ES::terms1, terms2, true, flipped)
+          case (true, true)      => checkEqualityTermBased(t1ES::terms1, terms2, true, flipped)
           // t1 expanded, t2 can still be expanded anymore --> continue expanding t2
-          case (true, false)     => checkEqualityExpandDef(terms2, t1ES::terms2, false, ! flipped)
+          case (true, false)     => checkEqualityTermBased(terms2, t1ES::terms2, false, ! flipped)
           // t1 cannot be expanded anymore but t2 can ---> continue expanding t2
-          case (false, false)    => checkEqualityExpandDef(terms2, terms1, true, ! flipped)
+          case (false, false)    => checkEqualityTermBased(terms2, terms1, true, ! flipped)
           // neither term can be expanded --> try congruence rule as last resort
           case (false, true)     =>
              // if necessary, we undo the flipping of t1 and t2
              val s1 = if (flipped) terms2.head else t1ES
              val s2 = if (flipped) t1ES else terms2.head
-             val j = Equality(stack, s1, s2, Some(tp))
-             if (currentLevel < 1)
-                delay(j, 1)
+             if (delayed.exists(_.isActivatable))
+                // if there is some other way to proceed, do it
+                delay(Equality(stack, s1, s2, Some(tp)), true)
              else
-                //TODO: if there is a simplification-rule for one of the heads, expand definition at the next lower level (and then iteratively)
-                //until a simplification-rule becomes applicable at toplevel
-                //That is necessary if a rule becomes applicable eventually.
-                //But it is a huge overhead if we don't actually want to simplify here. 
+                // last resort try congruence
                 checkEqualityCongruence(TorsoForm.fromHeadForm(s1), TorsoForm.fromHeadForm(s2))
        }
    }

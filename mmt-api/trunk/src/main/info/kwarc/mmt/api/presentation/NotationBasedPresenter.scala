@@ -169,8 +169,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
     *         a notation to use for presenting o'
     */ 
    protected def getNotation(o: Obj): (Obj, List[Position], Option[TextNotation]) = {
-      val (oP, pos, ncOpt) = Presenter.getNotation(controller, o)
-      (oP, pos, ncOpt.flatMap(nc => if (twoDimensional) nc.getPresent else nc.getParse))
+      Presenter.getNotation(controller, o, twoDimensional)
    }
    /**
     * called on objects for which no notation is available
@@ -186,7 +185,27 @@ trait NotationBasedPresenter extends ObjectPresenter {
       case l: OMLITTrait =>
          doLiteral(l)
          -1
+      case ComplexTerm(op, subs, con, args) =>
+         val vardata = con.map {v => VarData(v, Some(op), pc.pos)}
+         doBracketedGroup {
+            doIdentifier(op)
+            subs.zipWithIndex.foreach {case (s,i) =>
+               recurse(s)(pc.child(i+1))
+            }
+            doSpace(1)
+            doOperator("[")
+            con.zipWithIndex.foreach {case (v,i) =>
+               recurse(v)(pc.child(subs.length+i+1, vardata.take(i)))
+            }
+            doOperator("]")
+            args.zipWithIndex.foreach {case (t,i) =>
+               doSpace(1)
+               recurse(t)(pc.child(subs.length+con.length+i+1, vardata))
+            }
+         }
+         1
       case OMA(f,args) =>
+         // only applies in unusual cases where f is not atomic
          doBracketedGroup {
             val comps = (f::args).zipWithIndex
             comps.init.foreach {case (t,i) =>
@@ -197,6 +216,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
          }
          1
       case OMBINDC(b,c,s) =>
+         // only applies in unusual cases where b is not atomic
          val binder = b match {
             case OMA(OMS(p),_) => Some(p)
             case OMS(p) => Some(p)
@@ -291,16 +311,14 @@ trait NotationBasedPresenter extends ObjectPresenter {
                case Some(not) =>
                   if (not.name.toString.endsWith("Pi"))
                      true
-                  // TODO: args is currently not used - Arg(n) and Arg(-n) take scopes(n)
                   val (subargs, context, args, attributee) = objP match { 
                      // try to render using notation, defaults to doDefault for some errors
                      case ComplexTerm(_, sub, context, args) => (sub, context, args, None)
                      case OMID(p) => (Substitution(),Context(),Nil,None)
                      case _ => return doDefault(objP)(pc)
                   }
-                  if (! not.arity.canHandle(context.length, args.length, attributee.isDefined))
-                     return doDefault(objP)(pc)
-   
+                  val firstVarNumber = subargs.length+1
+                  val firstArgNumber = subargs.length+context.length+1
                   /*
                    * @param ac the component as which the child occurs
                    * @param child the child into which we recurse 
@@ -343,26 +361,26 @@ trait NotationBasedPresenter extends ObjectPresenter {
                         //val delimFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.Delimiter]
                         current match {
                            case c @ Arg(n) =>
-                              doChild(c, args(n-context.length-1), currentPosition)
+                              doChild(c, args(n-firstArgNumber), currentPosition)
                               if (compFollows) doSpace(1)
                            case c @ ImplicitArg(n) =>
                               doImplicit {
-                                 doChild(c, args(n-context.length-1), currentPosition)
+                                 doChild(c, args(n-firstArgNumber), currentPosition)
                                  if (compFollows) doSpace(1)
                               }
                            case c @ Var(n, typed, _) => //sequence variables impossible due to flattening
-                              doChild(c, context(n-1), currentPosition)
+                              doChild(c, context(n-firstVarNumber), currentPosition)
                               if (compFollows) doSpace(1)
                            case AttributedObject =>
                               // we know attributee.isDefined due to flattening
                               attributee.foreach {a =>
-                                 doChild(Arg(0), a, currentPosition) //TODO Arg(0)
+                                 doChild(Arg(0), a, currentPosition) //TODO
                               }
                               if (compFollows) doSpace(1)
                            case d: parser.Delimiter =>
                               val unpImps = if (unplacedImplicitsDone) Nil else unplacedImplicits map {
                                  case c @ ImplicitArg(n) =>
-                                     (_: Unit) => doChild(c, args(n-context.length-1), 0); ()
+                                     (_: Unit) => doChild(c, args(n-firstArgNumber), 0); ()
                               }
                               val letters = d.text.exists(_.isLetter)
                               if (letters && previous.isDefined) doSpace(1)

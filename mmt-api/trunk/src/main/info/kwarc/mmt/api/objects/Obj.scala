@@ -360,7 +360,7 @@ object OMATTRMany {
    def unapply(t: Term) : Option[(Term, List[(OMID, Term)])] = t match {
       case OMATTR(a, k, v) =>
          val Some((arg, kvs)) = unapply(a)
-         Some((a, kvs:::List((k,v))))
+         Some((arg, kvs:::List((k,v))))
       case t => Some(t, Nil)
    }
 }
@@ -469,7 +469,7 @@ object ComplexTerm {
       def apply(sub: Substitution) = sub.map {case Sub(l,t) => (OMS(utils.mmt.label ? l), t)}
       def unapply(ts: List[(OMID,Term)]): Option[Substitution] = ts match {
          case Nil => Some(Nil)
-         case (OMS(utils.mmt.label ? l), t) :: rest =>
+         case (OMS(utils.mmt.label ?? l), t) :: rest =>
             unapply(rest) map {case sub => Sub(l,t) ++ sub}  
       }
    }
