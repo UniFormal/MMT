@@ -15,13 +15,14 @@ class Plugin extends frontend.Plugin {
       em.ruleStore.add(UnsafeBeta)
       // proof rules
       em.ruleStore.add(PiIntroRule, PiElimRule, ArrowIntroRule, ArrowElimRule)
-      // pragmatic features
-      em.pragmaticStore.add(LFHOAS, LFTyping)
       // content enhancers
       em.addExtension(new NotationGenerator)
       em.addExtension(new SimplificationRuleGenerator)
       // build targets
       em.addExtension(new ScalaExporter)
+      // pragmatic features
+      em.pragmaticConstructors ::= new pragmatics.PragmaticConstructor(LF._path, Apply.path, Lambda.path, OfType.path)
+
    }
 }
 
