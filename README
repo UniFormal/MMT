@@ -1,5 +1,1 @@
-Directory structure:
- - deploy	jar files ready to be used without building; see the README there for further details
- - doc 		MMT documentation
- - src		individual MMT projects and their sources; see the README there for further details
- - styles	some styles for generating presentation
+See documentation in doc/html/index.html
