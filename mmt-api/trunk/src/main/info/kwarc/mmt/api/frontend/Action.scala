@@ -23,7 +23,7 @@ object Action extends RegexParsers {
    private def commented = (comment ^^ {c => NoAction}) | (action ~ opt(comment) ^^ {case a ~ _ => a}) | empty ^^ {_ => NoAction}
    private def empty = "\\s*"r
    private def comment = "//.*"r
-   private def action = log | mathpath | archive | extension | mws | server | windowaction | execfile | scala |
+   private def action = log | mathpath | archive | extension | mws | server | windowaction | execfile | defactions |scala |
       setbase | read | graph | check | navigate | printall | printallxml | diff | clear | exit | getaction // getaction must be at end for default get
 
    private def log = logfile | logconsole | logon | logoff
@@ -70,6 +70,10 @@ object Action extends RegexParsers {
      private def serveroff = "server" ~> "off" ^^ {_ => ServerOff}
 
    private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
+   private def defactions = define | enddefine | dodefined
+   private def define = "define " ~> str ^^ {s => Define(s)}
+   private def enddefine = "end" ^^ {case _ => EndDefine}
+   private def dodefined = "do " ~> file ~ str ^^ {case f ~ s => Do(f, s)}
    private def scala = "scala" ^^ {_ => Scala}
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
    private def read = "read" ~> file ^^ {f => Read(f)}
@@ -175,6 +179,25 @@ case class SetBase(base : Path) extends Action {override def toString = "base " 
  * concrete syntax: file file:FILE
  */
 case class ExecFile(file : File) extends Action {override def toString = "file " + file}
+
+/** bind all following commands to a name without executing them
+ *  
+ *  the folder of the containing msl file provides the namespace of this binding
+ *  concrete syntax: define name:STRING
+ */
+case class Define(name : String) extends Action {override def toString = "define " + name}
+/** ends a [[Define]]
+ *  concrete syntax: end
+ */
+case object EndDefine extends Action {override def toString = "end"}
+/** run a previously named list of commands
+ *  concrete syntax: do folder:FILE name:STRING
+ */
+case class Do(file: File, name : String) extends Action {override def toString = "do " + file + " " + name}
+
+/** stores a command binding done with [[Define]]
+ */
+case class Defined(file: File, name:String, body: List[Action])
 
 case class Graph(target : File) extends Action {override def toString = "graph " + target}
 

@@ -426,6 +426,9 @@ class Controller extends ROController with Logger {
     *  initially the current directory
     */
    def setHome(h: File) {home = h}
+   
+   protected var actionDefinitions: List[Defined] = Nil
+   protected var currentActionDefinition: Option[Defined] = None
 
    /** executes a string command */
    def handleLine(l : String) {
@@ -441,7 +444,14 @@ class Controller extends ROController with Logger {
    }
    /** executes an Action */
    def handle(act : Action) : Unit = {
-	  if (act != NoAction) report("user", act.toString)
+	  currentActionDefinition foreach {case Defined(file, name, acts) =>
+	      if (act != EndDefine) {
+	         currentActionDefinition = Some(Defined(file, name, acts ::: List(act)))
+   	      report("user", "  " + name + ":  " + act.toString)
+   	      return
+	      }
+	  }
+     if (act != NoAction) report("user", act.toString)
 	  act match {
 	      case AddMathPathFS(uri,file) =>
 	         val lc = LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, file)
@@ -533,11 +543,40 @@ class Controller extends ROController with Logger {
             interp.run
 	      case Clear => clear
 	      case ExecFile(f) =>
-	         var line : String = null
+	         // store old state, and initialize fresh state
 	         val oldHome = home
+	         val oldCAD = currentActionDefinition
 	         home = f.getParentFile
+	         currentActionDefinition = None
+	         // excecute the file
             File.read(f).split("\\n").foreach(handleLine)
+            if (currentActionDefinition.isDefined)
+               throw ParseError("end of definition expected")
+            // restore old state
 	         home = oldHome
+	         currentActionDefinition = oldCAD
+	      case Define(name) =>
+	         currentActionDefinition match {
+	            case None =>
+	               currentActionDefinition = Some(Defined(home, name, Nil))
+	            case Some(_) =>
+	               throw ParseError("end of definition expected")
+	         }
+	      case EndDefine =>
+	         currentActionDefinition match {
+	            case Some(a) =>
+	               actionDefinitions ::= a
+	               currentActionDefinition = None
+	            case None =>
+	               throw ParseError("no definition to end")
+	         }
+	      case Do(file, name) =>
+	         actionDefinitions.find {a => (a.file, a.name) == (file, name)} match {
+	            case Some(Defined(_, _, actions)) =>
+	               actions foreach handle
+	            case None =>
+	               logError("not defined")
+	         }
 	      case AddReportHandler(h) => report.addHandler(h)
 	      case LoggingOn(g) => report.groups += g
 	      case LoggingOff(g) => report.groups -= g
