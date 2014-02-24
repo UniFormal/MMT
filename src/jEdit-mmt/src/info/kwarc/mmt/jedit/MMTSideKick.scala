@@ -216,7 +216,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    /** build the sidekick outline tree: (sub)term node */
    private def buildTree(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, defaultReg: SourceRegion) {
       val reg = getRegion(t) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
-      val tp = controller.pragmatic.pragmaticHead(t)
+      val tp = controller.pragmatic.mostPragmatic(t)
       val label = tp match {
          case OMV(n) => n.toString
          case OMS(p) => p.name.toString
