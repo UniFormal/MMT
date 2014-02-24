@@ -44,7 +44,7 @@ object GenericScalaExporter {
    
    def scalaValDef(name: String, tp: Option[String], df: String): String = {
       val tpS = tp.map(": " + _).getOrElse("")
-      "  val " + name + tpS + " = " + df
+      "  lazy val " + name + tpS + " = " + df
    }
    def scalaValDef(name: GlobalName, tp: Option[String], df: String): String = scalaValDef(nameToScalaQ(name), tp, df)
    
@@ -149,7 +149,7 @@ trait GenericScalaExporter extends Exporter {
          }
       }
       namespaces foreach {case (_, dp) =>
-         val p = dpathToScala(dp)
+         val p = dpathToScala(dp, packageSep)
          rh.writeln(s"  addDocument($p.$folderName)")
       }
       rh.writeln("}")

@@ -8,15 +8,15 @@ trait RealizationInScala extends objects.RuleSet {
    lazy val _path = _domain._path
    lazy val _name = _domain._name
    
-   private[api] var _types : List[Unit => (GlobalName, RealizedType)] = Nil
-   private[api] var _opers : List[Unit => RealizedOperator] = Nil
+   private[api] var _types : List[(GlobalName, () => RealizedType)] = Nil
+   private[api] var _opers : List[() => RealizedOperator] = Nil
    
    /** add a realization of synType as rt (argument must be lazy because declares is called in initializer of trait) */
-   def declares(synType: GlobalName)(rt: => RealizedType) {
-      _types ::= (_ => (synType,rt))
+   def declares(synType: GlobalName)(rt: () => RealizedType) {
+      _types ::= ((synType,rt))
    }
    /** add a realization of r.op as r (argument must be lazy because declares is called in initializer of trait) */
-   def declares(r: => RealizedOperator) {_opers ::= (_ => r)}
+   def declares(r: => RealizedOperator) {_opers ::= (() => r)}
    
    var _axioms: List[(String, Unit => Term, Term => Boolean)] = Nil
    def _assert(name: String, term: Unit => Term, assertion: Term => Boolean) {_axioms ::= ((name, term, assertion))}

@@ -166,12 +166,8 @@ class Controller extends ROController with Logger {
    protected def retrieve(path : Path) {
       log("retrieving " + path)
       logGroup {
-         // get, ...
          try {
-           backend.get(path) {
-              // read and add the content
-              case (u,n) => xmlReader.readDocuments(DPath(u), n) {e => add(e)}
-           }
+            backend.load(path)(this)
          } catch {
             case b : BackendError =>
                throw GetError("backend: " + b.getMessage).setCausedBy(b) 
@@ -210,17 +206,7 @@ class Controller extends ROController with Logger {
          case p : MPath =>
              try {iterate(library.get(p))}
              catch {
-                case _: GetError =>
-                   try {iterate(notstore.get(p))}
-                   catch {
-                      // check if the MPath refers to a Realization given as a Scala class; if so, add it as a module
-                      case e: GetError =>
-                         log("trying to find realization for " + p + " on classpath")
-                         Realization.fromScala(p) match {
-                            case Some(r) => add(r); r
-                            case None => throw e
-                         }
-                   }
+                case _: GetError => iterate(notstore.get(p))
              }
          case p : GlobalName => iterate (library.get(p))
          case _ : CPath => throw ImplementationError("cannot retrieve component paths")
@@ -464,6 +450,8 @@ class Controller extends ROController with Logger {
             }
             val s = SVNRepo(uri.schemeNull, uri.authorityNull, uri.pathAsString, repos, rev)
             backend.addStore(s)
+         case AddMathPathJava(file) =>
+            backend.openRealizationArchive(file)
 	      case AddExtension(c, args) => extman.addExtension(c, args)
 	      case Local =>
 	          val currentDir = (new java.io.File(".")).getCanonicalFile

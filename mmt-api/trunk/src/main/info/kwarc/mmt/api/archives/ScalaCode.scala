@@ -12,7 +12,6 @@ trait ScalaArchive extends WritableArchive {
        if (loader == null) {
           val jar = File(root / (id+".jar"))
           try {
-            println(jar.toURI.toURL)
             loader = new java.net.URLClassLoader(Array(jar.toURI.toURL))
           } catch {
             case _:Exception => 
