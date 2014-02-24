@@ -30,6 +30,7 @@ This documentation uses upper case names for argument types.<br/>
 Some common argument types are:
 <ul>
 <li>FILE: a file name (relative to the current directory)</li>
+<li>FOLDER: a folder name (relative to the current directory)</li>
 <li>U: an <a href="../uri.html">MMT URI</a> (relative to the current base URI)</li>
 <li>STRING: a string</li>
 </ul>
@@ -42,9 +43,6 @@ exits the shell.
 <div class="code">extension STRING</div>
 registers the <a href="../extensions.html">extension</a> whose qualified Java class name is STRING.
 The class must be on the class Java path already.
-
-<div class="code">file FILE</div>
-runs the shell file FILE.
 
 <div class="code">base URI</div>
 sets the base URI to U.
@@ -75,6 +73,20 @@ switches logging on for the component with id STRING.
 
 <div class="code">log- STRING</div>
 switches logging off for the component with id STRING.
+
+<h3>Defining make-style targets</h3>
+
+<div class="code">file FILE [STRING]</div>
+runs the shell file FILE (which in particular registers all macro definitions in FILE); if provided, immediately runs one of those macros.
+
+<div class="code">define STRING</div>
+begins the definition of a named macro.
+
+<div class="code">end</div>
+ends the current macro definition.
+
+<div class="code">do FOLDER STRING</div>
+runs a previously registered macro defined file residing in FOLDER.
 
 <h3>Working with MMT content</h3>
 
