@@ -459,8 +459,8 @@ class StructureChecker(controller: Controller) extends Logger {
                  StructureVarDecl(name, tpR, dfR)
               case VarDecl(name, tp, df) =>
                  // a normal variable
-          	     val tpR = tp.map(x => checkTerm(home, currentContext, x)) 
-          	     val dfR = df.map(x => checkTerm(home, currentContext, x)) 
+          	     val tpR = tp.map(x => checkTerm(home, currentContext, x))
+          	     val dfR = df.map(x => checkTerm(home, currentContext, x))
           	     val vdR = VarDecl(name, tpR, dfR)
           	     vdR.copyFrom(vd)
           	     vdR

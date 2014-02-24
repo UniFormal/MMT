@@ -129,7 +129,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * @throws SourceError iff ill-formed or empty
     */
    def readName(implicit state: ParserState) : LocalName = {
-      val (s, reg) = state.reader.readToken
+      val (s, reg) = state.reader.readToSpace
       if (s == "")
          throw makeError(reg, "name expected")
       try {LocalName.parse(s)}
@@ -370,6 +370,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       }
       try {
          val (keyword, reg) = state.reader.readToken
+         if (keyword == "kind")
+            true
          state.startPosition = reg.start
          def fail(s: String) = throw makeError(reg,s)
          keyword match {

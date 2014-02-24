@@ -22,7 +22,6 @@ class Plugin extends frontend.Plugin {
       em.addExtension(new ScalaExporter)
       // pragmatic features
       em.pragmaticConstructors ::= new pragmatics.PragmaticConstructor(LF._path, Apply.path, Lambda.path, OfType.path)
-
    }
 }
 

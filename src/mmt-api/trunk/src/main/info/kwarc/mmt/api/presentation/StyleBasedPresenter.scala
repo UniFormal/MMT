@@ -295,7 +295,7 @@ class StyleBasedPresenter extends Presenter {
             else
                recurse(post)
             recurse(Components(NumberedIndex(current), Presentation.Empty, last, post, step, sep, body))
-        case Id => gpar.rh(lpar.pos.toString)
+        case Id => gpar.rh(lpar.pos.toString.substring(2)) // remove "0_" from Toplevel notation
         case Source => lpar.source match {
            case Some(r) => gpar.rh(r.toString)
            case None => 

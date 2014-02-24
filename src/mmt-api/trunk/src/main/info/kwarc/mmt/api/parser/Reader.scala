@@ -173,7 +173,7 @@ class Reader(val jr: java.io.BufferedReader) {
          } else if (! TokenList.canFollow(i.toChar, l(0))) {
             stop = true
             val j = l(0).toInt
-            lastDelimiter = if (List(FS,RS,GS,US).contains(j)) j else 32
+            lastDelimiter = 32
          } else {
             i = read
          }

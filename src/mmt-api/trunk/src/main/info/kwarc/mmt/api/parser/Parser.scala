@@ -220,7 +220,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                         // remove toplevel operator, e.g., :
                         stp match {
                            case controller.pragmatic.StrictTyping(tp) => tp
-                           case _ => null
+                           case _ => stp // applies to unregistered type attributions
                         }
                      }
                      vars = vars ::: List((fv.marker, nameToken.region, name, tp))
