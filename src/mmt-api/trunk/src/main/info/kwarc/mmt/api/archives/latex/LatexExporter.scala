@@ -49,6 +49,7 @@ class LatexExporter extends Exporter {
          scopes.foreach {s => res += "{" + doTerm(s) + "}"}
          res
       case l: OMLITTrait => l.toString
+      case t => logError("unexportable: " + t); "ERROR"
    }
    /** convert notation markers into the body of a \newcommand */
    private def doMarkers(ms: List[Marker]): String = {

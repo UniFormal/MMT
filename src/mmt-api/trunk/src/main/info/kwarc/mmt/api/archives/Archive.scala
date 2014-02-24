@@ -33,13 +33,13 @@ abstract class ROArchive extends Storage with Logger {
   /** Get a module from content folder (wrapped in <omdoc>) */
   def get(m: MPath) : scala.xml.Node
 
-  def get(p: Path)(implicit cont: (URI,NodeSeq) => Unit) {p match {
-    case doc : DPath => narrationBackend.get(doc)
+  def load(p: Path)(implicit controller: Controller) {p match {
+    case doc : DPath => narrationBackend.load(doc)
     case mod : MPath =>
       val node = try { get(mod) }
       catch {case e: java.io.FileNotFoundException => throw NotApplicable}
-      cont(mod.doc.uri, node)
-    case OMMOD(m) % _ => get(m)
+      loadXML(mod.doc.uri, node)
+    case OMMOD(m) % _ => load(m)
   }}
 }
 

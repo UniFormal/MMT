@@ -33,11 +33,12 @@ object Action extends RegexParsers {
      private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
      private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
      
-   private def mathpath = "mathpath" ~> (mathpathArchive | mathpathLocal | mathpathFS | mathpathSVN)
+   private def mathpath = "mathpath" ~> (mathpathArchive | mathpathLocal | mathpathFS | mathpathSVN | mathpathJava)
      private def mathpathArchive = "archive" ~> file ^^ {f => AddArchive(f)}
      private def mathpathLocal = "local" ^^ {case _ => Local}
      private def mathpathFS = "fs" ~> uri ~ file ^^ {case u ~ f => AddMathPathFS(u,f)}
      private def mathpathSVN = "svn" ~> uri ~ int ~ (str ?) ~ (str ?) ^^ {case uri ~ rev ~ user ~ pass => AddMathPathSVN(uri, rev, user, pass)}
+     private def mathpathJava = "java" ~> file ^^ {f => AddMathPathJava(f)}
 
    private def archive = archopen | archdim | archmar | svnarchopen | archbuild
      private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)} //deprecated, use mathpath archive
@@ -242,6 +243,12 @@ case class AddMathPathSVN(uri: URI, rev: Int, user: Option[String], password: Op
       (if (rev == -1) "" else " " + rev) +
       (user.map(" " + _).getOrElse("") + password.map(" " + _).getOrElse(""))
 }
+
+/**
+ * add catalog entry for realizations in Java
+ * @param the Java path entry, will be passed to [[java.net.URLClassLoader]]
+ */
+case class AddMathPathJava(javapath: File) extends Action {override def toString = "mathpath java " + javapath}
 
 /** registers a compiler
  * @param cls the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"

@@ -24,17 +24,10 @@ case object NotApplicable extends java.lang.Throwable
  * A storage declares a URI u and must answer to all URIs that start with u.
  */
 abstract class Storage {
-   /** dereferences a path and sends the content to a reader
-    * a storage may send more content than the path references, e.g., the whole file or a dependency closure
-    */
-   def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit)
-}
-
-/** convenience methods for backends */
-object Storage {
-   def virtDoc(entries : List[String], prefix : String) =
-      <omdoc>{entries.map(n => <dref target={prefix + n}/>)}</omdoc>
-   def getSuffix(base : utils.URI, uri : utils.URI) : List[String] = {
+   protected def loadXML(u: URI, n:NodeSeq)(implicit controller: Controller) {
+      controller.xmlReader.readDocuments(DPath(u), n) {e => controller.add(e)}
+   }
+   protected def getSuffix(base : utils.URI, uri : utils.URI) : List[String] = {
       val b = base.pathNoTrailingSlash
       val u = uri.pathNoTrailingSlash
       if (uri.scheme == base.scheme && uri.authority == base.authority && u.startsWith(b))
@@ -42,62 +35,40 @@ object Storage {
       else
          throw NotApplicable
       }
-}
-
-/** a trait for URL-addressed Storages that can serve MMT document fragments */
-abstract class OMBase(scheme : String, authority : String, prefix : String, ombase : URI)
-         extends Storage {
-     def sendRequest(p : String, b : String) : NodeSeq = {
-        val url = new java.net.URI(ombase.scheme.getOrElse(null), ombase.authority.getOrElse(null), ombase.pathAsString + p, null, null).toURL
-        if (b == "") {
-            //GET
-	        val src = scala.io.Source.fromURL(url, "utf-8")
-	        val N = scala.xml.parsing.ConstructingParser.fromSource(src, false).document()
-            src.asInstanceOf[scala.io.BufferedSource].close
-            N            
-        } else {
-            //POST with b as the body
-	        val conn = url.openConnection()// returns java.net.HttpURLConnection if url is http
-	        conn.setDoOutput(true);
-	        val wr = new java.io.OutputStreamWriter(conn.getOutputStream())
-	        wr.write(b)   // this automatically sets the request method to POST
-	        wr.flush()
-	        val src = scala.io.Source.fromInputStream(conn.getInputStream(), "utf-8")
-	        val N = scala.xml.parsing.ConstructingParser.fromSource(src, false).document()
-	        wr.close()
-            src.asInstanceOf[scala.io.BufferedSource].close
-            N
-        }
-     }
-     def handleResponse(msg : => String, N : NodeSeq) : NodeSeq
-     def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit)
+   protected def virtDoc(entries : List[String], prefix : String) =
+      <omdoc>{entries.map(n => <dref target={prefix + n}/>)}</omdoc>
+   
+   /** dereferences a path and sends the content to a reader
+    * a storage may send more content than the path references, e.g., the whole file or a dependency closure
+    */
+   def load(path : Path)(implicit controller: Controller)
 }
 
 /** a Storage that retrieves file URIs from the local system */
 case class LocalSystem(base : URI) extends Storage {
    val localBase = URI(Some("file"), None, Nil, true, None, None)
-   def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {
+   def load(path : Path)(implicit controller: Controller) {
       val uri = base.resolve(path.doc.uri)
-      val _ = Storage.getSuffix(localBase, uri)
+      val _ = getSuffix(localBase, uri)
       val file = new java.io.File(uri.toJava)
       val N = utils.xml.readFile(file)
-      cont(uri, N)
+      loadXML(uri, N)
    }
 }
 
 /** a Storage that retrieves repository URIs from the local working copy */
 case class LocalCopy(scheme : String, authority : String, prefix : String, base : File) extends Storage  {
    def localBase = URI(scheme + "://" + authority + prefix) 
-   def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {
+   def load(path : Path)(implicit controller: Controller) {
       val uri = path.doc.uri
-      val target = base / Storage.getSuffix(localBase,uri)
+      val target = base / getSuffix(localBase,uri)
       val N = if (target.isFile) utils.xml.readFile(target)
         else if (target.isDirectory) {
           val entries = target.list().toList.filter(x => x != ".svn" && x != ".omdoc") //TODO: should be an exclude pattern
           val relativePrefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
-          Storage.virtDoc(entries, relativePrefix)
+          virtDoc(entries, relativePrefix)
         } else throw BackendError("file/folder " + target + " not found or not accessible", path)
-      cont(uri, N)
+      loadXML(uri, N)
    }
 }
 
@@ -105,10 +76,10 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
 case class SVNRepo(scheme : String, authority : String, prefix : String, repository : SVNRepository, defaultRev : Int = -1) extends Storage  {
    def localBase = URI(scheme + "://" + authority + prefix) 
    
-   def get(path : Path)(implicit cont: (URI,NodeSeq) => Unit) {get(path, defaultRev)}
-   def get(path : Path, rev: Int)(implicit cont: (URI,NodeSeq) => Unit) {
+   def load(path : Path)(implicit controller: Controller) {load(path, defaultRev)}
+   def load(path : Path, rev: Int)(implicit controller: Controller) {
       val uri = path.doc.uri
-      val target = Storage.getSuffix(localBase, uri).mkString("/")
+      val target = getSuffix(localBase, uri).mkString("/")
       
       val revision = path.doc.version match {
         case None => rev
@@ -132,11 +103,52 @@ case class SVNRepo(scheme : String, authority : String, prefix : String, reposit
               case _ => None
             }
           }
-          Storage.virtDoc(strEntries.reverse.map(x => x.getURL.getPath), prefix) //TODO check if path is correct
+          virtDoc(strEntries.reverse.map(x => x.getURL.getPath), prefix) //TODO check if path is correct
         case SVNNodeKind.NONE => throw BackendError("not found or not accessible", path)
       }
-      cont(uri, N)
+      loadXML(uri, N)
    }
+}
+
+/**
+ * loads a realization from a Java Class Loader and dynamically creates a [[modules.Realization]] for it
+ */
+class RealizationArchive(file: File, loader: java.net.URLClassLoader) extends Storage {
+   override def toString = "RealizationArchive for " + file
+   def load(path : Path)(implicit controller: Controller) {
+      val mp = path match {
+         case mp: MPath => mp
+         case GlobalName(objects.OMMOD(mp), _) => mp
+         case _ => throw NotApplicable
+      }
+      val s = uom.GenericScalaExporter.mpathToScala(mp)
+      val c = try {Class.forName(s + "$", true, loader)}
+         catch {
+            case _: java.lang.ClassNotFoundException | _: java.lang.NoClassDefFoundError =>
+               throw NotApplicable
+            case _: java.lang.ExceptionInInitializerError | _: LinkageError =>
+               throw BackendError("class for " + mp + " exists, but an error occurred when accessing it", mp)
+         }
+      val r = try {c.getField("MODULE$").get(null).asInstanceOf[uom.RealizationInScala]}
+           catch {
+              case _ : java.lang.Exception =>
+               throw BackendError("realization for " + mp + " exists, but an error occurred when creating it", mp)
+           }
+      val real = new modules.Realization(mp.parent, mp.name, r._domain._path)
+      r._types foreach {case (synType, rtL) =>
+         val rt = rtL()
+         if (rt.synType == null) rt.init(synType, mp) // included RealizedTypes are already initialized
+         val rc = new symbols.RealizedTypeConstant(real.toTerm, synType.name, rt)
+         real.add(rc)
+      }
+      r._opers foreach {roL =>
+         // add a RealizedConstant for every realization of an operator constant
+         val ro = roL()
+         val rc = new symbols.RealizedOperatorConstant(real.toTerm, ro.op.name, ro)
+         real.add(rc)
+      }
+      controller.add(real)
+   }       
 }
 
 /** a Backend holds a list of Storages and uses them to dereference Paths */
@@ -161,7 +173,6 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
        case _ => s
      })
    }
-
   
    def openArchive(url : String, rev : Int) : SVNArchive = {
      log("opening archive at " + url + ":" + rev)
@@ -258,6 +269,18 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
       }
    }
    
+   def openRealizationArchive(file: File) {
+       val loader = try {
+          new java.net.URLClassLoader(Array(file.toURI.toURL))
+       } catch {
+          case _:Exception => 
+            logError("could not create class loader for " + file.toString)
+            return
+       }
+       val ra = new RealizationArchive(file, loader)
+       addStore(ra)
+   }
+   
    private def extractMar(file: File, newRoot: File) {
        log("unpacking archive " + file + " to " + newRoot)
        val mar = new ZipFile(file)
@@ -279,12 +302,12 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
        }
    }
    /** look up a path in the first Storage that is applicable and send the content to the reader */
-   def get(p : Path)(implicit cont: (URI,NodeSeq) => Unit) = {
+   def load(p : Path)(implicit controller: Controller) = {
       def getInList(l : List[Storage], p : Path) {l match {
          case Nil => throw BackendError("no applicable backend available", p)
          case hd :: tl =>
             log("trying " + hd)
-      	    try {hd.get(p)}
+      	    try {hd.load(p)}
             catch {case NotApplicable =>
                log(hd.toString + " not applicable to " + p)
                getInList(tl, p)
