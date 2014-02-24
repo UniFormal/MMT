@@ -7,6 +7,8 @@ import objects._
 
 import uom.GenericScalaExporter._
 
+//TODO translate LF definitions to Scala definitions  
+
 class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) with uom.GenericScalaExporter {
    val outDim = archives.Dim("export", "scala", "lf")
    val key = "scala_lf"
@@ -38,16 +40,24 @@ class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) 
       outputTrait(t){c =>
          c.tp match {
             case None => ""
-            case _ if c.df.isDefined => ""
             case Some(tp) => try {
                val synName = nameToScala(t.name) + "." + nameToScala(c.name) + ".path"
                val semName = nameToScalaQ(c.path)
                val Some((args,ret)) = FunType.unapply(tp)
-               if (ret == Univ(1)) {
+               val (decl, ini) = if (ret == Univ(1)) {
                   //scalaType(c.path)
-                  val ini = s"  declares($synName)($semName)"
-                  val decl = scalaVal(c.path, "RealizedType")
-                  decl + "\n" + ini + "\n"
+                  val ini = s"  declares($synName)(() => $semName)"
+                  val decl = c.df match {
+                     case None =>
+                        scalaVal(c.path, "RealizedType")
+                     case Some(d) => d match {
+                        case OMS(p) =>
+                           scalaValDef(c.path, Some("RealizedType"), nameToScalaQ(p))
+                        case _ =>
+                           scalaVal(c.path, "RealizedType")
+                     }
+                  }
+                  (decl, ini)
                } else {
                   // create declares(RealizedOperator(name)(argType1, ..., argTypeN, retType)(function))
                   val (argsE, retE) = typeEras(tp)
@@ -61,7 +71,7 @@ class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) 
                   }
                   val argsES = argsE.map(a => nameToScalaQ(a) + ".univ")
                   val decl = scalaDef(c.path, names zip argsES, nameToScalaQ(retE) + ".univ")
-                  decl + "\n" + ini + "\n"
+                  (decl, ini)
                   /*
                    val argsS = args.zipWithIndex.map {
                      case ((nOpt, t), i) => 
@@ -75,6 +85,7 @@ class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) 
                   val df = scalaDef(c.path, argsS, typeToScala(ret))
                   */
                }
+               decl +"\n" + ini + "\n"
             } catch {case IllFormed => "// skipping ill-formed " + c.name} 
          }
       }
