@@ -51,7 +51,7 @@ class MMTPlugin extends EBPlugin with Logger {
       val file = new java.io.File(home, startup)
       if (file.isFile) {
          try {
-            controller.handle(ExecFile(file))
+            controller.handle(ExecFile(file, None))
          } catch {
             case e: Error => controller.report(e)
          }

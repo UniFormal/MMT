@@ -69,7 +69,7 @@ object Action extends RegexParsers {
      private def serveron = "server" ~> "on" ~> int ^^ {i => ServerOn(i)}
      private def serveroff = "server" ~> "off" ^^ {_ => ServerOff}
 
-   private def execfile = "file " ~> file ^^ {f => ExecFile(f)}
+   private def execfile = "file " ~> file ~ (str?) ^^ {case f ~ s => ExecFile(f,s)}
    private def defactions = define | enddefine | dodefined
    private def define = "define " ~> str ^^ {s => Define(s)}
    private def enddefine = "end" ^^ {case _ => EndDefine}
@@ -178,7 +178,7 @@ case class SetBase(base : Path) extends Action {override def toString = "base " 
 /** load a file containing commands and execute them, fails on first error if any
  * concrete syntax: file file:FILE
  */
-case class ExecFile(file : File) extends Action {override def toString = "file " + file}
+case class ExecFile(file : File, name: Option[String]) extends Action {override def toString = "file " + file + " " + name.getOrElse("")}
 
 /** bind all following commands to a name without executing them
  *  

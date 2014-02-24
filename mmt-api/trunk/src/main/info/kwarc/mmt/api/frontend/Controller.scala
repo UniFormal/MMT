@@ -542,11 +542,12 @@ class Controller extends ROController with Logger {
 	         val interp = new MMTILoop(this)
             interp.run
 	      case Clear => clear
-	      case ExecFile(f) =>
+	      case ExecFile(f, nameOpt) =>
+	         val folder = f.getParentFile
 	         // store old state, and initialize fresh state
 	         val oldHome = home
 	         val oldCAD = currentActionDefinition
-	         home = f.getParentFile
+	         home = folder
 	         currentActionDefinition = None
 	         // excecute the file
             File.read(f).split("\\n").foreach(handleLine)
@@ -555,6 +556,10 @@ class Controller extends ROController with Logger {
             // restore old state
 	         home = oldHome
 	         currentActionDefinition = oldCAD
+	         // run the actionDefinition, if given
+	         nameOpt foreach {name =>
+	            handle(Do(folder, name))
+	         }
 	      case Define(name) =>
 	         currentActionDefinition match {
 	            case None =>
