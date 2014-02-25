@@ -133,225 +133,30 @@ object ParsingController {
 	    case _ => throw new Error("Controller.buildDefinition: invalid definiens found " + d.toString)
 	  }
 	}
-	
-	
-	/*
-	def buildDefinition(d : XMLDefinition, art : MizArticle) :  Unit =  {
-	  val df = definiens.find(x => (d.nr == x.absconstrnr && d.kind == x.constrkind && d.aid == x.constraid))  match {
-	    case Some(dfn) => dfn
-	    case None => d match {
-	      case rd : XMLRedefinition => {
-	        throw new Error("Err in Controller -> buildDefinitions : no definiens found for definition " + d.kind + d.nr)
-	        new XMLIsDefiniens(d.aid, d.nr : Int, d.aid, d.kind, d.nr,Nil, 
-	            Some(new MizFunc(rd.constraid, d.kind, rd.constrabsnr, 
-	                rd.argTypes.zipWithIndex.map(x => new MizLocusVar(x._2 + 1)))), Nil)//TODO check
-		  }
-	      case _ => throw new Error("Err in Controller -> buildDefinitions : no definiens found for definition " + d.kind + d.nr)
-	    }
-	  }
-	  
-	  val dts = deftheorems.filter(x => (x.constrkind == d.kind && x.constrnr == d.relnr && x.constraid == d.aid)).toList
-	  
-	  val opArgs = d.resolveArgs()
-	  opArgs match {
-	    case Some(args) => {
-	      d.kind match {
-	        case "R"  => {
-	          val p = df match {
-	            case di  : XMLIsDefiniens =>
-	              new MizPredIsDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, di.cases, di.term, dts)
-	            case dm: XMLMeansDefiniens =>
-	              new MizPredMeansDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, dm.cases, dm.form, dts)
-	          }
-	          p.sreg = d.sreg
-	          art.addElem(p)
-	        }
-	        case "K" | "O" => 
-	          val rt = d.retType.getOrElse(MizXML.set)
-	              //throw new Error("Err in Controller -> buildDefinitions : Func with no return type " + d.kind + d.nr)
-	          val f = df match {
-	            case di  : XMLIsDefiniens =>
-	              new MizFuncIsDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.kind, d.nr, args, rt, di.cases, di.term, dts)
-	            case dm: XMLMeansDefiniens =>
-	              new MizFuncMeansDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.kind, d.nr, args, rt, dm.cases, dm.form, dts)
-	          }
-	          f.sreg = d.sreg
-	          art.addElem(f)
-	        case "M"  => {
-	          val m = df match {
-	            case di  : XMLIsDefiniens =>
-	              new MizModeIsDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, d.retType, di.cases, di.term, dts)
-	            case dm: XMLMeansDefiniens =>
-	              new MizModeMeansDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, d.retType, dm.cases, dm.form, dts)
-	          }
-	          m.sreg = d.sreg
-	          art.addElem(m)
-	        }
-	        case "V"  => {
-	          d.retType match {
-	            case Some(rt) => {
-	              if (args.last._2 != rt) {throw new Error("Ahaaaa")}
-	            }
-	            case None => //throw new Error("Err in Controller -> buildDefinitions : Attribute with no return type " + d.kind + d.nr)
-	          }
-	          val rt = args.last._2
-	          val f = df match {
-	            case di  : XMLIsDefiniens =>
-	              new MizAttrIsDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, rt, di.cases, di.term, dts)
-	            case dm: XMLMeansDefiniens =>
-	              new MizAttrMeansDef(resolveDef(d.aid, d.kind, d.nr), d.aid, d.nr, args, rt, dm.cases, dm.form, dts)
-	          }
-	          f.sreg = d.sreg
-	          art.addElem(f)
-	        }
-	        case _  => throw new Error("Err in Controller -> buildDefinitions : def kind not supported yet : " + d.kind)	
-	      }
-	    }
-	    case None => throw new Error("Err in Controller -> buildDefinitions : unable to parse arg names" + d.kind + d.nr)
-	  }
-	}
-	*/
-	
-	
-	/*
-	def addIsDefiniens(d : XMLIsDefiniens) : Unit = {
-		currentDefBlock match {
-			case Some(db) => {
-				db.defs.find(x => (x.nr == d.absconstrnr && x.kind == d.constrkind && x.aid == d.constraid)) match {
-					case Some(df) => {
-						currentArticle match {
-							case Some(art) => {
-								df.kind match {
-									case "M" =>
-										val opArgs = df.resolveArgs()
-										opArgs match {
-											case Some(args) =>
-												val m = new MizModeIsDef(resolveDef(df.aid, df.kind, df.nr), df.aid, df.nr, args, df.retType, d.cases, d.term)
-												art.addElem(m)
-											case None => println("Err in Controller -> addIsDefiniens : unable to parse Mode arg names")
-										}
-									case "K" | "O" =>
-										df.retType match {
-											case Some(rt) => 
-												val opArgs = df.resolveArgs()
-												opArgs match {
-												case Some(args) =>
-													val f = new MizFuncIsDef(resolveDef(df.aid, df.kind, df.nr), df.aid, df.nr, args, rt, d.cases, d.term)
-													art.addElem(f)
-												case None => println("Err in Controller -> addIsDefiniens : unable to parse Func arg names")
-											}												
-											case None => println("err in Controller -> addIsDefiniens : Func with no return type")												
-										}
-									case "R" => 
-										val opArgs = df.resolveArgs()
-										opArgs match {
-											case Some(args) =>
-												val p = new MizPredIsDef(resolveDef(df.aid, df.kind, df.nr), df.aid, df.nr, args, d.cases, d.term)
-												art.addElem(p)
-											case None => println("Err in Controller -> addIsDefiniens : unable to parse Mode arg names")
-										}
-									case "V" => 
-										df.retType match {
-											case Some(rt) => 
-												val opArgs = df.resolveArgs()
-												opArgs match {
-												case Some(args) => 
-													val p = new MizAttrIsDef(resolveDef(df.aid, df.kind, df.nr), df.aid, df.nr, args, rt, d.cases, d.term)
-													art.addElem(p)
-												case None => println("Err in Controller -> addMeansDefiniens : unable to parse Attribute arg names")
-											}
-											case None => println("err in Controller -> addIsDefiniens : Attr with no return type")												
-										}
-								}
-							}
-							case None => println("err -> article not init for MizIsDefiniens: " + d.aid + d.constrkind + d.absconstrnr)
-						}
-					}
-					case None => println("err -> no constructor found for: " + d.aid + d.constrkind + d.absconstrnr)
-				}
-			}
-			case None => println("err -> no currentDefBlock for -> " + d.aid + d.constrkind + d.absconstrnr)
-		}
-	}
-	
-	def addMeansDefiniens(d : XMLMeansDefiniens) : Unit = {
-		currentDefBlock match {
-			case Some(db) => {
-				db.defs.find(x => (x.nr == d.absconstrnr && x.kind == d.constrkind && x.aid == d.constraid)) match {
-					case Some(df) => {
-						currentArticle match {
-							case Some(art) => {
-								df.kind match {
-									case "M" =>
-										val opArgs = df.resolveArgs()
-										opArgs match {
-											case Some(args) =>
-												val m = new MizModeMeansDef(resolveDef(df.aid, df.kind, df.nr), df.aid, df.nr, args, df.retType, d.cases, d.form)
-												art.addElem(m)
-											case None => println("Err in Controller -> addMeansDefiniens : unable to parse Mode arg names")
-										}
-									case "K" | "O" =>
-										df.retType match {
-											case Some(rt) => 
-												val opArgs = df.resolveArgs()
-												opArgs match {
-												case Some(args) =>
-													val f = new MizFuncMeansDef(resolveDef(df.aid, df.kind, df.nr), df.aid, df.nr, args, rt, d.cases, d.form)
-													art.addElem(f)
-												case None => println("Err in Controller -> addMeansDefiniens : unable to parse Func arg names")
-											}												
-											case None => println("err in Controller -> addMeansDefiniens : Func with no return type")												
-										}
-									case "R" => 									
-										val opArgs = df.resolveArgs()
-										opArgs match {
-											case Some(args) =>
-												val p = new MizPredMeansDef(resolveDef(df.aid, df.kind, df.nr), df.aid, df.nr, args, d.cases, d.form)
-												art.addElem(p)
-											case None => println("Err in Controller -> addMeansDefiniens : unable to parse Predicate arg names")
-										}
-									case "V" => 
-										df.retType match {
-											case Some(rt) => 
-												val opArgs = df.resolveArgs()
-												opArgs match {
-												case Some(args) => 
-													val p = new MizAttrMeansDef(resolveDef(df.aid, df.kind, df.nr), df.aid, df.nr, args, rt, d.cases, d.form)
-													art.addElem(p)
-												case None => println("Err in Controller -> addMeansDefiniens : unable to parse Attribute arg names")
-											}
-											case None => println("err in Controller -> addIsDefiniens : Attr with no return type")												
-										}
-										
-								}
-							}
-							case None => println("err -> article not init for MizMeanssDefiniens: " + d.aid + d.constrkind + d.absconstrnr)
-						}
-					}
-					case None => println("err -> no constructor found for: " + d.aid + d.constrkind + d.absconstrnr)
-				}
-			}
-			case None => println("err -> no currentDefBlock for -> " + d.aid + d.constrkind + d.absconstrnr)
-		}
-	}
-	*/
 
 	def resolveDef(aid : String, kind : String, absnr : Int) : Option[String] = {
-		dictionary.symbols.find(x => ((x.aid == Some(aid)) && (x.kind == kind) && (x.absnr == absnr))) match {
-		  case Some(x) => 
-			Some(x.name)
-			None //TODO remove for notations		  
+		dictionary.formats.find(x => ((x.aid == Some(aid)) && (x.kind == kind) && (x.absnr == absnr))) match {
+		  case Some(f) =>
+		    if (f.symbol == null){
+		      None
+		    } else {
+		      f.rightsymbol match {
+		        case Some(rightsymbol) => f.symbol.name + rightsymbol.name 
+		        case None =>  f.symbol.name
+		      }  
+		    }
+		    None //TODO remove for notations		  
 		  case None => 
-		  //println(aid + kind + absnr)
-		  //dictionary.symbols.filter(x => x.aid != None).map(s => (println(s.name + " = " + s.aid + " " + s.kind + " " + s.absnr + " " + s.formatnr + " " + s.symbolnr)))
-		  None
+		    //println(aid + kind + absnr)
+		    //dictionary.symbols.filter(x => x.aid != None).map(s => (println(s.name + " = " + s.aid + " " + s.kind + " " + s.absnr + " " + s.formatnr + " " + s.symbolnr)))
+		    None
 		}
 	}
 
 	def resolveVar(Svid : String) : Option[String] = {
 		try {
 			val vid = Svid.toInt
-			dictionary.symbols.find(x => x.symbolnr == vid && (x.kind == "I")) match {
+			dictionary.symbols.find(x => x.nr == vid && (x.kind == "I")) match {
 				case Some(x) => Some(x.name)
 				None //TODO remove for notations
 				case None => 

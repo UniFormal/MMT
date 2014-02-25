@@ -11,6 +11,8 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.parser._
+import info.kwarc.mmt.api.presentation._
 import scala.collection.mutable.ArrayStack
 import info.kwarc.mmt.lf._
 import scala.collection._
@@ -31,34 +33,33 @@ object TranslationController {
 	
     //set during translation
     var currentBase : String = null
-	var currentVersion : String = null
+    var currentVersion : String = null
     var currentAid : String = null
     var currentDoc : Document = null
     
     def localPath = LocalName(currentAid)
-	def currentThyBase : DPath = DPath(Mizar.mmlBase / currentVersion.toString)
-	def currentTheory : MPath = currentThyBase ? localPath
-	def currentSource = currentBase + "/source/" + currentVersion + "/" + currentAid + ".miz"
+    def currentThyBase : DPath = DPath(Mizar.mmlBase / currentVersion.toString)
+    def currentTheory : MPath = currentThyBase ? localPath
+    def currentSource = currentBase + "/source/" + currentVersion + "/" + currentAid + ".miz"
+
+    var anonConstNr = 0
+    var defs = 0
+    var theorems = 0
+    var notations = 0
+    var regs = 0
+    var schemes = 0
+    var varContext : ArrayStack[Term] = new ArrayStack
+    var locusVarContext : ArrayStack[Term] = new ArrayStack
+    // consider/set/reconsider everywhere and let in proofs
+    var constContext : mutable.HashMap[Int,Term] = mutable.HashMap()
+    //deftheorems, lemmas, assume and others 
+    var propContext : mutable.HashMap[Int,Term] = mutable.HashMap()
 	
-	var anonConstNr = 0
-	var defs = 0
-	var theorems = 0
-	var notations = 0
-	var regs = 0
-	var schemes = 0
-	
-	var varContext : ArrayStack[Term] = new ArrayStack
-	var locusVarContext : ArrayStack[Term] = new ArrayStack
-	// consider/set/reconsider everywhere and let in proofs
-	var constContext : mutable.HashMap[Int,Term] = mutable.HashMap()
-	//deftheorems, lemmas, assume and others 
-	var propContext : mutable.HashMap[Int,Term] = mutable.HashMap()
-	
-	def clear() = {
-     constContext = mutable.HashMap()
-     propContext = mutable.HashMap()
-     //controller.clear
-     anonConstNr = 0
+    def clear() = {
+      constContext = mutable.HashMap()
+      propContext = mutable.HashMap()
+      //controller.clear
+      anonConstNr = 0
     }
     
     def getLmName(nrO : Option[Int]) : String = nrO match {
@@ -192,7 +193,40 @@ object TranslationController {
 	}
 	
 	def makeConstant(n: LocalName, t: Term) =
-      Constant(OMMOD(currentTheory), n, None, Some(t), None, None)
-   def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term]) =
-      Constant(OMMOD(currentTheory), n, None, tO, dO, None)
+    Constant(OMMOD(currentTheory), n, None, Some(t), None, None)
+  def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term]) =
+    Constant(OMMOD(currentTheory), n, None, tO, dO, None)
+      
+  def makeDefConstant(kind : String, absnr : Int, tp : Term, df : Term) = {
+	  val lname = LocalName(kind + absnr.toString)
+	  val name = currentTheory ? lname
+	  ParsingController.dictionary.getFormatByAbsnr(currentAid, kind, absnr) match {
+	    case Some(format) if format.symbol != null => //found a format so will add notation
+	      val argnr = format.argnr
+	      val leftargnr = format.leftargnr
+	      val markers = format.rightsymbol match {
+	        case None => //single delimiter
+	          def genMarkers(args : Int, namePos : Int) : List[Marker] = args match {
+	            case 0 => Nil
+	            case 1 => Arg(0) :: Nil
+	            case n => 
+	              val delimS = if (namePos == 1) format.symbol.name else ","
+	              Arg(n - 1) :: Delim(delimS) :: genMarkers(n - 1, namePos - 1)
+	          }
+	          genMarkers(argnr, leftargnr)
+	        case Some(rightsymbol) => // double delimiter
+	          val first = Delim(format.symbol.name)
+	          val last = Delim(rightsymbol.name)
+	          val rest = 0.to(argnr - 1).toList.map(Arg(_))
+	          first :: (rest ::: List(last))
+	      }
+        val not = new TextNotation(name, Mixfix(markers), Precedence.integer(0), Mizar.MizarTh)
+        val alias = ParsingController.resolveDef(currentAid, kind, absnr).map(LocalName(_))
+        val notC = NotationContainer.apply(not)
+        Constant(OMMOD(currentTheory), lname, alias ,Some(tp), Some(df), None, notC)
+	    case _ => 
+	      makeConstant(lname, Some(tp), Some(df))
+	  }
+	}   
+      
 }
