@@ -22,7 +22,7 @@ class MWSHarvestExporter extends Exporter {
       d.getComponents.foreach {
          case (comp, tc: AbstractTermContainer) =>
             tc.get.foreach {t =>
-               val node = <mws:expr url={CPath(d.path,comp).toPath}><content>{t.toCML}</content></mws:expr>
+               val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML}</mws:expr>
                rh(node.toString + "\n")
             }
          case _ => 
