@@ -6,9 +6,9 @@ import scala.xml._
 
 object UtilsReader {
 
-	def parseSymbols(n : Node)  = {
-		ParsingController.dictionary.addSymbols(n.child.map(parseSymbol).toList)
-	}
+  def parseSymbols(n : Node)  = {
+    n.child.map(parseSymbol).map(ParsingController.dictionary.addSymbol)
+  }
 
 	def parseSymbol(n : Node) : Symbol = {
 		val kind = (n \ "@kind").text
@@ -18,16 +18,30 @@ object UtilsReader {
 	}
 
 	def parseFormats(n : Node) : Unit = {
-		n.child.filter(x => x.label == "Format").map(parseFormat)
+		n.child.filter(x => x.label == "Format").map(parseFormat).map(
+		  ParsingController.dictionary.addFormat
+		)
 	}
 
 	def parseFormat(n : Node) = {
 		val kind = (n \ "@kind").text
 		val symbolnr = (n \ "@symbolnr").text.toInt
-		val formatnr = (n \ "@nr").text.toInt
-		ParsingController.dictionary.addFormatnr(kind, symbolnr, formatnr)
+		val nr = (n \ "@nr").text.toInt
+		val argnr = (n \ "@argnr").text.toInt
+		val leftargnr = try {
+		  (n \ "@leftargnr").text.toInt
+		} catch {
+		  case _ : Exception => 0
+		}
+		
+		val rightsymbolnr = try {
+		  Some((n \ "@leftargnr").text.toInt)
+		} catch {
+		  case _ : Exception => None
+		}
+		new Format(kind, nr, symbolnr, argnr, leftargnr, rightsymbolnr)
+		
 	}
-	
 	
 	def parseSourceRef(n : Node) : SourceRef = {
 	  val line = (n \ "@line").text.toInt
