@@ -220,7 +220,7 @@ object TranslationController {
 	          val rest = 0.to(argnr - 1).toList.map(Arg(_))
 	          first :: (rest ::: List(last))
 	      }
-        val not = new TextNotation(name, Mixfix(markers), Precedence.integer(0), Mizar.MizarTh)
+        val not = new TextNotation(name, Mixfix(markers), Precedence.integer(0), None)
         val alias = ParsingController.resolveDef(currentAid, kind, absnr).map(LocalName(_))
         val notC = NotationContainer.apply(not)
         Constant(OMMOD(currentTheory), lname, alias ,Some(tp), Some(df), None, notC)
