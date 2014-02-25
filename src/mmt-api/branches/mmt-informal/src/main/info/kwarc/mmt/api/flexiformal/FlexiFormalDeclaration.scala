@@ -28,16 +28,16 @@ object FlexiformalDeclaration {
       new NarrativeNode(n, child.toList)
   } 
   
-  def parseDeclaration(n : scala.xml.Node, position : Position, mpath : MPath, base : Path) : FlexiformalDeclaration = (n \ "@role").text match {
+  def parseDeclaration(n : scala.xml.Node, name : LocalName, mpath : MPath, base : Path) : FlexiformalDeclaration = (n \ "@role").text match {
     case "plain" =>
       val r = parseNarrativeObject(n.child.head)(base)
-      new PlainNarration(OMMOD(mpath), position, r)
+      new PlainNarration(OMMOD(mpath), name, r)
     case "definition" =>
       val targetsS = (n \ "for").text.split(" ")
       val targets = targetsS.map(st => Path.parseS(st, base))
       val contentXML = n.child.find(_.label == "CMP").getOrElse(throw ParseError("Expected CMP inside definition"))
       val content = parseNarrativeObject(contentXML)(base)
-      new Definition(OMMOD(mpath), position, targets.toList, content)    
+      new Definition(OMMOD(mpath), name, targets.toList, content)
   }
   
   def cleanNamespaces(node : scala.xml.Node) : Node = node match {
@@ -102,19 +102,17 @@ class NarrativeNode(dirtyNode : scala.xml.Node,val child : List[NarrativeObject]
  * such as sentences and paragraphs.
  * The tokens it contains are words, sentences, or mathematical objects. 
  */
-abstract class FlexiformalDeclaration(val home : Term, val position : Position, val content : NarrativeObject) extends Declaration {
+abstract class FlexiformalDeclaration(val home : Term, val name : LocalName, val content : NarrativeObject) extends Declaration {
   def role : Role
   def getDeclarations = Nil
-  def fragPath = FragPath(home.toMPath, position)
   def children = List(content)
 }
 
-class PlainNarration(home : Term, position : Position,content : NarrativeObject) 
-	extends FlexiformalDeclaration(home, position, content) {
-  val name: info.kwarc.mmt.api.LocalName = LocalName.anonName
+class PlainNarration(home : Term, name : LocalName,content : NarrativeObject) 
+	extends FlexiformalDeclaration(home, name, content) {
   def role = Role_Narration
   def toNode = 
-    <flexiformal role="plain"> 
+    <flexiformal role="plain" name={name.toPath}> 
       {getMetaDataNode}
       {content.toNode}
     </flexiformal>
@@ -122,12 +120,11 @@ class PlainNarration(home : Term, position : Position,content : NarrativeObject)
   def getComponents = (DefComponent -> content) :: Nil 
 }
 
-class Definition(home : Term, position : Position, val targets : List[GlobalName], content : NarrativeObject) 
-	extends FlexiformalDeclaration(home, position, content) {
-  val name: info.kwarc.mmt.api.LocalName = LocalName.anonName
+class Definition(home : Term, name : LocalName, val targets : List[GlobalName], content : NarrativeObject) 
+	extends FlexiformalDeclaration(home, name, content) {
   def role = Role_Narrative_Def
   def toNode = 
-    <flexiformal role="definition" for={targets.mkString(" ")}> 
+    <flexiformal role="definition" name={name.toPath} for={targets.mkString(" ")}> 
       {getMetaDataNode}
       {content.toNode} 
     </flexiformal>  
@@ -135,24 +132,22 @@ class Definition(home : Term, position : Position, val targets : List[GlobalName
   def getComponents = (DefComponent -> content) :: Nil
 }
 
-class NotationDefinition(home: Term, position : Position, val target : GlobalName, notation : List[String]) 
-	extends FlexiformalDeclaration(home, position, new NarrativeText(notation.mkString)) {
-  val name = LocalName.anonName
+class NotationDefinition(home: Term, name : LocalName, val target : GlobalName, notation : List[String]) 
+	extends FlexiformalDeclaration(home, name, new NarrativeText(notation.mkString)) {
   def role = Role_Narration
   def toNode = 
-    <notation-definition>
+    <notation-definition role="notation">
   		TODO
     </notation-definition>
   def components = content :: Nil
   def getComponents = (DefComponent -> content) :: Nil
 }
 
-class Example(home : Term, position : Position, val targets : List[GlobalName], content : NarrativeObject) 
-	extends FlexiformalDeclaration(home, position, content) {
-  val name: info.kwarc.mmt.api.LocalName = LocalName.anonName
+class Example(home : Term, name : LocalName, val targets : List[GlobalName], content : NarrativeObject) 
+	extends FlexiformalDeclaration(home, name, content) {
   def role = Role_Narration
   def toNode = 
-    <flexiformal role="example" for="target"> 
+    <flexiformal role="example" name={name.toPath} for={targets.mkString(" ")}> 
       {getMetaDataNode}
       {content.toNode} 
     </flexiformal>  
@@ -160,12 +155,11 @@ class Example(home : Term, position : Position, val targets : List[GlobalName], 
   def getComponents = (DefComponent -> content) :: Nil
 }
 
-class Assertion(home : Term, position : Position, val targets : List[GlobalName], content : NarrativeObject) 
-	extends FlexiformalDeclaration(home, position, content) {
-  val name: info.kwarc.mmt.api.LocalName = LocalName.anonName
+class Assertion(home : Term, name : LocalName, val targets : List[GlobalName], content : NarrativeObject) 
+	extends FlexiformalDeclaration(home, name, content) {
   def role = Role_Narration
   def toNode = 
-    <flexiformal role="assertion" for="target"> 
+    <flexiformal role="assertion" name={name.toPath} for={targets.mkString(" ")}> 
       {getMetaDataNode}
       {content.toNode} 
     </flexiformal>

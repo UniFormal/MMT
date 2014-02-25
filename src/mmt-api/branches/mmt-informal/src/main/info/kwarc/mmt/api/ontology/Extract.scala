@@ -66,10 +66,10 @@ object Extractor {
                       case  p : PlainNarration => //nothing to do
                       case  d : Definition => 
                         d.targets foreach {target => 
-                          f(isDefinedBy(target, d.fragPath))
+                          f(isDefinedBy(target, d.path))
                         }
                       case n : NotationDefinition => 
-                        f(isDenotedBy(n.target, n.fragPath))
+                        f(isDenotedBy(n.target, n.path))
                     
                     }
                }

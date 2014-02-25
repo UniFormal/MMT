@@ -10,12 +10,9 @@ sealed abstract class FlexiformalBinary(desc : String, backwardsDesc : String)
   }
 }
 
-case object isDefinedBy extends FlexiformalBinary("is defined by", "defines")
-case object isDenotedBy extends FlexiformalBinary("is denoted by", "is notation for")
-
 /** helper methods for Binary items */
 object FlexiformalBinary {
-   val all = List(isDefinedBy, isDenotedBy)
+   val all = List()
    def parse(s: String) : FlexiformalBinary = all.find(_.toString == s) match {
       case Some(i) => i
       case _ => throw ParseError("flexiformal binary predicate expected, found: " + s)

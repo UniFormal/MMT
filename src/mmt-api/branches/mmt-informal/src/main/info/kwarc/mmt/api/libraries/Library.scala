@@ -43,10 +43,11 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
    private val modules = new ModuleHashMap
    private val implicitGraph = new ThinGeneratedCategory
    
-   private def modulesGetNF(p : MPath) : Module =
-      modules.get(p).getOrElse {
-         throw new frontend.NotFound(p)
-      }
+   private def modulesGetNF(p : MPath) : Module = {
+     modules.get(p).getOrElse {
+        throw new frontend.NotFound(p)
+     }
+   }
    val logPrefix = "library"
    
    /**
@@ -61,8 +62,9 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
    /**
     * Special case of get that throws GetError with a standard error message
     */
-   def get(p: Path) : ContentElement =
-      get(p, msg => throw GetError("error while retrieving " + p + ": " + msg))
+   def get(p: Path) : ContentElement = 
+       get(p, msg => throw GetError("error while retrieving " + p + ": " + msg))
+
    /**
     * Dereferences a path and returns the found ContentElement.
     * @param path the path to be dereferenced

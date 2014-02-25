@@ -52,12 +52,12 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath])
    }
    override def toString = "theory " + path + meta.map(" : " + _.toPath).getOrElse("") + innerString
    def toNode =
-      <theory name={name.last.toPath} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
+      <theory name={name.toPath} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
         {getMetaDataNode}
         {innerNodes}
       </theory>
    def toNodeElab = 
-    <theory name={name.last.toPath} base={doc.toPath}>
+    <theory name={name.toPath} base={doc.toPath}>
         {getMetaDataNode}
         {innerNodesElab}
     </theory>

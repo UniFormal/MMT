@@ -218,7 +218,11 @@ class Controller extends ROController with Logger {
       path match {
          case p : DPath => iterate (docstore.get(p))
          case p : MPath =>
-             try {iterate(library.get(p))}
+             try {
+               iterate{ 
+                 library.get(p)
+               }
+               }
              catch {
                 case _: GetError =>
                    try {iterate(notstore.get(p))}

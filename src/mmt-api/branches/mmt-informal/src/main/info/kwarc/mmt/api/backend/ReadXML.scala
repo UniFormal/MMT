@@ -70,8 +70,6 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
              log("mref to " + t + " found")
 	         val r = SRef(docParent.get, Path.parseS(t,modParent), false)
 	         add(r)
-         case <flexiformal>{decl}</flexiformal> => //by default adding to anonymous theory
-             readInTheory(modParent ? LocalName.anonName,  modParent, decl :: Nil)
          case scala.xml.Comment(_) =>
          case <metadata>{_*}</metadata> => //TODO
          case _ =>
@@ -80,6 +78,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
            (base, m) match {
 	         case (base : DPath, <theory>{seq @ _*}</theory>) =>
 		         log("theory " + name + " found")
+		         
 		         val tpath = base ? name
 		         val (t, body) = seq match {
 		        	 case <definition>{d}</definition> =>
@@ -95,6 +94,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
 				         (new DeclaredTheory(base, name, meta), Some(symbols))
 		         }
         	     add(t, md)
+        	     
         	     docParent map (dp => add(MRef(dp, tpath, true)))
               body.foreach {d => 
         	        logGroup {
@@ -261,7 +261,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
             val inst = new Instance(homeTerm,name,Path.parseS(p,base),args.toList)
             add(inst, md)
          case <flexiformal>{decl}</flexiformal> =>
-            FlexiformalDeclaration.parseDeclaration(decl, Position(i) , home, base)
+            FlexiformalDeclaration.parseDeclaration(s2, name , home, base)
          case scala.xml.Comment(_) =>
          case _ => throw new ParseError("symbol level element expected: " + s2)
          }

@@ -257,7 +257,6 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
                termParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), scope, objects.Context(), str), throw _)
              } catch {
                case e : Throwable =>
-                 println(e)
                  throw e
              }
 
@@ -369,7 +368,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
                     val boxedPaths = controller.update(sdiff, pchanges)
 
                     def invPaths(p : Path, parents : Set[Path] = Nil.toSet) : Set[Path] = {
-                    println("calling for path " + p + " with parents " + parents.mkString(", "))  
+                    log("calling for path " + p + " with parents " + parents.mkString(", "))  
                     p match {
                       case d : DPath => 
                         controller.getDocument(d).getItems.flatMap(x => invPaths(x.target, parents + d)).toSet

@@ -69,9 +69,14 @@ case object Declares extends Binary("contains declaration of", "is declared in")
 // symbol - symbol, module - module
 case object IsAliasFor extends Binary("is alias for", "has alias") 
 
+case object isDefinedBy extends Binary("is defined by", "defines")
+case object isDenotedBy extends Binary("is denoted by", "is notation for")
+
+
 /** helper methods for Binary items */
 object Binary {
-   val all = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares)
+   val all = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,
+       HasMeta,HasDomain,HasCodomain,Declares, isDefinedBy, isDenotedBy)
    def parse(s: String) : Binary = all.find(_.toString == s) match {
       case Some(i) => i
       case _ => throw ParseError("binary predicate expected, found: " + s)
@@ -105,7 +110,7 @@ object RelationalElement {
            val obj = flexiformal.FragPath(Path.parse(obj_pathS, base), objects.Position.parse(obj_posS))
            flexiformal.FlexiformalRelation(rel, subj, obj)
          case _ => throw ParseError("not a valid relational element: " + s)
-      }}catch {case e => println(s); throw e}
+      }}catch {case e : Throwable => throw e}
    }
 }
 
