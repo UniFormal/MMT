@@ -27,28 +27,29 @@ class LatexExporter extends Exporter {
    private def doDelim(d: Delimiter) =
       if (d.text == "%w" || d.text == " ") "\\;" else translate(d.text, delimEscapes ::: UnicodeConverter.maps)
    /** convert a term into a LaTeX expression (using lots of \ { and }) */
-   private def doTerm(t: Term): String = controller.pragmatic.pragmaticHead(t) match {
+   private def doTerm(t: Term): String = controller.pragmatic.mostPragmatic(t) match {
       case OMS(p) => doConstantName(p)
       case OMV(n) => n.toPath
-      case ComplexTerm(p, args, con, scopes) =>
+      case ComplexTerm(p, subs, con, args) =>
          var res = doConstantName(p)
          //TODO group arguments and variables into ,-separated sequences
-         args.foreach {case Sub(l,t) => res += "{\\mmtlabel{" + l.toPath + "}{" + doTerm(t) + "}"}
+         subs.foreach {case Sub(l,t) => res += "{\\mmtlabel{" + l.toPath + "}{" + doTerm(t) + "}"}
          con.variables.foreach {case VarDecl(n, tp, df) =>
             val nL = n.toPath
             val tpL = tp match {
                case None => "{}"
-               case Some(t) => "{" + doTerm(t) + "}"               
+               case Some(t) => "{" + doTerm(t) + "}"
             }
             val dfL = df match {
                case None => ""
-               case Some(t) => "[" + doTerm(t) + "]"               
+               case Some(t) => "[" + doTerm(t) + "]"
             }
             res += s"{\\mmtvar$dfL{$nL}$tpL" + "}"
          }
-         scopes.foreach {s => res += "{" + doTerm(s) + "}"}
+         args.foreach {s => res += "{" + doTerm(s) + "}"}
          res
       case l: OMLITTrait => l.toString
+      case t => logError("unexportable: " + t); "ERROR"
    }
    /** convert notation markers into the body of a \newcommand */
    private def doMarkers(ms: List[Marker]): String = {

@@ -166,15 +166,11 @@ class Controller extends ROController with Logger {
    protected def retrieve(path : Path) {
       log("retrieving " + path)
       logGroup {
-         // get, ...
          try {
-           backend.get(path) {
-              // read and add the content
-              case (u,n) => xmlReader.readDocuments(DPath(u), n) {e => add(e)}
-           }
+            backend.load(path)(this)
          } catch {
             case b : BackendError =>
-               throw GetError("backend: " + b.getMessage) 
+               throw GetError("backend: " + b.getMessage).setCausedBy(b) 
          }
       }
       log("retrieved " + path)
@@ -224,17 +220,7 @@ class Controller extends ROController with Logger {
                }
                }
              catch {
-                case _: GetError =>
-                   try {iterate(notstore.get(p))}
-                   catch {
-                      // check if the MPath refers to a Realization given as a Scala class; if so, add it as a module
-                      case e: GetError =>
-                         log("trying to find realization for " + p + " on classpath")
-                         Realization.fromScala(p) match {
-                            case Some(r) => add(r); r
-                            case None => throw e
-                         }
-                   }
+                case _: GetError => iterate(notstore.get(p))
              }
          case p : GlobalName => iterate (library.get(p))
          case _ : CPath => throw ImplementationError("cannot retrieve component paths")
@@ -440,6 +426,9 @@ class Controller extends ROController with Logger {
     *  initially the current directory
     */
    def setHome(h: File) {home = h}
+   
+   protected var actionDefinitions: List[Defined] = Nil
+   protected var currentActionDefinition: Option[Defined] = None
 
    /** executes a string command */
    def handleLine(l : String) {
@@ -455,7 +444,14 @@ class Controller extends ROController with Logger {
    }
    /** executes an Action */
    def handle(act : Action) : Unit = {
-	  if (act != NoAction) report("user", act.toString)
+	  currentActionDefinition foreach {case Defined(file, name, acts) =>
+	      if (act != EndDefine) {
+	         currentActionDefinition = Some(Defined(file, name, acts ::: List(act)))
+   	      report("user", "  " + name + ":  " + act.toString)
+   	      return
+	      }
+	  }
+     if (act != NoAction) report("user", act.toString)
 	  act match {
 	      case AddMathPathFS(uri,file) =>
 	         val lc = LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, file)
@@ -468,6 +464,8 @@ class Controller extends ROController with Logger {
             }
             val s = SVNRepo(uri.schemeNull, uri.authorityNull, uri.pathAsString, repos, rev)
             backend.addStore(s)
+         case AddMathPathJava(file) =>
+            backend.openRealizationArchive(file)
 	      case AddExtension(c, args) => extman.addExtension(c, args)
 	      case Local =>
 	          val currentDir = (new java.io.File(".")).getCanonicalFile
@@ -546,12 +544,46 @@ class Controller extends ROController with Logger {
 	         val interp = new MMTILoop(this)
             interp.run
 	      case Clear => clear
-	      case ExecFile(f) =>
-	         var line : String = null
+	      case ExecFile(f, nameOpt) =>
+	         val folder = f.getParentFile
+	         // store old state, and initialize fresh state
 	         val oldHome = home
-	         home = f.getParentFile
+	         val oldCAD = currentActionDefinition
+	         home = folder
+	         currentActionDefinition = None
+	         // excecute the file
             File.read(f).split("\\n").foreach(handleLine)
+            if (currentActionDefinition.isDefined)
+               throw ParseError("end of definition expected")
+            // restore old state
 	         home = oldHome
+	         currentActionDefinition = oldCAD
+	         // run the actionDefinition, if given
+	         nameOpt foreach {name =>
+	            handle(Do(folder, name))
+	         }
+	      case Define(name) =>
+	         currentActionDefinition match {
+	            case None =>
+	               currentActionDefinition = Some(Defined(home, name, Nil))
+	            case Some(_) =>
+	               throw ParseError("end of definition expected")
+	         }
+	      case EndDefine =>
+	         currentActionDefinition match {
+	            case Some(a) =>
+	               actionDefinitions ::= a
+	               currentActionDefinition = None
+	            case None =>
+	               throw ParseError("no definition to end")
+	         }
+	      case Do(file, name) =>
+	         actionDefinitions.find {a => (a.file, a.name) == (file, name)} match {
+	            case Some(Defined(_, _, actions)) =>
+	               actions foreach handle
+	            case None =>
+	               logError("not defined")
+	         }
 	      case AddReportHandler(h) => report.addHandler(h)
 	      case LoggingOn(g) => report.groups += g
 	      case LoggingOff(g) => report.groups -= g

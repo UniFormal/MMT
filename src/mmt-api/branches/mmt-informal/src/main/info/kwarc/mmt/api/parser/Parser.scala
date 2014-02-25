@@ -40,7 +40,7 @@ object AbstractObjectParser {
            var names = (c.name :: c.alias.toList).map(_.toString) //the names that can refer to this constant
            if (c.name.last == "_") names ::= c.name.init.toString
            //the unapplied notations consisting just of the name 
-           val nots = names map (n => new TextNotation(c.path, Mixfix(List(Delim(n))), presentation.Precedence.infinite, c.home.toMPath))
+           val nots = names map (n => new TextNotation(c.path, Mixfix(List(Delim(n))), presentation.Precedence.infinite, None))
            c.not.toList ::: nots
         case p: patterns.Pattern =>
            p.not.toList
@@ -115,26 +115,36 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
       vardecls = Nil
       counter = 0
    }
-   private def newArgument: OMV = {
+   private def newArgument: LocalName = {
      val name = LocalName("") / "I" / counter.toString
      //val tname = LocalName("") / "argumentType" / counter.toString
      vardecls = VarDecl(name,None,None) :: vardecls
      counter += 1
-     OMV(name)
+     name
    }
-   private def newType(name: LocalName): OMV = {
+   private def newType(name: LocalName): LocalName = {
       val tname = LocalName("") / name / counter.toString
       vardecls ::= VarDecl(tname,None,None)
       counter += 1
-      OMV(tname)
+      tname
    }
+   private def newUnknown(name: LocalName, bvars: List[LocalName])(implicit pu: ParsingUnit) = {
+      if (bvars == Nil)
+         OMV(name)
+      else {
+         //apply meta-variable to all bound variables in whose scope it occurs
+         prag.defaultApplication(Some(pu.scope.toMPath), OMV(name), bvars.map(OMV(_)))
+      }
+   }
+
    /**
     * recursively transforms a TokenListElem (usually obtained from a [[info.kwarc.mmt.api.parser.Scanner]]) to an MMT Term
     * @param te the element to transform
     * @param boundVars the variable names bound in the context
     * @param pu the original ParsingUnit (constant during recursion)
+    * @param attrib the resulting term should be a variable attribution
     */
-   private def makeTerm(te : TokenListElem, boundVars: List[LocalName])(implicit pu: ParsingUnit, errorCont: SourceError => Unit) : Term = {
+   private def makeTerm(te : TokenListElem, boundVars: List[LocalName], attrib: Boolean = false)(implicit pu: ParsingUnit, errorCont: SourceError => Unit) : Term = {
       val term = te match {
          case Token(word, _, _,_) =>
             val name = LocalName.parse(word)
@@ -204,17 +214,16 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                   fv.getVars foreach {case SingleFoundVar(pos, nameToken, tpOpt) =>
                      val name = LocalName(nameToken.word)
                      // a variable declaration, so take one TokenListElement for the type
-                     val stp = tpOpt map {_ =>
+                     val tp = tpOpt map {_ =>
                         i += 1
-                        val ptp = makeTerm(ml.tokens(i-1), boundVars ::: newBVarNamesBefore(fv.marker, name))
-                        prag.pragmaticHead(ptp) match {
-                           case OMA(OMS(p), List(value)) => prag.strictAttribution(p.module.toMPath, OMS(p), value)
-                           case _ =>
-                              makeError("not a valid type attribution: " + ptp.toString, te.region)
-                              ptp
+                        val stp = makeTerm(ml.tokens(i-1), boundVars ::: newBVarNamesBefore(fv.marker, name), true)
+                        // remove toplevel operator, e.g., :
+                        stp match {
+                           case controller.pragmatic.StrictTyping(tp) => tp
+                           case _ => stp // applies to unregistered type attributions
                         }
                      }
-                     vars = vars ::: List((fv.marker, nameToken.region, name, stp))
+                     vars = vars ::: List((fv.marker, nameToken.region, name, tp))
                   }
             }
             val con = ml.an.notation.name
@@ -226,7 +235,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
             val head = OMID(con)
             //construct a Term according to args, vars, and scopes
             //this includes sorting args and vars according to the abstract syntax
-            if (arity.isConstant && args == Nil && vars == Nil) {
+            if (arity.isConstant && args == Nil && vars == Nil && !attrib) {
                //no args, vars, scopes --> OMID
                head
             } else {
@@ -234,31 +243,14 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                   val orderedVars = vars.sortBy(_._1.number)
                   // order the arguments
                   val orderedArgs = args.sortBy(_._1)
-                  // compute the arguments, first insert 'null' for each implicit argument
-                  var finalArgs : List[Term] = Nil
-                  orderedArgs.foreach {case (i,arg) =>
-                     // add implicit arguments as needed
-                     while (i > vars.length + finalArgs.length + 1) {
-                        finalArgs ::= null
-                     }
-                     finalArgs ::= arg
+                  // compute the arguments before the context, currently only implicit arguments
+                  // number of implicit arguments that have to be inserted before the variables
+                  val numInitImplArgs = arity.variables.headOption match {
+                     case Some(h) => h.number - 1
+                     case None => 0
                   }
-                  // number of implicit arguments that have to be inserted after the explicit arguments
-                  val numLastImplArgs = arity.arguments.reverse.takeWhile(_.isInstanceOf[ImplicitArg]).length
-                  Range(0, numLastImplArgs).foreach(_ => finalArgs ::= null)
-                  // replace each 'null' with a fresh meta-variable
-                  finalArgs = finalArgs.map {
-                     case null =>
-                        val metaVar = newArgument
-                        if (boundVars == Nil)
-                           metaVar
-                        else {
-                           //under a binder, apply meta-variable to all bound variables
-                           prag.strictApplication(con.module.toMPath, metaVar, boundVars.map(OMV(_)), true)
-                        }
-                     case a => a
-                  }
-                  finalArgs = finalArgs.reverse
+                  val subArgs = Range(0, numInitImplArgs).toList.map(_ => newUnknown(newArgument, boundVars))
+                  val finalSubs = Substitution(subArgs.map(a => Sub(OMV.anonymous, a)) :_*)
                   // compute the variables
                   val finalVars = orderedVars.map {
                      case (vm, reg, vname, tp) =>
@@ -268,17 +260,13 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                            case Some(tp) => (Some(tp), false)
                            case None =>
                               //new meta-variable for unknown type
-                              val metaVar = newType(vname) 
                               //under a binder, apply the meta-variable to all governing bound variables
                               //these are the boundVars and all preceding vars of the current binder
                               val governingBVars = boundVars ::: newBVarNamesBefore(vm, vname)
-                              val t = if (governingBVars == Nil)
-                                 metaVar
-                              else
-                                 prag.strictApplication(con.module.toMPath, metaVar, governingBVars.map(OMV(_)), true)
+                              val t = newUnknown(newType(vname), governingBVars)
                               (Some(t), true)
                         }
-                        // using a random attribution to signal that the type was unknown
+                        // using metadata to signal that the type was unknown
                         // TODO: clean up together with Twelf output
                         val vd = VarDecl(vname, finalTp, None)
                         if (unknown)
@@ -286,15 +274,30 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                         SourceRef.update(vd, pu.source.copy(region = reg))
                         vd
                   }
-                  if (finalVars == Nil) {
-                     // no vars --> OMA
-                     // finalArgs may be Nil
-                     prag.strictApplication(con.module.toMPath, head, finalArgs)
-                  } else {
-                     //some vars --> OMBINDC
-                     val context = Context(finalVars : _*)
-                     prag.strictBinding(con.module.toMPath, head, context, finalArgs)
+                  // compute the arguments after the context
+                  var finalArgs : List[Term] = Nil
+                  orderedArgs.foreach {case (i,arg) =>
+                     // add implicit arguments as needed
+                     while (i > subArgs.length + vars.length + finalArgs.length + 1) {
+                        finalArgs ::= newUnknown(newArgument, boundVars ::: newBVarNames)
+                     }
+                     finalArgs ::= arg
                   }
+                  //   number of implicit arguments that have to be inserted after the explicit arguments
+                  val numLastImplArgs = arity.arguments.reverse.takeWhile(_.isInstanceOf[ImplicitArg]).length
+                  Range(0, numLastImplArgs).foreach(_ => finalArgs ::= newUnknown(newArgument, boundVars))
+                  finalArgs = finalArgs.reverse
+                  // construct the term
+                  // the level of the notation: if not provided, default to the meta-theory of the constant
+                  val level = notation.meta orElse {
+                     controller.globalLookup.getO(con.module.toMPath) match {
+                        case Some(t: modules.DeclaredTheory) => t.meta
+                        case _ => None
+                     }
+                  }
+                  prag.makeStrict(level, con, finalSubs, Context(finalVars : _*), finalArgs, attrib)(
+                        () => newUnknown(newArgument, boundVars)
+                  )
                }}
          case ul : UnmatchedList =>
             if (ul.tl.length == 1)
@@ -311,7 +314,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                //throw ParseError("unmatched list: " + ul.tl)
                */
                val terms = ul.tl.getTokens.map(makeTerm(_,boundVars))
-               prag.strictApplication(pu.scope.toMPath, terms.head, terms.tail)
+               prag.defaultApplication(Some(pu.scope.toMPath), terms.head, terms.tail)
             }
       }
       //log("result: " + term)

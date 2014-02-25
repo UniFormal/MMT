@@ -165,8 +165,7 @@ class StyleBasedPresenter extends Presenter {
             s.components.foreach(c => present(c, gpar, lpar)) //could be much better
             
          case o1: Obj =>
-            val (o, posP, ncOpt) = Presenter.getNotation(controller,o1)
-            val notationOpt = ncOpt.flatMap(_.getPresent)
+            val (o, posP, notationOpt) = Presenter.getNotation(controller,o1, true)
             //default values
             var key = NotationKey(o.head, o.role)
             var newlpar = lpar
@@ -319,7 +318,7 @@ class StyleBasedPresenter extends Presenter {
             else
                recurse(post)
             recurse(Components(NumberedIndex(current), Presentation.Empty, last, post, step, sep, body))
-        case Id => gpar.rh(lpar.pos.toString)
+        case Id => gpar.rh(lpar.pos.toString.substring(2)) // remove "0_" from Toplevel notation
         case Source => lpar.source match {
            case Some(r) => gpar.rh(r.toString)
            case None => 

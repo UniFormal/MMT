@@ -59,8 +59,11 @@ abstract class Fixity(val fixityString: String) {
          case _ =>
       }
       // sort by component number
-      args = args.sortBy(_.number)
       vars = vars.sortBy(_.number)
+      args = args.sortBy(_.number)
+      // subargs with all implicit argument components added
+      var lastSubArg = (vars:::args).headOption.map(_.number).getOrElse(1) - 1 // the last expected subarg position
+      val subargs = (0 until lastSubArg).toList.map {i => ImplicitArg(i+1)} 
       // args with all implicit argument components added
       var argsWithImpl: List[ArgumentComponent] = Nil
       var i = vars.lastOption.map(_.number).getOrElse(0) + 1 // the first expected argument position
@@ -84,7 +87,7 @@ abstract class Fixity(val fixityString: String) {
       args = argsWithImpl.reverse
       // the attribution
       val attribution = attrib > 0
-      Arity(vars, args, attribution)
+      Arity(subargs, vars, args, attribution)
    }
 }
 

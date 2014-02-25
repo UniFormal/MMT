@@ -87,39 +87,42 @@ object Presenter {
       }
    }
    
-   private def getNotation(controller: frontend.Controller, p: ContentPath) : Option[NotationContainer] = {
-      controller.globalLookup.getO(p) flatMap {
+   private def getNotation(controller: frontend.Controller, p: ContentPath, twoDim: Boolean) : Option[TextNotation] = {
+      val notC = controller.globalLookup.getO(p) flatMap {
          case c: symbols.Constant => if (c.notC.isDefined) Some(c.notC) else None
          case p: patterns.Pattern => if (p.notC.isDefined) Some(p.notC) else None
          case _ => None
       }
+      notC.flatMap(n => if (twoDim) n.getPresent else n.getParse)
    }
    
-   /** transforms into pragmatic form and tries to retrieve a notation
+   /** transforms into pragmatic form with matching notation
     *  
     *  if the term but not the pragmatic form has a notation, the strict form is retained
     *  
-    *  @param parsing if true return a parsing notation even if a presentation notation is available 
+    *  @param twoDim if true return presentation notation if possible
+    *  @return the pragmatic form, and the applicable notation 
     */
-   def getNotation(controller: frontend.Controller, o: Obj) : (Obj, List[Position], Option[NotationContainer]) = {
+   def getNotation(controller: frontend.Controller, o: Obj, twoDim: Boolean) : (Obj, List[Position], Option[TextNotation]) = {
+      lazy val default = (o, Position.positions(o), None)
       //TODO: try (lib.preImage(p) flatMap (q => getDefault(NotationKey(Some(q), key.role)))
-      def tryTerm(t: Term) = t match {
-         case ComplexTerm(p, sub, vars, args) => getNotation(controller, p)
-         case OMID(p) => getNotation(controller, p)
-         case _ => None
-      }
       o match {
-         case t: Term =>
-            val (tP, _, posP) = controller.pragmatic.pragmaticHeadWithInfo(t)
-            tryTerm(tP) match {
-               case Some(n) => (tP, posP, Some(n))
-               case None    => tryTerm(t) match {
-                  case Some(n) => (t, Position.positions(t), Some(n))
-                  case None => (tP, posP, None)
+         case OMID(p) =>
+            val not = getNotation(controller, p, twoDim).flatMap {n =>
+               if (n.arity.isConstant) Some(n) else None
+            }
+            (o, Position.positions(o), not)
+         case t @ ComplexTerm(_,_,_,_) =>
+            val tPs = controller.pragmatic.makePragmatic(t)
+            tPs.reverse.foreach {tP =>
+               getNotation(controller, tP.op, twoDim) foreach {n =>
+                  if (n.arity.canHandle(tP.subs.length, tP.con.length, tP.args.length, tP.attribution))
+                     return (tP.term, tP.pos, Some(n))
                }
             }
+            default
          case _ =>
-            (o, Position.positions(o), None)
+            default
       }
    }   
 }

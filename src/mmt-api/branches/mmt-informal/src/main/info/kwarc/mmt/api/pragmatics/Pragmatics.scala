@@ -6,114 +6,68 @@ import modules._
 import frontend._
 import libraries._
 
+import objects.Conversions._
+
 class Pragmatics(controller: Controller) {
-   private val ps = controller.extman.pragmaticStore
    private lazy val lup = controller.globalLookup // must be lazy due to order of class initialization
-   def strictApplication(theory: MPath, fun: Term, args: List[Term], includeSelf: Boolean = false) : Term = {
-      //called if we continue by trying the meta-theory
-      def tryMeta: Term = {
-         lup.getTheory(theory) match {
-            case d: DeclaredTheory => d.meta match {
-               case None => OMA(fun, args)
-               case Some(meta) => strictApplication(meta, fun, args, true)
-            }
-            case d: DefinedTheory => OMA(fun, args) //TODO what to do here?
-         }
-      }
-      if (includeSelf) {     
-         ps.getApplication(theory) match {
-            case Some(a) =>
-               strictApplication(theory, OMID(a.apply), fun :: args)
-            case None =>
-               tryMeta
-         }
-      } else tryMeta
-   }
-   def strictAttribution(theory: MPath, key: Term, value: Term): Term = {
-      lup.getTheory(theory) match {
-         case d: DeclaredTheory => d.meta match {
-            case None => value // not returning OMA(key, List(value)) here means the outermost key (e.g., the : is dropped)
-            case Some(meta) =>
-               ps.getTyping(meta) match {
-                  case None =>
-                     strictAttribution(meta, key, value)
-                  case Some(h) =>
-                     val arg = strictApplication(theory, key, List(value))
-                     strictAttribution(meta, OMID(h.hastype), arg)
-               }
-         }
-         case d: DefinedTheory => OMA(key, List(value)) //TODO what to do here?
-      }
-      
-   }
-   def strictBinding(theory: MPath, binder: Term, context: Context, scopes: List[Term]): Term = {
-      lup.getTheory(theory) match {
-         case d: DeclaredTheory => d.meta match {
-            case None => OMBINDC(binder, context, scopes)
-            case Some(meta) =>
-               ps.getHOAS(meta) match {
-                  case None =>
-                     strictBinding(meta, binder, context, scopes)
-                  case Some(h) =>
-                     val arg = strictBinding(meta, OMID(h.lambda), context, scopes)
-                     strictApplication(meta, OMID(h.apply), List(binder, arg))
-               }
-         }
-         case d: DefinedTheory => OMBINDC(binder, context, scopes) //TODO what to do here?
-      }
-   }
-   /**
-    *  like pragmaticHeadWithPositions
-    *  @param t the strict term
-    *  @return the pragmatic term
-    */
-   def pragmaticHead(t: Term) : Term = {
-      pragmaticHeadWithInfo(t)._1
-   }
+   private lazy val prags = controller.extman.pragmaticConstructors
    
-   /**
-    * removes the strict symbols to obtain a pragmatic term
-    * @param t the strict term
-    * @return (tP,apps,ps) where tP is the pragmatic version of t;
-    *   apps gives the Application's undone (innermost first);
-    *   ps gives the positions of the components of tP in t, i.e., (tP.components zip ps) forall {(c,p) => t.subobject(p) = c}
-    */
-   def pragmaticHeadWithInfo(t: Term) : (Term, List[Application], List[Position]) = {
-      pragmaticHeadAux(t, Nil, Position.positions(t))
-   }
-   private def pragmaticHeadAux(t: Term, apps: List[Application], pos: List[Position]) : (Term, List[Application], List[Position]) = t match {
-      case OMA(OMS(apply @ OMMOD(meta) % _), fun :: args) if fun.head.isDefined =>
-         ps.getApplication(meta) match {
-            case Some(a) =>
-               if (a.apply == apply) {
-                  val (tP, posP) = args match {
-                     case List(OMBINDC(OMS(lambda @ OMMOD(meta2) % _), context, scopes)) =>
-                        ps.getHOAS(meta2) match {
-                           case Some(h) =>
-                              if (h.apply == apply && h.lambda == lambda) {
-                                 // OMA(apply, OMA(apply, s, args), OMBIND(lambda, context, scopes))
-                                 //  --->
-                                 // OMBIND(OMA(s, args), context, scopes)
-                                 val (funP, funApps, funPos) = pragmaticHeadWithInfo(fun) // OMA(s, args)
-                                 val restRange = Range(0,context.variables.length + scopes.length).toList 
-                                 val posP = funPos.map(pos(1)/_) ::: restRange.map(i => Position(2)/(1+i))
-                                 val tP = OMBINDC(funP, context, scopes)
-                                 (tP, posP)
-                              } else
-                                 (OMA(fun, args), pos.tail)
-                           case None =>
-                                 (OMA(fun, args), pos.tail)
-                        }
-                     case _ =>   (OMA(fun, args), pos.tail)
+   def makeStrict(level: Option[MPath], op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean)(implicit newUnkwown: () => Term) : Term = {
+      lazy val default = ComplexTerm(op, subs, con, args) 
+      level match {
+         case None => default
+         case Some(l) =>
+            prags.find(_.level == l) match {
+               case None =>
+                  lup.getTheory(l) match {
+                     case t: DeclaredTheory => makeStrict(t.meta, op, subs, con, args, attrib)
+                     case t: DefinedTheory => default 
                   }
-                  pragmaticHeadAux(tP, a :: apps, posP)
-               } else
-                  (t, apps, pos)
-            case _ => (t, apps, pos)
-         }
-      case _ => (t, apps, pos)
+               case Some(pc) =>
+                  pc.makeStrict(op, subs, con, args, attrib)
+            }
+      }
    }
    
+   /** the default treatment for application-like constructions without a known operator
+    *  used for: apply meta-variables to its dependent bound variables; whitespace operator
+    *  @return currently the OMA formed using the first apply operator found; should be cleaned up
+    */
+   def defaultApplication(level: Option[MPath], fun: Term, args: List[Term]): Term = {
+      lazy val default = OMA(fun, args) 
+      level match {
+         case None => default
+         case Some(l) =>
+            prags.find(_.level == l) match {
+               case None =>
+                  lup.getTheory(l) match {
+                     case t: DeclaredTheory => defaultApplication(t.meta, fun, args)
+                     case t: DefinedTheory => default
+                  }
+               case Some(pc) =>
+                  OMA(OMS(pc.apply), fun::args)
+            }
+      }
+   }
+   
+   def makePragmatic(t: Term) : List[PragmaticTerm] = {
+      t match {
+         case ComplexTerm(op, sub, con, args) =>
+            val default = PragmaticTerm(op, Substitution(), con, args, false, Position.positions(t))
+            prags.find(_.apply == op) match {
+               case None => List(default)
+               case Some(pc) => default :: pc.makePragmatic(t) 
+            }
+         case _ => Nil
+      }
+   }
+   def mostPragmatic(t: Term) : Term = {
+      makePragmatic(t).headOption match {
+         case Some(h) => h.term
+         case _ => t
+      }
+   }
+ 
   /** provides constructor/pattern-matching for pragmatic applications, independent of strictification */ 
   object StrictOMA {
      /**
@@ -126,7 +80,7 @@ class Pragmatics(controller: Controller) {
       */
      def unapply(t: Term): Option[(List[GlobalName],GlobalName,List[Term])] = t match {
         case OMA(OMS(s), hd::tl) =>
-           if (ps.getStrictApps contains s) {
+           if (prags.exists(_.apply == s)) {
               unapply(OMA(hd,tl)) match {
                  case None => Some((Nil, s, hd::tl))
                  case Some((str, fun, args)) => Some((s::str, fun, args))
@@ -147,32 +101,62 @@ class Pragmatics(controller: Controller) {
         case Nil => OMA(OMS(fun), args)
      }
   }
+  
+  object StrictTyping {
+     def unapply(t: Term): Option[Term] = t match {
+        case OMA(OMS(s), List(tp)) if prags.exists(_.typeAtt == s) => Some(tp)
+        case _ => None
+     }
+  }
 }
 
-abstract class Feature {
-   val theory: MPath
+
+case class PragmaticTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attribution: Boolean, pos: List[Position]) {
+   def term = ComplexTerm(op, subs, con, args)
 }
 
-trait Application extends Feature {
-   val apply: GlobalName
-   override def toString = "Application: apply = " + apply.toPath
-}
+/**
+ * OMA(apply, op, args)) <--> OMA(op, args)
+ * 
+ * OMA(apply, op, OMBIND(bind, context, args)) <--> OMBIND(op, context, args)
+ * 
+ * x: OMA(typeAtt, tp) <--> x: tp
+ */
+class PragmaticConstructor(val level: MPath, val apply: GlobalName, bind: GlobalName, val typeAtt: GlobalName) {
+   private def application(op: GlobalName, args: List[Term])(implicit newUnknown: () => Term) : Term =
+      OMA(OMS(apply), OMS(op)::args)
+   def makeStrict(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean)(implicit newUnknown: () => Term) : Term =
+      if (attrib) {
+         val ptp = if (subs.isEmpty && con.isEmpty && args.isEmpty)
+            OMS(op)
+         else
+            makeStrict(op, subs, con, args, false)
+         OMA(OMS(typeAtt), List(ptp))
+      } else if (con.isEmpty)
+         application(op, args)
+      else
+         // for now: strict form treat substitution as extra arguments before context
+         application(op, subs.map(_.target) ::: List(OMBINDC(OMS(bind), con, args)))
 
-trait HOAS extends Application {
-   val lambda: GlobalName
-   override def toString = super.toString + "; HOAS: lambda = " + lambda.toPath  
-}
-
-//what about the other typing judgements - often there is more than one
-trait Typing extends Feature {
-   val hastype : GlobalName 
-   def makeStrict(j: objects.Typing) = Inhabited(j.stack, OMA(OMID(hastype), List(j.tm, j.tp)))
-   def makePragmatic(j: Judgement) = j match {
-      case Inhabited(stack, OMA(OMID(this.hastype), List(tm, tp))) => Typing(stack, tm, tp, Some(this.hastype))
-      case _ => j
+   def makePragmatic(t: Term): List[PragmaticTerm] = t match {
+      case OMA(OMS(this.apply), OMS(op)::rest) =>
+         val appPos = (0 until rest.length+1).toList.map(i => Position(i+1))
+         val appTerm = PragmaticTerm(op, Substitution(), Context(), rest, false, appPos)
+         rest.reverse match {
+            case OMBINDC(OMS(this.bind), con, args) :: _ =>
+               // last argument is binder
+               val subs = rest.init.map(a => Sub(OMV.anonymous, a))
+               val bindPos = Position(1) :: (0 until con.length+args.length).toList.map(i => Position(rest.length+1) / (i+1))  
+               val bindTerm = PragmaticTerm(op, subs, con, args, false, bindPos) 
+               List(appTerm, bindTerm)
+            case _ => List(appTerm)
+         }
+      case OMA(OMS(this.typeAtt), List(tp)) => tp match {
+         case OMS(op) =>
+            List(PragmaticTerm(op, Substitution(), Context(), Nil, true, List(Position(1))))
+         case OMA(OMS(this.apply), OMS(op)::rest) =>
+            List(PragmaticTerm(op, Substitution(), Context(), rest, true, (0 until rest.length+1).toList.map(i => Position(1) / (i+1))))
+      }
+      case _ => Nil
    }
-}
-
-abstract class Equality extends Feature {
-   val logrel : MPath 
 }
