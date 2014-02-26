@@ -143,8 +143,6 @@ class PragmaticConstructor(val level: MPath, val apply: GlobalName, bind: Global
 
    def makePragmatic(t: Term): List[PragmaticTerm] = t match {
       case OMA(OMS(this.apply), OMS(op)::rest) =>
-         if (op.name.toString == "Comb")
-            true
          val appPos = (0 until rest.length+1).toList.map(i => Position(i+1))
          val appTerm = PragmaticTerm(op, Substitution(), Context(), rest, false, appPos)
          rest.reverse match {
