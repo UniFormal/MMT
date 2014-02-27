@@ -40,7 +40,7 @@ object TranslationController {
     def localPath = LocalName(currentAid)
     def currentThyBase : DPath = DPath(Mizar.mmlBase / currentVersion.toString)
     def currentTheory : MPath = currentThyBase ? localPath
-    def currentSource = currentBase + "/source/" + currentVersion + "/" + currentAid + ".miz"
+    def currentSource = Mizar.mathHubBase + "/source/" + currentVersion + "/" + currentAid + ".miz"
 
     var anonConstNr = 0
     var defs = 0
