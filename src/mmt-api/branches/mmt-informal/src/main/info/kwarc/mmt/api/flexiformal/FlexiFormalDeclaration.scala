@@ -9,6 +9,7 @@ import modules._
 import frontend._
 import presentation._
 import xml.{Node, NamespaceBinding, Elem}
+import info.kwarc.mmt.api.metadata.MetaData
 
 object FlexiformalDeclaration {
   def parseNarrativeObject(n : scala.xml.Node)(implicit base : Path) : NarrativeObject = n.label match {
@@ -33,11 +34,16 @@ object FlexiformalDeclaration {
       val r = parseNarrativeObject(n.child.head)(base)
       new PlainNarration(OMMOD(mpath), name, r)
     case "definition" =>
-      val targetsS = (n \ "for").text.split(" ")
+      val targetsS = (n \ "@for").text.split(" ")
       val targets = targetsS.map(st => Path.parseS(st, base))
-      val contentXML = n.child.find(_.label == "CMP").getOrElse(throw ParseError("Expected CMP inside definition"))
+      val metadataXML = n.child.find(_.label == "metadata")
+      val contentXML = n.child.find(_.label != "metadata").get
+      val metadata = metadataXML.map(MetaData.parse(_, base))
       val content = parseNarrativeObject(contentXML)(base)
-      new Definition(OMMOD(mpath), name, targets.toList, content)
+      val d = new Definition(OMMOD(mpath), name, targets.toList, content)
+      metadata.map(d.metadata = _)
+      println(d.toNode)
+      d
   }
   
   def cleanNamespaces(node : scala.xml.Node) : Node = node match {

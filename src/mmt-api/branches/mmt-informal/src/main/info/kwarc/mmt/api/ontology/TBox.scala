@@ -104,11 +104,6 @@ object RelationalElement {
       s.split(" ").toList match {
          case List(tp, ind) => Individual(Path.parse(ind, base), Unary.parse(tp))
          case List(rel, subj, obj) => Relation(Binary.parse(rel), Path.parse(subj, base), Path.parse(obj, base))
-         case List(relS, subjS, obj_pathS, obj_posS) =>
-           val rel = flexiformal.FlexiformalBinary.parse(relS)
-           val subj = Path.parse(subjS, base)
-           val obj = flexiformal.FragPath(Path.parse(obj_pathS, base), objects.Position.parse(obj_posS))
-           flexiformal.FlexiformalRelation(rel, subj, obj)
          case _ => throw ParseError("not a valid relational element: " + s)
       }}catch {case e : Throwable => throw e}
    }

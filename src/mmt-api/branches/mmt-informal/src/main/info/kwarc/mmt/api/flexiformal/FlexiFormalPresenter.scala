@@ -77,6 +77,7 @@ class FlexiformalPresenter extends Presenter {
    private val cssbase    = "https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/css/"
    
    def doTheory(t: DeclaredTheory) {
+     println(t.toNode)
      div("theory") {
        div("theory-header") {doName(t.name.toString)}
        t.getPrimitiveDeclarations.foreach {
@@ -159,6 +160,7 @@ class FlexiformalPresenter extends Presenter {
    }
    
    def doDocument(doc: Document) {
+     println(doc.toNode)
      div("document") {
        span("name") {
          text(doc.path.last)

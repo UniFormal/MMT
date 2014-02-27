@@ -261,7 +261,9 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
             val inst = new Instance(homeTerm,name,Path.parseS(p,base),args.toList)
             add(inst, md)
          case <flexiformal>{decl}</flexiformal> =>
-            FlexiformalDeclaration.parseDeclaration(s2, name , home, base)
+            log("flexiformal declaration " + decl  +  " found")
+            val fd = FlexiformalDeclaration.parseDeclaration(s2, name , home, base)
+            add(fd)
          case scala.xml.Comment(_) =>
          case _ => throw new ParseError("symbol level element expected: " + s2)
          }

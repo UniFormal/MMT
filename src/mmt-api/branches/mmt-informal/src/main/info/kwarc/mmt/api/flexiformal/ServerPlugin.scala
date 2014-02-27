@@ -1,7 +1,8 @@
 package info.kwarc.mmt.api.flexiformal
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.web._
+import web._
+import ontology._
 import tiscaf._
 import scala.concurrent._
 import scala.util.parsing.json._
@@ -33,7 +34,7 @@ class FlexiformalServerPlugin extends ServerExtension("immt") {
        val returnS = params.get("return").getOrElse(throw ServerError("No return type found")).toString
        
        val subject = Path.parse(subjectS)
-       val relation = FlexiformalBinary.parse(relationS)
+       val relation = Binary.parse(relationS)
        val resultSet = controller.depstore.getObjects(subject, relation)
        val pres = controller.extman.getPresenter("ihtml").getOrElse(throw ServerError("No presenter found"))
        val rb = new presentation.StringBuilder
