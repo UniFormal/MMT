@@ -53,7 +53,7 @@ class Pragmatics(controller: Controller) {
    def makePragmatic(t: Term) : List[PragmaticTerm] = {
       t match {
          case ComplexTerm(op, sub, con, args) =>
-            val default = PragmaticTerm(op, Substitution(), con, args, false, Position.positions(t))
+            val default = PragmaticTerm(op, sub, con, args, false, Position.positions(t))
             prags.find(_.apply == op) match {
                case None => List(default)
                case Some(pc) => default :: pc.makePragmatic(t) 
@@ -132,11 +132,14 @@ class PragmaticConstructor(val level: MPath, val apply: GlobalName, bind: Global
          else
             makeStrict(op, subs, con, args, false)
          OMA(OMS(typeAtt), List(ptp))
-      } else if (con.isEmpty)
-         application(op, args)
-      else
-         // for now: strict form treat substitution as extra arguments before context
-         application(op, subs.map(_.target) ::: List(OMBINDC(OMS(bind), con, args)))
+      } else {
+         // for now: strict form treats substitution as extra arguments
+         val subargs = subs.map(_.target)
+         if (con.isEmpty)
+            application(op, subargs ::: args)
+        else
+          application(op, subargs ::: List(OMBINDC(OMS(bind), con, args)))
+      }
 
    def makePragmatic(t: Term): List[PragmaticTerm] = t match {
       case OMA(OMS(this.apply), OMS(op)::rest) =>

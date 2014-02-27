@@ -13,7 +13,7 @@ object Position {
    /** Parse a string representation of a list of integers
     *  @param s the string encoded by Position.toString */
    def parse(s: String) = {
-      val l = s.split("_").toList map {
+      val l = if (s == "") Nil else s.split("_").toList map {
          s => try {s.toInt} catch {case _ : Throwable => throw ParseError("illegal position " + s)} 
       }
       Position(l)

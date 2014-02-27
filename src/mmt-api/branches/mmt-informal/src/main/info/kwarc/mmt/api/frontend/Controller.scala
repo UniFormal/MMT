@@ -390,9 +390,11 @@ class Controller extends ROController with Logger {
          case Some(e) => throw ParseError("unknown file extension: " + f)
          case None => throw ParseError("unknown document format: " + f)
       }
-      log("deleting the remaining deactivated elements")
-      logGroup {
-         modules foreach {m => deleteInactive(m)}
+      if (! modules.isEmpty) {
+         log("deleting the remaining deactivated elements")
+         logGroup {
+            modules foreach {m => deleteInactive(m)}
+         }
       }
       result
    }

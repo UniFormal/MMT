@@ -41,6 +41,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term]) exten
          case (Some(t), Some(d)) => OMATTR(OMATTR(varToOMATTR, OMID(mmt.mmttype), t), OMID(mmt.mmtdef), d)
       }
    }
+   def toConstant(home: Term) = symbols.Constant(home, name, None, tp, df, None)
    def toNode = <om:OMV name={name.toPath}>{mdNode}{tpN}{dfN}</om:OMV> 
    def toCMLQVars(implicit qvars: Context) = <m:bvar><m:ci>{name.toPath}</m:ci>{(tp.toList:::df.toList).map(_.toCMLQVars)}</m:bvar>
    def role = Role_Variable

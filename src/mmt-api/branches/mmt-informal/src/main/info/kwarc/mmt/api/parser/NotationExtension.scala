@@ -61,9 +61,6 @@ abstract class Fixity(val fixityString: String) {
       // sort by component number
       vars = vars.sortBy(_.number)
       args = args.sortBy(_.number)
-      // subargs with all implicit argument components added
-      var lastSubArg = (vars:::args).headOption.map(_.number).getOrElse(1) - 1 // the last expected subarg position
-      val subargs = (0 until lastSubArg).toList.map {i => ImplicitArg(i+1)} 
       // args with all implicit argument components added
       var argsWithImpl: List[ArgumentComponent] = Nil
       var i = vars.lastOption.map(_.number).getOrElse(0) + 1 // the first expected argument position
@@ -76,6 +73,17 @@ abstract class Fixity(val fixityString: String) {
          argsWithImpl ::= a
          i += 1
       }
+      args = argsWithImpl.reverse
+      // subargs with all implicit argument components added
+      // the last expected subarg position
+      var lastSubArg = vars.headOption match {
+         case Some(v) => v.number-1
+         case None => args.headOption match {
+            case Some(a) => a.number-1
+            case None => 0
+         }
+      }
+      val subargs = (0 until lastSubArg).toList.map {i => ImplicitArg(i+1)} 
       //TODO: check all args.number < vars.number < scopes.numbers; no gaps in variables or scopes
 /*    arguments are behind the variables now
       //add implicit arguments after the last one (the first variable tells us if there are implicit arguments after the last one)
@@ -84,7 +92,6 @@ abstract class Fixity(val fixityString: String) {
          argsWithImpl ::= ImplicitArg(i)
          i += 1
       }*/
-      args = argsWithImpl.reverse
       // the attribution
       val attribution = attrib > 0
       Arity(subargs, vars, args, attribution)

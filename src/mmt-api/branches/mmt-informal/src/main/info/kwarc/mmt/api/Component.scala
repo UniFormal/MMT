@@ -14,7 +14,7 @@ trait AbstractTermContainer extends ComponentContainer {
    def get: Option[objects.Term]
 }
 
-/** a dummy container for a term that cannot be changed anymore */ 
+/** a dummy container for a stateless term */ 
 class FinalTermContainer(t: objects.Term) extends AbstractTermContainer {
    def update(nw: ComponentContainer) {}
    def delete {}

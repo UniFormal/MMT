@@ -31,9 +31,10 @@ class Pattern(val home: Term, val name : LocalName, val params: Context, val bod
      </pattern>    
    def role = info.kwarc.mmt.api.Role_Pattern
    def components = OMID(path) :: params ::: body
-   def children = params :: body :: not.toList
-   def getComponents = Nil //TODO
-   def getDeclarations = Nil
+   def children = params :::  body
+   def tp = OMBINDC(OMS(utils.mmt.mmtsymbol("param")),params,Nil)
+   def getComponents = (TypeComponent, new FinalTermContainer(tp)) :: notC.getComponents
+   def getDeclarations = body map {vd => vd.toConstant(home)}
    override def toString = 
      "Pattern for " + name.toString + {if (params.variables.toList.isEmpty) "" else  {" [ " + params.toString + " ]" }} +
      " { " + body.toString + " }" + notC.toString
@@ -72,7 +73,7 @@ class Instance(val home : Term, val name : LocalName, val pattern : GlobalName, 
    def role = info.kwarc.mmt.api.Role_Instance
    def components = List(OMID(path), OMID(pattern)) ::: matches
    def children = matches
-   def getComponents = Nil //TODO
+   def getComponents = List((TypeComponent, new FinalTermContainer(OMA(OMS(pattern), matches))))
    def getDeclarations = Nil
    override def toString = 
      "instance " + name.toString + " of pattern " + pattern.toString + " with " + { if (matches.isEmpty) "no args" else matches.map(_.toString).mkString("[ ", "; ", "]") }  
