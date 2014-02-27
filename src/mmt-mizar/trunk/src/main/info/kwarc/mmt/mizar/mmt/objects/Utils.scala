@@ -15,16 +15,15 @@ import info.kwarc.mmt.lfs._
 
 object Mizar {
 	val mmlBase = URI("http", "oaff.mathweb.org") / "MML" 
-
+  val mathHubBase = "http://gl.mathhub.info/Mizar/MML/tree/master"
 	private val mizarBase =  DPath(URI("http", "latin.omdoc.org") / "foundations"/ "mizar")
 	val MizarTh = mizarBase ? "mizar-curry"
 	val MizarPatternsTh = mizarBase ? "mizar-patterns"
 	val HiddenTh = mizarBase ? "HIDDEN"
-    val MizarInformal = mizarBase ? "mizar-informal"
+  val MizarInformal = mizarBase ? "mizar-informal"
 	
-    def by : Term = OMID(MizarInformal ? "by")
-    def from : Term = OMID(MizarInformal ? "from")
-    
+  def by : Term = OMID(MizarInformal ? "by")
+  def from : Term = OMID(MizarInformal ? "from")
     
 	def constant(name : String) : Term = {
 		name match {
