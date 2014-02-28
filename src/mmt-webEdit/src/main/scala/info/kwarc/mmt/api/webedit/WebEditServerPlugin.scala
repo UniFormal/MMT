@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.web._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.symbols._
 import objects._
-
+import libraries._
 import scala.util.parsing.json._
 import scala.concurrent._
 import tiscaf._
@@ -24,6 +24,8 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
         case "save" :: _ => getSaveResponse
         case "preview" :: _ => getPreviewResponse
         case "autocomplete" :: _ => getAutocompleteResponse
+        case "resolve" :: _ => getResolveResponse
+        
         case _ => error("Invalid request: " + uriComps.mkString("/"))
       }
     } catch {
@@ -37,6 +39,8 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   
   private def getSaveResponse : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
+      val reqBody = new Body(tk)
+      val params = reqBody.asJSON.obj
       val response = "TODO"
       Server.TextResponse(response).aact(tk)
     }
@@ -49,24 +53,38 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
     }
   }
   
+  private def getResolveResponse : HLet = new HLet {
+    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
+      val reqBody = new Body(tk)
+      val params = reqBody.asJSON.obj
+      
+      val symbol = params.get("symbol").getOrElse(throw ServerError("No symbol found")).toString
+      val mpathS = params.get("mpath").getOrElse(throw ServerError("No mpath found")).toString
+      val mpath = Path.parseM(mpathS, mmt.mmtbase)
+      
+      val respMap = new collection.mutable.HashMap[String, Any]()
+      Names.resolveIncludes(OMMOD(mpath),symbol)(controller.library) match {
+        case None => respMap("found") = true
+        case Some(myPaths) => 
+          respMap("found") = false
+          respMap("options") = new JSONArray(myPaths.map(_.from.toPath))
+      }
+      Server.JsonResponse(new JSONObject(respMap.toMap)).aact(tk)
+    }
+  }
+  
   private def getAutocompleteResponse : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
       val reqBody = new Body(tk)
-      val bodyS = reqBody.asString
-      val params = JSON.parseRaw(bodyS) match {
-         case Some(j : JSONObject) => j.obj
-         case _ => throw ServerError("Invalid JSON " + bodyS)
-      }
+      val params = reqBody.asJSON.obj
+      
       val prefix = params.get("prefix").getOrElse(throw ServerError("No prefix found")).toString
       val mpathS = params.get("mpath").getOrElse(throw ServerError("No mpath found")).toString
       val mpath = Path.parseM(mpathS, mmt.mmtbase)
-      val declPaths = controller.library.getDeclarationsInScope(OMMOD(mpath)) collect {
-        case d : Declaration => d.path
-      }
       
-      val myPaths = declPaths.filter(_.name.toPath.startsWith(prefix))
+      val myPaths = Names.resolve(OMMOD(mpath), Nil, prefix)(controller.globalLookup)
       
-      val response = new JSONArray(myPaths.map(_.toPath))
+      val response = new JSONArray(myPaths.map(_.path.toPath))
       Server.JsonResponse(response).aact(tk)
     }
   }

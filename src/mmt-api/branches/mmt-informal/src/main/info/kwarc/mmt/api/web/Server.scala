@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.web
 
 import info.kwarc.mmt.api._
+import scala.util.parsing.json._
 
 import frontend._
 import backend._
@@ -117,6 +118,15 @@ class Body(tk: HTalk) {
        }
        scala.xml.Utility.trim(bodyXML)
      }
+  
+  def asJSON : JSONObject = {
+    val reqBody = new Body(tk)
+    val bodyS = reqBody.asString
+    JSON.parseRaw(bodyS) match {
+      case Some(j : JSONObject) => j
+      case _ => throw ServerError("Invalid JSON " + bodyS)
+    }
+  }
 }
 
 
