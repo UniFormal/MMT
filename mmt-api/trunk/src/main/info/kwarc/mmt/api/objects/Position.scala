@@ -5,6 +5,7 @@ import objects.Conversions._
 /** A path in the syntax tree of an object */
 case class Position(indices : List[Int]) {
    def /(p:Position): Position = Position(indices ::: p.indices)
+   def /(l : List[Int]): Position = this / Position(l)
    def /(i : Int): Position = this / Position(i)
    def current = indices.last
    override def toString = indices.mkString("","_","")

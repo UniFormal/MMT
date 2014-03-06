@@ -12,7 +12,7 @@ abstract class Error(val shortMsg : String) extends java.lang.Throwable(shortMsg
       val causedByMsg = causedBy match {
         case None => ""
         case Some(e: Error) => "\ncaused by\n" + e.longMsg
-        case Some(e) => "\ncaused by\n" + e.getMessage + e.getStackTrace.map(_.toString).mkString("\n","\n","")
+        case Some(e) => "\ncaused by\n" + e.getClass + ": " + e.getMessage + e.getStackTrace.map(_.toString).mkString("\n","\n","")
       }
       getMessage + "\n" + stackTrace + causedByMsg
    }

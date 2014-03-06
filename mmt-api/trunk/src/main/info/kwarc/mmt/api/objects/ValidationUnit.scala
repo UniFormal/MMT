@@ -45,7 +45,7 @@ class Validator(controller: Controller) extends Logger {
          val result = if (remUnknowns.variables.isEmpty) tIS else OMBIND(OMID(parser.AbstractObjectParser.unknown), remUnknowns, tIS)
          //now report results, dependencies, errors
          val solution = solver.getSolution
-         val success = mayHold && solution.isDefined
+         val success = solver.checkSucceeded 
          if (success) {
             log("success")
             solver.getDependencies foreach depCont

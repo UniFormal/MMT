@@ -63,7 +63,7 @@ class ExtensionManager(controller: Controller) extends Logger {
    private[api] var queryExtensions : List[QueryExtension] = Nil
 
    var lexerExtensions : List[LexerExtension] = Nil
-   var pragmaticConstructors: List[pragmatics.PragmaticConstructor] = Nil
+   var notationExtensions: List[notations.NotationExtension] = Nil
 
    private var mws : Option[URI] = None
 
@@ -91,6 +91,8 @@ class ExtensionManager(controller: Controller) extends Logger {
       lexerExtensions ::= QuoteLexer
       lexerExtensions ::= UnicodeReplacer
       lexerExtensions ::= new PrefixedTokenLexer('\\')
+      
+      notationExtensions ::= notations.MixfixNotation
    }
 
    /** instantiates an extension, initializes it, and adds it

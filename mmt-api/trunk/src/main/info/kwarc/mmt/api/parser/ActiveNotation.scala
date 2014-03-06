@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api._
+import notations._
 import utils.MyList._
 
 import ActiveNotation._
@@ -105,6 +106,16 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
       case _ => false
    }
    
+   /** splits a List[Marker] into
+    *  a List[Int] (possibly Nil) that corresponds to a List[Arg]
+    * and the remaining List[Marker]
+    */
+   private def splitOffArgs(ms: List[Marker], ns: List[Int] = Nil) : (List[Int], List[Marker]) = ms match {
+      case Arg(n) :: rest => splitOffArgs(rest, n :: ns)
+      case Delim("%w") :: rest => splitOffArgs(rest, ns)
+      case rest => (ns.reverse, rest)
+   }
+   
   /**
    * @param currentToken the currently scanned token
    * @param futureTokens a string containing those succeeding Tokens that could be merged into the current Token
@@ -171,7 +182,7 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
       }
       if (result != null) return result
       // second: otherwise, try to match the current Token against an upcoming delimiter
-      Arg.split(left) match {
+      splitOffArgs(left) match {
          case (ns, Delimiter(s) :: _) if matches(s) =>
             ns match {
             case Nil =>
@@ -272,7 +283,7 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
     * i.e., the current arguments can be the last arguments of the notation with no further delimiter expected
     */
    def closable : Applicability = {
-      Arg.split(left) match {
+      splitOffArgs(left) match {
          case (Nil, SeqArg(n, Delimiter(s)) :: Nil) =>
               if (inSeqArg(n) && numCurrentTokens > 0) {
                  onApply {

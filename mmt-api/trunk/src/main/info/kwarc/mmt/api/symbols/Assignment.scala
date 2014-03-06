@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import objects._
 import modules._
 import presentation._
+import notations._
 
  /**
   * An MMT assignment to a constant is a special case of a Constant.

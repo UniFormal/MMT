@@ -1,4 +1,5 @@
 package info.kwarc.mmt.api.parser
+
 import info.kwarc.mmt.api._
 import frontend._
 import documents._
@@ -6,6 +7,7 @@ import modules._
 import symbols._
 import patterns._
 import objects._
+import notations._
 
 import scala.collection.mutable.{ListMap,HashMap}
 
@@ -473,7 +475,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
          tc.read = obj
          tc.parsed = tm
       }
-   private def doNotation(c: NotationComponent, nc: presentation.NotationContainer, treg: SourceRegion, cpath: GlobalName)(implicit state: ParserState) {
+   private def doNotation(c: NotationComponent, nc: NotationContainer, treg: SourceRegion, cpath: GlobalName)(implicit state: ParserState) {
          val (notString,reg) = state.reader.readObject
          if (nc(c).isDefined)
             errorCont(makeError(treg, "notation of this constant already given, ignored"))
@@ -493,7 +495,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       val tpC = new TermContainer
       val dfC = new TermContainer
       var al : Option[LocalName] = None
-      var nt = new presentation.NotationContainer
+      var nt = new NotationContainer
       var rl : Option[String] = None
       var pr : Option[Context] = None
       val cons = new Constant(OMMOD(parent), name, None, tpC, dfC, None, nt)
@@ -606,7 +608,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       val ppath = tpath ? name
       val tpC = new TermContainer
       val dfC = new TermContainer
-      var nt = new presentation.NotationContainer
+      var nt = new NotationContainer
       var pr : Context = Context()// params
       var bd : Context = Context()// body
       while (! state.reader.endOfDeclaration) {

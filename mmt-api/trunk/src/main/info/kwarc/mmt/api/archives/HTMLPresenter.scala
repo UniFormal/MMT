@@ -5,13 +5,14 @@ import modules._
 import symbols._
 import documents._
 import presentation._
+import notations._
 import frontend._
 import objects._
 import utils._
 
 trait HTMLPresenter extends Presenter {
    override val outExt = "html"
-   private lazy val mmlPres = new presentation.MathMLPresenter(controller) // must be lazy because controller is provided in init only
+   private lazy val mmlPres = new MathMLPresenter(controller) // must be lazy because controller is provided in init only
      
    def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) = {
      this._rh = rh
@@ -45,7 +46,7 @@ trait HTMLPresenter extends Presenter {
       td {span {text(comp.toString)}}
       td {doMath(t)}
    }
-   private def doNotComponent(comp: NotationComponent, tn: parser.TextNotation) {
+   private def doNotComponent(comp: NotationComponent, tn: TextNotation) {
       td {span {text(comp.toString)}}
       td {span {text(tn.toText)}}
    }

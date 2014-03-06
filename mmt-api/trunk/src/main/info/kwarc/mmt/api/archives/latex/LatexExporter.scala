@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import modules._
 import symbols._
 import objects._
-import parser._
+import notations._
 import archives._
 import documents._
 import objects.Conversions._
