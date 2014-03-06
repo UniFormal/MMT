@@ -9,7 +9,7 @@ import modules._
 import documents._
 import parser._
 import ontology._
-import pragmatics._
+import notations._
 import web._
 import utils._
 import utils.FileConversion._
@@ -69,11 +69,10 @@ class Controller extends ROController with Logger {
    
    /** text-based presenter for error messages, logging, etc. */
    val presenter = new StructureAndObjectPresenter
-   
+   /** converts between strict and pragmatic syntax using [[NotationExtension]]s */
+   val pragmatic = new Pragmatics(this)
    /** maintains all customizations for specific languages */
    val extman = new ExtensionManager(this)
-   /** pragmatic MMT features besides Patterns */
-   val pragmatic = new Pragmatics(this)
    /** the http server */
    var server : Option[Server] = None
    /** the MMT parser (XML syntax) */
@@ -170,6 +169,7 @@ class Controller extends ROController with Logger {
             backend.load(path)(this)
          } catch {
             case b : BackendError =>
+               log(b)
                throw GetError("backend: " + b.getMessage).setCausedBy(b) 
          }
       }

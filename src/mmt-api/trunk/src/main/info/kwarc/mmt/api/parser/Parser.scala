@@ -5,8 +5,8 @@ import objects._
 import symbols._
 import frontend._
 import presentation._
+import notations._
 import utils.MyList._
-
 import scala.collection.immutable.{HashMap}
 
 /** a ParsingUnit represents a term that is to be parsed

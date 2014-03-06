@@ -18,7 +18,7 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil
 
 // local XML databases or query engines to access local XML files: baseX or Saxon
 
-case object NotApplicable extends java.lang.Throwable
+case class NotApplicable(message: String = "") extends java.lang.Throwable
 
 /** Storage is an abstraction over backends that can provide MMT content
  * A storage declares a URI u and must answer to all URIs that start with u.
@@ -33,7 +33,7 @@ abstract class Storage {
       if (uri.scheme == base.scheme && uri.authority == base.authority && u.startsWith(b))
          u.drop(b.length)
       else
-         throw NotApplicable
+         throw NotApplicable()
       }
    protected def virtDoc(entries : List[String], prefix : String) =
       <omdoc>{entries.map(n => <dref target={prefix + n}/>)}</omdoc>
@@ -113,26 +113,28 @@ case class SVNRepo(scheme : String, authority : String, prefix : String, reposit
 /**
  * loads a realization from a Java Class Loader and dynamically creates a [[modules.Realization]] for it
  */
-class RealizationArchive(file: File, loader: java.net.URLClassLoader) extends Storage {
+class RealizationArchive(file: File, val loader: java.net.URLClassLoader) extends Storage {
    override def toString = "RealizationArchive for " + file
    def load(path : Path)(implicit controller: Controller) {
       val mp = path match {
          case mp: MPath => mp
          case GlobalName(objects.OMMOD(mp), _) => mp
-         case _ => throw NotApplicable
+         case _ => throw NotApplicable("no module path found")
       }
       val s = uom.GenericScalaExporter.mpathToScala(mp)
       val c = try {Class.forName(s + "$", true, loader)}
          catch {
-            case _: java.lang.ClassNotFoundException | _: java.lang.NoClassDefFoundError =>
-               throw NotApplicable
-            case _: java.lang.ExceptionInInitializerError | _: LinkageError =>
-               throw BackendError("class for " + mp + " exists, but an error occurred when accessing it", mp)
+            case e: ClassNotFoundException =>
+               throw NotApplicable("class not found")
+            case e: ExceptionInInitializerError =>
+               throw BackendError("class for " + mp + " exists, but an error occurred when initializing it", mp).setCausedBy(e)
+            case e: LinkageError =>
+               throw BackendError("class for " + mp + " exists, but an error occurred when linking it", mp).setCausedBy(e)
          }
       val r = try {c.getField("MODULE$").get(null).asInstanceOf[uom.RealizationInScala]}
            catch {
-              case _ : java.lang.Exception =>
-               throw BackendError("realization for " + mp + " exists, but an error occurred when creating it", mp)
+              case e : java.lang.Exception =>
+               throw BackendError("realization for " + mp + " exists, but an error occurred when creating it", mp).setCausedBy(e)
            }
       val real = new modules.Realization(mp.parent, mp.name, r._domain._path)
       r._types foreach {case (synType, rtL) =>
@@ -199,10 +201,10 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
              addStore(arch)
              arch
 
-           case _ => throw NotApplicable
+           case _ => throw NotApplicable()
          }
-       case SVNNodeKind.FILE => throw NotApplicable //TODO
-       case _ => throw NotApplicable
+       case SVNNodeKind.FILE => throw NotApplicable() //TODO
+       case _ => throw NotApplicable()
      }
    }
   
@@ -271,7 +273,12 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
    
    def openRealizationArchive(file: File) {
        val loader = try {
-          new java.net.URLClassLoader(Array(file.toURI.toURL))
+          val cl = getClass.getClassLoader // the class loader that loaded this class, may be null for bootstrap class loader
+          if (cl == null)
+             new java.net.URLClassLoader(Array(file.toURI.toURL)) // parent defaults to bootstrap class loader
+          else
+              // delegate to the class loader that loaded MMT - needed if classes to be loaded depend on MMT classes
+             new java.net.URLClassLoader(Array(file.toURI.toURL), cl)
        } catch {
           case _:Exception => 
             logError("could not create class loader for " + file.toString)
@@ -308,8 +315,8 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
          case hd :: tl =>
             log("trying " + hd)
       	    try {hd.load(p)}
-            catch {case NotApplicable =>
-               log(hd.toString + " not applicable to " + p)
+            catch {case NotApplicable(msg) =>
+               log(hd.toString + " not applicable to " + p + (if (msg != "") s" ($msg)" else ""))
                getInList(tl, p)
             }
       }}

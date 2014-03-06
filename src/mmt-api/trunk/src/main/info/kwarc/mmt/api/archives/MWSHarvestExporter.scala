@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import modules._
 import symbols._
-import presentation._
+import notations._
 import frontend._
 import backend._
 import objects._

@@ -6,9 +6,13 @@ import modules._
 import frontend._
 import symbols._
 import objects._
+import notations._
+
 import objects.Conversions._
+
 import utils._
 import utils.MyList._
+
 import scala.io.Source
 
 /** elaborates Instance declarations
@@ -213,7 +217,6 @@ object PatternTest  {
      
   val tptpbase = DPath(URI("http://latin.omdoc.org/logics/tptp"))
   val pbbase = DPath(URI("http://oaff.omdoc.org/tptp/problems"))// problem base
-  import presentation.NotationContainer
   val baseType = new Pattern(OMID(tptpbase ? "THF0"), LocalName("baseType"),Context(), OMV("t") % OMS(tptpbase ? "Types" ? "$tType"), NotationContainer())
   val typedCon = new Pattern(OMID(tptpbase ? "THF0"), LocalName("typedCon"), OMV("A") % OMS(tptpbase ? "Types" ? "$tType") , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$tm"), List(OMV("A"))), NotationContainer() )
   val axiom = new Pattern(OMID(tptpbase ? "THF0"), LocalName("axiom"), OMV("F") % OMA(OMS(tptpbase ? "Types" ? "$tm"),List(OMS(tptpbase ? "THF0" ? "$o"))) , OMV("c") % OMA(OMS(tptpbase ? "Types" ? "$istrue"), List(OMV("F"))), NotationContainer() )

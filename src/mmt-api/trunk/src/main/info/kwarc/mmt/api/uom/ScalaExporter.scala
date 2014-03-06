@@ -5,7 +5,7 @@ import archives._
 import modules._
 import symbols._
 import objects._
-import parser._
+import notations._
 import documents._
 
 object GenericScalaExporter {

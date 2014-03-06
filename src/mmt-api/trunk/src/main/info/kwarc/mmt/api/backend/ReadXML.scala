@@ -3,7 +3,7 @@ import info.kwarc.mmt.api._
 import documents._
 import metadata._
 import modules._
-import parser.TextNotation
+import notations._
 import symbols._
 import objects._
 import patterns._

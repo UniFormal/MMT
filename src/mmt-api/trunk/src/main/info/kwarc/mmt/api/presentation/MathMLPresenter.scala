@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.presentation
 
 import info.kwarc.mmt.api._
+import notations._
 import frontend._
 import objects._
 
@@ -52,7 +53,7 @@ class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter
       val mo = element("mo", Nil, s)
       pc.out(mo)
    }
-   override def doDelimiter(p: GlobalName, d: parser.Delimiter, implicits: List[Cont])(implicit pc : PresentationContext) {
+   override def doDelimiter(p: GlobalName, d: Delimiter, implicits: List[Cont])(implicit pc : PresentationContext) {
       val mo = element("mo", ("jobad:href" -> p.toPath) :: jobadattribs, d.text)
       if (! implicits.isEmpty) {
          pc.html.mrow {
