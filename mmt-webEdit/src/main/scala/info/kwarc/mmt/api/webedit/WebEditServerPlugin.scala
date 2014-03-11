@@ -5,11 +5,14 @@ import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.web._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.libraries._
+import info.kwarc.mmt.api.modules.DeclaredTheory
 import objects._
 import libraries._
 import scala.util.parsing.json._
 import scala.concurrent._
 import tiscaf._
+import scala.collection.mutable._
 
 class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   
@@ -25,7 +28,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
         case "preview" :: _ => getPreviewResponse
         case "autocomplete" :: _ => getAutocompleteResponse
         case "resolve" :: _ => getResolveResponse
-        
+        case "minIncludes" :: _ => getMinIncludes
         case _ => error("Invalid request: " + uriComps.mkString("/"))
       }
     } catch {
@@ -52,6 +55,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
       Server.TextResponse(response).aact(tk)
     }
   }
+ 
   
   private def getResolveResponse : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
@@ -73,6 +77,42 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
     }
   }
   
+  
+  private def minIncl(to: MPath) : List[MPath] = {
+    val thy = controller.get(to) match {
+      case theor: DeclaredTheory => theor
+      case _ => throw ServerError("No theory found")
+    }
+    val incl = thy.getIncludes
+    
+    def remover(checked: List[MPath], rest : List[MPath]) : List[MPath] = rest match{
+      case Nil => checked
+      case (hd::tl) => 
+        if(tl.exists(x=>controller.globalLookup.visible(OMMOD(x)).contains(OMMOD(hd))) ||
+            checked.exists(x=>controller.globalLookup.visible(OMMOD(x)).contains(OMMOD(hd))))
+        	remover(checked,tl)
+    	else remover(hd::checked,tl)	
+    }
+    
+   remover(Nil,incl)
+  }
+ 
+  
+ 
+  private def getMinIncludes : HLet = new HLet {
+    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
+      val reqBody = new Body(tk)
+      val params = reqBody.asJSON.obj
+      
+      val mpathS = params.get("mpath").getOrElse(throw ServerError("No mpath found")).toString
+      val mpath = Path.parseM(mpathS, mmt.mmtbase)		
+    
+      val newIncludes = minIncl(mpath)
+       val response = new JSONArray(newIncludes.map(_.toPath))
+      Server.JsonResponse(response).aact(tk)
+    }
+  }
+  
   private def getAutocompleteResponse : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
       val reqBody = new Body(tk)
@@ -83,7 +123,10 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
       val mpath = Path.parseM(mpathS, mmt.mmtbase)
       
       val myPaths = Names.resolve(OMMOD(mpath), Nil, prefix)(controller.globalLookup)
-      
+      //mPaths.map(controller.get) collect {
+      //  case c : Constant => c.not.toString
+      // return in form of ((string,meaning),arguments,return type))
+      //}
       val response = new JSONArray(myPaths.map(_.path.toPath))
       Server.JsonResponse(response).aact(tk)
     }
