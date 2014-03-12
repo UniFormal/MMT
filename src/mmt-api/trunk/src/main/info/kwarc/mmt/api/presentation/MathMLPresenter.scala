@@ -75,7 +75,7 @@ class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter
       val nsAtts = List("xmlns" -> namespace("mathml"), "xmlns:jobad" -> jobadns)
       val mmtAtts = pc.owner match {
          case None => Nil
-         case Some(cp) => List("jobad:owner" -> cp.parent.toPath, "jobad:component" -> cp.component.toString)
+         case Some(cp) => List("jobad:owner" -> cp.parent.toPath, "jobad:component" -> cp.component.toString, "jobad:mmtref" -> "")
       }
       // <mstyle displaystyle="true">
       pc.out(openTag("math", nsAtts ::: mmtAtts))

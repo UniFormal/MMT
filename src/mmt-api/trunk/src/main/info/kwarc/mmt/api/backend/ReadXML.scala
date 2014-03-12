@@ -175,9 +175,10 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                   case Some(_) =>
                      throw ParseError("multiple definitions in " + s2)
                }
-               case <notation>{ns @ _*}</notation> => notC match {
+               //TODO deprecate one of them
+               case comp @ (<notation>{_*}</notation> | <notations>{_*}</notations>) => notC match {
                   case None =>
-                     notC = Some(NotationContainer.parse(ns, home ? name))
+                     notC = Some(NotationContainer.parse(comp.child, home ? name))
                   case Some(_) =>
                      throw ParseError("multiple notations in " + s2)
                }

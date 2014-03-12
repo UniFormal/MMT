@@ -89,7 +89,7 @@ case class Tuple(components: List[Query]) extends Query
 case class Projection(of: Query, index: Int) extends Query
 
 /** query that applies an atomic function */
-case class QueryFunctionApply(function: QueryExtension, val argument: Query, val param: MPath) extends Query
+case class QueryFunctionApply(function: QueryExtension, argument: Query, params: List[String]) extends Query
 
 /** typing relation between a path and a concept of the MMT ontology */
 case class IsA(e: Query, t: Unary) extends Prop
@@ -319,12 +319,12 @@ object Query {
          Projection(parse(t), i)
       case <function>{a}</function> =>
          val name = xml.attr(n, "name")
-         val param = Path.parseM(xml.attr(n, "param"), utils.mmt.mmtbase)
+         val params = MyList.fromString(xml.attr(n, "param")) 
          val arg = parse(a)
          val fun = queryFunctions.find(_.name == name).getOrElse {
             throw ParseError("illegal function: " + name)
          }
-         QueryFunctionApply(fun, arg, param)
+         QueryFunctionApply(fun, arg, params)
       //TODO missing cases
       case n => throw ParseError("illegal query expression: " + n)
    }

@@ -14,7 +14,9 @@ import parser.SourceRef
 case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: List[(String,String)], 
       source: Option[SourceRef], pos : Position, context : List[VarData]) {
    def out(s: String) {rh(s)}
-   def child(i: Int, addCon: List[VarData] = Nil) = copy(pos = pos / i, context = context ::: addCon)
+   def child(i: Int) = copy(pos = pos / i)
+   def child(p: Position) = copy(pos = pos / p)
+   def addCon(con: List[VarData]) = copy(context = context ::: con)
    val html = new utils.HTML(out _)
 }
 
@@ -197,13 +199,13 @@ trait NotationBasedPresenter extends ObjectPresenter {
             if (! con.isEmpty) {
                doOperator("[")
                con.zipWithIndex.foreach {case (v,i) =>
-                  recurse(v)(pc.child(subs.length+i+1, vardata.take(i)))
+                  recurse(v)(pc.child(subs.length+i+1).addCon(vardata.take(i)))
                }
                doOperator("]")
             }
             args.zipWithIndex.foreach {case (t,i) =>
                doSpace(1)
-               recurse(t)(pc.child(subs.length+con.length+i+1, vardata))
+               recurse(t)(pc.child(subs.length+con.length+i+1).addCon(vardata))
             }
          }
          1
@@ -231,12 +233,12 @@ trait NotationBasedPresenter extends ObjectPresenter {
             doSpace(1)
             doOperator("[")
             c.zipWithIndex.foreach {case (v,i) =>
-               recurse(v)(pc.child(i+1, vardata.take(i)))
+               recurse(v)(pc.child(i+1).addCon(vardata.take(i)))
             }
             doOperator("]")
             s.zipWithIndex.foreach {case (t,i) =>
                doSpace(1)
-               recurse(t)(pc.child(c.length+i+1, vardata))
+               recurse(t)(pc.child(c.length+i+1).addCon(vardata))
             }
          }
          1
@@ -289,12 +291,10 @@ trait NotationBasedPresenter extends ObjectPresenter {
          -1
    }
    
-   def apply(o: Obj)(implicit rh : RenderingHandler) = apply(o, None, rh)
-   
-   def apply(obj: Obj, owner: Option[CPath], rh: RenderingHandler) {
-      implicit val pc = PresentationContext(rh, owner, Nil, None, Position.Init, Nil)
+   def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
+      implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil)
       doToplevel {
-         recurse(obj)
+         recurse(o)
       }
    }
 
@@ -330,12 +330,12 @@ trait NotationBasedPresenter extends ObjectPresenter {
                   val brack = (childNot: TextNotation) => Presenter.bracket(not.precedence, currentPosition, childNot)
                   // the additional context of the child
                   val newCont: Context = ac match {
-                     case Arg(n) if n < 0 => context
-                     case Var(n,_,_) => context.take(n-args.length-1)
+                     case _: ArgumentComponent => context
+                     case Var(n,_,_) => context.take(n-firstVarNumber)
                      case _ => Nil
                   }
                   val newVarData = newCont.map {v => VarData(v, Some(op), pc.pos)}
-                  recurse(child, brack)(pc.child(ac.number.abs, newVarData))
+                  recurse(child, brack)(pc.child(pos(ac.number.abs)).addCon(newVarData))
                }
                // all implicit arguments that are not placed by the notation, they are added to the first delimiter
                val unplacedImplicits = not.arity.flatImplicitArguments(args.length).filter(i => ! not.fixity.markers.contains(i))
@@ -380,7 +380,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
                            }
                            val letters = d.text.exists(_.isLetter)
                            if (letters && previous.isDefined) doSpace(1)
-                           doDelimiter(op, d, unpImps)(pc.copy(pos = pc.pos / 0))
+                           doDelimiter(op, d, unpImps)(pc.copy(pos = pc.pos / pos(0)))
                            numDelimsSeen += 1
                            if (letters && !markersLeft.isEmpty) doSpace(1)
                         case s: SeqArg => //impossible due to flattening
@@ -446,13 +446,13 @@ class StructureAndObjectPresenter extends Presenter with NotationBasedPresenter 
                rh("\n")
                doIndent
                rh("  : ")
-               apply(t, Some(c.path $ TypeComponent), rh)
+               apply(t, Some(c.path $ TypeComponent))
             }
             c.df foreach {t =>
                rh("\n")
                doIndent
                rh("  = ")
-               apply(t, Some(c.path $ DefComponent),rh)
+               apply(t, Some(c.path $ DefComponent))
             }
             c.notC.oneDim foreach {n =>
                rh("\n")
@@ -471,9 +471,9 @@ class StructureAndObjectPresenter extends Presenter with NotationBasedPresenter 
             t.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
          case v: DeclaredView =>
             rh("view " + v.name + " : ")
-            apply(v.from, Some(v.path $ DomComponent), rh)
+            apply(v.from, Some(v.path $ DomComponent))
             rh(" -> ")
-            apply(v.to, Some(v.path $ CodComponent), rh)
+            apply(v.to, Some(v.path $ CodComponent))
             rh(" =\n")
             v.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
          case s: DeclaredStructure =>
@@ -481,13 +481,13 @@ class StructureAndObjectPresenter extends Presenter with NotationBasedPresenter 
             s.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
          case t: DefinedTheory =>
             rh("theory " + t.name + " abbrev ")
-            apply(t.df, Some(t.path $ DefComponent), rh)
+            apply(t.df, Some(t.path $ DefComponent))
          case v: DefinedView =>
             rh("view " + v.name + " abbrev ")
-            apply(v.df, Some(v.path $ DefComponent), rh)
+            apply(v.df, Some(v.path $ DefComponent))
          case s: DefinedStructure =>
             rh("structure " + s.name + " : " + s.fromPath.toPath + " abbrev ")
-            apply(s.df, Some(s.path $ DefComponent), rh)
+            apply(s.df, Some(s.path $ DefComponent))
       }
       rh("\n")
    }

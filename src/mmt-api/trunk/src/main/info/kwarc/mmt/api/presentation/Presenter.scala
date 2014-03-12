@@ -17,10 +17,10 @@ trait StructurePresenter {
 }
 
 trait ObjectPresenter {
-   def apply(o: Obj)(implicit rh : RenderingHandler)
+   def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler)
    def asString(o: Obj): String = {
       val sb = new StringBuilder
-      apply(o)(sb)
+      apply(o, None)(sb)
       sb.get
    }
 }
@@ -110,7 +110,7 @@ object TextPresenter extends Presenter {
    def apply(c : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {
       rh(c.toString)
    }
-   def apply(o: Obj)(implicit rh : RenderingHandler) {
+   def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
       rh(o.toString)
    }
 }
@@ -131,7 +131,7 @@ object OMDocPresenter extends Presenter {
       pp.format(c.toNode, sb)
       rh(sb.result)
    }
-   def apply(o: Obj)(implicit rh : RenderingHandler) {
+   def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
       val sb = new scala.collection.mutable.StringBuilder
       pp.format(o.toNode, sb)
       rh(sb.result)
