@@ -559,7 +559,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
       // 1) base cases, e.g., identical terms, solving unknowns
       // identical terms
       if (tm1S hasheq tm2S) return true
-      // different literals are always non-equal
+         // different literals are always non-equal
       (tm1S, tm2S) match {
          case (l1: OMLIT, l2: OMLIT) => if (l1.value != l2.value) return error(s"$l1 and $l2 are inequal literals")
          case _ =>

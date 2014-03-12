@@ -74,9 +74,11 @@ class QueryServer extends ServerExtension("query") {
     *  @param query ignored
     *  @param body the query as XML
     */
-   def apply(path: List[String], query: String, body: Body) = {
-      val q = ontology.Query.parse(body.asXML)(controller.extman.queryExtensions)
-      log("qmt query: " + q.toString)
+   def apply(path: List[String], httpquery: String, body: Body) = {
+      val mmtquery = body.asXML
+      log("qmt query: " + mmtquery)
+      val q = ontology.Query.parse(mmtquery)(controller.extman.queryExtensions)
+      //log("qmt query: " + q.toString)
       ontology.Query.infer(q)(Nil) // type checking
       val res = controller.evaluator.evaluate(q)
       val resp = res.toNode

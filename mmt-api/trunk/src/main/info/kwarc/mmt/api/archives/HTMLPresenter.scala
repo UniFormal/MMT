@@ -28,7 +28,7 @@ trait HTMLPresenter extends Presenter {
      //TODO? reset this._rh 
    }
    
-   def apply(o : Obj)(implicit rh : RenderingHandler) = mmlPres(o)(rh)
+   def apply(o : Obj, owner: Option[CPath])(implicit rh : RenderingHandler) = mmlPres(o, owner)(rh)
    
    def isApplicable(format : String) = format == "html"
    
@@ -39,12 +39,12 @@ trait HTMLPresenter extends Presenter {
    private def doName(s: String) {
       span("name") {text(s)}
    }
-   private def doMath(t: Obj) {
-        rh(mmlPres.asString(t))
+   private def doMath(t: Obj, owner: Option[CPath]) {
+        mmlPres(t, owner)(rh)
    }
-   private def doComponent(comp: DeclarationComponent, t: Obj) {
-      td {span {text(comp.toString)}}
-      td {doMath(t)}
+   private def doComponent(cpath: CPath, t: Obj) {
+      td {span {text(cpath.component.toString)}}
+      td {doMath(t, Some(cpath))}
    }
    private def doNotComponent(comp: NotationComponent, tn: TextNotation) {
       td {span {text(comp.toString)}}
@@ -106,7 +106,7 @@ trait HTMLPresenter extends Presenter {
                   case (comp, tc: AbstractTermContainer) =>
                      tr(comp.toString) {
                         tc.get.foreach {t =>
-                            doComponent(comp, t)
+                            doComponent(d.path $ comp, t)
                         }
                      }
                   case (comp: NotationComponent, nc: NotationContainer) =>
@@ -132,7 +132,7 @@ trait HTMLPresenter extends Presenter {
                   }
                   case md: metadata.MetaDatum => tr("metadatum metadata") {
                      doKey(md.key)
-                     td {doMath(md.value)}
+                     td {doMath(md.value, None)}
                   }
                }
             }

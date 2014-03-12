@@ -97,10 +97,10 @@ class StyleBasedPresenter extends Presenter {
       val lparS = lpar.copy(source = SourceRef.get(s))
       present(StrToplevel(s), gpar, lpar)
    }
-   def apply(o: Obj)(implicit rh : RenderingHandler) {
+   def apply(o: Obj, owner: Option[CPath])(implicit rh : RenderingHandler) {
       val gpar = GlobalParams(rh, style)
       val lpar = LocalParams.objectTop
-      present(ObjToplevel(o, None), gpar, lpar)
+      present(ObjToplevel(o, owner), gpar, lpar)
    }
 
    /** the main presentation method
