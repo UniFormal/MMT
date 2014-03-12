@@ -152,8 +152,8 @@ var mmt = {
 	adaptMMTURI : function (uri, act, present) {
 		var arr = this.splitMMTURI(uri);
 		if (present && this.notstyle !== null) {
-			var pres = " present " + this.notstyle; //use this for style-based presenter
-		    //pres = " present html"; //uncomment this to use html presenter (currently experimental)
+			//var pres = " present " + this.notstyle; //use this for style-based presenter
+		   var pres = " present html"; //use this for html presenter
 		}
 		else
 			var pres = '';
