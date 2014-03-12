@@ -4,7 +4,7 @@ import frontend._
 import objects._
 import uom._
 import utils._
-import parser.ImplicitArg
+import notations.ImplicitArg
 
 class SimplificationRuleGenerator extends ChangeListener {
   override val logPrefix = "rule-gen"
@@ -148,7 +148,7 @@ class SimplificationRuleGenerator extends ChangeListener {
 
 class GeneratedDepthRule(outer: GlobalName, inner: GlobalName, from: symbols.Constant, desc: String,
        bfrNames: List[LocalName], insNames: List[LocalName], aftNames: List[LocalName],
-       implArgsOut: List[parser.ImplicitArg], implArgsIn: List[parser.ImplicitArg], lhs: Term) extends DepthRule(outer, inner){
+       implArgsOut: List[ImplicitArg], implArgsIn: List[ImplicitArg], lhs: Term) extends DepthRule(outer, inner){
     override def path = from.path
     override def parent = from.home
     override def toString = desc
