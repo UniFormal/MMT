@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.utils
 
-import scala.xml.Utility
+import scala.xml.Utility.escape
 
 /**
  * a partial implementation of HTML designed for easily building and emitting HTML documents
@@ -16,7 +16,7 @@ class HTML(out: String => Unit) {
       nextid += 1
       "_" + id
    }
-   private def optAttr(key: String, value: String) = if (value == "") "" else s""" $key="$value""""
+   private def optAttr(key: String, value: String) = if (value == "") "" else s""" $key="${escape(value)}""""
    /**
     * Most HTML tags inherit from this class
     * 
@@ -93,7 +93,7 @@ class HTML(out: String => Unit) {
       out("</a>")
    }
    def text(s : String) {
-     out(scala.xml.Utility.escape(s))
+     out(escape(s))
    }
    
    /**

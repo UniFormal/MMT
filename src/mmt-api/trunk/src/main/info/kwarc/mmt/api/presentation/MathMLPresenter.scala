@@ -54,15 +54,17 @@ class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter
       pc.out(mo)
    }
    override def doDelimiter(p: GlobalName, d: Delimiter, implicits: List[Cont])(implicit pc : PresentationContext) {
-      val mo = element("mo", ("jobad:href" -> p.toPath) :: jobadattribs, d.text)
+      val mo = d.text match {
+         case " " => element("mspace", ("width" -> ".2em") :: ("jobad:href" -> p.toPath) :: jobadattribs, "")
+         case t   => element("mo", ("jobad:href" -> p.toPath) :: jobadattribs, t)
+      }
       if (! implicits.isEmpty) {
          pc.html.mrow {
-            doImplicit {implicits.head}
-            implicits.tail.foreach {i =>
+            pc.out(mo)
+            implicits.foreach {i =>
                doSpace(1)
                doImplicit {i()}
             }
-            pc.out(mo)
          }
       } else
          pc.out(mo)

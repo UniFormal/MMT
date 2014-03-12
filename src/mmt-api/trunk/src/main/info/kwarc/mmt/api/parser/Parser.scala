@@ -243,11 +243,15 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                   val orderedVars = vars.sortBy(_._1.number)
                   // order the arguments
                   val orderedArgs = args.sortBy(_._1)
-                  // compute the arguments before the context, currently only implicit arguments
-                  // number of implicit arguments that have to be inserted before the variables
+                  // compute the number of subargs
+                  //   - arguments before the context (always implict)
+                  //   - initial implicit arguments
                   val numInitImplArgs = arity.variables.headOption match {
                      case Some(h) => h.number - 1
-                     case None => 0
+                     case None => orderedArgs.headOption match {
+                        case Some((n,_)) => n - 1
+                        case None => 0
+                     }
                   }
                   val subArgs = Range(0, numInitImplArgs).toList.map(_ => newUnknown(newArgument, boundVars))
                   val finalSubs = Substitution(subArgs.map(a => Sub(OMV.anonymous, a)) :_*)
