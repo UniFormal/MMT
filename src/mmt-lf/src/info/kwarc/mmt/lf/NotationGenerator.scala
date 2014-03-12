@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import frontend._
 import symbols._
 import objects._
-import parser._
+import notations._
 import presentation.Precedence
 
 /**
@@ -39,7 +39,7 @@ class NotationGenerator extends ChangeListener {
          val notC = c.notC
          if (notC.oneDim.isDefined && notC.twoDim.isDefined) return
          val tpU = c.tpC.get.getOrElse(return) // nothing to do if there is no (function) type
-         val (_, tp) = AbstractObjectParser.splitOffUnknowns(tpU)
+         val (_, tp) = parser.AbstractObjectParser.splitOffUnknowns(tpU)
          val (args, scp) = FunType.unapply(tp).getOrElse(return)
          val numTotalArgs = args.length
          if (numTotalArgs == 0 || ! isJudgment(scp)) return

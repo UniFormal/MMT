@@ -4,7 +4,7 @@ import frontend._
 import objects._
 import uom._
 import utils._
-import parser.ImplicitArg
+import notations.ImplicitArg
 
 class SimplificationRuleGenerator2 extends ChangeListener {
   override val logPrefix = "rule-gen"

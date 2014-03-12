@@ -29,6 +29,7 @@ object LF {
    val _base = Typed._base
    val _path = _base ? "LF"
    def constant(name : String) = OMS(_path ? name)
+   val hoas = notations.HOAS(Apply.path, Lambda.path, OfType.path)
 }
 
 class LFSym(name: String) {
@@ -322,6 +323,7 @@ class LFF extends Foundation {
 	   					else throw LFError("argument type mismatch: " + argtype + "   !=  " + a)
 	   				case _ => throw LFError("application of non-function")
 	   			}
+	   		case l: OMLIT => OMS(l.synType)
 	   		case _ => throw LFError("ill-formed")
 	 	}
    }

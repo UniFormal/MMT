@@ -21,7 +21,7 @@ class Plugin extends frontend.Plugin {
       // build targets
       em.addExtension(new ScalaExporter)
       // pragmatic features
-      em.pragmaticConstructors ::= new pragmatics.PragmaticConstructor(LF._path, Apply.path, Lambda.path, OfType.path)
+      em.notationExtensions ::= new notations.HOASNotation(LF._path, LF.hoas)
    }
 }
 
