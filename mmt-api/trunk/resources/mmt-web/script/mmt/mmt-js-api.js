@@ -1,4 +1,4 @@
-/* Utility functions and state provided for MMT/OMDoc-based html documents */
+   /* Utility functions and state provided for MMT/OMDoc-based html documents */
 
 // the following functions $.fn.f add functionality to jQuery and can be used as $(...).f
 
@@ -330,8 +330,8 @@ var qmt = {
 	infer       : qmtAux.extensionFunction('infer'),
 	simplify    : qmtAux.extensionFunction('simplify'),
 	analyze     : qmtAux.extensionFunction('analyze'),
-	present     : qmtAux.extensionFunction('present', function(){return mmt.notstyle;}),
-	presentDecl : qmtAux.extensionFunction('presentDecl', function(){return mmt.notstyle;}),
+	present     : qmtAux.extensionFunction('present', function(){return "html";}),
+	presentDecl : qmtAux.extensionFunction('presentDecl', function(){return "html";}),
 
 	/* executes a QMT query (as constructed by helper functions) via ajax and runs a continuation on the result */
     exec : function (q, cont) {
