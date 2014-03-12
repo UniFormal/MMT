@@ -49,7 +49,7 @@ class SVNArchive(repository : SVNRepository, val properties : Map[String, String
         } catch {
           case e : Exception => throw e
         }
-      case SVNNodeKind.DIR => throw NotApplicable
+      case SVNNodeKind.DIR => throw NotApplicable()
       case SVNNodeKind.NONE => throw NotFound(mod)
     }
   }
@@ -66,7 +66,7 @@ object SVNArchive {
       if (archive.properties.isDefinedAt("svnrepo")) {
         backend.openArchive(archive.properties("svnrepo"), rev)
       } else {
-        throw NotApplicable
+        throw NotApplicable()
       }
     }
 }

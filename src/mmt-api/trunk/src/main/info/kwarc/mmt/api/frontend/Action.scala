@@ -418,7 +418,7 @@ case class Present(c : MakeAbstract, param : String) extends MakeConcrete {
       }
       c.make(controller) match {
          case s: StructuralElement => presenter(s)(rb)
-         case o: Obj => presenter(o)(rb)
+         case o: Obj => presenter(o, None)(rb)
       }
    }
    override def toString = c + " present " + param
