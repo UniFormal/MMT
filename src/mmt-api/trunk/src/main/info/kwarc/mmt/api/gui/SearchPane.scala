@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import frontend._
 import parser._
 import objects._
+import ontology._
 
 import javax.swing._
 import tree._
@@ -30,14 +31,11 @@ class SearchPane(controller: Controller) extends JPanel {
    //private val scrollResults = new JScrollPane(results)
    add(new JScrollPane(resultTree), BorderLayout.CENTER)
    
-   private val mws = new archives.MathWebSearch(utils.URI("http://opal.eecs.jacobs-university.de:8082").toURL)
-   
    private def search {
-      val t = Path.parseM(theory.getText, utils.mmt.mmtcd)
+      val mws = controller.extman.mws.getOrElse(throw ParseError("no mws defined"))
       val q = queryText.getText
-      val pu = ParsingUnit(SourceRef.anonymous(q), OMMOD(t), Context(), q, Some(mws.qvarNot))
-      val mwsQuery = controller.termParser(pu, () => _)
-      val mwsResults = mws(archives.MathWebSearchQuery(mwsQuery))
+      val mwsQuery = TermPattern.parse(controller, theory.getText, q)
+      val mwsResults = mws(MathWebSearchQuery(mwsQuery))
       // node for all results in this search
       val root = new DefaultMutableTreeNode(q)
       val orderedResults = mwsResults.groupBy(_.cpath.parent.module).toList.sortBy(_._1.toMPath.toString)

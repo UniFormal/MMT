@@ -167,7 +167,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
    /** shortcut for UOM simplification */
    private def simplify(t : Term) = controller.uom.simplify(t, theory, solution)
    /** used for rendering objects, should be used by rules if they want to log */
-   implicit val presentObj : Obj => String = controller.presenter.asString
+   implicit val presentObj : Obj => String = o => controller.presenter.asString(o)
    
    /**
     * logs a string representation of the current state
@@ -834,9 +834,10 @@ object Solver {
       val oc = new Solver(controller, stack.theory, unknowns ++ VarDecl(etp, None, None))
       val j = Typing(stack, tmU, OMV(etp), None)
       oc(j)
-      oc.getSolution map {sub =>
+      if (oc.checkSucceeded) oc.getSolution.map {sub =>
           val tmR = tmU ^ sub
           (tmR, sub("expected_type").get) // must be defined if there is a solution
-      }
+      } else
+         None
   }
 }

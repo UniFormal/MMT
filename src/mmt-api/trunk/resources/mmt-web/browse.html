@@ -64,13 +64,17 @@
        });
    });
     
+   var searchWindow = null;
+   function openSearch() {
+      searchWindow = window.open('search.html');
+   };
    var graphWindow = null;
    function openGraph(p) {
       if (p == null)
          p = "";
       else
          p = "?" + p;
-      graphWindow = window.open("/graph.html" + p);
+      graphWindow = window.open('graph.html' + p);
    };
    
    $(function(){
@@ -115,6 +119,7 @@
       <div id="menu_bar">
         <!--<span class="pagelink"><a href="/search.html">Search</a></span>-->
         <span class="pagelink"><a href="javascript:openGraph()">Graph View</a></span>
+        <span class="pagelink"><a href="javascript:openSearch()">Search</a></span>
         <span class="pagelink"><a href="/admin.html" target="_blank">Administration</a></span>
         <span class="pagelink"><a href="/help.html" target="_blank">Help</a></span>
       </div>

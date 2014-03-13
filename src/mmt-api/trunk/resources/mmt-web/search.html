@@ -1,0 +1,48 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+   <head>
+      <meta charset="UTF-8"/>
+      <title>MMT Search</title>
+      <link rel="stylesheet" type="text/css" href="css/mmt.css" />  
+      <script type="text/javascript" src="/script/jquery/jquery.js"></script>
+      <script type="text/javascript">
+      function search(){
+         var base   = $('#base').val();
+         var module = $('#module').val();
+         var name   = $('#name').val();
+         var theory = $('#theory').val();
+         var pattern= $('#pattern').val();
+         var type   = $('#type').is(':checked');
+         var definition= $('#definition').is(':checked');
+		   $.ajax({'url': '/:search',
+				     'dataType': 'xml',
+				     'data': {base: base, module: module, name: name,
+				               theory: theory, pattern: pattern, type: type, definition: definition},
+				     'success': function(data){
+				        $('#results').children().replaceWith(data.firstChild);
+				     }
+			       });
+      }
+      </script>
+   </head>
+   
+   <body>
+     <div>Enter <a href="http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html#sum">Java regular expressions</a> to match the respective the URI of a declaration:<br/>
+     <div>Namespace: <input type="text" size="30" id="base"></input></div>
+     <div>Theory:    <input type="text" size="30" id="module"></input></div>
+     <div>Name:      <input type="text" size="30" id="name"></input></div>
+     </div>
+     <!--<div>Roles:
+        <span><input type="checkbox" id="constant"/>primitive</span>
+        <span><input type="checkbox" id="defined"/>defined</span>
+        <span><input type="checkbox" id="axiom"/>axiom</span>
+        <span><input type="checkbox" id="theorem"/>theorem</span>
+     </div>-->
+     <div>
+       Enter an expression over theory <input type="text" size="30" id="theory"></input> to match inside the <input type="checkbox" id="type" checked="checked"/> type or <input type="checkbox" id="definition"/> definiens of a declaration:<br/>
+       <input type="text" size="30" id="pattern"></input><br/>
+        Use $x,y,z:query to enter unification variables.
+     </div>
+     <div><input type="button" value="Search" id="search" onclick="search()"/></div>
+     <div id="results"><div/></div>
+   </body>
+</html>

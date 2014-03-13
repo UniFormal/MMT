@@ -30,7 +30,7 @@ class Validator(controller: Controller) extends Logger {
        * t is the result of substituting for the solved variables in the validated term 
        */
       def apply(v: ValidationUnit)(errorCont: Invalid => Unit, depCont: CPath => Unit): (Boolean,Term) = {
-         log("validation unit " + v.component + ": " + v.judgement.present(controller.presenter.asString))
+         log("validation unit " + v.component + ": " + v.judgement.present(o => controller.presenter.asString(o)))
          val solver = new Solver(controller, v.judgement.stack.theory, v.unknowns)
          solver.logPrefix = v.component.toString
          val mayHold = logGroup {

@@ -508,7 +508,7 @@ class Controller extends ROController with Logger {
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 
             arch.toMar(file)
-         case AddMWS(uri) => extman.setMWS(uri)
+         case AddMWS(uri) => extman.mws = Some(new MathWebSearch(uri.toURL))
 	      case SetBase(b) =>
 	         base = b
 	         report("response", "base: " + base)
