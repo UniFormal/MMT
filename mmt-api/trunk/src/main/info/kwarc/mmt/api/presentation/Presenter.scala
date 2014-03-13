@@ -18,9 +18,9 @@ trait StructurePresenter {
 
 trait ObjectPresenter {
    def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler)
-   def asString(o: Obj): String = {
+   def asString(o: Obj, origin: Option[CPath] = None): String = {
       val sb = new StringBuilder
-      apply(o, None)(sb)
+      apply(o, origin)(sb)
       sb.get
    }
 }

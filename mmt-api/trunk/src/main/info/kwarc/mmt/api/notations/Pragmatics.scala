@@ -13,7 +13,11 @@ class Pragmatics(controller: Controller) {
    private lazy val notExts = controller.extman.notationExtensions
 
    private def applicableByLevel(level: Option[MPath]): NotationExtension = {
-      val applicable = notExts.filter(_.isApplicable(level))
+      val applicable = notExts.filter {ne => (ne.applicableLevel, level) match {
+         case (None, None) => true
+         case (Some(aL), Some(l)) => controller.globalLookup.hasImplicit(OMMOD(aL), OMMOD(l))
+         case _ => false
+      }}
       if (applicable.isEmpty) {
          level match {
             case None => MixfixNotation

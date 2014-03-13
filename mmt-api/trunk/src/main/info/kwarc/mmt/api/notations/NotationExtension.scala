@@ -8,7 +8,6 @@ abstract class Fixity {
    def markers: List[Marker]
    def asString: (String,String)
 }
-// TODO Delim("%w") does not work because parser does not handle whitespace sequence separator; terms end up being parsed as default applications
 case class Mixfix(markers: List[Marker]) extends Fixity {
    def asString = ("mixfix", markers.mkString(" "))
 }
@@ -17,24 +16,31 @@ abstract class SimpleFixity extends Fixity {
    def impl: Int
    def expl: Int
    def delim: Delimiter
-   def simpleArgs = {
+   protected def implArgs = (0 until impl).toList.map(i => ImplicitArg(i+1))
+   /** ImplicitArgs Args1 Delim Args2 with Args1.length == beforeOp */
+   protected def argsWithOp(beforeOp: Int) =
+      (0 until beforeOp).toList.map(i => Arg(1+impl+i)) ::: delim :: (beforeOp until expl).toList.map(i => Arg(1+impl+i))
+   protected def simpleArgs = {
       val delimStr = delim match {
-         case Delim(s) => List(s)
          case SymbolName(name) => Nil
+         case _ => List(delim.text)
       }
       (impl :: expl :: delimStr).mkString(" ")
    }
 }
 
 case class Prefix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity {
-   lazy val markers = List(delim, SeqArg(impl+1, Delim("%w")))
+   lazy val markers = argsWithOp(0)
    def asString = ("prefix", simpleArgs)
 }
+/**
+ * @param assoc None/Some(true)/Some(false) for none, left, right; currently ignored 
+ */
 case class Infix(delim: Delimiter, impl: Int, expl: Int, assoc: Option[Boolean]) extends SimpleFixity {
    lazy val markers = assoc match {
-      case Some(true) =>  List(Arg(impl+1),delim,Arg(impl+2))
-      case None =>        List(Arg(impl+1),delim,Arg(impl+2))
-      case Some(false) => List(Arg(impl+1),delim,Arg(impl+2))
+      case Some(true) =>  argsWithOp(1)
+      case None =>        argsWithOp(1)
+      case Some(false) => argsWithOp(1)
    }
    def asString = {
       val assocString = assoc match {
@@ -46,7 +52,7 @@ case class Infix(delim: Delimiter, impl: Int, expl: Int, assoc: Option[Boolean])
    }
 }
 case class Postfix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity {
-   lazy val markers = List(SeqArg(impl+1, Delim("%w")), delim)
+   lazy val markers = argsWithOp(expl)
    def asString = ("postfix", simpleArgs)
 }
 case class Bindfix(delim: Delimiter, impl: Int, expl: Int, assoc: Boolean) extends SimpleFixity {
@@ -101,7 +107,8 @@ case class PragmaticTerm(op: GlobalName, subs: Substitution, con: Context, args:
  */
 abstract class NotationExtension {
    def priority: Int
-   def isApplicable(m: Option[MPath]): Boolean
+   /** this can strictify notations for this meta-level */
+   def applicableLevel: Option[MPath]
    def isApplicable(t: Term): Boolean
    /** called to construct a term after a notation produced by this was used for parsing */
    def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean)
@@ -114,7 +121,7 @@ abstract class NotationExtension {
 /** the standard mixfix notation for a list of [[Marker]]s */
 object MixfixNotation extends NotationExtension {
    def priority = 0
-   def isApplicable(m: Option[MPath]) = m.isEmpty
+   def applicableLevel = None
    def isApplicable(t: Term) = true
    def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean)
       (implicit unknown: () => Term) = ComplexTerm(op, subs, con, args)
@@ -139,9 +146,9 @@ case class HOAS(apply: GlobalName, bind: GlobalName, typeAtt: GlobalName)
  * 
  * x: OMA(typeAtt, tp) <--> x: tp
  */
-class HOASNotation(meta: MPath, val hoas: HOAS) extends NotationExtension {
+class HOASNotation(val language: MPath, val hoas: HOAS) extends NotationExtension {
    def priority = 1
-   def isApplicable(m: Option[MPath]) = m == Some(meta)
+   def applicableLevel = Some(language)
    def isApplicable(t: Term) = t.head match {
       case Some(h) => List(hoas.apply, hoas.typeAtt) contains h
       case None => false
@@ -199,7 +206,7 @@ class HOASNotation(meta: MPath, val hoas: HOAS) extends NotationExtension {
 
 class NestedHOASNotation(language: MPath, obj: HOAS, meta: HOAS) extends NotationExtension {
    def priority = 2
-   def isApplicable(m: Option[MPath]) = m == Some(language)
+   def applicableLevel = Some(language)
    def isApplicable(t: Term) = t match {
       case OMA(OMS(meta.apply), OMS(obj.apply) :: _) => true
       case _ => false

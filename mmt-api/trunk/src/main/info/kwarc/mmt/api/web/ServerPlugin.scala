@@ -1,6 +1,8 @@
 package info.kwarc.mmt.api.web
 import info.kwarc.mmt.api._
 import frontend._
+import ontology._
+import utils._
 import tiscaf._
 
 /**
@@ -71,20 +73,59 @@ class SVGServer extends ServerExtension("svg") {
 class QueryServer extends ServerExtension("query") {
    /**
     *  @param path ignored
-    *  @param query ignored
+    *  @param httpquery ignored
     *  @param body the query as XML
     */
    def apply(path: List[String], httpquery: String, body: Body) = {
       val mmtquery = body.asXML
       log("qmt query: " + mmtquery)
-      val q = ontology.Query.parse(mmtquery)(controller.extman.queryExtensions)
+      val q = Query.parse(mmtquery)(controller.extman.queryExtensions)
       //log("qmt query: " + q.toString)
-      ontology.Query.infer(q)(Nil) // type checking
+      Query.infer(q)(Nil) // type checking
       val res = controller.evaluator.evaluate(q)
       val resp = res.toNode
       Server.XmlResponse(resp)
    }
 }
+
+/** interprets the body as a QMT [[ontology.Query]] and evaluates it */
+class SearchServer extends ServerExtension("search") {
+   private lazy val search = new Search(controller)
+   private lazy val mmlpres = new presentation.MathMLPresenter(controller)
+   /**
+    *  @param path ignored
+    *  @param httpquery search parameters
+    *  @param body ignored
+    */
+   def apply(path: List[String], httpquery: String, body: Body) = {
+      val wq = WebQuery.parse(httpquery)
+      val base = wq("base")
+      val mod = wq("module")
+      val name = wq("name")
+      val theory = wq("theory")
+      val pattern = wq("pattern")
+      val intype = wq.boolean("type")  
+      val indef = wq.boolean("definition")
+      val allcomps = List(TypeComponent, DefComponent)
+      val comps = allcomps.zip(List(intype,indef)).filter(_._2).map(_._1)
+      val pp = PathPattern(base, mod, name)
+      val tp = (theory, pattern) match {
+         case (Some(t), Some(p)) => Some(TermPattern.parse(controller, t, p))
+         case (_, _) => None
+      }
+      val sq = SearchQuery(pp, comps, tp)
+      val res = search(sq, true)
+      val resultNodes = res.map {
+         case SearchResult(cp, pos, None) =>
+            s"<span>${cp.toPath}</span>"
+         case SearchResult(cp, pos, Some(term)) =>
+            s"<span>${cp.toPath}</span>" + mmlpres.asString(term, Some(cp))
+      }.map(r => "<div>" + r + "</div>")
+      val resp = xml.openTag("div", List("xmlns" -> xml.namespace("html"))) + resultNodes.mkString("\n") + xml.closeTag("div")
+      Server.XmlResponse(resp)
+   }
+}
+
 
 /** interprets the query as an MMT [[frontend.Action]] and executes it */
 class AdminServer extends ServerExtension("admin") {

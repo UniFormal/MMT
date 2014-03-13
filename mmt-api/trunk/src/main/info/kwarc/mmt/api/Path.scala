@@ -111,7 +111,7 @@ case class MPath(parent : DPath, name : LocalName) extends ContentPath {
  * This includes virtual declarations and declarations within complex module expressions.
  */
 case class GlobalName(module: Term, name: LocalName) extends ContentPath {
-   def doc = utils.mmt.mmtbase
+   def doc = module.toMPath.doc
    def ^! = if (name.length == 1) module.toMPath else GlobalName(module, name.init)
    def last = name.last.toPath
    def apply(args: List[Term]) : Term = OMA(OMS(this), args)
