@@ -22,6 +22,17 @@ The MMT <a href="applications/build.html">build tool</a> can be used to build MM
 This is necessary to make the content available to othe MMT applications.<br/>
 </p>
 
+<p>
+The following folders of an archivehave a special meaning to MMT:
+<table border="1">
+<tr><th>Folder</th><th>Content</th></tr>
+<tr><td>source</td><td>the primary content of the archive in some format that MMT understands natively</td></tr>
+<tr><td>content</td><td>index of all modules (produced by the build tool)</td></tr>
+<tr><td>narration</td><td>index of all documents (produced by the build tool)</td></tr>
+<tr><td>relational</td><td>the relational index with respect to the MMT ontology</td></tr>
+<tr><td>export</td><td>default location for all exports built by MMT, each export should use a separate subdirectory</td></tr>
+</table>
+
 <h2>Manifest</h2>
 
 MMT archives are inspired by Java archives (which are directory trees zipped into jar files).
@@ -38,4 +49,5 @@ The following keys are predefined by MMT:
 <tr><td>id</td><td>unique identifier of the archive, used to refer to the archive in <a href="applications/shell.html">shell</a> commands</td></tr>
 <tr><td>content-base</td><td>the default namespace in place when entering a source file; this only affects the MMT URIs of the modules in these source files</td></tr>
 <tr><td>narration-base</td><td>the URI prefix prepended to the file paths inside the archives to form document URIs</td></tr>
-<tr><td>source, content, narration, relational</td><td>custom folder names for specific dimensions (see the <a href="applications/build.html">build tool</a> for details)</td></tr></table>
+<tr><td>source, content, narration, relational</td><td>custom folder names for specific dimensions (see the <a href="applications/build.html">build tool</a> for details)</td></tr>
+</table>
