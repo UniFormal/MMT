@@ -4,7 +4,7 @@ function toggle(elem,s) {
 
 var JOBAD1;
 $(function(){	
-  JOBAD1 = new JOBAD($("math"));
+  JOBAD1 = new JOBAD($("math,span.mmturi"));
   JOBAD1.modules.load("kwarc.mmt.navigation", []);
   JOBAD1.modules.load("kwarc.mmt.hovering", []);
   JOBAD1.modules.load("kwarc.mmt.intvw", []);

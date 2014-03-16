@@ -50,7 +50,7 @@ span.pagelink a:hover {
    height: 20px;
    font-size:12px;
 }
-span.crumb {
+#breadcrumbs .mmturi {
    margin-left: 10px;
    margin-right: 10px;
 }
@@ -94,6 +94,14 @@ div.flat-container {
        border-style: dotted;
        border-width: thin;
        padding: 2px;
+}
+
+.mmturi {
+    color: red;
+}
+
+.used-by .mmturi {
+    margin-right: 5px;
 }
 
 #parse  {
@@ -140,4 +148,37 @@ div.results {
 
 div.result {
    margin-top: 5px;
+}
+
+.resultmatch {
+   background-color: lightblue;
+}
+
+span.name {
+  font-weight: bold;
+}
+
+tr.definition, tr.domain, tr.codomain,
+tr.onedim-notation, tr.twodim-notation, tr.used-by {
+  display: none;
+}
+tr.tags, tr.metadata {
+  display: none;
+}
+
+div.constant {
+  border-width: 1px;
+  border-radius: 5px;
+  border-style: solid;
+  margin-top: 10px;
+}
+
+button.compToggle {
+  margin-left:10px;
+  background-color: Wheat;
+  margin-right: 10px;
+}
+
+span.compLabel {
+  background-color: Wheat;
 }
