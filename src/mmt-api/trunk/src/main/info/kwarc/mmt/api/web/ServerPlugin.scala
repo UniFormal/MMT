@@ -88,7 +88,7 @@ class QueryServer extends ServerExtension("query") {
    }
 }
 
-/** interprets the body as a QMT [[ontology.Query]] and evaluates it */
+/** HTTP frontend to the [[Search]] class */
 class SearchServer extends ServerExtension("search") {
    private lazy val search = new Search(controller)
    private lazy val mmlpres = new presentation.MathMLPresenter(controller)
@@ -115,14 +115,24 @@ class SearchServer extends ServerExtension("search") {
       }
       val sq = SearchQuery(pp, comps, tp)
       val res = search(sq, true)
-      val resultNodes = res.map {
-         case SearchResult(cp, pos, None) =>
-            s"<span>${cp.toPath}</span>"
-         case SearchResult(cp, pos, Some(term)) =>
-            s"<span>${cp.toPath}</span>" + mmlpres.asString(term, Some(cp))
-      }.map(r => "<div>" + r + "</div>")
-      val resp = xml.openTag("div", List("xmlns" -> xml.namespace("html"))) + resultNodes.mkString("\n") + xml.closeTag("div")
-      Server.XmlResponse(resp)
+      val html = utils.HTML.builder
+      import html._
+      div(attributes = List("xmlns" -> xml.namespace("html"))) {
+         res.foreach {r =>
+            div("result") {
+               val CPath(par, comp) = r.cpath
+               div("resultpath", onclick=s"resultClick('${par.toPath}')") {
+                  text {comp.toString + " of " + par.toPath}
+               }
+               r match {
+                  case SearchResult(cp, pos, None) =>
+                  case SearchResult(cp, pos, Some(term)) =>
+                     div {mmlpres(term, Some(cp))(new presentation.HTMLRenderingHandler(html))}
+               }
+            }
+         }
+      }
+      Server.XmlResponse(html.result)
    }
 }
 

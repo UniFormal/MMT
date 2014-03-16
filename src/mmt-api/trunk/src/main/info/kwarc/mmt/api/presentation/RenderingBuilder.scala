@@ -94,3 +94,9 @@ class StringBuilder extends RenderingHandler with RenderingResult[String] {
    def write(s: String) {sb.append(s)}
    def get = sb.result
 }
+
+class HTMLRenderingHandler(hb: HTML) extends RenderingHandler {
+   def write(s: String) {
+      hb.out(s)
+   }
+}

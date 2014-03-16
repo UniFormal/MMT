@@ -8,7 +8,8 @@ import scala.xml.Utility.escape
  * 
  * see [[archives.HTMLExporter]] for a usage example
  */
-class HTML(out: String => Unit) {
+abstract class HTML {
+   def out(s: String)
    private var nextid = 0
    /** @return a fresh id */
    def freshid: String = {
@@ -109,5 +110,15 @@ class HTML(out: String => Unit) {
     */
    def css(src: String) {
       out(s"""<link rel="stylesheet" type="text/css" href="$src"></link>""")
+   }
+}
+
+object HTML {
+   def apply(f: String => Unit) = new HTML {
+      def out(s: String) {f(s)}
+   }
+   def builder = new HTML {
+      var result: String = "" 
+      def out(s: String) {result += s}
    }
 }

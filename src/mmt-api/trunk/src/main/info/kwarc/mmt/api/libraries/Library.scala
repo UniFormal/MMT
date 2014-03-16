@@ -105,7 +105,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
                          val sym = getSymbol(l.from % ln)
                          translateByLink(sym, l, error) // translate the result along the link
                      }
-                  case _ => throw GetError(name + " is not valid in " + t.path)
+                  case _ => throw GetError(name + " is not declared in " + t.path)
                }
             }
          case v : View =>

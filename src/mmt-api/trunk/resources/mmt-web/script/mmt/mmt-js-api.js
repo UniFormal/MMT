@@ -107,7 +107,7 @@ var mmt = {
 
 	/* the active theory is used for operations that must be executed relative to a theory, e.g., parsing */
 	getActiveTheory : function() {
-	   return $('#inputtheory').val();
+	   return $('#activetheory').val();
 	},
 	/* sets the active theory
 	  @param uri any MMT URI (symbol part is ignored if present; no action if document URI)
@@ -117,7 +117,7 @@ var mmt = {
       if (arr[1] != "") {
          var thy = arr[0] + '?' + arr[1]
          this.activeTheory = thy;
-         $('#inputtheory').val(thy);
+         $('.activetheory').val(thy);
       }
    },
    

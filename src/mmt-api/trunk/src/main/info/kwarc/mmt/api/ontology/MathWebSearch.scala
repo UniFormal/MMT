@@ -8,6 +8,7 @@ import notations._
 
 import scala.xml.Node
 
+/** a query to be sent to a [[MathWebSearch]] */
 case class MathWebSearchQuery(pattern: TermPattern, answsize: Int = 1000, limitmin: Int = 0) {
    def toXML = {
       val queryCML = if (pattern.qvars.isEmpty)
@@ -22,7 +23,7 @@ case class MathWebSearchQuery(pattern: TermPattern, answsize: Int = 1000, limitm
 }
 
 /**
- * a wrapper around a remote MathWebSearch server
+ * abstraction that wraps around a remote MathWebSearch server
  * @param url the URL of the server
  */
 class MathWebSearch(val url: java.net.URL) {

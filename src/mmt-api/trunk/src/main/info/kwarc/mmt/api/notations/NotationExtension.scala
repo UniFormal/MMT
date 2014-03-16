@@ -56,7 +56,7 @@ case class Postfix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity 
    def asString = ("postfix", simpleArgs)
 }
 case class Bindfix(delim: Delimiter, impl: Int, expl: Int, assoc: Boolean) extends SimpleFixity {
-   def markers = List(delim, Var(impl+1, true, None), Arg(impl+2))
+   def markers = List(delim, Var(impl+1, true, None), Delim("."), Arg(impl+2))
    def asString = {
       val assocString = if (assoc) "-assoc" else ""
       ("bindfix"+assocString, simpleArgs)
@@ -179,13 +179,16 @@ class HOASNotation(val language: MPath, val hoas: HOAS) extends NotationExtensio
          val appPos = (0 until 1+rest.length).toList.map(i => Position(1+i))
          getNotation(op) flatMap {not =>
             if (not.arity.canHandle(0,0,rest.length, false)) {
+              // OMA(apply, op, args)  <-->  OMA(op, args)
               val appTerm = PragmaticTerm(op, Substitution(), Context(), rest, false, not, appPos)
               Some(appTerm)
             } else rest.reverse match {
                case OMBINDC(OMS(hoas.bind), con, args) :: _ =>
-                  // last argument is binder
+                  // OMA(apply, op, subs, OMBIND(bind, con, args))  <-->  OMBIND(op@subs, con, args)
                   val subs = rest.init.map(a => Sub(OMV.anonymous, a))
-                  val bindPos = Position(1) :: (0 until con.length+args.length).toList.map(i => Position(rest.length+1) / (i+1))  
+                  val opSubsPos = (0 until 1+subs.length).toList.map(i => Position(1+i))
+                  val conArgsPos = (0 until con.length+args.length).toList.map(i => Position(rest.length+1) / (i+1))
+                  val bindPos = opSubsPos ::: conArgsPos 
                   if (not.arity.canHandle(subs.length, con.length, args.length, false)) {
                      val bindTerm = PragmaticTerm(op, subs, con, args, false, not, bindPos) 
                      Some(bindTerm)

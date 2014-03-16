@@ -2,7 +2,7 @@ span.name {
   font-weight: bold;
 }
 
-tr.definition, tr.type, tr.domain, tr.codomain,
+tr.definition, tr.domain, tr.codomain,
 tr.onedim-notation, tr.twodim-notation {
   display: none;
 }
@@ -14,8 +14,6 @@ div.constant {
   border-width: 1;
   border-style: solid;
   margin-top: 10px;
-}
-table.constant {
 }
 
 span.compToggle {

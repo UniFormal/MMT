@@ -80,21 +80,6 @@ a.treerelation {
    min-width:380px;
 }
 
-#inputbox {
-   border: solid;
-   border-width: 1px;
-   min-height:50px;
-   min-width:300px;
-   overflow: scroll;
-}
-
-#inputviewterm, #inputviewtype {
-   border: solid;
-   border-width: 1px;
-   min-height:30px;
-   min-width:300px;
-}
-
 table.decllist {
   border-left-style: solid;
   border-left-width: 1px;
@@ -109,5 +94,50 @@ div.flat-container {
        border-style: dotted;
        border-width: thin;
        padding: 2px;
+}
 
+#parse  {
+   border: solid 1px;
+   padding: 5px;
+   margin: 10px;
+}
+
+#inputbox {
+   border: solid;
+   border-width: 1px;
+   min-height:50px;
+   min-width:300px;
+   overflow: scroll;
+}
+
+#inputviewterm, #inputviewtype {
+   min-height:30px;
+   min-width:300px;
+}
+
+
+#search {
+   border: solid 1px;
+   padding: 5px;
+   margin: 10px;
+}
+
+div.searchgroup {
+   border: solid 1px;
+   border-radius: 5px;
+   margin-bottom: 10px;
+}
+
+input {
+   resize: horizontal; 
+}
+
+td.uriregexp {
+}
+
+div.results {
+}
+
+div.result {
+   margin-top: 5px;
 }

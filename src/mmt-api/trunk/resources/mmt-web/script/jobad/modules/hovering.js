@@ -14,13 +14,13 @@ var hovering = {
  		if (target.hasAttribute('jobad:mmtsrc')) {
 		   var sourceRef = target.getAttribute('jobad:mmtsrc');
 		   if (sourceRef[0] == '#') {
-            var matches = sourceRef.match(/#(\d+)\.\d+\.\d+-(\d+)\.\d+\.\d+/);
+            var matches = sourceRef.match(/#(\d+)\.\d+\.\d+:(\d+)\.\d+\.\d+/);
             if (matches.length == 3) {
                var start = parseInt(matches[1]);
                var end   = parseInt(matches[2]);
                var ip = $('#inputbox')[0];
                ip.selectionStart = start;
-               ip.selectionEnd = end;
+               ip.selectionEnd = end+1;
             }
          }
 	   }
