@@ -12,7 +12,7 @@ import notations._
 import parser.SourceRef
 
 case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: List[(String,String)], 
-      source: Option[SourceRef], pos : Position, context : List[VarData]) {
+      source: Option[SourceRef], pos : Position, context : List[VarData], style: Option[PresentationContext => String]) {
    def out(s: String) {rh(s)}
    def child(i: Int) = copy(pos = pos / i)
    def child(p: Position) = copy(pos = pos / p)
@@ -292,7 +292,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
    }
    
    def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
-      implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil)
+      implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil, None)
       doToplevel {
          recurse(o)
       }
@@ -300,7 +300,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
 
    /** abbreviation for not bracketing */
    private val noBrackets = (_: TextNotation) => -1
-   private def recurse(obj: Obj)(implicit pc: PresentationContext): Int = recurse(obj, noBrackets)(pc)
+   protected def recurse(obj: Obj)(implicit pc: PresentationContext): Int = recurse(obj, noBrackets)(pc)
    /** 
     *  @param bracket called to determine whether a non-atomic term rendered with a certain notation should be bracketed
     *  @return true if the term was bracketed

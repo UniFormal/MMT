@@ -82,6 +82,7 @@ sealed trait ContentPath extends Path {
    def isGeneric : Boolean
    def $(comp: DeclarationComponent) = CPath(this, comp)
    def module : Term
+   def name : LocalName
 }
 
 /**

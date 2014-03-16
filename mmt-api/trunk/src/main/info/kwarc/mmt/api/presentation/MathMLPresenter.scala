@@ -21,11 +21,23 @@ import utils.xml._
  * mi: jobad:varref ([[Position]]) pointing to its declaration 
  */
 class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter {
+   
+   /** generalized apply method that takes a callback function to determine the css class of a subterm */
+   def apply(o: Obj, origin: Option[CPath], style: PresentationContext => String)(implicit rh : RenderingHandler) {
+      implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil, Some(style))
+      doToplevel {
+         recurse(o)
+      }
+   }
+
    private val jobadns = namespace("jobad")
    private def jobadattribs(implicit pc: PresentationContext) = {
       var ret = List("jobad:mmtref" -> pc.pos.toString)
       pc.source.foreach {r =>
-         ret ::= ("jobad:mmtsrc" -> r.toString)
+         ret ::= "jobad:mmtsrc" -> r.toString
+      }
+      pc.style.foreach {s =>
+         ret ::= "class" -> s(pc)
       }
       ret
    }

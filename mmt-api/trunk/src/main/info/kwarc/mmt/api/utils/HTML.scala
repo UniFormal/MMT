@@ -87,6 +87,8 @@ abstract class HTML {
    val h7 = new Element("h7")
    val p  = new Element("p")
    
+   val button = new Element("button")
+   
    def br {out("<br/>")} 
    def a(ref: String)(body: => Unit) {
       out(s"""<a href="$ref">""")

@@ -19,26 +19,21 @@ var interactiveViewing = {
 			var me = this;
 			res["infer type"] = me.inferType;
 			res["simplify"] = me.simplify;
-			if (mmt.currentURI !== null) {
-				res["show type"] = this.showComp('type');
-				res["show definition"] = this.showComp('definition');
-				res["(un)mark occurrences"] = this.showOccurs;
-				res["show URI"] = function(){alert(mmt.currentURI)};
-			   res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
-				res["open in new window"] = function() {mmt.openCurrent();};
-				//res["get OMDoc"] = mmt.openCurrentOMDoc();
-			}
-			var folded = $(mmt.focus).closest('.math-folded');
+		   var folded = $(mmt.focus).closest('.math-folded');
          if (folded.length !== 0)
             res['unfold'] = function(){folded.removeMClass('math-folded');};
          else
             res['fold'] = function(){$(mmt.focus).addMClass('math-folded');};
-			return res;
-		} else if ($(target).hasClass('folder')) {
-			return res;
-		} else {
-			return false;
 		}
+		if (mmt.currentURI !== null) {
+			res["show type"] = this.showComp('type');
+			res["show definition"] = this.showComp('definition');
+		   res["(un)mark occurrences"] = this.showOccurs;
+         res["show URI"] = function(){alert(mmt.currentURI)};
+         res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
+		   //res["get OMDoc"] = mmt.openCurrentOMDoc();
+		}
+		return res;
 	},
 	
 	/* functions for context menu items */

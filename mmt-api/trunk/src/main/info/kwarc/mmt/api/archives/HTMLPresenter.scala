@@ -23,7 +23,7 @@ trait HTMLPresenter extends Presenter {
          doHTMLOrNot(thy.path.doc, standalone) {doTheory(thy)}
        case view : DeclaredView =>
          doHTMLOrNot(view.path.doc, standalone) {doView(view)}
-       case _ => rh("TODO: Not implemented yet, presentation function for " + s.getClass().toString())
+       case d: Declaration => doHTMLOrNot(d.path.doc, standalone) {doDeclaration(d)}
      }
      //TODO? reset this._rh 
    }
@@ -38,6 +38,18 @@ trait HTMLPresenter extends Presenter {
    
    private def doName(s: String) {
       span("name") {text(s)}
+   }
+   /** renders a MMT URI outside a math object */
+   private def doPath(p: Path) {
+      span("mmturi", attributes=List("jobad:href" -> p.toPath)) {
+         val pS = p match {
+            case d: DPath => d.last
+            case m: MPath => m.name.toString
+            case g: GlobalName => g.name.toString
+            case c: CPath => c.parent.name.toString + "?" + c.component.toString
+         }
+         text {pS}
+      }
    }
    private def doMath(t: Obj, owner: Option[CPath]) {
         mmlPres(t, owner)(rh)
@@ -116,19 +128,20 @@ trait HTMLPresenter extends Presenter {
         }
       }
    }
-   def doTheory(t: DeclaredTheory) {
-      div("theory") {
-         div("theory-header", onclick="toggleClick(this)") {doName(t.name.toString)}
-         t.getPrimitiveDeclarations.foreach {d =>
+   
+   def doDeclaration(d: Declaration) {
+            val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
             div("constant toggleTarget") {
                div("constant-header") {
                  span {doName(d.name.toString)}
                  def toggle(label: String) {
-                    span("compToggle", onclick = s"toggle(this,'$label')") {text("show/hide " + label)}
+                    button("compToggle", onclick = s"toggleClick(this.parentNode,'$label')") {text("show/hide " + label)}
                  }
                  d.getComponents.foreach {case (comp, tc) => if (tc.isDefined) 
                     toggle(comp.toString)
                  }
+                 //if (! usedby.isEmpty)
+                    toggle("used-by")
                  //if (! d.metadata.getTags.isEmpty)
                     toggle("tags")
                  //if (! d.metadata.getAll.isEmpty)
@@ -148,6 +161,12 @@ trait HTMLPresenter extends Presenter {
                               doNotComponent(comp, n)
                             }
                         }
+                  }
+                  if (! usedby.isEmpty) {
+                     tr("used-by") {
+                        td {span("compLabel") {text{"used by"}}}
+                        td {usedby foreach doPath}
+                     }
                   }
                   if (! d.metadata.getTags.isEmpty)
                      tr("tags") {
@@ -170,8 +189,13 @@ trait HTMLPresenter extends Presenter {
                      }
                   }
                }
-            }
-         }
+            }      
+   }
+   
+   def doTheory(t: DeclaredTheory) {
+      div("theory") {
+         div("theory-header", onclick="toggleClick(this)") {doName(t.name.toString)}
+         t.getPrimitiveDeclarations foreach doDeclaration
       }
    }
    def doView(v: DeclaredView) {}
