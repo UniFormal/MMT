@@ -33,7 +33,7 @@ trait HTMLPresenter extends Presenter {
    def isApplicable(format : String) = format == "html"
    
    // easy-to-use HTML markup
-   protected val htmlRh = new utils.HTML(s => rh(s))
+   protected val htmlRh = utils.HTML(s => rh(s))
    import htmlRh._
    
    private def doName(s: String) {
@@ -43,17 +43,51 @@ trait HTMLPresenter extends Presenter {
         mmlPres(t, owner)(rh)
    }
    private def doComponent(cpath: CPath, t: Obj) {
-      td {span {text(cpath.component.toString)}}
+      td {span("compLabel") {text(cpath.component.toString)}}
       td {doMath(t, Some(cpath))}
    }
    private def doNotComponent(comp: NotationComponent, tn: TextNotation) {
-      td {span {text(comp.toString)}}
-      td {span {text(tn.toText)}}
+      td {span("compLabel") {text(comp.toString)}}
+      td {span {
+         val firstVar = tn.arity.firstVarNumberIfAny
+         val firstArg = tn.arity.firstArgNumberIfAny
+         text {tn.markers.map {
+            case Arg(n) =>
+               val argNum = n-firstArg
+               if (argNum < 5)
+                  List("a", "b", "c", "d", "e")(argNum)
+               else
+                  "a" + argNum.toString
+            case ImplicitArg(n) =>
+               val argNum = n-firstArg
+               if (argNum < 3)
+                  List("I", "J", "K")(argNum)
+               else
+                  "I" + argNum.toString
+            case SeqArg(n, sep) => n.toString + sep.text + "..." + sep.text + n.toString
+            case Var(n, typed, sepOpt) =>
+               val varNum = n-firstVar
+               val varname = if (varNum < 3)
+                  List("x", "y", "z")(varNum)
+               else
+                  "x" + varNum.toString
+               val typedString = if (typed) ":_" else ""  
+               sepOpt match {
+                  case None => varname + typedString
+                  case Some(sep) => varname + typedString + sep.text + "..." + sep.text + varname + typedString
+               }
+            case Delim(s) => s
+            case SymbolName(n) => n.name.toPath
+            case m => m.toString
+         }.mkString(" ")}
+         text {" (precedence " + tn.precedence.toString + ")"}
+      }}
    }
    private val scriptbase = "https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/script/"
    private val cssbase    = "https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/css/"
-   /*
+   /**
     * @param dpath identifies the directory (needed for relative paths)
+    * @param doit if true, wrap HTML header etc. around argument, otherwise, return arguments as a div
     */
    private def doHTMLOrNot(dpath: DPath, doit: Boolean)(b: => Unit) {
       if (! doit) {
@@ -84,59 +118,60 @@ trait HTMLPresenter extends Presenter {
    }
    def doTheory(t: DeclaredTheory) {
       div("theory") {
-         div("theory-header") {doName(t.name.toString)}
-         t.getPrimitiveDeclarations.foreach {
-            d => div("constant") {table("constant") {
-               tr("constant-header") {
-                    td {doName(d.name.toString)}
-                    td {
-                       def toggle(label: String) {
-                          span("compToggle", onclick = s"toggle(this,'$label')") {text(label)}
-                       }
-                       d.getComponents.foreach {case (comp, tc) => if (tc.isDefined) 
-                          toggle(comp.toString)
-                       }
-                       if (! d.metadata.getTags.isEmpty)
-                          toggle("tags")
-                       if (! d.metadata.getAll.isEmpty)
-                          toggle("metadata")
-                    }
+         div("theory-header", onclick="toggleClick(this)") {doName(t.name.toString)}
+         t.getPrimitiveDeclarations.foreach {d =>
+            div("constant toggleTarget") {
+               div("constant-header") {
+                 span {doName(d.name.toString)}
+                 def toggle(label: String) {
+                    span("compToggle", onclick = s"toggle(this,'$label')") {text("show/hide " + label)}
+                 }
+                 d.getComponents.foreach {case (comp, tc) => if (tc.isDefined) 
+                    toggle(comp.toString)
+                 }
+                 //if (! d.metadata.getTags.isEmpty)
+                    toggle("tags")
+                 //if (! d.metadata.getAll.isEmpty)
+                    toggle("metadata")
                }
-               d.getComponents.foreach {
-                  case (comp, tc: AbstractTermContainer) =>
-                     tr(comp.toString) {
-                        tc.get.foreach {t =>
-                            doComponent(d.path $ comp, t)
+               table("constant-components") {
+                  d.getComponents.foreach {
+                     case (comp, tc: AbstractTermContainer) =>
+                        tr(comp.toString) {
+                           tc.get.foreach {t =>
+                               doComponent(d.path $ comp, t)
+                           }
                         }
-                     }
-                  case (comp: NotationComponent, nc: NotationContainer) =>
-                     tr(comp.toString) {
-                        nc(comp).foreach {n =>
-                           doNotComponent(comp, n)
-                         }
-                     }
-               }
-               if (! d.metadata.getTags.isEmpty) tr("tags") {
-                  td {text("tags")}
-                  td {d.metadata.getTags.foreach {
-                     k => div("tag") {text(k.toPath)}
-                  }}
-               }
-               def doKey(k: GlobalName) {
-                  td{span("key", title=k.toPath) {text(k.toString)}}
-               }
-               d.metadata.getAll.foreach {
-                  case metadata.Link(k,u) => tr("link metadata") {
-                     doKey(k)
-                     td {a(u.toString) {text(u.toString)}}
+                     case (comp: NotationComponent, nc: NotationContainer) =>
+                        tr(comp.toString) {
+                           nc(comp).foreach {n =>
+                              doNotComponent(comp, n)
+                            }
+                        }
                   }
-                  case md: metadata.MetaDatum => tr("metadatum metadata") {
-                     doKey(md.key)
-                     td {doMath(md.value, None)}
+                  if (! d.metadata.getTags.isEmpty)
+                     tr("tags") {
+                     td {span("compLabel"){text{"tags"}}}
+                     td {d.metadata.getTags.foreach {
+                        k => div("tag") {text(k.toPath)}
+                     }}
+                  }
+                  def doKey(k: GlobalName) {
+                     td{span("key compLabel", title=k.toPath) {text(k.toString)}}
+                  }
+                  d.metadata.getAll.foreach {
+                     case metadata.Link(k,u) => tr("link metadata") {
+                        doKey(k)
+                        td {a(u.toString) {text(u.toString)}}
+                     }
+                     case md: metadata.MetaDatum => tr("metadatum metadata") {
+                        doKey(md.key)
+                        td {doMath(md.value, None)}
+                     }
                   }
                }
             }
-         }}
+         }
       }
    }
    def doView(v: DeclaredView) {}

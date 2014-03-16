@@ -6,6 +6,7 @@ import parser._
 import notations._
 import frontend._
 
+/** regular expressions to be matched against components of a [[Path]] */
 case class PathPattern(basePattern: Option[String], modulePattern: Option[String], namePattern: Option[String]) {
    def matches(path: Path): Boolean = {
       val p = path match {
@@ -27,6 +28,7 @@ case class PathPattern(basePattern: Option[String], modulePattern: Option[String
    }
 }
 
+/** a pattern to be matched against a collection of terms, e.g., via [[MathWebSearch]] */
 case class TermPattern(qvars: Context, query: Term)
 
 object TermPattern {
@@ -53,9 +55,12 @@ object TermPattern {
    }
 }
 
+/** a query that can be sent to [[Search]] */
 case class SearchQuery(pp: PathPattern, comps: List[DeclarationComponent], pattern: Option[TermPattern])
+/** a result returned by [[Search]] or [[MathWebSearch]] */
 case class SearchResult(cpath: CPath, pos: Position, term: Option[Term])
 
+/** an implementation of a search algorithm that calls [[MathWebSearch]] and filters the results */
 class Search(controller: Controller) {
    def apply(sq: SearchQuery, resolveResults: Boolean): List[SearchResult] = {
       val mws = controller.extman.mws.getOrElse(throw ParseError("no mws defined"))
@@ -68,7 +73,7 @@ class Search(controller: Controller) {
                else
                   Nil
             }
-         case None =>
+         case None => Nil
       }
       if (resolveResults) {results.map {case SearchResult(cp, pos, _) =>
          val term = controller.globalLookup.getComponent(cp).asInstanceOf[AbstractTermContainer].get

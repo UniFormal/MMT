@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:jobad="http://omdoc.org/presentation">
 <head>
   <meta charset="UTF-8" />
- <!-- <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/> --> 
+  <!-- <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/> --> 
 
   <link rel="stylesheet" type="text/css" href="/css/mmt.css"/>
   <link rel="stylesheet" type="text/css" href="/css/browser.css"/>
@@ -64,10 +64,6 @@
        });
    });
     
-   var searchWindow = null;
-   function openSearch() {
-      searchWindow = window.open('search.html');
-   };
    var graphWindow = null;
    function openGraph(p) {
       if (p == null)
@@ -109,6 +105,35 @@
    
    $(function(){$('#latin-dialog').dialog({ autoOpen: false})});
   </script>
+  
+  <script type="text/javascript">
+     function toggleClick(elem){
+        $(elem).parent().closest('div').find('.toggleTarget').toggle()
+     }
+  </script>
+  
+  <script type="text/javascript">
+      function search(){
+         var base   = $('#base').val();
+         var module = $('#module').val();
+         var name   = $('#name').val();
+         var theory = $('#theory').val();
+         var pattern= $('#pattern').val();
+         var type   = $('#type').is(':checked');
+         var definition= $('#definition').is(':checked');
+		   $.ajax({'url': '/:search',
+				     'dataType': 'xml',
+				     'data': {base: base, module: module, name: name,
+				               theory: theory, pattern: pattern, type: type, definition: definition},
+				     'success': function(data){
+				        $('#results').children().replaceWith(data.firstChild);
+				     }
+			       });
+      }
+      function resultClick(p){
+         navigation.navigate(p);
+      }
+   </script>
 </head>
 
 <body><table>
@@ -119,7 +144,6 @@
       <div id="menu_bar">
         <!--<span class="pagelink"><a href="/search.html">Search</a></span>-->
         <span class="pagelink"><a href="javascript:openGraph()">Graph View</a></span>
-        <span class="pagelink"><a href="javascript:openSearch()">Search</a></span>
         <span class="pagelink"><a href="/admin.html" target="_blank">Administration</a></span>
         <span class="pagelink"><a href="/help.html" target="_blank">Help</a></span>
       </div>
@@ -149,21 +173,64 @@
        </div>
     </td>
   </tr>
-  
-  <tr><td colspan="2" class="layout">
+</table>  
+
+<div id="parse">
+<button onclick="toggleClick(this)">show/hide</button>
+<b>Parse-analyze-simplify-present</b>
+<table class="toggleTarget">
+  <tr>
+    <td class="layout">
       <div>
         <span>Enter an object over theory: </span>
-        <input type="text" style="resize:horizontal;" size="30" id="inputtheory"></input>
+        <input type="text" style="resize:horizontal;" size="30" class="activetheory" id="activetheory"></input>
       </div>
-      <textarea id="inputbox"></textarea>
-      <div>
+    </td>
+    <td>
         <span><input type="checkbox" id="inputanalyze"/>analyze</span>
         <span><input type="checkbox" id="inputsimplify"/>simplify</span>
-      </div>
-      <div id="inputviewterm"><div></div></div>
-      <div id="inputviewtype"><div></div></div>
-  </td></tr>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <textarea id="inputbox"></textarea>
+    </td>
+    <td>
+      result: <span id="inputviewterm"><div></div></div><br/>
+      inferred type:<span id="inputviewtype"><div></div></div>
+    </td>
+  </tr>
 </table>
+</div>
+
+<div id="search">
+<button onclick="toggleClick(this)">show/hide</button>
+<b>Search</b>
+<table class="toggleTarget">
+  <tr><td colspan="2" class="layout">
+     <div class="searchgroup">Enter <a href="http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html#sum">Java regular expressions</a> to filter based on the URI of a declaration<br/>
+     <table>
+        <tr><td class="uriregexp">Namespace</td><td><input type="text" size="30" id="base"></input></div></td></tr>
+     
+     <tr><td class="uriregexp">Theory</td><td><input type="text" size="30" id="module"></input></div></td></tr>
+     <tr><td class="uriregexp">Name</td><td><input type="text" size="30" id="name"></input></div></td></tr>
+     </table>
+     </div>
+     <!--<div>Roles:
+        <span><input type="checkbox" id="constant"/>primitive</span>
+        <span><input type="checkbox" id="defined"/>defined</span>
+        <span><input type="checkbox" id="axiom"/>axiom</span>
+        <span><input type="checkbox" id="theorem"/>theorem</span>
+     </div>-->
+     <div class="searchgroup">
+       Enter an expression over theory <input type="text" size="50" id="theory" class="activetheory"></input> to match inside the <input type="checkbox" id="type" checked="checked"/> type or <input type="checkbox" id="definition"/> definiens of a declaration<br/>
+       <input type="text" size="50" id="pattern"></input><br/>
+        Use $x,y,z:query to enter unification variables.
+     </div>
+     <div><input type="button" value="Search" id="search" onclick="search()"/></div>
+     <div id="results"><div/></div>
+  </td></tr>
+</div>
 
 <div id="latin-dialog"><span/></div>
 </body>
