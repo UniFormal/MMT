@@ -76,7 +76,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       //targets and presenters
       addExtension(new MMTCompiler)
       List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter,
-           TextPresenter, OMDocPresenter, controller.presenter, new flexiformal.FlexiformalPresenter).foreach {
+           TextPresenter, OMDocPresenter, controller.presenter).foreach {
         e => addExtension(e)
       }
       //changeListeners

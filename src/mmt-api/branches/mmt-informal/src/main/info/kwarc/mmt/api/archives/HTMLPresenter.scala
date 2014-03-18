@@ -187,14 +187,16 @@ trait HTMLPresenter extends Presenter {
        ul { doc.getItems foreach {
          case d: DRef => 
            li("dref") {
-             span(cls = "name loadable", attributes=List("jobad:load" -> d.target.toPath)) {
-               text(d.target.last)
-             }
+             controller.get(d.target) match {
+               case doc : Document => doDocument(doc)
+               case _ => //nothing to do
+             } 
            }
          case m : MRef =>
            li("mref") {
-             span(cls = "name loadable", attributes=List("jobad:load" -> m.target.toPath)) {
-               text(m.target.last)
+             controller.get(m.target) match {
+               case thy : DeclaredTheory => doTheory(thy)
+               case _ => //nothing to do
              }
            }
        }}

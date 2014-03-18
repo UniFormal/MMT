@@ -150,7 +150,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
   protected def talkPoolSize = 4
   protected def talkQueueSize = Int.MaxValue
   protected def selectorPoolSize = 2 
-  override def maxPostDataLength = 65536 * 16
+  override def maxPostDataLength = 65536 * 320
   
   val logPrefix = "server"
   val report = controller.report

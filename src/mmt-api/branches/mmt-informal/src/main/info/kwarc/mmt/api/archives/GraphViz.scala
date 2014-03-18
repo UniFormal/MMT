@@ -33,7 +33,7 @@ class GraphViz extends TraversingBuildTarget {
       val dotFile = bf.outFile.setExtension("dot")
       val gv = new ontology.GraphExporter(theories, views, tg)
       gv.exportDot(dotFile)
-      val command : List[String] = List("\"" + graphviz + "\"", "-Tsvg", "-o" + bf.outFile, dotFile.toString)
+      val command : List[String] = List("" + graphviz + "", "-Tsvg", "-o" + bf.outFile, dotFile.toString)
       log(command.mkString(" "))
       val proc = new java.lang.ProcessBuilder(command: _*).start() // use .inheritIO() for debugging
       proc.waitFor

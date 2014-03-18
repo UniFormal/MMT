@@ -35,10 +35,10 @@ class FlexiformalServerPlugin extends ServerExtension("immt") {
        
        val subject = Path.parse(subjectS)
        val relation = Binary.parse(relationS)
+       println(subjectS + " " +  relationS + " " +returnS)
        val resultSet = controller.depstore.getObjects(subject, relation)
-       val pres = controller.extman.getPresenter("ihtml").getOrElse(throw ServerError("No presenter found"))
+       val pres = controller.extman.getPresenter("planetary").getOrElse(throw ServerError("No presenter found"))
        val rb = new presentation.StringBuilder
-             
        val resultNodes = resultSet foreach {p =>
          controller.get(p) match {
            case s : StructuralElement =>
@@ -47,7 +47,18 @@ class FlexiformalServerPlugin extends ServerExtension("immt") {
          }
 //         <result path = {p.path.toPath} position={p.fragment.toString} />
        }
-       val response = "<div>" + rb.get + "</div>"
+      
+       val html = if (resultSet.isEmpty) {
+         "<div class=\"error\"> No Results Found </div>" 
+       } else {
+         "<div>" + rb.get + "</div>"
+       }
+       val response_header = <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title" id="myModalLabel">{subject.last}</h4>
+         </div>
+       val response = response_header.toString + 
+         "<div class=\"modal-body\" style=\"overflow:auto\"> " + html + " </div>"
        log("Sending Response: " + response)
        Server.XmlResponse(response).aact(tk)
      }
