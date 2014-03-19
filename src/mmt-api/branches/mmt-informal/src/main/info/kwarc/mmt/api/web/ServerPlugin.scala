@@ -1,6 +1,8 @@
 package info.kwarc.mmt.api.web
 import info.kwarc.mmt.api._
 import frontend._
+import ontology._
+import utils._
 import tiscaf._
 
 /**
@@ -71,16 +73,94 @@ class SVGServer extends ServerExtension("svg") {
 class QueryServer extends ServerExtension("query") {
    /**
     *  @param path ignored
-    *  @param query ignored
+    *  @param httpquery ignored
     *  @param body the query as XML
     */
-   def apply(path: List[String], query: String, body: Body) = {
-      val q = ontology.Query.parse(body.asXML)(controller.extman.queryExtensions)
-      log("qmt query: " + q.toString)
-      ontology.Query.infer(q)(Nil) // type checking
+   def apply(path: List[String], httpquery: String, body: Body) = {
+      val mmtquery = body.asXML
+      log("qmt query: " + mmtquery)
+      val q = Query.parse(mmtquery)(controller.extman.queryExtensions)
+      //log("qmt query: " + q.toString)
+      Query.infer(q)(Nil) // type checking
       val res = controller.evaluator.evaluate(q)
       val resp = res.toNode
       Server.XmlResponse(resp)
+   }
+}
+
+/** HTTP frontend to the [[Search]] class */
+class SearchServer extends ServerExtension("search") {
+   private lazy val search = new Search(controller)
+   private lazy val mmlpres = new presentation.MathMLPresenter(controller)
+   /**
+    *  @param path ignored
+    *  @param httpquery search parameters
+    *  @param body ignored
+    */
+   def apply(path: List[String], httpquery: String, body: Body) = {
+      val wq = WebQuery.parse(httpquery)
+      val base = wq("base")
+      val mod = wq("module")
+      val name = wq("name")
+      val theory = wq("theory")
+      val pattern = wq("pattern")
+      val intype = wq.boolean("type")  
+      val indef = wq.boolean("definition")
+      val allcomps = List(TypeComponent, DefComponent)
+      val comps = allcomps.zip(List(intype,indef)).filter(_._2).map(_._1)
+      val pp = PathPattern(base, mod, name)
+      val tp = (theory, pattern) match {
+         case (Some(t), Some(p)) => Some(TermPattern.parse(controller, t, p))
+         case (_, _) => None
+      }
+      val sq = SearchQuery(pp, comps, tp)
+      val res = search(sq, true)
+      val html = utils.HTML.builder
+      import html._
+      div(attributes = List("xmlns" -> xml.namespace("html"))) {
+         res.foreach {r =>
+            div("result") {
+               val CPath(par, comp) = r.cpath
+               div("resultpath", onclick=s"resultClick('${par.module.toMPath.toPath}')") {
+                  text {comp.toString + " of " + par.toPath}
+               }
+               r match {
+                  case SearchResult(cp, pos, None) =>
+                  case SearchResult(cp, pos, Some(term)) =>
+                     def style(pc: presentation.PresentationContext) = if (pc.pos == pos) "resultmatch" else ""
+                     div {mmlpres(term, Some(cp), style)(new presentation.HTMLRenderingHandler(html))}
+               }
+            }
+         }
+      }
+      Server.XmlResponse(html.result)
+   }
+}
+
+/** part of web browser */
+class BreadcrumbsServer extends ServerExtension("breadcrumbs") {
+   def apply(path: List[String], query: String, body: Body) = {
+      val mmtpath = Path.parse(query, controller.getBase)
+      val ancs = mmtpath.ancestors.reverse
+      var mpathfound = false
+      var spathfound = false
+      val html = utils.HTML.builder
+      import html._
+      def gsep() = span {text {"?"}}
+      def lsep() = span {text {"/"}}
+      // strangely, the client somehow does not handle this right if the XML is given literally, might be due to namespaces
+      div(attributes = List("xmlns" -> utils.xml.namespace("xhtml"), "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
+         ancs.foreach {p =>
+            p match {
+               case p : MPath if ! mpathfound => mpathfound = true; gsep()
+               case p : GlobalName if ! spathfound => spathfound = true; gsep()
+               case p if p.^! == p => Nil
+               case _ => lsep()
+            }
+            span("mmturi", attributes=List("jobad:href" -> p.toPath)) {text {p.last}}
+         }
+      }
+      Server.XmlResponse(html.result)
    }
 }
 
@@ -99,6 +179,9 @@ class AdminServer extends ServerExtension("admin") {
       logCache.clear
       controller.handle(act)
       val r = logCache.recall
-      Server.XmlResponse(Util.div(r reverseMap Util.div))
+      val html = utils.HTML.builder
+      import html._
+      div {r.reverse foreach {l => div {text {l}}}}
+      Server.XmlResponse(html.result)
    }
 }

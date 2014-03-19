@@ -9,41 +9,6 @@ import ontology._
 import modules._
 
 object Util {
-   def div(n: List[Node]) : Node = xml.Elem(null, "div", Null, NamespaceBinding(null, utils.xml.namespace("xhtml"), TopScope), true, n :_*)
-   def div(s: String) : Node = div(List(scala.xml.Text(s)))
-   /*
-   def link(xhtml : NodeSeq, p : Path) = {
-     val text = BindHelpers.bind("i", xhtml, "last" -> p.last, "full" -> p.toPath)
-     <span jobad:href={p.toPath}>{text}</span>
-   }
-   def ahref(p: Path) = <a href="#" mmtlink={p.toPath}>{p.last}</a>
-     // <a href="#" onclick={navigate(p)}>{p.last}</a>
-      */
-   /*def navigate(p: Path) = 
-      "sideBarClick('" + p.toPath + "')"
-   */
-   /** yields a breadcrumb navigation bar as a sequence of links */
-   def breadcrumbs(path : Path) : Node = {
-      val ancs = path.ancestors.reverse
-      val gsep = <span>?</span>
-      val lsep = <span>/</span>
-      var mpathfound = false
-      var spathfound = false
-      val crumbs = ancs.flatMap {p =>
-         val sep = p match {
-         case p : MPath if ! mpathfound => mpathfound = true; gsep
-         case p : GlobalName if ! spathfound => spathfound = true; gsep
-         case p if p.^! == p => Nil
-         case _ => lsep
-       }
-       sep ++ <span jobad:href={p.toPath} class="crumb">{p.last}</span>
-      }
-      // strangely, the client somehow does not handle this right if the XML is given literally, might be due to namespaces
-      //<div xmlns={utils.xml.namespace("xhtml")} xmlns:jobad={utils.xml.namespace("jobad")}>{crumbs}</div>
-      xml.Elem(null, "div", Null, NamespaceBinding(null, utils.xml.namespace("xhtml"),
-                              NamespaceBinding("jobad", utils.xml.namespace("jobad"), TopScope)), true, crumbs : _*)
-   }
-   
    def item(p : Path, state : String, label : Option[String] = None) = 
       <item id={p.toPath} state={state}>
         <content><name href="#" onclick={"mmt.sideBarClick(event, '" + p.toPath + "')"}>{label.getOrElse(p.last)}</name></content>
@@ -85,12 +50,12 @@ object Util {
   def loadResource(path : String) : java.io.InputStream = {
     val stream = getClass.getResourceAsStream("/mmt-web/" + path)  // the file inside the JAR
     if (stream != null)
-        return stream
+        stream
     else {
         val filePath : String = try {
           //the folder containing the class files
           val binaryFolder : java.io.File = new java.io.File(getClass.getProtectionDomain.getCodeSource.getLocation.toString)  // e.g. .../lfcatalog/trunk/build/main
-          val resourceFolder : String = binaryFolder.getParentFile.toString + "/../resources/mmt-web"
+          val resourceFolder : String = binaryFolder.getParentFile.toString + "/resources/mmt-web"
           (if (resourceFolder.startsWith("file:")) resourceFolder.substring("file:".length) else resourceFolder) + "/" + path
         }
         catch {
@@ -100,14 +65,11 @@ object Util {
         val file = new java.io.File(filePath)  // the file on disk
         // Try reading from compiled-folder/some-path/resource.txt
         if (file.exists)
-          return new java.io.FileInputStream(file)
+           new java.io.FileInputStream(file)
         else
-          return null
+           null
     }
   }
-  
-  /** "/a/bb/" gets split to ("", "a", "bb") */
-  def getComponents(path : String) : List[String] = path.split("/").toList
   
   /** Checks whether a port is used
     * @param port port number to be checked
@@ -127,6 +89,6 @@ object Util {
                 socket.close
             }
         }
-        return portTaken
+        portTaken
   }
 }

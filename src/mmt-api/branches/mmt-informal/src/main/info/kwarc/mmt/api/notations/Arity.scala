@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.parser
+package info.kwarc.mmt.api.notations
 
 import info.kwarc.mmt.api._
 import objects._
@@ -44,6 +44,14 @@ case class Arity(subargs: List[ArgumentComponent],
       case Var(_,_, None) => true
       case Var(_,_, Some(_)) => false
       case _ => true
+   }
+   def firstVarNumberIfAny = subargs.lastOption match {
+      case Some(a) => a.number+1
+      case None => 1
+   }
+   def firstArgNumberIfAny = (subargs:::variables).lastOption match {
+      case Some(a) => a.number+1
+      case None => 1
    }
    // distributes available components to numTotal normal/sequence components where the positions of the sequences are given by seqs
    // returns: number of arguments per sequence and cutoff below which sequences get one extra argument
@@ -137,8 +145,8 @@ case class Arity(subargs: List[ArgumentComponent],
    /** @return true if ComplexTerm(name, subs, vars, args) has enough components for this arity and provides for an attribution if necessary */
    def canHandle(subs: Int, vars: Int, args: Int, att: Boolean) = {
       (numNormalSubs == subs || (numNormalSubs < subs && numSeqSubs >= 1)) &&
-      (numNormalArgs == args || (numNormalArgs < args && numSeqArgs >= 1)) &&
       (numNormalVars == vars || (numNormalVars < vars && numSeqVars >= 1)) &&
+      (numNormalArgs == args || (numNormalArgs < args && numSeqArgs >= 1)) &&
       (! att || attribution)
    }
   /**

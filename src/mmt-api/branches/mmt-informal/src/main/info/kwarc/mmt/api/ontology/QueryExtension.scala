@@ -17,19 +17,25 @@ import QueryTypeConversion._
 abstract class QueryExtension(val name: String, val in: QueryType, val out: QueryType) extends Extension {
    protected lazy val extman = controller.extman // must be lazy because controller is initially null
    protected lazy val lup = controller.globalLookup
+   protected def mpath(params: List[String]) = params match {
+      case p::Nil => Path.parseM(p, utils.mmt.mmtbase)
+      case Nil => throw ParseError("paramater expected")
+      case _ => throw ParseError("exactly one paramater expected")
+   } 
    /** the semantics of this function
     *  @param the evaluation of the argument
     *  @param param the MPath this family of functions is parametrized by
     */
-   def evaluate(argument: BaseType, param: MPath): List[BaseType]
+   def evaluate(argument: BaseType, params: List[String]): List[BaseType]
 }
 
 /** parsing of strings into objects */
 class Parse extends QueryExtension("parse", StringType, ObjType) {
-   def evaluate(argument: BaseType, param: MPath) = {
+   def evaluate(argument: BaseType, params: List[String]) = {
+      val mp = mpath(params)
       argument match { 
          case StringValue(s) =>
-           val pu = parser.ParsingUnit(parser.SourceRef.anonymous(s), OMMOD(param), Context(), s) 
+           val pu = parser.ParsingUnit(parser.SourceRef.anonymous(s), OMMOD(mp), Context(), s) 
            controller.termParser(pu, throw _)
          case _ => throw ImplementationError("evaluation of ill-typed query")
       }
@@ -38,8 +44,9 @@ class Parse extends QueryExtension("parse", StringType, ObjType) {
 
 /** type inference relative to a foundation */
 class Infer extends QueryExtension("infer", ObjType, ObjType) {
-   def evaluate(argument: BaseType, param: MPath) = {
-      val found = extman.getFoundation(param).getOrElse(throw GetError("no applicable type inference engine defined"))
+   def evaluate(argument: BaseType, params: List[String]) = {
+      val mp = mpath(params)
+      val found = extman.getFoundation(mp).getOrElse(throw GetError("no applicable type inference engine defined"))
       argument match { 
          case OMBIND(Evaluator.free, cont, obj) =>
            found.inference(obj, cont)(lup)
@@ -53,10 +60,11 @@ class Infer extends QueryExtension("infer", ObjType, ObjType) {
 
 /** type reconstruction of objects */
 class Analyze extends QueryExtension("analyze", ObjType, List(ObjType,ObjType)) {
-   def evaluate(argument: BaseType, param: MPath) = {
+   def evaluate(argument: BaseType, params: List[String]) = {
+      val mp = mpath(params)
       argument match { 
          case t: Term =>
-            val stack = Stack(OMMOD(param), Context())
+            val stack = Stack(OMMOD(mp), Context())
             val (tR, tpR) = Solver.check(controller, stack, t).getOrElse {
                throw InvalidObject(t, "term was parsed but did not type-check")
             }
@@ -69,14 +77,15 @@ class Analyze extends QueryExtension("analyze", ObjType, List(ObjType,ObjType)) 
 
 /** simplification of objects */
 class Simplify extends QueryExtension("simplify", ObjType, ObjType) {
-   def evaluate(argument: BaseType, param: MPath) = {
+   def evaluate(argument: BaseType, params: List[String]) = {
+      val mp = mpath(params)
       argument match { 
          case OMBIND(Evaluator.free, cont, body) =>
-            controller.uom.simplify(body, OMMOD(param), cont)
+            controller.uom.simplify(body, OMMOD(mp), cont)
          case t: Term =>
-            controller.uom.simplify(t, OMMOD(param))
+            controller.uom.simplify(t, OMMOD(mp))
          case c: Context =>
-            controller.uom.simplifyContext(c, OMMOD(param))
+            controller.uom.simplifyContext(c, OMMOD(mp))
          case o: Obj =>
             o
          case _ => throw ImplementationError("evaluation of ill-typed query")
@@ -86,11 +95,13 @@ class Simplify extends QueryExtension("simplify", ObjType, ObjType) {
 
 /** XML rendering of objects */
 class Present extends QueryExtension("present", ObjType, XMLType) {
-   def evaluate(argument: BaseType, param: MPath) = {
+   def evaluate(argument: BaseType, params: List[String]) = {
+      if (params.length != 1) throw ParseError("excatly one parameter expected")
       argument match {
         case o : Obj =>
            val rb = new presentation.StringBuilder
-           (new presentation.StyleBasedPresenter(controller,param)).apply(o)(rb)
+           val pr = extman.getPresenter(params(0)).getOrElse(throw ParseError("unknown format"))
+           pr(o, None)(rb)
            XMLValue(scala.xml.XML.loadString(rb.get))
         case _ => throw ImplementationError("evaluation of ill-typed query")
      }
@@ -99,12 +110,14 @@ class Present extends QueryExtension("present", ObjType, XMLType) {
 
 /** XML rendering of declarations */
 class PresentDecl extends QueryExtension("presentDecl", PathType, XMLType) {
-   def evaluate(argument: BaseType, param: MPath) = {
+   def evaluate(argument: BaseType, params: List[String]) = {
+      if (params.length != 1) throw ParseError("excatly one parameter expected")
       argument match {
         case p: Path => 
            val rb = new presentation.StringBuilder
            val e = controller.get(p)
-           (new presentation.StyleBasedPresenter(controller,param)).apply(e)(rb)
+           val pr = extman.getPresenter(params(0)).getOrElse(throw ParseError("unknown format"))
+           pr(e)(rb)
            XMLValue(scala.xml.XML.loadString(rb.get))
         case _ => throw ImplementationError("evaluation of ill-typed query")
      }

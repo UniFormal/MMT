@@ -48,8 +48,7 @@ object Traverser {
 		   case OMID(_) => t
 		   case OMV(_) => t
 		   case OMFOREIGN(_) => t
-		   case t: OMLIT => t
-		   case UnknownOMLIT(_,_) => t
+		   case t: OMLITTrait => t
 		   case OMSemiFormal(tokens) => 
 		      val newtokens = tokens map {
 		         case Formal(t) => Formal(rec(t))

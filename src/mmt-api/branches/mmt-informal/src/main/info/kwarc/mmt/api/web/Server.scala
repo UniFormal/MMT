@@ -41,11 +41,11 @@ object Server {
    * A text response that the server sends back to the browser
    * @param text the message that is sent in the HTTP body
    */
-  def TextResponse(text: String): HLet = new HSimpleLet {
+  def TextResponse(text: String, tp: String = "plain"): HLet = new HSimpleLet {
     def act(tk: HTalk) {
       val out = text.getBytes("UTF-8")
       checkCORS(tk).setContentLength(out.size) // if not buffered
-        .setContentType("text/plain; charset=utf8")
+        .setContentType(s"text/$tp; charset=utf8")
         .write(out)
     }
   }
@@ -54,27 +54,14 @@ object Server {
    * An XML response that the server sends back to the browser
    * @param node the XML message that is sent in the HTTP body
    */
-  def XmlResponse(node: scala.xml.Node): HLet = new HSimpleLet {
-    def act(tk: HTalk) {
-      val out: Array[Byte] = node.toString.getBytes("UTF-8")
-      checkCORS(tk).setContentLength(out.size) // if not buffered
-        .setContentType("text/xml; charset=utf8")
-        .write(out)
-    }
-  }
+  def XmlResponse(s: String): HLet = TextResponse(s, "xml")
 
   /**
    * An XML response that the server sends back to the browser
    * @param node the XML message that is sent in the HTTP body
    */
-  def XmlResponse(s: String): HLet = new HSimpleLet {
-    def act(tk: HTalk) {
-      val out: Array[Byte] = s.getBytes("UTF-8")
-      checkCORS(tk).setContentLength(out.size) // if not buffered
-        .setContentType("text/xml; charset=utf8")
-        .write(out)
-    }
-  }
+  def XmlResponse(node: scala.xml.Node): HLet = TextResponse(node.toString, "xml")
+  
   /**
    * A Json response that the server sends back to the browser 
    * @param json the Json message that is sent in the HTTP body
@@ -94,6 +81,35 @@ object Server {
      val ns = utils.xml.namespace("html")
      val node = <div xmlns={ns}>{error.longMsg.split("\\n").map(s => <p>{s}</p>)}</div>
      XmlResponse(node)
+  }
+}
+
+/** straightforward abstraction for web style key-value queries; no encoding, no duplicate keys */
+case class WebQuery(pairs: List[(String,String)]) {
+   def apply(key: String) : Option[String] = pairs.find(_._1 == key).map(_._2) 
+   def string(key: String, default: String = ""): String = apply(key).getOrElse(default)
+   def boolean(key: String, default: Boolean = false) = apply(key).getOrElse(default.toString) match {
+      case "false" => false
+      case "" | "true" => true
+      case s => throw ParseError("boolean expected: " + s)
+   }
+   def int(key: String, default: Int = 0) = {
+      val s = apply(key).getOrElse(default.toString) 
+      try {s.toInt}
+      catch {case _: Exception => throw ParseError("integer expected: " + s)}
+   }
+}
+
+object WebQuery {
+  /** parses k1=v1&...&kn=vn */
+  def parse(query: String): WebQuery = {
+     val kvs = utils.MyList.fromString(query, "&")
+     val pairs = kvs map {s =>
+        val i = s.indexOf("=")
+        if (i == -1 || i == s.length-1) (s, "")
+        else (s.substring(0,i), s.substring(i+1))
+     }
+     WebQuery(pairs)
   }
 }
 
@@ -160,14 +176,10 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
     override def chunked = true // Content-Length is not set at the beginning of the response, so we can stream info while computing/reading from disk
     def resolve(req: HReqData): Option[HLet] = {
       log("request for /" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query)
-      Util.getComponents(req.uriPath) match {
-        case ":breadcrumbs" :: _ =>
-          val mmtpath = Path.parse(req.query, controller.getBase)
-          val node = scala.xml.Utility.trim(Util.breadcrumbs(mmtpath))
-          Some(XmlResponse(node))
+      req.uriPath.split("/").toList match {
         case ":tree" :: _ => Some(TreeResponse)
         case ":change" :: _ => Some(ChangeResponse)
-        case ":search" :: _ => Some(MwsResponse)
+        case ":mws" :: _ => Some(MwsResponse)
         case ":parse" :: _ => Some(ParserResponse)
         case ":post" :: _ => Some(PostResponse)
         case hd::tl if hd.startsWith(":") =>
@@ -286,10 +298,10 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
         }
         val tqs = qt.transformSearchQuery(mwsquery, params)
         def wrapMWS(n: Node): Node = <mws:query output="xml" limitmin={ offset.toString } answsize={ size.toString }>{ n }</mws:query>
-        val mws = controller.extman.getMWS.getOrElse(throw ServerError("no MathWebSearch engine defined"))
+        val mws = controller.extman.mws.getOrElse(throw ServerError("no MathWebSearch engine defined")).url
 
         tqs.map(q => println(wrapMWS(q)))
-        val res = tqs.map(q => utils.xml.post(mws.toJava.toURL, wrapMWS(q))) // calling MWS via HTTP post
+        val res = tqs.map(q => utils.xml.post(mws, wrapMWS(q))) // calling MWS via HTTP post
         val total = res.foldRight(0)((r, x) => x + (r \ "@total").text.toInt)
         val totalsize = res.foldRight(0)((r, x) => x + (r \ "@size").text.toInt)
         val answrs = res.flatMap(_.child)

@@ -63,9 +63,9 @@ class ExtensionManager(controller: Controller) extends Logger {
    private[api] var queryExtensions : List[QueryExtension] = Nil
 
    var lexerExtensions : List[LexerExtension] = Nil
-   var pragmaticConstructors: List[pragmatics.PragmaticConstructor] = Nil
+   var notationExtensions: List[notations.NotationExtension] = Nil
 
-   private var mws : Option[URI] = None
+   var mws : Option[ontology.MathWebSearch] = None
 
    val report = controller.report
    val logPrefix = "extman"
@@ -83,7 +83,8 @@ class ExtensionManager(controller: Controller) extends Logger {
       List(new modules.RealizationListener, parser.MetadataParser, parser.CommentIgnorer).foreach(addExtension(_))
       //parserExtensions ::= new ControlParser
       //serverPlugins
-      List(new web.ActionServer, new web.SVGServer, new web.QueryServer, new web.AdminServer).foreach(addExtension(_))
+      List(new web.ActionServer, new web.SVGServer, new web.QueryServer, new web.SearchServer,
+            new web.BreadcrumbsServer, new web.AdminServer).foreach(addExtension(_))
       //queryExtensions
       List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
                                 new ontology.Present, new ontology.PresentDecl).foreach(addExtension(_))
@@ -91,6 +92,8 @@ class ExtensionManager(controller: Controller) extends Logger {
       lexerExtensions ::= QuoteLexer
       lexerExtensions ::= UnicodeReplacer
       lexerExtensions ::= new PrefixedTokenLexer('\\')
+      
+      notationExtensions ::= notations.MixfixNotation
    }
 
    /** instantiates an extension, initializes it, and adds it
@@ -175,10 +178,6 @@ class ExtensionManager(controller: Controller) extends Logger {
    }
    def getFoundation(thy: objects.Term) : Option[Foundation] =
       objects.TheoryExp.metas(thy)(controller.globalLookup) mapFind getFoundation
-
-   /** sets the URL of the MathWebSearch backend */
-   def setMWS(uri: URI) {mws = Some(uri)}
-   def getMWS : Option[URI] = mws
    
    /** retrieves all registered extensions */
    private def getAll = foundations:::targets:::querytransformers:::changeListeners:::presenters:::

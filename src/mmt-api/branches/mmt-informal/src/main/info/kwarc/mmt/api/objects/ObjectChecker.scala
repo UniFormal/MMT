@@ -17,7 +17,7 @@ import scala.collection.mutable.{HashSet,HashMap}
  */
 
 /** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
-class DelayedConstraint(val constraint: Judgement, val history: History, val incomplete: Boolean = false) {
+class DelayedConstraint(val constraint: Judgement, val history: History, val incomplete: Boolean) {
   private val freeVars = constraint.freeVars
   private var activatable = false
   /** This must be called whenever a variable that may occur free in this constraint has been solved */
@@ -104,7 +104,8 @@ object InferredType extends TermProperty[Term](utils.mmt.baseURI / "clientProper
  * Unsolvable constraints are delayed and reactivated if later solving of unknowns provides further information.
  * 
  * @param controller an MMT controller that is used to look up Rule's and Constant's. No changes are made to the controller.
- * @param unknowns the list of all unknown variables including their types and listed in dependency order;
+ * @param theory the current theory
+ * @param initUnknowns the list of all unknown variables including their types and listed in dependency order;
  *   unknown variables may occur in the types of later unknowns.
  * 
  * Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.  
@@ -124,6 +125,8 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
    def hasUnresolvedConstraints : Boolean = ! delayed.isEmpty
    /** true if unsolved variables are left */
    def hasUnsolvedVariables : Boolean = solution.toSubstitution.isEmpty
+   /** true if all judgments solved so far succeeded (all variables solved, no delayed constraints, no errors) */
+   def checkSucceeded = ! hasUnresolvedConstraints && ! hasUnsolvedVariables && errors.isEmpty
    /** the solution to the constraint problem
     * @return None if there are unresolved constraints or unsolved variables; Some(solution) otherwise 
     */
@@ -164,7 +167,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
    /** shortcut for UOM simplification */
    private def simplify(t : Term) = controller.uom.simplify(t, theory, solution)
    /** used for rendering objects, should be used by rules if they want to log */
-   implicit val presentObj : Obj => String = controller.presenter.asString
+   implicit val presentObj : Obj => String = o => controller.presenter.asString(o)
    
    /**
     * logs a string representation of the current state
@@ -308,8 +311,11 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
       }
    }
    
-   /** registers an error and returns false */
+   /** registers an error
+    *  @return false
+    */
    def error(message: => String)(implicit history: History): Boolean = {
+      log("error: " + message)
       errors ::= history + message
       // maybe return true so that more errors are found
       false
@@ -318,7 +324,11 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
    /** applies this Solver to one Judgement
     *  This method can be called multiple times to solve a system of constraints.
     *  @param j the Judgement
-    *  @return false if the Judgment is definitely not provable; true if it has been proved or delayed
+    *  @return if false, j is disproved; if true, j holds relative to all delayed judgements and errors
+    *  
+    *  Note that this may return true even if can be disproved, namely if the delayed judgements are disproved later.
+    *  
+    *  If this returns false, an error must have been registered.  
     */
    @scala.annotation.tailrec
    final def apply(j: Judgement, history: History = new History(Nil)) : Boolean = {
@@ -362,6 +372,9 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
     * It handles logging and error reporting and delegates to specific methods based on the judgement.
     *  
     * The apply method is similar but additionally simplifies the judgment.
+    * 
+    * @param j the judgement
+    * @return like apply
     */
    def check(j: Judgement)(implicit history: History): Boolean = {
       history += j
@@ -546,9 +559,9 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
       // 1) base cases, e.g., identical terms, solving unknowns
       // identical terms
       if (tm1S hasheq tm2S) return true
-      // different literals are always non-equal
+         // different literals are always non-equal
       (tm1S, tm2S) match {
-         case (l1: OMLIT, l2: OMLIT) => if (l1.value != l2.value) return false
+         case (l1: OMLIT, l2: OMLIT) => if (l1.value != l2.value) return error(s"$l1 and $l2 are inequal literals")
          case _ =>
       }
       // solve an unknown
@@ -619,7 +632,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
     * @return true if equal
     */
    private def checkEqualityTermBased(terms1: List[Term], terms2: List[Term], t2Final: Boolean, flipped: Boolean = false)(implicit stack : Stack, history: History, tp: Term) : Boolean = {
-       log("equality (rewriting): " + terms1.head + " = " + terms2.head)
+       log("equality (trying rewriting): " + terms1.head + " = " + terms2.head)
        val t1 = terms1.head
        // see if we can expand a definition in t1
        val t1E = defExp(t1, Context())
@@ -821,9 +834,10 @@ object Solver {
       val oc = new Solver(controller, stack.theory, unknowns ++ VarDecl(etp, None, None))
       val j = Typing(stack, tmU, OMV(etp), None)
       oc(j)
-      oc.getSolution map {sub =>
+      if (oc.checkSucceeded) oc.getSolution.map {sub =>
           val tmR = tmU ^ sub
           (tmR, sub("expected_type").get) // must be defined if there is a solution
-      }
+      } else
+         None
   }
 }

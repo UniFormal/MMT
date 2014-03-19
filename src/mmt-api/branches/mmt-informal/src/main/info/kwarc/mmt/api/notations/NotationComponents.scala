@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.parser
+package info.kwarc.mmt.api.notations
 
 import info.kwarc.mmt.api._
 
@@ -106,21 +106,6 @@ case object AttributedObject extends Marker {
    override def toString = "%a" 
 }
 
-/**
- * helper object 
- */
-object Arg {
-   private def splitAux(ns: List[Int], ms: List[Marker]) : (List[Int], List[Marker]) = ms match {
-      case Arg(n) :: rest => splitAux(n :: ns, rest)
-      case rest => (ns.reverse, rest)
-   }
-   /** splits a List[Marker] into
-    *  a List[Int] (possibly Nil) that corresponds to a List[Arg]
-    * and the remaining List[Marker]
-    */
-   def split(ms: List[Marker]) = splitAux(Nil,ms)
-}
-
 /** PresentationMarker's occur in two-dimensional notations
  *
  *  They typically take other lists of markers as arguments, thus building a tree of markers.   
@@ -158,13 +143,13 @@ case class TdMarker(content : List[Marker]) extends PresentationMarker {
 /** a marker based on mathml mtd elements, representing table rows */
 case class TrMarker(content : List[Marker]) extends PresentationMarker {
    def flatMap(f : Marker => List[Marker]) = {
-     TrMarker(content.flatMap(f))
+     TdMarker(content.flatMap(f))
    } 
 }
 /** a marker based on mathml mtd elements, representing tables */
 case class TableMarker(content : List[Marker]) extends PresentationMarker {
    def flatMap(f : Marker => List[Marker]) = {
-     TableMarker(content.flatMap(f))
+     TdMarker(content.flatMap(f))
    } 
 }
 
@@ -223,41 +208,40 @@ object PresentationMarker {
                val newHead = FractionMarker(List(enum), List(denom), true)
                sofar = newHead :: sofar.tail
             case Delim("[&") => 
-              get_until(List("&]"), left.tail, true) match {
+              get_until(List("&]"), left, true) match {
                case None => //end not found, ignoring
                  sofar ::= left.head
                  left = left.tail
                case Some((taken, end)) => 
                  val processed = introducePresentationMarkers(taken)
                  sofar ::= TdMarker(processed)
-               	 left = end
+                   left = end
              }
-            case Delim("[/") => 
-               get_until(List("/]"), left.tail, true) match {
+            case Delim("[\\") => 
+               get_until(List("\\]"), left, true) match {
                case None => //end not found, ignoring
                  sofar ::= left.head
                  left = left.tail
                case Some((taken, end)) => 
                  val processed = introducePresentationMarkers(taken)
                  sofar ::= TrMarker(processed)
-               	 left = end
+                   left = end
              }
             case Delim("[[") =>
-             get_until(List("]]"), left.tail, true) match {
+             get_until(List("]]"), left, true) match {
                case None => //end not found, ignoring
                  sofar ::= left.head
                  left = left.tail
                case Some((taken, end)) => 
                  val processed = introducePresentationMarkers(taken)
                  sofar ::= TableMarker(processed)
-               	 left = end
+                   left = end
              }
             case m =>
                sofar ::= m
                left = left.tail
          }
       }
-
       sofar.reverse
    }
    
@@ -277,7 +261,7 @@ object PresentationMarker {
        }
      }
      if (found) {
-       Some(sofar.reverse, left)
+       Some(sofar, left)
      } else {
        None
      }

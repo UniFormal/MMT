@@ -39,7 +39,7 @@ abstract class ROArchive extends Storage with Logger {
       narrationBackend.load(doc)
     case mod : MPath =>
       val node = try { get(mod) }
-      catch {case e: java.io.FileNotFoundException => throw NotApplicable}
+      catch {case e: java.io.FileNotFoundException => throw NotApplicable("file not found")}
       loadXML(mod.doc.uri, node)
     case OMMOD(m) % _ => load(m)
   }}

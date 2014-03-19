@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.utils
 
-import scala.xml.Utility
+import scala.xml.Utility.escape
 
 /**
  * a partial implementation of HTML designed for easily building and emitting HTML documents
@@ -8,7 +8,8 @@ import scala.xml.Utility
  * 
  * see [[archives.HTMLExporter]] for a usage example
  */
-class HTML(out: String => Unit) {
+abstract class HTML {
+   def out(s: String)
    private var nextid = 0
    /** @return a fresh id */
    def freshid: String = {
@@ -16,7 +17,7 @@ class HTML(out: String => Unit) {
       nextid += 1
       "_" + id
    }
-   private def optAttr(key: String, value: String) = if (value == "") "" else s""" $key="$value""""
+   private def optAttr(key: String, value: String) = if (value == "") "" else s""" $key="${escape(value)}""""
    /**
     * Most HTML tags inherit from this class
     * 
@@ -86,6 +87,8 @@ class HTML(out: String => Unit) {
    val h7 = new Element("h7")
    val p  = new Element("p")
    
+   val button = new Element("button")
+   
    def br {out("<br/>")} 
    def a(ref: String)(body: => Unit) {
       out(s"""<a href="$ref">""")
@@ -93,7 +96,7 @@ class HTML(out: String => Unit) {
       out("</a>")
    }
    def text(s : String) {
-     out(scala.xml.Utility.escape(s))
+     out(escape(s))
    }
    
    /**
@@ -109,5 +112,15 @@ class HTML(out: String => Unit) {
     */
    def css(src: String) {
       out(s"""<link rel="stylesheet" type="text/css" href="$src"></link>""")
+   }
+}
+
+object HTML {
+   def apply(f: String => Unit) = new HTML {
+      def out(s: String) {f(s)}
+   }
+   def builder = new HTML {
+      var result: String = "" 
+      def out(s: String) {result += s}
    }
 }

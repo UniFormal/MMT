@@ -14,13 +14,13 @@ var hovering = {
  		if (target.hasAttribute('jobad:mmtsrc')) {
 		   var sourceRef = target.getAttribute('jobad:mmtsrc');
 		   if (sourceRef[0] == '#') {
-            var matches = sourceRef.match(/#(\d+)\.\d+\.\d+-(\d+)\.\d+\.\d+/);
+            var matches = sourceRef.match(/#(\d+)\.\d+\.\d+:(\d+)\.\d+\.\d+/);
             if (matches.length == 3) {
                var start = parseInt(matches[1]);
                var end   = parseInt(matches[2]);
                var ip = $('#inputbox')[0];
                ip.selectionStart = start;
-               ip.selectionEnd = end;
+               ip.selectionEnd = end+1;
             }
          }
 	   }
@@ -30,7 +30,7 @@ var hovering = {
 		//hover on OMS: show jobad:href and select the smallest proper superexpression
 		var target = targetObj[0];
 		if (target.hasAttribute('jobad:href')) {			
-			var mr = targetObj.closest('mrow');
+			var mr = targetObj.parents().filter(function(){return this.hasAttribute('jobad:mmtref')});
 			var select = (mr.length == 0) ? target : mr[0];
 			mmt.setSelected(select);
 			this.selectSource(select);
@@ -44,7 +44,7 @@ var hovering = {
 		}
 		// hover on variable: select declaration
 		if (target.hasAttribute('jobad:varref')) {
-			var v = $(target).parents('mrow').find('mrow').filter(function() {
+			var v = $(target).parents().filter(function() {
                 return $(this).attr('jobad:mmtref') == targetObj.attr('jobad:varref');
 			})
 			mmt.setSelected(v[0]);

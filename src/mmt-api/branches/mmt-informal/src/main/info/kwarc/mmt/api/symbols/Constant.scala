@@ -1,10 +1,10 @@
 package info.kwarc.mmt.api.symbols
 import info.kwarc.mmt.api._
 import objects._
+import notations._
 import modules._
 import moc._
-import parser.TextNotation
-import presentation.{StringLiteral, Omitted,NotationContainer}
+import presentation.{StringLiteral, Omitted}
 
 /**
  * A Constant represents an MMT constant.<p>

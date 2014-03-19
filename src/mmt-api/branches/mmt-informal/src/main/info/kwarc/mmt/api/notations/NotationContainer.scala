@@ -1,7 +1,6 @@
-package info.kwarc.mmt.api.presentation
+package info.kwarc.mmt.api.notations
 
 import info.kwarc.mmt.api._
-import parser.TextNotation
 
 class NotationDimension {
    var not : Option[TextNotation] = None

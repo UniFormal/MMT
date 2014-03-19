@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import metadata._
 import documents._
 import modules._
+import notations._
 import parser._
 import patterns._
 import objects._
@@ -644,7 +645,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     }
 
     // read the optional notation
-    var constantNotation = new presentation.NotationContainer
+    var constantNotation = new NotationContainer
     if (flat.codePointAt(i) == '#') {
       i += 1  // jump over '#'
       i = skipwscomments(i)
@@ -1035,7 +1036,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
      i = skipwscomments(i+1)
          // read the optional notation
 
-    var patternNotation = new presentation.NotationContainer
+    var patternNotation = new NotationContainer
     if (flat.codePointAt(i) == '#') {
       i += 1  // jump over '#'
       i = skipwscomments(i)

@@ -1,4 +1,4 @@
-/* Utility functions and state provided for MMT/OMDoc-based html documents */
+   /* Utility functions and state provided for MMT/OMDoc-based html documents */
 
 // the following functions $.fn.f add functionality to jQuery and can be used as $(...).f
 
@@ -107,7 +107,7 @@ var mmt = {
 
 	/* the active theory is used for operations that must be executed relative to a theory, e.g., parsing */
 	getActiveTheory : function() {
-	   return $('#inputtheory').val();
+	   return $('#activetheory').val();
 	},
 	/* sets the active theory
 	  @param uri any MMT URI (symbol part is ignored if present; no action if document URI)
@@ -117,7 +117,7 @@ var mmt = {
       if (arr[1] != "") {
          var thy = arr[0] + '?' + arr[1]
          this.activeTheory = thy;
-         $('#inputtheory').val(thy);
+         $('.activetheory').val(thy);
       }
    },
    
@@ -152,8 +152,8 @@ var mmt = {
 	adaptMMTURI : function (uri, act, present) {
 		var arr = this.splitMMTURI(uri);
 		if (present && this.notstyle !== null) {
-			var pres = " present " + this.notstyle; //use this for style-based presenter
-		    pres = " present ihtml"; //uncomment this to use html presenter (currently experimental)
+			//var pres = " present " + this.notstyle; //use this for style-based presenter
+		   var pres = " present html"; //use this for html presenter
 		}
 		else
 			var pres = '';
@@ -330,8 +330,8 @@ var qmt = {
 	infer       : qmtAux.extensionFunction('infer'),
 	simplify    : qmtAux.extensionFunction('simplify'),
 	analyze     : qmtAux.extensionFunction('analyze'),
-	present     : qmtAux.extensionFunction('present', function(){return mmt.notstyle;}),
-	presentDecl : qmtAux.extensionFunction('presentDecl', function(){return mmt.notstyle;}),
+	present     : qmtAux.extensionFunction('present', function(){return "html";}),
+	presentDecl : qmtAux.extensionFunction('presentDecl', function(){return "html";}),
 
 	/* executes a QMT query (as constructed by helper functions) via ajax and runs a continuation on the result */
     exec : function (q, cont) {

@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import modules._
 import symbols._
 import documents._
+import notations._
 import presentation._
 import frontend._
 import objects._
@@ -35,12 +36,12 @@ class FlexiformalPresenter extends Presenter {
    
    
    
-   def apply(o : Obj)(implicit rh : RenderingHandler) = mmlPres(o)(rh)
+   def apply(o : Obj, owner: Option[CPath])(implicit rh : RenderingHandler) = mmlPres(o, owner)(rh)
    
    def isApplicable(format : String) = format == "ihtml"
    
    // easy-to-use HTML markup
-   protected val htmlRh = new utils.HTML(s => rh(s))
+   protected val htmlRh = utils.HTML(s => rh(s))
    import htmlRh._
    
    def wrapScope(body : => Unit) {
@@ -69,7 +70,7 @@ class FlexiformalPresenter extends Presenter {
       td {span {text(comp.toString)}}
       td {doMath(t)}
    }
-   private def doNotComponent(comp: NotationComponent, tn: parser.TextNotation) {
+   private def doNotComponent(comp: NotationComponent, tn: TextNotation) {
       td {span {text(comp.toString)}}
       td {span {text(tn.toText)}}
    }
@@ -131,7 +132,7 @@ class FlexiformalPresenter extends Presenter {
      	case false => rh(<span jobad:href={r.target.toPath}> {r.text} </span>)
      	case true => rh(<span class="definiendum" jobad:href={r.target.toPath}> {r.text} </span>)
      }
-     case tm : NarrativeTerm => mmlPres(tm.term)(rh)
+     case tm : NarrativeTerm => mmlPres(tm.term, None)(rh)
      case n : NarrativeNode => 
        rh.writeStartTag(n.node.prefix, n.node.label, n.node.attributes, n.node.scope)
        n.child.map(doNarrativeObject)

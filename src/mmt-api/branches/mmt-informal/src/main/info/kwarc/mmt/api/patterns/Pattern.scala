@@ -3,7 +3,7 @@ import info.kwarc.mmt.api._
 import libraries._
 import modules._
 import objects._
-import parser.TextNotation
+import notations._
 import objects.Conversions._
 import symbols._
 import frontend._
@@ -18,7 +18,7 @@ import scala.io.Source
  * @param params the parameters of the declaration patterns
  * @param body   the body of the declaration pattern that consists of symbol declarations             
  */
-class Pattern(val home: Term, val name : LocalName, val params: Context, val body : Context, val notC: presentation.NotationContainer) extends Declaration {
+class Pattern(val home: Term, val name : LocalName, val params: Context, val body : Context, val notC: NotationContainer) extends Declaration {
    override val parameters = params
    def not = notC.oneDim
    def toNode =
@@ -47,7 +47,7 @@ class Pattern(val home: Term, val name : LocalName, val params: Context, val bod
 
 object Pattern {
    def apply(home: Term, name : LocalName, params: Context, body : Context) = {
-      new Pattern(home, name, params, body, presentation.NotationContainer())
+      new Pattern(home, name, params, body, NotationContainer())
    }
 
 }

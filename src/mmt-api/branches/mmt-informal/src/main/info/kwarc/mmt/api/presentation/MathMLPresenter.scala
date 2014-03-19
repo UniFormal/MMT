@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.presentation
 
 import info.kwarc.mmt.api._
+import notations._
 import frontend._
 import objects._
 
@@ -20,11 +21,23 @@ import utils.xml._
  * mi: jobad:varref ([[Position]]) pointing to its declaration 
  */
 class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter {
+   
+   /** generalized apply method that takes a callback function to determine the css class of a subterm */
+   def apply(o: Obj, origin: Option[CPath], style: PresentationContext => String)(implicit rh : RenderingHandler) {
+      implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil, Some(style))
+      doToplevel {
+         recurse(o)
+      }
+   }
+
    private val jobadns = namespace("jobad")
    private def jobadattribs(implicit pc: PresentationContext) = {
       var ret = List("jobad:mmtref" -> pc.pos.toString)
       pc.source.foreach {r =>
-         ret ::= ("jobad:mmtsrc" -> r.toString)
+         ret ::= "jobad:mmtsrc" -> r.toString
+      }
+      pc.style.foreach {s =>
+         ret ::= "class" -> s(pc)
       }
       ret
    }
@@ -52,16 +65,18 @@ class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter
       val mo = element("mo", Nil, s)
       pc.out(mo)
    }
-   override def doDelimiter(p: GlobalName, d: parser.Delimiter, implicits: List[Cont])(implicit pc : PresentationContext) {
-      val mo = element("mo", ("jobad:href" -> p.toPath) :: jobadattribs, d.text)
+   override def doDelimiter(p: GlobalName, d: Delimiter, implicits: List[Cont])(implicit pc : PresentationContext) {
+      val mo = d.text match {
+         case " " => element("mspace", ("width" -> ".2em") :: ("jobad:href" -> p.toPath) :: jobadattribs, "")
+         case t   => element("mo", ("jobad:href" -> p.toPath) :: jobadattribs, t)
+      }
       if (! implicits.isEmpty) {
          pc.html.mrow {
-            doImplicit {implicits.head}
-            implicits.tail.foreach {i =>
+            pc.out(mo)
+            implicits.foreach {i =>
                doSpace(1)
                doImplicit {i()}
             }
-            pc.out(mo)
          }
       } else
          pc.out(mo)
@@ -74,7 +89,7 @@ class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter
       val nsAtts = List("xmlns" -> namespace("mathml"), "xmlns:jobad" -> jobadns)
       val mmtAtts = pc.owner match {
          case None => Nil
-         case Some(cp) => List("jobad:owner" -> cp.parent.toPath, "jobad:component" -> cp.component.toString)
+         case Some(cp) => List("jobad:owner" -> cp.parent.toPath, "jobad:component" -> cp.component.toString, "jobad:mmtref" -> "")
       }
       // <mstyle displaystyle="true">
       pc.out(openTag("math", nsAtts ::: mmtAtts))

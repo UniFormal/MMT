@@ -32,9 +32,8 @@ var navigation = {
 
 	leftClick: function(target, JOBADInstance) {
 	   //handling clicks on parts of the document
-        if(target.hasAttribute('mmtlink')) {
+      if(target.hasAttribute('mmtlink')) {
 			var uri = target.attr('mmtlink');
-			console.log(uri);
 			this.navigate(uri);
 		}
 		if(target.hasAttribute('loadable')) {
@@ -77,9 +76,8 @@ var navigation = {
 		}
 
 		if (target.hasAttribute('jobad:href')) {
-			var mr = $(target).closest('mrow');
-			var select = (mr.length == 0) ? target[0] : mr[0];
-			return true; // do nothing for now
+			var uri = target.attr('jobad:href');
+			this.navigate(uri);
 		}
 
 		mmt.unsetSelected();	
@@ -91,10 +89,15 @@ var navigation = {
 		var res = {};
 		var me = this;
 		if (target.hasAttribute('jobad:href')) {
+		   res["local navigation"] = function() {
+		         var r = target.getAttribute('jobad:href');
+		         me.navigate(r);
+		   };
 		   res["remote navigation"] = function() {
 		         var r = target.getAttribute('jobad:href');
 		         me.navigateServer(r);
 		   };
+         res["open in new window"] = function() {mmt.openCurrent();};
 		}
       return res;
    },

@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
 import objects._
 import utils._
+import notations._
 import parser._
 
 import scala.math.BigInt.int2bigInt

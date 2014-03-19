@@ -82,6 +82,7 @@ sealed trait ContentPath extends Path {
    def isGeneric : Boolean
    def $(comp: DeclarationComponent) = CPath(this, comp)
    def module : Term
+   def name : LocalName
 }
 
 /**
@@ -111,11 +112,13 @@ case class MPath(parent : DPath, name : LocalName) extends ContentPath {
  * This includes virtual declarations and declarations within complex module expressions.
  */
 case class GlobalName(module: Term, name: LocalName) extends ContentPath {
-   def doc = utils.mmt.mmtbase
+   def doc = module.toMPath.doc
    def ^! = if (name.length == 1) module.toMPath else GlobalName(module, name.init)
    def last = name.last.toPath
-   def apply(args: List[Term]) : Term = OMA(OMID(this), args)
+   def apply(args: List[Term]) : Term = OMA(OMS(this), args)
    def apply(args: Term*) : Term = apply(args.toList)
+   def apply(con: Context, args: List[Term]) : Term = OMBINDC(OMS(this), con, args)
+   def apply(subs: Substitution, con: Context, args: List[Term]) : Term = ComplexTerm(this, subs, con, args)
    /** true iff the parent is a named module and each include step is simple */
    def isSimple : Boolean = module.isInstanceOf[OMID] && name.steps.forall(_.isInstanceOf[SimpleStep])
    def isGeneric = (module.toMPath == mmt.mmtcd)

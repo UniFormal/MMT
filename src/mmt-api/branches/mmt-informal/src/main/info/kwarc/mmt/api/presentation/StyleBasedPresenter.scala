@@ -101,10 +101,10 @@ class StyleBasedPresenter extends Presenter {
       val lparS = lpar.copy(source = SourceRef.get(s))
       present(StrToplevel(s), gpar, lpar)
    }
-   def apply(o: Obj)(implicit rh : RenderingHandler) {
+   def apply(o: Obj, owner: Option[CPath])(implicit rh : RenderingHandler) {
       val gpar = GlobalParams(rh, style)
       val lpar = LocalParams.objectTop
-      present(ObjToplevel(o, None), gpar, lpar)
+      present(ObjToplevel(o, owner), gpar, lpar)
    }
 
    /** the main presentation method
@@ -165,7 +165,12 @@ class StyleBasedPresenter extends Presenter {
             s.components.foreach(c => present(c, gpar, lpar)) //could be much better
             
          case o1: Obj =>
-            val (o, posP, notationOpt) = Presenter.getNotation(controller,o1, true)
+            val (o, posP, notationOpt) = o1 match {
+               case t: Term => controller.pragmatic.makePragmatic(t)(p => Presenter.getNotation(controller, p, true)) match {
+                  case Some(tP) => (tP.term, tP.pos, Some(tP.notation))
+                  case _ => (o1, Position.positions(o1), None)
+               }
+            }
             //default values
             var key = NotationKey(o.head, o.role)
             var newlpar = lpar

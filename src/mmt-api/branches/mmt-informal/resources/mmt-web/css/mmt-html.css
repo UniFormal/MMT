@@ -2,7 +2,7 @@ span.name {
  font-weight: bold; 
 }
 
-tr.definition, tr.type, tr.domain, tr.codomain,
+tr.definition, tr.domain, tr.codomain,
 tr.onedim-notation, tr.twodim-notation {
   display: none;
 }
@@ -11,12 +11,18 @@ tr.tags, tr.metadata {
 }
 
 div.constant {
-}
-
-table.constant {
+  border-width: 1px;
+  border-radius: 5px;
+  border-style: solid;
+  margin-top: 10px;
 }
 
 span.compToggle {
-  color: blue;
+  margin-left:10px;
+  background-color: Wheat;
   margin-right: 10px;
+}
+
+span.compLabel {
+  background-color: Wheat;
 }
