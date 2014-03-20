@@ -15,7 +15,6 @@ import scala.concurrent._
 import tiscaf._
 import scala.collection.mutable._
 
-
 class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   
   def error(msg : String) : HLet = {
