@@ -289,7 +289,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
                   case e: InvalidUnit =>
                      // TODO get region from e.unit.component
                      val steps = e.history.getSteps.reverse
-                     extraMessages = steps.map(_.present(controller.presenter.asString))
+                     extraMessages = steps.map(_.present(o => controller.presenter.asString(o)))
                      // WFJudgement must exist because we always start with it
                      // but maybe lastWFJ.wfo has lost its region through simplification or points to an unintended region?
                      steps.find(_.isInstanceOf[WFJudgement]) map {

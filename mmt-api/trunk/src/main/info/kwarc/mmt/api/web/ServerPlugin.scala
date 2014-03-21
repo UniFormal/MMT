@@ -117,12 +117,13 @@ class SearchServer extends ServerExtension("search") {
       val res = search(sq, true)
       val html = utils.HTML.builder
       import html._
-      div(attributes = List("xmlns" -> xml.namespace("html"))) {
+      div(attributes = List("xmlns" -> xml.namespace("html"), "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
          res.foreach {r =>
             div("result") {
                val CPath(par, comp) = r.cpath
-               div("resultpath", onclick=s"resultClick('${par.module.toMPath.toPath}')") {
-                  text {comp.toString + " of " + par.toPath}
+               div {
+                  text {comp.toString + " of "}
+                  span("mmturi", attributes=List("jobad:href" -> par.toPath)) {text {par.last}}
                }
                r match {
                   case SearchResult(cp, pos, None) =>
