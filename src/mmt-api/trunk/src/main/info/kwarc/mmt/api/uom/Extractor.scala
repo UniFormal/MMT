@@ -64,11 +64,11 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
     "import ConstantScala._\n"
 
    private def arityToScala(arity: Arity) : List[(String,String)] = arity.components.map {
-      case Arg(n) => ("x" + n.abs, "Term")
-      case ImplicitArg(n) => ("x" + n.abs, "Term")
-      case SeqArg(n,_) => ("xs" + n.abs, "List[Term]")
-      case Var(n,_,None) => ("v" + n, "VarDecl")
-      case Var(n,_,Some(_)) => ("vs" + n, "Context")
+      case Arg(n,_) => ("x" + n.abs, "Term")
+      case ImplicitArg(n,_) => ("x" + n.abs, "Term")
+      case SeqArg(n,_,_) => ("xs" + n.abs, "List[Term]")
+      case Var(n,_,None,_) => ("v" + n, "VarDecl")
+      case Var(n,_,Some(_),_) => ("vs" + n, "Context")
    }
    private def lastArgIsSeq(arity: Arity) = ! arity.arguments.isEmpty && arity.arguments.last.isSequence
    private def lastVarIsSeq(arity: Arity) = ! arity.variables.isEmpty && arity.variables.last.isSequence

@@ -1,0 +1,31 @@
+theory http://cds.omdoc.org/urtheories?Scala
+Declares http://cds.omdoc.org/urtheories?Scala http://cds.omdoc.org/urtheories?Scala?type
+constant http://cds.omdoc.org/urtheories?Scala?type
+Declares http://cds.omdoc.org/urtheories?Scala http://cds.omdoc.org/urtheories?Scala?hasType
+constant http://cds.omdoc.org/urtheories?Scala?hasType
+Declares http://cds.omdoc.org/urtheories?Scala http://cds.omdoc.org/urtheories?Scala?Any
+constant http://cds.omdoc.org/urtheories?Scala?Any
+Declares http://cds.omdoc.org/urtheories?Scala http://cds.omdoc.org/urtheories?Scala?Unit
+constant http://cds.omdoc.org/urtheories?Scala?Unit
+Declares http://cds.omdoc.org/urtheories?Scala http://cds.omdoc.org/urtheories?Scala?unit
+constant http://cds.omdoc.org/urtheories?Scala?unit
+Declares http://cds.omdoc.org/urtheories?Scala http://cds.omdoc.org/urtheories?Scala?Product
+constant http://cds.omdoc.org/urtheories?Scala?Product
+Declares http://cds.omdoc.org/urtheories?Scala http://cds.omdoc.org/urtheories?Scala?Tuple
+constant http://cds.omdoc.org/urtheories?Scala?Tuple
+Declares http://cds.omdoc.org/urtheories?Scala http://cds.omdoc.org/urtheories?Scala?Function
+constant http://cds.omdoc.org/urtheories?Scala?Function
+Declares http://cds.omdoc.org/urtheories?Scala http://cds.omdoc.org/urtheories?Scala?Lambda
+constant http://cds.omdoc.org/urtheories?Scala?Lambda
+Declares http://cds.omdoc.org/urtheories?Scala http://cds.omdoc.org/urtheories?Scala?List
+constant http://cds.omdoc.org/urtheories?Scala?List
+Declares http://cds.omdoc.org/urtheories?Scala http://cds.omdoc.org/urtheories?Scala?list
+constant http://cds.omdoc.org/urtheories?Scala?list
+Declares http://cds.omdoc.org/urtheories?Scala http://cds.omdoc.org/urtheories?Scala?BigInt
+constant http://cds.omdoc.org/urtheories?Scala?BigInt
+Declares http://cds.omdoc.org/urtheories?Scala http://cds.omdoc.org/urtheories?Scala?Double
+constant http://cds.omdoc.org/urtheories?Scala?Double
+Declares http://cds.omdoc.org/urtheories?Scala http://cds.omdoc.org/urtheories?Scala?Boolean
+constant http://cds.omdoc.org/urtheories?Scala?Boolean
+Declares http://cds.omdoc.org/urtheories?Scala http://cds.omdoc.org/urtheories?Scala?String
+constant http://cds.omdoc.org/urtheories?Scala?String

@@ -50,10 +50,12 @@ case object DomComponent  extends DeclarationComponent("domain")
 case object CodComponent  extends DeclarationComponent("codomain")
 
 abstract class NotationComponent(s: String) extends DeclarationComponent(s)
-/** one-dimensional notation of a symbol */
-case object OneDimNotationComponent extends NotationComponent("onedim-notation")
-/** two-dimensional notation of a symbol */
-case object TwoDimNotationComponent extends NotationComponent("twodim-notation")
+/** (text-based) parsing notation of a symbol */
+case object ParsingNotationComponent extends NotationComponent("parsing-notation")
+/** (two-dimensional, MathML-like) presentation notation of a symbol */
+case object PresentationNotationComponent extends NotationComponent("presentation-notation")
+/** (narrative) verbalization notation of a symbol */
+case object VerbalizationNotationComponent extends NotationComponent("verbalization-notation")
 
 // the following components are used only by change management
 case object ParamsComponent extends DeclarationComponent("params")

@@ -1,90 +1,0 @@
-namespace http://cds.omdoc.org/examples
-
-theory Bool : http://cds.omdoc.org/urtheories?LF =
-  bool  : type
-  true  : bool
-  false : bool
-
-
-theory Logic : http://cds.omdoc.org/urtheories?LF =
-  include ?Bool
-  ded   : bool → type # ⊦ 1 prec -5  role Judgment
-
-  
-theory Nat : http://cds.omdoc.org/urtheories?LF =
-  nat   : type
-  zero  : nat              # O 
-  one   : nat              # I 
-  succ  : nat → nat        # 1 ' prec 20
-  plus  : nat → nat → nat  # 1 + 2 prec 10 
-  times : nat → nat → nat  # 1 * 2 prec 15 
-  
-  include ?Bool
-  equal : nat → nat → bool  # 1 = 2 prec 5role Eq
-  leq   : nat → nat → bool  # 1 ≤ 2 prec 5
-
-
-theory NatRules : http://cds.omdoc.org/urtheories?LF =
-  include ?Logic
-  include ?Nat 
-
-  refl  : {X} ⊦ X = X  
-  sym   : {X,Y} ⊦ X = Y → ⊦ Y = X 
-  trans : {X,Y,Z} ⊦ X = Y → ⊦ Y = Z → ⊦ X = Z 
-  
-  eq_leq : {X,Y,Z} ⊦ X = Y → ⊦ Y ≤ Z → ⊦ X ≤ Z  
-  leq_eq : {X,Y,Z} ⊦ X ≤ Y → ⊦ Y = Z → ⊦ X ≤ Z  
-  
-  plus_comm  : {X,Y} ⊦ X + Y = Y + X  
-  plus_assoc : {X,Y,Z} ⊦ (X + Y) + Z = X + (Y + Z) 
-  plus_neut_Ex : {X} ⊦ X + O = X  # %%rule 0
-  plus_neut    : {X} ⊦ X + O = X  = [X] plus_neut_Ex X  
-  
-  times_comm  : {X,Y} ⊦ X * Y = Y * X  
-  times_assoc : {X,Y,Z} ⊦ (X * Y) * Z = X * (Y * Z)  
-  times_neut  : {X} ⊦ X * I = Xrole Simplify  
-  
-  times_zero  : {X} ⊦ X * O = Orole Simplify  
-
-  distrib     : {X,Y,Z} ⊦ X * (Y + Z) = X * Y + X * Z
-  
-  leq_refl    : {X} ⊦ X≤X  
-  leq_trans   : {X,Y,Z} ⊦ X≤Y → ⊦ Y≤Z → ⊦ X≤Z    
-  leq_antisym : {X,Y} ⊦ X≤Y → ⊦ Y≤X → ⊦ X=Y      
-  
-  plus_mono     : {X,Y,Z} ⊦ X≤Y → ⊦ X+Z ≤ Y+Z  
-  plus_mono_L   : {X,Y,Z} ⊦ X≤Y → ⊦ Z+X ≤ Z+Y   
-                = [X,Y,Z,p] leq_eq (eq_leq plus_comm (plus_mono p)) plus_comm
-  plus_invmono  : {X,Y,Z} ⊦ X+Z≤Y+Z → ⊦ X≤Y  
-
-  theory NatOnly : http://cds.omdoc.org/urtheories?LF =
-    least         : {X} ⊦ O ≤ X 
-    plus_larger_L : {X,Y} ⊦ X≤X+Y  
-                  = [X][Y] eq_leq (sym plus_neut) (plus_mono_L least)  
-    plus_larger_R : {X,Y} ⊦ Y≤X+Y  
-                  = [X][Y] leq_eq plus_larger_L plus_comm 
-    times_mono    : {X,Y,Z} ⊦ X ≤ Y → ⊦ X * Z ≤ Y * Z  
-    times_invmono : {X,Y,Z} ⊦ X * Z ≤ Y * Z → ⊦ X ≤ Y  
-  
-
-  
-theory NatMinus : http://cds.omdoc.org/urtheories?LF =
-  include ?NatRules 
-  include ?NatRules/NatOnly
- 
-  // A partial subtraction operation that takes a proof of definedness as a 3rd arguments. 
-  minus    : {X,Y} ⊦ Y≤X → nat   # 1 - 2 ! 3 prec 15   ## 1 - 2 %I3
-  minus_pi : {X,Y,P,Q} ⊦ X-Y!P = X-Y!Q                  
-
-  minus_intro_L : {X,Y,Z} {p: ⊦ X+Y=Z} ⊦ Z-Y!(leq_eq plus_larger_R p) = X  
-  minus_intro_R : {X,Y,Z} {p: ⊦ X+Y=Z} ⊦ Z-X!(leq_eq plus_larger_L p) = Y   
-                = [X,Y,Z] [p] trans minus_pi (minus_intro_L (trans plus_comm p))
-  minus_elim    : {X,Y,Z,P} ⊦ Z-Y!P = X  →  ⊦ X+Y = Z                      
-
-  
-  minus_inverse : {X} ⊦ X-X!leq_refl = O  
-                = [X] trans minus_pi (minus_intro_R (plus_neut_Ex X)) 
-  minus_neut    : {X} ⊦ X-O!least = X 
-                = [X] trans minus_pi (minus_intro_L (plus_neut_Ex X))  
-  // also provable: associativity +- (maybe X-(Y+Z)=(X-Y)-Z must be axiom) and distributivity *- 
-

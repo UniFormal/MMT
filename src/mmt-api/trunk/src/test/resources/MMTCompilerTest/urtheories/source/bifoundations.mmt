@@ -1,0 +1,17 @@
+namespace http://cds.omdoc.org/urtheories
+
+view Syntactic : http://www.openmath.org/cd?OpenMath -> ?ScalaOM =
+  Object     = Any
+  mapsto     = Function
+  naryObject = List[Any]
+  binder     = Fun [Context,Term] Any
+  FMP        = (x:Term) scala assert(x == true)
+
+  
+view Semantic : http://www.openmath.org/cd?OpenMath -> ?ScalaOM =
+  Object     = Term
+  mapsto     = Function
+  naryObject = List[Term]
+  binder     = Fun [Context,Term] Term
+  FMP        = (x:Term) scala assert(x == OMS(d))
+

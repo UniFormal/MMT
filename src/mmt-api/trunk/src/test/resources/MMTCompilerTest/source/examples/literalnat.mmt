@@ -1,15 +1,0 @@
-namespace http://cds.omdoc.org/examples
-
-theory NatLiterals : http://cds.omdoc.org/urtheories?LF =
-  include ?NatRules
-  include http://real.omdoc.org?Bool
-  include http://real.omdoc.org?StandardNat
-  test  : ⊦ 1+1 = 2
-
-  
-theory IntLiterals : http://cds.omdoc.org/urtheories?LF =
-  include ?IntRules
-  include http://real.omdoc.org?Bool
-  include http://real.omdoc.org?StandardInt
-  test  : ⊦ 1-3 = -2
-

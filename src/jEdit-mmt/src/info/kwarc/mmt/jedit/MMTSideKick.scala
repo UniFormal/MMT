@@ -90,7 +90,7 @@ class IDCompletion(view : org.gjt.sp.jedit.View, controller: Controller, constan
         case Some(not) =>
            val text = not.parsingMarkers.flatMap {
               case d: Delimiter => d.text
-              case SeqArg(_,sep) => " " + sep.text + " "
+              case SeqArg(_,sep,_) => " " + sep.text + " "
               case a:Arg => " "
               case _:ImplicitArg => ""
               case v: Var => " "

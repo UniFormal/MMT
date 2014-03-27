@@ -9,17 +9,19 @@ import scala.io._
 
 class MMTCompilerSpec extends FlatSpec with Matchers {
   val controller = new Controller()
-  val testLocation = "src/test/resources/MMTCompilerTest/"
+  val urLocation = "src/test/resources/MMTCompilerTest/urtheories"
+  val testLocation = "src/test/resources/MMTCompilerTest/examples"
   
   "Adding an archive" should "not throw an exception" in {
+      controller.handleLine("archive add " + urLocation)
       controller.handleLine("archive add " + testLocation)
   }
   
   val docbase = new DPath(URI("http://docs.omdoc.org/test/"))
-  val dpaths = List(docbase / "examples" / "int.omdoc",
-		  			docbase / "examples" / "fol.omdoc",
-		  			docbase / "examples" / "literalnat.omdoc",
-		  			docbase / "examples" / "numbers.omdoc")
+  val dpaths = List(docbase / "int.omdoc",
+		  			docbase / "fol.omdoc",
+		  			docbase / "literals.omdoc",
+		  			docbase / "arithmetic_rules.omdoc")
   
   val modbase = new DPath(URI("http://cds.omdoc.org/"))
   val mpaths = List((modbase / "examples") ? "Int",
@@ -53,9 +55,13 @@ class MMTCompilerSpec extends FlatSpec with Matchers {
   }
   
   "Indexing an archive" should "not throw an error" in {
-    controller.handleLine("build test mmt-omdoc")
+    
     controller.handleLine("extension info.kwarc.mmt.lf.Plugin")
     controller.handleLine("extension info.kwarc.mmt.api.objects.ErrorsPlugin")
+    controller.handleLine("build urtheories mmt-omdoc")
+    controller.handleLine("build test mmt-omdoc")
+    controller.handleLine("build test mmt-omdoc")
+
   }
   it should "allow access to documents from narration" in {
     controller.memory.clear

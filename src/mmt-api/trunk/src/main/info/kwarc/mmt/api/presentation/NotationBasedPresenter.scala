@@ -327,11 +327,15 @@ trait NotationBasedPresenter extends ObjectPresenter {
                 */
                def doChild(ac: ArityComponent, child: Obj, currentPosition: Int) = {
                   // the bracketing function
-                  val brack = (childNot: TextNotation) => Presenter.bracket(not.precedence, currentPosition, childNot)
+                  val precedence = ac.precedence match {
+                    case Some(prec) => prec
+                    case None => not.precedence //take the notation precedence as the default
+                  }
+                  val brack = (childNot: TextNotation) => Presenter.bracket(precedence, currentPosition, childNot)
                   // the additional context of the child
                   val newCont: Context = ac match {
                      case _: ArgumentComponent => context
-                     case Var(n,_,_) => context.take(n-firstVarNumber)
+                     case Var(n,_,_,_) => context.take(n-firstVarNumber)
                      case _ => Nil
                   }
                   val newVarData = newCont.map {v => VarData(v, Some(op), pc.pos)}
@@ -359,15 +363,15 @@ trait NotationBasedPresenter extends ObjectPresenter {
                      val compFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[ArgumentMarker]
                      //val delimFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.Delimiter]
                      current match {
-                        case c @ Arg(n) =>
+                        case c @ Arg(n,_) =>
                            doChild(c, args(n-firstArgNumber), currentPosition)
                            if (compFollows) doSpace(1)
-                        case c @ ImplicitArg(n) =>
+                        case c @ ImplicitArg(n,_) =>
                            doImplicit {
                               doChild(c, args(n-firstArgNumber), currentPosition)
                               if (compFollows) doSpace(1)
                            }
-                        case c @ Var(n, typed, _) => //sequence variables impossible due to flattening
+                        case c @ Var(n, typed, _,_) => //sequence variables impossible due to flattening
                            doChild(c, context(n-firstVarNumber), currentPosition)
                            if (compFollows) doSpace(1)
                         case AttributedObject =>
@@ -375,7 +379,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
                            //TODO
                         case d: Delimiter =>
                            val unpImps = if (unplacedImplicitsDone) Nil else unplacedImplicits map {
-                              case c @ ImplicitArg(n) =>
+                              case c @ ImplicitArg(n,_) =>
                                   (_: Unit) => doChild(c, args(n-firstArgNumber), 0); ()
                            }
                            val letters = d.text.exists(_.isLetter)
@@ -454,13 +458,13 @@ class StructureAndObjectPresenter extends Presenter with NotationBasedPresenter 
                rh("  = ")
                apply(t, Some(c.path $ DefComponent))
             }
-            c.notC.oneDim foreach {n =>
+            c.notC.parsing foreach {n =>
                rh("\n")
                doIndent
                rh("  # ")
                rh(n.toText)
             }
-            c.notC.twoDim foreach {n =>
+            c.notC.presentation foreach {n =>
                rh("\n")
                doIndent
                rh("  ## ")

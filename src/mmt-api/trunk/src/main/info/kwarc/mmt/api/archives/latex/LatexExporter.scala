@@ -57,8 +57,8 @@ class LatexExporter extends Exporter {
          case s: SeqArg => "\\mmtfold{" + doDelim(s.sep) + "}{" + "#" + s.number.abs + "}"
          case a: ArgumentMarker => "#" + a.number.abs
          case d: Delimiter => doDelim(d)
-         case Var(n, _, Some(sep)) => "\\mmtfold{" + doDelim(sep) + "}{" + "#" + n + "}"
-         case Var(n, _, None) => "#" + n
+         case Var(n, _, Some(sep),_) => "\\mmtfold{" + doDelim(sep) + "}{" + "#" + n + "}"
+         case Var(n, _, None,_) => "#" + n
          case AttributedObject => "#1" //probably wrong
          case GroupMarker(elements) => "{" + doMarkers(elements) + "}"
          case ScriptMarker(main, sup, sub, over, under) =>
@@ -114,7 +114,7 @@ class LatexExporter extends Exporter {
                case Some(t) => doTerm(t)
             }
             tex(s"\\mmtdecl$dfL{\\mathit{${doDelim(Delim(c.name.toPath))}}}{$tpL} \\\\")
-            val numArgs = c.notC.oneDim match {
+            val numArgs = c.notC.parsing match {
                case None => ""
                case Some(tn) => "[" + tn.arity.length + "]"
             }

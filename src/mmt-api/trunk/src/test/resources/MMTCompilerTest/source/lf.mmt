@@ -1,21 +1,0 @@
-namespace http://cds.omdoc.org/urtheories
-
-import meta http://cds.omdoc.org/mmt
-
-theory Typed =
-   kind
-   type
-   oftype   # : 1 prec  -9995
-   equality # equality 1 2   role Eq
-   include meta:?Errors
-   include meta:?ModExp
-
-
-theory LF =
-   include ?Typed
-   
-   Pi     # { V1T,… } -2 prec -10000
-   lambda # [ V1T,… ] -2 prec -10000
-   apply  # 1%w…         prec -10
-   arrow  # 1→…          prec  -9990
-
