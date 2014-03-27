@@ -12,18 +12,40 @@ import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.web._
 import info.kwarc.mmt.api.parser._
+import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.flexiformal._
 import scala.xml.{Node,Elem,NamespaceBinding}
 
-class STeXImporter extends Importer with Logger {
-  val key : String = "stex-omdoc"
-  override val logPrefix = "steximporter"    
-    
-  def includeFile(name : String) : Boolean = name.endsWith(".omdoc") //stex/latexml generated omdoc
+abstract class STeXError(msg : String) extends Error(msg)
 
+case class STeXParseError(msg : String, sref : Option[SourceRef]) extends STeXError(msg)
+case class STeXLookupError(msg : String) extends STeXError(msg)
+
+
+class STeXImporter extends Importer {
+  val key : String = "stex-omdoc"
+  override val logPrefix = "steximporter"
+  def includeFile(name : String) : Boolean = name.endsWith(".omdoc") //stex/latexml generated omdoc
+  
   override def init(controller: Controller) {
     this.controller = controller
     report = controller.report
+   }
+  
+  override def apply(modifier: BuildTargetModifier, arch: Archive, in: List[String], args: List[String]) {
+      val reqArgs = requiredArguments(modifier)
+      if (reqArgs != args.length)
+         throw ParseError("wrong nunmber of arguments, required: " + reqArgs)
+      modifier match {
+         case Update => update(arch, args, in)
+         case Clean  => clean(arch, args, in)
+         case Build  => 
+           //running twice, first to load all theories, then to successfully parse objects
+           build(arch, args, in)
+           out.write("\n\n\n\n\n")
+           build(arch, args, in)
+      }
+      out.close()
    }
   
   def buildOne(bf : BuildFile, cont : Document => Unit) {
@@ -36,12 +58,24 @@ class STeXImporter extends Importer with Logger {
       val doc = controller.getDocument(bf.dpath)
       if (errors != Nil) {
         log("Errors: " + errors.mkString("\n"))
+        reportErrors(bf.inFile.toJava.getAbsolutePath(), errors)
       }
       cont(doc)
     } catch {
       case e : Throwable => 
         log("WARNING: Skipping article due to error: " + e.toString() + " \n" + e.getStackTraceString) //skipping declaration
     }
+  }
+  
+  val file = new java.io.File("./stex-errors.log")
+  val out = new java.io.PrintWriter(new java.io.OutputStreamWriter(
+         new java.io.BufferedOutputStream(new java.io.FileOutputStream(file)),
+         java.nio.charset.Charset.forName("UTF-8")
+       ))
+  
+  def reportErrors(fpath : String, errors : List[Error]) {
+    out.write(fpath)
+    out.write(errors.mkString("\n    ", "\n    ", "\n"))
   }
   
   def compileOne(inText : String, dpath : DPath) : (String, List[Error]) = {
@@ -70,6 +104,7 @@ class STeXImporter extends Importer with Logger {
   
   val xmlNS = "http://www.w3.org/XML/1998/namespace"
   val omdocNS = "http://omdoc.org/ns"
+  val mhBase = DPath(URI("http://mathhub.info/"))
   
   private def translateArticle(n : Node)(implicit dpath : DPath) : List[Error] = {
     var errors : List[Error] = Nil
@@ -78,8 +113,10 @@ class STeXImporter extends Importer with Logger {
         case "omdoc" => 
           implicit val doc = new Document(dpath)
           controller.add(doc)
-          val anonthy = new DeclaredTheory(dpath, LocalName.anonName, None) //no meta for now
+          implicit val anonthy = new DeclaredTheory(dpath, OMV.anonymous, None) //no meta for now
+          val ref = MRef(dpath, anonthy.path, true)
           controller.add(anonthy)
+          controller.add(ref)
           errors ++= n.child.map(translateTheory).flatten
       }
     } catch {
@@ -88,35 +125,32 @@ class STeXImporter extends Importer with Logger {
     errors
   }
   
-  private def translateTheory(n : Node)(implicit doc : Document) : List[Error] = {
+  private def translateTheory(n : Node)(implicit doc : Document, anonthy : DeclaredTheory) : List[Error] = {
     var errors : List[Error]  = Nil
     try {
       n.label match {
         case "theory" => 
-          val id =  (n \ s"@{$xmlNS}id").text
-          val name = LocalName(id)
-          implicit val thy = new DeclaredTheory(doc.path, name, None)
+          val name = getName(n, doc)
+          val thy = new DeclaredTheory(doc.path, name, None)
           val mpath = thy.path 
           val ref = MRef(doc.path, mpath, true)
           controller.add(ref)
           controller.add(thy)
-          errors ++= n.child.map(translateDeclaration).flatten
-        case "metadata" => //ignore for now
+          errors ++= n.child.map(translateDeclaration(_)(doc, thy)).flatten
+        case "metadata" => //TODO
         case "omgroup" => 
           val errs = n.child.map(translateTheory)
           errors ++= errs.flatten
+        case "bibliography" => //TODO
+        case "index" => //TODO
+        case "oref" => //TODO
+        case _ => translateDeclaration(n : Node)(doc, anonthy)
       }
     } catch {
       case e : Error => errors ::= e
     }
     errors
   }
-  
-  def _tmp_translate_hardcoded_uris(fromS : String) : String = fromS match {
-    case "../../../slides/extcds/omstd/arith1.omdoc#arith1" => "http://docs.omdoc.org/smglo/sTeX/arith.omdoc#arith"
-    case "../../../slides/extcds/omstd/relation1.omdoc#relation1" => "http://docs.omdoc.org/smglo/sTeX/relation.omdoc#relation"
-    case _ => fromS
-  }  
   
   private def translateDeclaration(n : Node)(implicit doc : Document, thy : DeclaredTheory) : List[Error] = {
     var errors : List[Error] = Nil 
@@ -125,53 +159,45 @@ class STeXImporter extends Importer with Logger {
     try {
       n.label match {
         case "imports" => //omdoc import -> mmt (plain) include
-          var fromS = (n \ "@from").text
-          fromS = _tmp_translate_hardcoded_uris(fromS)
-          val from = fromS.split("#").toList match {
-            case dpathS :: localPathS :: Nil =>
-              val dpath = if (dpathS.startsWith("..//") && dpathS(4).isLetter) {
-                Path.parseD(dpathS.substring(4), doc.path)
-              } else {
-                DPath(URI(dpathS))
-              }
-              dpath ? LocalName(localPathS)
-            case _ => throw ParseError("invalid stex mpath: " + fromS)
-          }
+          val fromS = (n \ "@from").text
+          val from = parseMPath(fromS)
           if (from != mpath) {
             val include = PlainInclude(from, thy.path)
             controller.add(include)
           }
         case "symbol" => //omdoc symbol -> mmt constant
-          val nameS = (n \ "@name").text
-          val name = LocalName(nameS)
+          val name = (n \ "@name").text match {
+            case "" => getName(n, thy)
+            case s => LocalName(s)
+          }
           val tpWrapperO = n.child.find(_.label == "type")
           val tpO = tpWrapperO.map(tpN => translateTerm(tpN.child.head))
           val dfO = None //TODO, get also def
-          val const = new Constant(OMMOD(mpath), name, None, TermContainer(tpO), TermContainer(dfO), None, presentation.NotationContainer())
-          
+          val const = new Constant(OMMOD(mpath), name, None, TermContainer(tpO), TermContainer(dfO), None, NotationContainer())
           controller.add(const)
         case "definition" => 
           val sref = parseSourceRef(n, doc.path)
-          try {
-            val nameS =  (n \ s"@{$xmlNS}id").text
-            val name = LocalName(nameS)
-            val targetsS = (n \ "@for").text.split(" ")
-            val targets = targetsS map {s =>
-              mpath ? LocalName(s) //TODO handle non-local references 
+          val name = getName(n, thy)
+          val targetsS = (n \ "@for").text.split(" ")
+          val targets = targetsS map {s =>
+            mpath ? LocalName(s) //TODO handle non-local references 
+          }
+          parseNarrativeObject(n)(dpath, thy, targets.head) match {
+            case None => //nothing to do  
+            case Some(no) =>
+              val dfn = new Definition(OMMOD(mpath), name, targets.toList, no)
+              SourceRef.update(dfn, sref)
+              controller.add(dfn)
             }
-          //only interested in CMP for now
-            n.child.find(_.label == "CMP") match {
-              case None => log("no CMP: " + n.child.mkString("\n"))//nothing to do  
-              case Some(cmpXML) =>
-                val cmp = translateCMP(cmpXML.child.head)(dpath, thy, targets.head)
-                
-                val dfn = new Definition(OMMOD(mpath), Position(thy.children.length), targets.toList, cmp)
-                SourceRef.update(dfn, sref)
-                controller.add(dfn)
-            }
-          } catch {
-            case e : Error => //throw CompilerError(sref, List(e.shortMsg), false)
-            case e : Exception => throw SourceError("compiler", sref, e.getMessage, Nil, false, false)
+        case "omtext" => 
+          val name = getName(n, thy)
+          val sref = parseSourceRef(n, doc.path)
+          parseNarrativeObject(n)(dpath, thy, mpath ? name) match {
+            case Some(no) =>               
+              val dfn = new PlainNarration(OMMOD(mpath), name, no)
+              SourceRef.update(dfn, sref)
+              controller.add(dfn)
+            case None => //nothing to do
           }
         case "notation" =>
           val prototype = n.child.find(_.label == "prototype").get
@@ -182,13 +208,15 @@ class STeXImporter extends Importer with Logger {
           val refName = refPath ? LocalName(name)
           val notation = makeNotation(prototype.child.head, rendering.child.head)(doc.path, thy, refName)
           val c = controller.memory.content.getConstant(refName, p => "Notation for nonexistent constant " + p)
-          val const = new Constant(c.home, c.name, c.alias, c.tpC, c.dfC, c.rl, presentation.NotationContainer(notation))
+          val const = new Constant(c.home, c.name, c.alias, c.tpC, c.dfC, c.rl, NotationContainer(notation))
           controller.memory.content.update(const) 
           val res = controller.memory.content.getConstant(refName, p => "Notation for nonexistent constant " + p)
         
         case "metadata" => //TODO  
+        
         case _ =>
-          val nr = new PlainNarration(OMMOD(mpath), Position(thy.children.length), FlexiformalDeclaration.parseNarrativeObject(rewriteNode(n))(doc.path))
+          val name = getName(n, thy)
+          val nr = new PlainNarration(OMMOD(mpath), name, FlexiformalDeclaration.parseNarrativeObject(rewriteNode(n))(doc.path))
           controller.add(nr)
       }
     } catch {
@@ -199,7 +227,19 @@ class STeXImporter extends Importer with Logger {
     errors
   }
   
-  def makeNotation(proto : scala.xml.Node, rendering : scala.xml.Node)(implicit dpath : DPath, thy : DeclaredTheory, spath : GlobalName) : parser.TextNotation = {
+  def parseNarrativeObject(n : scala.xml.Node)(implicit dpath : DPath, thy : DeclaredTheory, spath : GlobalName) : Option[NarrativeObject]= {
+     n.child.find(_.label == "CMP").map(_.child) match {
+      case Some(nodes) => 
+        val cmpElems = nodes.map(translateCMP(_)(dpath, thy, spath))
+        val cmp = new NarrativeNode(<span/>, cmpElems.toList)                
+        Some(cmp)
+        case None => 
+          log("no CMP: " + n.child.mkString("\n")) //TODO probably turn this into a warning  
+          None
+    }
+  }
+  
+  def makeNotation(proto : scala.xml.Node, rendering : scala.xml.Node)(implicit dpath : DPath, thy : DeclaredTheory, spath : GlobalName) : TextNotation = {
     val argMap : collection.mutable.Map[String, Int] = new collection.mutable.HashMap() 
     val symName = proto.label match {
       case "OMA" => 
@@ -231,7 +271,7 @@ class STeXImporter extends Importer with Logger {
    } catch {
      case _ : Exception => 1
    }
-   new TextNotation(symName, Mixfix(markers), presentation.Precedence.integer(precS), mmt.mmtcd) //TODO to be replaced with None once arg becomes Option[MPath]
+   new TextNotation(symName, Mixfix(markers), presentation.Precedence.integer(precS), None)
   }
   
   def parseRenderingMarkers(n : scala.xml.Node,argMap : Map[String, Int])(implicit dpath : DPath, thy : DeclaredTheory, spath : GlobalName) : List[Marker] = n.label match {
@@ -271,6 +311,10 @@ class STeXImporter extends Importer with Logger {
               SeqArg(argNr, makeDelim(delim)) :: Nil
           } 
         }
+    case "mstyle" => n.child.toList.flatMap(parseRenderingMarkers(_, argMap))
+    case "merror" => Nil
+    case "mroot" => Delim("√") :: n.child.toList.flatMap(parseRenderingMarkers(_, argMap))
+    case "msqrt" => Delim("√") :: n.child.toList.flatMap(parseRenderingMarkers(_, argMap))
     case "none" => Nil
   }
   
@@ -294,7 +338,7 @@ class STeXImporter extends Importer with Logger {
            val l = lS.toInt 
            val r = rS.toInt
            (l,r)
-         case _ => throw new Exception("Invalid 'from' value in STeX source reference" + srcrefS)
+         case _ => throw STeXParseError("Invalid 'from' value in STeX source reference" + srcrefS, None)
        }
        val trangeS = toS.substring("to=".length, toS.length - 1) //removing "to=" and ending bracket
        val tvalsS = trangeS.split(";").toList
@@ -303,7 +347,7 @@ class STeXImporter extends Importer with Logger {
            val l = lS.toInt 
            val r = rS.toInt
            (l,r)
-         case _ => throw new Exception("Invalid 'to' value in STeX source reference " + srcrefS)
+         case _ => throw STeXParseError("Invalid 'to' value in STeX source reference " + srcrefS, None)
        }
        
       val from = SourcePosition(-1, fl, fr)
@@ -311,9 +355,57 @@ class STeXImporter extends Importer with Logger {
       val sreg = SourceRegion(from,to)
       SourceRef(dpath.uri, sreg)
       
-      case _ => throw new Exception("Invalid STeX source reference " + srcrefS)
+      case _ => throw STeXParseError("Invalid STeX source reference " + srcrefS, None)
     }
     
+  }
+  
+  def getName(n : Node, container : Content) : LocalName = {
+    try {
+      val nameS =  (n \ s"@{$xmlNS}id").text
+      LocalName(nameS)
+    } catch {
+      case e : Exception => LocalName("D" + container.children.length.toString)
+    }
+  }
+  
+  
+  def parseDPath(s : String) : DPath = {
+    val parts = s.split("/").toList
+    parts match {
+      case group :: project :: "source" :: name :: Nil => //MathHub URI
+        mhBase / group / project / (name + ".omdoc")
+      case _ => throw STeXParseError("Expected group/project/'source'/name for document path. Got: " + s, None)
+    }
+  }
+  
+  def parseMPath(s : String) : MPath = {
+    val parts = s.split("#")
+    parts.toList match {
+      case fpathS :: tnameS :: Nil => 
+        val dpath = parseDPath(fpathS)
+        dpath ? LocalName(tnameS)
+      case _ => throw STeXParseError("Expected 2 # separated parts for module path in: " + s, None)
+    }
+  }
+  
+  def resolveSPath(tnameS : String, snameS : String, container : MPath) : GlobalName = {
+    val tpaths = controller.globalLookup.visible(OMMOD(container)) //includes container
+    val options = tpaths.map(_.toMPath).filter(_.name.last.toPath == tnameS)
+    options.toList match {
+      case Nil => throw ParseError("Cannot resolve module " + tnameS + " from " + container.toPath) //perhaps not included
+      case l => 
+        val matches = l.map(controller.get(_)) flatMap {
+          case d : DeclaredTheory => 
+            d.getConstants.filter(_.name.last.toPath == snameS)
+          case _ => None
+        }
+        matches match {
+          case Nil => throw ParseError("Cannot resolve symbol for module=" + tnameS + " and symbol=" + snameS + ". No matching modules " + l +  " , contain symbol " + snameS ) 
+          case hd :: Nil => hd.path
+          case _ => throw ParseError("Cannot resolve symbol for module=" + tnameS + " and symbol=" + snameS + ". Several matching symbols: " + matches) 
+        }
+    }
   }
   
   def translateCMP(n : scala.xml.Node)(implicit dpath : DPath, thy : DeclaredTheory, spath : GlobalName) : NarrativeObject = n.label match {
@@ -327,8 +419,10 @@ class STeXImporter extends Importer with Logger {
     case "idx" =>  //first child is current in-text presentation, second is general verbalization information
       val ide = n.child.tail.head
       val name_parts = ide.child.map(_.child.mkString).toList
-      val not = new NotationDefinition(OMMOD(thy.path), Position(thy.children.length), spath, name_parts)
-      controller.add(not)
+      val name = getName(n, thy)
+      val not = new NotationDefinition(OMMOD(thy.path), name, spath, name_parts)
+      //disabling this temporarily
+      //controller.add(not)
       translateCMP(n.child.head)
     case "idt" => translateCMP(n.child.head) match {
       case nref : NarrativeRef => new NarrativeRef(nref.target, nref.text, true)        
@@ -343,11 +437,10 @@ class STeXImporter extends Importer with Logger {
   
   def rewriteNode(node : scala.xml.Node)(implicit mpath : MPath) : scala.xml.Node = node.label match {
       case "OMS" => 
-        var cd =  xml.attr(node, "cd")
+        val cd =  xml.attr(node, "cd")
         val name = xml.attr(node, "name")
-        val docName = cd + ".omdoc"
-        val doc = mpath.doc.^! / docName 
-        <om:OMS base={doc.toPath} module={cd} name={name}/>
+        val sym = resolveSPath(cd, name, mpath)
+        <om:OMS base={sym.module.toMPath.parent.toPath} module={sym.module.toMPath.name.last.toPath} name={sym.name.last.toPath}/>
       case "#PCDATA" => new scala.xml.Text(node.toString)
       case _ => new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, node.child.map(rewriteNode) :_*)
     }
