@@ -12,7 +12,7 @@
 		<pathelement location="${deploy}/lib/scala-reflect.jar"/>
 		<pathelement location="${deploy}/lib/scala-compiler.jar"/>
 		<pathelement location="${deploy}/lib/tiscaf.jar"/>
-		<pathelement location="${deploy}/mmt/mmt-api.jar"/>
+		<pathelement location="${deploy}/mmt/branches/informal/immt-api.jar"/>
 		<pathelement location="${deploy}/mmt/mmt-lfs.jar"/>
 		<pathelement location="${deploy}/mmt/mmt-lf.jar"/>
 	</path>
