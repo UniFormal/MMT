@@ -153,8 +153,8 @@ class GeneratedDepthRule(outer: GlobalName, inner: GlobalName, from: symbols.Con
     override def parent = from.home
     override def toString = desc
     val validSince = from.tpC.lastChangeAnalyzed
-    private val implOutInx = implArgsOut map { case ImplicitArg(i) => i-1 }
-    private val implInInx = implArgsIn map { case ImplicitArg(i) => i-1 }
+    private val implOutInx = implArgsOut map { case ImplicitArg(i,_) => i-1 }
+    private val implInInx = implArgsIn map { case ImplicitArg(i,_) => i-1 }
     def apply : Rewrite = { 
         (before : List[Term],inside : List[Term],after : List[Term]) => {
           val explBf = before.zipWithIndex.filterNot(p => implOutInx.contains(p._2)).map{_._1}

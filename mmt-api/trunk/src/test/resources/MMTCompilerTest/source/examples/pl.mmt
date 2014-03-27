@@ -1,59 +1,0 @@
-namespace http://cds.omdoc.org/examples
-
-//   intuitionistic propositional logic with natural deduction rules and a few example proofs 
-
-theory PL : http://cds.omdoc.org/urtheories?LF =
-  prop  : type          
-  ded   : prop → type          # ded 1  prec 0## ⊦ 1 prec 0role Judgment
-  contra : type  = {a} ded a # ↯             
-
-  true  : prop                                  
-  and   : prop → prop → prop   # 1 ∧ 2 prec 15
-  or    : prop → prop → prop   # 1 ∨ 2 prec 15
-  impl  : prop → prop → prop   # 1 ⇒ 2 prec 10
-  not   : prop → prop          # ¬ 1   prec 20
-  equiv : prop → prop → prop   # 1 ⇔ 2 prec 10
-        = [x,y] (x ⇒ y) ∧ (y ⇒ x)
-
-
-theory PLNatDed : http://cds.omdoc.org/urtheories?LF =
-  include ?PL  
-
-  trueI : ded true
-  
-  andI  : {A,B} ded A → ded B → ded A ∧ B   
-  andEl : {A,B} ded A ∧ B → ded A           
-  andEr : {A,B} ded A ∧ B → ded B           
-
-  orIl  : {A,B} ded A → ded A ∨ B           
-  orIr  : {A,B} ded B → ded A ∨ B           
-  orE   : {A,B,C} ded A ∨ B → (ded A → ded C) → (ded B → ded C) → ded C
-                                            
-
-  impI  : {A,B} (ded A → ded B) → ded A ⇒ B 
-  impE  : {A,B} ded A ⇒ B → ded A → ded B   
-
-  notI  : {A} (ded A → ↯) → ded ¬ A# notI 2
-  notE  : {A} ded ¬ A → ded A → ↯  # notE 2 3
-
-  equivI : {A,B} (ded A → ded B) → (ded B → ded A) → ded A ⇔ B  
-         = [A,B,p,q] andI (impI [x:ded A] p x) (impI [x] q x)  
-         
-         
-  equivEl : {A,B} ded A ⇔ B → ded A → ded B 
-          = [A,B,p,a] impE (andEl p) a 
-  equivEr : {A,B} ded A ⇔ B → ded B → ded A 
-          = [A,B,p,b] impE (andEr p) b 
-        
-  imp2I : {A,B,C} (ded A → (ded B → ded C)) → ded A ⇒ (B ⇒ C) 
-        = [A,B,C] [f] impI [p] (impI ([q] f p q))             
-  
-  imp2E : {A,B,C} ded A ⇒ (B ⇒ C) → ded A → ded B → ded C    
-        = [A,B,C] [p,q,r] impE (impE p q) r                   
-
-  example : {A} ded A ⇒ (A ∧ A)  
-          = [A] impI [p] andI p p 
-  
-  interactive_example : {A} ded A ⇒ (A ∧ A) 
-          = [A] ≪ded A ⇒ (A ∧ A)≫ 
-

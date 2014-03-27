@@ -96,8 +96,8 @@ class SimplificationRuleGenerator2 extends ChangeListener {
  	            	   	private val bfrNames = bfr.reverse
  	            	   	private val aftNames = aft.reverse
  	            	   	private val insNames = ins.reverse
- 	            	   	private val implOutInx = implArgsOut map { case ImplicitArg(i) => i-1 }
-    	                private val implInInx = implArgsIn map { case ImplicitArg(i) => i-1 }
+ 	            	   	private val implOutInx = implArgsOut map { case ImplicitArg(i,_) => i-1 }
+    	                private val implInInx = implArgsIn map { case ImplicitArg(i,_) => i-1 }
  	            	   	def apply : Rewrite = { 
  	            	   	  (before : List[Term],inside : List[Term],after : List[Term]) => {
  	            	   	    val explBf = before.zipWithIndex.filterNot(p => implOutInx.contains(p._2)).map{_._1}

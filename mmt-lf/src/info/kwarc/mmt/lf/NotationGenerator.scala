@@ -37,7 +37,7 @@ class NotationGenerator extends ChangeListener {
    override def onAdd(e: ContentElement) {e match {
       case c: Constant =>
          val notC = c.notC
-         if (notC.oneDim.isDefined && notC.twoDim.isDefined) return
+         if (notC.parsing.isDefined && notC.presentation.isDefined) return
          val tpU = c.tpC.get.getOrElse(return) // nothing to do if there is no (function) type
          val (_, tp) = parser.AbstractObjectParser.splitOffUnknowns(tpU)
          val (args, scp) = FunType.unapply(tp).getOrElse(return)
@@ -45,15 +45,15 @@ class NotationGenerator extends ChangeListener {
          if (numTotalArgs == 0 || ! isJudgment(scp)) return
          val numImplicitArgs = args.prefixLength {case (_, argType) => ! isJudgment(argType)}
          log(s"adding notation for ${c.name} ($numImplicitArgs implicit args, $numTotalArgs total args")
-         if (notC.oneDim.isEmpty) {
+         if (notC.parsing.isEmpty) {
             val parseMarkers = SymbolName(c.path) ::
                 Range(0,numImplicitArgs).map {i => ImplicitArg(i+1)}.toList :::
                 Range(numImplicitArgs,numTotalArgs).map {i => Arg(i+1)}.toList
             val nt = new TextNotation(c.path, Mixfix(parseMarkers), Precedence.integer(0), Some(LF._path))
             nt.setOrigin(GeneratedBy(this))
-            c.notC.oneDim = Some(nt)
+            c.notC.parsingDim.set(nt)
          }
-         if (notC.twoDim.isEmpty) {
+         if (notC.presentation.isEmpty) {
             val tree = if (numImplicitArgs == numTotalArgs) Nil else {
                val hyps = Range(numImplicitArgs,numTotalArgs).map {i => Arg(i+1)}.toList
                List(FractionMarker(hyps, List(InferenceMarker), true))
@@ -62,7 +62,7 @@ class NotationGenerator extends ChangeListener {
                Range(0,numImplicitArgs).map {i => ImplicitArg(i+1)}.toList
             val nt = new TextNotation(c.path, Mixfix(presentationMarkers), Precedence.integer(0), Some(LF._path))
             nt.setOrigin(GeneratedBy(this))
-            c.notC.twoDim = Some(nt)
+            c.notC.presentationDim.set(nt)
          }
       case _ =>
    }}

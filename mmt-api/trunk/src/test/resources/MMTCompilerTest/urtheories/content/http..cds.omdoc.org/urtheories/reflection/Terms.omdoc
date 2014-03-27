@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
+  <theory name="Terms" base="http://cds.omdoc.org/urtheories/reflection">
+    <metadata>
+      <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/term-reflection.mmt#55.2.0:257.9.1"/>
+    </metadata>
+    <import from="http://cds.omdoc.org/urtheories?Typed">
+      <metadata>
+        <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/term-reflection.mmt#73.3.3:99.3.29"/>
+      </metadata>
+    </import>
+    <constant name="formation">
+      <metadata>
+        <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/term-reflection.mmt#107.5.3:141.5.37"/>
+      </metadata>
+      <notation>
+        <notation dimensions="1" name="http://cds.omdoc.org/urtheories/reflection?Terms?formation" precedence="-10000" fixity="mixfix" arguments="{| 1 |} 2"/>
+      </notation>
+    </constant>
+    <constant name="reflect">
+      <metadata>
+        <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/term-reflection.mmt#145.6.3:179.6.37"/>
+      </metadata>
+      <notation>
+        <notation dimensions="1" name="http://cds.omdoc.org/urtheories/reflection?Terms?reflect" precedence="-10000" fixity="mixfix" arguments="⌜ 1 : 2 ⌝"/>
+      </notation>
+    </constant>
+    <constant name="eval">
+      <metadata>
+        <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/term-reflection.mmt#183.7.3:217.7.37"/>
+      </metadata>
+      <notation>
+        <notation dimensions="1" name="http://cds.omdoc.org/urtheories/reflection?Terms?eval" precedence="-10000" fixity="mixfix" arguments="⌞ 1 ⌟ 2"/>
+      </notation>
+    </constant>
+    <constant name="elim">
+      <metadata>
+        <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/term-reflection.mmt#221.8.3:255.8.37"/>
+      </metadata>
+      <notation>
+        <notation dimensions="1" name="http://cds.omdoc.org/urtheories/reflection?Terms?elim" precedence="-10000" fixity="mixfix" arguments="1 ^ 2"/>
+      </notation>
+    </constant>
+  </theory>
+</omdoc>

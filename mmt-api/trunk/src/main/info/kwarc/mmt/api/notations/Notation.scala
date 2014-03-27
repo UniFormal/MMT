@@ -79,11 +79,12 @@ class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Pre
       Arity(subargs, vars, args, attribution)
    }
    /** @return the list of markers that should be used for parsing */
-   lazy val parsingMarkers = markers.filter {
-      case _:PresentationMarker => false // there should not be any presentation markers in notations used for parsing
-      case _:ImplicitArg => false // remove the implicit markers
-      case AttributedObject => false // attributed variables are handles explicitly by variable parsing
-      case _ => true
+   lazy val parsingMarkers = markers flatMap {
+      case _:PresentationMarker => Nil // there should not be any presentation markers in notations used for parsing
+      case _:ImplicitArg => Nil // remove the implicit markers
+      case AttributedObject => Nil // attributed variables are handles explicitly by variable parsing
+      case v:VerbalizationMarker => v.toParsing
+      case m => List(m)
    }
    lazy val presentationMarkers = PresentationMarker.introducePresentationMarkers(markers)
    val key = NotationKey(Some(name), Role_application(None))
@@ -113,7 +114,7 @@ class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Pre
    def presentation(vars: Int, args: Int, attrib: Boolean) = {
      val flatMarkers = arity.flatten(presentationMarkers, vars, args, attrib)
      val implicitsP = arity.flatImplicitArguments(args) flatMap {
-        case i @ ImplicitArg(n) =>
+        case i @ ImplicitArg(n,_) =>
            if (markers contains i)
               Nil // skip arguments that are explicitly placed by the notation
            else
@@ -136,25 +137,25 @@ class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Pre
              if (i+1<ms.length)
                 delim += ArgSep()
              delim
-          case Arg(p) =>
+          case Arg(p,_) =>
              val bi = if (suppressBrackets) BracketInfo(Some(Precedence.neginfinite))
                 else { 
                    val delimitation = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
                    BracketInfo(Some(precedence), Some(delimitation))
                 }
              Component(NumberedIndex(p), bi)
-          case ImplicitArg(n) =>
+          case ImplicitArg(n,_) =>
              val bi = if (suppressBrackets) BracketInfo(Some(Precedence.neginfinite))
                 else { 
                    val delimitation = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
                    BracketInfo(Some(precedence), Some(delimitation))
                 }
              Fragment("implicit", Component(NumberedIndex(n), bi))
-          case Var(n, _, None) => Component(NumberedIndex(n), BracketInfo())
+          case Var(n, _, None,_) => Component(NumberedIndex(n), BracketInfo())
           case AttributedObject =>
                 Component(NumberedIndex(0), BracketInfo(Some(Precedence.neginfinite)))
-          case SeqArg(n,sep) => throw ImplementationError("non-flat marker")
-          case Var(n,_,Some(sep)) => throw ImplementationError("non-flat marker")
+          case SeqArg(n,sep,_) => throw ImplementationError("non-flat marker")
+          case Var(n,_,Some(sep),_) => throw ImplementationError("non-flat marker")
           case GroupMarker(ms) => aux(ms)
           case ScriptMarker(main, sup, sub, over, under) =>
              Fragment("scripted", aux(List(main)),
@@ -191,7 +192,7 @@ class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Pre
    // the first delimiter of this notation
    def firstDelimString : Option[String] = parsingMarkers mapFind {
       case d: Delimiter => Some(d.text)
-      case SeqArg(_, Delim(s)) => Some(s)
+      case SeqArg(_, Delim(s),_) => Some(s)
       case _ => None
    }
    def openArgs(fromRight: Boolean) : Int = {
@@ -205,6 +206,7 @@ class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Pre
          case AttributedObject =>
          case d: Delimiter => return i
          case _:PresentationMarker => // impossible
+         case _:VerbalizationMarker => //impossible
       }
       i
    }

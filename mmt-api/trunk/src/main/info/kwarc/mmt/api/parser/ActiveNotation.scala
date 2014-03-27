@@ -111,7 +111,7 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
     * and the remaining List[Marker]
     */
    private def splitOffArgs(ms: List[Marker], ns: List[Int] = Nil) : (List[Int], List[Marker]) = ms match {
-      case Arg(n) :: rest => splitOffArgs(rest, n :: ns)
+      case Arg(n, _) :: rest => splitOffArgs(rest, n :: ns)
       case Delim("%w") :: rest => splitOffArgs(rest, ns)
       case rest => (ns.reverse, rest)
    }
@@ -132,8 +132,8 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
          case (fv : FoundVar) :: _ =>
             val vm = fv.marker
             val nextDelim = left match {
-               case Var(_,_,_) :: Delimiter(s) :: _=> Some(s)
-               case Var(_,_,_) :: Nil => None
+               case Var(_,_,_,_) :: Delimiter(s) :: _=> Some(s)
+               case Var(_,_,_,_) :: Nil => None
                case _ => throw ImplementationError("invalid notation") //variable must be followed by nothing or Delim
             }
             //we are in a bound variable (sequence)
@@ -202,12 +202,12 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
                   deleteDelim(currentIndex)
                }
          }
-         case (Nil, SeqArg(n, Delimiter(s)) :: _) if matches(s) =>
+         case (Nil, SeqArg(n, Delimiter(s),_) :: _) if matches(s) =>
               onApply {
                  PickAllSeq(n)
                  addPrepickedDelims(Delim(s), currentToken)
               }
-         case (Nil, SeqArg(n, Delimiter(t)) :: Delimiter(s) :: _) if ! matches(t) && matches(s) =>
+         case (Nil, SeqArg(n, Delimiter(t),_) :: Delimiter(s) :: _) if ! matches(t) && matches(s) =>
               if (numCurrentTokens > 0) {
                  //picks the last element of the sequence (possibly the only one)
                  onApplyI {currentIndex =>
@@ -225,7 +225,7 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
               } else
                  NotApplicable //abort?
          // start a variable
-         case (Nil, (vm @ Var(n, _, sep)) :: rest) =>
+         case (Nil, (vm @ Var(n, _, sep, _)) :: rest) =>
             numCurrentTokens match {
                case 0 => onApplyI {currentIndex =>
                    //start a variable and take the current Token as the first variable name
@@ -284,7 +284,7 @@ class ActiveNotation(scanner: Scanner, val notation: TextNotation, val firstToke
     */
    def closable : Applicability = {
       splitOffArgs(left) match {
-         case (Nil, SeqArg(n, Delimiter(s)) :: Nil) =>
+         case (Nil, SeqArg(n, Delimiter(s), _) :: Nil) =>
               if (inSeqArg(n) && numCurrentTokens > 0) {
                  onApply {
                     PickAllSeq(n)

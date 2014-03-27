@@ -1,0 +1,55 @@
+theory http://cds.omdoc.org/urtheories?PL
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?oftype
+constant http://cds.omdoc.org/urtheories?PL?oftype
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?List
+constant http://cds.omdoc.org/urtheories?PL?List
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?list
+constant http://cds.omdoc.org/urtheories?PL?list
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?Option
+constant http://cds.omdoc.org/urtheories?PL?Option
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?some
+constant http://cds.omdoc.org/urtheories?PL?some
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?none
+constant http://cds.omdoc.org/urtheories?PL?none
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?Tuple
+constant http://cds.omdoc.org/urtheories?PL?Tuple
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?tuple
+constant http://cds.omdoc.org/urtheories?PL?tuple
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?proj
+constant http://cds.omdoc.org/urtheories?PL?proj
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?Function
+constant http://cds.omdoc.org/urtheories?PL?Function
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?lambda
+constant http://cds.omdoc.org/urtheories?PL?lambda
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?apply
+constant http://cds.omdoc.org/urtheories?PL?apply
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?Nat
+constant http://cds.omdoc.org/urtheories?PL?Nat
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?plus
+constant http://cds.omdoc.org/urtheories?PL?plus
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?times
+constant http://cds.omdoc.org/urtheories?PL?times
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?minus
+constant http://cds.omdoc.org/urtheories?PL?minus
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?div
+constant http://cds.omdoc.org/urtheories?PL?div
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?less
+constant http://cds.omdoc.org/urtheories?PL?less
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?lesseq
+constant http://cds.omdoc.org/urtheories?PL?lesseq
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?greater
+constant http://cds.omdoc.org/urtheories?PL?greater
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?greatereq
+constant http://cds.omdoc.org/urtheories?PL?greatereq
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?Boolean
+constant http://cds.omdoc.org/urtheories?PL?Boolean
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?or
+constant http://cds.omdoc.org/urtheories?PL?or
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?equal
+constant http://cds.omdoc.org/urtheories?PL?equal
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?ifte
+constant http://cds.omdoc.org/urtheories?PL?ifte
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?match
+constant http://cds.omdoc.org/urtheories?PL?match
+Declares http://cds.omdoc.org/urtheories?PL http://cds.omdoc.org/urtheories?PL?case
+constant http://cds.omdoc.org/urtheories?PL?case

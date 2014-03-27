@@ -537,9 +537,9 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                   } else
                      doComponent(DefComponent, dfC, scope, pr)
                case "#" =>
-                  doNotation(OneDimNotationComponent, nt, treg, cpath)
+                  doNotation(ParsingNotationComponent, nt, treg, cpath)
                case "##" =>
-                  doNotation(TwoDimNotationComponent, nt, treg, cpath)
+                  doNotation(PresentationNotationComponent, nt, treg, cpath)
                case "@" =>
                   val (str,_) = state.reader.readObject
                   if (al.isDefined)
@@ -637,9 +637,9 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
                 errorCont(makeError(reg, "parameters of this constant are not a context, ignored (note that implicit parts are not allowed in parameters)"))
             }
           case "#" =>
-             doNotation(OneDimNotationComponent, nt, treg, ppath)
+             doNotation(ParsingNotationComponent, nt, treg, ppath)
           case "##" =>
-             doNotation(TwoDimNotationComponent, nt, treg, ppath)
+             doNotation(PresentationNotationComponent, nt, treg, ppath)
         }
       }
       val pattern = new Pattern(OMMOD(tpath),name, pr, bd, nt)

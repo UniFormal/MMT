@@ -1,0 +1,26 @@
+namespace http://cds.omdoc.org/urtheories
+
+theory Scala =
+  type
+  hasType # : 1
+  Any
+  Unit
+  unit     # ()
+  Product  # Product [ 1,… ] 
+  Tuple    # Tuple [ 1,… ]
+  Function # Fun [ 1,… ] 2
+  Lambda   # ( V1T,… ) -2 prec -1000010
+  List     # List [ 1 ] prec 100
+  list     # List ( 1,… )
+  BigInt
+  Double
+  Boolean            
+  String
+
+
+theory ScalaOM =
+  include ?Scala
+  Term
+  Context
+
+
