@@ -12,6 +12,7 @@ import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.parser._
+import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.presentation._
 import scala.collection.mutable.ArrayStack
 import info.kwarc.mmt.lf._
@@ -40,7 +41,7 @@ object TranslationController {
     def localPath = LocalName(currentAid)
     def currentThyBase : DPath = DPath(Mizar.mmlBase / currentVersion.toString)
     def currentTheory : MPath = currentThyBase ? localPath
-    def currentSource = Mizar.mathHubBase + "/source/" + currentVersion + "/" + currentAid + ".miz"
+    def currentSource = Mizar.mathHubBase + "/source/" + currentVersion + "/" + currentAid.toLowerCase() + ".miz"
 
     var anonConstNr = 0
     var defs = 0

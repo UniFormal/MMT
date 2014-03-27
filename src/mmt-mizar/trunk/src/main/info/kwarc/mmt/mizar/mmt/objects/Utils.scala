@@ -15,7 +15,7 @@ import info.kwarc.mmt.lfs._
 
 object Mizar {
 	val mmlBase = URI("http", "oaff.mathweb.org") / "MML" 
-  val mathHubBase = "http://gl.mathhub.info/Mizar/MML/tree/master"
+  val mathHubBase = "http://gl.mathhub.info/Mizar/MML/blob/master"
 	private val mizarBase =  DPath(URI("http", "latin.omdoc.org") / "foundations"/ "mizar")
 	val MizarTh = mizarBase ? "mizar-curry"
 	val MizarPatternsTh = mizarBase ? "mizar-patterns"
