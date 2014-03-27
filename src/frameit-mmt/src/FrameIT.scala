@@ -16,12 +16,11 @@ import tiscaf._
 case class FrameitError(val text : String) extends Error(text)
 
 
-class FrameitPlugin extends ServerPlugin("frameit") with Logger {
+class FrameitPlugin extends ServerExtension("frameit") with Logger {
   
   override val logPrefix = "frameit"
     
-     /** Server */   
-   
+   /** Server */
    def apply(uriComps: List[String], query : String, body : web.Body): HLet = {
      try {
        uriComps match {
@@ -65,8 +64,12 @@ class FrameitPlugin extends ServerPlugin("frameit") with Logger {
          case vp : MPath => vp
          case p => throw FrameitError("Expected MPath found " + p)
        }
+       val view = controller.get(vpath) match {
+         case d : DeclaredView => d
+         case _ => throw FrameitError("expected view")
+       }
        
-       val tm = simplify(pushout(cpath, vpath))
+       val tm = simplify(pushout(cpath, vpath), view.to.toMPath)
        var tmS = tm.toString
        TextResponse(tmS).aact(tk)
      } catch {
@@ -75,9 +78,9 @@ class FrameitPlugin extends ServerPlugin("frameit") with Logger {
      }
    }
    
-   private def simplify(t : Term) : Term = {
+   private def simplify(t : Term, home : MPath) : Term = {
      log("Before: " + t.toString)
-     val tS = controller.uom.simplify(t)
+     val tS = controller.uom.simplify(t, OMMOD(home))
      log("After: " + tS.toString)
      tS 
    }
@@ -127,7 +130,7 @@ class FrameitPlugin extends ServerPlugin("frameit") with Logger {
    
    private def pushout(con : Context)(implicit rules : HashMap[Path, Term]) : Context = {
      val vars = con.variables map {
-       case VarDecl(n, tp, df, ats @ _*) => VarDecl(n, tp.map(pushout), df.map(pushout), ats : _*)
+       case VarDecl(n, tp, df) => VarDecl(n, tp.map(pushout), df.map(pushout))
      }
      Context(vars : _*)
    }
