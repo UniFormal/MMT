@@ -1,19 +1,33 @@
 package info.kwarc.mmt.api.notations
 
 import info.kwarc.mmt.api._
+import collection.mutable.HashMap
 
 class NotationDimension {
-   private var _notations = new collection.mutable.HashMap[String,TextNotation]()
+   private var _notations = new HashMap[Int,HashMap[String,TextNotation]]()
+   private var _maxArity = -1 //maximum arity of this notations, smaller ones imply partial applications
    
    def notations = _notations
+   def maxArity = _maxArity
    //default notation
-   def default = _notations.get("")
+   def default = notations.get(maxArity).flatMap(_.get("")) //assume fully applied
    def get(arity : Int, style : String = "") : Option[TextNotation] = {
-     _notations.find(p => p._1 == style && p._2.arity.length == arity).map(_._2)
+     notations.get(arity).flatMap(_.get(style))
    }
-   def set(not : TextNotation, style : String = "") = _notations(style) = not
-   def update(nd : NotationDimension) = _notations = nd.notations
-   def delete() = _notations.clear()
+   def set(not : TextNotation, style : String = "") = {
+     if (!notations.isDefinedAt(not.arity.length)) { //new arity
+       notations(not.arity.length) = new HashMap[String, TextNotation]()
+       if (not.arity.length > maxArity) {
+         _maxArity = not.arity.length
+       }
+     }
+     notations(not.arity.length)(style) = not
+   }
+   def update(nd : NotationDimension) = {
+     _notations = nd.notations
+     _maxArity = nd.maxArity
+   }
+   def delete() = notations.clear()
 }
 
 /** A NotationContainer wraps around various notations that can be associated with a Declaration */
