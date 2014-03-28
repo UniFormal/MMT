@@ -138,17 +138,6 @@ class Definition(home : Term, name : LocalName, val targets : List[GlobalName], 
   def getComponents = (DefComponent -> content) :: Nil
 }
 
-class NotationDefinition(home: Term, name : LocalName, val target : GlobalName, notation : List[String]) 
-	extends FlexiformalDeclaration(home, name, new NarrativeText(notation.mkString)) {
-  def role = Role_Narration
-  def toNode = 
-    <notation-definition role="notation">
-  		TODO
-    </notation-definition>
-  def components = content :: Nil
-  def getComponents = (DefComponent -> content) :: Nil
-}
-
 class Example(home : Term, name : LocalName, val targets : List[GlobalName], content : NarrativeObject) 
 	extends FlexiformalDeclaration(home, name, content) {
   def role = Role_Narration

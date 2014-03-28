@@ -651,7 +651,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
       i = skipwscomments(i)
       val (not, posAfter) = crawlNotation(i, List("."), cpath)
       addSourceRef(not, i, posAfter - 1)
-      constantNotation.oneDim = Some(not)
+      constantNotation.parsingDim.set(not)
 
       i = posAfter
       i = skipwscomments(i)
@@ -1042,7 +1042,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
       i = skipwscomments(i)
       val (not, posAfter) = crawlNotation(i, List("."), parent.path ? name)
       addSourceRef(not, i, posAfter - 1)
-      patternNotation.oneDim = Some(not)
+      patternNotation.parsingDim.set(not)
       i = posAfter
       i = skipwscomments(i)
     }

@@ -67,10 +67,7 @@ object Extractor {
                       case  d : Definition => 
                         d.targets foreach {target => 
                           f(isDefinedBy(target, d.path))
-                        }
-                      case n : NotationDefinition => 
-                        f(isDenotedBy(n.target, n.path))
-                    
+                        }                    
                     }
                }
             }}

@@ -272,7 +272,7 @@ class NestedHOASNotation(language: MPath, obj: HOAS, meta: HOAS) extends Notatio
       val not = getNotation(op).getOrElse(return None)
       val paths = (0 until objArgs.length).toList.map(i => Position((0 until i).toList.map(_ => 4)))
       val objArgPos = paths.reverse.map(p => p / 5)
-      val opMetaPath = paths.last / 4
+      val opMetaPath = paths.lastOption.getOrElse(Position.Init) / 4
       val opMetaPos = if (metaArgs.isEmpty) List(opMetaPath)
          else (0 until metaArgs.length+1).toList.map(i => opMetaPath / (i+1))
       val arity = not.arity

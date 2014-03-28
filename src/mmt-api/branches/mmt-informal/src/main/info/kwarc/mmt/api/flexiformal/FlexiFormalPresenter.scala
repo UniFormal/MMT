@@ -116,11 +116,6 @@ class FlexiformalPresenter extends Presenter {
            attributes = List(("jobad:defines" -> d.targets.head.toPath))) {
          doNarrativeObject(fd.content)
        }
-     case n : NotationDefinition => 
-       div(cls = "flexiformal notation",
-       attributes = List(("jobad:denotes" -> n.target.toPath))) {
-         doNarrativeObject(fd.content)
-       }
      case x => 
        throw ImplementationError("Presentation for " + x.getClass() + " not implemented yet")
    }

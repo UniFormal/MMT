@@ -58,7 +58,8 @@ object SRef {
   }
 }
 
-class NRef(p: DPath, target: DPath) extends XRef(p, target) {
+class NRRef(p: DPath, target: DPath) extends XRef(p, target) {
+
    val role = Role_DRef //TODO should get its own role
    def toNode = <nref href={target.toPath}/>
 }  

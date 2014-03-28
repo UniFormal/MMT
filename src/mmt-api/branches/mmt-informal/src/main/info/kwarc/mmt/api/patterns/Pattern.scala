@@ -20,7 +20,7 @@ import scala.io.Source
  */
 class Pattern(val home: Term, val name : LocalName, val params: Context, val body : Context, val notC: NotationContainer) extends Declaration {
    override val parameters = params
-   def not = notC.oneDim
+   def not = notC.parsing
    def toNode =
      <pattern name={name.toPath}>
    		{if (! params.isEmpty)

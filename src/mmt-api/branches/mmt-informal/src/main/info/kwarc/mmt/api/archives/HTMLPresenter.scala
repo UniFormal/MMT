@@ -65,20 +65,20 @@ trait HTMLPresenter extends Presenter {
          val firstVar = tn.arity.firstVarNumberIfAny
          val firstArg = tn.arity.firstArgNumberIfAny
          text {tn.markers.map {
-            case Arg(n) =>
+            case Arg(n,_) =>
                val argNum = n-firstArg
                if (argNum < 5)
                   List("a", "b", "c", "d", "e")(argNum)
                else
                   "a" + argNum.toString
-            case ImplicitArg(n) =>
+            case ImplicitArg(n,_) =>
                val argNum = n-firstArg
                if (argNum < 3)
                   List("I", "J", "K")(argNum)
                else
                   "I" + argNum.toString
-            case SeqArg(n, sep) => n.toString + sep.text + "..." + sep.text + n.toString
-            case Var(n, typed, sepOpt) =>
+            case SeqArg(n, sep,_) => n.toString + sep.text + "..." + sep.text + n.toString
+            case Var(n, typed, sepOpt,_) =>
                val varNum = n-firstVar
                val varname = if (varNum < 3)
                   List("x", "y", "z")(varNum)

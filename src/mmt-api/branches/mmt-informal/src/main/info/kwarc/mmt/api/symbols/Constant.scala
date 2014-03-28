@@ -24,7 +24,7 @@ class Constant(val home : Term, val name : LocalName, val alias: Option[LocalNam
   
   def tp = tpC.get
   def df = dfC.get
-  def not = notC.oneDim
+  def not = notC.parsing
   
   override def compNames = List((TypeComponent,1), (DefComponent, 2))
   def components = List(StringLiteral(name.toPath), tp.getOrElse(Omitted), df.getOrElse(Omitted),

@@ -1,0 +1,15 @@
+namespace http://cds.omdoc.org/urtheories/reflection
+
+theory Terms =
+   include /urtheories?Typed
+   
+   formation # {| 1 |} 2 prec -10000
+   reflect   # ⌜ 1 : 2 ⌝ prec -10000
+   eval      # ⌞ 1 ⌟ 2   prec -10000
+   elim      # 1 ^ 2     prec -10000
+
+
+theory LFReflection =
+  include /urtheories?LF
+  include ?Terms
+

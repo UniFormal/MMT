@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.notations
 
 import info.kwarc.mmt.api._
+import presentation.Precedence
 
 /** Objects of type Marker make up the pattern of a Notation */
 sealed abstract class Marker {
@@ -68,7 +69,7 @@ sealed abstract class ArgumentMarker extends Marker with ArgumentComponent
 /** an argument
  * @param n absolute value is the argument position, negative iff it is in the binding scope
  */
-case class Arg(number: Int) extends ArgumentMarker {
+case class Arg(number: Int, precedence : Option[Precedence] = None) extends ArgumentMarker {
    override def toString = number.toString
    def by(s:String) = SeqArg(number,Delim(s))
 }
@@ -78,7 +79,7 @@ case class Arg(number: Int) extends ArgumentMarker {
  * 
  * usually these are not mentioned in the notation, but occasionally they have to be, e.g., when an implicit argument is the last argument
  */
-case class ImplicitArg(number: Int) extends ArgumentMarker {
+case class ImplicitArg(number: Int, precedence : Option[Precedence] = None) extends ArgumentMarker {
    override def toString = "%I" + number
 }
 
@@ -86,7 +87,7 @@ case class ImplicitArg(number: Int) extends ArgumentMarker {
  * @param n absolute value is the argument position, negative iff it is in the binding scope
  * @param sep the delimiter between elements of the sequence 
  */
-case class SeqArg(number: Int, sep: Delim) extends ArgumentMarker {
+case class SeqArg(number: Int, sep: Delim, precedence : Option[Precedence] = None) extends ArgumentMarker {
    override def toString = number.toString + sep + "…"
    override def isSequence = true
 }
@@ -97,7 +98,7 @@ case class SeqArg(number: Int, sep: Delim) extends ArgumentMarker {
  * @param sep if given, this is a variable sequence with this separator;
  *   for typed variables with the same type, only the last one needs a type 
  */
-case class Var(number: Int, typed: Boolean, sep: Option[Delim]) extends Marker with VariableComponent {
+case class Var(number: Int, typed: Boolean, sep: Option[Delim], precedence : Option[Precedence] = None) extends Marker with VariableComponent {
    override def toString = "V" + number.toString + (if (typed) "T" else "") + (sep.map(_.toString + "…").getOrElse(""))
    override def isSequence = sep.isDefined
 }
@@ -105,6 +106,17 @@ case class Var(number: Int, typed: Boolean, sep: Option[Delim]) extends Marker w
 case object AttributedObject extends Marker {
    override def toString = "%a" 
 }
+
+/** Verbalization markers occur in verbalization notations
+ */
+sealed abstract class VerbalizationMarker extends Marker {
+  def toParsing : List[Marker]
+}
+
+case class WordMarker(word : String) extends VerbalizationMarker {
+  def toParsing = Delim(word) :: Nil
+}
+
 
 /** PresentationMarker's occur in two-dimensional notations
  *
@@ -276,6 +288,7 @@ object PresentationMarker {
 sealed trait ArityComponent {
    val number: Int
    def isSequence: Boolean = false
+   val precedence: Option[Precedence] //=None
 }
 sealed trait ArgumentComponent extends ArityComponent
 sealed trait VariableComponent extends ArityComponent

@@ -1,0 +1,6 @@
+theory http://cds.omdoc.org/urtheories?ScalaOM
+Includes http://cds.omdoc.org/urtheories?ScalaOM http://cds.omdoc.org/urtheories?Scala
+Declares http://cds.omdoc.org/urtheories?ScalaOM http://cds.omdoc.org/urtheories?ScalaOM?Term
+constant http://cds.omdoc.org/urtheories?ScalaOM?Term
+Declares http://cds.omdoc.org/urtheories?ScalaOM http://cds.omdoc.org/urtheories?ScalaOM?Context
+constant http://cds.omdoc.org/urtheories?ScalaOM?Context

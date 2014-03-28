@@ -1,0 +1,3 @@
+theory http://cds.omdoc.org/urtheories/reflection?LFReflection
+Includes http://cds.omdoc.org/urtheories/reflection?LFReflection http://cds.omdoc.org/urtheories?LF
+Includes http://cds.omdoc.org/urtheories/reflection?LFReflection http://cds.omdoc.org/urtheories/reflection?Terms
