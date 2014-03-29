@@ -8,6 +8,9 @@ class NotationDimension {
    private var _maxArity = -1 //maximum arity of this notations, smaller ones imply partial applications
    
    def notations = _notations
+   
+   def isDefined = !notations.isEmpty
+   
    def maxArity = _maxArity
    //default notation
    def default = notations.get(maxArity).flatMap(_.get("")) //assume fully applied
@@ -92,19 +95,22 @@ class NotationContainer extends ComponentContainer {
    def getParse  : Option[TextNotation] = parsing
    def getVerbal : Option[TextNotation] = verbalization orElse presentation orElse parsing
    def toNode = {
-      val n1 = parsing match {
-         case Some(n) if ! n.isGenerated => utils.xml.addAttr(n.toNode, "dimensions", "1")
+      val n1 = parsingDim.notations.values.flatten map {
+         case (style,n) if ! n.isGenerated => 
+           utils.xml.addAttr(utils.xml.addAttr(n.toNode, "dimensions", "1"), "style", style)
          case _ => Nil
       }
-      val n2 = presentation match {
-         case Some(n) if ! n.isGenerated => utils.xml.addAttr(n.toNode, "dimensions", "2")
+      val n2 = presentationDim.notations.values.flatten map {
+         case (style, n) if ! n.isGenerated => 
+           utils.xml.addAttr(utils.xml.addAttr(n.toNode, "dimensions", "2"), "style", style)
          case _ => Nil
       }
-      val n3 = verbalization match {
-         case Some(n) if ! n.isGenerated => utils.xml.addAttr(n.toNode, "dimensions", "3")
+      val n3 = verbalizationDim.notations.values.flatten map {
+         case (style, n) if ! n.isGenerated => 
+           utils.xml.addAttr(utils.xml.addAttr(n.toNode, "dimensions", "3"), "style", style)
          case _ => Nil
       }
-      if (parsing.isDefined || presentation.isDefined || verbalization.isDefined)
+      if (parsingDim.isDefined || presentationDim.isDefined || verbalizationDim.isDefined)
          <notation>{n1}{n2}{n3}</notation>
       else
          Nil
@@ -145,10 +151,11 @@ object NotationContainer {
       val nc = new NotationContainer
       ns foreach {c =>
          val tn = TextNotation.parse(c, name)
+         val style = utils.xml.attr(c, "style")
          utils.xml.attr(c, "dimensions") match {
-            case "1" | "" => nc.parsingDim.set(tn)
-            case "2"      => nc.presentationDim.set(tn)
-            case "3"      => nc.verbalizationDim.set(tn)
+            case "1" | "" => nc.parsingDim.set(tn, style)
+            case "2"      => nc.presentationDim.set(tn, style)
+            case "3"      => nc.verbalizationDim.set(tn, style)
          }
       }
       nc
