@@ -3,8 +3,10 @@ package info.kwarc.mmt.api.notations
 import info.kwarc.mmt.api._
 import collection.mutable.HashMap
 
+
+
 class NotationDimension {
-   private var _notations = new HashMap[Int,HashMap[String,TextNotation]]()
+   private var _notations = new HashMap[Int,List[TextNotation]]()
    private var _maxArity = -1 //maximum arity of this notations, smaller ones imply partial applications
    
    def notations = _notations
@@ -13,19 +15,35 @@ class NotationDimension {
    
    def maxArity = _maxArity
    //default notation
-   def default = notations.get(maxArity).flatMap(_.get("")) //assume fully applied
-   def get(arity : Int, style : String = "") : Option[TextNotation] = {
-     notations.get(arity).flatMap(_.get(style))
+   def default = get(maxArity, None) //assuming fully applied
+   
+   def get(arity : Int, lang : Option[String] = None) : Option[TextNotation] = {
+     notations.get(arity) match {
+       case Some(l) => 
+         val options = lang match {
+           case None => l
+           case Some(lang) => l.filter(_.scope.languages.contains(lang))
+         }
+         options match {
+           case Nil => None 
+           case _ => 
+             val res = options.reduceLeft((x,y) => if (x.scope.priority > y.scope.priority) x else y)
+             Some(res)
+         }
+       case None => None
+     }
    }
-   def set(not : TextNotation, style : String = "") = {
+   
+   def set(not : TextNotation) = {
      if (!notations.isDefinedAt(not.arity.length)) { //new arity
-       notations(not.arity.length) = new HashMap[String, TextNotation]()
+       notations(not.arity.length) = Nil
        if (not.arity.length > maxArity) {
          _maxArity = not.arity.length
        }
      }
-     notations(not.arity.length)(style) = not
+     notations(not.arity.length) ::= not
    }
+   
    def update(nd : NotationDimension) = {
      _notations = nd.notations
      _maxArity = nd.maxArity
@@ -96,18 +114,18 @@ class NotationContainer extends ComponentContainer {
    def getVerbal : Option[TextNotation] = verbalization orElse presentation orElse parsing
    def toNode = {
       val n1 = parsingDim.notations.values.flatten map {
-         case (style,n) if ! n.isGenerated => 
-           utils.xml.addAttr(utils.xml.addAttr(n.toNode, "dimensions", "1"), "style", style)
+         case n if ! n.isGenerated => 
+           utils.xml.addAttr(n.toNode, "dimension", "1")
          case _ => Nil
       }
       val n2 = presentationDim.notations.values.flatten map {
-         case (style, n) if ! n.isGenerated => 
-           utils.xml.addAttr(utils.xml.addAttr(n.toNode, "dimensions", "2"), "style", style)
+         case n if ! n.isGenerated => 
+           utils.xml.addAttr(n.toNode, "dimension", "2")
          case _ => Nil
       }
       val n3 = verbalizationDim.notations.values.flatten map {
-         case (style, n) if ! n.isGenerated => 
-           utils.xml.addAttr(utils.xml.addAttr(n.toNode, "dimensions", "3"), "style", style)
+         case n if ! n.isGenerated => 
+           utils.xml.addAttr(n.toNode, "dimension", "3")
          case _ => Nil
       }
       if (parsingDim.isDefined || presentationDim.isDefined || verbalizationDim.isDefined)
@@ -151,11 +169,10 @@ object NotationContainer {
       val nc = new NotationContainer
       ns foreach {c =>
          val tn = TextNotation.parse(c, name)
-         val style = utils.xml.attr(c, "style")
-         utils.xml.attr(c, "dimensions") match {
-            case "1" | "" => nc.parsingDim.set(tn, style)
-            case "2"      => nc.presentationDim.set(tn, style)
-            case "3"      => nc.verbalizationDim.set(tn, style)
+         utils.xml.attr(c, "dimension") match {
+            case "1" | "" => nc.parsingDim.set(tn)
+            case "2"      => nc.presentationDim.set(tn)
+            case "3"      => nc.verbalizationDim.set(tn)
          }
       }
       nc

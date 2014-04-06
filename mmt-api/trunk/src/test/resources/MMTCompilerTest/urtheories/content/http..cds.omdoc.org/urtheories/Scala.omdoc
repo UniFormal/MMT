@@ -14,7 +14,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/scala.mmt#69.4.2:83.4.16"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/urtheories?Scala?hasType" precedence="0" fixity="mixfix" arguments=": 1"/>
+        <notation dimension="1" name="http://cds.omdoc.org/urtheories?Scala?hasType" precedence="0" fixity="mixfix" arguments=": 1">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="Any">
@@ -32,7 +34,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/scala.mmt#101.7.2:115.7.16"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/urtheories?Scala?unit" precedence="-1000001" fixity="mixfix" arguments="()"/>
+        <notation dimension="1" name="http://cds.omdoc.org/urtheories?Scala?unit" precedence="-1000001" fixity="mixfix" arguments="()">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="Product">
@@ -40,7 +44,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/scala.mmt#118.8.2:146.8.30"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/urtheories?Scala?Product" precedence="0" fixity="mixfix" arguments="Product [ 1,… ]"/>
+        <notation dimension="1" name="http://cds.omdoc.org/urtheories?Scala?Product" precedence="0" fixity="mixfix" arguments="Product [ 1,… ]">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="Tuple">
@@ -48,7 +54,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/scala.mmt#149.9.2:174.9.27"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/urtheories?Scala?Tuple" precedence="0" fixity="mixfix" arguments="Tuple [ 1,… ]"/>
+        <notation dimension="1" name="http://cds.omdoc.org/urtheories?Scala?Tuple" precedence="0" fixity="mixfix" arguments="Tuple [ 1,… ]">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="Function">
@@ -56,7 +64,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/scala.mmt#177.10.2:202.10.27"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/urtheories?Scala?Function" precedence="0" fixity="mixfix" arguments="Fun [ 1,… ] 2"/>
+        <notation dimension="1" name="http://cds.omdoc.org/urtheories?Scala?Function" precedence="0" fixity="mixfix" arguments="Fun [ 1,… ] 2">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="Lambda">
@@ -64,7 +74,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/scala.mmt#205.11.2:243.11.40"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/urtheories?Scala?Lambda" precedence="-1000010" fixity="mixfix" arguments="( V1T,… ) 2"/>
+        <notation dimension="1" name="http://cds.omdoc.org/urtheories?Scala?Lambda" precedence="-1000010" fixity="mixfix" arguments="( V1T,… ) 2">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="List">
@@ -72,7 +84,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/scala.mmt#246.12.2:277.12.33"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/urtheories?Scala?List" precedence="100" fixity="mixfix" arguments="List [ 1 ]"/>
+        <notation dimension="1" name="http://cds.omdoc.org/urtheories?Scala?List" precedence="100" fixity="mixfix" arguments="List [ 1 ]">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="list">
@@ -80,7 +94,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/scala.mmt#280.13.2:304.13.26"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/urtheories?Scala?list" precedence="-1000001" fixity="mixfix" arguments="List ( 1,… )"/>
+        <notation dimension="1" name="http://cds.omdoc.org/urtheories?Scala?list" precedence="-1000001" fixity="mixfix" arguments="List ( 1,… )">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="BigInt">

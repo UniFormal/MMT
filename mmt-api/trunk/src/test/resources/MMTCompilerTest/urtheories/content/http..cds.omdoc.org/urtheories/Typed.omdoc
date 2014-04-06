@@ -19,7 +19,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/lf.mmt#119.7.3:146.7.30"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/urtheories?Typed?oftype" precedence="-9995" fixity="mixfix" arguments=": 1"/>
+        <notation dimension="1" name="http://cds.omdoc.org/urtheories?Typed?oftype" precedence="-9995" fixity="mixfix" arguments=": 1">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="equality" role="Eq">
@@ -27,7 +29,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/lf.mmt#150.8.3:185.8.38"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/urtheories?Typed?equality" precedence="0" fixity="mixfix" arguments="equality 1 2"/>
+        <notation dimension="1" name="http://cds.omdoc.org/urtheories?Typed?equality" precedence="0" fixity="mixfix" arguments="equality 1 2">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <import from="http://cds.omdoc.org/mmt?Errors">
