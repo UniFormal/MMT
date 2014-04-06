@@ -42,7 +42,6 @@ object FlexiformalDeclaration {
       val content = parseNarrativeObject(contentXML)(base)
       val d = new Definition(OMMOD(mpath), name, targets.toList, content)
       metadata.map(d.metadata = _)
-      println(d.toNode)
       d
   }
   

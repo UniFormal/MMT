@@ -15,6 +15,7 @@ case class FragPath(path : Path, fragment : Position) {
     case Nil => Some(path)
     case _ => None
   }
+  def isPath = fragment.indices.isEmpty
 }
 
 object FragPath {
