@@ -9,7 +9,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/module-expressions.mmt#56.3.3:94.3.41"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/mmt?ModExp?composition" precedence="-1" fixity="mixfix" arguments="1;…"/>
+        <notation dimension="1" name="http://cds.omdoc.org/mmt?ModExp?composition" precedence="-1" fixity="mixfix" arguments="1;…">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="theory-union">
@@ -17,7 +19,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/module-expressions.mmt#98.4.3:145.4.50"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/mmt?ModExp?theory-union" precedence="-1" fixity="mixfix" arguments="1∪…"/>
+        <notation dimension="1" name="http://cds.omdoc.org/mmt?ModExp?theory-union" precedence="-1" fixity="mixfix" arguments="1∪…">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="identity">
@@ -25,7 +29,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/module-expressions.mmt#149.5.3:190.5.44"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/mmt?ModExp?identity" precedence="-1" fixity="mixfix" arguments="mmtid 1"/>
+        <notation dimension="1" name="http://cds.omdoc.org/mmt?ModExp?identity" precedence="-1" fixity="mixfix" arguments="mmtid 1">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="rel-mor-composition">
@@ -33,7 +39,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/module-expressions.mmt#194.6.3:241.6.50"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/mmt?ModExp?rel-mor-composition" precedence="-2" fixity="mixfix" arguments="1;…"/>
+        <notation dimension="1" name="http://cds.omdoc.org/mmt?ModExp?rel-mor-composition" precedence="-2" fixity="mixfix" arguments="1;…">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
   </theory>

@@ -9,7 +9,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/meta.mmt#56.3.3:93.3.40"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/mmt?Errors?missing" precedence="-99500" fixity="mixfix" arguments="≪ 1 ≫"/>
+        <notation dimension="1" name="http://cds.omdoc.org/mmt?Errors?missing" precedence="-99500" fixity="mixfix" arguments="≪ 1 ≫">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="illtyped">
@@ -17,7 +19,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/meta.mmt#97.4.3:135.4.41"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/mmt?Errors?illtyped" precedence="-100000" fixity="mixfix" arguments="≪ 1 :: 2 ≫"/>
+        <notation dimension="1" name="http://cds.omdoc.org/mmt?Errors?illtyped" precedence="-100000" fixity="mixfix" arguments="≪ 1 :: 2 ≫">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="unknown">
@@ -25,7 +29,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/meta.mmt#139.5.3:178.5.42"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/mmt?Errors?unknown" precedence="-100000" fixity="mixfix" arguments="≪ using 1,… ≫"/>
+        <notation dimension="1" name="http://cds.omdoc.org/mmt?Errors?unknown" precedence="-100000" fixity="mixfix" arguments="≪ using 1,… ≫">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
   </theory>
