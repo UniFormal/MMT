@@ -9,7 +9,8 @@ import info.kwarc.mmt.api.objects.Position
  * @param fragment the position of the fragment inside the syntax tree of the containing element
  */
 case class FragPath(path : Path, fragment : Position) {
-  override def toString = path.toPath + "#" + fragment.toString 
+  def toPath = if (isPath) path.toPath else path.toPath + "#" + fragment.toString 
+  override def toString = if (isPath) path.toString else path.toPath + "#" + fragment.toString 
   //if this is a simple path return it, otherwise None 
   def toPathO : Option[Path] = fragment.indices match {
     case Nil => Some(path)

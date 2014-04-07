@@ -14,6 +14,8 @@ import info.kwarc.mmt.api.web._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.flexiformal._
+import info.kwarc.mmt.api.presentation.Precedence
+
 import scala.xml.{Node,Elem,NamespaceBinding}
 
 abstract class STeXError(msg : String) extends Error(msg)
@@ -93,15 +95,6 @@ class STeXImporter extends Importer {
     }
   } 
   
-  //just fixing here an latexml bug, to be removed when it's fixed there
-  //removing bad xmlns reference that conflicts with MMT's xmlns
-  /*
-  def clearXmlNS(s : String) : String = {
-   val s1 = s.replaceAll("xmlns=\"http://www.w3.org/1999/xhtml\"","")   
-   s1.replaceFirst("xmlns=\"http://omdoc.org/ns\"","xmlns=\"http://www.w3.org/1999/xhtml\"")   
-  }
-  */
-  
   val xmlNS = "http://www.w3.org/XML/1998/namespace"
   val omdocNS = "http://omdoc.org/ns"
   val mhBase = DPath(URI("http://mathhub.info/"))
@@ -111,12 +104,14 @@ class STeXImporter extends Importer {
     try {
       n.label match {
         case "omdoc" => 
+          //creating document and implicit theory
           implicit val doc = new Document(dpath)
           controller.add(doc)
           implicit val anonthy = new DeclaredTheory(dpath, OMV.anonymous, None) //no meta for now
           val ref = MRef(dpath, anonthy.path, true)
           controller.add(anonthy)
           controller.add(ref)
+          //recursing into children
           errors ++= n.child.map(translateTheory).flatten
       }
     } catch {
@@ -126,7 +121,7 @@ class STeXImporter extends Importer {
   }
   
   private def translateTheory(n : Node)(implicit doc : Document, anonthy : DeclaredTheory) : List[Error] = {
-    var errors : List[Error]  = Nil
+    var errors : List[Error] = Nil
     try {
       n.label match {
         case "theory" => 
@@ -200,20 +195,28 @@ class STeXImporter extends Importer {
             case None => //nothing to do
           }
         case "notation" =>
-          val prototype = n.child.find(_.label == "prototype").get
-          val rendering = n.child.find(_.label == "rendering").get
+          //getting symbol info
           val cd = (n \ "@cd").text
           val name = (n \ "@name").text
           val refPath = Path.parseM("?" + cd, doc.path)
           val refName = refPath ? LocalName(name)
-          val notation = makeNotation(prototype.child.head, rendering.child.head)(doc.path, thy, refName)
           val c = controller.memory.content.getConstant(refName, p => "Notation for nonexistent constant " + p)
-          val const = new Constant(c.home, c.name, c.alias, c.tpC, c.dfC, c.rl, NotationContainer(notation))
-          controller.memory.content.update(const) 
-          val res = controller.memory.content.getConstant(refName, p => "Notation for nonexistent constant " + p)
-        
+          //getting macro info
+          val macro_name = (n \ "@macro_name").text
+          val nrArgs = (n \ "@nargs").text.toInt
+          val macroMk = Delim("\\" + macro_name)
+          val notArgs = macroMk :: (0 until nrArgs).toList.flatMap(i => Delim("{") :: Arg(i + 1) :: Delim("}") :: Nil)
+          val stexScope = NotationScope(None, "stex" :: "tex" :: Nil, 0)
+          val texNotation = new TextNotation(refName, Mixfix(notArgs), Precedence.integer(0), None, stexScope)
+          c.notC.parsingDim.set(texNotation)
+          //getting mathml rendering info
+          val prototype = n.child.find(_.label == "prototype").get
+          val renderings = n.child.filter(_.label == "rendering")
+          renderings foreach { rendering => 
+            val notation = makeNotation(prototype, rendering)(doc.path, thy, refName)
+            c.notC.presentationDim.set(notation)
+          }
         case "metadata" => //TODO  
-        
         case _ =>
           val name = getName(n, thy)
           val nr = new PlainNarration(OMMOD(mpath), name, FlexiformalDeclaration.parseNarrativeObject(rewriteNode(n))(doc.path))
@@ -239,39 +242,48 @@ class STeXImporter extends Importer {
     }
   }
   
-  def makeNotation(proto : scala.xml.Node, rendering : scala.xml.Node)(implicit dpath : DPath, thy : DeclaredTheory, spath : GlobalName) : TextNotation = {
+  def makeNotation(prototype : scala.xml.Node, rendering : scala.xml.Node)(implicit dpath : DPath, thy : DeclaredTheory, spath : GlobalName) : TextNotation = {
     val argMap : collection.mutable.Map[String, Int] = new collection.mutable.HashMap() 
-    val symName = proto.label match {
+    val protoBody = prototype.child.head
+    val renderingBody = rendering.child.head
+    val symName = protoBody.label match {
       case "OMA" => 
-        val n = proto.child.head
+        val n = protoBody.child.head
         n.label match {
           case "OMS" => 
             val cd = (n \ "@cd").text
             val name = (n \ "@name").text
             val refPath = Path.parseM("?" + cd, dpath)
             //computing map of arg names to positions
-            proto.child.tail.zipWithIndex foreach {p => 
+            protoBody.child.tail.zipWithIndex foreach {p => 
               val name = (p._1 \ "@name").text
               argMap(name) = p._2 + 1 //args numbers start from 1
             }
             refPath ? LocalName(name)
-          case _ => throw ParseError("invalid  prototype" + proto)
+          case _ => throw ParseError("invalid  prototype" + protoBody)
         }
       case "OMS" => 
-        val cd = (proto \ "@cd").text
-        val name = (proto \ "@name").text
+        val cd = (protoBody \ "@cd").text
+        val name = (protoBody \ "@name").text
         val refPath = Path.parseM("?" + cd, dpath)
         refPath ? LocalName(name)
-      case _ => throw ParseError("invalid prototype" + proto + rendering)
+      case _ => throw ParseError("invalid prototype" + protoBody + renderingBody)
     }
    
-   val markers =  parseRenderingMarkers(rendering, argMap.toMap)
+   val markers =  parseRenderingMarkers(renderingBody, argMap.toMap)
    val precS = try {
-     (rendering \ "@precedence").text.toInt
+     (renderingBody \ "@precedence").text.toInt
    } catch {
      case _ : Exception => 1
    }
-   new TextNotation(symName, Mixfix(markers), presentation.Precedence.integer(precS), None)
+   
+   val variant = (rendering \ "@ic").text match {
+     case "" => None
+     case s => Some(s)
+   }
+   val languages = "mathml" :: Nil
+   val scope = NotationScope(variant, languages, 0)   
+   new TextNotation(symName, Mixfix(markers), presentation.Precedence.integer(precS), None, scope)
   }
   
   def parseRenderingMarkers(n : scala.xml.Node,argMap : Map[String, Int])(implicit dpath : DPath, thy : DeclaredTheory, spath : GlobalName) : List[Marker] = n.label match {
@@ -413,18 +425,26 @@ class STeXImporter extends Importer {
       val cd = (n \ "@cd").text
       val name = (n \ "@name").text
       val text = n.child.mkString(" ")
-      val refPath = Path.parseM(cd + ".omdoc?" + cd, dpath)
-      val refName = refPath ? LocalName(name)
+      val refName = resolveSPath(cd, name, thy.path)
       new NarrativeRef(refName, text) 
     case "idx" =>  //first child is current in-text presentation, second is general verbalization information
+      val idt = translateCMP(n.child.head)
       val ide = n.child.tail.head
       val name_parts = ide.child.map(_.child.mkString).toList
-      val name = getName(n, thy)
-      val not = new NotationDefinition(OMMOD(thy.path), name, spath, name_parts)
-      //disabling this temporarily
-      //controller.add(not)
-      translateCMP(n.child.head)
-    case "idt" => translateCMP(n.child.head) match {
+      val markers = name_parts.map(WordMarker(_))
+      val prec = presentation.Precedence.integer(0)
+      val verbScope = NotationScope(None, "english" :: "deutsch" :: Nil, 0)
+      val not = TextNotation(spath, prec, None, verbScope)(name_parts :_*)
+      val constant = idt match {
+        case nref : NarrativeRef if nref.target.isInstanceOf[GlobalName] =>  
+          controller.memory.content.getConstant(nref.target.asInstanceOf[GlobalName], p => "Notation for nonexistent constant" + p)
+        case _ => 
+          controller.memory.content.getConstant(spath, p => "Notation for nonexistent constant " + p)
+      }
+      constant.notC.verbalizationDim.set(not)
+      idt
+    case "idt" => 
+     translateCMP(n.child.head) match {
       case nref : NarrativeRef => new NarrativeRef(nref.target, nref.text, true)        
       case x => x 
     }

@@ -11,6 +11,21 @@ import objects._
 case class InvalidNotation(msg: String) extends java.lang.Throwable
 
 /**
+ * scope where a notation is applicable
+ * variant : optionally the name of this notation variant
+ * languages : the languages where this notation is applicable (e.g. tex, mmt, lf, mathml)
+ * priority : the priority of this notation when looking for a default notation
+ */
+case class NotationScope(variant : Option[String], languages : List[String], priority : Int) {
+  def toNode =  <scope variant={variant.getOrElse(null)} 
+    languages={languages.mkString(" ")} priority={priority.toString}/>
+}
+
+object NotationScope {
+  def default = NotationScope(None, Nil, 0)
+}
+
+/**
  * A TextNotation is a Notation that can be used for parsing objects in text syntax
  * @param name the symbol to which this notation applies
  * @param allMarkers the Markers making up the notation
@@ -22,7 +37,7 @@ case class InvalidNotation(msg: String) extends java.lang.Throwable
  * 
  * if the only marker is SeqArg, it must hold that OMA(name, List(x)) = x because sequences of length 1 are parsed as themselves 
  */
-class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Precedence, val meta: Option[MPath]) extends ComplexNotation {
+class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Precedence, val meta: Option[MPath], val scope : NotationScope = NotationScope.default) extends ComplexNotation {
    /** @return the list of markers used for parsing/presenting with this notations */
    lazy val markers: List[Marker] = fixity.markers
    /** @return the arity of this fixity */
@@ -101,9 +116,10 @@ class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Pre
    def toNode = {
      val (fixityString, argumentString) = fixity.asString
      <notation name={name.toPath} precedence={precedence.toString}
-         meta={meta.map(_.toPath).getOrElse(null)} fixity={fixityString} arguments={argumentString}/>
+         meta={meta.map(_.toPath).getOrElse(null)} fixity={fixityString} 
+         arguments={argumentString}> {scope.toNode} </notation>
    }
-
+   
    /**
     * flattens and transforms markers into Presentation
     * @param args number of arguments
@@ -215,13 +231,13 @@ class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Pre
 }
 
 object TextNotation {
-   def apply(name: GlobalName, prec: Precedence, meta: Option[MPath])(ms: Any*): TextNotation = {
+   def apply(name: GlobalName, prec: Precedence, meta: Option[MPath], scope : NotationScope = NotationScope.default)(ms: Any*): TextNotation = {
       val markers : List[Marker] = ms.toList map {
          case i: Int => Arg(i)
          case m: Marker => m
          case s: String => Marker.parse(name, s)
       }
-      new TextNotation(name, Mixfix(markers), prec, meta)
+      new TextNotation(name, Mixfix(markers), prec, meta, scope)
    }
    
    /** the precedence of the notation ( 1 )
@@ -236,9 +252,27 @@ object TextNotation {
    val bracketNotation = new TextNotation(utils.mmt.brackets, Mixfix(List(Delim("("),Arg(1),Delim(")"))), bracketLevel, None)
    val contextNotation = new TextNotation(utils.mmt.context, Mixfix(List(Delim("["), Var(1,true,Some(Delim(","))), Delim("]"))), bracketLevel, None)
    
+   
+   def parseScope(n : scala.xml.Node) : NotationScope = {
+       //parsing scope
+      val variant = utils.xml.attr(n, "variant") match {
+        case "" => None
+        case s => Some(s)
+      }
+      val languages = utils.xml.attr(n, "languages") match {
+        case "" => Nil
+        case s => s.split(" ").toList
+      }
+      val priority = utils.xml.attr(n, "priority") match {
+        case "" => 0
+        case s => s.toInt
+      }
+      NotationScope(variant, languages, priority)
+   }
+   
    /** XML parsing methods */
-   def parse(n : scala.xml.Node, name : GlobalName) : TextNotation = n match {
-    case <text-notation/> | <notation/> =>  // TODO text-notation is deprecated
+   def parse(n : scala.xml.Node, name : GlobalName) : TextNotation = n.label match {
+    case "text-notation" | "notation" =>  // TODO text-notation is deprecated
       val nameP = Path.parseS(utils.xml.attr(n,"name"), name)
       val precedence = utils.xml.attr(n, "precedence") match {
          case "" => Precedence.integer(0)
@@ -248,6 +282,11 @@ object TextNotation {
          case "" => None
          case s => Some(Path.parseM(s, name))
       }
+      val scope = n.child.find(_.label == "scope") match {
+        case None => NotationScope.default
+        case Some(s) => parseScope(s)
+      }
+      
       val (fixityString, arguments) = {
          val markers = utils.xml.attr(n, "markers")
          // default: markers given directly
@@ -268,7 +307,7 @@ object TextNotation {
          }
       }
       val fixity = FixityParser.parse(name, fixityString, arguments)
-      new TextNotation(name, fixity, precedence, meta)
+      new TextNotation(name, fixity, precedence, meta, scope)
     case _ => throw ParseError("invalid notation:\n" + n)
   }
   

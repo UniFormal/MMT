@@ -14,7 +14,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/lf.mmt#277.16.3:311.16.37"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/urtheories?LF?Pi" precedence="-10000" fixity="mixfix" arguments="{ V1T,… } 2"/>
+        <notation dimension="1" name="http://cds.omdoc.org/urtheories?LF?Pi" precedence="-10000" fixity="mixfix" arguments="{ V1T,… } 2">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="lambda">
@@ -22,7 +24,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/lf.mmt#315.17.3:349.17.37"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/urtheories?LF?lambda" precedence="-10000" fixity="mixfix" arguments="[ V1T,… ] 2"/>
+        <notation dimension="1" name="http://cds.omdoc.org/urtheories?LF?lambda" precedence="-10000" fixity="mixfix" arguments="[ V1T,… ] 2">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="apply">
@@ -30,7 +34,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/lf.mmt#353.18.3:384.18.34"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/urtheories?LF?apply" precedence="-10" fixity="mixfix" arguments="1%w…"/>
+        <notation dimension="1" name="http://cds.omdoc.org/urtheories?LF?apply" precedence="-10" fixity="mixfix" arguments="1%w…">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
     <constant name="arrow">
@@ -38,7 +44,9 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/lf.mmt#388.19.3:422.19.37"/>
       </metadata>
       <notation>
-        <notation dimensions="1" name="http://cds.omdoc.org/urtheories?LF?arrow" precedence="-9990" fixity="mixfix" arguments="1→…"/>
+        <notation dimension="1" name="http://cds.omdoc.org/urtheories?LF?arrow" precedence="-9990" fixity="mixfix" arguments="1→…">
+          <scope languages="" priority="0"/>
+        </notation>
       </notation>
     </constant>
   </theory>

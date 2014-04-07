@@ -71,7 +71,10 @@ abstract class HTML {
    val mfrac      = new Element("mfrac")
    
    val table = new Element("table")
+   val thead = new Element("thead")
+   val tbody = new Element("tbody")
    val tr = new Element("tr")
+   val th = new Element("th")
    val td = new Element("td")
 
    val ul = new Element("ul")
