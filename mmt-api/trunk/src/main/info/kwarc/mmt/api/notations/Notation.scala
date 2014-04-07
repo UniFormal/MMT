@@ -231,13 +231,13 @@ class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Pre
 }
 
 object TextNotation {
-   def apply(name: GlobalName, prec: Precedence, meta: Option[MPath])(ms: Any*): TextNotation = {
+   def apply(name: GlobalName, prec: Precedence, meta: Option[MPath], scope : NotationScope = NotationScope.default)(ms: Any*): TextNotation = {
       val markers : List[Marker] = ms.toList map {
          case i: Int => Arg(i)
          case m: Marker => m
          case s: String => Marker.parse(name, s)
       }
-      new TextNotation(name, Mixfix(markers), prec, meta)
+      new TextNotation(name, Mixfix(markers), prec, meta, scope)
    }
    
    /** the precedence of the notation ( 1 )
