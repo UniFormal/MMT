@@ -112,6 +112,12 @@ class NotationContainer extends ComponentContainer {
    /** @return an appropriate notation for parsing, if any */
    def getParse  : Option[TextNotation] = parsing
    def getVerbal : Option[TextNotation] = verbalization orElse presentation orElse parsing
+   def getAllNotations : List[TextNotation] = {
+     List(parsingDim.notations.values.flatten, 
+          presentationDim.notations.values.flatten,
+          verbalizationDim.notations.values.flatten
+     ).flatten
+   }
    def toNode = {
       val n1 = parsingDim.notations.values.flatten map {
          case n if ! n.isGenerated => 
