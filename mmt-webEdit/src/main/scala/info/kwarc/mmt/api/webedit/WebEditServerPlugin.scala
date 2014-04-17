@@ -16,6 +16,7 @@ import scala.util.parsing.json._
 import scala.concurrent._
 import tiscaf._
 import scala.collection.mutable.HashMap._
+import main.scala.info.kwarc.mmt.api.webedit._
 
 class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   
@@ -27,8 +28,6 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   def apply(uriComps: List[String], query: String, body : Body): HLet = {
     try {
       uriComps match {
-        case "save" :: _ => getSaveResponse
-        case "preview" :: _ => getPreviewResponse
         case "autocomplete" :: _ => getAutocompleteResponse
         case "resolve" :: _ => getResolveResponse
         case "minIncludes" :: _ => getMinIncludes
@@ -45,22 +44,6 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
     }
   }
   
-  private def getSaveResponse : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-      val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
-      val response = "TODO"
-      Server.TextResponse(response).aact(tk)
-    }
-  }
-  
-  private def getPreviewResponse : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-      val response = "TODO"
-      Server.TextResponse(response).aact(tk)
-    }
-  }
- 
   
   private def getResolveResponse : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
@@ -144,7 +127,6 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
       Server.JsonResponse(response).aact(tk)
     }
   }
-    
    
   private def getAutocompleteResponse : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
