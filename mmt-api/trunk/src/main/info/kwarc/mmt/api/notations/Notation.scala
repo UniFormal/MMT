@@ -115,7 +115,7 @@ class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Pre
    override def toString = toText + " (markers are: " + markers.map(_.toString).mkString(" ") + ")" 
    def toNode = {
      val (fixityString, argumentString) = fixity.asString
-     <notation name={name.toPath} precedence={precedence.toString}
+     <notation precedence={precedence.toString}
          meta={meta.map(_.toPath).getOrElse(null)} fixity={fixityString} 
          arguments={argumentString}> {scope.toNode} </notation>
    }
@@ -273,7 +273,6 @@ object TextNotation {
    /** XML parsing methods */
    def parse(n : scala.xml.Node, name : GlobalName) : TextNotation = n.label match {
     case "text-notation" | "notation" =>  // TODO text-notation is deprecated
-      val nameP = Path.parseS(utils.xml.attr(n,"name"), name)
       val precedence = utils.xml.attr(n, "precedence") match {
          case "" => Precedence.integer(0)
          case s => Precedence.parse(s)
