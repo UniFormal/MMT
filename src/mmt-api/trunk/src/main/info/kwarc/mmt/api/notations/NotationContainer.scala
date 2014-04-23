@@ -135,7 +135,7 @@ class NotationContainer extends ComponentContainer {
          case _ => Nil
       }
       if (parsingDim.isDefined || presentationDim.isDefined || verbalizationDim.isDefined)
-         <notation>{n1}{n2}{n3}</notation>
+         <notations>{n1}{n2}{n3}</notations>
       else
          Nil
    }

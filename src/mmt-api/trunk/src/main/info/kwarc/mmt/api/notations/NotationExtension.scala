@@ -4,22 +4,48 @@ import info.kwarc.mmt.api._
 import objects._
 import Conversions._
 
+/**
+ * a Fixity is used by a [[TextNotation]] to arrange arguments and delimiters
+ * 
+ * A Fixity is a high-level construct that elaborates into a list of [[Marker]]s. Parser and present only use the latter.
+ */
 abstract class Fixity {
+   /** the elaboration into markers */
    def markers: List[Marker]
+   /** the string representation to use when serializing notations
+    *  pair of "fixity type" and type-specific argument(s) 
+    */
    def asString: (String,String)
 }
+
+/** 
+ *  the default Fixity, which is directly a list of markers
+ */
 case class Mixfix(markers: List[Marker]) extends Fixity {
    def asString = ("mixfix", markers.mkString(" "))
 }
 
+/**
+ * A SimpleFixity is one out of multiple typical fixities (infix, postfix, etc) characterized by using only a single delimiter.
+ * 
+ * impl and expl do not have to agree with the number of arguments demanded by the type system.
+ *  * Notation has more arguments than function type: Notation extensions may handle the extra arguments.
+ *    Example: equal : {a:tp} tm (a => a => bool), impl = 1, expl = 2
+ *  * Notation has less arguments than function type: Operator return a function.
+ *    Example: union : {a:tp} tm (a set => a set => a set) where a set = a => bool, impl = 1, expl = 2
+ */
 abstract class SimpleFixity extends Fixity {
+   /** number number of initial implicit arguments (inferred by parser, skipped by printer) */
    def impl: Int
+   /** expl number of subsequent explicit arguments (needed to trigger notation during parsing, rendered by printer) */
    def expl: Int
+   /** the delimiter to use */
    def delim: Delimiter
    protected def implArgs = (0 until impl).toList.map(i => ImplicitArg(i+1))
    /** ImplicitArgs Args1 Delim Args2 with Args1.length == beforeOp */
    protected def argsWithOp(beforeOp: Int) =
-      (0 until beforeOp).toList.map(i => Arg(1+impl+i)) ::: delim :: (beforeOp until expl).toList.map(i => Arg(1+impl+i))
+      (0 until beforeOp).toList.map(i => Arg(1+impl+i)) ::: delim ::
+      (beforeOp until expl).toList.map(i => Arg(1+impl+i))
    protected def simpleArgs = {
       val delimStr = delim match {
          case SymbolName(name) => Nil
@@ -29,11 +55,14 @@ abstract class SimpleFixity extends Fixity {
    }
 }
 
+/** delimiter followed by the (explicit) arguments */
 case class Prefix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity {
-   lazy val markers = argsWithOp(0)
+   lazy val markers = if (expl != 0) argsWithOp(0) else argsWithOp(0) ::: implArgs
    def asString = ("prefix", simpleArgs)
 }
 /**
+ * delimiter after the first (explicit) argument
+ * 
  * @param assoc None/Some(true)/Some(false) for none, left, right; currently ignored 
  */
 case class Infix(delim: Delimiter, impl: Int, expl: Int, assoc: Option[Boolean]) extends SimpleFixity {
@@ -51,10 +80,19 @@ case class Infix(delim: Delimiter, impl: Int, expl: Int, assoc: Option[Boolean])
       ("infix"+assocString, simpleArgs)
    }
 }
+
+/** delimiter after the (explicit) arguments */ 
 case class Postfix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity {
    lazy val markers = argsWithOp(expl)
    def asString = ("postfix", simpleArgs)
 }
+
+/** delimiter followed by first and second (explicit) argument with . in between
+ *  
+ * @param assoc merge with nested bindings using the same binder; currently ignored
+ * 
+ * assumes arguments are one variable and one scope; expl is currently ignored
+ */
 case class Bindfix(delim: Delimiter, impl: Int, expl: Int, assoc: Boolean) extends SimpleFixity {
    def markers = List(delim, Var(impl+1, true, None), Delim("."), Arg(impl+2))
    def asString = {
@@ -64,12 +102,21 @@ case class Bindfix(delim: Delimiter, impl: Int, expl: Int, assoc: Boolean) exten
 }
 
 /**
- * A FixityParser that provides infix, prefix, etc., each with some implicit arguments
+ * parses MixFix and SimpleFixity
+ * 
+ * 
  */
 object FixityParser {
    private def toInt(s: String) = try {s.toInt} catch {case e: Exception => throw ParseError("number expected, found: " + s)}
    
-   /** infix, infix-right, infix-left, prefix, postfix; followed by number of implicit arguments (defaults to 0) */
+   /** infix, infix-right, infix-left, prefix, postfix; followed by number of implicit arguments (defaults to 0)
+    *  
+    *  @param fixityString one of prefix | postfix | infix | infix-left | infix-right | bindfix | bindfix-assoc
+    *  @param args
+    *   * for mixfix: the list of markers separated by whitespace
+    *   * else: impl | delim | impl expl | impl delim | impl expl delim
+    *     where impl and expl are natural numbers, delim anything else 
+    */
    def parse(name: GlobalName, fixityString: String, args: List[String]): Fixity = {
       if (fixityString == "mixfix")
          return Mixfix(args.map(Marker.parse(name, _)))
@@ -267,7 +314,7 @@ class NestedHOASNotation(language: MPath, obj: HOAS, meta: HOAS) extends Notatio
       case t => (Context(), t)
    }
    
-   def destructTerm(t: Term)(implicit getNotation: GlobalName => Option[TextNotation]): Option[PragmaticTerm] = { 
+   def destructTerm(t: Term)(implicit getNotation: GlobalName => Option[TextNotation]): Option[PragmaticTerm] = {
       val (op, metaArgs, objArgs) = unapplication(t).getOrElse(return None)
       val not = getNotation(op).getOrElse(return None)
       val paths = (0 until objArgs.length).toList.map(i => Position((0 until i).toList.map(_ => 4)))
