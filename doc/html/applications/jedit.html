@@ -7,7 +7,7 @@ To create hard drive images of the build results, use the <a href="build.html">b
 <h2>Installation</h2>
 
 <ol>
-<li><a href="obtain.html">Obtain</a> MMT, the deploy folder is enough</li>
+<li><a href="../obtain.html">Obtain</a> MMT, the deploy folder is enough</li>
 <li>Install jEdit, for example from <a href="http://www.jedit.org/">http://www.jedit.org/</a>.<br/>
    Using the jEdit plugin manager, install (at least) the following plugins
    <ul>
@@ -17,12 +17,12 @@ To create hard drive images of the build results, use the <a href="build.html">b
    <li>Hyperlinks</li>
    </ul>
 </li>
-<li>Add the MMT plugin to jEdit: Locate your jedit settings folder -- call it JEDIT -- and run
+<li>Add the MMT plugin to jEdit: If JEDIT is your jedit settings folder (You can lookup its location in the Utilities menu.), run
     <span class="code">cd deploy/jedit-plugin</span>
     and
     <span class="code">setup.sh install JEDIT</span>.<br/>
    
-   <span class="code">setup.bat</span> words accordingly on Windows.
+   <span class="code">setup.bat</span> works accordingly on Windows.
    Both can also be used with <span class="code">uninstall</span> instead of <span class="code">install</span> to remove the MMT plugin.<br/>
 
    jEdit experts may want to know what the setup tool does in detail:
@@ -38,7 +38,7 @@ To create hard drive images of the build results, use the <a href="build.html">b
    Run jEdit, open the plugin manager dialog, and select the MMT plugin.
    After doing that once, the plugin will be loaded automatically when jEdit is started.</li>
    
-<li>Unicode font: Install a font on your system that includes
+<li>Unicode font (optional but recommended): Install a font on your system that includes
    <ul>
      <li>a good amount of unicode characters,</li>
      <li>readable glyphs for the characters ASCII 27-31, which MMT uses as delimiters.</li>
@@ -49,9 +49,9 @@ To create hard drive images of the build results, use the <a href="build.html">b
 
 <li>To configure the MMT plugin, go to the MMT pane of the jEdit plugin options dialog.
 
-The startup file gives a path to an MMT script that is run when the MMT plugin is loaded (usually when jEdit is started).
+The startup file gives a path to an <a href="shell.html">MMT script</a> that is run when the MMT plugin is loaded (usually when jEdit is started).
 
-A commented example is provided by the file startup.mmt in this directory.
+If this is not defined, it defaults to JEDIT/plugins/info.kwarc.mmt.jedit.MMTPlugin/startup.msl (which is created by the install step above).
 </li>
 </ol>
 
@@ -75,15 +75,16 @@ It is advisable to make the following general jEdit configurations:
 <h3>The MMT Mode</h3>
 
 The mode "mmt" is added for MMT files, which includes syntax highlighting.
-Mode-specific options including the appearance of the syntax highlighting can be configured via the generic jEdit options dialog.
+Mode-specific options including the appearance of the syntax highlighting can be configured via the generic jEdit options dialog.<br/>
 Most importantly, the mode assigns the token types OPERATOR and KEYWORDn.
-The token types LITERAL1 to LITERAL4 are assigned to brackets at different levels.
+Additionally, the token types LITERAL1 to LITERAL4 are assigned to brackets at different levels.<br/>
 The token type COMMENT4 is reseved by MMT. It is assigned to all hidden, i.e., invisible, parts. Changes to its text style are ignored and overwritten.
 
 <h3>Abbreviations</h3>
 
-The files abbrevs contains a number of useful abbreviations to produce Unicode characters using Latex-like commands.
-For example, "jPi" expands like "\Pi". The details can be configured in jEdit's Options/Abbreviations dialog or by editing the JEDIT/abbrevs file.
+The files abbrevs contains a number of useful abbreviations to produce Unicode characters using Latex-like commands.<br/>
+For the most common Unicode characters, the abbreviation <span class="code">jCOMMAND</span> produces the same character as <span class="code">\COMMAND</span> in LaTeX.<br/>
+The details can be configured in jEdit's Options/Abbreviations dialog or by editing the JEDIT/abbrevs file.
 
 <h3>Interaction with Other Components</h3>
 
@@ -107,20 +108,20 @@ The plugin provides a Sidekick parser (called "mmt").
 <h4>ErrorList</h4>
 
 The plugin provides an ErrorList error source (called "mmt"), which maintains compilation errors.
-  These errors appear in the same dockable window of the ErrorList plugin.
+  These errors appear in the dockable window of the ErrorList plugin.
 
 <h4>Hyperlinks</h4>
 
 The plugin provides a Hyperlink source (called "mmt").
-  This displays the MMT URI of the identifier under the cursor and permits jumping to its declaration.
-  Jumping only works if the parser has read the file already.
-  you can enforce the latter by parsing the respective files in your MMT startup script (see below).
+  This displays the MMT URI of the identifier under the cursor as a tooltip and permits jumping to its declaration using Control-Click.<br/>
+
+  Jumping only works if the destination is known to MMT.
+  This is the case if the file has been build by MMT earlier or is currently open in jEdit.
 
 <h4>Console</h4>
 
 The plugin provides a Console (named "mmt") for the Console plugin.
-  This permits direct access to the MMT shell in the dockable Console window.
-  See the MMT manual for the documentation of the MMT shell.
+  This permits direct access to the <a href="shell.html">MMT shell</a> in the dockable Console window.
 
 <h4>Hiding</h4>
 
