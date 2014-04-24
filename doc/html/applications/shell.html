@@ -1,4 +1,4 @@
-write<h2>Running the MMT Shell</h2>
+<h2>Running the MMT Shell</h2>
 
 The deploy/ folder includes 2 run scripts (with .bat/.sh file endings to be used on Windows/Unix):
 <ul>
@@ -137,8 +137,9 @@ The math path maintains a catalog that maps <a href="../uri.html">MMT URI</a>s t
 
 Several commands exist to add entries to the math path.
 
-<div class="code">mathpath archive FILE</div>
-adds the location of an MMT <a href="../archives.html">archive</a>.
+<div id="mathpathArchive" class="code">mathpath archive FILE</div>
+adds the location of an MMT <a href="../archives.html">archive</a>.<br/>
+The path is searched recursively and registers all found archive folders and mar files.
 
 <div class="code">mathpath local</div>
 adds the local file system, i.e., file:// URIs are mapped to themselves.

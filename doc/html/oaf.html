@@ -1,0 +1,44 @@
+The OAF is a repository backend for mathematical content hosted at <a href="http://gl.mathhub.info/public/projects">gl.mathhub.info</a>.<br/>
+It is the main place to develop and publish <a href="archives.html">MMT archives</a>.
+
+<h2>Archives</h2>
+
+In particular, the OAF contains the following MMT archives:
+
+<table border="1">
+<tr><th>archive</th><th>contents</th><th>depends on</th></tr>
+<tr><td>MMT/urtheories</td><td>various top level languages, in particular the logical framework LF</td><td></td></tr>
+<tr><td>MMT/examples</td><td>an example archive for beginners</td><td>MMT/urtheories</td></tr>
+<tr><td>MMT/experimental</td><td>similar to MMT/examples but not always working</td><td>MMT/urtheories</td></tr>
+<tr><td>MMT/LATIN</td><td>the <a href="https://latin.omdoc.org/">LATIN</a> logic atlas</td><td>MMT/urtheories</td></tr>
+<tr><td>Mizar/mml</td><td>the Mizar Mathematical Library</td><td>MMT/LATIN</td></tr>
+<tr><td>HOLLight/basic</td><td>the standard library of HOL Light</td><td>MMT/LATIN</td></tr>
+</table>
+
+<h2>Setup</h2>
+
+To work with the archives in the OAF, you usually want to clone the relevant git repositories and then add your local working copies to the <a href="applications/shell.html#mathpathArchive">math path</a>.<br/>
+
+To clone the repositories, you typically proceed along the following lines:
+
+<pre class="code">
+mkdir archives
+cd archives
+
+mkdir MMT
+cd MMT
+git clone git@gl.mathhub.info:MMT/urtheories.git
+git clone git@gl.mathhub.info:MMT/examples.git
+git clone git@gl.mathhub.info:MMT/LATIN.git
+cd ..
+
+mkdir HOLLight
+cd HOLLight
+git clone git@gl.mathhub.info:HOLLight/basic.git
+cd ..
+
+mkdir Mizar
+cd Mizar
+git clone git@gl.mathhub.info:Mizar/MML.git
+cd ..
+</pre>
