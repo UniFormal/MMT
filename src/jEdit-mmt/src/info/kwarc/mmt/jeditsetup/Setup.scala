@@ -67,7 +67,7 @@ object Setup {
       val jabb = jedit / "abbrevs"
       var newAbbrevs : List[String] = Nil
       var remove = false
-      File.ReadLineWise(jabb) {line =>
+      if (jabb.exists) File.ReadLineWise(jabb) {line =>
          if (install)
             newAbbrevs ::= line
          else {
