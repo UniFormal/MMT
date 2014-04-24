@@ -301,8 +301,8 @@ class Controller extends ROController with Logger {
       extman.cleanup
       //close all open svn sessions from storages in backend
       backend.cleanup
-      // flush logging buffers
-      report.flush
+      // close logging buffers
+      report.cleanup
       // stop server
       server foreach {_.stop}
    }

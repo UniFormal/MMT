@@ -54,6 +54,10 @@ class Report {
    def flush {
       handlers foreach {_.flush}
    }
+   /** closes all handlers */
+   def cleanup {
+      handlers foreach {_.cleanup}
+   }
 }
 
 object Report {
@@ -65,6 +69,7 @@ object Report {
 abstract class ReportHandler(val id: String) {
    def apply(ind: String, group: String, msg: String)
    def flush {}
+   def cleanup {}
    override def toString = id
 }
 
@@ -86,6 +91,7 @@ class FileHandler(val filename : File, timestamps: Boolean) extends ReportHandle
          flush
    }
    override def flush {file.flush}
+   override def cleanup {file.close}
    override def toString = "file " + filename
 }
 
