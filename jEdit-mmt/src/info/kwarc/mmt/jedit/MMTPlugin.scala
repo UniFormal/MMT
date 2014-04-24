@@ -1,6 +1,10 @@
 package info.kwarc.mmt.jedit
+
 import info.kwarc.mmt.api._
 import parser._
+import frontend._
+import utils._
+import utils.FileConversion._
 
 import org.gjt.sp.jedit._
 import textarea._
@@ -8,10 +12,6 @@ import msg._
 
 import errorlist._
 
-import info.kwarc.mmt.api._
-import frontend._
-import utils._
-import utils.FileConversion._
 
 /**
  * The main class of the MMTPlugin
@@ -42,28 +42,23 @@ class MMTPlugin extends EBPlugin with Logger {
    }
    
    /** called by jEdit when plugin is loaded */
-   override def start() {
-      val home = getPluginHome()
-      home.mkdirs()
+   override def start {
+      val home = getPluginHome
+      home.mkdirs
       controller.setHome(home)
-      var startup = jEdit.getProperty(MMTProperty("startup"))
-      if (startup == null) startup = "startup.msl"
-      val file = new java.io.File(home, startup)
-      if (file.isFile) {
-         try {
-            controller.handle(ExecFile(file, None))
-         } catch {
-            case e: Error => controller.report(e)
-         }
-      }
+      val startup = MMTOptions.startup.get.getOrElse("startup.msl")
+      val file = home resolve startup
+      controller.handle(ExecFile(file, None))
       errorlist.ErrorSource.registerErrorSource(errorSource)
+      val archives = MMTOptions.archives.get.getOrElse("mars")
+      controller.handle(AddArchive(home resolve archives))
       // add this only after executing the startup file because the status bar is not available yet
       // this command itself may also not be logged
       controller.report.addHandler(StatusBarLogger)
       controller.extman.addExtension(mmtListener)
    }
    /** called by jEdit when plugin is unloaded */
-   override def stop() {
+   override def stop {
       controller.cleanup
       errorlist.ErrorSource.unregisterErrorSource(errorSource)
    }
