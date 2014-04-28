@@ -1,5 +1,5 @@
-package info.kwarc.mmt.planetary
-
+package info.kwarc.mmt.marpa
+import scala.util.matching.Regex
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.web._
 import info.kwarc.mmt.api.frontend._
@@ -8,8 +8,10 @@ import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.api.ontology._
+import info.kwarc.mmt.api.modules.{DeclaredTheory}
 import info.kwarc.mmt.api.flexiformal._
 import info.kwarc.mmt.stex._
+import info.kwarc.mmt.api.objects._
 import symbols.{Constant}
 
 import scala.util.parsing.json._
@@ -19,18 +21,20 @@ import scala.concurrent._
 case class PlanetaryError(val text : String) extends Error(text)
 
 
-class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
+class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
   
-  override val logPrefix = "planetary"
+  override val logPrefix = "marpa"
      /** Server */   
   def apply(uriComps: List[String], query: String, body : Body): HLet = {
     try {
       uriComps match {
+        case "getGrammar" :: _ => getGrammarResponse
         case "getPresentation" :: _ => getPresentationResponse
         case "getCompiled" :: _ => getCompiledResponse
         case "getRelated" :: _ => getRelated
         case "getNotations" :: _ => getNotations
         case "getDefinitions" :: _ => getDefinitions
+        case "getActions" :: _ => getActionsResponse
         case _ => errorResponse("Invalid request: " + uriComps.mkString("/"), List(new PlanetaryError("Invalid Request" + uriComps)))
        }
     } catch {
@@ -41,6 +45,238 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
         errorResponse("Exception occured : " + e.getStackTrace(), List(e))
     }
   }
+  
+  def getGrammarResponse : HLet  = new HLet {
+    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
+      val reqBody = new Body(tk)
+      val notations = controller.library.getModules flatMap {
+        case t : DeclaredTheory 
+        	if t.path.toPath == "http://mathhub.info/smglom/mv/structure.omdoc?structure" => 
+          val not = t.getDeclarations collect {
+            case c : Constant => c.notC.presentationDim.notations.values.flatten
+          } 
+          not.flatten
+        case _ => Nil
+      }
+      
+      //val xmlNotations = notations.map(n => (n.name.toPath, n.presentationMarkers))
+      val xmlNotations = notations.map(n => 
+        Grammar.addTopRule(n.name.toPath
+            ,n.presentationMarkers))
+     
+      val symbol = notations.head.name
+      //val prototype = OMA(OMS(symbol), List(args))
+      //prototype.toNode
+      
+      //val resp = new JSONArray(xmlNotations.map(_.toString))
+      val pref = "default ::= action => [name,values]"::"lexeme default = latm => 1"::Nil
+      val resp = new JSONArray(pref:::Grammar.rules.toList.map(x=>Grammar.toBNF(x)))
+        //val resp = new JSONArray(List(Grammar.rules.toString))
+     
+      // val resp = new JSONArray(xmlNotations)
+      val params = reqBody.asJSON
+      
+      Server.JsonResponse(resp).aact(tk)
+    }
+  }
+
+  def getActionsResponse : HLet  = new HLet {
+    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
+      val reqBody = new Body(tk)
+      val notations = controller.library.getModules flatMap {
+        case t : DeclaredTheory 
+        	if t.path.toPath == "http://mathhub.info/smglom/mv/structure.omdoc?structure" => 
+          val not = t.getDeclarations collect {
+            case c : Constant => c.notC.presentationDim.notations.values.flatten
+          } 
+          not.flatten
+        case _ => Nil
+      }
+      
+      //val xmlNotations = notations.map(n => (n.name.toPath, n.presentationMarkers))
+      val xmlNotations = notations.map(n => 
+        Grammar.addTopRule(n.name.toPath
+            ,n.presentationMarkers))
+     
+      val symbol = notations.head.name
+      //val prototype = OMA(OMS(symbol), List(args))
+      //prototype.toNode
+      
+      //val resp = new JSONArray(xmlNotations.map(_.toString))
+      
+      val resp = new JSONArray("#TODO...My Actions"::Nil)
+        //val resp = new JSONArray(List(Grammar.rules.toString))
+     
+      // val resp = new JSONArray(xmlNotations)
+      val params = reqBody.asJSON
+      
+      Server.JsonResponse(resp).aact(tk)
+    }
+  }
+
+  
+  
+  def doMarkers(markers : List[Marker]) : scala.xml.Node = {
+    <m:mrow> {markers.map(doMarker)} </m:mrow>
+  }
+  def doMarker(marker : Marker) : scala.xml.Node = marker match {
+    case Arg(argNr,precedence) => {
+		      val precS = precedence match {
+		        case Some(x) => x.toString
+		        case None    => ""
+		      }
+		      <omdoc:render name={"arg" + argNr} precedence={precS} />
+	      }
+    case SeqArg(argNr,delim,precedence) => {
+    		val precS = precedence match {
+    		  case Some(x) => x.toString
+    		  case None => ""
+    		}
+    		<omdoc:iterate name={"arg"+argNr} precedence={precS}>
+    		<omdoc:separator>
+    			{doMarker(delim)}
+    		</omdoc:separator>
+    			 <omdoc:render name={"arg" + argNr} precedence={precS} />
+    		</omdoc:iterate>
+    }		//{doMarker(Arg(argNr,precedence))}
+  	case m : TdMarker => <td> <todo/> </td> 
+    case d : Delimiter => <m:mo> {d.text} </m:mo>
+    case m : GroupMarker => doMarkers(m.elements)
+    
+    case _ => <todo/>		
+  }
+  
+//  abstract class Rule 
+//  case class Mo(name:String, content:List[String])  extends Rule
+//  case class TdRule(name:String, content: List[String]) extends Rule
+  abstract class GenericRule
+  case class Rule(name:String, content: List[String]) extends GenericRule
+  object Grammar {
+	  var rules = Set.empty[Rule]
+	  var index:Int = 0
+	  //var test = List.empty[String]
+	  def addTopRule(name:String, markers:List[Marker]) {
+		  val content:List[String] = "rowB"::markers.map(addRule):::"rowE"::Nil
+		  rules = rules | Set((Rule(name,content)))     //uniqueness of top level notations is assumed
+		  
+	  }
+	  def createRule(content:List[String]):String = { //returns the name of the rule
+		 val filteredRules = rules.filter(r => r match { case Rule(n,c) => c == content})
+	     if (filteredRules.isEmpty) {
+	        index = index + 1
+	        val name = "rule" + index.toString
+	        rules = rules | Set(Rule(name, content))
+	        //test = (name+" NEW")::test
+	        name
+	     } else {
+	        val Rule(name,_) = filteredRules.head
+	        //test = (name+" OLD")::test
+	        name
+	     }
+	  }
+	  def addRuleL(markers:List[Marker]):String  = { //returns the name of the rule
+	     val content:List[String] = "rowB"::markers.map(addRule):::"rowE"::Nil
+	     createRule(content)
+	  }
+	  def addRule(marker:Marker):String = marker match { //returns the name of the rule
+			case Arg(argNr,precedence) => {
+						       precedence match {
+						        case Some(x) => 
+				 val content = "renderB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::"renderE"::Nil
+				 createRule(content)
+						        case None    =>
+				 val content = "renderB"::"nrB"::argNr.toString::"nrE"::"renderE"::Nil
+				 createRule(content)
+						      }
+						
+				    }
+		    case SeqArg(argNr,delim,precedence) => {
+				    		val delimName = addRule(delim)
+				    		val argName = addRule(Arg(argNr,precedence))
+				    		precedence match {
+				    		  case Some(x) => 
+				     		    createRule(
+				     		    "iterateB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::
+				    		    "separatorB"::delimName::"separatorE"::argName::"iterateE"::Nil)
+				    		  case None => 
+				    		    createRule(
+				    		    "iterateB"::"nrB"::argNr.toString::"nrE"::"separatorB"::delimName::
+				    		    "separatorE"::argName::"iterateE"::Nil)
+				    		}
+				    }		
+		  	case m : TdMarker => createRule("<TODO>"::Nil)
+		    case d : Delimiter => createRule("moB"::d.text::"moE"::Nil)
+		    case m : GroupMarker => addRuleL(m.elements)
+		    case _ => "<TODO>"
+	  }
+	  
+	  def toBNF(rule:Rule):String = {
+	    val Rule(rawName,content) = rule
+	    
+	    val pattern = "rule.*".r
+	    val topPatt = """\?.*""".r
+	    val q = new Regex(("""\?"""),"q")
+	    val name:String = pattern findFirstIn rawName match{
+	      case Some(_) => rawName
+	      case None => val Some(suff) = topPatt findFirstIn rawName
+	      			   q replaceAllIn (suff, m => "_")
+	    }
+	    content match {
+	      case "rowB"::tl => name + "::= " + content.mkString(" ")  
+	      case "moB"::tl => name + "::= " + content.mkString(" ")  
+	      case "renderB"::tl => name + "::= expression"
+	      case "iterateB"::tl => 
+	        			val Some(delim) = content.find(x=> 
+	        			   if (content.indexOf(x)>0) {
+	        			      content(content.indexOf(x)-1) == "separatorB"
+	        			   } else false)
+						name + "::= expression \n"+ "| " + name + " " + delim + " expression" 
+	      case _ => "<TODO>"
+	    }
+	  }
+}
+
+//def toGrammarAll(markers:List[Marker], index:String = "")= {  
+//  def fun (s:Set[(String,List[String])],x:Marker) = s | toGrammar(x,index+markers.indexOf(x))
+//  var res =  markers.foldLeft (Set.empty[(String,List[String])])(fun)
+//  val suff = if (index == "") "TOP" else index;
+//  var topLevelRule = ("rule"+suff,"rowB"::markers.map(x=>"rule"+index+markers.indexOf(x)):::"rowE"::Nil)
+//  res | Set(topLevelRule)
+//} 
+//def toGrammar(marker:Marker, index: String) : Set[(String,List[String])] = marker match {
+//    case Arg(argNr,precedence) => {
+//		       precedence match {
+//		        case Some(x) => 
+//  Set(("rule"+index,"renderB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::"renderE"::Nil))
+//		        case None    =>
+//  Set(("rule"+index,"renderB"::"nrB"::argNr.toString::"nrE"::"renderE"::Nil)) 
+//		      }
+//		
+//    }
+//    case SeqArg(argNr,delim,precedence) => {
+//    		val delimSet = toGrammar(delim,index+delim.text)
+//    		val (delimID,delimRule) = delimSet.head
+//    		val argSet = toGrammar(Arg(argNr,precedence),index+argNr)
+//    		val (argID,argRule) =  argSet.head
+//    		val result = precedence match {
+//    		  case Some(x) => 
+//     		    Set(("rule"+index,
+//     		    "iterateB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::
+//    		    "separatorB"::delimID::"separatorE"::
+//    		    argID::"iterateE"::Nil))
+//    		  case None => 
+//    		    Set(("rule"+index,"iterateB"::"nrB"::argNr.toString::"nrE"::
+//    		    "separatorB"::delimID::"separatorE"::
+//    		    argID::"iterateE"::Nil))
+//    		}
+//    		result | delimSet | argSet
+//    }		
+//  	case m : TdMarker => Set(("rule"+index,"TODO"::Nil))
+//    case d : Delimiter => Set(("rule"+index,"moB"::d.text::"moE"::Nil))
+//    case m : GroupMarker => toGrammarAll(m.elements, index) 
+//  }
+  
+  
   
   def getNotations : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
@@ -213,8 +449,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       presenter.apply(doc)(rb)
       val response = rb.get
       log("Sending Response: " + response)
-      val additional = GlossaryGenerator.generate(controller)
-      JsonResponse(response + additional, "", Nil).aact(tk)
+      JsonResponse(response, "", Nil).aact(tk)
      } catch {
        case e : Error => 
          log(e.longMsg)
