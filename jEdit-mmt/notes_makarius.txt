@@ -70,10 +70,3 @@ while (chunks != null) {
   chunk = chunk.next
 }
 But chunkCache, getLineInfo, and chunks are package-private in the textarea package.
-
-A workaround is this
-
-package org.gjt.sp.jedit.textarea
-case class Trick(textArea: TextArea) {
-   textArea.chunkCache.getLineInfo(0).chunks.style = ...
-}
