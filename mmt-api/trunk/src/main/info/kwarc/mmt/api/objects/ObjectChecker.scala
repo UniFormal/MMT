@@ -1,7 +1,6 @@
 package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
 
-//import info.kwarc.mmt.api.objects._
 import libraries._
 import modules._
 import symbols._
@@ -16,78 +15,6 @@ import scala.collection.mutable.{HashSet,HashMap}
  * constants have equality rule: injectivity and implicit arguments used to obtain necessary/sufficient condition (not preserved by morphism); congruence if no rule applicable
  */
 
-/** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
-class DelayedConstraint(val constraint: Judgement, val history: History, val incomplete: Boolean) {
-  private val freeVars = constraint.freeVars
-  private var activatable = false
-  /** This must be called whenever a variable that may occur free in this constraint has been solved */
-  def solved(names: List[LocalName]) {
-     if (! activatable && (names exists {name => freeVars contains name})) activatable = true
-  }
-  /** @return true if since delaying, a variable has been solved that occurs free in this Constraint */
-  def isActivatable = activatable
-  override def toString = constraint.toString
-}
-
-/** experimental: delay a continuation function until the type of a term can be inferred */
-class DelayedInference(val stack: Stack, val history: History, val tm: Term, val cont: Term => Boolean) extends UnaryObjJudegment(stack, tm, "delayed inference")
-
-/** wrapper for classes that can occur in the [[History]] */
-trait HistoryEntry {
-   /** for user-facing rendering */
-   def present(implicit cont: Obj => String): String
-}
-
-/** a HistoryEntry that consists of a string, meant as a log or error message */
-case class Comment(text: Unit => String) extends HistoryEntry {
-   override def toString = text()
-   def present(implicit cont: Obj => String) = text()
-}
-
-/**
- * The History is a branch in the tree of decisions, messages, and judgements that occurred during type-checking
- * 
- * The most import History's are those ending in an error message.
- * See [[Solver.getErrors]]
- * 
- * @param the nodes of the branch, from leaf to root
- */
-class History(private var steps: List[HistoryEntry]) {
-   /** creates and returns a new branch with a child appended to the leaf */
-   def +(e: HistoryEntry) : History = new History(e::steps)
-   /** shortcut for adding a Comment leaf */
-   def +(s: => String) : History = this + new Comment(_ => s)
-   /** appends a child to the leaf */
-   def +=(e: HistoryEntry) {steps ::= e}
-   /** appends a child to the leaf */
-   def +=(s: => String) {this += Comment(_ => s)}
-   /** creates a copy of the history that can be passed when branching */
-   def branch = new History(steps)
-   /** get the steps */
-   def getSteps = steps
-   /**
-    * A History produced by the ObjectChecker starts with the ValidationUnit, but the error is only encountered along the way.
-    * 
-    * @return an educated guess which suffix of the history is most useful 
-    */
-   def narrowDownError : History = {
-      // idea: we start at the comment immediately before the last WFJudgement before the first other Judgement
-      var i = steps.length - 1
-      var lastWFJ = i
-      var continue = true
-      while (continue && i >= 0) {
-         steps(i) match {
-            case j: WFJudgement => lastWFJ = i
-            case j: Judgement => continue = false
-            case _ =>
-         }
-         i -= 1
-      }
-      if (lastWFJ+1 < steps.length && steps(lastWFJ+1).isInstanceOf[Comment]) lastWFJ += 1
-      new History(steps.take(lastWFJ+1))
-   }
-}
-
 object InferredType extends TermProperty[Term](utils.mmt.baseURI / "clientProperties" / "solver" / "inferred")
 
 /**
@@ -95,7 +22,7 @@ object InferredType extends TermProperty[Term](utils.mmt.baseURI / "clientProper
  * 
  * The judgments may contain unknown variables (also called meta-variables or logic variables);
  * variables may represent any MMT term, i.e., object language terms, types, etc.;
- * the solution is a Substitution that provides a closed Term for every unknown variable.
+ * the solution is a [[Substitution]] that provides a closed Term for every unknown variable.
  * (Higher-order abstract syntax should be used to represent unknown terms with free variables as closed function terms.) 
  * 
  * The Solver decomposes the judgments individually by applying typing rules, collecting (partial) solutions along the way and possibly delaying unsolvable judgments.
@@ -119,7 +46,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
    private var delayed : List[DelayedConstraint] = Nil
    /** tracks the errors in reverse order of encountering */
    private var errors: List[History] = Nil
-   /** tracks the dependecnies in reverse order of encountering */
+   /** tracks the dependencies in reverse order of encountering */
    private var dependencies : List[CPath] = Nil
    /** true if unresolved constraints are left */
    def hasUnresolvedConstraints : Boolean = ! delayed.isEmpty
@@ -138,7 +65,6 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
    def getPartialSolution : Context = solution
    /**
     * @return the context containing only the unsolved variables
-    * This solution may contain unsolved variables, and there may be unresolved constraints. 
     */   
    def getUnsolvedVariables : Context = solution.filter(_.df.isEmpty)
    /**
@@ -183,9 +109,11 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
       logGroup {
          report(prefix, "unknowns: " + initUnknowns.toString)
          report(prefix, "solution: " + solution.toString)
-         val unsolved = solution.variables.filter(_.df.isEmpty).map(_.name)
+         val unsolved = getUnsolvedVariables.map(_.name)
          if (! unsolved.isEmpty)
             report(prefix, "unsolved: " + unsolved.mkString(", "))
+         else
+            report(prefix, "all variables solved")
          if (! errors.isEmpty) {
             report(prefix, "errors:")
             logGroup {
@@ -194,22 +122,29 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
                   logHistory(e)
                }
             }
-         }
+         } else
+            report(prefix, "no errors")
          if (! delayed.isEmpty) {
             report(prefix, "constraints:")
             logGroup {
-               delayed.foreach {d =>
-                  report(prefix, d.constraint.present)
-                  logGroup {
-                     report(prefix, d.constraint.presentAntecedent(_.toString))
-                     report(prefix, d.constraint.presentSucceedent(_.toString))
+               delayed.foreach {
+                  case d: DelayedJudgement =>
+                     report(prefix, d.constraint.present)
+                     logGroup {
+                        report(prefix, d.constraint.presentAntecedent(_.toString))
+                        report(prefix, d.constraint.presentSucceedent(_.toString))
+                        if (errors.isEmpty)
+                           // if there are no errors, see the history of the constraints
+                           logHistory(d.history)
+                     }
+                  case d: DelayedInference =>
+                     report(prefix, "continuation after delayed inference of  " + presentObj(d.tm))
                      if (errors.isEmpty)
-                        // if there are no errors, see the history of the constraints
                         logHistory(d.history)
-                  }
                }
             }
-         }
+         } else
+            report(prefix, "no remaining constraints")
       }
    }
    
@@ -232,34 +167,6 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
       c.dfC.analyzed
    }
 
-   /** delays a constraint for future processing
-    * @param j the Judgement to be delayed
-    * @param activatable true if the judgment can be activated immediately
-    * @return true (i.e., delayed Judgment's always return success)
-    */
-   private def delay(j: Judgement, incomplete: Boolean = false)(implicit history: History): Boolean = {
-      // testing if the same judgement has been delayed already
-      if (delayed.exists(d => d.constraint hasheq j)) {
-         log("delaying (exists already): " + j.present)
-      } else {
-         log("delaying: " + j.present)
-         history += "(delayed)"
-         val dc = new DelayedConstraint(j, history, incomplete)
-         delayed ::= dc
-      }
-      true
-   }
-   /**
-    * selects an activatable constraint: a previously delayed constraint if one of its free variables has been solved since
-    * @return an activatable constraint if available
-    */
-   private def activatable: Option[DelayedConstraint] = {
-      delayed foreach {_.solved(newsolutions)}
-      newsolutions = Nil
-      delayed.find {_.isActivatable} orElse
-      // no activatable judgement left, try incomplete reasoning
-      delayed.find {_.incomplete} 
-   }
    /** registers the solution for an unknown variable
     * 
     * If a solution exists already, their equality is checked.
@@ -330,41 +237,97 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
     *  
     *  If this returns false, an error must have been registered.  
     */
+   
+   def apply(j: Judgement): Boolean = {
+      delayed ::= new DelayedJudgement(j, new History(Nil), true)
+      activate
+   }
+   
+   /** delays a constraint for future processing
+    * @param j the Judgement to be delayed
+    * @param activatable true if the judgment can be activated immediately
+    * @return true (i.e., delayed Judgment's always return success)
+    */
+   private def delay(j: Judgement, incomplete: Boolean = false)(implicit history: History): Boolean = {
+      // testing if the same judgement has been delayed already
+      if (delayed.exists {
+         case d: DelayedJudgement => d.constraint hasheq j
+         case _ => false
+      }) {
+         log("delaying (exists already): " + j.present)
+      } else {
+         log("delaying: " + j.present)
+         history += "(delayed)"
+         val dc = new DelayedJudgement(j, history, incomplete)
+         delayed ::= dc
+      }
+      true
+   }
+   /**
+    * selects an activatable constraint: a previously delayed constraint if one of its free variables has been solved since
+    * @return an activatable constraint if available
+    */
+   private def activatable: Option[DelayedConstraint] = {
+      delayed foreach {_.solved(newsolutions)}
+      newsolutions = Nil
+      delayed.find {d => d.isActivatable && !d.incomplete} orElse
+      // no activatable judgement left, try incomplete reasoning
+      delayed.find {_.incomplete} 
+   }
+
+   /**
+    * processes the next activatable constraint until none are left
+    */
    @scala.annotation.tailrec
-   final def apply(j: Judgement, history: History = new History(Nil)) : Boolean = {
-     implicit val h = history
+   private def activate : Boolean = {
      val subs = solution.toPartialSubstitution
-     def prepare(t: Term) = simplify(t ^^ subs)
+     def prepare(t: Term, covered: Boolean = false) = if (covered) simplify(t ^^ subs) else simplify(t ^^ subs)
      def prepareS(s: Stack) =
         Stack(s.frames.map(f => Frame(f.theory, controller.uom.simplifyContext(f.context ^^ subs, theory, solution))))
-     val mayhold = j match {
-        case Typing(stack, tm, tp, typS) =>
-           val tmS = tm ^^ subs
-           check(Typing(prepareS(stack), tmS, prepare(tp), typS))
-        case Equality(stack, tm1, tm2, tp) =>
-           check(Equality(prepareS(stack), prepare(tm1), prepare(tm2), tp map prepare))
-        case Universe(stack, tm) =>
-           check(Universe(prepareS(stack), tm ^^ subs))
-        case Inhabitable(stack, tm) =>
-           check(Inhabitable(prepareS(stack), tm ^^ subs))
-        case IsMorphism(stack, mor, from) =>
-           checkMorphism(mor ^^ subs, prepare(from))(prepareS(stack), history)
+     val dcOpt = activatable
+     val mayhold = dcOpt match {
+        case None => return true
+        case Some(dc) => 
+           delayed = delayed filterNot (_ == dc)
+           dc match {
+              case dj: DelayedJudgement =>
+                 val j = dj.constraint
+                 implicit val history = dj.history
+                 //logState() // noticably slows down type-checking, only use for debugging
+                 log("activating: " + j.present)
+                 j match {
+                    case Typing(stack, tm, tp, typS) =>
+                       check(Typing(prepareS(stack), prepare(tm), prepare(tp, true), typS))
+                    case Equality(stack, tm1, tm2, tp) =>
+                       check(Equality(prepareS(stack), prepare(tm1, true), prepare(tm2, true), tp.map {x => prepare(x, true)}))
+                    case Universe(stack, tm) =>
+                       check(Universe(prepareS(stack), prepare(tm)))
+                    case Inhabitable(stack, tm) =>
+                       check(Inhabitable(prepareS(stack), prepare(tm)))
+                    case IsMorphism(stack, mor, from) =>
+                       checkMorphism(mor ^^ subs, prepare(from))(prepareS(stack), history)
+                 }
+              case di: DelayedInference =>
+                  inferTypeAndThen(prepare(di.tm))(prepareS(di.stack), di.history)(di.cont)
+           }
      }
      if (mayhold) {
         //activate next constraint and recurse, if any left
-        val dcOpt = activatable
-        dcOpt match {
-           case None => true
-           case Some(dc) => 
-              delayed = delayed filterNot (_ == dc)
-              val j = dc.constraint
-              //logState() // noticably slows down type-checking, only use for debugging
-              log("activating: " + j.present)
-              apply(j, dc.history)
-        }
+        activate
      } else false
    }
 
+   def inferTypeAndThen(tm: Term)(stack: Stack, history: History)(cont: Term => Boolean): Boolean = {
+      implicit val (s,h) = (stack, history)
+      inferType(tm) match {
+         case Some(tp) =>
+            cont(tp)
+         case None =>
+            delayed ::= new DelayedInference(stack, history + "(inference delayed)", tm, cont)
+            true
+      }
+   }
+   
    /**
     * checks a judgement
     *  
@@ -386,11 +349,6 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
             case j: Equality => checkEquality(j)
             case j: Universe => checkUniverse(j)
             case j: Inhabitable => checkInhabitable(j)
-            case di: DelayedInference =>
-               inferType(di.tm)(di.stack, di.history) match {
-                  case Some(tp) => di.cont(tp)
-                  case None => delay(di)
-               }
          }
       }
    }
@@ -415,17 +373,20 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
             if (solution.isDeclared(x))
               solveType(x, tp) //TODO: check for occurrences of bound variables?
             else
-              false //untyped variable type-checks against nothing
+              error("untyped variable type-checks against nothing: " + x)
          case Some(t) => check(Equality(stack, t, tp, None))
        }
        case OMS(p) =>
          getType(p) match {
            case None => getDef(p) match {
-             case None => false //untyped, undefined constant type-checks against nothing
+             case None =>
+                //TODO: we may want to check if there is a typing rule for p
+                error("untyped, undefined constant type-checks against nothing: " + p.toString)
              case Some(d) => check(Typing(stack, d, tp, j.tpSymb)) // expand defined constant
            }
            case Some(t) => check(Equality(stack, t, tp, None))
          }
+       case l: OMLIT => check(Equality(stack, OMS(l.rt.synType), tp, None))
        // the foundation-dependent cases
        // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
@@ -482,7 +443,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
           case l: OMLIT =>
              history += "lookup in literal"
              // structurally well-formed literals carry their type
-             return Some(OMS(l.rt.synType))
+             return Some(OMS(l.rt.synType)) // no need to use InferredType.put on literals
           case _ => None
         }
         //foundation-dependent cases if necessary

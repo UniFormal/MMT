@@ -3,6 +3,14 @@ package info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import frontend._
 
+class TypedPlugin extends frontend.Plugin {
+   val dependencies = Nil
+   override def start(args: List[String]) {
+      val em = controller.extman
+      em.ruleStore.add(UniverseType,UniverseKind,UnivTerm)
+   }
+}
+
 class Plugin extends frontend.Plugin {
    val dependencies = List("info.kwarc.mmt.lf.TypedPlugin")
    override def start(args: List[String]) {
@@ -25,11 +33,10 @@ class Plugin extends frontend.Plugin {
    }
 }
 
-class TypedPlugin extends frontend.Plugin {
-   val dependencies = Nil
+class ShallowPolymorphismPlugin extends frontend.Plugin {
+   val dependencies = List("info.kwarc.mmt.lf.Plugin")
    override def start(args: List[String]) {
       val em = controller.extman
-      em.ruleStore.add(UniverseType,UniverseKind,UnivTerm)
+      em.ruleStore.add(ShallowPolymorphism)
    }
 }
-

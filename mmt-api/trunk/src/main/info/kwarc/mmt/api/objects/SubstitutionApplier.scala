@@ -34,8 +34,7 @@ object SmartSubstitutionApplier extends SubstitutionApplier {
 }
 
 /** 
- *  A SubstitutionApplier that remembers previous applications. 
- *  It exploits and preserves structure sharing.
+ *  Like SmartSubstitutionApplier, but remembers previous applications. 
  */
 class MemoizedSubstitutionApplier extends SubstitutionApplier {
    private val memory = new scala.collection.mutable.HashMap[(Int,Int), Obj]
