@@ -44,8 +44,8 @@ class RuleStore {
    val typingRules = new RuleMap[TypingRule]
    val inferenceRules = new RuleMap[InferenceRule]
    val computationRules = new RuleMap[ComputationRule]
-   val universeRules = new RuleMap[UniverseRule]
    val inhabitableRules = new RuleMap[InhabitableRule]
+   val universeRules = new RuleMap[UniverseRule]
    val typeBasedEqualityRules = new RuleMap[TypeBasedEqualityRule]
    val termBasedEqualityRules = new RuleSetMap2[TermBasedEqualityRule]
    val solutionRules = new RuleMap[SolutionRule]
@@ -61,7 +61,7 @@ class RuleStore {
    /** the AbbrevRule's that this UOM will use, hashed by the abbreviating operator */
    val abbrevRules = new RuleSetMap[uom.AbbrevRule]
    
-   private val all = List(typingRules, inferenceRules, computationRules, universeRules, 
+   private val all = List(typingRules, inferenceRules, computationRules, universeRules, inhabitableRules,
                      typeBasedEqualityRules , termBasedEqualityRules, solutionRules, forwardSolutionRules, 
                      introProvingRules, elimProvingRules, depthRules, breadthRules, abbrevRules)
    
@@ -71,6 +71,7 @@ class RuleStore {
          case r: TypingRule => typingRules(r.head) = r
          case r: InferenceRule => inferenceRules(r.head) = r
          case r: ComputationRule => computationRules(r.head) = r
+         case r: InhabitableRule => inhabitableRules(r.head) = r
          case r: UniverseRule => universeRules(r.head) = r
          case r: TypeBasedEqualityRule => typeBasedEqualityRules(r.head) = r
          case r: TermBasedEqualityRule => termBasedEqualityRules((r.left,r.right)) += r
@@ -107,6 +108,7 @@ class RuleStore {
       mkM("typing rules", typingRules) 
       mkM("inference rules", inferenceRules)
       mkM("computation rules", computationRules)
+      mkM("inhabitable rules", inhabitableRules)
       mkM("universe rules", universeRules)
       mkM("equality rules", typeBasedEqualityRules)
       mkS("term-based equality rules", termBasedEqualityRules)

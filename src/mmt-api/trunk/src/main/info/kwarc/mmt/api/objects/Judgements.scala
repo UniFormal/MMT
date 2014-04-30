@@ -11,6 +11,7 @@ abstract class Judgement extends utils.HashEquality[Judgement] with HistoryEntry
    */ 
   def freeVars : HashSet[LocalName]
   val stack: Stack
+  
    /** a toString method that may call a continuation on its objects
     */
   def present(implicit cont: Obj => String) = presentAntecedent + " |- " + presentSucceedent
@@ -18,6 +19,10 @@ abstract class Judgement extends utils.HashEquality[Judgement] with HistoryEntry
   def presentAntecedent(implicit cont: Obj => String) = {
      stack.theory.toString + "; " + cont(stack.context)
   }
+  /*
+  def map(fC: Stack => Stack, fT: (Term, Boolean) => Term): Judgement
+  private[objects] def check(implicit solver: Solver, history: History): Boolean
+  */
 }
 
 /** A WFJudgment defines well-formed objects */
