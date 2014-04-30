@@ -51,7 +51,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
       val reqBody = new Body(tk)
       val notations = controller.library.getModules flatMap {
         case t : DeclaredTheory 
-        	if t.path.toPath == "http://mathhub.info/smglom/mv/structure.omdoc?structure" => 
+        	//if t.path.toPath == "http://mathhub.info/smglom/mv/structure.omdoc?structure"
+        	=> 
           val not = t.getDeclarations collect {
             case c : Constant => c.notC.presentationDim.notations.values.flatten
           } 
@@ -59,33 +60,29 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
         case _ => Nil
       }
       
-      //val xmlNotations = notations.map(n => (n.name.toPath, n.presentationMarkers))
+  //   val xmlNotations = notations.map(n => (n.name.toPath, n.presentationMarkers))
       val xmlNotations = notations.map(n => 
         Grammar.addTopRule(n.name.toPath
             ,n.presentationMarkers))
      
-      val symbol = notations.head.name
-      //val prototype = OMA(OMS(symbol), List(args))
+//      val symbol = notations.head.name
+//      //val prototype = OMA(OMS(symbol), List(args))
       //prototype.toNode
+ //   val resp = new JSONArray(xmlNotations.map(_.toString))
       
-      //val resp = new JSONArray(xmlNotations.map(_.toString))
-      val pref = "default ::= action => [name,values]"::"lexeme default = latm => 1"::Nil
-      val resp = new JSONArray(pref:::Grammar.rules.toList.map(x=>Grammar.toBNF(x)))
-        //val resp = new JSONArray(List(Grammar.rules.toString))
-     
-      // val resp = new JSONArray(xmlNotations)
+      val resp = new JSONArray( Grammar.getMarpaGrammar );
       val params = reqBody.asJSON
-      
+     
       Server.JsonResponse(resp).aact(tk)
     }
   }
-
   def getActionsResponse : HLet  = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
       val reqBody = new Body(tk)
       val notations = controller.library.getModules flatMap {
         case t : DeclaredTheory 
-        	if t.path.toPath == "http://mathhub.info/smglom/mv/structure.omdoc?structure" => 
+        	//if t.path.toPath == "http://mathhub.info/smglom/mv/structure.omdoc?structure"
+        => 
           val not = t.getDeclarations collect {
             case c : Constant => c.notC.presentationDim.notations.values.flatten
           } 
@@ -146,19 +143,17 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
     case _ => <todo/>		
   }
   
-//  abstract class Rule 
-//  case class Mo(name:String, content:List[String])  extends Rule
-//  case class TdRule(name:String, content: List[String]) extends Rule
+
   abstract class GenericRule
   case class Rule(name:String, content: List[String]) extends GenericRule
   object Grammar {
 	  var rules = Set.empty[Rule]
+	  var NotationContent = List.empty[String]
 	  var index:Int = 0
 	  //var test = List.empty[String]
 	  def addTopRule(name:String, markers:List[Marker]) {
 		  val content:List[String] = "rowB"::markers.map(addRule):::"rowE"::Nil
 		  rules = rules | Set((Rule(name,content)))     //uniqueness of top level notations is assumed
-		  
 	  }
 	  def createRule(content:List[String]):String = { //returns the name of the rule
 		 val filteredRules = rules.filter(r => r match { case Rule(n,c) => c == content})
@@ -205,7 +200,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 				    		}
 				    }		
 		  	case m : TdMarker => createRule("<TODO>"::Nil)
-		    case d : Delimiter => createRule("moB"::d.text::"moE"::Nil)
+		    case d : Delimiter => createRule("moB"::"'"+d.text+"'"::"moE"::Nil)
 		    case m : GroupMarker => addRuleL(m.elements)
 		    case _ => "<TODO>"
 	  }
@@ -218,8 +213,13 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	    val q = new Regex(("""\?"""),"q")
 	    val name:String = pattern findFirstIn rawName match{
 	      case Some(_) => rawName
-	      case None => val Some(suff) = topPatt findFirstIn rawName
-	      			   q replaceAllIn (suff, m => "_")
+	      case None => {  val Some(suff) = topPatt findFirstIn rawName
+	      			  	  val result = q replaceAllIn (suff, m => "_")
+	      				  NotationContent = result :: NotationContent
+	      				  println(result)
+	      				  result
+	      			   } 
+
 	    }
 	    content match {
 	      case "rowB"::tl => name + "::= " + content.mkString(" ")  
@@ -234,47 +234,28 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	      case _ => "<TODO>"
 	    }
 	  }
+	  
+	  def getMarpaGrammar:List[String] = {
+		    val pref = ":default ::= action => do_print"::
+		    			"lexeme default = latm => 1"::
+		    			"Error = anyToken"::
+		    			"     || anyToken Error"::
+		    			":lexeme ~ <anyToken> priority => -1"::
+		    			":start ::= Script"::
+		    			"Script ::= Notation"::
+		    			"         ||Error"::Nil
+		   val extractedRules = Grammar.rules.toList.map(x=>Grammar.toBNF(x)).map(_.toString)
+		   NotationContent match {
+		      case Nil => "#No notations found"::Nil 
+		      case _ => val tl = NotationContent.tail
+			   val Notation = tl match {
+			      case Nil => "Notation ::= " + NotationContent.head :: Nil
+			      case _   => "Notation ::= " + NotationContent.head :: NotationContent.map(x => "| "+x)
+			    }
+			   pref:::Notation:::extractedRules:::"END_OF_DSL"::Nil
+		   } 	
+	  } 
 }
-
-//def toGrammarAll(markers:List[Marker], index:String = "")= {  
-//  def fun (s:Set[(String,List[String])],x:Marker) = s | toGrammar(x,index+markers.indexOf(x))
-//  var res =  markers.foldLeft (Set.empty[(String,List[String])])(fun)
-//  val suff = if (index == "") "TOP" else index;
-//  var topLevelRule = ("rule"+suff,"rowB"::markers.map(x=>"rule"+index+markers.indexOf(x)):::"rowE"::Nil)
-//  res | Set(topLevelRule)
-//} 
-//def toGrammar(marker:Marker, index: String) : Set[(String,List[String])] = marker match {
-//    case Arg(argNr,precedence) => {
-//		       precedence match {
-//		        case Some(x) => 
-//  Set(("rule"+index,"renderB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::"renderE"::Nil))
-//		        case None    =>
-//  Set(("rule"+index,"renderB"::"nrB"::argNr.toString::"nrE"::"renderE"::Nil)) 
-//		      }
-//		
-//    }
-//    case SeqArg(argNr,delim,precedence) => {
-//    		val delimSet = toGrammar(delim,index+delim.text)
-//    		val (delimID,delimRule) = delimSet.head
-//    		val argSet = toGrammar(Arg(argNr,precedence),index+argNr)
-//    		val (argID,argRule) =  argSet.head
-//    		val result = precedence match {
-//    		  case Some(x) => 
-//     		    Set(("rule"+index,
-//     		    "iterateB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::
-//    		    "separatorB"::delimID::"separatorE"::
-//    		    argID::"iterateE"::Nil))
-//    		  case None => 
-//    		    Set(("rule"+index,"iterateB"::"nrB"::argNr.toString::"nrE"::
-//    		    "separatorB"::delimID::"separatorE"::
-//    		    argID::"iterateE"::Nil))
-//    		}
-//    		result | delimSet | argSet
-//    }		
-//  	case m : TdMarker => Set(("rule"+index,"TODO"::Nil))
-//    case d : Delimiter => Set(("rule"+index,"moB"::d.text::"moE"::Nil))
-//    case m : GroupMarker => toGrammarAll(m.elements, index) 
-//  }
   
   
   
