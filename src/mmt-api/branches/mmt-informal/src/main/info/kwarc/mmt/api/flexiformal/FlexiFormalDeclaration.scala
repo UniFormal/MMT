@@ -13,17 +13,17 @@ import info.kwarc.mmt.api.metadata.MetaData
 
 object FlexiformalDeclaration {
   def parseNarrativeObject(n : scala.xml.Node)(implicit base : Path) : NarrativeObject = n.label match {
-    case "#PCDATA" => new NarrativeText(n.toString)
+    case _ if ((n \ "@type").text == "XML") => new NarrativeXML(n)
     case "OMOBJ" => new NarrativeTerm(Obj.parseTerm(n, base))
     case "ref" if n.prefix == "omdoc" => 
       val targetS = (n \ "@target").text
       val target = Path.parse(targetS, base)
-      val text = n.child.mkString(" ")
+      val objects = n.child.map(parseNarrativeObject)
       val self = (n \ "@self").text match {
         case "true" => true 
         case _ => false
       }
-      new NarrativeRef(target, text, self)
+      new NarrativeRef(target, objects.toList, self)
     case _ => 
       val child = n.child.map(parseNarrativeObject)
       new NarrativeNode(n, child.toList)
@@ -75,9 +75,9 @@ sealed trait NarrativeObject extends Content with ComponentContainer {
   
 }
 
-class NarrativeText(val text : String) extends NarrativeObject {
-  def toNode = scala.xml.Text(text)
-  def components = presentation.StringLiteral(text) :: Nil
+class NarrativeXML(val node : scala.xml.Node) extends NarrativeObject {
+  def toNode = node
+  def components = Nil
   def children = Nil
 }
 
@@ -85,13 +85,11 @@ class NarrativeTerm(val term : Term) extends NarrativeObject {
   def toNode = new scala.xml.Elem("om", "OMOBJ", new scala.xml.PrefixedAttribute("xmlns","om", "http://www.openmath.org/OpenMath", scala.xml.Null), scala.xml.TopScope, false, term.toNode)
   def components = term :: Nil
   def children = List(term)
-
 }
 
-class NarrativeRef(val target : Path, val text : String, val self : Boolean = false) extends NarrativeObject { //self is true e.g. for subjects of definitions "A 'prime number' p is ..."
-  def toNode = <omdoc:ref target={target.toPath} self={self.toString}> {text} </omdoc:ref>
-  
-  def components = presentation.StringLiteral(text) :: Nil
+class NarrativeRef(val target : Path, val objects : List[NarrativeObject], val self : Boolean = false) extends NarrativeObject { //self is true e.g. for subjects of definitions "A 'prime number' p is ..."
+  def toNode = <omdoc:ref target={target.toPath} self={self.toString}> {objects.map(_.toNode)} </omdoc:ref>
+  def components = objects
   def children = Nil
 }
 
@@ -101,7 +99,6 @@ class NarrativeNode(dirtyNode : scala.xml.Node,val child : List[NarrativeObject]
   def components = child
   def children = child
 }
-
 
 /* A Narration instance represents unstructured narrative content
  * such as sentences and paragraphs.

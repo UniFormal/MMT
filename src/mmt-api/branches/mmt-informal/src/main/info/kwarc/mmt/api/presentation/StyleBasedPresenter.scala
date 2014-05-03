@@ -144,16 +144,15 @@ class StyleBasedPresenter extends Presenter {
            val notation = controller.get(gpar.nset, key)
            render(notation.presentation, n.contComponents, None, List(0), gpar, lpar)
          case no:NarrativeObject => no match {
+           case n : NarrativeXML => rh(n.node)
            case nd : NarrativeNode => 
              gpar.rh.writeStartTag(nd.node.prefix, nd.node.label, nd.node.attributes, nd.node.scope)
              nd.child.map(ch => present(ch, gpar, lpar))
              gpar.rh.writeEndTag(nd.node.prefix, nd.node.label)
-           case nt: NarrativeText =>
-             gpar.rh(" ")
-             gpar.rh(nt.text)
-             gpar.rh(" ")
-           case nr: NarrativeRef =>
-             gpar.rh(<span jobad:href={nr.target.toPath}> {nr.text} </span>) 
+         case nr: NarrativeRef =>
+             gpar.rh("<span jobad:href=\"" + nr.target.toPath + "\">") 
+             nr.objects.foreach(c => present(c, gpar, lpar))
+             gpar.rh("</span>") 
            case nr: NarrativeTerm => 
              present(nr.term, gpar, lpar)             
          }

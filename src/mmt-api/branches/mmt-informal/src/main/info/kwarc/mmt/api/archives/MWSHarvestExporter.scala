@@ -67,6 +67,55 @@ class MWSHarvestExporter extends Exporter {
 
 }
 
+
+
+class TeMaSearchExporter extends Exporter {
+  val outDim = Dim("export", "tema")
+  val key = "tema-harvest"
+  override val outExt = "harvest"
+  def exportTheory(t: DeclaredTheory, bf: BuildFile) { 
+    rh("<!DOCTYPE html><html><head>")
+    rh("<title>" + t.name + "</title>")
+    rh("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">")
+    rh("</head><body>")
+     def narrToCML(n : NarrativeObject, path : GlobalName, position : Position = Position.Init) : List[scala.xml.Node] = n match {
+        case nt : NarrativeTerm => List( <math xml:id={path + "#" + position.toString}> nt.term.toCML </math>)
+        case nn : NarrativeNode => nn.child.zipWithIndex.flatMap( p => narrToCML(p._1, path, position / p._2))
+        case _ => Nil
+    }
+    
+    t.getDeclarations foreach {d =>
+      d.getComponents.foreach {
+         case (comp, tc: AbstractTermContainer) =>
+            tc.get.foreach {t =>
+               val node = <math xml:id={CPath(d.path,comp).toPath}>{t.toCML}</math>
+               rh(node.toString + "\n")
+            }
+         case (comp, no : NarrativeObject) => 
+           val exprs = narrToCML(no, d.path)
+           exprs foreach {cml =>
+            val out = cml
+            rh(out.toString + "\n")
+           }
+         case _ => 
+      }
+    }
+    rh("</body></html>")
+  }
+   def exportView(v: DeclaredView, bf: BuildFile) { 
+    //excluding expressions from views for now
+  }
+  
+  def exportNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+    //Nothing to do - MathML in namespaces
+  }
+
+  def exportDocument(doc : Document, bt: BuildTask) {
+    //Nothing to do
+  }
+}
+
+
 import scala.xml.Node
 import parser._
 /**

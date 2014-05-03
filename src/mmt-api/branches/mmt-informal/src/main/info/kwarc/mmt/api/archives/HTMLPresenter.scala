@@ -205,12 +205,17 @@ trait HTMLPresenter extends Presenter {
    }
    
    def doNarrativeObject(no : NarrativeObject) : Unit = no match {
-     case t : NarrativeText =>
-       rh(<span class="narrative-text"> {t.text} </span>)
+     case n : NarrativeXML => rh(n.node)
      case r : NarrativeRef => r.self match {
-     	case false => rh(<span jobad:href={r.target.toPath}> {r.text} </span>)
-     	case true => rh(<span class="definiendum" jobad:href={r.target.toPath}> {r.text} </span>)
-     }
+      case false => 
+        rh("<span jobad:href=\"" + r.target.toPath + "\">")
+        r.objects.foreach(doNarrativeObject)
+        rh("</span>")
+      case true => 
+        rh("<span class=\"definiendum\" jobad:href=\"" + r.target.toPath + "\">")
+        r.objects.foreach(doNarrativeObject)
+        rh("</span>")
+      }
      case tm : NarrativeTerm => mmlPres(tm.term, None)(rh)
      case n : NarrativeNode => 
        rh.writeStartTag(n.node.prefix, n.node.label, n.node.attributes, n.node.scope)

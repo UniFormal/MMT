@@ -398,6 +398,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
                            def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
                            doFraction(a map aux, b map aux, l)
                         case InferenceMarker =>
+                        case _ => //TODO
                      }
                      previous = Some(current)
                   }
