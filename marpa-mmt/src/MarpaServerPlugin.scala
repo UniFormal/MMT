@@ -162,7 +162,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	    val q = new Regex(("""\?"""),"q")
 	    val Some(suff) = topPatt findFirstIn rawName 
 	    val notUniqueName = q replaceAllIn (suff, m => "_")
-		printf("\nCall for " + notUniqueName +"\n")
+		
+		
 		val uniqueName = createRuleName(notUniqueName)
 	    NotationContent = uniqueName :: NotationContent
 	    rules = rules | Set((Rule(uniqueName,content)))     //uniqueness of top level notations is assumed
@@ -237,20 +238,21 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	  def getMarpaGrammar:List[String] = {
 		    val pref = ":default ::= action => do_print"::
 		    			"lexeme default = latm => 1"::
-		    			"Error = anyToken"::
+		    			"Error ::= anyToken"::
 		    			"     || anyToken Error"::
 		    			":lexeme ~ <anyToken> priority => -1"::
-		    			":start ::= Script"::
-		    			"Script ::= Notation"::
+		    			":start ::= Start"::
+		    			"Start ::= Notation"::
 		    			"         ||Error"::
-		    			"Any = zeroPriorityAnyToken"::
-		    			"     || zeroPriorityAnyToke Any"::
+		    			"Any ::= zeroPriorityAnyToken"::
+		    			"     || zeroPriorityAnyToken Any"::
 		    			"""zeroPriorityAnyToken ~ [\s\S]"""::
-		    			"Expression = '<' Any '>'"::
-		    			"moB ~ '<m:mo>'"::
-		    			"moE ~ '</m:mo>'"::
-		    			"rowB ~ '<m:mrow>'"::
-		    			"rowE ~ '</m:mrow>'"::	
+		    			"Expression  ::= '<' Any '>'"::
+		    			"""moB ~ '<m:mo>'"""::
+		    			"""moE ~ '</m:mo>'"""::
+		    			"""rowB ~ '<m:mrow>'"""::
+		    			"""rowE ~ '</m:mrow>'"""::	
+		    			"""anyToken ~ [\s\S]"""::
 		    			Nil
 		    		
 		   val extractedRules = Grammar.rules.toList.map(x=>Grammar.toBNF(x)).map(_.toString)
