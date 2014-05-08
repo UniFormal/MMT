@@ -184,19 +184,11 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
          val valueS = simplify(value ^^ left.toPartialSubstitution) // substitute solutions of earlier variables that have been found already
          parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
          val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of later variables that have been found already
-         solution = left ::: solved.copy(df = Some(valueS)) :: rightS
-         newsolutions = name :: newsolutions
-         true
+         val vd = solved.copy(df = Some(valueS))
+         solution = left ::: vd :: rightS
+         newsolutions ::= name
+         typeCheckSolution(vd)
       }
-   }
-   /**
-    * @param newVars new unknowns; creating new unknowns during checking permits variable transformations
-    * @param before the variable before which to insert the new ones 
-    */
-   def addUnknowns(newVars: Context, before: LocalName): Boolean = {
-      val (left, right) = solution.span(_.name != before)
-      solution = left ::: newVars ::: right
-      true
    }
    /** registers the solved type for a variable
     * 
@@ -212,10 +204,29 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
       if (solved.tp.isDefined)
          check(Equality(stack, valueS, solved.tp.get, None))(history + "solution for type must be equal to previously found solution") //TODO
       else {
-         solution = left ::: solved.copy(tp = Some(valueS)) :: right
+         val vd = solved.copy(tp = Some(valueS))
+         solution = left ::: vd :: right
          //no need to register this in newsolutions
-         true
+         typeCheckSolution(vd)
       }
+   }
+   /** if the type and the definiens of an unknown are solved independently, this type-checks them */
+   private def typeCheckSolution(vd: VarDecl)(implicit stack: Stack, history: History): Boolean = {
+      (vd.tp, vd.df) match {
+         case (Some(tp), Some(df)) =>
+            check(Typing(stack, df, tp))(history + "checking solution of metavariable against solved type")
+         case _ => true
+      }
+   }
+   
+   /**
+    * @param newVars new unknowns; creating new unknowns during checking permits variable transformations
+    * @param before the variable before which to insert the new ones 
+    */
+   def addUnknowns(newVars: Context, before: LocalName): Boolean = {
+      val (left, right) = solution.span(_.name != before)
+      solution = left ::: newVars ::: right
+      true
    }
    
    /** registers an error
@@ -263,20 +274,14 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
       }
       true
    }
-   /**
-    * selects an activatable constraint: a previously delayed constraint if one of its free variables has been solved since
-    * @return an activatable constraint if available
-    */
-   private def activatable: Option[DelayedConstraint] = {
-      delayed foreach {_.solved(newsolutions)}
-      newsolutions = Nil
-      delayed.find {d => d.isActivatable && !d.incomplete} orElse
-      // no activatable judgement left, try incomplete reasoning
-      delayed.find {_.incomplete} 
-   }
 
+   /** true if there is an activatable constraint that is not incomplete */
+   private def existsActivatable : Boolean = delayed.exists {d => d.isActivatable && !d.incomplete}
+   
    /**
     * processes the next activatable constraint until none are left
+    * 
+    * if there is no activatable constraint, we try an incomplete constraint as a last resort
     */
    @scala.annotation.tailrec
    private def activate : Boolean = {
@@ -284,12 +289,22 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
      def prepare(t: Term, covered: Boolean = false) = if (covered) simplify(t ^^ subs) else simplify(t ^^ subs)
      def prepareS(s: Stack) =
         Stack(s.frames.map(f => Frame(f.theory, controller.uom.simplifyContext(f.context ^^ subs, theory, solution))))
-     val dcOpt = activatable
-     val mayhold = dcOpt match {
-        case None => return true
-        case Some(dc) => 
+     // look for an activatable constraint
+     delayed foreach {_.solved(newsolutions)}
+     newsolutions = Nil
+     val dcOpt = delayed.find {d => d.isActivatable && !d.incomplete} orElse {
+         log("no activatable constraint, trying incomplete reasoning")
+         delayed.find {_.incomplete}
+     }
+     dcOpt match {
+        case None =>
+           // no activatable constraint: return true if no errors (other constraints may be left)
+           errors.isEmpty
+        case Some(dc) =>
+           // activate a constraint
            delayed = delayed filterNot (_ == dc)
-           dc match {
+           // mayhold is the result of checking the activated constraint
+           val mayhold = dc match {
               case dj: DelayedJudgement =>
                  val j = dj.constraint
                  implicit val history = dj.history
@@ -310,11 +325,13 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
               case di: DelayedInference =>
                   inferTypeAndThen(prepare(di.tm))(prepareS(di.stack), di.history)(di.cont)
            }
-     }
-     if (mayhold) {
-        //activate next constraint and recurse, if any left
-        activate
-     } else false
+           if (mayhold) {
+              //recurse to activate the next constraint
+              activate
+           } else
+              // the judgment was disproved
+              false
+           }
    }
 
    def inferTypeAndThen(tm: Term)(stack: Stack, history: History)(cont: Term => Boolean): Boolean = {
@@ -624,7 +641,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
              // if necessary, we undo the flipping of t1 and t2
              val s1 = if (flipped) terms2.head else t1ES
              val s2 = if (flipped) t1ES else terms2.head
-             if (delayed.exists(_.isActivatable))
+             if (existsActivatable)
                 // if there is some other way to proceed, do it
                 delay(Equality(stack, s1, s2, Some(tp)), true)
              else
