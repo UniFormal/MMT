@@ -22,7 +22,6 @@ case class PlanetaryError(val text : String) extends Error(text)
 
 
 class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
-  
   override val logPrefix = "marpa"
      /** Server */   
   def apply(uriComps: List[String], query: String, body : Body): HLet = {
@@ -149,7 +148,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	  //private
 	  var rules = Set.empty[Rule]
 	  private var NotationContent = List.empty[String]
-	  private var eventList = List[String]();
+	  private var eventList = List.empty[String];
 	  private var index:Int = 0
 	  //private var test = List.empty[String]
 	  def createRuleName(name:String):String = {
@@ -160,14 +159,15 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	    }
 	  }
 	  def addTopRule(rawName:String, markers:List[Marker]) {
-		val content:List[String] = "rowB"::markers.map(addRule):::"rowE"::Nil
+		val content:List[String] = "topLevel"::markers.map(addRule)
 	    val topPatt = """\?.*""".r
 	    val q = new Regex(("""\?"""),"q")
 	    val Some(suff) = topPatt findFirstIn rawName 
 	    val notUniqueName = q replaceAllIn (suff, m => "_")
 		val uniqueName = createRuleName(notUniqueName)
 	    NotationContent ::= uniqueName 
-	    eventList ::= "event '"+uniqueName+"' = completed "+uniqueName 
+	    eventList ::= "event '"+uniqueName+"' = completed "+uniqueName
+	    eventList ::= "event '"+"predicted_"+uniqueName+"' = predicted "+uniqueName 
 	    rules = rules | Set((Rule(uniqueName,content)))     //uniqueness of top level notations is assumed
 	  }
 	  def createRule(content:List[String]):String = { //returns the name of the rule
@@ -185,7 +185,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	     }
 	  }
 	  def addRuleL(markers:List[Marker]):String  = { //returns the name of the rule
-	     val content:List[String] = "rowB"::markers.map(addRule):::"rowE"::Nil
+	     val content:List[String] = markers.map(addRule)
 	     createRule(content)
 	  }
 	  def addRule(marker:Marker):String = marker match { //returns the name of the rule
@@ -224,7 +224,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	    val Rule(name, content) = rule
 	    
 	    content match {
-	      case "rowB"::tl => name + "::= " + content.mkString(" ")  
+	      case "topLevel"::tl => name + "::= " + tl.mkString(" ")  
 	      case "moB"::tl => name + "::= " + content.mkString(" ")  
 	      case "renderB"::tl => name + "::= Expression"
 	      case "iterateB"::tl => 
@@ -242,26 +242,26 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	  }
 	  
 	  def getMarpaGrammar:List[String] = {
-		    val pref = ":default ::= action => do_print":: // by default any rule will return the string it matched
+		    val pref = ":default ::= action => getString":: // by default any rule will return the string it matched
 		    			"lexeme default = latm => 1"::       
-		    			"Error ::= anyChar"::                  
-		    			"     || anyChar Error"::
-		    			":lexeme ~ <anyChar> priority => -1":: //otherwise nothing other than Error will ever match
+//		    			"Error ::= anyChar"::                  
+//		    			"       || anyChar Error"::
+//		    			"""anyChar ~ [\s\S]"""::
+		    			//":lexeme ~ <anyChar> priority => -1":: //otherwise nothing other than Error will ever match
 		    			":start ::= Start "::                   // :start does not allow alternatives
-		    			"Start ::= Notation action => OK"::              //Rule
-		    					// Content -> MathML ... to do
-		    			       // Presentation -> already semantified content ... to do
-		    			"         ||Error action => NOT_OK"::
-		    			"Any ::= zeroPriorityAnyToken":: //same as error but used for different purposes
-		    			"     || zeroPriorityAnyToken Any"::
-		    			"""zeroPriorityAnyToken ~ [\s\S]"""::
-		    			"Expression  ::= '<' Any '>'":: // some MathML...needs to be changed
-		    			"""moB ~ '<m:mo>'"""::
-		    			"""moE ~ '</m:mo>'"""::
-		    			"""rowB ~ '<m:mrow>'"""::
-		    			"""rowE ~ '</m:mrow>'"""::	
-		    			"""anyChar ~ [\s\S]"""::
+		    			"Start ::= '<m:mrow>' ExpressionList '</m:mrow>' "::
+		    			"ExpressionList ::= Expression ExpressionList "::
+		    			"| Expression "::
+		    			"Expression ::= Notation "::
+		    			"            || Presentation "::
+//		    			" 			  | Content "::
+		    			"Presentation ::= '<m:mrow>' ExpressionList '</m:mrow>'"::
+		    			" | '<m:mo>' Expression '</m:mo>' "::
+		    			" | '<m:mi>' Expression '</m:mi>' "::
+		    			"moB ~ '<m:mo>'"::"moE ~ '</m:mo>'"::
+//		    			"rowB ~ '<m:mrow>'"::"rowE ~ '</m:mrow>'"::
 		    			Nil
+		    			
 		    		
 		   val extractedRules = Grammar.rules.toList.map(x=>Grammar.toBNF(x)).map(_.toString)
 		   NotationContent match {
@@ -271,7 +271,13 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 			      case Nil => "Notation ::= " + NotationContent.head :: Nil
 			      case _   => "Notation ::= " + NotationContent.head :: tl.map(x => "| "+x)
 			    }
-			   pref:::Notation:::extractedRules:::eventList
+		   val result = pref:::Notation:::extractedRules:::eventList
+		   //clean up   
+		   eventList = List[String]();
+		   rules = Set[Rule]();
+		   NotationContent = List.empty[String]
+		   index = 0;
+		   result
 		   } 	
 	  } 
 }
