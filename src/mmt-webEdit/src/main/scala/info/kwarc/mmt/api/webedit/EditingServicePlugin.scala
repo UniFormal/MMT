@@ -134,4 +134,38 @@ class EditingServicePlugin(val controller : Controller) {
         case e : Throwable => Nil
       }
   }
+  
+   def getTrefiCompletion(spathS: String) : List[String] = {
+      try {
+        val spath = Path.parseS(spathS, mmt.mmtbase)
+        val constants = controller.get(spath) match {
+          case c : Constant => c.notC.getVerbal match {
+            case None => List(c.name -> Nil) 
+            case Some(a) => List(c.name -> a.fixity.markers)
+         }
+          case _ => Nil
+        }
+      
+        def modifyStringRepresent (name:LocalName,markers:List[Marker],accumulator:String,hasSymbol:Boolean) : (String) = {
+          val separator = " " 
+          markers match {
+            case Nil => 
+              if(hasSymbol) accumulator 
+              else name.toString + accumulator
+            case hd::b  => if(hd.toString=="%n"){ 
+              modifyStringRepresent(name,b,accumulator,false)
+            } else if(hd.toString.length()>1 && hd.toString.substring(0,2)=="%I") 
+              modifyStringRepresent(name,b,accumulator,hasSymbol) 
+              else modifyStringRepresent(name,b,accumulator+ separator +hd.toString,hasSymbol)
+          }
+        }
+        constants.map({case (x,y)=>modifyStringRepresent(x,y,"",true)})
+      } catch {
+        case e : Throwable => Nil
+      }
+  }
+  
+  
+  
+  
 }
