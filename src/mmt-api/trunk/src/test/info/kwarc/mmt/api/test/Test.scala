@@ -23,7 +23,7 @@ object Test {
       val prover = new Prover(controller)
 
       val context = cont"[x: bool, y: bool]"
-      val stack = Stack(mpath, context)
+      val stack = Stack(OMMOD(mpath), context)
       val x = OMV("x")
       val y = OMV("y")
       

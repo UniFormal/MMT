@@ -11,6 +11,16 @@ import objects.Conversions._
 import notations._
 import parser.SourceRef
 
+/** This class stores information about a bound variable.
+ * @param decl the variable declaration
+ * @param binder the path of the binder (if atomic)
+ * @param declpos the position of the variable declaration 
+ */
+case class VarData(decl : VarDecl, binder : Option[GlobalName], declpos : Position) {
+   /** the variable name */
+   def name = decl.name
+}
+
 case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: List[(String,String)], 
       source: Option[SourceRef], pos : Position, context : List[VarData], style: Option[PresentationContext => String]) {
    def out(s: String) {rh(s)}
@@ -248,10 +258,10 @@ trait NotationBasedPresenter extends ObjectPresenter {
             case XMLNode(n) => pc.out(n.toString)
          }
          1
-      case VarDecl(n,tp,df) =>
+      case VarDecl(n,tp,df, not) =>
          doVariable(n)
          tp foreach {t =>
-            if (o.metadata.getTags contains utils.mmt.inferedTypeTag) {
+            if (metadata.Generated.get(o)) {
                doInferredType {
                   doOperator(":")
                   recurse(t, noBrackets)(pc.child(1))
@@ -264,6 +274,10 @@ trait NotationBasedPresenter extends ObjectPresenter {
          df foreach {d =>
             doOperator("=")
             recurse(d, noBrackets)(pc.child(2))
+         }
+         not foreach {n =>
+            doOperator("#")
+            doOperator(n.toString) //TODO make nicer
          }
          -1
       case Sub(n,t) =>
@@ -378,13 +392,14 @@ trait NotationBasedPresenter extends ObjectPresenter {
                            // we know attributee.isDefined due to flattening
                            //TODO
                         case d: Delimiter =>
+                           val dE = d.expand(op)
                            val unpImps = if (unplacedImplicitsDone) Nil else unplacedImplicits map {
                               case c @ ImplicitArg(n,_) =>
                                   (_: Unit) => doChild(c, args(n-firstArgNumber), 0); ()
                            }
-                           val letters = d.text.exists(_.isLetter)
+                           val letters = dE.text.exists(_.isLetter)
                            if (letters && previous.isDefined) doSpace(1)
-                           doDelimiter(op, d, unpImps)(pc.copy(pos = pc.pos / pos(0)))
+                           doDelimiter(op, dE, unpImps)(pc.copy(pos = pc.pos / pos(0)))
                            numDelimsSeen += 1
                            if (letters && !markersLeft.isEmpty) doSpace(1)
                         case s: SeqArg => //impossible due to flattening

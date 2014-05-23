@@ -31,24 +31,23 @@ object Traverser {
    def apply[State](trav : Traverser[State], t : Term)(implicit con : Context, state : State) : Term = {
       def rec(t: Term)(implicit con : Context, state : State) = trav.traverse(t)(con, state)
       def recCon(c: Context)(implicit con : Context, state : State) : Context =
-         c.zipWithIndex map {
-            case (vd @ VarDecl(n, t, d), i) =>
-               val conci = con ++ c.take(i+1)
-               val newt = t.map(rec( _)(conci, state))
-               val newd = d.map(rec( _)(conci, state))
-               val newvd = VarDecl(n, newt, newd)   //TODO traversal into attributions
-               newvd.copyFrom(vd)
-               newvd
+         c.mapVarDecls {
+            case (before, vd @ VarDecl(n, t, d, _)) =>
+               val curentContext = con ++ before
+               val newt = t.map(rec(_)(curentContext, state))
+               val newd = d.map(rec(_)(curentContext, state))
+               vd.copy(tp = newt, df = newd)
          }
 	   t match {
-		   case OMA(fun,args) => OMA(rec(fun), args.map(rec)).from(t)
-		   case OMM(arg,via) => OMM(rec(arg), via)
-		   case OMATTR(arg,key,value) => OMATTR(rec(arg), key, rec(value)).from(t) //TODO traversal into key
-		   case OMBINDC(b,vars,scopes) => OMBINDC(rec(b), recCon(vars), scopes.map(x => rec(x)(con ++ vars, state))).from(t)
+	      case ComplexTerm(op, subs, bound, args) =>
+	         val newSubs = subs.map(s => s.copy(target = rec(s.target)))
+	         val newArgs = args.map(a => rec(a)(con ++ bound, state))
+	         ComplexTerm(op, newSubs, recCon(bound), newArgs).from(t)
 		   case OMID(_) => t
 		   case OMV(_) => t
-		   case OMFOREIGN(_) => t
 		   case t: OMLITTrait => t
+		   case OMFOREIGN(_) => t
+		   case OMATTR(arg,key,value) => OMATTR(rec(arg), key, rec(value)).from(t) //TODO traversal into key
 		   case OMSemiFormal(tokens) => 
 		      val newtokens = tokens map {
 		         case Formal(t) => Formal(rec(t))
@@ -64,11 +63,11 @@ object PushMorphs extends Traverser[Term] {
    // morph is the composition of all morphisms encountered so far 
 	def traverse(t: Term)(implicit con : Context, morph : Term) : Term = t match {
 	   // change state: via is added to the morphisms
-		case OMM(arg, via) => traverse(arg)(con, morph * via)
+		case OMM(arg, via) => traverse(arg)(con, OMCOMP(via, morph))
 		// apply the morphism to symbols
 		case OMID(path) => OMM(t, morph)
 		// in all other cases, traverse
 		case t => Traverser(this,t)
 	}
-	def apply(t: Term, thy : info.kwarc.mmt.api.MPath) : Term = apply(t, OMIDENT(OMMOD(thy)))
+	def apply(t: Term, thy : MPath) : Term = apply(t, OMIDENT(OMMOD(thy)))
 }

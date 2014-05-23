@@ -9,10 +9,11 @@ import objects.Conversions._
 import scala.collection.mutable.{HashSet,HashMap}
 
 /* ideas
- * inferType guarantees well-formedness (not done yet by LambdaTerm)
+ * inferType should guarantee well-formedness (what about LambdaTerm?)
  *   but what if there are unknowns whose type cannot be inferred? Is that even possible?
  * limitedSimplify must include computation, definition expansion, but can stop on GlobalChange; but safety is usually needed
  * constants have equality rule: injectivity and implicit arguments used to obtain necessary/sufficient condition (not preserved by morphism); congruence if no rule applicable
+ * false should not be returned without generating an error 
  */
 
 object InferredType extends TermProperty[Term](utils.mmt.baseURI / "clientProperties" / "solver" / "inferred")
@@ -166,6 +167,13 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
       if (c.dfC.analyzed.isDefined) dependencies ::= p $ DefComponent
       c.dfC.analyzed
    }
+   def getModule(p: MPath) : Option[Module] = {
+      controller.globalLookup.getO(p) match {
+         case Some(m: Module) => Some(m)
+         case Some(_) => None
+         case None => None
+      }
+   }
 
    /** registers the solution for an unknown variable
     * 
@@ -288,7 +296,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
      val subs = solution.toPartialSubstitution
      def prepare(t: Term, covered: Boolean = false) = if (covered) simplify(t ^^ subs) else simplify(t ^^ subs)
      def prepareS(s: Stack) =
-        Stack(s.frames.map(f => Frame(f.theory, controller.uom.simplifyContext(f.context ^^ subs, theory, solution))))
+        Stack(s.theory, controller.uom.simplifyContext(s.context ^^ subs, s.theory, solution))
      // look for an activatable constraint
      delayed foreach {_.solved(newsolutions)}
      newsolutions = Nil
@@ -319,8 +327,6 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
                        check(Universe(prepareS(stack), prepare(tm)))
                     case Inhabitable(stack, tm) =>
                        check(Inhabitable(prepareS(stack), prepare(tm)))
-                    case IsMorphism(stack, mor, from) =>
-                       checkMorphism(mor ^^ subs, prepare(from))(prepareS(stack), history)
                  }
               case di: DelayedInference =>
                   inferTypeAndThen(prepare(di.tm))(prepareS(di.stack), di.history)(di.cont)
@@ -383,6 +389,14 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
      val tm = j.tm
      val tp = j.tp
      implicit val stack = j.stack
+     def checkByInference(tpS: Term): Boolean = {
+         inferType(tm)(stack, history.branch) match {
+            case Some(itp) =>
+               check(Equality(stack, itp, tpS, None))(history + ("inferred type must be equal to expected type; the term is: " + presentObj(tm)))
+            case None =>
+               delay(Typing(stack, tm, tpS, j.tpSymb))(history + "type inference failed")
+         }
+     }
      tm match {
        // the foundation-independent cases
        case OMV(x) => (solution ++ stack.context)(x).tp match {
@@ -409,15 +423,14 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
        case tm =>
          limitedSimplify(tp,ruleStore.typingRules) match {
            case (tpS, Some(rule)) =>
-             rule(this)(tm, tpS)
-           case (tpS, None) =>
-             // either this is an atomic type, or no typing rule is known
-             inferType(tm)(stack, history.branch) match {
-               case Some(itp) =>
-                  check(Equality(stack, itp, tpS, None))(history + ("inferred type must be equal to expected type; the term is: " + presentObj(tm)))
-               case None =>
-                  delay(Typing(stack, tm, tpS, j.tpSymb))(history + "type inference failed")
+             try {
+                rule(this)(tm, tpS)
+             } catch {case TypingRule.SwitchToInference =>
+                checkByInference(tpS)
              }
+           case (tpS, None) =>
+              // either this is an atomic type, or no typing rule is known
+              checkByInference(tpS)
          }
      }
    }
@@ -461,6 +474,16 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
              history += "lookup in literal"
              // structurally well-formed literals carry their type
              return Some(OMS(l.rt.synType)) // no need to use InferredType.put on literals
+          case OMMOD(p) =>
+             // types of theories and views are formed using meta-level operators
+             history += "lookup in library"
+             getModule(p) match {
+                case Some(t: Theory) => Some(TheoryType())
+                case Some(v: View)   => Some(MorphType(v.from,v.to))
+                case _ =>
+                   error("not found")
+                   None
+             }
           case _ => None
         }
         //foundation-dependent cases if necessary
@@ -731,29 +754,13 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
       }
    }
    /* ********************** end of auxiliary methods of checkEquality ***************************/
-   
-   private def checkMorphism(mor: Term, from : Term)(implicit stack: Stack, history: History) : Boolean = {
-     log("typing: " + mor + " : " + from)
-     logGroup {
-        log("in context: " + stack.context)
-        from match {
-          case OMMOD(p) => controller.globalLookup.getTheory(p) match {
-            case thdf : DefinedTheory =>  checkMorphism(mor, thdf.df)
-            case thd : DeclaredTheory =>
-              val clist : List[Declaration] = thd.getDeclarations filter (p => !p.isInstanceOf[Structure])  // list of constants in the domain theory
-              false //TODO
-          }
-          case _ => false
-        }
-     }
-   }
 
    /** applies all ForwardSolutionRules of the given priority
     * @param priority exactly the rules with this Priority are applied */
    //TODO call this method at appropriate times
    private def forwardRules(priority: ForwardSolutionRule.Priority)(implicit stack: Stack, history: History): Boolean = {
       val results = solution.zipWithIndex map {
-         case (vd @ VarDecl(x, Some(tp), None), i) =>
+         case (vd @ VarDecl(x, Some(tp), None, _), i) =>
             implicit val con : Context = solution.take(i)
             limitedSimplify(tp, ruleStore.forwardSolutionRules) match {
                case (tpS, Some(rule)) if rule.priority == priority => rule(this)(vd)
@@ -809,7 +816,7 @@ object Solver {
   def check(controller: Controller, stack: Stack, tm: Term): Option[(Term,Term)] = {
       val (unknowns,tmU) = parser.AbstractObjectParser.splitOffUnknowns(tm)
       val etp = LocalName("expected_type")
-      val oc = new Solver(controller, stack.theory, unknowns ++ VarDecl(etp, None, None))
+      val oc = new Solver(controller, stack.theory, unknowns ++ VarDecl(etp, None, None, None))
       val j = Typing(stack, tmU, OMV(etp), None)
       oc(j)
       if (oc.checkSucceeded) oc.getSolution.map {sub =>

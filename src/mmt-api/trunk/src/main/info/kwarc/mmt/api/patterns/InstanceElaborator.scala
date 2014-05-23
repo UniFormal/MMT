@@ -26,10 +26,10 @@ class InstanceElaborator(controller: Controller) extends Elaborator with Logger 
          def auxSub(x : Term): Term = {
         		x ^ (pt.getSubstitution(inst) ++ Substitution(subs : _*))  
         	}
-        	pt.body.foreach {case VarDecl(n,tp,df) =>
+        	pt.body.foreach {case VarDecl(n,tp,df,_) =>
         			val nname = inst.name / n
         			log("generating constant " + nname)
-        			val c = Constant(inst.home,nname,None,tp.map(auxSub),df.map(auxSub),None)
+        			val c = Constant(inst.home,nname,None,tp.map(auxSub),df.map(auxSub), None)
         			c.setOrigin(InstanceElaboration(inst.path))
         			cont(c)
         	}

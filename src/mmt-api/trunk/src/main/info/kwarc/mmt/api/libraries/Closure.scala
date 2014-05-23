@@ -7,7 +7,6 @@ import patterns._
 
 class Closer(controller: Controller) {
    private val lup = controller.globalLookup
-   private val elab = new InstanceElaborator(controller)
    /**
     * recursive loads all theories included into p
     */
@@ -16,7 +15,6 @@ class Closer(controller: Controller) {
        d match {
           case Some(d: DeclaredTheory) =>
              d.getIncludes foreach apply
-             elab.elaborate(d)
           case _ =>
        }
    }

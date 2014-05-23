@@ -85,18 +85,22 @@ class MMTTreeModel(controller: Controller) extends TreeModel {
 class TreePane(controller: Controller) extends JPanel {
    /** true: text; false: XML; pres: presentation according to style */
    private var mode: String = "text"
-   private var style = DPath(utils.mmt.baseURI / "styles" / "omdoc" / "mathml.omdoc") ? "html5"
 
    setLayout(new BorderLayout())
 
-   val items = List(Item("plain", "text"), Item("text", "text/notations"), Item("XML", "xml"), Item("rendered", "pres"))
-   val styleTextArea = new JTextField(style.toPath, 30)
+   val items = List(Item("plain", "text"), Item("text", "text/notations"), Item("XML", "xml"), Item("other", "other"))
+   val presenterTextArea = new JTextField("", 30)
    private val toolbar = new JPanel
    private val buttons = Swing.RadioButtonPanel(items : _*){id =>
       mode = id
-      if (mode == "pres")
-         try {style = Path.parseM(styleTextArea.getText, style)}
-         catch {case _ : Throwable => styleTextArea.setText("error: " + styleTextArea.getText)}
+      if (mode == "other") {
+         val other = presenterTextArea.getText
+         if (controller.extman.getPresenter(other).isEmpty) {
+            presenterTextArea.setText("error: " + other)
+            mode = "text"
+         } else
+            mode = other
+      }
    }
    private def back {
       if (current+1 < history.length) {
@@ -114,7 +118,7 @@ class TreePane(controller: Controller) extends JPanel {
    toolbar.add(Swing.Button("back")(back))
    toolbar.add(Swing.Button("forward")(forward))
    
-   buttons.add(styleTextArea)
+   buttons.add(presenterTextArea)
 
    private val content = new JTextArea // FXPanel 
    private val scrollContent = new JScrollPane(content)
@@ -137,9 +141,7 @@ class TreePane(controller: Controller) extends JPanel {
    }
    private def setCurrentElement {
       val se = history(current)
-      val presenter = controller.extman.getPresenter(mode) getOrElse {
-         new presentation.StyleBasedPresenter(controller,style)
-      }
+      val presenter = controller.extman.getPresenter(mode).get // defined due to check above
       val rb = new presentation.StringBuilder
       presenter(se)(rb)
       content.setText(rb.get) 

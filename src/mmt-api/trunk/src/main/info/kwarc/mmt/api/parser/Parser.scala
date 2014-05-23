@@ -16,7 +16,17 @@ import scala.collection.immutable.{HashMap}
  * @param term the term to parse
  * @param top an optional notation that the whole input must match; this can be used to parse a term that is known/required to have a certain form
  */
-case class ParsingUnit(source: SourceRef, scope: Term, context: Context, term: String, top: Option[TextNotation] = None)
+case class ParsingUnit(source: SourceRef, scope: Term, context: Context, term: String, top: Option[ParsingRule] = None)
+
+/** couples an identifier with its notation */
+case class ParsingRule(name: GlobalName, notation: TextNotation) {
+   /** the first delimiter of this notation, which triggers the rule */
+   def firstDelimString : Option[String] = notation.parsingMarkers mapFind {
+      case d: Delimiter => Some(d.expand(name).text)
+      case SeqArg(_, Delim(s),_) => Some(s)
+      case _ => None
+   }
+}
 
 /** a TermParser parses Term's. Instances are maintained by the ExtensionManager and retrieved and called by the structural parser. */
 trait AbstractObjectParser {
@@ -25,7 +35,7 @@ trait AbstractObjectParser {
 
 /** helper object */
 object AbstractObjectParser {
-  def getNotations(controller : Controller, scope : Term) : (List[TextNotation], List[LexerExtension]) = {
+  def getRules(controller : Controller, scope : Term) : (List[ParsingRule], List[LexerExtension]) = {
      val closer = new libraries.Closer(controller)
      closer(scope.toMPath)
      val includes = controller.library.visible(scope)
@@ -40,10 +50,11 @@ object AbstractObjectParser {
            var names = (c.name :: c.alias.toList).map(_.toString) //the names that can refer to this constant
            if (c.name.last == "_") names ::= c.name.init.toString
            //the unapplied notations consisting just of the name 
-           val nots = names map (n => new TextNotation(c.path, Mixfix(List(Delim(n))), presentation.Precedence.infinite, None))
-           c.not.toList ::: nots
+           val unapp = names map (n => new TextNotation(Mixfix(List(Delim(n))), presentation.Precedence.infinite, None))
+           val app = c.not.toList
+           (app ::: unapp).map(n => ParsingRule(c.path, n))
         case p: patterns.Pattern =>
-           p.not.toList
+           p.not.toList.map(n => ParsingRule(p.path, n))
         case _ => Nil
      }
      val les = decls.flatMap {
@@ -87,9 +98,8 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
     * and the scope (base path) of the parsing unit
     * returned list is sorted (in increasing order) by priority
     */
-   protected def tableNotations(nots: List[TextNotation]) : List[(Precedence,List[TextNotation])] = {
-      val notations = TextNotation.bracketNotation :: nots  
-      val qnotations = notations.groupBy(x => x.precedence).toList
+   protected def tableNotations(nots: List[ParsingRule]) : List[(Precedence,List[ParsingRule])] = {
+      val qnotations = nots.groupBy(x => x.notation.precedence).toList
 //      log("notations in scope: " + qnotations)
       qnotations.sortWith((p1,p2) => p1._1 < p2._1)
    } 
@@ -118,13 +128,13 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
    private def newArgument: LocalName = {
      val name = LocalName("") / "I" / counter.toString
      //val tname = LocalName("") / "argumentType" / counter.toString
-     vardecls = VarDecl(name,None,None) :: vardecls
+     vardecls = VarDecl(name,None,None,None) :: vardecls
      counter += 1
      name
    }
    private def newType(name: LocalName): LocalName = {
       val tname = LocalName("") / name / counter.toString
-      vardecls ::= VarDecl(tname,None,None)
+      vardecls ::= VarDecl(tname,None,None,None)
       counter += 1
       tname
    }
@@ -173,7 +183,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
          case e: ExternalToken =>
             e.parse(pu, boundVars, this)
          case ml : MatchedList =>
-            val notation = ml.an.notation
+            val notation = ml.an.rule.notation
             val arity = notation.arity
             //log("constructing term for notation: " + ml.an)
             val found = ml.an.getFound
@@ -226,7 +236,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                      vars = vars ::: List((fv.marker, nameToken.region, name, tp))
                   }
             }
-            val con = ml.an.notation.name
+            val con = ml.an.rule.name
             // hard-coded special case for a bracketed subterm
             if (con == utils.mmt.brackets)
                args(0)._2
@@ -272,9 +282,9 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
                         }
                         // using metadata to signal that the type was unknown
                         // TODO: clean up together with Twelf output
-                        val vd = VarDecl(vname, finalTp, None)
+                        val vd = VarDecl(vname, finalTp, None, None)
                         if (unknown)
-                           vd.metadata.add(metadata.Tag(utils.mmt.inferedTypeTag))
+                           metadata.Generated.set(vd)
                         SourceRef.update(vd, pu.source.copy(region = reg))
                         vd
                   }
@@ -332,16 +342,16 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
    */
   def apply(implicit pu : ParsingUnit, errorCont: SourceError => Unit) : Term = {
     //gathering notations and lexer extensions in scope
-    val (nots, les) = AbstractObjectParser.getNotations(controller, pu.scope)
-    val qnotations = tableNotations(nots)
+    val (parsing, lexing) = AbstractObjectParser.getRules(controller, pu.scope)
+    val notations = tableNotations(parsing)
     resetVarGenerator
     log("parsing: " + pu.term)
     log("notations:")
     logGroup {
-       qnotations.map(o => log(o.toString))
+       notations.map(o => log(o.toString))
     }
 
-    val escMan = new EscapeManager(controller.extman.lexerExtensions ::: les)
+    val escMan = new EscapeManager(controller.extman.lexerExtensions ::: lexing)
     val tl = TokenList(pu.term, pu.source.region.start, escMan)
     if (tl.length == 0) {
        makeError("no tokens found: " + pu.term, pu.source.region)
@@ -362,7 +372,7 @@ class ObjectParser(controller : Controller) extends AbstractObjectParser with Lo
        }
     }
     // now scan with all notations in increasing order of precedence
-    qnotations map {
+    notations map {
          case (priority,nots) => sc.scan(nots)
     }
     log("scan result: " + sc.tl.toString)

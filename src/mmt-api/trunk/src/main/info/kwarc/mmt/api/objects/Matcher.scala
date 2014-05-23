@@ -102,7 +102,7 @@ class Matcher(templateVars: Context) {
       if (goal.length != template.length) return None
       var newBound : List[(LocalName,LocalName)] = Nil
       (goal zip template) foreach {
-         case (VarDecl(x1,tp1,df1), VarDecl(x2,tp2, df2)) =>
+         case (VarDecl(x1,tp1,df1, _), VarDecl(x2,tp2, df2, _)) =>
             val compM = List((tp1,tp2), (df1,df2)) forall {
                case (None,None) => true
                case (Some(t1), Some(t2)) =>

@@ -25,7 +25,7 @@ trait HTMLPresenter extends Presenter {
          doHTMLOrNot(view.path.doc, standalone) {doView(view)}
        case d: Declaration => doHTMLOrNot(d.path.doc, standalone) {doDeclaration(d)}
      }
-     //TODO? reset this._rh 
+     this._rh = null 
    }
    
    def apply(o : Obj, owner: Option[CPath])(implicit rh : RenderingHandler) = mmlPres(o, owner)(rh)
@@ -58,8 +58,8 @@ trait HTMLPresenter extends Presenter {
       td {span("compLabel") {text(cpath.component.toString)}}
       td {doMath(t, Some(cpath))}
    }
-   private def doNotComponent(comp: NotationComponent, tn: TextNotation) {
-      td {span("compLabel") {text(comp.toString)}}
+   private def doNotComponent(cpath: CPath, tn: TextNotation) {
+      td {span("compLabel") {text(cpath.component.toString)}}
       td {span {
          val firstVar = tn.arity.firstVarNumberIfAny
          val firstArg = tn.arity.firstArgNumberIfAny
@@ -89,7 +89,7 @@ trait HTMLPresenter extends Presenter {
                   case Some(sep) => varname + typedString + sep.text + "..." + sep.text + varname + typedString
                }
             case Delim(s) => s
-            case SymbolName(n) => n.name.toPath
+            case SymbolName() => cpath.parent.name.toPath
             case m => m.toString
          }.mkString(" ")}
          text {" (precedence " + tn.precedence.toString + ")"}
@@ -158,7 +158,7 @@ trait HTMLPresenter extends Presenter {
                      case (comp: NotationComponent, nc: NotationContainer) =>
                         tr(comp.toString) {
                            nc(comp).foreach {n =>
-                              doNotComponent(comp, n)
+                              doNotComponent(d.path $ comp, n)
                             }
                         }
                   }
@@ -242,7 +242,7 @@ trait HTMLPresenter extends Presenter {
    }
 }
 
-class HTMLExporter extends HTMLPresenter{
+class HTMLExporter extends HTMLPresenter {
   val key = "html"
   val outDim = Dim("export", "html")
 }

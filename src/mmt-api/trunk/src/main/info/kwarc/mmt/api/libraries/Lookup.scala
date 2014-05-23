@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.utils._
 import scala.collection.mutable.HashSet
 
 /** A read-only abstraction of a library. A Library is a Lookup with write methods */
-abstract class Lookup(val report : frontend.Report) {
+abstract class Lookup {
    def apply(path : Path) = get(path)
 
    def get(path : Path) : ContentElement
@@ -58,6 +58,7 @@ abstract class Lookup(val report : frontend.Report) {
    
    def visible(to: Term): HashSet[Term]
    def getImplicit(from: Term, to: Term) : Option[Term]
+   def getImplicit(from: MPath, to: MPath) : Option[Term] = getImplicit(OMMOD(from), OMMOD(to))
    def hasImplicit(from: Term, to: Term): Boolean = getImplicit(from, to).isDefined
 
    //def getDeclarationsInScope(mod : Term) : List[Content]
@@ -95,40 +96,6 @@ abstract class Lookup(val report : frontend.Report) {
    }
    
    /**
-    * looks up a qualified LocalName in a context
-    * This respects [[StructureVarDecl]] and [[ComplexTheory]]. 
-    * @param context the context
-    * @param name the name
-    * @param prefix should be omitted
-    * @return the resulting VarDecl, possibly generated from a named [[Declaration]]
-    */
-   def deepLookup(context: Context, name: LocalName, prefix: LocalName = LocalName(Nil)) : VarDecl = {
-      context.variables.foreach {vd =>
-         name.hasPrefix(vd.name) foreach {rest =>
-            val fullName = prefix / vd.name
-            val vdR = if (rest.length == 0)
-               vd.copy(name = fullName)
-            else vd match {
-               case StructureVarDecl(n, tp, _) => tp match {
-                  case OMMOD(p) =>
-                     get(p ? rest) match {
-                        case c: Constant =>
-                           VarDecl(fullName, c.tp, c.df)
-                        case s: Structure =>
-                           StructureVarDecl(fullName, s.from, None)
-                     }
-                  case ComplexTheory(body) =>
-                     deepLookup(body, rest, fullName)
-               }
-            }
-            return vdR
-         }
-      }
-      throw LookupError(name, context)
-   }
-
-   
-   /**
     * A Traverser that recursively expands definitions of Constants.
     * It carries along a test function that is used to determine when a constant should be expanded. 
     */
@@ -148,7 +115,7 @@ abstract class Lookup(val report : frontend.Report) {
     */
    object ApplyMorphs extends Traverser[Term] {
       def traverse(t: Term)(implicit con: Context, morph: Term) = t match {
-         case OMM(arg, via) => traverse(arg)(con, OMCOMP(morph, via))
+         case OMM(arg, via) => traverse(arg)(con, OMCOMP(via, morph))
          case OMS(theo ?? ln) =>
            val aOpt = getConstant(morph % (LocalName(theo) / ln)).df
            aOpt match {

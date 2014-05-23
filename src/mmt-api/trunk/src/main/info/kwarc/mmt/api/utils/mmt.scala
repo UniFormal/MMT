@@ -10,23 +10,8 @@ object mmt {
    val mmtdef = mmtsymbol("definiens")
    val brackets = mmtsymbol("brackets")
    val context = mmtsymbol("context")
-   val identity = mmtsymbol("identity")
-   val composition = mmtsymbol("composition")
-   val inferedTypeTag = mmtsymbol("infered")
-   val morphismapplication = mmtsymbol("morphismapplication")
-   val substitutionapplication = mmtsymbol("substitutionapplication")
-   val mempty = mmtsymbol("morphism-empty")
-   val tunion = mmtsymbol("theory-union")
-   val munion = mmtsymbol("morphism-union")
    val unknowns = mmtsymbol("unknowns")
-/* val poii = mmtsymbol("theory-union")
-   val poiim = mmtsymbol("morphism-union")
-   val poi = mmtsymbol("theory-with")
-   val poim = mmtsymbol("morphism-with")
-   val poiw = mmtsymbol("morphism-extend") */
-   val explmorph = mmtsymbol("explicitmorphism")
    val label = mmtbase ? "label"
-   val functorapplication = mmtsymbol("functorapplication")
    val mimeBase = DPath(URI("http://www.iana.org/assignments/media-types/"))
 }
 

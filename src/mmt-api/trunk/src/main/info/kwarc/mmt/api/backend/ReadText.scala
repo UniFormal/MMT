@@ -659,7 +659,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     val endsAt = expectNext(i, ".")
 
     // create the constant object
-    val constant = new Constant(cpath.module, cpath.name, None, constantType, constantDef, None, constantNotation)
+    val constant = Constant(cpath.module, cpath.name, None, constantType, constantDef, None, constantNotation)
     addSourceRef(constant, start, endsAt)
     addSemanticComment(constant, oldComment)
     add(constant)
@@ -991,7 +991,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
       val endsAt = expectNext(i, ".")
 
       // create the VarDecl object
-      val varDecl = new VarDecl(LocalName(name), varType, varDef)
+      val varDecl = new VarDecl(LocalName(name), varType, varDef, None)
       addSourceRef(varDecl, start, endsAt)
       addSemanticComment(varDecl, oldComment)
 
@@ -1456,7 +1456,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
 
   /** adds sourceRef to the metadata of the first argument */
   private def addSourceRef(target : HasMetaData, startsAt : Int, endsAt : Int) {
-    target.metadata.add(metadata.Link(SourceRef.metaDataKey, getSourceRef(startsAt, endsAt).toURI))
+    SourceRef.update(target, getSourceRef(startsAt, endsAt))
   }
 
   /** adds metadata from the optional semantic comment to the target */
