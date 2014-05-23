@@ -109,16 +109,16 @@ class EditingServicePlugin(val controller : Controller) {
   private def getSymbolCompletion(request: MMTSymbolCompletionRequest) : MMTSymbolCompletionResponse = {
       
       val mpath = Path.parseM(request.getMPath, mmt.mmtbase)
-      val prefix = request.getPrefix
+      val symName = LocalName(request.getSymName())
       
-      val myPaths = Names.resolve(OMMOD(mpath), Nil, prefix)(controller.globalLookup)
-      val paths=(myPaths.map(_.path)) 
+      val spath = mpath ? symName
       
-      val constants = paths.map(controller.get) collect {
+      val constants = controller.get(spath) match {
        case c : Constant => c.not match {
-         case None => c.name -> Nil 
-         case Some(a) => c.name -> a.fixity.markers
+         case None => List(c.name -> Nil) 
+         case Some(a) => List(c.name -> a.fixity.markers)
        }
+       case _ => Nil
       }
       
       def modifyStringRepresent (name:LocalName,markers:List[Marker],accumulator:String,hasSymbol:Boolean) : (String) = {
