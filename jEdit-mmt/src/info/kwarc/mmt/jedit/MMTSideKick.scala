@@ -203,7 +203,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    
    /** build the sidekick outline tree: context node (each VarDecl is added individually) */
    private def buildTree(node: DefaultMutableTreeNode, parent: CPath, con: Context, context: Context, defaultReg: SourceRegion) {
-      con mapVarDecls {case (previous, vd @ VarDecl(n, tp, df)) =>
+      con mapVarDecls {case (previous, vd @ VarDecl(n, tp, df, _)) =>
          val reg = getRegion(vd) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
          val currentContext = context ++ previous
          val child = new DefaultMutableTreeNode(new MMTObjAsset(vd, currentContext, parent, n.toString, reg))
@@ -217,17 +217,17 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    /** build the sidekick outline tree: (sub)term node */
    private def buildTree(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, defaultReg: SourceRegion) {
       val reg = getRegion(t) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
-      val tp = controller.pragmatic.mostPragmatic(t)
-      val label = tp match {
+      val tP = controller.pragmatic.mostPragmatic(t)
+      val label = tP match {
          case OMV(n) => n.toString
          case OMS(p) => p.name.toString
          case l: OMLITTrait => l.toString 
-         case OMSemiFormal(_) => "unparsed"
-         case _ => tp.head.map(_.last.toString).getOrElse(t.role.toString)
+         case OMSemiFormal(_) => "unparsed: " + tP.toString
+         case _ => tP.head.map(_.last.toString).getOrElse(t.role.toString)
       }
       val child = new DefaultMutableTreeNode(new MMTObjAsset(t, context, parent, label, reg))
       node.add(child)
-      tp match {
+      tP match {
          case OMBINDC(binder,cont, scopes) =>
             if (! binder.isInstanceOf[OMID])
                buildTree(child, parent, binder, context, reg)
@@ -337,7 +337,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
             log(a.obj.toString)
             a.obj match {
                case Hole(t) =>
-                  val rules = prover.applicable(t)(Stack(Frame(a.getTheory, a.context)))
+                  val rules = prover.applicable(t)(Stack(a.getTheory, a.context))
                   val comp = new ProverCompletion(view, controller, a.region, rules)
                   return comp
                case _ =>
