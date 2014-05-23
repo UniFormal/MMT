@@ -14,9 +14,8 @@ import info.kwarc.mmt.api.LocalName
 import info.kwarc.mmt.api.notations.Marker
 import info.kwarc.mmt.api.symbols._
 
-class EditingServicePlugin(val controller : Controller) {  
-  
-  private def getAutocompleteResponse(request: MMTAutoCompleteRequest) : MMTAutoCompleteResponse = 
+class EditingServicePlugin(val controller : Controller) {
+  def getAutocompleteResponse(request: MMTAutoCompleteRequest) : MMTAutoCompleteResponse = 
   { 
       val prefix = request.getPrefix
       val mpath = Path.parseM(request.getMPath,mmt.mmtbase)
@@ -26,7 +25,7 @@ class EditingServicePlugin(val controller : Controller) {
       new MMTAutoCompleteResponse(response)
   }
   
-   private def getResolveIncludesResponse(request: MMTResolveIncludesRequest) = {
+   def getResolveIncludesResponse(request: MMTResolveIncludesRequest) = {
       
 	  val symbol = request.getSymbol
       val mpath = Path.parseM(request.getMPath, mmt.mmtbase)
@@ -41,7 +40,7 @@ class EditingServicePlugin(val controller : Controller) {
 	  new MMTResolveIncludesResponse(respMap.toList)
   }
    
-   private def minIncl(to: MPath) : List[MPath] = {
+   def minIncl(to: MPath) : List[MPath] = {
     val thy = controller.get(to) match {
       case theor: DeclaredTheory => theor
       case _ => throw ServerError("No theory found")
@@ -61,14 +60,14 @@ class EditingServicePlugin(val controller : Controller) {
   }
   
  
-  private def getMinIncludes(request : MMTMinIncludesRequest) : MMTMinIncludesResponse= {
+  def getMinIncludes(request : MMTMinIncludesRequest) : MMTMinIncludesResponse= {
       val mpath = Path.parseM(request.getMPath, mmt.mmtbase)		
     
       val newIncludes = minIncl(mpath)
       new MMTMinIncludesResponse(newIncludes.map(_.toString))
   }
   
-  private def getTermInference(request: MMTTermInferenceRequest) : MMTTermInferenceResponse = {
+  def getTermInference(request: MMTTermInferenceRequest) : MMTTermInferenceResponse = {
           
       val mpath = Path.parseM(request.getMPath, mmt.mmtbase)
       val sref = new SourceRef(mpath.doc.uri, SourceRegion(SourcePosition(-1,0,0),SourcePosition(-1,0,1)))
@@ -106,7 +105,7 @@ class EditingServicePlugin(val controller : Controller) {
       } 
   }
   
-  private def getSymbolCompletion(spathS: String) : List[String] = {
+  def getSymbolCompletion(spathS: String) : List[String] = {
       try {
         val spath = Path.parseS(spathS, mmt.mmtbase)
         val constants = controller.get(spath) match {
