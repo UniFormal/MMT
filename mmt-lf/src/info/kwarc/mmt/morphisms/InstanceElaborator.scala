@@ -1,4 +1,4 @@
-package info.kwarc.mmt.lf
+package info.kwarc.mmt.morphisms
 
 import info.kwarc.mmt.api._
 import objects._
@@ -6,6 +6,8 @@ import objects.Conversions._
 import symbols._
 import notations._
 import frontend._
+
+import info.kwarc.mmt.lf._
 
 /**
  * elaborates each instance that is added

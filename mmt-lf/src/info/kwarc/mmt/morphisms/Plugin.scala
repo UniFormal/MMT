@@ -8,6 +8,6 @@ class MorphismPlugin extends frontend.Plugin {
    override def start(args: List[String]) {
       val em = controller.extman
       em.ruleStore.add(TheoryTypeUniverse,MorphTypeUniverse,ComplexTheoryInfer,MorphCheck)
-      em.addExtension(new lf.InstanceElaborator)
+      em.addExtension(new InstanceElaborator)
    }
 }
