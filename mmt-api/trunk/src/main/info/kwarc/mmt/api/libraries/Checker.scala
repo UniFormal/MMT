@@ -187,9 +187,12 @@ class StructureChecker(controller: Controller) extends Logger {
             getTermToCheck(c.dfC, "definiens") foreach {d =>
                val (unknowns, dR, valid) = prepareTerm(d)
                if (valid) {
-                  c.tp foreach {tp =>
-                      val j = Typing(Stack(scope, parR), dR, tp, None)
-                      unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
+                  c.tp match {
+                     case Some(tp) =>
+                        val j = Typing(Stack(scope, parR), dR, tp, None)
+                        unitCont(ValidationUnit(c.path $ DefComponent, unknowns, j))
+                     case None =>
+                        //TODO infer type
                   }
                }
             }
@@ -383,15 +386,12 @@ class StructureChecker(controller: Controller) extends Logger {
             if (! context.isDeclared(name))
                errorCont(InvalidObject(s, "variable is not declared"))
             s
-         case OMA(fun, args) =>
-            val funR = checkTerm(home, context, fun)
-            val argsR = args map {a => checkTerm(home, context, a)}
-            OMA(funR, argsR).from(s)
-         case OMBINDC(binder, bound, scopes) =>
-            val binderR = checkTerm(home, context, binder)
+         case ComplexTerm(c, subs, bound, args) =>
+            val subsR = subs map {case Sub(v, t) => Sub(v, checkTerm(home, context, t))}
             val boundR = checkContext(home, context, bound)
-            val scopesR = scopes map {c => checkTerm(home, context ++ bound, c)}
-            OMBINDC(binderR, boundR, scopesR).from(s)
+            val argsR = args map {a => checkTerm(home, context++bound, a)}
+            pCont(c)
+            ComplexTerm(c, subsR, boundR, argsR).from(s)
          case OMATTR(arg, key, value) =>
             val argR = checkTerm(home, context, arg)
             checkTerm(home, context, key)
@@ -446,22 +446,22 @@ class StructureChecker(controller: Controller) extends Logger {
               case StructureVarDecl(name, tp, df) =>
                  // a variable that imports another theory
                  // type must be a theory
-                 val tpR = checkTheory(home, currentContext, tp) 
+                 checkTheory(home, currentContext, OMMOD(tp)) 
                  // definiens must be a partial substitution
                  val dfR = df map {
                     case ComplexMorphism(subs) =>
-                       val subsR = checkSubstitution(home, currentContext, subs, TheoryExp.toContext(tpR), Context(), true)
+                       val subsR = checkSubstitution(home, currentContext, subs, Context(IncludeVarDecl(tp)), Context(), true)
                        ComplexMorphism(subsR)
                     case o =>
                        errorCont(InvalidObject(vd, "definiens of theory-level variable must be a partial substitution, found " + o))
                        o
                  }
-                 StructureVarDecl(name, tpR, dfR)
-              case VarDecl(name, tp, df) =>
+                 StructureVarDecl(name, tp, dfR)
+              case VarDecl(name, tp, df, not) =>
                  // a normal variable
           	     val tpR = tp.map(x => checkTerm(home, currentContext, x))
           	     val dfR = df.map(x => checkTerm(home, currentContext, x))
-          	     val vdR = VarDecl(name, tpR, dfR)
+          	     val vdR = VarDecl(name, tpR, dfR, not)
           	     vdR.copyFrom(vd)
           	     vdR
            }
@@ -534,14 +534,7 @@ class StructureChecker(controller: Controller) extends Logger {
       // finally, check the individual maps in subs
       subs.map {
          case Sub(n, t) =>
-            // for each one, we look up the declaration of n and check t
-            val tR = content.deepLookup(from, n) match {
-               case StructureVarDecl(n, from, _) =>
-                  checkMorphism(home, context, t, Some(from), Some(ComplexTheory(to)))._1
-               case _ =>
-                  // we could generate a typing obligation here
-                  checkTerm(home,to,t)
-            }
+            val tR = checkTerm(home,to,t)
             Sub(n, tR)
       }
    }

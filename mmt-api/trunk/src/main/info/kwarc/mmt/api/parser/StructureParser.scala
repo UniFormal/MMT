@@ -470,8 +470,8 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       readInModule(mod, patterns) // compiled code is not actually tail-recursive
    }
    
-   private def doComponent(c: DeclarationComponent, tc: TermContainer, scope: Term, pr: Option[Context])(implicit state: ParserState) {
-         val (obj,_,tm) = readParsedObject(scope, pr.getOrElse(Context()))
+   private def doComponent(c: DeclarationComponent, tc: TermContainer, scope: Term, cont: Context = Context())(implicit state: ParserState) {
+         val (obj,_,tm) = readParsedObject(scope, cont)
          tc.read = obj
          tc.parsed = tm
       }
@@ -497,45 +497,29 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       var al : Option[LocalName] = None
       var nt = new NotationContainer
       var rl : Option[String] = None
-      var pr : Option[Context] = None
-      val cons = new Constant(OMMOD(parent), name, None, tpC, dfC, None, nt)
+      val cons = Constant(OMMOD(parent), name, None, tpC, dfC, None, nt)
       // every iteration reads one delimiter and one object
       // @ alias or : TYPE or = DEFINIENS or # NOTATION
       //TODO remove "##" here and in the case split below, only used temporarily for latex integration
-      val keys = List(":","=","#", "##","@", "of", "role")
+      val keys = List(":","=","#", "##","@", "role")
       val keyString = keys.map("'" + _ + "'").mkString(", ")
 
       while (! state.reader.endOfDeclaration) {
          val (delim, treg) = state.reader.readToken
             // branch based on the delimiter
             delim match {
-               case "of" =>
-                  if (pr.isDefined) {
-                     errorCont(makeError(treg, "parameters of this constant already given, ignored"))
-                     state.reader.readObject
-                  } else {
-                     val (obj, reg) = state.reader.readObject
-                     val pu = ParsingUnit(SourceRef(state.container.uri, reg), scope, Context(), obj, Some(TextNotation.contextNotation))
-                     val parsed = puCont(pu)
-                     parsed match {
-                        case OMBINDC(utils.mmt.context, cont, Nil) =>
-                           pr = Some(cont)
-                        case _ =>
-                           errorCont(makeError(reg, "parameters of this constant are not a context, ignored (note that implicit parts are not allowed in parameters)"))
-                     }
-                  }
                case ":" =>
                   if (tpC.read.isDefined) {
                      errorCont(makeError(treg, "type of this constant already given, ignored"))
                      state.reader.readObject
                   } else
-                     doComponent(TypeComponent, tpC, scope, pr)
+                     doComponent(TypeComponent, tpC, scope)
                case "=" =>
                   if (dfC.read.isDefined) {
                      errorCont(makeError(treg, "definiens of this constant already given, ignored"))
                      state.reader.readObject
                   } else
-                     doComponent(DefComponent, dfC, scope, pr)
+                     doComponent(DefComponent, dfC, scope)
                case "#" =>
                   doNotation(ParsingNotationComponent, nt, treg, cpath)
                case "##" =>
@@ -567,9 +551,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
             }
          }
       }
-      val constant = new Constant(OMMOD(parent), name, al, tpC, dfC, rl, nt) {
-         override val parameters = pr.getOrElse(Context())
-      }
+      val constant = Constant(OMMOD(parent), name, al, tpC, dfC, rl, nt)
       constant.metadata = cons.metadata
       constant
    }
@@ -617,7 +599,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
         delim match {
           case "::" =>
             val (obj, reg) = state.reader.readObject
-            val pu = ParsingUnit(SourceRef(state.container.uri, reg), OMMOD(tpath), Context(), obj, Some(TextNotation.contextNotation))
+            val pu = ParsingUnit(SourceRef(state.container.uri, reg), OMMOD(tpath), Context(), obj, None)
             val parsed = puCont(pu)
             parsed match {
               case OMBINDC(_, cont, Nil) =>
@@ -628,7 +610,7 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
           case ">>" =>
             val (obj, reg) = state.reader.readObject
             // keep parameters in the context
-            val pu = ParsingUnit(SourceRef(state.container.uri, reg), OMMOD(tpath), pr, obj, Some(TextNotation.contextNotation))
+            val pu = ParsingUnit(SourceRef(state.container.uri, reg), OMMOD(tpath), pr, obj, None)
             val parsed = puCont(pu)
             parsed match {
               case OMBINDC(_, cont, Nil) =>

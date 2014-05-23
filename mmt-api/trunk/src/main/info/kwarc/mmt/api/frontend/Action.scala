@@ -403,7 +403,7 @@ case class Elaboration(p : Path) extends MakeAbstract {
 
 /** represents the first post-processing phase
  *  These produce concrete syntax from the abstract syntax.
- * */
+ */
 abstract class MakeConcrete {
    /** takes a Controller, executes the rendering and passes it to a RenderingHandler */
    def make(controller : Controller, rb : RenderingHandler)
@@ -412,9 +412,8 @@ abstract class MakeConcrete {
 /** takes a content element and renders it using notations */
 case class Present(c : MakeAbstract, param : String) extends MakeConcrete {
    def make(controller : Controller, rb : RenderingHandler) {
-      val presenter = controller.extman.getPresenter(param) getOrElse {
-         val nset = Path.parseM(param, controller.getBase)
-         new StyleBasedPresenter(controller, nset)
+      val presenter = controller.extman.getPresenter(param).getOrElse {
+         throw PresentationError("no presenter found: " + param)
       }
       c.make(controller) match {
          case s: StructuralElement => presenter(s)(rb)

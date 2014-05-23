@@ -159,7 +159,7 @@ span.name {
 }
 
 tr.definition, tr.domain, tr.codomain,
-tr.onedim-notation, tr.twodim-notation, tr.used-by {
+tr.parsing-notation, tr.presentation-notation, tr.used-by {
   display: none;
 }
 tr.tags, tr.metadata {

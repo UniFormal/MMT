@@ -88,26 +88,15 @@ case class SourceRef(container: URI, region: SourceRegion) {
    override def toString = toURI.toString 
 }
 
-object SourceRef {
+object SourceRef extends metadata.Linker[SourceRef](mmt.mmtbase ? "metadata" ? "sourceRef") {
    def fromURI(u: URI) = {
       val container = u.copy(fragment = None)
       val reg = SourceRegion.parse(u.fragment.getOrElse(""))
       SourceRef(container, reg)
    }
+   def toURI(s: SourceRef) = s.toURI
    def anonymous(s: String) = {
       val reg = SourceRegion.ofString(s)
       SourceRef(URI.empty, reg)
-   }
-   /** the theory in which the parsed metadata keys reside */
-   //def metadataBase : MPath = MetaDatum.keyBase
-
-   /** the "sourceRef" metadata key */
-   def metaDataKey : GlobalName = mmt.mmtbase ? "metadata" ? "sourceRef"
-   def update(e: metadata.HasMetaData, r: SourceRef) {
-      e.metadata.update(metaDataKey, r.toURI)
-   }
-   def get(e: metadata.HasMetaData) = e.metadata.getLinks(metaDataKey).headOption.map(fromURI)
-   def delete(e: metadata.HasMetaData) {
-      e.metadata.delete(metaDataKey)
    }
 }

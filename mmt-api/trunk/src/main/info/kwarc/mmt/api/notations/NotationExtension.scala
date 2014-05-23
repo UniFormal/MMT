@@ -48,7 +48,7 @@ abstract class SimpleFixity extends Fixity {
       (beforeOp until expl).toList.map(i => Arg(1+impl+i))
    protected def simpleArgs = {
       val delimStr = delim match {
-         case SymbolName(name) => Nil
+         case SymbolName() => Nil
          case _ => List(delim.text)
       }
       (impl :: expl :: delimStr).mkString(" ")
@@ -117,9 +117,9 @@ object FixityParser {
     *   * else: impl | delim | impl expl | impl delim | impl expl delim
     *     where impl and expl are natural numbers, delim anything else 
     */
-   def parse(name: GlobalName, fixityString: String, args: List[String]): Fixity = {
+   def parse(fixityString: String, args: List[String]): Fixity = {
       if (fixityString == "mixfix")
-         return Mixfix(args.map(Marker.parse(name, _)))
+         return Mixfix(args.map(Marker.parse(_)))
       val (impl, expl, del) = args match {
          case i::e::s:: Nil => (toInt(i), toInt(e), s)
          case n::es:: Nil =>
@@ -131,7 +131,7 @@ object FixityParser {
             catch {case _:ParseError => (0, 0, es)}
          case _ => (0,0,"")
       }
-      val delim = if (del != "") Delim(del) else SymbolName(name)
+      val delim = if (del != "") Delim(del) else SymbolName()
       fixityString match {
          case "infix"       => Infix(delim, impl, expl, None)
          case "infix-left"  => Infix(delim, impl, expl, Some(true))

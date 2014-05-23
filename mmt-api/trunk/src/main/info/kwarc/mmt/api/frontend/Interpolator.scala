@@ -48,7 +48,7 @@ class MMTInterpolator(controller: frontend.Controller) {
            case GlobalName(t,_) => t
         }
      }
-   private def parse(sc: StringContext, ts: List[Term], top: Option[TextNotation], check: Boolean) = {
+   private def parse(sc: StringContext, ts: List[Term], top: Option[ParsingRule], check: Boolean) = {
          val strings = sc.parts.iterator
          val args = ts.iterator
          val buf = new StringBuffer(strings.next)
@@ -57,7 +57,7 @@ class MMTInterpolator(controller: frontend.Controller) {
          while(strings.hasNext) {
             val name = LocalName("$_" + i.toString)
             val arg = args.next
-            cont = cont ++ VarDecl(name, None, Some(arg))
+            cont = cont ++ VarDecl(name, None, Some(arg), None)
             buf.append(name)
             buf.append(strings.next)
             i += 1
@@ -88,7 +88,7 @@ class MMTInterpolator(controller: frontend.Controller) {
 	     controller.uom.simplify(t, theory)
       }
       def cont(ts: Term*) : Context = {
-         val t = parse(sc, ts.toList, Some(TextNotation.contextNotation), false)
+         val t = parse(sc, ts.toList, None, false)
          t match {
             case OMBINDC(_,con, Nil) => con
             case _ => throw ParseError("not a context")

@@ -364,7 +364,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
                 } else {
                   mod
                 }
-                val presenter = new presentation.StyleBasedPresenter(controller,nset) 
+                val presenter = new archives.HTMLExporter() 
                 presenter(module)(rb)
                 val thyString = rb.get
                 val response = new collection.mutable.HashMap[String,Any]()

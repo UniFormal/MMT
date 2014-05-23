@@ -167,6 +167,13 @@ trait RuleSet {
 }
 
 
+object TypingRule {
+   /**
+    * may be thrown by a TypingRule to indicate that type of tm should be inferred and equated to tp 
+    */
+   object SwitchToInference extends java.lang.Throwable
+}
+
 /** An TypingRule checks a term against a type.
  *  It may recursively call other checks.
  *  @param head the head of the type to which this rule is applicable 
@@ -178,6 +185,8 @@ abstract class TypingRule(val head: GlobalName) extends Rule {
     *  @param the type
     *  @param context its context
     *  @return true iff the typing judgment holds
+    *  
+    *  may throw SwitchToInference
     */
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean
 }

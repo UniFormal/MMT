@@ -137,7 +137,7 @@ class Controller extends ROController with Logger {
    val logPrefix = "controller"
 
    /** a lookup that uses only the current memory data structures */
-   val localLookup = new Lookup(report) {
+   val localLookup = new Lookup {
       def get(path : Path) =  try {library.get(path)} catch {case NotFound(p) => throw GetError(p.toPath + " not known")}
       //def imports(from: Term, to: Term) = library.imports(from, to)
       def visible(to: Term) = library.visible(to)
@@ -147,7 +147,7 @@ class Controller extends ROController with Logger {
    }
    private val self = this
    /** a lookup that loads missing modules dynamically */
-   val globalLookup = new Lookup(report) {
+   val globalLookup = new Lookup {
       def get(path : Path) = {
          val se = iterate {self.get(path)}
          se match {
