@@ -3,6 +3,7 @@ package info.kwarc.mmt.mizar.mizar.translator
 import info.kwarc.mmt.mizar.mizar.objects._
 import info.kwarc.mmt.mizar.mizar.reader._
 import info.kwarc.mmt.mizar.mmt.objects._
+
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.utils._
@@ -10,12 +11,13 @@ import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.objects._
 import objects.Conversions._
+
 import info.kwarc.mmt.lf.Arrow
 import info.kwarc.mmt.lf.Lambda
 
+import info.kwarc.mmt.morphisms._
 
 
 object ArticleTranslator {
@@ -90,7 +92,7 @@ object ArticleTranslator {
 	    val name = TranslationController.getFreeVar()
 	      TranslationController.addLocusVarBinder(OMV(name))
 	    val tp = TypeTranslator.translateTyp(t)
-	    VarDecl(name, Some(tp), None)
+	    VarDecl(name, Some(tp), None, ???)
 	  }
 	  val df = Lambda(Context(con :_*), TypeTranslator.translateTerm(f.term))
 	  
@@ -106,7 +108,7 @@ object ArticleTranslator {
 	    val name = TranslationController.getFreeVar()
 	      TranslationController.addLocusVarBinder(OMV(name))
 	    val tp = TypeTranslator.translateTyp(t)
-	    VarDecl(name, Some(tp), None)
+	    VarDecl(name, Some(tp), None, ???)
 	  }
 	  val df = Lambda(Context(con :_*), PropositionTranslator.translateFormula(p.form))
 	  
