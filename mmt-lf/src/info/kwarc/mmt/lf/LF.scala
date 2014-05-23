@@ -47,7 +47,7 @@ object Lambda extends LFSym ("lambda") {
    def apply(name : LocalName, tp : Term, body : Term) = OMBIND(this.term, OMV(name) % tp, body)
    def apply(con: Context, body : Term) = OMBIND(this.term, con, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
-	   case OMBIND(b, Context(VarDecl(n,Some(t),None), rest @_*), s) if b == this.term || b == LF.constant("implicit_lambda") =>
+	   case OMBIND(b, Context(VarDecl(n,Some(t),None, _), rest @_*), s) if b == this.term || b == LF.constant("implicit_lambda") =>
 	      val newScope = if (rest.isEmpty)
 	         s
 	      else
@@ -67,7 +67,7 @@ object Pi extends LFSym ("Pi") {
    def apply(name : LocalName, tp : Term, body : Term) = OMBIND(this.term, OMV(name) % tp, body)
    def apply(con: Context, body : Term) = OMBIND(this.term, con, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
-	   case OMBIND(b, Context(VarDecl(n,Some(t),None), rest @ _*), s) if b == this.term || b == LF.constant("implicit_Pi") =>
+	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_), rest @ _*), s) if b == this.term || b == LF.constant("implicit_Pi") =>
          val newScope = if (rest.isEmpty)
             s
          else
@@ -152,10 +152,26 @@ object FunType {
   }
   
   def argsAsContext(args: List[(Option[LocalName], Term)]): Context = args.map {
-     case (Some(n), t) => VarDecl(n, Some(t), None)
-     case (None, t) => VarDecl(OMV.anonymous, Some(t), None)
+     case (Some(n), t) => VarDecl(n, Some(t), None, None)
+     case (None, t) => VarDecl(OMV.anonymous, Some(t), None, None)
   } 
 }
+
+/** like FunType, but for Lambda terms */
+object FunTerm {
+  def apply(in: List[(LocalName, Term)], out: Term) = {
+     in.foldRight(out) ({
+       case ((x, t), sofar) => Lambda(x, t, sofar)
+     })
+  }
+  def unapply(t: Term): Option[(List[(LocalName, Term)], Term)] = t match {
+      case Lambda(name, tp, bd) =>
+         val (remainingArgs,ultimateScope) = unapply(bd).get //always returns non-None
+         Some((name, tp) :: remainingArgs, ultimateScope)
+      case t => Some(Nil,t)
+  }
+}
+
 
 /**
  * like ApplySpine, but also covers the case n=0, akin to FunType

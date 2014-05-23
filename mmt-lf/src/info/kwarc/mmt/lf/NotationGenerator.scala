@@ -46,11 +46,11 @@ class NotationGenerator extends ChangeListener {
          val numImplicitArgs = args.prefixLength {case (_, argType) => ! isJudgment(argType)}
          log(s"adding notation for ${c.name} ($numImplicitArgs implicit args, $numTotalArgs total args")
          if (notC.parsing.isEmpty) {
-            val parseMarkers = SymbolName(c.path) ::
+            val parseMarkers = SymbolName() ::
                 Range(0,numImplicitArgs).map {i => ImplicitArg(i+1)}.toList :::
                 Range(numImplicitArgs,numTotalArgs).map {i => Arg(i+1)}.toList
-            val nt = new TextNotation(c.path, Mixfix(parseMarkers), Precedence.integer(0), Some(LF._path))
-            nt.setOrigin(GeneratedBy(this))
+            val nt = new TextNotation(Mixfix(parseMarkers), Precedence.integer(0), Some(LF._path))
+            metadata.Generated.set(nt)
             c.notC.parsingDim.set(nt)
          }
          if (notC.presentation.isEmpty) {
@@ -58,10 +58,10 @@ class NotationGenerator extends ChangeListener {
                val hyps = Range(numImplicitArgs,numTotalArgs).map {i => Arg(i+1)}.toList
                List(FractionMarker(hyps, List(InferenceMarker), true))
             }
-            val presentationMarkers : List[Marker] = tree ::: SymbolName(c.path) ::
+            val presentationMarkers : List[Marker] = tree ::: SymbolName() ::
                Range(0,numImplicitArgs).map {i => ImplicitArg(i+1)}.toList
-            val nt = new TextNotation(c.path, Mixfix(presentationMarkers), Precedence.integer(0), Some(LF._path))
-            nt.setOrigin(GeneratedBy(this))
+            val nt = new TextNotation(Mixfix(presentationMarkers), Precedence.integer(0), Some(LF._path))
+            metadata.Generated.set(nt)
             c.notC.presentationDim.set(nt)
          }
       case _ =>
