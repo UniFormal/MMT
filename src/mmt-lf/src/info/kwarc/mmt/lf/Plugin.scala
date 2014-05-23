@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import frontend._
 
 class TypedPlugin extends frontend.Plugin {
-   val dependencies = Nil
+   val dependencies = List("info.kwarc.mmt.morphisms.MorphismPlugin")
    override def start(args: List[String]) {
       val em = controller.extman
       em.ruleStore.add(UniverseType,UniverseKind,UnivTerm)

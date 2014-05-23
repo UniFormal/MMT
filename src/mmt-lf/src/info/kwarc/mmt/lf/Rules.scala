@@ -33,7 +33,7 @@ object Common {
            val mSol = Pi(mV.name, ApplyGeneral(mD, args), ApplyGeneral(mC, args ::: List(mV)))
            // if we have not done the variable transformation before, add the new unknowns
            if (! solver.getPartialSolution.isDeclared(mD.name)) {
-              val newVars = Context(VarDecl(mD.name, None, None), VarDecl(mC.name, None, None))
+              val newVars = Context(VarDecl(mD.name, None, None, None), VarDecl(mC.name, None, None, None))
               solver.addUnknowns(newVars, m)
            }
            // solve m in terms of newVars
@@ -99,7 +99,7 @@ object ApplyTerm extends InferenceRule(Apply.path, OfType.path) {
               fTPi match {
                  case Pi(x,a,b) =>
                     solver.check(Typing(stack, t, a))(history + "argument must have domain type")
-                    Some(b ^ (x / t))
+                    Some(b ^? (x / t))
                  case _ =>
                     // definition expansion must also consider unknown variables whose definitions are not known yet
                     None
@@ -159,7 +159,7 @@ object LambdaCongruence extends TermBasedEqualityRule(Lambda.path, Lambda.path) 
          case (Lambda(x1,a1,t1), Lambda(x2,a2,t2)) =>
             val cont = Continue {
                history += "congruence for lambda"
-               val res1 = solver.check(Equality(stack,a1,a2,Some(OMS(Typed.ktype))))(history + "equality of domain types")
+               val res1 = solver.check(Equality(stack,a1,a2,None))(history + "equality of domain types")
                val (xn,_) = Context.pickFresh(stack.context, x1)
                val t1sub = t1 ^? (x1 / OMV(xn))
                val t2sub = t2 ^? (x2 / OMV(xn))
@@ -182,7 +182,7 @@ object PiCongruence extends TermBasedEqualityRule(Pi.path, Pi.path) {
          case (Pi(x1,a1,t1), Pi(x2,a2,t2)) =>
             val cont = Continue {
                history += "congruence for function types"
-               val res1 = solver.check(Equality(stack,a1,a2,Some(OMS(Typed.ktype))))(history + "equality of domain types")
+               val res1 = solver.check(Equality(stack,a1,a2,None))(history + "equality of domain types")
                val (xn,_) = Context.pickFresh(stack.context, x1)
                val t1sub = t1 ^? (x1 / OMV(xn))
                val t2sub = t2 ^? (x2 / OMV(xn))
@@ -208,7 +208,7 @@ object Beta extends ComputationRule(Apply.path) {
          case (Lambda(x,a,t), s :: rest) => 
             solver.check(Typing(stack, s, a))(history + "argument must have domain type") //TODO what if false?
             reduced = true
-            reduce(t ^ (x / s), rest)
+            reduce(t ^? (x / s), rest)
          case (f, Nil) =>
             //all arguments were used
             //only possible if there was a reduction, so no need for 'if (reduced)'
@@ -320,8 +320,8 @@ object Solve extends SolutionRule(Apply.path) {
                 return false
              // get the type of x and abstract over it
              stack.context.variables(i) match {
-                case VarDecl(_, Some(a), _) => 
-                   val newStack = Stack(stack.frames.head.copy(context = newCon) :: stack.frames.tail)
+                case VarDecl(_, Some(a), _, _) => 
+                   val newStack = stack.copy(context = newCon)
                    solver.solveEquality(t, Lambda(x, a, tm2), None)(newStack, history + ("solving by binding " + x)) // tpOpt map {tp => Pi(x,a,tp)}
                 case _ => false
              }
@@ -364,7 +364,7 @@ class PiOrArrowElimRule(op: GlobalName) extends ElimProvingRule(op) {
       val (bindings, scope) = FunType.unapply(fact).get
       // the free variables of scope (we drop the types because matching does not need them)
       val unknowns: Context = bindings.flatMap {
-         case (Some(x),_) => List(VarDecl(x,None,None))
+         case (Some(x),_) => List(VarDecl(x,None,None, None))
          case _ => Nil
       }
       // fact may contain free variables from stack.context, so make sure there are no name clashes
