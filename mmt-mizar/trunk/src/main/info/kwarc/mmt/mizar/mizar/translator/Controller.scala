@@ -78,7 +78,7 @@ object TranslationController {
         val start = parser.SourcePosition(-1, sregion.start.line, sregion.start.col)
         val end = parser.SourcePosition(-1, sregion.end.line, sregion.end.col)
         val ref = parser.SourceRef(URI(currentSource), parser.SourceRegion(start, end))
-        mmtEl.metadata.add(metadata.Link(parser.SourceRef.metaDataKey, ref.toURI))
+        parser.SourceRef.update(mmtEl, ref)
     }
 	
 	def add(e : StructuralElement) {
@@ -221,7 +221,7 @@ object TranslationController {
 	          val rest = 0.to(argnr - 1).toList.map(Arg(_))
 	          first :: (rest ::: List(last))
 	      }
-        val not = new TextNotation(name, Mixfix(markers), Precedence.integer(0), None)
+        val not = new TextNotation(Mixfix(markers), Precedence.integer(0), None)
         val alias = ParsingController.resolveDef(currentAid, kind, absnr).map(LocalName(_))
         val notC = NotationContainer.apply(not)
         Constant(OMMOD(currentTheory), lname, alias ,Some(tp), Some(df), None, notC)

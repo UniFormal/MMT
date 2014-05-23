@@ -11,10 +11,11 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.lfs._
-import info.kwarc.mmt.api.patterns._
 import objects.Conversions._
 
 import info.kwarc.mmt.mizar.mizar.translator._
+
+import info.kwarc.mmt.morphisms._
 
 
 object artPatterns {
@@ -22,28 +23,28 @@ object artPatterns {
    * Notations
    */
   
-  val SynonymicNotation : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("SynonymicNotation"),
+  val SynonymicNotation = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("SynonymicNotation"),
       Context(
-          VarDecl("nr", None, None),
-          VarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None),
-          VarDecl("ref", Some(Mizar.constant("prop")), None)
+          VarDecl("nr", None, None, ???),
+          VarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None, ???),
+          VarDecl("ref", Some(Mizar.constant("prop")), None, ???)
           ),
-      Context(VarDecl("notation",Some(OMV("ref")), None))
+      Context(VarDecl("notation",Some(OMV("ref")), None, ???))
   )
   
-  val AntonymicNotation : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("AntonymicNotation"),
+  val AntonymicNotation = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("AntonymicNotation"),
       Context(
-          VarDecl("nr", None, None),
-          VarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None),
-          VarDecl("ref", Some(Mizar.constant("prop")), None)
+          VarDecl("nr", None, None, ???),
+          VarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None, ???),
+          VarDecl("ref", Some(Mizar.constant("prop")), None, ???)
           ),
-      Context(VarDecl("notation", Some(Mizar.apply(Mizar.constant("not"),OMV("ref"))), None))
+      Context(VarDecl("notation", Some(Mizar.apply(Mizar.constant("not"),OMV("ref"))), None, ???))
   )
   
   
-  val Lemma : Pattern = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("Lemma"),
-      Context(VarDecl("prop", Some(Mizar.constant("prop")),None)),
-      Context(VarDecl("lemma", Some(Mizar.apply(Mizar.constant("proof"), OMV("prop"))), None)))
+  val Lemma = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("Lemma"),
+      Context(VarDecl("prop", Some(Mizar.constant("prop")),None, ???)),
+      Context(VarDecl("lemma", Some(Mizar.apply(Mizar.constant("proof"), OMV("prop"))), None, ???)))
   
 }
 

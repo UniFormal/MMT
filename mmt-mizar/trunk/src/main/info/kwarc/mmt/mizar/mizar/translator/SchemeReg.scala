@@ -4,12 +4,13 @@ import info.kwarc.mmt.mizar.mizar.objects._
 import info.kwarc.mmt.mizar.mmt.objects._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.patterns._
-import info.kwarc.mmt.lf._
-import info.kwarc.mmt.lfs._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.objects.Conversions._
 
+import info.kwarc.mmt.lf._
+import info.kwarc.mmt.lfs._
+
+import info.kwarc.mmt.morphisms._
 
 object SchemeRegTranslator {
 	

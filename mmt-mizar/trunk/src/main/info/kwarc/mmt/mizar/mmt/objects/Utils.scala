@@ -65,10 +65,10 @@ object Mizar {
 	def eq(t1 : Term, t2 : Term) = apply(constant("R1"), t1, t2)
 	
 	def exists(v : String, tp : Term, prop : Term) = 
-	  not(OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None)), not(prop)))
+	  not(OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None, ???)), not(prop)))
 	
 	def forall(v : String, tp : Term, prop : Term) = 
-	  OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None)), prop)
+	  OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None, ???)), prop)
 	
 	def attr(t : Term) = apply(Mizar.constant("attr"), t)
 	  
