@@ -46,10 +46,25 @@ abstract class PlanetaryAbstractPresenter(name : String) extends Presenter {
   protected val htmlRh = utils.HTML(s => rh(s))
    
   import htmlRh._
-  def wrapScope(body : => Unit) {
-    div(attributes=List("xmlns" -> utils.xml.namespace("html"),
-                        "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
-      body
+  def wrapScope(standalone : Boolean, uri : Path)(content : => Unit) {
+    if (standalone) {
+      rh("<!DOCTYPE html>")
+      html{
+        head{
+          rh(<meta name="mmturi" content={uri.toPath}></meta>)
+        }
+        body{
+          div(attributes=List("xmlns" -> utils.xml.namespace("html"),
+                              "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
+            content
+          }
+        }
+      }
+    } else {
+      div(attributes=List("xmlns" -> utils.xml.namespace("html"),
+                          "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
+        content
+      }
     }
   }
 }
@@ -59,11 +74,11 @@ class PlanetaryHeadersPresenter extends PlanetaryAbstractPresenter("planetary-he
      this._rh = rh
      s match { 
        case doc : Document => 
-         wrapScope(doDocument(doc))
+         wrapScope(standalone, doc.path)(doDocument(doc))
        case thy : DeclaredTheory => 
-         wrapScope(doTheory(thy))
+         wrapScope(standalone, thy.path)(doTheory(thy))
        case view : DeclaredView =>
-         wrapScope(doView(view))
+         wrapScope(standalone, view.path)(doView(view))
        case d : Declaration => rh("Headers presenter not applicable to declarations " + s.getClass().toString())
        case _ => rh("TODO: Not implemented yet, presentation function for " + s.getClass().toString())
      }
@@ -104,13 +119,13 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      this._rh = rh
      s match { 
        case doc : Document => 
-         wrapScope(doDocument(doc))
+         wrapScope(standalone, doc.path)(doDocument(doc))
        case thy : DeclaredTheory => 
-         wrapScope(doTheory(thy))
+         wrapScope(standalone, thy.path)(doTheory(thy))
        case view : DeclaredView =>
-         wrapScope(doView(view))
+         wrapScope(standalone, view.path)(doView(view))
        case fd : FlexiformalDeclaration => 
-         wrapScope(doFlexiformalDeclaration(fd))
+         wrapScope(standalone, fd.path)(doFlexiformalDeclaration(fd))
        case _ => rh("TODO: Not implemented yet, presentation function for " + s.getClass().toString())
      }
      //TODO? reset this._rh 
@@ -213,7 +228,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        }
        name.toString + indices
      }
-     
+
      val arity = not.arity.length
      val tm = OMA(OMID(not.name), (0 until arity).map(n => OMV(getVarName(n))).toList)
      tr {
