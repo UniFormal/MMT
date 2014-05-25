@@ -28,7 +28,7 @@ object Delimiter {
 case class Delim(s: String) extends Delimiter {
    override def toString = {
       if (s == "%w") s
-      else if (List('%', 'V').contains(s(0)) || s.endsWith("…"))
+      else if (s.length > 0 && (List('%', 'V').contains(s(0)) || s.endsWith("…")))
          "%D" + s
       else {
          try {s.toInt; "%D" + s}

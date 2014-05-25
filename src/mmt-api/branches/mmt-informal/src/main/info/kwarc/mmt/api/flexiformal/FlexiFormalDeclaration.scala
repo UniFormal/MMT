@@ -14,7 +14,7 @@ import info.kwarc.mmt.api.metadata.MetaData
 object FlexiformalDeclaration {
   def parseNarrativeObject(n : scala.xml.Node)(implicit base : Path) : NarrativeObject = n.label match {
     case _ if ((n \ "@type").text == "XML") => new NarrativeXML(n)
-    case "OMOBJ" => new NarrativeTerm(Obj.parseTerm(n, base))
+    case "OMOBJ" => new NarrativeTerm(Obj.parseTerm(scala.xml.Utility.trim(n), base))
     case "ref" if n.prefix == "omdoc" => 
       val targetS = (n \ "@target").text
       val target = Path.parse(targetS, base)
@@ -24,6 +24,7 @@ object FlexiformalDeclaration {
         case _ => false
       }
       new NarrativeRef(target, objects.toList, self)
+    case "#PCDATA" => new NarrativeXML(n)
     case _ => 
       val child = n.child.map(parseNarrativeObject)
       new NarrativeNode(n, child.toList)
@@ -37,7 +38,7 @@ object FlexiformalDeclaration {
       val targetsS = (n \ "@for").text.split(" ")
       val targets = targetsS.map(st => Path.parseS(st, base))
       val metadataXML = n.child.find(_.label == "metadata")
-      val contentXML = n.child.find(_.label != "metadata").get
+      val contentXML = n.child.find(c => (c.label != "metadata") && (c.label != "#PCDATA")).get
       val metadata = metadataXML.map(MetaData.parse(_, base))
       val content = parseNarrativeObject(contentXML)(base)
       val d = new Definition(OMMOD(mpath), name, targets.toList, content)

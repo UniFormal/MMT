@@ -43,7 +43,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term]) exten
    }
    def toConstant(home: Term) = symbols.Constant(home, name, None, tp, df, None)
    def toNode = <om:OMV name={name.toPath}>{mdNode}{tpN}{dfN}</om:OMV> 
-   def toCMLQVars(implicit qvars: Context) = <m:bvar><m:ci>{name.toPath}</m:ci>{(tp.toList:::df.toList).map(_.toCMLQVars)}</m:bvar>
+   def toCMLQVars(implicit qvars: Context) = <bvar><ci>{name.toPath}</ci>{(tp.toList:::df.toList).map(_.toCMLQVars)}</bvar>
    def role = Role_Variable
    def head = tp.flatMap(_.head)
    def components =
@@ -205,7 +205,7 @@ case class Context(variables : VarDecl*) extends Obj {
    def toNode =
      <om:OMBVAR>{mdNode}{this.zipWithIndex.map({case (v,i) => v.toNode})}</om:OMBVAR>
    def toCMLQVars(implicit qvars: Context) = 
-     <m:apply>{this.map(v => v.toCMLQVars)}</m:apply>
+     <apply>{this.map(v => v.toCMLQVars)}</apply>
    def head = None
    def role : Role = Role_context
    def components = variables.toList
@@ -223,7 +223,7 @@ case class Sub(name : LocalName, target : Term) extends Obj {
    private[objects] def freeVars_ = target.freeVars_
    def role : Role = Role_termsub
    def toNode: Node = <om:OMV name={name.toString}>{mdNode}{target.toNode}</om:OMV>
-   def toCMLQVars(implicit qvars: Context) : Node = <m:mi name={name.toPath}>{target.toCMLQVars}</m:mi>
+   def toCMLQVars(implicit qvars: Context) : Node = <mi name={name.toPath}>{target.toCMLQVars}</mi>
    def components = List(StringLiteral(name.toString), target)
    def children = List(target)
    override def toString = name + ":=" + target.toString

@@ -46,15 +46,21 @@ class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Pre
       var vars : List[VariableComponent] = Nil
       var attrib : Int = 0
       //collect components from markers
-      markers foreach {
-         case a: ArgumentComponent =>
-            args ::= a
-         case v: VariableComponent =>
-            vars ::= v
-         case AttributedObject =>
-            attrib += 1
-         case _ =>
+      def collectComponents(mk : Marker) {
+         mk match {
+           case a: ArgumentComponent =>
+              args ::= a
+           case v: VariableComponent =>
+              vars ::= v
+           case AttributedObject =>
+              attrib += 1
+           case p : PresentationMarker => p.flatMap(x => {collectComponents(x); Nil})
+           case _ =>
+         }
       }
+      
+      markers.foreach(collectComponents)
+     
       // sort by component number
       vars = vars.sortBy(_.number)
       args = args.sortBy(_.number)

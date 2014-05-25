@@ -15,7 +15,6 @@ object Differ {
   
     def diff(c : Controller, p : MPath, rev : Int) : StrictDiff = {
       
-      //println(p)
       val c2 = new Controller
       c2.backend.addStore(c.backend.copyStorages(rev) :_ *)
       

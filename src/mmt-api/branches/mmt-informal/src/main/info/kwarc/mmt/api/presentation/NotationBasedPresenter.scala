@@ -83,7 +83,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
    /**
     * called once at the toplevel of every object to be rendered 
     */
-   def doToplevel(body: => Unit)(implicit pc: PresentationContext) {
+   def doToplevel(o : Obj)(body: => Unit)(implicit pc: PresentationContext) {
       body
    }
    
@@ -294,7 +294,7 @@ trait NotationBasedPresenter extends ObjectPresenter {
    
    def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
       implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil, None)
-      doToplevel {
+      doToplevel(o) {
          recurse(o)
       }
    }

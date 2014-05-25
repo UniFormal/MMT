@@ -139,6 +139,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                  readInDocument(base, Some(dpath), mods)
              case (base : MPath, <notation>{_*}</notation>) =>
                  readNotations(base, base, m)
+             case (_, scala.xml.Text(s)) => //nothing to do
 	         case (_,_) => throw ParseError("module level element expected: " + m)
          }}
       }
@@ -170,7 +171,8 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
             var tp: Option[Term] = None
             var df: Option[Term] = None
             var notC: Option[NotationContainer] = None
-            comps foreach {
+            val trimmedComps = comps.flatMap(scala.xml.Utility.trimProper)
+            trimmedComps foreach {
                case <type>{t}</type> => tp match {
                   case None =>
                      tp = Some(Obj.parseTerm(t, base))
@@ -190,7 +192,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                   case Some(_) =>
                      throw ParseError("multiple notations in " + s2)
                }
-               case c => throw ParseError("illegal child in constant " + c)
+               case c => throw ParseError("illegal child in constant " + c + c.getClass())
             }
             val rl = xml.attr(s2,"role") match {
                case "" => None
@@ -261,11 +263,12 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
          	val args = ns map (Obj.parseTerm(_, base))
             val inst = new Instance(homeTerm,name,Path.parseS(p,base),args.toList)
             add(inst, md)
-         case <flexiformal>{decl}</flexiformal> =>
-            log("flexiformal declaration " + decl  +  " found")
+         case <flexiformal>{decls @ _*}</flexiformal> =>
+            log("flexiformal declaration " + s2  +  " found")
             val fd = FlexiformalDeclaration.parseDeclaration(s2, name , home, base)
             add(fd)
          case scala.xml.Comment(_) =>
+         case scala.xml.Text(s) => //nothing to do (ignoring whitespace)
          case _ => throw new ParseError("symbol level element expected: " + s2)
          }
       }

@@ -16,7 +16,7 @@ object xml {
    /** reads an XML file and returns the first Node in it */
    def readFile(file : File) : scala.xml.Node = {
       val src = scala.io.Source.fromFile(file.toJava, "utf-8") // utf-8 forced due to error with default codec
-      val cp = scala.xml.parsing.ConstructingParser.fromSource(src, false)
+      val cp = scala.xml.parsing.ConstructingParser.fromSource(src, true)
       val N = try {
          cp.document()(0)
       } catch {case e: Exception =>

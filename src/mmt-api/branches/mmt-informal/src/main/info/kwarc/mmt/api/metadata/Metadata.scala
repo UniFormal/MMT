@@ -71,7 +71,7 @@ object MetaData {
       (newnode, mdxml.map(d => parse(d, base)))
    }
    /** parses a MetaData */
-   def parse(node: Node, base: Path) : MetaData = node match {
+   def parse(node: Node, base: Path) : MetaData = scala.xml.Utility.trim(node) match {
       case <metadata>{mdxml @ _*}</metadata> =>
          val mdata = new MetaData
          mdxml foreach {n => mdata.add(MetaDatum.parse(n, base))}

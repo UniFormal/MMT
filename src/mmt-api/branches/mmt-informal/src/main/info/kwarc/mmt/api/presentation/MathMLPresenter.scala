@@ -25,7 +25,7 @@ class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter
    /** generalized apply method that takes a callback function to determine the css class of a subterm */
    def apply(o: Obj, origin: Option[CPath], style: PresentationContext => String)(implicit rh : RenderingHandler) {
       implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil, Some(style))
-      doToplevel {
+      doToplevel(o) {
          recurse(o)
       }
    }
@@ -85,15 +85,21 @@ class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter
       val ms = element("mspace", List(("width", "." + (2*level).toString + "em")), "")
       pc.out(ms)
    }
-   override def doToplevel(body: => Unit)(implicit pc: PresentationContext) {
+   override def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
       val nsAtts = List("xmlns" -> namespace("mathml"), "xmlns:jobad" -> jobadns)
       val mmtAtts = pc.owner match {
          case None => Nil
          case Some(cp) => List("jobad:owner" -> cp.parent.toPath, "jobad:component" -> cp.component.toString, "jobad:mmtref" -> "")
       }
+      val idAtt = ( "id" -> o.hashCode.toString)
       // <mstyle displaystyle="true">
-      pc.out(openTag("math", nsAtts ::: mmtAtts))
+      pc.out(openTag("math",  idAtt :: nsAtts ::: mmtAtts))
+      pc.out(openTag("semantics", Nil))
       body
+      pc.out(openTag("annotation-xml", List("encoding" -> "MathML-Content")))
+      pc.out(o.toCML.toString)
+      pc.out(closeTag("annotation-xml"))
+      pc.out(closeTag("semantics"))
       pc.out(closeTag("math"))
    }
    private def bracket(hidden: Boolean, open: Boolean) = {
