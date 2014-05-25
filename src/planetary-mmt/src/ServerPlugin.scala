@@ -204,7 +204,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
         p
       }
       val reader = new XMLReader(controller.report)
-      val bodyXML = scala.xml.Utility.trim(scala.xml.XML.loadString(bodyS))
+      val bodyXML = scala.xml.XML.loadString(bodyS)
       
       val cont = controller //new Controller
       reader.readDocument(dpath, bodyXML)(cont.add)
@@ -213,8 +213,10 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       presenter.apply(doc)(rb)
       val response = rb.get
       log("Sending Response: " + response)
-      val additional = GlossaryGenerator.generate(controller)
-      JsonResponse(response + additional, "", Nil).aact(tk)
+      //val additional = GlossaryGenerator.generate(controller)
+      //JsonResponse(response + additional, "", Nil).aact(tk)
+      JsonResponse(response, "", Nil).aact(tk)
+      
      } catch {
        case e : Error => 
          log(e.longMsg)
