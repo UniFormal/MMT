@@ -28,12 +28,17 @@ object Names {
       case _ => None
    }
    private def lookIn(home: Term, partialName: String)(implicit lib: Lookup) : List[Completion] = {
-      get(home) match {
+     try {
+     get(home) match {
          case None => Nil
          case Some(t) =>
             val names = t.domain.toList
             names.filter(_.toString.startsWith(partialName)).map(n => Completion(t.path, n))
       }
+     } catch {
+       case e : Error => Nil
+       case e : Exception => Nil
+     }
    }
    /** returns the list of possible completions of partialName imported from the theory/via the structure given by qualifiers */
    def resolve(home: Term, qualifiers: List[String], partialName: String)(implicit lib: Lookup) : List[Completion] = {
