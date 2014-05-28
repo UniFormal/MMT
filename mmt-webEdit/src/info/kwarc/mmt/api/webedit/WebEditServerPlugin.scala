@@ -17,6 +17,7 @@ import scala.concurrent._
 import tiscaf._
 import scala.collection.mutable.HashMap._
 import main.scala.info.kwarc.mmt.api.webedit._
+import info.kwarc.mmt.api.presentation.StringLiteral
 
 class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   
@@ -228,5 +229,41 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
       Server.JsonResponse(response).aact(tk)
     }
   }
+  
+ private def rank(includes: MPath,term:MPath) : Int = {
+	
+	 val constants = controller.get(term) match{
+	 case t : DeclaredTheory => t.getDeclarations
+	 case _ => throw new ServerError("No declarations")
+	 }
+		 val declarations:List[Declaration] = controller.get(includes) match{
+		 case t:DeclaredTheory => t.getDeclarations
+		 case _ => throw new ServerError("No declarations")
+	 } 
+	 val decl = declarations.map(_.name)
+	
+	 //the function to get used Declarations
+	 def getUsage(term: Term ) : List[OMID] = {
+		 term match {
+			 case OMBINDC(nterm,ncontext,nbodyList)=> (nterm::nbodyList).flatMap(getUsage(_))
+			 case OMA(f, args) => (f :: args).flatMap(getUsage(_))
+			 case OMS(f)=> OMS(f)::Nil
+			 case k => Nil
+		 }
+	 }
+	
+	 val usedDeclarations = constants.flatMap(_.components).flatMap{
+	 	case t: Term => getUsage(t)
+	 	case _ => Nil
+	 }.toSet
+	
+	 val usedDeclarationsNames = usedDeclarations.map(_.components).map{
+	 	case List(_,_,StringLiteral(b),_) => LocalName(b)
+	 }
+	 val includesDeclarations = decl.toSet
+	
+	 includesDeclarations.intersect(usedDeclarationsNames).size
+	
+ }
   
 }
