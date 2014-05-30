@@ -1,22 +1,45 @@
 package info.kwarc.mmt.marpa
-import scala.util.matching.Regex
-import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.web._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.presentation._
-import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.backend._
-import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.modules.{DeclaredTheory}
-import info.kwarc.mmt.api.flexiformal._
-import info.kwarc.mmt.stex._
-import info.kwarc.mmt.api.objects._
-import symbols.{Constant}
 
-import scala.util.parsing.json._
-import tiscaf._
-import scala.concurrent._
+import scala.Option.option2Iterable
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.matching.Regex
+import scala.util.parsing.json.JSONArray
+import scala.util.parsing.json.JSONObject
+
+import info.kwarc.mmt.api.DPath
+import info.kwarc.mmt.api.Error
+import info.kwarc.mmt.api.Path
+import info.kwarc.mmt.api.SourceError
+import info.kwarc.mmt.api.StructuralElement
+import info.kwarc.mmt.api.backend.XMLReader
+import info.kwarc.mmt.api.documents.Document
+import info.kwarc.mmt.api.frontend.Logger
+import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.notations.Arg
+import info.kwarc.mmt.api.notations.Delimiter
+import info.kwarc.mmt.api.notations.GroupMarker
+import info.kwarc.mmt.api.notations.ImplicitArg
+import info.kwarc.mmt.api.notations.Marker
+import info.kwarc.mmt.api.notations.SeqArg
+import info.kwarc.mmt.api.notations.TdMarker
+import info.kwarc.mmt.api.notations.TextNotation
+import info.kwarc.mmt.api.notations.Var
+import info.kwarc.mmt.api.ontology.Binary
+import info.kwarc.mmt.api.ontology.isDefinedBy
+import info.kwarc.mmt.api.parser
+import info.kwarc.mmt.api.presentation.StringBuilder
+import info.kwarc.mmt.api.presentation.StyleBasedPresenter
+import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.utils
+import info.kwarc.mmt.api.web.Body
+import info.kwarc.mmt.api.web.Server
+import info.kwarc.mmt.api.web.ServerError
+import info.kwarc.mmt.api.web.ServerExtension
+import info.kwarc.mmt.stex.STeXImporter
+import info.kwarc.mmt.stex.sTeX
+import tiscaf.HLet
+import tiscaf.HTalk
 
 case class PlanetaryError(val text : String) extends Error(text)
 
@@ -50,7 +73,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
       val reqBody = new Body(tk)
       val notations = controller.library.getModules flatMap {
         case t : DeclaredTheory 
-        	if t.path.toPath == "http://mathhub.info/smglom/mv/equal.omdoc?equal"
+        	//if t.path.toPath == "http://mathhub.info/smglom/mv/equal.omdoc?equal"
         	=> 
           val not = t.getDeclarations collect {
             case c : Constant => c.notC.presentationDim.notations.values.flatten
@@ -167,7 +190,6 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		val uniqueName = createRuleName(notUniqueName)
 	    NotationContent ::= uniqueName 
 	    eventList ::= "event '"+uniqueName+"' = completed "+uniqueName
-	    eventList ::= "event '"+"predicted_"+uniqueName+"' = predicted "+uniqueName 
 	    rules = rules | Set((Rule(uniqueName,content)))     //uniqueness of top level notations is assumed
 	  }
 	  def createRule(content:List[String]):String = { //returns the name of the rule
@@ -248,18 +270,46 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 //		    			"       || anyChar Error"::
 //		    			"""anyChar ~ [\s\S]"""::
 		    			//":lexeme ~ <anyChar> priority => -1":: //otherwise nothing other than Error will ever match
-		    			":start ::= Start "::                   // :start does not allow alternatives
-		    			"Start ::= '<m:mrow>' ExpressionList '</m:mrow>' "::
+		    			":start ::= Expression "::                   // :start does not allow alternatives
 		    			"ExpressionList ::= Expression ExpressionList "::
 		    			"| Expression "::
 		    			"Expression ::= Notation "::
 		    			"            || Presentation "::
-//		    			" 			  | Content "::
-		    			"Presentation ::= '<m:mrow>' ExpressionList '</m:mrow>'"::
-		    			" | '<m:mo>' Expression '</m:mo>' "::
-		    			" | '<m:mi>' Expression '</m:mi>' "::
-		    			"moB ~ '<m:mo>'"::"moE ~ '</m:mo>'"::
-//		    			"rowB ~ '<m:mrow>'"::"rowE ~ '</m:mrow>'"::
+     	    	//		" 			  | Content "::
+		    			"Presentation ::= rowB ExpressionList rowE"::
+		    			" moB '(' moE Expression moB ')' moE "::
+		    			" | moB Expression moE "::
+		    			" | miB Expression miE "::
+		    			" | mnB Expression mnE "::
+		    			" | mfracB Expression Expression mfracE"::
+		    			" | msqrtB Expression msqrtE"::
+		    			" | msupB Expression Expression msupE" ::
+		    			" | msubB Expression Expression msubE" ::
+		    			" || texts "::
+		    			"mfracB ::= ws '<mfrac' attribs '>' ws"::"mfracE ::= ws '</mfrac>' ws"::
+		    			"msqrtB ::= ws '<msqrt' attribs '>' ws"::"msqrtE ::= ws '</msqrt>' ws"::
+		    			"msupB ::= ws '<msup' attribs '>' ws"::"msupE ::= ws '</msup>' ws"::
+		    			"msubB ::= ws '<msub' attribs '>' ws"::"msubE ::= ws '</msub>' ws"::
+		    			"mnB ::= ws '<mn' attribs '>' ws"::"mnE ::= ws '</mn>' ws"::
+		    			"miB ::= ws '<mi' attribs '>' ws"::"miE ::= ws '</mi>' ws"::
+		    			"moB ::= ws '<mo' attribs '>' ws"::"moE ::= ws '</mo>' ws"::
+		    			"""rowB ::= ws '<mrow' attribs '>' ws""":: """rowE ::= ws '</mrow>' ws"""::
+		    			"ws ::= spaces"::
+		    			"ws::= # empty"::
+		    			"""spaces ~ space*"""::
+		    			"""space ~ [\s] """::
+		    			"attribs ::= texts"::
+//		    			"attribs ::= "::
+//		    			"attribs ::= ws attrib "::
+//		    			" | ws attrib ws attribs " ::
+//		    			"""attrib ::= letters '=' '"' notquotes '"' """::
+//		    			"""letters ::= letter+"""::
+//		    			"""letter ~ [\w]"""::
+//		    			"""notquotes ::= notquote+ """ ::
+//		    			"""notquote ~ [^"]"""::
+//		    			"""notquote ~ [\w]"""::
+		    			""" texts ~ text* """::
+		    			""" text ~ [^<>]"""::
 		    			Nil
 		    			
 		    		
