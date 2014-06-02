@@ -404,14 +404,16 @@ class Controller extends ROController with Logger {
    }
    /** MMT base URI */
    protected var base : Path = DPath(mmt.baseURI)
+   /** @return the current base URI */
    def getBase = base
    /** base URL In the local system */
    protected var home = File(System.getProperty("user.dir"))
    /** @return the current home directory */
    def getHome = home
-   /** @param h sets the current home directory relative to which path names in commands are executed
-    *  
-    *  initially the current directory
+   /**
+    * @param h sets the current home directory relative to which path names in commands are executed
+    * 
+    * initially the current working directory
     */
    def setHome(h: File) {home = h}
    
@@ -454,7 +456,6 @@ class Controller extends ROController with Logger {
             backend.addStore(s)
          case AddMathPathJava(file) =>
             backend.openRealizationArchive(file)
-	      case AddExtension(c, args) => extman.addExtension(c, args)
 	      case Local =>
 	          val currentDir = (new java.io.File(".")).getCanonicalFile
 	          val b = URI.fromJava(currentDir.toURI)
@@ -505,10 +506,25 @@ class Controller extends ROController with Logger {
                         logError("unknown dimension " + d + ", ignored")
                   }
             }
+         case ArchiveClone(folder, repos) =>
+            def cloneRecursively(r: URI) {
+               val lcOpt = new OAF(folder, report).clone(r)
+               lcOpt foreach {lc =>
+                  val archs = backend.openArchive(lc)
+                  archs foreach {a =>
+                     val deps = MyList.fromString(a.properties.getOrElse("dependencies", ""))
+                     deps foreach {d => cloneRecursively(URI(d))}
+                  }
+               }
+            }
+            cloneRecursively(repos)
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 
             arch.toMar(file)
-         case AddMWS(uri) => extman.mws = Some(new MathWebSearch(uri.toURL))
+         case AddExtension(c, args) =>
+            extman.addExtension(c, args)
+         case AddMWS(uri) =>
+            extman.mws = Some(new MathWebSearch(uri.toURL))
 	      case SetBase(b) =>
 	         base = b
 	         report("response", "base: " + base)
