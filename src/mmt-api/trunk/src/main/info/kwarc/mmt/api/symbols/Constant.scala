@@ -16,7 +16,7 @@ abstract class Constant extends Declaration {
    def rl : Option[String]
    def notC: NotationContainer
 
-  override val alternativeName = alias
+  override def alternativeName = alias
   def toTerm = OMID(path)
 
   def role = Role_Constant(rl)

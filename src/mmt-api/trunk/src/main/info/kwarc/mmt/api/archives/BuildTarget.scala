@@ -69,29 +69,28 @@ abstract class BuildTarget extends Extension {
    }
 }
 
-/** auxiliary type to represent the parameters and result of building a file/directory */
-abstract class BuildTask {
+/**
+ * auxiliary type to represent the parameters and result of building a file/directory
+ *  
+ * @param inFile the input file
+ * @param inPath the path of the input file inside the archive, relative to the input dimension
+ * @param base the narration-base of the containing archive
+ * @param outFile the intended output file
+ */
+class BuildTask(val inFile: File, val isDir: Boolean, val inPath: List[String], val base: utils.URI, val outFile: File) {
    /** build targets should set this to true if they skipped the file so that it is not passed on to the parent directory */
    var skipped = false
    /** build targets should add all errors here */
    var errors : List[Error] = Nil
-}
-/**
- * passed when building a file
- * @param inFile the input file
- * @param inPath the path of the input file inside the archive, relative to the input dimension
- * @param dpath the base to use for resolving relative names
- * @param outFile the intended output file
- */
-class BuildFile(val inFile: File, val inPath: List[String], val dpath: DPath, val outFile: File) extends BuildTask
-/**
- * passed when building a directory
- * @param inFile the input file
- * @param inPath the path of the input file inside the archive, relative to the input dimension
- * @param outFile the intended output file
- */
-class BuildDir(val inFile: File, val inPath: List[String], val outFile: File) extends BuildTask {
-   def dirName = outFile.segments.init.last
+   
+   /** the MPath corresponding to the inFile if inFile is a file in a content-structured dimension */
+   def contentMPath = Archive.ContentPathToMMTPath(inPath)
+   /** the DPath corresponding to the inFile if inFile is a folder in a content-structured dimension */
+   def contentDPath = Archive.ContentPathToDPath(inPath)
+   /** the DPath corrresponding to the inFile if inFile is in a narration-structured dimension */
+   def narrationDPath = DPath(base / inPath)
+   /** the name of the folder if inFile is a folder */
+   def dirName: String = outFile.segments.init.last
 }
 
 /**
@@ -133,7 +132,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
      * @param a the containing archive  
      * @param bfFile information about input/output file etc
      */ 
-   def buildFile(a: Archive, bf: BuildFile)
+   def buildFile(a: Archive, bf: BuildTask)
 
    /** similar to buildOne but called on every directory (after all its children have been processed)
      * @param a the containing archive  
@@ -141,7 +140,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
      * @param buildChildren results from building the children
      * This does nothing by default and can be overridden if needed.
      */ 
-   def buildDir(a: Archive, bd: BuildDir, builtChildren: List[BuildTask]) {}
+   def buildDir(a: Archive, bd: BuildTask, builtChildren: List[BuildTask]) {}
    
    /** entry point for recursive building */
    def build(a: Archive, args: List[String], in: List[String] = Nil) {
@@ -157,7 +156,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
        a.traverse[BuildTask](inDim, in, includeFile) ({case Current(inFile,inPath) =>
            val outFile = outPath(a, inPath)
            log(prefix + inFile + " -> " + outFile)
-           val bf = new BuildFile(inFile, inPath, DPath(a.narrationBase / inPath), outFile)
+           val bf = new BuildTask(inFile, false, inPath, a.narrationBase, outFile)
            buildFile(a, bf)
            errorMap(inPath) = bf.errors
            if (! bf.errors.isEmpty) {
@@ -169,7 +168,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
        }, {
           case (Current(inDir, inPath), builtChildren) =>
              val outFile = folderOutPath(a, inPath)
-             val bd = new BuildDir(inDir, inPath, outFile) 
+             val bd = new BuildTask(inDir, true, inPath, a.narrationBase, outFile) 
              buildDir(a, bd, builtChildren)
              bd
        })
@@ -221,7 +220,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
        }, {case (c @ Current(inDir, inPath), childChanged) =>
           if (childChanged.exists(_ == true)) {
              val outFile = folderOutPath(a, inPath)
-             val bd = new BuildDir(inDir, inPath, outFile) 
+             val bd = new BuildTask(inDir, true, inPath, a.narrationBase, outFile) 
              buildDir(a, bd, Nil) // TODO pass proper builtChildren
              false
           } else

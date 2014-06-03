@@ -15,8 +15,8 @@ class MMTCompiler extends archives.Importer {
 
   def includeFile(n: String) : Boolean = n.endsWith(".mmt") || n.endsWith(".elf")
     
-  def buildOne(bf: archives.BuildFile, seCont: documents.Document => Unit) {
-    val (doc, strucErrors) = controller.read(bf.inFile, Some(bf.dpath))
+  def buildOne(bf: archives.BuildTask, seCont: documents.Document => Unit) {
+    val (doc, strucErrors) = controller.read(bf.inFile, Some(bf.narrationDPath))
     val invErrors = controller.checker(doc)
     bf.errors = strucErrors ::: invErrors
     seCont(doc)

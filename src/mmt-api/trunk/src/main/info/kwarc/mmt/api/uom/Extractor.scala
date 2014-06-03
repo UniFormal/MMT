@@ -56,7 +56,6 @@ import GenericScalaExporter._
 
 class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path) {
    val key = "scala_om"
-   val outDim = Dim("export", "scala", "om")
    override val outExt = "scala"
    override protected val folderName = "NAMESPACE"
    
@@ -261,14 +260,14 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
      rh.writeln(s"object ${nameToScala(v.name)} extends ${nameToScala(v.name)}\n")
    }
    
-   def exportNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
       val pack = dpathToScala(dpath)
       rh.writeln("//Source file generated MMT\n")
       rh.writeln(s"package $pack")
       rh.writeln("import info.kwarc.mmt.api.uom._\n\n")
       rh.writeln(s"object $folderName extends DocumentScala {\n")
-      modules foreach {case (_, mp) =>
-         controller.globalLookup.getModule(mp) match {
+      modules foreach {bt =>
+         controller.globalLookup.getModule(bt.contentMPath) match {
             case m: DeclaredTheory =>
                val p = s"$pack.${nameToScala(m.name)}"
                rh.writeln(s"  addTheory($p)")
@@ -278,8 +277,8 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
             case _ =>
          }
       }
-      namespaces foreach {case (_, dp) =>
-         val p = dpathToScala(dp)
+      namespaces foreach {bt =>
+         val p = dpathToScala(bt.contentDPath)
          rh.writeln(s"  addDocument($p.$folderName)")
       }
       rh.writeln("}")

@@ -199,20 +199,20 @@ trait HTMLPresenter extends Presenter {
       }
    }
    def doView(v: DeclaredView) {}
-   override def exportNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+   override def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
       doHTMLOrNot(dpath, true) {div("namespace") {
-         namespaces.foreach {case (bd, dp) =>
+         namespaces.foreach {case bd =>
             div("subnamespace") {
                val name = bd.dirName + "/" + bd.outFile.segments.last
                a(name) {
-                  text(dp.toPath)
+                  text(bd.contentDPath.toPath)
                }
             }
          }
-         modules.foreach {case (bf, mp) =>
+         modules.foreach {case bf =>
             div("submodule") {
                a(bf.outFile.segments.last) {
-                  text(mp.toPath)
+                  text(bf.contentMPath.toPath)
                }
             }
          }
@@ -244,13 +244,11 @@ trait HTMLPresenter extends Presenter {
 
 class HTMLExporter extends HTMLPresenter {
   val key = "html"
-  val outDim = Dim("export", "html")
 }
 
 
 class MMTDocExporter extends HTMLPresenter {
   val key = "mmtdoc"
-  val outDim = Dim("export", "mmtdoc")
   import htmlRh._
 
   override def doDocument(doc: Document) {

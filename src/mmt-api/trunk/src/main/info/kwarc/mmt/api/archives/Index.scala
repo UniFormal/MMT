@@ -27,13 +27,13 @@ abstract class Importer extends TraversingBuildTarget {
     *  @param information about the input document and error reporting
     *  @param seCont a continuation function to be called on every generated document
     */
-   def buildOne(bf: BuildFile, seCont: Document => Unit)
+   def buildOne(bf: BuildTask, seCont: Document => Unit)
 
-   def buildFile(a: Archive, bf: BuildFile) {
+   def buildFile(a: Archive, bf: BuildTask) {
       buildOne(bf, doc => indexDocument(a, doc, bf.inPath))
    }
    
-   override def buildDir(a: Archive, bd: BuildDir, builtChildren: List[BuildTask]) {
+   override def buildDir(a: Archive, bd: BuildTask, builtChildren: List[BuildTask]) {
       bd.outFile.toJava.getParentFile().mkdirs()
       val doc = controller.get(DPath(a.narrationBase / bd.inPath)).asInstanceOf[Document]
       val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
@@ -100,9 +100,9 @@ abstract class StringBasedImporter extends Importer {
    /** the main abstract method to import a document given by its content */
    def importOne(base: DPath, input: String, seCont: Document => Unit)
 
-   def buildOne(bf: BuildFile, seCont: Document => Unit) {
+   def buildOne(bf: BuildTask, seCont: Document => Unit) {
       val input = utils.File.read(bf.inFile)
-      importOne(bf.dpath, input, seCont)
+      importOne(bf.narrationDPath, input, seCont)
    }
 }
 
@@ -122,8 +122,8 @@ class OMDocImporter extends Importer {
       }
    }
    
-   def buildOne(bf: BuildFile, seCont: Document => Unit) = {
-      val (doc,_) = controller.read(bf.inFile, Some(bf.dpath))
+   def buildOne(bf: BuildTask, seCont: Document => Unit) = {
+      val (doc,_) = controller.read(bf.inFile, Some(bf.narrationDPath))
       seCont(doc)
    }
 }

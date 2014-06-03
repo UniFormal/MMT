@@ -8,15 +8,24 @@ import documents._
 import frontend._
 
 trait Exporter extends BuildTarget { self => 
-   /** must be set correctly before any of the abstract methods are called */
+   /** must be set by deriving classes to direct output, not necessary if outputTo is used */
    protected var _rh: RenderingHandler = null
-   /** @return the RenderingHandler to which all produced output must be sent */ 
-   protected def rh = _rh 
-   
-   val outDim: Dim
-   
-   protected val folderName = ""
-   
+   /**
+    * sends output to a certain file, file is created new and deleted if empty afterwards
+    * @param out the output file to be used while executing body
+    * @param body any code that produces output
+    */
+   protected def outputTo(out: File)(body: => Unit) {
+      val fw = new presentation.FileWriter(out) 
+      _rh = fw
+      body
+      fw.done
+      if (out.toJava.length == 0)
+         out.toJava.delete
+   }
+   /** gives access to the RenderingHandler for sending output */
+   protected def rh = _rh
+
    override def init(controller: Controller) {
      this.controller = controller
      report = controller.report
@@ -24,27 +33,22 @@ trait Exporter extends BuildTarget { self =>
      narrationExporter.init(controller)
    }  
      
-   /** the file extension used for generated files, defaults to outDim, override as needed */
-   def outExt: String = outDim match {
-      case Dim(path@_*) => path.last
-      case d => d.toString
-   }
-   
-   /** applied to each leaf document (i.e., .omdoc file) */
+   /** applied to each document (i.e., narration-folders and .omdoc files) */
    def exportDocument(doc : Document, bf: BuildTask)
    
    /** applied to each theory */
-   def exportTheory(thy : DeclaredTheory, bf: BuildFile)
+   def exportTheory(thy : DeclaredTheory, bf: BuildTask)
+   
    /** applied to each view */
-   def exportView(view : DeclaredView, bf: BuildFile)
+   def exportView(view : DeclaredView, bf: BuildTask)
+   
    /** applied to every namespace
     *  @param dpath the namespace
     *  @param namespaces the sub-namespace in this namespace
     *  @param modules the modules in this namespace
     */
-   def exportNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)])
+   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask])
   
-   
    def build (a: Archive, args: List[String], in: List[String]) {
      contentExporter.build(a, args, in)
      narrationExporter.build(a, args, in)
@@ -65,85 +69,68 @@ trait Exporter extends BuildTarget { self =>
      narrationExporter.register(arch)
    }
    
-   /** closes the FileWriter and removes the file if it is empty */
-   private def done(rh: RenderingHandler) {
-      rh.done
-      rh match {
-         case fw: presentation.FileWriter => 
-            if (fw.filename.toJava.length == 0)
-               fw.filename.toJava.delete
-         case _ =>
-      }
+   /** the file name for files representing folders, defaults to "", override as needed */
+   protected def folderName = ""
+   /** the file extension used for generated files, defaults to key, override as needed */
+   protected def outExt = key
+   
+   /** the common properties of the content and the narration exporter */
+   private trait ExportInfo extends TraversingBuildTarget {
+      def key = self.key + "_" + inDim.toString
+      def includeFile(name: String) = name.endsWith(".omdoc")
+      def outDim: Dim = Dim("export", self.key, inDim.toString)
+      override def outExt = self.outExt
+      override protected val folderName = self.folderName
    }
    
-   /** A BuildTarget that traverses the content dimension and applies continuation functions to each module.
-    *
-    *  Deriving this class is well-suited for writing exporters that transform MMT content into other formats.
+   /**
+    * A BuildTarget that traverses the content dimension and applies continuation functions to each module.
     */
-   private lazy val contentExporter = new TraversingBuildTarget {
+   private lazy val contentExporter = new TraversingBuildTarget with ExportInfo {
       val inDim = content
-      val outDim = self.outDim / "content"
-      
-      override val outExt = self.outExt
-      
-      override val folderName = self.folderName
-      
-      def key = self.key + "_content"
-      def buildFile(a: Archive, bf: BuildFile) {
-        val mp = Archive.ContentPathToMMTPath(bf.inPath)
-        val mod = controller.globalLookup.getModule(mp)
-        _rh = new presentation.FileWriter(bf.outFile)
-        mod match {
-          case t: DeclaredTheory =>
-            exportTheory(t, bf)
-          case v: DeclaredView =>
-            exportView(v, bf)
-          case _ =>
-        }
-        done(_rh)
+      def buildFile(a: Archive, bf: BuildTask) {
+         val mp = Archive.ContentPathToMMTPath(bf.inPath)
+         val mod = controller.globalLookup.getModule(mp)
+         outputTo(bf.outFile) {
+            mod match {
+               case t: DeclaredTheory =>
+                  exportTheory(t, bf)
+               case v: DeclaredView =>
+                  exportView(v, bf)
+               case _ =>
+            }
+         }
       }
       
-      override def buildDir(a: Archive, bd: BuildDir, builtChildren: List[BuildTask]) = {
+      override def buildDir(a: Archive, bd: BuildTask, builtChildren: List[BuildTask]) = {
         val dp = Archive.ContentPathToDPath(bd.inPath)
-        val nss = builtChildren flatMap {
-          case d: BuildDir if ! d.skipped => List((d, Archive.ContentPathToDPath(d.inPath)))
-          case _ => Nil
+        val (nss,mps) = builtChildren.filter(! _.skipped).partition(_.isDir)
+        outputTo(bd.outFile) {
+           exportNamespace(dp, bd, nss, mps)
         }
-        val mps = builtChildren flatMap {
-          case f: BuildFile if ! f.skipped => List((f, Archive.ContentPathToMMTPath(f.inPath)))
-          case _ => Nil
-        }
-        _rh = new presentation.FileWriter(bd.outFile)
-        exportNamespace(dp, bd, nss, mps)
-        done(_rh)
       }
-      
-      def includeFile(name: String) = self.includeFile(name)
    }
    
-   /** A BuildTarget that traverses the content dimension and applies continuation functions to each module.
-    *
-    *  Deriving this class is well-suited for writing exporters that transform MMT content into other formats.
+   /**
+    * A BuildTarget that traverses the content dimension and applies continuation functions to each module.
     */
-   private lazy val narrationExporter = new TraversingBuildTarget {
+   private lazy val narrationExporter = new TraversingBuildTarget with ExportInfo {
       val inDim = narration
-      val outDim = self.outDim / "narration"
-      
-      override  val outExt = self.outExt
-      override val folderName = self.folderName
-      
-      def key = self.key + "_narration"
 
-      def buildFile(a: Archive, bf: BuildFile) = {
-        val doc = controller.getDocument(bf.dpath)
-        _rh = new presentation.FileWriter(bf.outFile)
-        exportDocument(doc, bf)
-        done(_rh)
+      def buildFile(a: Archive, bf: BuildTask) = {
+        val doc = controller.getDocument(bf.narrationDPath)
+        outputTo(bf.outFile) {
+           exportDocument(doc, bf)
+        }
       }
-      def includeFile(name : String) = self.includeFile(name)
+
+      override def buildDir(a: Archive, bd: BuildTask, builtChildren: List[BuildTask]) = {
+        val doc = controller.getDocument(DPath(a.narrationBase / bd.inPath))
+        outputTo(bd.outFile) {
+           exportDocument(doc, bd)
+        }
+      }
    }
-   
-   def includeFile(name: String) = name.endsWith(".omdoc")
 }
 
 trait IndentedExporter extends Exporter {
@@ -172,13 +159,13 @@ abstract class FoundedExporter(meta: MPath, found: MPath) extends Exporter {
    protected def covered(m: MPath): Boolean = {
       objects.TheoryExp.metas(objects.OMMOD(m))(controller.globalLookup) contains meta
    }
-   def exportTheory(t: DeclaredTheory, bf: BuildFile) {
+   def exportTheory(t: DeclaredTheory, bf: BuildTask) {
       if (covered(t.path))
          exportCoveredTheory(t)
       else
          bf.skipped = true
    }
-   def exportView(v: DeclaredView, bf: BuildFile) {
+   def exportView(v: DeclaredView, bf: BuildTask) {
       if (covered(v.from.toMPath)) {
          val to = v.to.toMPath
          if (to == found)

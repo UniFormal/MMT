@@ -183,6 +183,16 @@ object TheoryExp {
          body.getDomain
    }
   
+   /** all directly imported named theories */
+   def getSupport(t: Term): List[MPath] = t match {
+      case OMMOD(p) => List(p)
+      case ComplexTheory(cont) => cont.variables.toList.flatMap {
+         case StructureVarDecl(_,from,_) => List(from)
+         case _ => Nil
+      }
+      case TUnion(ts) => (ts flatMap getSupport).distinct
+   }
+   
    /** checks whether "from" is included into "to", relative to a base function that handles the case where both theory expressions are atomic */
    def imports(from: Term, to: Term)(implicit atomic: (MPath,MPath) => Boolean) : Boolean = {
       if (from == to) true else (from, to) match {
