@@ -65,7 +65,7 @@ class Twelf extends Importer {
      * @param dpath unused (could be passed to Twelf as the default namespace in the future)
      * @param out the file in which to put the generated OMDoc
      */
-   def buildOne(bf: BuildFile, seCont: documents.Document => Unit) = {
+   def buildOne(bf: BuildTask, seCont: documents.Document => Unit) = {
       File(bf.outFile.getParent).mkdirs
       val procBuilder = new java.lang.ProcessBuilder(path.toString)
       procBuilder.redirectErrorStream()
@@ -96,7 +96,7 @@ class Twelf extends Importer {
          }
       }
       bf.errors = bf.errors.reverse
-      val (doc,_) = controller.read(outFile, Some(bf.dpath))
+      val (doc,_) = controller.read(outFile, Some(bf.narrationDPath))
       seCont(doc)
    }
    
@@ -105,7 +105,7 @@ class Twelf extends Importer {
      val inFileName = tmp / "in.elf"
      val outFileName = tmp / "out.omdoc"
      utils.File.write(inFileName,inText)
-     val bf = new archives.BuildFile(File(inFileName), List("string"), dpath, File(outFileName))
+     val bf = new archives.BuildTask(File(inFileName), false, List("string"), dpath.uri, File(outFileName))
      buildOne(bf, doc => ())
      val lines = utils.File.read(outFileName)
      (lines, bf.errors)

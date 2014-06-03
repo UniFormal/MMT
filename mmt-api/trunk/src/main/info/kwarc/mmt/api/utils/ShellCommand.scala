@@ -5,7 +5,7 @@ object ShellCommand {
     * @param command the commnd to run
     * @return error message if not successful
     */
-   def run(command: List[String]): Option[String] = {
+   def run(command: String*): Option[String] = {
       val proc = new java.lang.ProcessBuilder(command: _*).start() // use .inheritIO() for debugging
       proc.waitFor
       val ev = proc.exitValue

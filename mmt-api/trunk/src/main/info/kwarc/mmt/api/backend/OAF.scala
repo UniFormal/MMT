@@ -14,7 +14,7 @@ class OAF(root: File, val report: Report) extends Logger {
    private def git(args: String*): Boolean = {
       val command = gitPath :: args.toList
       log(command.mkString(" "))
-      val result = ShellCommand.run(command)
+      val result = ShellCommand.run(command :_*)
       result match {
          case Some(m) =>
             report("error", m)
