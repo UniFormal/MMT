@@ -34,7 +34,7 @@ class LatexExporter extends Exporter {
          var res = doConstantName(p)
          //TODO group arguments and variables into ,-separated sequences
          subs.foreach {case Sub(l,t) => res += "{\\mmtlabel{" + l.toPath + "}{" + doTerm(t) + "}"}
-         con.variables.foreach {case VarDecl(n, tp, df) =>
+         con.variables.foreach {case VarDecl(n, tp, df, _) =>
             val nL = n.toPath
             val tpL = tp match {
                case None => "{}"
@@ -77,7 +77,7 @@ class LatexExporter extends Exporter {
       }.mkString("")
    }
    private def doM(m: Marker): String = doMarkers(List(m))
-   private def requirePackage(p: MPath, bf: BuildFile): String = {
+   private def requirePackage(p: MPath, bf: BuildTask): String = {
       controller.backend.findOwningArchive(p) match {
          case None => "% skipping import of unknown module " + p.toPath
          case Some(a) =>
@@ -87,7 +87,7 @@ class LatexExporter extends Exporter {
             s"\\RequirePackage{\\currfiledir $relSty}"
       }
    }
-   def exportTheory(t: DeclaredTheory, bf: BuildFile) {
+   def exportTheory(t: DeclaredTheory, bf: BuildTask) {
       val styFile = utils.File.Writer(bf.outFile.setExtension("sty"))
       def sty(s: String) = styFile.println(s)
       def tex(s: String) = rh.writeln(s)
@@ -134,10 +134,10 @@ class LatexExporter extends Exporter {
       tex("\\end{document}")
       styFile.close
    }
-   def exportView(v: DeclaredView, bf: BuildFile) {
+   def exportView(v: DeclaredView, bf: BuildTask) {
       rh("%% view omitted")
    }
-   def exportNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
       rh("%% namespace omitted")
    }
    def exportDocument(doc : Document, bf:BuildTask) {}

@@ -1,14 +1,15 @@
 package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import documents._
+import modules._
 import ontology._
 import utils._
 
-class GraphViz extends TraversingBuildTarget {
-   val inDim = narration
-   val key = "narration-svg"
-   val outDim = Dim("export","svg")
-   def includeFile(name: String) : Boolean = name.endsWith(".omdoc")
+/**
+ * uses [[ontology.GraphExporter]] to produce a dot file and then calls dot to produce an svg file
+ */
+class GraphViz extends Exporter {
+   val key = "svg"
    
    private var tg : ontology.TheoryGraph = null
    private var graphviz: String = null
@@ -23,26 +24,33 @@ class GraphViz extends TraversingBuildTarget {
       }
    }
    
-   /** creates dot file and calls graphviz on it to produce svg file
-    *
-    *  the resulting theory graph contains all modules declared anywhere in this document  
-    */
-   def buildFile(a: Archive, bf: BuildFile) = {
-      val theories = controller.depstore.querySet(bf.dpath, Transitive(+Declares) * HasType(IsTheory))
-      val views = controller.depstore.querySet(bf.dpath, Transitive(+Declares) * HasType(IsView))
-      val dotFile = bf.outFile.setExtension("dot")
+   /** contains at least all elements of the document */
+   def exportDocument(doc : Document, bf: BuildTask) {
+      val theories = controller.depstore.querySet(doc.path, Transitive(+Declares) * HasType(IsTheory))
+      val views = controller.depstore.querySet(doc.path, Transitive(+Declares) * HasType(IsView))
+      produceGraph(theories, views, bf)
+   }
+   /** contains at least the theory */
+   def exportTheory(thy : DeclaredTheory, bf: BuildTask) {
+      produceGraph(List(thy.path), Nil, bf)
+   }
+   /** contains at least domain, codomain, and view */
+   def exportView(view : DeclaredView, bf: BuildTask) {
+      val theories = List(view.from,view.to).flatMap(objects.TheoryExp.getSupport)
+      produceGraph(theories, List(view.path), bf)
+   }
+   /** nothing for now */
+   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
+
+   private def produceGraph(theories: Iterable[Path], views: Iterable[Path], bt: BuildTask) {
+      val dotFile = bt.outFile.setExtension("dot")
       val gv = new ontology.GraphExporter(theories, views, tg)
       gv.exportDot(dotFile)
-      val command : List[String] = List("" + graphviz + "", "-Tsvg", "-o" + bf.outFile, dotFile.toString)
-      log(command.mkString(" "))
-      val proc = new java.lang.ProcessBuilder(command: _*).start() // use .inheritIO() for debugging
-      proc.waitFor
-      val ev = proc.exitValue
-      if (ev != 0) {
-         val scanner = new java.util.Scanner(proc.getErrorStream).useDelimiter("\\A")
-         val message = if (scanner.hasNext) scanner.next else ""
-         bf.errors ::= LocalError(message)
-      }
+      val result = ShellCommand.run(graphviz, "-Tsvg", "-o" + bt.outFile, dotFile.toString)
+      result foreach {m => bt.errors ::= LocalError(m)}
+   }
+   
+/*   def buildFile(a: Archive, bf: BuildFile) = {
    }
    
    /** same as buildOne but for the document given by the directory */
@@ -50,5 +58,5 @@ class GraphViz extends TraversingBuildTarget {
       val bf = new BuildFile(bd.inFile, bd.inPath, DPath(a.narrationBase / bd.inPath), bd.outFile)
       buildFile(a,bf)
       bd.errors = bf.errors
-   }
+   }*/
 }

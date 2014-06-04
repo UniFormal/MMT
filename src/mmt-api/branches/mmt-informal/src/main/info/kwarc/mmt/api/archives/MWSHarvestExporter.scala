@@ -20,7 +20,7 @@ class MWSHarvestExporter extends Exporter {
   override val outExt = "harvest"
 
     
-  def exportTheory(t: DeclaredTheory, bf: BuildFile) { 
+  def exportTheory(t: DeclaredTheory, bf: BuildTask) { 
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
      def narrToCML(n : NarrativeObject) : List[scala.xml.Node] = n match {
@@ -47,11 +47,11 @@ class MWSHarvestExporter extends Exporter {
     rh("</mws:harvest>\n")
   }
   
-  def exportView(v: DeclaredView, bf: BuildFile) { 
+  def exportView(v: DeclaredView, bf: BuildTask) { 
     //excluding expressions from views for now
   }
   
-  def exportNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
     //Nothing to do - MathML in namespaces
   }
 
@@ -135,7 +135,7 @@ class ModuleFlatener(controller : Controller) {
     case c : Constant =>
       val newtpC = TermContainer(c.tp.map(rewrite))
       val newdfC = TermContainer(c.df.map(rewrite))
-      new Constant(c.home, c.name, c.alias, newtpC, newdfC, c.rl, c.notC)
+      new FinalConstant(c.home, c.name, c.alias, newtpC, newdfC, c.rl, c.notC)
     case x => x
   }
   
@@ -150,7 +150,7 @@ class ModuleFlatener(controller : Controller) {
    
   private def rewrite(con : Context)(implicit rules : HashMap[Path, Term]) : Context = {
     val vars = con.variables map {
-      case VarDecl(n, tp, df) => VarDecl(n, tp.map(rewrite), df.map(rewrite))
+      case VarDecl(n, tp, df, not) => VarDecl(n, tp.map(rewrite), df.map(rewrite), not)
     }
     Context(vars : _*)
   }
@@ -162,16 +162,16 @@ class FlattenningExporter extends Exporter {
   val key = "mws-flat-harvest"
   override val outExt = "harvest"
   
-  def exportTheory(t : DeclaredTheory, bf : BuildFile) {
+  def exportTheory(t : DeclaredTheory, bd : BuildTask) {
     
     
     
   }
-    def exportView(v: DeclaredView, bf: BuildFile) { 
+    def exportView(v: DeclaredView, bd: BuildTask) { 
     //excluding expressions from views for now
   }
   
-  def exportNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
     //Nothing to do - MathML in namespaces
   }
   
@@ -196,7 +196,7 @@ class FlattenningExporter extends Exporter {
 class MathWebSearch(url: java.net.URL) {
    val qvarBinder = utils.mmt.mmtcd ? "qvar"
    private val qvarMarkers = List(Delim("$"), Var(1, false, Some(Delim(","))), Delim(":"), Arg(2))
-   val qvarNot = new TextNotation(qvarBinder, Mixfix(qvarMarkers), presentation.Precedence.infinite, None)
+   val qvarNot = new TextNotation(Mixfix(qvarMarkers), presentation.Precedence.infinite, None)
 
    private def queryToXML(query: MathWebSearchQuery) = {
       val queryCML = query.term match {

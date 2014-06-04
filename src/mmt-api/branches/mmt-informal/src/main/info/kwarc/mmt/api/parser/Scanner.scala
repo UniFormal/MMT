@@ -5,7 +5,7 @@ import utils.MyList._
 
 import scala.annotation.tailrec
 
-case class Ambiguous(notations: List[TextNotation]) extends {
+case class Ambiguous(notations: List[ParsingRule]) extends {
    val message = "multiple notations apply: " + notations.map(_.toString).mkString(",")
 } with Error(message)
 
@@ -25,11 +25,11 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
       "token list: " + tl + "\n" +
       "scanner: shifted " + numCurrentTokens.toString + "\n" +
       (active.reverseMap {an =>
-          "\t" + an.notation.name + ": " + an.getFound.mkString("", " ", "") + ", shifted: " + an.numCurrentTokens
+          "\t" + an.rule.name + ": " + an.getFound.mkString("", " ", "") + ", shifted: " + an.numCurrentTokens
       } mkString("", "\n", "") )
    }
    /** the notations to scan for */
-   private var notations: List[TextNotation] = Nil
+   private var notations: List[ParsingRule] = Nil
    /** the number of Token's currently in tl */
    private var numTokens = tl.length
    def length = numTokens
@@ -235,7 +235,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                   val openable = notations flatMap {not =>
                      val delim = not.firstDelimString
                      val m = delim.isDefined && ActiveNotation.matches(delim.get, currentToken.word, futureTokens)
-                     val openArgs = not.openArgs(false)
+                     val openArgs = not.notation.openArgs(false)
                      // n is true iff there are enough tokens shifted for not to pick from the left
                      val n = openArgs == 0 || {
                         val availableTokens = active match {
@@ -257,7 +257,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
                      case (hd,_) :: Nil =>
                         //open the notation and apply it
                         log("opening notation at " + currentToken)
-                        if (hd.isLeftOpen) {
+                        if (hd.notation.isLeftOpen) {
                            /* at this point, all active notations are right-open
                             * thus, opening a left-open notation, leads to the ambiguity of association, e.g.,
                             * there is no unique reading for a-b+c
@@ -302,7 +302,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
    /** scans for some notations and applies matches to tl
     * @param nots the notations to scan for
     */
-   def scan(nots: List[TextNotation]) {
+   def scan(nots: List[ParsingRule]) {
       log("scanning " + tl + " with notations " + nots.mkString(","))
       notations = nots
       currentIndex = 0

@@ -71,6 +71,9 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
          t
       // this term was simplified before resulting in tS
       case SimplificationResult(tS) => tS
+      case OMM(t, mor) =>
+         val tM = controller.globalLookup.ApplyMorphs(t, mor)
+         traverse(tM)
       case OMA(OMS(_), _) =>
          log("simplifying " + controller.presenter.asString(t))
          logGroup {
@@ -91,7 +94,7 @@ class UOM(controller: frontend.Controller) extends Traverser[UOMState] with fron
       case OMS(p) =>
          rs.abbrevRules(p).headOption match {
            case Some(ar) => ar.term.from(t)
-           case None => t
+           case None => Simple(t)
          }
       case _ =>
          val tS = Simple(Traverser(this, t))

@@ -28,7 +28,7 @@ trait ClientProperties {
    lazy val clientProperty = new ListMap[URI, Any]
 }
 
-/** convenience to create get and put methods for objects ClientProperties
+/** convenience to create get and put methods for objects with ClientProperties
  *  @param property the client property for which to generate get and put methods
  */
 class TermProperty[A](val property: utils.URI) {
@@ -127,7 +127,6 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
 sealed abstract class Term extends Obj {
    final type ThisType = Term
    def strip : Term = this
-   /** optimized to call substitution only if a free variable is substituted with a term other than itself */
    /** morphism application (written postfix), maps OMHID to OMHID */
    def *(that : Term) : Term = OMM(this, that)
    /** permits the intuitive f(t_1,...,t_n) syntax for term applications */
@@ -240,30 +239,6 @@ object OMBIND {
 }
 
 /**
- * An OMM represents a morphism application to a term
- * @param arg the argument term
- * @param via the applied morphism
- */
-case class OMM(arg : Term, via : Term) extends Term {
-   val path = mmt.morphismapplication
-   def args = List(arg,via)
-   def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMM(arg ^^ sub, via ^^ sub).from(this)
-   private[objects] def freeVars_ = arg.freeVars_ ::: via.freeVars_
-   def components = OMID(path) :: args
-   def children = args
-   def head = Some(path)
-   def role = Role_application(None)
-   def toNode =
-      if (args.isEmpty) OMID(path).toNode
-      else
-      <om:OMA>{mdNode}{components.zipWithIndex.map({case (m,i) => m.toNode})}
-      </om:OMA>
-   def toCMLQVars(implicit qvars: Context) = 
-     if (args.isEmpty) <csymbol>{path.toPath}</csymbol>
-     else <apply>{components.zipWithIndex.map({case (m,i) => m.toCMLQVars})}</apply> 
-}
-
-/**
  * An OMA represents an application of a term to a list of terms
  * @param fun the function term
  * @param args the list of argument terms (may be Nil)
@@ -306,7 +281,7 @@ case class OMV(name : LocalName) extends Term {
    def /(s : Term) = Sub(name, s)
    def ->(s: Term) = Sub(name, s)
    /** the declaration this:tp */
-   def %(tp : Term) = VarDecl(name, Some(tp), None)
+   def %(tp : Term) = VarDecl(name, Some(tp), None, None)
    def toNode = <om:OMV name={name.toPath}>{mdNode}</om:OMV>
    override def toString = name.toString
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = 
@@ -531,10 +506,6 @@ object Obj {
             }
          case <OMV/> =>
             OMV(LocalName.parse(xml.attr(N,"name")))
-         case <OMA>{child @ _*}</OMA> if child.length == 3 && child.head.label == "OMS" && parseOMS(child.head, base) == mmt.morphismapplication =>
-            val arg = parseTerm(child(1), nbase)
-            val morph = parseTerm(child(2), nbase)
-            OMM(arg, morph)
          case <OMA>{child @ _*}</OMA> =>
             if (child.length == 0)
                throw ParseError("No operator given: " + N.toString)

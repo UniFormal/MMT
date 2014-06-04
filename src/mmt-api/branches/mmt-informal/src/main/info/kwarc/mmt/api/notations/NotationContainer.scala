@@ -65,18 +65,6 @@ class NotationContainer extends ComponentContainer {
    def presentation = presentationDim.default
    def verbalization = verbalizationDim.default
    
-   /*
-   def parsing_=(tn: Option[TextNotation]) {
-      _parsing.not = tn
-   }
-   def presentation_=(tn: Option[TextNotation]) {
-      _presentation.not = tn
-   }
-   def verbalization_=(tn: Option[TextNotation]) {
-      _verbalization.not = tn
-   }
-   */
-   
    /** get the notation for a certain component */
    def apply(c: NotationComponent) = c match {
       case ParsingNotationComponent => parsing
@@ -89,7 +77,7 @@ class NotationContainer extends ComponentContainer {
       case PresentationNotationComponent => presentationDim.set(tn)
       case VerbalizationNotationComponent => verbalizationDim.set(tn)
    }}
-   /** set all notations */
+   /** update all notations using the values of a different container */
    def update(c: ComponentContainer) {c match {
       case nc: NotationContainer =>
          parsingDim.update(nc.parsingDim)
@@ -111,6 +99,7 @@ class NotationContainer extends ComponentContainer {
    def getPresent: Option[TextNotation] = presentation orElse parsing orElse verbalization
    /** @return an appropriate notation for parsing, if any */
    def getParse  : Option[TextNotation] = parsing
+   /** @return an appropriate notation for verbalization, if any */
    def getVerbal : Option[TextNotation] = verbalization orElse presentation orElse parsing
    def getAllNotations : List[TextNotation] = {
      List(parsingDim.notations.values.flatten, 
@@ -120,22 +109,22 @@ class NotationContainer extends ComponentContainer {
    }
    def toNode = {
       val n1 = parsingDim.notations.values.flatten map {
-         case n if ! n.isGenerated => 
+         case n if ! metadata.Generated(n) => 
            utils.xml.addAttr(n.toNode, "dimension", "1")
          case _ => Nil
       }
       val n2 = presentationDim.notations.values.flatten map {
-         case n if ! n.isGenerated => 
+         case n if ! metadata.Generated(n) => 
            utils.xml.addAttr(n.toNode, "dimension", "2")
          case _ => Nil
       }
       val n3 = verbalizationDim.notations.values.flatten map {
-         case n if ! n.isGenerated => 
+         case n if ! metadata.Generated(n) => 
            utils.xml.addAttr(n.toNode, "dimension", "3")
          case _ => Nil
       }
       if (parsingDim.isDefined || presentationDim.isDefined || verbalizationDim.isDefined)
-         <notation>{n1}{n2}{n3}</notation>
+         <notations>{n1}{n2}{n3}</notations>
       else
          Nil
    }
@@ -155,11 +144,12 @@ class NotationContainer extends ComponentContainer {
 
 object NotationContainer {
    def apply(): NotationContainer = new NotationContainer
-   def apply(tn: TextNotation): NotationContainer = {
+   def apply(tnOpt: Option[TextNotation]): NotationContainer = {
       val nc = apply()
-      nc.parsingDim.set(tn)
+      tnOpt foreach {tn => nc.parsingDim.set(tn)}
       nc
    }
+   def apply(tn: TextNotation): NotationContainer = apply(Some(tn))
    def apply(tn: TextNotation, tn2: TextNotation): NotationContainer = {
       val nc = apply(tn)
       nc.presentationDim.set(tn2)

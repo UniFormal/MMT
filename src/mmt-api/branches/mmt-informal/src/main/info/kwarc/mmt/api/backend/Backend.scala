@@ -20,8 +20,8 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil
 
 case class NotApplicable(message: String = "") extends java.lang.Throwable
 
-/** Storage is an abstraction over backends that can provide MMT content
- * A storage declares a URI u and must answer to all URIs that start with u.
+/**
+ * An abstraction over physical storage units that hold MMT content
  */
 abstract class Storage {
    protected def loadXML(u: URI, n:NodeSeq)(implicit controller: Controller) {
@@ -38,8 +38,10 @@ abstract class Storage {
    protected def virtDoc(entries : List[String], prefix : String) =
       <omdoc>{entries.map(n => <dref target={prefix + n}/>)}</omdoc>
    
-   /** dereferences a path and sends the content to a reader
-    * a storage may send more content than the path references, e.g., the whole file or a dependency closure
+   /**
+    * dereferences a path and sends the content to a reader
+    * 
+    * a storage may send more/additional content, e.g., the containing file or a dependency closure,
     */
    def load(path : Path)(implicit controller: Controller)
 }
@@ -153,61 +155,56 @@ class RealizationArchive(file: File, val loader: java.net.URLClassLoader) extend
    }       
 }
 
-/** a Backend holds a list of Storages and uses them to dereference Paths */
+/**
+ * the backend of a [[Controller]]
+ * 
+ * holds a list of [[Storage]]s and uses them to dereference MMT URIs,
+ */
 class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend.Report) extends Logger {
+   /** the registered storages */
    private var stores : List[Storage] = Nil
    val logPrefix = "backend"
+   /** adds a Storgage */
    def addStore(s : Storage*) {
       stores = stores ::: s.toList
       s.foreach {d =>
          log("adding storage " + d.toString)
       }
    }
+   /** removes a Storage (if present) */
    def removeStore(s: Storage) {
       stores = stores.filter(_ != s)
       log("removing storage " + s.toString)
    }
-   
-   //this must be redesigned
-   def copyStorages(newRev : Int = -1) : List[Storage] = {
-     stores.map(s => s match {
-       case SVNRepo(sch, auth, pref, repo, rev) => new SVNRepo(sch,auth,pref, repo, newRev)
-       case _ => s
+   /** retrieves all Stores */
+   def getStores : List[Storage] = stores
+
+   /** releases all ressources held by storages */
+   def cleanup = {
+     stores.map(x => x match {
+       case SVNRepo(scheme,authority,prefix,repo, rev) => repo.closeSession() // closes all svn sessions
+       case _ => None
      })
    }
-  
-   def openArchive(url : String, rev : Int) : SVNArchive = {
-     log("opening archive at " + url + ":" + rev)
-     val repository = SVNRepositoryFactory.create( SVNURL.parseURIEncoded( url ) )
-     val authManager : ISVNAuthenticationManager = SVNWCUtil.createDefaultAuthenticationManager()
-     repository.setAuthenticationManager(authManager)
-     repository.checkPath(".", rev) match {
-       case SVNNodeKind.DIR =>
-         val properties = new scala.collection.mutable.ListMap[String, String]
-         val manifest = "META-INF/MANIFEST.MF"
-         repository.checkPath(manifest, rev) match {
-           case SVNNodeKind.FILE =>
-             val  baos : java.io.ByteArrayOutputStream = new java.io.ByteArrayOutputStream()
-             repository.getFile(manifest, rev, null, baos)
-             val lines = baos.toString().split("\n").map(_.trim).filterNot(line => line.startsWith("//") || line.isEmpty)
-             lines map { line =>
-               val p = line.indexOf(":")
-               val key = line.substring(0,p).trim
-               val value = line.substring(p+1).trim
-               properties(key) = value
-               //TODO handle catalog key
-             }
-             val arch = new SVNArchive(repository, properties, report, rev)
-             addStore(arch)
-             arch
-
-           case _ => throw NotApplicable()
-         }
-       case SVNNodeKind.FILE => throw NotApplicable() //TODO
-       case _ => throw NotApplicable()
-     }
+   
+   /**
+    * looks up a path in the first Storage that is applicable and sends the content to the reader
+    * the registered storages are searched in the order of registration
+    */
+   def load(p : Path)(implicit controller: Controller) = {
+      def getInList(l : List[Storage], p : Path) {l match {
+         case Nil => throw BackendError("no applicable backend available", p)
+         case hd :: tl =>
+            log("trying " + hd)
+             try {hd.load(p)}
+            catch {case NotApplicable(msg) =>
+               log(hd.toString + " not applicable to " + p + (if (msg != "") s" ($msg)" else ""))
+               getInList(tl, p)
+            }
+      }}
+      getInList(stores, p)
    }
-  
+   
    /** 
     * opens archives: an archive folder, or a mar file, or any other folder recursively
     * @param root the file/folder containing the archive(s)
@@ -264,65 +261,13 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
          Nil
       }
    }
+   /** unregisters an Archive with a given id */
    def closeArchive(id: String) {
       getArchive(id) foreach {arch =>
          removeStore(arch)
          removeStore(arch.narrationBackend)
       }
    }
-   
-   def openRealizationArchive(file: File) {
-       val loader = try {
-          val cl = getClass.getClassLoader // the class loader that loaded this class, may be null for bootstrap class loader
-          if (cl == null)
-             new java.net.URLClassLoader(Array(file.toURI.toURL)) // parent defaults to bootstrap class loader
-          else
-              // delegate to the class loader that loaded MMT - needed if classes to be loaded depend on MMT classes
-             new java.net.URLClassLoader(Array(file.toURI.toURL), cl)
-       } catch {
-          case _:Exception => 
-            logError("could not create class loader for " + file.toString)
-            return
-       }
-       val ra = new RealizationArchive(file, loader)
-       addStore(ra)
-   }
-   
-   private def extractMar(file: File, newRoot: File) {
-       log("unpacking archive " + file + " to " + newRoot)
-       val mar = new ZipFile(file)
-       var bytes = new Array[Byte](100000)
-       var len = -1
-       val enum = mar.entries
-       while (enum.hasMoreElements) {
-           val entry = enum.nextElement
-           val outFile = newRoot / entry.getName
-           outFile.getParentFile.mkdirs
-           if (! entry.isDirectory) {
-               val istream = mar.getInputStream(entry)
-               val ostream = new java.io.FileOutputStream(outFile)
-               while({len = istream.read(bytes, 0, bytes.size); len != -1 })
-               ostream.write(bytes, 0, len)
-               ostream.close
-               istream.close
-           }
-       }
-   }
-   /** look up a path in the first Storage that is applicable and send the content to the reader */
-   def load(p : Path)(implicit controller: Controller) = {
-      def getInList(l : List[Storage], p : Path) {l match {
-         case Nil => throw BackendError("no applicable backend available", p)
-         case hd :: tl =>
-            log("trying " + hd)
-      	    try {hd.load(p)}
-            catch {case NotApplicable(msg) =>
-               log(hd.toString + " not applicable to " + p + (if (msg != "") s" ($msg)" else ""))
-               getInList(tl, p)
-            }
-      }}
-      getInList(stores, p)
-   }
-   
    /** retrieve an Archive by its id */
    def getArchive(id: String) : Option[Archive] = stores mapFind {
       case a: Archive => if (a.properties.get("id") == Some(id)) Some(a) else None
@@ -333,9 +278,6 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
       case a: Archive => Some(a)
       case _ => None
    }
-   /** retrieves all Stores */
-   def getStores : List[Storage] = stores
-   
    /**
     * @param p a module URI
     * @return an archive defining it (the corresponding file exists in content dimension)
@@ -359,11 +301,85 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
         a => (a, segments.drop(a.root.segments.length + 1)) // + 1 to drop "source" directory
       }
    }
-   /** closes all svn sessions */
-   def cleanup = {
-     stores.map(x => x match {
-       case SVNRepo(scheme,authority,prefix,repo, rev) => repo.closeSession()
-       case _ => None
+   
+   /** creates and registers a RealizationArchive */
+   def openRealizationArchive(file: File) {
+       val loader = try {
+          val cl = getClass.getClassLoader // the class loader that loaded this class, may be null for bootstrap class loader
+          if (cl == null)
+             new java.net.URLClassLoader(Array(file.toURI.toURL)) // parent defaults to bootstrap class loader
+          else
+              // delegate to the class loader that loaded MMT - needed if classes to be loaded depend on MMT classes
+             new java.net.URLClassLoader(Array(file.toURI.toURL), cl)
+       } catch {
+          case _:Exception => 
+            logError("could not create class loader for " + file.toString)
+            return
+       }
+       val ra = new RealizationArchive(file, loader)
+       addStore(ra)
+   }
+   
+   //TODO this must be redesigned
+   def copyStorages(newRev : Int = -1) : List[Storage] = {
+     stores.map(s => s match {
+       case SVNRepo(sch, auth, pref, repo, rev) => new SVNRepo(sch,auth,pref, repo, newRev)
+       case _ => s
      })
+   }
+  
+   /** creates and registers an SVNArchive */
+   def openArchive(url : String, rev : Int) : SVNArchive = {
+     log("opening archive at " + url + ":" + rev)
+     val repository = SVNRepositoryFactory.create( SVNURL.parseURIEncoded( url ) )
+     val authManager : ISVNAuthenticationManager = SVNWCUtil.createDefaultAuthenticationManager()
+     repository.setAuthenticationManager(authManager)
+     repository.checkPath(".", rev) match {
+       case SVNNodeKind.DIR =>
+         val properties = new scala.collection.mutable.ListMap[String, String]
+         val manifest = "META-INF/MANIFEST.MF"
+         repository.checkPath(manifest, rev) match {
+           case SVNNodeKind.FILE =>
+             val  baos : java.io.ByteArrayOutputStream = new java.io.ByteArrayOutputStream()
+             repository.getFile(manifest, rev, null, baos)
+             val lines = baos.toString().split("\n").map(_.trim).filterNot(line => line.startsWith("//") || line.isEmpty)
+             lines map { line =>
+               val p = line.indexOf(":")
+               val key = line.substring(0,p).trim
+               val value = line.substring(p+1).trim
+               properties(key) = value
+               //TODO handle catalog key
+             }
+             val arch = new SVNArchive(repository, properties, report, rev)
+             addStore(arch)
+             arch
+
+           case _ => throw NotApplicable()
+         }
+       case SVNNodeKind.FILE => throw NotApplicable() //TODO
+       case _ => throw NotApplicable()
+     }
+   }
+   
+   /** auxiliary function of openArchive */
+   private def extractMar(file: File, newRoot: File) {
+       log("unpacking archive " + file + " to " + newRoot)
+       val mar = new ZipFile(file)
+       var bytes = new Array[Byte](100000)
+       var len = -1
+       val enum = mar.entries
+       while (enum.hasMoreElements) {
+           val entry = enum.nextElement
+           val outFile = newRoot / entry.getName
+           outFile.getParentFile.mkdirs
+           if (! entry.isDirectory) {
+               val istream = mar.getInputStream(entry)
+               val ostream = new java.io.FileOutputStream(outFile)
+               while({len = istream.read(bytes, 0, bytes.size); len != -1 })
+               ostream.write(bytes, 0, len)
+               ostream.close
+               istream.close
+           }
+       }
    }
 }

@@ -139,20 +139,20 @@ class FlexiformalPresenter extends Presenter {
    }
    
    def doView(v: DeclaredView) {}
-   override def exportNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+   override def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
      div("namespace") {
-        namespaces.foreach {case (bd, dp) =>
+        namespaces.foreach {bd =>
             div("subnamespace") {
                val name = bd.dirName + "/" + bd.outFile.segments.last
                a(name) {
-                  text(dp.toPath)
+                  text(bd.contentDPath.toPath)
                }
             }
          }
-         modules.foreach {case (bf, mp) =>
+         modules.foreach {bd =>
             div("submodule") {
-               a(bf.outFile.segments.last) {
-                  text(mp.toPath)
+               a(bd.outFile.segments.last) {
+                  text(bd.contentMPath.toPath)
                }
             }
          }

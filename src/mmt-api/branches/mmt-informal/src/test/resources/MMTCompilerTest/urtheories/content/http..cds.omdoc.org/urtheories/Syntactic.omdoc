@@ -2,6 +2,7 @@
 <omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
   <view name="Syntactic" base="http://cds.omdoc.org/urtheories" from="http://www.openmath.org/cd?OpenMath" to="http://cds.omdoc.org/urtheories?ScalaOM">
     <metadata>
+      <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/bifoundations.mmt#44.2.0:110.2.66"/>
       <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/bifoundations.mmt#44.2.0:273.8.1"/>
     </metadata>
     <constant name="Object">

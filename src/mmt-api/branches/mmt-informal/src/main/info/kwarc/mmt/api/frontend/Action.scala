@@ -40,8 +40,9 @@ object Action extends RegexParsers {
      private def mathpathSVN = "svn" ~> uri ~ int ~ (str ?) ~ (str ?) ^^ {case uri ~ rev ~ user ~ pass => AddMathPathSVN(uri, rev, user, pass)}
      private def mathpathJava = "java" ~> file ^^ {f => AddMathPathJava(f)}
 
-   private def archive = archopen | archdim | archmar | svnarchopen | archbuild
+   private def archive = archopen | archclone | archdim | archmar | svnarchopen | archbuild
      private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)} //deprecated, use mathpath archive
+     private def archclone = "archive" ~> "clone" ~> file ~ uri ^^ {case f ~ u => ArchiveClone(f,u)}
      private def svnarchopen = "SVNArchive" ~> "add" ~> str ~ int ^^ {case url ~ rev => AddSVNArchive(url,rev)}
      private def archbuild = "build" ~> str ~ str ~ (str ?) ~ (str *) ^^ {
        case id ~ keymod ~ in ~ args =>
@@ -246,7 +247,7 @@ case class AddMathPathSVN(uri: URI, rev: Int, user: Option[String], password: Op
 
 /**
  * add catalog entry for realizations in Java
- * @param the Java path entry, will be passed to [[java.net.URLClassLoader]]
+ * @param javapath the Java path entry, will be passed to [[java.net.URLClassLoader]]
  */
 case class AddMathPathJava(javapath: File) extends Action {override def toString = "mathpath java " + javapath}
 
@@ -257,6 +258,9 @@ case class AddMathPathJava(javapath: File) extends Action {override def toString
  * concrete syntax: importer cls:CLASS args:STRING*
  */
 case class AddExtension(cls: String, args: List[String]) extends Action {override def toString = "extension " + cls + args.mkString(" ", " ", "")}
+
+/** clone a git archive */
+case class ArchiveClone(folder: File, uri: URI) extends Action {override def toString = "archive clone " + folder + " " + uri}
 
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive add " + folder}
@@ -403,7 +407,7 @@ case class Elaboration(p : Path) extends MakeAbstract {
 
 /** represents the first post-processing phase
  *  These produce concrete syntax from the abstract syntax.
- * */
+ */
 abstract class MakeConcrete {
    /** takes a Controller, executes the rendering and passes it to a RenderingHandler */
    def make(controller : Controller, rb : RenderingHandler)
@@ -412,9 +416,8 @@ abstract class MakeConcrete {
 /** takes a content element and renders it using notations */
 case class Present(c : MakeAbstract, param : String) extends MakeConcrete {
    def make(controller : Controller, rb : RenderingHandler) {
-      val presenter = controller.extman.getPresenter(param) getOrElse {
-         val nset = Path.parseM(param, controller.getBase)
-         new StyleBasedPresenter(controller, nset)
+      val presenter = controller.extman.getPresenter(param).getOrElse {
+         throw PresentationError("no presenter found: " + param)
       }
       c.make(controller) match {
          case s: StructuralElement => presenter(s)(rb)

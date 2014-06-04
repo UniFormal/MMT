@@ -34,7 +34,8 @@ case class TermPattern(qvars: Context, query: Term)
 object TermPattern {
    val qvarBinder = utils.mmt.mmtcd ? "qvar"
    val qvarMarkers = List(Delim("$"), Var(1, false, Some(Delim(","))), Delim(":"), Arg(2))
-   val qvarNot = new TextNotation(qvarBinder, Mixfix(qvarMarkers), presentation.Precedence.infinite, None)
+   val qvarNot = new TextNotation(Mixfix(qvarMarkers), presentation.Precedence.infinite, None)
+   val qvarRule = ParsingRule(qvarBinder, qvarNot)
    class RemoveUnknowns(unk: Context) extends StatelessTraverser {
       def traverse(t: Term)(implicit con : Context, init : State) = t match {
          case OMA(OMS(_), OMV(x) :: _) if unk.isDeclared(x) && ! con.isDeclared(x) => OMV(x)
@@ -44,7 +45,7 @@ object TermPattern {
    /** parses $ qvars:query, all unknown variables are turned into additional query variables */
    def parse(controller: Controller, theory: String, pattern: String): TermPattern = {
       val mp = Path.parseM(theory, utils.mmt.mmtcd)
-      val pu = ParsingUnit(SourceRef.anonymous(pattern), OMMOD(mp), Context(), pattern, Some(TermPattern.qvarNot))
+      val pu = ParsingUnit(SourceRef.anonymous(pattern), OMMOD(mp), Context(), pattern, Some(qvarRule))
       val unkQP = controller.termParser(pu, throw _)
       val (unk, qP) = AbstractObjectParser.splitOffUnknowns(unkQP)
       val qPM = (new RemoveUnknowns(unk)).apply(qP, Context())

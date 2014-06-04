@@ -7,17 +7,16 @@ import moc._
 import presentation.{StringLiteral, Omitted}
 
 /**
- * A Constant represents an MMT constant.<p>
- * 
- * @param home the {@link info.kwarc.mmt.api.objects.Term} representing the parent theory
- * @param name the name of the constant
- * @param tp the optional type
- * @param df the optional definiens
- * @param rl the role of the constant
+ * the abstract interface to MMT constants with a few basic methods 
  */
-class Constant(val home : Term, val name : LocalName, val alias: Option[LocalName],
-               val tpC : TermContainer, val dfC : TermContainer, val rl : Option[String], val notC: NotationContainer) extends Declaration {
-  override val alternativeName = alias
+abstract class Constant extends Declaration {
+   def alias: Option[LocalName]
+   def tpC: TermContainer
+   def dfC: TermContainer
+   def rl : Option[String]
+   def notC: NotationContainer
+
+  override def alternativeName = alias
   def toTerm = OMID(path)
 
   def role = Role_Constant(rl)
@@ -31,7 +30,7 @@ class Constant(val home : Term, val name : LocalName, val alias: Option[LocalNam
                                     rl.map(StringLiteral(_)).getOrElse(Omitted))
   def getComponents = List((TypeComponent, tpC), (DefComponent, dfC)) ::: notC.getComponents
   def getDeclarations = Nil
-  def children = List(tp,df, not).flatten
+  def children = List(tp,df).flatten
   def toNode =
      <constant name={name.toPath} alias={alias.map(_.toPath).getOrElse(null)} role={rl.getOrElse(null)}>
        {getMetaDataNode}
@@ -43,6 +42,20 @@ class Constant(val home : Term, val name : LocalName, val alias: Option[LocalNam
      tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("") + notC.toString
 }
 
+/**
+ * the main class for a concrete MMT constant
+ * 
+ * @param home the parent theory
+ * @param name the name of the constant
+ * @param alias an alternative (usually shorter) name
+ * @param tp the optional type
+ * @param df the optional definiens
+ * @param rl the role of the constant
+ */
+class FinalConstant(val home : Term, val name : LocalName, val alias: Option[LocalName],
+               val tpC : TermContainer, val dfC : TermContainer, val rl : Option[String], val notC: NotationContainer) extends Constant {
+}
+
 /** helper object */
 object Constant {
    /** factory that hides the TermContainer's
@@ -52,5 +65,8 @@ object Constant {
     */
    def apply(home : Term, name : LocalName, alias: Option[LocalName], tp: Option[Term], df: Option[Term],
              rl : Option[String], not: NotationContainer = NotationContainer()) =
-      new Constant(home, name, alias, TermContainer(tp), TermContainer(df), rl, not)
+      new FinalConstant(home, name, alias, TermContainer(tp), TermContainer(df), rl, not)
+   def apply(home : Term, name : LocalName, alias: Option[LocalName],
+             tpC : TermContainer, dfC : TermContainer, rl : Option[String], notC: NotationContainer) =
+      new FinalConstant(home, name, alias, tpC, dfC, rl, notC)
 }

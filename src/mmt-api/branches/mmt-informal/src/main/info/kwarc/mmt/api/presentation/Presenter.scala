@@ -32,17 +32,17 @@ trait Presenter extends archives.Exporter with StructurePresenter with ObjectPre
   def isApplicable(format: String): Boolean
   
   /** applied to each leaf document (i.e., .omdoc file) */
-  def exportDocument(doc : documents.Document, bf: archives.BuildTask) = apply(doc, true)(rh)
+  def exportDocument(doc : documents.Document, bf: BuildTask) = apply(doc, true)(rh)
   /** applied to each theory */
-  def exportTheory(thy : DeclaredTheory, bf: BuildFile) = apply(thy, true)(rh)
+  def exportTheory(thy : DeclaredTheory, bf: BuildTask) = apply(thy, true)(rh)
   /** applied to each view */
-  def exportView(view : DeclaredView, bf: BuildFile) = apply(view, true)(rh)
+  def exportView(view : DeclaredView, bf: BuildTask) = apply(view, true)(rh)
   /** applied to every namespace
    *  @param dpath the namespace
    *  @param namespaces the sub-namespace in this namespace
    *  @param modules the modules in this namespace
    */
-  def exportNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
     //nothing to do
   }
   

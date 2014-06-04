@@ -137,7 +137,7 @@ class Controller extends ROController with Logger {
    val logPrefix = "controller"
 
    /** a lookup that uses only the current memory data structures */
-   val localLookup = new Lookup(report) {
+   val localLookup = new Lookup {
       def get(path : Path) =  try {library.get(path)} catch {case NotFound(p) => throw GetError(p.toPath + " not known")}
       //def imports(from: Term, to: Term) = library.imports(from, to)
       def visible(to: Term) = library.visible(to)
@@ -147,7 +147,7 @@ class Controller extends ROController with Logger {
    }
    private val self = this
    /** a lookup that loads missing modules dynamically */
-   val globalLookup = new Lookup(report) {
+   val globalLookup = new Lookup {
       def get(path : Path) = {
          val se = iterate {self.get(path)}
          se match {
@@ -315,8 +315,8 @@ class Controller extends ROController with Logger {
       extman.cleanup
       //close all open svn sessions from storages in backend
       backend.cleanup
-      // flush logging buffers
-      report.flush
+      // close logging buffers
+      report.cleanup
       // stop server
       server foreach {_.stop}
    }
@@ -418,14 +418,16 @@ class Controller extends ROController with Logger {
    }
    /** MMT base URI */
    protected var base : Path = DPath(mmt.baseURI)
+   /** @return the current base URI */
    def getBase = base
    /** base URL In the local system */
    protected var home = File(System.getProperty("user.dir"))
    /** @return the current home directory */
    def getHome = home
-   /** @param h sets the current home directory relative to which path names in commands are executed
-    *  
-    *  initially the current directory
+   /**
+    * @param h sets the current home directory relative to which path names in commands are executed
+    * 
+    * initially the current working directory
     */
    def setHome(h: File) {home = h}
    
@@ -468,7 +470,6 @@ class Controller extends ROController with Logger {
             backend.addStore(s)
          case AddMathPathJava(file) =>
             backend.openRealizationArchive(file)
-	      case AddExtension(c, args) => extman.addExtension(c, args)
 	      case Local =>
 	          val currentDir = (new java.io.File(".")).getCanonicalFile
 	          val b = URI.fromJava(currentDir.toURI)
@@ -519,10 +520,25 @@ class Controller extends ROController with Logger {
                         logError("unknown dimension " + d + ", ignored")
                   }
             }
+         case ArchiveClone(folder, repos) =>
+            def cloneRecursively(r: URI) {
+               val lcOpt = new OAF(folder, report).clone(r)
+               lcOpt foreach {lc =>
+                  val archs = backend.openArchive(lc)
+                  archs foreach {a =>
+                     val deps = MyList.fromString(a.properties.getOrElse("dependencies", ""))
+                     deps foreach {d => cloneRecursively(URI(d))}
+                  }
+               }
+            }
+            cloneRecursively(repos)
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 
             arch.toMar(file)
-         case AddMWS(uri) => extman.mws = Some(new MathWebSearch(uri.toURL))
+         case AddExtension(c, args) =>
+            extman.addExtension(c, args)
+         case AddMWS(uri) =>
+            extman.mws = Some(new MathWebSearch(uri.toURL))
 	      case SetBase(b) =>
 	         base = b
 	         report("response", "base: " + base)

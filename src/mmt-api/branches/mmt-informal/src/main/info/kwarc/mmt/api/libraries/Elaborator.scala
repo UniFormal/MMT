@@ -45,7 +45,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
     case OMA(f, args) => OMA(rewrite(f), args.map(rewrite))
     case OMBINDC(b, context, scopes) =>
       val nwctx = Context(context.variables.map(v =>
-        VarDecl(v.name, v.tp.map(rewrite), v.df.map(rewrite))
+        VarDecl(v.name, v.tp.map(rewrite), v.df.map(rewrite), v.not)
       ) :_ *)
       OMBINDC(rewrite(b), nwctx, scopes.map(rewrite))
     case OMM(arg,via) => OMM(rewrite(arg), rewrite(via))

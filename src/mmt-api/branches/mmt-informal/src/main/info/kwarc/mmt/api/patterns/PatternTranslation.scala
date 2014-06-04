@@ -23,7 +23,7 @@ class PatternAssignment(val home : Term, val name : LocalName, val target : Patt
 
 object Functor {
   def applyFunctor(view : View, theo : DeclaredTheory, controller : Controller): DeclaredTheory = {       
-    val theoExp = OMA(OMS(mmt.functorapplication),List(OMMOD(view.path),OMMOD(theo.path)))
+    val theoExp = OMA(OMS(ModExp.morphismapplication),List(OMMOD(view.path),OMMOD(theo.path)))
     val mp = theoExp.toMPath
     val outputTheory =  new DeclaredTheory(mp.parent,mp.name,None)
     //controller.add(Include(OMMOD(mp),view.to)) TODO: fix
@@ -52,7 +52,7 @@ object Functor {
         		      x ^ (pt.getSubstitution(inst) ++ Substitution(subs : _*))  
                   }
         	       pt.body.map {
-     		   case VarDecl(n,tp,df) =>
+     		   case VarDecl(n,tp,df,_) =>
         		   val nname = inst.name / n     			
         		   val c = Constant(theoExp,nname,None,tp.map(auxSub),df.map(auxSub),None)
         		   controller.add(c)     		   

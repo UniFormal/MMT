@@ -37,7 +37,8 @@ object NotationScope {
  * 
  * if the only marker is SeqArg, it must hold that OMA(name, List(x)) = x because sequences of length 1 are parsed as themselves 
  */
-class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Precedence, val meta: Option[MPath], val scope : NotationScope = NotationScope.default) extends ComplexNotation {
+class TextNotation(val fixity: Fixity, val precedence: Precedence, val meta: Option[MPath],
+                   val scope : NotationScope = NotationScope.default) extends metadata.HasMetaData {
    /** @return the list of markers used for parsing/presenting with this notations */
    lazy val markers: List[Marker] = fixity.markers
    /** @return the arity of this fixity */
@@ -103,13 +104,11 @@ class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Pre
    lazy val parsingMarkers = markers flatMap {
       case _:PresentationMarker => Nil // there should not be any presentation markers in notations used for parsing
       case _:ImplicitArg => Nil // remove the implicit markers
-      case AttributedObject => Nil // attributed variables are handles explicitly by variable parsing
+      case AttributedObject => Nil // attributed variables are handled explicitly by variable parsing
       case v:VerbalizationMarker => v.toParsing
       case m => List(m)
    }
    lazy val presentationMarkers = PresentationMarker.introducePresentationMarkers(markers)
-   val key = NotationKey(Some(name), Role_application(None))
-   val nset = name.module.toMPath
   
    def toText = {
       val (fixityString, argumentString) = fixity.asString
@@ -121,11 +120,32 @@ class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Pre
    override def toString = toText + " (markers are: " + markers.map(_.toString).mkString(" ") + ")" 
    def toNode = {
      val (fixityString, argumentString) = fixity.asString
-     <notation name={name.toPath} precedence={precedence.toString}
+     <notation precedence={precedence.toString}
          meta={meta.map(_.toPath).getOrElse(null)} fixity={fixityString} 
          arguments={argumentString}> {scope.toNode} </notation>
    }
    
+   def openArgs(fromRight: Boolean) : Int = {
+      var i = 0
+      val ms = if (fromRight) parsingMarkers.reverse else parsingMarkers
+      ms foreach {
+         case a: Arg => i += 1
+         case a: ImplicitArg =>
+         case _:SeqArg => return i+1
+         case _: Var => return i+1
+         case AttributedObject =>
+         case d: Delimiter => return i
+         case _:PresentationMarker => // impossible
+         case _:VerbalizationMarker => //impossible
+      }
+      i
+   }
+   def isLeftOpen = openArgs(false) > 0
+   def isRightOpen = openArgs(true) > 0
+
+   /*
+   val key = NotationKey(Some(name), Role_application(None))
+   val nset = name.module.toMPath
    /**
     * flattens and transforms markers into Presentation
     * @param args number of arguments
@@ -211,53 +231,18 @@ class TextNotation(val name: GlobalName, val fixity: Fixity, val precedence: Pre
      val tokens = translateMarkers(flatMarkers)
      PList(tokens)
    }
-   // the first delimiter of this notation
-   def firstDelimString : Option[String] = parsingMarkers mapFind {
-      case d: Delimiter => Some(d.text)
-      case SeqArg(_, Delim(s),_) => Some(s)
-      case _ => None
-   }
-   def openArgs(fromRight: Boolean) : Int = {
-      var i = 0
-      val ms = if (fromRight) parsingMarkers.reverse else parsingMarkers
-      ms foreach {
-         case a: Arg => i += 1
-         case a: ImplicitArg =>
-         case _:SeqArg => return i+1
-         case _: Var => return i+1
-         case AttributedObject =>
-         case d: Delimiter => return i
-         case _:PresentationMarker => // impossible
-         case _:VerbalizationMarker => //impossible
-      }
-      i
-   }
-   def isLeftOpen = openArgs(false) > 0
-   def isRightOpen = openArgs(true) > 0
+   */
 }
 
 object TextNotation {
-   def apply(name: GlobalName, prec: Precedence, meta: Option[MPath], scope : NotationScope = NotationScope.default)(ms: Any*): TextNotation = {
+   def apply(prec: Precedence, meta: Option[MPath], scope : NotationScope = NotationScope.default)(ms: Any*): TextNotation = {
       val markers : List[Marker] = ms.toList map {
          case i: Int => Arg(i)
          case m: Marker => m
-         case s: String => Marker.parse(name, s)
+         case s: String => Marker.parse(s)
       }
-      new TextNotation(name, Mixfix(markers), prec, meta, scope)
+      new TextNotation(Mixfix(markers), prec, meta, scope)
    }
-   
-   /** the precedence of the notation ( 1 )
-    * 
-    * notations with round brackets must have a higher precedence than this to be recognized
-    */
-   val bracketLevel = Precedence.integer(-1000000)
-   /** 
-    * a special Notation for utils.mmt.brackets
-    * matches ( 1 ) with precedence bracketLevel
-    */
-   val bracketNotation = new TextNotation(utils.mmt.brackets, Mixfix(List(Delim("("),Arg(1),Delim(")"))), bracketLevel, None)
-   val contextNotation = new TextNotation(utils.mmt.context, Mixfix(List(Delim("["), Var(1,true,Some(Delim(","))), Delim("]"))), bracketLevel, None)
-   
    
    def parseScope(n : scala.xml.Node) : NotationScope = {
        //parsing scope
@@ -277,16 +262,15 @@ object TextNotation {
    }
    
    /** XML parsing methods */
-   def parse(n : scala.xml.Node, name : GlobalName) : TextNotation = n.label match {
+   def parse(n : scala.xml.Node, base : Path) : TextNotation = n.label match {
     case "text-notation" | "notation" =>  // TODO text-notation is deprecated
-      val nameP = Path.parseS(utils.xml.attr(n,"name"), name)
       val precedence = utils.xml.attr(n, "precedence") match {
          case "" => Precedence.integer(0)
          case s => Precedence.parse(s)
       }
       val meta = utils.xml.attr(n, "meta") match {
          case "" => None
-         case s => Some(Path.parseM(s, name))
+         case s => Some(Path.parseM(s, base))
       }
       val scope = n.child.find(_.label == "scope") match {
         case None => NotationScope.default
@@ -312,8 +296,8 @@ object TextNotation {
             }
          }
       }
-      val fixity = FixityParser.parse(name, fixityString, arguments)
-      new TextNotation(name, fixity, precedence, meta, scope)
+      val fixity = FixityParser.parse(fixityString, arguments)
+      new TextNotation(fixity, precedence, meta, scope)
     case _ => throw ParseError("invalid notation:\n" + n)
   }
   
@@ -322,12 +306,12 @@ object TextNotation {
     *
     * the default precedence is 0; exception: if the notation contains (, it is above bracketLevel
     */
-   def parse(str : String, name : GlobalName) : TextNotation = {
+   def parse(str : String, base : Path) : TextNotation = {
        var tokens = str.split("\\s+").toList.filter(_ != "")
        val meta = tokens match {
           case "meta" :: mt :: rest =>
              tokens = rest
-             Some(Path.parseM(mt, name))
+             Some(Path.parseM(mt, base))
           case "meta" :: Nil =>
              throw ParseError("theory expected")
           case _ => None
@@ -351,8 +335,8 @@ object TextNotation {
        } else {
           ("mixfix", tokens)
        }
-       val fixity = FixityParser.parse(name, fixityString, arguments)
-       new TextNotation(name, fixity, prec, meta)
+       val fixity = FixityParser.parse(fixityString, arguments)
+       new TextNotation(fixity, prec, meta)
   }
 }
 

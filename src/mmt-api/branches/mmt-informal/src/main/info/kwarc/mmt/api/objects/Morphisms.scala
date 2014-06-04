@@ -114,8 +114,9 @@ object Morph {
  * an auxiliary class to store domains of [[Context]]s and theory expressions (see [[TheoryExp]])
 
  * @param name the name
- * @param defined true if name has a definiens (including [[DefinedStructure]]s)
- * @param subdomain the imported theory and the instantiated names (for [[DeclaredStructure]])
+ * @param defined true if name has a definiens (including total morphisms in [[DefinedStructure]] and [[StructureVarDecl]])
+ * @param subdomain if name is an import, the imported theory and
+ *    (if not defined as in [[DeclaredStructure]] and [[StructureVarDecl]]) the instantiated names of the partial morphism
  */
 case class DomainElement(name: LocalName, defined: Boolean, subdomain: Option[(MPath,List[LocalName])])
 
@@ -169,8 +170,8 @@ object TheoryExp {
                case s: symbols.DefinedStructure =>
                   DomainElement(s.name, true, Some((s.fromPath, Nil)))
                case s: symbols.DeclaredStructure =>
-                  val defined = s.getPrimitiveDeclarations.map(_.name)
-                  DomainElement(s.name, false, Some((s.fromPath, defined)))
+                  val definitions = s.getPrimitiveDeclarations.map(_.name)
+                  DomainElement(s.name, false, Some((s.fromPath, definitions)))
                case c: symbols.Constant =>
                   DomainElement(d.name, c.df.isDefined, None)
                case d =>
@@ -182,6 +183,16 @@ object TheoryExp {
          body.getDomain
    }
   
+   /** all directly imported named theories */
+   def getSupport(t: Term): List[MPath] = t match {
+      case OMMOD(p) => List(p)
+      case ComplexTheory(cont) => cont.variables.toList.flatMap {
+         case StructureVarDecl(_,from,_) => List(from)
+         case _ => Nil
+      }
+      case TUnion(ts) => (ts flatMap getSupport).distinct
+   }
+   
    /** checks whether "from" is included into "to", relative to a base function that handles the case where both theory expressions are atomic */
    def imports(from: Term, to: Term)(implicit atomic: (MPath,MPath) => Boolean) : Boolean = {
       if (from == to) true else (from, to) match {
@@ -203,6 +214,23 @@ object TheoryExp {
    }
 }
 
+object ModExp extends uom.TheoryScala {
+   val _base = DPath(utils.URI("http", "cds.omdoc.org") / "mmt")
+   val _name = LocalName("ModExp")
+
+   val theorytype = _path ? "theory"
+   val morphtype = _path ? "morphism"
+   val complextheory = _path ? "complextheory"
+   val complexmorphism = _path ? "complexmorphism"
+   val identity = _path ? "identity"
+   val composition = _path ? "composition"
+   val morphismapplication = _path ? "morphismapplication"
+
+   //TODO deprecate
+   val tunion = _path ? "theory-union"
+   val munion = _path ? "morphism-union"
+}
+
 /**
  * An OMMOD represents a reference to a module (which may be a theory or a morphism expression).
  */
@@ -218,10 +246,10 @@ object OMMOD {
 object TUnion {
    def apply(thys: List[Term]) : Term = thys match {
      case hd :: Nil => hd
-     case _ => OMA(OMID(mmt.tunion), thys)
+     case _ => OMA(OMID(ModExp.tunion), thys)
    }
    def unapply(union: Term) : Option[List[Term]] = union match {
-     case OMA(OMID(mmt.tunion), thys) => Some(thys)
+     case OMA(OMID(ModExp.tunion), thys) => Some(thys)
      
      case _ => None
    }
@@ -233,9 +261,10 @@ object TUnion {
 }
 
 object ComplexTheory {
-   def apply(body: Context) = OMBINDC(OMID(mmt.tunion), body, Nil)
+   val path = ModExp.complextheory
+   def apply(body: Context) = OMBINDC(OMID(this.path), body, Nil)
    def unapply(t: Term) : Option[Context] = t match {
-      case OMBINDC(OMID(mmt.tunion), body, Nil) => Some(body)
+      case OMBINDC(OMID(this.path), body, Nil) => Some(body)
       case OMMOD(p) => Some(Context(IncludeVarDecl(p)))
       case _ => None
    }
@@ -252,9 +281,47 @@ object OMDL {
 }
 
 /**
+ * MorphType(from,to) is the type of morphisms
+ */
+object MorphType {
+   val path = ModExp.morphtype
+   def apply(from: Term, to: Term) = OMA(OMS(this.path), List(from,to))
+   def unapply(t: Term) : Option[(Term,Term)] = t match {
+      case OMA(OMS(this.path), List(from,to)) => Some((from, to))
+      case _ => None
+   }
+}
+
+object TheoryType {
+   val path = ModExp.theorytype
+   def apply() = OMS(this.path)
+   def unapply(t: Term): Option[Unit] = t match {
+      case OMS(this.path) => Some(())
+      case _ => None
+   }
+}
+
+/**
+ * An OMM represents the application of a morphism to a term
+ */
+object OMM {
+  val path = ModExp.morphismapplication
+ /** 
+  * @param t the term
+  * @param m the morphism
+  */
+  def apply(t: Term, m: Term) : Term = OMA(OMS(this.path), List(t,m))
+  def unapply(t: Term) : Option[(Term,Term)] = t match {
+     case OMA(OMS(this.path), List(t,m)) => Some((t,m))
+     case _ => None
+   }
+}
+
+/**
  * An OMCOMP represents the associative composition of a list of morphisms. Compositions may be nested.
  */
 object OMCOMP {
+ val path = ModExp.composition
  /** 
   * @param morphs the list of morphisms in diagram order
   * the trivial morphism OMCOMP() is dropped from morphs
@@ -263,12 +330,12 @@ object OMCOMP {
      val morphsNT = morphs.filterNot {_ == OMCOMP()}
      morphsNT match {
         case hd :: Nil => hd
-        case _ => OMA(OMID(mmt.composition), morphsNT)
+        case _ => OMA(OMID(this.path), morphsNT)
      }
    }
    def apply(morphs: Term*) : Term = apply(morphs.toList)
    def unapply(t: Term) : Option[List[Term]] = t match {
-     case OMA(OMID(mmt.composition), morphs) => Some(morphs)
+     case OMA(OMID(this.path), morphs) => Some(morphs)
      case _ => None
    }
 }
@@ -278,29 +345,32 @@ object OMCOMP {
  * @param theory the theory
  */
 object OMIDENT {
-   def apply(theory : Term) : Term = OMA(OMID(mmt.identity), List(theory))
+   val path = ModExp.identity
+   def apply(theory : Term) : Term = OMA(OMID(this.path), List(theory))
    def unapply(t : Term) : Option[Term] = t match {
-     case OMA(OMID(mmt.identity), List(theory)) => Some(theory)
+     case OMA(OMID(this.path), List(theory)) => Some(theory)
      case _ => None
    }
 }
 
 object ComplexMorphism {
-   def apply(body: Substitution) = ComplexTerm(mmt.munion, body, Context(), Nil)
+   val path = ModExp.complexmorphism
+   def apply(body: Substitution) = ComplexTerm(this.path, body, Context(), Nil)
    def unapply(t: Term) : Option[Substitution] = t match {
-      case ComplexTerm(mmt.munion, sub, Context(), Nil) => Some(sub)
+      case ComplexTerm(this.path, sub, Context(), Nil) => Some(sub)
       case _ => None
    }
 }
 
 object MUnion {
+   val path = ModExp.munion
    def apply(morphs: List[Term]) : Term = morphs match {
       case Nil => Morph.empty
       case hd :: Nil => hd
-      case hd :: tl => OMA(OMID(mmt.munion), morphs)
+      case hd :: tl => OMA(OMID(this.path), morphs)
    }
    def unapply(t : Term) : Option[List[Term]] = t match {
-     case OMA(OMID(mmt.munion), morphs) if (morphs.forall(_.isInstanceOf[Term])) => Some(morphs.asInstanceOf[List[Term]])
+     case OMA(OMID(this.path), morphs) if (morphs.forall(_.isInstanceOf[Term])) => Some(morphs.asInstanceOf[List[Term]])
      case _ => None
    }
    /** applies associativity of union by merging nested MUnion */

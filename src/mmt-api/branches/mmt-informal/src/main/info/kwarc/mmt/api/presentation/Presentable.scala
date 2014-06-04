@@ -5,7 +5,7 @@ import objects._
 /** information provided by a content expression about how it is to be presented */
 abstract class PresentationData
 /** a content expression provides a key that yields a notation, which is rendered in the context of some components */
-case class ByNotation(key : NotationKey, components : ContentComponents, lpar : LocalParams) extends PresentationData
+case class ByNotation(key : NotationKey, components : ContentComponents) extends PresentationData
 
 /** instances of Literal are not so much content items themselves but the
  *  terminal symbols that are produced when rendering content items

@@ -10,44 +10,61 @@ import utils.MyList._
 import ontology._
 
 import scala.xml.{Node,NodeSeq}
-import collection.mutable.HashSet
+import scala.collection.mutable._
+import scala.ref.SoftReference
 
-/** auxiliary class of [[Library]] to permit more readable toString output for debugging */
-class ModuleHashMap extends scala.collection.mutable.HashMap[MPath,Module] {
+/**
+ * auxiliary class of [[Library]] to optimize storage
+ *  
+ * This uses [[SoftReferences]] so that modules are automatically removed when memory is needed.
+ */
+class ModuleHashMap {
+   private val underlying = new HashMap[MPath,SoftReference[Module]]
+   def get(p: MPath): Option[Module] = {
+      underlying.get(p).flatMap(_.get)
+   }
+   def update(p: MPath, m: Module) {
+      val r = new SoftReference(m)
+      underlying.update(p,r)
+   }
+   def -=(p: MPath) {
+      underlying -= p
+   }
+   def keys = underlying.keys
+   def values = underlying.values.flatMap(_.get)
+   def clear {underlying.clear}
    override def toString = {
-      toList.sortBy(_._2.name.toPath).map {case (mp, mod) =>
-         mp.toString + "\n" + mod.toString
+      underlying.toList.sortBy(_._1.name.toPath).map {case (mp, r) =>
+         val modString = r.get match {
+            case Some(mod) => mod.toString
+            case None => "[cleared]"
+         }
+         mp.toString + "\n" + modString 
       }.mkString("\n")
    }
 }
 
-/*abstract class ContentMessage
-case class Add(e : ContentElement) extends ContentMessage
-case class Get(path : Path) extends ContentMessage
-case class Delete(path : Path) extends ContentMessage
-*/
-
 /**
  * A Library represents an MMT theory graph.
  *
- * The Library instance is the central object of the implementation. represent the main interface between frontend and intelligence.
- * All access of the frontend to the main data structures is through the library's get/add/update/delete interface.
+ * The Library implements the central structural algorithms, in particular lookup.
+ * All access of the main data structures is through the library's get/add/update/delete methods.
  *
  * @param mem the memory
- * @param report Parameter for logging.
+ * @param report parameter for logging.
  * 
- * Invariance: This class guarantees structural well-formedness in the sense that libraries conform to the MMT grammar and all declarations have canonical URIs
+ * Invariance: This class guarantees structural well-formedness in the sense that
+ * libraries conform to the MMT grammar and all declarations have canonical URIs.
  * The well-formedness of the objects in the declarations is not guaranteed.
  */
-class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) with Logger {
+class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with Logger {
    private val modules = new ModuleHashMap
    private val implicitGraph = new ThinGeneratedCategory
    
-   private def modulesGetNF(p : MPath) : Module = {
-     modules.get(p).getOrElse {
-        throw new frontend.NotFound(p)
-     }
-   }
+   private def modulesGetNF(p : MPath) : Module =
+      modules.get(p).getOrElse {
+         throw frontend.NotFound(p)
+      }
    val logPrefix = "library"
    
    /**
@@ -122,13 +139,6 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
                }
             }
       }
-      // lookup in complex modules
-      case TUnion(ts) % name => ts mapFind {t =>
-         getO(t % name)
-      } match {
-         case Some(d) => d
-         case None => throw GetError("union of theories has no declarations except includes")
-      }
       case OMDL(h,n) % name =>
          val s = getStructure(h % n, msg => throw GetError("declaration exists but is not a structure: " + h % n + "\n" + msg))
          try {
@@ -141,6 +151,46 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
                case _ => throw ImplementationError("unimplemented default assignment")
             }
          }
+      // lookup in complex modules
+      case (home @ ComplexTheory(cont)) % name =>
+         cont.mapVarDecls {case (before, vd) =>
+            val vdDecl = vd.toDeclaration(ComplexTheory(before))
+            vd match {
+               case IncludeVarDecl(p) =>
+                  name.head match {
+                     case ComplexStep(q) =>
+                        getImplicit(q,p).foreach {m =>
+                           val sym = getSymbol(q ? name.tail)
+                           val symT = translate(sym, m, error)
+                           return symT
+                        }
+                     case _ =>
+                  }
+               case StructureVarDecl(s, from, dfOpt) =>
+                  name.head match {
+                     case SimpleStep(s2) if s == s2 =>
+                        val sym = getSymbol(from ? name.tail)
+                        val struc = vdDecl.asInstanceOf[Structure]
+                        val symT = translateByLink(sym, struc, error)
+                        return symT
+                     case _ =>
+                  }
+               case VarDecl(n, _, _, _) =>
+                  name.head match {
+                     case SimpleStep(n2) if n == n2 =>
+                        val c = vdDecl.asInstanceOf[Constant]
+                        return c
+                     case _ =>
+                  }
+            }
+         }
+         throw GetError("name " + name + " not found in " + cont)
+      case TUnion(ts) % name => ts mapFind {t =>
+         getO(t % name)
+      } match {
+         case Some(d) => d
+         case None => throw GetError("union of theories has no declarations except includes")
+      }
       case OMCOMP(Nil) % _ => throw GetError("cannot lookup in identity morphism without domain: " + p)
       case (m @ OMCOMP(hd::tl)) % name =>
          val a = get(hd % name, error)
@@ -183,7 +233,7 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
       }
    }
 
-   /** translate a Symbol along a morphism */
+   /** translate a Declaration along a morphism */
    def translate(e: Declaration, morph: Term, error: String => Nothing) : Declaration = morph match {
       case OMMOD(v) =>
          val link = getView(v)
@@ -437,8 +487,9 @@ class Library(mem: ROMemory, report : frontend.Report) extends Lookup(report) wi
       modules.clear
       implicitGraph.clear
    }
+
    /** retrieves all modules in any order */
-   def getModules = modules.values.toList
+   def getModules = modules.values
    
    def toNode : NodeSeq = modules.values.map(_.toNode).toList
    override def toString = modules.values.map(_.toString).mkString("","\n\n","")

@@ -11,6 +11,7 @@ abstract class Judgement extends utils.HashEquality[Judgement] with HistoryEntry
    */ 
   def freeVars : HashSet[LocalName]
   val stack: Stack
+  
    /** a toString method that may call a continuation on its objects
     */
   def present(implicit cont: Obj => String) = presentAntecedent + " |- " + presentSucceedent
@@ -18,6 +19,10 @@ abstract class Judgement extends utils.HashEquality[Judgement] with HistoryEntry
   def presentAntecedent(implicit cont: Obj => String) = {
      stack.theory.toString + "; " + cont(stack.context)
   }
+  /*
+  def map(fC: Stack => Stack, fT: (Term, Boolean) => Term): Judgement
+  private[objects] def check(implicit solver: Solver, history: History): Boolean
+  */
 }
 
 /** A WFJudgment defines well-formed objects */
@@ -92,26 +97,38 @@ abstract class UnaryObjJudegment(stack: Stack, obj: Obj, label: String) extends 
 case class Universe(stack: Stack, wfo: Term) extends UnaryObjJudegment(stack, wfo, "UNIVERSE") with WFJudgement {
    def univ = wfo
 }
-
 /**
- *  A term tp is inhabitable if it can occur on the right side of a Typing judgement.
- *  Such terms can be used as the types of constants and variables. 
+ *  A term wfo is inhabitable if it can occur on the right side of a Typing judgement.
+ *  Such terms can be used as the types of constants and variables.
  */
 case class Inhabitable(stack: Stack, wfo: Term) extends UnaryObjJudegment(stack, wfo, "INHABITABLE") with WFJudgement
+/**
+ *  A term tp is inhabitable if it occurs on the right side of a Typing judgement.
+ *  Via Curry-Howard, such terms can be thought of as provable propositions.
+ *  Therefore, this judgement is usually undecidable. 
+ */
+case class Inhabited(stack: Stack, tp: Term) extends UnaryObjJudegment(stack, tp, "INHABITED")
 
-case class Inhabited(stack: Stack, wfo: Term) extends UnaryObjJudegment(stack, wfo, "INHABITED") with WFJudgement
-case class IsTheory(stack: Stack, wfo: Term) extends UnaryObjJudegment(stack, wfo, "Theory")
-case class IsContext(stack: Stack, context: Context) extends UnaryObjJudegment(stack, context, "Context")
-
-case class IsMorphism(stack: Stack, morphism: Term, from: Term) extends Judgement {
-  lazy val freeVars = {
-    val ret = new HashSet[LocalName]
-    val fvs = stack.context.freeVars_ ::: morphism.freeVars_ ::: from.freeVars_
-    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
-    ret
-  }
+/**
+ * An abbreviation for the meta-level typing judgement for valid theories
+ */
+object IsTheory {
+   def apply(stack: Stack, thy: Term) = Typing(stack, thy, TheoryType())
+}
+/**
+ * An abbreviation for the meta-level typing judgement for valid morphisms
+ */
+object IsMorphism {
+   def apply(stack: Stack, morphism: Term, from: Term, to: Term) = Typing(stack, morphism, MorphType(from, to))
+}
+/**
+ * An abbreviation for a [[IsMorphism]] into the current theory
+ */
+object IsRealization {
+   def apply(stack: Stack, morphism: Term, from: Term) = IsMorphism(stack, morphism, from, ComplexTheory(Nil))
 }
 
+case class IsContext(stack: Stack, context: Context) extends UnaryObjJudegment(stack, context, "Context")
 case class IsSubstitution(stack: Stack, substitution: Substitution, from: Context, to: Context) extends Judgement {
   lazy val freeVars = {
     val ret = new HashSet[LocalName]

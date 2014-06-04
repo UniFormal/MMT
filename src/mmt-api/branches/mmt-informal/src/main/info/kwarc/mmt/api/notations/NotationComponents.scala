@@ -11,6 +11,12 @@ sealed abstract class Marker {
 /** Markers that are delimiters */
 sealed abstract class Delimiter extends Marker {
    def text : String
+   /** the value of a delimiter may depend on the name of the operator that owns the notation
+    *  expand eliminates such dependencies
+    *  
+    *  expansion is identity by default
+    */
+   def expand(name: GlobalName) : Delimiter = this
 }
 
 /** helper object */
@@ -38,20 +44,28 @@ case class Delim(s: String) extends Delimiter {
    def text = if (s == "%w") " " else s
 }
 
-/** special delimiters that are expanded to a string based on the declaration that the notation occurs in
+/**
+ * special delimiters that use non-trivial implementations of expand
  * 
- * These should never occur in notations that are used by the Scanner. They should be expanded first.
+ * These are only useful for presentation, not for parsing.
  */
-abstract class PlaceholderDelimiter extends Delimiter
+abstract class PlaceholderDelimiter extends Delimiter {
+   /** empty to make them useless for parsing */
+   def text = ""
+   /** string to be used when expanding */
+   def expandString(name: GlobalName) : String
+   /** expansions uses expandString */
+   override def expand(name: GlobalName) = Delim(expandString(name))
+}
 
 /**
  * expands to the name of the instance
  * 
  * only legal for notations within patterns
  */
-case class InstanceName(path: GlobalName) extends PlaceholderDelimiter {
+case class InstanceName() extends PlaceholderDelimiter {
    override def toString = "%i"
-   def text = if (path.name.length <= 1) "" else path.name.init.toPath
+   override def expandString(path: GlobalName) = if (path.name.length <= 1) "" else path.name.init.toPath
 }
 
 /**
@@ -59,9 +73,9 @@ case class InstanceName(path: GlobalName) extends PlaceholderDelimiter {
  * 
  * useful for repetitive notations that differ only in the name
  */
-case class SymbolName(path: GlobalName) extends PlaceholderDelimiter {
+case class SymbolName() extends PlaceholderDelimiter {
    override def toString = "%n"
-   def text = if (path.name.length < 1) "" else path.name.last.toPath
+   override def expandString(path: GlobalName) = if (path.name.length < 1) "" else path.name.last.toPath
 }
 
 sealed abstract class ArgumentMarker extends Marker with ArgumentComponent
@@ -295,9 +309,9 @@ sealed trait VariableComponent extends ArityComponent
 //sealed trait ScopeComponent extends ArityComponent
 
 object Marker {
-   def parse(name: GlobalName, s: String) = s match {
-         case "%i" => InstanceName(name)
-         case "%n" => SymbolName(name)
+   def parse(s: String) = s match {
+         case "%i" => InstanceName()
+         case "%n" => SymbolName()
          case "%a" => AttributedObject
          case s: String if s.startsWith("%D") =>
             // Ds ---> delimiter s (used to escape special delimiters)

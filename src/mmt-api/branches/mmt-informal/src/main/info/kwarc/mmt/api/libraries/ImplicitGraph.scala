@@ -96,17 +96,21 @@ class ThinGeneratedCategory {
     * @throws AlreadyDefined(m) if an implicit morphism m between the same theories already exists
     */
    def update(from: Term, to: Term, morph: Term) {
+      val existsAlready = direct(from ,to).isDefined
+      // this is needed even if existsAlready == true in order to check that morph is equal to the existing value
       direct(from, to) = morph
-      impl  (from, to) = morph
-      (impl into from) foreach {
-         case (f,m) =>
-           impl(f,to) = OMCOMP(m, morph)
-           (impl outOf to) foreach {
-               case (t,m2) => impl(f, t) = OMCOMP(m, morph, m2)
-           }
-      }
-      (impl outOf to) foreach {
-         case (t,m) => impl(from, t) = OMCOMP(morph, m)
+      if (! existsAlready) {
+         impl  (from, to) = morph
+         (impl into from) foreach {
+            case (f,m) =>
+              impl(f,to) = OMCOMP(m, morph)
+              (impl outOf to) foreach {
+                  case (t,m2) => impl(f, t) = OMCOMP(m, morph, m2)
+              }
+         }
+         (impl outOf to) foreach {
+            case (t,m) => impl(from, t) = OMCOMP(morph, m)
+         }
       }
    }
    

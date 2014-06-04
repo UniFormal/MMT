@@ -8,6 +8,8 @@ import parser._
 import documents._
 import flexiformal._
 
+/*
+
 /** This class collects the parameters that are globally fixed during one presentation task.
  * @param rh the rendering handler that collects the generated output
  * @param nset the style containing the notations 
@@ -412,3 +414,5 @@ object StyleBasedPresenter {
 //store current MMTBase in lpar
 // present symbols based on whether they are meta, included, local
 //presentation item for relativized path; format string?
+
+*/

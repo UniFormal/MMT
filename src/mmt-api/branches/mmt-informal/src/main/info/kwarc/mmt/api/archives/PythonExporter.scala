@@ -29,7 +29,7 @@ class PythonExporter extends Exporter with IndentedExporter {
       nl
    }
    
-   def exportTheory(t: DeclaredTheory, bf: BuildFile) {
+   def exportTheory(t: DeclaredTheory, bf: BuildTask) {
       cls(t.name.toPath) {
          var fields: List[String] = Nil
          t.getPrimitiveDeclarations.foreach {
@@ -49,13 +49,13 @@ class PythonExporter extends Exporter with IndentedExporter {
       }
    }
    
-   def exportView(v: DeclaredView, bf: BuildFile) {}
+   def exportView(v: DeclaredView, bf: BuildTask) {}
    
-   def exportNamespace(dpath: DPath, nsbd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
-         namespaces.foreach {case (bd, dp) =>
+   def exportNamespace(dpath: DPath, nsbt: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
+         namespaces.foreach {case bd =>
             comment {rh("package " + bd.dirName)}
          }
-         modules.foreach {case (bf, mp) =>
+         modules.foreach {case bf =>
             comment {rh("module " + bf.outFile.segments.last)}
          }
    }
