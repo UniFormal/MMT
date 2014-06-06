@@ -91,7 +91,8 @@ class QueryServer extends ServerExtension("query") {
 /** HTTP frontend to the [[Search]] class */
 class SearchServer extends ServerExtension("search") {
    private lazy val search = new Search(controller)
-   private lazy val mmlpres = new presentation.MathMLPresenter(controller)
+   private val mmlpres = new presentation.MathMLPresenter
+   override def start(args: List[String]) {mmlpres.init(controller)}
    /**
     *  @param path ignored
     *  @param httpquery search parameters

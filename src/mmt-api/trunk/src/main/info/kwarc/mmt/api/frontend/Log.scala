@@ -29,7 +29,7 @@ class Report {
    /** outputs an error (categories "error" and "debug" for short and long message, respectively) */
    def apply(e : Error) {
 	   apply("error", e.shortMsg)
-	   apply("debug", e.longMsg)
+	   apply("debug", e.getLongMessage)
 	}
    /** definitely logs a message */
    private def log(group : => String, msg : => String) {

@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api._
+import frontend._
 import objects._
 import objects.Conversions._
 import notations._
@@ -7,16 +8,12 @@ import documents._
 import modules._
 import archives._
 
-trait StructurePresenter {
-   def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler)
-   def asString(e : StructuralElement): String = {
-      val sb = new StringBuilder
-      apply(e)(sb)
-      sb.get
-   }
-}
-
-trait ObjectPresenter {
+/**
+ * the type of presenters that can handle objects
+ *  
+ * see also [Presenter]]
+ */
+trait ObjectPresenter extends Extension {
    def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler)
    def asString(o: Obj, origin: Option[CPath] = None): String = {
       val sb = new StringBuilder
@@ -26,26 +23,37 @@ trait ObjectPresenter {
 }
 
 /**
- * A Presenter transforms MMT content into presentation
+ * the type of presenters that can handle structural elements
+ *  
+ * see also [Presenter]]
  */
-trait Presenter extends archives.Exporter with StructurePresenter with ObjectPresenter {  
+trait StructurePresenter extends Extension {
+   def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler)
+   def asString(e : StructuralElement): String = {
+      val sb = new StringBuilder
+      apply(e)(sb)
+      sb.get
+   }
+}
+
+/**
+ * the designated super class of all presenters
+ */
+abstract class Presenter(val objectLevel: ObjectPresenter)
+   extends archives.Exporter with StructurePresenter with ObjectPresenter with LeveledExtension {
+
+  /** relegates to objectPresenter */
+  def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) = objectLevel(o, origin)
+   
+  def outDim = Dim("export", "presentation", key)
+
   def isApplicable(format: String): Boolean
   
-  /** applied to each leaf document (i.e., .omdoc file) */
   def exportDocument(doc : documents.Document, bf: BuildTask) = apply(doc, true)(rh)
-  /** applied to each theory */
   def exportTheory(thy : DeclaredTheory, bf: BuildTask) = apply(thy, true)(rh)
-  /** applied to each view */
   def exportView(view : DeclaredView, bf: BuildTask) = apply(view, true)(rh)
-  /** applied to every namespace
-   *  @param dpath the namespace
-   *  @param namespaces the sub-namespace in this namespace
-   *  @param modules the modules in this namespace
-   */
-  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
-    //nothing to do
-  }
-  
+  /** does nothing */
+  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
 }
 
 /** helper object */
@@ -102,38 +110,53 @@ object Presenter {
  * 
  * This Presenter can be used without initialization.
  */
-object TextPresenter extends Presenter {
-   val key = "present-text"
-   val outDim = Dim("export", "presentation", "text")
-   override def outExt = "txt"
-   def isApplicable(format: String) = format == "text"
-   def apply(c : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {
-      rh(c.toString)
-   }
+object ObjectTextPresenter extends ObjectPresenter {
    def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
       rh(o.toString)
    }
 }
 
 /**
- * A Presenter that returns XML based on the toNode method
+ * A Presenter that returns text based on the toString method
  * 
  * This Presenter can be used without initialization.
  */
-object OMDocPresenter extends Presenter {
-  val key = "present-omdoc"
-  val outDim = Dim("export", "presentation", "omdoc")
-  override def outExt = "omdoc"
-  def isApplicable(format: String) = format == "xml"
+object TextPresenter extends Presenter(ObjectTextPresenter) {
+   val key = "present-text"
+   override def outExt = "txt"
+   def isApplicable(format: String) = format == "text"
+   def apply(c : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {
+      rh(c.toString)
+   }
+}
+
+/**
+ * A Presenter that returns XML based on the toNode method, i.e., OpenMath
+ * 
+ * This Presenter can be used without initialization.
+ */
+object OpenMathPresenter extends ObjectPresenter {
+   private val pp = new scala.xml.PrettyPrinter(100, 2)
+   def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
+      val sb = new scala.collection.mutable.StringBuilder
+      pp.format(o.toNode, sb)
+      rh(sb.result)
+   }
+}
+
+/**
+ * A Presenter that returns XML based on the toNode method, i.e., OMDoc
+ * 
+ * This Presenter can be used without initialization.
+ */
+object OMDocPresenter extends Presenter(OpenMathPresenter) {
+   val key = "present-omdoc"
+   override def outExt = "omdoc"
+   def isApplicable(format: String) = format == "xml"
    private val pp = new scala.xml.PrettyPrinter(100, 2)
    def apply(c : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {
       val sb = new scala.collection.mutable.StringBuilder
       pp.format(c.toNode, sb)
-      rh(sb.result)
-   }
-   def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
-      val sb = new scala.collection.mutable.StringBuilder
-      pp.format(o.toNode, sb)
       rh(sb.result)
    }
 }

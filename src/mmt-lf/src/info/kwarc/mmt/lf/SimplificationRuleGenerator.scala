@@ -40,7 +40,7 @@ class SimplificationRuleGenerator extends ChangeListener {
           case _ => return
        }
        val tm = c.tpC.analyzed.get
-       if (parser.AbstractObjectParser.isOnlyParsed(tm)) {
+       if (parser.ObjectParser.isOnlyParsed(tm)) {
           log("type only partially validated, skipped")
           return
        }

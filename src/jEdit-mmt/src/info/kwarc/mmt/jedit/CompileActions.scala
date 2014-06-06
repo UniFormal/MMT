@@ -25,14 +25,20 @@ class CompileActions(mmtplugin: MMTPlugin) {
       // read out the errors
       arch.traverse(source, path, _ => true, false) {case archives.Current(inFile, inPath) =>
          errorSource.removeFileErrors(inFile.toString)
-         arch.errors("mmt-omdoc")(inPath) foreach {case SourceError("compiler", ref, hd, tl, warn, fatal) =>
-            val tp = if (warn) ErrorSource.WARNING else ErrorSource.ERROR
-            val error = new DefaultErrorSource.DefaultError(
-                // 0 to avoid giving an end position; errorlist adds the end-column to the lineStart to compute an offset; so we could trick it into displaying multi-line errors
-                errorSource, tp, inFile.toString, ref.region.start.line, ref.region.start.column, 0, hd
-            )
-            tl foreach {m => error.addExtraMessage(m)}
-            errorSource.addError(error)
+         arch.errors("mmt-omdoc")(inPath).getErrors foreach {
+            case SourceError("compiler", ref, hd, tl, warn, fatal) =>
+               val tp = if (warn) ErrorSource.WARNING else ErrorSource.ERROR
+               val error = new DefaultErrorSource.DefaultError(
+                   // 0 to avoid giving an end position; errorlist adds the end-column to the lineStart to compute an offset; so we could trick it into displaying multi-line errors
+                   errorSource, tp, inFile.toString, ref.region.start.line, ref.region.start.column, 0, hd
+               )
+               tl foreach {m => error.addExtraMessage(m)}
+               errorSource.addError(error)
+            case e =>
+               val error = new DefaultErrorSource.DefaultError(
+                   errorSource, ErrorSource.ERROR, inFile.toString, 0, 0, 0, "error while compiling: " + e.getMessage
+               )
+               errorSource.addError(error)
          }
       }
    }

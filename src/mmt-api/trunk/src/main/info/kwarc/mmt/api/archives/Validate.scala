@@ -1,15 +1,10 @@
 package info.kwarc.mmt.api.archives
+
 import info.kwarc.mmt.api._
-import libraries._
 import frontend._
-import backend._
-import modules._
 import ontology._
-import patterns._
-import symbols._
-import objects._
+import checking._
 import utils._
-import utils.FileConversion._
 
 import scala.collection.mutable._
 
@@ -18,20 +13,17 @@ trait ValidatedArchive extends WritableArchive {
    /** checks modules in content structurally and generates term-level dependency relation in .occ files */
    def check(in: List[String] = Nil, controller: Controller) {
       val rels = new HashSet[RelationalElement]
-      val alog: (=> String) => Unit = log _
-      val checker = new StructureChecker(controller) {
-         override def reCont(r : RelationalElement) {
+      val relHandler = new RelationHandler {
+         def apply(r : RelationalElement) {
             rels += r
             controller.memory.ontology += r
          }
-         override def errorCont(e: Invalid) {
-            alog(e.getMessage)
-         }
       }
+      val checker = new MMTStructureChecker(ObjectChecker.ignore)
       traverse(content, in, Archive.extensionIs("omdoc")) {case Current(_, inPath) =>
          rels.clear
          val mpath = Archive.ContentPathToMMTPath(inPath)
-         checker(mpath)
+         checker(mpath)(new ErrorLogger(report), relHandler)
          val relFile = (this/relational / inPath).setExtension("occ")
          val relFileHandle = File.Writer(relFile)
          rels foreach {r => relFileHandle.write(r.toPath + "\n")}
@@ -39,14 +31,11 @@ trait ValidatedArchive extends WritableArchive {
       }
     }
     
-    /** checks modules in content structurally and then validates all ValidationUnits */
+    /** checks modules in content structurally and then validates all objects */
     def validate(in: List[String] = Nil, controller: Controller) {
       traverse(content, in, Archive.extensionIs("omdoc")) {case Current(_, inPath) =>
          val mpath = Archive.ContentPathToMMTPath(inPath)
-         val errors = controller.checker(mpath)
-         logGroup {
-            errors foreach {e => log(e.getMessage)}
-         }
+         val errors = controller.checker(mpath)(new ErrorLogger(report), RelationHandler.ignore)
       }
     }
 }

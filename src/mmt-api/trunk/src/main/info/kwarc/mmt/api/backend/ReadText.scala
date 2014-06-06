@@ -326,10 +326,10 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
       } catch {
          case e: ParseError =>
             errors = errors :+ TextParseError(toPos(start), "object continuation caused ParseError: " + e.getMessage)
-            DefaultObjectParser(pu)
+            DefaultObjectParser(pu)(ErrorThrower)
          case e: Error =>
             errors = errors :+ TextParseError(toPos(start), "object continuation caused error: " + e.getMessage)
-            DefaultObjectParser(pu)
+            DefaultObjectParser(pu)(ErrorThrower)
       }
       
       Pair(obj, i)

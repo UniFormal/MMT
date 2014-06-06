@@ -341,7 +341,7 @@ class TptpTranslator {
       case Some(x) =>
         var ctx: Context = Context()
         for (v <- item.getVariables) {
-          ctx = ctx ++ VarDecl(LocalName(v), None, None)
+          ctx = ctx ++ VarDecl(LocalName(v), None, None, None)
         }
         Some(OMBIND(constant(item.getQuantifier), ctx, x))
       case None => None

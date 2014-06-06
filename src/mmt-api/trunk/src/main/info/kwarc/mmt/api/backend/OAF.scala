@@ -10,7 +10,7 @@ import utils.FileConversion._
  */
 class OAF(root: File, val report: Report) extends Logger {
    val logPrefix = "oaf"
-   private val gitPath = """C:\Program Files\Git\bin\git""" 
+   private val gitPath = "git" 
    private def git(args: String*): Boolean = {
       val command = gitPath :: args.toList
       log(command.mkString(" "))

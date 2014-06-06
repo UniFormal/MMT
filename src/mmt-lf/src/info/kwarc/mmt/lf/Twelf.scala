@@ -31,7 +31,7 @@ class Twelf extends Importer {
    
    def includeFile(n: String) : Boolean = n.endsWith(".elf")
    
-   var path : File = null
+   private var path : File = null
    /** Twelf setting "set unsafe ..." */
    var unsafe : Boolean = true
    /** Twelf setting "set chatter ..." */
@@ -44,7 +44,7 @@ class Twelf extends Importer {
     * first argument is the location of the twelf-server script
     */
    override def start(args: List[String]) {
-      if (args.isEmpty) throw ParseError("no path to Twelf given")
+      checkNumberOfArguments(1,1,args)
       path = File(args(0))
       catalog = new Catalog(HashSet(), HashSet("*.elf"), HashSet(".svn"), port, true, report("lfcatalog", _))
       catalog.init    //  throws PortUnavailable
@@ -65,7 +65,7 @@ class Twelf extends Importer {
      * @param dpath unused (could be passed to Twelf as the default namespace in the future)
      * @param out the file in which to put the generated OMDoc
      */
-   def buildOne(bf: BuildTask, seCont: documents.Document => Unit) = {
+   def importDocument(bf: BuildTask, seCont: documents.Document => Unit) {
       File(bf.outFile.getParent).mkdirs
       val procBuilder = new java.lang.ProcessBuilder(path.toString)
       procBuilder.redirectErrorStream()
@@ -92,23 +92,20 @@ class Twelf extends Importer {
             do {
                msg ::= output.readLine
             } while (! msg.head.startsWith("%%"))
-            bf.errors ::= CompilerError(r, msg.reverse, warning)
+            bf.errorCont(CompilerError(r, msg.reverse, warning))
          }
       }
-      bf.errors = bf.errors.reverse
-      val (doc,_) = controller.read(outFile, Some(bf.narrationDPath))
+      val doc = controller.read(outFile, Some(bf.narrationDPath))(bf.errorCont)
       seCont(doc)
    }
    
-   def compileOne(inText : String, dpath : DPath) : (String, List[Error]) = {
+   def importString(inText : String, dpath : DPath)(implicit errorCont: ErrorHandler) {
      val tmp = File(System.getProperty("java.io.tmpdir"))
      val inFileName = tmp / "in.elf"
      val outFileName = tmp / "out.omdoc"
      utils.File.write(inFileName,inText)
-     val bf = new archives.BuildTask(File(inFileName), false, List("string"), dpath.uri, File(outFileName))
-     buildOne(bf, doc => ())
-     val lines = utils.File.read(outFileName)
-     (lines, bf.errors)
+     val bf = new archives.BuildTask(File(inFileName), false, List("string"), dpath.uri, File(outFileName), errorCont)
+     importDocument(bf, doc => ())
    }
    
 }

@@ -3,6 +3,7 @@ package info.kwarc.mmt.morphisms
 import info.kwarc.mmt.api._
 import uom._
 import symbols._
+import checking._
 import objects._
 import objects.Conversions._
 

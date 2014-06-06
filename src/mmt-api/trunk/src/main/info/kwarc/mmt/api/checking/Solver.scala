@@ -1,6 +1,7 @@
-package info.kwarc.mmt.api.objects
-import info.kwarc.mmt.api._
+package info.kwarc.mmt.api.checking
 
+import info.kwarc.mmt.api._
+import objects._
 import libraries._
 import modules._
 import symbols._
@@ -92,7 +93,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
    /** a DefinitionExpander to be used throughout */
    private val defExp = new uom.DefinitionExpander(controller)
    /** shortcut for UOM simplification */
-   private def simplify(t : Term) = controller.uom.simplify(t, theory, solution)
+   private def simplify(t : Term) = controller.simplifier(t, theory, solution)
    /** used for rendering objects, should be used by rules if they want to log */
    implicit val presentObj : Obj => String = o => controller.presenter.asString(o)
    
@@ -296,7 +297,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
      val subs = solution.toPartialSubstitution
      def prepare(t: Term, covered: Boolean = false) = if (covered) simplify(t ^^ subs) else simplify(t ^^ subs)
      def prepareS(s: Stack) =
-        Stack(s.theory, controller.uom.simplifyContext(s.context ^^ subs, s.theory, solution))
+        Stack(s.theory, controller.simplifier(s.context ^^ subs, s.theory, solution))
      // look for an activatable constraint
      delayed foreach {_.solved(newsolutions)}
      newsolutions = Nil
@@ -814,7 +815,7 @@ class Solver(val controller: Controller, theory: Term, initUnknowns: Context) ex
 object Solver {
   /** reconstructs a single term and returns the reconstructed term and its type */
   def check(controller: Controller, stack: Stack, tm: Term): Option[(Term,Term)] = {
-      val (unknowns,tmU) = parser.AbstractObjectParser.splitOffUnknowns(tm)
+      val (unknowns,tmU) = parser.ObjectParser.splitOffUnknowns(tm)
       val etp = LocalName("expected_type")
       val oc = new Solver(controller, stack.theory, unknowns ++ VarDecl(etp, None, None, None))
       val j = Typing(stack, tmU, OMV(etp), None)

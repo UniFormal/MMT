@@ -1,6 +1,7 @@
 package info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import objects._
+import checking._
 
 object Typed {
    val _base = DPath(utils.URI("http", "cds.omdoc.org") / "urtheories")
