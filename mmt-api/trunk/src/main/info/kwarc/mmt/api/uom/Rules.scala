@@ -22,6 +22,9 @@ case class GlobalChange(it: Term) extends Change
 /** no change */
 case object NoChange extends Change
 
+/** super class of all rules used by the [[UOM]] */
+trait UOMRule extends checking.Rule
+
 /** A DepthRule looks one level deep into the structure of one of the arguments of an operator
  * 
  * It is applicable to a term of the form
@@ -30,7 +33,7 @@ case object NoChange extends Change
  * }}}
  * A LocalChange replaces OMA(inner,inside).
  */
-abstract class DepthRule(val outer: GlobalName, val inner: GlobalName) extends Rule {
+abstract class DepthRule(val outer: GlobalName, val inner: GlobalName) extends UOMRule {
    val head = outer
    /** a Rewrite takes the triple (before, inside, after) and returns a simplification Result */
    type Rewrite = (List[Term], List[Term], List[Term]) => Change
@@ -55,7 +58,7 @@ abstract class DepthRuleUnary(outer: GlobalName, inner: GlobalName) extends Dept
  * }}}
  * A LocalChange replaces args.
  */ 
-abstract class BreadthRule(val head: GlobalName) extends Rule {
+abstract class BreadthRule(val head: GlobalName) extends UOMRule {
    /** a Rewrite takes the arguments args and returns a simplification Result */
    type Rewrite = List[Term] => Change
    /** the implementation of the simplification rule */
@@ -64,4 +67,4 @@ abstract class BreadthRule(val head: GlobalName) extends Rule {
 
 /** An AbbrevRule expands a symbol into a term
  */ 
-case class AbbrevRule(head: GlobalName, term: Term) extends Rule
+case class AbbrevRule(head: GlobalName, term: Term) extends UOMRule

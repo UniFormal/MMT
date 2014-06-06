@@ -1,6 +1,7 @@
 package info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import objects._
+import checking._
 import objects.Conversions._
 import uom._
 import utils.MyList.fromList

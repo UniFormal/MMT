@@ -7,6 +7,7 @@ import objects._
 import symbols._
 import modules._
 import documents._
+import checking._
 import parser._
 import ontology._
 import notations._
@@ -68,29 +69,29 @@ class Controller extends ROController with Logger {
    val docstore = memory.narration
    
    /** text-based presenter for error messages, logging, etc. */
-   val presenter = new StructureAndObjectPresenter
+   val presenter: Presenter = new MMTStructurePresenter(new NotationBasedPresenter {override def twoDimensional = false})
+   /** the MMT parser (native MMT text syntax) */
+   val textParser: Parser = new KeywordBasedParser(new NotationBasedParser)
+   /** default structure checker and type reconstructor */
+   val checker: Checker = new MMTStructureChecker(new RuleBasedChecker)
+   /** elaborator and universal machine for simplification */
+   val simplifier: Simplifier = new StructureElaborator(new UOM)
+
+   /** the MMT parser (XML syntax) */
+   val xmlReader = new XMLReader(report)
+   /** Twelf-specific parser */
+   val twelfParser = new TextReader(this, this.add)
+   
    /** converts between strict and pragmatic syntax using [[NotationExtension]]s */
    val pragmatic = new Pragmatics(this)
    /** maintains all customizations for specific languages */
    val extman = new ExtensionManager(this)
    /** the http server */
    var server : Option[Server] = None
-   /** the MMT parser (XML syntax) */
-   val xmlReader = new XMLReader(report)
-   /** the MMT term parser */
-   val termParser = new ObjectParser(this)
-   /** the MMT parser (native MMT text syntax) */
-   val textParser = new StructureAndObjectParser(this)
-   /** a basic structure checker */
-   val checker = new StructureAndObjectChecker(this)
-   /** the MMT parser (Twelf text syntax) */
-   val textReader = new TextReader(this, this.add)
    /** the catalog maintaining all registered physical storage units */
    val backend = new Backend(extman, report)
    /** the query engine */
    val evaluator = new ontology.Evaluator(this)
-   /** the universal machine, a computation engine */
-   val uom = new UOM(this)
    /** the window manager */
    val winman = new WindowManager(this)
    /** moc.refiner - handling pragmatic changes in scope */ 
@@ -100,6 +101,7 @@ class Controller extends ROController with Logger {
    
    private def init {
       extman.addDefaultExtensions
+      List(presenter, textParser, checker, simplifier).foreach {_.init(this)}
    }
    init
    
@@ -332,13 +334,14 @@ class Controller extends ROController with Logger {
          delete(d.path)
       }}
    }
-   /** reads a file containing a document and returns the Path of the document found in it
+   /**
+    * reads a file containing a document and returns the Path of the document found in it
     * the reader is chosen according to the file ending: omdoc, elf, or mmt
     * @param f the input file
     * @param docBase the base path to use for relative references
     * @return the read Document and a list of errors that were encountered
     */
-   def read(f: File, docBase : Option[DPath] = None) : (Document,List[SourceError]) = {
+   def read(f: File, docBase : Option[DPath] = None)(implicit errorCont: ErrorHandler) : Document = {
       // use docBase, fall back to logical document id given by an archive, fall back to file:f
       val dpath = docBase orElse
                   backend.resolvePhysical(f).map {
@@ -357,24 +360,19 @@ class Controller extends ROController with Logger {
                   doc = d
                case e => add(e)
             }
-            (doc, Nil)
+            doc
          case Some("elf") =>
             val source = scala.io.Source.fromFile(f, "UTF-8")
-            val (doc, errorList) = textReader.readDocument(source, dpath)(pu => termParser.apply(pu, throw _))
+            val (doc, errorList) = twelfParser.readDocument(source, dpath)(pu => textParser(pu)(ErrorThrower))
             source.close
-            if (!errorList.isEmpty)
-              log(errorList.size + " errors in " + dpath.toString + ": " + errorList.mkString("\n  ", "\n  ", ""))
-            (doc, errorList.toList)
+            errorList.foreach {e => errorCont(e)}
+            doc
          case Some("mmt") =>
-            val r = Reader(f)
-            try {
-               val (doc, state) = textParser(r, dpath)
-               (doc, state.getErrors)
-            } finally {
-               r.close
-            }
-         case Some(e) => throw ParseError("unknown file extension: " + f)
-         case None => throw ParseError("unknown document format: " + f)
+            textParser.readFile(dpath, f)
+         case Some(e) =>
+            throw ParseError("unknown file extension: " + f)
+         case None =>
+            throw ParseError("unknown document format: " + f)
       }
       if (! modules.isEmpty) {
          log("deleting the remaining deactivated elements")
@@ -386,21 +384,16 @@ class Controller extends ROController with Logger {
    }
    
    /** like read(f: File) but taking a string in mmt format  */
-   def read(s: String, dpath: DPath) : (Document,List[SourceError]) = {
+   def read(s: String, dpath: DPath)(implicit errorCont: ErrorHandler) : Document = {
       val modules = deactivateDocument(dpath)
       log("reading " + dpath)
-      val r = Reader(s)
-      val result = try {
-         val (doc, state) = textParser(r, dpath)
-         (doc, state.getErrors)
-      } finally {
-         r.close
-      }
+      implicit val errorCont = new ErrorContainer
+      val doc = textParser.readString(dpath, s)
       log("deleting the remaining deactivated elements")
       logGroup {
          modules foreach {m => deleteInactive(m)}
       }
-      result
+      doc
    }
    /** MMT base URI */
    protected var base : Path = DPath(mmt.baseURI)
@@ -592,17 +585,14 @@ class Controller extends ROController with Logger {
 	      case LoggingOn(g) => report.groups += g
 	      case LoggingOff(g) => report.groups -= g
 	      case NoAction => ()
-	      case Read(f) => read(f)
+	      case Read(f) =>
+	         read(f)(new ErrorLogger(report))
 	      case Graph(f) =>
 	         val tg = new TheoryGraph(depstore)
 	         val gv = new GraphExporter(tg.nodes.toIterable, Nil, tg)
             gv.exportDot(f)
 	      case Check(p) =>
-	         val errors = checker(p)
-	         if (errors == Nil)
-	            log("check succeeded")
-	         else
-	            log("check failed (see log for error messages)")
+	         checker(p)(new ErrorLogger(report), RelationHandler.ignore)
 	      case Navigate(p) =>
 	         extman.changeListeners foreach {l =>
 	            l.onNavigate(p)

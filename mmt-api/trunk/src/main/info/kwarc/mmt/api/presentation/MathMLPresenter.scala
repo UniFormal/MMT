@@ -20,7 +20,7 @@ import utils.xml._
  * 
  * mi: jobad:varref ([[Position]]) pointing to its declaration 
  */
-class MathMLPresenter(val controller: Controller) extends NotationBasedPresenter {
+class MathMLPresenter extends NotationBasedPresenter {
    
    /** generalized apply method that takes a callback function to determine the css class of a subterm */
    def apply(o: Obj, origin: Option[CPath], style: PresentationContext => String)(implicit rh : RenderingHandler) {

@@ -124,7 +124,7 @@ object TermContainer {
    //currently this is just a workaround
    def apply(tOpt: Option[Term]): TermContainer = {
       val tc = new TermContainer
-      tOpt foreach {t => if (parser.AbstractObjectParser.isOnlyParsed(t))
+      tOpt foreach {t => if (parser.ObjectParser.isOnlyParsed(t))
          tc.parsed = t
       else
          tc.analyzed = t

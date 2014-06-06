@@ -17,7 +17,7 @@ import scala.collection.mutable.{ListMap,HashMap}
  * @param reader the input stream, from which the parser reads
  * @param container the MMT URI of the input stream (used for back-references)
  */
-class ParserState(val reader: Reader, val container: DPath) {
+class ParserState(val reader: Reader, val container: DPath, val errorCont: ErrorHandler) {
    /**
     * the namespace mapping set by
     * {{{
@@ -33,13 +33,8 @@ class ParserState(val reader: Reader, val container: DPath) {
    /** the position at which the current StructuralElement started */ 
    var startPosition = reader.getSourcePosition
    
-   /** all errors encountered during parsing, in reverse order */()
-   var errors : List[SourceError] = Nil
-   /** all errors encountered during parsing */()
-   def getErrors = errors.reverse
-   
    def copy(reader: Reader = reader) = {
-      val s = new ParserState(reader, container)
+      val s = new ParserState(reader, container, errorCont)
       s.namespaces = namespaces
       s
    }
@@ -61,9 +56,8 @@ class ParserState(val reader: Reader, val container: DPath) {
  * 
  * 3) It leaves processing of MMT entities application-independently via high-level continuation functions. 
  */
-abstract class StructureParser(controller: Controller) extends frontend.Logger {
-   val report = controller.report
-   val logPrefix = "structure-parser"
+class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser) {
+   override val logPrefix = "structure-parser"
    
    /**
     * A continuation function called on every StructuralElement that was found
@@ -71,22 +65,39 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * For grouping elements (documents, modules with body), this is called on the empty element first
     * and then on each child.
     */
-   def seCont(se: StructuralElement)(implicit state: ParserState): Unit
+   protected def seCont(se: StructuralElement)(implicit state: ParserState) {
+      log(se.toString)
+      val reg = currentSourceRegion
+      SourceRef.update(se, SourceRef(state.container.uri,reg))
+      try {controller.add(se)}
+      catch {case e: Error =>
+         val se = makeError(reg, e.getMessage)
+         errorCont(se)
+      }
+   }
    /**
     * A continuation function called on every ParsingUnit that was found
     * 
-    * Objects are opaque to the parser, and parsing is deferred via this function.
+    * Objects are opaque to the parser, and parsing is deferred to objectParser via this function.
+    * 
+    * Fatal errors are recovered from by defaulting to [[DefaultObjectParser]]
     */
-   def puCont(pu: ParsingUnit)(implicit state: ParserState): Term
+   private def puCont(pu: ParsingUnit)(implicit state: ParserState): Term = {
+      val obj = try {
+         objectParser(pu)(state.errorCont)  
+      } catch {
+         case e: Error =>
+            val se = makeError(pu.source.region, e.getMessage)
+            state.errorCont(se)
+            DefaultObjectParser(pu)(state.errorCont)
+      }
+      obj
+   }
    /**
-    * A continuation function called on every error that was found
-    * 
-    * Error handling will recover wherever possible.
-    * 
-    * Default implementation adds every error to the ParserState
+    * A continuation function called on every error that occurred
     */
-   def errorCont(err: SourceError)(implicit state: ParserState) {
-      state.errors ::= err
+   private def errorCont(e: SourceError)(implicit state: ParserState) = {
+      state.errorCont(e)
    }
    
    /** called at the end of a document or module, does common bureaucracy */
@@ -98,17 +109,13 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       log("end " + s.path)
    }
    
-   /** the main interface function
-    * 
-    * @param r a Reader holding the input stream
-    * @param dpath the MMT URI of the stream
-    */
-   def apply(r: Reader, dpath: DPath) : (Document,ParserState) = {
-      val state = new ParserState(r, dpath)
-      apply(state, dpath)
+   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) : Document = {
+      val (d, _) = apply(new ParserState(new Reader(ps.stream), ps.dpath, errorCont))
+      d
    }
    
-   def apply(state : ParserState, dpath : DPath) : (Document,ParserState) = {
+   private def apply(state : ParserState) : (Document,ParserState) = {
+      val dpath = state.container
       state.namespaces.default = dpath.uri
       val doc = new Document(dpath)
       seCont(doc)(state)
@@ -627,22 +634,9 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
       val pattern = new Pattern(OMMOD(tpath),name, pr, bd, nt)
       seCont(pattern)
    }
-   //TODO, text syntax for styles?
-   //def readInStyle(style: MPath)(implicit state: ParserState) {}
    
-   /** API Functions **/
-   
-   /**
-    * Reads a document from a string
-    * @param docURI the base uri (location) of the document
-    * @param docS the document string
-    */
-   def readDocument(docURI : DPath, docS : String) {
-     val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(docS)))
-     apply(r, docURI)
-     r.close
-   }
-		   			
+   /** API Functions for parsing fragments, TODO refactor **/
+   		   			
    /**
     * reads a module from a string
     * @param dpath the uri of the parent document
@@ -650,13 +644,11 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * @param docBaseO optionally the base uri of the containing document 
     * @param namespace the namespace declarations found so far
     */
-   def readModule(dpath : DPath, 
-		   	      modS : String, 
-                  docBaseO : Option[DPath] = None, 
-                  namespace : ListMap[String, DPath] = new ListMap) {
+   def readModule(dpath : DPath, modS : String, docBaseO : Option[DPath] = None,
+          namespace : ListMap[String, DPath] = new ListMap, errorCont: ErrorHandler) {
      //building parsing state
      val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(modS)))
-     val state = new ParserState(r, docBaseO.getOrElse(null))
+     val state = new ParserState(r, docBaseO.getOrElse(null), errorCont)
      docBaseO.map(dp => state.namespaces.default = dp.uri)
      namespace map { p =>
        state.namespaces.prefixes(p._1) = p._2.uri
@@ -674,13 +666,11 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
     * @param docBaseO optionally the base uri of the containing document 
     * @param namespace the namespace declarations found so far
     */
-   def readConstant(mpath : MPath, 
-		   	        conS : String, 
-                    docBaseO : Option[DPath] = None, 
-                    namespace : ListMap[String, DPath] = new ListMap) = {
+   def readConstant(mpath : MPath, conS : String, docBaseO : Option[DPath] = None, 
+                    namespace : ListMap[String, DPath] = new ListMap, errorCont: ErrorHandler) = {
      //building parsing state
      val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(conS)))
-     val state = new ParserState(r, docBaseO.getOrElse(null))
+     val state = new ParserState(r, docBaseO.getOrElse(null), errorCont)
      docBaseO.map(dp => state.namespaces.default = dp.uri)
      namespace map { p =>
        state.namespaces.prefixes(p._1) = p._2.uri
@@ -695,42 +685,6 @@ abstract class StructureParser(controller: Controller) extends frontend.Logger {
      readInModule(thy, patterns)(state)
    }
 }
-
-/**
- * An implementation of the continuation functions in StructureParser with reasonable defaults.
- */
-class StructureAndObjectParser(controller: Controller) extends StructureParser(controller) {
-   /**
-    * parsing units are parsed by the termParser of the controller
-    * if that fails, the [[info.kwarc.mmt.api.parser.DefaultObjectParser]] is used
-    */
-   def puCont(pu: ParsingUnit)(implicit state: ParserState): Term = {
-      val obj = try {
-         controller.termParser(pu, errorCont _)  
-      } catch {
-         case e: Error =>
-            val se = makeError(pu.source.region, e.getMessage)
-            errorCont(se)
-            DefaultObjectParser(pu)
-      }
-      obj
-   }
-   /**
-    * structural elements are added to controller
-    */
-   def seCont(se: StructuralElement)(implicit state: ParserState) {
-      log(se.toString)
-      //log(se.toNode.toString)
-      val reg = currentSourceRegion
-      SourceRef.update(se, SourceRef(state.container.uri,reg))
-      try {controller.add(se)}
-      catch {case e: Error =>
-         val se = makeError(reg, e.getMessage)
-         errorCont(se)
-      }
-   }
-}
-
 
 class SequentialReader extends java.io.Reader {
   var text : List[Char] = Nil

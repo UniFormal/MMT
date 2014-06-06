@@ -26,7 +26,7 @@ class ProverSpec extends FlatSpec with Matchers {
   
   import ip._
  
-  val prover = new Prover(controller)
+  val prover = new checking.Prover(controller)
   "A prover" should "detect if rules are applicable" in {
     val context = cont"[x: bool, y: bool]"
     val stack = Stack(OMMOD(mpath), context)

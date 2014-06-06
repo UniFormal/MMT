@@ -1,6 +1,6 @@
-package info.kwarc.mmt.api.objects
+package info.kwarc.mmt.api.checking
 import info.kwarc.mmt.api._
-import frontend._
+import objects._
 
 /** apply/unapply methods for missing terms of known type */
 object Hole {
@@ -18,7 +18,7 @@ object HoleTerm extends InferenceRule(Hole.path, Hole.path) {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History): Option[Term] = Hole.unapply(tm)
 }
 
-class ErrorsPlugin extends Plugin {
+class ErrorsPlugin extends frontend.Plugin {
    val dependencies = Nil
    override def start(args: List[String]) {
       controller.extman.ruleStore.add(HoleTerm)

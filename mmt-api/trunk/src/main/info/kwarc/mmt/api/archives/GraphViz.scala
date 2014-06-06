@@ -17,11 +17,8 @@ class GraphViz extends Exporter {
    /** expects one argument: the path to graphviz */
    override def start(args: List[String]) {
       tg = new ontology.TheoryGraph(controller.depstore)
-      args match {
-         case hd::Nil =>
-            graphviz = hd
-         case _ => logError("missing/extraneous arguments; expected 1 argument (path to graphviz)")
-      }
+      checkNumberOfArguments(1,1,args)
+      graphviz = args(0)
    }
    
    /** contains at least all elements of the document */
@@ -47,7 +44,7 @@ class GraphViz extends Exporter {
       val gv = new ontology.GraphExporter(theories, views, tg)
       gv.exportDot(dotFile)
       val result = ShellCommand.run(graphviz, "-Tsvg", "-o" + bt.outFile, dotFile.toString)
-      result foreach {m => bt.errors ::= LocalError(m)}
+      result foreach {m => bt.errorCont(LocalError(m))}
    }
    
 /*   def buildFile(a: Archive, bf: BuildFile) = {

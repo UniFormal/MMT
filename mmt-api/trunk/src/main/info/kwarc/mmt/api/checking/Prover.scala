@@ -1,5 +1,7 @@
-package info.kwarc.mmt.api.objects
+package info.kwarc.mmt.api.checking
+
 import info.kwarc.mmt.api._
+import objects._
 import frontend._
 import symbols._
 import objects.Conversions._
