@@ -8,21 +8,10 @@ import objects._
 import utils.MyList.fromList
 import collection.immutable.{HashSet, HashMap}
 
-//import objects.Conversions._
-
-/** an Elaborator takes a StructuralElement and produces further StructuralElement that are the result of elaborating the former */
-abstract class Elaborator {
-  /**
-   * @param e the StructuralElement that is elaborated
-   * @param cont a function that is applied to each produced StructuralElement
-   */
-   def apply(e: StructuralElement)(implicit cont: StructuralElement => Unit)
-}
-
 /**
  * Elaborates modules by enriching with induced statements
  */
-class ModuleElaborator(controller : Controller) extends Elaborator {
+class ModuleElaborator(controller : Controller) {
   private val content = controller.globalLookup
   private val modules = controller.memory.content.getAllPaths.map(controller.globalLookup.get(_)).toList
 
@@ -118,11 +107,7 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
               }
             }
       }
-
-
-
       val nt = new DeclaredTheory(t.parent, t.name, t.meta)
-
       newDecs foreach {
         case c : Constant =>
           val nwName = c.name
@@ -136,30 +121,24 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
           decls += 1
         case _ => nt.add(_)
       }
-
       t.components collect {
         case c : Constant =>
           newDecs += c
           nt.add(c)
           decls += 1
       }
-
       cont(nt)
-
       modules collect {
         case v : DeclaredView =>
           v.from match {
             case OMMOD(p) =>
               var viewRewrRules = new HashMap[Path,Term]
-
               v.components collect {
                 case ca : Constant =>
                   ca.df.foreach {t =>
                      viewRewrRules += (p ? ca.name -> t)
                   }
               }
-
-
               if (p == t.path) {    // view from this theory
               val nwIndThy = new DeclaredTheory(v.to.toMPath.parent, LocalName(v.to.toMPath.name.last + "^" +  escape(v.path.toPath) + "^" + escape(t.path.toPath)), t.meta)
                 newDecs foreach { c =>
@@ -188,10 +167,8 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
               }
           }
       }
-
     case v : DeclaredView => cont(v)
     case _ => None
-
   }
 
   def escape(s : String) = {
@@ -229,7 +206,5 @@ class ModuleElaborator(controller : Controller) extends Elaborator {
    constants.foreach(nt add _)
    nt    
   }
-  
-  
 }
 

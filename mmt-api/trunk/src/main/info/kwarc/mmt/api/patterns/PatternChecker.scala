@@ -15,10 +15,9 @@ import utils.MyList._
 
 import scala.io.Source
 
-/** elaborates Instance declarations
- * this is also called the pragmatic-to-strict translation
+/** tries to turn constants into instances
  */
-class PatternChecker(controller: Controller) extends Elaborator {
+class PatternChecker(controller: Controller) {
   private var valid : Boolean = true // theory is valid? 
   
   case class getPatternsError(msg : String) extends java.lang.Throwable(msg)
@@ -74,14 +73,6 @@ class PatternChecker(controller: Controller) extends Elaborator {
       
     } else None //Fail: Wrong number of declarations in pattern or number of constants               
   }  
-  
-  def apply(e: StructuralElement)(implicit cont: StructuralElement => Unit) : Unit = e match {
-     case c: Constant =>
-       val patts = getPatterns(c.home)(1)
-       patts.mapPartial(p => patternCheck(List(c),p))
-     case _ => 
-   }
-  
   
   // check const decl vs list of patterns
   def getInstance(constList : List[Constant], pattList : List[Pattern]) : List[Instance]= {        

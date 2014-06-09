@@ -120,8 +120,13 @@ class ThinGeneratedCategory {
     * @return the implicit morphism if one exists
     */
    def apply(from: Term, to: Term) : Option[Term] = {
-      if (TheoryExp.importsDefinitely(from,to)) Some(OMCOMP())
-      else impl(from,to)
+      val imports = TheoryExp.imports(from,to) {case (f,t) =>
+         f == t || impl(OMMOD(f), OMMOD(t)) == Some(OMCOMP())
+      }
+      if (imports) 
+         Some(OMCOMP())
+      else
+         impl(from,to)
    }
    
    /** retrieves all pairs (to,Morph) for from */

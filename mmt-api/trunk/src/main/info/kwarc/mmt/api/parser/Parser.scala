@@ -8,12 +8,11 @@ import frontend._
 
 /** a ParsingUnit represents a term that is to be parsed
  * @param source the source reference of the string to parse
- * @param scope the theory against which to parse
  * @param context the context against which to parse
  * @param term the term to parse
  * @param top an optional notation that the whole input must match; this can be used to parse a term that is known/required to have a certain form
  */
-case class ParsingUnit(source: SourceRef, scope: Term, context: Context, term: String, top: Option[ParsingRule] = None)
+case class ParsingUnit(source: SourceRef, context: Context, term: String, top: Option[ParsingRule] = None)
 
 class ParsingStream(val dpath: DPath, val stream: java.io.BufferedReader)
 
@@ -45,7 +44,7 @@ object ObjectParser {
 /** A default parser that parses any string into an OMSemiFormal object. */
 object DefaultObjectParser extends ObjectParser {
    def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): Term = {
-      val t = OMSemiFormal(objects.Text(pu.scope.toMPath.toPath, pu.term))
+      val t = OMSemiFormal(objects.Text("unparsed", pu.term))
       SourceRef.update(t, pu.source)
       t
    }

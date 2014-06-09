@@ -410,11 +410,10 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
        e match {
           case l: Link if l.isImplicit =>
                 implicitGraph(l.from, l.to) = l.toTerm
-          case t: DeclaredTheory => t.meta match {
-             case Some(m) =>
-                implicitGraph(OMMOD(m), t.toTerm) = OMIDENT(OMMOD(m))
-             case None =>
-          }
+          case t: DeclaredTheory =>
+             t.getIncludes foreach {m =>
+                 implicitGraph(OMMOD(m), t.toTerm) = OMIDENT(OMMOD(m))
+             }
           case e: NestedModule =>
              add(e.module)
              implicitGraph(e.home, e.module.toTerm) = OMIDENT(e.home)
