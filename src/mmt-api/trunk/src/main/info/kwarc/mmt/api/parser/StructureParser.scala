@@ -7,6 +7,7 @@ import modules._
 import symbols._
 import patterns._
 import objects._
+import objects.Conversions._
 import notations._
 
 import scala.collection.mutable.{ListMap,HashMap}
@@ -199,9 +200,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
          throw makeError(delim._2, delims.map("'" + _ + "'").mkString("" ," or ", "") + "expected")
    }
    
-   def readParsedObject(scope: Term, context: Context = Context())(implicit state: ParserState) = {
+   /**
+    * reads until the object delimiter and parses the found string
+    * @return the raw string, the region, and the parsed term
+    */
+   def readParsedObject(context: Context = Context())(implicit state: ParserState) = {
       val (obj, reg) = state.reader.readObject
-      val pu = ParsingUnit(SourceRef(state.container.uri, reg), scope, context, obj)
+      val pu = ParsingUnit(SourceRef(state.container.uri, reg), context, obj)
       val parsed = puCont(pu)
       (obj,reg,parsed)
    }
@@ -230,7 +235,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       val tpath = ns ? name
       var delim = state.reader.readToken
       if (delim._1 == "abbrev") {
-         val (_,_,df) = readParsedObject(OMMOD(tpath))
+         val (_,_,df) = readParsedObject(Context())
          val thy = DefinedTheory(ns, name, df)
          moduleCont(thy, parent)
       } else {
@@ -240,7 +245,23 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             Some(p)
          } else
             None
-         val t = new DeclaredTheory(ns, name, meta)
+         val parameters = if (delim._1 == ">") {
+            val contextMeta = meta match {
+               case Some(p) => Context(IncludeVarDecl(p))
+               case _ => Context()
+            }
+            val (_,reg,p) = readParsedObject(contextMeta)
+            val params = p match {
+               case ComplexTheory(cont) => cont
+               case _ =>
+                  makeError(reg, "parameters of theory must be context")
+                  Context()
+            }
+            delim = state.reader.readToken
+            params
+         } else
+            Context()
+         val t = new DeclaredTheory(ns, name, meta, parameters)
          moduleCont(t, parent)
          if (delim._1 == "=") {
             val patterns: List[(String,GlobalName)] = meta match {
@@ -285,7 +306,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       val to = readMPath(vpath)
       readDelimiter("abbrev", "=") match {
          case "abbrev" =>
-            val (_,_,df) = readParsedObject(OMMOD(vpath))
+            val (_,_,df) = readParsedObject(Context())
             val v = DefinedView(ns, name, OMMOD(from), OMMOD(to), df, isImplicit)
             moduleCont(v, parent)
          case "=" =>
@@ -373,9 +394,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    private def readInModule(mod: DeclaredModule, patterns: List[(String,GlobalName)])(implicit state: ParserState) {
       //This would make the last RS marker of a module optional, but it's problematic with nested modules.
       //if (state.reader.endOfModule) return
-      val scope = mod match {
-         case t: DeclaredTheory => OMMOD(t.path)
-         case l: DeclaredLink => l.to 
+      val scope: Context = mod match {
+         case t: DeclaredTheory => Context(t.path)
+         case l: DeclaredLink => l.codomainAsContext
       }
       try {
          val (keyword, reg) = state.reader.readToken
@@ -477,8 +498,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       readInModule(mod, patterns) // compiled code is not actually tail-recursive
    }
    
-   private def doComponent(c: DeclarationComponent, tc: TermContainer, scope: Term, cont: Context = Context())(implicit state: ParserState) {
-         val (obj,_,tm) = readParsedObject(scope, cont)
+   private def doComponent(c: DeclarationComponent, tc: TermContainer, cont: Context)(implicit state: ParserState) {
+         val (obj,_,tm) = readParsedObject(cont)
          tc.read = obj
          tc.parsed = tm
       }
@@ -496,7 +517,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     * @param parent the containing [[info.kwarc.mmt.api.modules.DeclaredModule]]
     * @param scope the home theory for term components
     */
-   private def readConstant(name: LocalName, parent: MPath, scope: Term)(implicit state: ParserState): Constant = {
+   private def readConstant(name: LocalName, parent: MPath, context: Context)(implicit state: ParserState): Constant = {
       val cpath = parent ? name
       //initialize all components as omitted
       val tpC = new TermContainer
@@ -520,13 +541,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                      errorCont(makeError(treg, "type of this constant already given, ignored"))
                      state.reader.readObject
                   } else
-                     doComponent(TypeComponent, tpC, scope)
+                     doComponent(TypeComponent, tpC, context)
                case "=" =>
                   if (dfC.read.isDefined) {
                      errorCont(makeError(treg, "definiens of this constant already given, ignored"))
                      state.reader.readObject
                   } else
-                     doComponent(DefComponent, dfC, scope)
+                     doComponent(DefComponent, dfC, context)
                case "#" =>
                   doNotation(ParsingNotationComponent, nt, treg, cpath)
                case "##" =>
@@ -571,7 +592,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             case None => throw makeError(state.reader.getSourcePosition.toRegion, "instance declaration expected")
          }
       } else { 
-         val (obj,reg,tm) = readParsedObject(OMMOD(tpath))
+         val (obj,reg,tm) = readParsedObject(IncludeVarDecl(tpath))
          controller.pragmatic.mostPragmatic(tm) match {
             case OMA(OMS(pat), args) =>
                pattern = pat
@@ -606,7 +627,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         delim match {
           case "::" =>
             val (obj, reg) = state.reader.readObject
-            val pu = ParsingUnit(SourceRef(state.container.uri, reg), OMMOD(tpath), Context(), obj, None)
+            val pu = ParsingUnit(SourceRef(state.container.uri, reg), IncludeVarDecl(tpath), obj, None)
             val parsed = puCont(pu)
             parsed match {
               case OMBINDC(_, cont, Nil) =>
@@ -617,7 +638,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           case ">>" =>
             val (obj, reg) = state.reader.readObject
             // keep parameters in the context
-            val pu = ParsingUnit(SourceRef(state.container.uri, reg), OMMOD(tpath), pr, obj, None)
+            val pu = ParsingUnit(SourceRef(state.container.uri, reg), pr ++ tpath, obj, None)
             val parsed = puCont(pu)
             parsed match {
               case OMBINDC(_, cont, Nil) =>

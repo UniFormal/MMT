@@ -76,11 +76,101 @@ class NotationBasedParser extends ObjectParser {
          OMV(name)
       else {
          //apply meta-variable to all bound variables in whose scope it occurs
-         prag.defaultApplication(Some(pu.scope.toMPath), OMV(name), bvars.map(OMV(_)))
+         prag.defaultApplication(Some(pu.context.getIncludes.last), OMV(name), bvars.map(OMV(_)))
       }
    }
 
-   /**
+  /**
+   * @param pu the parsing unit
+   */
+  def apply(pu : ParsingUnit)(implicit errorCont: ErrorHandler) : Term = {
+    implicit val puI = pu
+    //gathering notations and lexer extensions in scope
+    val (parsing, lexing) = getRules(pu.context)
+    val notations = tableNotations(parsing)
+    resetVarGenerator
+    log("parsing: " + pu.term)
+    log("notations:")
+    logGroup {
+       notations.map(o => log(o.toString))
+    }
+
+    val escMan = new EscapeManager(controller.extman.lexerExtensions ::: lexing)
+    val tl = TokenList(pu.term, pu.source.region.start, escMan)
+    if (tl.length == 0) {
+       makeError("no tokens found: " + pu.term, pu.source.region)
+       return OMSemiFormal(objects.Text("unknown", ""))
+    }
+    
+    //scanning
+    val sc = new Scanner(tl, controller.report)
+    // scan once with the top notation and make sure it matches the whole input
+    pu.top foreach { n =>
+       log("scanning top notation: " + n)
+       sc.scan(List(n))
+       if (sc.tl.length == 1 && sc.tl(0).isInstanceOf[MatchedList])
+          ()
+       else {
+          makeError("top notation did not match whole input: " + n.toString, pu.source.region)
+          return OMSemiFormal(objects.Text("unknown", pu.term))
+       }
+    }
+    // now scan with all notations in increasing order of precedence
+    notations map {
+         case (priority,nots) => sc.scan(nots)
+    }
+    log("scan result: " + sc.tl.toString)
+    
+    //structuring
+    val varnames = pu.context.variables.map(_.name).toList
+    val scanned = sc.tl.length match {
+       case 1 => sc.tl(0)
+       case _ => new UnmatchedList(sc.tl)
+    }
+    val tm = logGroup {
+       makeTerm(scanned, varnames)
+    }
+    log("parse result: "  + tm.toString)
+    if (vardecls == Nil)
+       tm
+    else
+       OMBIND(OMID(ObjectParser.unknown), Context(vardecls: _*),tm)
+  }
+
+  /** auxiliary function to collect all lexing and parsing rules in a given context */
+  private def getRules(context : Context) : (List[ParsingRule], List[LexerExtension]) = {
+     val closer = new libraries.Closer(controller)
+     val support = context.getIncludes
+     //TODO we can also collect notations attached to variables
+     support foreach {p => closer(p)}
+     val includes = support.flatMap {p => controller.library.visible(OMMOD(p))}.toList.distinct
+     val decls = includes flatMap {tm =>
+        controller.localLookup.getO(tm.toMPath) match {
+           case Some(d: modules.DeclaredTheory) => d.getDeclarations
+           case _ => None
+        }
+     }
+     val nots = decls.flatMap {
+        case c: Constant =>
+           var names = (c.name :: c.alias.toList).map(_.toString) //the names that can refer to this constant
+           if (c.name.last == "_") names ::= c.name.init.toString
+           //the unapplied notations consisting just of the name 
+           val unapp = names map (n => new TextNotation(Mixfix(List(Delim(n))), presentation.Precedence.infinite, None))
+           val app = c.not.toList
+           (app ::: unapp).map(n => ParsingRule(c.path, n))
+        case p: patterns.Pattern =>
+           p.not.toList.map(n => ParsingRule(p.path, n))
+        case _ => Nil
+     }
+     val les = decls.flatMap {
+        case r: RealizedTypeConstant =>
+           r.real.lexerExtension.toList
+        case _ => Nil
+     }
+     (nots, les)
+  }
+  
+  /**
     * recursively transforms a TokenListElem (usually obtained from a [[Scanner]]) to an MMT Term
     * @param te the element to transform
     * @param boundVars the variable names bound in the context
@@ -96,7 +186,7 @@ class NotationBasedParser extends ObjectParser {
                OMV(name)
             } else if (word.count(_ == '?') > 0) {
                 try {
-                   Path.parse(word, pu.scope.toMPath) match {
+                   Path.parse(word, pu.context.getIncludes.last) match {
                       //or identifiers
                       case p: ContentPath => OMID(p)
                       case p =>
@@ -261,98 +351,11 @@ class NotationBasedParser extends ObjectParser {
                //throw ParseError("unmatched list: " + ul.tl)
                */
                val terms = ul.tl.getTokens.map(makeTerm(_,boundVars))
-               prag.defaultApplication(Some(pu.scope.toMPath), terms.head, terms.tail)
+               prag.defaultApplication(Some(pu.context.getIncludes.last), terms.head, terms.tail)
             }
       }
       //log("result: " + term)
       SourceRef.update(term, pu.source.copy(region = te.region))
       term
    }
-  
-   private def getRules(scope : Term) : (List[ParsingRule], List[LexerExtension]) = {
-     val closer = new libraries.Closer(controller)
-     closer(scope.toMPath)
-     val includes = controller.library.visible(scope)
-     val decls = includes.toList flatMap {tm =>
-        controller.localLookup.getO(tm.toMPath) match {
-           case Some(d: modules.DeclaredTheory) => d.getDeclarations
-           case _ => None
-        }
-     }
-     val nots = decls.flatMap {
-        case c: Constant =>
-           var names = (c.name :: c.alias.toList).map(_.toString) //the names that can refer to this constant
-           if (c.name.last == "_") names ::= c.name.init.toString
-           //the unapplied notations consisting just of the name 
-           val unapp = names map (n => new TextNotation(Mixfix(List(Delim(n))), presentation.Precedence.infinite, None))
-           val app = c.not.toList
-           (app ::: unapp).map(n => ParsingRule(c.path, n))
-        case p: patterns.Pattern =>
-           p.not.toList.map(n => ParsingRule(p.path, n))
-        case _ => Nil
-     }
-     val les = decls.flatMap {
-        case r: RealizedTypeConstant =>
-           r.real.lexerExtension.toList
-        case _ => Nil
-     }
-     (nots, les)
-  }
-
-  /**
-   * @param pu the parsing unit
-   */
-  def apply(pu : ParsingUnit)(implicit errorCont: ErrorHandler) : Term = {
-    implicit val puI = pu
-    //gathering notations and lexer extensions in scope
-    val (parsing, lexing) = getRules(pu.scope)
-    val notations = tableNotations(parsing)
-    resetVarGenerator
-    log("parsing: " + pu.term)
-    log("notations:")
-    logGroup {
-       notations.map(o => log(o.toString))
-    }
-
-    val escMan = new EscapeManager(controller.extman.lexerExtensions ::: lexing)
-    val tl = TokenList(pu.term, pu.source.region.start, escMan)
-    if (tl.length == 0) {
-       makeError("no tokens found: " + pu.term, pu.source.region)
-       return OMSemiFormal(objects.Text("unknown", ""))
-    }
-    
-    //scanning
-    val sc = new Scanner(tl, controller.report)
-    // scan once with the top notation and make sure it matches the whole input
-    pu.top foreach { n =>
-       log("scanning top notation: " + n)
-       sc.scan(List(n))
-       if (sc.tl.length == 1 && sc.tl(0).isInstanceOf[MatchedList])
-          ()
-       else {
-          makeError("top notation did not match whole input: " + n.toString, pu.source.region)
-          return OMSemiFormal(objects.Text("unknown", pu.term))
-       }
-    }
-    // now scan with all notations in increasing order of precedence
-    notations map {
-         case (priority,nots) => sc.scan(nots)
-    }
-    log("scan result: " + sc.tl.toString)
-    
-    //structuring
-    val varnames = pu.context.variables.map(_.name).toList
-    val scanned = sc.tl.length match {
-       case 1 => sc.tl(0)
-       case _ => new UnmatchedList(sc.tl)
-    }
-    val tm = logGroup {
-       makeTerm(scanned, varnames)
-    }
-    log("parse result: "  + tm.toString)
-    if (vardecls == Nil)
-       tm
-    else
-       OMBIND(OMID(ObjectParser.unknown), Context(vardecls: _*),tm)
-  }
 }

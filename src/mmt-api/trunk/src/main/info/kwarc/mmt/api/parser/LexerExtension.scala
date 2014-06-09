@@ -337,7 +337,7 @@ class QuoteEval(bQ: String, eQ: String, bE: String, eE: String) extends LexerExt
                  val cont = outer.context ++ Context(boundVars.map(VarDecl(_,None,None,None)) :_*)
                  val ref = outer.source.copy(region = SourceRegion(current, current.after(e)))
                  current = current.after(e + eE) 
-                 val pu = ParsingUnit(ref, outer.scope, cont, e)
+                 val pu = ParsingUnit(ref, cont, e)
                  parser(pu)(ErrorThrower)
            }
            OMSemiFormal(parsed.map(Formal(_)))

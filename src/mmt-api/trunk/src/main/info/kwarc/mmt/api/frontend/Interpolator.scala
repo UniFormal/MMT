@@ -44,12 +44,12 @@ class MMTInterpolator(controller: frontend.Controller) {
    }
    
    private def theory = controller.getBase match {
-        case d: DPath => OMMOD(utils.mmt.mmtcd) 
-        case p: MPath => OMMOD(p)
-        case GlobalName(t,_) => t
+        case d: DPath => utils.mmt.mmtcd 
+        case p: MPath => p
+        case GlobalName(t,_) => t.toMPath
         case CPath(par,_) => par match {
-           case p: MPath => OMMOD(p)
-           case GlobalName(t,_) => t
+           case p: MPath => p
+           case GlobalName(t,_) => t.toMPath
         }
      }
    private def parse(sc: StringContext, ts: List[Term], top: Option[ParsingRule], check: Boolean) = {
@@ -67,11 +67,11 @@ class MMTInterpolator(controller: frontend.Controller) {
             i += 1
         }
         val str = buf.toString
-        val pu = ParsingUnit(SourceRef.anonymous(str), theory, cont, str, top) 
+        val pu = ParsingUnit(SourceRef.anonymous(str), Context(theory) ++ cont, str, top) 
         val t = controller.textParser(pu)(ErrorThrower)
         val tI = t ^ cont.toPartialSubstitution
         if (check) {
-	        val stack = Stack(theory, cont)
+	        val stack = Stack(OMMOD(theory), cont)
 	        val (tR, tpR) = checking.Solver.check(controller, stack, tI).getOrElse {
 	           throw InvalidObject(t, "term was parsed but did not type-check")
 	        }
@@ -95,14 +95,14 @@ class MMTInterpolator(controller: frontend.Controller) {
       /** uom"s" parses and simplifies s */
       def uom(ts: Term*): Term = {
          val t = mmt(ts : _*)
-	     controller.simplifier(t, theory, Context())
+	     controller.simplifier(t, OMMOD(theory), Context())
       }
       /** r"s" parses and type-checks s */
       def r(ts: Term*): Term = parse(sc, ts.toList, None, true)
       /** s"s" parses, type-checks, and simplifies s */
       def rs(ts: Term*): Term = {
          val t = r(ts : _*)
-	     controller.simplifier(t, theory, Context())
+	     controller.simplifier(t, OMMOD(theory), Context())
       }
       /** cont"s" parses s into a Context */
       def cont(ts: Term*) : Context = {

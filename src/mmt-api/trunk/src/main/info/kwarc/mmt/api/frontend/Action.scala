@@ -123,7 +123,11 @@ object Action extends RegexParsers {
    def parseAct(s:String, b : Path, h: File) : Action = {
       base = b
       home = h
-      val p = parseAll(commented,s)
+      val p =
+         try {parseAll(commented,s)}
+         catch {case e: Exception =>
+            throw ParseError("unknown parse error: " + e.getMessage).setCausedBy(e)
+         }
       p match {
          case Success(tree, _) => tree
          case e: NoSuccess => throw ParseError(s + "\n  error: " + e.msg)

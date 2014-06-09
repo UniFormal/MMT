@@ -75,7 +75,7 @@ class Controller extends ROController with Logger {
    /** default structure checker and type reconstructor */
    val checker: Checker = new MMTStructureChecker(new RuleBasedChecker)
    /** elaborator and universal machine for simplification */
-   val simplifier: Simplifier = new StructureElaborator(new UOM)
+   val simplifier: Simplifier = new StepBasedElaborator(new UOM)
 
    /** the MMT parser (XML syntax) */
    val xmlReader = new XMLReader(report)
@@ -415,14 +415,14 @@ class Controller extends ROController with Logger {
 
    /** executes a string command */
    def handleLine(l : String) {
-        val act = try {
-           Action.parseAct(l, base, home)
+        try {
+           val act = Action.parseAct(l, base, home)
+           handle(act)
         } catch {
-           case ParseError(msg) =>
-              logError(msg)
+           case e: Error =>
+              logError(e.getLongMessage)
               return
         }
-        handle(act)
         report.flush
    }
    /** executes an Action */

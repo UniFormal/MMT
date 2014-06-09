@@ -35,7 +35,7 @@ class Parse extends QueryExtension("parse", StringType, ObjType) {
       val mp = mpath(params)
       argument match { 
          case StringValue(s) =>
-           val pu = parser.ParsingUnit(parser.SourceRef.anonymous(s), OMMOD(mp), Context(), s) 
+           val pu = parser.ParsingUnit(parser.SourceRef.anonymous(s), Context(mp), s) 
            controller.textParser(pu)(ErrorThrower)
          case _ => throw ImplementationError("evaluation of ill-typed query")
       }

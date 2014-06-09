@@ -16,7 +16,7 @@ abstract class Theory(doc : DPath, name : LocalName) extends Module(doc, name)
  * @param name the name of the theory
  * @param meta the path of the optional meta-theory
  */
-class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath])
+class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], val parameters: Context = Context())
       extends Theory(doc, name) with DeclaredModule {
    def role = Role_DeclaredTheory
    def components = OMID(path) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents

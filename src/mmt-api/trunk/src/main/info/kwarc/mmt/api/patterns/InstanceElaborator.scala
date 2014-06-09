@@ -6,6 +6,7 @@ import frontend._
 import symbols._
 import modules._
 import objects._
+import uom._
 import objects.Conversions._
 import utils._
 import scala.io.Source
@@ -13,25 +14,25 @@ import scala.io.Source
 /** elaborates Instance declarations
  * this is also called the pragmatic-to-strict translation
  */
-class InstanceElaborator(controller: Controller) extends Elaborator with Logger {
+class InstanceElaborator(controller: Controller) extends Logger {
    val logPrefix = "elaborator"
    val report = controller.report
    /**
    * returns the elaboration of an instance
    */
-   def apply(e: StructuralElement)(implicit cont: StructuralElement => Unit) {e match {
+   def apply(e: StructuralElement) {e match {
       case inst : Instance => 
         	val pt : Pattern = controller.globalLookup.getPattern(inst.pattern)
         	val subs = pt.body.map {d => d.name / OMID(inst.home % (inst.name / d.name))} //TODO Check c.c1
          def auxSub(x : Term): Term = {
-        		x ^ (pt.getSubstitution(inst) ++ Substitution(subs : _*))  
+        		x ^? (pt.getSubstitution(inst) ++ Substitution(subs : _*))  
         	}
-        	pt.body.foreach {case VarDecl(n,tp,df,_) =>
+        	pt.body.foreach {case VarDecl(n,tp,df,not) =>
         			val nname = inst.name / n
         			log("generating constant " + nname)
-        			val c = Constant(inst.home,nname,None,tp.map(auxSub),df.map(auxSub), None)
+        			val c = Constant(inst.home,nname,None,tp.map(auxSub),df.map(auxSub), None, notations.NotationContainer(not))
         			c.setOrigin(InstanceElaboration(inst.path))
-        			cont(c)
+        			controller.add(c)
         	}
       case _ =>
   }}
@@ -43,10 +44,7 @@ class InstanceElaborator(controller: Controller) extends Elaborator with Logger 
      thy.getInstances foreach {i =>
         if (i.getOrigin != Elaborated) {
            i.setOrigin(Elaborated)
-           apply(i) {
-              case s: Declaration => thy.add(s)
-              case _ => //does not occur
-           }
+           apply(i)
         }
      }
   }

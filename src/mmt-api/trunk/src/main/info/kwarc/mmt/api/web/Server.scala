@@ -257,7 +257,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
              val scope = tk.req.header("scope") match {
                case Some(s) => 
                  Path.parse(s) match {
-                   case mp : MPath =>  objects.OMMOD(mp)
+                   case mp : MPath =>  mp
                    case _ => throw ServerError("expected mpath found : " + s)
                  }
                case _ => throw ServerError("expected a scope (mpath) passed in header")
@@ -265,7 +265,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
              val termParser = controller.textParser
              val tm = try {
                val str = body.asString
-               termParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), scope, objects.Context(), str))(ErrorThrower)
+               termParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), objects.Context(scope), str))(ErrorThrower)
              } catch {
                case e : Throwable =>
                  println(e)

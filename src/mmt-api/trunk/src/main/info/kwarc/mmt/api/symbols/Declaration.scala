@@ -34,10 +34,6 @@ abstract class Declaration extends ContentElement {
    def path = GlobalName(home, name)
    /** the component used to identify anonymous declarations, e.g., the from of an import, None by default but may be overridden */ 
    def implicitKey : Option[MPath] = None
-   /** every MMT symbol takes a list of parameters
-    * empty by default, may be overridden when constructing instances
-    */
-   val parameters = Context()
 }
 
 class NestedModule(val module: Module) extends Declaration {
