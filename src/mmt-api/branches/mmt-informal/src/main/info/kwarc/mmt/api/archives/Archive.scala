@@ -257,6 +257,7 @@ object Archive {
    def ContentPathToDPath(segs: List[String]) : DPath = segs match {
        case Nil => DPath(URI.empty)
        case hd :: tl =>
+         println(segs)
           val p = hd.indexOf("..")
           DPath(URI(hd.substring(0,p), hd.substring(p+2)) / tl)
    }
