@@ -11,6 +11,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import objects._
+import checking._
 import libraries._
 import scala.util.parsing.json._
 import scala.concurrent._
@@ -38,8 +39,8 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
       }
     } catch {
       case e : Error => 
-        log(e.longMsg) 
-        Server.errorResponse(e.longMsg)
+        log(e.shortMsg) 
+        Server.errorResponse(e.shortMsg)
       case e : Exception => 
         error("Exception occured : " + e.getStackTrace())
     }
@@ -155,7 +156,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
       val mpath = Path.parseM(mpathS, mmt.mmtbase)
       val sref = new SourceRef(mpath.doc.uri, SourceRegion(SourcePosition(-1,0,0),SourcePosition(-1,0,1)))
       
-      val term = controller.termParser(ParsingUnit(sref, OMMOD(mpath), Context(), termS), e => throw e)
+      val term = controller.textParser(ParsingUnit(sref, Context(), termS))(new ErrorLogger(report))
       
       def getHoles(term: Term , context : Context) : List[(Term,Context)] = {
         term match {
@@ -177,7 +178,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
           val hole = holeContextList.head._1
           val context = holeContextList.head._2
           val prover = new Prover(controller) 
-          val rules = prover.applicable(hole) (Stack(Frame(OMMOD(mpath),context)))
+          val rules = prover.applicable(hole) (Stack(OMMOD(mpath),context))
           rules match{ 
         			case Nil => val returnNoRules = "No Rules" :: Nil
         						Server.JsonResponse(new JSONArray(returnNoRules)).aact(tk)

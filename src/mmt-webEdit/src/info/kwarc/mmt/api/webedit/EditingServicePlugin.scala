@@ -1,5 +1,6 @@
 package main.scala.info.kwarc.mmt.api.webedit
 
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.frontend.Controller
@@ -13,6 +14,8 @@ import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.LocalName
 import info.kwarc.mmt.api.notations.Marker
 import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.checking._
+
 
 class EditingServicePlugin(val controller : Controller) {
   def getAutocompleteResponse(request: MMTAutoCompleteRequest) : MMTAutoCompleteResponse = 
@@ -72,7 +75,7 @@ class EditingServicePlugin(val controller : Controller) {
       val mpath = Path.parseM(request.getMPath, mmt.mmtbase)
       val sref = new SourceRef(mpath.doc.uri, SourceRegion(SourcePosition(-1,0,0),SourcePosition(-1,0,1)))
       
-      val term = controller.termParser(ParsingUnit(sref, OMMOD(mpath), Context(), request.getTerm), e=>throw e)
+      val term = controller.textParser(ParsingUnit(sref, Context(), request.getTerm))(new ErrorLogger(controller.report))
       
       def getHoles(term: Term , context : Context) : List[(Term,Context)] = {
         term match {
@@ -95,7 +98,7 @@ class EditingServicePlugin(val controller : Controller) {
           val hole = holeContextList.head._1
           val context = holeContextList.head._2
           val prover = new Prover(controller) 
-          val rules = prover.applicable(hole) (Stack(Frame(OMMOD(mpath),context)))
+          val rules = prover.applicable(hole) (Stack(OMMOD(mpath),context))
           rules match{ 
         			case Nil => val returnNoRules = "No Rules" :: Nil
         						new MMTTermInferenceResponse(returnNoRules)
