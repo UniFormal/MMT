@@ -57,7 +57,6 @@ class MMTCompilerSpec extends FlatSpec with Matchers {
   "Indexing an archive" should "not throw an error" in {
     
     controller.handleLine("extension info.kwarc.mmt.lf.Plugin")
-    controller.handleLine("extension info.kwarc.mmt.api.objects.ErrorsPlugin")
     controller.handleLine("build urtheories mmt-omdoc")
     controller.handleLine("build test mmt-omdoc")
     controller.handleLine("build test mmt-omdoc")
