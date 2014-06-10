@@ -35,8 +35,8 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
        }
     } catch {
       case e : Error => 
-        log(e.longMsg) 
-        errorResponse(e.longMsg, List(e))
+        log(e.shortMsg) 
+        errorResponse(e.shortMsg, List(e))
       case e : Exception => 
         errorResponse("Exception occured : " + e.getStackTrace(), List(e))
     }
@@ -167,8 +167,9 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
           val (response,errors) = comp.compileOne(bodyS, dpath)
           JsonResponse(response, errors.map(e => e.getStackTrace().mkString("\n")).mkString("\n\n"), errors).aact(tk)
         case "mmt" => 
-          val reader = parser.Reader(bodyS)
-          val (doc,state) = controller.textParser(reader, dpath) 
+          val is = new java.io.InputStreamReader(new java.io.ByteArrayInputStream(bodyS.getBytes()))
+          val ps = new parser.ParsingStream(dpath, new java.io.BufferedReader(is))
+          val doc = controller.textParser(ps)(new ErrorLogger(report))
           val response = doc.toNodeResolved(controller.memory.content).toString    
           JsonResponse(response, "", Nil).aact(tk)
         case "elf" => 
@@ -181,8 +182,8 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       }
     } catch {
       case e : Error => 
-        log(e.longMsg)
-        errorResponse(e.longMsg, List(e)).aact(tk)
+        log(e.shortMsg)
+        errorResponse(e.shortMsg, List(e)).aact(tk)
       case e : Exception => 
         errorResponse("Exception occured : " + e.getStackTrace().mkString("\n"), List(e)).aact(tk)
     }
@@ -198,10 +199,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       val dpath = DPath(utils.URI(dpathS))
       val styleS = params.get("style").getOrElse("xml").toString
       val presenter = controller.extman.getPresenter(styleS) getOrElse {
-        val nset = Path.parseM(styleS, controller.getBase)
-        val p = new StyleBasedPresenter(controller, nset)
-        p.expandXRefs = true
-        p
+        throw ServerError("no presenter found")
       }
       val reader = new XMLReader(controller.report)
       val bodyXML = scala.xml.XML.loadString(bodyS)
@@ -219,8 +217,8 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       
      } catch {
        case e : Error => 
-         log(e.longMsg)
-         errorResponse(e.longMsg, List(e)).aact(tk)
+         log(e.shortMsg)
+         errorResponse(e.shortMsg, List(e)).aact(tk)
        case e : Exception => 
          errorResponse("Exception occured : "  + e.getStackTrace().mkString("\n"), List(e)).aact(tk)
     }

@@ -13,12 +13,13 @@ import archives._
 import notations._
 
 
-class NotationPresenter(controller : Controller, var notations : List[TextNotation] = Nil) 
-  extends presentation.MathMLPresenter(controller) {
-  override def getNotation(p: GlobalName): Option[TextNotation] = {
-    notations.find(n => n.name == p) match {
-      case None => super.getNotation(p)
-      case not => not
+class NotationPresenter(controller : Controller, var notations : List[(GlobalName,TextNotation)] = Nil) 
+  extends presentation.MathMLPresenter {
+  report = controller.report
+  override def getNotation(path: GlobalName): Option[TextNotation] = {
+    notations.find(p => p._1 == path) match {
+      case None => super.getNotation(path)
+      case Some(p) => Some(p._2)
     }
   }
   //this overrides variable presentation to placeholders for notation rendering (currently changing color to red)
@@ -33,13 +34,10 @@ class NotationPresenter(controller : Controller, var notations : List[TextNotati
 }
 
 
-abstract class PlanetaryAbstractPresenter(name : String) extends Presenter {
+abstract class PlanetaryAbstractPresenter(name : String) extends Presenter(new presentation.MathMLPresenter) {
   override val outExt = "html"
   val key = name
-  val outDim = Dim("export", name)
-  protected lazy val mmlPres = new presentation.MathMLPresenter(controller) // must be lazy because controller is provided in init only
   def isApplicable(format : String) = format == name
-  def apply(o : Obj, owner : Option[CPath])(implicit rh : RenderingHandler) = mmlPres(o, owner)(rh)
   protected lazy val notPres = new NotationPresenter(controller)
   
   // easy-to-use HTML markup
@@ -153,7 +151,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
    }
    
    private def doMath(t: Obj) {
-        rh(mmlPres.asString(t))
+        apply(t, None)(rh)
    }
    private def doComponent(comp: DeclarationComponent, t: Obj) {
       td {span {text(comp.toString)}}
@@ -191,7 +189,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      div(cls = "constant", attributes = List("jobad:presents" -> c.path.toPath)) {
        span("keyword"){text("constant")}
        doName(c.path)
-       doNotations(c.notC.getAllNotations, c.path)
+       doNotations(c.notC.getAllNotations.map(c.path -> _), c.path)
      }
    }
    
@@ -199,7 +197,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      path.module.toMPath.name.toString + "_" + path.name.toString
    }
    
-   def doNotations(notations : List[TextNotation], path : GlobalName) {
+   def doNotations(notations : List[(GlobalName, TextNotation)], path : GlobalName) {
      if (!notations.isEmpty) {
        val onclick = "onclick=\"if ($(this).html() == \'Show Notations\') {$(this).html(\'Hide Notations\')} else {$(this).html(\'Show Notations\')};" +
                      "$(document.getElementById(\'not_" + encPath(path) + "\')).toggle( \'fold\' );\""
@@ -213,13 +211,13 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
            }
          }
          tbody {
-           notations.foreach(doNotation)
+           notations.foreach(p => doNotation(p._1, p._2))
          }
        }
      }
    }
    
-   def doNotation(not : TextNotation)  = {
+   def doNotation(spath : GlobalName, not : TextNotation)  = {
      def getVarName(i : Int) : String = {
        val name = ((i % 26) + 'a'.toInt).toChar
        val indices =  (i / 26) match {
@@ -230,12 +228,12 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      }
 
      val arity = not.arity.length
-     val tm = OMA(OMID(not.name), (0 until arity).map(n => OMV(getVarName(n))).toList)
+     val tm = OMA(OMID(spath), (0 until arity).map(n => OMV(getVarName(n))).toList)
      tr {
        td { text{not.scope.languages.mkString("/")} }
        td { text{not.arity.length.toString} }
        td {
-         notPres.notations = List(not)
+         notPres.notations = List(spath -> not)
          notPres(tm, None)(rh)
          notPres.notations = Nil
        }
@@ -269,7 +267,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
         r.objects.foreach(doNarrativeObject)
         rh("</span>")
      }
-     case tm : NarrativeTerm => mmlPres(tm.term, None)(rh)
+     case tm : NarrativeTerm => apply(tm.term, None)(rh)
      case n : NarrativeNode => 
        rh.writeStartTag(n.node.prefix, n.node.label, n.node.attributes, n.node.scope)
        n.child.map(doNarrativeObject)
@@ -277,20 +275,20 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
    }
    
    def doView(v: DeclaredView) {}
-   override def exportNamespace(dpath: DPath, bd: BuildDir, namespaces: List[(BuildDir,DPath)], modules: List[(BuildFile,MPath)]) {
+   override def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
      div("namespace") {
-        namespaces.foreach {case (bd, dp) =>
+        namespaces.foreach {bt =>
             div("subnamespace") {
-               val name = bd.dirName + "/" + bd.outFile.segments.last
+               val name = bt.dirName + "/" + bt.outFile.segments.last
                a(name) {
-                  text(dp.toPath)
+                  text(bt.contentDPath.toPath)
                }
             }
          }
-         modules.foreach {case (bf, mp) =>
+         modules.foreach {bt =>
             div("submodule") {
-               a(bf.outFile.segments.last) {
-                  text(mp.toPath)
+               a(bt.outFile.segments.last) {
+                  text(bt.contentMPath.toPath)
                }
             }
          }
