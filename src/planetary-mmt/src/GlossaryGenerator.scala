@@ -34,7 +34,7 @@ object GlossaryGenerator {
       case thy: DeclaredTheory =>
         thy.getDeclarations collect {
           case c: Constant if c.notC.verbalizationDim.isDefined =>
-            c.notC.verbalizationDim.notations.values.flatten
+            c.notC.verbalizationDim.notations.values.flatten.map(c.path -> _)
         }
     }
     present(verbs.flatten.flatten)
@@ -45,8 +45,8 @@ object GlossaryGenerator {
   protected val htmlRh = utils.HTML(s => rh(s))
   import htmlRh._
 
-  private def present(verbs: Iterable[TextNotation]): Unit = {
-    val langVerbs = verbs.groupBy[String](n => sTeX.getLanguage(n.name).getOrElse(""))
+  private def present(verbs: Iterable[(GlobalName, TextNotation)]): Unit = {
+    val langVerbs = verbs.groupBy[String](p => sTeX.getLanguage(p._1).getOrElse(""))
     def getCls(lang: String) = if (lang == "en") "active" else ""
     div(attributes = List("id" -> "glossary")) {
       ul("nav nav-tabs") {
@@ -60,8 +60,8 @@ object GlossaryGenerator {
         langVerbs.foreach { p =>
           div(cls = ("tab-pane " + getCls(p._1)), attributes = List("id" -> ("gtab_" + p._1))) {
             ul("glossary") {
-              val glossary = p._2.toList.sortWith((x,y) => x.markers.mkString(" ").toLowerCase() < y.markers.mkString(" ").toLowerCase())
-              glossary.foreach(v => present(v))
+              val glossary = p._2.toList.sortWith((x,y) => x._2.markers.mkString(" ").toLowerCase() < y._2.markers.mkString(" ").toLowerCase())
+              glossary.foreach(v => present(v._1, v._2))
             }
           }
         }
@@ -69,8 +69,7 @@ object GlossaryGenerator {
     }
   }
 
-  private def present(not: TextNotation): Unit = {
-    val spath = not.name
+  private def present(spath : GlobalName, not: TextNotation): Unit = {
 
     val doc = spath.doc
     val mod = spath.module.toMPath.name
@@ -81,11 +80,11 @@ object GlossaryGenerator {
       (l -> sTeX.getLangPath(masterPath, l))
     }
     val notations = try {
-      controller.library.getConstant(masterPath).notC.getAllNotations
+      controller.library.getConstant(masterPath).notC.getAllNotations.map(n => masterPath -> n)
     } catch {
       case e: Throwable => Nil
     }
-    val defs = controller.depstore.getObjects(not.name, isDefinedBy) collect {
+    val defs = controller.depstore.getObjects(spath, isDefinedBy) collect {
           case fp: FragPath if fp.isPath =>
             controller.get(fp.path) match {
               case fd: Definition =>
