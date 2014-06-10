@@ -12,12 +12,9 @@ import utils._
 import flexiformal._
 import archives._
 
-class FlexiformalPresenter extends Presenter {
+class FlexiformalPresenter extends Presenter(new MathMLPresenter) {
    override val outExt = "html"
    def key = "ihtml"
-   val outDim = Dim("export", "ihtml")
-   private lazy val mmlPres = new presentation.MathMLPresenter(controller) // must be lazy because controller is provided in init only
-     
    def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) = {
      this._rh = rh
      s match { 
@@ -33,10 +30,6 @@ class FlexiformalPresenter extends Presenter {
      }
      //TODO? reset this._rh 
    }
-   
-   
-   
-   def apply(o : Obj, owner: Option[CPath])(implicit rh : RenderingHandler) = mmlPres(o, owner)(rh)
    
    def isApplicable(format : String) = format == "ihtml"
    
@@ -64,7 +57,7 @@ class FlexiformalPresenter extends Presenter {
    }
    
    private def doMath(t: Obj) {
-        rh(mmlPres.asString(t))
+      apply(t, None)(rh)
    }
    private def doComponent(comp: DeclarationComponent, t: Obj) {
       td {span {text(comp.toString)}}
@@ -131,7 +124,7 @@ class FlexiformalPresenter extends Presenter {
         r.objects.foreach(doNarrativeObject)
         rh("</span>")
      }
-     case tm : NarrativeTerm => mmlPres(tm.term, None)(rh)
+     case tm : NarrativeTerm => apply(tm.term, None)(rh)
      case n : NarrativeNode => 
        rh.writeStartTag(n.node.prefix, n.node.label, n.node.attributes, n.node.scope)
        n.child.map(doNarrativeObject)

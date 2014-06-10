@@ -1,14 +1,13 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.uom._
+import objects._
+import uom._
 
 class InteractiveSimplifier(controller : Controller, intp : tools.nsc.interpreter.ILoop) {
-  var uomLog = controller.uom.simplificationLog
-  def present(state : UOMState, t : Term, rule : Rule) = {
-    
-  }
+  private var uom = new UOM
+  uom.init(controller)
+  var uomLog = uom.simplificationLog
   def current = uomLog.head
   def rule = current._3
   var topTerm : Term = null
@@ -17,7 +16,7 @@ class InteractiveSimplifier(controller : Controller, intp : tools.nsc.interprete
   
   def set(s : String) {
     intp.interpret("if (uom\"" + s + "\" != null) \"Success\"")
-    uomLog = controller.uom.simplificationLog.reverse.filter(p => p._1 != null)
+    uomLog = uom.simplificationLog.reverse.filter(p => p._1 != null)
     topTerm = current._1.t
     println("Loaded Problem " + render(topTerm))
   }
@@ -50,7 +49,6 @@ class InteractiveSimplifier(controller : Controller, intp : tools.nsc.interprete
     }
   }
   
-  /** */  
   private def getSubterm(t : Term, path : List[Int]) : Term = path match {
     case Nil => t
     case hd :: tl => getSubterm(getChild(t, hd), tl)

@@ -6,7 +6,7 @@ import modules._
 import symbols._
 
 /**
- * classes implementing InDocParser may be registered with a [[info.kwarc.mmt.api.parser.StructureParser]]
+ * classes implementing InDocParser may be registered with a [[StructureParser]]
  * to extend MMT's concrete syntax with new keywords
  */
 abstract class ParserExtension extends Extension {
@@ -25,5 +25,5 @@ abstract class ParserExtension extends Extension {
     * 
     * the keyword but nothing else has been read already when this is called
     */
-   def apply(sp: StructureParser, s: ParserState, se: StructuralElement, keyword: String)
+   def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, keyword: String)
 }

@@ -185,7 +185,7 @@ class Reader(val jr: java.io.BufferedReader) {
     */
    def readAll = readUntil()
    
-   /** closes the underlying Reader */
+   /** closes the underlying Java reader */
    def close {
       jr.close
    }

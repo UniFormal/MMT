@@ -11,9 +11,8 @@ import objects._
 import utils._
 import flexiformal._
 
-trait HTMLPresenter extends Presenter {
+abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
    override val outExt = "html"
-   private lazy val mmlPres = new MathMLPresenter(controller) // must be lazy because controller is provided in init only
      
    def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) = {
      this._rh = rh
@@ -28,8 +27,6 @@ trait HTMLPresenter extends Presenter {
      }
      this._rh = null 
    }
-   
-   def apply(o : Obj, owner: Option[CPath])(implicit rh : RenderingHandler) = mmlPres(o, owner)(rh)
    
    def isApplicable(format : String) = format == "html"
    
@@ -53,7 +50,7 @@ trait HTMLPresenter extends Presenter {
       }
    }
    private def doMath(t: Obj, owner: Option[CPath]) {
-        mmlPres(t, owner)(rh)
+        objectLevel(t, owner)(rh)
    }
    private def doComponent(cpath: CPath, t: Obj) {
       td {span("compLabel") {text(cpath.component.toString)}}
@@ -216,7 +213,7 @@ trait HTMLPresenter extends Presenter {
         r.objects.foreach(doNarrativeObject)
         rh("</span>")
       }
-     case tm : NarrativeTerm => mmlPres(tm.term, None)(rh)
+     case tm : NarrativeTerm => apply(tm.term, None)(rh)
      case n : NarrativeNode => 
        rh.writeStartTag(n.node.prefix, n.node.label, n.node.attributes, n.node.scope)
        n.child.map(doNarrativeObject)
@@ -269,12 +266,12 @@ trait HTMLPresenter extends Presenter {
    }
 }
 
-class HTMLExporter extends HTMLPresenter {
+class HTMLExporter extends HTMLPresenter(new MathMLPresenter) {
   val key = "html"
 }
 
 
-class MMTDocExporter extends HTMLPresenter {
+class MMTDocExporter extends HTMLPresenter(new MathMLPresenter) {
   val key = "mmtdoc"
   import htmlRh._
 

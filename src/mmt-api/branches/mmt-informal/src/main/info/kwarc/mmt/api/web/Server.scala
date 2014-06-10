@@ -79,7 +79,7 @@ object Server {
   /** a response that sends an HTML error message to the browser */
   def errorResponse(error: Error): HLet = {
      val ns = utils.xml.namespace("html")
-     val node = <div xmlns={ns}>{error.longMsg.split("\\n").map(s => <p>{s}</p>)}</div>
+     val node = <div xmlns={ns}>{error.getLongMessage.split("\\n").map(s => <p>{s}</p>)}</div>
      XmlResponse(node)
   }
 }
@@ -268,15 +268,15 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
              val scope = tk.req.header("scope") match {
                case Some(s) => 
                  Path.parse(s) match {
-                   case mp : MPath =>  objects.OMMOD(mp)
+                   case mp : MPath =>  mp
                    case _ => throw ServerError("expected mpath found : " + s)
                  }
                case _ => throw ServerError("expected a scope (mpath) passed in header")
              }
-             val termParser = controller.termParser
+             val termParser = controller.textParser
              val tm = try {
                val str = body.asString
-               termParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), scope, objects.Context(), str), throw _)
+               termParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), objects.Context(scope), str))(ErrorThrower)
              } catch {
                case e : Throwable =>
                  throw e
@@ -326,7 +326,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
         val dpathS = tk.req.param("dpath").getOrElse(throw ServerError("expected dpath"))
         val dpath = DPath(URI(dpathS))
         log("Received content : " + content)
-        controller.textParser.apply(parser.Reader(content), dpath)
+        controller.textParser.readString(dpath, content)(ErrorThrower)
         TextResponse("Success").aact(tk)
       } catch {
         case e : Error => errorResponse(e).aact(tk)
@@ -362,7 +362,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
           val mpath = dpath ? strThy
           val ctrl = new Controller(controller.report)
           val reader = new TextReader(controller, ctrl.add)
-          val res = reader.readDocument(text, dpath)(pu => controller.termParser.apply(pu, throw _))
+          val res = reader.readDocument(text, dpath)(pu => controller.textParser(pu)(ErrorThrower))
           res._2.toList match {
             case Nil => //no error -> parsing successful
               try {

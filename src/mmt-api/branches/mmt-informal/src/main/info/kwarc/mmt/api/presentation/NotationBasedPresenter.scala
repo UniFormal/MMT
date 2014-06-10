@@ -31,9 +31,7 @@ case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: 
 }
 
 /** 
- * This trait defines methods for presenting objects using notations.
- * 
- * It is intended to be mixed into Presenters that already define the presentation of the structural levels.
+ * presents objects using notations
  * 
  * The main methods do not produce any rendering themselves.
  * Instead, they call special methods that may be overridden for customization.
@@ -43,8 +41,7 @@ case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: 
  * It will sometimes put too many and sometimes too few brackets.
  * The latter will confuse the NotationBasedParser, but rarely humans.    
  */
-trait NotationBasedPresenter extends ObjectPresenter {
-   
+class NotationBasedPresenter extends ObjectPresenter {
    /**
     * called by doDefaultTerm to render symbols
     */
@@ -170,8 +167,6 @@ trait NotationBasedPresenter extends ObjectPresenter {
       }
    }
    
-   /** needed to look up notations */
-   protected def controller : frontend.Controller
    /** 1 or 2-dimensional notations, true by default */
    def twoDimensional : Boolean = true
    
@@ -427,89 +422,5 @@ trait NotationBasedPresenter extends ObjectPresenter {
                }
                br
          }
-   }
-}
-
-/** a notation-based presenter using the StructureParser syntax and parsing notations
- * 
- * this class must be initialized after instantiation to set the controller
- */
-class StructureAndObjectPresenter extends Presenter with NotationBasedPresenter {
-   val key = "present-text-notations"
-   val outDim = archives.Dim("export", "presentation", "text-notations")
-   override def outExt = "mmt"
-  
-   def isApplicable(format: String) = format == "text/notations"
-   def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {apply(e, 0)(rh)}
-   override def twoDimensional = false
-   
-   private def apply(e : StructuralElement, indent: Int)(implicit rh: RenderingHandler) {
-      def doIndent {
-         Range(0,indent).foreach {_ => rh("   ")}
-      }
-      doIndent
-      e match {
-         //TODO delimiters
-         case d: Document =>
-            rh("document " + d.path.toPath + "\n")
-            d.getItems foreach {i => apply(i, indent+1)}
-         case r: DRef =>
-            rh("document " + r.target.toPath)
-         case r: MRef =>
-            rh("module " + r.target.toPath)
-         case c: Constant =>
-            rh("constant " + c.name)
-            c.alias foreach {a =>
-               rh(" @ ")
-               rh(a.toPath)
-            }
-            c.tp foreach {t =>
-               rh("\n")
-               doIndent
-               rh("  : ")
-               apply(t, Some(c.path $ TypeComponent))
-            }
-            c.df foreach {t =>
-               rh("\n")
-               doIndent
-               rh("  = ")
-               apply(t, Some(c.path $ DefComponent))
-            }
-            c.notC.parsing foreach {n =>
-               rh("\n")
-               doIndent
-               rh("  # ")
-               rh(n.toText)
-            }
-            c.notC.presentation foreach {n =>
-               rh("\n")
-               doIndent
-               rh("  ## ")
-               rh(n.toText)
-            }
-         case t: DeclaredTheory =>
-            rh("theory " + t.name + " =\n")
-            t.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
-         case v: DeclaredView =>
-            rh("view " + v.name + " : ")
-            apply(v.from, Some(v.path $ DomComponent))
-            rh(" -> ")
-            apply(v.to, Some(v.path $ CodComponent))
-            rh(" =\n")
-            v.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
-         case s: DeclaredStructure =>
-            rh("structure " + s.name + " : " + s.fromPath.toPath + " =\n")
-            s.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
-         case t: DefinedTheory =>
-            rh("theory " + t.name + " abbrev ")
-            apply(t.df, Some(t.path $ DefComponent))
-         case v: DefinedView =>
-            rh("view " + v.name + " abbrev ")
-            apply(v.df, Some(v.path $ DefComponent))
-         case s: DefinedStructure =>
-            rh("structure " + s.name + " : " + s.fromPath.toPath + " abbrev ")
-            apply(s.df, Some(s.path $ DefComponent))
-      }
-      rh("\n")
    }
 }

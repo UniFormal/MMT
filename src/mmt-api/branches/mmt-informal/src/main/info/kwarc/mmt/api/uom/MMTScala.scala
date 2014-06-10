@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import objects._
 
-trait RealizationInScala extends objects.RuleSet {
+trait RealizationInScala extends checking.RuleSet {
    val _domain: TheoryScala
    lazy val _path = _domain._path
    lazy val _name = _domain._name
@@ -27,7 +27,7 @@ trait RealizationInScala extends objects.RuleSet {
            try {
              val t = tL()
              //log("term: " + controller.presenter.asString(t))
-             val tS = controller.uom.simplify(t, objects.OMMOD(_path))
+             val tS = controller.simplifier(t, objects.OMMOD(_path), Context())
              //log("simplified: " + controller.presenter.asString(tS))
              val result = a(tS)
              log((if (result) "PASSED" else "FAILED") + "\n")
@@ -68,7 +68,7 @@ trait DocumentScala {
    def addDocument(d: DocumentScala) {
       documents ::= d
    }
-   def register(rs: objects.RuleStore) {
+   def register(rs: checking.RuleStore) {
       documents.foreach(_.register(rs))
       realizations.foreach {v =>
          rs.add(v)

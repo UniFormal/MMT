@@ -46,6 +46,24 @@ trait Extension extends Logger {
    def destroy {}
 }
 
+/**
+ * Common super class of all extensions, whose functionality is systematically split between structure and object level
+ * 
+ * Implementing classes should have a constructor that takes an Extension providing the object level functionality
+ * and add the structure level functionality.  
+ */ 
+trait LeveledExtension extends Extension {
+   val objectLevel: Extension
+   override def init(controller: Controller) {
+      objectLevel.init(controller)
+      super.init(controller)
+   }
+   override def destroy {
+      objectLevel.destroy
+      super.destroy
+   }
+}
+
 /** An ExtensionManager maintains all language-specific extensions of MMT.
  *  This includes Compilers, QueryTransformers, and Foundations.
  *  They are provided as plugins and registered via their qualified class name, which is instantiated by reflection.
@@ -70,7 +88,7 @@ class ExtensionManager(controller: Controller) extends Logger {
    val report = controller.report
    val logPrefix = "extman"
 
-   val ruleStore = new objects.RuleStore
+   val ruleStore = new checking.RuleStore
    
    def addDefaultExtensions {
       //targets and presenters

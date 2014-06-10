@@ -54,7 +54,10 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
       //temporary hack: 4th components indicates that the type was generated
       (if (info.kwarc.mmt.api.metadata.Generated(this)) List(StringLiteral("")) else Nil)
    def children = List(tp,df).flatten
-   override def toString = name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")  
+   override def toString = this match {
+      case IncludeVarDecl(p) => p.toString
+      case _ => name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")
+   }
    private def tpN = tp.map(t => <type>{t.toNode}</type>).getOrElse(Nil)
    private def dfN = df.map(t => <definition>{t.toNode}</definition>).getOrElse(Nil)
    
@@ -97,6 +100,8 @@ object StructureVarDecl {
 /** represents an MMT context as a list of variable declarations */
 case class Context(variables : VarDecl*) extends Obj {
    type ThisType = Context
+   /** add a theory inclusion at the end */
+   def ++(p : MPath) : Context = this ++ IncludeVarDecl(p)
    /** add variable at the end */
    def ++(v : VarDecl) : Context = this ++ Context(v)
    /** concatenate contexts */
@@ -142,6 +147,11 @@ case class Context(variables : VarDecl*) extends Obj {
             des ::= DomainElement(n, df.isDefined, None)
       }
       des.reverse
+   }
+   /** all theories directly included into this context */
+   def getIncludes = variables flatMap {
+      case IncludeVarDecl(p) => List(p)
+      case _ => Nil
    }
    
    /** the identity substitution of this context */
@@ -295,6 +305,8 @@ case class Substitution(subs : Sub*) extends Obj {
 
 /** helper object */
 object Context {
+   /** a context consisting of a single theory */
+   def apply(p: MPath): Context = Context((IncludeVarDecl(p)))
 	/** parses an OMBVAR into a context */
 	def parse(Nmd : scala.xml.Node, base : Path) : Context = {
 	   val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, base)

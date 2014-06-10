@@ -325,7 +325,7 @@ class QuoteEval(bQ: String, eQ: String, bE: String, eE: String) extends LexerExt
      val text = s.substring(index,i)
      new ExternalToken(text) {
         val firstPosition = fp
-        def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: AbstractObjectParser) = {
+        def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: ObjectParser) = {
            var current = fp.after(bQ) //invariant: first character of current part
            val parsed: List[Term] = parts map {
               case QuotePart(q) =>
@@ -337,8 +337,8 @@ class QuoteEval(bQ: String, eQ: String, bE: String, eE: String) extends LexerExt
                  val cont = outer.context ++ Context(boundVars.map(VarDecl(_,None,None,None)) :_*)
                  val ref = outer.source.copy(region = SourceRegion(current, current.after(e)))
                  current = current.after(e + eE) 
-                 val pu = ParsingUnit(ref, outer.scope, cont, e)
-                 parser(pu, throw _)
+                 val pu = ParsingUnit(ref, cont, e)
+                 parser(pu)(ErrorThrower)
            }
            OMSemiFormal(parsed.map(Formal(_)))
         }

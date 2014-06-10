@@ -6,7 +6,7 @@ import frontend._
 import utils.File
 
 trait QueryTransformer extends Extension {
-   /** true iff this Importer can handle input of type 'src' */
+   /** true iff this can handle input of type 'src' */
    def isApplicable(src: String): Boolean
    def transformSearchQuery(n: scala.xml.Node, params : List[String]) : List[scala.xml.Node]
 }

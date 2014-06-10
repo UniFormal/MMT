@@ -212,7 +212,7 @@ abstract class ExternalToken(text:String) extends PrimitiveTokenListElem(text) {
     * @param boundVars the context
     * @param parser the parser calling this function
     */
-   def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: AbstractObjectParser): Term
+   def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: ObjectParser): Term
 }
 
 /** A convenience class for an ExternalToken whose parsing is context-free so that it can be parsed immediately
@@ -220,7 +220,7 @@ abstract class ExternalToken(text:String) extends PrimitiveTokenListElem(text) {
  */
 case class CFExternalToken(text:String, firstPosition: SourcePosition, term: Term) extends ExternalToken(text) {
    /** returns simply term */
-   def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: AbstractObjectParser) = term
+   def parse(outer: ParsingUnit, boundVars: List[LocalName], parser: ObjectParser) = term
 }
 
 /**

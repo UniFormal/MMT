@@ -284,7 +284,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
    * @return the parsed term, position after the term
    * @throws SourceError if there are unmatched right brackets }
    */
-  private def crawlTerm(start: Int, delimChars: List[Char], delimiters: List[String], component: CPath, theory: Term, context: Context = Context()) : Pair[Term, Int] =
+  private def crawlTerm(start: Int, delimChars: List[Char], delimiters: List[String], component: CPath, context: Context) : Pair[Term, Int] =
   {
     var i = start
     while (i < flat.length) {
@@ -320,16 +320,16 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     // computes the return value. i is assumed to be the position after the end of the term
     def computeReturnValue = {
       val term = getSlice(start, i - 1)
-      val pu = ParsingUnit(getSourceRef(start, i - 1), theory, context, term)
+      val pu = ParsingUnit(getSourceRef(start, i - 1), context, term)
       val obj = try {
          puCont(pu)
       } catch {
          case e: ParseError =>
             errors = errors :+ TextParseError(toPos(start), "object continuation caused ParseError: " + e.getMessage)
-            DefaultObjectParser(pu)
+            DefaultObjectParser(pu)(ErrorThrower)
          case e: Error =>
             errors = errors :+ TextParseError(toPos(start), "object continuation caused error: " + e.getMessage)
-            DefaultObjectParser(pu)
+            DefaultObjectParser(pu)(ErrorThrower)
       }
       
       Pair(obj, i)
@@ -594,7 +594,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
         case e : SourceError => errors = (errors :+ e)   // add to the list of errors returned
     }
 
-    return Pair(MetaData(properties.map(keyValue => new MetaDatum(Path.parseS("??" + keyValue._1, TextReader.metadataBase), OMSTR(keyValue._2))).toSeq : _*), endsAt + 1)
+    return Pair(MetaData(properties.map(keyValue => new MetaDatum(Path.parseS("??" + keyValue._1, MetaDatum.keyBase), OMSTR(keyValue._2))).toSeq : _*), endsAt + 1)
   }
 
   // ------------------------------- symbol level -------------------------------
@@ -608,7 +608,8 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
   private def crawlConstantDeclaration(start: Int, parent: Theory) : Int =
   {
     val oldComment = keepComment
-
+    val context = Context(parent.path)
+    
     var i = start
     if (flat.startsWith("%abbrev", i)) {
       i += "%abbrev".length
@@ -625,7 +626,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     if (flat.codePointAt(i) == ':') {
       i += 1  // jump over ':'
       i = skipwscomments(i)
-      val (term, posAfter) = crawlTerm(i, Nil, List("=","#"), cpath $ TypeComponent, parent.toTerm)
+      val (term, posAfter) = crawlTerm(i, Nil, List("=","#"), cpath $ TypeComponent, context)
       constantType.read = getSlice(i, posAfter - 1)
       constantType.parsed = term
       i = posAfter
@@ -637,7 +638,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     if (flat.codePointAt(i) == '=') {
       i += 1  // jump over '='
       i = skipwscomments(i)
-      val (term, posAfter) = crawlTerm(i, Nil, List("#"), cpath $ DefComponent, parent.toTerm)
+      val (term, posAfter) = crawlTerm(i, Nil, List("#"), cpath $ DefComponent, context)
       constantDef.read = getSlice(i, posAfter - 1)
       constantDef.parsed = term
       i = posAfter
@@ -840,7 +841,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
         throw TextParseError(toPos(i), "morphism or assignment list expected after '='")
       else {
         // It's a DefinedStructure
-        val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, spath $ DefComponent, parent.toTerm)
+        val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, spath $ DefComponent, Context(parent.path))
         i = positionAfter
         domain match {
           case Some(dom) => structure = DefinedStructure(parent.toTerm, LocalName(name), Path.parseM(dom.toString, parent.path), morphism, isImplicit)
@@ -908,7 +909,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
      i = skipwscomments(i)
 
      // parse the type
-     val (term, posAfter) = crawlTerm(i, List(']'), Nil, theory ? name $ TypeComponent, OMMOD(theory ^), context)
+     val (term, posAfter) = crawlTerm(i, List(']'), Nil, theory ? name $ TypeComponent, context ++ (theory ^))
      val vd = OMV(name) % term
      i = posAfter
      
@@ -971,7 +972,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
       if (flat.codePointAt(i) == ':') {
         i += 1  // jump over ':'
         i = skipwscomments(i)
-        val (term, posAfter) = crawlTerm(i, Nil, List("=","#"), theory ? name $ TypeComponent, OMMOD(theory ^), context) // TODO remove ^ to avoid ignoring notations inside pattern body (occurs multiple times)
+        val (term, posAfter) = crawlTerm(i, Nil, List("=","#"), theory ? name $ TypeComponent, context ++ (theory ^)) // TODO remove ^ to avoid ignoring notations inside pattern body (occurs multiple times)
         varType = Some(term)
         i = posAfter
         i = skipwscomments(i)
@@ -982,7 +983,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
       if (flat.codePointAt(i) == '=') {
         i += 1  // jump over '='
         i = skipwscomments(i)
-        val (term, posAfter) = crawlTerm(i, Nil, List("#"), theory ? name $ DefComponent, OMMOD(theory ^), context)
+        val (term, posAfter) = crawlTerm(i, Nil, List("#"), theory ? name $ DefComponent, context ++ (theory ^))
         varDef = Some(term)
         i = posAfter
         i = skipwscomments(i)
@@ -1085,7 +1086,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     i = skipwscomments(i)
 
     // read the assigned term
-    val (term, posAfter) = crawlTerm(i, Nil, Nil, apath $ DefComponent, parent.to)
+    val (term, posAfter) = crawlTerm(i, Nil, Nil, apath $ DefComponent, parent.codomainAsContext)
     i = posAfter
     i = skipwscomments(i)
 
@@ -1125,7 +1126,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     i = skipwscomments(i)
 
     // get the morphism
-    val (morphism, positionAfter2) = crawlTerm(i, Nil, Nil, apath $ DefComponent, parent.to)
+    val (morphism, positionAfter2) = crawlTerm(i, Nil, Nil, apath $ DefComponent, parent.codomainAsContext)
 
     val endsAt = expectNext(positionAfter2, ".")    // on the final dot
 
@@ -1156,7 +1157,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     val apath = parent.toTerm % LocalName(ComplexStep(domain))
 
     // get the morphism
-    val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, apath $ DefComponent, parent.to)
+    val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, apath $ DefComponent, parent.codomainAsContext)
     
     val endsAt = expectNext(positionAfter, ".")    // on the final dot
 
@@ -1265,7 +1266,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     }
     else {
       // It's a DefinedTheory
-      val (theoryExp, positionAfter) = crawlTerm(i, Nil, Nil, tpath $ DefComponent, OMMOD(utils.mmt.mmtcd))
+      val (theoryExp, positionAfter) = crawlTerm(i, Nil, Nil, tpath $ DefComponent, Context())
       i = positionAfter
       theory = DefinedTheory(tpath.parent, tpath.name, theoryExp)
       add(theory)
@@ -1345,7 +1346,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     i = skipwscomments(i)
 
     // read the domain
-    val (domain, positionAfterDomain) = crawlTerm(i, Nil, List("->"), vpath $ DomComponent, OMMOD(utils.mmt.mmtcd))
+    val (domain, positionAfterDomain) = crawlTerm(i, Nil, List("->"), vpath $ DomComponent, Context())
     i = positionAfterDomain   // jump over domain
 
     i = expectNext(i, "->")
@@ -1353,7 +1354,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     i = skipwscomments(i)
 
     // read the codomain
-    val (codomain, positionAfterCodomain) = crawlTerm(i, Nil, List("="), vpath $ CodComponent, OMMOD(utils.mmt.mmtcd))
+    val (codomain, positionAfterCodomain) = crawlTerm(i, Nil, List("="), vpath $ CodComponent, Context())
     i = positionAfterCodomain     // jump over codomain
 
     i = expectNext(i, "=")
@@ -1370,7 +1371,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     }
     else {
       // It's a DefinedView
-      val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, vpath $ DefComponent, OMMOD(utils.mmt.mmtcd))
+      val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, vpath $ DefComponent, Context())
       i = positionAfter
       view = DefinedView(vpath.parent, vpath.name, domain, codomain, morphism, isImplicit)
       add(view)
@@ -1555,7 +1556,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
         i = positionAfter
         i = skipwscomments(i)
         val pattern = meta ? name
-        i = crawlInstanceDeclaration(i, parent.toTerm, pattern)
+        i = crawlInstanceDeclaration(i, Context(parent.path), pattern)
       }
       else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
         i = skipAfterDot(i)
@@ -1575,15 +1576,15 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
      * reads a instance declaration.
      * @param start the position of the initial % from %instance
      * @param parent the parent theory
-     * @param pattern the pattern
      * @return position after the block/
      * @throws SourceError for syntactical errors
      * example instance declaration syntax
      *   (%instance pattern) name arg1 ... argn
      *   (%pattern) name arg1 ... argn
      */
-   private def crawlInstanceDeclaration(start: Int, parent: Term, pattern: GlobalName) : Int =
+   private def crawlInstanceDeclaration(start: Int, context: Context, pattern: GlobalName) : Int =
    {
+     val parent = ComplexTheory(context)
      var i = start
      val oldComment = keepComment
      // parse instance name
@@ -1593,7 +1594,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
      i = skipwscomments(i)
      val instancePath = parent % nameI     
      val Pair(t,posAfter) = if (flat.charAt(i) != '.') {
-        crawlTerm(i, Nil, Nil, instancePath $ TypeComponent, parent)
+        crawlTerm(i, Nil, Nil, instancePath $ TypeComponent, context)
      }
      else
         (OMS(pattern), i)
@@ -1612,19 +1613,5 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
       add(instance)
      
       return endsAt + 1
-   }
-
-  
-}
-
-
-
-
-object TextReader {
-   /** the theory in which the parsed metadata keys reside */
-   def metadataBase : MPath = MetaDatum.keyBase
-   /** turns a string into a semiformal term */
-   //def makeSemiFormal(s: String) = OMSemiFormal(objects.Text("Twelf", s)) 
-   /** the "sourceRef" metadata key */
-   def sourceRefKey : GlobalName = Path.parseS(xml.namespace("omdoc") + "?metadata?sourceRef", Path.empty)
+   } 
 }

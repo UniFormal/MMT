@@ -14,10 +14,10 @@ object MetadataParser extends ParserExtension {
    private val keywords = List("tag", "link", "meta")
    private val extraKeywords = List("@creator", "@created", "@description", "@abstract", "@subject", "@title")
    def isApplicable(se: StructuralElement, kw: String) = (keywords:::extraKeywords) contains kw 
-   def apply(sp: StructureParser, s: ParserState, se: StructuralElement, k: String) {
+   def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, k: String) {
       val md = if (extraKeywords contains k) {
          val key = MetaDatum.keyBase ? k.substring(1)
-         val (_,_,value) = sp.readParsedObject(OMMOD(MetaDatum.keyBase))(s)
+         val (_,_,value) = sp.readParsedObject(Context(MetaDatum.keyBase))(s)
          new MetaDatum(key,value)
       } else {
          val key = sp.readSPath(MetaDatum.keyBase)(s)
@@ -25,7 +25,7 @@ object MetadataParser extends ParserExtension {
             case "tag" =>
                Tag(key)
             case "meta" =>
-               val (_,_,value) = sp.readParsedObject(OMMOD(MetaDatum.keyBase))(s)
+               val (_,_,value) = sp.readParsedObject(Context(MetaDatum.keyBase))(s)
                new MetaDatum(key,value)
             case "link" =>
                val (u,reg) = s.reader.readToken

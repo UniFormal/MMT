@@ -1,6 +1,8 @@
-package info.kwarc.mmt.api.objects
+package info.kwarc.mmt.api.checking
+
 import info.kwarc.mmt.api._
 import libraries._
+import objects._
 import objects.Conversions._
 import scala.collection.mutable.{HashMap,HashSet}
 

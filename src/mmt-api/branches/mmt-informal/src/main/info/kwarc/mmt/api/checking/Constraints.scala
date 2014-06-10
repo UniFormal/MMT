@@ -1,6 +1,7 @@
-package info.kwarc.mmt.api.objects
+package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
+import objects._
 
 /** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
 abstract class DelayedConstraint(val incomplete: Boolean) {

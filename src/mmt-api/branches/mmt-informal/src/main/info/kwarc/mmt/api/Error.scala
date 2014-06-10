@@ -7,16 +7,16 @@ import info.kwarc.mmt.api.parser.SourceRef
 abstract class Error(val shortMsg : String) extends java.lang.Throwable(shortMsg) {
    private var causedBy: Option[java.lang.Throwable] = None
    def setCausedBy(e: java.lang.Throwable): Error = {causedBy = Some(e); this}
-   def getCausedBy : Option[java.lang.Throwable] = causedBy
-   def longMsg : String = {
+   //def getCausedBy : Option[java.lang.Throwable] = causedBy
+   private def stackTrace : String = getStackTrace.map(_.toString).mkString("","\n","")
+   def getLongMessage : String = {
       val causedByMsg = causedBy match {
         case None => ""
-        case Some(e: Error) => "\ncaused by\n" + e.longMsg
+        case Some(e: Error) => "\ncaused by\n" + e.getLongMessage
         case Some(e) => "\ncaused by\n" + e.getClass + ": " + e.getMessage + e.getStackTrace.map(_.toString).mkString("\n","\n","")
       }
       getMessage + "\n" + stackTrace + causedByMsg
    }
-   def stackTrace : String = getStackTrace.map(_.toString).mkString("","\n","")
    override def toString = shortMsg
 }
 
@@ -53,7 +53,7 @@ case class InvalidElement(elem: StructuralElement, s : String, causedBy: Error =
 /** errors that occur when objects are invalid */
 case class InvalidObject(obj: objects.Obj, s: String) extends Invalid("invalid object: " + s)
 /** errors that occur when judgement do not hold */
-case class InvalidUnit(unit: objects.ValidationUnit, history: objects.History) extends Invalid("invalid object: " + unit.component.toString)
+case class InvalidUnit(unit: checking.CheckingUnit, history: checking.History) extends Invalid("invalid object: " + unit.component.toString)
 
 /** errors that occur when presenting a knowledge item */
 case class PresentationError(s : String) extends Error(s)
@@ -68,3 +68,40 @@ case class LookupError(name : LocalName, context: objects.Context) extends Error
 
 /** base class for errors that are thrown by an extension */
 abstract class ExtensionError(prefix: String, s : String) extends Error(prefix + ": " + s)
+
+/** the type of continuation functions for error handling */
+abstract class ErrorHandler {
+   private var newErrors = false
+   def mark {newErrors = false}
+   /** true if new errors occurred since the last call to mark */
+   def hasNewErrors = newErrors
+   /** registers an error */
+   def apply(e: Error) {
+      newErrors = true
+      addError(e)
+   }
+   protected def addError(e: Error)
+}
+
+/** passed along processing pipe lines to collect errors */
+class ErrorContainer extends ErrorHandler {
+   private var errors: List[Error] = Nil
+   def addError(e: Error) {
+      errors ::= e
+   }
+   def isEmpty = errors.isEmpty
+   def reset {errors = Nil}
+   def getErrors = errors.reverse 
+}
+
+class ErrorLogger(report: frontend.Report) extends ErrorHandler {
+   def addError(e: Error) {
+      report(e)
+   }
+}
+
+object ErrorThrower extends ErrorHandler {
+   def addError(e: Error) {
+      throw e
+   }
+}

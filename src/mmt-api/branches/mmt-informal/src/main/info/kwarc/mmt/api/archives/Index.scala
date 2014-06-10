@@ -18,7 +18,9 @@ import utils.FileConversion._
  */
 abstract class Importer extends TraversingBuildTarget {
    protected var _inDim: ArchiveDimension = source
+   /** source by default, may be overridden */
    def inDim = _inDim
+   /** narration, produces also content and relational */ 
    val outDim = narration
    override val outExt = "omdoc"
 
@@ -27,10 +29,10 @@ abstract class Importer extends TraversingBuildTarget {
     *  @param information about the input document and error reporting
     *  @param seCont a continuation function to be called on every generated document
     */
-   def buildOne(bf: BuildTask, seCont: Document => Unit)
+   def importDocument(bf: BuildTask, seCont: Document => Unit)
 
    def buildFile(a: Archive, bf: BuildTask) {
-      buildOne(bf, doc => indexDocument(a, doc, bf.inPath))
+      importDocument(bf, doc => indexDocument(a, doc, bf.inPath))
    }
    
    override def buildDir(a: Archive, bd: BuildTask, builtChildren: List[BuildTask]) {
@@ -72,12 +74,12 @@ abstract class Importer extends TraversingBuildTarget {
            writeToRel(mod, a/relational / Archive.MMTPathToContentPath(mod.path))
         }}
    }    
-   /** deletes content, narration, notation, and relational */
+   /** deletes content, narration, and relational */
    override def cleanFile(a: Archive, curr: Current) {
        val controller = new Controller(report)
-       val Current(inFile, inPath) = curr
-       val narrFile = outPath(a, inPath)
-       val (doc,_) = controller.read(narrFile, Some(DPath(a.narrationBase / inPath)))
+       val Current(inFile, narrPath) = curr
+       val narrFile = outPath(a, narrPath)
+       val doc = controller.read(narrFile, Some(DPath(a.narrationBase / narrPath)))(new ErrorLogger(report))
        //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly 
        doc.getItems foreach {
           case r: documents.MRef =>
@@ -86,7 +88,7 @@ abstract class Importer extends TraversingBuildTarget {
              delete((a/relational / cPath).setExtension("rel"))
           case r: documents.DRef => //TODO recursively delete subdocuments
        }
-       delete((a/relational / inPath).setExtension("rel"))
+       delete((a/relational / narrPath).setExtension("rel"))
        delete(narrFile)
     }
     override def cleanDir(a: Archive, curr: Current) {
@@ -98,11 +100,11 @@ abstract class Importer extends TraversingBuildTarget {
 /** An StringBasedImporter is a more flexible importer whose input does not have to be a file */
 abstract class StringBasedImporter extends Importer {
    /** the main abstract method to import a document given by its content */
-   def importOne(base: DPath, input: String, seCont: Document => Unit)
+   def importString(base: DPath, input: String, seCont: Document => Unit)
 
-   def buildOne(bf: BuildTask, seCont: Document => Unit) {
+   def importDocument(bf: BuildTask, seCont: Document => Unit) {
       val input = utils.File.read(bf.inFile)
-      importOne(bf.narrationDPath, input, seCont)
+      importString(bf.narrationDPath, input, seCont)
    }
 }
 
@@ -122,8 +124,8 @@ class OMDocImporter extends Importer {
       }
    }
    
-   def buildOne(bf: BuildTask, seCont: Document => Unit) = {
-      val (doc,_) = controller.read(bf.inFile, Some(bf.narrationDPath))
+   def importDocument(bf: BuildTask, seCont: Document => Unit) = {
+      val doc = controller.read(bf.inFile, Some(bf.narrationDPath))(bf.errorCont)
       seCont(doc)
    }
 }
