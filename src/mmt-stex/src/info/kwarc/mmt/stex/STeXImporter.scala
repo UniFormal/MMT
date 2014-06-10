@@ -47,14 +47,14 @@ class STeXImporter extends Importer {
       }
    }
   
-  def buildOne(bf : BuildFile, cont : Document => Unit) {
+  def importDocument(bt : BuildTask, cont : Document => Unit) {
     try {
-      val src = scala.io.Source.fromFile(bf.inFile.toString)
+      val src = scala.io.Source.fromFile(bt.inFile.toString)
       val cp = scala.xml.parsing.ConstructingParser.fromSource(src, true)
       val node : Node = cp.document()(0)
       src.close 
-      val errors = translateDocument(node)(bf.dpath)
-      val doc = controller.getDocument(bf.dpath)
+      val errors = translateDocument(node)(bt.narrationDPath)
+      val doc = controller.getDocument(bt.narrationDPath)
       if (errors != Nil) {
         log("Errors: " + errors.mkString("\n"))
       }
@@ -166,7 +166,7 @@ class STeXImporter extends Importer {
           val tpWrapperO = n.child.find(_.label == "type")
           val tpO = tpWrapperO.map(tpN => translateTerm(tpN.child.head))
           val dfO = None //TODO, get also def
-          val const = new Constant(OMMOD(mpath), name, None, TermContainer(tpO), TermContainer(dfO), None, NotationContainer())
+          val const = new FinalConstant(OMMOD(mpath), name, None, TermContainer(tpO), TermContainer(dfO), None, NotationContainer())
           add(const)
         case "definition" => //omdoc definition -> immt flexiformal declaration
           val sref = parseSourceRef(n, doc.path)
@@ -205,7 +205,7 @@ class STeXImporter extends Importer {
           val macroMk = Delim("\\" + macro_name)
           val notArgs = macroMk :: (0 until nrArgs).toList.flatMap(i => Delim("{") :: Arg(i + 1) :: Delim("}") :: Nil)
           val stexScope = NotationScope(None, "stex" :: "tex" :: Nil, 0)
-          val texNotation = new TextNotation(refName, Mixfix(notArgs), Precedence.integer(0), None, stexScope)
+          val texNotation = new TextNotation(Mixfix(notArgs), Precedence.integer(0), None, stexScope)
           c.notC.parsingDim.set(texNotation)
           //getting mathml rendering info
           val prototype = n.child.find(_.label == "prototype").get
@@ -282,7 +282,7 @@ class STeXImporter extends Importer {
    }
    val languages = "mathml" :: Nil
    val scope = NotationScope(variant, languages, 0)
-   new TextNotation(symName, Mixfix(markers), precedence, None, scope)
+   new TextNotation(Mixfix(markers), precedence, None, scope)
   }
   
   def getPrecedence(n : scala.xml.Node) : Precedence = {
@@ -312,7 +312,7 @@ class STeXImporter extends Importer {
         val markers = n.text.split(" ").map(Delim(_))
         val prec = presentation.Precedence.integer(0)
         val verbScope = NotationScope(None, sTeX.getLanguage(spath).toList, 0)
-        val not = TextNotation(spath, prec, None, verbScope)(markers :_*)
+        val not = TextNotation(prec, None, verbScope)(markers :_*)
         const.notC.verbalizationDim.set(not)
         ref
       } else {
