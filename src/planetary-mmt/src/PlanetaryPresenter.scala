@@ -13,8 +13,9 @@ import archives._
 import notations._
 
 
-class NotationPresenter(controller : Controller, var notations : List[(GlobalName,TextNotation)] = Nil) 
+class NotationPresenter(contr : Controller, var notations : List[(GlobalName,TextNotation)] = Nil) 
   extends presentation.MathMLPresenter {
+  controller = contr
   report = controller.report
   override def getNotation(path: GlobalName): Option[TextNotation] = {
     notations.find(p => p._1 == path) match {
