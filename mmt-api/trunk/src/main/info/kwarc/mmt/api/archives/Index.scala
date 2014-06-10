@@ -77,10 +77,9 @@ abstract class Importer extends TraversingBuildTarget {
    /** deletes content, narration, and relational */
    override def cleanFile(a: Archive, curr: Current) {
        val controller = new Controller(report)
-       val Current(inFile, inPath) = curr
-       val narrFile = outPath(a, inPath)
-       implicit val errorCont = a.errors(key)(inPath) 
-       val doc = controller.read(narrFile, Some(DPath(a.narrationBase / inPath)))
+       val Current(inFile, narrPath) = curr
+       val narrFile = outPath(a, narrPath)
+       val doc = controller.read(narrFile, Some(DPath(a.narrationBase / narrPath)))(new ErrorLogger(report))
        //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly 
        doc.getItems foreach {
           case r: documents.MRef =>
@@ -89,7 +88,7 @@ abstract class Importer extends TraversingBuildTarget {
              delete((a/relational / cPath).setExtension("rel"))
           case r: documents.DRef => //TODO recursively delete subdocuments
        }
-       delete((a/relational / inPath).setExtension("rel"))
+       delete((a/relational / narrPath).setExtension("rel"))
        delete(narrFile)
     }
     override def cleanDir(a: Archive, curr: Current) {
