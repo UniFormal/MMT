@@ -51,12 +51,6 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
     try {
       uriComps match {
         case "getGrammar" :: _ => getGrammarResponse
-        case "getPresentation" :: _ => getPresentationResponse
-        case "getCompiled" :: _ => getCompiledResponse
-        case "getRelated" :: _ => getRelated
-        case "getNotations" :: _ => getNotations
-        case "getDefinitions" :: _ => getDefinitions
-        case "getActions" :: _ => getActionsResponse
         case _ => errorResponse("Invalid request: " + uriComps.mkString("/"), List(new PlanetaryError("Invalid Request" + uriComps)))
        }
     } catch {
@@ -89,82 +83,17 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 // 
 //       val xmlNotations = notations.map(n => (n.name.toPath, n.presentationMarkers))
 //       val resp = new JSONArray(xmlNotations.map(_.toString))
-    
-     notations.foreach(n => Grammar.addTopRule(n.name.toPath, n.presentationMarkers)) 
+   // notations.foreach( x => println(x.arity.length)) PRINT NOTATION ARGUMENT NUMBER
+      notations.foreach(n => Grammar.addTopRule(n.name.toPath, n.presentationMarkers)) 
      val resp = new JSONArray( Grammar.getMarpaGrammar );
 //     val resp = new JSONArray(Grammar.rules.toList.map(_.toString));
      val params = reqBody.asJSON
       Server.JsonResponse(resp).aact(tk)
     }
   }
-  def getActionsResponse : HLet  = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-      val reqBody = new Body(tk)
-      val notations = controller.library.getModules flatMap {
-        case t : DeclaredTheory 
-        	//if t.path.toPath == "http://mathhub.info/smglom/mv/structure.omdoc?structure"
-        => 
-          val not = t.getDeclarations collect {
-            case c : Constant => c.notC.presentationDim.notations.values.flatten
-          } 
-          not.flatten
-        case _ => Nil
-      }
-      
-      //val xmlNotations = notations.map(n => (n.name.toPath, n.presentationMarkers))
-      val xmlNotations = notations.map(n => 
-        Grammar.addTopRule(n.name.toPath
-            ,n.presentationMarkers))
-     
-      val symbol = notations.head.name
-      //val prototype = OMA(OMS(symbol), List(args))
-      //prototype.toNode
-      
-      //val resp = new JSONArray(xmlNotations.map(_.toString))
-      
-      val resp = new JSONArray("#TODO...My Actions"::Nil)
-        //val resp = new JSONArray(List(Grammar.rules.toString))
-     
-      // val resp = new JSONArray(xmlNotations)
-      val params = reqBody.asJSON
-      
-      Server.JsonResponse(resp).aact(tk)
-    }
-  }
+ 
 
-  
-  
-  def doMarkers(markers : List[Marker]) : scala.xml.Node = {
-    <m:mrow> {markers.map(doMarker)} </m:mrow>
-  }
-  def doMarker(marker : Marker) : scala.xml.Node = marker match {
-    case Arg(argNr,precedence) => {
-		      val precS = precedence match {
-		        case Some(x) => x.toString
-		        case None    => ""
-		      }
-		      <omdoc:render name={"arg" + argNr} precedence={precS} />
-	      }
-    case SeqArg(argNr,delim,precedence) => {
-    		val precS = precedence match {
-    		  case Some(x) => x.toString
-    		  case None => ""
-    		}
-    		<omdoc:iterate name={"arg"+argNr} precedence={precS}>
-    		<omdoc:separator>
-    			{doMarker(delim)}
-    		</omdoc:separator>
-    			 <omdoc:render name={"arg" + argNr} precedence={precS} />
-    		</omdoc:iterate>
-    }		//{doMarker(Arg(argNr,precedence))}
-  	case m : TdMarker => <td> <todo/> </td> 
-    case d : Delimiter => <m:mo> {d.text} </m:mo>
-    case m : GroupMarker => doMarkers(m.elements)
-    
-    case _ => <todo/>		
-  }
-  
-
+ 
   abstract class GenericRule
   case class Rule(name:String, content: List[String]) extends GenericRule
   object Grammar {
@@ -184,7 +113,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	  def addTopRule(rawName:String, markers:List[Marker]) {
 		val content:List[String] = "topLevel"::markers.map(addRule)
 	    val topPatt = """\?.*""".r
-	    val q = new Regex(("""\?"""),"q")
+	    val q = """[\?-]""".r
 	    val Some(suff) = topPatt findFirstIn rawName 
 	    val notUniqueName = q replaceAllIn (suff, m => "_")
 		val uniqueName = createRuleName(notUniqueName)
@@ -206,18 +135,15 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	        name
 	     }
 	  }
-	  def addRuleL(markers:List[Marker]):String  = { //returns the name of the rule
-	     val content:List[String] = markers.map(addRule)
-	     createRule(content)
-	  }
+	
 	  def addRule(marker:Marker):String = marker match { //returns the name of the rule
 			case Arg(argNr,precedence) => {
 						       precedence match {
 						        case Some(x) => 
-				 val content = "renderB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::"renderE"::Nil
+				 val content = "renderB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::"renderE"::" #Arg"::Nil
 				 createRule(content)
 						        case None    =>
-				 val content = "renderB"::"nrB"::argNr.toString::"nrE"::"renderE"::Nil
+				 val content = "renderB"::"nrB"::argNr.toString::"nrE"::"renderE"::" #Arg"::Nil
 				 createRule(content)
 						      }
 						
@@ -229,26 +155,92 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 				    		  case Some(x) => 
 				     		    createRule(
 				     		    "iterateB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::
-				    		    "separatorB"::delimName::"separatorE"::argName::"iterateE"::Nil)
+				    		    "separatorB"::delimName::"separatorE"::argName::"iterateE"::" #SeqArg"::Nil)
 				    		  case None => 
 				    		    createRule(
 				    		    "iterateB"::"nrB"::argNr.toString::"nrE"::"separatorB"::delimName::
-				    		    "separatorE"::argName::"iterateE"::Nil)
+				    		    "separatorE"::argName::"iterateE"::" #SeqArg "::Nil)
 				    		}
 				    }		
-		  	case m : TdMarker => createRule("<TODO>"::Nil)
-		    case d : Delimiter => createRule("moB"::"'"+d.text+"'"::"moE"::Nil)
-		    case m : GroupMarker => addRuleL(m.elements)
-		    case _ => "<TODO>"
+		  	case m : TdMarker => createRule("'TODO'"::Nil)
+		    case d : Delimiter => createRule("moB"::"'"+d.text+"'"::"moE"::" #Delimiter"::Nil)
+		    case m : GroupMarker => {
+		    				  val content:List[String] = m.elements.map(addRule)
+		    				  createRule(content:::" #Group"::Nil)
+		    		}
+		   case s : info.kwarc.mmt.api.notations.ScriptMarker => 
+		     	val mainRule = addRule(s.main)
+		        var hasSup = false
+		        var hasSub = false
+		        var hasUnder = false
+		        var hasOver = false
+		     	val subRule = s.sub match {
+		     		  case Some(m) =>  { hasSup = true
+		     		  					addRule(m)}
+		     		  case _ => ""
+		     		}
+		     	val supRule = s.sup match {
+		     		  case Some(m) => { hasSub = true
+		     				  		   addRule(m)
+		     		  }
+		     		  case _ =>  ""
+		     	}
+		        
+		     	val overRule =  s.over match {
+		     		  case Some(m) => { hasOver = true
+		     			  				addRule(m)}  
+		     		  case _ => ""
+		        }
+		     		
+		     	val underRule = s.under match {
+		     		  case Some(m) => { hasUnder
+		     			  				addRule(m)}
+		     		  case _ => "" 
+		     	}
+		     	
+		     	
+		     	//TODO: for now a lot of cases are ignored ...
+		       if (hasSup && !hasSub ) {
+		          createRule("msubB"::mainRule::subRule::"msubE"::Nil)
+		       } else if (!hasSup && hasSub) {
+		         createRule("msupB"::mainRule::subRule::"msupE"::Nil)
+		       } else if (hasSup && hasSub) {
+		          val v1 = createRule("msubB"::
+		             "msupB"::mainRule::supRule::"msupE"::
+		             subRule::"msubE"::Nil)
+		          val v2 = createRule("msupB"::
+		             "msubB"::mainRule::subRule::"msubE"::
+		             supRule::"msupE"::Nil)
+		          val v3 = createRule("msubsupB"::
+		              mainRule::subRule::supRule::"msubsupE"::Nil)
+		          createRule( "alternatives"::v1::v2::v3::Nil)
+		           
+		       } else if (hasOver && !hasUnder ) {
+		          createRule("moverB"::mainRule::underRule::"moverE"::Nil)
+		       } else if (!hasOver && hasUnder) {
+		          createRule("munderB"::mainRule::underRule::"munderE"::Nil)
+		       } else  { //(hasOver && hasUnder) {
+		          val v1 = createRule("munderB"::
+		             "moverB"::mainRule::overRule::"moverE"::
+		             underRule::"munderE"::Nil)
+		          val v2 = createRule("moverB"::
+		             "munderB"::mainRule::underRule::"munderE"::
+		             overRule::"moverE"::Nil)
+		          val v3 = createRule("munderoverB"::
+		              mainRule::underRule::overRule::"mUnderOverE"::Nil)
+		          createRule( "alternatives"::v1::v2::v3::Nil)
+		           
+		       }
+		    case _ => "'TODO'"
 	  }
 	  
 	  def toBNF(rule:Rule):String = {
 	    val Rule(name, content) = rule
 	    
 	    content match {
-	      case "topLevel"::tl => name + "::= " + tl.mkString(" ")  
-	      case "moB"::tl => name + "::= " + content.mkString(" ")  
-	      case "renderB"::tl => name + "::= Expression"
+	      case "topLevel"::tl => name + "::= " + tl.mkString(" ") 
+	      case "moB"::tl => name + "::= " + content.mkString(" ") 
+	      case "renderB"::tl => name + "::= Expression || texts" //todo -> think of a better base case for arguments
 	      case "iterateB"::tl => 
 	        			val Some(delim) = content.find(x=> 
 	        			   if (content.indexOf(x)>0) {
@@ -258,13 +250,41 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	        			   if (content.indexOf(x)>0) {
 	        			      content(content.indexOf(x)-1) == "separatorE"
 	        			   } else false)
-						name + "::= " + argName +" \n"+ "| " + name + " " + delim + " " +argName 
-	      case _ => "<TODO>"
+						name + "::= " +  argName + " " + delim + " " + name + " || " + argName + " " + delim + " " + argName
+		 //TODO: msupB msubB (/) moverB munderB (/) msubsupB munderoverB alternatives
+	      case "msubB"::mainRule::subRule::"msubE"::Nil => 
+	        name + "::= " + (content mkString " ")
+	      case "msupB"::mainRule::subRule::"msupE"::Nil =>
+	        name + "::= " + (content mkString " ")
+	      case "msubB"::"msupB"::mainRule::supRule::"msupE"::
+		     subRule::"msubE"::Nil   =>
+		     name + "::= " + (content mkString " ")
+	      case "msupB"::"msubB"::mainRule::subRule::"msubE"::
+		     supRule::"msupE"::Nil   =>
+		      name + "::= " + (content mkString " ")
+	      case "msubsupB"::mainRule::subRule::supRule::"msubsupE"::Nil =>
+	        name + "::= " + (content mkString " ")
+	      case "moverB"::mainRule::underRule::"moverE"::Nil =>
+	        name + "::= " + (content mkString " ")
+	      case "munderB"::mainRule::underRule::"munderE"::Nil =>
+	        name + "::= " + (content mkString " ")
+	      case "munderB"::"moverB"::mainRule::overRule::"moverE"::
+		       underRule::"munderE"::Nil =>
+		         name + "::= " + (content mkString " ")
+	      case "moverB"::"munderB"::mainRule::underRule::"munderE"::
+		       overRule::"moverE"::Nil =>
+		         name + "::= " + (content mkString " ")
+	      case "munderoverB"::mainRule::underRule::overRule::"mUnderOverE"::Nil =>
+	        name + "::= " + (content mkString " ")
+	      case  "alternatives"::v1::v2::v3::Nil => 
+	         name + "::= " + (List(v1,v2,v3) mkString (" | "))
+	      case _ => "'TODO'"
 	    }
 	  }
 	  
 	  def getMarpaGrammar:List[String] = {
-		    val pref = ":default ::= action => getString":: // by default any rule will return the string it matched
+		    val pref =  "#Manually generated part"::
+		    			":default ::= action => getString":: // by default any rule will return the string it matched
 		    			"lexeme default = latm => 1"::       
 //		    			"Error ::= anyChar"::                  
 //		    			"       || anyChar Error"::
@@ -277,7 +297,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			"            || Presentation "::
      	    	//		" 			  | Content "::
 		    			"Presentation ::= rowB ExpressionList rowE"::
-		    			" moB '(' moE Expression moB ')' moE "::
+		    			" | moB '(' moE Expression moB ')' moE "::
 		    			" | moB Expression moE "::
 		    			" | miB Expression miE "::
 		    			" | mnB Expression mnE "::
@@ -285,6 +305,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			" | msqrtB Expression msqrtE"::
 		    			" | msupB Expression Expression msupE" ::
 		    			" | msubB Expression Expression msubE" ::
+		    			" | msubsupB Expression Expression Expression msubE"::
 		    			" || texts "::
 		    			"mfracB ::= ws '<mfrac' attribs '>' ws"::"mfracE ::= ws '</mfrac>' ws"::
 		    			"msqrtB ::= ws '<msqrt' attribs '>' ws"::"msqrtE ::= ws '</msqrt>' ws"::
@@ -293,13 +314,14 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			"mnB ::= ws '<mn' attribs '>' ws"::"mnE ::= ws '</mn>' ws"::
 		    			"miB ::= ws '<mi' attribs '>' ws"::"miE ::= ws '</mi>' ws"::
 		    			"moB ::= ws '<mo' attribs '>' ws"::"moE ::= ws '</mo>' ws"::
+		    			"msubsupB ::= ws '<msubsup' attribs '>' ws"::"moE ::= ws '</msubsup>' ws"::
 		    			"""rowB ::= ws '<mrow' attribs '>' ws""":: """rowE ::= ws '</mrow>' ws"""::
 		    			"ws ::= spaces"::
 		    			"ws::= # empty"::
-		    			"""spaces ~ space*"""::
+		    			"""spaces ~ space+"""::
 		    			"""space ~ [\s] """::
 		    			"attribs ::= texts"::
-//		    			"attribs ::= "::
+		    			"attribs ::= "::
 //		    			"attribs ::= ws attrib "::
 //		    			" | ws attrib ws attribs " ::
 //		    			"""attrib ::= letters '=' '"' notquotes '"' """::
@@ -308,8 +330,9 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 //		    			"""notquotes ::= notquote+ """ ::
 //		    			"""notquote ~ [^"]"""::
 //		    			"""notquote ~ [\w]"""::
-		    			""" texts ~ text* """::
+		    			""" texts ~ text+"""::
 		    			""" text ~ [^<>]"""::
+		    			"#Automatically generated part"::
 		    			Nil
 		    			
 		    		
@@ -374,146 +397,6 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
     }
   }
   
-  private def getDefinitions : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-      val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
-      val spathS = params.get("spath").getOrElse(throw ServerError("No spath found")).toString
-      val languageO = params.get("language").map(_.toString)
-      val spath = Path.parse(spathS)
-      var resultSet = controller.depstore.getObjects(spath, isDefinedBy) collect { 
-        case p if p.isPath => p.path
-      }
-      resultSet = languageO match {
-        case None => resultSet
-        case Some(_) => resultSet.filter(p => sTeX.getLanguage(p) == languageO)
-      }
-      
-      //presenting
-      val pres = controller.extman.getPresenter("planetary").getOrElse(throw ServerError("No presenter found"))
-      val resultNodes = resultSet flatMap {p => 
-        controller.get(p) match {
-          case s : StructuralElement =>
-            val rb = new presentation.StringBuilder
-            pres(s)(rb)
-            Some(rb.get)
-          case _ => None
-        }
-      }
-      
-      
-      Server.JsonResponse(JSONArray(resultNodes.toList)).aact(tk)
-    }
-  }
-  
-  private def getRelated : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-      val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
-      log("Received immt query request : " + params.toString)
-      val subjectS = params.get("subject").getOrElse(throw ServerError("No subject found")).toString
-      val relationS = params.get("relation").getOrElse(throw ServerError("No relation found")).toString
-      val returnS = params.get("return").getOrElse(throw ServerError("No return type found")).toString
-      val subject = Path.parse(subjectS)
-      val relation = Binary.parse(relationS)
-      log(subjectS + " " +  relationS + " " +returnS)
-      val resultSet = controller.depstore.getObjects(subject, relation)
-      val pres = controller.extman.getPresenter("planetary").getOrElse(throw ServerError("No presenter found"))
-      val rb = new presentation.StringBuilder
-      val resultNodes = resultSet foreach {p =>
-        controller.get(p) match {
-          case s : StructuralElement =>
-            pres(s)(rb)
-          case _ => 
-        }
-      }
-      val html = if (resultSet.isEmpty) {
-        "<div class=\"error\"> No Results Found </div>" 
-      } else {
-         "<div>" + rb.get + "</div>"
-      }
-      val response_header = <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h4 class="modal-title" id="myModalLabel">{subject.last}</h4>
-        </div>
-      val response = response_header.toString + 
-        "<div class=\"modal-body\" style=\"overflow:auto\"> " + html + " </div>"
-      log("Sending Response: " + response)
-      Server.XmlResponse(response).aact(tk)
-    }
-  }
-  
-  private def getCompiledResponse : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-      val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
-      log("Received Compilation Request : " + params.toString)
-      val bodyS = params.get("body").getOrElse(throw ServerError("No Body Found")).toString
-      val dpathS = params.getOrElse("dpath", "/tmp/").toString
-      val format = params.get("format").getOrElse(throw ServerError("No dpath Found")).toString     
-      val dpath = DPath(utils.URI(dpathS))
-      format match {
-        case "stex" => 
-          val comp = new STeXImporter()
-          comp.init(controller)
-          val (response,errors) = comp.compileOne(bodyS, dpath)
-          JsonResponse(response, errors.map(e => e.getStackTrace().mkString("\n")).mkString("\n\n"), errors).aact(tk)
-        case "mmt" => 
-          val reader = parser.Reader(bodyS)
-          val (doc,state) = controller.textParser(reader, dpath) 
-          val response = doc.toNodeResolved(controller.memory.content).toString    
-          JsonResponse(response, "", Nil).aact(tk)
-        case "elf" => 
-           //val comp = new Twelf()
-           //comp.init(controller, List("/home/mihnea/kwarc/data/twelf-mod/bin/twelf-server")) //TODO take from extension list
-           //val (response,errors) = comp.compileOne(bodyS, dpath)       
-          val response = controller.get(dpath).toNode.toString
-          val errors : List[Error] = Nil
-          JsonResponse(response, errors.map(e => e.getStackTrace().mkString("\n")).mkString("\n\n"), errors).aact(tk)
-      }
-    } catch {
-      case e : Error => 
-        log(e.longMsg)
-        errorResponse(e.longMsg, List(e)).aact(tk)
-      case e : Exception => 
-        errorResponse("Exception occured : " + e.getStackTrace().mkString("\n"), List(e)).aact(tk)
-    }
-  }
-  
-  private def getPresentationResponse : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-      val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
-      log("Received Presentation Request : " + params.toString)
-      val bodyS = params.get("body").getOrElse(throw ServerError("No Body Found")).toString
-      val dpathS = params.getOrElse("dpath","/tmp/").toString
-      val dpath = DPath(utils.URI(dpathS))
-      val styleS = params.get("style").getOrElse("xml").toString
-      val presenter = controller.extman.getPresenter(styleS) getOrElse {
-        val nset = Path.parseM(styleS, controller.getBase)
-        val p = new StyleBasedPresenter(controller, nset)
-        p.expandXRefs = true
-        p
-      }
-      val reader = new XMLReader(controller.report)
-      val bodyXML = scala.xml.Utility.trim(scala.xml.XML.loadString(bodyS))
-      
-      val cont = controller //new Controller
-      reader.readDocument(dpath, bodyXML)(cont.add)
-      val doc : Document = cont.getDocument(dpath, dp => "doc not found at path " + dp)
-      val rb = new StringBuilder()
-      presenter.apply(doc)(rb)
-      val response = rb.get
-      log("Sending Response: " + response)
-      JsonResponse(response, "", Nil).aact(tk)
-     } catch {
-       case e : Error => 
-         log(e.longMsg)
-         errorResponse(e.longMsg, List(e)).aact(tk)
-       case e : Exception => 
-         errorResponse("Exception occured : "  + e.getStackTrace().mkString("\n"), List(e)).aact(tk)
-    }
-  }
   
   //utils
   private def errorResponse(text : String, errors : List[Throwable]) : HLet = {
