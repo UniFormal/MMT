@@ -1,0 +1,466 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>Rule - MMT - info.kwarc.mmt.api.checking.Rule</title>
+          <meta name="description" content="Rule - MMT - info.kwarc.mmt.api.checking.Rule" />
+          <meta name="keywords" content="Rule MMT info.kwarc.mmt.api.checking.Rule" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      <script type="text/javascript" src="../../../../../lib/modernizr.custom.js"></script><script type="text/javascript" src="../../../../../lib/diagrams.js" id="diagrams-js"></script>
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'info.kwarc.mmt.api.checking.Rule';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="type">
+      <div id="definition">
+        <img src="../../../../../lib/trait_big.png" />
+        <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.api.checking">checking</a></p>
+        <h1>Rule</h1>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <span class="name">Rule</span><span class="result"> extends <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>the type of all Rules</p><p>All Rules have an apply method that is passed a Solver for callbacks.
+The Solver does not implement any back-tracking. Therefore, rules may only use callbacks if their effects are required.
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="../../../../../../../src/mmt-api/trunk/src/main/info/kwarc/mmt/api/checking/Rules.scala" target="_blank">Rules.scala</a></dd></dl><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
+        </div><div class="toggleContainer block">
+          <span class="toggle">Known Subclasses</span>
+          <div class="subClasses hiddenContent"><a href="../uom/AbbrevRule.html" class="extype" name="info.kwarc.mmt.api.uom.AbbrevRule">AbbrevRule</a>, <a href="../uom/Antonym.html" class="extype" name="info.kwarc.mmt.api.uom.Antonym">Antonym</a>, <a href="../../lf/ApplyTerm$.html" class="extype" name="info.kwarc.mmt.lf.ApplyTerm">ApplyTerm</a>, <a href="../../lf/ArrowElimRule$.html" class="extype" name="info.kwarc.mmt.lf.ArrowElimRule">ArrowElimRule</a>, <a href="../../lf/ArrowIntroRule$.html" class="extype" name="info.kwarc.mmt.lf.ArrowIntroRule">ArrowIntroRule</a>, <a href="../uom/Association.html" class="extype" name="info.kwarc.mmt.api.uom.Association">Association</a>, <a href="../uom/Attractor.html" class="extype" name="info.kwarc.mmt.api.uom.Attractor">Attractor</a>, <a href="../uom/Lambda$Beta$.html" class="extype" name="info.kwarc.mmt.api.uom.Lambda.Beta">Beta</a>, <a href="../../lf/Beta$.html" class="extype" name="info.kwarc.mmt.lf.Beta">Beta</a>, <a href="../uom/UnaryInverse$BinaryInverse.html" class="extype" name="info.kwarc.mmt.api.uom.UnaryInverse.BinaryInverse">BinaryInverse</a>, <a href="../uom/BreadthRule.html" class="extype" name="info.kwarc.mmt.api.uom.BreadthRule">BreadthRule</a>, <a href="../uom/Collect.html" class="extype" name="info.kwarc.mmt.api.uom.Collect">Collect</a>, <a href="../uom/Commutative.html" class="extype" name="info.kwarc.mmt.api.uom.Commutative">Commutative</a>, <a href="../uom/Complement.html" class="extype" name="info.kwarc.mmt.api.uom.Complement">Complement</a>, <a href="../../morphisms/ComplexTheoryInfer$.html" class="extype" name="info.kwarc.mmt.morphisms.ComplexTheoryInfer">ComplexTheoryInfer</a>, <a href="../uom/UnaryInverse$Composition.html" class="extype" name="info.kwarc.mmt.api.uom.UnaryInverse.Composition">Composition</a>, <a href="../../morphisms/CompositionInfer$.html" class="extype" name="info.kwarc.mmt.morphisms.CompositionInfer">CompositionInfer</a>, <a href="../../reflection/Computation$.html" class="extype" name="info.kwarc.mmt.reflection.Computation">Computation</a>, <a href="ComputationRule.html" class="extype" name="info.kwarc.mmt.api.checking.ComputationRule">ComputationRule</a>, <a href="CongruenceRule.html" class="extype" name="info.kwarc.mmt.api.checking.CongruenceRule">CongruenceRule</a>, <a href="../uom/DepthRule.html" class="extype" name="info.kwarc.mmt.api.uom.DepthRule">DepthRule</a>, <a href="../uom/DepthRuleUnary.html" class="extype" name="info.kwarc.mmt.api.uom.DepthRuleUnary">DepthRuleUnary</a>, <a href="../uom/Distribution.html" class="extype" name="info.kwarc.mmt.api.uom.Distribution">Distribution</a>, <a href="../../reflection/ElimInfer$.html" class="extype" name="info.kwarc.mmt.reflection.ElimInfer">ElimInfer</a>, <a href="ElimProvingRule.html" class="extype" name="info.kwarc.mmt.api.checking.ElimProvingRule">ElimProvingRule</a>, <a href="../../lf/EqualityTerm$.html" class="extype" name="info.kwarc.mmt.lf.EqualityTerm">EqualityTerm</a>, <a href="../uom/Lambda$Eta$.html" class="extype" name="info.kwarc.mmt.api.uom.Lambda.Eta">Eta</a>, <a href="../../lf/ExpandArrow$.html" class="extype" name="info.kwarc.mmt.lf.ExpandArrow">ExpandArrow</a>, <a href="../../reflection/Extensionality$.html" class="extype" name="info.kwarc.mmt.reflection.Extensionality">Extensionality</a>, <a href="../../lf/Extensionality$.html" class="extype" name="info.kwarc.mmt.lf.Extensionality">Extensionality</a>, <a href="../../reflection/FormationInfer$.html" class="extype" name="info.kwarc.mmt.reflection.FormationInfer">FormationInfer</a>, <a href="ForwardSolutionRule.html" class="extype" name="info.kwarc.mmt.api.checking.ForwardSolutionRule">ForwardSolutionRule</a>, <a href="../../lf/GeneratedDepthRule.html" class="extype" name="info.kwarc.mmt.lf.GeneratedDepthRule">GeneratedDepthRule</a>, <a href="HoleTerm$.html" class="extype" name="info.kwarc.mmt.api.checking.HoleTerm">HoleTerm</a>, <a href="../uom/Homomorphism.html" class="extype" name="info.kwarc.mmt.api.uom.Homomorphism">Homomorphism</a>, <a href="../uom/Idempotent.html" class="extype" name="info.kwarc.mmt.api.uom.Idempotent">Idempotent</a>, <a href="../../morphisms/IdentityInfer$.html" class="extype" name="info.kwarc.mmt.morphisms.IdentityInfer">IdentityInfer</a>, <a href="../uom/Implementation.html" class="extype" name="info.kwarc.mmt.api.uom.Implementation">Implementation</a>, <a href="InferenceRule.html" class="extype" name="info.kwarc.mmt.api.checking.InferenceRule">InferenceRule</a>, <a href="InhabitableRule.html" class="extype" name="info.kwarc.mmt.api.checking.InhabitableRule">InhabitableRule</a>, <a href="IntroProvingRule.html" class="extype" name="info.kwarc.mmt.api.checking.IntroProvingRule">IntroProvingRule</a>, <a href="../uom/Involution.html" class="extype" name="info.kwarc.mmt.api.uom.Involution">Involution</a>, <a href="../uom/UnaryInverse$Involution$.html" class="extype" name="info.kwarc.mmt.api.uom.UnaryInverse.Involution">Involution</a>, <a href="../../lf/LambdaCongruence$.html" class="extype" name="info.kwarc.mmt.lf.LambdaCongruence">LambdaCongruence</a>, <a href="../../lf/LambdaTerm$.html" class="extype" name="info.kwarc.mmt.lf.LambdaTerm">LambdaTerm</a>, <a href="../uom/MonoidAction.html" class="extype" name="info.kwarc.mmt.api.uom.MonoidAction">MonoidAction</a>, <a href="../../morphisms/MorphCheck$.html" class="extype" name="info.kwarc.mmt.morphisms.MorphCheck">MorphCheck</a>, <a href="../../morphisms/MorphTypeUniverse$.html" class="extype" name="info.kwarc.mmt.morphisms.MorphTypeUniverse">MorphTypeUniverse</a>, <a href="../uom/UnaryInverse$Neutral.html" class="extype" name="info.kwarc.mmt.api.uom.UnaryInverse.Neutral">Neutral</a>, <a href="../uom/Neutral.html" class="extype" name="info.kwarc.mmt.api.uom.Neutral">Neutral</a>, <a href="../../lf/PiCongruence$.html" class="extype" name="info.kwarc.mmt.lf.PiCongruence">PiCongruence</a>, <a href="../../lf/PiElimRule$.html" class="extype" name="info.kwarc.mmt.lf.PiElimRule">PiElimRule</a>, <a href="../../lf/PiIntroRule$.html" class="extype" name="info.kwarc.mmt.lf.PiIntroRule">PiIntroRule</a>, <a href="../../lf/PiOrArrowElimRule.html" class="extype" name="info.kwarc.mmt.lf.PiOrArrowElimRule">PiOrArrowElimRule</a>, <a href="../../lf/PiOrArrowIntroRule.html" class="extype" name="info.kwarc.mmt.lf.PiOrArrowIntroRule">PiOrArrowIntroRule</a>, <a href="../../lf/PiTerm$.html" class="extype" name="info.kwarc.mmt.lf.PiTerm">PiTerm</a>, <a href="../../lf/PiType$.html" class="extype" name="info.kwarc.mmt.lf.PiType">PiType</a>, <a href="../uom/Projection.html" class="extype" name="info.kwarc.mmt.api.uom.Projection">Projection</a>, <a href="../../reflection/ReflInfer$.html" class="extype" name="info.kwarc.mmt.reflection.ReflInfer">ReflInfer</a>, <a href="../uom/SemigroupAction.html" class="extype" name="info.kwarc.mmt.api.uom.SemigroupAction">SemigroupAction</a>, <a href="../../lf/ShallowPolymorphism$.html" class="extype" name="info.kwarc.mmt.lf.ShallowPolymorphism">ShallowPolymorphism</a>, <a href="../uom/Sign.html" class="extype" name="info.kwarc.mmt.api.uom.Sign">Sign</a>, <a href="SolutionRule.html" class="extype" name="info.kwarc.mmt.api.checking.SolutionRule">SolutionRule</a>, <a href="../../lf/Solve$.html" class="extype" name="info.kwarc.mmt.lf.Solve">Solve</a>, <a href="../../lf/SolveMultiple$.html" class="extype" name="info.kwarc.mmt.lf.SolveMultiple">SolveMultiple</a>, <a href="TermBasedEqualityRule.html" class="extype" name="info.kwarc.mmt.api.checking.TermBasedEqualityRule">TermBasedEqualityRule</a>, <a href="../../morphisms/TheoryTypeUniverse$.html" class="extype" name="info.kwarc.mmt.morphisms.TheoryTypeUniverse">TheoryTypeUniverse</a>, <a href="TypeBasedEqualityRule.html" class="extype" name="info.kwarc.mmt.api.checking.TypeBasedEqualityRule">TypeBasedEqualityRule</a>, <a href="../../reflection/TypingRule$.html" class="extype" name="info.kwarc.mmt.reflection.TypingRule">TypingRule</a>, <a href="TypingRule.html" class="extype" name="info.kwarc.mmt.api.checking.TypingRule">TypingRule</a>, <a href="../uom/UOMRule.html" class="extype" name="info.kwarc.mmt.api.uom.UOMRule">UOMRule</a>, <a href="UnaryTermRule.html" class="extype" name="info.kwarc.mmt.api.checking.UnaryTermRule">UnaryTermRule</a>, <a href="../../lf/UnivTerm$.html" class="extype" name="info.kwarc.mmt.lf.UnivTerm">UnivTerm</a>, <a href="../../lf/UniverseKind$.html" class="extype" name="info.kwarc.mmt.lf.UniverseKind">UniverseKind</a>, <a href="UniverseRule.html" class="extype" name="info.kwarc.mmt.api.checking.UniverseRule">UniverseRule</a>, <a href="../../lf/UniverseType$.html" class="extype" name="info.kwarc.mmt.lf.UniverseType">UniverseType</a>, <a href="../../lf/UnsafeBeta$.html" class="extype" name="info.kwarc.mmt.lf.UnsafeBeta">UnsafeBeta</a></div>
+        </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
+                <span class="toggle diagram-link">Type Hierarchy</span>
+                <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#diagrams" target="_blank" class="diagram-help">Learn more about scaladoc diagrams</a>
+                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph601" viewBox="0.00 0.00 1474.00 158.00" height="158pt" width="1474pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 154)" class="graph" id="graph1"><polygon points="-4,5 -4,-154 1471,-154 1471,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this trait" id="graph601_0"><a xlink:title="info.kwarc.mmt.api.checking.Rule (this trait)" xlink:href="#inheritance-diagram"><polygon points="764.25,-88 699.75,-88 699.75,-62 764.25,-62 764.25,-88" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-83" x="710" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-73" x="732" text-anchor="start">Rule</text></a></g><!-- node1 --><g class="node class" id="graph601_1"><a xlink:title="info.kwarc.mmt.api.checking.ComputationRule" xlink:href="ComputationRule.html#inheritance-diagram"><polygon points="120,-26 0,-26 0,-0 120,-0 120,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="10" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="32" text-anchor="start">ComputationRule</text></a></g><!-- node0&#45;&gt;node1 --><g class="edge inheritance" id="graph601_0_1"><a xlink:title="ComputationRule is a subtype of Rule"><path d="M694.318,-72.2178C599.229,-67.4565 341.947,-52.9337 129,-26 126.105,-25.6338 123.146,-25.2308 120.161,-24.8012" stroke="#d4d4d4" fill="none"></path><polygon points="694.455,-73.9767 699.535,-72.4774 694.628,-70.481 694.455,-73.9767" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node class" id="graph601_2"><a xlink:title="info.kwarc.mmt.api.checking.ElimProvingRule" xlink:href="ElimProvingRule.html#inheritance-diagram"><polygon points="254,-26 138,-26 138,-0 254,-0 254,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="148" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="170" text-anchor="start">ElimProvingRule</text></a></g><!-- node0&#45;&gt;node2 --><g class="edge inheritance" id="graph601_0_2"><a xlink:title="ElimProvingRule is a subtype of Rule"><path d="M694.4,-71.1184C614.664,-64.7952 422.812,-48.4571 263,-26 260.074,-25.5889 257.081,-25.1437 254.062,-24.6748" stroke="#d4d4d4" fill="none"></path><polygon points="694.366,-72.871 699.488,-71.5203 694.642,-69.3819 694.366,-72.871" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node3 --><g class="node class" id="graph601_3"><a xlink:title="info.kwarc.mmt.api.checking.ForwardSolutionRule" xlink:href="ForwardSolutionRule.html#inheritance-diagram"><polygon points="407.25,-26 272.75,-26 272.75,-0 407.25,-0 407.25,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="283" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="305" text-anchor="start">ForwardSolutionRule</text></a></g><!-- node0&#45;&gt;node3 --><g class="edge inheritance" id="graph601_0_3"><a xlink:title="ForwardSolutionRule is a subtype of Rule"><path d="M694.151,-68.2749C634.998,-59.3175 517.04,-41.4174 417,-26 413.925,-25.526 410.78,-25.0404 407.604,-24.5489" stroke="#d4d4d4" fill="none"></path><polygon points="694.139,-70.0428 699.344,-69.0611 694.663,-66.5823 694.139,-70.0428" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node4 --><g class="node class" id="graph601_4"><a xlink:title="info.kwarc.mmt.api.checking.InferenceRule" xlink:href="InferenceRule.html#inheritance-diagram"><polygon points="530,-26 426,-26 426,-0 530,-0 530,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="436" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="458" text-anchor="start">InferenceRule</text></a></g><!-- node0&#45;&gt;node4 --><g class="edge inheritance" id="graph601_0_4"><a xlink:title="InferenceRule is a subtype of Rule"><path d="M694.643,-65.1756C650.863,-54.8338 578.086,-37.6423 529.101,-26.0711" stroke="#d4d4d4" fill="none"></path><polygon points="694.304,-66.8936 699.573,-66.34 695.109,-63.4873 694.304,-66.8936" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node5 --><g class="node class" id="graph601_5"><a xlink:title="info.kwarc.mmt.api.checking.IntroProvingRule" xlink:href="IntroProvingRule.html#inheritance-diagram"><polygon points="663.25,-26 548.75,-26 548.75,-0 663.25,-0 663.25,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="559" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="581" text-anchor="start">IntroProvingRule</text></a></g><!-- node0&#45;&gt;node5 --><g class="edge inheritance" id="graph601_0_5"><a xlink:title="IntroProvingRule is a subtype of Rule"><path d="M701.757,-59.5985C680.282,-49.3726 651.773,-35.7968 631.46,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="701.235,-61.2884 706.502,-61.8581 702.74,-58.1284 701.235,-61.2884" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node6 --><g class="node class" id="graph601_6"><a xlink:title="info.kwarc.mmt.api.checking.SolutionRule" xlink:href="SolutionRule.html#inheritance-diagram"><polygon points="782,-26 682,-26 682,-0 782,-0 782,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="692" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="714" text-anchor="start">SolutionRule</text></a></g><!-- node0&#45;&gt;node6 --><g class="edge inheritance" id="graph601_0_6"><a xlink:title="SolutionRule is a subtype of Rule"><path d="M732,-56.6826C732,-46.8961 732,-34.9026 732,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="730.25,-56.8581 732,-61.8581 733.75,-56.8581 730.25,-56.8581" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node7 --><g class="node class" id="graph601_7"><a xlink:title="info.kwarc.mmt.api.checking.TermBasedEqualityRule" xlink:href="TermBasedEqualityRule.html#inheritance-diagram"><polygon points="950,-26 800,-26 800,-0 950,-0 950,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="810" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="832" text-anchor="start">TermBasedEqualityRule</text></a></g><!-- node0&#45;&gt;node7 --><g class="edge inheritance" id="graph601_0_7"><a xlink:title="TermBasedEqualityRule is a subtype of Rule"><path d="M765.711,-59.8556C790.151,-49.601 822.857,-35.8781 846.105,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="764.872,-58.3098 760.938,-61.8581 766.226,-61.5372 764.872,-58.3098" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node8 --><g class="node class" id="graph601_8"><a xlink:title="info.kwarc.mmt.api.checking.TypeBasedEqualityRule" xlink:href="TypeBasedEqualityRule.html#inheritance-diagram"><polygon points="1117.25,-26 968.75,-26 968.75,-0 1117.25,-0 1117.25,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="979" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="1001" text-anchor="start">TypeBasedEqualityRule</text></a></g><!-- node0&#45;&gt;node8 --><g class="edge inheritance" id="graph601_0_8"><a xlink:title="TypeBasedEqualityRule is a subtype of Rule"><path d="M769.327,-66.7986C821.646,-56.7049 917.456,-38.2208 980.69,-26.0213" stroke="#d4d4d4" fill="none"></path><polygon points="768.98,-65.0832 764.402,-67.7487 769.643,-68.5198 768.98,-65.0832" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node9 --><g class="node class" id="graph601_9"><a xlink:title="info.kwarc.mmt.api.checking.TypingRule" xlink:href="TypingRule.html#inheritance-diagram"><polygon points="1230,-26 1136,-26 1136,-0 1230,-0 1230,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="1146" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="1168" text-anchor="start">TypingRule</text></a></g><!-- node0&#45;&gt;node9 --><g class="edge inheritance" id="graph601_0_9"><a xlink:title="TypingRule is a subtype of Rule"><path d="M769.627,-70.5074C839.911,-63.7416 995.811,-47.593 1126,-26 1129.19,-25.4705 1132.48,-24.8859 1135.78,-24.2682" stroke="#d4d4d4" fill="none"></path><polygon points="769.12,-68.7978 764.31,-71.017 769.454,-72.2819 769.12,-68.7978" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node10 --><g class="node trait" id="graph601_10"><a xlink:title="info.kwarc.mmt.api.uom.UOMRule" xlink:href="../uom/UOMRule.html#inheritance-diagram"><polygon points="1336,-26 1248,-26 1248,-0 1336,-0 1336,-26" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-21" x="1258" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="1280" text-anchor="start">UOMRule</text></a></g><!-- node0&#45;&gt;node10 --><g class="edge inheritance" id="graph601_0_10"><a xlink:title="UOMRule is a subtype of Rule"><path d="M769.644,-72.0918C854.064,-67.4513 1064.76,-53.8551 1239,-26 1241.89,-25.5383 1244.85,-25.0125 1247.84,-24.4448" stroke="#d4d4d4" fill="none"></path><polygon points="769.406,-70.3521 764.509,-72.3716 769.597,-73.8469 769.406,-70.3521" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node11 --><g class="node class" id="graph601_11"><a xlink:title="info.kwarc.mmt.api.checking.UnaryTermRule" xlink:href="UnaryTermRule.html#inheritance-diagram"><polygon points="1466,-26 1354,-26 1354,-0 1466,-0 1466,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="1364" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="1386" text-anchor="start">UnaryTermRule</text></a></g><!-- node0&#45;&gt;node11 --><g class="edge inheritance" id="graph601_0_11"><a xlink:title="UnaryTermRule is a subtype of Rule"><path d="M769.632,-72.4229C865.776,-68.0971 1128.15,-54.4279 1345,-26 1347.84,-25.6271 1350.75,-25.2126 1353.69,-24.7682" stroke="#d4d4d4" fill="none"></path><polygon points="769.275,-70.687 764.358,-72.6583 769.432,-74.1835 769.275,-70.687" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node12 --><g class="node class" id="graph601_12"><a xlink:title="scala.AnyRef"><polygon points="770.25,-150 693.75,-150 693.75,-124 770.25,-124 770.25,-150" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-145" x="704" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-135" x="726" text-anchor="start">AnyRef</text></a></g><!-- node12&#45;&gt;node0 --><g class="edge inheritance" id="graph601_12_0"><a xlink:title="Rule is a subtype of AnyRef"><path d="M732,-118.683C732,-108.896 732,-96.9026 732,-88.1238" stroke="#d4d4d4" fill="none"></path><polygon points="730.25,-118.858 732,-123.858 733.75,-118.858 730.25,-118.858" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
+              </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="info.kwarc.mmt.api.checking.Rule"><span>Rule</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show all</span></li>
+            </ol>
+            <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#members" target="_blank">Learn more about member selection</a>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        
+
+        <div id="values" class="values members">
+              <h3>Abstract Value Members</h3>
+              <ol><li name="info.kwarc.mmt.api.checking.Rule#head" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="head:info.kwarc.mmt.api.GlobalName"></a>
+      <a id="head:GlobalName"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">head</span><span class="result">: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">an MMT URI that is used to indicate when the Rule is applicable</p>
+    </li></ol>
+            </div>
+
+        <div id="values" class="values members">
+              <h3>Concrete Value Members</h3>
+              <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:AnyRef):Boolean"></a>
+      <a id="!=(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.Any#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:Any):Boolean"></a>
+      <a id="!=(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="##():Int"></a>
+      <a id="##():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:AnyRef):Boolean"></a>
+      <a id="==(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.Any#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:Any):Boolean"></a>
+      <a id="==(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asInstanceOf[T0]:T0"></a>
+      <a id="asInstanceOf[T0]:T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clone():Object"></a>
+      <a id="clone():AnyRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="eq(x$1:AnyRef):Boolean"></a>
+      <a id="eq(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#equals" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="equals(x$1:Any):Boolean"></a>
+      <a id="equals(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <a id="finalize():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getClass():Class[_]"></a>
+      <a id="getClass():Class[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="hashCode():Int"></a>
+      <a id="hashCode():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ne(x$1:AnyRef):Boolean"></a>
+      <a id="ne(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notify():Unit"></a>
+      <a id="notify():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notifyAll():Unit"></a>
+      <a id="notifyAll():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.checking.Rule#parent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="parent:info.kwarc.mmt.api.objects.Term"></a>
+      <a id="parent:Term"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">parent</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the home theory in which this rule lives</p><div class="fullcomment"><div class="comment cmt"><p>the home theory in which this rule lives</p><p>a rule is only applicable if the home theory is included</p><p>by default, the theory of the head operator
+</p></div></div>
+    </li><li name="info.kwarc.mmt.api.checking.Rule#path" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="path:info.kwarc.mmt.api.GlobalName"></a>
+      <a id="path:GlobalName"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">path</span><span class="result">: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">an MMT URI that identifies the rule, by default the head
+</p>
+    </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
+      <a id="synchronized[T0](⇒T0):T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.checking.Rule#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toString():String"></a>
+      <a id="toString():String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a> → AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <a id="wait():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long,x$2:Int):Unit"></a>
+      <a id="wait(Long,Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long):Unit"></a>
+      <a id="wait(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

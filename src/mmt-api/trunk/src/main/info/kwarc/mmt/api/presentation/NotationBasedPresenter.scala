@@ -135,7 +135,7 @@ class NotationBasedPresenter extends ObjectPresenter {
     *  each script is passed as a continuation that must be called at the appropriate place
     *  @param main the object
     *  
-    * See [[parser.ScriptMarker]] for the meaning of the scripts
+    * See [[notations.ScriptMarker]] for the meaning of the scripts
     */
    def doScript(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext) {
       def aux(sOpt: Option[Cont], oper: String) {sOpt match {

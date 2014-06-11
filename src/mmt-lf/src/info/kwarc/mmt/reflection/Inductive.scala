@@ -15,7 +15,7 @@ object FormationInfer extends InferenceRule(Terms.formation.path, OfType.path) {
      tm match {
        case Terms.formation(p, t) =>
           //TODO check that inferred type does not depend on p
-          solver.inferType(t)(stack++IncludeVarDecl(p), history)
+          solver.inferType(t)(stack++Context(p), history)
      }
 }
 
@@ -26,7 +26,7 @@ object ReflInfer extends InferenceRule(Terms.refl.path, OfType.path) {
   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History): Option[Term] =
     tm match {
        case Terms.refl(p,t) =>
-          solver.inferType(t)(stack ++ IncludeVarDecl(p), history) map {tI => Terms.formation(p,tI)}
+          solver.inferType(t)(stack ++ Context(p), history) map {tI => Terms.formation(p,tI)}
      }
 }
 
@@ -55,7 +55,7 @@ object TypingRule extends TypingRule(Terms.formation.path) {
   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack : Stack, history: History) : Boolean = {
     tp match {
       case Terms.formation(p,a) =>
-         solver.check(Typing(stack++IncludeVarDecl(p), Terms.eval(tm), a))
+         solver.check(Typing(stack++Context(p), Terms.eval(tm), a))
     }
   }
 }
@@ -66,7 +66,7 @@ object TypingRule extends TypingRule(Terms.formation.path) {
 object Extensionality extends TypeBasedEqualityRule(Terms.formation.path) {
   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = tp match {
      case Terms.formation(p, a) =>
-        solver.check(Equality(stack++IncludeVarDecl(p), Terms.eval(tm1), Terms.eval(tm2), Some(a)))
+        solver.check(Equality(stack++Context(p), Terms.eval(tm1), Terms.eval(tm2), Some(a)))
   }
 }
 

@@ -135,7 +135,7 @@ object MMTPlugin {
 }
 
 object StatusBarLogger extends ReportHandler("jEdit") {
-  def apply(ind: String, group: String, msg: String) {
+  def apply(ind: Int, caller: String, group: String, msg: String) {
      val v = jEdit.getActiveView
      if (v != null) {
         v.getStatus.setMessage("MMT " + group + ": " + msg)

@@ -5,7 +5,7 @@ import objects._
 import symbols._
 
 /**
- * A Validator is a stateless convenience data structure that provides a function for a validating [[ValidationUnit]]s.
+ * A Validator is a stateless convenience data structure that provides a function for a validating [[CheckingUnit]]s.
  * It can manage errors and dependencies.  
  */
 class RuleBasedChecker extends ObjectChecker {

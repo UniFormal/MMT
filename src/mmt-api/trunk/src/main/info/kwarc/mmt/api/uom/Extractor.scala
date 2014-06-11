@@ -162,9 +162,9 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
              var o = s"  def ${nameToScalaQ(c.path)}($argtpString): Term\n"
              rh.writeln(o)
           }
-        case s: DeclaredStructure if ! s.isAnonymous =>
+        case SimpleStructure(s, fromPath) if ! s.isInclude =>
              // unnamed structures have been handled above already
-             rh.writeln("val " + nameToScalaQ(s.path) + ": " + mpathToScala(s.fromPath))
+             rh.writeln("val " + nameToScalaQ(s.path) + ": " + mpathToScala(fromPath))
         case _ => 
      }
      rh.writeln("}\n")

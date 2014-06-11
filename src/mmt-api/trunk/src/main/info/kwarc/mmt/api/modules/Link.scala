@@ -15,7 +15,7 @@ trait Link {
    def codomainAsContext = to match {
        case ComplexTheory(cont) => cont
        case _ => throw ImplementationError("codomain of link must be theory")
-    } 
+    }
    
    def toTerm : Term
    def path : ContentPath

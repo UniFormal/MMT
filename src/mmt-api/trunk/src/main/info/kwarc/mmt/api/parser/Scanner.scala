@@ -311,7 +311,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
    }
 }
 
-/** Objects of type Found represent [[info.kwarc.mmt.api.parser.TokenSlice]]s that were found in the input
+/** Objects of type Found represent [[TokenSlice]]s that were found in the input
  *  
  *  The subclasses correspond to the subclasses of Marker.
  */
@@ -319,12 +319,12 @@ sealed abstract class Found {
    /** @return start (inclusive) and end (exclusive) of this Token, None if length 0 */
    def fromTo: Option[(Int, Int)]
 }
-/** represents a [[info.kwarc.mmt.api.parser.Delimiter]] that was found */
+/** represents a [[Delimiter]] that was found */
 case class FoundDelim(pos: Int, delim: Delimiter) extends Found {
    override def toString = delim.toString
    def fromTo = Some((pos, pos+1))
 }
-/** represents a [[info.kwarc.mmt.api.parser.Arg]] that was found
+/** represents a [[Arg]] that was found
  * @param slice the TokenSlice where it was found
  * (as TokenList's are mutable, slice is not necessarily valid in the future)
  * @param n the number of the Arg
@@ -333,7 +333,7 @@ case class FoundArg(slice: TokenSlice, n: Int) extends Found {
    override def toString = slice.toString
    def fromTo = Some((slice.start,slice.next))
 }
-/** represents an [[info.kwarc.mmt.api.parser.SeqArg]] that was found
+/** represents an [[SeqArg]] that was found
  * @param n the number of the SeqArg
  * @param args the arguments that were found 
  */
@@ -353,7 +353,7 @@ case class SingleFoundVar(val pos: Int, val name: Token, tp: Option[FoundArg]) {
       case None => pos+1
    }
 }
-/** represents a [[info.kwarc.mmt.api.parser.Var]] that was found
+/** represents a [[Var]] that was found
  * @param marker the Var marker found
  * @param vrs the variables
  * 

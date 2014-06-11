@@ -44,9 +44,9 @@ object DeclarationComponent {
 case object TypeComponent extends DeclarationComponent("type")
 /** definitiens of [[symbols.Constant]], DefinedTheory, DefinedView, DefinedStructure */
 case object DefComponent  extends DeclarationComponent("definition")
-/** domain of a Link, meta-theory of a theory */
+/** domain of a [[modules.Link]], meta-theory of a theory */
 case object DomComponent  extends DeclarationComponent("domain")
-/** codomain of a [[Link]] */
+/** codomain of a [[modules.Link]] */
 case object CodComponent  extends DeclarationComponent("codomain")
 
 abstract class NotationComponent(s: String) extends DeclarationComponent(s)

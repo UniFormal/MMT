@@ -119,7 +119,7 @@ object Morph {
  * @param subdomain if name is an import, the imported theory and
  *    (if not defined as in [[DeclaredStructure]] and [[StructureVarDecl]]) the instantiated names of the partial morphism
  */
-case class DomainElement(name: LocalName, defined: Boolean, subdomain: Option[(MPath,List[LocalName])])
+case class DomainElement(name: LocalName, defined: Boolean, subdomain: Option[(Term,List[LocalName])])
 
 object TheoryExp {
   val empty = ComplexTheory(Context())
@@ -171,10 +171,10 @@ object TheoryExp {
          case d: DeclaredTheory =>
             d.getPrimitiveDeclarations.map {
                case s: symbols.DefinedStructure =>
-                  DomainElement(s.name, true, Some((s.fromPath, Nil)))
+                  DomainElement(s.name, true, Some((s.from, Nil)))
                case s: symbols.DeclaredStructure =>
                   val definitions = s.getPrimitiveDeclarations.map(_.name)
-                  DomainElement(s.name, false, Some((s.fromPath, definitions)))
+                  DomainElement(s.name, false, Some((s.from, definitions)))
                case c: symbols.Constant =>
                   DomainElement(d.name, c.df.isDefined, None)
                case d =>
@@ -186,13 +186,10 @@ object TheoryExp {
          body.getDomain
    }
   
-   /** all directly imported named theories */
+   /** all directly included named theories */
    def getSupport(t: Term): List[MPath] = t match {
       case OMMOD(p) => List(p)
-      case ComplexTheory(cont) => cont.variables.toList.flatMap {
-         case StructureVarDecl(_,from,_) => List(from)
-         case _ => Nil
-      }
+      case ComplexTheory(cont) => cont.getIncludes.toList
       case TUnion(ts) => (ts flatMap getSupport).distinct
    }
    
@@ -200,14 +197,15 @@ object TheoryExp {
    def imports(from: Term, to: Term)(implicit atomic: (MPath,MPath) => Boolean) : Boolean = {
       if (from == to) true else (from, to) match {
          case (OMMOD(f), OMMOD(t)) => atomic(f,t)
+         case (OMMOD(f), OMPMOD(t,_)) => atomic(f,t)
          case (OMMOD(f), TUnion(ts)) => ts exists {t => imports(OMMOD(f),t)}
          case (OMMOD(f), ComplexTheory(toCont)) => toCont.getIncludes exists {t => atomic(f,t)}
          case (TUnion(ts), _) => ts forall {t => imports(t, from)}
          // TODO remove unions or handle their interaction with ComplexTheory
          case (ComplexTheory(fromC), _) =>
             fromC.forall {
-               case IncludeVarDecl(p) =>
-                  imports(OMMOD(p), to)
+               case IncludeVarDecl(p,args) =>
+                  imports(OMPMOD(p,args), to)
                case vd => to match {
                   case ComplexTheory(toC) => toC contains vd
                   case _ => false
@@ -250,9 +248,22 @@ object ModExp extends uom.TheoryScala {
  */
 object OMMOD {
    /** @param path the path to the module */
-   def apply(path : MPath) : OMID = OMID(path)
+   def apply(path: MPath) : OMID = OMID(path)
    def unapply(term : Term) : Option[MPath] = term match {
      case OMID(m: MPath) => Some(m)
+     case _ => None
+   }
+}
+
+/**
+ * An OMPMOD represents a reference to a parametric module applied to arguments
+ */
+object OMPMOD {
+   /** @param path the path to the module */
+   def apply(path: MPath, args: List[Term]) = OMA.applyMaybeNil(OMMOD(path), args)
+   def unapply(term : Term) : Option[(MPath, List[Term])] = term match {
+     case OMMOD(m) => Some((m,Nil))
+     case OMA(OMMOD(m), args) => Some((m, args))
      case _ => None
    }
 }
@@ -283,12 +294,12 @@ object TUnion {
 object ComplexTheory {
    val path = ModExp.complextheory
    def apply(body: Context) = body match {
-      case Context(IncludeVarDecl(p)) => OMMOD(p)
+      case Context(IncludeVarDecl(p,args)) => OMPMOD(p,args)
       case _ => OMBINDC(OMID(this.path), body, Nil)
    }
    def unapply(t: Term) : Option[Context] = t match {
       case OMBINDC(OMID(this.path), body, Nil) => Some(body)
-      case OMMOD(p) => Some(Context(IncludeVarDecl(p)))
+      case OMPMOD(p, args) => Some(Context(IncludeVarDecl(p, args)))
       case _ => None
    }
 }

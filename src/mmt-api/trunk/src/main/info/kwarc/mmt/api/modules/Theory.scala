@@ -6,7 +6,9 @@ import objects._
 import utils._
 import presentation.{StringLiteral,Omitted}
 
-abstract class Theory(doc : DPath, name : LocalName) extends Module(doc, name)
+abstract class Theory(doc : DPath, name : LocalName) extends Module(doc, name) {
+   def parameters: Context
+}
 /**
  * A Theory represents an MMT theory.<p>
  * 
@@ -36,7 +38,7 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
    }   
    /** convenience method to obtain all named structures */
    def getNamedStructures:List[Structure] = getDeclarations.flatMap {
-      case s: Structure if ! s.isAnonymous => List(s)
+      case s: Structure if ! s.isInclude => List(s)
       case _ => Nil
    }
    /** convenience method to obtain all patterns */
@@ -63,6 +65,7 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
 }
 
 class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) extends Theory(doc, name) with DefinedModule {
+   val parameters = Context()
    def role = Role_DefinedTheory
    def components = StringLiteral(name.toPath) :: innerComponents
    override def toString = path + innerString

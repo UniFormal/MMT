@@ -540,9 +540,10 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 object Export {	
 	
 	def main(args: Array[String]) {
-		
+      implicit val eh = ErrorThrower                
+
 		val controller = new Controller
-		controller.handle(ExecFile(utils.File("startup.mmt")))
+		controller.handle(ExecFile(utils.File("startup.mmt"), None))
 		val manager : OWLOntologyManager = OWLManager.createOWLOntologyManager()
 		val exporter = new Export (manager, controller)
 			
@@ -554,7 +555,7 @@ object Export {
 		val source : File = File(new java.io.File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base2.omdoc"))		
 		val target : File = File(new java.io.File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base2ToOWL.owl"))
 		
-		val doc : DPath  = controller.read(source)._1.path
+		val doc : DPath  = controller.read(source).path
 		
 		def writeToFile(iri : IRI, trg : File) {
 			val onto = manager.getOntology(iri)

@@ -592,12 +592,12 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 class OWLCompiler extends archives.Importer {
    val key = "owl-omdoc"
    override def includeFile(f:  String) = f.endsWith("owl")
-   def buildOne(bf: archives.BuildFile, seCont: documents.Document => Unit) {
+   def importDocument(bf: archives.BuildTask, seCont: documents.Document => Unit) {
        val source : File = bf.inFile
        val target : File = bf.outFile.setExtension("omdoc")
       
 	   val controller = new Controller
-	   controller.handle(ExecFile(new java.io.File("startup.mmt"))) 
+	   controller.handle(ExecFile(new java.io.File("startup.mmt"), None)) 
 	   val manager : OWLOntologyManager = OWLManager.createOWLOntologyManager()
 	   val importer = new Import (manager, controller)
       

@@ -42,33 +42,21 @@ class ModuleElaborator(controller : Controller) {
     case _ => t
   }
 
-  def getIncludes(t : Term) : HashSet[MPath] = {
-    var includes : HashSet[MPath] = new HashSet[MPath]()
-    content.get(t.toMPath).components collect {
-      case s : DeclaredStructure =>
-      if (s.isAnonymous)
-        includes += s.from.toMPath
+  def getIncludes(t : Term) : List[DeclaredStructure] = {
+    content.getTheory(t.toMPath).components flatMap {
+      case s : DeclaredStructure if s.isInclude => List(s)
+      case _ => Nil
     }
-
-    includes
   }
 
   private def importsTo(t : DeclaredTheory) : List[DeclaredStructure] = {
-    var imports : List[DeclaredStructure] = Nil
-
-    var includes : HashSet[MPath] = new HashSet[MPath]()
-
-    t.components collect {
-      case s : DeclaredStructure =>
-      if (s.isAnonymous) {
-        includes += s.from.toMPath
-        includes ++= getIncludes(s.from)
-
-      } else {
-        imports ::= s
-      }
+    t.getDeclarations.flatMap {
+      case i @ Include(_, fromPath, _) =>
+         i.asInstanceOf[DeclaredStructure] :: getIncludes(OMMOD(fromPath))
+      case s: DeclaredStructure =>
+         List(s)
+      case _ => Nil
     }
-    includes.map(p => Include(OMMOD(t.path), p)).toList ::: imports
   }
 
   /**
@@ -84,8 +72,7 @@ class ModuleElaborator(controller : Controller) {
       var newDecs = new HashSet[Constant]()
       var rewriteRules = new HashMap[Path,Term]
       //s.home == t.path
-      elabImports map {s =>
-            val p = s.fromPath
+      elabImports map {case SimpleStructure(s: DeclaredStructure, p) =>
             if (s.domain.isEmpty) { //import is essentially an include
               val impThy = content.getTheory(p)
               impThy.components collect {
@@ -189,7 +176,7 @@ class ModuleElaborator(controller : Controller) {
     var constants : List[Constant] = Nil
     thy.components collect {
       case s : DeclaredStructure =>
-      if (s.isAnonymous) {
+      if (s.isInclude) {
         val inclPath = s.from.toMPath
         controller.get(inclPath) match {
           case inclThy : DeclaredTheory => 

@@ -1,4 +1,5 @@
 package info.kwarc.mmt.api.objects
+
 import info.kwarc.mmt.api._
 import utils._
 import libraries._

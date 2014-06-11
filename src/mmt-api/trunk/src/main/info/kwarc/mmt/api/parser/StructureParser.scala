@@ -247,7 +247,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             None
          val parameters = if (delim._1 == ">") {
             val contextMeta = meta match {
-               case Some(p) => Context(IncludeVarDecl(p))
+               case Some(p) => Context(p)
                case _ => Context()
             }
             val (_,reg,p) = readParsedObject(contextMeta)
@@ -592,7 +592,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             case None => throw makeError(state.reader.getSourcePosition.toRegion, "instance declaration expected")
          }
       } else { 
-         val (obj,reg,tm) = readParsedObject(IncludeVarDecl(tpath))
+         val (obj,reg,tm) = readParsedObject(Context(tpath))
          controller.pragmatic.mostPragmatic(tm) match {
             case OMA(OMS(pat), args) =>
                pattern = pat
@@ -627,7 +627,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         delim match {
           case "::" =>
             val (obj, reg) = state.reader.readObject
-            val pu = ParsingUnit(SourceRef(state.container.uri, reg), IncludeVarDecl(tpath), obj, None)
+            val pu = ParsingUnit(SourceRef(state.container.uri, reg), Context(tpath), obj, None)
             val parsed = puCont(pu)
             parsed match {
               case OMBINDC(_, cont, Nil) =>
