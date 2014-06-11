@@ -74,6 +74,10 @@ class MMTCompilerSpec extends FlatSpec with Matchers {
     controller.memory.clear
     val syms = spaths.map(controller.get)
   }
+  "Checking an archive" should "not throw an error" in  {
+    controller.handleLine("archive test check")
+  }
+  
   "Cleaning an archive" should "remove MMT-generated files" in {
     controller.handleLine("build test -mmt-omdoc")
     controller.memory.clear
