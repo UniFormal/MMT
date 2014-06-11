@@ -28,7 +28,7 @@ object Action extends RegexParsers {
    private def action = log | mathpath | archive | extension | mws | server | windowaction | execfile | defactions |scala |
       setbase | read | graph | check | navigate | printall | printallxml | diff | clear | exit | getaction // getaction must be at end for default get
 
-   private def log = logfile | logconsole | logon | logoff
+   private def log = logfile | logfilets | loghtml | logconsole | logon | logoff
      private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new TextFileHandler(f, false))}
      private def logfilets = "log filets" ~> file ^^ {f => AddReportHandler(new TextFileHandler(f, true))}
      private def logconsole = "log console" ^^ {case _ => AddReportHandler(ConsoleHandler)}

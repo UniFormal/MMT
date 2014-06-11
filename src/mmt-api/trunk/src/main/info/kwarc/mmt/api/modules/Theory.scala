@@ -22,6 +22,8 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
       extends Theory(doc, name) with DeclaredModule {
    def role = Role_DeclaredTheory
    def components = OMID(path) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents
+   /** meta-theory, parameters, and this theory */
+   def getInnerContext = meta.map(p => Context(p)).getOrElse(Context()) ++ parameters ++ path
    /** convenience method to obtain all constants */
    def getConstants:List[Constant] = getDeclarations.flatMap {
       case c: Constant => List(c)

@@ -204,7 +204,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     * reads until the object delimiter and parses the found string
     * @return the raw string, the region, and the parsed term
     */
-   def readParsedObject(context: Context = Context())(implicit state: ParserState) = {
+   def readParsedObject(context: Context)(implicit state: ParserState) = {
       val (obj, reg) = state.reader.readObject
       val pu = ParsingUnit(SourceRef(state.container.uri, reg), context, obj)
       val parsed = puCont(pu)
@@ -219,8 +219,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
          case _ => throw ImplementationError("bad parent")
       }
    } 
-  /** auxiliary function to read Theories */
-  private def readTheory(parent: Path)(implicit state: ParserState) {
+  /** auxiliary function to read Theories
+   *  @param parent the containing document/module
+   *  @param the context (excluding the theory to be read)
+   */
+  private def readTheory(parent: Path, context: Context)(implicit state: ParserState) {
       val rname = readName
       val (ns,name) = parent match {
          case doc: DPath =>
@@ -245,11 +248,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             Some(p)
          } else
             None
+         val contextMeta = meta match {
+            case Some(p) => context ++ p
+            case _ => context
+         }
          val parameters = if (delim._1 == ">") {
-            val contextMeta = meta match {
-               case Some(p) => Context(p)
-               case _ => Context()
-            }
             val (_,reg,p) = readParsedObject(contextMeta)
             val params = p match {
                case ComplexTheory(cont) => cont
@@ -278,7 +281,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                   }
             }
             logGroup {
-               readInModule(t, patterns)
+               readInModule(t, t.getInnerContext, patterns)
             }
             end(t)
          } else {
@@ -286,8 +289,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
          }
       }
    }
-   /** auxiliary function to unify "view" and "implicit view" */
-   private def readView(parent: Path, isImplicit: Boolean)(implicit state: ParserState) {
+  /** auxiliary function to read (possibly implicit) views
+   *  @param parent the containing document/module
+   *  @param the context (excluding the view to be read)
+   */
+   private def readView(parent: Path, context: Context, isImplicit: Boolean)(implicit state: ParserState) {
       val rname = readName
       val (ns,name) = parent match {
          case doc: DPath =>
@@ -306,14 +312,14 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       val to = readMPath(vpath)
       readDelimiter("abbrev", "=") match {
          case "abbrev" =>
-            val (_,_,df) = readParsedObject(Context())
+            val (_,_,df) = readParsedObject(context)
             val v = DefinedView(ns, name, OMMOD(from), OMMOD(to), df, isImplicit)
             moduleCont(v, parent)
          case "=" =>
             val v = new DeclaredView(ns, name, OMMOD(from), OMMOD(to), isImplicit)
             moduleCont(v, parent)
             logGroup {
-               readInModule(v, Nil)
+               readInModule(v, context ++ v.codomainAsContext, Nil)
             }
             end(v)
       }
@@ -352,12 +358,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                val ns = readDPath(DPath(state.namespaces.default))
                state.namespaces.prefixes(n) = ns.uri
             case "theory" =>
-               readTheory(doc.path)
-            case "view" | "morphism" => readView(doc.path, false)
+               readTheory(doc.path, Context())
+            case "view" | "morphism" => readView(doc.path, Context(), false)
             case "implicit" =>
                val (keyword2, reg2) = state.reader.readToken
                keyword2 match {
-                  case "view" | "morphism" => readView(doc.path, true)
+                  case "view" | "morphism" => readView(doc.path, Context(), true)
                   case _ => throw makeError(reg2, "only views can be implicit here")
                }
             case k =>
@@ -386,18 +392,15 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    }
    
    /** the main loop for reading declarations that can occur in a theory
-    * @param thy the containing theory (must be in the controller already)
+    * @param mod the containing module (added already)
+    * @param context the context (including the containing module)
     * @param patterns the patterns of the meta-theory (precomputed in readInDocument)
     * 
     * this function handles one declaration if possible, then calls itself recursively
     */
-   private def readInModule(mod: DeclaredModule, patterns: List[(String,GlobalName)])(implicit state: ParserState) {
+   private def readInModule(mod: DeclaredModule, context: Context, patterns: List[(String,GlobalName)])(implicit state: ParserState) {
       //This would make the last RS marker of a module optional, but it's problematic with nested modules.
       //if (state.reader.endOfModule) return
-      val scope: Context = mod match {
-         case t: DeclaredTheory => Context(t.path)
-         case l: DeclaredLink => l.codomainAsContext
-      }
       try {
          val (keyword, reg) = state.reader.readToken
          if (keyword == "kind")
@@ -414,7 +417,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             //Constant
             case "constant" =>
                val name = readName
-               val c = readConstant(name, mod.path, scope)
+               val c = readConstant(name, mod.path, context)
                seCont(c)
             //PlainInclude
             case "include" =>
@@ -430,7 +433,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                      val as = PlainViewInclude(link.toTerm, from, incl)
                      seCont(as)
                }
-            case "theory" => readTheory(mod.path)
+            case "theory" => readTheory(mod.path, context)
             //Pattern
             case "pattern" =>
               mod match {
@@ -479,7 +482,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                   } else {
                      // 3) a constant with name k
                      val name = LocalName.parse(k)
-                     val c = readConstant(name, mod.path, scope)
+                     val c = readConstant(name, mod.path, context)
                      seCont(c)
                   }
                }
@@ -495,7 +498,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             if (! state.reader.endOfDeclaration)
                state.reader.readDeclaration
       }
-      readInModule(mod, patterns) // compiled code is not actually tail-recursive
+      readInModule(mod, context, patterns) // compiled code is not actually tail-recursive
    }
    
    private def doComponent(c: DeclarationComponent, tc: TermContainer, cont: Context)(implicit state: ParserState) {
@@ -703,7 +706,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
      }
      val patterns = Nil //TODO
      //calling parse function
-     readInModule(thy, patterns)(state)
+     readInModule(thy, thy.getInnerContext, patterns)(state)
    }
 }
 
