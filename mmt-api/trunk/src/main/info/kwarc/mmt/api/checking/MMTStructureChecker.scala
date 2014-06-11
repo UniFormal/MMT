@@ -67,9 +67,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               contextMeta = contextMeta ++ mt
             }
             checkContext(contextMeta, t.parameters)
-            val contextForBody = contextMeta ++ t.parameters ++ t.path
             logGroup {
-               t.getPrimitiveDeclarations foreach {d => check(contextForBody, d)}
+               t.getPrimitiveDeclarations foreach {d => check(t.getInnerContext, d)}
             }
          case t: DefinedTheory =>
             val dfR = checkTheory(context, t.df)
@@ -517,8 +516,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       }
       // subs is total if all names in fromDomain have been removed or are defined to begin with
       if (! allowPartial) {
-         if (fromDomain.forall(_.defined))
-            errorCont(InvalidObject(subs, "not total, missing cases for " + fromDomain.map(_.name).mkString(", ")))
+         val left = fromDomain.filterNot(_.defined) 
+         if (! left.isEmpty)
+            errorCont(InvalidObject(subs, "not total, missing cases for " + left.map(_.name).mkString(", ")))
       }
       // finally, check the individual maps in subs
       subs.map {

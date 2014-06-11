@@ -341,17 +341,16 @@ class NotationBasedParser extends ObjectParser {
                // process the single TokenListElement
                makeTerm(ul.tl(0), boundVars)
             else {
-               /* TODO This case arises if
+               /* This case arises if
                - the Term is ill-formed
                - the matching TextNotation is missing
-               - a subterm has no delimiters as in LF application
+               - a subterm has no delimiters (e.g., as in LF applications)
                - a semi-formal subterm consists of multiple text Tokens 
                Consequently, it is not obvious how to proceed.
-               Current behavior: application of first to rest
-               //throw ParseError("unmatched list: " + ul.tl)
+               By using defaultApplication, the behavior is somewhat configurable.
                */
                val terms = ul.tl.getTokens.map(makeTerm(_,boundVars))
-               prag.defaultApplication(Some(pu.context.getIncludes.last), terms.head, terms.tail)
+               prag.defaultApplication(pu.context.getIncludes.lastOption, terms.head, terms.tail)
             }
       }
       //log("result: " + term)

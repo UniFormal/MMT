@@ -28,7 +28,12 @@ class Report extends Logger {
 
    /** logs a message if logging is switched on for the group */
    def apply(group : => String, msg : => String) {
-      lazy val caller = Thread.currentThread.getStackTrace()(1).toString
+      lazy val caller = {
+        val s = Thread.currentThread.getStackTrace()
+        //TODO could also be Logger.log etc.
+        val i = s.indexWhere(e => e.getClassName == getClass.getName && e.getMethodName == "apply")
+        s(i+1).toString
+      }
 	   if (groups.contains(group) || groups.contains("*")) handlers.foreach(_.apply(ind, caller, group, msg))
    }
    /** logs an error */
@@ -118,7 +123,7 @@ abstract class FileHandler(val filename : File) extends ReportHandler(filename.t
 
 /** outputs to a file */
 class TextFileHandler(filename : File, timestamps: Boolean) extends FileHandler(filename) {
-   def apply(ind: Int, caller: String, group : String, msg : String) = {
+   def apply(ind: Int, caller: String, group : String, msg : String) {
          val t = if (timestamps) time + "\t" else ""
          val m = t + indentString(ind) + group + ": " + msg
          file.println(m)
@@ -131,14 +136,25 @@ class TextFileHandler(filename : File, timestamps: Boolean) extends FileHandler(
 class HtmlFileHandler(filename : File) extends FileHandler(filename) {
    override def init {
      super.init
-     file.println("<html>\n<body>\n")
+     val script = """<script type="text/javascript" src="script.js"></script>"""
+     val jquery = """<script type="text/javascript" src="https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/script/jquery/jquery.js"></script>"""
+     val css = """<link rel="stylesheet" type="text/css" href="style.css"></link>"""
+     file.println(s"<html>\n$jquery$script$css<body>\n")
    }
-   def apply(ind: Int, caller: String, group : String, msg : String) = {
+   def apply(ind: Int, caller: String, group : String, msg : String) {
       file.println(s"""<div class="log $group" style="margin-left: $ind%">""")
-      file.println(s"""<span class="caller">$caller</span""")
-      file.println(s"""<span class="timestamp">$time</span> <span class="group">$group</span> <span class="message">$msg</span>""")
+      file.println(s"""<div><span class="timestamp">$time</span><span class="caller">$caller</span></div>""")
+      file.println(s"""<div><span class="group">$group:</span><span class="message">$msg</span></div>""")
       file.println("</div>")
       flush
+   }
+   override def apply(ind: Int, e: Error) {
+      file.println(s"""<div class="log error" style="margin-left: $ind%">""")
+      file.println(s"""<div><span class="timestamp">$time</span><span class="error-short">${e.shortMsg}</span></div>""")
+      e.getLongMessage.split("\\n").toList.foreach {line =>
+         file.println(s"""<div class="error-long"><span>${line}</span></div>""")
+      }
+      file.println("</div>")
    }
    override def toString = "html " + filename
    override def cleanup {
