@@ -20,6 +20,7 @@ trait ValidatedArchive extends WritableArchive {
          }
       }
       val checker = new MMTStructureChecker(ObjectChecker.ignore)
+      checker.init(controller)
       traverse(content, in, Archive.extensionIs("omdoc")) {case Current(_, inPath) =>
          rels.clear
          val mpath = Archive.ContentPathToMMTPath(inPath)
