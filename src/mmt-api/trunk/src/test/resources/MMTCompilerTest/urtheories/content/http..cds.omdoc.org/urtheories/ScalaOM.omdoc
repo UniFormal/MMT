@@ -2,6 +2,7 @@
 <omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
   <theory name="ScalaOM" base="http://cds.omdoc.org/urtheories">
     <metadata>
+      <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/scala.mmt#361.20.0:377.20.16"/>
       <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/scala.mmt#361.20.0:416.24.1"/>
     </metadata>
     <import from="http://cds.omdoc.org/urtheories?Scala">

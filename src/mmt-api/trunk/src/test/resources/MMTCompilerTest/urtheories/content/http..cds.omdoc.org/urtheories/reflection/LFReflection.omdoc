@@ -2,6 +2,7 @@
 <omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
   <theory name="LFReflection" base="http://cds.omdoc.org/urtheories/reflection">
     <metadata>
+      <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/term-reflection.mmt#259.11.0:280.11.21"/>
       <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/term-reflection.mmt#259.11.0:326.14.1"/>
     </metadata>
     <import from="http://cds.omdoc.org/urtheories?LF">

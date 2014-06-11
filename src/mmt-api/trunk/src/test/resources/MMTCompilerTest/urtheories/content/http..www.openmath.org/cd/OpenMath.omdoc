@@ -2,6 +2,7 @@
 <omdoc xmlns:om="http://www.openmath.org/OpenMath" xmlns="http://omdoc.org/ns">
   <theory name="OpenMath" base="http://www.openmath.org/cd">
     <metadata>
+      <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/openmath.mmt#39.2.0:56.2.17"/>
       <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/openmath.mmt#39.2.0:109.8.1"/>
     </metadata>
     <constant name="Object">
