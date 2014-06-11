@@ -29,7 +29,6 @@ import info.kwarc.mmt.api.ontology.Binary
 import info.kwarc.mmt.api.ontology.isDefinedBy
 import info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api.presentation.StringBuilder
-import info.kwarc.mmt.api.presentation.StyleBasedPresenter
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils
 import info.kwarc.mmt.api.web.Body
@@ -55,8 +54,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
        }
     } catch {
       case e : Error => 
-        log(e.longMsg) 
-        errorResponse(e.longMsg, List(e))
+        log(e.shortMsg) 
+        errorResponse(e.shortMsg, List(e))
       case e : Exception => 
         errorResponse("Exception occured : " + e.getStackTrace(), List(e))
     }
@@ -70,11 +69,11 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
         	//if t.path.toPath == "http://mathhub.info/smglom/mv/equal.omdoc?equal"
         	=> 
           val not = t.getDeclarations collect {
-            case c : Constant => c.notC.presentationDim.notations.values.flatten
+            case c : Constant => c.notC.presentationDim.notations.values.flatten.map(not => c.name -> not) //@Ion, changed it to produce (name, notation) pairs
           } 
           not.flatten
         case _ => Nil
-      }
+      } //notations is now iterable of (name, notation) pairs
       
      
 //      val symbol = notations.head.name
@@ -84,7 +83,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 //       val xmlNotations = notations.map(n => (n.name.toPath, n.presentationMarkers))
 //       val resp = new JSONArray(xmlNotations.map(_.toString))
    // notations.foreach( x => println(x.arity.length)) PRINT NOTATION ARGUMENT NUMBER
-      notations.foreach(n => Grammar.addTopRule(n.name.toPath, n.presentationMarkers)) 
+      notations.foreach(pair => Grammar.addTopRule(pair._1.toPath, pair._2.presentationMarkers)) //@Ion see modification here and in notation variable above 
      val resp = new JSONArray( Grammar.getMarpaGrammar );
 //     val resp = new JSONArray(Grammar.rules.toList.map(_.toString));
      val params = reqBody.asJSON
