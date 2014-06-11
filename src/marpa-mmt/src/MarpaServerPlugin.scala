@@ -6,7 +6,6 @@ import scala.concurrent.Future
 import scala.util.matching.Regex
 import scala.util.parsing.json.JSONArray
 import scala.util.parsing.json.JSONObject
-
 import info.kwarc.mmt.api.DPath
 import info.kwarc.mmt.api.Error
 import info.kwarc.mmt.api.Path
@@ -29,6 +28,7 @@ import info.kwarc.mmt.api.ontology.Binary
 import info.kwarc.mmt.api.ontology.isDefinedBy
 import info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api.presentation.StringBuilder
+import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils
 import info.kwarc.mmt.api.web.Body
@@ -38,6 +38,7 @@ import info.kwarc.mmt.api.web.ServerExtension
 import info.kwarc.mmt.stex.STeXImporter
 import info.kwarc.mmt.stex.sTeX
 import tiscaf.HLet
+
 import tiscaf.HTalk
 
 case class PlanetaryError(val text : String) extends Error(text)
@@ -69,11 +70,12 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
         	//if t.path.toPath == "http://mathhub.info/smglom/mv/equal.omdoc?equal"
         	=> 
           val not = t.getDeclarations collect {
-            case c : Constant => c.notC.presentationDim.notations.values.flatten.map(not => c.name -> not) //@Ion, changed it to produce (name, notation) pairs
+            case c : Constant => c.notC.presentationDim.notations.values.flatten.map(not => c.path -> not) //@Ion, changed it to produce (name, notation) pairs
           } 
           not.flatten
         case _ => Nil
       } //notations is now iterable of (name, notation) pairs
+      
       
      
 //      val symbol = notations.head.name
@@ -84,7 +86,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 //       val resp = new JSONArray(xmlNotations.map(_.toString))
    // notations.foreach( x => println(x.arity.length)) PRINT NOTATION ARGUMENT NUMBER
       notations.foreach(pair => Grammar.addTopRule(pair._1.toPath, pair._2.presentationMarkers)) //@Ion see modification here and in notation variable above 
-     val resp = new JSONArray( Grammar.getMarpaGrammar );
+      val resp = new JSONArray( Grammar.getMarpaGrammar );
 //     val resp = new JSONArray(Grammar.rules.toList.map(_.toString));
      val params = reqBody.asJSON
       Server.JsonResponse(resp).aact(tk)
@@ -161,13 +163,21 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 				    		    "separatorE"::argName::"iterateE"::" #SeqArg "::Nil)
 				    		}
 				    }		
-		  	case m : TdMarker => createRule("'TODO'"::Nil)
+		  	case m : TdMarker => 
+		  	  val contentRule = createRule("contentRule"::(m.content map addRule))
+		  	  createRule("mtdB"::contentRule::"mtdE"::Nil)
+		  	case m : TrMarker => 
+		  	  val contentRule = createRule("contentRule"::(m.content map addRule))
+		  	  createRule("mtrB"::contentRule::"mtrE"::Nil)
+		  	case m : TableMarker =>
+		  	  val contentRule = createRule("contentRule"::(m.content map addRule))
+		  	  createRule("mtableB"::contentRule::"mtableE"::Nil)
 		    case d : Delimiter => createRule("moB"::"'"+d.text+"'"::"moE"::" #Delimiter"::Nil)
 		    case m : GroupMarker => {
 		    				  val content:List[String] = m.elements.map(addRule)
-		    				  createRule(content:::" #Group"::Nil)
+		    				  createRule("Group"::content)
 		    		}
-		   case s : info.kwarc.mmt.api.notations.ScriptMarker => 
+		   case s : ScriptMarker => 
 		     	val mainRule = addRule(s.main)
 		        var hasSup = false
 		        var hasSub = false
@@ -198,7 +208,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		     	}
 		     	
 		     	
-		     	//TODO: for now a lot of cases are ignored ...
+		  
 		       if (hasSup && !hasSub ) {
 		          createRule("msubB"::mainRule::subRule::"msubE"::Nil)
 		       } else if (!hasSup && hasSub) {
@@ -225,12 +235,14 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		          val v2 = createRule("moverB"::
 		             "munderB"::mainRule::underRule::"munderE"::
 		             overRule::"moverE"::Nil)
-		          val v3 = createRule("munderoverB"::
-		              mainRule::underRule::overRule::"mUnderOverE"::Nil)
+		          val v3 = createRule(
+		 "munderoverB"::mainRule::underRule::overRule::"munderoverE"::Nil)
 		          createRule( "alternatives"::v1::v2::v3::Nil)
 		           
 		       }
-		    case _ => "'TODO'"
+		    case _ =>
+		      println("TODO Marker: " + marker.toString)
+		      "'TODO'"
 	  }
 	  
 	  def toBNF(rule:Rule):String = {
@@ -238,6 +250,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	    
 	    content match {
 	      case "topLevel"::tl => name + "::= " + tl.mkString(" ") 
+	      case "contentRule"::tl => name + "::= " + tl.mkString(" ") 
+	      case "Group"::tl => name + "::= " + tl.mkString(" ") 
 	      case "moB"::tl => name + "::= " + content.mkString(" ") 
 	      case "renderB"::tl => name + "::= Expression || texts" //todo -> think of a better base case for arguments
 	      case "iterateB"::tl => 
@@ -273,11 +287,15 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	      case "moverB"::"munderB"::mainRule::underRule::"munderE"::
 		       overRule::"moverE"::Nil =>
 		         name + "::= " + (content mkString " ")
-	      case "munderoverB"::mainRule::underRule::overRule::"mUnderOverE"::Nil =>
+	      case "munderoverB"::mainRule::underRule::overRule::"munderoverE"::Nil =>
 	        name + "::= " + (content mkString " ")
 	      case  "alternatives"::v1::v2::v3::Nil => 
 	         name + "::= " + (List(v1,v2,v3) mkString (" | "))
-	      case _ => "'TODO'"
+	      case "mtdB"::contentRule::"mtdE"::Nil => name + "::= " + content.mkString(" ") 
+	      case "mtrB"::contentRule::"mtrE"::Nil => name + "::= " + content.mkString(" ") 
+	      case "mtableB"::contentRule::"mtableE"::Nil => name + "::= " + content.mkString(" ") 
+	      case _ => println ("TODO BNF:"+ (content mkString " ")) 
+	      			"'TODO'"
 	    }
 	  }
 	  
@@ -313,8 +331,18 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			"mnB ::= ws '<mn' attribs '>' ws"::"mnE ::= ws '</mn>' ws"::
 		    			"miB ::= ws '<mi' attribs '>' ws"::"miE ::= ws '</mi>' ws"::
 		    			"moB ::= ws '<mo' attribs '>' ws"::"moE ::= ws '</mo>' ws"::
+		    			"mtdB ::= ws '<mtd' attribs '>' ws"::"mtdE ::= ws '</mtd>' ws"::
+		    			"mtrB ::= ws '<mtr' attribs '>' ws"::"mtrE ::= ws '</mtr>' ws"::
+		    			"mtableB ::= ws '<mtable' attribs '>' ws"::"mtableE ::= ws '</mtable>' ws"::
 		    			"msubsupB ::= ws '<msubsup' attribs '>' ws"::"moE ::= ws '</msubsup>' ws"::
 		    			"""rowB ::= ws '<mrow' attribs '>' ws""":: """rowE ::= ws '</mrow>' ws"""::
+		    			//dummy rules for marpa when certain rules are missing
+		    			"""#dummy rule for marpa"""::
+		    			"Presentation ::= mfracB mfracE msqrtB msqrtE msupB msubB msubE msubsupB msubsupE "::
+		    			"Presentation::= moB moE mtdB mtdE mtrB mtrE mtableB mtableE munderoverB"::
+		    			"Presentation::= munderoverE moverB moverE munderB munderE mnB mnE miB miE "::
+		    			"""                                 """::
+		    			//end dummy rules
 		    			"ws ::= spaces"::
 		    			"ws::= # empty"::
 		    			"""spaces ~ space+"""::
@@ -413,7 +441,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
         val message = new collection.mutable.HashMap[String, Any]()
         message("type") = "Info"
         message("shortMsg") = info
-        message("longMsg") = info
+        message("shortMsg") = info
         //no srcref
         messages("0") = JSONObject(message.toMap)
       }
@@ -429,7 +457,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
           case se : SourceError =>
             message("type") = "Error"
             message("shortMsg") = se.mainMessage
-            message("longMsg") = se.getStackTraceString
+            message("shortMsg") = se.getStackTraceString
             message("srcref") = JSONObject(List("from" -> JSONObject(List("line" -> se.ref.region.start.line, "col" -> se.ref.region.start.column).toMap), 
                                  "to" -> JSONObject(List("line" -> se.ref.region.end.line, "col" -> se.ref.region.end.column).toMap)).toMap)
           case e =>
