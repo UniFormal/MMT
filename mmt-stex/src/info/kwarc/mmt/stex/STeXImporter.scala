@@ -362,8 +362,33 @@ class STeXImporter extends Importer {
   def parseRenderingMarkers(n : scala.xml.Node, argMap : Map[String, Int])(implicit dpath : DPath, thy : DeclaredTheory, spath : GlobalName) : List[Marker] = n.label match {
     case "mrow" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList
     case "mmultiscripts" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList //treated as mrow because not sure what it should do
-    case "msub" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList //treated mrow because there is no subscript support in MMT TextNotation
-    case "msup" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList //treated mrow because there is no superscript support in MMT TextNotation
+    case "msub" => 
+      val main = GroupMarker(parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath))
+      val sub = GroupMarker(parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath))
+      List(ScriptMarker(main,None,Some(sub),None,None))
+    case "msup" =>
+      val main = GroupMarker(parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath))
+      val sup = GroupMarker(parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath))
+      List(ScriptMarker(main,Some(sup),None,None,None))
+    case "msubsup" =>
+      val main = GroupMarker(parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath))
+      val sub = GroupMarker(parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath))
+      val sup = GroupMarker(parseRenderingMarkers(n.child(2),argMap)(dpath,thy,spath))
+      List(ScriptMarker(main,Some(sup),Some(sub),None,None))
+    case "munder" =>
+      val main = GroupMarker(parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath))
+      val under = GroupMarker(parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath))
+      List(ScriptMarker(main,None,None,None,Some(under)))
+    case "mover" =>
+      val main = GroupMarker(parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath))
+      val over = GroupMarker(parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath))
+      List(ScriptMarker(main,None,None,Some(over),None))
+    case "munderover" =>
+      val main = GroupMarker(parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath))
+      val under = GroupMarker(parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath))
+      val over = GroupMarker(parseRenderingMarkers(n.child(2),argMap)(dpath,thy,spath))
+      List(ScriptMarker(main,None,None,Some(over),Some(under)))
+      
     case "mpadded" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList
     case "mo" => makeDelim(n.child.mkString) :: Nil
     case "mi" => makeDelim(n.child.mkString) :: Nil //for now treated exactly like mo        
@@ -372,12 +397,17 @@ class STeXImporter extends Importer {
     case "text" => makeDelim(n.child.mkString) :: Nil
     case "mfrac" => 
       val above = parseRenderingMarkers(n.child(0), argMap)
-      val below = parseRenderingMarkers(n.child(0), argMap)
-      val fraction = FractionMarker(above, below, true) //true => render line
+      val below = parseRenderingMarkers(n.child(1), argMap)
+      val attribOpt =  (n \\ "@bevelled") find {_.text == "bevelled"}
+      val render_line = attribOpt match {
+        case Some(attrib) if attrib.text == "true" => true
+        case _ => false
+      }
+      val fraction = FractionMarker(above, below, render_line) //true => render line
       List(fraction)
-    case "mtd" => Delim("[&") :: n.child.toList.flatMap(parseRenderingMarkers(_, argMap)) ::: List(Delim("&]"))
-    case "mtr" => Delim("[/") :: n.child.toList.flatMap(parseRenderingMarkers(_, argMap)) ::: List(Delim("/]")) 
-    case "mtable" => Delim("[[") :: n.child.toList.flatMap(parseRenderingMarkers(_, argMap)) ::: List(Delim("]]")) 
+    case "mtd" => TdMarker( n.child.toList.flatMap(parseRenderingMarkers(_, argMap)))::Nil
+    case "mtr" => TrMarker( n.child.toList.flatMap(parseRenderingMarkers(_, argMap)))::Nil 
+    case "mtable" => TableMarker( n.child.toList.flatMap(parseRenderingMarkers(_, argMap)))::Nil 
     case "render" => 
       val argName = (n \ "@name").text
       val argNr = argMap(argName)
