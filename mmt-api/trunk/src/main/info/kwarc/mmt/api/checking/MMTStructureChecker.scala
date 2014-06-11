@@ -64,10 +64,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             var contextMeta = context
             t.meta map {mt =>
               checkTheory(context, OMMOD(mt))
-              contextMeta = contextMeta ++ IncludeVarDecl(mt)
+              contextMeta = contextMeta ++ mt
             }
             checkContext(contextMeta, t.parameters)
-            val contextForBody = contextMeta ++ t.parameters ++ IncludeVarDecl(t.path)
+            val contextForBody = contextMeta ++ t.parameters ++ t.path
             logGroup {
                t.getPrimitiveDeclarations foreach {d => check(contextForBody, d)}
             }
@@ -99,7 +99,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                   checkRealization(context, s.df, s.from)
                case Some(link) =>
                   // assignment in a link
-                  if (s.isAnonymous) {
+                  if (s.isInclude) {
                      val (dfR, dom, _) = checkMorphism(context, s.df, Some(s.from), Some(link.to))
                      dom match {
                         case OMMOD(p) =>
@@ -110,8 +110,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                      }
                   } else {
                      val sOrg = content.getStructure(thy.path ? s.name)
-                     if (sOrg.fromPath != s.from)
-                        errorCont(InvalidElement(s, "import-assignment has bad domain: found " + s.from + " expected " + sOrg.from)) 
+                     // infer and set s.from if not provided
+                     if (s.tpC.isDefined) {
+                        if (! TheoryExp.equal(sOrg.from, s.from))
+                           errorCont(InvalidElement(s, "import-assignment has bad domain: found " + s.from + " expected " + sOrg.from))
+                     } else {
+                        s.tpC.analyzed = s.from
+                     }
                      checkRealization(context, s.df, s.from)
                   }
             }
@@ -229,10 +234,16 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     */
    private def checkTheory(context : Context, t : Term)(implicit pCont: Path => Unit) : Term = {
      t match {
-        case OMMOD(p) =>
+        case OMPMOD(p, args) =>
            controller.globalLookup.getO(p) match {
               case Some(thy: Theory) =>
+                 val pars = thy.parameters
                  pCont(p)
+                 val subs = (pars / args).getOrElse {
+                    errorCont(InvalidObject(t, "bad number of arguments, expected " + pars.length))
+                    context.id
+                 }
+                 checkSubstitution(context, subs, pars, Context(), false)
               case Some(_) =>
                  errorCont(InvalidObject(t, "not a theory identifier" + p.toPath))
               case None =>
@@ -421,19 +432,19 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       con.mapVarDecls {case (c, vd) =>
            val currentContext = context ++ c
            vd match {
-              case StructureVarDecl(name, tp, df) =>
+              case StructureVarDecl(name, tp, dfOpt) =>
                  // a variable that imports another theory
                  // type must be a theory
-                 checkTheory(currentContext, OMMOD(tp)) 
+                 checkTheory(currentContext, tp) 
                  // definiens must be a partial substitution
-                 val dfR = df map {
-                    case ComplexMorphism(subs) =>
-                       val subsR = checkSubstitution(currentContext, subs, Context(IncludeVarDecl(tp)), Context(), true)
+                 val dfR = dfOpt map {df => (tp,df) match {
+                    case (ComplexTheory(tpCon), ComplexMorphism(dfSubs)) =>
+                       val subsR = checkSubstitution(currentContext, dfSubs, tpCon, Context(), true)
                        ComplexMorphism(subsR)
-                    case o =>
-                       errorCont(InvalidObject(vd, "definiens of theory-level variable must be a partial substitution, found " + o))
-                       o
-                 }
+                    case _ =>
+                       errorCont(InvalidObject(vd, "definiens of theory-level variable must be a partial substitution, found " + df))
+                       df
+                 }}
                  StructureVarDecl(name, tp, dfR)
               case VarDecl(name, tp, df, not) =>
                  // a normal variable
@@ -483,9 +494,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                      fromDomain = fromDomain.filter(_ != de)
                   } else {
                      subdomainOpt match {
-                        case Some((tpath, defs)) =>
+                        case Some((t, defs)) =>
                            // n maps a part of p, which imports tpath: replace de with domain elements for tpath
-                           val tpathDomElems = TheoryExp.getDomain(OMMOD(tpath)).map {d =>
+                           val tpathDomElems = TheoryExp.getDomain(t).map {d =>
                               d.copy(name = p / d.name)
                            }
                            fromDomain = fromDomain.filter(_ != de) ::: tpathDomElems

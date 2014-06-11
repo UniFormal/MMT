@@ -41,11 +41,11 @@ object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.pat
               // an import from another theory
               case StructureVarDecl(name, tp, df) =>
                  // type must be a theory
-                 solver.check(IsTheory(currentStack, OMMOD(tp))) && 
+                 solver.check(IsTheory(currentStack, tp)) && 
                  // if given, definiens must be a morphism
                  (df match {
                     case Some(d) =>
-                       solver.check(IsRealization(currentStack, d, OMMOD(tp)))
+                       solver.check(IsRealization(currentStack, d, tp))
                     case None => true
                  })
               case VarDecl(n,tpOpt,dfOpt,_) =>
@@ -114,10 +114,10 @@ object MorphCheck extends TypingRule(ModExp.morphtype) {
                      // currentSub maps a part of de (currentSubName has prefix p)
                      subdomainOpt match {
                         // de must be an import from tpath
-                        case Some((tpath, defs)) =>
+                        case Some((dom, defs)) =>
                            // flatten de: replace it with the domain elements of tpath (prefixing p to the name)
                            fromDomain = fromDomain.filter(_ != de)
-                           TheoryExp.getDomain(OMMOD(tpath)).foreach {d =>
+                           TheoryExp.getDomain(dom).foreach {d =>
                               fromDomain ::= d.copy(name = p / d.name)
                            }
                            // the definitions of de are like fixed cases of subsDomain
@@ -154,8 +154,6 @@ object MorphCheck extends TypingRule(ModExp.morphtype) {
          val d = lup.get(from % n)
          val historyN =  history + ("checking map of " + n)
          val mayhold = d match {
-            case Include(_, from) =>
-               solver.check(IsRealization(stack, t, OMMOD(from)))(historyN)
             case s: Structure =>
                solver.check(IsRealization(stack, t, s.from))(historyN)
             case c: Constant =>

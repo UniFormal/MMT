@@ -14,7 +14,7 @@ import utils.xml._
  * 
  * math: jobad:owner ([[ContentPath]]) and jobad:component ([[DeclarationComponent]])
  * 
- * mrow, mo, mi, mn: jobad:mmtsrc ([[SourceRef]]) and jobad:mmtref ([[Position]])
+ * mrow, mo, mi, mn: jobad:mmtsrc ([[parser.SourceRef]]) and jobad:mmtref ([[Position]])
  * 
  * mo (from OMS or delimiter): jobad:href ([[ContentPath]])
  * 

@@ -13,11 +13,12 @@ import scala.xml._
 
 object Diff{
   def main(args: Array[String]) {
+   implicit val eh = ErrorThrower                
     
 	val firstController = new Controller
     val secondController = new Controller
-	firstController.handle(ExecFile(new java.io.File("startup.mmt")))
-	secondController.handle(ExecFile(new java.io.File("startup.mmt")))
+	firstController.handle(ExecFile(new java.io.File("startup.mmt"), None))
+	secondController.handle(ExecFile(new java.io.File("startup.mmt"), None))
 	
 	var currentVersion : File = null
 	var olderVersion : File = null
@@ -59,9 +60,8 @@ object Diff{
 			
 	//val olderVersion : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\ChangeImpacts\\changeImpactsIDs.omdoc")
     //val currentVersion : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\ChangeImpacts\\changeImpactsIDsChanged.omdoc")
-                
-    val olderDoc : DPath  = firstController.read(olderVersion)._1.path
-    val currentDoc : DPath = secondController.read(currentVersion)._1.path
+    val olderDoc : DPath  = firstController.read(olderVersion).path
+    val currentDoc : DPath = secondController.read(currentVersion).path
         
     var diff = Differ.diff(firstController, secondController, olderDoc, currentDoc)
 //    println(diff.toNode.toString())

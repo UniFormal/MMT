@@ -5,7 +5,7 @@ import objects._
 import frontend._
 
 /**
- * A validation unit encapsulates the proof obligations produced by the [[libraries.StructureChecker]] and passed on to the [[Solver]].
+ * A validation unit encapsulates the proof obligations produced by the [[MMTStructureChecker]] and passed on to the [[Solver]].
  * 
  * Each validation unit validates a single term that is part of a WFJudgement, i.e.,
  * the other parts of the judgement are assumed to be valid.

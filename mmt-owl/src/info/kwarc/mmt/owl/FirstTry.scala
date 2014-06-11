@@ -12,18 +12,19 @@ import info.kwarc.mmt.api.utils.URI
 
 object FirstTry {
 	def main(args: Array[String]) {
-	
+   implicit val eh = ErrorThrower                
+
 	val firstController = new Controller
     val secondController = new Controller
     
-	firstController.handle(ExecFile(new java.io.File("startup.mmt")))
-	secondController.handle(ExecFile(new java.io.File("startup.mmt")))
+	firstController.handle(ExecFile(new java.io.File("startup.mmt"), None))
+	secondController.handle(ExecFile(new java.io.File("startup.mmt"), None))
 	
 	val older : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\try.omdoc") 	  
 	val current : File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\try.omdoc")
 	
-	val olderDoc : DPath  = firstController.read(older)._1.path
-    val currentDoc : DPath = secondController.read(current)._1.path
+	val olderDoc : DPath  = firstController.read(older).path
+    val currentDoc : DPath = secondController.read(current).path
         
     var diff = Differ.diff(firstController, secondController, olderDoc, currentDoc)
     val pretty = new PrettyPrinter (150, 3) 

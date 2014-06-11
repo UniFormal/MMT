@@ -22,8 +22,8 @@ import info.kwarc.mmt.api.utils.URI
 		val controllerOld = new Controller
 	    val controllerCurr = new Controller
 
-	    controllerOld.handle(ExecFile(new java.io.File("startup.mmt")))
-	    controllerCurr.handle(ExecFile(new java.io.File("startupCurrent.mmt")))
+	    controllerOld.handle(ExecFile(new java.io.File("startup.mmt"), None))
+	    controllerCurr.handle(ExecFile(new java.io.File("startupCurrent.mmt"), None))
 	   	    
 	   //http://docs.omdoc.org/older.omdoc
 	    if(args.length < 1) 

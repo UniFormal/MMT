@@ -12,9 +12,9 @@ object Terms extends TheoryScala {
   object formation extends ConstantScala {
     val parent = _path
     val name = "formation"
-    def apply(p: MPath, t: Term) = OMBINDC(OMID(this.path), Context(IncludeVarDecl(p)), List(t))
+    def apply(p: MPath, t: Term) = OMBINDC(OMID(this.path), Context(p), List(t))
     def unapply(t: Term): Option[(MPath, Term)] = t match {
-      case OMBINDC(OMID(this.path), Context(IncludeVarDecl(p)), List(t)) => Some((p, t))
+      case OMBINDC(OMID(this.path), Context(IncludeVarDecl(p, Nil)), List(t)) => Some((p, t))
       case _ => None
     }
   }
@@ -22,9 +22,9 @@ object Terms extends TheoryScala {
   object refl extends ConstantScala {
     val parent = _path
     val name = "refl"
-    def apply(p: MPath, t: Term) = OMBINDC(OMID(this.path), Context(IncludeVarDecl(p)), List(t))
+    def apply(p: MPath, t: Term) = OMBINDC(OMID(this.path), Context(p), List(t))
     def unapply(t: Term): Option[(MPath, Term)] = t match {
-      case OMBINDC(OMID(this.path), Context(IncludeVarDecl(p)), List(t)) => Some((p, t))
+      case OMBINDC(OMID(this.path), Context(IncludeVarDecl(p, Nil)), List(t)) => Some((p, t))
       case _ => None
     }
   }
