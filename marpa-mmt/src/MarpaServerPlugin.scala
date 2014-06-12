@@ -177,6 +177,10 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    				  val content:List[String] = m.elements.map(addRule)
 		    				  createRule("Group"::content)
 		    		}
+		    case f : FractionMarker => 
+		      val above = addRule(GroupMarker(f.above))
+		      val below = addRule(GroupMarker(f.below))
+		      createRule(List("mfracB",above,below,"mfracE"))
 		   case s : ScriptMarker => 
 		     	val mainRule = addRule(s.main)
 		        var hasSup = false
@@ -294,6 +298,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	      case "mtdB"::contentRule::"mtdE"::Nil => name + "::= " + content.mkString(" ") 
 	      case "mtrB"::contentRule::"mtrE"::Nil => name + "::= " + content.mkString(" ") 
 	      case "mtableB"::contentRule::"mtableE"::Nil => name + "::= " + content.mkString(" ") 
+	      case List("mfracB",above,below,"mfracE") => name + "::= " + content.mkString(" ") 
 	      case _ => println ("TODO BNF:"+ (content mkString " ")) 
 	      			"'TODO'"
 	    }
@@ -313,50 +318,54 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			"Expression ::= Notation "::
 		    			"            || Presentation "::
      	    	//		" 			  | Content "::
-		    			"Presentation ::= rowB ExpressionList rowE"::
+		    			"Presentation ::= mrowB ExpressionList mrowE"::
 		    			" | moB '(' moE Expression moB ')' moE "::
 		    			" | moB Expression moE "::
 		    			" | miB Expression miE "::
 		    			" | mnB Expression mnE "::
-		    			" | mfracB Expression Expression mfracE"::
+		    			" | mfracB ExpressionList mfracE"::
 		    			" | msqrtB Expression msqrtE"::
-		    			" | msupB Expression Expression msupE" ::
-		    			" | msubB Expression Expression msubE" ::
-		    			" | msubsupB Expression Expression Expression msubE"::
+		    			" | msupB ExpressionList msupE" ::
+		    			" | msubB ExpressionList msubE" ::
+		    			" | msubsupB ExpressionList msubsupE"::
+		    			" | munderB ExpressionList munderE "::
+		    			" | moverB ExpressionList moverE "::
+		    			" | munderoverB ExpressionList munderoverE "::
+		    			" | mtdB ExpressionList mtdE" ::
+		    			" | mtrB ExpressionList mtrE" ::
+		    			" | mtableB ExpressionList mtableE "::
+		    			" | mathB ExpressionList mathE "::
+		    			" | mtextB ExpressionList mtextE "::
+		    			" | emB ExpressionList emE "::
+		    			" | miBE "::
 		    			" || texts "::
+		    		//	" || '<' texts '/>'"::
+		    		//	" || '<' texts '>' ExpressionList '<' texts '>' "::
 		    			"mfracB ::= ws '<mfrac' attribs '>' ws"::"mfracE ::= ws '</mfrac>' ws"::
 		    			"msqrtB ::= ws '<msqrt' attribs '>' ws"::"msqrtE ::= ws '</msqrt>' ws"::
 		    			"msupB ::= ws '<msup' attribs '>' ws"::"msupE ::= ws '</msup>' ws"::
 		    			"msubB ::= ws '<msub' attribs '>' ws"::"msubE ::= ws '</msub>' ws"::
+		    			"munderB ::= ws '<munder' attribs '>' ws"::"munderE ::= ws '</munder>' ws"::
+		    			"moverB ::= ws '<mover' attribs '>' ws"::"moverE ::= ws '</mover>' ws"::
 		    			"mnB ::= ws '<mn' attribs '>' ws"::"mnE ::= ws '</mn>' ws"::
 		    			"miB ::= ws '<mi' attribs '>' ws"::"miE ::= ws '</mi>' ws"::
 		    			"moB ::= ws '<mo' attribs '>' ws"::"moE ::= ws '</mo>' ws"::
+		    			"mtextB ::= ws '<mtext' attribs '>' ws"::"mtextE ::= ws '</mtext>' ws"::
+		    			"emB ::= ws '<em' attribs '>' ws"::"emE ::= ws '</em>' ws"::
 		    			"mtdB ::= ws '<mtd' attribs '>' ws"::"mtdE ::= ws '</mtd>' ws"::
 		    			"mtrB ::= ws '<mtr' attribs '>' ws"::"mtrE ::= ws '</mtr>' ws"::
 		    			"mtableB ::= ws '<mtable' attribs '>' ws"::"mtableE ::= ws '</mtable>' ws"::
-		    			"msubsupB ::= ws '<msubsup' attribs '>' ws"::"moE ::= ws '</msubsup>' ws"::
-		    			"""rowB ::= ws '<mrow' attribs '>' ws""":: """rowE ::= ws '</mrow>' ws"""::
-		    			//dummy rules for marpa when certain rules are missing
-		    			"""#dummy rule for marpa"""::
-		    			"Presentation ::= mfracB mfracE msqrtB msqrtE msupB msubB msubE msubsupB msubsupE "::
-		    			"Presentation::= moB moE mtdB mtdE mtrB mtrE mtableB mtableE munderoverB"::
-		    			"Presentation::= munderoverE moverB moverE munderB munderE mnB mnE miB miE "::
-		    			"""                                 """::
-		    			//end dummy rules
+		    			"msubsupB ::= ws '<msubsup' attribs '>' ws"::"msubsupE ::= ws '</msubsup>' ws"::
+		    			"munderoverB ::= ws '<munderover' attribs '>' ws"::"munderoverE ::= ws '</munderover>' ws"::
+		    			"""mrowB ::= ws '<mrow' attribs '>' ws""":: """mrowE ::= ws '</mrow>' ws"""::
+		    			"mathB ::= ws '<math' attribs '>' ws"::"mathE ::= ws '</math>' ws"::
+		    			"miBE ::= ws '<mi' attribs '>' ws":: // '/>'
 		    			"ws ::= spaces"::
 		    			"ws::= # empty"::
 		    			"""spaces ~ space+"""::
 		    			"""space ~ [\s] """::
 		    			"attribs ::= texts"::
 		    			"attribs ::= "::
-//		    			"attribs ::= ws attrib "::
-//		    			" | ws attrib ws attribs " ::
-//		    			"""attrib ::= letters '=' '"' notquotes '"' """::
-//		    			"""letters ::= letter+"""::
-//		    			"""letter ~ [\w]"""::
-//		    			"""notquotes ::= notquote+ """ ::
-//		    			"""notquote ~ [^"]"""::
-//		    			"""notquote ~ [\w]"""::
 		    			""" texts ~ text+"""::
 		    			""" text ~ [^<>]"""::
 		    			"#Automatically generated part"::
