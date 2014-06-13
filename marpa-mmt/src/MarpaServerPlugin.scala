@@ -141,10 +141,10 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 			case Arg(argNr,precedence) => {
 						       precedence match {
 						        case Some(x) => 
-				 val content = "renderB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::"renderE"::" #Arg"::Nil
+				 val content = "renderB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::"renderE"::Nil
 				 createRule(content)
 						        case None    =>
-				 val content = "renderB"::"nrB"::argNr.toString::"nrE"::"renderE"::" #Arg"::Nil
+				 val content = "renderB"::"nrB"::argNr.toString::"nrE"::"renderE"::Nil
 				 createRule(content)
 						      }
 						
@@ -156,11 +156,11 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 				    		  case Some(x) => 
 				     		    createRule(
 				     		    "iterateB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::
-				    		    "separatorB"::delimName::"separatorE"::argName::"iterateE"::" #SeqArg"::Nil)
+				    		    "separatorB"::delimName::"separatorE"::argName::"iterateE"::Nil)
 				    		  case None => 
 				    		    createRule(
 				    		    "iterateB"::"nrB"::argNr.toString::"nrE"::"separatorB"::delimName::
-				    		    "separatorE"::argName::"iterateE"::" #SeqArg "::Nil)
+				    		    "separatorE"::argName::"iterateE"::Nil)
 				    		}
 				    }		
 		  	case m : TdMarker => 
@@ -172,7 +172,12 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		  	case m : TableMarker =>
 		  	  val contentRule = createRule("contentRule"::(m.content map addRule))
 		  	  createRule("mtableB"::contentRule::"mtableE"::Nil)
-		    case d : Delimiter => createRule("moB"::"'"+d.text+"'"::"moE"::" #Delimiter"::Nil)
+		    case d : Delimiter => 
+		      if ( d.text == "") {
+		        createRule("moB"::"moE"::Nil)
+		      } else
+		      createRule("moB"::"'"+d.text+"'"::"moE"::Nil)
+		    
 		    case m : GroupMarker => {
 		    				  val content:List[String] = m.elements.map(addRule)
 		    				  createRule("Group"::content)
@@ -319,7 +324,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			"            || Presentation "::
      	    	//		" 			  | Content "::
 		    			"Presentation ::= mrowB ExpressionList mrowE"::
-		    			" | moB '(' moE Expression moB ')' moE "::
+		    			" | moB '(' moE ExpressionList moB ')' moE "::
 		    			" | moB Expression moE "::
 		    			" | miB Expression miE "::
 		    			" | mnB Expression mnE "::
@@ -337,7 +342,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			" | mathB ExpressionList mathE "::
 		    			" | mtextB ExpressionList mtextE "::
 		    			" | emB ExpressionList emE "::
-		    			" | miBE "::
+		    			" | mstyleB ExpressionList mstyleE "::
+		    			" | miB "::
 		    			" || texts "::
 		    		//	" || '<' texts '/>'"::
 		    		//	" || '<' texts '>' ExpressionList '<' texts '>' "::
@@ -350,6 +356,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			"mnB ::= ws '<mn' attribs '>' ws"::"mnE ::= ws '</mn>' ws"::
 		    			"miB ::= ws '<mi' attribs '>' ws"::"miE ::= ws '</mi>' ws"::
 		    			"moB ::= ws '<mo' attribs '>' ws"::"moE ::= ws '</mo>' ws"::
+		    			"mstyleB ::= ws '<mstyle' attribs '>' ws"::"mstyleE ::= ws '</mstyle>' ws"::
 		    			"mtextB ::= ws '<mtext' attribs '>' ws"::"mtextE ::= ws '</mtext>' ws"::
 		    			"emB ::= ws '<em' attribs '>' ws"::"emE ::= ws '</em>' ws"::
 		    			"mtdB ::= ws '<mtd' attribs '>' ws"::"mtdE ::= ws '</mtd>' ws"::
@@ -359,15 +366,23 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			"munderoverB ::= ws '<munderover' attribs '>' ws"::"munderoverE ::= ws '</munderover>' ws"::
 		    			"""mrowB ::= ws '<mrow' attribs '>' ws""":: """mrowE ::= ws '</mrow>' ws"""::
 		    			"mathB ::= ws '<math' attribs '>' ws"::"mathE ::= ws '</math>' ws"::
-		    			"miBE ::= ws '<mi' attribs '>' ws":: // '/>'
 		    			"ws ::= spaces"::
 		    			"ws::= # empty"::
-		    			"""spaces ~ space+"""::
+		    		    """spaces ~ space+"""::
 		    			"""space ~ [\s] """::
-		    			"attribs ::= texts"::
+		    			"attribs ::= ws attrib ws | ws attrib ws attribs"::
 		    			"attribs ::= "::
+		    			""" attrib  ::= notEqSignS '="' notQuoteS '"' """::
+		    			"notEqSignS ~ notEqSign+ "::
+		    			"notEqSign ~ [^=]"::
+		    			"notQuoteS ~ notQuote+ "::
+		    			"""notQuote ~ [^"]"""::
 		    			""" texts ~ text+"""::
 		    			""" text ~ [^<>]"""::
+		    			"Notation ::= my_opPlus #my_plus" ::
+		    		    "my_opPlus ::= Expression  my_plus Expression | Expression my_plus my_opPlus"::
+		    		    "event 'my_opPlus' = completed my_opPlus"::
+		    		    "my_plus ::= moB '+' moE"::
 		    			"#Automatically generated part"::
 		    			Nil
 		    			
