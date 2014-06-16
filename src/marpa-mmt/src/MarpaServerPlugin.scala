@@ -343,10 +343,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			" | mtextB ExpressionList mtextE "::
 		    			" | emB ExpressionList emE "::
 		    			" | mstyleB ExpressionList mstyleE "::
-		    			" | miB "::
+		    			" | miSingle "::
 		    			" || texts "::
-		    		//	" || '<' texts '/>'"::
-		    		//	" || '<' texts '>' ExpressionList '<' texts '>' "::
 		    			"mfracB ::= ws '<mfrac' attribs '>' ws"::"mfracE ::= ws '</mfrac>' ws"::
 		    			"msqrtB ::= ws '<msqrt' attribs '>' ws"::"msqrtE ::= ws '</msqrt>' ws"::
 		    			"msupB ::= ws '<msup' attribs '>' ws"::"msupE ::= ws '</msup>' ws"::
@@ -366,17 +364,17 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			"munderoverB ::= ws '<munderover' attribs '>' ws"::"munderoverE ::= ws '</munderover>' ws"::
 		    			"""mrowB ::= ws '<mrow' attribs '>' ws""":: """mrowE ::= ws '</mrow>' ws"""::
 		    			"mathB ::= ws '<math' attribs '>' ws"::"mathE ::= ws '</math>' ws"::
+		    			"miSingle ::= ws '<mi' attribs '/>' ws "::
 		    			"ws ::= spaces"::
-		    			"ws::= # empty"::
+		    			"ws ::= # empty"::
 		    		    """spaces ~ space+"""::
 		    			"""space ~ [\s] """::
-		    			"attribs ::= ws attrib ws | ws attrib ws attribs"::
-		    			"attribs ::= "::
-		    			""" attrib  ::= notEqSignS '="' notQuoteS '"' """::
+		    			"attribs ::= ws || attrib || attrib attribs "::
+		    			""" attrib  ::= ws notEqSignS '=' ws '"' notQuoteS '"' ws"""::
 		    			"notEqSignS ~ notEqSign+ "::
-		    			"notEqSign ~ [^=]"::
+		    			"notEqSign ~ [^=<>/]"::
 		    			"notQuoteS ~ notQuote+ "::
-		    			"""notQuote ~ [^"]"""::
+		    			"""notQuote ~ [^"<>]"""::
 		    			""" texts ~ text+"""::
 		    			""" text ~ [^<>]"""::
 		    			"Notation ::= my_opPlus #my_plus" ::
