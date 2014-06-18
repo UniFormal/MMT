@@ -1,3 +1,25 @@
+/**
+ * Marpa Server Plugin
+ * ------------------------------------------
+ * Toloaca Ion  <i.toloaca@jacobs-university.de>
+ * ------------------------------------------
+ * 		General information: 
+ * 	New notations are written in sTeX, afterwards LaTeXML is used to convert those to .omdoc ,
+ * then MMT is used to parse the .omdoc documents and to store the relevant notations.
+ * 		
+ *   	Purpose of this code:
+ * 	The code below uses the notations stored in MMT as Markers (Scala datatypes) to create a Marpa 
+ * grammar and make it available via a post request.
+ *  	
+ *  	 Details about the code:
+ *    To convert from Markers to a Marpa grammar an intermediate format is used (List[String]). 
+ * Although the format might have been omitted, using tokenized strings make the recursion ease 
+ * the transformation from Markers to the grammar, and creating unique rules also becomes easier.
+ *    To create the rules, a recursion is used that starts creating the rules first from the 
+ * deepest nested Markers. This means that when adding a rule - it is enough to check whether a rule
+ * with the same content is already in the grammar or not (which wouldn't be the case if the rules would 
+ * be created in inverse order).
+ */
 package info.kwarc.mmt.marpa
 
 import scala.Option.option2Iterable
@@ -50,6 +72,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
   def apply(uriComps: List[String], query: String, body : Body): HLet = {
     try {
       uriComps match {
+        //Here the post request is handled
         case "getGrammar" :: _ => getGrammarResponse
         case _ => errorResponse("Invalid request: " + uriComps.mkString("/"), List(new PlanetaryError("Invalid Request" + uriComps)))
        }
@@ -62,19 +85,20 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
     }
   }
   
+  //The post request response is defined here 
   def getGrammarResponse : HLet  = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
       val reqBody = new Body(tk)
       val notations = controller.library.getModules flatMap {
         case t : DeclaredTheory 
-        	//if t.path.toPath == "http://mathhub.info/smglom/mv/equal.omdoc?equal"
+        	//if t.path.toPath == "http://mathhub.info/smglom/mv/equal.omdoc?equal" 
         	=> 
           val not = t.getDeclarations collect {
-            case c : Constant => c.notC.presentationDim.notations.values.flatten.map(not => c.path -> not) //@Ion, changed it to produce (name, notation) pairs
+            case c : Constant => c.notC.presentationDim.notations.values.flatten.map(not => c.path -> not) //produces (name, notation) pairs
           } 
           not.flatten
         case _ => Nil
-      } //notations is now iterable of (name, notation) pairs
+      } //notations is now an iterable of (name, notation) pairs
       
       
      
@@ -84,12 +108,12 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 // 
 //       val xmlNotations = notations.map(n => (n.name.toPath, n.presentationMarkers))
 //       val resp = new JSONArray(xmlNotations.map(_.toString))
-   // notations.foreach( x => println(x.arity.length)) PRINT NOTATION ARGUMENT NUMBER
-      notations.foreach(pair => Grammar.addTopRule(pair._1.toPath, pair._2.presentationMarkers)) //@Ion see modification here and in notation variable above 
-      val resp = new JSONArray( Grammar.getMarpaGrammar );
+   // 	notations.foreach( x => println(x.arity.length)) PRINT NOTATION ARGUMENT NUMBER
+      	notations.foreach(pair => Grammar.addTopRule(pair._1.toPath, pair._2.presentationMarkers)) //adding rules to the grammar
+      	val resp = new JSONArray( Grammar.getMarpaGrammar );
 //     val resp = new JSONArray(Grammar.rules.toList.map(_.toString));
-     val params = reqBody.asJSON
-      Server.JsonResponse(resp).aact(tk)
+      	val params = reqBody.asJSON
+      	Server.JsonResponse(resp).aact(tk)
     }
   }
  
@@ -98,31 +122,39 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
   abstract class GenericRule
   case class Rule(name:String, content: List[String]) extends GenericRule
   object Grammar {
-	  //private
-	  var rules = Set.empty[Rule]
+    
+	  var rules = Set.empty[Rule]  
 	  private var NotationContent = List.empty[String]
 	  private var eventList = List.empty[String];
-	  private var index:Int = 0
-	  //private var test = List.empty[String]
-	  def createRuleName(name:String):String = {
+	  private var index:Int = 0  //used to ensure the uniqueness of rule names
+	  
+	  //Top Rule Name uniqueness cannot be assumed because the path of the notation
+	  //can be common for multiple notations - hence "_" is added to differentiate between those
+	  //TODO: This is enough for now, however when the original notation is needed - further improvement  will be necessary
+	  def createTopRuleName(name:String):String = {
 	    if (rules.exists(x => x match {case Rule(n,c) => n==name} )) {
-	    	createRuleName(name + "_")
+	    	createTopRuleName(name + "_")
 	    } else {
 	    	name
 	    }
 	  }
+	  //adds the Top Rule and all of the necessary subrules to the Grammar
 	  def addTopRule(rawName:String, markers:List[Marker]) {
 		val content:List[String] = "topLevel"::markers.map(addRule)
 	    val topPatt = """\?.*""".r
 	    val q = """[\?-]""".r
+	    //rawName is the path of the notation - it is used to ensure topLevelRule name uniqueness
 	    val Some(suff) = topPatt findFirstIn rawName 
 	    val notUniqueName = q replaceAllIn (suff, m => "_")
-		val uniqueName = createRuleName(notUniqueName)
+		val uniqueName = createTopRuleName(notUniqueName)
 	    NotationContent ::= uniqueName 
 	    eventList ::= "event '"+uniqueName+"' = completed "+uniqueName
 	    rules = rules | Set((Rule(uniqueName,content)))     //uniqueness of top level notations is assumed
 	  }
-	  def createRule(content:List[String]):String = { //returns the name of the rule
+	  
+	  
+	  //returns the name of the rule, adds the rule to the Set[Rule] only if it is not already there
+	  def createRule(content:List[String]):String = { 
 		 val filteredRules = rules.filter(r => r match { case Rule(n,c) => c == content})
 	     if (filteredRules.isEmpty) {
 	        index = index + 1
@@ -136,8 +168,10 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	        name
 	     }
 	  }
-	
-	  def addRule(marker:Marker):String = marker match { //returns the name of the rule
+	  
+	  //returns the name of the rule, adds the rule to the grammar by calling CreateRule
+	  //this function performs the recursion on Markers, while CreateRule just checks for uniqueness
+	  def addRule(marker:Marker):String = marker match { 
 			case Arg(argNr,precedence) => {
 						       precedence match {
 						        case Some(x) => 
@@ -216,8 +250,6 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		     		  case _ => "" 
 		     	}
 		     	
-		     	
-		  
 		       if (hasSup && !hasSub ) {
 		          createRule("msubB"::mainRule::subRule::"msubE"::Nil)
 		       } else if (!hasSup && hasSub) {
@@ -254,6 +286,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		      "'TODO'"
 	  }
 	  
+	  //converts from Set(Rule(String,List[String])) (Rules stores as tokenized strings) to List[String] (List of real grammar rules)
+ 
 	  def toBNF(rule:Rule):String = {
 	    val Rule(name, content) = rule
 	    
@@ -262,7 +296,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	      case "contentRule"::tl => name + "::= " + tl.mkString(" ") 
 	      case "Group"::tl => name + "::= " + tl.mkString(" ") 
 	      case "moB"::tl => name + "::= " + content.mkString(" ") 
-	      case "renderB"::tl => name + "::= Expression || texts" //todo -> think of a better base case for arguments
+	      case "renderB"::tl => name + "::= Expression || texts" //TODO: -> think of a better base case for arguments
 	      case "iterateB"::tl => 
 	        			val Some(delim) = content.find(x=> 
 	        			   if (content.indexOf(x)>0) {
@@ -273,7 +307,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	        			      content(content.indexOf(x)-1) == "separatorE"
 	        			   } else false)
 						name + "::= " +  argName + " " + delim + " " + name + " || " + argName + " " + delim + " " + argName
-		 //TODO: msupB msubB (/) moverB munderB (/) msubsupB munderoverB alternatives
+		
 	      case "msubB"::mainRule::subRule::"msubE"::Nil => 
 	        name + "::= " + (content mkString " ")
 	      case "msupB"::mainRule::subRule::"msupE"::Nil =>
@@ -309,6 +343,9 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	    }
 	  }
 	  
+	  //creates the grammar as a List[String] by adding a manually written prefix that gives the Grammar 
+	  //an overall shape and also includes presentation MathML parsing
+	  //the actual grammar is assembled in Perl by inserting '\n' in between the elements of the List.
 	  def getMarpaGrammar:List[String] = {
 		    val pref =  "#Manually generated part"::
 		    			":default ::= action => getString":: // by default any rule will return the string it matched
@@ -378,7 +415,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			""" texts ~ text+"""::
 		    			""" text ~ [^<>]"""::
 		    			"Notation ::= my_opPlus #my_plus" ::
-		    		    "my_opPlus ::= Expression  my_plus Expression | Expression my_plus my_opPlus"::
+		    		    "my_opPlus ::= Expression  my_plus Expression | Expression my_plus my_opPlus":: //TODO: remove when the errors related to generating it from omdocs is fixed
 		    		    "event 'my_opPlus' = completed my_opPlus"::
 		    		    "my_plus ::= moB '+' moE"::
 		    			"#Automatically generated part"::
