@@ -13,8 +13,8 @@
  *  	
  *  	 Details about the code:
  *    To convert from Markers to a Marpa grammar an intermediate format is used (List[String]). 
- * Although the format might have been omitted, using tokenized strings make the recursion ease 
- * the transformation from Markers to the grammar, and creating unique rules also becomes easier.
+ * Although the format might have been omitted, using tokenized strings make the recursion and
+ * the transformation from Markers to the grammar easier, and creating unique rules also becomes easier.
  *    To create the rules, a recursion is used that starts creating the rules first from the 
  * deepest nested Markers. This means that when adding a rule - it is enough to check whether a rule
  * with the same content is already in the grammar or not (which wouldn't be the case if the rules would 
@@ -207,11 +207,21 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		  	  val contentRule = createRule("contentRule"::(m.content map addRule))
 		  	  createRule("mtableB"::contentRule::"mtableE"::Nil)
 		    case d : Delimiter => 
-		      if ( d.text == "") {
-		        createRule("moB"::"moE"::Nil)
-		      } else
-		      createRule("moB"::"'"+d.text+"'"::"moE"::Nil)
-		    
+		      var text = d.text.drop(3);
+		      var pref = d.text.take(2);
+		      pref = if (pref=="mi" || pref=="mn") pref else {text = d.text; "mo"} 
+		      var moB = pref+"B";
+		      var moE = pref+"E";
+		      if ( text == "") {
+		        createRule("empty"::Nil)
+		      } else if (text == """⁢""") { //handling the invisible unicode char used for function application
+		        val v1 = createRule("empty"::Nil)
+		        val v2 = createRule(moB::" '"+text+"' "::moE::Nil)
+		        createRule("alternatives"::v1::v2::Nil)
+		      } else {
+		      createRule(moB::" '"+text+"' "::moE::Nil)
+		      }
+		     
 		    case m : GroupMarker => {
 		    				  val content:List[String] = m.elements.map(addRule)
 		    				  createRule("Group"::content)
@@ -295,7 +305,10 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	      case "topLevel"::tl => name + "::= " + tl.mkString(" ") 
 	      case "contentRule"::tl => name + "::= " + tl.mkString(" ") 
 	      case "Group"::tl => name + "::= " + tl.mkString(" ") 
-	      case "moB"::tl => name + "::= " + content.mkString(" ") 
+	      case "moB"::tl if tl.length>1  => name + "::= " + content.mkString(" ")
+	      case "empty"::Nil => name + "::= " + "#Empty rule" 
+	      case List("miB",text,"miE") => name + "::= " + content.mkString(" ") 
+	      case List("mnB",text,"mnE") => name + "::= " + content.mkString(" ") 
 	      case "renderB"::tl => name + "::= Expression || texts" //TODO: -> think of a better base case for arguments
 	      case "iterateB"::tl => 
 	        			val Some(delim) = content.find(x=> 
@@ -332,8 +345,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		         name + "::= " + (content mkString " ")
 	      case "munderoverB"::mainRule::underRule::overRule::"munderoverE"::Nil =>
 	        name + "::= " + (content mkString " ")
-	      case  "alternatives"::v1::v2::v3::Nil => 
-	         name + "::= " + (List(v1,v2,v3) mkString (" | "))
+	      case  "alternatives"::tl => 
+	         name + "::= " + (tl mkString (" | "))
 	      case "mtdB"::contentRule::"mtdE"::Nil => name + "::= " + content.mkString(" ") 
 	      case "mtrB"::contentRule::"mtrE"::Nil => name + "::= " + content.mkString(" ") 
 	      case "mtableB"::contentRule::"mtableE"::Nil => name + "::= " + content.mkString(" ") 
