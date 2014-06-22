@@ -1,19 +1,17 @@
-package main.scala.info.kwarc.mmt.api.webedit
+package info.kwarc.mmt.api.webedit
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.libraries._
+import info.kwarc.mmt.api.libraries.Names
+import info.kwarc.mmt.api.web.Server
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.frontend.ExtensionManager
-import info.kwarc.mmt.api.web._
-import info.kwarc.mmt.api.Path
-import info.kwarc.mmt.api.utils.mmt
-import info.kwarc.mmt.api.MPath
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.web
+import info.kwarc.mmt.api.utils._
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.parser._
-import info.kwarc.mmt.api.LocalName
-import info.kwarc.mmt.api.notations.Marker
+import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.web.ServerError
 import info.kwarc.mmt.api.checking._
 
 
@@ -28,8 +26,7 @@ class EditingServicePlugin(val controller : Controller) {
       new MMTAutoCompleteResponse(response)
   }
   
-   def getResolveIncludesResponse(request: MMTResolveIncludesRequest) = {
-      
+   def getResolveIncludesResponse(request: MMTResolveIncludesRequest) = { 
 	  val symbol = request.getSymbol
       val mpath = Path.parseM(request.getMPath, mmt.mmtbase)
       
@@ -73,7 +70,7 @@ class EditingServicePlugin(val controller : Controller) {
   def getTermInference(request: MMTTermInferenceRequest) : MMTTermInferenceResponse = {
           
       val mpath = Path.parseM(request.getMPath, mmt.mmtbase)
-      val sref = new SourceRef(mpath.doc.uri, SourceRegion(SourcePosition(-1,0,0),SourcePosition(-1,0,1)))
+      val sref = new SourceRef(mpath.doc.uri, SourceRegion(SourcePosition(-1,0,0),SourcePosition(-1,0,0)))
       
       val term = controller.textParser(ParsingUnit(sref, Context(), request.getTerm))(new ErrorLogger(controller.report))
       
@@ -90,7 +87,7 @@ class EditingServicePlugin(val controller : Controller) {
       val returnNoHoles = "Term Complete"
       val holeContextList =  getHoles(term,Context())
       
-      //response Term Complete if there are no Holes, No Rules if no rule is applicable otherwise return the rules
+      //response: Term Complete if there are no Holes, No Rules if no rule is applicable otherwise return the rules
       holeContextList match { 
         case Nil => val returnNoHoles = "Term Complete" :: Nil
         			new MMTTermInferenceResponse(returnNoHoles)

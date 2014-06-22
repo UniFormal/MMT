@@ -1,4 +1,4 @@
-package main.scala.info.kwarc.mmt.api.webedit
+package info.kwarc.mmt.api.webedit
 
 class MMTAutoCompleteResponse(autocompleteOptions: List[String]) {
 

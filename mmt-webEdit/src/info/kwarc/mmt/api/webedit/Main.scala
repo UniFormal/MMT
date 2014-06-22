@@ -1,6 +1,7 @@
-package main.scala.info.kwarc.mmt.api.webedit
+package info.kwarc.mmt.api.webedit
 import info.kwarc.mmt.api._
 import frontend._
+
 
 object Main {
    val controller = new Controller
