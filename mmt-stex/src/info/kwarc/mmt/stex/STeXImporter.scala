@@ -390,9 +390,9 @@ class STeXImporter extends Importer {
       List(ScriptMarker(main,None,None,Some(over),Some(under)))
       
     case "mpadded" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList
-    case "mo" => makeDelim(n.child.mkString) :: Nil
-    case "mi" => makeDelim(n.child.mkString) :: Nil //for now treated exactly like mo        
-    case "mn" => makeDelim(n.child.mkString) :: Nil //for now treated exactly like mo
+    case "mo" => makeDelim("#op_" + n.child.mkString) :: Nil
+    case "mi" => makeDelim("#id_" + n.child.mkString) :: Nil
+    case "mn" => makeDelim("#num_" + n.child.mkString) :: Nil
     case "mtext" => makeDelim(n.child.mkString) :: Nil
     case "text" => makeDelim(n.child.mkString) :: Nil
     case "mfrac" => 
