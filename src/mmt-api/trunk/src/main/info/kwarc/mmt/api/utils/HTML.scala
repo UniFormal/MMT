@@ -95,6 +95,21 @@ abstract class HTML {
       body
       out("</a>")
    }
+   def htmlobject(ref: String, tp: String) {
+      out(s"""<object type="$tp" data="$ref"></object>""")
+   }
+   def iframe(src: String){
+      out(s"""<iframe src="$src">""")
+      out("</iframe>")
+   }
+   def img(src: String) {
+     out(s"""<img src="$src"/>""")
+   }
+   
+   def embed(src: String) {
+     out(s"""<embed src="$src"/>""")
+   }
+   
    def text(s : String) {
      out(escape(s))
    }
@@ -120,7 +135,7 @@ object HTML {
       def out(s: String) {f(s)}
    }
    def builder = new HTML {
-      var result: String = "" 
+      var result: String = ""
       def out(s: String) {result += s}
    }
 }

@@ -49,9 +49,10 @@ object Util {
     */
   def loadResource(path : String) : java.io.InputStream = {
     val stream = getClass.getResourceAsStream("/mmt-web/" + path)  // the file inside the JAR
-    if (stream != null)
-        stream
-    else {
+    if (stream != null) {
+        println("found in JAR")
+        stream  
+    } else {
         val filePath : String = try {
           //the folder containing the class files
           val binaryFolder : java.io.File = new java.io.File(getClass.getProtectionDomain.getCodeSource.getLocation.toString)  // e.g. .../lfcatalog/trunk/build/main

@@ -12,6 +12,7 @@ class GraphViz extends Exporter {
    val key = "svg"
    
    private var tg : ontology.TheoryGraph = null
+   /** path to graphviz (dot) binary */
    private var graphviz: String = null
    
    /** expects one argument: the path to graphviz */

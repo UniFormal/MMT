@@ -40,14 +40,19 @@ object Server {
    * A text response that the server sends back to the browser
    * @param text the message that is sent in the HTTP body
    */
-  def TextResponse(text: String, tp: String = "plain"): HLet = new HSimpleLet {
+  def TypedTextResponse(text: String, tp: String): HLet = new HSimpleLet {
     def act(tk: HTalk) {
       val out = text.getBytes("UTF-8")
       checkCORS(tk).setContentLength(out.size) // if not buffered
-        .setContentType(s"text/$tp; charset=utf8")
+        .setContentType(s"$tp; charset=utf8")
         .write(out)
     }
   }
+  /**
+   * A text response that the server sends back to the browser
+   * @param text the message that is sent in the HTTP body
+   */
+  def TextResponse(text: String, tp: String = "plain"): HLet = TypedTextResponse(text, "text/"+tp)
 
   /**
    * An XML response that the server sends back to the browser
