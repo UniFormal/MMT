@@ -94,3 +94,7 @@ span.keyword:hover {
 span.keyword:active {
   cursor: progress;
 }
+
+ul.ref {
+ list-style: square;
+}
