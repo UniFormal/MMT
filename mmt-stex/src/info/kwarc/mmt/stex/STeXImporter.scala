@@ -431,7 +431,8 @@ class STeXImporter extends Importer {
     case "mstyle" => n.child.toList.flatMap(parseRenderingMarkers(_, argMap))
     case "merror" => Nil
     case "mroot" => Delim("√") :: n.child.toList.flatMap(parseRenderingMarkers(_, argMap))
-    case "msqrt" => Delim("√") :: n.child.toList.flatMap(parseRenderingMarkers(_, argMap))
+    case "msqrt" => //SqrtMarker(n.child.toList.flatMap(parseRenderingMarkers(_, argMap))) :: Nil
+      Delim("√") :: Delim("(") :: n.child.toList.flatMap(parseRenderingMarkers(_, argMap)) ::: List(Delim(")"))
     case "none" => Nil
   }
   
