@@ -185,6 +185,21 @@ case class SqrtMarker(content : List[Marker]) extends PresentationMarker {
   } 
 }
 
+case class NumberMarker(value : Delim) extends PresentationMarker {
+  def flatMap(f : Marker => List[Marker]) = {
+    NumberMarker(value)
+  } 
+}
+case class OpMarker(value : Delim) extends PresentationMarker {
+  def flatMap(f : Marker => List[Marker]) = {
+    OpMarker(value)
+  } 
+}
+case class IdenMarker(value : Delim) extends PresentationMarker {
+  def flatMap(f : Marker => List[Marker]) = {
+    IdenMarker(value)
+  } 
+}
 /** a marker for type of the presented object */
 case object InferenceMarker extends PresentationMarker {
    def flatMap(f: Marker => List[Marker]) = InferenceMarker
@@ -273,6 +288,16 @@ object PresentationMarker {
               val (arg, rest) = splitOffOne(left.tail)
               left = rest
               sofar ::= SqrtMarker(List(arg))
+              
+            case Delim(w) if w.startsWith("#num_") => //mathml number
+              left = left.tail
+              sofar ::= NumberMarker(Delim(w.substring(5)))
+            case Delim(w) if w.startsWith("#op_") => //mathml operator
+              left = left.tail
+              sofar ::= OpMarker(Delim(w.substring(4)))
+            case Delim(w) if w.startsWith("#id_") => //mathml identifier
+              left = left.tail
+              sofar ::= IdenMarker(Delim(w.substring(4)))
             case m =>
                sofar ::= m
                left = left.tail

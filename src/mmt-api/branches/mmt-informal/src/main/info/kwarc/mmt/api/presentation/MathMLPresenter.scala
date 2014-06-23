@@ -179,4 +179,22 @@ class MathMLPresenter extends NotationBasedPresenter {
        }
      }
    }
+   
+   override def doNumberMarker(arg : Delim)(implicit pc: PresentationContext) {
+     pc.html.mn {
+       pc.out(arg.s)
+     }
+   }
+   
+   override def doOpMarker(arg : Delim)(implicit pc: PresentationContext) {
+     pc.html.mo {
+       pc.out(arg.s)
+     }
+   }
+      
+   override def doIdenMarker(arg : Delim)(implicit pc: PresentationContext) {
+     pc.html.mi {
+       pc.out(arg.s)
+     }
+   }
 }

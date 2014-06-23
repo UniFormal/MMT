@@ -178,6 +178,17 @@ class NotationBasedPresenter extends ObjectPresenter {
      }
    }
    
+   def doNumberMarker(arg : Delim)(implicit pc: PresentationContext) {
+     doOperator("#num_" + arg.s)
+   }
+   def doOpMarker(arg : Delim)(implicit pc: PresentationContext) {
+     doOperator("#op_" + arg.s)
+   }
+   def doIdenMarker(arg : Delim)(implicit pc: PresentationContext) {
+     doOperator("#id_" + arg.s)
+   }
+
+   
    /** 1 or 2-dimensional notations, true by default */
    def twoDimensional : Boolean = true
    
@@ -421,6 +432,12 @@ class NotationBasedPresenter extends ObjectPresenter {
                         case SqrtMarker(markers) => 
                            def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
                            doSqrt(markers map aux)
+                        case NumberMarker(value) => 
+                           doNumberMarker(value)
+                        case OpMarker(value) => 
+                           doOpMarker(value)
+                        case IdenMarker(value) => 
+                           doIdenMarker(value)
                         case InferenceMarker =>
                         case _ => //TODO
                      }
