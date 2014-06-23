@@ -171,4 +171,12 @@ class MathMLPresenter extends NotationBasedPresenter {
          }
       }
    }
+   
+   override def doSqrt(args : List[Cont])(implicit pc: PresentationContext) {
+     pc.html.msqrt {
+       pc.html.mrow {
+         args foreach(a => a())
+       }
+     }
+   }
 }

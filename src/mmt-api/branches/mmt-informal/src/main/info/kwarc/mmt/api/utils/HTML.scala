@@ -69,6 +69,8 @@ abstract class HTML {
    val msup       = new Element("msup")
    val msubsup    = new Element("msubsup")
    val mfrac      = new Element("mfrac")
+   val msqrt      = new Element("msqrt")
+   
    
    val table = new Element("table")
    val thead = new Element("thead")

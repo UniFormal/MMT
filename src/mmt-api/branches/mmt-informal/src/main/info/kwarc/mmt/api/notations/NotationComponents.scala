@@ -169,14 +169,20 @@ case class TdMarker(content : List[Marker]) extends PresentationMarker {
 /** a marker based on mathml mtd elements, representing table rows */
 case class TrMarker(content : List[Marker]) extends PresentationMarker {
    def flatMap(f : Marker => List[Marker]) = {
-     TdMarker(content.flatMap(f))
+     TrMarker(content.flatMap(f))
    } 
 }
 /** a marker based on mathml mtd elements, representing tables */
 case class TableMarker(content : List[Marker]) extends PresentationMarker {
    def flatMap(f : Marker => List[Marker]) = {
-     TdMarker(content.flatMap(f))
+     TableMarker(content.flatMap(f))
    } 
+}
+
+case class SqrtMarker(content : List[Marker]) extends PresentationMarker {
+  def flatMap(f : Marker => List[Marker]) = {
+    SqrtMarker(content.flatMap(f))
+  } 
 }
 
 /** a marker for type of the presented object */
@@ -263,6 +269,10 @@ object PresentationMarker {
                  sofar ::= TableMarker(processed)
                    left = end
              }
+            case Delim("√")  =>
+              val (arg, rest) = splitOffOne(left.tail)
+              left = rest
+              sofar ::= SqrtMarker(List(arg))
             case m =>
                sofar ::= m
                left = left.tail

@@ -167,6 +167,17 @@ class NotationBasedPresenter extends ObjectPresenter {
       }
    }
    
+   def doSqrt(args : List[Cont])(implicit pc: PresentationContext) {
+     doOperator("√")
+     doBracketedGroup {
+       args.head
+       args.tail.foreach {e =>
+         doSpace(1)
+         e()
+       }
+     }
+   }
+   
    /** 1 or 2-dimensional notations, true by default */
    def twoDimensional : Boolean = true
    
@@ -407,6 +418,9 @@ class NotationBasedPresenter extends ObjectPresenter {
                         case FractionMarker(a,b,l) =>
                            def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
                            doFraction(a map aux, b map aux, l)
+                        case SqrtMarker(markers) => 
+                           def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                           doSqrt(markers map aux)
                         case InferenceMarker =>
                         case _ => //TODO
                      }
