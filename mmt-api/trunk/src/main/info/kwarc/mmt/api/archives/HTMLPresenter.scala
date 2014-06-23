@@ -217,11 +217,21 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    }
    
    def doDocument(doc: Document) {
+     val locOpt = controller.backend.resolveLogical(doc.path.uri)
+     val svgOpt = locOpt flatMap { 
+       case (arch, path) =>
+         val fpath = Archive.narrationSegmentsAsFile(path, "omdoc")
+         val f = (arch.root / "export" / "svg" / "narration" / fpath).setExtension("svg")
+         if (f.toJava.exists())
+            Some("/:svg?"+doc.path.uri.toString)           
+         else
+           None
+     }
      div("document") {
        span("name") {
          text(doc.path.last)
        }
-       ul { doc.getItems foreach {
+       ul("ref") { doc.getItems foreach {
          case d: DRef => 
            li("dref") {
              span(cls = "name loadable", attributes=List("jobad:load" -> d.target.toPath)) {
@@ -235,6 +245,11 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
              }
            }
        }}
+       svgOpt foreach {src =>
+          div("graph") {
+            htmlobject(src, "image/svg+xml")
+          }
+       }
      }
    }
 }

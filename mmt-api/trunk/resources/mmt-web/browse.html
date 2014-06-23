@@ -20,6 +20,8 @@
   <script type="text/javascript" src="/script/jquery/jquery-ui.js"></script>
   <script type="text/javascript" src="/script/tree/jquery.hotkeys.js"></script>
   <script type="text/javascript" src="/script/tree/jquery.jstree.js"></script>
+  <script type="text/javascript" src="/script/SVGPan/SVGPan.js"></script>
+
   <!-- JOBAD Deps -->
   <script type="text/javascript" src="/script/jobad/deps/underscore-min.js"></script>
   <!-- JOBAD -->
@@ -106,7 +108,10 @@
      function toggleClick(elem,label){
         var cls = label != null ? label : 'toggleTarget'
         $(elem).parent().closest('div').find('.' + cls).toggle()
-     }
+     };
+     function SVGClick(url){
+        navigation.navigate(url)
+     };
   </script>
   
   <script type="text/javascript">
