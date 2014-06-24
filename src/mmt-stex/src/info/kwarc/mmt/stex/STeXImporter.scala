@@ -363,31 +363,31 @@ class STeXImporter extends Importer {
     case "mrow" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList
     case "mmultiscripts" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList //treated as mrow because not sure what it should do
     case "msub" => 
-      val main = GroupMarker(parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath))
-      val sub = GroupMarker(parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath))
-      List(ScriptMarker(main,None,Some(sub),None,None))
+      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath).head
+      val sub = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath).head
+      main::Delim("_")::sub::Nil
     case "msup" =>
-      val main = GroupMarker(parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath))
-      val sup = GroupMarker(parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath))
-      List(ScriptMarker(main,Some(sup),None,None,None))
+      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath).head
+      val sup = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath).head
+      main::Delim("^")::sup::Nil
     case "msubsup" =>
-      val main = GroupMarker(parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath))
-      val sub = GroupMarker(parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath))
-      val sup = GroupMarker(parseRenderingMarkers(n.child(2),argMap)(dpath,thy,spath))
-      List(ScriptMarker(main,Some(sup),Some(sub),None,None))
+      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath).head
+      val sub = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath).head
+      val sup = parseRenderingMarkers(n.child(2),argMap)(dpath,thy,spath).head
+        main::Delim("_")::sub::Delim("^")::sup::Nil
     case "munder" =>
-      val main = GroupMarker(parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath))
-      val under = GroupMarker(parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath))
-      List(ScriptMarker(main,None,None,None,Some(under)))
+      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath).head
+      val under = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath).head
+      main::Delim("__")::under::Nil
     case "mover" =>
-      val main = GroupMarker(parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath))
-      val over = GroupMarker(parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath))
-      List(ScriptMarker(main,None,None,Some(over),None))
+      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath).head
+      val over = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath).head
+      main::Delim("^^")::over::Nil
     case "munderover" =>
-      val main = GroupMarker(parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath))
-      val under = GroupMarker(parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath))
-      val over = GroupMarker(parseRenderingMarkers(n.child(2),argMap)(dpath,thy,spath))
-      List(ScriptMarker(main,None,None,Some(over),Some(under)))
+      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath).head
+      val under = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath).head
+      val over = parseRenderingMarkers(n.child(2),argMap)(dpath,thy,spath).head
+      main::Delim("__")::under::Delim("^^")::over::Nil
       
     case "mpadded" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList
     case "mo" => makeDelim("#op_" + n.child.mkString) :: Nil
@@ -396,18 +396,18 @@ class STeXImporter extends Importer {
     case "mtext" => makeDelim(n.child.mkString) :: Nil
     case "text" => makeDelim(n.child.mkString) :: Nil
     case "mfrac" => 
-      val above = parseRenderingMarkers(n.child(0), argMap)
-      val below = parseRenderingMarkers(n.child(1), argMap)
-      val attribOpt =  (n \\ "@bevelled") find {_.text == "bevelled"}
-      val render_line = attribOpt match {
-        case Some(attrib) if attrib.text == "true" => true
-        case _ => false
-      }
-      val fraction = FractionMarker(above, below, render_line) //true => render line
-      List(fraction)
-    case "mtd" => TdMarker( n.child.toList.flatMap(parseRenderingMarkers(_, argMap)))::Nil
-    case "mtr" => TrMarker( n.child.toList.flatMap(parseRenderingMarkers(_, argMap)))::Nil 
-    case "mtable" => TableMarker( n.child.toList.flatMap(parseRenderingMarkers(_, argMap)))::Nil 
+      val enum = parseRenderingMarkers(n.child(0), argMap).head
+      val denum = parseRenderingMarkers(n.child(1), argMap).head
+//      val attribOpt =  (n \\ "@bevelled") find {_.text == "bevelled"}   NOT SURE HOW TO HANDLE THIS ATTRIBUTE
+//      val render_line = attribOpt match {
+//        case Some(attrib) if attrib.text == "true" => true
+//        case _ => false
+//      }
+      enum::Delim("/")::denum::Nil
+    case "mtd" => val content = n.child.flatMap(parseRenderingMarkers(_, argMap)).toList
+      makeDelim("[&")::content:::makeDelim("&]")::Nil
+    case "mtr" => makeDelim("[\\")::n.child.toList.flatMap(parseRenderingMarkers(_, argMap)).toList:::makeDelim("\\]")::Nil
+    case "mtable" => makeDelim("[[")::n.child.toList.flatMap(parseRenderingMarkers(_, argMap)).toList:::makeDelim("]]")::Nil 
     case "render" => 
       val argName = (n \ "@name").text
       val argNr = argMap(argName)
