@@ -181,9 +181,6 @@ class NotationBasedPresenter extends ObjectPresenter {
    def doNumberMarker(arg : Delim)(implicit pc: PresentationContext) {
      doOperator("#num_" + arg.s)
    }
-   def doOpMarker(arg : Delim)(implicit pc: PresentationContext) {
-     doOperator("#op_" + arg.s)
-   }
    def doIdenMarker(arg : Delim)(implicit pc: PresentationContext) {
      doOperator("#id_" + arg.s)
    }
@@ -434,8 +431,6 @@ class NotationBasedPresenter extends ObjectPresenter {
                            doSqrt(markers map aux)
                         case NumberMarker(value) => 
                            doNumberMarker(value)
-                        case OpMarker(value) => 
-                           doOpMarker(value)
                         case IdenMarker(value) => 
                            doIdenMarker(value)
                         case InferenceMarker =>

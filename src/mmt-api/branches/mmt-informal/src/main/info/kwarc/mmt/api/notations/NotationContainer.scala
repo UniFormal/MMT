@@ -41,7 +41,10 @@ class NotationDimension {
          _maxArity = not.arity.length
        }
      }
-     notations(not.arity.length) ::= not
+     
+     if (!notations(not.arity.length).map(_.parsingMarkers).contains(not.parsingMarkers)) {
+       notations(not.arity.length) ::= not
+     }
    }
    
    def update(nd : NotationDimension) = {
@@ -100,7 +103,7 @@ class NotationContainer extends ComponentContainer {
    /** @return an appropriate notation for parsing, if any */
    def getParse  : Option[TextNotation] = parsing
    /** @return an appropriate notation for verbalization, if any */
-   def getVerbal : Option[TextNotation] = verbalization orElse presentation orElse parsing
+   def getVerbal : Option[TextNotation] = verbalization
    def getAllNotations : List[TextNotation] = {
      List(parsingDim.notations.values.flatten, 
           presentationDim.notations.values.flatten,
