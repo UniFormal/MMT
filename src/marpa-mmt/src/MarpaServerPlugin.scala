@@ -127,7 +127,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
       var currentTopRuleNr = ""
 	  var rules = Set.empty[Rule]  
 	  private var NotationContent = List.empty[String]
-	  private var eventList = List.empty[String];
+	//  private var eventList = List.empty[String];
 	  private var index:Int = 0  //used to ensure the uniqueness of rule names
 	  
 	  //Top Rule Name uniqueness cannot be assumed because the path of the notation
@@ -154,7 +154,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	    val notUniqueName = q replaceAllIn (suff, m => "_")
 		val uniqueName = createTopRuleName(notUniqueName)
 	    NotationContent ::= uniqueName 
-	    eventList ::= "event '"+uniqueName+"' = completed "+uniqueName
+	//    eventList ::= "event '"+uniqueName+"' = completed "+uniqueName
 	    currentTopRuleNr = getRuleNr(uniqueName)
 	    val content:List[String] = "topLevel"::markers.map(addRule)
 	    rules = rules | Set((Rule(uniqueName,content)))     //uniqueness of top level notations is assumed
@@ -177,12 +177,12 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	     }
 	  }
 	  
-	  def createArgRule(topRuleNr:String, argNr:String):String = { 
-		val name = "argRule" + "N"+topRuleNr+"A"+argNr
+	  def createArgRule(topRuleNr:String, suff:String):String = { 
+		val name = "argRule" + "N"+topRuleNr+"A"+suff
 		val filteredRules = rules.filter(r => r match { case Rule(n,c) => n==name})
 	     if (filteredRules.isEmpty) {
 	        rules = rules | Set(Rule(name, "renderB"::Nil))
-	        eventList ::= "event '"+name+"' = completed "+name
+//	        eventList ::= "event '"+name+"' = completed "+name
 	        name
 	     } else {
 	       name
@@ -384,6 +384,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	        			      content(content.indexOf(x)-1) == "separatorE"
 	        			   } else false)
 						name + "::= " +  argName + " " + delim + " " + name + " || " + argName + " " + delim + " " + argName
+						//name + "::= " +  "Expression" + " " + delim + " " + name + " || " + "Expression" + " " + delim + " " + "Expression"
 		
 	      case "msubB"::mainRule::subRule::"msubE"::Nil => 
 	        name + "::= " + (content mkString " ")
@@ -426,16 +427,16 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	  //the actual grammar is assembled in Perl by inserting '\n' in between the elements of the List.
 	  def getMarpaGrammar:List[String] = {
 		    val pref =  "#Manually generated part"::
-		    			":default ::= action => getString":: // by default any rule will return the string it matched
+		    			":default ::= action => [name, start, length, values]":: // by default any rule will return the string it matched
 		    			"lexeme default = latm => 1"::       
-//		    			"Error ::= anyChar"::                  
+//		    			"Error ::= anyChar"::                  2
 //		    			"       || anyChar Error"::
 //		    			"""anyChar ~ [\s\S]"""::
 		    			//":lexeme ~ <anyChar> priority => -1":: //otherwise nothing other than Error will ever match
 		    			":start ::= Expression "::                   // :start does not allow alternatives
 		    			"ExpressionList ::= Expression ExpressionList "::
 		    			"| Expression "::
-		    			"Expression ::= Notation "::
+		    			"Expression ::= Notation   "::
 		    			"            || Presentation "::
      	    	//		" 			  | Content "::
 		    			"Presentation ::= mrowB ExpressionList mrowE"::
@@ -500,7 +501,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			""" argRule ::= Expression """::
 		    			"Notation ::= my_opPlus #my_plus" ::
 		    		    "my_opPlus ::= Expression  my_plus Expression | Expression my_plus my_opPlus":: //TODO: remove when the errors related to generating it from omdocs is fixed
-		    		    "event 'my_opPlus' = completed my_opPlus"::
+		    		  //  "event 'my_opPlus' = completed my_opPlus"::
 		    		    "my_plus ::= moB '+' moE"::
 		    			"#Automatically generated part"::
 		    			Nil
@@ -514,9 +515,9 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 			      case Nil => "Notation ::= " + NotationContent.head :: Nil
 			      case _   => "Notation ::= " + NotationContent.head :: tl.map(x => "| "+x)
 			    }
-		   val result = pref:::Notation:::extractedRules:::eventList
+		   val result = pref:::Notation:::extractedRules //:::eventList
 		   //clean up   
-		   eventList = List[String]();
+		 //  eventList = List[String]();
 		   rules = Set[Rule]();
 		   NotationContent = List.empty[String]
 		   index = 0;
