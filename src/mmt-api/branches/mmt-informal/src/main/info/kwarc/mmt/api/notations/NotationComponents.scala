@@ -215,7 +215,7 @@ object PresentationMarker {
             i += 1
          }
          val rem = rest.drop(i)
-         if (i == 2) (rest(1), rem)
+         if (i == 2) (rest(0), rem)
          else {
             val group = introducePresentationMarkers(rest.take(i-1))
             (GroupMarker(group), rem)
@@ -226,14 +226,15 @@ object PresentationMarker {
       var sofar: List[Marker] = Nil
       var left : List[Marker] = ms
       while (left != Nil) {
-         left.head match {
+         val (first, others) = splitOffOne(left)
+         first match {
             case Delim(w) if List("^", "_", "^^", "__") contains w =>
                if (sofar.isEmpty) sofar ::= Delim(" ")
                val scripted = sofar.head match {
                   case m: ScriptMarker => m
                   case m => ScriptMarker(m, None, None, None, None)
                }
-               val (script, rest) = splitOffOne(left.tail)
+               val (script, rest) = splitOffOne(others)
                left = rest
                val newHead = w match {
                   case "^" => scripted.copy(sup = Some(script))
@@ -245,15 +246,15 @@ object PresentationMarker {
             case Delim("/") =>
                if (sofar.isEmpty) sofar ::= Delim(" ")
                val enum = sofar.head
-               val (denom, rest) = splitOffOne(left.tail)
+               val (denom, rest) = splitOffOne(others)
                left = rest
                val newHead = FractionMarker(List(enum), List(denom), true)
                sofar = newHead :: sofar.tail
             case Delim("[&") => 
               get_until(List("&]"), left, true) match {
                case None => //end not found, ignoring
-                 sofar ::= left.head
-                 left = left.tail
+                 sofar ::= first
+                 left = others
                case Some((taken, end)) => 
                  val processed = introducePresentationMarkers(taken)
                  sofar ::= TdMarker(processed)
@@ -262,8 +263,8 @@ object PresentationMarker {
             case Delim("[\\") => 
                get_until(List("\\]"), left, true) match {
                case None => //end not found, ignoring
-                 sofar ::= left.head
-                 left = left.tail
+                 sofar ::= first
+                 left = others
                case Some((taken, end)) => 
                  val processed = introducePresentationMarkers(taken)
                  sofar ::= TrMarker(processed)
@@ -272,27 +273,27 @@ object PresentationMarker {
             case Delim("[[") =>
              get_until(List("]]"), left, true) match {
                case None => //end not found, ignoring
-                 sofar ::= left.head
-                 left = left.tail
+                 sofar ::= first
+                 left = others
                case Some((taken, end)) => 
                  val processed = introducePresentationMarkers(taken)
                  sofar ::= TableMarker(processed)
                    left = end
              }
             case Delim("√")  =>
-              val (arg, rest) = splitOffOne(left.tail)
+              val (arg, rest) = splitOffOne(others)
               left = rest
               sofar ::= SqrtMarker(List(arg))
               
             case Delim(w) if w.startsWith("#num_") => //mathml number
-              left = left.tail
+              left = others
               sofar ::= NumberMarker(Delim(w.substring(5)))
             case Delim(w) if w.startsWith("#id_") => //mathml identifier
-              left = left.tail
+              left = others
               sofar ::= IdenMarker(Delim(w.substring(4)))
             case m =>
                sofar ::= m
-               left = left.tail
+               left = others
          }
       }
       sofar.reverse

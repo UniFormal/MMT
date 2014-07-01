@@ -419,7 +419,7 @@ class NotationBasedPresenter extends ObjectPresenter {
                            if (letters && !markersLeft.isEmpty) doSpace(1)
                         case s: SeqArg => //impossible due to flattening
                         case GroupMarker(ms) =>
-                           doMarkers(ms)
+                           doUnbracketedGroup { doMarkers(ms) }
                         case s: ScriptMarker =>
                            def aux(mOpt: Option[Marker]) = mOpt.map {m => (_:Unit) => doMarkers(List(m))} 
                            doScript(doMarkers(List(s.main)), aux(s.sup), aux(s.sub), aux(s.over), aux(s.under))

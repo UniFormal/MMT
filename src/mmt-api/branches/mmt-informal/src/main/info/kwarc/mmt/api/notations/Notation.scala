@@ -63,8 +63,8 @@ class TextNotation(val fixity: Fixity, val precedence: Precedence, val meta: Opt
       markers.foreach(collectComponents)
      
       // sort by component number
-      vars = vars.sortBy(_.number)
-      args = args.sortBy(_.number)
+      vars = vars.distinct.sortBy(_.number)
+      args = args.distinct.sortBy(_.number)
       // args with all implicit argument components added
       var argsWithImpl: List[ArgumentComponent] = Nil
       var i = vars.lastOption.map(_.number).getOrElse(0) + 1 // the first expected argument position
