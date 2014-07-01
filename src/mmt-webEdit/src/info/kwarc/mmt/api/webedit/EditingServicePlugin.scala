@@ -110,7 +110,7 @@ class EditingServicePlugin(val controller : Controller) {
         val spath = Path.parseS(spathS, mmt.mmtbase)
         val constants = controller.get(spath) match {
           case c : Constant => c.not match {
-            case None => List(c.name -> Nil) 
+            case None => Nil
             case Some(a) => List(c.name -> a.fixity.markers)
          }
           case _ => Nil
@@ -140,7 +140,7 @@ class EditingServicePlugin(val controller : Controller) {
         val spath = Path.parseS(spathS, mmt.mmtbase)
         val constants = controller.get(spath) match {
           case c : Constant => c.notC.getVerbal match {
-            case None => List(c.name -> Nil) 
+            case None => Nil 
             case Some(a) => List(c.name -> a.fixity.markers)
          }
           case _ => Nil
