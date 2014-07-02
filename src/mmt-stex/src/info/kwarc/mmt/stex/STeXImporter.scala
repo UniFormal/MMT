@@ -173,7 +173,7 @@ class STeXImporter extends Importer {
           val name = getName(n, thy)
           val targetsS = (n \ "@for").text.split(" ")
           val targets = targetsS map {s =>
-            mpath ? LocalName(s) //TODO handle non-local references 
+            resolveSPath(None, s, thy.path)
           }
           parseNarrativeObject(n)(dpath, thy, targets.head) match {
             case None => //nothing to do  
@@ -251,20 +251,25 @@ class STeXImporter extends Importer {
     val protoBody = scala.xml.Utility.trim(prototype).child.head
     val renderingChildren = scala.xml.Utility.trim(rendering).child.toList
     val symName = protoBody.label match {
-      case "OMA" => 
+      case "OMA" | "OMBIND"=> 
         val n = protoBody.child.head
         n.label match {
-          case "OMS" => 
+          case "OMS"  => 
             val cd = (n \ "@cd").text
             val name = (n \ "@name").text
             val refPath = Path.parseM("?" + cd, dpath)
             //computing map of arg names to positions
-            protoBody.child.tail.zipWithIndex foreach {p => 
-              val name = (p._1 \ "@name").text
-              argMap(name) = p._2 + 1 //args numbers start from 1
-            }
+            protoBody.child.tail.zipWithIndex foreach {p => p._1.label match {
+              case "expr" => 
+                val name = (p._1 \ "@name").text
+                argMap(name) = p._2 + 1 //args numbers start from 1
+              case "OMBVAR" => 
+                val name = (p._1.child.head \ "@name").text
+                argMap(name) = -(p._2 + 1) //negative numbers encode variables
+              case _ => throw ParseError("invalid prototype" + protoBody)
+            }}
             refPath ? LocalName(name)
-          case _ => throw ParseError("invalid  prototype" + protoBody)
+          case _ => throw ParseError("invalid prototype" + protoBody)
         }
       case "OMS" => 
         val cd = (protoBody \ "@cd").text
@@ -300,10 +305,10 @@ class STeXImporter extends Importer {
   
   def translateCMP(n : scala.xml.Node)(implicit dpath : DPath, thy : DeclaredTheory, spath : GlobalName) : NarrativeObject = n.label match {
     case "term" => 
-      val cd = (n \ "@cd").text
+      val cd = (n \ "@cd").text 
       val name = (n \ "@name").text
       val objects = n.child.map(translateCMP).toList
-      val refName = resolveSPath(cd, name, thy.path)
+      val refName = resolveSPath(None, name, thy.path) //Ignoring CD -- talk to Deyan and Michael to either remove or fix it
       val role = (n \ "@role").text
       if (role == "definiendum") {
         val ref = new NarrativeRef(refName, objects, true)
@@ -311,7 +316,7 @@ class STeXImporter extends Importer {
         //creating notation
         val markers = n.text.split(" ").map(Delim(_))
         val prec = presentation.Precedence.integer(0)
-        val verbScope = NotationScope(None, sTeX.getLanguage(spath).toList, 0)
+        val verbScope = NotationScope(None, sTeX.getLanguage(thy.path).toList, 0)
         val not = TextNotation(prec, None, verbScope)(markers :_*)
         const.notC.verbalizationDim.set(not)
         ref
@@ -348,9 +353,12 @@ class STeXImporter extends Importer {
       case "OMS" => 
         val cd =  xml.attr(node, "cd")
         val name = xml.attr(node, "name")
-        val sym = resolveSPath(cd, name, mpath)
+        val sym = resolveSPath(Some(cd), name, mpath)
         <om:OMS base={sym.module.toMPath.parent.toPath} module={sym.module.toMPath.name.last.toPath} name={sym.name.last.toPath}/>
       case "#PCDATA" => new scala.xml.Text(node.toString)
+      case "OMATTR" if node.child(1).label == "OMV" => //Complex Variable
+        val n = node.child(1) //TODO for now handled as simple variable, need to make entry in context with notation
+        cleanNamespaces(n) //TODO refactor cleanNamespaces to some xml helper object --duplicate in FlexiformalDeclarationObject
       case _ => new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, node.child.map(rewriteNode) :_*)
     }
   
@@ -358,52 +366,70 @@ class STeXImporter extends Importer {
     Obj.parseTerm(rewriteNode(n), dpath)
   }
   
+  def cleanNamespaces(node : scala.xml.Node) : Node = node match {
+    case el : Elem => 
+      val scope = _cleanNamespaces(el.scope, Nil)
+      new scala.xml.Elem(el.prefix, el.label, el.attributes, scope, el.minimizeEmpty, el.child.map(cleanNamespaces) : _*)
+    case _ => node
+  }
+  
+  private def _cleanNamespaces(scope : NamespaceBinding, prefixes : List[String] = Nil) : NamespaceBinding = {
+    if (scope == scala.xml.TopScope) {
+      scope
+    } else {
+      if (prefixes.contains(scope.prefix)) {
+        _cleanNamespaces(scope.parent, prefixes)
+      } else {
+        NamespaceBinding(scope.prefix, scope.uri, _cleanNamespaces(scope.parent, scope.prefix :: prefixes))
+      }
+    }
+  }
+  
    
   def parseRenderingMarkers(n : scala.xml.Node, argMap : Map[String, Int])(implicit dpath : DPath, thy : DeclaredTheory, spath : GlobalName) : List[Marker] = n.label match {
-    case "mrow" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList
+    case "mrow" => Delim("(") :: n.child.flatMap(parseRenderingMarkers(_, argMap)).toList ::: List(Delim(")"))
     case "mmultiscripts" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList //treated as mrow because not sure what it should do
-    case "msub" => 
-      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath).head
-      val sub = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath).head
-      main::Delim("_")::sub::Nil
-    case "msup" =>
-      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath).head
-      val sup = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath).head
-      main::Delim("^")::sup::Nil
-    case "msubsup" =>
-      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath).head
-      val sub = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath).head
-      val sup = parseRenderingMarkers(n.child(2),argMap)(dpath,thy,spath).head
-        main::Delim("_")::sub::Delim("^")::sup::Nil
-    case "munder" =>
-      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath).head
-      val under = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath).head
-      main::Delim("__")::under::Nil
-    case "mover" =>
-      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath).head
-      val over = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath).head
-      main::Delim("^^")::over::Nil
-    case "munderover" =>
-      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath).head
-      val under = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath).head
-      val over = parseRenderingMarkers(n.child(2),argMap)(dpath,thy,spath).head
-      main::Delim("__")::under::Delim("^^")::over::Nil
-      
+    case "msub" => //assuming well formed elem and children
+      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath)
+      val sub = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath)
+      main ::: List(Delim("_")) :::sub
+    case "msup" => //assuming well formed elem and children
+      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath)
+      val sup = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath)
+      main ::: List(Delim("^")) :::sup
+    case "msubsup" =>//assuming well formed elem and children
+      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath)
+      val sub = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath)
+      val sup = parseRenderingMarkers(n.child(2),argMap)(dpath,thy,spath)
+        main::: List(Delim("_")) :::sub ::: List(Delim("^")) :::sup
+    case "munder" =>//assuming well formed elem and children
+      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath)
+      val under = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath)
+      main ::: List(Delim("__")) ::: under
+    case "mover" =>//assuming well formed elem and children
+      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath)
+      val over = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath)
+      main ::: List(Delim("^^")) ::: over
+    case "munderover" =>//assuming well formed elem and children
+      val main = parseRenderingMarkers(n.child(0),argMap)(dpath,thy,spath)
+      val under = parseRenderingMarkers(n.child(1),argMap)(dpath,thy,spath)
+      val over = parseRenderingMarkers(n.child(2),argMap)(dpath,thy,spath)
+      main ::: List(Delim("__")) ::: under ::: List(Delim("^^")) ::: over
     case "mpadded" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList
-    case "mo" => makeDelim("#op_" + n.child.mkString) :: Nil
+    case "mo" => makeDelim(n.child.mkString) :: Nil
     case "mi" => makeDelim("#id_" + n.child.mkString) :: Nil
     case "mn" => makeDelim("#num_" + n.child.mkString) :: Nil
     case "mtext" => makeDelim(n.child.mkString) :: Nil
     case "text" => makeDelim(n.child.mkString) :: Nil
-    case "mfrac" => 
-      val enum = parseRenderingMarkers(n.child(0), argMap).head
-      val denum = parseRenderingMarkers(n.child(1), argMap).head
+    case "mfrac" => //assuming well formed elem and children
+      val enum = parseRenderingMarkers(n.child(0), argMap)
+      val denum = parseRenderingMarkers(n.child(1), argMap)
 //      val attribOpt =  (n \\ "@bevelled") find {_.text == "bevelled"}   NOT SURE HOW TO HANDLE THIS ATTRIBUTE
 //      val render_line = attribOpt match {
 //        case Some(attrib) if attrib.text == "true" => true
 //        case _ => false
 //      }
-      enum::Delim("/")::denum::Nil
+      enum ::: List(Delim("/")) ::: denum
     case "mtd" => val content = n.child.flatMap(parseRenderingMarkers(_, argMap)).toList
       makeDelim("[&")::content:::makeDelim("&]")::Nil
     case "mtr" => makeDelim("[\\")::n.child.toList.flatMap(parseRenderingMarkers(_, argMap)).toList:::makeDelim("\\]")::Nil
@@ -411,23 +437,31 @@ class STeXImporter extends Importer {
     case "render" => 
       val argName = (n \ "@name").text
       val argNr = argMap(argName)
-      
-      Arg(argNr, Some(getPrecedence(n))) :: Nil
+      if (argNr >= 0) {
+        Arg(argNr, Some(getPrecedence(n))) :: Nil
+      } else {
+        Var(-argNr, false, None, Some(getPrecedence(n))) :: Nil
+      }
     case "iterate" =>
       val argName = (n \ "@name").text
       val argNr = argMap(argName)
       val precO = Some(getPrecedence(n))
-      n.child.find(_.label == "separator") match {
-        case None => SeqArg(argNr, makeDelim(","), precO) :: Nil
+      val delim = n.child.find(_.label == "separator") match {
+        case None => makeDelim(",")
         case Some(sep) => 
           sep.child.toList match {
-            case Nil => 
-              SeqArg(argNr, makeDelim(","), precO) :: Nil
+            case Nil => makeDelim(",")
             case hd :: tl =>
-              val delim = parseRenderingMarkers(hd, argMap).mkString("")
-              SeqArg(argNr, makeDelim(delim), precO) :: Nil
+              val dm = parseRenderingMarkers(hd, argMap).mkString("")
+              makeDelim(dm)
           } 
-        }
+      }
+      
+      if (argNr >= 0) {
+        SeqArg(argNr, delim, precO) :: Nil
+      } else {
+        Var(-argNr, false, Some(delim), precO) :: Nil
+      }
     case "mstyle" => n.child.toList.flatMap(parseRenderingMarkers(_, argMap))
     case "merror" => Nil
     case "mroot" => Delim("√") :: n.child.toList.flatMap(parseRenderingMarkers(_, argMap))
@@ -506,11 +540,12 @@ class STeXImporter extends Importer {
     }
   }
   
-  def resolveSPath(tnameS : String, snameS : String, container : MPath) : GlobalName = {
+  def resolveSPath(tnameSO : Option[String], snameS : String, container : MPath) : GlobalName = {
     val tpaths = controller.globalLookup.visible(OMMOD(container)) //includes container
-    val options = tpaths.map(_.toMPath).filter(_.name.last.toPath == tnameS)
+    //filter those that match tname
+    val options = tpaths.map(_.toMPath).filter(t => tnameSO.map(t.name.last.toPath == _).getOrElse(true))
     options.toList match {
-      case Nil => throw ParseError("Cannot resolve module for " + tnameS + "?" + snameS + " from theory " + container.toPath) //perhaps not included
+      case Nil => throw ParseError("Cannot resolve module for " + tnameSO.getOrElse("*") + "?" + snameS + " from theory " + container.toPath) //perhaps not included
       case l => 
         val matches = l.map(controller.get(_)) flatMap {
           case d : DeclaredTheory => 
@@ -518,9 +553,9 @@ class STeXImporter extends Importer {
           case _ => None
         }
         matches match {
-          case Nil => throw ParseError("Cannot resolve symbol for module=" + tnameS + " and symbol=" + snameS + ". No matching modules " + l +  " , contain symbol " + snameS ) 
+          case Nil => throw ParseError("Cannot resolve symbol for module=" + tnameSO.getOrElse("*") + " and symbol=" + snameS + ". No matching modules " + l +  " , contain symbol " + snameS ) 
           case hd :: Nil => hd.path
-          case _ => throw ParseError("Cannot resolve symbol for module=" + tnameS + " and symbol=" + snameS + ". Several matching symbols: " + matches) 
+          case _ => throw ParseError("Cannot resolve symbol for module=" + tnameSO.getOrElse("*") + " and symbol=" + snameS + ". Several matching symbols: " + matches.map(_.path)) 
         }
     }
   }
