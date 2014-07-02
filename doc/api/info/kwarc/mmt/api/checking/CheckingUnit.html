@@ -40,20 +40,25 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">CheckingUnit</span><span class="params">(<span name="component">component: <a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a></span>, <span name="unknowns">unknowns: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="judgement">judgement: <a href="../objects/WFJudgement.html" class="extype" name="info.kwarc.mmt.api.objects.WFJudgement">WFJudgement</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">CheckingUnit</span><span class="params">(<span name="component">component: <a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a></span>, <span name="context">context: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="unknowns">unknowns: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="judgement">judgement: <a href="../objects/WFJudgement.html" class="extype" name="info.kwarc.mmt.api.objects.WFJudgement">WFJudgement</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A validation unit encapsulates the proof obligations produced by the <a href="MMTStructureChecker.html" class="extype" name="info.kwarc.mmt.api.checking.MMTStructureChecker">MMTStructureChecker</a> and passed on to the <a href="Solver.html" class="extype" name="info.kwarc.mmt.api.checking.Solver">Solver</a>.</p><p>Each validation unit validates a single term that is part of a WFJudgement, i.e.,
 the other parts of the judgement are assumed to be valid.
-</p></div><dl class="paramcmts block"><dt class="param">component</dt><dd class="cmt"><p>the term component that is validated, e.g., namespace?theory?symbol?type</p></dd><dt class="param">unknowns</dt><dd class="cmt"><p>the unknowns parts of the expressions that should be inferred during validation</p></dd><dt class="param">judgement</dt><dd class="cmt"><p>the typing judegment to validate
-</p></dd></dl><dl class="attributes block"> <dt>Source</dt><dd><a href="../../../../../../../src/mmt-api/trunk/src/main/info/kwarc/mmt/api/checking/CheckingUnit.scala" target="_blank">CheckingUnit.scala</a></dd></dl><div class="toggleContainer block">
+</p></div><dl class="paramcmts block"><dt class="param">component</dt><dd class="cmt"><p>the term component that is validated, e.g., namespace?theory?symbol?type</p></dd><dt class="param">context</dt><dd class="cmt"><p>the constant context</p></dd><dt class="param">unknowns</dt><dd class="cmt"><p>the unknown context</p></dd><dt class="param">judgement</dt><dd class="cmt"><p>the typing judegment to validate</p><p>A checking unit involves three contexts, which must be separated because they correspond to a quantifier alternation.
+The constant context is the (universally quantified) global context that does not change during checking.
+It includes in particular the theory relative to which a unit is formed.
+The unknown context is the (existentially quantified) context of unknowns that are to be solved during checking.
+The variable context is the context that arises from traversing binders during checking.
+It changes during checking and is therefor stored within the judgement.
+</p></dd></dl><dl class="attributes block"> <dt>Source</dt><dd><a href="file:/C:/frabe/MMT/src/mmt-api/trunk/src/main/info/kwarc/mmt/api/checking/CheckingUnit.scala" target="_blank">CheckingUnit.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
                 <span class="toggle diagram-link">Type Hierarchy</span>
                 <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#diagrams" target="_blank" class="diagram-help">Learn more about scaladoc diagrams</a>
-                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph620" viewBox="0.00 0.00 201.00 120.00" height="120pt" width="201pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 116)" class="graph" id="graph1"><polygon points="-4,5 -4,-116 198,-116 198,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph620_0"><a xlink:title="info.kwarc.mmt.api.checking.CheckingUnit (this class)" xlink:href="#inheritance-diagram"><polygon points="143.25,-50 40.75,-50 40.75,-24 143.25,-24 143.25,-50" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-45" x="51" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-35" x="73" text-anchor="start">CheckingUnit</text></a></g><!-- node1 --><g class="node trait" id="graph620_1"><a xlink:title="scala.Product"><polygon points="78.25,-112 -0.25,-112 -0.25,-86 78.25,-86 78.25,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-107" x="10" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="32" text-anchor="start">Product</text></a></g><!-- node1&#45;&gt;node0 --><g class="edge inheritance" id="graph620_1_0"><a xlink:title="CheckingUnit is a subtype of Product"><path d="M53.1094,-82.0271C61.9547,-72.0135 73.177,-59.3091 81.2906,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="51.724,-80.9521 49.7253,-85.8581 54.3471,-83.2693 51.724,-80.9521" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node trait" id="graph620_2"><a xlink:title="scala.Serializable"><polygon points="193,-112 97,-112 97,-86 193,-86 193,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-107" x="107" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="129" text-anchor="start">Serializable</text></a></g><!-- node2&#45;&gt;node0 --><g class="edge inheritance" id="graph620_2_0"><a xlink:title="CheckingUnit is a subtype of Serializable"><path d="M130.891,-82.0271C122.045,-72.0135 110.823,-59.3091 102.709,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="129.653,-83.2693 134.275,-85.8581 132.276,-80.9521 129.653,-83.2693" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
+                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph624" viewBox="0.00 0.00 201.00 120.00" height="120pt" width="201pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 116)" class="graph" id="graph1"><polygon points="-4,5 -4,-116 198,-116 198,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph624_0"><a xlink:title="info.kwarc.mmt.api.checking.CheckingUnit (this class)" xlink:href="#inheritance-diagram"><polygon points="143.25,-50 40.75,-50 40.75,-24 143.25,-24 143.25,-50" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-45" x="51" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-35" x="73" text-anchor="start">CheckingUnit</text></a></g><!-- node1 --><g class="node trait" id="graph624_1"><a xlink:title="scala.Product"><polygon points="78.25,-112 -0.25,-112 -0.25,-86 78.25,-86 78.25,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-107" x="10" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="32" text-anchor="start">Product</text></a></g><!-- node1&#45;&gt;node0 --><g class="edge inheritance" id="graph624_1_0"><a xlink:title="CheckingUnit is a subtype of Product"><path d="M53.1094,-82.0271C61.9547,-72.0135 73.177,-59.3091 81.2906,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="51.724,-80.9521 49.7253,-85.8581 54.3471,-83.2693 51.724,-80.9521" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node trait" id="graph624_2"><a xlink:title="scala.Serializable"><polygon points="193,-112 97,-112 97,-86 193,-86 193,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-107" x="107" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="129" text-anchor="start">Serializable</text></a></g><!-- node2&#45;&gt;node0 --><g class="edge inheritance" id="graph624_2_0"><a xlink:title="CheckingUnit is a subtype of Serializable"><path d="M130.891,-82.0271C122.045,-72.0135 110.823,-59.3091 102.709,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="129.653,-83.2693 134.275,-85.8581 132.276,-80.9521 129.653,-83.2693" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
               </div></div>
         
 
@@ -92,7 +97,7 @@ the other parts of the judgement are assumed to be valid.
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.checking.CheckingUnit#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(component:info.kwarc.mmt.api.CPath,unknowns:info.kwarc.mmt.api.objects.Context,judgement:info.kwarc.mmt.api.objects.WFJudgement):info.kwarc.mmt.api.checking.CheckingUnit"></a>
+      <a id="&lt;init&gt;(component:info.kwarc.mmt.api.CPath,context:info.kwarc.mmt.api.objects.Context,unknowns:info.kwarc.mmt.api.objects.Context,judgement:info.kwarc.mmt.api.objects.WFJudgement):info.kwarc.mmt.api.checking.CheckingUnit"></a>
       <a id="&lt;init&gt;:CheckingUnit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -100,10 +105,15 @@ the other parts of the judgement are assumed to be valid.
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">CheckingUnit</span><span class="params">(<span name="component">component: <a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a></span>, <span name="unknowns">unknowns: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="judgement">judgement: <a href="../objects/WFJudgement.html" class="extype" name="info.kwarc.mmt.api.objects.WFJudgement">WFJudgement</a></span>)</span>
+        <span class="name">CheckingUnit</span><span class="params">(<span name="component">component: <a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a></span>, <span name="context">context: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="unknowns">unknowns: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="judgement">judgement: <a href="../objects/WFJudgement.html" class="extype" name="info.kwarc.mmt.api.objects.WFJudgement">WFJudgement</a></span>)</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">component</dt><dd class="cmt"><p>the term component that is validated, e.g., namespace?theory?symbol?type</p></dd><dt class="param">unknowns</dt><dd class="cmt"><p>the unknowns parts of the expressions that should be inferred during validation</p></dd><dt class="param">judgement</dt><dd class="cmt"><p>the typing judegment to validate
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">component</dt><dd class="cmt"><p>the term component that is validated, e.g., namespace?theory?symbol?type</p></dd><dt class="param">context</dt><dd class="cmt"><p>the constant context</p></dd><dt class="param">unknowns</dt><dd class="cmt"><p>the unknown context</p></dd><dt class="param">judgement</dt><dd class="cmt"><p>the typing judegment to validate</p><p>A checking unit involves three contexts, which must be separated because they correspond to a quantifier alternation.
+The constant context is the (universally quantified) global context that does not change during checking.
+It includes in particular the theory relative to which a unit is formed.
+The unknown context is the (existentially quantified) context of unknowns that are to be solved during checking.
+The variable context is the context that arises from traversing binders during checking.
+It changes during checking and is therefor stored within the judgement.
 </p></dd></dl></div>
     </li></ol>
             </div>
@@ -221,6 +231,19 @@ the other parts of the judgement are assumed to be valid.
       </span>
       </h4>
       <p class="shortcomment cmt">the term component that is validated, e.</p><div class="fullcomment"><div class="comment cmt"><p>the term component that is validated, e.g., namespace?theory?symbol?type</p></div></div>
+    </li><li name="info.kwarc.mmt.api.checking.CheckingUnit#context" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="context:info.kwarc.mmt.api.objects.Context"></a>
+      <a id="context:Context"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">context</span><span class="result">: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">the constant context</p>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -276,7 +299,7 @@ the other parts of the judgement are assumed to be valid.
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.CheckingUnit#judgement" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.checking.CheckingUnit#judgement" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="judgement:info.kwarc.mmt.api.objects.WFJudgement"></a>
       <a id="judgement:WFJudgement"></a>
       <h4 class="signature">
@@ -288,8 +311,13 @@ the other parts of the judgement are assumed to be valid.
         <span class="name">judgement</span><span class="result">: <a href="../objects/WFJudgement.html" class="extype" name="info.kwarc.mmt.api.objects.WFJudgement">WFJudgement</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the typing judegment to validate
-</p>
+      <p class="shortcomment cmt">the typing judegment to validate</p><div class="fullcomment"><div class="comment cmt"><p>the typing judegment to validate</p><p>A checking unit involves three contexts, which must be separated because they correspond to a quantifier alternation.
+The constant context is the (universally quantified) global context that does not change during checking.
+It includes in particular the theory relative to which a unit is formed.
+The unknown context is the (existentially quantified) context of unknowns that are to be solved during checking.
+The variable context is the context that arises from traversing binders during checking.
+It changes during checking and is therefor stored within the judgement.
+</p></div></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -329,6 +357,20 @@ the other parts of the judgement are assumed to be valid.
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.checking.CheckingUnit#present" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="present(implicitcont:info.kwarc.mmt.api.objects.Obj=&gt;String):String"></a>
+      <a id="present((Obj)⇒String):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">present</span><span class="params">(<span class="implicit">implicit </span><span name="cont">cont: (<a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a>) ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">a toString method that may call a continuation on its objects
+</p>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -354,7 +396,7 @@ the other parts of the judgement are assumed to be valid.
         <span class="name">unknowns</span><span class="result">: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the unknowns parts of the expressions that should be inferred during validation</p>
+      <p class="shortcomment cmt">the unknown context</p>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>

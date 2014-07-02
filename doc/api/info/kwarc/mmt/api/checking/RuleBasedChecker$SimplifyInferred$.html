@@ -40,14 +40,14 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <span class="name">SimplifyInferred</span><span class="result"> extends <a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
+        <span class="name">SimplifyInferred</span><span class="result"> extends <a href="../objects/StatelessTraverser.html" class="extype" name="info.kwarc.mmt.api.objects.StatelessTraverser">StatelessTraverser</a></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A Traverser that simplifies all subterms that are the result of inference (recognized by the lack of a SourceRef)
-</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="../../../../../../../src/mmt-api/trunk/src/main/info/kwarc/mmt/api/checking/RuleBasedChecker.scala" target="_blank">RuleBasedChecker.scala</a></dd></dl><div class="toggleContainer block">
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="file:/C:/frabe/MMT/src/mmt-api/trunk/src/main/info/kwarc/mmt/api/checking/RuleBasedChecker.scala" target="_blank">RuleBasedChecker.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>], <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../objects/StatelessTraverser.html" class="extype" name="info.kwarc.mmt.api.objects.StatelessTraverser">StatelessTraverser</a>, <a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a>[<span class="extype" name="scala.Unit">Unit</span>], <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -65,7 +65,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.checking.RuleBasedChecker.SimplifyInferred"><span>SimplifyInferred</span></li><li class="in" name="info.kwarc.mmt.api.objects.Traverser"><span>Traverser</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.checking.RuleBasedChecker.SimplifyInferred"><span>SimplifyInferred</span></li><li class="in" name="info.kwarc.mmt.api.objects.StatelessTraverser"><span>StatelessTraverser</span></li><li class="in" name="info.kwarc.mmt.api.objects.Traverser"><span>Traverser</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -96,7 +96,7 @@
         <span class="kind">type</span>
       </span>
       <span class="symbol">
-        <span class="name">State</span><span class="result"> = <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
+        <span class="name">State</span><span class="result"> = <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a></dd></dl></div>
@@ -172,6 +172,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.objects.StatelessTraverser#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="apply(t:info.kwarc.mmt.api.objects.Term,con:info.kwarc.mmt.api.objects.Context):info.kwarc.mmt.api.objects.Term"></a>
+      <a id="apply(Term,Context):Term"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">apply</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="con">con: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../objects/StatelessTraverser.html" class="extype" name="info.kwarc.mmt.api.objects.StatelessTraverser">StatelessTraverser</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.objects.Traverser#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="apply(t:info.kwarc.mmt.api.objects.Term,init:Traverser.this.State,con:info.kwarc.mmt.api.objects.Context):info.kwarc.mmt.api.objects.Term"></a>
       <a id="apply(Term,State,Context):Term"></a>
@@ -361,15 +374,15 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.checking.RuleBasedChecker.SimplifyInferred#traverse" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="traverse(t:info.kwarc.mmt.api.objects.Term)(implicitcon:info.kwarc.mmt.api.objects.Context,implicittheory:info.kwarc.mmt.api.objects.Term):info.kwarc.mmt.api.objects.Term"></a>
-      <a id="traverse(Term)(Context,Term):Term"></a>
+      <a id="traverse(t:info.kwarc.mmt.api.objects.Term)(implicitcon:info.kwarc.mmt.api.objects.Context,implicitu:Unit):info.kwarc.mmt.api.objects.Term"></a>
+      <a id="traverse(Term)(Context,Unit):Term"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">traverse</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="con">con: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="theory">theory: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
+        <span class="name">traverse</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="con">con: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="u">u: <span class="extype" name="scala.Unit">Unit</span></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.checking.RuleBasedChecker.SimplifyInferred">SimplifyInferred</a> → <a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a></dd></dl></div>
@@ -430,8 +443,10 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="info.kwarc.mmt.api.objects.Traverser">
-              <h3>Inherited from <a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</h3>
+        <div class="parent" name="info.kwarc.mmt.api.objects.StatelessTraverser">
+              <h3>Inherited from <a href="../objects/StatelessTraverser.html" class="extype" name="info.kwarc.mmt.api.objects.StatelessTraverser">StatelessTraverser</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.objects.Traverser">
+              <h3>Inherited from <a href="../objects/Traverser.html" class="extype" name="info.kwarc.mmt.api.objects.Traverser">Traverser</a>[<span class="extype" name="scala.Unit">Unit</span>]</h3>
             </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">

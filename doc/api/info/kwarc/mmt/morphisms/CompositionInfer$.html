@@ -45,7 +45,7 @@
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>m1: a1 =&gt; b1 and m2: a2 =&gt; b2 and b1 &lt;= a2  ---&gt;  m1;m2: a1 =&gt; b2</p><p>cannot infer type of empty composition
-</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="../../../../../../src/mmt-lf/src/info/kwarc/mmt/morphisms/Rules.scala" target="_blank">Rules.scala</a></dd></dl><div class="toggleContainer block">
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="file:/C:/frabe/MMT/src/mmt-lf/src/info/kwarc/mmt/morphisms/Rules.scala" target="_blank">Rules.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a href="../api/checking/InferenceRule.html" class="extype" name="info.kwarc.mmt.api.checking.InferenceRule">InferenceRule</a>, <a href="../api/checking/Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a>, <a href="../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
@@ -157,18 +157,18 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.morphisms.CompositionInfer#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="apply(solver:info.kwarc.mmt.api.checking.Solver)(tm:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):Option[info.kwarc.mmt.api.objects.Term]"></a>
-      <a id="apply(Solver)(Term)(Stack,History):Option[Term]"></a>
+      <a id="apply(solver:info.kwarc.mmt.api.checking.Solver)(tm:info.kwarc.mmt.api.objects.Term,covered:Boolean)(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):Option[info.kwarc.mmt.api.objects.Term]"></a>
+      <a id="apply(Solver)(Term,Boolean)(Stack,History):Option[Term]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="solver">solver: <a href="../api/checking/Solver.html" class="extype" name="info.kwarc.mmt.api.checking.Solver">Solver</a></span>)</span><span class="params">(<span name="tm">tm: <a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="../api/objects/Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="../api/checking/History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
+        <span class="name">apply</span><span class="params">(<span name="solver">solver: <a href="../api/checking/Solver.html" class="extype" name="info.kwarc.mmt.api.checking.Solver">Solver</a></span>)</span><span class="params">(<span name="tm">tm: <a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="covered">covered: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="../api/objects/Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="../api/checking/History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">solver</dt><dd class="cmt"><p>provides callbacks to the currently solved system of judgments</p></dd><dt class="param">tm</dt><dd class="cmt"><p>the term</p></dd><dt>returns</dt><dd class="cmt"><p>the inferred type if inference was possible
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">solver</dt><dd class="cmt"><p>provides callbacks to the currently solved system of judgments</p></dd><dt class="param">tm</dt><dd class="cmt"><p>the term</p></dd><dt class="param">covered</dt><dd class="cmt"><p>if true, well-formedness may be assumed</p></dd><dt class="param">stack</dt><dd class="cmt"><p>its context</p></dd><dt class="param">history</dt><dd class="cmt"><p>the history so far</p></dd><dt>returns</dt><dd class="cmt"><p>the inferred type if inference was possible
 </p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.morphisms.CompositionInfer">CompositionInfer</a> → <a href="../api/checking/InferenceRule.html" class="extype" name="info.kwarc.mmt.api.checking.InferenceRule">InferenceRule</a></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
