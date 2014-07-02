@@ -44,11 +44,15 @@ object Extractor {
                        f(IsAliasFor(c.home % a, c.path))
                      }
                   case s: Structure =>
+                     val from = s.from match {
+                        case OMPMOD(p,_) => p
+                        case f => TheoryExp.simplify(s.from).toMPath
+                     }
                      if (s.isInclude) {
-                        f(Includes(t.path, TheoryExp.simplify(s.from).toMPath))
+                        f(Includes(t.path, from))
                      } else {
                         f(dec)
-                        f(HasDomain(s.path, TheoryExp.simplify(s.from).toMPath))
+                        f(HasDomain(s.path, from))
                         f(HasCodomain(s.path, TheoryExp.simplify(s.to).toMPath))
                         f(IsStructure(s.path))
                      }

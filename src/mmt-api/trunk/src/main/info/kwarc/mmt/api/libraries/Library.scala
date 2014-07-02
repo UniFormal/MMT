@@ -246,9 +246,7 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
     * the home of the new declarations is adapted
     */
    private def instantiate(decl: Declaration, params: Context, args: List[Term]): Declaration = {
-      // special case: if no arguments are provided, we return a declaration in context
-      if (args.length == 0)
-         return decl
+      if (args.isEmpty) return decl // lookup from within parametric theory does not provide arguments
       val subs: Substitution = (params / args).getOrElse {
          throw GetError("number of arguments does not match number of parameters")
       }
@@ -378,15 +376,9 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
          }
       case TUnion(ts) => (ts flatMap importsTo).iterator //TODO remove duplicates
    }
-
-   /** Checks whether a theory ("from") is included into another ("to"), transitive, reflexive */
-   def imports(from: Term, to: Term) : Boolean = {
-      TheoryExp.imports(from,to) {(f,t) => 
-         importsTo(OMMOD(t)) contains OMMOD(f)
-      }
-   }
    
    def getImplicit(from: Term, to: Term) : Option[Term] = implicitGraph(from, to)
+   // TODO should be private, public only because of Archive.readRelational
    def addImplicit(from: Term, to: Term, morph: Term) {implicitGraph(from, to) = morph}
 
    // TODO move to elaborator
@@ -451,7 +443,7 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
     try {
        e match {
           case l: Link if l.isImplicit =>
-                implicitGraph(l.from, l.to) = l.toTerm
+             implicitGraph(l.from, l.to) = l.toTerm
           case t: DeclaredTheory =>
              t.getIncludes foreach {m =>
                  implicitGraph(OMMOD(m), t.toTerm) = OMIDENT(OMMOD(m))

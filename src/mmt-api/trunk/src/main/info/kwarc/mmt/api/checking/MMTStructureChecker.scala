@@ -68,7 +68,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             }
             checkContext(contextMeta, t.parameters)
             logGroup {
-               t.getPrimitiveDeclarations foreach {d => check(t.getInnerContext, d)}
+               t.getPrimitiveDeclarations foreach {d => check(context ++ t.getInnerContext, d)}
             }
          case t: DefinedTheory =>
             val dfR = checkTheory(context, t.df)
@@ -77,7 +77,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             checkTheory(context, v.from)
             checkTheory(context, v.to)
             logGroup {
-               v.getPrimitiveDeclarations foreach {d => check(context, d)}
+               v.getPrimitiveDeclarations foreach {d => check(context ++ v.codomainAsContext, d)}
             }
          case v: DefinedView =>
             checkTheory(context, v.from)
@@ -149,8 +149,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             getTermToCheck(c.tpC, "type") foreach {t =>
                val (unknowns, tR, valid) = prepareTerm(t)
                if (valid) {
-                  val j = Inhabitable(Stack(scope, context), tR)
-                  objectChecker(CheckingUnit(c.path $ TypeComponent, unknowns, j))
+                  val j = Inhabitable(Stack(Context()), tR)
+                  objectChecker(CheckingUnit(c.path $ TypeComponent, context, unknowns, j))
                }
             }
             // == additional check in a link ==
@@ -174,8 +174,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                if (valid) {
                   c.tp match {
                      case Some(tp) =>
-                        val j = Typing(Stack(scope, context), dR, tp, None)
-                        objectChecker(CheckingUnit(c.path $ DefComponent, unknowns, j))
+                        val j = Typing(Stack(Context()), dR, tp, None)
+                        objectChecker(CheckingUnit(c.path $ DefComponent, context, unknowns, j))
                      case None =>
                         //TODO infer type
                   }
@@ -523,7 +523,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       // finally, check the individual maps in subs
       subs.map {
          case Sub(n, t) =>
-            val tR = checkTerm(to,t)
+            val tR = checkTerm(context ++ to,t)
             Sub(n, tR)
       }
    }

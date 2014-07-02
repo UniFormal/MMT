@@ -54,7 +54,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
       //temporary hack: 4th components indicates that the type was generated
       (if (info.kwarc.mmt.api.metadata.Generated(this)) List(StringLiteral("")) else Nil)
    override def toString = this match {
-      case IncludeVarDecl(p) => p.toString
+      case IncludeVarDecl(p, args) => p.toString + args.mkString(" ")
       case _ => name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")
    }
    private def tpN = tp.map(t => <type>{t.toNode}</type>).getOrElse(Nil)
@@ -79,7 +79,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
 
 object IncludeVarDecl {
    def apply(p: MPath, args: List[Term]) = VarDecl(LocalName(ComplexStep(p)), Some(OMPMOD(p, args)), None, None)
-   def unapply(vd: VarDecl) = vd match {
+   def unapply(vd: VarDecl): Option[(MPath, List[Term])] = vd match {
       case VarDecl(LocalName(List(ComplexStep(p))), Some(OMPMOD(q, args)), None, _) if p == q => Some((p,args))
       case _ => None
    }
@@ -156,7 +156,7 @@ case class Context(variables : VarDecl*) extends Obj {
       des.reverse
    }
    /** all theories directly included into this context */
-   def getIncludes = variables flatMap {
+   def getIncludes: List[MPath] = variables.toList flatMap {
       case IncludeVarDecl(p, args) => List(p)
       case _ => Nil
    }
@@ -281,8 +281,6 @@ object StructureSub {
    }
 }
 
-
-
 /** substitution between two contexts */
 case class Substitution(subs : Sub*) extends Obj {
    type ThisType = Substitution
@@ -306,6 +304,10 @@ case class Substitution(subs : Sub*) extends Obj {
       }
       Context(decls : _*)
    }
+   def mapTerms(f: Term => Term): Substitution = this map {s =>
+      Sub(s.name, f(s.target))
+   }
+
    override def toString = this.map(_.toString).mkString("",", ","")
    def toNode =
       <om:OMBVAR>{mdNode}{subs.zipWithIndex.map(x => x._1.toNode)}</om:OMBVAR>

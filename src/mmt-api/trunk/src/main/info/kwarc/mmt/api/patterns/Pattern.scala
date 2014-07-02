@@ -18,8 +18,7 @@ import scala.io.Source
  * @param params the parameters of the declaration patterns
  * @param body   the body of the declaration pattern that consists of symbol declarations             
  */
-class Pattern(val home: Term, val name : LocalName, val params: Context, val body : Context, val notC: NotationContainer) extends Declaration {
-   def not = notC.parsing
+class Pattern(val home: Term, val name : LocalName, val params: Context, val body : Context, val notC: NotationContainer) extends Declaration with HasNotation {
    def toNode =
      <pattern name={name.toPath}>
    		{if (! params.isEmpty)

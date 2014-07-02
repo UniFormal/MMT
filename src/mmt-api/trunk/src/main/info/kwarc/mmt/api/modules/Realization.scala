@@ -16,6 +16,8 @@ class Realization(doc : DPath, name : LocalName, theory: MPath) extends Declared
 
 /** adds all rules of Realization to the RuleStore */
 class RealizationListener extends frontend.ChangeListener {
+   /** all rules added by this listener (used for deleting rules) */
+   private var rules: List[UOMRule] = Nil
    override val logPrefix = "realization-listener"
    override def onAdd(e: ContentElement) {
        e match {
@@ -23,10 +25,27 @@ class RealizationListener extends frontend.ChangeListener {
              r.getDeclarations.foreach {
                 case rc: RealizedOperatorConstant =>
                    log("adding rule for " + rc.path)
-                   controller.extman.ruleStore.add(rc.real.toRule(r.path))
+                   val rule = rc.real.toRule(r.path)
+                   rules ::= rule
+                   controller.extman.ruleStore.add(rule)
                 case _ =>
              }
           case _ =>
        }
+   }
+   override def onDelete(p: Path) {
+      p match {
+         case p: MPath =>
+            val toBeDeleted = rules.filter(r => r.parent == OMMOD(p))
+            if (toBeDeleted != Nil) {
+               controller.extman.ruleStore.delete {r => toBeDeleted contains r}
+               rules = rules filterNot {r => toBeDeleted contains r}
+            }
+         case _ => None
+      }
+   }
+   override def onClear {
+      controller.extman.ruleStore.delete {r => rules contains r}
+      rules = Nil
    }
 }

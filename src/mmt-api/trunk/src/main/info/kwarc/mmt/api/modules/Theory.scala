@@ -3,6 +3,7 @@ import info.kwarc.mmt.api._
 import symbols._
 import libraries._
 import objects._
+import objects.Conversions._
 import utils._
 import presentation.{StringLiteral,Omitted}
 
@@ -22,8 +23,11 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
       extends Theory(doc, name) with DeclaredModule {
    def role = Role_DeclaredTheory
    def components = OMID(path) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents
-   /** meta-theory, parameters, and this theory */
-   def getInnerContext = meta.map(p => Context(p)).getOrElse(Context()) ++ parameters ++ path
+   /** the context governing the body: meta-theory, parameters, and this theory */
+   def getInnerContext = {
+      val self = IncludeVarDecl(path, parameters.id.map(_.target))
+      meta.map(p => Context(p)).getOrElse(Context()) ++ parameters ++ self
+   }
    /** convenience method to obtain all constants */
    def getConstants:List[Constant] = getDeclarations.flatMap {
       case c: Constant => List(c)
@@ -68,6 +72,7 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
 
 class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) extends Theory(doc, name) with DefinedModule {
    val parameters = Context()
+   def getComponents = List((DefComponent, dfC))
    def role = Role_DefinedTheory
    def components = StringLiteral(name.toPath) :: innerComponents
    override def toString = path + innerString

@@ -4,9 +4,9 @@ import info.kwarc.mmt.api._
 import objects._
 import objects.Conversions._
 
-class UOMState(val t : Term, val scope: Term, val path : List[Int]) {
-  def enter(i : Int) : UOMState = new UOMState(t, scope, i :: path)
-  def exit(i : Int) : UOMState = new UOMState(t, scope, path.tail)
+case class UOMState(t : Term, context: Context, path : List[Int]) {
+  def enter(i : Int) : UOMState = new UOMState(t, context, i :: path)
+  def exit(i : Int) : UOMState = new UOMState(t, context, path.tail)
   override def toString = t.toString + "@" + path.mkString("_")  
 }
 
@@ -48,17 +48,18 @@ class UOM extends ObjectSimplifier {
     * The code uses [[Simple]] and [[SimplificationResult]] to remember whether a term has been simplified.
     * Therefore, structure sharing or multiple calls to this method do not cause multiple traversals. 
     */
-   def apply(obj: Obj, scope: Term, context: Context): obj.ThisType = {
+   def apply(obj: Obj, context: Context): obj.ThisType = {
+      log("called on " + controller.presenter.asString(obj) + " in context " + controller.presenter.asString(context))
       val result = obj match {
          case t: Term =>
             simplificationLog = Nil
-            val initState = new UOMState(t, scope, Nil)
+            val initState = new UOMState(t, context, Nil)
             val tS: Term = traverse(t,initState, context)
             tS
          case c: Context =>
-            c.mapTerms {case (sofar, t) => apply(t, scope, context ++ sofar)}
+            c.mapTerms {case (sofar, t) => apply(t, context ++ sofar)}
          case s: Substitution =>
-            s.map {case Sub(x,t) => Sub(x, apply(t, scope, context))}
+            s.map {case Sub(x,t) => Sub(x, apply(t, context))}
       }
       // this is statically well-typed, but we need a cast because Scala does not see it
       result.asInstanceOf[obj.ThisType]
@@ -70,16 +71,16 @@ class UOM extends ObjectSimplifier {
       // Note that certain operations remove the simplified marker: changing the toplevel, substitution application 
       def traverse(t: Term)(implicit con : Context, init: UOMState) : Term = t match {
          // this term is the result of simplification
-         case Simple(t) =>
-            log("not simplifying " + controller.presenter.asString(t))
-            t
+         /*case Simple(t) =>
+            log("already simplified " + controller.presenter.asString(t))
+            t*/
          // this term was simplified before resulting in tS
          case SimplificationResult(tS) => tS
          case OMM(t, mor) =>
             val tM = controller.globalLookup.ApplyMorphs(t, mor)
             traverse(tM)
          case OMA(OMS(_), _) =>
-            log("simplifying " + controller.presenter.asString(t))
+            log("trying to simplify " + controller.presenter.asString(t))
             logGroup {
                //log("state is" + init.t + " at " + init.path.toString)
                val (tS, globalChange) = logGroup {
@@ -96,9 +97,10 @@ class UOM extends ObjectSimplifier {
                   tSM
             }
          case OMS(p) =>
-            rs.abbrevRules(p).headOption match {
-              case Some(ar) => ar.term.from(t)
-              case None => Simple(t)
+            applyAbbrevRules(p) match {
+              case GlobalChange(tS) => tS.from(t)
+              case NoChange => Simple(t)
+              // LocalChange impossible
             }
          case _ =>
             val tS = Simple(Traverser(this, t))
@@ -160,10 +162,18 @@ class UOM extends ObjectSimplifier {
    }
   
    /** determines applicability of a rule */
-   private def inScope(currentTheory: Term, ruleTheory: Term): Boolean = {
-     controller.memory.content.hasImplicit(ruleTheory, currentTheory)
+   private def inScope(currentContext: Context, ruleTheory: Term): Boolean = {
+     controller.memory.content.hasImplicit(ruleTheory, ComplexTheory(currentContext))
    }
   
+   /** auxiliary object for matching */
+   private object OMAorOMS {
+      def unapply(t: Term) = t match {
+         case StrictOMA(strApps, p, args) => Some((p, args, false))
+         case OMS(p) => Some((p, Nil, true))
+         case _ => None
+      } 
+   }
    /** applies all DepthRule's that are applicable at toplevel of an OMA
     * for each arguments, all rules are tried
     * if a rule leads to a GlobalChange, we stop; otherwise, we go to the next argument
@@ -179,27 +189,18 @@ class UOM extends ObjectSimplifier {
             //auxiliary pattern-matcher to unify the cases for OMA and OMS
             //in order to permit distinguishing OMA(OMS(p),Nil) and OMS(p), a boolean is returned
             //that indicates which case applied
-            object OMAorOMS {
-               def unapply(t: Term) = t match {
-                  case StrictOMA(strApps, p, args) => Some((p, args, false))
-                  case OMS(p) => Some((p, Nil, true))
-                  case _ => None
-               } 
-            }
             arg match {
                case OMAorOMS(inner, inside, isOMS) =>
                   rs.depthRules.getOrElse((outer,inner), Nil) foreach {rule =>
-                     if (inScope(state.scope, rule.parent)) {
+                     if (inScope(state.context, rule.parent)) {
                         val ch = rule.apply(before, inside, afterRest)
-                        //log("rule " + rule + ": " + ch)
                         ch match {
                            case NoChange =>
                            case LocalChange(args) =>
-                              //saveSimplificationRule(rule)
                               return applyDepthRules(outer, before, args ::: afterRest)
                            //return immediately upon GlobalChange
                            case GlobalChange(tS) =>
-                              //saveSimplificationRule(rule)
+                              log("simplified to " + controller.presenter.asString(tS))
                               return GlobalChange(tS)
                         }
                      }
@@ -219,24 +220,31 @@ class UOM extends ObjectSimplifier {
       var insideS = inside
       var changed = false
       rs.breadthRules.getOrElse(op,Nil) foreach {rule =>
-         if (inScope(state.scope, rule.parent)) {
+         if (inScope(state.context, rule.parent)) {
             val ch = rule.apply(insideS)
-            //log("rule " + rule + ": " + ch)
+            log("rule " + rule + ": " + ch)
             ch match {
                case NoChange =>
                case LocalChange(args) =>
                   insideS = args
                   changed = true
-                  //saveSimplificationRule(rule)
-   
-               case GlobalChange(t) => 
-                 //saveSimplificationRule(rule)
+               case GlobalChange(t) =>
+                 log("simplified to " + controller.presenter.asString(t))
                  return GlobalChange(t)
             }
          }
       }
       //we have to check for insideS == inside here in case a BreadthRule falsely thinks it changed the term (such as commutativity when the arguments are already in normal order)
       if (! changed || insideS == inside) NoChange else LocalChange(insideS)
+   }
+   
+   private def applyAbbrevRules(p: GlobalName)(implicit state: UOMState): Change = {
+      rs.abbrevRules.getOrElse(p,Nil) foreach {rule =>
+         if (inScope(state.context, rule.parent)) {
+            return GlobalChange(rule.term)
+         }
+      }
+      NoChange
    }
 }
 

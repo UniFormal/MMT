@@ -10,19 +10,39 @@ import objects.Conversions._
 import info.kwarc.mmt.lf._
 
 /**
- * theory : Universe
+ * theory : Inhabitable
  */
-object TheoryTypeUniverse extends UniverseRule(ModExp.theorytype) {
+object TheoryTypeInhabitable extends InhabitableRule(ModExp.theorytype) {
    def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Boolean = {
-      if (tp != TheoryType()) return solver.error("non-OMS occurrence of theory type")
-      true
+      tp match {
+         case TheoryType(params) =>
+            if (params.isEmpty)
+               true
+            else
+               solver.check(IsTheory(stack, ComplexTheory(params)))
+      }
    }
 }
 
 /**
- * a => b : Universe
+ * theory : Universe
  */
-object MorphTypeUniverse extends UniverseRule(ModExp.morphtype) {
+object TheoryTypeUniverse extends UniverseRule(ModExp.theorytype) {
+   def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Boolean = {
+      tp match {
+         case TheoryType(params) =>
+            if (params.isEmpty)
+               true
+            else
+               solver.check(IsTheory(stack, ComplexTheory(params)))
+      }
+   }
+}
+
+/**
+ * a => b : Inhabitable
+ */
+object MorphTypeInhabitable extends InhabitableRule(ModExp.morphtype) {
    def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Boolean = {
       val MorphType(from,to) = tp
       solver.check(IsTheory(stack, from)) && solver.check(IsTheory(stack, to)) 
@@ -33,8 +53,9 @@ object MorphTypeUniverse extends UniverseRule(ModExp.morphtype) {
  * C Context  --->  {{C}} : theory
  */
 object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Term] = tm match {
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
       case ComplexTheory(con) =>
+         if (covered) return Some(TheoryType(Nil))
          con.mapVarDecls {case (c, vd) =>
            val currentStack = stack ++ c
            val mayhold = vd match {
@@ -68,7 +89,7 @@ object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.pat
            if (!mayhold)
               return None
          }
-         Some(TheoryType())
+         Some(TheoryType(Nil))
       case _ =>
          solver.error("illegal use of " + ModExp.complextheory)
          None
@@ -200,7 +221,7 @@ object MorphCheck extends TypingRule(ModExp.morphtype) {
  * T: theory  --->  id_T : T=>T
  */
 object IdentityInfer extends InferenceRule(ModExp.identity, OfType.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Term] = {
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case OMIDENT(t) =>
            solver.check(IsTheory(stack, t))
@@ -215,7 +236,7 @@ object IdentityInfer extends InferenceRule(ModExp.identity, OfType.path) {
  * cannot infer type of empty composition
  */
 object CompositionInfer extends InferenceRule(ModExp.composition, OfType.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Term] = {
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       val OMCOMP(ms) = tm
       ms match {
         case Nil => None
@@ -223,7 +244,7 @@ object CompositionInfer extends InferenceRule(ModExp.composition, OfType.path) {
         case hd::tl =>
            (solver.inferType(hd), solver.inferType(OMCOMP(tl))) match {
               case (Some(MorphType(a1,b1)), Some(MorphType(a2,b2))) =>
-                 solver.check(Equality(stack, b1,a2, Some(TheoryType())))
+                 solver.check(Equality(stack, b1,a2, Some(TheoryType(Nil))))
                  Some(MorphType(a1,b2))
               case _ => None
            }
