@@ -5,18 +5,13 @@ import objects._
 import symbols._
 
 /**
- * A Validator is a stateless convenience data structure that provides a function for a validating [[CheckingUnit]]s.
- * It can manage errors and dependencies.  
+ * the primary object level checker of MMT
+ * 
+ * It checks [[CheckingUnit]]s by invoking [[Solver]]s and updates the checked objects with the solutions.
+ * It manages errors and dependencies.  
  */
 class RuleBasedChecker extends ObjectChecker {
       override val logPrefix = "validator"
-      /**
-       * @param v the validation unit to validate
-       * @param errorCont a continuation that will be called on every validation error
-       * @param depCont a continuation that will be called on every component that the validation depends on
-       * @return (b,t) where b is true iff validation succeeded and
-       * t is the result of substituting for the solved variables in the validated term 
-       */
       def apply(cu: CheckingUnit)(implicit errorCont: ErrorHandler, relCont: RelationHandler) {
          log("checking unit " + cu.component + ": " + cu.judgement.present(o => controller.presenter.asString(o)))
          val tc = controller.globalLookup.getComponent(cu.component) match {
@@ -25,7 +20,7 @@ class RuleBasedChecker extends ObjectChecker {
          }
          tc.dependsOn.clear
          // ** checking **
-         val solver = new Solver(controller, cu.judgement.stack.theory, cu.unknowns)
+         val solver = new Solver(controller, cu.context, cu.unknowns)
          solver.logPrefix = cu.component.toString
          val mayHold = logGroup {
             solver.apply(cu.judgement)
@@ -34,8 +29,9 @@ class RuleBasedChecker extends ObjectChecker {
          val psol = solver.getPartialSolution
          val remUnknowns = solver.getUnsolvedVariables 
          val subs = psol.toPartialSubstitution
-         val tI = cu.judgement.wfo ^ subs //fill in inferred values
-         val tIS = SimplifyInferred(tI,cu.judgement.stack.theory,remUnknowns) //substitution may have created redexes
+         val tI = cu.judgement.wfo ^? subs //fill in inferred values
+         val tIS = SimplifyInferred(tI,cu.context ++ remUnknowns) //substitution may have created redexes
+         TermProperty.eraseAll(tIS) // reset term properties (whether a term is, e.g., simplified, depends on where it is used)
          val result = if (remUnknowns.variables.isEmpty) tIS else OMBIND(OMID(parser.ObjectParser.unknown), remUnknowns, tIS)
          //now report results, dependencies, errors
          val solution = solver.getSolution
@@ -53,12 +49,12 @@ class RuleBasedChecker extends ObjectChecker {
                solver.logState(logPrefix)
                val errors = solver.getErrors
                errors foreach {e =>
-                  errorCont(InvalidUnit(cu, e.narrowDownError))
+                  errorCont(InvalidUnit(cu, e.narrowDownError, cu.present(solver.presentObj)))
                }
                if (errors.isEmpty) {
                   solver.getConstraints foreach {dc =>
                      val h = dc.history + "unresolved constraint"
-                     errorCont(InvalidUnit(cu, h))
+                     errorCont(InvalidUnit(cu, h, cu.present(solver.presentObj)))
                   }
                }
             }
@@ -78,10 +74,10 @@ class RuleBasedChecker extends ObjectChecker {
       /**
        * A Traverser that simplifies all subterms that are the result of inference (recognized by the lack of a SourceRef)
        */
-      object SimplifyInferred extends Traverser[Term] {
-         def traverse(t: Term)(implicit con : Context, theory: Term) : Term = {
+      object SimplifyInferred extends StatelessTraverser {
+         def traverse(t: Term)(implicit con : Context, u: Unit) : Term = {
             if (parser.SourceRef.get(t).isEmpty)
-               controller.simplifier(t, theory, con)
+               controller.simplifier(t, con)
             else
                Traverser(this, t)
          }

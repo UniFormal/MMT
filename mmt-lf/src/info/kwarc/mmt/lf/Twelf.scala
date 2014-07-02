@@ -26,7 +26,7 @@ object Twelf {
 
 /** Utility for starting the catalog and calling the Twelf compiler
   */
-class Twelf extends Importer {
+class Twelf extends Importer with frontend.ChangeListener {
    val key = "twelf-omdoc"
    
    def includeFile(n: String) : Boolean = n.endsWith(".elf")
@@ -49,11 +49,10 @@ class Twelf extends Importer {
       catalog = new Catalog(HashSet(), HashSet("*.elf"), HashSet(".svn"), port, true, report("lfcatalog", _))
       catalog.init    //  throws PortUnavailable
    }
-   override def register(arch: Archive) {
+   override def onNewArchive(arch: Archive) {
       val dim = arch.properties.get("twelf").getOrElse(arch.sourceDim)
       val stringLoc = (arch.root / dim).getPath
       catalog.addStringLocation(stringLoc)
-      super.register(arch)
    }
    override def destroy {
       catalog.destroy

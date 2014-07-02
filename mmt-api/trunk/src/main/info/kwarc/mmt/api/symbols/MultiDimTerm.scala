@@ -77,7 +77,7 @@ class TermContainer extends AbstractTermContainer {
    def lastChangeParsed = _parsed.time
    /** true if the term must be (re)analyzed */
    def isAnalyzedDirty =  _analyzed.dirty
-   /** marks this term for reanalyzation */
+   /** marks this term for re-analysis */
    def setAnalyzedDirty {_analyzed.dirty = true}
    /** time of the last change */
    def lastChangeAnalyzed = _analyzed.time

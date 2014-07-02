@@ -71,7 +71,7 @@ class MMTInterpolator(controller: frontend.Controller) {
         val t = controller.textParser(pu)(ErrorThrower)
         val tI = t ^ cont.toPartialSubstitution
         if (check) {
-	        val stack = Stack(OMMOD(theory), cont)
+	        val stack = Stack(Context(theory) ++ cont)
 	        val (tR, tpR) = checking.Solver.check(controller, stack, tI).getOrElse {
 	           throw InvalidObject(t, "term was parsed but did not type-check")
 	        }
@@ -95,14 +95,14 @@ class MMTInterpolator(controller: frontend.Controller) {
       /** uom"s" parses and simplifies s */
       def uom(ts: Term*): Term = {
          val t = mmt(ts : _*)
-	     controller.simplifier(t, OMMOD(theory), Context())
+	     controller.simplifier(t, Context(theory))
       }
       /** r"s" parses and type-checks s */
       def r(ts: Term*): Term = parse(sc, ts.toList, None, true)
       /** s"s" parses, type-checks, and simplifies s */
       def rs(ts: Term*): Term = {
          val t = r(ts : _*)
-	     controller.simplifier(t, OMMOD(theory), Context())
+	     controller.simplifier(t, Context(theory))
       }
       /** cont"s" parses s into a Context */
       def cont(ts: Term*) : Context = {

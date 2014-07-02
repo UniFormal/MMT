@@ -54,7 +54,7 @@ object UniverseKind extends UniverseRule(Typed.kind) {
 
 /** the type inference rule type:kind */
 object UnivTerm extends InferenceRule(Typed.ktype, OfType.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Term] = tm match {
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
       case OMS(Typed.ktype) => Some(OMS(Typed.kind))
       case _ => None
    }
@@ -64,8 +64,9 @@ object UnivTerm extends InferenceRule(Typed.ktype, OfType.path) {
  * This rule goes beyond LF but it does not harm because it only adds kinds and thus do not affect types and terms   
  */
 object EqualityTerm extends InferenceRule(LFEquality.path, OfType.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Term] = tm match {
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
       case LFEquality(a,b) =>
+         if (covered) return Some(OMS(Typed.kind))
          val aT = solver.inferType(a)(stack, history + "infering left term")
          val bT = solver.inferType(b)(stack, history + "infering right term")
          val equalTypes = solver.check(Equality(stack,a,b,None))(history + "types must be equal")

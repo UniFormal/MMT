@@ -11,7 +11,7 @@ import info.kwarc.mmt.lf._
  * p |- t: U  --->  |- formation(p,t) : U
  */
 object FormationInfer extends InferenceRule(Terms.formation.path, OfType.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History): Option[Term] =
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] =
      tm match {
        case Terms.formation(p, t) =>
           //TODO check that inferred type does not depend on p
@@ -23,7 +23,7 @@ object FormationInfer extends InferenceRule(Terms.formation.path, OfType.path) {
  * p |- t: a  --->  |- refl(p,t) : formation(p,a)
  */
 object ReflInfer extends InferenceRule(Terms.refl.path, OfType.path) {
-  def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History): Option[Term] =
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] =
     tm match {
        case Terms.refl(p,t) =>
           solver.inferType(t)(stack ++ Context(p), history) map {tI => Terms.formation(p,tI)}
@@ -34,7 +34,7 @@ object ReflInfer extends InferenceRule(Terms.refl.path, OfType.path) {
  * |- t: formation(p,a)  --->  |- elim(t,m) : m(a)
  */
 object ElimInfer extends InferenceRule(Terms.elim.path, OfType.path) {
-  def apply(solver: Solver)(tm: Term)(implicit stack : Stack, history: History) : Option[Term] = {
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack : Stack, history: History) : Option[Term] = {
      tm match {
        case Terms.elim(t,mor) =>
           solver.inferType(t) flatMap {

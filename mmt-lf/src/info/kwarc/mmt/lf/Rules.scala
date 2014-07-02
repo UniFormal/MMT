@@ -43,6 +43,8 @@ object Common {
          case _ => tpS 
       }
    }
+   def pickFresh(solver: Solver, x: LocalName)(implicit stack: Stack) =
+      Context.pickFresh(solver.constantContext ++ solver.getPartialSolution ++ stack.context, x)
 }
 
 import Common._
@@ -50,11 +52,11 @@ import Common._
 /** the type inference rule x:A:type|-B:U  --->  Pi x:A.B : U
  * This rule works for any universe U */
 object PiTerm extends InferenceRule(Pi.path, OfType.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Term] = {
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case Pi(x,a,b) =>
-           isType(solver,a)
-           val (xn,sub) = Context.pickFresh(stack.context, x)
+           if (!covered) isType(solver,a)
+           val (xn,sub) = Common.pickFresh(solver, x)
            solver.inferType(b ^? sub)(stack ++ xn % a, history) flatMap {bT =>
               if (bT.freeVars contains xn) {
                  solver.error("type of Pi-term has been inferred as shown, but contains free variable " + xn)
@@ -70,11 +72,11 @@ object PiTerm extends InferenceRule(Pi.path, OfType.path) {
 /** the type inference rule x:A|-t:B  --->  lambda x:A.t : Pi x:A.B
  * This rule works for B:U for any universe U */
 object LambdaTerm extends InferenceRule(Lambda.path, OfType.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Term] = {
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case Lambda(x,a,t) =>
-           isType(solver,a)
-           val (xn,sub) = Context.pickFresh(stack.context, x)
+           if (!covered) isType(solver,a)
+           val (xn,sub) = Common.pickFresh(solver, x)
            solver.inferType(t ^? sub)(stack ++ xn % a, history) map {b => Pi(xn,a,b)}
         case _ => None // should be impossible
       }
@@ -84,9 +86,9 @@ object LambdaTerm extends InferenceRule(Lambda.path, OfType.path) {
 /** the type inference rule f : Pi x:A.B  ,  t : A  --->  f t : B [x/t]
  * This rule works for B:U for any universe U */
 object ApplyTerm extends InferenceRule(Apply.path, OfType.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Term] = tm match {
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
      case Apply(f,t) =>
-        history += "inferring type of function"
+        history += "inferring type of function " + solver.presentObj(f)
         val fTOpt = solver.inferType(f)(stack, history.branch)
         fTOpt match {
            case None =>
@@ -99,7 +101,7 @@ object ApplyTerm extends InferenceRule(Apply.path, OfType.path) {
                  history += "function type is: " + solver.presentObj(fTPi)
               fTPi match {
                  case Pi(x,a,b) =>
-                    solver.check(Typing(stack, t, a))(history + "argument must have domain type")
+                    if (!covered) solver.check(Typing(stack, t, a))(history + "argument must have domain type")
                     Some(b ^? (x / t))
                  case _ =>
                     // definition expansion must also consider unknown variables whose definitions are not known yet
@@ -119,11 +121,11 @@ object PiType extends TypingRule(Pi.path) {
             //isType(solver,a1)
             solver.check(Equality(stack,a1,a2,None))(history+"domains must be equal")
             // solver.checkTyping(a2,LF.ktype)(stack) is redundant after the above have succeeded, but checking it anyway might help solve variables
-            val (xn,sub1) = Context.pickFresh(stack.context, x1)
+            val (xn,sub1) = Common.pickFresh(solver, x1)
             val sub2 = x2 / OMV(xn)
             solver.check(Typing(stack ++ xn % a2, t ^? sub1, b ^? sub2))(history + "type checking rule for Pi")
          case (tm, Pi(x2, a2, b)) =>
-            val (xn,sub) = Context.pickFresh(stack.context, x2)
+            val (xn,sub) = Common.pickFresh(solver, x2)
             val j = Typing(stack ++ xn % a2,  Apply(tm, xn), b ^? sub)
             solver.check(j)(history + "type checking rule for Pi")
       }
@@ -331,6 +333,44 @@ object Solve extends SolutionRule(Apply.path) {
    }
 }
 
+/** This rule tries to solve for an unkown by applying lambda-abstraction on both sides and eta-reduction on the left.
+ *  Its effect is, for example, that X x = t is reduced to X = lambda x.t where X is a meta- and x an object variable. 
+ */
+object SolveType extends TypeSolutionRule(Apply.path) {
+   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean = {
+      tm match {
+         case Apply(t, OMV(x)) =>
+             val i = stack.context.lastIndexWhere(_.name == x)
+             if (i == -1) return false
+             var dropped = List(x) // the variables that we will remove from the context
+             var newCon : Context = stack.context.take(i) // the resulting context
+             // iterate over the variables vd after x
+             stack.context.drop(i+1) foreach {vd =>
+                if (vd.freeVars.exists(dropped.contains _)) {
+                   // vd depends on x, we use weakening to drop vd as well
+                   dropped ::= vd.name
+                } else {
+                   // append vd to the new context
+                   newCon = newCon ++ vd
+                }
+             }
+             // check whether weakening is applicable: dropped variables may not occur in t or Lambda(x,a,tm2)
+             if (t.freeVars.exists(dropped.contains _))
+                // most important special case: x occurs free in t so that eta is not applicable
+                return false
+             if (tp.freeVars.exists(dropped.filterNot(_ == x) contains _))
+                return false
+             // get the type of x and abstract over it
+             stack.context.variables(i) match {
+                case VarDecl(_, Some(a), _, _) => 
+                   val newStack = stack.copy(context = newCon)
+                   solver.solveTyping(t, Pi(x, a, tp))(newStack, history + ("solving by binding " + x)) // tpOpt map {tp => Pi(x,a,tp)}
+                case _ => false
+             }
+         case _ => false
+      }
+   }
+}
 
 /** the proof step ?:Pi x:A.B ----> lambda x:A.(?:B)
  *
@@ -401,3 +441,10 @@ class PiOrArrowElimRule(op: GlobalName) extends ElimProvingRule(op) {
 
 object PiElimRule extends PiOrArrowElimRule(Pi.path)
 object ArrowElimRule extends PiOrArrowElimRule(Arrow.path)
+
+
+object TheoryTypeWithLF extends ComputationRule(ModExp.theorytype) {
+   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) = tm match {
+      case TheoryType(params) => if (params.isEmpty) None else Some(Pi(params, TheoryType(Nil)))
+   }
+}

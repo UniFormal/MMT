@@ -49,6 +49,23 @@ class TermProperty[A](val property: utils.URI) {
    }
 }
 
+object TermProperty {
+   /** removes all term properties */
+   def eraseAll(t: Term) {
+      t.clientProperty.clear
+      t match {
+         case ComplexTerm(_, subs, cont, args) =>
+            subs.foreach {s => eraseAll(s.target)}
+            cont.foreach {v => 
+               v.tp foreach eraseAll
+               v.df foreach eraseAll
+            }
+            args foreach eraseAll
+         case _ =>
+      }
+   }
+}
+
 /**
  * An Obj represents an MMT object. MMT objects are represented by immutable Scala objects.
  */
@@ -257,13 +274,17 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
    def toCMLQVars(implicit qvars: Context) = <m:apply>{fun.toCMLQVars}{args.map(_.toCMLQVars)}</m:apply>
 }
 
-/** helper object */
-object OMA {
-   /**
-    * special application that elides empty argument lists:
-    * @return f if args is Nil, OMA(f, args) otherwise
-    */
-   def applyMaybeNil(f: Term, args: List[Term]) = if (args == Nil) f else OMA(f,args)
+/**
+ * special application that elides empty argument lists:
+ * @return f if args is Nil, OMA(f, args) otherwise
+ */
+object OMAorOMID {
+   def apply(f: Term, args: List[Term]) = if (args == Nil) f else OMA(f,args)
+   def unapply(t: Term) = t match {
+      case OMID(p) => Some((t, Nil))
+      case OMA(t, args) => Some((t, args))
+      case _ => None
+   }
 }
 
 /**

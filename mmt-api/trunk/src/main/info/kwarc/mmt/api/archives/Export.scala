@@ -64,11 +64,6 @@ trait Exporter extends BuildTarget { self =>
      narrationExporter.build(a, args, in)
    }
    
-   override def register(arch : Archive) {
-     contentExporter.register(arch)
-     narrationExporter.register(arch)
-   }
-   
    /** the file name for files representing folders, defaults to "", override as needed */
    protected def folderName = ""
    /** the file extension used for generated files, defaults to key, override as needed */

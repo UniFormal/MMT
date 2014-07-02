@@ -57,11 +57,6 @@ abstract class BuildTarget extends Extension {
       }
    }
    
-   /** registers an archive with this target */
-   def register(arch: Archive) {}
-   /** unregisters an archive with this target */
-   def unregister(arch: Archive) {}
-
    /** auxiliary method for deleting a file */
    protected def delete(f: File) {
        log("deleting " + f)
@@ -102,12 +97,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
    def inDim:  ArchiveDimension 
   /** the output archive folder */
    def outDim: ArchiveDimension
-   
-   override def register(arch : Archive) {
-      arch.timestamps.add(key, inDim.toString)
-      arch.errors.add(key)
-   }
-   
+     
    /** the file extension used for generated files, defaults to outDim, override as needed */
    def outExt: String = outDim match {
       case Dim(path@_*) => path.last
@@ -147,26 +137,23 @@ abstract class TraversingBuildTarget extends BuildTarget {
    }
    /** recursive building */
    private def buildAux(in : List[String] = Nil)(implicit a: Archive) {
+       def makeHandler = new ErrorContainer(Some(report))
        val errorMap = a.errors(key)
        //build every file
        val prefix = "[" + inDim + " -> " + outDim + "] "
        a.traverse[BuildTask](inDim, in, includeFile) ({case Current(inFile,inPath) =>
            val outFile = outPath(a, inPath)
            log(prefix + inFile + " -> " + outFile)
-           val errorCont = errorMap.getOrElseUpdate(inPath, new ErrorContainer)
+           val errorCont = errorMap.getOrElseUpdate(inPath, makeHandler)
            errorCont.reset
            val bf = new BuildTask(inFile, false, inPath, a.narrationBase, outFile, errorCont)
            buildFile(a, bf)
-           if (! errorCont.isEmpty) {
-             log("errors follow")
-             errorCont.getErrors foreach log
-           }
-           a.timestamps(key).set(inPath)
+           a.timestamps(this).set(inPath)
            bf
        }, {
           case (Current(inDir, inPath), builtChildren) =>
              val outFile = folderOutPath(a, inPath)
-             val errorCont = errorMap.getOrElseUpdate(inPath, new ErrorContainer)
+             val errorCont = errorMap.getOrElseUpdate(inPath, makeHandler)
              errorCont.reset
              val bd = new BuildTask(inDir, true, inPath, a.narrationBase, outFile, errorCont) 
              buildDir(a, bd, builtChildren)
@@ -200,7 +187,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
      */  
    def update(a: Archive, args: List[String], in: List[String] = Nil) {
        a.traverse[Boolean](inDim, in, _ => true) ({case c @ Current(inFile, inPath) =>
-          a.timestamps(key).modified(inPath) match {
+          a.timestamps(this).modified(inPath) match {
              case Deleted =>
                 val outFile = outPath(a, inPath)
                 cleanFile(a, c)

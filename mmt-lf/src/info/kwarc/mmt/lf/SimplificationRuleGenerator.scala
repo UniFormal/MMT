@@ -12,7 +12,7 @@ class SimplificationRuleGenerator extends ChangeListener {
   override def onUpdate(e: ContentElement) {onAdd(e)}
   override def onAdd(e: ContentElement) {onCheck(e)}
   override def onDelete(p: Path) {
-     controller.extman.ruleStore.delete {r => r.path == p}
+     controller.extman.ruleStore.delete {r => p <= r.path}
   }
   override def onClear {
      controller.extman.ruleStore.delete {r => r.isInstanceOf[GeneratedDepthRule]}

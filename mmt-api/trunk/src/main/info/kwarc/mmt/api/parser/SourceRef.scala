@@ -14,6 +14,7 @@ case class SourceRegion(start: SourcePosition, end: SourcePosition) {
   def twoDimString = start.twoDimString + ":" + end.twoDimString
   /** number of characters in this region */
   def length = end.offset - start.offset + 1
+  def contains(that: SourceRegion) = start <= that.start && that.end <= end 
 }
 
 /** helper object */
@@ -62,6 +63,11 @@ case class SourcePosition(offset: Int, line: Int, column: Int) {
   def nl = SourcePosition(offset + 1, line + 1, 0)
   /** the SourceRegion of lenght 1 at this SourcePosition */
   def toRegion = SourceRegion(this, this)
+  def <=(that: SourcePosition) =
+     if (offset != -1 && that.offset != -1)
+        offset <= that.offset
+     else
+        line <= that.line && column <= that.column
 }
 
 /** helper object */
@@ -85,7 +91,8 @@ object SourcePosition {
  */
 case class SourceRef(container: URI, region: SourceRegion) {
    def toURI = container ## region.toString
-   override def toString = toURI.toString 
+   override def toString = toURI.toString
+   def contains(that: SourceRef) = container == that.container && (region contains that.region) 
 }
 
 object SourceRef extends metadata.Linker[SourceRef](mmt.mmtbase ? "metadata" ? "sourceRef") {

@@ -13,7 +13,7 @@ import info.kwarc.mmt.lf._
  * it expands using LF-abstraction to name : {params} THEORY = [params] {| body |}
  */
 class Pattern(home: Term, name : LocalName, val params: Context, val body : Context, notC: NotationContainer) extends
-     FinalConstant(home, name, None, TermContainer(Pi(params, TheoryType())),
+     FinalConstant(home, name, None, TermContainer(Pi(params, TheoryType(Context()))),
                                      TermContainer(Lambda(params, ComplexTheory(body))), None, notC) {
 
 }

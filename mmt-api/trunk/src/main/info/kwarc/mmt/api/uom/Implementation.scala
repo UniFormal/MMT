@@ -32,7 +32,7 @@ object Implementation {
    def S(name: GlobalName)(f: List[Term] => Term) = new Implementation(name, f)
    /** convenience factory for functions of type  -> obj */
    def constant(name: GlobalName)(f: () => Term) =
-      AbbrevRule(name, f())
+      new AbbrevRule(name, f())
    /** convenience factory for functions of type obj  -> obj */
    def A(name: GlobalName)(f: Term    => Term): Implementation = S(name) {args =>
       if (args.length != 1) throw UOMError("bad number of arguments")

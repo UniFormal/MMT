@@ -11,13 +11,14 @@ abstract class Judgement extends utils.HashEquality[Judgement] with checking.His
    */ 
   def freeVars : HashSet[LocalName]
   val stack: Stack
+  def context = stack.context
   
    /** a toString method that may call a continuation on its objects
     */
   def present(implicit cont: Obj => String) = presentAntecedent + " |- " + presentSucceedent
   def presentSucceedent(implicit cont: Obj => String) = toString
   def presentAntecedent(implicit cont: Obj => String) = {
-     stack.theory.toString + "; " + cont(stack.context)
+     cont(stack.context)
   }
   /*
   def map(fC: Stack => Stack, fT: (Term, Boolean) => Term): Judgement
@@ -113,7 +114,7 @@ case class Inhabited(stack: Stack, tp: Term) extends UnaryObjJudegment(stack, tp
  * An abbreviation for the meta-level typing judgement for valid theories
  */
 object IsTheory {
-   def apply(stack: Stack, thy: Term) = Typing(stack, thy, TheoryType())
+   def apply(stack: Stack, thy: Term) = Typing(stack, thy, TheoryType(Nil))
 }
 /**
  * An abbreviation for the meta-level typing judgement for valid morphisms
@@ -128,7 +129,7 @@ object IsRealization {
    def apply(stack: Stack, morphism: Term, from: Term) = IsMorphism(stack, morphism, from, ComplexTheory(Nil))
 }
 
-case class IsContext(stack: Stack, context: Context) extends UnaryObjJudegment(stack, context, "Context")
+case class IsContext(stack: Stack, con: Context) extends UnaryObjJudegment(stack, con, "Context")
 case class IsSubstitution(stack: Stack, substitution: Substitution, from: Context, to: Context) extends Judgement {
   lazy val freeVars = {
     val ret = new HashSet[LocalName]

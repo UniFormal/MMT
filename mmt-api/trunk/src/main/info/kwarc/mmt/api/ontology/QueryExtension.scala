@@ -64,7 +64,7 @@ class Analyze extends QueryExtension("analyze", ObjType, List(ObjType,ObjType)) 
       val mp = mpath(params)
       argument match { 
          case t: Term =>
-            val stack = Stack(OMMOD(mp), Context())
+            val stack = Stack(mp)
             val (tR, tpR) = checking.Solver.check(controller, stack, t).getOrElse {
                throw InvalidObject(t, "term was parsed but did not type-check")
             }
@@ -81,9 +81,9 @@ class Simplify extends QueryExtension("simplify", ObjType, ObjType) {
       val mp = mpath(params)
       argument match { 
          case OMBIND(Evaluator.free, cont, body) =>
-            controller.simplifier(body, OMMOD(mp), cont)
+            controller.simplifier(body, Context(mp) ++ cont)
          case o: Obj =>
-            controller.simplifier(o, OMMOD(mp), Context())
+            controller.simplifier(o, Context(mp))
          case _ => throw ImplementationError("evaluation of ill-typed query")
       }
    }

@@ -10,8 +10,8 @@ object ShallowPolymorphism extends InhabitableRule(Pi.path) {
       tp match {
          case Pi(x,a,b) =>
             val historyArg = history + "toplevel argument must be typed by universe"
-            solver.inferTypeAndThen(a)(stack, historyArg) {u =>
-               solver.check(Universe(stack, u))(historyArg)
+            solver.inferTypeAndThen(a)(stack, historyArg + "infer type") {u =>
+               solver.check(Universe(stack, u))(historyArg + "check universe")
             } &&
             solver.check(Inhabitable(stack++x%a, b))
       }

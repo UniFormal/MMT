@@ -65,7 +65,6 @@ abstract class Structure extends Declaration with Link {
 class DeclaredStructure(val home : Term, val name : LocalName, val tpC: TermContainer, val isImplicit : Boolean)
       extends Structure with DeclaredLink {
    def role = Role_Structure
-   /** the domain is not part of the term components because it is just a Path */ 
    def getComponents = List((DomComponent, tpC))
 }
 
@@ -82,6 +81,7 @@ class DefinedStructure(val home : Term, val name : LocalName,
                        val tpC: TermContainer, val dfC : TermContainer, val isImplicit : Boolean)
       extends Structure with DefinedLink {
    def role = Role_DefinedStructure
+   def getComponents = List((DomComponent, tpC), (DefComponent, dfC))
 }
 
 

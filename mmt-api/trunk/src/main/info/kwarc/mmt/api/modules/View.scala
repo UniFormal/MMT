@@ -65,6 +65,7 @@ class DeclaredView(doc : DPath, name : LocalName, val from : Term, val to : Term
 class DefinedView(doc : DPath, name : LocalName, val from : Term, val to : Term, val dfC : TermContainer, val isImplicit : Boolean)
       extends View(doc, name) with DefinedModule with DefinedLink {
    def role = info.kwarc.mmt.api.Role_DefinedView
+   def getComponents = List((DefComponent, dfC))
 }
 
 object DefinedView {

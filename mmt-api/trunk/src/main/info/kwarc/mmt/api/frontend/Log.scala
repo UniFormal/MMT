@@ -38,7 +38,10 @@ class Report extends Logger {
    }
    /** logs an error */
    def apply(e : Error) {
-	   handlers.foreach(_.apply(ind, e))
+      if (groups contains "debug")
+         handlers foreach {_.apply(ind, e)}
+      else
+         apply("error", e.shortMsg)
 	}
    /** flushes all handlers */
    def flush {
@@ -139,7 +142,8 @@ class HtmlFileHandler(filename : File) extends FileHandler(filename) {
      val script = """<script type="text/javascript" src="script.js"></script>"""
      val jquery = """<script type="text/javascript" src="https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/script/jquery/jquery.js"></script>"""
      val css = """<link rel="stylesheet" type="text/css" href="style.css"></link>"""
-     file.println(s"<html>\n$jquery$script$css<body>\n")
+     val pref = """<?xml version="1.0" encoding="UTF-8"?>"""
+     file.println(s"$pref\n<html>\n$jquery$script$css<body>\n")
    }
    def apply(ind: Int, caller: String, group : String, msg : String) {
       file.println(s"""<div class="log $group" style="margin-left: $ind%">""")

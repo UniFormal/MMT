@@ -17,7 +17,7 @@ class MMTCompiler extends archives.Importer {
     
   def importDocument(bf: archives.BuildTask, seCont: documents.Document => Unit) {
     val doc = controller.read(bf.inFile, Some(bf.narrationDPath))(bf.errorCont)
-    val invErrors = controller.checker(doc)(bf.errorCont, checking.RelationHandler.ignore)
+    controller.checker(doc)(bf.errorCont, checking.RelationHandler.ignore)
     seCont(doc)
   }
 }

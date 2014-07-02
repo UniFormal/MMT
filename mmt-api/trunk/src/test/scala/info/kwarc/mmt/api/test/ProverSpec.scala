@@ -29,7 +29,7 @@ class ProverSpec extends FlatSpec with Matchers {
   val prover = new checking.Prover(controller)
   "A prover" should "detect if rules are applicable" in {
     val context = cont"[x: bool, y: bool]"
-    val stack = Stack(OMMOD(mpath), context)
+    val stack = Stack(Context(mpath) ++ context)
     val x = OMV("x")
     val y = OMV("y")
  

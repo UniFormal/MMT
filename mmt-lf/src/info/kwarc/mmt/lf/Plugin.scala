@@ -18,7 +18,8 @@ class Plugin extends frontend.Plugin {
       // type reconstruction rules
       em.ruleStore.add(PiType,PiTerm,ApplyTerm,LambdaTerm,
             Beta,Extensionality,PiCongruence,LambdaCongruence,
-            Solve,ExpandArrow)
+            Solve,SolveType,ExpandArrow,
+            TheoryTypeWithLF)
       // computation rules
       em.ruleStore.add(UnsafeBeta)
       // proof rules

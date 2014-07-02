@@ -23,6 +23,11 @@ object RelationHandler {
  * see also [[Checker]]
  */
 trait ObjectChecker extends Extension {
+   /**
+    * @param cu the cheching unit to check
+    * @param errorCont a continuation that will be called on every validation error
+    * @param relCont a continuation that will be called on found relations
+    */
    def apply(cu: CheckingUnit)(implicit errorCont: ErrorHandler, relCont: RelationHandler)
 }
 
