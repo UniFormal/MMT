@@ -76,7 +76,12 @@ class STeXImporter extends Importer {
         val docXML = controller.getDocument(dpath).toNodeExpanded(controller.memory.content, controller.memory.narration)
         (docXML.toString, Nil)
       case _ => //reporting errors
-        ("",errors)
+        val doc = try {
+          controller.getDocument(dpath).toNodeExpanded(controller.memory.content, controller.memory.narration).toString
+        } catch {
+          case e : Throwable => ""
+        }
+        (doc, errors)
     }
   } 
   
@@ -246,40 +251,54 @@ class STeXImporter extends Importer {
     }
   }
   
-  def makeNotation(prototype : scala.xml.Node, rendering : scala.xml.Node)(implicit dpath : DPath, thy : DeclaredTheory, spath : GlobalName) : TextNotation = {
-    val argMap : collection.mutable.Map[String, Int] = new collection.mutable.HashMap() 
-    val protoBody = scala.xml.Utility.trim(prototype).child.head
-    val renderingChildren = scala.xml.Utility.trim(rendering).child.toList
+  abstract class ProtoPlaceholder(val nr : Int)
+  case class ProtoArg(override val nr : Int) extends ProtoPlaceholder(nr)
+  case class ProtoVar(override val nr : Int) extends ProtoPlaceholder(nr)
+  case class ProtoSub(override val nr: Int) extends ProtoPlaceholder(nr)
+  
+  
+  def parsePrototype(protoBody : scala.xml.Node, inBinder : Boolean = false)(implicit dpath : DPath) :(GlobalName, Map[String, ProtoPlaceholder]) = {
+    val argMap : collection.mutable.Map[String, ProtoPlaceholder] = new collection.mutable.HashMap()
+    var nextArgNumber = 1 //start
     val symName = protoBody.label match {
       case "OMA" | "OMBIND"=> 
         val n = protoBody.child.head
         n.label match {
-          case "OMS"  => 
-            val cd = (n \ "@cd").text
-            val name = (n \ "@name").text
-            val refPath = Path.parseM("?" + cd, dpath)
+          case "OMS" | "OMA" | "OMBIND"  => 
+            val (spath, args) = parsePrototype(n, protoBody.label == "OMBIND")
+            argMap ++= args
+            nextArgNumber = argMap.size + 1
             //computing map of arg names to positions
-            protoBody.child.tail.zipWithIndex foreach {p => p._1.label match {
-              case "expr" => 
-                val name = (p._1 \ "@name").text
-                argMap(name) = p._2 + 1 //args numbers start from 1
+            protoBody.child.tail foreach {p => p.label match {
+              case "expr" | "exprlist" => 
+                val name = (p \ "@name").text
+                argMap(name) = if (inBinder) ProtoSub(nextArgNumber) else ProtoArg(nextArgNumber)
+                nextArgNumber += 1
               case "OMBVAR" => 
-                val name = (p._1.child.head \ "@name").text
-                argMap(name) = -(p._2 + 1) //negative numbers encode variables
+                val name = (p.child.head \ "@name").text
+                argMap(name) = ProtoVar(nextArgNumber) 
+                nextArgNumber += 1
               case _ => throw ParseError("invalid prototype" + protoBody)
             }}
-            refPath ? LocalName(name)
+            spath
           case _ => throw ParseError("invalid prototype" + protoBody)
         }
-      case "OMS" => 
+      case "OMS" =>
         val cd = (protoBody \ "@cd").text
         val name = (protoBody \ "@name").text
         val refPath = Path.parseM("?" + cd, dpath)
         refPath ? LocalName(name)
-      case _ => throw ParseError("invalid prototype" + prototype + rendering)
+      case _ => throw ParseError("invalid prototype" + protoBody)
     }
+    (symName -> argMap.toMap)
+  }
+  
+  def makeNotation(prototype : scala.xml.Node, rendering : scala.xml.Node)(implicit dpath : DPath, thy : DeclaredTheory, spath : GlobalName) : TextNotation = {
+   val protoBody = scala.xml.Utility.trim(prototype).child.head
+   val renderingChildren = scala.xml.Utility.trim(rendering).child.toList
+   val (symName, argMap) = parsePrototype(protoBody)
    
-   val markers =  renderingChildren.flatMap(mk => parseRenderingMarkers(mk, argMap.toMap))
+   val markers =  renderingChildren.flatMap(mk => parseRenderingMarkers(mk, argMap))
    val precedence = getPrecedence(rendering)
    val variant = (rendering \ "@ic").text match {
      case "" => None
@@ -287,7 +306,9 @@ class STeXImporter extends Importer {
    }
    val languages = "mathml" :: Nil
    val scope = NotationScope(variant, languages, 0)
-   new TextNotation(Mixfix(markers), precedence, None, scope)
+   val notation = new TextNotation(Mixfix(markers), precedence, None, scope)
+   println("1" + notation.markers)
+   notation
   }
   
   def getPrecedence(n : scala.xml.Node) : Precedence = {
@@ -386,7 +407,7 @@ class STeXImporter extends Importer {
   }
   
    
-  def parseRenderingMarkers(n : scala.xml.Node, argMap : Map[String, Int])(implicit dpath : DPath, thy : DeclaredTheory, spath : GlobalName) : List[Marker] = n.label match {
+  def parseRenderingMarkers(n : scala.xml.Node, argMap : Map[String, ProtoPlaceholder])(implicit dpath : DPath, thy : DeclaredTheory, spath : GlobalName) : List[Marker] = n.label match {
     case "mrow" => Delim("(") :: n.child.flatMap(parseRenderingMarkers(_, argMap)).toList ::: List(Delim(")"))
     case "mmultiscripts" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList //treated as mrow because not sure what it should do
     case "msub" => //assuming well formed elem and children
@@ -436,11 +457,10 @@ class STeXImporter extends Importer {
     case "mtable" => makeDelim("[[")::n.child.toList.flatMap(parseRenderingMarkers(_, argMap)).toList:::makeDelim("]]")::Nil 
     case "render" => 
       val argName = (n \ "@name").text
-      val argNr = argMap(argName)
-      if (argNr >= 0) {
-        Arg(argNr, Some(getPrecedence(n))) :: Nil
-      } else {
-        Var(-argNr, false, None, Some(getPrecedence(n))) :: Nil
+      argMap(argName) match{
+        case ProtoArg(nr) => Arg(nr, Some(getPrecedence(n))) :: Nil
+        case ProtoVar(nr) => Var(nr, false, None, Some(getPrecedence(n))) :: Nil
+        case ProtoSub(nr) => Subs(nr, Some(getPrecedence(n))) :: Nil
       }
     case "iterate" =>
       val argName = (n \ "@name").text
@@ -457,10 +477,10 @@ class STeXImporter extends Importer {
           } 
       }
       
-      if (argNr >= 0) {
-        SeqArg(argNr, delim, precO) :: Nil
-      } else {
-        Var(-argNr, false, Some(delim), precO) :: Nil
+      argMap(argName) match {
+        case ProtoArg(nr) => SeqArg(nr, delim, precO) :: Nil
+        case ProtoVar(nr) => Var(nr, false, Some(delim), precO) :: Nil
+        case ProtoSub(nr) => throw STeXParseError("cannot have sequence sub as arg", None)
       }
     case "mstyle" => n.child.toList.flatMap(parseRenderingMarkers(_, argMap))
     case "merror" => Nil
