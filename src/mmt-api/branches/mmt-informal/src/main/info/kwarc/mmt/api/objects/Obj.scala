@@ -415,7 +415,7 @@ case class OMFOREIGN(node : Node) extends Term {
    def role = Role_foreign
    def components = List(XMLLiteral(node))
    def children = Nil
-   def toNode = <om:OMFOREIGN>{node}</om:OMFOREIGN> 
+   def toNode = node
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
    def toCMLQVars(implicit qvars: Context) = <apply><csymbol>OMFOREIGN</csymbol>{Node}</apply>

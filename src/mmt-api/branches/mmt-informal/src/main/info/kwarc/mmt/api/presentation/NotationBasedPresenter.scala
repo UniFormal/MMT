@@ -244,6 +244,9 @@ class NotationBasedPresenter extends ObjectPresenter {
             recurse(comps.last._1)(pc.child(comps.last._2))
          }
          1
+      case OMFOREIGN(node) => 
+        pc.out(node.child.mkString)
+        1
       case OMBINDC(b,c,s) =>
          // only applies in unusual cases where b is not atomic
          val binder = b match {
