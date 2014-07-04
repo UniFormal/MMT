@@ -467,10 +467,12 @@ object ComplexTerm {
       case OMATTRMany(OMS(p), LabelledTerms(sub)) if ! sub.isEmpty => Some((p, sub, Context(), Nil))
       case OMA(OMATTRMany(OMS(p), LabelledTerms(sub)), args) => Some((p, sub, Context(), args))
       case OMBINDC(OMATTRMany(OMS(p), LabelledTerms(sub)), con, scopes) => Some((p, sub, con, scopes))
+      case OMBINDC(OMA(OMS(p), args), con, scopes) =>
+        val sub = Substitution(args.map(Sub(OMV.anonymous, _)) :_*)
+        Some((p, sub, con, scopes))
       case _ => None
    }
 }
-
 
 /**
  * Obj contains the parsing methods for objects.

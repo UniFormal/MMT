@@ -175,11 +175,12 @@ object MixfixNotation extends NotationExtension {
    def constructTerm(fun: Term, args: List[Term]) = OMA(fun, args)
    def destructTerm(t: Term)(implicit getNotation: GlobalName => Option[TextNotation]): Option[PragmaticTerm] = t match {
       case ComplexTerm(op, subs, con, args) =>
-         getNotation(op) flatMap {not =>
+        val ptm = getNotation(op) flatMap {not =>
             if (not.arity.canHandle(subs.length, con.length, args.length, false))
                Some(PragmaticTerm(op, subs, con, args, false, not, Position.positions(t)))
             else None
          }
+        ptm
       case _ => None
    }
 }

@@ -296,8 +296,10 @@ class NotationBasedPresenter extends ObjectPresenter {
          }
          -1
       case Sub(n,t) =>
-         doVariable(n)
-         doOperator("=")
+          if (n != OMV.anonymous) { //omiting assignment if label is missing 
+            doVariable(n)
+            doOperator("=")
+          }
          recurse(t, noBrackets)
          -1
       case c: Context =>
@@ -403,6 +405,9 @@ class NotationBasedPresenter extends ObjectPresenter {
                         case c @ Var(n, typed, _,_) => //sequence variables impossible due to flattening
                            doChild(c, context(n-firstVarNumber), currentPosition)
                            if (compFollows) doSpace(1)
+                        case c @ Subs(n, _) => 
+                          doChild(c, subargs(n - 1), currentPosition)
+                          if (compFollows) doSpace(1)
                         case AttributedObject =>
                            // we know attributee.isDefined due to flattening
                            //TODO

@@ -117,6 +117,12 @@ case class Var(number: Int, typed: Boolean, sep: Option[Delim], precedence : Opt
    override def isSequence = sep.isDefined
 }
 
+//TODO add name
+case class Subs(number: Int, precedence : Option[Precedence] = None) extends Marker with ScopeComponent {
+  override def toString = "S" + number.toString
+}
+
+
 case object AttributedObject extends Marker {
    override def toString = "%a" 
 }
@@ -204,6 +210,7 @@ object PresentationMarker {
    private def splitOffOne(ms: List[Marker]) : (Marker,List[Marker]) = ms match {
       case Nil => (Delim(" "), Nil)
       case Delim("(") :: rest =>
+         println("in splitoffone: " + ms)
          var i = 0
          var level = 1
          while (level > 0) {
@@ -225,6 +232,7 @@ object PresentationMarker {
    def introducePresentationMarkers(ms: List[Marker]) : List[Marker] = {
       var sofar: List[Marker] = Nil
       var left : List[Marker] = ms
+      println(ms)
       while (left != Nil) {
          val (first, others) = splitOffOne(left)
          first match {
@@ -251,7 +259,7 @@ object PresentationMarker {
                val newHead = FractionMarker(List(enum), List(denom), true)
                sofar = newHead :: sofar.tail
             case Delim("[&") => 
-              get_until(List("&]"), left, true) match {
+              get_until(List("&]"), others, true) match {
                case None => //end not found, ignoring
                  sofar ::= first
                  left = others
@@ -261,17 +269,17 @@ object PresentationMarker {
                    left = end
              }
             case Delim("[\\") => 
-               get_until(List("\\]"), left, true) match {
+               get_until(List("\\]"), others, true) match {
                case None => //end not found, ignoring
                  sofar ::= first
                  left = others
                case Some((taken, end)) => 
                  val processed = introducePresentationMarkers(taken)
                  sofar ::= TrMarker(processed)
-                   left = end
+                 left = end
              }
             case Delim("[[") =>
-             get_until(List("]]"), left, true) match {
+             get_until(List("]]"), others, true) match {
                case None => //end not found, ignoring
                  sofar ::= first
                  left = others
@@ -315,7 +323,7 @@ object PresentationMarker {
        }
      }
      if (found) {
-       Some(sofar, left)
+       Some(sofar.reverse, left)
      } else {
        None
      }
@@ -334,7 +342,7 @@ sealed trait ArityComponent {
 }
 sealed trait ArgumentComponent extends ArityComponent
 sealed trait VariableComponent extends ArityComponent
-//sealed trait ScopeComponent extends ArityComponent
+sealed trait ScopeComponent extends ArityComponent
 
 object Marker {
    def parse(s: String) = s match {
@@ -377,6 +385,9 @@ object Marker {
                Var(n, false, Some(Delim(sep)))
             } else
                throw ParseError("not a valid marker " + s)
+         case s : String if s.startsWith("S") => 
+           val nr = s.substring(1).toInt
+           Subs(nr)
          case s: String if s.endsWith("…") =>
             //nsep… ---> sequence argument/scope
             var i = 0

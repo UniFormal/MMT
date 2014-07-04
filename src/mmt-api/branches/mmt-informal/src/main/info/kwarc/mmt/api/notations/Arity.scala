@@ -16,7 +16,7 @@ import objects._
  *  some arguments, some variables: binder, OMBINDC(s, vars, args)
  *  as above but exactly 1 argument: usual binders, generalized binders as suggested by Davenport, Kohlhase, MKM 2010
  */
-case class Arity(subargs: List[ArgumentComponent],
+case class Arity(subargs: List[ScopeComponent],
                  variables: List[VariableComponent],
                  arguments: List[ArgumentComponent], attribution: Boolean) {
    def components = variables ::: arguments
@@ -31,8 +31,7 @@ case class Arity(subargs: List[ArgumentComponent],
       case _ => false
    }
    def numNormalSubs = subargs.count {
-      case Arg(n,_) => true
-      case ImplicitArg(_,_) => true
+      case Subs(n,_) => true
       case _ => false
    }
    def numNormalArgs = arguments.count {
@@ -144,6 +143,7 @@ case class Arity(subargs: List[ArgumentComponent],
    }
    /** @return true if ComplexTerm(name, subs, vars, args) has enough components for this arity and provides for an attribution if necessary */
    def canHandle(subs: Int, vars: Int, args: Int, att: Boolean) = {
+     
       (numNormalSubs == subs || (numNormalSubs < subs && numSeqSubs >= 1)) &&
       (numNormalVars == vars || (numNormalVars < vars && numSeqVars >= 1)) &&
       (numNormalArgs == args || (numNormalArgs < args && numSeqArgs >= 1)) &&
@@ -181,6 +181,8 @@ case class Arity(subargs: List[ArgumentComponent],
             List(ImplicitArg(remap(n),p))
          case Var(n, tpd, None, p) =>
             List(Var(remap(n), tpd, None, p))
+         case Subs(n, p) => 
+            List(Subs(remap(n), p))
          case v @ Var(n, tpd, Some(sep), p) =>
             val length = if (n < seqVarCutOff) perSeqVar+1 else perSeqVar
             val first = remap(n)

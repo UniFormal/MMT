@@ -45,6 +45,8 @@ class TextNotation(val fixity: Fixity, val precedence: Precedence, val meta: Opt
    lazy val arity = {
       var args: List[ArgumentComponent] = Nil
       var vars : List[VariableComponent] = Nil
+      var subargs : List[ScopeComponent] = Nil
+      
       var attrib : Int = 0
       //collect components from markers
       def collectComponents(mk : Marker) {
@@ -53,6 +55,8 @@ class TextNotation(val fixity: Fixity, val precedence: Precedence, val meta: Opt
               args ::= a
            case v: VariableComponent =>
               vars ::= v
+           case s : ScopeComponent => 
+             subargs ::= s
            case AttributedObject =>
               attrib += 1
            case p : PresentationMarker => p.flatMap(x => {collectComponents(x); Nil})
@@ -67,7 +71,7 @@ class TextNotation(val fixity: Fixity, val precedence: Precedence, val meta: Opt
       args = args.distinct.sortBy(_.number)
       // args with all implicit argument components added
       var argsWithImpl: List[ArgumentComponent] = Nil
-      var i = vars.lastOption.map(_.number).getOrElse(0) + 1 // the first expected argument position
+      var i = vars.lastOption.map(_.number).getOrElse(subargs.lastOption.map(_.number).getOrElse(0)) + 1 // the first expected argument position
       args foreach {a =>
          while (i < a.number) {
             //add implicit argument in front of the current one
@@ -87,7 +91,7 @@ class TextNotation(val fixity: Fixity, val precedence: Precedence, val meta: Opt
             case None => 0
          }
       }
-      val subargs = (0 until lastSubArg).toList.map {i => ImplicitArg(i+1)}
+      //val subargs = (0 until lastSubArg).toList.map {i => ImplicitArg(i+1)}
       //TODO: check all args.number < vars.number < scopes.numbers; no gaps in variables or scopes
 /*    arguments are behind the variables now
       //add implicit arguments after the last one (the first variable tells us if there are implicit arguments after the last one)
