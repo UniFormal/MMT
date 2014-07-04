@@ -378,8 +378,9 @@ class STeXImporter extends Importer {
         <om:OMS base={sym.module.toMPath.parent.toPath} module={sym.module.toMPath.name.last.toPath} name={sym.name.last.toPath}/>
       case "#PCDATA" => new scala.xml.Text(node.toString)
       case "OMATTR" if node.child(1).label == "OMV" => //Complex Variable
-        val n = node.child(1) //TODO for now handled as simple variable, need to make entry in context with notation
-        cleanNamespaces(n) //TODO refactor cleanNamespaces to some xml helper object --duplicate in FlexiformalDeclarationObject
+        val n = node.child(0).child(1) //TODO
+        val nn = <om:OMFOREIGN>{scala.xml.Utility.trim(n).child.map(cleanNamespaces)}</om:OMFOREIGN>
+        nn //TODO refactor cleanNamespaces to some xml helper object --duplicate in FlexiformalDeclarationObject
       case _ => new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, node.child.map(rewriteNode) :_*)
     }
   
@@ -390,7 +391,7 @@ class STeXImporter extends Importer {
   def cleanNamespaces(node : scala.xml.Node) : Node = node match {
     case el : Elem => 
       val scope = _cleanNamespaces(el.scope, Nil)
-      new scala.xml.Elem(el.prefix, el.label, el.attributes, scope, el.minimizeEmpty, el.child.map(cleanNamespaces) : _*)
+      new scala.xml.Elem(null, el.label, el.attributes, scope, el.minimizeEmpty, el.child.map(cleanNamespaces) : _*)
     case _ => node
   }
   
