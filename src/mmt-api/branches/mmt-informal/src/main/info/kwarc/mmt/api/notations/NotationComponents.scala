@@ -207,6 +207,12 @@ case object InferenceMarker extends PresentationMarker {
 }
 
 object PresentationMarker {
+  
+   private def makeOne(ms : List[Marker]) : Marker = ms match {
+     case hd :: Nil => hd
+     case l => GroupMarker(l)
+   }
+   
    private def splitOffOne(ms: List[Marker]) : (Marker,List[Marker]) = ms match {
       case Nil => (Delim(" "), Nil)
       case Delim("(") :: rest =>
@@ -222,8 +228,9 @@ object PresentationMarker {
             i += 1
          }
          val rem = rest.drop(i)
-         if (i == 2) (rest(0), rem)
-         else {
+         if (i == 2) {
+           (rest(0),rem)
+         } else {
             val group = introducePresentationMarkers(rest.take(i-1))
             (GroupMarker(group), rem)
          }
@@ -235,6 +242,7 @@ object PresentationMarker {
       println(ms)
       while (left != Nil) {
          val (first, others) = splitOffOne(left)
+         println("testing " + first + first.getClass())
          first match {
             case Delim(w) if List("^", "_", "^^", "__") contains w =>
                if (sofar.isEmpty) sofar ::= Delim(" ")
@@ -243,12 +251,13 @@ object PresentationMarker {
                   case m => ScriptMarker(m, None, None, None, None)
                }
                val (script, rest) = splitOffOne(others)
+               val pscript = makeOne(introducePresentationMarkers(List(script)))
                left = rest
                val newHead = w match {
-                  case "^" => scripted.copy(sup = Some(script))
-                  case "_" => scripted.copy(sub = Some(script))
-                  case "^^" => scripted.copy(over = Some(script))
-                  case "__" => scripted.copy(under = Some(script))
+                  case "^" => scripted.copy(sup = Some(pscript))
+                  case "_" => scripted.copy(sub = Some(pscript))
+                  case "^^" => scripted.copy(over = Some(pscript))
+                  case "__" => scripted.copy(under = Some(pscript))
                } 
                sofar = newHead :: sofar.tail
             case Delim("/") =>
@@ -295,14 +304,17 @@ object PresentationMarker {
               
             case Delim(w) if w.startsWith("#num_") => //mathml number
               left = others
+              println("or here")
               sofar ::= NumberMarker(Delim(w.substring(5)))
             case Delim(w) if w.startsWith("#id_") => //mathml identifier
               left = others
               sofar ::= IdenMarker(Delim(w.substring(4)))
             case m =>
+               println("here")
                sofar ::= m
                left = others
          }
+         println(sofar.head + sofar.head.getClass().toString)
       }
       sofar.reverse
    }
