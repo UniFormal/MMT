@@ -127,7 +127,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
       var currentTopRuleNr = ""
 	  var rules = Set.empty[Rule]  
 	  private var NotationContent = List.empty[String]
-	//  private var eventList = List.empty[String];
+	  private var eventList = List.empty[String];
 	  private var index:Int = 0  //used to ensure the uniqueness of rule names
 	  
 	  //Top Rule Name uniqueness cannot be assumed because the path of the notation
@@ -154,7 +154,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	    val notUniqueName = q replaceAllIn (suff, m => "_")
 		val uniqueName = createTopRuleName(notUniqueName)
 	    NotationContent ::= uniqueName 
-	//    eventList ::= "event '"+uniqueName+"' = completed "+uniqueName
+	    eventList ::= "event '"+uniqueName+"' = completed "+uniqueName
 	    currentTopRuleNr = getRuleNr(uniqueName)
 	    val content:List[String] = "topLevel"::markers.map(addRule)
 	    rules = rules | Set((Rule(uniqueName,content)))     //uniqueness of top level notations is assumed
@@ -182,7 +182,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		val filteredRules = rules.filter(r => r match { case Rule(n,c) => n==name})
 	     if (filteredRules.isEmpty) {
 	        rules = rules | Set(Rule(name, "renderB"::Nil))
-//	        eventList ::= "event '"+name+"' = completed "+name
+	        eventList ::= "event '"+name+"' = completed "+name
 	        name
 	     } else {
 	       name
@@ -246,24 +246,21 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		  	  if (w.startsWith("#num_")) {
 		  	    addRule(NumberMarker(Delim(w.substring(5))))
 		  	  } else if (w.startsWith("#id_")){
-		  	    addRule(OpMarker(Delim(w.substring(4))))
-		  	  } else if (w.startsWith("#op_")) {
-		  	    addRule(OpMarker(Delim(w.substring(4))))
+		  	    addRule(IdenMarker(Delim(w.substring(4))))
+		  	//  } else if (w.startsWith("#op_")) {
+		  	    //addRule(OpMarker(Delim(w.substring(4))))
 		  	  } else {
-		  	    addRule(OpMarker(Delim(w)))
+			  	   val text = w
+			  	   if ( text == "" || text == " ") {
+			        createRule("empty"::Nil)
+			      } else if (text == """⁢""") { //handling the invisible unicode char used for function application
+			        val v1 = createRule("empty"::Nil)
+			         val v2 = createRule("moB"::text.toString::"moE"::Nil)
+			        createRule("alternatives"::v1::v2::Nil)
+			      } else {
+			    	  createRule("moB"::text.toString::"moE"::Nil)
+			      }
 		  	  }
-		  	case OpMarker(d) =>
-		 
-		  	   val text = d.text
-		  	   if ( text == "" || text == " ") {
-		        createRule("empty"::Nil)
-		      } else if (text == """⁢""") { //handling the invisible unicode char used for function application
-		        val v1 = createRule("empty"::Nil)
-		         val v2 = createRule("moB"::text.toString::"moE"::Nil)
-		        createRule("alternatives"::v1::v2::Nil)
-		      } else {
-		    	  createRule("moB"::text.toString::"moE"::Nil)
-		      }
 		  	case IdenMarker(d) =>
 
 		  	   val text = d.text
@@ -383,7 +380,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	        			   if (content.indexOf(x)>0) {
 	        			      content(content.indexOf(x)-1) == "separatorE"
 	        			   } else false)
-						name + "::= " +  argName + " " + delim + " " + name + " || " + argName + " " + delim + " " + argName
+					//	name + "::= " +  argName + " " + delim + " " + name + " || " + argName + " " + delim + " " + argName
+						name + "::= " + argName + " "+delim+" "+ name +"_  \n"+ name +"_::= " +argName+"+  separator => " + delim 
 						//name + "::= " +  "Expression" + " " + delim + " " + name + " || " + "Expression" + " " + delim + " " + "Expression"
 		
 	      case "msubB"::mainRule::subRule::"msubE"::Nil => 
@@ -433,7 +431,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 //		    			"       || anyChar Error"::
 //		    			"""anyChar ~ [\s\S]"""::
 		    			//":lexeme ~ <anyChar> priority => -1":: //otherwise nothing other than Error will ever match
-		    			":start ::= Expression "::                   // :start does not allow alternatives
+		    			":start ::= ExpressionList "::                   // :start does not allow alternatives
 		    			"ExpressionList ::= Expression ExpressionList "::
 		    			"| Expression "::
 		    			"Expression ::= Notation   "::
@@ -444,6 +442,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			" | moB text moE "::
 		    			" | miB text miE "::
 		    			" | mnB text mnE "::
+		    			" | emB text emE "::
+		    			" | mtextB ExpressionList mtextE"::
 		    			" | mtextB text mtextE "::
 		    			" | msB text msE "::
 		    			" | mfracB ExpressionList mfracE"::
@@ -495,13 +495,15 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			"notEqSign ~ [^=<>/]"::
 		    			"notQuoteS ~ notQuote+ "::
 		    			"""notQuote ~ [^"<>]"""::
-		    			""" text ~ char+"""::
+		    			""" text ::= char | char text """::
+		    			""" text ::= #empty"""::
 		    			""" char ~ [^<>]"""::
 		    		//	":lexeme ~ <text> priority => -1":: 
 		    			""" argRule ::= Expression """::
-		    			"Notation ::= my_opPlus #my_plus" ::
-		    		    "my_opPlus ::= Expression  my_plus Expression | Expression my_plus my_opPlus":: //TODO: remove when the errors related to generating it from omdocs is fixed
-		    		  //  "event 'my_opPlus' = completed my_opPlus"::
+		    			"Notation ::= my_opPlusN12345 #my_plus" ::
+		    			"argRuleNmyPlus ::= Expression "::
+		    		    "my_opPlusN12345 ::= argRuleNmyPlus  my_plus argRuleNmyPlus | argRuleNmyPlus my_plus my_opPlusN12345":: //TODO: remove when the errors related to generating it from omdocs is fixed
+		    		    "event 'my_opPlusN12345' = completed my_opPlusN12345"::
 		    		    "my_plus ::= moB '+' moE"::
 		    			"#Automatically generated part"::
 		    			Nil
@@ -515,9 +517,9 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 			      case Nil => "Notation ::= " + NotationContent.head :: Nil
 			      case _   => "Notation ::= " + NotationContent.head :: tl.map(x => "| "+x)
 			    }
-		   val result = pref:::Notation:::extractedRules //:::eventList
+		   val result = pref:::Notation:::extractedRules :::eventList
 		   //clean up   
-		 //  eventList = List[String]();
+		   eventList = List[String]();
 		   rules = Set[Rule]();
 		   NotationContent = List.empty[String]
 		   index = 0;
