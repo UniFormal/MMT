@@ -19,6 +19,9 @@
  * deepest nested Markers. This means that when adding a rule - it is enough to check whether a rule
  * with the same content is already in the grammar or not (which wouldn't be the case if the rules would 
  * be created in inverse order).
+ * 
+ *    For each top level rule an event is created and for each argument of such rule a relevant action
+ * is added to the grammar.
  */
 package info.kwarc.mmt.marpa
 
@@ -148,7 +151,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	  //adds the Top Rule and all of the necessary subrules to the Grammar
 	  def addTopRule(rawName:String, markers:List[Marker]) {
 		val topPatt = """\?.*""".r
-	    val q = """[\?-]""".r
+	    val q = """[^a-zA-Z0-9]""".r
 	    //rawName is the path of the notation - it is used to ensure topLevelRule name uniqueness
 	    val Some(suff) = topPatt findFirstIn rawName 
 	    val notUniqueName = q replaceAllIn (suff, m => "_")
@@ -182,7 +185,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		val filteredRules = rules.filter(r => r match { case Rule(n,c) => n==name})
 	     if (filteredRules.isEmpty) {
 	        rules = rules | Set(Rule(name, "renderB"::Nil))
-	        eventList ::= "event '"+name+"' = completed "+name
+	      //  eventList ::= "event '"+name+"' = completed "+name
 	        name
 	     } else {
 	       name
@@ -205,7 +208,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 						
 				    }
 		    case SeqArg(argNr,delim,precedence) => {
-				    		val delimName = addRule(delim)
+		    				val Delim(text) = delim
+				    		val delimName = addRule(Delim("#seq_"+text))
 				    		val argName :String = createArgRule(currentTopRuleNr, argNr.toString +"Seq")
 				    		val content = precedence match {
 				    		  case Some(x) => 
@@ -231,29 +235,49 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		  	  createRule("mtableB"::contentRule::"mtableE"::Nil)
 		  	  //////////////////////////////////////////////////////////////
 		  	case NumberMarker(d) =>
-
-		  	   val text = d.text
-		  	   if ( text == "" || text == " ") {
-		        createRule("empty"::Nil)
-		      } else if (text == """⁢""") { //handling the invisible unicode char used for function application
+		  	  var text = d.text
+		  	  var flag = ""
+		  	  text = if (text.startsWith("#seq_")) {
+		  	    flag = "#seq_" 
+		  	    text.substring(3)
+		  	  } else {
+		  	    text
+		  	  }
+		  	   if ( text == "" ) {
+		         text = " "
+		  	   }
+		  	   // flag shows whether the delim comes from a seq arg 
+//		  	   if ( text == "") {
+//		        createRule("empty"::Nil)
+//		      } else 
+		        if (text == """⁢""") { //handling the invisible unicode char used for function application
 		        val v1 = createRule("empty"::Nil)
 		        val v2 = createRule("mnB"::text.toString::"mnE"::Nil)
 		        createRule("alternatives"::v1::v2::Nil)
 		      } else {
-		      createRule("mnB"::text.toString::"mnE"::Nil)
+		    	  createRule("mnB"::text.toString::"mnE"::Nil)
 		      }
-		  	case Delim(w) =>
-		  	  if (w.startsWith("#num_")) {
-		  	    addRule(NumberMarker(Delim(w.substring(5))))
-		  	  } else if (w.startsWith("#id_")){
-		  	    addRule(IdenMarker(Delim(w.substring(4))))
-		  	//  } else if (w.startsWith("#op_")) {
-		  	    //addRule(OpMarker(Delim(w.substring(4))))
+		  	case Delim(rawW) =>
+		  	  //first check if this Delim is from a Sequence Argument - if so the rule
+		  	  //cannot be nullable
+		  	  var flag = ""
+		  	  val w = if (rawW.startsWith("#seq_")) {
+		  	    flag = "#seq_" 
+		  	    rawW.substring(3)
 		  	  } else {
-			  	   val text = w
-			  	   if ( text == "" || text == " ") {
-			        createRule("empty"::Nil)
-			      } else if (text == """⁢""") { //handling the invisible unicode char used for function application
+		  	    rawW
+		  	  }
+		  	  if (w.startsWith("#num_")) {
+		  	    addRule(NumberMarker(Delim(flag+w.substring(5))))
+		  	  } else if (w.startsWith("#id_")){
+		  	    addRule(IdenMarker(Delim(flag+w.substring(4))))
+		  	  } else {
+			  	  var text = w
+			  	  if ( text == "") {
+			        text = " "
+			          
+			      } 
+			       if (text == """⁢""") { //handling the invisible unicode char used for function application
 			        val v1 = createRule("empty"::Nil)
 			         val v2 = createRule("moB"::text.toString::"moE"::Nil)
 			        createRule("alternatives"::v1::v2::Nil)
@@ -262,11 +286,18 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 			      }
 		  	  }
 		  	case IdenMarker(d) =>
-
-		  	   val text = d.text
-		  	   if ( text == "" || text == " ") {
-		        createRule("empty"::Nil)
-		      } else if (text == """⁢""") { //handling the invisible unicode char used for function application
+		  	  var text = d.text
+		  	  var flag = ""
+		  	  text = if (text.startsWith("#seq_")) {
+		  	    flag = "#seq_" 
+		  	    text.substring(3)
+		  	  } else {
+		  	    text
+		  	  }
+		  	   if ( text == "" ) {
+		         text = " "
+		  	   }
+		      if (text == """⁢""") { //handling the invisible unicode char used for function application
 		        val v1 = createRule("empty"::Nil)
 		         val v2 = createRule("miB"::text.toString::"miE"::Nil)
 		        createRule("alternatives"::v1::v2::Nil)
@@ -381,7 +412,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	        			      content(content.indexOf(x)-1) == "separatorE"
 	        			   } else false)
 					//	name + "::= " +  argName + " " + delim + " " + name + " || " + argName + " " + delim + " " + argName
-						name + "::= " + argName + " "+delim+" "+ name +"_  \n"+ name +"_::= " +argName+"+  separator => " + delim 
+						name + "::= " + argName + " "+delim+" "+ name +"_  \n"+ name +"_::= " +argName+" | "+argName + " " + delim + " "  + name+"_"
 						//name + "::= " +  "Expression" + " " + delim + " " + name + " || " + "Expression" + " " + delim + " " + "Expression"
 		
 	      case "msubB"::mainRule::subRule::"msubE"::Nil => 
@@ -435,9 +466,9 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			"ExpressionList ::= Expression ExpressionList "::
 		    			"| Expression "::
 		    			"Expression ::= Notation   "::
-		    			"            || Presentation "::
+		    			"             | Presentation "::
      	    	//		" 			  | Content "::
-		    			"Presentation ::= mrowB ExpressionList mrowE"::
+		    			"Presentation ::= mrowB ExpressionList mrowE "::
 		    			" | moB '(' moE ExpressionList moB ')' moE "::
 		    			" | moB text moE "::
 		    			" | miB text miE "::
@@ -463,48 +494,77 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			" | mspaceB mspaceE "::
 		    			" | miSingle "::
 		    		//	" || texts "::
-		    			"mfracB ::= ws '<mfrac' attribs '>' ws"::"mfracE ::= ws '</mfrac>' ws"::
-		    			"msqrtB ::= ws '<msqrt' attribs '>' ws"::"msqrtE ::= ws '</msqrt>' ws"::
-		    			"msupB ::= ws '<msup' attribs '>' ws"::"msupE ::= ws '</msup>' ws"::
-		    			"msubB ::= ws '<msub' attribs '>' ws"::"msubE ::= ws '</msub>' ws"::
-		    			"munderB ::= ws '<munder' attribs '>' ws"::"munderE ::= ws '</munder>' ws"::
-		    			"moverB ::= ws '<mover' attribs '>' ws"::"moverE ::= ws '</mover>' ws"::
-		    			"mnB ::= ws '<mn' attribs '>' ws"::"mnE ::= ws '</mn>' ws"::
-		    			"miB ::= ws '<mi' attribs '>' ws"::"miE ::= ws '</mi>' ws"::
-		    			"msB ::= ws '<ms' attribs '>' ws"::"msE ::= ws '</ms>' ws"::
-		    			"mspaceB ::= ws '<mspace' attribs '>' ws"::"mspaceE ::= ws '</mspace>' ws"::
-		    			"moB ::= ws '<mo' attribs '>' ws"::"moE ::= ws '</mo>' ws"::
-		    			"mstyleB ::= ws '<mstyle' attribs '>' ws"::"mstyleE ::= ws '</mstyle>' ws"::
-		    			"mtextB ::= ws '<mtext' attribs '>' ws"::"mtextE ::= ws '</mtext>' ws"::
-		    			"emB ::= ws '<em' attribs '>' ws"::"emE ::= ws '</em>' ws"::
-		    			"mtdB ::= ws '<mtd' attribs '>' ws"::"mtdE ::= ws '</mtd>' ws"::
-		    			"mtrB ::= ws '<mtr' attribs '>' ws"::"mtrE ::= ws '</mtr>' ws"::
-		    			"mtableB ::= ws '<mtable' attribs '>' ws"::"mtableE ::= ws '</mtable>' ws"::
-		    			"msubsupB ::= ws '<msubsup' attribs '>' ws"::"msubsupE ::= ws '</msubsup>' ws"::
-		    			"munderoverB ::= ws '<munderover' attribs '>' ws"::"munderoverE ::= ws '</munderover>' ws"::
-		    			"""mrowB ::= ws '<mrow' attribs '>' ws""":: """mrowE ::= ws '</mrow>' ws"""::
-		    			"mathB ::= ws '<math' attribs '>' ws"::"mathE ::= ws '</math>' ws"::
-		    			"miSingle ::= ws '<mi' attribs '/>' ws "::
+//		    			"mfracB ::= ws '<mfrac' attribs '>' ws"::"mfracE ::= ws '</mfrac>' ws"::
+//		    			"msqrtB ::= ws '<msqrt' attribs '>' ws"::"msqrtE ::= ws '</msqrt>' ws"::
+//		    			"msupB ::= ws '<msup' attribs '>' ws"::"msupE ::= ws '</msup>' ws"::
+//		    			"msubB ::= ws '<msub' attribs '>' ws"::"msubE ::= ws '</msub>' ws"::
+//		    			"munderB ::= ws '<munder' attribs '>' ws"::"munderE ::= ws '</munder>' ws"::
+//		    			"moverB ::= ws '<mover' attribs '>' ws"::"moverE ::= ws '</mover>' ws"::
+//		    			"mnB ::= ws '<mn' attribs '>' ws"::"mnE ::= ws '</mn>' ws"::
+//		    			"miB ::= ws '<mi' attribs '>' ws"::"miE ::= ws '</mi>' ws"::
+//		    			"msB ::= ws '<ms' attribs '>' ws"::"msE ::= ws '</ms>' ws"::
+//		    			"mspaceB ::= ws '<mspace' attribs '>' ws"::"mspaceE ::= ws '</mspace>' ws"::
+//		    			"moB ::= ws '<mo' attribs '>' ws"::"moE ::= ws '</mo>' ws"::
+//		    			"mstyleB ::= ws '<mstyle' attribs '>' ws"::"mstyleE ::= ws '</mstyle>' ws"::
+//		    			"mtextB ::= ws '<mtext' attribs '>' ws"::"mtextE ::= ws '</mtext>' ws"::
+//		    			"emB ::= ws '<em' attribs '>' ws"::"emE ::= ws '</em>' ws"::
+//		    			"mtdB ::= ws '<mtd' attribs '>' ws"::"mtdE ::= ws '</mtd>' ws"::
+//		    			"mtrB ::= ws '<mtr' attribs '>' ws"::"mtrE ::= ws '</mtr>' ws"::
+//		    			"mtableB ::= ws '<mtable' attribs '>' ws"::"mtableE ::= ws '</mtable>' ws"::
+//		    			"msubsupB ::= ws '<msubsup' attribs '>' ws"::"msubsupE ::= ws '</msubsup>' ws"::
+//		    			"munderoverB ::= ws '<munderover' attribs '>' ws"::"munderoverE ::= ws '</munderover>' ws"::
+//		    			"""mrowB ::= ws '<mrow' attribs '>' ws""":: """mrowE ::= ws '</mrow>' ws"""::
+//		    			"mathB ::= ws '<math' attribs '>' ws"::"mathE ::= ws '</math>' ws"::
+//		    			"miSingle ::= ws '<mi' attribs '/>' ws "::
+//////////////////////////////////////////////////////////////
+		    		    "mfracB ::=  '<mfrac' attribs '>' "::"mfracE ::=  '</mfrac>' "::
+		    			"msqrtB ::=  '<msqrt' attribs '>' "::"msqrtE ::=  '</msqrt>' "::
+		    			"msupB ::=  '<msup' attribs '>' "::"msupE ::=  '</msup>' "::
+		    			"msubB ::=  '<msub' attribs '>' "::"msubE ::=  '</msub>' "::
+		    			"munderB ::=  '<munder' attribs '>' "::"munderE ::=  '</munder>' "::
+		    			"moverB ::=  '<mover' attribs '>' "::"moverE ::=  '</mover>' "::
+		    			"mnB ::=  '<mn' attribs '>' "::"mnE ::=  '</mn>' "::
+		    			"miB ::=  '<mi' attribs '>' "::"miE ::=  '</mi>' "::
+		    			"msB ::=  '<ms' attribs '>' "::"msE ::=  '</ms>' "::
+		    			"mspaceB ::=  '<mspace' attribs '>' "::"mspaceE ::=  '</mspace>' "::
+		    			"moB ::=  '<mo' attribs '>' "::"moE ::=  '</mo>' "::
+		    			"mstyleB ::=  '<mstyle' attribs '>' "::"mstyleE ::=  '</mstyle>' "::
+		    			"mtextB ::=  '<mtext' attribs '>' "::"mtextE ::=  '</mtext>' "::
+		    			"emB ::=  '<em' attribs '>' "::"emE ::=  '</em>' "::
+		    			"mtdB ::=  '<mtd' attribs '>' "::"mtdE ::=  '</mtd>' "::
+		    			"mtrB ::=  '<mtr' attribs '>' "::"mtrE ::=  '</mtr>' "::
+		    			"mtableB ::=  '<mtable' attribs '>' "::"mtableE ::=  '</mtable>' "::
+		    			"msubsupB ::=  '<msubsup' attribs '>' "::"msubsupE ::=  '</msubsup>' "::
+		    			"munderoverB ::=  '<munderover' attribs '>' "::"munderoverE ::=  '</munderover>' "::
+		    			"""mrowB ::=  '<mrow' attribs '>' """:: """mrowE ::=  '</mrow>' """::
+		    			"mathB ::=  '<math' attribs '>' "::"mathE ::=  '</math>' "::
+		    			"miSingle ::=  '<mi' attribs '/>'  "::
+/////////////////////////////////////////////////////////////
 		    			"ws ::= spaces"::
 		    			"ws ::= # empty"::
 		    		    """spaces ~ space+"""::
 		    			"""space ~ [\s] """::
-		    			"attribs ::= ws || attrib || attrib attribs "::
+		    			"attribs ::=  ws"::
+                        "attribs::= attribRule"::
+                        "attribRule ::=  attrib || attrib attribRule"::
 		    			""" attrib  ::= ws notEqSignS '=' ws '"' notQuoteS '"' ws"""::
 		    			"notEqSignS ~ notEqSign+ "::
 		    			"notEqSign ~ [^=<>/]"::
 		    			"notQuoteS ~ notQuote+ "::
 		    			"""notQuote ~ [^"<>]"""::
-		    			""" text ::= char | char text """::
+		    			""" text ::= textRule""":: 
+		    			"""textRule::= char | char textRule """::
 		    			""" text ::= #empty"""::
 		    			""" char ~ [^<>]"""::
 		    		//	":lexeme ~ <text> priority => -1":: 
-		    			""" argRule ::= Expression """::
-		    			"Notation ::= my_opPlusN12345 #my_plus" ::
-		    			"argRuleNmyPlus ::= Expression "::
-		    		    "my_opPlusN12345 ::= argRuleNmyPlus  my_plus argRuleNmyPlus | argRuleNmyPlus my_plus my_opPlusN12345":: //TODO: remove when the errors related to generating it from omdocs is fixed
-		    		    "event 'my_opPlusN12345' = completed my_opPlusN12345"::
-		    		    "my_plus ::= moB '+' moE"::
+		    			""" argRule ::= Expression # Presentation |Content """::
+// argRule is not defined as Expression since this would increase the ambiguity of the grammar
+// + we don't care whether an argument contains a notation		    			
+//		    			"Notation ::= my_opPlusN12345 #my_plus" ::
+//		    			"argRuleNmyPlus ::= Expression "::
+//		    		    "my_opPlusN12345 ::= argRuleNmyPlus  my_plus argRuleNmyPlus | argRuleNmyPlus my_plus my_opPlusN12345":: //TODO: remove when the errors related to generating it from omdocs is fixed
+//		    		    "event 'my_opPlusN12345' = completed my_opPlusN12345"::
+//		    		    "my_plus ::= moB '+' moE"::
 		    			"#Automatically generated part"::
 		    			Nil
 		    			
