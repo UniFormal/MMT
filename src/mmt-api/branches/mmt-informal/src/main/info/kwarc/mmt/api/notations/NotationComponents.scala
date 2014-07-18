@@ -34,7 +34,7 @@ object Delimiter {
 case class Delim(s: String) extends Delimiter {
    override def toString = {
       if (s == "%w") s
-      else if (s.length > 0 && (List('%', 'V').contains(s(0)) || s.endsWith("…")))
+      else if (s.length > 0 && (List('%', 'V', 'S').contains(s(0)) || s.endsWith("…")))
          "%D" + s
       else {
          try {s.toInt; "%D" + s}
@@ -216,10 +216,12 @@ object PresentationMarker {
    private def splitOffOne(ms: List[Marker]) : (Marker,List[Marker]) = ms match {
       case Nil => (Delim(" "), Nil)
       case Delim("(") :: rest =>
-         println("in splitoffone: " + ms)
          var i = 0
          var level = 1
          while (level > 0) {
+            if (i >= rest.length) { //bracket is just delim
+              return (Delim("("), rest)
+            }
             rest(i) match {
                case Delim("(") => level +=1
                case Delim(")") => level -=1
@@ -239,10 +241,8 @@ object PresentationMarker {
    def introducePresentationMarkers(ms: List[Marker]) : List[Marker] = {
       var sofar: List[Marker] = Nil
       var left : List[Marker] = ms
-      println(ms)
       while (left != Nil) {
          val (first, others) = splitOffOne(left)
-         println("testing " + first + first.getClass())
          first match {
             case Delim(w) if List("^", "_", "^^", "__") contains w =>
                if (sofar.isEmpty) sofar ::= Delim(" ")
@@ -304,17 +304,14 @@ object PresentationMarker {
               
             case Delim(w) if w.startsWith("#num_") => //mathml number
               left = others
-              println("or here")
               sofar ::= NumberMarker(Delim(w.substring(5)))
             case Delim(w) if w.startsWith("#id_") => //mathml identifier
               left = others
               sofar ::= IdenMarker(Delim(w.substring(4)))
             case m =>
-               println("here")
                sofar ::= m
                left = others
          }
-         println(sofar.head + sofar.head.getClass().toString)
       }
       sofar.reverse
    }

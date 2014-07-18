@@ -384,8 +384,6 @@ class NotationBasedPresenter extends ObjectPresenter {
                 *   for presentation markers, recurses into groups and arranges them according to doXXX methods
                 */
                def doMarkers(markers: List[Marker]) {
-                 println("!")
-                 println(markers.map(m => m.toString + m.getClass()).mkString("\n"))
                   val numDelims = markers.count(_.isInstanceOf[Delimiter])
                   var numDelimsSeen = 0
                   def currentPosition = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
@@ -440,7 +438,6 @@ class NotationBasedPresenter extends ObjectPresenter {
                            def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
                            doSqrt(markers map aux)
                         case NumberMarker(value) => 
-                          println("GOT HREEEEEEE@@")
                            doNumberMarker(value)
                         case IdenMarker(value) => 
                            doIdenMarker(value)

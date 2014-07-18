@@ -181,7 +181,6 @@ class MathMLPresenter extends NotationBasedPresenter {
    }
    
    override def doNumberMarker(arg : Delim)(implicit pc: PresentationContext) {
-     println("GOT HERE")
      pc.html.mn {
        pc.out(arg.s)
      }
