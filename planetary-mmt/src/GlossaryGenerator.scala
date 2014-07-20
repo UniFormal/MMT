@@ -29,7 +29,19 @@ object GlossaryGenerator {
     }
     this.rh = new StringBuilder
     presenter.setRh(rh)
-    val modules = controller.library.getModules
+    val mpaths = controller.depstore.getInds(ontology.IsTheory).toList
+    val modules = mpaths flatMap { p => 
+      try {
+        controller.get(p) match {
+          case d : DeclaredTheory => Some(d)
+          case _ =>  None
+        }
+      } catch {
+        case e : Error => None
+        case e : Exception => None
+      }
+    }
+    
     val verbs = modules collect {
       case thy: DeclaredTheory =>
         thy.getDeclarations collect {
@@ -44,24 +56,40 @@ object GlossaryGenerator {
   // easy-to-use HTML markup
   protected val htmlRh = utils.HTML(s => rh(s))
   import htmlRh._
+  
+  private def makeString(not : TextNotation) : String = {
+    val smks = not.markers map {
+      case d : Delimiter => d.text
+      case m => m.toString
+    }
+    smks.mkString(" ")
+  }
 
   private def present(verbs: Iterable[(GlobalName, TextNotation)]): Unit = {
-    val langVerbs = verbs.groupBy[String](p => sTeX.getLanguage(p._1).getOrElse(""))
+    val items = new collection.mutable.HashMap[String, List[(GlobalName, TextNotation)]] 
+    verbs foreach {p => p._2.scope.languages.foreach { lang => 
+     if (lang != "") {
+       if (!items.contains(lang)) {
+         items(lang) = Nil
+       }
+       items(lang) ::= p
+     } 
+    }}
     def getCls(lang: String) = if (lang == "en") "active" else ""
     div(attributes = List("id" -> "glossary")) {
       ul("nav nav-tabs") {
-        langVerbs.foreach { p =>
+        items.foreach { p =>
           li(getCls(p._1)) {
             rh(<a data-target={ "#gtab_" + p._1 } style="cursor: pointer;" onclick={ "$(this).tab('show');" }> { p._1 } </a>)
           }
         }
       }
       div("tab-content") {
-        langVerbs.foreach { p =>
+        items.foreach { p =>
           div(cls = ("tab-pane " + getCls(p._1)), attributes = List("id" -> ("gtab_" + p._1))) {
             ul("glossary") {
-              val glossary = p._2.toList.sortWith((x,y) => x._2.markers.mkString(" ").toLowerCase() < y._2.markers.mkString(" ").toLowerCase())
-              glossary.foreach(v => present(v._1, v._2))
+              val glossary = p._2.toList.sortWith((x,y) => makeString(x._2).toLowerCase() < makeString(y._2).toLowerCase())
+              glossary.foreach(v => present(p._1, v._1, v._2))
             }
           }
         }
@@ -69,28 +97,21 @@ object GlossaryGenerator {
     }
   }
 
-  private def present(spath : GlobalName, not: TextNotation): Unit = {
-
+  private def present(lang : String, spath : GlobalName, not: TextNotation): Unit = {
     val doc = spath.doc
     val mod = spath.module.toMPath.name
     val name = spath.name
-    val lang = sTeX.getLanguage(spath)
-    val masterPath = sTeX.getMasterPath(spath)
-    val alternatives = langList.filter(l => Some(l) != lang) map { l =>
-      (l -> sTeX.getLangPath(masterPath, l))
-    }
-    val notations = try {
-      controller.library.getConstant(masterPath).notC.getAllNotations.map(n => masterPath -> n)
-    } catch {
-      case e: Throwable => Nil
-    }
+    val constant = controller.library.getConstant(spath)
+    val alternatives = constant.notC.verbalizationDim.notations.values.flatten.flatMap(_.scope.languages.filter(_ != lang)).toSet
+    
+    val notations = (constant.notC.parsingDim.notations.values.flatten ++ constant.notC.presentationDim.notations.values.flatten).map(n => spath -> n).toList
+
     val defs = controller.depstore.getObjects(spath, isDefinedBy) collect {
           case fp: FragPath if fp.isPath =>
             controller.get(fp.path) match {
               case fd: Definition =>
-                val thyName = fd.home.toMPath.name.toPath
-                val parts = thyName.split('.')
-                if (parts.length == 2) {
+                val mpath = fd.home.toMPath
+                if (sTeX.getLanguage(mpath) == Some(lang)) {
                   Some(fd)
                 } else {
                   None
@@ -103,7 +124,7 @@ object GlossaryGenerator {
     
     li(cls = "entry") {
       div {
-        span(cls="name keyword", attributes=List("id" -> presenter.encPath(spath))) { 
+        span(cls="name keyword", attributes=List("id" -> (presenter.encPath(spath) + "_" + lang))) { 
           val smks = not.markers map {
             case d : Delimiter => d.text
             case x => x.toString //TODO
@@ -112,14 +133,11 @@ object GlossaryGenerator {
         }
         //addings defs
         
-        presenter.doNotations(notations, spath)
-
-        for (alt <- alternatives) {
-          val lang = alt._1
-          val path = alt._2
+        presenter.doNotations(notations, spath, lang)
+        for (lang <- alternatives) {
           try {
-            controller.get(path)
-            rh(<a style="cursor: pointer;" onclick={ "$('#glossary a[data-target=\\\'#gtab_" + lang + "\\\']').tab('show'); window.location.href = \'#" + presenter.encPath(path) + "\';" }> { lang } </a>)
+            val altId = presenter.encPath(spath) + "_" + lang;
+            rh(<a style="cursor: pointer;" onclick={ "$('#glossary a[data-target=\\\'#gtab_" + lang + "\\\']').tab('show'); window.location.href = \'#" + altId + "\';" + "jQuery(\'#" + altId + "\').parent().effect(\'highlight\', {}, 1500);" }> { lang } </a>)
           } catch {
             case e: Error => //invalid path, nothing to do
             //           rh(<a href="#" style="cursor: pointer;" onclick={"$('#glossary a[\\\'data-toggle=#gtab_" + lang + "\\\']').tab('show');"}> {lang} </a>)
