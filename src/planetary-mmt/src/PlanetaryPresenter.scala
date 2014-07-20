@@ -44,6 +44,11 @@ abstract class PlanetaryAbstractPresenter(name : String) extends Presenter(new p
   // easy-to-use HTML markup
   protected val htmlRh = utils.HTML(s => rh(s))
    
+  def mathhubPath(p : Path) : String = {
+    val uri = p.doc.uri
+    URI(uri.scheme, uri.authority, uri.path.head :: uri.path.tail.head :: "source" :: uri.path.tail.tail, uri.absolute).toString
+  }
+  
   import htmlRh._
   def wrapScope(standalone : Boolean, uri : Path)(content : => Unit) {
     if (standalone) {
@@ -51,6 +56,8 @@ abstract class PlanetaryAbstractPresenter(name : String) extends Presenter(new p
       html{
         head{
           rh(<meta name="mmturi" content={uri.toPath}></meta>)
+          rh(<title> {uri.last} </title>)
+          rh(<meta name="url" content={mathhubPath(uri)}></meta>)
         }
         body{
           div(attributes=List("xmlns" -> utils.xml.namespace("html"),
@@ -198,12 +205,12 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      path.module.toMPath.name.toString + "_" + path.name.toString
    }
    
-   def doNotations(notations : List[(GlobalName, TextNotation)], path : GlobalName) {
+   def doNotations(notations : List[(GlobalName, TextNotation)], path : GlobalName, instId : String = "") {
      if (!notations.isEmpty) {
        val onclick = "onclick=\"if ($(this).html() == \'Show Notations\') {$(this).html(\'Hide Notations\')} else {$(this).html(\'Show Notations\')};" +
-                     "$(document.getElementById(\'not_" + encPath(path) + "\')).toggle( \'fold\' );\""
+                     "$(document.getElementById(\'not_" + encPath(path) + "_" + instId + "\')).toggle( \'fold\' );\""
        rh(" <small><a style=\"cursor:pointer;\" " + onclick + ">" + "Show Notations" + "</a></small>")
-       table(cls = "table table-striped table-condensed", attributes = ("id" -> ("not_" + encPath(path))) :: ("style" -> "display:none;") :: Nil) {
+       table(cls = "table table-striped table-condensed", attributes = ("id" -> ("not_" + encPath(path) + "_" + instId)) :: ("style" -> "display:none;") :: Nil) {
          thead {
            tr {
              th { text{"Languages"} } 
@@ -227,9 +234,11 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        }
        name.toString + indices
      }
-
-     val arity = not.arity.length
-     val tm = OMA(OMID(spath), (0 until arity).map(n => OMV(getVarName(n))).toList)
+     val arity = not.arity
+     val sub = Substitution(arity.subargs.map(sa => Sub(OMV.anonymous, OMV(getVarName(sa.number - 1)))) :_*)
+     val con = Context(arity.variables.map(v => VarDecl(LocalName(getVarName(v.number - 1)), None, None, None)) :_*)
+     val args = arity.arguments map {a => OMV(getVarName(a.number - 1))}
+     val tm = ComplexTerm(spath, sub, con, args)
      tr {
        td { text{not.scope.languages.mkString("/")} }
        td { text{not.arity.length.toString} }
@@ -268,7 +277,8 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
         r.objects.foreach(doNarrativeObject)
         rh("</span>")
      }
-     case tm : NarrativeTerm => apply(tm.term, None)(rh)
+     case tm : NarrativeTerm =>
+       apply(tm.term, None)(rh)
      case n : NarrativeNode => 
        rh.writeStartTag(n.node.prefix, n.node.label, n.node.attributes, n.node.scope)
        n.child.map(doNarrativeObject)

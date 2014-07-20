@@ -109,7 +109,6 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
         }
       }
       
-      
       Server.JsonResponse(JSONArray(resultNodes.toList)).aact(tk)
     }
   }
@@ -128,18 +127,46 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       val resultSet = controller.depstore.getObjects(subject, relation)
       val pres = controller.extman.getPresenter("planetary").getOrElse(throw ServerError("No presenter found"))
       val rb = new presentation.StringBuilder
-      val resultNodes = resultSet foreach {p =>
+      val resultNodes = new collection.mutable.HashMap[String,String]
+      resultSet foreach {p =>
         controller.get(p) match {
           case s : StructuralElement =>
+            val rb = new presentation.StringBuilder
             pres(s)(rb)
+            val lang = sTeX.getLanguage(p.path).getOrElse("all")
+            resultNodes(lang) = rb.get
           case _ => 
         }
       }
+      
+      val sb = new StringBuilder
+      sb.write("<ul class=\"nav nav-tabs\" role=\"tablist\">")
+      resultNodes.keys.zipWithIndex foreach { p => 
+        sb.write(<li class={if (p._2 == 0) "active" else ""}><a data-target={ "#" + p._1 } style="cursor: pointer;" onclick={ "$(this).tab('show');" }> { p._1 } </a></li>.toString)
+      }
+      sb.write("</ul>")
+      
+            
+      sb.write("<div class=\"tab-content\">")
+      resultNodes.zipWithIndex foreach { p => 
+        sb.write("<div class=\"tab-pane ")
+        sb.write((if (p._2 == 0) "active" else ""))
+        sb.write("\"")
+        sb.write(" id=\"" + p._1._1 + "\">")
+        sb.write(p._1._2)
+        sb.write("</div>")
+      }
+      sb.write("</div>")
+      
+      
       val html = if (resultSet.isEmpty) {
         "<div class=\"error\"> No Results Found </div>" 
       } else {
-         "<div>" + rb.get + "</div>"
+         "<div>" + sb.get + "</div>"
       }
+      
+      
+      
       val response_header = <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
         <h4 class="modal-title" id="myModalLabel">{subject.last}</h4>
@@ -246,9 +273,13 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       }
       status("messages") = JSONObject(messages.toMap)
       response("status") = JSONObject(status.toMap)        
-    } else {
+    } else { //there are errors
       val status = new collection.mutable.HashMap[String, Any]()
-      status("conversion") = 2 //failed with errors
+      if (content == "") {
+        status("conversion") = 2 //failed with errors
+      } else {
+        status("conversion") = 2 //success with errors
+      }
       val messages = new collection.mutable.HashMap[String, Any]()
       errors.zipWithIndex foreach { p => 
         val message = new collection.mutable.HashMap[String, Any]()
