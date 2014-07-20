@@ -307,7 +307,6 @@ class STeXImporter extends Importer {
    val languages = "mathml" :: Nil
    val scope = NotationScope(variant, languages, 0)
    val notation = new TextNotation(Mixfix(markers), precedence, None, scope)
-   println("1" + notation.markers)
    notation
   }
   
@@ -493,7 +492,11 @@ class STeXImporter extends Importer {
   
   def makeDelim(s : String) : Delim = {
     val str = s.replaceAll("…", "...")
-    Delim(s)
+    str match {
+      case "(" => Delim("&#40;")
+      case ")" => Delim("&#41;")
+      case _ => Delim(str)
+    }
   }
   
   def parseSourceRef(n : scala.xml.Node,dpath : DPath) : SourceRef = {
