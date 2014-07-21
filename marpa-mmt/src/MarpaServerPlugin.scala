@@ -239,7 +239,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		  	  var flag = ""
 		  	  text = if (text.startsWith("#seq_")) {
 		  	    flag = "#seq_" 
-		  	    text.substring(3)
+		  	    text.substring(5)
 		  	  } else {
 		  	    text
 		  	  }
@@ -263,7 +263,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		  	  var flag = ""
 		  	  val w = if (rawW.startsWith("#seq_")) {
 		  	    flag = "#seq_" 
-		  	    rawW.substring(3)
+		  	    rawW.substring(5)
 		  	  } else {
 		  	    rawW
 		  	  }
@@ -290,7 +290,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		  	  var flag = ""
 		  	  text = if (text.startsWith("#seq_")) {
 		  	    flag = "#seq_" 
-		  	    text.substring(3)
+		  	    text.substring(5)
 		  	  } else {
 		  	    text
 		  	  }
@@ -323,25 +323,26 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		     	val subRule = s.sub match {
 		     		  case Some(m) =>  { hasSub = true
 		     		  					addRule(m)}
-		     		  case _ => "none"
+		     		  case _ => "none_sub"
 		     		}
 		     	val supRule = s.sup match {
 		     		  case Some(m) => { hasSup = true
 		     				  		   addRule(m)
 		     		  }
-		     		  case _ =>  "none"
+		     		  case _ =>  "none_sup"
+		     		    
 		     	}
 		        
 		     	val overRule =  s.over match {
 		     		  case Some(m) => { hasOver = true
 		     			  				addRule(m)}  
-		     		  case _ => "none"
+		     		  case _ => "none_over"
 		        }
 		     		
 		     	val underRule = s.under match {
 		     		  case Some(m) => { hasUnder = true
 		     			  				addRule(m)}
-		     		  case _ => "none" 
+		     		  case _ => "none_under" 
 		     	}
 		       val result = if (hasSup && !hasSub ) {
 		          createRule("msubB"::mainRule::supRule::"msubE"::Nil)
@@ -359,7 +360,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		          createRule( "alternatives"::v1::v2::v3::Nil)
 		           
 		       } else if (hasOver && !hasUnder ) {
-		          createRule("moverB"::mainRule::underRule::"moverE"::Nil)
+		          createRule("moverB"::mainRule::overRule::"moverE"::Nil)
 		       } else if (!hasOver && hasUnder) {
 		          createRule("munderB"::mainRule::underRule::"munderE"::Nil)
 		       } else if ( hasOver && hasUnder) {
@@ -462,9 +463,9 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 //		    			"       || anyChar Error"::
 //		    			"""anyChar ~ [\s\S]"""::
 		    			//":lexeme ~ <anyChar> priority => -1":: //otherwise nothing other than Error will ever match
-		    			":start ::= ExpressionList "::                   // :start does not allow alternatives
-		    			"ExpressionList ::= Expression ExpressionList "::
-		    			"| Expression "::
+		    			":start ::= Expression "::                   // :start does not allow alternatives
+		    			"ExpressionList ::= Expression+ "::
+		    		//	"| Expression "::
 		    			"Expression ::= Notation   "::
 		    			"             | Presentation "::
      	    	//		" 			  | Content "::
