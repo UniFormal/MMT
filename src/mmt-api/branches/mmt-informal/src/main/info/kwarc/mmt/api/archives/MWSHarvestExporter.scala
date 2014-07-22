@@ -70,7 +70,7 @@ class MWSHarvestExporter extends Exporter {
 }
 
 
-class ModuleFlatener(controller : Controller) {
+class ModuleFlattener(controller : Controller) {
   val memory = controller.memory
   val modules = controller.memory.content.getModules
   
@@ -84,7 +84,7 @@ class ModuleFlatener(controller : Controller) {
     controller
   }
   
-  def flatten(t : DeclaredTheory) {
+  def flatten(t : DeclaredTheory) : DeclaredTheory =  {
     val tbar = new DeclaredTheory(t.parent, t.name, t.meta)
     val views = modules collect {
       case v : DeclaredView if v.to == t.path => v
@@ -104,6 +104,7 @@ class ModuleFlatener(controller : Controller) {
         tbar.add(s)
       }
     }
+    tbar
   }
   
   private def makeRules(v : DeclaredView) : HashMap[Path, Term] = {
@@ -157,14 +158,37 @@ class ModuleFlatener(controller : Controller) {
 }
 
 
-class FlattenningExporter extends Exporter {
+class FlattenningMWSExporter extends Exporter {
   val outDim = Dim("export", "mws-flat")
   val key = "mws-flat-harvest"
   override val outExt = "harvest"
-  
+  lazy val mf = new ModuleFlattener(controller)
   def exportTheory(t : DeclaredTheory, bd : BuildTask) {
-    
-    
+    val tbar = mf.flatten(t)
+    rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+    rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
+     def narrToCML(n : NarrativeObject) : List[scala.xml.Node] = n match {
+        case nt : NarrativeTerm => List(nt.term.toCML)
+        case nn : NarrativeNode => nn.child.flatMap(narrToCML)
+        case _ => Nil
+    }
+    tbar.getDeclarations foreach {d =>
+      d.getComponents.foreach {
+         case (comp, tc: AbstractTermContainer) =>
+            tc.get.foreach {t =>
+               val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML}</mws:expr>
+               rh(node.toString + "\n")
+            }
+         case (comp, no : NarrativeObject) => 
+           val exprs = narrToCML(no)
+           exprs foreach {cml =>
+            val out = <mws:expr url={CPath(d.path, comp).toPath}><content>{cml}</content></mws:expr>
+            rh(out.toString + "\n")
+           }
+         case _ => 
+      }
+    }
+    rh("</mws:harvest>\n")
     
   }
     def exportView(v: DeclaredView, bd: BuildTask) { 
