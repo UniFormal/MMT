@@ -70,6 +70,13 @@ abstract class HTML {
    val msubsup    = new Element("msubsup")
    val mfrac      = new Element("mfrac")
    val msqrt      = new Element("msqrt")
+   val merror     = new Element("merror")
+   val mglyph     = new Element("mglyph")
+   val mlabel     = new Element("mlabeledtr")
+   val mphantom   = new Element("mphantom")
+   val mroot      = new Element("mroot")
+   val mtext      = new Element("mtext")
+   
    
    
    val table = new Element("table")

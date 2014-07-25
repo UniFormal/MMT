@@ -185,10 +185,17 @@ case class TableMarker(content : List[Marker]) extends PresentationMarker {
    } 
 }
 
-case class SqrtMarker(content : List[Marker]) extends PresentationMarker {
+/**a marker representing the nth(index) root in mathml*/
+case class RootMarker(content : List[Marker], index : List[Marker] = Nil) extends PresentationMarker {
   def flatMap(f : Marker => List[Marker]) = {
-    SqrtMarker(content.flatMap(f))
+    RootMarker(content.flatMap(f),index)
   } 
+}
+/**a maker based on mathml label*/
+case class LabelMarker(content: List[Marker], label : String) extends PresentationMarker {
+  def flatMap(f : Marker => List[Marker]) = {
+    LabelMarker(content.flatMap(f),label)
+  }
 }
 
 case class NumberMarker(value : Delim) extends PresentationMarker {
@@ -196,10 +203,49 @@ case class NumberMarker(value : Delim) extends PresentationMarker {
     NumberMarker(value)
   } 
 }
-case class IdenMarker(value : Delim) extends PresentationMarker {
+/**Marker for Identifier in MathML -*/
+/*case class IdenMarker(value: Delim) extends PresentationMarker {
   def flatMap(f : Marker => List[Marker]) = {
     IdenMarker(value)
   } 
+}
+*/
+
+/** Marker for <mfenced> MathML tag*/
+/*case class ParaMarker(content: List[Marker]) extends PresentationMarker{
+  def flatMap(f : Marker => List[Marker]) = {
+    ParaMarker(content.flatMap(f))
+  }
+}
+*/
+
+/**Marker for error elements in MathML*/
+case class ErrorMarker(content: List[Marker]) extends PresentationMarker{
+  def flatMap(f: Marker => List[Marker]) = {
+    ErrorMarker(content)
+  }
+}
+
+/**Marker for phantom elements in MathML*/
+case class PhantomMarker(content : List[Marker]) extends PresentationMarker{
+  def flatMap(f: Marker => List[Marker]) = {
+    PhantomMarker(content.flatMap(f))
+  }
+}
+/** a marker for mglyph, to load non-standard symbols
+ *  @param src the source (link) of the symbol
+ *  @param alt the text to show in case of failure
+ *  */
+case class GlyphMarker( src : Delim, alt: String = "Failed Loading") extends PresentationMarker{
+  def flatMap(f: Marker => List[Marker]) = {
+    GlyphMarker(src)
+  }
+}
+
+case class TextMarker(text : Delim) extends PresentationMarker {
+  def flatMap(f:Marker => List[Marker]) = {
+    TextMarker(text)
+  }
 }
 /** a marker for type of the presented object */
 case object InferenceMarker extends PresentationMarker {
@@ -219,10 +265,10 @@ object PresentationMarker {
          var i = 0
          var level = 1
          while (level > 0) {
-            if (i >= rest.length) { //bracket is just delim
-              return (Delim("("), rest)
-            }
-            rest(i) match {
+			if( i >= rest.length) { //bracket is just Delim
+			   return (Delim("("),rest)
+			} 
+          	rest(i) match {
                case Delim("(") => level +=1
                case Delim(")") => level -=1
                case m =>
@@ -241,6 +287,7 @@ object PresentationMarker {
    def introducePresentationMarkers(ms: List[Marker]) : List[Marker] = {
       var sofar: List[Marker] = Nil
       var left : List[Marker] = ms
+      var isRootProcessed = true
       while (left != Nil) {
          val (first, others) = splitOffOne(left)
          first match {
@@ -295,19 +342,82 @@ object PresentationMarker {
                case Some((taken, end)) => 
                  val processed = introducePresentationMarkers(taken)
                  sofar ::= TableMarker(processed)
-                   left = end
+                 left = end
              }
-            case Delim("√")  =>
+            case Delim("√") =>
               val (arg, rest) = splitOffOne(others)
+              if(isRootProcessed){
+	              left = rest
+	              sofar ::= RootMarker(introducePresentationMarkers(List(arg)))
+              }
+              else{
+                left = rest
+                sofar = RootMarker(introducePresentationMarkers(List(arg)),List(sofar.head)) :: sofar.tail
+                isRootProcessed = true
+              }
+            case Delim("//*") =>
+              get_until(List("*//"),others,true) match {
+                case None =>
+                  sofar ::= first
+                  left = others
+                case Some((taken,end))=>
+                  val processed = introducePresentationMarkers(taken)
+                  sofar ::= PhantomMarker(processed)
+                  left = end
+              }
+               
+            case Delim("'") => // root will be '(root)√(base)
+              val (arg,rest) = splitOffOne(others)
               left = rest
-              sofar ::= SqrtMarker(List(arg))
+              sofar ::= makeOne(introducePresentationMarkers(List(arg)))
+              isRootProcessed = false
               
             case Delim(w) if w.startsWith("#num_") => //mathml number
               left = others
               sofar ::= NumberMarker(Delim(w.substring(5)))
-            case Delim(w) if w.startsWith("#id_") => //mathml identifier
+              
+          /*  case Delim(w) if w.startsWith("#id_") => //mathml identifier
               left = others
               sofar ::= IdenMarker(Delim(w.substring(4)))
+            case Delim("(") => 						//mathml fenced (paranthesis)
+              get_until(List(")"), left, true) match {
+               case None => 
+                 sofar ::= left.head
+                 left = left.tail
+               case Some((taken, end)) => 
+                 val processed = introducePresentationMarkers(taken)
+                 sofar ::= ParaMarker(processed)
+                 left = end
+             }
+             */
+              // [tdMarker].label(LABEL)
+            case Delim(w) if w.startsWith(".label(") => //TODO: support markers as labels
+              if(w.endsWith(")"))
+                sofar.head match {
+                case td : TdMarker => 
+                  sofar = LabelMarker(List(sofar.head),w.substring(7).dropRight(1)) :: sofar.tail
+                case notEnding =>
+                  sofar ::= first
+              	}
+              else
+                sofar ::= Delim(" ")
+              left = others
+              
+            case Delim(w) if w.startsWith("#glyph_") =>
+              left = others
+              sofar ::= GlyphMarker(Delim(w.substring(7)))
+              
+            case Delim("err_") =>
+              val (content,lrest) = splitOffOne(others)
+              left = lrest
+              sofar ::= ErrorMarker(List(content))
+            
+            case Delim(w) if w.startsWith("/*") && w.endsWith("*/") =>{
+              left = others
+              val second = w.substring(2).dropRight(2)
+              sofar ::= TextMarker(Delim(second))
+            }
+              
             case m =>
                sofar ::= m
                left = others

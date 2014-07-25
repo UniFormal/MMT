@@ -137,7 +137,7 @@ class NotationBasedPresenter extends ObjectPresenter {
     *  
     * See [[parser.ScriptMarker]] for the meaning of the scripts
     */
-   def doScript(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext) {
+   def doScriptMarker(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext) {
       def aux(sOpt: Option[Cont], oper: String) {sOpt match {
             case Some(script) => doOperator(oper); script()
             case None =>
@@ -150,7 +150,7 @@ class NotationBasedPresenter extends ObjectPresenter {
       doSpace(1)
    }
    
-   def doFraction(above: List[Cont], below: List[Cont], line: Boolean)(implicit pc: PresentationContext) {
+   def doFractionMarker(above: List[Cont], below: List[Cont], line: Boolean)(implicit pc: PresentationContext) {
       doBracketedGroup {
          above.head()
          above.foreach {e => 
@@ -166,7 +166,7 @@ class NotationBasedPresenter extends ObjectPresenter {
          }
       }
    }
-   
+   //helper method only
    def doSqrt(args : List[Cont])(implicit pc: PresentationContext) {
      doOperator("√")
      doBracketedGroup {
@@ -178,13 +178,82 @@ class NotationBasedPresenter extends ObjectPresenter {
      }
    }
    
+   def doRootMarker(base : List[Cont], root : List[Cont])(implicit pc: PresentationContext){
+     if(root != Nil){
+	     doOperator("'")
+	     doBracketedGroup{
+	       base.head
+	       base.tail foreach { e => 
+	         doSpace(1)
+	         e()
+	       }
+	     }
+     }
+     doSqrt(root)
+   }
+   
    def doNumberMarker(arg : Delim)(implicit pc: PresentationContext) {
      doOperator("#num_" + arg.s)
    }
-   def doIdenMarker(arg : Delim)(implicit pc: PresentationContext) {
+   /*def doIdenMarker(arg : Delim)(implicit pc: PresentationContext) {
      doOperator("#id_" + arg.s)
    }
-
+   def doParaMarker(content: List[Delim], open:String="(", close:String=")", separators:List[String])(implicit pc: PresentationContext){
+     var body = ""
+     var i=0
+     val sepLength = separators.length
+     val cont = content.toArray
+     val seps = separators.toArray
+     for(i <- 0 to content.length-1){
+    	 if(i>sepLength) 
+    	   body += cont(i) + ","
+    	 else 
+    	   body += cont(i)+ seps(i) 
+	 }
+     body += cont(i)
+     doOperator(open + body + close)
+   }*/
+   def doErrorMarker(args: List[Cont])(implicit pc: PresentationContext){
+      doOperator("#err_")
+	  doBracketedGroup {
+	   args.head
+	   args.tail.foreach {e =>
+	     doSpace(1)
+	     e()
+	   }
+	 }
+   }
+   
+   def doPhantomMarker(args: List[Cont])(implicit pc: PresentationContext){
+     doOperator("//*")
+     doBracketedGroup {
+	   args.head
+	   args.tail.foreach {e =>
+	     doSpace(1)
+	     e()
+	   }
+	 }
+     doOperator("*//")
+   }
+   
+   def doTextMarker(text : Delim)(implicit pc: PresentationContext){
+     doOperator("/*" + text.s + "*/")
+   }
+   
+   def doGlyphMarker(src: Delim, alt: String="Failed to Load")(implicit pc: PresentationContext){
+	   doOperator("#glyph_"+src.s)
+   }
+   
+   def doLabelMarker(args: List[Cont], label : String ) (implicit pc: PresentationContext){
+    doBracketedGroup {
+      args.head
+      args.tail.foreach {e=> 
+        doSpace(1)
+        e()
+      }
+    }
+    doOperator( ".label(" +label+ ")" )
+   }
    
    /** 1 or 2-dimensional notations, true by default */
    def twoDimensional : Boolean = true
@@ -339,7 +408,7 @@ class NotationBasedPresenter extends ObjectPresenter {
     *  @param bracket called to determine whether a non-atomic term rendered with a certain notation should be bracketed
     *  @return true if the term was bracketed
     */
-   private def recurse(obj: Obj, bracket: TextNotation => Int)(implicit pcOrg: PresentationContext): Int = {
+   def recurse(obj: Obj, bracket: TextNotation => Int)(implicit pcOrg: PresentationContext): Int = {
          val pc = pcOrg.copy(source = SourceRef.get(obj))
          val t = obj match {
             case t: Term => t
@@ -430,18 +499,33 @@ class NotationBasedPresenter extends ObjectPresenter {
                            doUnbracketedGroup { doMarkers(ms) }
                         case s: ScriptMarker =>
                            def aux(mOpt: Option[Marker]) = mOpt.map {m => (_:Unit) => doMarkers(List(m))} 
-                           doScript(doMarkers(List(s.main)), aux(s.sup), aux(s.sub), aux(s.over), aux(s.under))
+                           doScriptMarker(doMarkers(List(s.main)), aux(s.sup), aux(s.sub), aux(s.over), aux(s.under))
                         case FractionMarker(a,b,l) =>
                            def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
-                           doFraction(a map aux, b map aux, l)
-                        case SqrtMarker(markers) => 
-                           def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
-                           doSqrt(markers map aux)
+                           doFractionMarker(a map aux, b map aux, l)
                         case NumberMarker(value) => 
                            doNumberMarker(value)
-                        case IdenMarker(value) => 
+                        /*case IdenMarker(value) => 
                            doIdenMarker(value)
+                           */
+                        case ErrorMarker(markers)=>
+                            def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                            doErrorMarker(markers map aux)
+                        case GlyphMarker(source,alt) =>
+                            doGlyphMarker(source,alt)
+                        case LabelMarker(markers,label) =>
+                            def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                            doLabelMarker(markers map aux,label)
+                        case PhantomMarker(markers) =>
+                            def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                            doPhantomMarker(markers map aux)
+                        case TextMarker(text) =>
+                            doTextMarker(text)
+                        case RootMarker(base, root) =>
+                            def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                            doRootMarker(base map aux,root map aux)
                         case InferenceMarker =>
+                        
                         case _ => //TODO
                      }
                      previous = Some(current)
