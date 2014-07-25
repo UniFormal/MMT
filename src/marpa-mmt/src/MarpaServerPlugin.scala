@@ -48,6 +48,11 @@ import info.kwarc.mmt.api.notations.Marker
 import info.kwarc.mmt.api.notations.SeqArg
 import info.kwarc.mmt.api.notations.TdMarker
 import info.kwarc.mmt.api.notations.TextNotation
+import info.kwarc.mmt.api.notations.PlaceholderDelimiter
+import info.kwarc.mmt.api.notations.SymbolName
+import info.kwarc.mmt.api.notations.Subs
+import info.kwarc.mmt.api.notations.InstanceName
+
 import info.kwarc.mmt.api.notations.Var
 import info.kwarc.mmt.api.ontology.Binary
 import info.kwarc.mmt.api.ontology.isDefinedBy
@@ -113,7 +118,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 //       val resp = new JSONArray(xmlNotations.map(_.toString))
    // 	notations.foreach( x => println(x.arity.length)) PRINT NOTATION ARGUMENT NUMBER
         //	notations.foreach( pair => Grammar.addTopRule(pair._1.toPath, pair._2.presentationMarkers)) //adding rules to the grammar
-       val raw = notations.toList.zipWithIndex
+       
+      val raw = notations.toList.zipWithIndex
        raw.foreach( x => Grammar.addTopRule(x._1._1.toPath+"N"+x._2.toString, x._1._2.presentationMarkers)) //adding rules to the grammar
        val resp = new JSONArray( Grammar.getMarpaGrammar );
 //     val resp = new JSONArray(Grammar.rules.toList.map(_.toString));
@@ -157,9 +163,15 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	    val notUniqueName = q replaceAllIn (suff, m => "_")
 		val uniqueName = createTopRuleName(notUniqueName)
 	    NotationContent ::= uniqueName 
-	    eventList ::= "event '"+uniqueName+"' = completed "+uniqueName
+	    if (!uniqueName.endsWith("N482")){
+	    	eventList ::= "event '"+uniqueName+"' = completed "+uniqueName 
+	    }
 	    currentTopRuleNr = getRuleNr(uniqueName)
-	    val content:List[String] = "topLevel"::markers.map(addRule)
+	    val content:List[String] = "topLevel"::markers.map(
+	        x => x match { 
+	          case Delim(text) => addRule(Delim("#seq_"+text)) 
+	          case _ => addRule(x)
+	        })
 	    rules = rules | Set((Rule(uniqueName,content)))     //uniqueness of top level notations is assumed
 	  }
 	  
@@ -195,6 +207,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	  //returns the name of the rule, adds the rule to the grammar by calling CreateRule
 	  //this function performs the recursion on Markers, while CreateRule just checks for uniqueness
 	  def addRule(marker:Marker):String = marker match { 
+	        
 			case Arg(argNr,precedence) => {
 						   val content =  precedence match {
 						        case Some(x) => 
@@ -225,14 +238,30 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 				    		result
 				    }		
 		  	case m : TdMarker => 
-		  	  val contentRule = createRule("contentRule"::(m.content map addRule))
-		  	  createRule("mtdB"::contentRule::"mtdE"::Nil)
+		  	  val content = m.content map addRule
+		  	  if (content.isEmpty) {
+		  	    createRule("mtdSingle"::Nil)
+		  	  } else {
+		  	      val contentRule = createRule("contentRule"::content)
+		  		  createRule("mtdB"::contentRule::"mtdE"::Nil)
+		  	  }
+		  	  
 		  	case m : TrMarker => 
-		  	  val contentRule = createRule("contentRule"::(m.content map addRule))
-		  	  createRule("mtrB"::contentRule::"mtrE"::Nil)
+		  	  val content = m.content map addRule
+		  	  if (content.isEmpty) {
+		  	    createRule("mtrSingle"::Nil)
+		  	  } else {
+		  	      val contentRule = createRule("contentRule"::content)
+		  		  createRule("mtrB"::contentRule::"mtrE"::Nil)
+		  	  }
 		  	case m : TableMarker =>
-		  	  val contentRule = createRule("contentRule"::(m.content map addRule))
-		  	  createRule("mtableB"::contentRule::"mtableE"::Nil)
+		  	  val content = m.content map addRule
+		  	  if (content.isEmpty) {
+		  	    createRule("mtableSingle"::Nil)
+		  	  } else {
+		  	      val contentRule = createRule("contentRule"::content)
+		  		  createRule("mtableB"::contentRule::"mtableE"::Nil)
+		  	  }	  
 		  	  //////////////////////////////////////////////////////////////
 		  	case NumberMarker(d) =>
 		  	  var text = d.text
@@ -246,11 +275,9 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		  	   if ( text == "" ) {
 		         text = " "
 		  	   }
-		  	   // flag shows whether the delim comes from a seq arg 
-//		  	   if ( text == "") {
-//		        createRule("empty"::Nil)
-//		      } else 
-		        if (text == """⁢""") { //handling the invisible unicode char used for function application
+		  
+		        if (text == "⁢"//unicode 
+		            && flag == "") { //handling the invisible unicode char used for function application
 		        val v1 = createRule("empty"::Nil)
 		        val v2 = createRule("mnB"::text.toString::"mnE"::Nil)
 		        createRule("alternatives"::v1::v2::Nil)
@@ -261,12 +288,14 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		  	  //first check if this Delim is from a Sequence Argument - if so the rule
 		  	  //cannot be nullable
 		  	  var flag = ""
-		  	  val w = if (rawW.startsWith("#seq_")) {
+		  	  var w = if (rawW.startsWith("#seq_")) {
 		  	    flag = "#seq_" 
 		  	    rawW.substring(5)
 		  	  } else {
 		  	    rawW
 		  	  }
+		  	  if (w=="&#40;") { w = "(" }
+		  	  if (w=="&#41;") { w = ")" }
 		  	  if (w.startsWith("#num_")) {
 		  	    addRule(NumberMarker(Delim(flag+w.substring(5))))
 		  	  } else if (w.startsWith("#id_")){
@@ -277,7 +306,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 			        text = " "
 			          
 			      } 
-			       if (text == """⁢""") { //handling the invisible unicode char used for function application
+			       if (text == """⁢""" //unicode
+			         && flag == "") { //handling the invisible unicode char used for function application
 			        val v1 = createRule("empty"::Nil)
 			         val v2 = createRule("moB"::text.toString::"moE"::Nil)
 			        createRule("alternatives"::v1::v2::Nil)
@@ -297,7 +327,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		  	   if ( text == "" ) {
 		         text = " "
 		  	   }
-		      if (text == """⁢""") { //handling the invisible unicode char used for function application
+		      if (text == """⁢""" //unicode
+		        && flag == "") { //handling the invisible unicode char used for function application
 		        val v1 = createRule("empty"::Nil)
 		         val v2 = createRule("miB"::text.toString::"miE"::Nil)
 		        createRule("alternatives"::v1::v2::Nil)
@@ -307,8 +338,12 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
               /////////////////////////////////////////////////////
 		    case m : GroupMarker => 
 		    				  val content:List[String] = m.elements.map(addRule)
-		    				  val result = createRule("Group"::content)
-		    				  result
+		    				  if (content.isEmpty) {
+			    				  createRule("mrowSingle"::Nil)
+		    				  } else {
+		    				      val result = createRule("Group"::content)
+			    				  result
+		    				  }
 		 
 		    case f : FractionMarker => 
 		      val above = addRule(GroupMarker(f.above))
@@ -381,6 +416,9 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		       }
 		       
 		       result
+		   case  Var(nr, false, None, precOp) =>  addRule(Arg(nr,precOp))
+		   case Var(nr,false,Some(delim),precOp) => addRule(SeqArg(nr,delim,precOp))
+		   case Subs(nr,precOp) =>  addRule(Arg(nr,precOp))
 		   case SqrtMarker(ml) => 
 		      createRule("msqrtB"::ml.map(addRule):::"msqrtE"::Nil)
 		    case _ =>
@@ -395,7 +433,13 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	    
 	    content match {
 	      case "ref"::to::Nil => name + "::= " + to
-	      case "topLevel"::tl => name + "::= " + tl.mkString(" ") 
+	      case "topLevel"::tl => 
+	        val rest = tl.mkString(" ")
+	        if (rest == "") {
+	        	"#Ignored top level rule (no rendering)"
+	        } else {
+	        	name + "::= " + tl.mkString(" ")
+	        }
 	      case "contentRule"::tl => name + "::= " + tl.mkString(" ") 
 	      case "Group"::tl => name + "::= " + tl.mkString(" ") 
 	      case "empty"::Nil => name + "::= " + "#Empty rule" 
@@ -445,6 +489,10 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	      case "mtdB"::contentRule::"mtdE"::Nil => name + "::= " + content.mkString(" ") 
 	      case "mtrB"::contentRule::"mtrE"::Nil => name + "::= " + content.mkString(" ") 
 	      case "mtableB"::contentRule::"mtableE"::Nil => name + "::= " + content.mkString(" ")
+	      case "mtdSingle"::Nil => name + "::= mtdSingle"
+	      case "mtrSingle"::Nil => name + "::= mtrSingle"
+	      case "mtableSingle"::Nil => name + "::= mtableSingle"
+	      case "mrowSingle"::Nil => name + "::= mrowSingle"
 	      case "msqrtB"::tl => name + "::= " + content.mkString(" ") 
 	      case List("mfracB",above,below,"mfracE") => name + "::= " + content.mkString(" ") 
 	      case _ => println ("TODO BNF:"+ (content mkString " ")) 
@@ -464,7 +512,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 //		    			"""anyChar ~ [\s\S]"""::
 		    			//":lexeme ~ <anyChar> priority => -1":: //otherwise nothing other than Error will ever match
 		    			":start ::= Expression "::                   // :start does not allow alternatives
-		    			"ExpressionList ::= Expression+ "::
+		    			"ExpressionList ::= Expression+"::
 		    		//	"| Expression "::
 		    			"Expression ::= Notation   "::
 		    			"             | Presentation "::
@@ -494,6 +542,11 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			" | mstyleB ExpressionList mstyleE "::
 		    			" | mspaceB mspaceE "::
 		    			" | miSingle "::
+		    			" | moSingle "::
+		    			" | mtdSingle " ::
+		    			" | mtrSingle " ::
+		    			" | mtableSingle "::
+		    			" | mrowSingle "::
 		    		//	" || texts "::
 //		    			"mfracB ::= ws '<mfrac' attribs '>' ws"::"mfracE ::= ws '</mfrac>' ws"::
 //		    			"msqrtB ::= ws '<msqrt' attribs '>' ws"::"msqrtE ::= ws '</msqrt>' ws"::
@@ -540,6 +593,11 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			"""mrowB ::=  '<mrow' attribs '>' """:: """mrowE ::=  '</mrow>' """::
 		    			"mathB ::=  '<math' attribs '>' "::"mathE ::=  '</math>' "::
 		    			"miSingle ::=  '<mi' attribs '/>'  "::
+		    			"moSingle ::=  '<mo' attribs '/>'  "::
+		    			"mtdSingle ::=  '<mtd' attribs '/>'  "::
+		    			"mtrSingle ::=  '<mtr' attribs '/>'  "::
+		    			"mtableSingle ::=  '<mtable' attribs '/>'  "::
+		    			"mrowSingle ::=  '<mrow' attribs '/>'  "::
 /////////////////////////////////////////////////////////////
 		    			"ws ::= spaces"::
 		    			"ws ::= # empty"::
@@ -571,12 +629,19 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			
 		    		
 		   val extractedRules = Grammar.rules.toList.map(x=>Grammar.toBNF(x)).map(_.toString)
+
 		   NotationContent match {
 		      case Nil => "#No notations found"::Nil 
 		      case _ => val tl = NotationContent.tail
 			   val Notation = tl match {
 			      case Nil => "Notation ::= " + NotationContent.head :: Nil
-			      case _   => "Notation ::= " + NotationContent.head :: tl.map(x => "| "+x)
+			      case _   => val r = Grammar.rules.toList 
+					         "Notation ::= " + NotationContent.head :: tl.map(x => 
+					          if (x.endsWith("N482")) {
+					           "#Ommited top level rule"
+					         } else {
+					        	 "| " + x
+					         })
 			    }
 		   val result = pref:::Notation:::extractedRules :::eventList
 		   //clean up   
