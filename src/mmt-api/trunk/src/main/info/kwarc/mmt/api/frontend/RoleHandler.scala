@@ -7,8 +7,10 @@ import info.kwarc.mmt.api._
 trait ChangeListener extends Extension {
    /** called after adding the element */
    def onAdd(c: ContentElement) {}
-   /** called after deleting the element */
-   def onDelete(path: Path) {}
+   /** called after deleting the element
+    *  @param old the now-deleted element
+    */
+   def onDelete(old: ContentElement) {}
    /** called after updating the element
     *  @param newElem the element after its update
     */
@@ -28,7 +30,7 @@ trait ChangeListener extends Extension {
  */
 class Notify(listeners: List[ChangeListener]) {
    def onAdd(c: ContentElement)          {listeners.foreach(_.onAdd(c))}
-   def onDelete(path: Path)              {listeners.foreach(_.onDelete(path))}
+   def onDelete(c: ContentElement)       {listeners.foreach(_.onDelete(c))}
    def onUpdate(newElem: ContentElement) {listeners.foreach(_.onUpdate(newElem))}
    def onClear                           {listeners.foreach(_.onClear)}
    def onCheck(c: ContentElement)        {listeners.foreach(_.onCheck(c))}

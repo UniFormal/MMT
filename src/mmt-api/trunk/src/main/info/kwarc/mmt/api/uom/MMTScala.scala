@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import objects._
 
-trait RealizationInScala extends checking.RuleSet {
+trait RealizationInScala {
    val _domain: TheoryScala
    lazy val _path = _domain._path
    lazy val _name = _domain._name
@@ -67,12 +67,6 @@ trait DocumentScala {
    }
    def addDocument(d: DocumentScala) {
       documents ::= d
-   }
-   def register(rs: checking.RuleStore) {
-      documents.foreach(_.register(rs))
-      realizations.foreach {v =>
-         rs.add(v)
-      }
    }
    def test(controller: frontend.Controller, log: String => Unit) {
       documents.foreach {_.test(controller, log)}

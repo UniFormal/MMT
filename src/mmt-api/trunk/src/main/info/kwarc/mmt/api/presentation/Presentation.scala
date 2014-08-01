@@ -3,6 +3,8 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 import scala.xml.{Node,NodeSeq}
 
+/*
+
 case class BracketInfo(prec: Option[Precedence] = None, delimitation : Option[Int] = None)
 
 /** This is the type of a simple language of presentation expressions that may be used in Notation and are evaluated by Presenter */
@@ -272,3 +274,5 @@ object Presentation {
          PList(ps.toList)
    }
 }
+
+*/

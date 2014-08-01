@@ -6,13 +6,9 @@ import uom._
 import utils._
 import notations.ImplicitArg
 
-class SimplificationRuleGenerator2 extends ChangeListener {
-  override val logPrefix = "rule-gen"
-  case class DoesNotMatch(msg : String = "") extends java.lang.Throwable(msg)
-  override def onAdd(e: ContentElement) {onCheck(e)}
-  override def onDelete(p: Path) {
-     controller.extman.ruleStore.delete {r => r.path == p}
-  }
+class SimplificationRuleGenerator2 extends SimplificationRuleGenerator {
+  override val logPrefix = "rule-gen2"
+
   override def onCheck(e: ContentElement) {
     val c = e match {
        case c: symbols.Constant =>
@@ -29,10 +25,10 @@ class SimplificationRuleGenerator2 extends ChangeListener {
     	    scp match {
     	      case OMSemiFormal(s) => throw DoesNotMatch("failed to parse rule " + ruleName)
     	      // match to OMA(OMID(=), (lhs, rhs))    	      
-    	      case ApplySpine(OMID(eq), argls) =>
+    	      case ApplySpine(OMS(eq), argls) =>
     	        val t1 = argls(argls.length - 2)
     	        val t2 = argls(argls.length - 1)
-    	        if (controller.localLookup.get(eq).role.toString == "Constant:Eq") {
+    	        if (controller.localLookup.getConstant(eq).rl.toString == "Constant:Eq") {
                 // match lhs to OMA(op, (var,...,var,OMA/OMID,var,...,var))
     	          t1 match {
     	            case ApplySpine(OMS(outer), args) =>
@@ -131,7 +127,7 @@ class SimplificationRuleGenerator2 extends ChangeListener {
  	            	   	  }
  	            	   	} 	
  	            	  }
- 	            	  controller.extman.ruleStore.add(simplify)
+ 	            	  controller.add(new symbols.RuleConstant(c.home, c.name / SimplifyTag, simplify))
     	              log("succesfully registered rule: " + ruleName)
     	            case _ => throw DoesNotMatch(ruleName + " no outer op")
     	          }

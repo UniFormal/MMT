@@ -48,7 +48,6 @@ class MMTElemAsset(val elem : StructuralElement, name: String, reg: SourceRegion
    def path = elem.path
    def getScope : Option[objects.Term] = elem match {
       case _ : NarrativeElement => None
-      case _ : PresentationElement => None
       case c : ContentElement => c match {
         case t: DeclaredTheory => Some(objects.OMMOD(t.path))
         case v: modules.View => None //would have to be parsed to be available
@@ -225,7 +224,8 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case OMS(p) => p.name.toString
          case l: OMLITTrait => l.toString 
          case OMSemiFormal(_) => "unparsed: " + tP.toString
-         case _ => tP.head.map(_.last.toString).getOrElse(t.role.toString)
+         case ComplexTerm(op, _,_,_) => op.last.toString
+         case _ => ""
       }
       val child = new DefaultMutableTreeNode(new MMTObjAsset(t, context, parent, label, reg))
       node.add(child)
@@ -241,8 +241,8 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
             if (! fun.isInstanceOf[OMID])
                buildTree(child, parent, fun, context, reg)
             args.foreach(buildTree(child, parent, _, context, reg))            
-         case _ => t.components foreach {
-            case o: Term => buildTree(child, parent, o, context, reg)
+         case _ => t.subobjects foreach {
+            case (_, o: Term) => buildTree(child, parent, o, context, reg)
             case _ =>
          }
       }
@@ -290,8 +290,9 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
             log(a.obj.toString)
             a.obj match {
                case Hole(t) =>
-                  val rules = prover.applicable(t)(Stack(a.context))
-                  val comp = new ProverCompletion(view, controller, a.region, rules)
+                  val rules = RuleBasedChecker.collectRules(controller, a.context) //TODO should be cached
+                  val applRules = prover.applicable(t, rules)(Stack(a.context))
+                  val comp = new ProverCompletion(view, controller, a.region, applRules)
                   return comp
                case _ =>
             }

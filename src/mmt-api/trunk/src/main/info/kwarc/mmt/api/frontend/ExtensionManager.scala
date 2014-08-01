@@ -88,8 +88,6 @@ class ExtensionManager(controller: Controller) extends Logger {
    val report = controller.report
    val logPrefix = "extman"
 
-   val ruleStore = new checking.RuleStore
-   
    def addDefaultExtensions {
       //targets and presenters
       addExtension(new MMTCompiler)
@@ -97,8 +95,8 @@ class ExtensionManager(controller: Controller) extends Logger {
            TextPresenter, OMDocPresenter, controller.presenter).foreach {
         e => addExtension(e)
       }
-      //changeListeners
-      List(new modules.RealizationListener, parser.MetadataParser, parser.CommentIgnorer).foreach(addExtension(_))
+      //parser
+      List(new symbols.RuleConstantParser, parser.MetadataParser, parser.CommentIgnorer).foreach(addExtension(_))
       //parserExtensions ::= new ControlParser
       //serverPlugins
       List(new web.ActionServer, new web.SVGServer, new web.QueryServer, new web.SearchServer,
@@ -212,8 +210,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       mkL("server plugins", serverPlugins) +
       mkL("parser extensions", parserExtensions) +
       mkL("query extensions", queryExtensions) +
-      mkL("plugins", loadedPlugins) +
-      "rules\n" + ruleStore.stringDescription 
+      mkL("plugins", loadedPlugins) 
    }
    
    def cleanup {

@@ -2,6 +2,8 @@ package info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api._
 import objects._
 
+/*
+
 /** information provided by a content expression about how it is to be presented */
 abstract class PresentationData
 /** a content expression provides a key that yields a notation, which is rendered in the context of some components */
@@ -50,3 +52,5 @@ case class ContentComponents(comps : List[Content], names: List[(DeclarationComp
 abstract class CIndex
 case class NumberedIndex(i: Int) extends CIndex
 case class NamedIndex(s: String) extends CIndex
+
+*/

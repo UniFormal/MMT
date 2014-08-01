@@ -131,7 +131,7 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
     cpaths += mod.path
     
     //declaration paths
-    mod.components collect {
+    mod.getDeclarations collect {
       case dec : Declaration => cpaths ++= containedPaths(dec)
     }
     

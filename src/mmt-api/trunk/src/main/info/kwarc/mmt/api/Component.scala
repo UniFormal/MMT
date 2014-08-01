@@ -36,7 +36,7 @@ object DeclarationComponent {
     case "params" => ParamsComponent
     case "pattern-body" => PatternBodyComponent
     case "metadata" => MetaDataComponent
-    case s => throw ImplementationError("Invalid Declaration Component name : " + s)
+    case s => throw ParseError("Invalid name of declaration component: " + s)
   }
 }
 

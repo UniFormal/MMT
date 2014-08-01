@@ -115,6 +115,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
 	            }
 	         case (_, <rel>{_*}</rel>) => 
 	            //ignoring logical relations, produced by Twelf, but not implemented yet
+	         /*
 	         case (base : DPath, <style>{notations @ _*}</style>) =>
 		         log("style " + name + " found")
 			      val npath = base ? name
@@ -124,13 +125,12 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
 		         add(nset, md)
 		         docParent map (dp => add(MRef(dp, npath, true)))
 		         readNotations(npath, from, notations)
+		         */
              case (base : DPath, <omdoc>{mods}</omdoc>) =>
                  val dpath = docParent.get / name
                  val doc = new Document(dpath)
                  add(DRef(docParent.get, dpath, true), md)
                  readInDocument(base, Some(dpath), mods)
-             case (base : MPath, <notation>{_*}</notation>) =>
-                 readNotations(base, base, m)
 	         case (_,_) => throw ParseError("module level element expected: " + m)
          }}
       }
@@ -231,9 +231,14 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                   readInTheory(parent ? tname, parent ? tname, decs)
                }
             }
+         case <realizedconstant/> =>
+            log("found opaque constant " + name + ", trying RuleConstantInterpreter")
+            val rc = RuleConstantInterpreter.fromNode(s, home)
+            add(rc, md)
          case <alias/> =>
             //TODO: remove this case when Twelf exports correctly
             logError("warning: ignoring deprecated alias declaration")
+         //TODO remove patterns and instances
          case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations></pattern> =>
             log("pattern with name " + name + " found")
             doPat(name, Some(params), decls, Nil, md)
@@ -257,6 +262,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
          }
       }
    }
+   /*
    def readNotations(nset : MPath, base : Path, notations : NodeSeq)(implicit cont: StructuralElement => Unit) {
       for (N <- notations) {
          N match {
@@ -282,7 +288,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
 	     }
 	  }
    }
-   
+   */
    private def parseImplicit(n: Node): Boolean = {
       xml.attr(n, "implicit") match {
          case "true" => true

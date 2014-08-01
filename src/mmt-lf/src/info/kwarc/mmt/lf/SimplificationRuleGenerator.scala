@@ -2,35 +2,48 @@ package info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import frontend._
 import objects._
+import symbols._
 import uom._
 import utils._
 import notations.ImplicitArg
 
 class SimplificationRuleGenerator extends ChangeListener {
   override val logPrefix = "rule-gen"
-  case class DoesNotMatch(msg : String = "") extends java.lang.Throwable(msg)
-  override def onUpdate(e: ContentElement) {onAdd(e)}
-  override def onAdd(e: ContentElement) {onCheck(e)}
-  override def onDelete(p: Path) {
-     controller.extman.ruleStore.delete {r => p <= r.path}
+  protected val SimplifyTag = "Simplify"
+  private def rulePath(r: GeneratedDepthRule) = r.from.path / SimplifyTag
+  
+  private def getGeneratedRule(p: Path): Option[GeneratedDepthRule] = {
+     p match {
+        case p: GlobalName =>
+           controller.globalLookup.getO(p / SimplifyTag) match {
+              case Some(r: RuleConstant) => Some(r.df.asInstanceOf[GeneratedDepthRule])
+              case _ => None
+           }
+        case _ => None
+     }
   }
-  override def onClear {
-     controller.extman.ruleStore.delete {r => r.isInstanceOf[GeneratedDepthRule]}
+     
+  case class DoesNotMatch(msg : String = "") extends java.lang.Throwable(msg)
+  
+  override def onUpdate(e: ContentElement) {
+     onDelete(e)
+     onAdd(e)
+  }
+  override def onAdd(e: ContentElement) {onCheck(e)}
+  override def onDelete(e: ContentElement) {
+     getGeneratedRule(e.path).foreach {r => controller.delete(rulePath(r))}
   }
   override def onCheck(e: ContentElement) {
        val c = e match {
-          case c: symbols.Constant if c.rl == Some("Simplify") =>
+          case c: symbols.Constant if c.rl == Some(SimplifyTag) =>
              if (c.tpC.analyzed.isDefined) {
-                val rules = controller.extman.ruleStore.depthRules.pairs
                 // check if an up-to-date rule for this constant exists already: if so break, otherwise delete it
-                rules foreach {
-                   case (_, r: GeneratedDepthRule) if r.path == c.path => 
-                      if (r.validSince >= c.tpC.lastChangeAnalyzed) {
-                         log("rule is up-to-date")
-                         return
-                      } else
-                         controller.extman.ruleStore.delete(_ == r)
-                   case _ =>
+                getGeneratedRule(c.path) foreach {r =>
+                   if (r.validSince >= c.tpC.lastChangeAnalyzed) {
+                      log("rule is up-to-date")
+                      return
+                   } else
+                      controller.delete(rulePath(r))
                 }
                 c
              } else {
@@ -132,9 +145,10 @@ class SimplificationRuleGenerator extends ChangeListener {
               throw DoesNotMatch("there are some non-unique variables in " + ruleName + " : " + varls)
            val desc = ruleName + " simplify " +   
               controller.presenter.asString(t1) + "  ~~>  " + controller.presenter.asString(t2)
-           val simplify = new GeneratedDepthRule(outer, inr, c, desc,
+           val rule = new GeneratedDepthRule(outer, inr, c, desc,
               bfr.reverse, ins.reverse, aft.reverse, implArgsOuter, implArgsInner, t2)
-      	  controller.extman.ruleStore.add(simplify)
+           val ruleConst = new RuleConstant(c.home, c.name / SimplifyTag, rule)
+      	  controller.add(ruleConst)
            log("succesfully registered rule: " + ruleName)
          case _ => error(c, "no outer op")
        }
@@ -146,11 +160,9 @@ class SimplificationRuleGenerator extends ChangeListener {
 }
 
 
-class GeneratedDepthRule(outer: GlobalName, inner: GlobalName, from: symbols.Constant, desc: String,
+class GeneratedDepthRule(outer: GlobalName, inner: GlobalName, val from: Constant, desc: String,
        bfrNames: List[LocalName], insNames: List[LocalName], aftNames: List[LocalName],
-       implArgsOut: List[ImplicitArg], implArgsIn: List[ImplicitArg], lhs: Term) extends DepthRule(outer, inner){
-    override def path = from.path
-    override def parent = from.home
+       implArgsOut: List[ImplicitArg], implArgsIn: List[ImplicitArg], lhs: Term) extends DepthRule(outer, inner) {
     override def toString = desc
     val validSince = from.tpC.lastChangeAnalyzed
     private val implOutInx = implArgsOut map { case ImplicitArg(i,_) => i-1 }

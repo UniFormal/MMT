@@ -59,12 +59,8 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
                   ta.obj match {
                     case OMV(n) =>
                       asString(ta.context(n))
-                    case VarDecl(n, Some(tp), _, _) =>
-                      if (parser.SourceRef.get(tp).isEmpty)
-                        //assuming lack of source reference identifies inferred type
-                        asString(tp)
-                      else 
-                        null
+                    case vd : VarDecl =>
+                        asString(vd)
                     case OMA(OMID(p), args) =>
                         val implicits = args.filter(a => parser.SourceRef.get(a).isEmpty)
                         if (implicits.isEmpty) null

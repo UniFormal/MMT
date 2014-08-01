@@ -135,9 +135,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
    def build(a: Archive, args: List[String], in: List[String] = Nil) {
       buildAux(in)(a)
    }
+
+   private def makeHandler = new ErrorContainer(Some(report))
+   
    /** recursive building */
    private def buildAux(in : List[String] = Nil)(implicit a: Archive) {
-       def makeHandler = new ErrorContainer(Some(report))
        val errorMap = a.errors(key)
        //build every file
        val prefix = "[" + inDim + " -> " + outDim + "] "
@@ -207,7 +209,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
        }, {case (c @ Current(inDir, inPath), childChanged) =>
           if (childChanged.exists(_ == true)) {
              val outFile = folderOutPath(a, inPath)
-             val errorCont = a.errors(key)(inPath)
+             val errorCont = a.errors(key).getOrElseUpdate(inPath, makeHandler)
              errorCont.reset
              val bd = new BuildTask(inDir, true, inPath, a.narrationBase, outFile, errorCont) 
              buildDir(a, bd, Nil) // TODO pass proper builtChildren

@@ -50,7 +50,6 @@ object Util {
   def loadResource(path : String) : java.io.InputStream = {
     val stream = getClass.getResourceAsStream("/mmt-web/" + path)  // the file inside the JAR
     if (stream != null) {
-        println("found in JAR")
         stream  
     } else {
         val filePath : String = try {

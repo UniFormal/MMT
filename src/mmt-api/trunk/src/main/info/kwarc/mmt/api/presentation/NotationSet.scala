@@ -3,6 +3,8 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 import scala.xml.Node
 
+/*
+
 sealed abstract class Defaults(val desc : String)
 case object ImportsDefaults extends Defaults("use")
 case object IgnoresDefaults extends Defaults("ignore")
@@ -25,3 +27,5 @@ class Style(val parent : DPath, name : LocalName, val from : Path, val to : Path
          {notations.iterator.map(_._2.toNode)}
       </style>
 }
+
+*/

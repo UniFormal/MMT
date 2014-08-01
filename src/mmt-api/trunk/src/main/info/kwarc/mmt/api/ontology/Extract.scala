@@ -57,6 +57,9 @@ object Extractor {
                         f(IsStructure(s.path))
                      }
                   case nm: NestedModule => apply(nm.module)
+                  case rc: RealizedConstant =>
+                     f(dec)
+                     f(IsConstant(rc.path))
                   case p: Pattern =>
                      f(dec)
                      f(IsPattern(p.path))

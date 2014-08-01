@@ -34,7 +34,7 @@ case class TermPattern(qvars: Context, query: Term)
 object TermPattern {
    val qvarBinder = utils.mmt.mmtcd ? "qvar"
    val qvarMarkers = List(Delim("$"), Var(1, false, Some(Delim(","))), Delim(":"), Arg(2))
-   val qvarNot = new TextNotation(Mixfix(qvarMarkers), presentation.Precedence.infinite, None)
+   val qvarNot = new TextNotation(Mixfix(qvarMarkers), Precedence.infinite, None)
    val qvarRule = ParsingRule(qvarBinder, qvarNot)
    class RemoveUnknowns(unk: Context) extends StatelessTraverser {
       def traverse(t: Term)(implicit con : Context, init : State) = t match {

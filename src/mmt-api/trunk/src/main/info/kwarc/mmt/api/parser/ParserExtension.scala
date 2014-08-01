@@ -19,8 +19,8 @@ abstract class ParserExtension extends Extension {
    /**
     * Called to parse a declaration if the respective keyword has been read.
     * @param sp the StructureParser that is calling this extension
-    * @param r the reader from which further input can be read
-    * @param document the current structural element (Document, DeclaredModule, or Constant)
+    * @param s the current parsing state
+    * @param se the current structural element (Document, DeclaredModule, or Constant)
     * @param keyword the keyword that was read
     * 
     * the keyword but nothing else has been read already when this is called

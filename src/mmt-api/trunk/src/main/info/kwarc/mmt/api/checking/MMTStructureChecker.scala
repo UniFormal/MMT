@@ -195,8 +195,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                }
                case _ => // cOrg has no definiens, nothing to do
             }
+         case rc: RealizedConstant =>
          case _ =>
-            //succeed for everything else
+            //succeed for everything else but signal error
             logError("unchecked " + path)
       }
       // call the registered change listeners

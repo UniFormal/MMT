@@ -19,7 +19,6 @@ import presentation._
  */
 class Theory2LogicSyntax {
 	case class TheoryLookupError(msg : String) extends java.lang.Throwable(msg)
-	 
   
 	/*
 	 * translates a theory to a logic syntax LogicSyntax = (List[Category], CatRef, List[Declaration])
@@ -64,7 +63,7 @@ class Theory2LogicSyntax {
 	  sl.mapPartial{
 	    case a : Pattern => {
 	      val name = a.name.toString
-	      val args = a.params.components.mapPartial{ v =>
+	      val args = a.params.variables.toList.mapPartial{ v =>
 	        v.tp
 	      } 
 	      val ars = args.map{ q => head(q) }

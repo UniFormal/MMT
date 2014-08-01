@@ -24,10 +24,5 @@ object Position {
 	/** same Init / i */
 	def apply(i: Int) : Position = Position(List(i))
    /** @return the positions of the subobjects of t */
-   def positions(t: Obj) = t match {
-      case ComplexTerm(f, args, con, scs) =>
-         val n = 1+args.length+con.variables.length+scs.length
-         Range(0,n).toList.map(i => Position(i))
-      case _ => t.components.indices.toList.map(Position(_))
-   }
+   def positions(t: Obj) = t.subobjects.indices.toList.map(i => Position(i))
 }

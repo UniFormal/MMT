@@ -73,7 +73,7 @@ abstract class Importer extends TraversingBuildTarget {
            // write relational file
            writeToRel(mod, a/relational / Archive.MMTPathToContentPath(mod.path))
         }}
-   }    
+   }
    /** deletes content, narration, and relational */
    override def cleanFile(a: Archive, curr: Current) {
        val controller = new Controller(report)
