@@ -19,7 +19,6 @@
  * deepest nested Markers. This means that when adding a rule - it is enough to check whether a rule
  * with the same content is already in the grammar or not (which wouldn't be the case if the rules would 
  * be created in inverse order).
- * 
  *    For each top level rule an event is created and for each argument of such rule a relevant action
  * is added to the grammar.
  */
@@ -163,7 +162,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	    val notUniqueName = q replaceAllIn (suff, m => "_")
 		val uniqueName = createTopRuleName(notUniqueName)
 	    NotationContent ::= uniqueName 
-	    if (!uniqueName.endsWith("N482")){
+	    if (!(uniqueName.endsWith("N482")||uniqueName.startsWith("_coset_"))){
 	    	eventList ::= "event '"+uniqueName+"' = completed "+uniqueName 
 	    }
 	    currentTopRuleNr = getRuleNr(uniqueName)
@@ -380,9 +379,9 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		     		  case _ => "none_under" 
 		     	}
 		       val result = if (hasSup && !hasSub ) {
-		          createRule("msubB"::mainRule::supRule::"msubE"::Nil)
+		          createRule("msupB"::mainRule::supRule::"msupE"::Nil)
 		       } else if (!hasSup && hasSub) {
-		         createRule("msupB"::mainRule::subRule::"msupE"::Nil)
+		         createRule("msubB"::mainRule::subRule::"msubE"::Nil)
 		       } else if (hasSup && hasSub) {
 		          val v1 = createRule("msubB"::
 		             "msupB"::mainRule::supRule::"msupE"::
@@ -637,7 +636,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 			      case Nil => "Notation ::= " + NotationContent.head :: Nil
 			      case _   => val r = Grammar.rules.toList 
 					         "Notation ::= " + NotationContent.head :: tl.map(x => 
-					          if (x.endsWith("N482")) {
+					          if (x.endsWith("N482")||
+					              x.startsWith("_coset_")) {
 					           "#Ommited top level rule"
 					         } else {
 					        	 "| " + x
