@@ -161,7 +161,7 @@ class MizarCompiler extends archives.Importer {
    	val th = new DeclaredTheory(TranslationController.currentThyBase, TranslationController.localPath, Some(Mizar.MizarPatternsTh))	
    
    	TranslationController.add(th)
-   	fv.map(x => {if (x != "HIDDEN" && !TranslationController.controller.library.imports(OMMOD(MMTUtils.getTheoryPath(x)),OMMOD(th.path)))
+   	fv.map(x => {if (x != "HIDDEN" && !TranslationController.controller.library.hasImplicit(OMMOD(MMTUtils.getTheoryPath(x)),OMMOD(th.path)))
    		TranslationController.add(PlainInclude(MMTUtils.getTheoryPath(x) , th.path))
    	})
    	//TranslationController.add(PlainInclude(Mizar.HiddenTh, th.path))

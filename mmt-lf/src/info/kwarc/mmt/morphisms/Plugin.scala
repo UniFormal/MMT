@@ -7,7 +7,7 @@ class MorphismPlugin extends frontend.Plugin {
    val dependencies = Nil
    override def start(args: List[String]) {
       val em = controller.extman
-      em.ruleStore.add(TheoryTypeInhabitable,TheoryTypeUniverse,MorphTypeInhabitable,ComplexTheoryInfer,MorphCheck)
+      //em.ruleStore.add(TheoryTypeInhabitable,TheoryTypeUniverse,MorphTypeInhabitable,ComplexTheoryInfer,MorphCheck)
       em.addExtension(new InstanceElaborator)
    }
 }

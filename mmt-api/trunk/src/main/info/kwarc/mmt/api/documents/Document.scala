@@ -1,6 +1,5 @@
 package info.kwarc.mmt.api.documents
 import info.kwarc.mmt.api._
-import presentation._
 import libraries._
 import modules._
 import utils.MyList._
@@ -21,6 +20,10 @@ class Document(val path : DPath) extends NarrativeElement {
    }
    private var items : List[DocumentItem] = Nil
    /** returns the list of children of the document (including narration) */
+   def getDeclarations = items.flatMap {
+      case d: NarrativeElement => List(d)
+      case _ => Nil
+   }
    def getNarratedItems = items
    /** returns the list of children of the document (excluding narration) */
    def getItems : List[XRef] = items mapPartial {
@@ -47,8 +50,6 @@ class Document(val path : DPath) extends NarrativeElement {
       items = items ::: List(i)
    }
    val parent = path ^!
-   val role = Role_Document
-   def components = StringLiteral(path.toString) :: StringLiteral(path.last) :: items
    override def toString = "document " + path + items.map(_.toString).mkString("\n\t","\n\t","")
    def toNode = <omdoc base={path.toPath}>{items.map(_.toNode)}</omdoc>
    /** prints document with all generated module references expanded (document references are not expanded) */
@@ -59,12 +60,4 @@ class Document(val path : DPath) extends NarrativeElement {
            case r => r.toNode
         }}
      </omdoc>
-}
-
-object Document {
-   
-}
-
-trait DocumentItem extends Content {
-  
 }

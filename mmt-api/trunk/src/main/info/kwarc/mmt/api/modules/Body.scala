@@ -115,5 +115,4 @@ trait Body {
    protected def innerString =
       if (getPrimitiveDeclarations.isEmpty) ""
       else getPrimitiveDeclarations.map("\t" + _.toString).mkString(" = {\n", "\n", "\n}")
-   def innerComponents = getPrimitiveDeclarations.filter(! _.isGenerated)
 }

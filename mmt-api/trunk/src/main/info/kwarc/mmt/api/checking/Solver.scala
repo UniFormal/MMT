@@ -41,7 +41,7 @@ object InferredType extends TermProperty[Term](utils.mmt.baseURI / "clientProper
  * 
  * Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.  
  */
-class Solver(val controller: Controller, val constantContext: Context, initUnknowns: Context) extends Logger {
+class Solver(val controller: Controller, val constantContext: Context, initUnknowns: Context, rules: RuleSet) extends Logger {
    /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */ 
    private var solution : Context = initUnknowns
    /** the unknowns that were solved since the last call of activate (used to determine which constraints are activatable) */
@@ -87,9 +87,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    /** for Logger */ 
    val report = controller.report
    /** prefix used when logging */ 
-   var logPrefix = "object-checker"
-   /** shortcut for the RuleStore of the controller; used to retrieve Rule's */
-   private val ruleStore = controller.extman.ruleStore
+   var logPrefix = "solver"
    /** the SubstitutionApplier to be used throughout */
    private implicit val sa = new MemoizedSubstitutionApplier
    /** a DefinitionExpander to be used throughout */
@@ -302,7 +300,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    private def activate : Boolean = {
      val subs = solution.toPartialSubstitution
      def prepareS(s: Stack) =
-        Stack(controller.simplifier(s.context ^^ subs, constantContext ++ solution))
+        Stack(controller.simplifier(s.context ^^ subs, constantContext ++ solution, rules))
      // look for an activatable constraint
      delayed foreach {_.solved(newsolutions)}
      newsolutions = Nil
@@ -364,7 +362,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    
    /** UOM simplification */
    private def simplify(t : Term)(implicit stack: Stack, history: History) = {
-      val tS = controller.simplifier(t, constantContext ++ solution ++ stack.context)
+      val tS = controller.simplifier(t, constantContext ++ solution ++ stack.context, rules)
       if (tS != t)
          history += ("simplified: " + presentObj(t) + " ~~> " + presentObj(tS))
       tS
@@ -375,7 +373,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    def safeSimplify(tm: Term)(implicit stack: Stack, history: History): Term = tm match {
       case _:OMID | _:OMV | _:OMLITTrait => tm
       case ComplexTerm(op, subs, cont, args) =>
-         val rOpt = ruleStore.computationRules.get(op)
+         val rOpt = rules.getFirst(classOf[ComputationRule], op)
          rOpt flatMap {rule => rule(this)(tm)} match {
             case Some(tmS) =>
                log("simplified: " + tm + " ~~> " + tmS)
@@ -464,7 +462,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
        // the foundation-dependent cases
        // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
-         limitedSimplify(tp,ruleStore.typingRules) match {
+         limitedSimplify(tp,rules.get(classOf[TypingRule])) match {
            case (tpS, Some(rule)) =>
              try {
                 rule(this)(tm, tpS)
@@ -532,7 +530,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
         //foundation-dependent cases if necessary
         //syntax-driven type inference
         resFoundInd orElse {
-            val (tmS, ruleOpt) = limitedSimplify(tm,ruleStore.inferenceRules)
+            val (tmS, ruleOpt) = limitedSimplify(tm,rules.get(classOf[InferenceRule]))
             ruleOpt match {
               case Some(rule) =>
                  history += ("applying rule for " + rule.head.name.toString)
@@ -557,7 +555,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     */
    private def checkUniverse(j : Universe)(implicit history: History): Boolean = {
      implicit val stack = j.stack
-     limitedSimplify(j.univ, ruleStore.universeRules) match {
+     limitedSimplify(j.univ, rules.get(classOf[UniverseRule])) match {
         case (uS, Some(rule)) => rule(this)(uS)
         case (uS, None) => delay(Universe(stack, uS))  
      }
@@ -573,7 +571,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     */
    private def checkInhabitable(j : Inhabitable)(implicit history: History): Boolean = {
      implicit val stack = j.stack
-     limitedSimplify(j.wfo, ruleStore.inhabitableRules) match {
+     limitedSimplify(j.wfo, rules.get(classOf[InhabitableRule])) match {
         case (uS, Some(rule)) => rule(this)(uS)
         case (uS, None) =>
            inferType(j.wfo)(stack, history + "inferring universe") match {
@@ -615,7 +613,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       // 2) find a TermBasedEqualityRule based on the heads of the terms
       (tm1.head, tm2.head) match {
          case (Some(c1), Some(c2)) =>
-            ruleStore.termBasedEqualityRules(c1,c2) foreach {rule =>
+            rules.get(classOf[TermBasedEqualityRule]).filter(r => r.left == c1 && r.right == c2) foreach {rule =>
                // we apply the first applicable rule
                val contOpt = rule(this)(tm1,tm2,tpOpt)
                if (contOpt.isDefined) {
@@ -636,7 +634,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
            itp.getOrElse(return delay(Equality(stack, tm1S, tm2S, None)))
       }
       // try to simplify the type until an equality rule is applicable 
-      limitedSimplify(tp, ruleStore.typeBasedEqualityRules) match {
+      limitedSimplify(tp, rules.get(classOf[TypeBasedEqualityRule])) match {
          case (tpS, Some(rule)) => rule(this)(tm1S, tm2S, tpS)
          case (tpS, None) =>
             // this is either a base type or an equality rule is missing
@@ -655,7 +653,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       t1 match {
          case TorsoNormalForm(OMS(c1), _) => others foreach {o => o match {
             case TorsoNormalForm(OMS(c2), _) => 
-               ruleStore.termBasedEqualityRules(c1,c2) foreach {rule =>
+               rules.get(classOf[TermBasedEqualityRule]).filter(r => r.left == c1 && r.right == c2) foreach {rule =>
                   val contOpt = rule(this)(t1, o, Some(tp))
                   if (contOpt.isDefined) return contOpt
                }
@@ -807,7 +805,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
             }
          //apply a foundation-dependent solving rule selected by the head of tm1
          case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tm2.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
-            ruleStore.solutionRules.get(h) match {
+            rules.getFirst(classOf[SolutionRule], h) match {
                case None => false
                case Some(rule) => rule(this)(tm1, tm2)
             }
@@ -837,7 +835,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
             }
          //apply a foundation-dependent solving rule selected by the head of tm1
          case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tp.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
-            ruleStore.typeSolutionRules.get(h) match {
+            rules.getFirst(classOf[TypeSolutionRule], h) match {
                case None => false
                case Some(rule) => rule(this)(tm, tp)
             }
@@ -853,7 +851,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       val results = solution.zipWithIndex map {
          case (vd @ VarDecl(x, Some(tp), None, _), i) =>
             implicit val con : Context = solution.take(i)
-            limitedSimplify(tp, ruleStore.forwardSolutionRules) match {
+            limitedSimplify(tp, rules.get(classOf[ForwardSolutionRule])) match {
                case (tpS, Some(rule)) if rule.priority == priority => rule(this)(vd)
                case _ => false 
             }
@@ -868,8 +866,8 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     *  @param stack the context of tm
     *  @return (tmS, Some(r)) where tmS = tm and r from rm is applicable to tmS; (tmS, None) if tm = tmS and no further simplification rules are applicable
     */  
-   private def limitedSimplify[R <: Rule](tm: Term, rm: RuleMap[R])(implicit stack: Stack, history: History): (Term,Option[R]) =
-      limitedSimplify[R](tm)(t => t.head flatMap {h => rm.get(h)})
+   private def limitedSimplify[R <: Rule](tm: Term, hs: HashSet[R])(implicit stack: Stack, history: History): (Term,Option[R]) =
+      limitedSimplify[R](tm)(t => t.head flatMap {h => hs.find(_.head == h)})
    
    /** applies ComputationRule's to simplify a term until some condition is satisfied;
     *  A typical case is transformation into weak head normal form.
@@ -883,7 +881,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
          case Some(a) => (tm,Some(a))
          case None => tm.head match {
             case Some(h) =>
-               val rOpt = ruleStore.computationRules.get(h)
+               val rOpt = rules.getByHead(classOf[ComputationRule], h)
                rOpt foreach {rule =>
                   rule(this)(tm) match {
                      case Some(tmS) =>
@@ -907,7 +905,8 @@ object Solver {
   def check(controller: Controller, stack: Stack, tm: Term): Option[(Term,Term)] = {
       val (unknowns,tmU) = parser.ObjectParser.splitOffUnknowns(tm)
       val etp = LocalName("expected_type")
-      val oc = new Solver(controller, stack.context, unknowns ++ VarDecl(etp, None, None, None))
+      val rules = RuleBasedChecker.collectRules(controller, stack.context)
+      val oc = new Solver(controller, stack.context, unknowns ++ VarDecl(etp, None, None, None), rules)
       val j = Typing(stack, tmU, OMV(etp), None)
       oc(j)
       if (oc.checkSucceeded) oc.getSolution.map {sub =>

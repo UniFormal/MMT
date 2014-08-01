@@ -1,7 +1,6 @@
 package info.kwarc.mmt.api.notations
 
 import info.kwarc.mmt.api._
-import presentation.Precedence
 
 /** Objects of type Marker make up the pattern of a Notation */
 sealed abstract class Marker {

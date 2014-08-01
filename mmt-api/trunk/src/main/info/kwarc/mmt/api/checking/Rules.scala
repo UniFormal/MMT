@@ -89,7 +89,7 @@ class RuleStore {
       }
    }
    def add(rs: RuleSet) {
-      rs.rules.foreach(add(_))
+      rs.getAll.foreach(add(_))
    }
    def delete(which: Rule => Boolean) {
       all foreach {_.delete(which)}
@@ -136,18 +136,12 @@ class RuleStore {
 trait Rule {
    /** an MMT URI that is used to indicate when the Rule is applicable */
    val head: GlobalName
-   /** an MMT URI that identifies the rule, by default the head
-    */
-   def path: GlobalName = head
-   /**
-    * the home theory in which this rule lives
-    * 
-    * a rule is only applicable if the home theory is included
-    * 
-    * by default, the theory of the head operator 
-    */
-   def parent: Term = head.module
-   override def toString = "rule " + path.toString + " of class " + getClass.toString 
+   override def toString = {
+      var name = getClass.getName
+      if (name.endsWith("$"))
+         name = name.substring(0,name.length-1)
+      "rule " + name + " for " + head
+   }
 }
 
 class Continue[A](a: => A) {
@@ -159,16 +153,21 @@ object Continue {
 }
 
 /** A RuleSet groups some Rule's. Its construction and use corresponds to algebraic theories. */
-trait RuleSet {
-   val rules = new HashSet[Rule]
+class RuleSet {
+   private val rules = new HashSet[Rule]
 
    def declares(rs: Rule*) {rs foreach {rules += _}}
    def imports(rss: RuleSet*) {rss foreach {rules ++= _.rules}}
-
-   def allRules = rules
-   def depthRules = rules filter {_.isInstanceOf[uom.DepthRule]}
-   def breadthRules = rules filter {_.isInstanceOf[uom.BreadthRule]}
-   def abbrevRules = rules filter {_.isInstanceOf[uom.AbbrevRule]}
+   
+   def getAll = rules
+   def get[R<:Rule](cls: Class[R]): HashSet[R] = rules flatMap {r =>
+      if (cls.isInstance(r))
+         List(r.asInstanceOf[R])
+      else
+         Nil
+   }
+   def getByHead[R<:Rule](cls: Class[R], head: ContentPath): HashSet[R] = get(cls) filter {r => r.head == head}
+   def getFirst[R<:Rule](cls: Class[R], head: ContentPath): Option[R] = getByHead(cls, head).headOption
 }
 
 

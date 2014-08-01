@@ -5,7 +5,6 @@ import frontend._
 import symbols._
 import objects._
 import notations._
-import presentation.Precedence
 
 /**
  * A ChangeListerner that adds notations for constants that are inference rules and do not provide notations.

@@ -64,15 +64,17 @@ class UniqueGraph extends LabeledHashRelation[Term,Term] {
     * @throws AlreadyDefined(m) if an implicit morphism m between the same theories already exists
     */
    override def update(from: Term, to: Term, morph: Term) {
+      val fromN  = TheoryExp.simplify(from)
+      val toN    = TheoryExp.simplify(to)
       val morphN = Morph.simplify(morph)
-      var current = apply(from,to)
+      var current = apply(fromN,toN)
       if (current.isDefined) {
            if (current.get == morphN)
               return
            else
               throw AlreadyDefined(current.get, morphN)
       }
-      super.update(from, to, morphN)
+      super.update(fromN, toN, morphN)
    }
 }
 
@@ -81,7 +83,8 @@ class UniqueGraph extends LabeledHashRelation[Term,Term] {
  * i.e., all paths between two nodes must be equal.
  * UniqueGraph is used to maintain the generated category, see its description for the treatment of equality.
  * The generated category is precomputed so that retrieval of morphisms takes constant and insertion up to quadratic time. 
- */ 
+ */
+// TODO implicit morphisms into union or out of instantiations are a huge problem
 class ThinGeneratedCategory {
    /** generating edges of the diagram */
    private val direct = new UniqueGraph
@@ -95,22 +98,29 @@ class ThinGeneratedCategory {
     * @throws AlreadyDefined(m) if an implicit morphism m between the same theories already exists
     */
    def update(from: Term, to: Term, morph: Term) {
-      // TODO: decompose links between complex theories (inverse to how apply composes them)
-      val existsAlready = impl(from ,to).isDefined
-      // if existsAlready == true, this will check equality and throw exception if inequal
-      direct(from, to) = morph
-      if (! existsAlready) {
-         impl  (from, to) = morph
-         (impl into from) foreach {
-            case (f,m) =>
-              impl(f,to) = OMCOMP(m, morph)
-              (impl outOf to) foreach {
-                  case (t,m2) => impl(f, t) = OMCOMP(m, morph, m2)
-              }
-         }
-         (impl outOf to) foreach {
-            case (t,m) => impl(from, t) = OMCOMP(morph, m)
-         }
+      // TODO: decompose links into complex theories
+      from match {
+         case OMPMOD(_, _) | OMMOD(_) =>
+            //TODO handle args
+            val existsAlready = impl(from ,to).isDefined
+            // if existsAlready == true, this will check equality and throw exception if inequal
+            direct(from, to) = morph
+            if (! existsAlready) {
+               impl  (from, to) = morph
+               (impl into from) foreach {
+                  case (f,m) =>
+                    impl(f,to) = OMCOMP(m, morph)
+                    (impl outOf to) foreach {
+                        case (t,m2) => impl(f, t) = OMCOMP(m, morph, m2)
+                    }
+               }
+               (impl outOf to) foreach {
+                  case (t,m) => impl(from, t) = OMCOMP(morph, m)
+               }
+            }
+         case ComplexTheory(cont) =>
+            cont.getIncludes.foreach {i => update(OMMOD(i), to, morph)}
+         case TUnion(ts) => ts.foreach {t => update(t, to, morph)}
       }
    }
    
@@ -134,7 +144,7 @@ class ThinGeneratedCategory {
     */
    def apply(from: Term, to: Term) : Option[Term] = {
       if (from == to) Some(OMCOMP()) else (from, to) match {
-         // atomic domain, case split on codomain
+         // atomic domain: case split on codomain
          case (OMMOD(f), OMMOD(t)) => applyAtomic(f,t)
          case (OMMOD(f), OMPMOD(t,_)) => applyAtomic(f,t)
          case (OMMOD(f), TUnion(ts)) =>
@@ -143,7 +153,7 @@ class ThinGeneratedCategory {
          case (OMMOD(f), ComplexTheory(toCont)) =>
             val toMors = toCont.getIncludes.flatMap {t => applyAtomic(f,t).toList}
             checkUnique(toMors)
-         // otherwise, case split on domain for arbitrary codomain
+         // otherwise: case split on domain for arbitrary codomain
          case (OMPMOD(p, args), _) =>
             // TODO check agreement with args
             apply(OMMOD(p), to)
@@ -166,10 +176,21 @@ class ThinGeneratedCategory {
       }
    }
 
-   /** retrieves all pairs (to,Morph) for from */
-   def outOf(from: Term) : HashSet[(Term,Term)] = impl.outOf(from)
-   /** retrieves all pairs (from,Morph) for to */
-   def into (to: Term) : HashSet[(Term,Term)] = impl.into(to)
+   /** retrieves all pairs (to,morph) for from */
+   def outOf(from: Term) : HashSet[(Term,Term)] = from match {
+      case OMMOD(p) => impl.outOf(from)
+      case OMPMOD(p, args) => impl.outOf(from) //TODO check agreement with args
+      case TUnion(ts) => impl.outOf(TheoryExp.simplify(from)) //TODO does not yield all morphisms
+      case ComplexTheory(cont) => impl.outOf(from)  //TODO does not yield all morphisms
+   }
+   /** retrieves all pairs (from,morph) for to */
+   def into (to: Term) : HashSet[(Term,Term)] = to match {
+      case OMMOD(p) => impl.into(to)
+      case OMPMOD(p, _) => impl.into(to)
+      case TUnion(ts) => HashSet(ts:_*).flatMap(t => into(t))
+      case ComplexTheory(cont) =>
+         HashSet(cont.getIncludes:_*).flatMap(t => into(OMMOD(t)))
+   }
    
    def clear {
       direct.clear

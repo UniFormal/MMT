@@ -9,11 +9,14 @@ import uom._
  *  to make an unknown semantic entity (e.g., a model or an implementation) partially accessible to the syntax.
  *  
  *  It typically contains [[symbols.RealizedConstant]]s.
+ *  
+ *  @param theory the theory that is modeled or implemented
  */
 class Realization(doc : DPath, name : LocalName, theory: MPath) extends DeclaredTheory(doc, name, None) {
    add(PlainInclude(theory, path))
 }
 
+/*
 /** adds all rules of Realization to the RuleStore */
 class RealizationListener extends frontend.ChangeListener {
    /** all rules added by this listener (used for deleting rules) */
@@ -48,4 +51,4 @@ class RealizationListener extends frontend.ChangeListener {
       controller.extman.ruleStore.delete {r => rules contains r}
       rules = Nil
    }
-}
+}*/

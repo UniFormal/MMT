@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
 import uom._
 
-abstract class RealizedOperator(val op: GlobalName) {self =>
+abstract class RealizedOperator(val op: GlobalName) extends BreadthRule(op) {
    val argTypes: List[RealizedType]
    val retType : RealizedType
    def applicable(args: List[Term]): Boolean = {
@@ -15,29 +15,17 @@ abstract class RealizedOperator(val op: GlobalName) {self =>
    }
    def apply(args: List[Term]): OMLIT
    
-   def toRule(mp: MPath) =
-      if (argTypes.isEmpty)
-         new AbbrevRule(op, apply(Nil)) {
-            override val parent = OMMOD(mp)
-         }
-      else
-         new BreadthRule(op) {
-            override val parent = OMMOD(mp)
-            val apply: Rewrite = (args: List[Term]) =>
-               if (applicable(args))
-                  GlobalChange(self.apply(args))
-               else
-                  NoChange
-         }
+   val apply: Rewrite = (args: List[Term]) => {
+         if (applicable(args))
+            GlobalChange(apply(args))
+         else
+            NoChange
+   }
 }
 
 object RealizedOperator {
-   def apply(op:GlobalName, rType: RealizedType)(comp: rType.univ): RealizedOperator =
-      new RealizedOperator(op) {
-         val argTypes = Nil
-         val retType = rType
-         def apply(args: List[Term]): OMLIT = rType(comp)
-      }
+   def apply(op:GlobalName, rType: RealizedType)(comp: rType.univ): AbbrevRule = new AbbrevRule(op, rType(comp))
+   
    def apply(op:GlobalName, argType1: RealizedType, rType: RealizedType)(comp: argType1.univ => rType.univ): RealizedOperator =
       new RealizedOperator(op) {
          val argTypes = List(argType1)

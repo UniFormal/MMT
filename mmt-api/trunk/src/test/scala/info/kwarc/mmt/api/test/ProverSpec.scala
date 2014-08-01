@@ -33,8 +33,9 @@ class ProverSpec extends FlatSpec with Matchers {
     val x = OMV("x")
     val y = OMV("y")
  
+    val rules = checking.RuleBasedChecker.collectRules(controller, context)
     val goal = mmt"ded forall [z:univ] z=z"
-    val apps = prover.applicable(goal)(stack)
+    val apps = prover.applicable(goal, rules)(stack)
     apps foreach {a =>
       println(a.label + " : " + tts(a.apply()))
     } 

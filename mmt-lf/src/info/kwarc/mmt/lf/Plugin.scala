@@ -7,7 +7,7 @@ class TypedPlugin extends frontend.Plugin {
    val dependencies = List("info.kwarc.mmt.morphisms.MorphismPlugin")
    override def start(args: List[String]) {
       val em = controller.extman
-      em.ruleStore.add(UniverseType,UniverseKind,UnivTerm)
+      //em.ruleStore.add(UniverseType,UniverseKind,UnivTerm)
    }
 }
 
@@ -16,6 +16,7 @@ class Plugin extends frontend.Plugin {
    override def start(args: List[String]) {
       val em = controller.extman
       // type reconstruction rules
+      /*
       em.ruleStore.add(PiType,PiTerm,ApplyTerm,LambdaTerm,
             Beta,Extensionality,PiCongruence,LambdaCongruence,
             Solve,SolveType,ExpandArrow,
@@ -24,6 +25,7 @@ class Plugin extends frontend.Plugin {
       em.ruleStore.add(UnsafeBeta)
       // proof rules
       em.ruleStore.add(PiIntroRule, PiElimRule, ArrowIntroRule, ArrowElimRule)
+      */
       // content enhancers
       em.addExtension(new NotationGenerator)
       em.addExtension(new SimplificationRuleGenerator)
@@ -38,6 +40,6 @@ class ShallowPolymorphismPlugin extends frontend.Plugin {
    val dependencies = List("info.kwarc.mmt.lf.Plugin")
    override def start(args: List[String]) {
       val em = controller.extman
-      em.ruleStore.add(ShallowPolymorphism)
+      //em.ruleStore.add(ShallowPolymorphism)
    }
 }

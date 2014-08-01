@@ -57,7 +57,7 @@ sealed abstract class Query
  *  if a variable of tuple type is bound, each component is added separately, the first one has index 1
  */
 case class Bound(index: Int) extends Query
-case class Component(of: Query, component: String) extends Query
+case class Component(of: Query, component: DeclarationComponent) extends Query
 /** subobject of an object at a certain position */
 case class SubObject(of: Query, position: Position) extends Query
 /** the set of all elements related to a certain path by a certain relation */
@@ -298,7 +298,7 @@ object Query {
       case <bound/> => Bound(xml.attrInt(n, "index", ParseError(_)))
       case <let>{v}{in}</let> => Let(parse(v), parse(in))
       case <uris/> => Paths(Unary.parse(xml.attr(n, "concept")))
-      case <component>{o}</component> => Component(parse(o), xml.attr(n, "index"))
+      case <component>{o}</component> => Component(parse(o), DeclarationComponent.parse(xml.attr(n, "index")))
       case <subobject>{o}</subobject> => SubObject(parse(o), Position.parse(xml.attr(n, "position")))
       case <related>{to}{by}</related> => Related(parse(to), RelationExp.parse(by))
       case <closure>{of}</closure> => Closure(parse(of))

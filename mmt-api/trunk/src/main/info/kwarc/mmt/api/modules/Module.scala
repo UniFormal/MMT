@@ -40,6 +40,5 @@ trait ModuleDefiniens {
    def df = dfC.get.get // TODO for now, we assume the definiens is always present
    protected def innerString = " = " + df.toString
    protected def innerNodes = <definition>{df.toNode}</definition>
-   protected def innerComponents = List(df)
    def getDeclarations = Nil
 }

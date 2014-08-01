@@ -17,10 +17,3 @@ object Hole {
 object HoleTerm extends InferenceRule(Hole.path, Hole.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = Hole.unapply(tm)
 }
-
-class ErrorsPlugin extends frontend.Plugin {
-   val dependencies = Nil
-   override def start(args: List[String]) {
-      controller.extman.ruleStore.add(HoleTerm)
-   }
-}

@@ -112,17 +112,17 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
    lazy val freeVars : List[LocalName] = freeVars_.distinct
    /** helper function for freeVars that computes the free variables without eliminating repetitions */ 
    private[objects] def freeVars_ : List[LocalName]
+   /** all direct subobjects of this object with their context (excluding any outer context of this object) */
+   def subobjects: List[(Context,Obj)]
+   /** auxiliary function for subobjects in the absence of binding */
+   protected def subobjectsNoContext(os: List[Obj]) = os.map(s => (Context(),s))
    /** returns the subobject at a given position and its context; first index of pos used to be always 0 but not anymore */
    def subobject(pos: Position) : (Context, Obj) =
      pos.indices.foldLeft((Context(),this)) {
          case ((con,obj), i) =>
-            val newContext = obj match {
-               case OMBINDC(_,context,_) => con ++ context.take(i)
-               case _ => con
-            }
-            obj.components(i) match {
-               case o : Obj => (newContext, o)
-               case _ => throw GetError("position " + pos + " not valid in " + this)
+            obj.subobjects.applyOrElse(i, null) match {
+               case null => throw GetError("position " + pos + " not valid in " + this)
+               case (newCon, so) => (con ++ newCon, so)
             }
       }
    /* the constructor or constant used to form this term */
@@ -175,17 +175,7 @@ case class OMID(path: ContentPath) extends Term {
    def head = Some(path)
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
-   def role = path match {
-      case m: MPath => Role_ModRef
-      case OMMOD(p) % _ => Role_ConstantRef
-      case thy % name => Role_ComplexConstantRef
-   }
-   def components = path match {
-      case m: MPath => m.components
-      case OMMOD(doc ? mod) % ln => List(StringLiteral(doc.toPath), StringLiteral(mod.toString),
-                                 StringLiteral(ln.toString), StringLiteral(path.toPathEscaped))
-      case thy % name => List(thy, StringLiteral(name.toString))
-   }
+   def subobjects = Nil
    override def toString = path match {
       case doc ? mod => doc + "?" + mod.toString
       case OMMOD(mod) % name => mod.name.toString + "?" + name.toString
@@ -216,15 +206,6 @@ object OMS {
 case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends Term  {
    def head = binder.head
    val numVars = context.variables.length
-   def components = {
-      val binderComps = binder match {
-         case b:OMA => b.components
-         case b:OMID => List(b)
-         case _ => throw ImplementationError("binder must be OMA or OMID")
-      }
-      binderComps ::: context.toList ::: scopes
-   }
-   def role = Role_binding
    def toNode = 
       <om:OMBIND>{mdNode}
                  {binder.toNode}
@@ -240,6 +221,7 @@ case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends
       OMBINDC(binder ^^ sub, newCon ^^ sub, scopes.map(_ ^^ subN)).from(this)
    }
    private[objects] lazy val freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: scopes.flatMap(_.freeVars_).filterNot(x => context.isDeclared(x))      
+   def subobjects = (Context(), binder) :: context.subobjects ::: scopes.map(s => (context, s))
    def toCMLQVars(implicit qvars: Context) = <m:apply>{binder.toCMLQVars}{context.map(_.toCMLQVars)}{scopes.map(_.toCMLQVars)}</m:apply>
 }
 
@@ -261,8 +243,6 @@ object OMBIND {
  */
 case class OMA(fun : Term, args : List[Term]) extends Term {
    def head = fun.head
-   def role = Role_application(None)
-   def components = fun :: args
    override def toString = (fun :: args).map(_.toString).mkString("(", " ", ")")
    def toNode =
       <om:OMA>{mdNode}
@@ -271,6 +251,7 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
       </om:OMA>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMA(fun ^^ sub, args.map(_ ^^ sub)).from(this)
    private[objects] lazy val freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
+   def subobjects = subobjectsNoContext(fun :: args)
    def toCMLQVars(implicit qvars: Context) = <m:apply>{fun.toCMLQVars}{args.map(_.toCMLQVars)}</m:apply>
 }
 
@@ -293,8 +274,6 @@ object OMAorOMID {
  */
 case class OMV(name : LocalName) extends Term {
    def head = None
-   def role = Role_VariableRef
-   def components = List(StringLiteral(name.toString)) 
    /** the substutition this/s */
    def /(s : Term) = Sub(name, s)
    def ->(s: Term) = Sub(name, s)
@@ -315,6 +294,7 @@ case class OMV(name : LocalName) extends Term {
 	  	   case None => this
        }
    private[objects] def freeVars_ = List(name)
+   def subobjects = Nil
    def toCMLQVars(implicit qvars: Context) =
       if (qvars.isDeclared(name)) <mws:qvar xmlns:mws="http://www.mathweb.org/mws/ns">{name.toPath}</mws:qvar>
       else <m:ci>{name.toPath}</m:ci>
@@ -336,8 +316,6 @@ object OMV {
  */
 case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
    def head = key.head
-   def role = Role_attribution
-   def components = List(key, arg, value)
    override def strip = arg.strip
    override def toString = "{" + arg + " : " + key + " -> " + value + "}"
    def toNode = 
@@ -345,6 +323,7 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
                  {arg.toNode}
       </om:OMATTR>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMATTR(arg ^^ sub, key, value ^^ sub).from(this)
+   def subobjects = List(arg, key, value).map(s => (Context(), s))
    private[objects] def freeVars_ = arg.freeVars_ ::: value.freeVars_
    def toCMLQVars(implicit qvars: Context) = <m:apply><m:csymbol>OMATTR</m:csymbol>{arg.toCMLQVars}{key.toCMLQVars}{value.toCMLQVars}</m:apply>
 }
@@ -367,12 +346,11 @@ object OMATTRMany {
 sealed trait OMLITTrait extends Term {
    def synType: GlobalName
    def head = None
-   def role = Role_value
-   def components = List(StringLiteral(toString))
    def toNode = <om:OMLIT value={toString} type={synType.toPath}/>
    def toCMLQVars(implicit qvars: Context) = <m:lit value={toString} type={synType.toPath}/>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
+   def subobjects = Nil
 }
 
 /**
@@ -428,11 +406,10 @@ case class UnknownOMLIT(value: String, synType: GlobalName) extends Term with OM
  */
 case class OMFOREIGN(node : Node) extends Term {
    def head = None
-   def role = Role_foreign
-   def components = List(XMLLiteral(node))
    def toNode = <om:OMFOREIGN>{node}</om:OMFOREIGN>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
+   def subobjects = Nil
    def toCMLQVars(implicit qvars: Context) = <m:apply><m:csymbol>OMFOREIGN</m:csymbol>{Node}</m:apply>
 }
 
@@ -441,7 +418,6 @@ case class OMFOREIGN(node : Node) extends Term {
 /** An OMSemiFormal represents a mathematical object that mixes formal and informal components */
 case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFormalObjectList {
    def head = None
-   def role = Role_value
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = {
       val newtokens = tokens map {
          case Formal(t) => Formal(t ^^ sub)
@@ -450,6 +426,13 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFo
       OMSemiFormal(newtokens).from(this)
    }
    private[objects] def freeVars_ = tokens.flatMap(_.freeVars)
+   def subobjects = {
+      val terms = tokens.flatMap {
+         case Formal(t) => List(t)
+         case _ => Nil
+      }
+      subobjectsNoContext(terms)
+   }
    def toCMLQVars(implicit qvars: Context) = <m:apply><m:csymbol>OMSemiFormal</m:csymbol>{tokens.map(_.toCMLQVars)}</m:apply>
 }
 

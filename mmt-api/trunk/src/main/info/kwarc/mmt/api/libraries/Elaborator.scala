@@ -43,7 +43,7 @@ class ModuleElaborator(controller : Controller) {
   }
 
   def getIncludes(t : Term) : List[DeclaredStructure] = {
-    content.getTheory(t.toMPath).components flatMap {
+    content.getTheory(t.toMPath).getDeclarations flatMap {
       case s : DeclaredStructure if s.isInclude => List(s)
       case _ => Nil
     }
@@ -75,7 +75,7 @@ class ModuleElaborator(controller : Controller) {
       elabImports map {case SimpleStructure(s: DeclaredStructure, p) =>
             if (s.domain.isEmpty) { //import is essentially an include
               val impThy = content.getTheory(p)
-              impThy.components collect {
+              impThy.getDeclarations collect {
                 case c : Constant =>
                   val nwName = ComplexStep(impThy.path) / c.name
                   val nwHome = OMMOD(t.path)
@@ -108,7 +108,7 @@ class ModuleElaborator(controller : Controller) {
           decls += 1
         case _ => nt.add(_)
       }
-      t.components collect {
+      t.getDeclarations collect {
         case c : Constant =>
           newDecs += c
           nt.add(c)
@@ -120,7 +120,7 @@ class ModuleElaborator(controller : Controller) {
           v.from match {
             case OMMOD(p) =>
               var viewRewrRules = new HashMap[Path,Term]
-              v.components collect {
+              v.getDeclarations collect {
                 case ca : Constant =>
                   ca.df.foreach {t =>
                      viewRewrRules += (p ? ca.name -> t)
@@ -164,7 +164,7 @@ class ModuleElaborator(controller : Controller) {
   
   def gatherConstants(thy : DeclaredTheory) : List[Constant] = {
     var constants : List[Constant] = Nil 		
-    thy.components foreach {
+    thy.getDeclarations foreach {
       case c : Constant => constants = constants ::: List(c) //MPath may be irrelevant, otherwise needs changing
       case _ => 
     }
@@ -174,7 +174,7 @@ class ModuleElaborator(controller : Controller) {
   def flatten(thy : DeclaredTheory) : DeclaredTheory = {
     var includes : HashSet[MPath] = new HashSet[MPath]()
     var constants : List[Constant] = Nil
-    thy.components collect {
+    thy.getDeclarations collect {
       case s : DeclaredStructure =>
       if (s.isInclude) {
         val inclPath = s.from.toMPath

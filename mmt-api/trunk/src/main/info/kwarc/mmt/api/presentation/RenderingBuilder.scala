@@ -15,13 +15,6 @@ abstract class RenderingHandler {
    }
    /** output an XML node */
    def apply(N : Node) {apply(N.toString)}
-   /** output a literal */
-   def apply(l : Literal) : Unit = l match {
-      case StringLiteral(s) => apply(s)
-      case XMLLiteral(n) => apply(n)
-      case ValueLiteral(v) => apply(v.toString)
-      case Omitted => ()
-   }
    
    // Convenience methods for rendering text
    /** output a string with line ending */

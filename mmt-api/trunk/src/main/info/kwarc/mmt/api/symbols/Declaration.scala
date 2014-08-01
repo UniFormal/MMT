@@ -47,8 +47,6 @@ class NestedModule(val module: Module) extends Declaration {
    val home = OMMOD(module.parent ? module.name.init)
    val name = LocalName(module.name.last)
    
-   def components: List[Content] = module.components
-   def role = module.role
    def toNode = module.toNode
    override def toString = module.toString
    def getComponents = module.getComponents 

@@ -1,13 +1,20 @@
 package info.kwarc.mmt.api.uom
 
 import info.kwarc.mmt.api._
+import checking._
 import objects._
 import objects.Conversions._
 
-case class UOMState(t : Term, context: Context, path : List[Int]) {
-  def enter(i : Int) : UOMState = new UOMState(t, context, i :: path)
-  def exit(i : Int) : UOMState = new UOMState(t, context, path.tail)
-  override def toString = t.toString + "@" + path.mkString("_")  
+case class UOMState(t : Term, context: Context, rules: RuleSet, path : List[Int]) {
+  def enter(i : Int) : UOMState = new UOMState(t, context, rules, i :: path)
+  def exit(i : Int) : UOMState = new UOMState(t, context, rules, path.tail)
+  override def toString = t.toString + "@" + path.mkString("_")
+  /** precomputes the available rules */
+  val depthRules = rules.get(classOf[uom.DepthRule])
+  /** precomputes the available rules */
+  val breadthRules = rules.get(classOf[uom.BreadthRule])
+  /** precomputes the available rules */
+  val abbrevRules = rules.get(classOf[uom.AbbrevRule])
 }
 
 /** A UOM applies DepthRule's and BreadthRule's exhaustively to simplify a Term */
@@ -32,7 +39,6 @@ class UOM extends ObjectSimplifier {
   }
   /* end of simplification log functions */
   
-  private lazy val rs = controller.extman.ruleStore
   private lazy val StrictOMA = controller.pragmatic.StrictOMA
 
    
@@ -48,18 +54,18 @@ class UOM extends ObjectSimplifier {
     * The code uses [[Simple]] and [[SimplificationResult]] to remember whether a term has been simplified.
     * Therefore, structure sharing or multiple calls to this method do not cause multiple traversals. 
     */
-   def apply(obj: Obj, context: Context): obj.ThisType = {
+   def apply(obj: Obj, context: Context, rules: RuleSet): obj.ThisType = {
       log("called on " + controller.presenter.asString(obj) + " in context " + controller.presenter.asString(context))
       val result = obj match {
          case t: Term =>
             simplificationLog = Nil
-            val initState = new UOMState(t, context, Nil)
+            val initState = new UOMState(t, context, rules, Nil)
             val tS: Term = traverse(t,initState, context)
             tS
          case c: Context =>
-            c.mapTerms {case (sofar, t) => apply(t, context ++ sofar)}
+            c.mapTerms {case (sofar, t) => apply(t, context ++ sofar, rules)}
          case s: Substitution =>
-            s.map {case Sub(x,t) => Sub(x, apply(t, context))}
+            s.map {case Sub(x,t) => Sub(x, apply(t, context, rules))}
       }
       // this is statically well-typed, but we need a cast because Scala does not see it
       result.asInstanceOf[obj.ThisType]
@@ -191,18 +197,16 @@ class UOM extends ObjectSimplifier {
             //that indicates which case applied
             arg match {
                case OMAorOMS(inner, inside, isOMS) =>
-                  rs.depthRules.getOrElse((outer,inner), Nil) foreach {rule =>
-                     if (inScope(state.context, rule.parent)) {
-                        val ch = rule.apply(before, inside, afterRest)
-                        ch match {
-                           case NoChange =>
-                           case LocalChange(args) =>
-                              return applyDepthRules(outer, before, args ::: afterRest)
-                           //return immediately upon GlobalChange
-                           case GlobalChange(tS) =>
-                              log("simplified to " + controller.presenter.asString(tS))
-                              return GlobalChange(tS)
-                        }
+                  state.depthRules.filter(r => r.outer == outer && r.inner == inner) foreach {rule =>
+                     val ch = rule.apply(before, inside, afterRest)
+                     ch match {
+                        case NoChange =>
+                        case LocalChange(args) =>
+                           return applyDepthRules(outer, before, args ::: afterRest)
+                        //return immediately upon GlobalChange
+                        case GlobalChange(tS) =>
+                           log("simplified to " + controller.presenter.asString(tS))
+                           return GlobalChange(tS)
                      }
                   }
                   applyDepthRules(outer, before ::: List(arg), afterRest)
@@ -219,19 +223,17 @@ class UOM extends ObjectSimplifier {
    private def applyBreadthRules(op: GlobalName, inside: List[Term])(implicit state: UOMState): Change = {
       var insideS = inside
       var changed = false
-      rs.breadthRules.getOrElse(op,Nil) foreach {rule =>
-         if (inScope(state.context, rule.parent)) {
-            val ch = rule.apply(insideS)
-            log("rule " + rule + ": " + ch)
-            ch match {
-               case NoChange =>
-               case LocalChange(args) =>
-                  insideS = args
-                  changed = true
-               case GlobalChange(t) =>
-                 log("simplified to " + controller.presenter.asString(t))
-                 return GlobalChange(t)
-            }
+      state.breadthRules.filter(_.head == op) foreach {rule =>
+         val ch = rule.apply(insideS)
+         log("rule " + rule + ": " + ch)
+         ch match {
+            case NoChange =>
+            case LocalChange(args) =>
+               insideS = args
+               changed = true
+            case GlobalChange(t) =>
+              log("simplified to " + controller.presenter.asString(t))
+              return GlobalChange(t)
          }
       }
       //we have to check for insideS == inside here in case a BreadthRule falsely thinks it changed the term (such as commutativity when the arguments are already in normal order)
@@ -239,10 +241,8 @@ class UOM extends ObjectSimplifier {
    }
    
    private def applyAbbrevRules(p: GlobalName)(implicit state: UOMState): Change = {
-      rs.abbrevRules.getOrElse(p,Nil) foreach {rule =>
-         if (inScope(state.context, rule.parent)) {
-            return GlobalChange(rule.term)
-         }
+      state.abbrevRules.filter(_.head == p) foreach {rule =>
+         return GlobalChange(rule.term)
       }
       NoChange
    }

@@ -89,9 +89,10 @@ class Evaluator(controller: Controller) {
          val res = empty
          evaluateESet(of) foreach {
             case List(p: Path) =>
-               lup.get(p).contComponents(comp) match {
-                  case obj : Obj => res += List(obj)
-                  case _ => throw GetError("component exists but does not indicate an object: " + comp)
+               lup.get(p).getComponent(comp) match {
+                  case Some(tc: AbstractTermContainer) => tc.get foreach {res += _}
+                  case Some(_) => throw GetError("component exists but does not indicate an object: " + comp)
+                  case _ => throw GetError("component does not exist: " + comp)
                }
             case _ => throw ImplementationError("ill-typed query") 
          }

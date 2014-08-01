@@ -1,9 +1,10 @@
 package info.kwarc.mmt.api.moc
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.objects._
+import modules._
+import symbols._
+import objects._
+import objects.Conversions._
 
 import scala.xml.Node
 
@@ -20,7 +21,6 @@ abstract class Delete(val s : StructuralElement) extends Change
 
 object Add {
   def apply(s : StructuralElement) : Add = s match {
-    case p : PresentationElement => AddPresentation(p)
     case d : Declaration => AddDeclaration(d)
     case m : Module => AddModule(m)
   }
@@ -28,7 +28,6 @@ object Add {
 
 object Delete {
   def apply(s : StructuralElement) : Delete = s match {
-    case p : PresentationElement => DeletePresentation(p)
     case d : Declaration => DeleteDeclaration(d)
     case m : Module => DeleteModule(m)
   }
@@ -125,11 +124,11 @@ object pragmaticAlphaRename extends PragmaticChangeType {
         isAlpha(f,f2) && args.length == args2.length && args.zip(args2).forall(p => isAlpha(p._1, p._2)) 
       case (OMV(n), OMV(n2)) => context(n.toPath) == n2.toPath
       case (OMBIND(b, con, body), OMBIND(b2,con2, body2)) if (isAlpha(b,b2)) => 
-        if (con.components.length == con2.components.length) {
+        if (con.length == con2.length) {
           var newcon = context
-          var holds = con.components.zip(con2.components) forall {
+          var holds = con.zip(con2) forall {
             case (VarDecl(n, tp, df, _), VarDecl(n2, tp2, df2, _)) => 
-              newcon += (n.toPath -> n2.toPath)
+              newcon += ((n.toPath, n2.toPath))
               isAlpha(tp, tp2) && isAlpha(df, df2)              
           }
           holds && isAlpha(body, body2)(newcon)
@@ -185,7 +184,7 @@ object pragmaticRename extends PragmaticChangeType {
       case OMID(p) => if (p == old) OMID(nw) else t
       case OMA(f, args) => OMA(prop(f), args.map(prop))
       case OMBIND(binder, con, body) =>
-        val newCon = Context(con.components.map(v =>
+        val newCon = Context(con.map(v =>
           VarDecl(v.name, v.tp.map(prop), v.df.map(prop), v.not)
         ) :_ *)
         
@@ -311,18 +310,4 @@ case class UpdateMetadata(path : ContentPath, key : GlobalName, old: List[Obj], 
   def toNodeFlat =
     <change type="update" path={path.toPath} key={key.toPath}>  {nw.map(_.toNode).toSeq}  </change> :: Nil
   
-}
-
-/**
- * Presentation
- */
-
-trait PresentationChange
-
-case class AddPresentation(p : PresentationElement) extends Add(p) with PresentationChange {
-  def toNode = <add level="pres">{p.toNode}</add>
-}
-
-case class DeletePresentation(p : PresentationElement) extends Delete(p) with PresentationChange {
-  def toNode = <delete level="pres">{p.toNode}</delete>
 }

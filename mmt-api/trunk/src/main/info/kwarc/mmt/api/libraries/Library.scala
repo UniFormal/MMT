@@ -106,7 +106,7 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
                case Some((d,LocalName(Nil))) => d // perfect match
                case Some((d, ln)) => d match {
                   // a prefix exists and resolves to d, a suffix ln is left
-                  case c: Constant => error("local name " + ln + " left after resolving to constant")
+                  case _: Constant | _: RealizedConstant => error("local name " + ln + " left after resolving to constant")
                   case s: Structure =>
                       val sym = getSymbol(s.from % ln, p => error("could not lookup source symbol " + p)) // resolve ln in the domain of d
                       translateByLink(sym, s, error) // translate sym along l
@@ -340,48 +340,33 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
   def getDeclarationsInScope(mod : Term) : List[Content] = {
     val impls = visibleVia(mod).toList
     val decls = impls flatMap {case (from,via) => 
-      get(from.toMPath).components
+      get(from.toMPath).getDeclarations
     }
     decls
   }
-
-  /** visible theories (implicit imports and views)
-   * @param to the theory
-   * @return all pairs (theory,via) such that theory is visible in to
-   * transitive and reflexive
-   */
-  private def visibleVia(to: Term) : HashSet[(Term,Term)] = {
-     val hs = implicitGraph.into(to)
-     hs add (to, OMCOMP())
-     hs
-  }
-  //TODO: both these methods do not take complex to-terms into account, e.g., a union should see all imports into its parts
-  /** visible theories (implicit imports and views)
-   * as visibleVia but dropping the implicit morphisms
-   */
-  def visible(to: Term) : HashSet[Term] = {
-     val hs = implicitGraph.into(to)
-     hs add (to, OMCOMP())
-     hs.map(_._1)
-  }
   
-   /** iterator over all includes into a theory (including the meta-theory)
-    * a new iterator is needed once this has been traversed 
-    */
-   private def importsTo(to: Term) : Iterator[Term] = to match {
-      case OMMOD(p) =>
-         getTheory(p) match {
-            case t: DefinedTheory => importsTo(t.df)
-            case t: DeclaredTheory => t.getIncludes.map(OMMOD(_)).iterator
-         }
-      case TUnion(ts) => (ts flatMap importsTo).iterator //TODO remove duplicates
-   }
-   
+   /** retrieve the implicit morphism "from --implicit--> to" */
    def getImplicit(from: Term, to: Term) : Option[Term] = implicitGraph(from, to)
+   /** set the implicit morphism "from --implicit--> to" */
    // TODO should be private, public only because of Archive.readRelational
    def addImplicit(from: Term, to: Term, morph: Term) {implicitGraph(from, to) = morph}
+   /** retrieve all implicit morphisms into a theory
+    * @param to the theory
+    * @return all pairs (theory,via) such that "via: theory --implicit--> to" (transitive and reflexive)
+    */
+   private def visibleVia(to: Term) : HashSet[(Term,Term)] = {
+      val hs = implicitGraph.into(to)
+      hs add (to, OMCOMP())
+      hs
+   }
+   /** as visibleVia but dropping the implicit morphisms */
+   def visible(to: Term) : HashSet[Term] = visibleVia(to).map(_._1)
+   /** as visible but only those where the morphism is trivial (i.e., all includes) */
+   def visibleDirect(to: Term) : HashSet[Term] = visibleVia(to).flatMap {case (from, via) =>
+      if (via == OMCOMP()) List(from) else Nil
+   }
 
-   // TODO move to elaborator
+  // TODO move to elaborator
    /** Elaborate a theory expression ("exp") into a module */
    private def materialize(path: MPath, exp: Term) : Theory = {
       exp match {
@@ -448,6 +433,8 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
              t.getIncludes foreach {m =>
                  implicitGraph(OMMOD(m), t.toTerm) = OMIDENT(OMMOD(m))
              }
+          case t: DefinedTheory =>
+             implicitGraph(t.df, t.toTerm) = OMIDENT(t.toTerm)
           case e: NestedModule =>
              add(e.module)
              implicitGraph(e.home, e.module.toTerm) = OMIDENT(e.home)

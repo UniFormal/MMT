@@ -116,7 +116,7 @@ class TokenList(private var tokens: List[TokenListElem]) {
    /** returns a Token in a given position */
    def apply(n: Int) =
       if (n >= tokens.length)
-         throw ParseError("uncaught error while reducing")
+         throw ImplementationError("token index out of range")
       else
          tokens(n)
    /** returns a sublist of elements */
@@ -124,6 +124,7 @@ class TokenList(private var tokens: List[TokenListElem]) {
    /** returns all tokens */
    def getTokens = tokens
    /**
+    * applies a notation and transforms this token list accordingly (this is the only place where [[MatchedList]]s are created)
     * @param an the notation to reduce
     * @return the slice reduced into 1 Token 
     */

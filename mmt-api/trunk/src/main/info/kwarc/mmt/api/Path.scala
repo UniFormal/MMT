@@ -1,11 +1,10 @@
 package info.kwarc.mmt.api
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.presentation._
-import scala.collection.mutable.Map
+import libraries._
+import modules._
+import objects._
+import utils._
 
+import scala.collection.mutable.Map
 
 /**
  * A Path represents an MMT path.
@@ -53,15 +52,21 @@ sealed abstract class Path extends ontology.BaseType {
    override def toString = toPath
 }
 
+/** auxiliary trait to mixin convenience methods into [[Path]] classes */
+trait SlashFunctions[A] {
+   def /(n: LocalName): A
+   def /(n: String): A = this / LocalName(n)
+   def /(n: LNStep): A = this / LocalName(n)
+}
+
 /**
  * A DPath represents an MMT document level path.
  * @param uri the URI of the document (may not contain query or fragment)
  */
-case class DPath(uri : URI) extends Path {
+case class DPath(uri : URI) extends Path with SlashFunctions[DPath] {
    //go down to a module
    def doc = this
    def last = uri.path match {case Nil | List("") => uri.authority.getOrElse("") case l => l.last}
-   def /(n : String) = DPath(uri / n)
    def /(n : LocalName) = DPath(uri / n.steps.map(_.toPath))
    def ^! = DPath(uri ^)
    def ?(n : String) : MPath = this ? LocalName(n)
@@ -91,20 +96,18 @@ sealed trait ContentPath extends Path {
  * @param parent the path of the parent document
  * @param name the name of the module
  */
-case class MPath(parent : DPath, name : LocalName) extends ContentPath {
+case class MPath(parent : DPath, name : LocalName) extends ContentPath with SlashFunctions[MPath] {
    def doc = parent
    def last = name.steps.last.toPath
    /** go up to containing document */
    def ^ : MPath = parent ? name.init
    def ^^ : DPath = parent
    def ^! = if (name.length <= 1) ^^ else ^
-   def /(n : String) : MPath = MPath(parent, name / n)
    /** go down to a submodule */
    def /(n : LocalName) = MPath(parent, name / n)
    /** go down to a symbol */
    def ?(n : LocalName) : GlobalName = OMID(this) % n
    def ?(n : String) : GlobalName = this ? LocalName(n)
-   def components : List[Content] = List(StringLiteral(doc.uri.toString), StringLiteral(name.toPath),Omitted, StringLiteral(toPathEscaped))
    def isGeneric = (this == mmt.mmtcd)
    def module = OMMOD(this)
 }
@@ -112,9 +115,10 @@ case class MPath(parent : DPath, name : LocalName) extends ContentPath {
 /** A GlobalName represents the MMT URI of a symbol-level declaration.
  * This includes virtual declarations and declarations within complex module expressions.
  */
-case class GlobalName(module: Term, name: LocalName) extends ContentPath {
+case class GlobalName(module: Term, name: LocalName) extends ContentPath with SlashFunctions[GlobalName] {
    def doc = module.toMPath.doc
    def ^! = if (name.length == 1) module.toMPath else GlobalName(module, name.init)
+   def /(n : LocalName) = GlobalName(module, name / n)
    def last = name.last.toPath
    def apply(args: List[Term]) : Term = OMA(OMS(this), args)
    def apply(args: Term*) : Term = apply(args.toList)
@@ -129,10 +133,8 @@ case class GlobalName(module: Term, name: LocalName) extends ContentPath {
  * A LocalName represents a local MMT symbol-level declarations (relative to a module).
  * @param steps the list of (in MMT: slash-separated) components
  */
-case class LocalName(steps: List[LNStep]) {
+case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
    def /(n: LocalName) : LocalName = LocalName(steps ::: n.steps)
-   def /(n: LNStep) : LocalName = this / LocalName(List(n))
-   def /(n: String) : LocalName = this / LocalName(n)
    def init = LocalName(steps.init)
    def tail = LocalName(steps.tail)
    def head = steps.head

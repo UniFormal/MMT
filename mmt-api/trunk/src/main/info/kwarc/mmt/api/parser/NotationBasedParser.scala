@@ -6,7 +6,6 @@ import objects.Conversions._
 import symbols._
 import modules._
 import frontend._
-import presentation._
 import notations._
 import utils.MyList._
 import scala.collection.immutable.{HashMap}
@@ -156,13 +155,13 @@ class NotationBasedParser extends ObjectParser {
               case t: Theory => t.parameters.length
               case v: View => 0
            }
-           val tn = new TextNotation(Mixfix(Delim(nm.name.toString) :: Range(0,args).toList.map(Arg(_))), presentation.Precedence.infinite, None)
+           val tn = new TextNotation(Mixfix(Delim(nm.name.toString) :: Range(0,args).toList.map(Arg(_))), Precedence.infinite, None)
            List(ParsingRule(nm.module.path, tn))
         case c: Declaration with HasNotation =>
            var names = (c.name :: c.alternativeName.toList).map(_.toString) //the names that can refer to this declaration
            if (c.name.last == SimpleStep("_")) names ::= c.name.init.toString
            //the unapplied notations consisting just of the name 
-           val unapp = names map (n => new TextNotation(Mixfix(List(Delim(n))), presentation.Precedence.infinite, None))
+           val unapp = names map (n => new TextNotation(Mixfix(List(Delim(n))), Precedence.infinite, None))
            val app = c.not.toList
            (app ::: unapp).map(n => ParsingRule(c.path, n))
         case _ => Nil

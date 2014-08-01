@@ -148,7 +148,7 @@ class RealizationArchive(file: File, val loader: java.net.URLClassLoader) extend
       r._opers foreach {roL =>
          // add a RealizedConstant for every realization of an operator constant
          val ro = roL()
-         val rc = new symbols.RealizedOperatorConstant(real.toTerm, ro.op.name, ro)
+         val rc = new symbols.RuleConstant(real.toTerm, ro.op.name, ro)
          real.add(rc)
       }
       controller.add(real)

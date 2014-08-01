@@ -28,7 +28,7 @@ object Action extends RegexParsers {
    private def action = log | mathpath | archive | extension | mws | server | windowaction | execfile | defactions |scala |
       setbase | read | graph | check | navigate | printall | printallxml | diff | clear | exit | getaction // getaction must be at end for default get
 
-   private def log = logfile | logfilets | loghtml | logconsole | logon | logoff
+   private def log = logfilets | logfile | loghtml | logconsole | logon | logoff
      private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new TextFileHandler(f, false))}
      private def logfilets = "log filets" ~> file ^^ {f => AddReportHandler(new TextFileHandler(f, true))}
      private def logconsole = "log console" ^^ {case _ => AddReportHandler(ConsoleHandler)}
@@ -64,7 +64,7 @@ object Action extends RegexParsers {
             ArchiveBuild(id, dim, archives.Build, segs)
      }
      private def dimension = "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
-           "relational" | "delete" | "integrate" | "register" | "test" | "close"
+           "relational" | "delete" | "integrate" | "test" | "close"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
 
    private def extension = "extension" ~> str ~ (strMaybeQuoted *) ^^ {case c ~ args => AddExtension(c, args)}
@@ -78,7 +78,7 @@ object Action extends RegexParsers {
    private def defactions = define | enddefine | dodefined
    private def define = "define " ~> str ^^ {s => Define(s)}
    private def enddefine = "end" ^^ {case _ => EndDefine}
-   private def dodefined = "do " ~> file ~ str ^^ {case f ~ s => Do(f, s)}
+   private def dodefined = "do " ~> str ~ (file?) ^^ {case s ~ f => Do(f, s)}
    private def scala = "scala" ^^ {_ => Scala}
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
    private def read = "read" ~> file ^^ {f => Read(f)}
@@ -105,7 +105,7 @@ object Action extends RegexParsers {
    private def content = "get" ~> (closure | elaboration | component | get)
       private def closure = path <~ "closure" ^^ {p => Closure(p)}
       private def elaboration = path <~ "elaboration" ^^ {p => Elaboration(p)}   
-      private def component = (path <~ "component") ~ str ^^ {case p ~ s => Component(p, s)}
+      private def component = (path <~ "component") ~ str ^^ {case p ~ s => Component(p, DeclarationComponent.parse(s))}
       private def get = path ^^ {p => Get(p)}
    
    private def windowaction = windowclose | windowpos | gui
@@ -200,9 +200,10 @@ case class Define(name : String) extends Action {override def toString = "define
  */
 case object EndDefine extends Action {override def toString = "end"}
 /** run a previously named list of commands
- *  concrete syntax: do folder:FILE name:STRING
+ *  concrete syntax: do [folder:FILE] name:STRING
+ *  if folder is omitted, this refers to the most recently defined action with the right name
  */
-case class Do(file: File, name : String) extends Action {override def toString = "do " + file + " " + name}
+case class Do(file: Option[File], name : String) extends Action {override def toString = "do " + file.getOrElse("") + " " + name}
 
 /** stores a command binding done with [[Define]]
  */
@@ -380,12 +381,15 @@ case class Get(p : Path) extends MakeAbstract {
    override def toString = p.toString
 }
 /** retrieves a component of a knowledge item */
-case class Component(p : Path, comp : String) extends MakeAbstract {
+case class Component(p : Path, comp : DeclarationComponent) extends MakeAbstract {
    def make(controller : Controller) : Content = {
       val o = controller.get(p)
-      o.role.componentByName(comp) match {
-         case Some(c) => o.components(c)
-         case None => throw ParseError("component name " + comp + " illegal for element with role " + o.role)
+      val tOpt = o.getComponent(comp) flatMap {
+         case c: AbstractTermContainer => c.get
+         case _ => throw ParseError("component name " + comp + " not a term component in " + o)
+      }
+      tOpt.getOrElse {
+         throw ParseError("component name " + comp + " illegal for element " + o)
       }
    }
    override def toString = p + " component " + comp
