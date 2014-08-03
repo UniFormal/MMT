@@ -5,6 +5,9 @@ import symbols._
 import objects._
 import uom._
 
+/*
+
+
 /** A Realization is a special case of a DeclaredTheory constructed
  *  to make an unknown semantic entity (e.g., a model or an implementation) partially accessible to the syntax.
  *  
@@ -16,7 +19,6 @@ class Realization(doc : DPath, name : LocalName, theory: MPath) extends Declared
    add(PlainInclude(theory, path))
 }
 
-/*
 /** adds all rules of Realization to the RuleStore */
 class RealizationListener extends frontend.ChangeListener {
    /** all rules added by this listener (used for deleting rules) */

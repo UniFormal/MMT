@@ -269,6 +269,10 @@ object ExpandArrow extends ComputationRule(Arrow.path) {
 
 // experimental (requiring that torso is variable does not combine with other solution rules) 
 object SolveMultiple extends SolutionRule(Apply.path) {
+   def applicable(tm1: Term) = tm1 match {
+      case ApplySpine(OMV(_),_) => Some(0)
+      case _ => None
+   }
    def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Boolean = {
       tm1 match {
          case ApplySpine(OMV(u), args) =>
@@ -298,6 +302,10 @@ object SolveMultiple extends SolutionRule(Apply.path) {
  *  Its effect is, for example, that X x = t is reduced to X = lambda x.t where X is a meta- and x an object variable. 
  */
 object Solve extends SolutionRule(Apply.path) {
+   def applicable(t: Term) = t match {
+      case Apply(_, _) => Some(0)
+      case _ => None
+   }
    def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Boolean = {
       tm1 match {
          case Apply(t, OMV(x)) =>

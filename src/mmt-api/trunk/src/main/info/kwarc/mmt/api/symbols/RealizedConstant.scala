@@ -31,8 +31,13 @@ object RuleConstantInterpreter {
    def fromString(s: String, thy: MPath): RuleConstant = {
       val name = LocalName.parse(s, thy)
       val java = name.steps.mkString(".")
-      val cls = Class.forName(java + "$")
-      val rule = cls.getField("MODULE$").get(null).asInstanceOf[Rule]
+      val rule = try {
+         val cls = Class.forName(java + "$")
+         cls.getField("MODULE$").get(null).asInstanceOf[Rule]
+      } catch {
+         case e: Exception =>
+            throw BackendError("reflection error", thy ? name).setCausedBy(e)
+      }
       new RuleConstant(OMMOD(thy), name, rule)
    }
 }

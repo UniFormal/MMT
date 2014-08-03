@@ -75,7 +75,7 @@ class ErrorListForwarder(errorSource: DefaultErrorSource, controller: Controller
       case e: Error =>
          // other errors, should not happen
          val error = new DefaultErrorSource.DefaultError(
-             errorSource, ErrorSource.ERROR, src.toString, 0, 0, 1, "unknown error in file: " + e.getMessage
+             errorSource, ErrorSource.ERROR, src.toString, 0, 0, 1, "error with unknown location: " + e.getMessage
          )
          errorSource.addError(error)
    }
