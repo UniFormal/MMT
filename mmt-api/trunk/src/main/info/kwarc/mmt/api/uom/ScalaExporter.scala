@@ -34,6 +34,15 @@ object GenericScalaExporter {
       if (auth == List("")) auth = Nil
       (auth ::: key ::: u.path).mkString(".")
    }
+   def scalaToDPath(j: String, key: List[String] = Nil) = {
+      val segments = j.split("\\.").toList
+      val i = segments.indexOfSlice(key)
+      val (auth,path) = if (key == Nil || i == -1)
+         (segments.reverse, Nil)
+      else
+         (segments.take(i).reverse, segments.drop(i+key.length))
+      DPath(utils.URI("http", auth.mkString(".")) / path)
+   }
    /** package URI . modname */
    def mpathToScala(m: MPath, key: List[String] = Nil) = dpathToScala(m.doc, key) + "." + nameToScala(m.name) 
    val imports = "import info.kwarc.mmt.api._\n" + "import objects._\n" + "import uom._\n" +

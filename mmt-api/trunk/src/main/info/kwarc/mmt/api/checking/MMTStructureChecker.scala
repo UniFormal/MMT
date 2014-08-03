@@ -235,8 +235,15 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
    private def checkTheory(context : Context, t : Term)(implicit pCont: Path => Unit) : Term = {
      t match {
         case OMPMOD(p, args) =>
-           controller.globalLookup.getO(p) match {
-              case Some(thy: Theory) =>
+           val thy = try {
+              controller.globalLookup.get(p)
+           } catch {
+              case e: Error =>
+              errorCont(InvalidObject(t, "unknown identifier: " + p.toPath).setCausedBy(e))
+              return t
+           }
+           thy match {
+              case thy: Theory =>
                  val pars = thy.parameters
                  pCont(p)
                  val subs = (pars / args).getOrElse {
@@ -244,10 +251,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                     context.id
                  }
                  checkSubstitution(context, subs, pars, Context(), false)
-              case Some(_) =>
+              case _ =>
                  errorCont(InvalidObject(t, "not a theory identifier" + p.toPath))
-              case None =>
-                 errorCont(InvalidObject(t, "unknown identifier: " + p.toPath))
            }
            t
         case ComplexTheory(body) =>

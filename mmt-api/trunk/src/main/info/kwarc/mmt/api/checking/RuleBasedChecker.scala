@@ -95,10 +95,14 @@ object RuleBasedChecker {
       val rs = new RuleSet
       imports.foreach {
          case OMPMOD(p,_) =>
-            val t = controller.globalLookup.getAs(classOf[DeclaredTheory], p)
-            t.getPrimitiveDeclarations.foreach {
-               case rc: RuleConstant =>
-                     rs.declares(rc.df)
+            controller.globalLookup.getO(p) match {
+               case Some(t:DeclaredTheory) =>
+                  // trying all declarations because some rules might be generated
+                  t.getDeclarations.foreach {
+                     case rc: RuleConstant =>
+                           rs.declares(rc.df)
+                     case _ => Nil
+                  }
                case _ => Nil
             }
          case _ => Nil

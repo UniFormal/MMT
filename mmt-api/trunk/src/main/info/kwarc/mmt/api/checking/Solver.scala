@@ -777,6 +777,22 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       Some(remainingFreeVars)
   }
    
+   private def findSolvableVariable(rules: HashSet[SolutionRule], t: Term): Option[(List[SolutionRule],LocalName)] = t match {
+      case OMA(OMS(_), args) =>
+         rules.foreach {r =>
+            r.applicable(t) foreach {i =>
+               findSolvableVariable(rules, args(i)) foreach {case (rs,m) =>
+                  val otherArgs = args.take(i) ::: args.drop(i+1) 
+                  if (otherArgs.forall(a => ! a.freeVars.contains(m)))
+                     return Some((rs:::List(r), m))
+               }
+            }
+         }
+         return None
+      case OMV(m) if solution.isDeclared(m) => Some((Nil, m))
+      case _ => None
+   }
+   
    /** tries to solve an unknown occurring as the torso of tm1 in terms of tm2.
     * 
     * This method should not be called by users (instead, use check(Equality(tm1,tm2,...))).
@@ -804,12 +820,15 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
                   }
             }
          //apply a foundation-dependent solving rule selected by the head of tm1
-         case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tm2.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
+         case _ => findSolvableVariable(rules.get(classOf[SolutionRule]), tm1) match {
+            case Some((rs, m)) => rs.head(this)(tm1, tm2)
+            case _ => false
+         }
+         /*case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tm2.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
             rules.getFirst(classOf[SolutionRule], h) match {
                case None => false
                case Some(rule) => rule(this)(tm1, tm2)
-            }
-         case _ => false
+            }*/
       }
    }
    /* ********************** end of auxiliary methods of checkEquality ***************************/

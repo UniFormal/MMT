@@ -124,6 +124,7 @@ class RealizationArchive(file: File, val loader: java.net.URLClassLoader) extend
          case _ => throw NotApplicable("no module path found")
       }
       val s = uom.GenericScalaExporter.mpathToScala(mp)
+      controller.report("backend", "trying to load class " + s + "$")
       val c = try {Class.forName(s + "$", true, loader)}
          catch {
             case e: ClassNotFoundException =>
@@ -138,20 +139,8 @@ class RealizationArchive(file: File, val loader: java.net.URLClassLoader) extend
               case e : java.lang.Exception =>
                throw BackendError("realization for " + mp + " exists, but an error occurred when creating it", mp).setCausedBy(e)
            }
-      val real = new modules.Realization(mp.parent, mp.name, r._domain._path)
-      r._types foreach {case (synType, rtL) =>
-         val rt = rtL()
-         if (rt.synType == null) rt.init(synType, mp) // included RealizedTypes are already initialized
-         val rc = new symbols.RealizedTypeConstant(real.toTerm, synType.name, rt)
-         real.add(rc)
-      }
-      r._opers foreach {roL =>
-         // add a RealizedConstant for every realization of an operator constant
-         val ro = roL()
-         val rc = new symbols.RuleConstant(real.toTerm, ro.op.name, ro)
-         real.add(rc)
-      }
-      controller.add(real)
+      r.init
+      controller.add(r)
    }       
 }
 

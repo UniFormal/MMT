@@ -330,15 +330,23 @@ object ForwardSolutionRule {
 
 /** A SolutionRule tries to solve for an unknown that occurs in a non-solved position.
  * It may also be partial, e.g., by inverting the toplevel operation of a Term without completely isolating an unknown occurring in it.
+ * 
+ * @param applications strict apply-operators in whose context head is applied
+ * @param head the operator that the rule tries to invert
  */
 abstract class SolutionRule(val head: GlobalName) extends Rule {
+   /**
+    * @return Some(i) if the rule is applicable to t1 in the judgment t1=t2,
+    *   in that case, i is the position of the subterm of t1 that the rule will try to isolate
+    */
+   def applicable(t: Term) : Option[Int]
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm1 the term that contains the unknown to be solved
     *  @param tm2 the second term 
     *  @param stack the context
     *  @return false if this rule is not applicable;
-    *    if this rule is applicable, it may return true only if the Equality Judgement is guaranteed
+    *    if this rule is applicable, it may return true only if the Equality judgement is guaranteed
     *    (by calling an appropriate callback method such as delay or checkEquality)
     */
    def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Boolean
