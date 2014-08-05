@@ -165,7 +165,51 @@ class EditingServicePlugin(val controller : Controller) {
       }
   }
   
+   
+  private def modifyStringRepresent (name:LocalName,markers:List[Marker],accumulator:String,hasSymbol:Boolean) : String = {
+          val separator = " " 
+          markers match {
+            case Nil => 
+              if(hasSymbol) accumulator 
+              else name.toString + accumulator
+            case hd::b  => if(hd.toString=="%n"){ 
+              modifyStringRepresent(name,b,accumulator,false)
+            } else if(hd.toString.length()>1 && hd.toString.substring(0,2)=="%I") 
+              modifyStringRepresent(name,b,accumulator,hasSymbol) 
+              else modifyStringRepresent(name,b,accumulator+ separator +hd.toString,hasSymbol)
+          }
+        }
   
-  
-  
+  def getSymbolDefinitions(spathS: String) : Map[String, (String,String)] = {
+    val res = new collection.mutable.HashMap[String, (String, String)]
+    try {
+     val spath = Path.parseS(spathS, mmt.mmtbase)
+     controller.get(spath) match {
+       case c : Constant => 
+         val verbs = c.notC.verbalizationDim.notations.values.flatten.toList
+         val defs = controller.depstore.getObjects(spath, ontology.isDefinedBy) collect {
+           case f if f.isPath => f.path
+         }
+         defs foreach {
+           case p : GlobalName => 
+             //getting language 
+             //FIXME terrible hack, to add language field to definition instead
+             val lang = p.module.toMPath.name.toPath.split('.').toList match {
+               case l if l.contains("de") => "de"
+               case l if l.contains("en") => "en"
+               case l => throw new IllegalStateException
+             }
+             val verbalization = verbs.find(_.scope.languages.contains(lang)).map(n => modifyStringRepresent(p.name, n.fixity.markers, "", true)).getOrElse("")
+             res(lang) = (p.toPath -> verbalization)
+           case _ => throw new IllegalStateException
+         }
+         res.toMap
+       case _ => res.toMap
+     }
+    } catch {
+      case e : Exception => res.toMap
+      case e : Error => res.toMap
+    }
+  }
+
 }
