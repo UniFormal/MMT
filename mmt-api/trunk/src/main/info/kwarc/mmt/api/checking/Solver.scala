@@ -820,8 +820,13 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
                   }
             }
          //apply a foundation-dependent solving rule selected by the head of tm1
-         case _ => findSolvableVariable(rules.get(classOf[SolutionRule]), tm1) match {
-            case Some((rs, m)) => rs.head(this)(tm1, tm2)
+         case _ =>
+            if (tm1.toString == "3")
+                  true
+
+            findSolvableVariable(rules.get(classOf[SolutionRule]), tm1) match {
+            case Some((rs, m)) =>
+               rs.head(this)(tm1, tm2)
             case _ => false
          }
          /*case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tm2.freeVars.contains(m) => //TODO what about occurrences of m in tm1?

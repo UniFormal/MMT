@@ -38,10 +38,7 @@ class Report extends Logger {
    }
    /** logs an error */
    def apply(e : Error) {
-      if (groups contains "debug")
-         handlers foreach {_.apply(ind, e)}
-      else
-         apply("error", e.shortMsg)
+      handlers foreach {_.apply(ind, e, groups contains "debug")}
 	}
    /** flushes all handlers */
    def flush {
@@ -90,11 +87,18 @@ abstract class ReportHandler(val id: String) {
     */
    def apply(ind: Int, caller: String, group: String, msg: String)
    /** logs as an error (categories "error" and "debug" for short and long message, respectively) */
-   def apply(ind: Int, e: Error) {
+   def apply(ind: Int, e: Error, debug: Boolean) {
       val caller = e.getStackTrace()(0).toString
-      apply(ind, caller, "error", e.shortMsg)
-      apply(ind, caller, "debug", e.getLongMessage)
+      val msg = e match {
+         case _: Invalid | _: ParseError => contentErrorHighlight(e.shortMsg)
+         case _ => systemErrorHighlight(e.shortMsg)
+      }
+      apply(ind, caller, "error", msg)
+      if (debug)
+         apply(ind, caller, "debug", e.getLongMessage)
    }
+   def systemErrorHighlight(s: String): String = s
+   def contentErrorHighlight(s: String): String = s
    /** produces a timestamp */
    def time = Report.df.format(new java.util.Date())
    /** turns indentation level into a string of spaces */
@@ -115,6 +119,11 @@ object ConsoleHandler extends ReportHandler("console") {
       val m = indentString(ind) + group + ": " + msg
       println(m)
    }
+   /* see http://mihai-nita.net/2013/06/03/eclipse-plugin-ansi-in-console/ for ANSI escape codes
+    * e.g., 30-37: colors, 1 bold, 3 italic, 0 reset
+    */
+   override def systemErrorHighlight(s: String) = "\u001b[31;1m" + s + "\u001b[0m"
+   override def contentErrorHighlight(s: String) = "\u001b[34;103m" + s + "\u001b[0m"
 }
 
 /** common methods for logging to a file */
@@ -152,11 +161,13 @@ class HtmlFileHandler(filename : File) extends FileHandler(filename) {
       file.println("</div>")
       flush
    }
-   override def apply(ind: Int, e: Error) {
+   override def apply(ind: Int, e: Error, debug: Boolean) {
       file.println(s"""<div class="log error" style="margin-left: $ind%">""")
       file.println(s"""<div><span class="timestamp">$time</span><span class="error-short">${e.shortMsg}</span></div>""")
-      e.getLongMessage.split("\\n").toList.foreach {line =>
-         file.println(s"""<div class="error-long"><span>${line}</span></div>""")
+      if (debug) {
+         e.getLongMessage.split("\\n").toList.foreach {line =>
+            file.println(s"""<div class="error-long"><span>${line}</span></div>""")
+         }
       }
       file.println("</div>")
    }

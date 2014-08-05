@@ -87,7 +87,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       SourceRef.update(se, SourceRef(state.container.uri,reg))
       try {controller.add(se)}
       catch {case e: Error =>
-         val se = makeError(reg, "error while adding parsed element")
+         val se = makeError(reg, "after parsing: " + e.getMessage)
          se.setCausedBy(e)
          errorCont(se)
       }
@@ -104,7 +104,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
          objectParser(pu)(state.errorCont)  
       } catch {
          case e: Error =>
-            val se = makeError(pu.source.region, "error while parsing object")
+            val se = makeError(pu.source.region, "during parsing: " + e.getMessage)
             se.setCausedBy(e)
             state.errorCont(se)
             DefaultObjectParser(pu)(state.errorCont)

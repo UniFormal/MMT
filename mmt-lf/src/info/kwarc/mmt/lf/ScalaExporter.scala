@@ -1,5 +1,5 @@
-package info.kwarc.mmt.lf
 
+package info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import modules._
 import symbols._
@@ -10,8 +10,7 @@ import uom.GenericScalaExporter._
 //TODO translate LF definitions to Scala definitions  
 
 class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) with uom.GenericScalaExporter {
-   val outDim = archives.Dim("export", "scala", "lf")
-   val key = "scala_lf"
+   val key = "lf-scala"
    override val packageSep = List("lf")
    
    private object IllFormed extends Throwable
@@ -46,7 +45,7 @@ class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) 
                val Some((args,ret)) = FunType.unapply(tp)
                val (decl, ini) = if (ret == Univ(1)) {
                   //scalaType(c.path)
-                  val ini = s"  declares($synName)(() => $semName)"
+                  val ini = s"  realizes {universe($synName)($semName)}"
                   val decl = c.df match {
                      case None =>
                         scalaVal(c.path, "RealizedType")
@@ -59,11 +58,10 @@ class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) 
                   }
                   (decl, ini)
                } else {
-                  // create declares(RealizedOperator(name)(argType1, ..., argTypeN, retType)(function))
+                  // create "realizes {function(name)(argType1, ..., argTypeN, retType)(function)}
                   val (argsE, retE) = typeEras(tp)
                   val lts = (argsE ::: List(retE)).map(nameToScalaQ).mkString(", ")
-                  val dcl = s"RealizedOperator($synName, $lts)($semName)"
-                  val ini = "  declares(" + dcl + ")"
+                  val ini = s"  realizes {function($synName, $lts)($semName)}"
                   // create def name(x0: argType1._univ, ..., xN: argTypeN._univ): retType.univ
                   val names = args.zipWithIndex.map {
                      case ((Some(n), _), _) => n.toPath
@@ -95,4 +93,61 @@ class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) 
    def exportFunctor(v: DeclaredView) {}
 
    def exportRealization(v: DeclaredView) {}
+}
+
+import checking._
+
+trait SolutionRules extends uom.RealizationInScala {
+   def solve_unary(op:GlobalName, argType: RealizedType, rType: RealizedType)(invert: rType.univ => Option[argType.univ]) = {
+      val sr = new SolutionRule(op / "invert") {
+         def applicable(tm1: Term) = tm1 match {
+            case ApplySpine(OMS(`op`), List(_)) => Some(1)
+            case _ => None
+         }
+         def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History) = (tm1, tm2) match {
+            case (ApplySpine(_, List(t)), rType(y)) => invert(y) match {
+               case Some(x) =>
+                  solver.check(Equality(stack, t, argType(x), None))
+               case None =>
+                  false
+            }
+            case _ => false
+         }
+      }
+      rule(sr)
+   }
+   def solve_binary_right(op:GlobalName, argType1: RealizedType, argType2: RealizedType, rType: RealizedType)
+            (invert: (rType.univ,argType2.univ) => Option[argType1.univ]) =
+      new SolutionRule(op / "right-invert") {
+         def applicable(tm1: Term) = tm1 match {
+            case ApplySpine(OMS(`op`), List(_,argType2(_))) => Some(1)
+            case _ => None
+         }
+         def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History) = (tm1, tm2) match {
+            case (ApplySpine(_, List(t, argType2(x2))), rType(y)) => invert(y,x2) match {
+               case Some(x1) =>
+                  solver.check(Equality(stack, t, argType1(x1), None))
+               case None =>
+                  false
+            }
+            case _ => false
+         }
+      }
+   def solve_binary_left(op:GlobalName, argType1: RealizedType, argType2: RealizedType, rType: RealizedType)
+            (invert: (argType1.univ,rType.univ) => Option[argType2.univ]) =
+      new SolutionRule(op / "left-invert") {
+         def applicable(tm1: Term) = tm1 match {
+            case ApplySpine(OMS(`op`), List(argType1(_),_)) => Some(2)
+            case _ => None
+         }
+         def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History) = (tm1, tm2) match {
+            case (ApplySpine(_, List(argType1(x1), t)), rType(y)) => invert(x1,y) match {
+               case Some(x2) =>
+                  solver.check(Equality(stack, t, argType2(x2), None))
+               case None =>
+                  false
+            }
+            case _ => false
+         }
+      }
 }
