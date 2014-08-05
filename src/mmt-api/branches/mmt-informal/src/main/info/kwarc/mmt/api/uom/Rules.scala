@@ -67,4 +67,4 @@ abstract class BreadthRule(val head: GlobalName) extends UOMRule {
 
 /** An AbbrevRule expands a symbol into a term
  */ 
-case class AbbrevRule(head: GlobalName, term: Term) extends UOMRule
+class AbbrevRule(val head: GlobalName, val term: Term) extends UOMRule

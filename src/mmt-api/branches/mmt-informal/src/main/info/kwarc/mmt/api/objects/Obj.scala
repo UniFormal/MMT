@@ -1,4 +1,5 @@
 package info.kwarc.mmt.api.objects
+
 import info.kwarc.mmt.api._
 import utils._
 import libraries._
@@ -45,6 +46,23 @@ class TermProperty[A](val property: utils.URI) {
    }
    def erase(t: Term) {
       t.clientProperty -= property
+   }
+}
+
+object TermProperty {
+   /** removes all term properties */
+   def eraseAll(t: Term) {
+      t.clientProperty.clear
+      t match {
+         case ComplexTerm(_, subs, cont, args) =>
+            subs.foreach {s => eraseAll(s.target)}
+            cont.foreach {v => 
+               v.tp foreach eraseAll
+               v.df foreach eraseAll
+            }
+            args foreach eraseAll
+         case _ =>
+      }
    }
 }
 
@@ -259,13 +277,17 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
    def toCMLQVars(implicit qvars: Context) = <apply>{fun.toCMLQVars}{args.map(_.toCMLQVars)}</apply>
 }
 
-/** helper object */
-object OMA {
-   /**
-    * special application that elides empty argument lists:
-    * @return f if args is Nil, OMA(f, args) otherwise
-    */
-   def applyMaybeNil(f: Term, args: List[Term]) = if (args == Nil) f else OMA(f,args)
+/**
+ * special application that elides empty argument lists:
+ * @return f if args is Nil, OMA(f, args) otherwise
+ */
+object OMAorOMID {
+   def apply(f: Term, args: List[Term]) = if (args == Nil) f else OMA(f,args)
+   def unapply(t: Term) = t match {
+      case OMID(p) => Some((t, Nil))
+      case OMA(t, args) => Some((t, args))
+      case _ => None
+   }
 }
 
 /**

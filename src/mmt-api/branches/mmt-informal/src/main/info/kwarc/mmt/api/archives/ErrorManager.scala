@@ -14,10 +14,7 @@ class ErrorManager(archive: WritableArchive) {
     * 
     * returns a
     */
-   def apply(key: String): ErrorMap = errors(key)
-   def add(key: String) {
-      errors(key) = new ErrorMap
-   }
+   def apply(key: String): ErrorMap = errors.getOrElseUpdate(key, new ErrorMap)
 }
 
 /**

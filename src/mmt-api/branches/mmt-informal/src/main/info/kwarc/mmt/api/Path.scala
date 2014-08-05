@@ -8,7 +8,8 @@ import scala.collection.mutable.Map
 
 
 /**
- * A Path represents an MMT path. <p>
+ * A Path represents an MMT path.
+ * 
  * An MMT path refers to a document (doc), a module (doc?mod), or a symbol (M % sym).
  * Use the objects ?, %, /, \, and ! for pattern matching paths.
  */

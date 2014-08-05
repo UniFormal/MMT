@@ -86,9 +86,9 @@ object Presenter {
       else {
          val yes = delimitation match {
             //the = case puts brackets into x * (y / z) if * and / have the same precedence
-            case 1 => outerPrecedence >= innerPrecedence && innerNotation.isLeftOpen
+            case 1 => outerPrecedence >= innerPrecedence && (innerNotation.isLeftOpen || innerNotation.arity.numNormalArgs > 1)
             case 0 => outerPrecedence >= innerPrecedence && (innerNotation.isLeftOpen || innerNotation.isRightOpen)
-            case -1 => outerPrecedence >= innerPrecedence && innerNotation.isRightOpen
+            case -1 => outerPrecedence >= innerPrecedence && (innerNotation.isRightOpen || innerNotation.arity.numNormalArgs > 1)
             case _ => throw ImplementationError("illegal position")
          }
          if (yes) 1 else 0

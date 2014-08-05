@@ -3,10 +3,13 @@ import info.kwarc.mmt.api._
 import symbols._
 import libraries._
 import objects._
+import objects.Conversions._
 import utils._
 import presentation.{StringLiteral,Omitted}
 
-abstract class Theory(doc : DPath, name : LocalName) extends Module(doc, name)
+abstract class Theory(doc : DPath, name : LocalName) extends Module(doc, name) {
+   def parameters: Context
+}
 /**
  * A Theory represents an MMT theory.<p>
  * 
@@ -20,7 +23,12 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
       extends Theory(doc, name) with DeclaredModule {
    def role = Role_DeclaredTheory
    def components = OMID(path) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents
+   /** the context governing the body: meta-theory, parameters, and this theory */
    def children = innerComponents
+   def getInnerContext = {
+      val self = IncludeVarDecl(path, parameters.id.map(_.target))
+      meta.map(p => Context(p)).getOrElse(Context()) ++ parameters ++ self
+   }
    /** convenience method to obtain all constants */
    def getConstants:List[Constant] = getDeclarations.flatMap {
       case c: Constant => List(c)
@@ -37,7 +45,7 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
    }   
    /** convenience method to obtain all named structures */
    def getNamedStructures:List[Structure] = getDeclarations.flatMap {
-      case s: Structure if ! s.isAnonymous => List(s)
+      case s: Structure if ! s.isInclude => List(s)
       case _ => Nil
    }
    /** convenience method to obtain all patterns */
@@ -52,18 +60,20 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
    }
    override def toString = "theory " + path + meta.map(" : " + _.toPath).getOrElse("") + innerString
    def toNode =
-      <theory name={name.toPath} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
+      <theory name={name.last.toPath} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
         {getMetaDataNode}
         {innerNodes}
       </theory>
    def toNodeElab = 
-    <theory name={name.toPath} base={doc.toPath}>
+    <theory name={name.last.toPath} base={doc.toPath}>
         {getMetaDataNode}
         {innerNodesElab}
     </theory>
 }
 
 class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) extends Theory(doc, name) with DefinedModule {
+   val parameters = Context()
+   def getComponents = List((DefComponent, dfC))
    def role = Role_DefinedTheory
    def components = StringLiteral(name.toPath) :: innerComponents
    def children = innerComponents

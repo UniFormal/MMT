@@ -203,19 +203,18 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
          case <import>{seq @ _*}</import> =>
             log("import " + name + " found")
             val (rest, from) = XMLReader.getTheoryFromAttributeOrChild(s2, "from", base)
-            val fromPath = from match {
-               case OMMOD(p) => p
-               case _ => throw ParseError("domain of structure must be atomic")
+            val adjustedName = if (name.length > 0) name else from match {
+               case OMMOD(p) => LocalName(p)
+               case _ => throw ParseError("domain of include must be atomic")
             }
-            val adjustedName = if (name.length > 0) name else LocalName(fromPath)
             val isImplicit = parseImplicit(s2) 
             rest.child match {
                case <definition>{d}</definition> :: Nil =>
                   val df = Obj.parseTerm(d, base)
-                  val s = DefinedStructure(homeTerm, adjustedName, fromPath, df, isImplicit)
+                  val s = DefinedStructure(homeTerm, adjustedName, from, df, isImplicit)
                   add(s,md)
                case assignments =>
-                  val s = new DeclaredStructure(homeTerm, adjustedName, fromPath, isImplicit)
+                  val s = DeclaredStructure(homeTerm, adjustedName, from, isImplicit)
                   add(s,md)
                   readInTheory(home / name, base, assignments)
             }

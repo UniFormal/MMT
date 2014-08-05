@@ -2,7 +2,9 @@ package info.kwarc.mmt.api.parser
 
 import info.kwarc.mmt.api._
 import objects._
+import objects.Conversions._
 import symbols._
+import modules._
 import frontend._
 import presentation._
 import notations._
@@ -10,7 +12,7 @@ import utils.MyList._
 import scala.collection.immutable.{HashMap}
 
 /** couples an identifier with its notation */
-case class ParsingRule(name: GlobalName, notation: TextNotation) {
+case class ParsingRule(name: ContentPath, notation: TextNotation) {
    /** the first delimiter of this notation, which triggers the rule */
    def firstDelimString : Option[String] = notation.parsingMarkers mapFind {
       case d: Delimiter => Some(d.expand(name).text)
@@ -119,16 +121,14 @@ class NotationBasedParser extends ObjectParser {
     notations map {
          case (priority,nots) => sc.scan(nots)
     }
-    log("scan result: " + sc.tl.toString)
-    
-    //structuring
-    val varnames = pu.context.variables.map(_.name).toList
     val scanned = sc.tl.length match {
        case 1 => sc.tl(0)
        case _ => new UnmatchedList(sc.tl)
     }
+    log("scan result: " + sc.tl.toString)
+    // turn the syntax tree into a term
     val tm = logGroup {
-       makeTerm(scanned, varnames)
+       makeTerm(scanned, Nil)
     }
     log("parse result: "  + tm.toString)
     if (vardecls == Nil)
@@ -151,15 +151,20 @@ class NotationBasedParser extends ObjectParser {
         }
      }
      val nots = decls.flatMap {
-        case c: Constant =>
-           var names = (c.name :: c.alias.toList).map(_.toString) //the names that can refer to this constant
-           if (c.name.last == "_") names ::= c.name.init.toString
+        case nm: NestedModule =>
+           val args = nm.module match {
+              case t: Theory => t.parameters.length
+              case v: View => 0
+           }
+           val tn = new TextNotation(Mixfix(Delim(nm.name.toString) :: Range(0,args).toList.map(Arg(_))), presentation.Precedence.infinite, None)
+           List(ParsingRule(nm.module.path, tn))
+        case c: Declaration with HasNotation =>
+           var names = (c.name :: c.alternativeName.toList).map(_.toString) //the names that can refer to this declaration
+           if (c.name.last == SimpleStep("_")) names ::= c.name.init.toString
            //the unapplied notations consisting just of the name 
            val unapp = names map (n => new TextNotation(Mixfix(List(Delim(n))), presentation.Precedence.infinite, None))
            val app = c.not.toList
            (app ::: unapp).map(n => ParsingRule(c.path, n))
-        case p: patterns.Pattern =>
-           p.not.toList.map(n => ParsingRule(p.path, n))
         case _ => Nil
      }
      val les = decls.flatMap {
@@ -173,7 +178,7 @@ class NotationBasedParser extends ObjectParser {
   /**
     * recursively transforms a TokenListElem (usually obtained from a [[Scanner]]) to an MMT Term
     * @param te the element to transform
-    * @param boundVars the variable names bound in the context
+    * @param boundVars the variable names bound in this term (excluding the variables of the context of the parsing unit)
     * @param pu the original ParsingUnit (constant during recursion)
     * @param attrib the resulting term should be a variable attribution
     */
@@ -181,7 +186,7 @@ class NotationBasedParser extends ObjectParser {
       val term = te match {
          case Token(word, _, _,_) =>
             val name = LocalName.parse(word)
-            if (boundVars contains name) {
+            if (boundVars.contains(name) || pu.context.exists(_.name == name)) {
                //single Tokens may be bound variables
                OMV(name)
             } else if (word.count(_ == '?') > 0) {
@@ -332,26 +337,32 @@ class NotationBasedParser extends ObjectParser {
                         case _ => None
                      }
                   }
-                  prag.makeStrict(level, con, finalSubs, Context(finalVars : _*), finalArgs, attrib)(
-                        () => newUnknown(newArgument, boundVars)
-                  )
+                  con match {
+                     case con:MPath =>
+                        if (!finalSubs.isEmpty || !finalVars.isEmpty)
+                           makeError("no context or substitution allowed in module application", te.region)
+                        OMPMOD(con, finalArgs)
+                     case con: GlobalName =>
+                       prag.makeStrict(level, con, finalSubs, Context(finalVars : _*), finalArgs, attrib)(
+                              () => newUnknown(newArgument, boundVars)
+                        )
+                  }
                }}
          case ul : UnmatchedList =>
             if (ul.tl.length == 1)
                // process the single TokenListElement
                makeTerm(ul.tl(0), boundVars)
             else {
-               /* TODO This case arises if
+               /* This case arises if
                - the Term is ill-formed
                - the matching TextNotation is missing
-               - a subterm has no delimiters as in LF application
+               - a subterm has no delimiters (e.g., as in LF applications)
                - a semi-formal subterm consists of multiple text Tokens 
                Consequently, it is not obvious how to proceed.
-               Current behavior: application of first to rest
-               //throw ParseError("unmatched list: " + ul.tl)
+               By using defaultApplication, the behavior is somewhat configurable.
                */
                val terms = ul.tl.getTokens.map(makeTerm(_,boundVars))
-               prag.defaultApplication(Some(pu.context.getIncludes.last), terms.head, terms.tail)
+               prag.defaultApplication(pu.context.getIncludes.lastOption, terms.head, terms.tail)
             }
       }
       //log("result: " + term)

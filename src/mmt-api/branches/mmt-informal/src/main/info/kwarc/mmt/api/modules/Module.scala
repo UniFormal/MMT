@@ -41,6 +41,5 @@ trait ModuleDefiniens {
    protected def innerString = " = " + df.toString
    protected def innerNodes = <definition>{df.toNode}</definition>
    protected def innerComponents = List(df)
-   def getComponents = List((DefComponent, dfC))
    def getDeclarations = Nil
 }

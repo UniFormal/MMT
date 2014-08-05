@@ -71,14 +71,14 @@ class GraphExporter(theories: Iterable[Path], views: Iterable[Path], tg: TheoryG
       }
       val tooltipAtt = "tooltip=\"" + tp + " " + id.toPath + "\""
       val styleAtts = if (external) "style=filled,fillcolor=gray," else ""
-      val uriAtt = "href=\"javascript:planetary.navigate('" + id.toPath + "')\""
+      val uriAtt = "href=\"javascript:parent.SVGClick('" + id.toPath + "')\""
       "\"" + id.toPath + "\" [label=\"" + label + "\"," + tooltipAtt + "," + styleAtts + uriAtt + "];"
    }
    private def dotEdge(id:Option[Path], from: Path, to: Path, tp: String, external: Boolean) = {
       val idAtts = id match {
          case None => "tooltip=\"" + tp + "\""
          case Some(id) => "label=\"" + id.last + "\", tooltip=\"" + tp + " " + id.toPath + "\"" + 
-           "href=\"javascript:planetary.navigate('" + id.toPath + "')\"" 
+           "href=\"javascript:parent.SVGClick('" + id.toPath + "')\"" 
       }
       val styleAtts = tp match {
          case "view" => "style=dashed,color=\"blue:blue\""

@@ -17,7 +17,9 @@ abstract class RealizedOperator(val op: GlobalName) {self =>
    
    def toRule(mp: MPath) =
       if (argTypes.isEmpty)
-         AbbrevRule(op, apply(Nil))
+         new AbbrevRule(op, apply(Nil)) {
+            override val parent = OMMOD(mp)
+         }
       else
          new BreadthRule(op) {
             override val parent = OMMOD(mp)

@@ -51,6 +51,7 @@ class RuleStore {
    val typeBasedEqualityRules = new RuleMap[TypeBasedEqualityRule]
    val termBasedEqualityRules = new RuleSetMap2[TermBasedEqualityRule]
    val solutionRules = new RuleMap[SolutionRule]
+   val typeSolutionRules = new RuleMap[TypeSolutionRule]
    val forwardSolutionRules = new RuleMap[ForwardSolutionRule]
    
    val introProvingRules = new RuleSetMap[IntroProvingRule]
@@ -64,7 +65,7 @@ class RuleStore {
    val abbrevRules = new RuleSetMap[uom.AbbrevRule]
    
    private val all = List(typingRules, inferenceRules, computationRules, universeRules, inhabitableRules,
-                     typeBasedEqualityRules , termBasedEqualityRules, solutionRules, forwardSolutionRules, 
+                     typeBasedEqualityRules , termBasedEqualityRules, solutionRules, typeSolutionRules, forwardSolutionRules, 
                      introProvingRules, elimProvingRules, depthRules, breadthRules, abbrevRules)
    
    /** add some Rule to this RuleStore */
@@ -78,6 +79,7 @@ class RuleStore {
          case r: TypeBasedEqualityRule => typeBasedEqualityRules(r.head) = r
          case r: TermBasedEqualityRule => termBasedEqualityRules((r.left,r.right)) += r
          case r: SolutionRule => solutionRules(r.head) = r
+         case r: TypeSolutionRule => typeSolutionRules(r.head) = r
          case r: ForwardSolutionRule => forwardSolutionRules(r.head) = r
          case r: IntroProvingRule => introProvingRules(r.head) += r
          case r: ElimProvingRule => elimProvingRules(r.head) += r
@@ -115,6 +117,7 @@ class RuleStore {
       mkM("equality rules", typeBasedEqualityRules)
       mkS("term-based equality rules", termBasedEqualityRules)
       mkM("solution rules", solutionRules)
+      mkM("type solution rules", typeSolutionRules)
       mkM("forwardSolution rules", forwardSolutionRules)
       mkS("intro proving rules", introProvingRules)
       mkS("elim proving rules", elimProvingRules)
@@ -201,10 +204,12 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm the term
-    *  @param context its context
+    *  @param covered if true, well-formedness may be assumed
+    *  @param stack its context
+    *  @param history the history so far
     *  @return the inferred type if inference was possible
     */
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History): Option[Term]
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term]
 }
 
 /** A ComputationRule simplifies an expression operating at the toplevel of the term.
@@ -338,6 +343,22 @@ abstract class SolutionRule(val head: GlobalName) extends Rule {
     *    (by calling an appropriate callback method such as delay or checkEquality)
     */
    def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Boolean
+}
+
+/** A TypeSolutionRule tries to solve for an unknown that occurs in a non-solved position.
+ * It may also be partial, e.g., by inverting the toplevel operation of a Term without completely isolating an unknown occurring in it.
+ */
+abstract class TypeSolutionRule(val head: GlobalName) extends Rule {
+   /** 
+    *  @param solver provides callbacks to the currently solved system of judgments
+    *  @param tm the term that contains the unknown to be solved
+    *  @param tp its type 
+    *  @param stack the context
+    *  @return false if this rule is not applicable;
+    *    if this rule is applicable, it may return true only if the Typing Judgement is guaranteed
+    *    (by calling an appropriate callback method such as delay or checkTyping)
+    */
+   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean
 }
 
 /** A continuation returned by [[IntroProvingRule]] and [[IntroProvingRule]] */

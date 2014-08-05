@@ -4,6 +4,7 @@ import frontend._
 import modules._
 import symbols._
 import objects._
+import objects.Conversions._
 import patterns._
 import utils._
 import utils.MyList._
@@ -93,20 +94,25 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
       case mp: MPath => modulesGetNF(mp)
       //case doc ? t / !(str)) => getStructure(doc ? t ? str)    
       //lookup in atomic modules
-      case OMMOD(p) % name => get(p, error) match {
+      case OMPMOD(p, args) % name => get(p, error) match {
          case t: DefinedTheory =>
-            get(t.df % name, error)
+             get(t.df % name, error) match {
+                case d: Declaration => instantiate(d, t.parameters, args)
+                case d => error("illegal declaration in theory " + d.path)
+             }
+             
          case t: DeclaredTheory =>
-             t.getMostSpecific(name) match {
-               case Some((d,LocalName(Nil))) => d  // perfect match
+             val decl = t.getMostSpecific(name) map {case (d,ln) => (instantiate(d, t.parameters, args), ln)}
+             decl match {
+               case Some((d,LocalName(Nil))) => d // perfect match
                case Some((d, ln)) => d match {
                   // a prefix exists and resolves to d, a suffix ln is left
                   case c: Constant => error("local name " + ln + " left after resolving to constant")
-                  case p: Pattern  => error("local name " + ln + " left after resolving to pattern")
-                  case i: Instance => error("resolution in unelaborated instances not implemented yet")
                   case s: Structure =>
                       val sym = getSymbol(s.from % ln, p => error("could not lookup source symbol " + p)) // resolve ln in the domain of d
                       translateByLink(sym, s, error) // translate sym along l
+                  case nm: NestedModule =>
+                     error("local name " + ln + " left after resolving to nested module")
                }
                case None => name match {
                   // no prefix of name is declared in t
@@ -128,13 +134,15 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
                }
             }
          case v : View =>
+            if (0 != args.length)
+                throw GetError("number of arguments does not match number of parameters")
             try {
                getInLink(v, name, error)
             } catch {
                case PartialLink() => get(v.from % name) match {
                   // return default assignment
                   case c:Constant => ConstantAssignment(v.toTerm, name, None, None)
-                  case s:Structure => DefLinkAssignment(v.toTerm, name, s.fromPath, Morph.empty)
+                  case s:Structure => DefLinkAssignment(v.toTerm, name, s.from, Morph.empty)
                   case _ => throw ImplementationError("unimplemented default assignment")
                }
             }
@@ -147,7 +155,7 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
             // return default assignment
             get(s.from % name) match {   
                case c:Constant => ConstantAssignment(s.toTerm, name, None, Some(OMID(s.to % (s.name / name))))
-               case d:Structure => DefLinkAssignment(s.toTerm, name, d.fromPath, OMDL(s.to, s.name / name))
+               case d:Structure => DefLinkAssignment(s.toTerm, name, d.from, OMDL(s.to, s.name / name))
                case _ => throw ImplementationError("unimplemented default assignment")
             }
          }
@@ -156,20 +164,20 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
          cont.mapVarDecls {case (before, vd) =>
             val vdDecl = vd.toDeclaration(ComplexTheory(before))
             vd match {
-               case IncludeVarDecl(p) =>
+               case IncludeVarDecl(p, args) =>
                   name.head match {
                      case ComplexStep(q) =>
                         getImplicit(q,p).foreach {m =>
-                           val sym = getSymbol(q ? name.tail)
+                           val sym = getSymbol(OMPMOD(q, args) % name.tail)
                            val symT = translate(sym, m, error)
                            return symT
                         }
                      case _ =>
                   }
-               case StructureVarDecl(s, from, dfOpt) =>
+               case StructureVarDecl(s, OMPMOD(p, args), dfOpt) =>
                   name.head match {
                      case SimpleStep(s2) if s == s2 =>
-                        val sym = getSymbol(from ? name.tail)
+                        val sym = getSymbol(p ? name.tail)
                         val struc = vdDecl.asInstanceOf[Structure]
                         val symT = translateByLink(sym, struc, error)
                         return symT
@@ -198,11 +206,11 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
            a
          else a match {
             case a: Constant => ConstantAssignment(m, a.name, a.alias, a.df.map(_ * OMCOMP(tl)))
-            case a: DefinedStructure => DefLinkAssignment(m, a.name, a.fromPath, OMCOMP(a.df :: tl))
+            case a: DefinedStructure => DefLinkAssignment(m, a.name, a.from, OMCOMP(a.df :: tl))
          }
       case (m @ OMIDENT(t)) % name => get(t % name) match {
          case c: Constant =>  ConstantAssignment(m, name, None, Some(c.toTerm))
-         case l: Structure =>  DefLinkAssignment(m, name, l.fromPath, l.toTerm)
+         case l: Structure =>  DefLinkAssignment(m, name, l.from, l.toTerm)
       }
       case Morph.empty % name => throw GetError("empty morphism has no assignments")
       case MUnion(ms) % name => ms mapFind {
@@ -233,37 +241,68 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
       }
    }
 
+   /**
+    * instantiates parameters of a declaration with arguments
+    * 
+    * the home of the new declarations is adapted
+    */
+   private def instantiate(decl: Declaration, params: Context, args: List[Term]): Declaration = {
+      if (args.isEmpty) return decl // lookup from within parametric theory does not provide arguments
+      val subs: Substitution = (params / args).getOrElse {
+         throw GetError("number of arguments does not match number of parameters")
+      }
+      if (subs.isIdentity) return decl // avoid creating new instance
+      val newHome = decl.home match {
+         case OMPMOD(p, oldArgs) => OMPMOD(p, oldArgs ::: args)
+         case _ => throw ImplementationError("cannot instantiate declaration of complex theory")
+      }
+      decl match {
+        case c: Constant =>
+           Constant(newHome, c.name, c.alias, c.tp.map(_ ^? subs), c.df.map(_ ^? subs), c.rl, c.notC)
+        case s: DefinedStructure =>
+           DefinedStructure(newHome, s.name, s.from ^? subs, s.df ^? subs, s.isImplicit)
+        case s: DeclaredStructure =>
+           val sS = DeclaredStructure(newHome, s.name, s.from ^? subs, s.isImplicit)
+           s.getPrimitiveDeclarations.foreach {case d =>
+              sS.add(instantiate(d, params, args))
+           }
+           sS
+        case nm: NestedModule => throw ImplementationError("substitution of nested modules not implemented yet")
+      }
+   }
+   
    /** translate a Declaration along a morphism */
-   def translate(e: Declaration, morph: Term, error: String => Nothing) : Declaration = morph match {
+   private def translate(d: Declaration, morph: Term, error: String => Nothing) : Declaration = morph match {
       case OMMOD(v) =>
          val link = getView(v)
-         translateByLink(e, link, error)
+         translateByLink(d, link, error)
       case OMDL(h,n) =>
          val link = getStructure(h % n)
-         translateByLink(e, link, error)
-      case OMCOMP(Nil) => e
-      case OMCOMP(hd::tl) => translate(translate(e, hd, error), OMCOMP(tl), error)
+         translateByLink(d, link, error)
+      case OMCOMP(Nil) => d
+      case OMCOMP(hd::tl) => translate(translate(d, hd, error), OMCOMP(tl), error)
       case OMIDENT(t) =>
-         val imp = implicitGraph(e.home, t) getOrElse {
-            throw GetError("no implicit morphism from " + e.home + " to " + t)
+         val imp = implicitGraph(d.home, t) getOrElse {
+            throw GetError("no implicit morphism from " + d.home + " to " + t)
          }
          //TODO better copy e and change home to t?
-         translate(e, imp, error)
+         translate(d, imp, error)
      //TODO remaining cases
    }
    
    /** auxiliary method of translate to unify translation along structures and views */
-   private def translateByLink(s: Declaration, l: Link, error: String => Nothing) : Declaration = l match {
-      case l: DefinedLink => translate(s, l.df, error)
+   private def translateByLink(decl: Declaration, l: Link, error: String => Nothing) : Declaration =
+   l match {
+      case l: DefinedLink => translate(decl, l.df, error)
       case l: DeclaredLink =>
-          //compute e such that the home theory of e is the domain of l by inserting an implicit morphism 
-          val imp = implicitGraph(s.home, l.from) getOrElse {
-             throw GetError("no implicit morphism from " + s.home + " to " + l.from)
+          //compute e such that the home theory of decl is the domain of l by inserting an implicit morphism 
+          val imp = implicitGraph(decl.home, l.from) getOrElse {
+             throw GetError("no implicit morphism from " + decl.home + " to " + l.from)
           }
-          val e = translate(s, imp, error)
+          val declT = translate(decl, imp, error)
           // get the assignment for e provided by l (if any)
           val assigOpt = try {
-              Some(getInLink(l, e.name, error))
+              Some(getInLink(l, declT.name, error))
           } catch {case PartialLink() =>
               None
           }
@@ -272,28 +311,31 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
              case s: Structure => s.name
              case v: View => LocalName(ComplexStep(v.path))
           }
-          val newName = namePrefix / e.name
-          // translate e along assigOpt
-          e match {
+          val newName = namePrefix / declT.name
+          def mapTerm(t: Term) = t * l.toTerm  
+          // translate declT along assigOpt
+          val newDecl = declT match {
               case c: Constant =>
-                 val (alias, target) = assigOpt match {
+                 val (alias, target, not) = assigOpt match {
                     //use alias and target (as definiens) from assignment
-                    case Some(a: Constant) => (a.alias,a.df)
+                    case Some(a: Constant) => (a.alias,a.df,a.not)
                     //translate old alias and definiens if no assignment given                       
-                    case None => (None,None)
+                    case None => (None,None,None)
                     case _ => throw GetError("link " + l.path + " provides non-ConstantAssignment for constant " + c.path)
                  }
                  val newAlias = alias orElse c.alias.map(namePrefix / _)
-                 val newDef = target orElse c.df.map(_ * l.toTerm)
-                 Constant(l.to, newName, newAlias, c.tp.map(_ * l.toTerm), newDef, c.rl, c.notC)
+                 val newDef = target orElse c.df.map(mapTerm)
+                 val newNotC = not.map(notations.NotationContainer(_)) getOrElse c.notC
+                 Constant(l.to, newName, newAlias, c.tp.map(mapTerm), newDef, c.rl, newNotC)
               case r: Structure => assigOpt match {
                   case Some(a: DefinedStructure) =>
-                      DefinedStructure(l.to, newName, r.fromPath, a.df, false)
+                      DefinedStructure(l.to, newName, r.from, a.df, false)
                   case None =>
-                      DefinedStructure(l.to, newName, r.fromPath, OMCOMP(r.toTerm, l.toTerm), false) //TODO should be a DeclaredStructure
+                      DefinedStructure(l.to, newName, r.from, OMCOMP(r.toTerm, l.toTerm), false) //TODO should be a DeclaredStructure
                   case _ =>  throw GetError("link " + l.path + " provides non-StructureAssignment for structure " + r.path)
               }
           }
+          newDecl
    }
 
   def getDeclarationsInScope(mod : Term) : List[Content] = {
@@ -309,7 +351,7 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
    * @return all pairs (theory,via) such that theory is visible in to
    * transitive and reflexive
    */
-  def visibleVia(to: Term) : HashSet[(Term,Term)] = {
+  private def visibleVia(to: Term) : HashSet[(Term,Term)] = {
      val hs = implicitGraph.into(to)
      hs add (to, OMCOMP())
      hs
@@ -335,36 +377,28 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
          }
       case TUnion(ts) => (ts flatMap importsTo).iterator //TODO remove duplicates
    }
-
-   /** Checks whether a theory ("from") is included into another ("to"), transitive, reflexive */
-   def imports(from: Term, to: Term) : Boolean = {
-      TheoryExp.imports(from,to) {(f,t) => 
-         importsTo(OMMOD(t)) contains OMMOD(f)
-      }
-   }
    
    def getImplicit(from: Term, to: Term) : Option[Term] = implicitGraph(from, to)
+   // TODO should be private, public only because of Archive.readRelational
    def addImplicit(from: Term, to: Term, morph: Term) {implicitGraph(from, to) = morph}
 
-   // TODO add it to the library (i.e. cache results), and check at the beginning if it's cached
+   // TODO move to elaborator
    /** Elaborate a theory expression ("exp") into a module */
-   def materialize(exp: Term) : Theory = {
+   private def materialize(path: MPath, exp: Term) : Theory = {
       exp match {
          case OMMOD(p: MPath) => getTheory(p)            // exists already
+         /* case OMPMOD(p, args) =>
+            val t = getTheory(p)
+            new InstantiatedTheory(t, args) */
          case exp =>                 // create a new theory and return it
-            val path = exp.toMPath
+            val ComplexTheory(cont) = exp
             val meta = TheoryExp.metas(exp, false)(this).headOption
             val thy = new DeclaredTheory(path.parent, path.name, meta)
-            exp match {
-               case TUnion(ts) =>
-                  ts foreach {
-                    case OMMOD(p) => thy.add(Include(exp, p))
-                    // TODO: other cases 
-                  }
-                  thy
-               case OMMOD(_) => throw ImplementationError("impossible case")
-               case _ => throw ImplementationError("cannot materialize; (note that materializing morphisms not implemented yet)")
+            cont.foreach {vd =>
+               val d = vd.toDeclaration(exp)
+               thy.add(d)
             }
+            thy
       }
    }
 
@@ -410,7 +444,7 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
     try {
        e match {
           case l: Link if l.isImplicit =>
-                implicitGraph(l.from, l.to) = l.toTerm
+             implicitGraph(l.from, l.to) = l.toTerm
           case t: DeclaredTheory =>
              t.getIncludes foreach {m =>
                  implicitGraph(OMMOD(m), t.toTerm) = OMIDENT(OMMOD(m))

@@ -76,7 +76,9 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             rh(" =\n")
             v.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
          case s: DeclaredStructure =>
-            rh("structure " + s.name + " : " + s.fromPath.toPath + " =\n")
+            rh("structure " + s.name + " : ")
+            apply(s.from, Some(s.path $ TypeComponent))
+            rh(" =\n")
             s.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
          case t: DefinedTheory =>
             rh("theory " + t.name + " abbrev ")
@@ -85,7 +87,9 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             rh("view " + v.name + " abbrev ")
             apply(v.df, Some(v.path $ DefComponent))
          case s: DefinedStructure =>
-            rh("structure " + s.name + " : " + s.fromPath.toPath + " abbrev ")
+            rh("structure " + s.name + " : ")
+            apply(s.from, Some(s.path $ TypeComponent))
+            rh(" abbrev")
             apply(s.df, Some(s.path $ DefComponent))
       }
       rh("\n")

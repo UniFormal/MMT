@@ -752,7 +752,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     fromOpt match {
       case Some(from) =>
           // create the Include object
-          val include = Include(parent.toTerm, from)
+          val include = Include(parent.toTerm, from, Nil)
           if (flat.startsWith("%open", i))
              i = crawlOpen(i, include)      
           // add metadata and source references
@@ -831,7 +831,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
         domain match {
           case None => throw TextParseError(toPos(start), "structure is defined via a list of assignments, but its domain is not specified")
           case Some(dom)  =>
-            val declstructure = new DeclaredStructure(parent.toTerm, LocalName(name), dom, isImplicit)
+            val declstructure = SimpleDeclaredStructure(parent.toTerm, LocalName(name), dom, isImplicit)
             add(declstructure)
             structure = declstructure
             i = crawlLinkBody(i, declstructure)
@@ -844,7 +844,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
         val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, spath $ DefComponent, Context(parent.path))
         i = positionAfter
         domain match {
-          case Some(dom) => structure = DefinedStructure(parent.toTerm, LocalName(name), Path.parseM(dom.toString, parent.path), morphism, isImplicit)
+          case Some(dom) => structure = DefinedStructure(parent.toTerm, LocalName(name), OMMOD(dom), morphism, isImplicit)
           //TODO: the domain should be obligatory so that this case goes away; but currently the Twelf parser expects it to be omitted 
           case None => structure = DefinedStructure(parent.toTerm, LocalName(name), null, morphism, isImplicit)
         }
@@ -856,7 +856,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
       case None => throw TextParseError(toPos(start), "structure has no definiens and its domain is not specified")
       case Some(dom) =>
         // It's a DeclaredStructure with empty body
-        structure = new DeclaredStructure(parent.toTerm, LocalName(name), Path.parseM(dom.toString, parent.path), isImplicit)
+        structure = SimpleDeclaredStructure(parent.toTerm, LocalName(name), Path.parseM(dom.toString, parent.path), isImplicit)
         add(structure)
     }
 
@@ -1162,7 +1162,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     val endsAt = expectNext(positionAfter, ".")    // on the final dot
 
     // add the include assignment to the controller
-    val defLinkAssignment = DefLinkAssignment(parent.toTerm, LocalName(domain), domain, morphism)
+    val defLinkAssignment = ViewInclude(parent.toTerm, domain, morphism)
     add(defLinkAssignment)
 
     // add semantic comment and source references

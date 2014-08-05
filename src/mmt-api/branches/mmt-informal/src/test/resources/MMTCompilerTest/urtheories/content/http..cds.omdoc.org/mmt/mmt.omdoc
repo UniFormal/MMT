@@ -10,7 +10,7 @@
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/meta.mmt#202.9.3:211.10.1"/>
       </metadata>
     </constant>
-    <theory name="mmt/QMT" base="http://cds.omdoc.org/mmt">
+    <theory name="QMT" base="http://cds.omdoc.org/mmt">
       <metadata>
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/meta.mmt#216.12.0:228.12.12"/>
         <link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/meta.mmt#216.12.0:347.22.1"/>

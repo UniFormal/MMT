@@ -16,7 +16,7 @@ sealed abstract class Delimiter extends Marker {
     *  
     *  expansion is identity by default
     */
-   def expand(name: GlobalName) : Delimiter = this
+   def expand(name: ContentPath) : Delimiter = this
 }
 
 /** helper object */
@@ -53,9 +53,9 @@ abstract class PlaceholderDelimiter extends Delimiter {
    /** empty to make them useless for parsing */
    def text = ""
    /** string to be used when expanding */
-   def expandString(name: GlobalName) : String
+   def expandString(name: ContentPath) : String
    /** expansions uses expandString */
-   override def expand(name: GlobalName) = Delim(expandString(name))
+   override def expand(name: ContentPath) = Delim(expandString(name))
 }
 
 /**
@@ -65,7 +65,7 @@ abstract class PlaceholderDelimiter extends Delimiter {
  */
 case class InstanceName() extends PlaceholderDelimiter {
    override def toString = "%i"
-   override def expandString(path: GlobalName) = if (path.name.length <= 1) "" else path.name.init.toPath
+   override def expandString(path: ContentPath) = if (path.name.length <= 1) "" else path.name.init.toPath
 }
 
 /**
@@ -75,7 +75,7 @@ case class InstanceName() extends PlaceholderDelimiter {
  */
 case class SymbolName() extends PlaceholderDelimiter {
    override def toString = "%n"
-   override def expandString(path: GlobalName) = if (path.name.length < 1) "" else path.name.last.toPath
+   override def expandString(path: ContentPath) = if (path.name.length < 1) "" else path.name.last.toPath
 }
 
 sealed abstract class ArgumentMarker extends Marker with ArgumentComponent

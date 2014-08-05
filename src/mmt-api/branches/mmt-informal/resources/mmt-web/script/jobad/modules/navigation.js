@@ -23,6 +23,8 @@ var navigation = {
 		// breadcrumbs
 		var bcurl = '/:breadcrumbs?' + uri;
 		mmt.ajaxReplaceIn(bcurl, 'breadcrumbs');
+                // initialize SVG pan
+                setSVGPanRoot($('svg')[0]);
 	},
 	
 	navigateServer: function(uri) {

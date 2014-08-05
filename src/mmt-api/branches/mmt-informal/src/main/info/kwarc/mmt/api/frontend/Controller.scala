@@ -105,6 +105,9 @@ class Controller extends ROController with Logger {
    }
    init
    
+   /** @return a notifier for all currently registered [[ChangeListener]]s */
+   private def notifyListeners = new Notify(extman.changeListeners)
+
    //not sure if this really belong here, map from jobname to some state info
    val states = new collection.mutable.HashMap[String, ParserState]
          
@@ -240,7 +243,7 @@ class Controller extends ROController with Logger {
       iterate {e match {
          case nw : ContentElement =>
             localLookup.getO(e.path) match {
-               case Some(old) if old.inactive =>
+               case Some(old)  =>
                   /* optimization for change management
                    * if e.path is already loaded but inactive, and the new e is compatible with it,
                    * we reactivate the existing declaration
@@ -259,24 +262,18 @@ class Controller extends ROController with Logger {
                      }
                      // activate the old one
                      old.inactive = false
-                     extman.changeListeners foreach {l =>
-                        l.onUpdate(nw)
-                     }
+                     notifyListeners.onUpdate(nw)
                   } else {
                      // delete the deactivated old one, and add the new one
                      log("deleting deactivated " + old.path)
                      memory.content.update(nw)
-                     extman.changeListeners foreach {l =>
-                        l.onDelete(nw.path)
-                        l.onAdd(nw)
-                     }
+                     notifyListeners.onDelete(nw.path)
+                     notifyListeners.onAdd(nw)
                   }
                case _ =>
                   // the normal case
                   memory.content.add(nw)
-                  extman.changeListeners foreach {l =>
-                     l.onAdd(nw)
-                  }
+                  notifyListeners.onAdd(nw)
             }
          case p : PresentationElement => notstore.add(p)
          case d : NarrativeElement => docstore.add(d) 
@@ -300,16 +297,14 @@ class Controller extends ROController with Logger {
          case cp : CPath =>
             library.delete(cp)
       }
-      extman.changeListeners foreach {l =>
-         l.onDelete(p)
-      }
+      notifyListeners.onDelete(p)
       //depstore.deleteSubject(p)
    }
 
    /** clears the state */
    def clear {
       memory.clear
-      extman.changeListeners foreach {l => l.onClear}
+      notifyListeners.onClear
    }
    /** releases all resources that are not handled by the garbage collection */
    def cleanup {
@@ -330,12 +325,12 @@ class Controller extends ROController with Logger {
          logGroup {
             doc.getLocalItems flatMap {
                case r: DRef => deactivateDocument(r.target)
-               case r: MRef => get(r.target) match {
-                  case m: Module =>
+               case r: MRef => localLookup.getO(r.target) match {
+                  case Some(m: Module) =>
                      log("deactivating " + m.path)
                      m.inactive = true
                      List(m)
-                  case _ => Nil // impossible
+                  case _ => Nil
                }
             }
          }
@@ -401,7 +396,6 @@ class Controller extends ROController with Logger {
    def read(s: String, dpath: DPath)(implicit errorCont: ErrorHandler) : Document = {
       val modules = deactivateDocument(dpath)
       log("reading " + dpath)
-      implicit val errorCont = new ErrorContainer
       val doc = textParser.readString(dpath, s)
       log("deleting the remaining deactivated elements")
       logGroup {
@@ -469,7 +463,13 @@ class Controller extends ROController with Logger {
 	          backend.addStore(LocalSystem(b)) 
          case AddArchive(f) =>
 	         val archs = backend.openArchive(f)
-	         archs foreach {a => extman.targets.foreach {t => t.register(a)}}
+	         val notifier = notifyListeners
+	         archs.foreach {a =>
+	            a.properties.get("classpath").foreach {cp =>
+	               handle(AddMathPathJava(a.root/cp))
+	            }
+	            notifier.onNewArchive(a)
+	         }
          case AddSVNArchive(url, rev) =>
            backend.openArchive(url, rev)
          case ArchiveBuild(id, key, mod, in, args) =>
@@ -503,7 +503,6 @@ class Controller extends ROController with Logger {
                      arch.loadJava(this, in(0), false, true)
                case "close"        =>
                   val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
-                  extman.targets.foreach {t => t.register(arch)}
                   backend.closeArchive(id)
                case d =>
                   extman.getTarget(d) match {
@@ -608,9 +607,7 @@ class Controller extends ROController with Logger {
 	      case Check(p) =>
 	         checker(p)(new ErrorLogger(report), RelationHandler.ignore)
 	      case Navigate(p) =>
-	         extman.changeListeners foreach {l =>
-	            l.onNavigate(p)
-	         }
+	         notifyListeners.onNavigate(p)
 	      case a : GetAction => a.make(this)
 	      case PrintAllXML => report("response", "\n" + library.toNode.toString)
 	      case PrintAll => report("response", "\n" + library.toString)

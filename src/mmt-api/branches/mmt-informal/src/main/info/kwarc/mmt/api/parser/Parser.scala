@@ -56,10 +56,11 @@ object DefaultObjectParser extends ObjectParser {
  * see also [[Parser]]
  */
 trait StructureParser extends Extension {
-  /** the main interface function
+  /** the main interface function: parses a stream and registers all elements (usually a single document) in it
     * 
     * @param r a Reader holding the input stream
     * @param dpath the MMT URI of the stream
+    * @return the document into which the stream was parsed
     */
    def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) : Document
    

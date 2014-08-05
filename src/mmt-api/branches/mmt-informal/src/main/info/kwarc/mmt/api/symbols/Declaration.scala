@@ -1,8 +1,9 @@
 package info.kwarc.mmt.api.symbols
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.libraries._
+import modules._
+import objects._
+import libraries._
+import notations._
 
 /**
  * Declaration unifies MMT symbols and MMT assignments.
@@ -34,6 +35,12 @@ abstract class Declaration extends ContentElement {
    def path = GlobalName(home, name)
    /** the component used to identify anonymous declarations, e.g., the from of an import, None by default but may be overridden */ 
    def implicitKey : Option[MPath] = None
+}
+
+/** declarations that have a notation */
+trait HasNotation {
+   def notC: NotationContainer
+   def not = notC.parsing
 }
 
 class NestedModule(val module: Module) extends Declaration {

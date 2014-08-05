@@ -85,25 +85,39 @@ class ModuleFlattener(controller : Controller) {
   }
   
   def flatten(t : DeclaredTheory) : DeclaredTheory =  {
+    println("Flattening: " + t.path)
     val tbar = new DeclaredTheory(t.parent, t.name, t.meta)
+    t.getDeclarations foreach {d =>
+      tbar.add(d)
+    }
     val views = modules collect {
-      case v : DeclaredView if v.to == t.path => v
+      case v : DeclaredView if v.to == t.toTerm => v
     } // all views to T
     
     views foreach { v => 
       val s = v.from
       implicit val rules = makeRules(v)
+      println(memory.content.visible(s).toSet)
       modules collect {
-        case sprime : DeclaredTheory if memory.content.imports(s, sprime.toTerm) => 
-        // here we have v : s -> t and sprime includes s -- (include relation is transitive, reflexive)
-        // therefore we make a structure with sprime^v and add it to tbar
-        val s = new DeclaredStructure(tbar.toTerm, LocalName(v.path), sprime.path, false)
-        sprime.getDeclarations foreach {d => 
-          s.add(rewrite(d))          
-        }
-        tbar.add(s)
+        case sprime : DeclaredTheory if memory.content.visible(sprime.toTerm).toSet.contains(s) =>
+          // here we have v : s -> t and sprime includes s -- (include relation is transitive, reflexive)
+          // therefore we make a structure with sprime^v and add it to tbar
+          /*
+          val str = SimpleDeclaredStructure(tbar.toTerm, (LocalName(v.path) / sprime.path.toPath), sprime.path, false)
+          sprime.getDeclarations foreach {d => 
+            str.add(rewrite(d))
+          }
+          tbar.add(str)
+          */
+          //conceptually this should be a structure, but adding the declarations directly is more efficient
+          sprime.getDeclarations foreach { 
+            case c : Constant => tbar.add(rewrite(c, s.toMPath, tbar.path))
+            case _ => //nothing for now //TODO handle structures
+          }
       }
     }
+    
+    println(t.path + ": " + t.getDeclarations.length + " ->  " + tbar.getDeclarations.length)
     tbar
   }
   
@@ -132,11 +146,12 @@ class ModuleFlattener(controller : Controller) {
   
   
   
-  private def rewrite(d : Declaration)(implicit rules : HashMap[Path, Term]) : Declaration = d match {
+  private def rewrite(d : Declaration, vpath : MPath, newhome : MPath)(implicit rules : HashMap[Path, Term]) : Declaration = d match {
     case c : Constant =>
       val newtpC = TermContainer(c.tp.map(rewrite))
       val newdfC = TermContainer(c.df.map(rewrite))
-      new FinalConstant(c.home, c.name, c.alias, newtpC, newdfC, c.rl, c.notC)
+      val newname = LocalName(vpath.toPath) / c.home.toMPath.toPath / c.name
+      new FinalConstant(OMMOD(newhome), newname, c.alias, newtpC, newdfC, c.rl, c.notC)
     case x => x
   }
   
@@ -172,8 +187,8 @@ class FlattenningMWSExporter extends Exporter {
         case nn : NarrativeNode => nn.child.flatMap(narrToCML)
         case _ => Nil
     }
-    tbar.getDeclarations foreach {d =>
-      d.getComponents.foreach {
+    tbar.getDeclarations foreach {
+      case d => d.getComponents.foreach {
          case (comp, tc: AbstractTermContainer) =>
             tc.get.foreach {t =>
                val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML}</mws:expr>

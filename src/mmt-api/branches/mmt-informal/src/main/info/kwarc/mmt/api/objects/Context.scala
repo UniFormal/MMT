@@ -55,20 +55,20 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
       (if (info.kwarc.mmt.api.metadata.Generated(this)) List(StringLiteral("")) else Nil)
    def children = List(tp,df).flatten
    override def toString = this match {
-      case IncludeVarDecl(p) => p.toString
+      case IncludeVarDecl(p, args) => p.toString + args.mkString(" ")
       case _ => name.toString + tp.map(" : " + _.toString).getOrElse("") + df.map(" = " + _.toString).getOrElse("")
    }
    private def tpN = tp.map(t => <type>{t.toNode}</type>).getOrElse(Nil)
    private def dfN = df.map(t => <definition>{t.toNode}</definition>).getOrElse(Nil)
    
    def toDeclaration(home: Term): Declaration = this match {
-      case IncludeVarDecl(p) =>
-         Include(home, p)
+      case IncludeVarDecl(p,args) =>
+         Include(home, p, args)
       case StructureVarDecl(n, from, dfOpt) => dfOpt match {
          case None =>
-            new DeclaredStructure(home, name, from, false)
+            DeclaredStructure(home, name, from, false)
          case Some(ComplexMorphism(subs)) =>
-            val s = new DeclaredStructure(home, name, from, false)
+            val s = DeclaredStructure(home, name, from, false)
             //TODO add body
             s
          case Some(df) =>
@@ -79,20 +79,28 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
 }
 
 object IncludeVarDecl {
-   def apply(p: MPath) = VarDecl(LocalName(ComplexStep(p)), Some(OMMOD(p)), None, None)
-   def unapply(vd: VarDecl) = vd match {
-      case VarDecl(LocalName(List(ComplexStep(p))), Some(OMMOD(q)), None, _) if p == q => Some(p)
+   def apply(p: MPath, args: List[Term]) = VarDecl(LocalName(ComplexStep(p)), Some(OMPMOD(p, args)), None, None)
+   def unapply(vd: VarDecl): Option[(MPath, List[Term])] = vd match {
+      case VarDecl(LocalName(List(ComplexStep(p))), Some(OMPMOD(q, args)), None, _) if p == q => Some((p,args))
       case _ => None
    }
 }
 
+/**
+ * apply/unapply methods for variable declarations that correspond to [[Structure]]s
+ */
 object StructureVarDecl {
-   def apply(n: LocalName, p: MPath, df: Option[Term]) =
-      VarDecl(n, Some(OMMOD(p)), df, None)
-   def unapply(vd: VarDecl) : Option[(LocalName, MPath, Option[Term])] =
+   /**
+    * @param n the name 
+    * @param from the domain, must be OMMOD or OMPMOD
+    * @param df optional definiens, must be total morphism expresion or partial ComplexMorphism
+    */
+   def apply(n: LocalName, from: Term, df: Option[Term]) =
+      VarDecl(n, Some(from), df, None)
+   def unapply(vd: VarDecl) : Option[(LocalName, Term, Option[Term])] =
       vd.tp match {
-         case Some(OMMOD(p)) =>
-            Some((vd.name, p, vd.df))
+         case Some(from @ OMPMOD(p, args)) =>
+            Some((vd.name, from, vd.df))
          case _ => None
    }
 }
@@ -101,7 +109,7 @@ object StructureVarDecl {
 case class Context(variables : VarDecl*) extends Obj {
    type ThisType = Context
    /** add a theory inclusion at the end */
-   def ++(p : MPath) : Context = this ++ IncludeVarDecl(p)
+   def ++(p : MPath) : Context = this ++ Context(p)
    /** add variable at the end */
    def ++(v : VarDecl) : Context = this ++ Context(v)
    /** concatenate contexts */
@@ -149,14 +157,23 @@ case class Context(variables : VarDecl*) extends Obj {
       des.reverse
    }
    /** all theories directly included into this context */
-   def getIncludes = variables flatMap {
-      case IncludeVarDecl(p) => List(p)
+   def getIncludes: List[MPath] = variables.toList flatMap {
+      case IncludeVarDecl(p, args) => List(p)
       case _ => Nil
    }
    
    /** the identity substitution of this context */
    def id : Substitution = this map {
 	   case VarDecl(n, _, _, _) => Sub(n,OMV(n))
+   }
+   /**
+    * @return substitution that maps variables according to args, None if lengths do not match
+    */
+   def /(args: List[Term]): Option[Substitution] = {
+      if (variables.length != args.length) None else {
+         val s: Substitution = (variables.toList zip args).map {case (vd,a) => Sub(vd.name, a)}
+         Some(s)
+      }
    }
  
    /** applies a function to the type/definiens of all variables (in the respective context)
@@ -267,8 +284,6 @@ object StructureSub {
    }
 }
 
-
-
 /** substitution between two contexts */
 case class Substitution(subs : Sub*) extends Obj {
    type ThisType = Substitution
@@ -292,6 +307,10 @@ case class Substitution(subs : Sub*) extends Obj {
       }
       Context(decls : _*)
    }
+   def mapTerms(f: Term => Term): Substitution = this map {s =>
+      Sub(s.name, f(s.target))
+   }
+
    override def toString = this.map(_.toString).mkString("",", ","")
    def toNode =
       <om:OMBVAR>{mdNode}{subs.zipWithIndex.map(x => x._1.toNode)}</om:OMBVAR>
@@ -306,7 +325,7 @@ case class Substitution(subs : Sub*) extends Obj {
 /** helper object */
 object Context {
    /** a context consisting of a single theory */
-   def apply(p: MPath): Context = Context((IncludeVarDecl(p)))
+   def apply(p: MPath): Context = Context((IncludeVarDecl(p,Nil)))
 	/** parses an OMBVAR into a context */
 	def parse(Nmd : scala.xml.Node, base : Path) : Context = {
 	   val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, base)

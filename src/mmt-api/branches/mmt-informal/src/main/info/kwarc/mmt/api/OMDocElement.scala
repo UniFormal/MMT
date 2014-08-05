@@ -1,5 +1,7 @@
 package info.kwarc.mmt.api
 import presentation._
+import symbols._
+import modules._
 import scala.xml.Node
 
 /** 
@@ -59,13 +61,19 @@ trait ContentElement extends StructuralElement {
    /** two ContentElement's are compatible
     * if they have the same type, same Path, and agree in all parts that are TermContainer's
     */  
-   def compatible(that: ContentElement) = {(this, that) match {
-      case (a: symbols.Constant, b: symbols.Constant) =>
+   def compatible(that: ContentElement): Boolean = {(this, that) match {
+      case (a: DeclaredTheory, b: DeclaredTheory) =>
+         a.path == b.path && a.meta == b.meta && a.parameters == b.parameters
+      case (a: DefinedTheory, b: DefinedTheory) =>
+         a.path == b.path && a.parameters == b.parameters
+      case (a: View, b: View) =>
+         a.getClass == b.getClass && a.path == b.path && a.from == b.from && a.to == b.to && (a.isImplicit == b.isImplicit)
+      case (a: NestedModule, b: NestedModule) =>
+         a.module.compatible(b.module)
+      case (a: Constant, b: Constant) =>
          a.path == b.path && a.alias == b.alias && a.rl == b.rl
-      case (a: modules.DeclaredTheory, b: modules.DeclaredTheory) =>
-         a.path == b.path && a.meta == b.meta
-      case (a: modules.DeclaredView, b: modules.DeclaredView) =>
-         a.path == b.path && a.from == b.from && a.to == b.to
+      case (a: Structure, b: Structure) =>
+         a.getClass == b.getClass && a.path == b.path && (a.isImplicit == b.isImplicit)
       case _ => false
    }}
 }

@@ -12,9 +12,11 @@ import utils.FileConversion._
 
 import scala.util.parsing.combinator._
 
-/** helper object for Actions
- * This object provides a combinator parser for Actions that is used when commands are sent to a controller as strings.
- * It is straightforward to understand the concrete syntax from the source code.
+/**
+ * parser for Actions
+ *  
+ * This object implements a combinator parser for Actions. It is used in particular by the [[Controller]]
+ * It is straightforward to understand the grammar from the source code.
  */
 object Action extends RegexParsers {
    private var base : Path = null
@@ -26,10 +28,11 @@ object Action extends RegexParsers {
    private def action = log | mathpath | archive | extension | mws | server | windowaction | execfile | defactions |scala |
       setbase | read | graph | check | navigate | printall | printallxml | diff | clear | exit | getaction // getaction must be at end for default get
 
-   private def log = logfile | logconsole | logon | logoff
-     private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new FileHandler(f, false))}
-     private def logfilets = "log filets" ~> file ^^ {f => AddReportHandler(new FileHandler(f, true))}
+   private def log = logfile | logfilets | loghtml | logconsole | logon | logoff
+     private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new TextFileHandler(f, false))}
+     private def logfilets = "log filets" ~> file ^^ {f => AddReportHandler(new TextFileHandler(f, true))}
      private def logconsole = "log console" ^^ {case _ => AddReportHandler(ConsoleHandler)}
+     private def loghtml = "log html" ~> file ^^ {f => AddReportHandler(new HtmlFileHandler(f))}
      private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
      private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
      

@@ -10,6 +10,7 @@ case class Position(indices : List[Int]) {
    def current = indices.last
    override def toString = indices.mkString("","_","")
 }
+
 object Position {
    /** Parse a string representation of a list of integers
     *  @param s the string encoded by Position.toString */
@@ -20,7 +21,7 @@ object Position {
       Position(l)
    }
 	val Init = Position(Nil)
-	/** = Init / i */
+	/** same Init / i */
 	def apply(i: Int) : Position = Position(List(i))
    /** @return the positions of the subobjects of t */
    def positions(t: Obj) = t match {
@@ -29,5 +30,4 @@ object Position {
          Range(0,n).toList.map(i => Position(i))
       case _ => t.components.indices.toList.map(Position(_))
    }
-
 }

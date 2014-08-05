@@ -94,9 +94,9 @@ trait GenericScalaExporter extends Exporter {
         case c: Constant =>
              val d = doCon(c)
              rh.writeln(d)
-        case s: DeclaredStructure if ! s.isAnonymous =>
+        case SimpleStructure(s, fromPath) if ! s.isInclude =>
              // unnamed structures have been handled above already
-             rh.writeln("  val " + nameToScalaQ(s.path) + ": " + mpathToScala(s.fromPath))
+             rh.writeln("  val " + nameToScalaQ(s.path) + ": " + mpathToScala(fromPath))
         case _ =>
      }
      rh.writeln("}\n")

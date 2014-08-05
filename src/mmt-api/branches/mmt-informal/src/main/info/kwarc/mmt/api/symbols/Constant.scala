@@ -9,12 +9,11 @@ import presentation.{StringLiteral, Omitted}
 /**
  * the abstract interface to MMT constants with a few basic methods 
  */
-abstract class Constant extends Declaration {
+abstract class Constant extends Declaration with HasNotation {
    def alias: Option[LocalName]
    def tpC: TermContainer
    def dfC: TermContainer
    def rl : Option[String]
-   def notC: NotationContainer
 
   override def alternativeName = alias
   def toTerm = OMID(path)
@@ -23,7 +22,6 @@ abstract class Constant extends Declaration {
   
   def tp = tpC.get
   def df = dfC.get
-  def not = notC.parsing
   
   override def compNames = List((TypeComponent,1), (DefComponent, 2))
   def components = List(StringLiteral(name.toPath), tp.getOrElse(Omitted), df.getOrElse(Omitted),
