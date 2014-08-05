@@ -18,7 +18,6 @@ import scala.concurrent._
 import tiscaf._
 import scala.collection.mutable.HashMap._
 import info.kwarc.mmt.api.web._
-import info.kwarc.mmt.api.presentation.{Hole => PHole,_}
 
 class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   private lazy val editingService = new EditingServicePlugin(controller)
@@ -151,17 +150,14 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
 		 }
 	 }
 	
-	 val usedDeclarations = constants.flatMap(_.components).flatMap{
-	 	case t: Term => getUsage(t)
+	 val usedDeclarations = constants.flatMap(_.getComponents).flatMap{
+	 	case (_,t : AbstractTermContainer) => t.get.map(getUsage)
 	 	case _ => Nil
 	 }.toSet
 	
-	 val usedDeclarationsNames = usedDeclarations.map(_.components).map{
-	 	case List(_,_,StringLiteral(b),_) => LocalName(b)
-	 }
+	 val usedDeclarationsNames = usedDeclarations.flatMap(l => l.map(_.path.name))
 	 val includesDeclarations = decl.toSet
 	 includesDeclarations.intersect(usedDeclarationsNames).size
-	
  }
  
  private def getTermInference : HLet = new HLet {
