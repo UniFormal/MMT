@@ -2,7 +2,6 @@ package info.kwarc.mmt.api.modules
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
 
 /**
  * A View represents an MMT view.<p>
@@ -17,7 +16,6 @@ import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
  */
 abstract class View(doc : DPath, name : LocalName)
          extends Module(doc, name) with Link {
-   protected def outerComponents = List(StringLiteral(name.toPath), from, to)
    protected def outerString = path + " : " + from.toString + " -> " + to.toString
    def toNode = (from, to) match {
 	   case (OMMOD(p), OMMOD(q)) =>
@@ -45,7 +43,6 @@ abstract class View(doc : DPath, name : LocalName)
   */
 class DeclaredView(doc : DPath, name : LocalName, val from : Term, val to : Term, val isImplicit : Boolean)
       extends View(doc, name) with DeclaredModule with DeclaredLink {
-   def role = info.kwarc.mmt.api.Role_View
    def getIncludes: List[MPath] = getDeclarations.flatMap {
       case PlainViewInclude(_,_,v) => List(v)
       case _ => Nil
@@ -64,7 +61,6 @@ class DeclaredView(doc : DPath, name : LocalName, val from : Term, val to : Term
    */
 class DefinedView(doc : DPath, name : LocalName, val from : Term, val to : Term, val dfC : TermContainer, val isImplicit : Boolean)
       extends View(doc, name) with DefinedModule with DefinedLink {
-   def role = info.kwarc.mmt.api.Role_DefinedView
    def getComponents = List((DefComponent, dfC))
 }
 

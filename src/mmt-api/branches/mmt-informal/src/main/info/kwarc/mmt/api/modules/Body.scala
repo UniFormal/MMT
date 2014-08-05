@@ -110,10 +110,10 @@ trait Body {
    def getDeclarationsElaborated = getDeclarations.filter(_.inElaborated)
    /** the list of declarations in the order of addition as an iterator */
    def iterator = getDeclarations.iterator
+   def children = getDeclarations
    protected def innerNodes = getPrimitiveDeclarations.map(_.toNode)
    protected def innerNodesElab = getDeclarationsElaborated.map(_.toNode)
    protected def innerString =
       if (getPrimitiveDeclarations.isEmpty) ""
       else getPrimitiveDeclarations.map("\t" + _.toString).mkString(" = {\n", "\n", "\n}")
-   def innerComponents = getPrimitiveDeclarations.filter(! _.isGenerated)
 }

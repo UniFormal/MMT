@@ -5,7 +5,6 @@ import libraries._
 import objects._
 import objects.Conversions._
 import utils._
-import presentation.{StringLiteral,Omitted}
 
 abstract class Theory(doc : DPath, name : LocalName) extends Module(doc, name) {
    def parameters: Context
@@ -21,10 +20,7 @@ abstract class Theory(doc : DPath, name : LocalName) extends Module(doc, name) {
  */
 class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], val parameters: Context = Context())
       extends Theory(doc, name) with DeclaredModule {
-   def role = Role_DeclaredTheory
-   def components = OMID(path) :: meta.map(objects.OMMOD(_)).getOrElse(Omitted) :: innerComponents
    /** the context governing the body: meta-theory, parameters, and this theory */
-   def children = innerComponents
    def getInnerContext = {
       val self = IncludeVarDecl(path, parameters.id.map(_.target))
       meta.map(p => Context(p)).getOrElse(Context()) ++ parameters ++ self
@@ -74,9 +70,6 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
 class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) extends Theory(doc, name) with DefinedModule {
    val parameters = Context()
    def getComponents = List((DefComponent, dfC))
-   def role = Role_DefinedTheory
-   def components = StringLiteral(name.toPath) :: innerComponents
-   def children = innerComponents
    override def toString = path + innerString
    def toNode = 
     <theory name={name.last.toPath} base={doc.toPath}>

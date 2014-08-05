@@ -37,13 +37,6 @@ abstract class ROController {
    val localLookup : Lookup
    val globalLookup : Lookup
    def get(path : Path) : StructuralElement
-   def get(nset : MPath, key : NotationKey) : Notation
-   def getNotation(path : Path) : Notation =
-      getNotation(path, "no element of required type found at " + path)
-   def getNotation(path : Path, msg : String) : Notation = get(path) match {
-      case e : Notation => e
-      case _ => throw GetError(msg)
-   }
    def getDocument(path: DPath, msg : Path => String = p => "no document found at " + p) : Document = get(path) match {
       case d: Document => d
       case _ => throw GetError(msg(path))
@@ -65,7 +58,6 @@ class Controller extends ROController with Logger {
    val memory = new Memory(report)
    val depstore = memory.ontology
    val library = memory.content
-   val notstore = memory.presentation
    val docstore = memory.narration
    
    /** text-based presenter for error messages, logging, etc. */
@@ -218,25 +210,10 @@ class Controller extends ROController with Logger {
    def get(path : Path) : StructuralElement = {
       path match {
          case p : DPath => iterate (docstore.get(p))
-         case p : MPath =>
-             try {
-               iterate{ 
-                 library.get(p)
-               }
-               }
-             catch {
-                case _: GetError => iterate(notstore.get(p))
-             }
+         case p : MPath => iterate(library.get(p))
          case p : GlobalName => iterate (library.get(p))
          case _ : CPath => throw ImplementationError("cannot retrieve component paths")
       }
-   }
-   /** selects a notation
-    *  @param nset the style from which to select
-    *  @param key the notation key identifying the knowledge item to be presented
-    */
-   def get(nset : MPath, key : NotationKey) : StyleNotation = {
-      iterate (notstore.get(nset,key))
    }
    /** adds a knowledge item */
    def add(e : StructuralElement) {
@@ -267,7 +244,7 @@ class Controller extends ROController with Logger {
                      // delete the deactivated old one, and add the new one
                      log("deleting deactivated " + old.path)
                      memory.content.update(nw)
-                     notifyListeners.onDelete(nw.path)
+                     notifyListeners.onDelete(nw)
                      notifyListeners.onAdd(nw)
                   }
                case _ =>
@@ -275,7 +252,6 @@ class Controller extends ROController with Logger {
                   memory.content.add(nw)
                   notifyListeners.onAdd(nw)
             }
-         case p : PresentationElement => notstore.add(p)
          case d : NarrativeElement => docstore.add(d) 
       }}
    }
@@ -286,18 +262,16 @@ class Controller extends ROController with Logger {
     *   in particular, the deletion of a document also deletes its subdocuments and modules 
     */
    def delete(p: Path) {
+      val seOpt = localLookup.getO(p)
       p match {
-         case d: DPath =>
-            docstore.delete(d)
-         case m: MPath =>
-            library.delete(m)
-            notstore.delete(m)
-         case s: GlobalName =>
-            library.delete(s)
-         case cp : CPath =>
-            library.delete(cp)
+         case d: DPath => docstore.delete(d)
+         case m: MPath => library.delete(m)
+         case s: GlobalName => library.delete(s)
+         case cp : CPath => library.delete(cp)
       }
-      notifyListeners.onDelete(p)
+      seOpt foreach {se =>
+         notifyListeners.onDelete(se)
+      }
       //depstore.deleteSubject(p)
    }
 
@@ -491,16 +465,11 @@ class Controller extends ROController with Logger {
                   log("done reading notation index")
                 */
                case "integrate"    => arch.integrateScala(this, in)
-               case "register"     =>
-                  if (in.length != 1)
-                     logError("exactly 1 parameter required for register command, found " + in.mkString(""))
-                  else
-                     arch.loadJava(this, in(0), true, false)
                case "test"         =>
                   if (in.length != 1)
-                     logError("exactly 1 parameter required for test command, found " + in.mkString(""))
+                     logError("exactly 1 parameter required, found " + in.mkString(""))
                   else
-                     arch.loadJava(this, in(0), false, true)
+                     arch.loadJava(this, in(0))
                case "close"        =>
                   val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
                   backend.closeArchive(id)
@@ -570,7 +539,7 @@ class Controller extends ROController with Logger {
 	         currentActionDefinition = oldCAD
 	         // run the actionDefinition, if given
 	         nameOpt foreach {name =>
-	            handle(Do(folder, name))
+	            handle(Do(Some(folder), name))
 	         }
 	      case Define(name) =>
 	         currentActionDefinition match {
@@ -588,7 +557,7 @@ class Controller extends ROController with Logger {
 	               throw ParseError("no definition to end")
 	         }
 	      case Do(file, name) =>
-	         actionDefinitions.find {a => (a.file, a.name) == (file, name)} match {
+	         actionDefinitions.find {a => (file.isEmpty || a.file == file.get) && a.name == name} match {
 	            case Some(Defined(_, _, actions)) =>
 	               actions foreach handle
 	            case None =>

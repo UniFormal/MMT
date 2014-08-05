@@ -1,5 +1,7 @@
 package info.kwarc.mmt.api
 
+/*
+
 /** Roles of expressions, corresponding to productions of the abstract grammar.
  * For simplicity all combinations of arguments are allowed, but only the possible results of the parsing functions constitute legal roles.
  * @param bracketable flag indicating whether rendering expressions with this role may produce brackets
@@ -106,3 +108,5 @@ object Role {
       case s => throw ParseError("illegal role: " + s)
    }
 }
+
+*/

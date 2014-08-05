@@ -4,6 +4,8 @@ import info.kwarc.mmt.api.utils.MyList.{fromList}
 import info.kwarc.mmt.api.utils._
 import scala.xml.{Null, Node, NodeSeq, UnprefixedAttribute}
 
+/*
+
 //TODO: merge with content import
 /** import between two styles */
 case class NotationImport(from : MPath, to : MPath) extends PresentationElement {
@@ -66,7 +68,6 @@ object StyleNotation {
    }
 }
 
-/*
 sealed abstract class NotationProperties {
    val impl : Int
    val oPrec : Precedence

@@ -32,7 +32,8 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
       vd.copyFrom(this)
       vd
    }
-   private[objects] def freeVars_ = (tp map {_.freeVars_}).getOrElse(Nil) ::: (df map {_.freeVars_}).getOrElse(Nil) 
+   private[objects] def freeVars_ = (tp map {_.freeVars_}).getOrElse(Nil) ::: (df map {_.freeVars_}).getOrElse(Nil)
+   def subobjects = subobjectsNoContext(tp.toList ::: df.toList)
    /** converts to an OpenMath-style attributed variable using two special keys */
    def toOpenMath : Term = {
 	   val varToOMATTR = OMV(name)
@@ -47,12 +48,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
    def toConstant(home: Term) = symbols.Constant(home, name, None, tp, df, None)
    def toNode = <om:OMV name={name.toPath}>{mdNode}{tpN}{dfN}</om:OMV> 
    def toCMLQVars(implicit qvars: Context) = <bvar><ci>{name.toPath}</ci>{(tp.toList:::df.toList).map(_.toCMLQVars)}</bvar>
-   def role = Role_Variable
    def head = tp.flatMap(_.head)
-   def components =
-      List(StringLiteral(name.toString), tp.getOrElse(Omitted), df.getOrElse(Omitted)) :::
-      //temporary hack: 4th components indicates that the type was generated
-      (if (info.kwarc.mmt.api.metadata.Generated(this)) List(StringLiteral("")) else Nil)
    def children = List(tp,df).flatten
    override def toString = this match {
       case IncludeVarDecl(p, args) => p.toString + args.mkString(" ")
@@ -225,6 +221,7 @@ case class Context(variables : VarDecl*) extends Obj {
         fv
       }
    }
+   def subobjects = mapVarDecls {case (con, vd) => (con, vd)}
    /** returns this as a substitutions using those variables that have a definiens */
    def toPartialSubstitution : Substitution = {
      variables.toList mapPartial {
@@ -243,8 +240,6 @@ case class Context(variables : VarDecl*) extends Obj {
    def toCMLQVars(implicit qvars: Context) = 
      <apply>{this.map(v => v.toCMLQVars)}</apply>
    def head = None
-   def role : Role = Role_context
-   def components = variables.toList
    def children = variables.toList
 }
 
@@ -257,10 +252,9 @@ case class Sub(name : LocalName, target : Term) extends Obj {
      s
    }
    private[objects] def freeVars_ = target.freeVars_
-   def role : Role = Role_termsub
+   def subobjects = subobjectsNoContext(List(target))
    def toNode: Node = <om:OMV name={name.toString}>{mdNode}{target.toNode}</om:OMV>
    def toCMLQVars(implicit qvars: Context) : Node = <mi name={name.toPath}>{target.toCMLQVars}</mi>
-   def components = List(StringLiteral(name.toString), target)
    def children = List(target)
    override def toString = name + ":=" + target.toString
    def head = None
@@ -292,6 +286,7 @@ case class Substitution(subs : Sub*) extends Obj {
    def ++(that: Substitution) : Substitution = this ::: that
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this map {s => s ^^ sub}
    private[objects] def freeVars_ = (this flatMap {_.freeVars_})
+   def subobjects = subobjectsNoContext(subs.toList)
    def maps(n: LocalName): Boolean = this exists {_.name == n}
    def apply(v : LocalName) : Option[Term] = subs.reverse.find(_.name == v).map(_.target)
    def isIdentity : Boolean = subs forall {
@@ -316,10 +311,9 @@ case class Substitution(subs : Sub*) extends Obj {
       <om:OMBVAR>{mdNode}{subs.zipWithIndex.map(x => x._1.toNode)}</om:OMBVAR>
    def toCMLQVars(implicit qvars: Context) = asContext.toCMLQVars
    def head = None
-   def role : Role = Role_substitution
-   def components = subs.toList
+
    def children = subs.toList
-   def isEmpty = components.isEmpty
+   def isEmpty = subs.isEmpty
 }
 
 /** helper object */

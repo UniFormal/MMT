@@ -5,7 +5,6 @@ import NotationConversions._
 import utils.MyList._
 import modules._
 import symbols._
-import presentation.{Text => PText, _}
 import objects._
 
 case class InvalidNotation(msg: String) extends java.lang.Throwable

@@ -59,7 +59,7 @@ class MWSHarvestExporter extends Exporter {
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
     try {
-      doc.components collect {
+      doc.collectModules(controller) collect {
         case _ =>
       }
     } catch {
@@ -124,7 +124,7 @@ class ModuleFlattener(controller : Controller) {
   private def makeRules(v : DeclaredView) : HashMap[Path, Term] = {
     val path = v.from.toMPath
     var rules = new HashMap[Path,Term]
-    v.components collect {
+    v.getDeclarations collect {
       case c : Constant =>
         c.df.foreach {t =>
           rules += (path ? c.name -> t)
@@ -218,7 +218,7 @@ class FlattenningMWSExporter extends Exporter {
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
     try {
-      doc.components collect {
+      doc.collectModules(controller) collect {
         case _ =>
       }
     } catch {

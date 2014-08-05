@@ -87,7 +87,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       SourceRef.update(se, SourceRef(state.container.uri,reg))
       try {controller.add(se)}
       catch {case e: Error =>
-         val se = makeError(reg, e.getMessage)
+         val se = makeError(reg, "error while adding parsed element")
+         se.setCausedBy(e)
          errorCont(se)
       }
    }
@@ -103,7 +104,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
          objectParser(pu)(state.errorCont)  
       } catch {
          case e: Error =>
-            val se = makeError(pu.source.region, e.getMessage)
+            val se = makeError(pu.source.region, "error while parsing object")
+            se.setCausedBy(e)
             state.errorCont(se)
             DefaultObjectParser(pu)(state.errorCont)
       }
@@ -178,15 +180,17 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    /** read a MPath from the stream
     * @throws SourceError iff ill-formed or empty
     */
-  def readMPath(base: Path)(implicit state: ParserState) : MPath = {
+  def readMPath(base: Path)(implicit state: ParserState) : (SourceRef, MPath) = {
       val (s, reg) = state.reader.readToSpace
       if (s == "")
          throw makeError(reg, "MMT URI expected")
       val sexp = state.namespaces.expand(s)
-      try {Path.parseM(sexp, base)}
+      val mp = try {Path.parseM(sexp, base)}
       catch {case e: ParseError => 
          throw makeError(reg, "invalid identifier: " + e.getMessage)
       }
+      val ref = SourceRef(state.container.uri, reg)
+      (ref, mp)
    }
   /** read a GlobalName from the stream
     * @throws SourceError iff ill-formed or empty
@@ -273,7 +277,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
          moduleCont(thy, parent)
       } else {
          val meta = if (delim._1 == ":") {
-            val p = readMPath(tpath)
+            val (_,p) = readMPath(tpath)
             delim = state.reader.readToken
             Some(p)
          } else
@@ -338,16 +342,20 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       }
       val vpath = ns ? name
       readDelimiter(":")
-      val from = readMPath(vpath)
+      val (fromRef, fromPath) = readMPath(vpath)
+      val from = OMMOD(fromPath)
+      SourceRef.update(from, fromRef)
       readDelimiter("->","→")
-      val to = readMPath(vpath)
+      val (toRef,toPath) = readMPath(vpath)
+      val to = OMMOD(toPath)
+      SourceRef.update(to, toRef)
       readDelimiter("abbrev", "=") match {
          case "abbrev" =>
             val (_,_,df) = readParsedObject(context)
-            val v = DefinedView(ns, name, OMMOD(from), OMMOD(to), df, isImplicit)
+            val v = DefinedView(ns, name, from, to, df, isImplicit)
             moduleCont(v, parent)
          case "=" =>
-            val v = new DeclaredView(ns, name, OMMOD(from), OMMOD(to), isImplicit)
+            val v = new DeclaredView(ns, name, from, to, isImplicit)
             moduleCont(v, parent)
             logGroup {
                readInModule(v, v.path, context ++ v.codomainAsContext, Nil)
@@ -633,14 +641,17 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             case "include" =>
                mod match {
                   case thy: DeclaredTheory =>
-                     val from = readMPath(thy.path)
+                     val (fromRef, from) = readMPath(thy.path)
                      val incl = PlainInclude(from, thy.path)
+                     SourceRef.update(incl.from, fromRef)
                      seCont(incl)
                   case link: DeclaredLink =>
-                     val from = readMPath(link.path)
+                     val (fromRef,from) = readMPath(link.path)
                      readDelimiter("=")
-                     val incl = readMPath(link.path) //readParsedObject(view.to)
+                     val (inclRef,incl) = readMPath(link.path) //readParsedObject(view.to)
                      val as = PlainViewInclude(link.toTerm, from, incl)
+                     SourceRef.update(as.from, fromRef)
+                     SourceRef.update(as.df, inclRef)
                      seCont(as)
                }
             case StructureKey() => readStructure(mpath, context, false)

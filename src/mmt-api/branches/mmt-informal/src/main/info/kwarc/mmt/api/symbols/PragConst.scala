@@ -3,7 +3,6 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.patterns._
-import info.kwarc.mmt.api.presentation.{StringLiteral,Omitted}
 
 /**
  * A Constant represents an MMT constant.<p>
@@ -18,8 +17,6 @@ class PragConst(val home : Term, val name : LocalName,
                val by : List[Constant], val means : List[Constant], val rl : Option[String]) extends Declaration {
   def toTerm = OMID(path)
 
-  def role = Role_Constant(rl)
-  def components = List(OMID(path))//
   def children = by ::: means
   def getComponents = Nil //TODO
   def getDeclarations = Nil

@@ -5,10 +5,15 @@ import symbols._
 import objects._
 import uom._
 
+/*
+
+
 /** A Realization is a special case of a DeclaredTheory constructed
  *  to make an unknown semantic entity (e.g., a model or an implementation) partially accessible to the syntax.
  *  
  *  It typically contains [[symbols.RealizedConstant]]s.
+ *  
+ *  @param theory the theory that is modeled or implemented
  */
 class Realization(doc : DPath, name : LocalName, theory: MPath) extends DeclaredTheory(doc, name, None) {
    add(PlainInclude(theory, path))
@@ -48,4 +53,4 @@ class RealizationListener extends frontend.ChangeListener {
       controller.extman.ruleStore.delete {r => rules contains r}
       rules = Nil
    }
-}
+}*/

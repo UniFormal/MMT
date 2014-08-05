@@ -14,11 +14,9 @@ import utils._
 class PatternAssignment(val home : Term, val name : LocalName, val target : PatternExpression) extends Declaration {
    def toNode = <pattern name={name.toPath}>{getMetaDataNode}{target.toOBJNode}</pattern>
    override def toString = name + " |-> " + target.toString 
-   def components = List(StringLiteral(name.toPath)) //TODO give target as argument
    def children = Nil
    def getComponents = Nil //TODO
    def getDeclarations = Nil
-   def role = info.kwarc.mmt.api.Role_PatAss
 }
 
 object Functor {

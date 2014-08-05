@@ -5,6 +5,9 @@ import utils._
 import utils.MyList.fromList
 import scala.xml.Node
 import scala.collection.mutable.HashMap
+
+/*
+
 /** A NotationKey identifies the situation when a notation should be applied.
  * @param path an MMTURI identifying the applicable expressions, applicable to all expressions if omitted
  * @param role the syntactical position where the notation is applicable
@@ -121,3 +124,5 @@ class NotationStore(mem : ROMemory, val report : frontend.Report) extends Logger
       visible.clear
    }
 }
+
+*/

@@ -8,7 +8,7 @@ import utils.FileConversion._
 trait ScalaArchive extends WritableArchive {
   
     private var loader: java.net.URLClassLoader = null
-    def loadJava(controller: Controller, cls: String, addRules: Boolean, runTests: Boolean) {
+    def loadJava(controller: Controller, cls: String) {
        if (loader == null) {
           val jar = File(root / (id+".jar"))
           try {
@@ -24,12 +24,8 @@ trait ScalaArchive extends WritableArchive {
        val clsJ = loader.loadClass(cls + ".NAMESPACE$")
        //val clsJ = java.lang.Class.forName(cls + ".NAMESPACE$")
        val ns = clsJ.getField("MODULE$").get(clsJ).asInstanceOf[uom.DocumentScala]
-       if (addRules) {
-          ns.register(controller.extman.ruleStore)
-       }
-       if (runTests) {
-          ns.test(controller, (s: String) => log(s))
-       }
+       // run tests
+       ns.test(controller, (s: String) => log(s))
     }
   
     /** Integrate scala into a dimension */

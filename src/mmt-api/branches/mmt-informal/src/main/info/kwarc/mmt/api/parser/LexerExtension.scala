@@ -224,7 +224,7 @@ class AsymmetricEscapeLexer(begin: String, end: String) extends LexFunction {
  * an EscapeHandler that detects tokens delimited by delim
  * 
  * @param delim the begin and end Char
- * @param exceptAfter the escape character to used delim within the escaped text
+ * @param exceptAfter the escape character to use delim within the escaped text
  * 
  * typical example: SymmetricEscapeHandler(", \)
  */

@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.documents
+
 import info.kwarc.mmt.api._
-import presentation._
 
 
 /**
@@ -11,9 +11,9 @@ import presentation._
  * @param target the referenced module
  * @param generated true iff the module was given directly in the document rather than referenced remotely
  */
-sealed abstract class XRef(val parent : DPath, val target : Path) extends NarrativeElement with DocumentItem {
+abstract class XRef(val parent : DPath, val target : Path) extends NarrativeElement {
    val path = parent
-   def components = List(StringLiteral(target.toString), StringLiteral(target.last))
+   def getDeclarations = Nil
    def children = Nil
    def toNode : scala.xml.Node
    override def toString = "ref " +  target.toPath
@@ -21,7 +21,6 @@ sealed abstract class XRef(val parent : DPath, val target : Path) extends Narrat
 
 /** reference to a document section */
 class DRef(p : DPath, override val target : DPath) extends XRef(p, target) {
-   val role = Role_DRef
    def toNode = <dref target={target.toPath}/>
 }
 object DRef {
@@ -33,7 +32,6 @@ object DRef {
 }
 /** reference to a module */
 class MRef(p : DPath, override val target : MPath) extends XRef(p, target) {
-   val role = Role_MRef
    def toNode = <mref target={target.toPath}/>
 }
 object MRef {
@@ -46,7 +44,6 @@ object MRef {
 
 /** reference to a Statement/Symbol */
 class SRef(p : DPath, override val target : GlobalName) extends XRef(p, target) {
-  val role = Role_SRef
   def toNode = <sref target={target.toPath}/>
 }
 object SRef {
@@ -54,12 +51,9 @@ object SRef {
     val r = new SRef(p, target)
     if (generated) r.setOrigin(DocumentSkeleton)
     r
-    
   }
 }
 
 class NRRef(p: DPath, target: DPath) extends XRef(p, target) {
-
-   val role = Role_DRef //TODO should get its own role
    def toNode = <nref href={target.toPath}/>
 }  

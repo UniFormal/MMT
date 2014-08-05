@@ -11,9 +11,15 @@ import scala.xml.Node
 trait StructuralElement extends Content with metadata.HasMetaData {
    /** the MMT URI of the element */
    def path : Path
-   def governingPath = path match {case c: ContentPath => Some(c) case _ => None}
+   //def governingPath = path match {case c: ContentPath => Some(c) case _ => None}
    /** the containing knowledge item, a URL if none */
    def parent : Path
+   /** the children of this element */
+   def getDeclarations: List[StructuralElement]
+   /** returns all term components of this elements */
+   def getComponents: List[(DeclarationComponent,ComponentContainer)]
+   /** returns a specific component if present */
+   def getComponent(c: DeclarationComponent) = getComponents find (_._1 == c) map (_._2)
    /** If a StructuralElement has been generated (as opposed to being physically present in the document),
     * this gives its origin.
     * The origin must be set by overriding the field when creating the ContentElement. 
@@ -44,10 +50,6 @@ trait ContentElement extends StructuralElement {
    def path : ContentPath
    /** returns all children of this elements */
    def getDeclarations: List[ContentElement]
-   /** returns all term components of this elements */
-   def getComponents: List[(DeclarationComponent,ComponentContainer)]
-   /** returns a specific component if present */
-   def getComponent(c: DeclarationComponent) = getComponents find (_._1 == c) map (_._2)
    /** recursively applies a function to all declarations in this element (in declaration order) */
    def foreachDeclaration(f: ContentElement => Unit) {
       f(this)
@@ -78,24 +80,32 @@ trait ContentElement extends StructuralElement {
    }}
 }
 
+/*
 /**
  * A PresentationElement is any knowledge item element that is used to represent notations.
  * These includes styles and notations.
  */
 trait PresentationElement extends StructuralElement
+*/
+
+/** A DocumentItem is anything that may occur in documents */
+trait DocumentItem extends Content
 
 /**
  * A NarrativeElement is any OMDoc element that is used to represent narration and document structure.
  * These include documents and cross-references.
  */
-trait NarrativeElement extends StructuralElement
+trait NarrativeElement extends StructuralElement with DocumentItem {
+   def getComponents = Nil
+}
 
 /**
- * The trait Content is mixed into any class that can be rendered using notations.
+ * The trait Content is mixed into any class that can be rendered.
  */
 trait Content {
    /** XML representation */
    def toNode : Node
+   /*
    /** the role, the non-terminal in the MMT grammar producing this item */  
    def role : Role
    /** the governingPath is used to define the owner of components in a CPath */
@@ -110,6 +120,7 @@ trait Content {
    def compNames : List[(DeclarationComponent,Int)] = Nil
    /** this ContentComponents object permits accessing components by name */
    def contComponents = ContentComponents(components, compNames, governingPath)
+   * */
    /** the children of this content element, used for fragmentPaths */
    def children : List[Content]
 }

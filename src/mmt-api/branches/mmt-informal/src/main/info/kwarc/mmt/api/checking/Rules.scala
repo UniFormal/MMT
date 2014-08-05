@@ -89,7 +89,7 @@ class RuleStore {
       }
    }
    def add(rs: RuleSet) {
-      rs.rules.foreach(add(_))
+      rs.getAll.foreach(add(_))
    }
    def delete(which: Rule => Boolean) {
       all foreach {_.delete(which)}
@@ -136,18 +136,12 @@ class RuleStore {
 trait Rule {
    /** an MMT URI that is used to indicate when the Rule is applicable */
    val head: GlobalName
-   /** an MMT URI that identifies the rule, by default the head
-    */
-   def path: GlobalName = head
-   /**
-    * the home theory in which this rule lives
-    * 
-    * a rule is only applicable if the home theory is included
-    * 
-    * by default, the theory of the head operator 
-    */
-   def parent: Term = head.module
-   override def toString = "rule " + path.toString + " of class " + getClass.toString 
+   override def toString = {
+      var name = getClass.getName
+      if (name.endsWith("$"))
+         name = name.substring(0,name.length-1)
+      "rule " + name + " for " + head
+   }
 }
 
 class Continue[A](a: => A) {
@@ -159,16 +153,21 @@ object Continue {
 }
 
 /** A RuleSet groups some Rule's. Its construction and use corresponds to algebraic theories. */
-trait RuleSet {
-   val rules = new HashSet[Rule]
+class RuleSet {
+   private val rules = new HashSet[Rule]
 
    def declares(rs: Rule*) {rs foreach {rules += _}}
    def imports(rss: RuleSet*) {rss foreach {rules ++= _.rules}}
-
-   def allRules = rules
-   def depthRules = rules filter {_.isInstanceOf[uom.DepthRule]}
-   def breadthRules = rules filter {_.isInstanceOf[uom.BreadthRule]}
-   def abbrevRules = rules filter {_.isInstanceOf[uom.AbbrevRule]}
+   
+   def getAll = rules
+   def get[R<:Rule](cls: Class[R]): HashSet[R] = rules flatMap {r =>
+      if (cls.isInstance(r))
+         List(r.asInstanceOf[R])
+      else
+         Nil
+   }
+   def getByHead[R<:Rule](cls: Class[R], head: ContentPath): HashSet[R] = get(cls) filter {r => r.head == head}
+   def getFirst[R<:Rule](cls: Class[R], head: ContentPath): Option[R] = getByHead(cls, head).headOption
 }
 
 
@@ -331,15 +330,23 @@ object ForwardSolutionRule {
 
 /** A SolutionRule tries to solve for an unknown that occurs in a non-solved position.
  * It may also be partial, e.g., by inverting the toplevel operation of a Term without completely isolating an unknown occurring in it.
+ * 
+ * @param applications strict apply-operators in whose context head is applied
+ * @param head the operator that the rule tries to invert
  */
 abstract class SolutionRule(val head: GlobalName) extends Rule {
+   /**
+    * @return Some(i) if the rule is applicable to t1 in the judgment t1=t2,
+    *   in that case, i is the position of the subterm of t1 that the rule will try to isolate
+    */
+   def applicable(t: Term) : Option[Int]
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm1 the term that contains the unknown to be solved
     *  @param tm2 the second term 
     *  @param stack the context
     *  @return false if this rule is not applicable;
-    *    if this rule is applicable, it may return true only if the Equality Judgement is guaranteed
+    *    if this rule is applicable, it may return true only if the Equality judgement is guaranteed
     *    (by calling an appropriate callback method such as delay or checkEquality)
     */
    def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Boolean

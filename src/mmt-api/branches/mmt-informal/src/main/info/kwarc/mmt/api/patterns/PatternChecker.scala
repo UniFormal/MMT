@@ -152,7 +152,7 @@ class Matcher(controller : Controller, var metaContext : Context) {
             // check if constant and variable types are the same                        
             case (OMS(s),OMV(v)) => {
               val const = controller.globalLookup.getConstant(s)
-              val vardecs = metaContext.components
+              val vardecs = metaContext.variables
               val vardec = vardecs.find(x => x.name == v)
               vardec match {                
                 case Some(w) => (w.tp,const.tp) match {

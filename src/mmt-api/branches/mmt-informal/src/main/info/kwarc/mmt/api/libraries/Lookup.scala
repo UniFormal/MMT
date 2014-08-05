@@ -17,8 +17,25 @@ abstract class Lookup {
     * @return Some(content) if get succeeds, None if get throws an error
     */
    def getO(path: Path) : Option[ContentElement] = try {Some(get(path))} catch {case _:GetError | _:BackendError => None}
-   //typed access methods
-   private def defmsg(path : Path) : String = "no element of required type found at " + path
+   private def defmsg(path : Path) : String = "element exists but has unexpected type at " + path
+   /**
+    * as get but with finer return type
+    * @tparam E required return type
+    * @param cls class object of E
+    * @return same as get(path) but cast into E 
+    * 
+    * usage example: getAs(classOf[Constant], path): Constant
+    */
+   def getAs[E <: ContentElement](cls : Class[E], path: Path): E = {
+      val se = get(path)
+      if (cls.isInstance(se))
+         se.asInstanceOf[E]
+      else
+         throw GetError("element at " + path + " exists but has unexpected type " + se.getClass + " (expected: " + cls + ")")
+   }
+   
+
+   // obsolete
    def getModule(path : MPath, msg : Path => String = defmsg) : Module =
      get(path) match {case m: Module => m case _ => throw GetError(msg(path))}
    def getTheory(path : MPath, msg : Path => String = defmsg) : Theory =
@@ -39,22 +56,13 @@ abstract class Lookup {
      get(path) match {case e : PatternAssignment => e case _ => throw GetError(msg(path))} 
    def getPattern(path : GlobalName, msg: Path => String = defmsg) : Pattern = 
      get(path) match {case e : Pattern => e case _ => throw GetError(msg(path))}
+   
    def getComponent(path: CPath, msg: Path => String = defmsg) : ComponentContainer = {
       val se = getO(path.parent).getOrElse(throw GetError(msg(path.parent)))
       se.getComponent(path.component) getOrElse {
          throw GetError("illegal component: " + path)
       }
    }
-      
-   /* The above methods should be polymorphic in the return type like this:
-      def get[A <: ContentElement](p : Path) : A = {
-         get(p) match {
-            case a : A => a
-            case _ => throw GetError("bad role")
-         }
-      }
-   *  But we cannot case-split over an abstract type parameter due to Scala's compilation-time type erasure.
-   */
    
    def visible(to: Term): HashSet[Term]
    def getImplicit(from: Term, to: Term) : Option[Term]

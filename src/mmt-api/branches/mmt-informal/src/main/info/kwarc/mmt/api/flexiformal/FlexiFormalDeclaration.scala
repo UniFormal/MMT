@@ -1,7 +1,6 @@
 package info.kwarc.mmt.api.flexiformal
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.presentation.{XMLLiteral}
 import objects._
 import collection._
 import symbols._
@@ -68,7 +67,6 @@ object FlexiformalDeclaration {
 
 sealed trait NarrativeObject extends Content with ComponentContainer {
   def toNode : scala.xml.Node 
-  def role = Role_NarrativeObject
   def governingPath = None
   def delete: Unit = throw ImplementationError("Cannot delete narrative object")
   def isDefined: Boolean = true
@@ -106,55 +104,46 @@ class NarrativeNode(dirtyNode : scala.xml.Node,val child : List[NarrativeObject]
  * The tokens it contains are words, sentences, or mathematical objects. 
  */
 abstract class FlexiformalDeclaration(val home : Term, val name : LocalName, val content : NarrativeObject) extends Declaration {
-  def role : Role
   def getDeclarations = Nil
   def children = List(content)
 }
 
 class PlainNarration(home : Term, name : LocalName,content : NarrativeObject) 
 	extends FlexiformalDeclaration(home, name, content) {
-  def role = Role_Narration
   def toNode = 
     <flexiformal role="plain" name={name.toPath}> 
       {getMetaDataNode}
       {content.toNode}
     </flexiformal>
-  def components = content :: Nil //TODO
   def getComponents = (DefComponent -> content) :: Nil 
 }
 
 class Definition(home : Term, name : LocalName, val targets : List[GlobalName], content : NarrativeObject) 
 	extends FlexiformalDeclaration(home, name, content) {
-  def role = Role_Narrative_Def
   def toNode = 
     <flexiformal role="definition" name={name.toPath} for={targets.mkString(" ")}> 
       {getMetaDataNode}
       {content.toNode} 
     </flexiformal>  
-  def components =  content :: Nil //TODO  
   def getComponents = (DefComponent -> content) :: Nil
 }
 
 class Example(home : Term, name : LocalName, val targets : List[GlobalName], content : NarrativeObject) 
 	extends FlexiformalDeclaration(home, name, content) {
-  def role = Role_Narration
   def toNode = 
     <flexiformal role="example" name={name.toPath} for={targets.mkString(" ")}> 
       {getMetaDataNode}
       {content.toNode} 
     </flexiformal>  
-  def components =  XMLLiteral(content.toNode) :: Nil //TODO
   def getComponents = (DefComponent -> content) :: Nil
 }
 
 class Assertion(home : Term, name : LocalName, val targets : List[GlobalName], content : NarrativeObject) 
 	extends FlexiformalDeclaration(home, name, content) {
-  def role = Role_Narration
   def toNode = 
     <flexiformal role="assertion" name={name.toPath} for={targets.mkString(" ")}> 
       {getMetaDataNode}
       {content.toNode} 
     </flexiformal>
-  def components =  XMLLiteral(content.toNode) :: Nil //TODO      
   def getComponents = (DefComponent -> content) :: Nil
 }
