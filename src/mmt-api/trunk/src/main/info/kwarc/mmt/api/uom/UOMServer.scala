@@ -10,11 +10,13 @@ case class UOMState(t : Term, context: Context, rules: RuleSet, path : List[Int]
   def exit(i : Int) : UOMState = new UOMState(t, context, rules, path.tail)
   override def toString = t.toString + "@" + path.mkString("_")
   /** precomputes the available rules */
-  val depthRules = rules.get(classOf[uom.DepthRule])
+  val depthRules = rules.get(classOf[DepthRule])
   /** precomputes the available rules */
-  val breadthRules = rules.get(classOf[uom.BreadthRule])
+  val breadthRules = rules.get(classOf[BreadthRule])
   /** precomputes the available rules */
-  val abbrevRules = rules.get(classOf[uom.AbbrevRule])
+  val abbrevRules = rules.get(classOf[AbbrevRule])
+  /** precomputes the available rules */
+  val matchRules = rules.get(classOf[InverseOperator])
 }
 
 /** A UOM applies DepthRule's and BreadthRule's exhaustively to simplify a Term */
@@ -40,7 +42,6 @@ class UOM extends ObjectSimplifier {
   /* end of simplification log functions */
   
   private lazy val StrictOMA = controller.pragmatic.StrictOMA
-
    
    /** the main simplification method
     * @param t the term to simplify
@@ -48,7 +49,7 @@ class UOM extends ObjectSimplifier {
     * @return the simplified Term (if a sensible collection of rules is used that make this method terminate)
     * 
     * The input term must be fully strictified, and so will be the output term.
-    * Applicability of rules is determined based on the pragmatic form (using controller.pragmatic.StrictOMA).
+    * Applicability of rules is determined based on the pragmatic form (using StrictOMA).
     * Rules are passed strict terms and are expected to return strict terms.
     * 
     * The code uses [[Simple]] and [[SimplificationResult]] to remember whether a term has been simplified.
@@ -167,19 +168,27 @@ class UOM extends ObjectSimplifier {
       }
    }
   
-   /** determines applicability of a rule */
-   private def inScope(currentContext: Context, ruleTheory: Term): Boolean = {
-     controller.memory.content.hasImplicit(ruleTheory, ComplexTheory(currentContext))
-   }
-  
-   /** auxiliary object for matching */
-   private object OMAorOMS {
-      def unapply(t: Term) = t match {
-         case StrictOMA(strApps, p, args) => Some((p, args, false))
-         case OMS(p) => Some((p, Nil, true))
-         case _ => None
-      } 
-   }
+  /** object for matching the inner term in a depth rule */
+  class InnerTermMatcher(controller: frontend.Controller, matchRules: List[InverseOperator]) {
+     /**
+      * unifies matching OMA, strict OMS, OMS, literals that can be the result of applying a realized operator
+      * @return list of matches: tuples of operator, arguments, flag signalling whether the inner term is an OMS
+      */
+     def matches(t: Term): List[(GlobalName, List[Term], Boolean)] = t match {
+        case controller.pragmatic.StrictOMA(strApps, p, args) => List((p, args, false))
+        case OMS(p) => List((p, Nil, true))
+        case l: OMLIT =>
+           matchRules.flatMap {m =>
+              m.unapply(l) match {
+                 case None => Nil
+                 case Some(args) => List((m.head, args, args.isEmpty)) 
+              }
+           }
+           Nil
+        case _ => Nil
+     } 
+  }
+
    /** applies all DepthRule's that are applicable at toplevel of an OMA
     * for each arguments, all rules are tried
     * if a rule leads to a GlobalChange, we stop; otherwise, we go to the next argument
@@ -189,14 +198,12 @@ class UOM extends ObjectSimplifier {
     * @return GlobalChange if a rule led to it; LocalChange otherwise (even if no rule was applicable)
     */
    private def applyDepthRules(outer: GlobalName, before: List[Term], after: List[Term])(implicit state: UOMState): Change = {
+      val itm = new InnerTermMatcher(controller, state.matchRules.toList)
       after match {
          case Nil => LocalChange(before) //we don't know if 'before' has a change; but if not, returning NoChange would not actually help in applyAux anyway
          case arg::afterRest =>
-            //auxiliary pattern-matcher to unify the cases for OMA and OMS
-            //in order to permit distinguishing OMA(OMS(p),Nil) and OMS(p), a boolean is returned
-            //that indicates which case applied
-            arg match {
-               case OMAorOMS(inner, inside, isOMS) =>
+            itm.matches(arg) foreach {
+               case (inner, inside, isOMS) =>
                   state.depthRules.filter(r => r.outer == outer && r.inner == inner) foreach {rule =>
                      val ch = rule.apply(before, inside, afterRest)
                      ch match {
@@ -209,10 +216,8 @@ class UOM extends ObjectSimplifier {
                            return GlobalChange(tS)
                      }
                   }
-                  applyDepthRules(outer, before ::: List(arg), afterRest)
-               case _ =>
-                 applyDepthRules(outer, before ::: List(arg), afterRest)
             }
+            applyDepthRules(outer, before ::: List(arg), afterRest)
       }
    }
    

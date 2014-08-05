@@ -337,7 +337,7 @@ object ForwardSolutionRule {
 abstract class SolutionRule(val head: GlobalName) extends Rule {
    /**
     * @return Some(i) if the rule is applicable to t1 in the judgment t1=t2,
-    *   in that case, i is the position of the subterm of t1 that the rule will try to isolate
+    *   in that case, i is the position of the argument of t1 (starting from 0) that the rule will try to isolate
     */
    def applicable(t: Term) : Option[Int]
    /** 

@@ -16,7 +16,7 @@ abstract class Lookup {
    /** Same as get, but returns an option
     * @return Some(content) if get succeeds, None if get throws an error
     */
-   def getO(path: Path) : Option[ContentElement] = try {Some(get(path))} catch {case _:GetError | _:BackendError => None}
+   def getO(path: Path) : Option[ContentElement] = try {Some(get(path))} catch {case _:GetError => None}
    private def defmsg(path : Path) : String = "element exists but has unexpected type at " + path
    /**
     * as get but with finer return type
