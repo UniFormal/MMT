@@ -14,7 +14,6 @@ import info.kwarc.mmt.api.web._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.flexiformal._
-import info.kwarc.mmt.api.presentation.Precedence
 
 import scala.xml.{Node,Elem,NamespaceBinding}
 
@@ -335,7 +334,7 @@ class STeXImporter extends Importer {
         val const = controller.memory.content.getConstant(refName)
         //creating notation
         val markers = n.text.split(" ").map(Delim(_))
-        val prec = presentation.Precedence.integer(0)
+        val prec = Precedence.integer(0)
         val verbScope = NotationScope(None, sTeX.getLanguage(thy.path).toList, 0)
         val not = TextNotation(prec, None, verbScope)(markers :_*)
         const.notC.verbalizationDim.set(not)
