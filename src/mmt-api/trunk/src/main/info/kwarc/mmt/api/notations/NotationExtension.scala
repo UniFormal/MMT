@@ -249,6 +249,7 @@ class HOASNotation(val language: MPath, val hoas: HOAS) extends NotationExtensio
             Some(PragmaticTerm(op, Substitution(), Context(), Nil, true, null, List(Position(1))))
          case OMA(OMS(hoas.apply), OMS(op)::rest) =>
             Some(PragmaticTerm(op, Substitution(), Context(), rest, true, null, (0 until rest.length+1).toList.map(i => Position(1) / (i+1))))
+         case _ => None
       }
       case _ => None
    }

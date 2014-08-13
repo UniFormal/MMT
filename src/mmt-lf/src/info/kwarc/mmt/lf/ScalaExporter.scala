@@ -104,7 +104,7 @@ trait SolutionRules extends uom.RealizationInScala {
             case ApplySpine(OMS(`op`), List(_)) => Some(1)
             case _ => None
          }
-         def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History) = (tm1, tm2) match {
+         def apply(solver: Solver)(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History) = (tm1, tm2) match {
             case (ApplySpine(_, List(t)), rType(y)) => invert(y) match {
                case Some(x) =>
                   solver.check(Equality(stack, t, argType(x), None))
@@ -123,7 +123,7 @@ trait SolutionRules extends uom.RealizationInScala {
             case ApplySpine(OMS(`op`), List(_,argType2(_))) => Some(1)
             case _ => None
          }
-         def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History) = (tm1, tm2) match {
+         def apply(solver: Solver)(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History) = (tm1, tm2) match {
             case (ApplySpine(_, List(t, argType2(x2))), rType(y)) => invert(y,x2) match {
                case Some(x1) =>
                   solver.check(Equality(stack, t, argType1(x1), None))
@@ -140,7 +140,7 @@ trait SolutionRules extends uom.RealizationInScala {
             case ApplySpine(OMS(`op`), List(argType1(_),_)) => Some(2)
             case _ => None
          }
-         def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History) = (tm1, tm2) match {
+         def apply(solver: Solver)(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History) = (tm1, tm2) match {
             case (ApplySpine(_, List(argType1(x1), t)), rType(y)) => invert(x1,y) match {
                case Some(x2) =>
                   solver.check(Equality(stack, t, argType2(x2), None))

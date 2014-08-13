@@ -221,7 +221,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val tP = controller.pragmatic.mostPragmatic(t)
       val label = tP match {
          case OMV(n) => n.toString
-         case OMS(p) => p.name.toString
+         case OMID(p) => p.name.toString
          case l: OMLITTrait => l.toString 
          case OMSemiFormal(_) => "unparsed: " + tP.toString
          case ComplexTerm(op, _,_,_) => op.last.toString
@@ -291,7 +291,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
             a.obj match {
                case Hole(t) =>
                   val rules = RuleBasedChecker.collectRules(controller, a.context) //TODO should be cached
-                  val applRules = prover.applicable(t, rules)(Stack(a.context))
+                  val applRules = prover.applicable(t)(Stack(a.context), rules)
                   val comp = new ProverCompletion(view, controller, a.region, applRules)
                   return comp
                case _ =>

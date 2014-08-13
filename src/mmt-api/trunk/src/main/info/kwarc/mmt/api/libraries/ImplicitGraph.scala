@@ -85,6 +85,7 @@ class UniqueGraph extends LabeledHashRelation[Term,Term] {
  * The generated category is precomputed so that retrieval of morphisms takes constant and insertion up to quadratic time. 
  */
 // TODO implicit morphisms into union or out of instantiations are a huge problem
+// they come up in particular as the inverse of conservative extensions such as Neg/Classical <--cons-- Neg+Classical
 class ThinGeneratedCategory {
    /** generating edges of the diagram */
    private val direct = new UniqueGraph
