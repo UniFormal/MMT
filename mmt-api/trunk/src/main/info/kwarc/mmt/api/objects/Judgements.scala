@@ -62,26 +62,39 @@ case class EqualityContext(stack: Stack, context1: Context, context2: Context) e
 }
 
 
+/**
+ *  Common code for some binary judgements
+ */
+abstract class BinaryObjJudgement(stack: Stack, left: Obj, right: Obj, delim: String) extends Judgement {
+   lazy val freeVars = {
+    val ret = new HashSet[LocalName]
+    val fvs = stack.context.freeVars_ ::: left.freeVars_ ::: right.freeVars_
+    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
+    ret
+  }
+  override def presentSucceedent(implicit cont: Obj => String): String =
+      cont(left) + " " + delim + " " + cont(right)
+}
+
+/**
+ * represents a subtyping judgement
+ * context |- tp1 <: tp2
+ */
+case class Subtyping(stack: Stack, tp1: Term, tp2: Term) extends BinaryObjJudgement(stack, tp1, tp2, "<:")
+
 /** represents a typing judgement
  * context |- tm : tp
  * tpSymb - optionally specified typing symbol
  */
-case class Typing(stack: Stack, tm: Term, tp: Term, tpSymb : Option[GlobalName] = None) extends WFJudgement {
-  lazy val freeVars = {
-    val ret = new HashSet[LocalName]
-    val fvs = stack.context.freeVars_ ::: tm.freeVars_ ::: tp.freeVars_
-    fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
-    ret
-  }
+case class Typing(stack: Stack, tm: Term, tp: Term, tpSymb : Option[GlobalName] = None)
+           extends BinaryObjJudgement(stack, tm, tp, ":") with WFJudgement {
   val wfo = tm
-  override def presentSucceedent(implicit cont: Obj => String): String =
-      cont(tm) + " : " + cont(tp)
 }
 
 /**
  *  Common code for some judgements
  */
-abstract class UnaryObjJudegment(stack: Stack, obj: Obj, label: String) extends Judgement {
+abstract class UnaryObjJudgement(stack: Stack, obj: Obj, label: String) extends Judgement {
    lazy val freeVars = {
     val ret = new HashSet[LocalName]
     val fvs = stack.context.freeVars_ ::: obj.freeVars_
@@ -95,20 +108,20 @@ abstract class UnaryObjJudegment(stack: Stack, obj: Obj, label: String) extends 
 /**
  *  A term univ is a universe if all its inhabitants are [[Inhabitable]].
  */
-case class Universe(stack: Stack, wfo: Term) extends UnaryObjJudegment(stack, wfo, "UNIVERSE") with WFJudgement {
+case class Universe(stack: Stack, wfo: Term) extends UnaryObjJudgement(stack, wfo, "UNIVERSE") with WFJudgement {
    def univ = wfo
 }
 /**
  *  A term wfo is inhabitable if it can occur on the right side of a Typing judgement.
  *  Such terms can be used as the types of constants and variables.
  */
-case class Inhabitable(stack: Stack, wfo: Term) extends UnaryObjJudegment(stack, wfo, "INHABITABLE") with WFJudgement
+case class Inhabitable(stack: Stack, wfo: Term) extends UnaryObjJudgement(stack, wfo, "INHABITABLE") with WFJudgement
 /**
  *  A term tp is inhabitable if it occurs on the right side of a Typing judgement.
  *  Via Curry-Howard, such terms can be thought of as provable propositions.
  *  Therefore, this judgement is usually undecidable. 
  */
-case class Inhabited(stack: Stack, tp: Term) extends UnaryObjJudegment(stack, tp, "INHABITED")
+case class Inhabited(stack: Stack, tp: Term) extends UnaryObjJudgement(stack, tp, "INHABITED")
 
 /**
  * An abbreviation for the meta-level typing judgement for valid theories
@@ -129,7 +142,7 @@ object IsRealization {
    def apply(stack: Stack, morphism: Term, from: Term) = IsMorphism(stack, morphism, from, ComplexTheory(Nil))
 }
 
-case class IsContext(stack: Stack, con: Context) extends UnaryObjJudegment(stack, con, "Context")
+case class IsContext(stack: Stack, con: Context) extends UnaryObjJudgement(stack, con, "Context")
 case class IsSubstitution(stack: Stack, substitution: Substitution, from: Context, to: Context) extends Judgement {
   lazy val freeVars = {
     val ret = new HashSet[LocalName]

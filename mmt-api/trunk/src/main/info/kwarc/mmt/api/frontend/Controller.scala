@@ -391,7 +391,7 @@ class Controller extends ROController with Logger {
            handle(act)
         } catch {
            case e: Error =>
-              logError(e.getLongMessage)
+              log(e)
               return
         }
         report.flush

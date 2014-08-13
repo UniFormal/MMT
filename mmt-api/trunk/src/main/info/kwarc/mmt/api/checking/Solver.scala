@@ -86,7 +86,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
 
    /** for Logger */ 
    val report = controller.report
-   /** prefix used when logging */ 
+   /** prefix used when logging (can be changed flexibly to filter the log better) */ 
    var logPrefix = "solver"
    /** the SubstitutionApplier to be used throughout */
    private implicit val sa = new MemoizedSubstitutionApplier
@@ -328,6 +328,8 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
                  j match {
                     case Typing(stack, tm, tp, typS) =>
                        check(Typing(prepareS(stack), prepare(tm), prepare(tp, true), typS))
+                    case Subtyping(stack, tp1, tp2) =>
+                       check(Subtyping(prepareS(stack), prepare(tp1), prepare(tp2)))
                     case Equality(stack, tm1, tm2, tp) =>
                        check(Equality(prepareS(stack), prepare(tm1, true), prepare(tm2, true), tp.map {x => prepare(x, true)}))
                     case Universe(stack, tm) =>
@@ -349,6 +351,11 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
            }
    }
 
+   /**
+    * performs a type inference and calls a continuation function on the inferred type
+    * 
+    * If type inference is not successful, this is delayed. 
+    */
    def inferTypeAndThen(tm: Term)(stack: Stack, history: History)(cont: Term => Boolean): Boolean = {
       implicit val (s,h) = (stack, history)
       inferType(tm) match {
@@ -368,7 +375,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       tS
    }
    
-   /** simplifies one step along all branches, well-formedness is preserved+reflected */
+   /** simplifies one step along each branches, well-formedness is preserved+reflected */
    //TODO merge with limitedSimplify; offer simplification strategies
    def safeSimplify(tm: Term)(implicit stack: Stack, history: History): Term = tm match {
       case _:OMID | _:OMV | _:OMLITTrait => tm
@@ -389,6 +396,67 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
          }
    }
    
+   /** simplifies one step overall */
+   def safeSimplifyOne(tm: Term)(implicit stack: Stack, history: History): Term = tm.head match {
+      case Some(h) =>
+         val rOpt = rules.getByHead(classOf[ComputationRule], h)
+         rOpt foreach {rule =>
+            rule(this)(tm) match {
+               case Some(tmS) =>
+                  log("simplified: " + tm + " ~~> " + tmS)
+                  return tmS
+               case None =>
+            }
+         }
+         // no applicable rule, expand a definition
+         val tmE = defExp(tm,stack.context)
+         tmE
+      case None => tm
+   }
+   
+   /** special case of the version below where we simplify until an applicable rule is found
+    *  @param tm the term to simplify
+    *  @param rm the RuleMap from which an applicable rule is needed
+    *  @param stack the context of tm
+    *  @return (tmS, Some(r)) where tmS = tm and r from rm is applicable to tmS; (tmS, None) if tm = tmS and no further simplification rules are applicable
+    */  
+   private def limitedSimplify[R <: Rule](tm: Term, hs: HashSet[R])(implicit stack: Stack, history: History): (Term,Option[R]) =
+      safeSimplifyUntil[R](tm)(t => t.head flatMap {h => hs.find(_.head == h)})
+   
+   /** applies [[ComputationRule]]s expands definitions until a condition is satisfied;
+    *  A typical case is transformation into weak head normal form.
+    *  @param tm the term to simplify (It may be simple already.)
+    *  @param simple a term is considered simple if this function returns a non-None result
+    *  @param stack the context of tm
+    *  @return (tmS, Some(a)) if tmS is simple and simple(tm)=tmS; (tmS, None) if tmS is not simple but no further simplification rules are applicable
+    */
+   def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term,Option[A]) = {
+      simple(tm) match {
+         case Some(a) => (tm,Some(a))
+         case None =>
+            val tmS = safeSimplifyOne(tm)
+            if (tmS hashneq tm)
+               safeSimplifyUntil(tmS)(simple)
+            else
+               (tm, None)
+      }
+   }
+   /** like the other method but simplifies two terms in parallel */
+   @scala.annotation.tailrec
+   final def safeSimplifyUntil[A](tm1: Term, tm2: Term)(simple: (Term,Term) => Option[A])
+                           (implicit stack: Stack, history: History): (Term,Term,Option[A]) = {
+      simple(tm1,tm2) match {
+         case Some(a) => (tm1,tm2,Some(a))
+         case None =>
+            val tm1S = safeSimplifyOne(tm1)
+            val tm2S = safeSimplifyOne(tm2)
+            if ((tm1S hashneq tm2S) || (tm2S hashneq tm2))
+                  safeSimplifyUntil(tm1S, tm2S)(simple)
+               else
+                  (tm1S,tm2S,None)
+      }
+   }
+
    /**
     * checks a judgement
     *  
@@ -407,6 +475,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
          log(j.presentAntecedent)
          j match {
             case j: Typing   => checkTyping(j)
+            case j: Subtyping   => checkSubtyping(j)
             case j: Equality => checkEquality(j)
             case j: Universe => checkUniverse(j)
             case j: Inhabitable => checkInhabitable(j)
@@ -433,7 +502,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
      def checkByInference(tpS: Term): Boolean = {
          inferType(tm)(stack, history.branch) match {
             case Some(itp) =>
-               check(Equality(stack, itp, tpS, None))(history + ("inferred type must be equal to expected type; the term is: " + presentObj(tm)))
+               check(Subtyping(stack, itp, tpS))(history + ("inferred type must conform to expected type; the term is: " + presentObj(tm)))
             case None =>
                delay(Typing(stack, tm, tpS, j.tpSymb))(history + "type inference failed")
          }
@@ -446,7 +515,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
               solveType(x, tp) //TODO: check for occurrences of bound variables?
             else
               error("untyped variable type-checks against nothing: " + x)
-         case Some(t) => check(Equality(stack, t, tp, None))
+         case Some(t) => check(Subtyping(stack, t, tp))
        }
        case OMS(p) =>
          getType(p) match {
@@ -456,9 +525,9 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
                 error("untyped, undefined constant type-checks against nothing: " + p.toString)
              case Some(d) => check(Typing(stack, d, tp, j.tpSymb)) // expand defined constant
            }
-           case Some(t) => check(Equality(stack, t, tp, None))
+           case Some(t) => check(Subtyping(stack, t, tp))
          }
-       case l: OMLIT => check(Equality(stack, OMS(l.rt.synType), tp, None))
+       case l: OMLIT => check(Subtyping(stack, OMS(l.rt.synType), tp))
        // the foundation-dependent cases
        // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
@@ -545,6 +614,37 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
      res
    }
 
+   /** proves a Subtyping Judgement
+    *  
+    * MMT does not natively implement any subtyping and relegates to equality checking by default.
+    * However, this behavior can customized by providing [[SubtypingRule]]s. 
+    * 
+    * pre: context and both types are covered
+    *
+    * post: subtyping judgment is covered
+    */
+   private def checkSubtyping(j: Subtyping)(implicit history: History) : Boolean = {
+      val stRules = rules.get(classOf[SubtypingRule])
+      // optimization: if there are no rules, we can skip immediately to equality checking
+      if (!stRules.isEmpty) {
+         implicit val stack = j.stack
+         val (tp1S, tp2S, rOpt) = safeSimplifyUntil(j.tp1, j.tp2) { case (a1,a2) =>
+            stRules.find(_.applicable(a1,a2))
+         }
+         rOpt flatMap {r => r(this)(tp1S, tp2S)} match {
+            case Some(r) =>
+               return r
+            case None =>
+               if (existsActivatable)
+                  // maybe other branches solve unknowns that make a rule applicable
+                  return delay(Subtyping(stack, tp1S, tp2S), true)
+         }
+      }
+      // otherwise, we default to checking equality
+      // in the absence of subtyping rules, this is the needed behavior anyway
+      check(Equality(j.stack, j.tp1, j.tp2, None))
+   }
+   
    /** proves a Universe Judgment
     * @param j the judgment
     * @return true if succeeded or delayed
@@ -610,17 +710,13 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       val solved = solveEquality(tm1S, tm2S, tpOpt) || solveEquality(tm2S, tm1S, tpOpt)
       if (solved) return true
       
-      // 2) find a TermBasedEqualityRule based on the heads of the terms
-      (tm1.head, tm2.head) match {
-         case (Some(c1), Some(c2)) =>
-            rules.get(classOf[TermBasedEqualityRule]).filter(r => r.left == c1 && r.right == c2) foreach {rule =>
-               // we apply the first applicable rule
-               val contOpt = rule(this)(tm1,tm2,tpOpt)
-               if (contOpt.isDefined) {
-                  return contOpt.get.apply
-               }
-            }
-         case _ =>
+      // 2) find a TermBasedEqualityRule (based on the heads of the terms)
+      rules.get(classOf[TermBasedEqualityRule]).filter(r => r.applicable(tm1,tm2)) foreach {rule =>
+         // we apply the first applicable rule
+         val contOpt = rule(this)(tm1,tm2,tpOpt)
+         if (contOpt.isDefined) {
+            return contOpt.get.apply
+         }
       }
 
       // 3) find a TypeBasedEqualityRule based on the head of the type
@@ -633,8 +729,9 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
                      inferType(tm2S)(stack, history + "inferring omitted type")
            itp.getOrElse(return delay(Equality(stack, tm1S, tm2S, None)))
       }
-      // try to simplify the type until an equality rule is applicable 
-      limitedSimplify(tp, rules.get(classOf[TypeBasedEqualityRule])) match {
+      // try to simplify the type until an equality rule is applicable
+      val tbEqRules = rules.get(classOf[TypeBasedEqualityRule])
+      safeSimplifyUntil(tp)(t => tbEqRules.find(_.applicable(t))) match {
          case (tpS, Some(rule)) => rule(this)(tm1S, tm2S, tpS)
          case (tpS, None) =>
             // this is either a base type or an equality rule is missing
@@ -650,18 +747,16 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     * first found rule is returned
     */
    private def findEqRule(t1: Term, others: List[Term])(implicit stack : Stack, history: History, tp: Term) : Option[Continue[Boolean]] = {
-      t1 match {
-         case TorsoNormalForm(OMS(c1), _) => others foreach {o => o match {
-            case TorsoNormalForm(OMS(c2), _) => 
-               rules.get(classOf[TermBasedEqualityRule]).filter(r => r.left == c1 && r.right == c2) foreach {rule =>
-                  val contOpt = rule(this)(t1, o, Some(tp))
-                  if (contOpt.isDefined) return contOpt
-               }
-            case _ =>
-         }}
-         case _ =>
+      val eqRules = rules.get(classOf[TermBasedEqualityRule])
+      others foreach {t2 =>
+         eqRules foreach {r =>
+            if (r.applicable(t1,t2)) {
+               val contOpt = r(this)(t1, t2, Some(tp))
+               if (contOpt.isDefined) return contOpt
+            }
+         }
       }
-      return None
+      None
    }
    
    /**
@@ -680,7 +775,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
        val t1 = terms1.head
        // see if we can expand a definition in t1
        val t1E = defExp(t1, Context())
-       val t1EL = limitedSimplify(t1E)(_ => None)._1
+       val t1EL = safeSimplifyOne(t1E)
        val t1ES = simplify(t1EL)
        val changed = t1ES hashneq t1
        if (changed) {
@@ -797,7 +892,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     * 
     * This method should not be called by users (instead, use check(Equality(tm1,tm2,...))).
     * It is only public because it serves as a callback for SolutionRule's.
-    * (SolutionRule's should not recurse into check(Equality(...)) because it tends to lead to cycles.)
+    * (SolutionRule's should not recurse into check(Equality(...)) because it can lead to cycles.)
     */
    def solveEquality(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History): Boolean = {
       tm1 match {
@@ -826,7 +921,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
 
             findSolvableVariable(rules.get(classOf[SolutionRule]), tm1) match {
             case Some((rs, m)) =>
-               rs.head(this)(tm1, tm2)
+               rs.head(this)(tm1, tm2, tpOpt)
             case _ => false
          }
          /*case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tm2.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
@@ -867,6 +962,16 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       }
    }
 
+   /** 
+    *  tries to prove a goal
+    *  @return true if successful
+    */
+   def prove(g: Goal, levels: Int): Boolean = {
+      val intros = rules.get(classOf[IntroTactic]).toList
+      val elims  = rules.get(classOf[ElimTactic]).toList
+      val prover = new P(g, intros, elims)
+      prover.apply(levels)
+   }
    
    /** applies all ForwardSolutionRules of the given priority
     * @param priority exactly the rules with this Priority are applied */
@@ -882,45 +987,6 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
          case _ => false
       }
       results.exists(_ == true)
-   }
-   
-   /** special case of the version below where we simplify until an applicable rule is found
-    *  @param tm the term to simplify
-    *  @param rm the RuleMap from which an applicable rule is needed
-    *  @param stack the context of tm
-    *  @return (tmS, Some(r)) where tmS = tm and r from rm is applicable to tmS; (tmS, None) if tm = tmS and no further simplification rules are applicable
-    */  
-   private def limitedSimplify[R <: Rule](tm: Term, hs: HashSet[R])(implicit stack: Stack, history: History): (Term,Option[R]) =
-      limitedSimplify[R](tm)(t => t.head flatMap {h => hs.find(_.head == h)})
-   
-   /** applies ComputationRule's to simplify a term until some condition is satisfied;
-    *  A typical case is transformation into weak head normal form.
-    *  @param tm the term to simplify (It may be simple already.)
-    *  @param simple a term is considered simple if this function returns a non-None result
-    *  @param stack the context of tm
-    *  @return (tmS, Some(a)) if tmS is simple and simple(tm)=tmS; (tmS, None) if tmS is not simple but no further simplification rules are applicable
-    */
-   def limitedSimplify[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term,Option[A]) = {
-      simple(tm) match {
-         case Some(a) => (tm,Some(a))
-         case None => tm.head match {
-            case Some(h) =>
-               val rOpt = rules.getByHead(classOf[ComputationRule], h)
-               rOpt foreach {rule =>
-                  rule(this)(tm) match {
-                     case Some(tmS) =>
-                        log("simplified: " + tm + " ~~> " + tmS)
-                        return limitedSimplify(tmS.from(tm))(simple)
-                     case None =>
-                  }
-               }
-               // no rule or rule not applicable, expand a definition
-               val tmE = defExp(tm,Context())
-               if (tmE hashneq tm) limitedSimplify(tmE)(simple)
-               else (tmE, None)
-            case None => (tm, None)
-         }
-      }
    }
 }
 

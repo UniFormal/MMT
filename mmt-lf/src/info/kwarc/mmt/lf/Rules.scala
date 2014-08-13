@@ -17,7 +17,7 @@ object Common {
     * @return a type equal to tp that may have Pi shape  
     */
    def makePi(solver: Solver, tp: Term)(implicit stack: Stack, history: History): Term = {
-      val tpS = solver.limitedSimplify(tp)(Pi.unapply)._1
+      val tpS = solver.safeSimplifyUntil(tp)(Pi.unapply)._1
       tpS match {
          case Pi(x,a,b) => tpS
          case ApplyGeneral(OMV(m), args) =>
@@ -59,7 +59,8 @@ object PiTerm extends InferenceRule(Pi.path, OfType.path) {
            val (xn,sub) = Common.pickFresh(solver, x)
            solver.inferType(b ^? sub)(stack ++ xn % a, history) flatMap {bT =>
               if (bT.freeVars contains xn) {
-                 solver.error("type of Pi-term has been inferred as shown, but contains free variable " + xn)
+                 // usually an error, but xn may disappear later, especially when unknown in b are not solved yet 
+                 //solver.error("type of Pi-scope has been inferred, but contains free variable " + xn + ": " + solver.presentObj(bT))
                  None
               } else
                  Some(bT)
@@ -134,7 +135,7 @@ object PiType extends TypingRule(Pi.path) {
 
 /** the extensionality rule (equivalent to Eta) x:A|-f x = g x  --->  f = g  : Pi x:A. B
  * If possible, the name of the new variable x is taken from f, g, or their type; otherwise, a fresh variable is invented. */
-object Extensionality extends TypeBasedEqualityRule(Pi.path) {
+object Extensionality extends TypeBasedEqualityRule(Nil, Pi.path) {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Boolean = {
       val Pi(x, a, b) = tp
       // pick fresh variable name, trying to reuse existing name 
@@ -156,7 +157,7 @@ object Extensionality extends TypeBasedEqualityRule(Pi.path) {
  *  
  *  This rule is a special case of Extensionality, but it does not make use of the type.
  */
-object LambdaCongruence extends TermBasedEqualityRule(Lambda.path, Lambda.path) {
+object LambdaCongruence extends TermBasedEqualityRule(Nil, Lambda.path, Lambda.path) {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
       (tm1,tm2) match {
          case (Lambda(x1,a1,t1), Lambda(x2,a2,t2)) =>
@@ -179,7 +180,7 @@ object LambdaCongruence extends TermBasedEqualityRule(Lambda.path, Lambda.path) 
  *  
  *  We cannot use CongruenceRule here because we have to flatten nested Pis and consider -> in addition.
  */
-object PiCongruence extends TermBasedEqualityRule(Pi.path, Pi.path) {
+object PiCongruence extends TermBasedEqualityRule(Nil, Pi.path, Pi.path) {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
       (tm1,tm2) match {
          case (Pi(x1,a1,t1), Pi(x2,a2,t2)) =>
@@ -273,7 +274,7 @@ object SolveMultiple extends SolutionRule(Apply.path) {
       case ApplySpine(OMV(_),_) => Some(0)
       case _ => None
    }
-   def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Boolean = {
+   def apply(solver: Solver)(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History): Boolean = {
       tm1 match {
          case ApplySpine(OMV(u), args) =>
              // solver.unknowns.isDeclared(u) known by precondition
@@ -306,7 +307,7 @@ object Solve extends SolutionRule(Apply.path) {
       case Apply(_, _) => Some(0)
       case _ => None
    }
-   def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Boolean = {
+   def apply(solver: Solver)(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History): Boolean = {
       tm1 match {
          case Apply(t, OMV(x)) =>
              val i = stack.context.lastIndexWhere(_.name == x)
@@ -333,7 +334,8 @@ object Solve extends SolutionRule(Apply.path) {
              stack.context.variables(i) match {
                 case VarDecl(_, Some(a), _, _) => 
                    val newStack = stack.copy(context = newCon)
-                   solver.solveEquality(t, Lambda(x, a, tm2), None)(newStack, history + ("solving by binding " + x)) // tpOpt map {tp => Pi(x,a,tp)}
+                   solver.solveEquality(t, Lambda(x, a, tm2), tpOpt map {tp => Pi(x,a,tp)})(
+                         newStack, history + ("solving by binding " + x))
                 case _ => false
              }
          case _ => false
@@ -384,7 +386,7 @@ object SolveType extends TypeSolutionRule(Apply.path) {
  *
  * This rule works for any universe U
  */
-class PiOrArrowIntroRule(op: GlobalName) extends IntroProvingRule(op) {
+class PiOrArrowIntroRule(op: GlobalName) extends IntroProvingRule(Nil, op) {
    def apply(tp: Term)(implicit stack: Stack) : Option[ApplicableProvingRule] = {
       tp match {
         case Pi(x,a,b) =>
@@ -407,7 +409,7 @@ object ArrowIntroRule extends PiOrArrowIntroRule(Arrow.path)
  * This rule works for any universe U and the case n=0.
  * This rule replace ?'s in the result with their terms if they can be inferred through unification.
  */
-class PiOrArrowElimRule(op: GlobalName) extends ElimProvingRule(op) {
+class PiOrArrowElimRule(op: GlobalName) extends ElimProvingRule(Nil, op) {
    def apply(ev: Term, fact: Term, goal: Term)(implicit stack: Stack) : Option[ApplicableProvingRule] = {
       // tp must be of the form Pi bindings.scope
       val (bindings, scope) = FunType.unapply(fact).get

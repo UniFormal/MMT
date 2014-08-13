@@ -280,8 +280,10 @@ class GeneratedDepthRule(val from: Constant, desc: String, names: OuterInnerName
                 // check that all remaining positions are indeed equal
                 others.forall(i => all(i) hasheq t)
              }
+             // TODO we also need to substitute for those variables that only occur in implicit arguments
              if (! matchesNonlinearityConstraints) {
                 // mismatch: non-linearity constraints not met
+                // TODO simplification further down the term may make the constraints true without this rule being rechecked
                 NoChange
              } else {
                 // subs contains the needed substitution
@@ -319,7 +321,7 @@ class GeneratedSolutionRule(from: Constant, desc: String, names: OuterInnerNames
             None
       case _ => None
    }
-   def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Boolean = tm1 match {
+   def apply(solver: Solver)(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History): Boolean = tm1 match {
       case ApplySpine(_, args) =>
          val explArgs = names.explArgsInner(args)
          val before = bfrPositions.map(i => explArgs(i))
