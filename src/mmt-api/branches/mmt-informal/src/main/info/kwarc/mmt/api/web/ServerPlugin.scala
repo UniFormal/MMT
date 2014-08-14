@@ -4,6 +4,7 @@ import frontend._
 import ontology._
 import utils._
 import tiscaf._
+import objects._
 
 /**
  * An MMT extensions that handles certain requests in MMT's HTTP server.
@@ -186,4 +187,38 @@ class AdminServer extends ServerExtension("admin") {
       div {r.reverse foreach {l => div {text {l}}}}
       Server.XmlResponse(html.result)
    }
+}
+
+
+class MwsQuery extends ServerExtension("mwsq") {
+	def apply(path : List[String], query : String, body : Body) = {
+	  val bodyS = body.asString
+	  val bjson = body.asJSON
+	  val mpathS = bjson.obj.getOrElse("mpath", throw ServerError("mpath not given")).toString
+	  val mpath : MPath = Path.parseM(mpathS, mmt.mmtbase)
+	  val tmS = bjson.obj.getOrElse("input", throw ServerError("input not given")).toString
+	  var context = Context(mpath)
+	  val parts = tmS.split(" ").toList map {s =>
+	    if (s.charAt(0) == '?') { //assuming qvar
+	      context ++= VarDecl(LocalName(s.substring(1)), None, None, None)
+	      s.substring(1)
+	    } else s
+	  } 
+	  val newtmS = parts.mkString(" ")
+	  println(context)
+	  val pu = parser.ParsingUnit(parser.SourceRef.anonymous(newtmS), context, newtmS)
+	  val tm = try {
+        controller.textParser(pu)(new ErrorContainer(None))
+      } catch {
+        case e : Error => println(e); throw e
+        case e : Exception => println(e); throw e
+      }
+      println(tm)
+      val pres = controller.extman.getPresenter("planetary").getOrElse(throw ServerError("Presenter not found"))
+      val sb = new presentation.StringBuilder
+      pres.apply(tm, None)(sb)
+	  val res = sb.get
+      println(res)
+      Server.XmlResponse(res)
+	}
 }

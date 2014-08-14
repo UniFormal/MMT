@@ -116,10 +116,39 @@ class ModuleFlattener(controller : Controller) {
           }
       }
     }
-    
     println(t.path + ": " + t.getDeclarations.length + " ->  " + tbar.getDeclarations.length)
     tbar
   }
+  //Flattens by generating a new theory for every view, used for flatsearch
+  def flattenFineGrained(t : DeclaredTheory) : List[DeclaredTheory] = {
+    var thys : List[DeclaredTheory] = Nil
+    val tbar = new DeclaredTheory(t.parent, t.name, t.meta)
+    t.getDeclarations foreach {d =>
+      tbar.add(d)
+    }
+    thys ::= tbar
+    val views = modules collect {
+      case v : DeclaredView if v.to == t.toTerm => v
+    }
+    
+    views foreach { v=>
+      val s = v.from
+      implicit val rules = makeRules(v)
+      modules collect {
+        case sprime : DeclaredTheory if memory.content.visible(sprime.toTerm).toSet.contains(s) => 
+          val tvw = new DeclaredTheory(t.parent, sprime.name / v.name, t.meta)
+          sprime.getDeclarations foreach { 
+            case c : Constant => tvw.add(rewrite(c, v.path, tbar.path))
+            case _ => //nothing for now //TODO handle structures
+          }
+          thys ::= tvw
+      }
+      
+    }
+    
+    thys
+  }
+  
   
   private def makeRules(v : DeclaredView) : HashMap[Path, Term] = {
     val path = v.from.toMPath
@@ -144,14 +173,17 @@ class ModuleFlattener(controller : Controller) {
     rules
   }
   
-  
-  
   private def rewrite(d : Declaration, vpath : MPath, newhome : MPath)(implicit rules : HashMap[Path, Term]) : Declaration = d match {
     case c : Constant =>
       val newtpC = TermContainer(c.tp.map(rewrite))
       val newdfC = TermContainer(c.df.map(rewrite))
       val newname = LocalName(vpath.toPath) / c.home.toMPath.toPath / c.name
-      new FinalConstant(OMMOD(newhome), newname, c.alias, newtpC, newdfC, c.rl, c.notC)
+      val newCons = new FinalConstant(OMMOD(newhome), newname, c.alias, newtpC, newdfC, c.rl, c.notC)
+      import metadata._
+      newCons.metadata.add(new MetaDatum(MetaDatum.keyBase ? LocalName("type"), OMSTR("Induced")))
+      newCons.metadata.add(new MetaDatum(MetaDatum.keyBase ? LocalName("origin"), c.home))
+      newCons.metadata.add(new MetaDatum(MetaDatum.keyBase ? LocalName("view"), OMID(vpath)))
+      newCons
     case x => x
   }
   
@@ -173,7 +205,7 @@ class ModuleFlattener(controller : Controller) {
 }
 
 
-class FlattenningMWSExporter extends Exporter {
+class FlatteningMWSExporter extends Exporter {
   val outDim = Dim("export", "mws-flat")
   val key = "mws-flat-harvest"
   override val outExt = "harvest"
@@ -227,4 +259,126 @@ class FlattenningMWSExporter extends Exporter {
     rh("</mws:harvest>\n")
   }
   
+}
+
+import presentation._
+import metadata._
+
+class FlatteningPresenter extends Presenter(new MathMLPresenter) {
+  def key: String = "flatmws"
+  override val outExt = "html"
+  def isApplicable(format: String): Boolean = "flatmws" == format
+  lazy val mf = new ModuleFlattener(controller)
+  def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) = {
+    this._rh = rh
+    val f = rh match {
+      case fw : FileWriter => fw.filename 
+    }
+    val folder = File(f.toJava.getParentFile())
+    s match { 
+      case doc : Document => 
+        wrapScope(standalone, doc.path)(doDocument(doc))
+      case thy : DeclaredTheory => 
+        val newThys = if (thy.path.toPath.contains("math")) mf.flattenFineGrained(thy) else List(thy)
+        newThys foreach { t => 
+          val out = (folder / t.name.toPath).setExtension("html")
+          this.outputTo(out) {
+            wrapScope(standalone, t.path)(doTheory(t))
+          }
+        }
+      case view : DeclaredView =>
+        wrapScope(standalone, view.path)(doView(view))
+      case _ => rh("TODO: Not implemented yet, presentation function for " + s.getClass().toString())
+    }
+    //TODO? reset this._rh 
+  }  
+  protected val htmlRh = utils.HTML(s => rh(s))
+  import htmlRh._
+  
+  def doDocument(doc : Document) {
+    //nothing to do
+  }
+  
+  private def doTheory(thy : DeclaredTheory) {
+    div ("theory") {
+      thy.getDeclarations foreach {
+      case c : Constant => 
+        div ("constant") {
+          div ("body") {
+            text(c.name.last.toPath) 
+            c.tp.foreach { o => 
+              text(" : ")
+              objectLevel(o, None)(rh)
+            }
+            c.df.foreach { o => 
+              text(" = ")
+              objectLevel(o, None)(rh)
+            }
+          }
+          if (c.metadata.get(MetaDatum.keyBase ? LocalName("type")).map(_.value).contains(OMSTR("Induced"))) { //induced statement
+            val origin = c.metadata.get(MetaDatum.keyBase ? "origin").head.value match {
+              case t : Term => t.toMPath
+            }
+            val view = c.metadata.get(MetaDatum.keyBase ? "view").head.value match {
+              case OMID(p : MPath) => p
+            }
+            val path = c.home.toMPath
+            p {
+              text {
+                " Induced statement found in " + path.toPath + ". "
+              }
+              text {
+                path.last + " is a " + origin.last  + " if we interpret over view " + view.last + ". "
+              }
+              text {
+                origin.last + " contains the statement " + c.name.last + "."
+              }
+            }
+          }
+        }
+      case _ => //TODO
+      }
+    }
+  }
+  
+  def doView(view : View) {//nothing to do
+    
+  }
+  
+  //utils  
+  def mathhubPath(p : Path) : String = {
+    val uri = p.doc.uri
+    //URI(uri.scheme, uri.authority, uri.path.head :: uri.path.tail.head :: "source" :: uri.path.tail.tail, uri.absolute).toString
+    uri.toString
+  }
+  
+  
+  def getTitle(uri : Path) : String = uri match {
+    case m : MPath => m.name.toPath
+    case _ => uri.last
+  }
+  
+  def wrapScope(standalone : Boolean, uri : Path)(content : => Unit) {
+    if (standalone) {
+      rh("<!DOCTYPE html>")
+      html{
+        head{
+          rh(<meta name="mmturi" content={uri.toPath}></meta>)
+          rh(<title> {getTitle(uri)} </title>)
+          rh(<meta name="url" content={mathhubPath(uri)}></meta>)
+        }
+        body{
+          div(attributes=List("xmlns" -> utils.xml.namespace("html"),
+                              "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
+            content
+          }
+        }
+      }
+    } else {
+      div(attributes=List("xmlns" -> utils.xml.namespace("html"),
+                          "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
+        content
+      }
+    }
+  }
 }
