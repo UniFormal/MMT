@@ -29,7 +29,7 @@ object Test {
       
       val rules = checking.RuleBasedChecker.collectRules(controller, context)
       val goal = mmt"ded forall [z:univ] z=z"
-      val apps = prover.applicable(goal, rules)(stack)
+      val apps = prover.applicable(goal)(stack, rules)
       apps foreach {a =>
          println(a.label + " : " + tts(a.apply()))
       }

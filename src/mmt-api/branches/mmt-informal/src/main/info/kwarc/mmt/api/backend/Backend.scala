@@ -123,23 +123,29 @@ class RealizationArchive(file: File, val loader: java.net.URLClassLoader) extend
          case GlobalName(objects.OMMOD(mp), _) => mp
          case _ => throw NotApplicable("no module path found")
       }
-      val s = uom.GenericScalaExporter.mpathToScala(mp)
-      controller.report("backend", "trying to load class " + s + "$")
-      val c = try {Class.forName(s + "$", true, loader)}
+      val s = uom.GenericScalaExporter.mpathToScala(mp) + "$"
+      controller.report("backend", "trying to load class " + s)
+      val c = try {Class.forName(s, true, loader)}
          catch {
             case e: ClassNotFoundException =>
-               throw NotApplicable("class not found")
+               throw NotApplicable("class + " + s + " not found")
             case e: ExceptionInInitializerError =>
                throw BackendError("class for " + mp + " exists, but an error occurred when initializing it", mp).setCausedBy(e)
             case e: LinkageError =>
                throw BackendError("class for " + mp + " exists, but an error occurred when linking it", mp).setCausedBy(e)
+            case e: Error =>
+               throw BackendError("class for " + mp + " exists, but: " + e.getMessage, mp).setCausedBy(e)
          }
       val r = try {c.getField("MODULE$").get(null).asInstanceOf[uom.RealizationInScala]}
            catch {
               case e : java.lang.Exception =>
                throw BackendError("realization for " + mp + " exists, but an error occurred when creating it", mp).setCausedBy(e)
            }
-      r.init
+      try {r.init}
+      catch {
+         case e: Error =>
+            throw BackendError("body of " + mp + " ill-formed: " + e.getMessage, mp).setCausedBy(e)
+      }
       controller.add(r)
    }       
 }
@@ -179,10 +185,12 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
    /**
     * looks up a path in the first Storage that is applicable and sends the content to the reader
     * the registered storages are searched in the order of registration
+    * 
+    * throws [[NotApplicable]] if the resource is not known/available, [[BackendError]] if it is but something goes wrong
     */
    def load(p : Path)(implicit controller: Controller) = {
       def getInList(l : List[Storage], p : Path) {l match {
-         case Nil => throw BackendError("no applicable backend available", p)
+         case Nil => throw NotApplicable("no applicable backend available")
          case hd :: tl =>
             log("trying " + hd)
              try {hd.load(p)}

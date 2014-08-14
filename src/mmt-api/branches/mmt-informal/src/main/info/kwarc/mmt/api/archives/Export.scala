@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
 import modules._
+import objects._
 import presentation._
 import utils._
 import documents._
@@ -152,7 +153,9 @@ trait IndentedExporter extends Exporter {
  */
 abstract class FoundedExporter(meta: MPath, found: MPath) extends Exporter {
    protected def covered(m: MPath): Boolean = {
-      objects.TheoryExp.metas(objects.OMMOD(m))(controller.globalLookup) contains meta
+      objects.TheoryExp.metas(OMMOD(m))(controller.globalLookup).exists {
+         mt => controller.library.visibleDirect(OMMOD(mt)) contains OMMOD(meta)
+      }
    }
    def exportTheory(t: DeclaredTheory, bf: BuildTask) {
       if (covered(t.path))

@@ -99,10 +99,11 @@ trait GenericScalaExporter extends Exporter {
      rh.writeln(s"trait $name extends RealizationInScala$includesS {")
      val domainOver = if (includes == "") "" else "override " // override included values
      rh.writeln(s"  ${domainOver}val _domain: TheoryScala = $name\n")
-     t.getDeclarations foreach {
+     t.getPrimitiveDeclarations foreach {
         case c: Constant =>
              val d = doCon(c)
              rh.writeln(d)
+        //TODO exclude declarations with extraneous types that should not be implemented, e.g., m:MOR a b
         case SimpleStructure(s, fromPath) if ! s.isInclude =>
              // unnamed structures have been handled above already
              rh.writeln("  val " + nameToScalaQ(s.path) + ": " + mpathToScala(fromPath))
@@ -127,7 +128,7 @@ trait GenericScalaExporter extends Exporter {
         ")"
      )
      rh.writeln("  val _name = LocalName(\"" + t.name + "\")")
-     t.getDeclarations foreach {
+     t.getPrimitiveDeclarations foreach {
         case c: Constant =>
             var o = ""
             o +=  s"\n  object ${nameToScala(c.name)} extends ConstantScala {\n"

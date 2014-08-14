@@ -195,6 +195,18 @@ abstract class TypingRule(val head: GlobalName) extends Rule {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean
 }
 
+/**
+ * A SubtypingRule handles [[Subtyping]] judgements
+ */
+abstract class SubtypingRule extends Rule {
+   def applicable(tp1: Term, tp2: Term): Boolean
+   /**
+    * pre all arguments covered
+    * @return Some(b) if the judgment was proved/disproved, None if the result is inconclusive
+    */
+   def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History) : Option[Boolean]
+}
+
 /** An InferenceRule infers the type of an expression
  *  It may recursively infer the types of components.
  *  @param head the head of the term whose type this rule infers 
@@ -243,10 +255,19 @@ abstract class InhabitableRule(head: GlobalName) extends UnaryTermRule(head)
 /** checks a [[Universe]] judgement */
 abstract class UniverseRule(head: GlobalName) extends UnaryTermRule(head)
 
+trait ApplicableUnder extends Rule {
+   def under: List[GlobalName]
+   private lazy val ops = (under:::List(head)).map(p => OMS(p))
+   def applicable(tp: Term) = tp match {
+      case OMA(f,a) => (f::a).startsWith(ops)
+      case _ => false
+   }
+}
+
 /** A TypeBasedEqualityRule checks the equality of two terms based on the head of their type
  *  @param head the head of the type of the two terms 
  */
-abstract class TypeBasedEqualityRule(val head: GlobalName) extends Rule {
+abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: GlobalName) extends Rule with ApplicableUnder {
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm1 the first term
@@ -262,8 +283,15 @@ abstract class TypeBasedEqualityRule(val head: GlobalName) extends Rule {
  *  @param left the head of the first term
  *  @param right the head of the second term 
  */
-abstract class TermBasedEqualityRule(val left: GlobalName, val right: GlobalName) extends Rule {
+abstract class TermBasedEqualityRule(val under: List[GlobalName], val left: GlobalName, val right: GlobalName) extends Rule {
    val head = left
+   private val opsLeft  = (under:::List(left)).map(p => OMS(p))
+   private val opsRight = (under:::List(right)).map(p => OMS(p))
+   def applicable(tm1: Term, tm2: Term) = (tm1,tm2) match {
+      case (OMA(f1,a1),OMA(f2,a2)) => (f1::a1).startsWith(opsLeft) && (f2::a2).startsWith(opsRight)
+      case (ComplexTerm(c1,_,_,_), ComplexTerm(c2,_,_,_)) => under.isEmpty && c1 == left && c2 == right 
+      case _ => false
+   }
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm1 the first term
@@ -280,7 +308,7 @@ abstract class TermBasedEqualityRule(val left: GlobalName, val right: GlobalName
  *  This rule can be added whenever a constructor is known to be injective,
  *  which is typically the case for type formation and term introduction.
  */
-class CongruenceRule(head: GlobalName) extends TermBasedEqualityRule(head,head) {
+class CongruenceRule(head: GlobalName) extends TermBasedEqualityRule(Nil, head, head) {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
       (tm1,tm2) match {
          case (ComplexTerm(this.head, args1, cont1, scps1), ComplexTerm(this.head, args2, cont2, scps2)) =>
@@ -337,19 +365,20 @@ object ForwardSolutionRule {
 abstract class SolutionRule(val head: GlobalName) extends Rule {
    /**
     * @return Some(i) if the rule is applicable to t1 in the judgment t1=t2,
-    *   in that case, i is the position of the subterm of t1 that the rule will try to isolate
+    *   in that case, i is the position of the argument of t1 (starting from 0) that the rule will try to isolate
     */
    def applicable(t: Term) : Option[Int]
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm1 the term that contains the unknown to be solved
-    *  @param tm2 the second term 
+    *  @param tm2 the second term
+    *  @param tpOtp the type if known 
     *  @param stack the context
     *  @return false if this rule is not applicable;
     *    if this rule is applicable, it may return true only if the Equality judgement is guaranteed
     *    (by calling an appropriate callback method such as delay or checkEquality)
     */
-   def apply(solver: Solver)(tm1: Term, tm2: Term)(implicit stack: Stack, history: History): Boolean
+   def apply(solver: Solver)(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History): Boolean
 }
 
 /** A TypeSolutionRule tries to solve for an unknown that occurs in a non-solved position.
@@ -368,7 +397,7 @@ abstract class TypeSolutionRule(val head: GlobalName) extends Rule {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean
 }
 
-/** A continuation returned by [[IntroProvingRule]] and [[IntroProvingRule]] */
+/** A continuation returned by [[IntroProvingRule]] and [[ElimProvingRule]] */
 abstract class ApplicableProvingRule {
   def label: String
   //def ranking: Int
@@ -377,8 +406,8 @@ abstract class ApplicableProvingRule {
 
 /** An IntroProvingRule solves a goal with a certain head.
  */
-abstract class IntroProvingRule(val head: GlobalName) extends Rule {
-   /** 
+abstract class IntroProvingRule(val under: List[GlobalName], val head: GlobalName) extends Rule with ApplicableUnder {
+   /**
     * @param goal the type for which a term is needed
     * @param stack the context
     * @return if applicable, a continuation that applies the rule
@@ -389,7 +418,7 @@ abstract class IntroProvingRule(val head: GlobalName) extends Rule {
 /**
  * An ElimProvingRule uses a term of a given type with a given head.
  */
-abstract class ElimProvingRule(val head: GlobalName) extends Rule {
+abstract class ElimProvingRule(val under: List[GlobalName], val head: GlobalName) extends Rule {
    /** 
     * @param evidence the proof of the fact, typically an OMS or OMV
     * @param fact the type representing the judgment to be used (whose type is formed from head)
