@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.webedit
 
+import scala.Array
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.libraries.Names
 import info.kwarc.mmt.api.web.Server
@@ -95,7 +96,8 @@ class EditingServicePlugin(val controller : Controller) {
           val hole = holeContextList.head._1
           val context = holeContextList.head._2
           val prover = new Prover(controller) 
-          val rules = prover.applicable(hole) (Stack(OMMOD(mpath),context))
+          val stack = new Stack(context)
+          val rules = prover.applicable(hole,null)(stack)
           rules match{ 
         			case Nil => val returnNoRules = "No Rules" :: Nil
         						new MMTTermInferenceResponse(returnNoRules)
@@ -164,7 +166,36 @@ class EditingServicePlugin(val controller : Controller) {
         case e : Throwable => Nil
       }
   }
+   
+   /*returns the distance between two words
+    * distance: the minimum number of operations(substitutions/deletions/insertions) to transform one word to another
+    */
+   private def WordDistance(first : String, second : String) : Int = {
+      val m = first.length()
+      val n = second.length()
   
+      val distance = Array.ofDim[Int](m+1,n+1)
+      var i = 0
+      var j = 0
+	  for(i<- 1 to m)
+	     distance(i)(0) = i 
+	   for(j <-1 to n)
+	     distance(0)(j) = j 
+	  
+	   for(j <-1 to n)
+	     for( i<-1 to m){
+	       if (first.charAt(i-1).equals(second.charAt(j-1)))  
+	         distance(i)(j) = distance(i-1)(j-1)       // no operation required
+	       else
+	         distance(i)(j) = Math.min(Math.min(  
+	                      distance(i-1)(j) + 1,  // a deletion
+	                      distance(i)(j-1) + 1),  // an insertion
+	                      distance(i-1)(j-1) + 1 // a substitution
+	                    )
+	     }
+	  distance(m)(n)    
+   }
+
    
   private def modifyStringRepresent (name:LocalName,markers:List[Marker],accumulator:String,hasSymbol:Boolean) : String = {
           val separator = " " 
@@ -179,7 +210,59 @@ class EditingServicePlugin(val controller : Controller) {
               else modifyStringRepresent(name,b,accumulator+ separator +hd.toString,hasSymbol)
           }
         }
+
   
+   private def closestWord(word : String, possibilites : List[String]) : Option[String] = {
+      val distances = possibilites.map(x => WordDistance(word,x))
+      val min = distances.zipWithIndex.min
+      val index = min._2
+      val element = min._1
+      if(element < word.length()/2)
+        Some(possibilites(index))
+      else
+        None
+   }
+   
+   /*checks if there is a similar constant in the includes recursively
+    * resolveIncludes should be called first, if not resolved, one can try this
+    * */
+   def getConstantCorrection( request: MMTConstantCorrectionRequest) : MMTConstantCorrectionResponse = {
+      val mpath = Path.parse(request.getMPath(), mmt.mmtbase)
+     val constant = request.getConstant()
+
+     def searchOnIncludes( mpath : Path ) : List[String] = {
+	     val declarations = controller.get(mpath) match{
+	       case t: DeclaredTheory => t
+	       case _ => throw new ServerError("No declarations")
+	     }
+	     val includes = declarations.getIncludes
+	     
+	     if(includes == Nil){
+	       return List[String]()
+	     }
+	     
+	     val constants  = controller.get(mpath) match {
+	       case t: DeclaredTheory => t.getConstants.map(_.name.toString)
+	       case _ => Nil
+	     }
+	     
+	     val possibleMatches = constants
+
+	     val answer = closestWord(constant, possibleMatches) match{
+	       case None => ""
+	       case Some(a) => a
+	     }
+	     
+	     includes.foldRight(List[String](answer))((b,a) => searchOnIncludes(b):::List(a.minBy(x => WordDistance(x,constant))))
+     }
+     
+     val response = searchOnIncludes(mpath).filter(x => x != "").minBy(x => WordDistance(x,constant))
+     
+     new MMTConstantCorrectionResponse(response)
+   }
+   
+  
+
   def getSymbolDefinitions(spathS: String) : Map[String, (String,String)] = {
     val res = new collection.mutable.HashMap[String, (String, String)]
     try {
