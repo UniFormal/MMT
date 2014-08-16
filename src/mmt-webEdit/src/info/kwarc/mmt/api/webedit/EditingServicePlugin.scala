@@ -212,25 +212,25 @@ class EditingServicePlugin(val controller : Controller) {
         }
 
   
-   private def closestWord(word : String, possibilites : List[String]) : Option[String] = {
+   private def closestWord(word : String, possibilites : List[String]) : String = {
       val distances = possibilites.map(x => WordDistance(word,x))
       val min = distances.zipWithIndex.min
       val index = min._2
       val element = min._1
-      if(element < word.length()/2)
-        Some(possibilites(index))
-      else
-        None
+      //if(element < word.length()/2)
+        possibilites(index)
+      //else
+        //None
    }
    
    /*checks if there is a similar constant in the includes recursively
     * resolveIncludes should be called first, if not resolved, one can try this
     * */
    def getConstantCorrection( request: MMTConstantCorrectionRequest) : MMTConstantCorrectionResponse = {
-      val mpath = Path.parse(request.getMPath(), mmt.mmtbase)
-     val constant = request.getConstant()
+	  val mpath = Path.parse(request.getMPath(), mmt.mmtbase)
+	  val constant = request.getConstant()
 
-     def searchOnIncludes( mpath : Path ) : List[String] = {
+     def searchOnIncludes( mpath : Path ) : List[(String,Int)] = {
 	     val declarations = controller.get(mpath) match{
 	       case t: DeclaredTheory => t
 	       case _ => throw new ServerError("No declarations")
@@ -238,7 +238,7 @@ class EditingServicePlugin(val controller : Controller) {
 	     val includes = declarations.getIncludes
 	     
 	     if(includes == Nil){
-	       return List[String]()
+	       return List[(String,Int)]()
 	     }
 	     
 	     val constants  = controller.get(mpath) match {
@@ -248,17 +248,14 @@ class EditingServicePlugin(val controller : Controller) {
 	     
 	     val possibleMatches = constants
 
-	     val answer = closestWord(constant, possibleMatches) match{
-	       case None => ""
-	       case Some(a) => a
-	     }
+	     val answer = possibleMatches.map(x => x -> WordDistance(x,constant)).minBy(_._2)
 	     
-	     includes.foldRight(List[String](answer))((b,a) => searchOnIncludes(b):::List(a.minBy(x => WordDistance(x,constant))))
+	     includes.foldRight(List(answer))((b,a) => searchOnIncludes(b):::List(a.minBy(_._2)))
      }
      
-     val response = searchOnIncludes(mpath).filter(x => x != "").minBy(x => WordDistance(x,constant))
+     val response = searchOnIncludes(mpath).minBy(_._2)
      
-     new MMTConstantCorrectionResponse(response)
+     new MMTConstantCorrectionResponse(response._1)
    }
    
   
