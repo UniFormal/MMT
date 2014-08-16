@@ -35,6 +35,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
         case "minIncludes" :: _ => getMinIncludes
         case "symbolCompletion" :: _ => getSymbolCompletion
         case "termInference" :: _ => getTermInference
+        case "constantCorrection" :: _ => getConstantCorrection
         case _ => error("Invalid request: " + uriComps.mkString("/"))
       }
     } catch {
@@ -131,10 +132,10 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
  private def rank(includes: MPath,term:MPath) : Int = {
 	
 	 val constants = controller.get(term) match{
-	 case t : DeclaredTheory => t.getDeclarations
-	 case _ => throw new ServerError("No declarations")
+		 case t : DeclaredTheory => t.getDeclarations
+		 case _ => throw new ServerError("No declarations")
 	 }
-		 val declarations:List[Declaration] = controller.get(includes) match{
+	 val declarations:List[Declaration] = controller.get(includes) match{
 		 case t:DeclaredTheory => t.getDeclarations
 		 case _ => throw new ServerError("No declarations")
 	 } 
@@ -173,5 +174,17 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
     }   
  }
  
+  private def getConstantCorrection : HLet = new HLet {
+    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
+      val reqBody = new Body(tk)
+      val params = reqBody.asJSON.obj
+      
+      val constant = params.get("constant").getOrElse(throw ServerError("No type found")).toString
+      val mpathS = params.get("mpath").getOrElse(throw ServerError("No mpath found")).toString     
+      
+      val resp = editingService.getConstantCorrection(new MMTConstantCorrectionRequest(constant,mpathS))
+      Server.JsonResponse(new JSONArray(List(resp.getResponse()))).aact(tk)
+    }   
+ }
  
 }
