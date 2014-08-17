@@ -400,7 +400,18 @@ class PiOrArrowIntroRule(op: GlobalName) extends IntroProvingRule(Nil, op) {
    }
 }
 
-object PiIntroRule extends PiOrArrowIntroRule(Pi.path)
+object PiIntroRule extends PiOrArrowIntroRule(Pi.path) with IntroTactic {
+   def priority = 5
+   def isInvertible = true
+   def apply(prover: P, g: Goal) = g.tp match {
+      case Pi(x,a,b) =>
+         onApply {
+            val sg = new Goal(x%a, b)
+            new Alternative(List(sg))
+         }
+      case _ => Nil
+   }
+}
 object ArrowIntroRule extends PiOrArrowIntroRule(Arrow.path)
 
 
@@ -410,7 +421,7 @@ object ArrowIntroRule extends PiOrArrowIntroRule(Arrow.path)
  * This rule replace ?'s in the result with their terms if they can be inferred through unification.
  */
 class PiOrArrowElimRule(op: GlobalName) extends ElimProvingRule(Nil, op) {
-   def apply(ev: Term, fact: Term, goal: Term)(implicit stack: Stack) : Option[ApplicableProvingRule] = {
+   protected def makeSubgoals(context: Context, goal: Term, fact: Term): Option[List[Term]] = { 
       // tp must be of the form Pi bindings.scope
       val (bindings, scope) = FunType.unapply(fact).get
       // the free variables of scope (we drop the types because matching does not need them)
@@ -420,37 +431,97 @@ class PiOrArrowElimRule(op: GlobalName) extends ElimProvingRule(Nil, op) {
       }
       // fact may contain free variables from stack.context, so make sure there are no name clashes
       // sub is a renaming from unknowns to unknownsFresh
-      val (unknownsFresh, sub) = Context.makeFresh(unknowns, stack.context.map(_.name))
+      val (unknownsFresh, sub) = Context.makeFresh(unknowns, context.map(_.name))
       val scopeFresh = scope ^ sub
       // match goal against scope, trying to solve for scope's free variables
       // TODO using a first-order matcher is too naive in general - for the general case, we need to use the Solver
       val matcher = new Matcher(unknownsFresh)
-      val matchFound = matcher(stack.context, goal, scopeFresh)
+      val matchFound = matcher(context, goal, scopeFresh)
       if (!matchFound) return None
       val solution = matcher.getSolution
       // sub is a renaming, so it's more efficient to compose the substitutions before applying them
       val subSolution = sub ^ solution
-      // now scope ^ solution == goal
-      val cont = new ApplicableProvingRule {
-          def label = ev.toString
-          def apply = {
-             val args = bindings map {
-                // named bound variables that are substituted by solution can be filled in
-                // others are holes representing subgoals
-                case (Some(x), xtp) =>
-                   solution(x).getOrElse(Hole(xtp ^ subSolution))
-                case (None, anontp) =>
-                   Hole(anontp ^ subSolution)
-             }
-             ApplyGeneral(ev, args)
-          }
+      // now scope ^ subSolution == goal
+      val args = bindings map {
+         // named bound variables that are substituted by solution can be filled in
+         // others are holes representing subgoals
+         case (Some(x), xtp) =>
+             solution(x).getOrElse(Hole(xtp ^ subSolution))
+         case (None, anontp) =>
+             Hole(anontp ^ subSolution)
+       }
+      Some(args)
+   }
+   def apply(ev: Term, fact: Term, goal: Term)(implicit stack: Stack) : Option[ApplicableProvingRule] = {
+      makeSubgoals(stack.context, goal, fact) map {args =>
+         new ApplicableProvingRule {
+             def label = ev.toString
+             def apply = ApplyGeneral(ev, args)
+         }
       }
-      Some(cont)
    }
 }
 
-object PiElimRule extends PiOrArrowElimRule(Pi.path)
-object ArrowElimRule extends PiOrArrowElimRule(Arrow.path)
+object PiElimRule extends PiOrArrowElimRule(Pi.path) with IntroTactic {
+   val priority = 3
+   val isInvertible = false
+   def apply(prover: P, g: Goal) = {
+      g.facts.flatMap {facttp =>
+         val (bindings, scope) = FunType.unapply(facttp).get
+         // heuristic to weed out rules like false elimination that should not be applied backwards
+         val looksLikeForward = scope match {
+            case OMV(_) | ApplySpine(OMS(_), List(OMV(_))) => true
+            case _ => false
+         }
+         if (bindings.isEmpty || looksLikeForward)
+            Nil
+         else {
+            makeSubgoals(g.context, g.tp, facttp).map {args =>
+               val sgs = args.collect {
+                  case Hole(t) => new Goal(g.context, t)
+               }
+               ApplicableTactic(Alternative(sgs))
+            }
+         }
+      }.toList
+   }
+}
+
+object ArrowElimRule extends PiOrArrowElimRule(Arrow.path) with ElimTactic {
+   val isInvertible = false
+   def apply(prover: P, g: Goal) = null
+   private class ArgumentFinder(facts: Facts, fun: Term, scope: Term) {
+      def apply(foundArgs: List[Term], foundSubs: Substitution, needed: List[(Option[LocalName], Term)]) {
+         needed match {
+            case Nil => facts.add(ApplySpine(fun, foundArgs:_*), scope ^ foundSubs)
+            case (nOpt, t) :: rest =>
+               val tS = t ^? foundSubs
+               val args = facts.termsOfType(t)
+               args foreach {a =>
+                  val newSubs = nOpt match {
+                     case Some(n) => foundSubs ++ n/a
+                     case None => foundSubs
+                  }
+                  apply(foundArgs ::: List(a), newSubs, rest)
+               }
+         }
+      }
+   }
+   
+   def generate(facts: Facts) {
+      // for every new ...
+      facts.newContext.foreach {case VarDecl(_,Some(tp),_,_) =>
+         val fun = facts.termsOfType(tp).head
+         val (bindings, scope) = FunType.unapply(tp).get
+         if (!bindings.isEmpty) {
+            // function: apply it to all old arguments
+            new ArgumentFinder(facts, fun, scope).apply(Nil, Nil, bindings) 
+         } else {
+            
+         }
+      }
+   }
+}
 
 
 object TheoryTypeWithLF extends ComputationRule(ModExp.theorytype) {
