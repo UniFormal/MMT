@@ -64,7 +64,6 @@ trait SlashFunctions[A] {
  * @param uri the URI of the document (may not contain query or fragment)
  */
 case class DPath(uri : URI) extends Path with SlashFunctions[DPath] {
-   //go down to a module
    def doc = this
    def last = uri.path match {case Nil | List("") => uri.authority.getOrElse("") case l => l.last}
    def /(n : LocalName) = DPath(uri / n.steps.map(_.toPath))
@@ -270,8 +269,14 @@ object LocalRef {
 
 /** helper object for paths */
 object Path {
+   /**
+    * [[Path]]s consume a lot of memory because there are so many
+    * because they are stateless, we can secretly introduce structure sharing
+    */ 
+   private val cache = new ValueCache[Path](50)
+
    /** the empty path */
-   val empty : Path = Path.parse("")
+   lazy val empty : Path = Path.parse("")
 
    def parse(s : String) : Path = parse(s, utils.mmt.mmtbase)
    /** parses an MMT-URI reference into a triple and then makes it absolute */
@@ -306,7 +311,8 @@ object Path {
          case (_       , _       , _, Some(d), Some(m), Some(n)) => mergeD(bdoc, d) ? m.toLocalName(base) ? n.toLocalName(base)
          case _ => throw ParseError("(" + doc + ", " + mod + ", " + name + ") cannot be resolved against " + base) 
       }
-      if (comp == "") path else path match {
+      val pathR = cache.get(path)
+      if (comp == "") pathR else pathR match {
          case cp: ContentPath =>
             val compP = TermComponent.parse(comp)
             CPath(cp, compP)

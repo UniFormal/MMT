@@ -105,6 +105,14 @@ trait NarrativeElement extends StructuralElement with DocumentItem {
 trait Content {
    /** XML representation */
    def toNode : Node
+   /** 
+    *  by default, this prints out toNode
+    *  
+    *  potentially large [[StructuralElement]]s should override it with a memory-efficient implementation
+    */
+   def toNode(rh: RenderingHandler) {
+      rh(toNode)
+   }
    /*
    /** the role, the non-terminal in the MMT grammar producing this item */  
    def role : Role

@@ -46,8 +46,11 @@ abstract class Importer extends TraversingBuildTarget {
     private def writeToContent(a: Archive, mod: Module) {
        val contFile = a.MMTPathToContentPath(mod.path)
        log("[  -> content   ]     " + contFile.getPath)
-       val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{mod.toNode}</omdoc>
-       xml.writeFile(omdocNode, contFile)
+       val w = new presentation.FileWriter(contFile)
+       w("""<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">""")
+       mod.toNode(w)
+       w("</omdoc>")
+       w.done
     }
     /** extract and write the relational information about a knowledge item */
     private def writeToRel(se: StructuralElement, file: File) {
@@ -64,7 +67,8 @@ abstract class Importer extends TraversingBuildTarget {
         // write narration file
         val narrFile = outPath(a, inPath)
         log("[  -> narration ]     " + narrFile)
-        xml.writeFile(doc.toNode, narrFile)
+        val node = doc.toNode
+        xml.writeFile(node, narrFile)
         // write relational file
         writeToRel(doc, a/relational / inPath)
         doc.getModulesResolved(controller.library) foreach {mod => {

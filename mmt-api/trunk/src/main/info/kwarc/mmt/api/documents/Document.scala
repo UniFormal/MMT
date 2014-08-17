@@ -52,6 +52,13 @@ class Document(val path : DPath) extends NarrativeElement {
    val parent = path ^!
    override def toString = "document " + path + items.map(_.toString).mkString("\n\t","\n\t","")
    def toNode = <omdoc base={path.toPath}>{items.map(_.toNode)}</omdoc>
+   override def toNode(rh: presentation.RenderingHandler) {
+      rh(s"""<omdoc base="${path.toPath}">""")
+      items.foreach {i =>
+         i.toNode(rh)
+      }
+      rh("</omdoc>")
+   }
    /** prints document with all generated module references expanded (document references are not expanded) */
    def toNodeResolved(lib: Lookup) =
       <omdoc base={path.toPath}>
