@@ -26,15 +26,6 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
       cont(e)
    }
    
-   /*
-   def read(p : DPath, node : Node, eager : Boolean)(implicit cont: StructuralElement => Unit) = node.label match {
-      case "omdoc" => readDocuments(p, node)
-      case l => throw ParseError("unexpected label: " + l)
-   }*/
-   /** parses a sequence of documents (xml.Node) into the controller */
-   def readDocuments(location : DPath, documents : NodeSeq)(implicit cont: StructuralElement => Unit) {
-      documents foreach {readDocument(location, _)}
-   }
    /** parses a document (xml.Node) and forwards its declarations into the continuation function */
    def readDocument(base : DPath, D : Node)(implicit cont: StructuralElement => Unit) {
       D match {

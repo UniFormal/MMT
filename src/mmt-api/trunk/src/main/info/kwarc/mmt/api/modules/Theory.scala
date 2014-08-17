@@ -65,6 +65,15 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
         {getMetaDataNode}
         {innerNodesElab}
     </theory>
+   override def toNode(rh: presentation.RenderingHandler) {
+      val metaS = if (meta.isDefined) s""" meta="${meta.get.toPath}"""" else ""
+      rh(s"""<theory name="${name.last.toPath}" base="${doc.toPath}"$metaS>""")
+      rh(getMetaDataNode)
+      getPrimitiveDeclarations.foreach {i =>
+         i.toNode(rh)
+      }
+      rh("</theory>")
+   }
 }
 
 class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) extends Theory(doc, name) with DefinedModule {

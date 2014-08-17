@@ -24,8 +24,8 @@ case class NotApplicable(message: String = "") extends java.lang.Throwable
  * An abstraction over physical storage units that hold MMT content
  */
 abstract class Storage {
-   protected def loadXML(u: URI, n:NodeSeq)(implicit controller: Controller) {
-      controller.xmlReader.readDocuments(DPath(u), n) {e => controller.add(e)}
+   protected def loadXML(u: URI, n:Node)(implicit controller: Controller) {
+      controller.xmlReader.readDocument(DPath(u), n) {e => controller.add(e)}
    }
    protected def getSuffix(base : utils.URI, uri : utils.URI) : List[String] = {
       val b = base.pathNoTrailingSlash
