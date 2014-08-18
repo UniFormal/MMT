@@ -92,11 +92,11 @@ class NatSolver(stack: Stack) {
    def apply(x: Term, y: Term): Option[Boolean] = (x,y) match {
       case (x,y) if x == y => Some(true)
       case (succ(m), succ(n)) => apply(m,n)
-      case (zero,_) => Some(true)
-      case (succ(_), zero) => Some(false)
+      case (LFS.zero,_) => Some(true)
+      case (succ(_), LFS.zero) => Some(false)
+      case (OMV(vx),OMV(vy)) => if (useUpper(vx,y) || useLower(x, vy)) Some(true) else None
       case (OMV(vx),_) =>  if (useUpper(vx,y)) Some(true) else None
       case (_, OMV(vy)) => if (useLower(x, vy)) Some(true) else None
-      case (OMV(vx),OMV(vy)) => if (useUpper(vx,y) || useLower(x, vy)) Some(true) else None
       case _ => None
    }
    private def useUpper(vx: LocalName, y: Term) = ups .exists {case (v,up)  => v == vx && apply(up,y) == Some(true)}

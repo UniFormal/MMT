@@ -3,6 +3,7 @@ package info.kwarc.mmt.lf.subtypes
 import info.kwarc.mmt._
 import api._
 import checking._
+import proving._
 import objects._
 
 import lf._
