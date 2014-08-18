@@ -551,7 +551,7 @@ object Obj {
    }
    private def parseOMS(N : Node, base : Path) : Path = N match {
       case <OMS/> =>
-        val doc = URI(xml.attr(N,"base"))
+        val doc = xml.attr(N,"base")
         val mod = xml.attr(N,"module")
         val name = xml.attr(N,"name")
         Path.parse(doc, mod, name, "", base)

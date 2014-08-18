@@ -273,7 +273,8 @@ object Path {
     * [[Path]]s consume a lot of memory because there are so many
     * because they are stateless, we can secretly introduce structure sharing
     */ 
-   private val cache = new ValueCache[Path](50)
+   private val pathCache = new ValueCache[Path](50)
+   private val uriParseCache = new ResultCache[String,URI](URI(_), 5)
 
    /** the empty path */
    lazy val empty : Path = Path.parse("")
@@ -292,7 +293,8 @@ object Path {
       else
          bl.get / l.toLocalName(base)
    /** turns an MMT-URI reference (d,m,n) into an MMT-URI relative to base (omitting a component is possible by making it empty) */
-   def parse(d : URI, m : String, n : String, comp: String, base : Path) : Path = {
+   def parse(dS : String, m : String, n : String, comp: String, base : Path) : Path = {
+      val d = uriParseCache(dS)
       //to make the case distinctions simpler, all omitted (= empty) components become None
       val doc = if (d.scheme == None && d.authority == None && d.path == Nil) None else Some(DPath(d))
       def wrap(l : LocalRef) = if (l.segments.isEmpty) None else Some(l)
@@ -311,7 +313,7 @@ object Path {
          case (_       , _       , _, Some(d), Some(m), Some(n)) => mergeD(bdoc, d) ? m.toLocalName(base) ? n.toLocalName(base)
          case _ => throw ParseError("(" + doc + ", " + mod + ", " + name + ") cannot be resolved against " + base) 
       }
-      val pathR = cache.get(path)
+      val pathR = pathCache.get(path)
       if (comp == "") pathR else pathR match {
          case cp: ContentPath =>
             val compP = TermComponent.parse(comp)
@@ -320,7 +322,7 @@ object Path {
       }
    }
    /** splits uri?mod?name?component into (uri, mod, name, component) */
-   private def split(s : String) : (URI, String, String, String) = {
+   private def split(s : String) : (String, String, String, String) = {
       var left = s
       val comp = Array("", "", "", "") // Array(uri, mod, name, component)
       var current = 0
@@ -345,7 +347,7 @@ object Path {
          }
          left = left.substring(1)
       }
-      (URI(comp(0)), comp(1), comp(2), comp(3))
+      (comp(0), comp(1), comp(2), comp(3))
    }
    /** as parse but fails if the result is not a component level URI */
    def parseC(s : String, base : Path) : CPath = parse(s,base) match {

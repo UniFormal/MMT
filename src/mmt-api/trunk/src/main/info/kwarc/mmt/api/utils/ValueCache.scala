@@ -16,7 +16,7 @@ class ValueCache[A<:AnyRef](size: Int, enable: Boolean = true) {
     * Scala doesn't let us make this an Array[A]
     * so we have to cast when retrieving elements, but the problem is minor since it is a private field
     */
-   private var cache = new Array[AnyRef](size)
+   private val cache = new Array[AnyRef](size)
    private var next = 0
    @inline private def dec(i:Int) = if (i==0) size-1 else i-1
    @inline private def inc(i:Int) = if (i==size-1) 0 else i+1
@@ -31,5 +31,37 @@ class ValueCache[A<:AnyRef](size: Int, enable: Boolean = true) {
       cache(next) = a
       next = inc(next)
       a
+   }
+}
+
+/**
+ * An auxiliary trait for introducing tabling a function and introducing structure sharing of result values
+ * @tparam A the input type
+ * @tparam B the output type
+ * @param f the function to table
+ * @param size the number of A-B-pairs to cache
+ */
+class ResultCache[A,B](f: A => B, size: Int) {
+   /**
+    * the cache
+    * 
+    * Scala doesn't let us make this an Array[A]
+    * so we have to cast when retrieving elements, but the problem is minor since it is a private field
+    */
+   private val cache = new Array[(A,B)](size)
+   private var next = 0
+   @inline private def dec(i:Int) = if (i==0) size-1 else i-1
+   @inline private def inc(i:Int) = if (i==size-1) 0 else i+1
+   def apply(a: A): B = {
+      var i = next
+      do {
+         i = dec(i)
+         val c = cache(i)
+         if (c != null && c._1 == a) return c._2
+      } while (i != next)
+      val b = f(a)
+      cache(next) = (a,b)
+      next = inc(next)
+      b
    }
 }

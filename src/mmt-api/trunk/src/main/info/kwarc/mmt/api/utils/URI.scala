@@ -5,7 +5,7 @@ package info.kwarc.mmt.api.utils
  * @param abs true if the path is absolute (ignored if scheme or authority are present) */
 case class URI(scheme: Option[String], authority: Option[String], path: List[String] = Nil, private val abs: Boolean = false, query: Option[String] = None, fragment: Option[String] = None) {
    /** true if the path is absolute; automatically set to true if scheme or authority are present */ 
-   val absolute = abs || scheme.isDefined || authority.isDefined
+   def absolute = abs || scheme.isDefined || authority.isDefined
    /** drop path, query, fragment, append (absolute) path of length 1 */
    def !/(n : String) : URI = this !/ List(n)
    /** drop path, query, fragment, append (absolute) path */
@@ -56,7 +56,7 @@ case class URI(scheme: Option[String], authority: Option[String], path: List[Str
          URI(toJava.resolve(u.toJava))
    }
    /** removes an empty trailing segment, which results from a trailing / */
-   val pathNoTrailingSlash = if (path.endsWith(List(""))) path.init else path
+   def pathNoTrailingSlash = if (path.endsWith(List(""))) path.init else path
    /** returns the whole path as a string (/-separated, possibly with a leading /) */
    def pathAsString : String = {
      val tmp = path.mkString(if (absolute) "/" else "", "/", "")
@@ -77,11 +77,11 @@ case class URI(scheme: Option[String], authority: Option[String], path: List[Str
    
 object URI {
    private def nullToNone(s: String) = if (s == null) None else Some(s)
-   /** transforms a Java URI into a URI */
+   private val pattern = java.util.regex.Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?") // pattern taken from RFC 3986   /** transforms a Java URI into a URI */
    def apply(uri : java.net.URI) : URI = URI(uri.toString)
    /** parses a URI (using the regular expression from the RFC) */
    def apply(s : String) : URI = {
-      val m : java.util.regex.Matcher = java.util.regex.Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?").matcher(s) // pattern taken from RFC 3986
+      val m = pattern.matcher(s)
       if (m.matches == false)
           throw new java.net.URISyntaxException(s, "malformed URI reference")
       val scheme = nullToNone(m.group(2))
