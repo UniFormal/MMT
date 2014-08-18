@@ -1,52 +1,101 @@
 package info.kwarc.mmt.api.backend
 
 import info.kwarc.mmt.api._
+import documents._
 import modules._
+import frontend._
+import utils._
 
-import scala.xml._
-import parsing._
+import scala.xml.{MetaData,NamespaceBinding,Elem,NodeSeq}
+import scala.xml.parsing.ConstructingParser
 import scala.io.Source
 
 /** 
- *  first attempt at a streaming XML reader
- *  
- *  does not work yet and it's probably better to refactor the old parser to make it stream-ready first
+ * similar to [[XMLReader]] but streams parsed elements into the continuation function
  */
-abstract class StreamXML(input: Source) extends ConstructingParser(input, false) {
-   private val reader = new XMLReader(???)
+// DefinedTheory and DefinedView are parsed wrong
+class XMLStreamer(controller: Controller) extends Logger {streamer =>
+   private lazy val reader = controller.xmlReader
+   val report = controller.report
+   val logPrefix = "streamer"
+   /** the elements whose children are processed immediately */
+   private val containers = List("omdoc", "theory", "view")
+   
+   def readDocument(base: DPath, file: File)(implicit cont: StructuralElement => Unit): Document = {
+      val input = Source.fromFile(file.toJava, "utf-8") 
+      val parser = makeParser(base, input, cont)
+      parser.nextch
+      parser.document()
+      parser.root.asInstanceOf[Document]
+   }
 
-   private var openTags : List[StructuralElement] = Nil
-   private def labelsInDoc = List("theory", "view")
+   private def makeParser(base: DPath, input: Source, cont: StructuralElement => Unit) = new ConstructingParser(input, false) {
+      /** the stack of currently open tags, innermost first */
+      private var openTags : List[StructuralElement] = Nil
+      /** holds the root element once parsing has finished */
+      var root: StructuralElement = null
    
-   private implicit def catchSE(se: StructuralElement) {openTags ::= se}
-   override def elemStart(pos: Int, pre: String, label: String, attrs: MetaData, scope: NamespaceBinding) {
-      lazy val elem = Elem(pre, label, attrs, scope, true)
-      label match {
-         case "omdoc" =>
-            reader.readDocument(???, elem)
-         case l if (labelsInDoc contains l) && openTags.head.isInstanceOf[documents.Document] =>
-            reader.readInDocument(???, ???, elem)
-         case _ =>
-            openTags ::= null
-      }
-   }
-   override def elemEnd(pos: Int, pre: String, label: String) {
-      openTags = openTags.tail
-   }
-   
-   override def elem(pos: Int, pre: String, label: String, attrs: MetaData,
-                     scope: NamespaceBinding, empty: Boolean, nodes: NodeSeq) = {
-      val n = Elem(pre, label, attrs, scope, empty, nodes:_*)
-      if (openTags.head == null)
-         n
-      else {
-         openTags.head match {
-            case d: documents.Document =>
-               reader.readInDocument(???,???, n)
-            case m: DeclaredModule =>
-               reader.readInTheory(???, ???, n)
+      /** like cont, but also pushes the parsed element onto openTags */
+      private def catchSE(se: StructuralElement) {
+         cont(se)
+         // hack: push the expected container element (will also be called for XRef's though)
+         se match {
+            case _:Document | _:DeclaredModule => openTags ::= se
+            case _ =>
          }
-         NodeSeq.Empty
+      }
+      
+      // called when an opening tag is encountered
+      override def elemStart(pos: Int, pre: String, label: String, attrs: MetaData, scope: NamespaceBinding) {
+         // construct empty element
+         lazy val elem = Elem(pre, label, attrs, scope, true)
+         // if this is a container element, we read the empty one immediately and push it to openTags
+         label match {
+            case "omdoc" if openTags.isEmpty =>
+               // toplevel container
+               streamer.log("streaming in top element")
+               reader.readDocument(base, elem)(catchSE)
+               root = openTags.head
+            case l if containers contains l =>
+               // nested container
+               streamer.log("streaming in " + l)
+               reader.readIn(openTags.head, elem)(catchSE)
+            case _ =>
+               // in all other cases, we push a dummy element
+               openTags ::= null
+         }
+      }
+
+      // called when a closing tag is encountered
+      // the return value of this method replaces the node
+      override def elem(pos: Int, pre: String, label: String, attrs: MetaData,
+                        scope: NamespaceBinding, empty: Boolean, nodes: NodeSeq) = {
+         // the element to be read
+         val n = Elem(pre, label, attrs, scope, empty, nodes:_*)
+         // pop n from openTags 
+         openTags = openTags.tail
+         // check where we are in the XML
+         openTags match {
+            case null :: _ =>
+               // n is some inner node: return it (same behavior as the super method)
+               n
+            case hd :: _ =>
+               // n is the child of a container element
+               // if n is a container itself, it was already handled in elemStart
+               //   otherwise, we process it now
+               if (containers.contains(label)) {
+                 streamer.log("done streaming in " + label)
+               } else {
+                 streamer.log("processing " + label)
+                 reader.readIn(hd, n)(cont)
+               }
+               // either way, n is handled at this point and can be dropped
+               NodeSeq.Empty
+            case Nil =>
+               // n is the root node (which may not be empty)
+               streamer.log("done streaming in top element")
+               <dummy/>
+         }
       }
    }
 }

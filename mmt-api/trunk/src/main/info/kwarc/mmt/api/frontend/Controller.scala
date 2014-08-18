@@ -71,6 +71,7 @@ class Controller extends ROController with Logger {
 
    /** the MMT parser (XML syntax) */
    val xmlReader = new XMLReader(report)
+   val xmlStreamer = new XMLStreamer(this)
    /** Twelf-specific parser */
    val twelfParser = new TextReader(this, this.add)
    
@@ -324,15 +325,18 @@ class Controller extends ROController with Logger {
       log("reading " + dpath)
       val result = f.getExtension match {
          case Some("omdoc") =>
-            val N = utils.xml.readFile(f)
-            var doc: Document = null
-            xmlReader.readDocument(dpath, N) {
-               case d: Document =>
+            /* old non-streaming code
+              val N = utils.xml.readFile(f)
+              var doc: Document = null
+              xmlReader.readDocument(dpath, N) {
+                case d: Document =>
                   add(d)
                   doc = d
                case e => add(e)
             }
             doc
+            */
+            xmlStreamer.readDocument(dpath, f)(add)
          case Some("elf") =>
             val source = scala.io.Source.fromFile(f, "UTF-8")
             val (doc, errorList) = twelfParser.readDocument(source, dpath)(pu => textParser(pu)(ErrorThrower))
