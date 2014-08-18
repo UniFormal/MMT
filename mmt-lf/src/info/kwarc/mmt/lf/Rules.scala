@@ -382,6 +382,8 @@ object SolveType extends TypeSolutionRule(Apply.path) {
    }
 }
 
+import proving._
+
 /** the proof step ?:Pi x:A.B ----> lambda x:A.(?:B)
  *
  * This rule works for any universe U
@@ -400,16 +402,15 @@ class PiOrArrowIntroRule(op: GlobalName) extends IntroProvingRule(Nil, op) {
    }
 }
 
-object PiIntroRule extends PiOrArrowIntroRule(Pi.path) with IntroTactic {
+object PiIntroRule extends PiOrArrowIntroRule(Pi.path) with BackwardInvertible {
    def priority = 5
-   def isInvertible = true
-   def apply(prover: P, g: Goal) = g.tp match {
+   def apply(prover: P, conc: Term) = conc match {
       case Pi(x,a,b) =>
          onApply {
             val sg = new Goal(x%a, b)
-            new Alternative(List(sg))
+            Alternative(List(sg))
          }
-      case _ => Nil
+      case _ => None
    }
 }
 object ArrowIntroRule extends PiOrArrowIntroRule(Arrow.path)
@@ -462,12 +463,11 @@ class PiOrArrowElimRule(op: GlobalName) extends ElimProvingRule(Nil, op) {
    }
 }
 
-object PiElimRule extends PiOrArrowElimRule(Pi.path) with IntroTactic {
+object PiElimRule extends PiOrArrowElimRule(Pi.path) with BackwardSearch {
    val priority = 3
-   val isInvertible = false
    def apply(prover: P, g: Goal) = {
-      g.facts.flatMap {facttp =>
-         val (bindings, scope) = FunType.unapply(facttp).get
+      g.facts.flatMap {tp =>
+         val (bindings, scope) = FunType.unapply(tp).get
          // heuristic to weed out rules like false elimination that should not be applied backwards
          val looksLikeForward = scope match {
             case OMV(_) | ApplySpine(OMS(_), List(OMV(_))) => true
@@ -476,24 +476,23 @@ object PiElimRule extends PiOrArrowElimRule(Pi.path) with IntroTactic {
          if (bindings.isEmpty || looksLikeForward)
             Nil
          else {
-            makeSubgoals(g.context, g.tp, facttp).map {args =>
+            makeSubgoals(g.context, g.conc, tp).flatMap {args =>
                val sgs = args.collect {
                   case Hole(t) => new Goal(g.context, t)
                }
-               ApplicableTactic(Alternative(sgs))
+               onApply(Alternative(sgs))
             }
          }
       }.toList
    }
 }
 
-object ArrowElimRule extends PiOrArrowElimRule(Arrow.path) with ElimTactic {
-   val isInvertible = false
-   def apply(prover: P, g: Goal) = null
+object ArrowElimRule extends PiOrArrowElimRule(Arrow.path) with ForwardSearch {
    private class ArgumentFinder(facts: Facts, fun: Term, scope: Term) {
       def apply(foundArgs: List[Term], foundSubs: Substitution, needed: List[(Option[LocalName], Term)]) {
+         facts.add(ApplySpine(fun, foundArgs:_*), FunType(needed,scope) ^ foundSubs)
          needed match {
-            case Nil => facts.add(ApplySpine(fun, foundArgs:_*), scope ^ foundSubs)
+            case Nil => 
             case (nOpt, t) :: rest =>
                val tS = t ^? foundSubs
                val args = facts.termsOfType(t)
@@ -510,14 +509,22 @@ object ArrowElimRule extends PiOrArrowElimRule(Arrow.path) with ElimTactic {
    
    def generate(facts: Facts) {
       // for every new ...
-      facts.newContext.foreach {case VarDecl(_,Some(tp),_,_) =>
-         val fun = facts.termsOfType(tp).head
+      facts.getNewFacts.foreach {case (tm, tp) =>
          val (bindings, scope) = FunType.unapply(tp).get
          if (!bindings.isEmpty) {
             // function: apply it to all old arguments
-            new ArgumentFinder(facts, fun, scope).apply(Nil, Nil, bindings) 
+            new ArgumentFinder(facts, tm, scope).apply(Nil, Nil, bindings) 
          } else {
-            
+            // non-function: apply all functions that take it as first argument
+            facts.iterator.foreach {case funtp =>
+               funtp match {
+                  case Pi(x,a,b) if a hasheq tp =>
+                     facts.termsOfType(funtp).foreach {f =>
+                        facts.add(Apply(f, tm), b ^? x/tm)
+                     }
+                  case _ =>
+               }
+            }
          }
       }
    }
