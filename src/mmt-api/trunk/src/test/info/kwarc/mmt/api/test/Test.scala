@@ -20,7 +20,7 @@ object Test {
       controller.handle(SetBase(mpath))
       import ip._
       
-      val prover = new checking.Prover(controller)
+      val prover = new proving.Prover(controller)
 
       val context = cont"[x: bool, y: bool]"
       val stack = Stack(Context(mpath) ++ context)

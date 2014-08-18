@@ -6,6 +6,7 @@ import libraries._
 import modules._
 import symbols._
 import frontend._
+import proving._
 import objects.Conversions._
 import scala.collection.mutable.{HashSet,HashMap}
 
@@ -967,9 +968,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     *  @return true if successful
     */
    def prove(g: Goal, levels: Int): Boolean = {
-      val intros = rules.get(classOf[IntroTactic]).toList
-      val elims  = rules.get(classOf[ElimTactic]).toList
-      val prover = new P(g, intros, elims)
+      val prover = new P(g, rules)
       prover.apply(levels)
    }
    
