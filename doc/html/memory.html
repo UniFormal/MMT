@@ -1,0 +1,29 @@
+MMT takes several steps to maintain physical memory well and to scale to large libraries.
+
+<h2>Transparent Loading</h2>
+
+<p>
+Users generally do not have to think about whether a particular MMT module is available in memory.
+Instead MMT transparently loads and unloads modules: Just accessing a theory by its MMT URI retrieves it (from any registered <a href="backend.html">backend</a>) and parses it.
+</p>
+
+<p>
+Internally, modules are held using soft references. Whenever memory is needed, Java garbage collection transparently unloads unused modules.
+</p>
+
+<p>
+This has the effect that there is no difference between storage on the hard drive and in memory for all applications on top of MMT.
+</p>
+
+<h2>Structure Sharing</h2>
+
+<p>
+To reduce its memory footprint, MMT introduces structure sharing for some stateless data types.
+This includes in particular the types for <a href="uris.html">MMT URIs</a>.
+</p>
+
+<p>
+This does not include the data types for expressions: These are not stateless because they can carry metadata such as source references.<br/>
+However, structure sharing can be introduced when constructing expressions, and MMT algorithms preserve structure sharing where possible.
+For example, if a variable occurs twice in a term, then substitution will produce terms with structure sharing.
+</p>
