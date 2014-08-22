@@ -109,6 +109,7 @@ case class MPath(parent : DPath, name : LocalName) extends ContentPath with Slas
    def ?(n : String) : GlobalName = this ? LocalName(n)
    def isGeneric = (this == mmt.mmtcd)
    def module = OMMOD(this)
+   def toGlobalName = ^ ? LocalName(name.last)
 }
 
 /** A GlobalName represents the MMT URI of a symbol-level declaration.

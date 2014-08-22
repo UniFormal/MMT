@@ -83,7 +83,13 @@ abstract class Importer extends TraversingBuildTarget {
        val controller = new Controller(report)
        val Current(inFile, narrPath) = curr
        val narrFile = outPath(a, narrPath)
-       val doc = controller.read(narrFile, Some(DPath(a.narrationBase / narrPath)))(new ErrorLogger(report))
+       val doc = try {
+         controller.read(narrFile, Some(DPath(a.narrationBase / narrPath)))(new ErrorLogger(report))
+       } catch {
+         case e: java.io.IOException =>
+           report(LocalError("io error, could not clean content of " + narrFile).setCausedBy(e))
+           return
+       }
        //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly 
        doc.getItems foreach {
           case r: documents.MRef =>

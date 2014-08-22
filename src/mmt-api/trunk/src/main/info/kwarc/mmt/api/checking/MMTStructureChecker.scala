@@ -203,7 +203,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       // call the registered change listeners
       e match {
          case ce: ContentElement =>
-            controller.extman.changeListeners foreach {l => l.onCheck(ce)}
+            new Notify(controller.extman.changeListeners, report).onCheck(ce)
          case _ =>
       }
    }

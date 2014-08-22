@@ -29,7 +29,7 @@ class Pattern(val home: Term, val name : LocalName, val params: Context, val bod
      </pattern>    
    def tp = OMBINDC(OMS(utils.mmt.mmtsymbol("param")),params,Nil)
    def getComponents = (TypeComponent, new FinalTermContainer(tp)) :: notC.getComponents
-   def getDeclarations = body map {vd => vd.toConstant(home)}
+   def getDeclarations = body mapVarDecls {case (con,vd) => vd.toConstant(home, con)}
    override def toString = 
      "Pattern for " + name.toString + {if (params.variables.toList.isEmpty) "" else  {" [ " + params.toString + " ]" }} +
      " { " + body.toString + " }" + notC.toString

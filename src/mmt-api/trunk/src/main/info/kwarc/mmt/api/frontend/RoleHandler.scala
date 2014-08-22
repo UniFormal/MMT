@@ -28,12 +28,25 @@ trait ChangeListener extends Extension {
 /**
  * Convenience class to notify a set of [[ChangeListener]]s
  */
-class Notify(listeners: List[ChangeListener]) {
-   def onAdd(c: ContentElement)          {listeners.foreach(_.onAdd(c))}
-   def onDelete(c: ContentElement)       {listeners.foreach(_.onDelete(c))}
-   def onUpdate(newElem: ContentElement) {listeners.foreach(_.onUpdate(newElem))}
-   def onClear                           {listeners.foreach(_.onClear)}
-   def onCheck(c: ContentElement)        {listeners.foreach(_.onCheck(c))}
-   def onNavigate(p: Path)               {listeners.foreach(_.onNavigate(p))}
-   def onNewArchive(a: archives.Archive) {listeners.foreach(_.onNewArchive(a))}
+class Notify(listeners: List[ChangeListener], report: Report) {
+   private def tryAll(f: ChangeListener => Unit) {
+     listeners.foreach {l =>
+        try {f(l)}
+        catch {
+          case e: Error =>
+             val ee = l.LocalError("change listener caused error").setCausedBy(e)
+             report(ee)
+           case e: Exception =>
+             val ee = l.LocalError("change listener caused error").setCausedBy(e)
+             report(ee)
+         }
+     }
+   }
+   def onAdd(c: ContentElement)          {tryAll(_.onAdd(c))}
+   def onDelete(c: ContentElement)       {tryAll(_.onDelete(c))}
+   def onUpdate(newElem: ContentElement) {tryAll(_.onUpdate(newElem))}
+   def onClear                           {tryAll(_.onClear)}
+   def onCheck(c: ContentElement)        {tryAll(_.onCheck(c))}
+   def onNavigate(p: Path)               {tryAll(_.onNavigate(p))}
+   def onNewArchive(a: archives.Archive) {tryAll(_.onNewArchive(a))}
 }
