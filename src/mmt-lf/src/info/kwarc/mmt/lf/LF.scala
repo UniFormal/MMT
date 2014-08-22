@@ -29,7 +29,7 @@ object LF {
    val _base = Typed._base
    val _path = _base ? "LF"
    def constant(name : String) = OMS(_path ? name)
-   val hoas = notations.HOAS(Apply.path, Lambda.path, OfType.path)
+   lazy val hoas = notations.HOAS(Apply.path, Lambda.path, OfType.path)
 }
 
 class LFSym(name: String) {

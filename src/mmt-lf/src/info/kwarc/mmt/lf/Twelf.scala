@@ -71,12 +71,13 @@ class Twelf extends Importer with frontend.ChangeListener {
       val proc = procBuilder.start()
       val input = new PrintWriter(proc.getOutputStream(), true)
       val output = new BufferedReader(new InputStreamReader(proc.getInputStream()))
-      val outFile = bf.outFile.setExtension("omdoc")
+      val inFileAsString = bf.inFile.toString
+      val outFile = bf.inFile.setExtension("omdoc")
       input.println("set chatter " + chatter)
       input.println("set unsafe " + unsafe)
       input.println("set catalog " + catalog.queryURI)
-      input.println("loadFile " + bf.inPath)
-      input.println("Print.OMDoc.printDoc " + bf.inPath + " " + outFile)
+      input.println("loadFile " + inFileAsString)
+      input.println("Print.OMDoc.printDoc " + inFileAsString + " " + outFile)
       input.println("OS.exit")
       var line : String = null
       while ({line = output.readLine; line != null}) {
@@ -91,10 +92,15 @@ class Twelf extends Importer with frontend.ChangeListener {
             do {
                msg ::= output.readLine
             } while (! msg.head.startsWith("%%"))
-            bf.errorCont(CompilerError(r, msg.reverse, warning))
+            bf.errorCont(CompilerError(key, r, msg.reverse, warning))
          }
       }
-      val doc = controller.read(outFile, Some(bf.narrationDPath))(bf.errorCont)
+      val doc = try {
+         controller.read(outFile, Some(bf.narrationDPath))(bf.errorCont)
+       } catch {
+         case e: java.io.IOException =>
+           return
+       }
       seCont(doc)
    }
    
