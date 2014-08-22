@@ -90,8 +90,14 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
     */
    def get(p: Path, error: String => Nothing) : ContentElement = p match {
       case doc : DPath => throw ImplementationError("getting documents from library impossible")
-      case mp: MPath => modulesGetNF(mp)
-      //case doc ? t / !(str)) => getStructure(doc ? t ? str)    
+      case mp: MPath => mp.name.length match {
+        case 1 => modulesGetNF(mp)
+        case _ => get(mp.toGlobalName, error) match {
+          case nm: NestedModule => nm.module
+          case s: Structure => s
+          case e => error("complex module path did not resolve to a declaration allowed as a module: " + e)
+        }
+      }
       //lookup in atomic modules
       case OMPMOD(p, args) % name => get(p, error) match {
          case t: DefinedTheory =>

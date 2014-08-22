@@ -12,6 +12,7 @@ class MMTILoop(controller: Controller) extends interpreter.ILoop {
    /** this is overridden in order to bind variables after the interpreter has been created */
    override def loop() {
       if (isAsync) awaitInitialized()
+      //bind not working with latest scala version
       intp beQuietDuring {
          intp.interpret("import info.kwarc.mmt.api._")
          intp.bind("controller", controller)

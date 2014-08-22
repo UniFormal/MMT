@@ -196,8 +196,8 @@ class ExtensionManager(controller: Controller) extends Logger {
       objects.TheoryExp.metas(thy)(controller.globalLookup) mapFind getFoundation
    
    /** retrieves all registered extensions */
-   private def getAll = foundations:::targets:::querytransformers:::changeListeners:::presenters:::
-                        serverPlugins:::parserExtensions:::queryExtensions:::loadedPlugins
+   private def getAll = (foundations:::targets:::querytransformers:::changeListeners:::presenters:::
+                        serverPlugins:::parserExtensions:::queryExtensions:::loadedPlugins).distinct
    
    def stringDescription = {
       def mkL(label: String, es: List[Extension]) =

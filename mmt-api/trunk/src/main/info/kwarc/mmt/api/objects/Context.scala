@@ -45,7 +45,10 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
          case (Some(t), Some(d)) => OMATTR(OMATTR(varToOMATTR, OMID(mmt.mmttype), t), OMID(mmt.mmtdef), d)
       }
    }
-   def toConstant(home: Term) = symbols.Constant(home, name, None, tp, df, None)
+   def toConstant(home: Term, con : Context) = {
+     val sub = con.map(vd => vd.name / (OMS(home % name)))
+     symbols.Constant(home, name, None, tp map(_^? sub), df map(_^? sub), None)
+   }
    def toNode = <om:OMV name={name.toPath}>{mdNode}{tpN}{dfN}</om:OMV> 
    def toCMLQVars(implicit qvars: Context) = <m:bvar><m:ci>{name.toPath}</m:ci>{(tp.toList:::df.toList).map(_.toCMLQVars)}</m:bvar>
    def head = tp.flatMap(_.head)

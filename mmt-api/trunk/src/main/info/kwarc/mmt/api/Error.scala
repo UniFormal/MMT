@@ -24,13 +24,13 @@ abstract class Error(val shortMsg : String) extends java.lang.Throwable(shortMsg
 case class SourceError(
     origin: String, ref: SourceRef, mainMessage: String, extraMessages: List[String] = Nil,
     warning: Boolean = false, fatal: Boolean = false
- ) extends Error(origin + ": source error at " + ref.toString + ": " + mainMessage) {
+ ) extends Error("source error (origin) at " + ref.toString + ": " + mainMessage) {
     override def getMessage = mainMessage + extraMessages.mkString("\n","\n","\n")
 }
 /** errors that occur during compiling */
 object CompilerError {
-  def apply(ref: SourceRef, messageList : List[String], warning: Boolean) =
-      SourceError("compiler", ref, messageList.head, messageList.tail, warning)
+  def apply(key: String, ref: SourceRef, messageList : List[String], warning: Boolean) =
+      SourceError(key, ref, messageList.head, messageList.tail, warning)
 }
 /** errors that occur during parsing */
 case class ParseError(s : String) extends Error("parse error: " + s)
