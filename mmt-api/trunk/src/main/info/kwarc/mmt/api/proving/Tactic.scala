@@ -93,7 +93,7 @@ trait ForwardSearch extends Tactic {
    /**
     * enriches a database of facts by one iteration
     */
-   def generate(facts: Facts): Unit
+   def generate(prover: P, facts: FactsDB): Unit
 }
 
 /**
@@ -107,4 +107,10 @@ abstract class ApplicableTactic {
     *  @return the new goals, None if application was not possible
     */
    def apply() : Option[Alternative]
+}
+
+object ApplicableTactic {
+   def apply(a: Alternative) = new ApplicableTactic {
+      def apply = Some(a)
+   }
 }

@@ -184,6 +184,21 @@ case class Context(variables : VarDecl*) extends Obj {
       }
       Context(newvars : _*)
    }
+   
+   /** @return an iterator over all declarations in their respective context */
+   def declsInContext = new Iterator[(Context,VarDecl)] {
+      private var sofar = Context()
+      private var todo  = variables
+      def hasNext = !todo.isEmpty
+      def next = {
+         val hd::tl = todo
+         val ret = (sofar,hd)
+         sofar = sofar ++ hd
+         todo = tl
+         ret
+      }
+   }
+   
    /** applies a function to each VarDecl, each time in the respective context
     * @return the list of results
     */

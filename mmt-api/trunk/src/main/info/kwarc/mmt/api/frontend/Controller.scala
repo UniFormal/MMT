@@ -221,14 +221,14 @@ class Controller extends ROController with Logger {
                   if (old.compatible(nw)) {
                      log("activating " + old.path)
                      // deactivate all children
-                     old.getDeclarations.foreach {_.inactive = true}
+                     old.getDeclarations.foreach {_.status = Inactive}
                      // update metadata and components
                      old.metadata = nw.metadata
                      nw.getComponents.foreach {case (comp, cont) =>
                         old.getComponent(comp).foreach {_.update(cont)}
                      }
                      // activate the old one
-                     old.inactive = false
+                     old.status = Active
                      notifyListeners.onUpdate(nw)
                   } else {
                      // delete the deactivated old one, and add the new one
@@ -292,7 +292,7 @@ class Controller extends ROController with Logger {
                case r: MRef => localLookup.getO(r.target) match {
                   case Some(m: Module) =>
                      log("deactivating " + m.path)
-                     m.inactive = true
+                     m.status = Inactive
                      List(m)
                   case _ => Nil
                }
@@ -302,7 +302,7 @@ class Controller extends ROController with Logger {
    }
    /** deletes everything in ce that is marked for deletion (i.e., inactive) */
    private def deleteInactive(ce: ContentElement) {
-      ce.foreachDeclaration {d => if (d.inactive) {
+      ce.foreachDeclaration {d => if (d.status == Inactive) {
          log("deleting deactivated " + d.path)
          delete(d.path)
       }}

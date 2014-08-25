@@ -16,8 +16,10 @@ class MMTCompiler extends archives.Importer {
   def includeFile(n: String) : Boolean = n.endsWith(".mmt") || n.endsWith(".elf")
     
   def importDocument(bf: archives.BuildTask, seCont: documents.Document => Unit) {
-    val doc = controller.read(bf.inFile, Some(bf.narrationDPath))(bf.errorCont)
-    controller.checker(doc)(bf.errorCont, checking.RelationHandler.ignore)
-    seCont(doc)
+     val name = File(bf.inPath.last).setExtension("omdoc").segments.last // set extension to omdoc (hacky)
+     val dpath = DPath(bf.base / bf.inPath.init / name) // bf.narrationDPath except for extension
+     val doc = controller.read(bf.inFile, Some(dpath))(bf.errorCont)
+     controller.checker(doc)(bf.errorCont, checking.RelationHandler.ignore)
+     seCont(doc)
   }
 }

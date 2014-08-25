@@ -70,6 +70,10 @@ class MMTObjAsset(val obj: Obj, val context: Context, val parent: CPath, name: S
   def getScope = Some(getTheory)
 }
 
+class MMTNotAsset(owner: GlobalName, label: String, not: TextNotation, reg: SourceRegion) extends MMTAsset(label, reg) {
+   def getScope = Some(owner.module)
+}
+
 /**
  * @param view the current jEdit view
  * @param controller the current MMT controller
@@ -189,7 +193,9 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       node.add(child)
       dec.getComponents foreach {
          case (comp, cont: AbstractTermContainer) if cont.get.isDefined =>
-             buildTree(child, dec.path $ comp, cont.get.get, reg)
+            buildTree(child, dec.path $ comp, cont.get.get, reg)
+         case (comp: NotationComponent, cont: NotationContainer) =>
+            buildTree(child, dec.path, cont, comp, reg)
          case _ =>
       }
    }
@@ -202,6 +208,19 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       buildTree(child, parent, t, Context(), reg)
    }
    
+   /** build the sidekick outline tree: notations */
+   private def buildTree(node: DefaultMutableTreeNode, owner: GlobalName, cont: NotationContainer, comp: NotationComponent, defaultReg: SourceRegion) {
+      val tn = cont(comp).get // always defined here
+      val reg = getRegion(tn) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
+      val label = comp match {
+         case ParsingNotationComponent => "notation (parsing)"
+         case PresentationNotationComponent => "notation (presentation)"
+         case VerbalizationNotationComponent => "notation (verbalization)"
+      }
+      val child = new DefaultMutableTreeNode(new MMTNotAsset(owner, label + ": " + tn.toString, tn, reg))
+      node.add(child)
+   }
+
    /** build the sidekick outline tree: context node (each VarDecl is added individually) */
    private def buildTree(node: DefaultMutableTreeNode, parent: CPath, con: Context, context: Context, defaultReg: SourceRegion) {
       con mapVarDecls {case (previous, vd @ VarDecl(n, tp, df, _)) =>
@@ -280,7 +299,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    override def supportsCompletion = true
    override def canCompleteAnywhere = true
    // override def getInstantCompletionTriggers : String = ""
-   private val prover = new Prover(controller)
+   private val prover = new proving.Prover(controller)
    override def complete(editPane: EditPane, caret : Int) : SideKickCompletion = {
       val textArea = editPane.getTextArea
       val view = editPane.getView

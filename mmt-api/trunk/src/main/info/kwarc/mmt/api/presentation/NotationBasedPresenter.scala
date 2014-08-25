@@ -26,6 +26,10 @@ case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: 
    def out(s: String) {rh(s)}
    def child(i: Int) = copy(pos = pos / i)
    def child(p: Position) = copy(pos = pos / p)
+   def getContext: Context = {
+      val ownerCon: Context = owner.toList.flatMap(cp => TheoryExp.getSupport(cp.parent.module).map(IncludeVarDecl(_,Nil)))
+      ownerCon ++ context.map(_.decl)
+   }
    def addCon(con: List[VarData]) = copy(context = context ::: con)
    val html = utils.HTML(out _)
 }
@@ -378,7 +382,9 @@ class NotationBasedPresenter extends ObjectPresenter {
                         case Var(n,_,_,_) => context.take(n-firstVarNumber)
                         case _ => Nil
                      }
-                     val newVarData = newCont.map {v => VarData(v, Some(op), pc.pos)}
+                     val newVarData = newCont.zipWithIndex map {case (v,i) =>
+                        VarData(v, Some(op), pc.pos / pos(firstVarNumber+i))
+                     }
                      recurse(child, brack)(pc.child(pos(ac.number.abs)).addCon(newVarData))
                   }
                   // all implicit arguments that are not placed by the notation, they are added to the first delimiter
@@ -438,6 +444,13 @@ class NotationBasedPresenter extends ObjectPresenter {
                               def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
                               doFraction(a map aux, b map aux, l)
                            case InferenceMarker =>
+                              checking.Solver.infer(controller, Stack(pc.getContext), t) match {
+                                 case Some(tp) =>
+                                    //TODO pass PresentationContext
+                                    recurse(tp, _ => -1)
+                                 case None =>
+                                    doOperator("?")
+                              }
                         }
                         previous = Some(current)
                      }

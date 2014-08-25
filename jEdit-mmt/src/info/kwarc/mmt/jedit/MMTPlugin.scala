@@ -56,6 +56,8 @@ class MMTPlugin extends EBPlugin with Logger {
       // this command itself may also not be logged
       controller.report.addHandler(StatusBarLogger)
       controller.extman.addExtension(mmtListener)
+      // make tooltips stay longer
+      javax.swing.ToolTipManager.sharedInstance().setDismissDelay(100000)
    }
    /** called by jEdit when plugin is unloaded */
    override def stop {

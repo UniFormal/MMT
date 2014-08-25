@@ -24,7 +24,7 @@ class DefinitionExpander(controller: frontend.Controller) extends StatelessTrave
                   return ComplexTerm(p, args.take(i) ::: Sub(l,aE) :: args.drop(i+1), cont, scopes).from(t)
             }
             scopes.zipWithIndex foreach {case (s,i) =>
-               val sE = traverse(s)
+               val sE = traverse(s)(con ++ cont, init)
                if (sE hashneq s)
                   return ComplexTerm(p, args, cont, scopes.take(i) ::: sE :: scopes.drop(i+1))
             }

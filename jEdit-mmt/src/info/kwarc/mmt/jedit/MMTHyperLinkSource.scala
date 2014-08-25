@@ -65,6 +65,7 @@ class MMTHyperlinkSource extends HyperlinkSource {
                   a.obj match {
                     case t: objects.Term =>
                       val tp = controller.pragmatic.mostPragmatic(t)
+                      log(tp.toString)
                       tp.head flatMap {h =>
                          controller.globalLookup.getO(h)
                       }

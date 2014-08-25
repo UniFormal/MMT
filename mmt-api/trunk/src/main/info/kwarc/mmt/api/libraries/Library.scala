@@ -200,9 +200,8 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
          throw GetError("name " + name + " not found in " + cont)
       case TUnion(ts) % name => ts mapFind {t =>
          getO(t % name)
-      } match {
-         case Some(d) => d
-         case None => throw GetError("union of theories has no declarations except includes")
+      } getOrElse {
+         throw GetError("union of theories has no declarations except includes")
       }
       case OMCOMP(Nil) % _ => throw GetError("cannot lookup in identity morphism without domain: " + p)
       case (m @ OMCOMP(hd::tl)) % name =>
@@ -220,9 +219,8 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
       case Morph.empty % name => throw GetError("empty morphism has no assignments")
       case MUnion(ms) % name => ms mapFind {
          m => getO(m % name)
-      } match {
-         case Some(a) => a
-         case None => throw GetError("union of morphisms has no assignments except includes")
+      } getOrElse {
+         throw GetError("union of morphisms has no assignments except includes")
       }
    }
 

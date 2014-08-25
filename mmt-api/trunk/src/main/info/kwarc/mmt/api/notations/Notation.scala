@@ -46,7 +46,7 @@ class TextNotation(val fixity: Fixity, val precedence: Precedence, val meta: Opt
       var vars : List[VariableComponent] = Nil
       var attrib : Int = 0
       //collect components from markers
-      markers foreach {
+      markers.flatMap(PresentationMarker.flatten) foreach {
          case a: ArgumentComponent =>
             args ::= a
          case v: VariableComponent =>
