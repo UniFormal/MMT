@@ -26,7 +26,7 @@ class MMTILoop(controller: Controller) extends interpreter.ILoop {
    }
    override def printWelcome() {
       out.println
-      out.println("This is a Scala interpreter running within MMT; it may take a few second for the prompt to appear; ':help' lists commands.")
+      out.println("This is a Scala interpreter running within MMT; it may take a few seconds for the prompt to appear; ':help' lists commands.")
       out.println("Use 'controller' to access the current MMT Controller, use 'mmt\"expression\"' to invoke the MMT parser.")
       out.println
       out.flush

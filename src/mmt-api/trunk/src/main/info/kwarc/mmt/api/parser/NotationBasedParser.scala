@@ -13,10 +13,9 @@ import scala.collection.immutable.{HashMap}
 /** couples an identifier with its notation */
 case class ParsingRule(name: ContentPath, notation: TextNotation) {
    /** the first delimiter of this notation, which triggers the rule */
-   def firstDelimString : Option[String] = notation.parsingMarkers mapFind {
-      case d: Delimiter => Some(d.expand(name).text)
-      case SeqArg(_, Delim(s),_) => Some(s)
-      case _ => None
+   def firstDelimString : Option[String] = notation.parsingMarkers collectFirst {
+      case d: Delimiter => d.expand(name).text
+      case SeqArg(_, Delim(s),_) => s
    }
 }
 
@@ -55,24 +54,23 @@ class NotationBasedParser extends ObjectParser {
    // so adding to the front yields the right order
    private var vardecls: List[VarDecl] = Nil
    private var counter = 0
+   private def next = {
+      val s = counter.toString
+      counter += 1
+      s
+   }
    private def resetVarGenerator {
       vardecls = Nil
       counter = 0
    }
-   private def newArgument: LocalName = {
-     val name = LocalName("") / "I" / counter.toString
-     //val tname = LocalName("") / "argumentType" / counter.toString
-     vardecls = VarDecl(name,None,None,None) :: vardecls
-     counter += 1
-     name
-   }
-   private def newType(name: LocalName): LocalName = {
-      val tname = LocalName("") / name / counter.toString
-      vardecls ::= VarDecl(tname,None,None,None)
-      counter += 1
-      tname
-   }
+   private def newArgument = 
+      LocalName("") / "I" / next
+   private def newType(name: LocalName) = 
+      LocalName("") / name / next
+   private def newExplicitUnknown =
+      LocalName("") / "_" / next
    private def newUnknown(name: LocalName, bvars: List[LocalName])(implicit pu: ParsingUnit) = {
+      vardecls ::= VarDecl(name,None,None,None)
       if (bvars == Nil)
          OMV(name)
       else {
@@ -188,6 +186,9 @@ class NotationBasedParser extends ObjectParser {
             if (boundVars.contains(name) || pu.context.exists(_.name == name)) {
                //single Tokens may be bound variables
                OMV(name)
+            } else if (word == "_") {
+               // unbound _ is a fresh unknown variable
+               newUnknown(newExplicitUnknown, boundVars)
             } else if (word.count(_ == '?') > 0) {
                 try {
                    Path.parse(word, pu.context.getIncludes.last) match {

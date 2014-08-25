@@ -408,7 +408,7 @@ object PiIntroRule extends PiOrArrowIntroRule(Pi.path) with BackwardInvertible {
       case Pi(x,a,b) =>
          onApply {
             val sg = new Goal(x%a, b)
-            Alternative(List(sg))
+            Alternative(List(sg), () => Lambda(x,a,sg.proof))
          }
       case _ => None
    }
@@ -422,6 +422,12 @@ object ArrowIntroRule extends PiOrArrowIntroRule(Arrow.path)
  * This rule replace ?'s in the result with their terms if they can be inferred through unification.
  */
 class PiOrArrowElimRule(op: GlobalName) extends ElimProvingRule(Nil, op) {
+   /**
+    * @param context current context 
+    * @param goal term relative to context
+    * @param fact closed (function) type
+    * @return the argument types of fact such that applying a function of type fact yields a result of type goal 
+    */
    protected def makeSubgoals(context: Context, goal: Term, fact: Term): Option[List[Term]] = { 
       // tp must be of the form Pi bindings.scope
       val (bindings, scope) = FunType.unapply(fact).get
@@ -438,7 +444,7 @@ class PiOrArrowElimRule(op: GlobalName) extends ElimProvingRule(Nil, op) {
       // TODO using a first-order matcher is too naive in general - for the general case, we need to use the Solver
       val matcher = new Matcher(unknownsFresh)
       val matchFound = matcher(context, goal, scopeFresh)
-      if (!matchFound) return None
+      if (!matchFound || matcher.hasUnsolvedVariables) return None
       val solution = matcher.getSolution
       // sub is a renaming, so it's more efficient to compose the substitutions before applying them
       val subSolution = sub ^ solution
@@ -451,7 +457,7 @@ class PiOrArrowElimRule(op: GlobalName) extends ElimProvingRule(Nil, op) {
          case (None, anontp) =>
              Hole(anontp ^ subSolution)
        }
-      Some(args)
+       Some(args)
    }
    def apply(ev: Term, fact: Term, goal: Term)(implicit stack: Stack) : Option[ApplicableProvingRule] = {
       makeSubgoals(stack.context, goal, fact) map {args =>
@@ -466,67 +472,69 @@ class PiOrArrowElimRule(op: GlobalName) extends ElimProvingRule(Nil, op) {
 object PiElimRule extends PiOrArrowElimRule(Pi.path) with BackwardSearch {
    val priority = 3
    def apply(prover: P, g: Goal) = {
-      g.facts.flatMap {tp =>
+      g.atoms.flatMap {case (tm,tp) =>
          val (bindings, scope) = FunType.unapply(tp).get
          // heuristic to weed out rules like false elimination that should not be applied backwards
-         val looksLikeForward = scope match {
+         /*lazy val looksLikeForward = scope match {
             case OMV(_) | ApplySpine(OMS(_), List(OMV(_))) => true
             case _ => false
          }
          if (bindings.isEmpty || looksLikeForward)
             Nil
-         else {
-            makeSubgoals(g.context, g.conc, tp).flatMap {args =>
+         else {*/
+         //TODO: if match but unsolved variables, unify first arrow-argument with known facts at g to solve more variables  
+            makeSubgoals(g.fullContext, g.conc, tp).flatMap {args =>
                val sgs = args.collect {
                   case Hole(t) => new Goal(g.context, t)
                }
-               onApply(Alternative(sgs))
+               onApply(Alternative(sgs, () => ApplyGeneral(tm, sgs.map(_.proof))))
             }
-         }
       }.toList
    }
 }
 
 object ArrowElimRule extends PiOrArrowElimRule(Arrow.path) with ForwardSearch {
-   private class ArgumentFinder(facts: Facts, fun: Term, scope: Term) {
-      def apply(foundArgs: List[Term], foundSubs: Substitution, needed: List[(Option[LocalName], Term)]) {
-         facts.add(ApplySpine(fun, foundArgs:_*), FunType(needed,scope) ^ foundSubs)
+   private class ArgumentFinder(facts: FactsDB, fun: Term, scope: Term) {
+      def apply(g: Goal, unknowns: Context, foundArgs: List[Term], foundSubs: Substitution, needed: List[(Option[LocalName], Term)]) {
          needed match {
-            case Nil => 
+            case Nil =>
+               unknowns.toSubstitution match {
+                  case Some(sub) =>
+                     facts.add(g, ApplyGeneral(fun, foundArgs), scope ^ (sub ++ foundSubs))
+                  case None =>
+               }
             case (nOpt, t) :: rest =>
                val tS = t ^? foundSubs
-               val args = facts.termsOfType(t)
-               args foreach {a =>
+               val args = facts.termsOfTypeAtGoal(g, unknowns, t)
+               args foreach {case (sub, a, hOpt) =>
+                  val newGoal = hOpt.getOrElse(g)
+                  val newUnknowns = unknowns map {vd =>
+                     sub(vd.name) match {
+                        case None => vd
+                        case Some(s) => vd.copy(df = Some(s))
+                     }
+                  }
                   val newSubs = nOpt match {
                      case Some(n) => foundSubs ++ n/a
                      case None => foundSubs
                   }
-                  apply(foundArgs ::: List(a), newSubs, rest)
+                  apply(newGoal, newUnknowns, foundArgs ::: List(a), newSubs, rest)
                }
          }
       }
    }
    
-   def generate(facts: Facts) {
-      // for every new ...
-      facts.getNewFacts.foreach {case (tm, tp) =>
-         val (bindings, scope) = FunType.unapply(tp).get
-         if (!bindings.isEmpty) {
-            // function: apply it to all old arguments
-            new ArgumentFinder(facts, tm, scope).apply(Nil, Nil, bindings) 
-         } else {
-            // non-function: apply all functions that take it as first argument
-            facts.iterator.foreach {case funtp =>
-               funtp match {
-                  case Pi(x,a,b) if a hasheq tp =>
-                     facts.termsOfType(funtp).foreach {f =>
-                        facts.add(Apply(f, tm), b ^? x/tm)
-                     }
-                  case _ =>
-               }
-            }
-         }
-      }
+   def generate(prover: P, facts: FactsDB) {
+      facts.symbolAtoms foreach {case (tm,tp) => applyAtom(prover.goal, tm, tp, facts)}
+      // for all goals, g.varAtoms {case (tm, tp) => applyAtom(g, tm, tp, facts)}
+   }
+   
+   private def applyAtom(g: Goal, tm: Term, tp: Term, facts: FactsDB) {
+      val (bindings, scope) = FunType.unapply(tp).get
+      val (impls, rest) = bindings.span(_._1.isDefined)
+      val unknowns: Context = impls.map {case (Some(n),t) => VarDecl(n,Some(t),None,None)} 
+      // function: apply it to all old arguments
+      new ArgumentFinder(facts, tm, scope).apply(g, unknowns, Nil, Nil, rest)
    }
 }
 

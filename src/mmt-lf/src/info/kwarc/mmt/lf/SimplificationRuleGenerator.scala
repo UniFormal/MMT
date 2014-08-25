@@ -178,7 +178,7 @@ class SimplificationRuleGenerator extends ChangeListener {
          val rule = new GeneratedDepthRule(c, desc, n, t2)
          val ruleConst = new RuleConstant(c.home, ruleName, rule)
          ruleConst.setOrigin(GeneratedBy(this))
-   	   controller.add(ruleConst)
+   	   controller.add(ruleConst) //TODO add in right position
          log(desc)
          // check if we can also generate a SolutionRule
          generateSolutionRule(c, n, t2)

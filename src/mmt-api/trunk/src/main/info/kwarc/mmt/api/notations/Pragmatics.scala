@@ -52,7 +52,7 @@ class Pragmatics(controller: Controller) {
       return None
    }
    
-   def mostPragmatic(t: Term) : Term = makePragmatic(t)(p => presentation.Presenter.getNotation(controller, p, true)) match {
+   def mostPragmatic(t: Term) : Term = makePragmatic(t)(p => presentation.Presenter.getNotation(controller, p, false)) match {
       case Some(tP) => tP.term
       case None => t
    }

@@ -149,6 +149,8 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       }
    }
    
+   /* TODO get* methods must pass context; only checked constants may be looked up */
+   
    /** retrieves the type type of a constant and registers the dependency
     *
     * returns nothing if the type could not be reconstructed
@@ -188,14 +190,14 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     * @return true unless the solution differs from an existing one
     * precondition: value is well-typed if the overall check succeeds
     */
-   def solve(name: LocalName, value: Term)(implicit stack: Stack, history: History) : Boolean = {
+   def solve(name: LocalName, value: Term)(implicit history: History) : Boolean = {
       log("solving " + name + " as " + value)
       history += ("solving " + name + " as " + presentObj(value))
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.df.isDefined) {
-         check(Equality(stack, value, solved.df.get, solved.tp))(history + "solution must be equal to previously found solution") //TODO
+         check(Equality(Stack.empty, value, solved.df.get, solved.tp))(history + "solution must be equal to previously found solution") //TODO
       } else {
-         val valueS = simplify(value ^^ left.toPartialSubstitution) // substitute solutions of earlier variables that have been found already
+         val valueS = simplify(value ^^ left.toPartialSubstitution)(Stack.empty,history) // substitute solutions of earlier variables that have been found already
          parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
          val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of later variables that have been found already
          val vd = solved.copy(df = Some(valueS))
@@ -212,11 +214,12 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     * @return true unless the type differs from an existing one
     * precondition: value is well-typed if the the overall check succeeds
     */
-   private def solveType(name: LocalName, value: Term)(implicit stack: Stack, history: History) : Boolean = {
-      val valueS = simplify(value)
+   private def solveType(name: LocalName, value: Term)(implicit history: History) : Boolean = {
+      log("solving type of " + name + " as " + value)
+      val valueS = simplify(value)(Stack.empty, history)
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.tp.isDefined)
-         check(Equality(stack, valueS, solved.tp.get, None))(history + "solution for type must be equal to previously found solution") //TODO
+         check(Equality(Stack.empty, valueS, solved.tp.get, None))(history + "solution for type must be equal to previously found solution") //TODO
       else {
          val vd = solved.copy(tp = Some(valueS))
          solution = left ::: vd :: right
@@ -225,10 +228,10 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       }
    }
    /** if the type and the definiens of an unknown are solved independently, this type-checks them */
-   private def typeCheckSolution(vd: VarDecl)(implicit stack: Stack, history: History): Boolean = {
+   private def typeCheckSolution(vd: VarDecl)(implicit history: History): Boolean = {
       (vd.tp, vd.df) match {
          case (Some(tp), Some(df)) =>
-            check(Typing(stack, df, tp))(history + "checking solution of metavariable against solved type")
+            check(Typing(Stack.empty, df, tp))(history + "checking solution of metavariable against solved type")
          case _ => true
       }
    }
@@ -256,7 +259,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    /** applies this Solver to one Judgement
     *  This method can be called multiple times to solve a system of constraints.
     *  @param j the Judgement
-    *  @return if false, j is disproved; if true, j holds relative to all delayed judgements and errors
+    *  @return if false, j is disproved; if true, j holds relative to all delayed judgements
     *  
     *  Note that this may return true even if can be disproved, namely if the delayed judgements are disproved later.
     *  
@@ -311,8 +314,11 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
      }
      dcOpt match {
         case None =>
-           // no activatable constraint: return true if no errors (other constraints may be left)
-           errors.isEmpty
+           // no activatable constraint
+           if (errors.isEmpty)
+              noActivatableConstraint
+           else
+              false
         case Some(dc) =>
            // activate a constraint
            delayed = delayed filterNot (_ == dc)
@@ -350,6 +356,22 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
               // the judgment was disproved
               false
            }
+   }
+   
+   private def noActivatableConstraint: Boolean = {
+     true /* solution.declsInContext.forall {
+         case (cont, VarDecl(x, Some(tp), None,_)) =>
+            implicit val history = new History(Nil)
+            history += "proving open goals"
+            prove(constantContext++cont,tp)(history) match {
+               case Some(p) =>
+                  solve(x, p)
+               case None =>
+                  error("unproved")
+            }
+         case _ =>
+            true
+      } */
    }
 
    /**
@@ -963,13 +985,31 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       }
    }
 
+   private def prove(context: Context, conc: Term)(implicit history: History): Option[Term] = {
+      val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
+      log(msg)
+      history += msg 
+      val g = new Goal(context, conc)
+      val prover = new P(this, g, rules)
+      prover.apply(3)
+      if (g.isSolved) {
+         val p = g.proof
+         val msg = "proof: " + presentObj(p)
+         history += msg
+         log(msg)
+         Some(p)
+      } else {
+         log(g.present(0))
+         None
+      }
+   }
+   
    /** 
     *  tries to prove a goal
-    *  @return true if successful
+    *  @return the proof term if successful
     */
-   def prove(g: Goal, levels: Int): Boolean = {
-      val prover = new P(g, rules)
-      prover.apply(levels)
+   def prove(conc: Term)(implicit stack: Stack, history: History): Option[Term] = {
+      prove(constantContext ++ solution ++ stack.context, conc)
    }
    
    /** applies all ForwardSolutionRules of the given priority
@@ -995,13 +1035,21 @@ object Solver {
       val (unknowns,tmU) = parser.ObjectParser.splitOffUnknowns(tm)
       val etp = LocalName("expected_type")
       val rules = RuleBasedChecker.collectRules(controller, stack.context)
-      val oc = new Solver(controller, stack.context, unknowns ++ VarDecl(etp, None, None, None), rules)
+      val solver = new Solver(controller, stack.context, unknowns ++ VarDecl(etp, None, None, None), rules)
       val j = Typing(stack, tmU, OMV(etp), None)
-      oc(j)
-      if (oc.checkSucceeded) oc.getSolution.map {sub =>
+      solver(j)
+      if (solver.checkSucceeded) solver.getSolution.map {sub =>
           val tmR = tmU ^ sub
           (tmR, sub("expected_type").get) // must be defined if there is a solution
       } else
          None
+  }
+  /** infers the type of a term that is known to be well-formed */
+  def infer(controller: Controller, stack: Stack, tm: Term): Option[Term] = {
+      val rules = RuleBasedChecker.collectRules(controller, stack.context)
+      val history = new History(Nil)
+      val solver = new Solver(controller, stack.context, Context(), rules)
+      val tpOpt = solver.inferType(tm, true)(stack, history)
+      tpOpt map {tp => solver.simplify(tp)(stack, history)}
   }
 }

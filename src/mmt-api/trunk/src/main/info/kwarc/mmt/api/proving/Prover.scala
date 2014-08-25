@@ -20,9 +20,16 @@ import utils._
  * @param parent g.parent.facts
  * @param newContext g.context
  */
-class Facts(parent: Option[Facts], val newContext: Context) extends Iterable[Term] {
-   /** the database: maps every type to a set of terms of that type */
+class Facts(parent: Option[Facts], newContext: Context) extends Iterable[Term] {
+   /** the database: maps every type to a set of terms of that type
+    *
+    * invariant: facts(tp) is not empty (i.e., non-empty or undefined)  
+    */
    private val facts = new HashMapToSet[Term,Term]
+   /** the facts added in the previous iteration */
+   private var newFacts : List[(Term,Term)] = Nil
+   /** the facts added in the current iteration */
+   private var futureFacts : List[(Term,Term)] = Nil
    
    /**
     * initializes the database by adding the context to the facts, called in class initializer
@@ -31,13 +38,10 @@ class Facts(parent: Option[Facts], val newContext: Context) extends Iterable[Ter
       newContext foreach {case VarDecl(n, Some(tp), _,_) =>
          add(OMV(n), tp)
       }
+      integrateFutureFacts
    }
    initFacts
 
-   /** the facts added in the previous iteration */
-   private var newFacts : List[(Term,Term)] = Nil
-   /** the facts added in the current iteration */
-   private var futureFacts : List[(Term,Term)] = Nil
    /** 
     *  adds a fact to the database
     *  @param tm a term that is valid over the full context of this goal
@@ -47,6 +51,7 @@ class Facts(parent: Option[Facts], val newContext: Context) extends Iterable[Ter
     *  see integrateNewFacts 
     */
    def add(tm: Term, tp: Term) {
+      println("adding " + tm + " : " + tp)
       futureFacts ::= (tm,tp)
    }
    /**
@@ -61,11 +66,86 @@ class Facts(parent: Option[Facts], val newContext: Context) extends Iterable[Ter
    def getNewFacts = newFacts
    /** an iterator over all types inhabited at this context (including those of the parent goal) */
    def iterator: Iterator[Term] = facts.keys.iterator ++ parent.map(_.iterator).getOrElse(Nil)
-   /** the set of terms of a given type */
-   def termsOfType(tp: Term): List[Term] = facts(tp).toList
+   /** the set of terms of a given type
+    *  
+    *  post: non-empty if iterator.contains(tp)
+    */
+   def termsOfType(tp: Term): List[Term] =
+      facts.getOrEmpty(tp).toList ::: parent.map(_.termsOfType(tp)).getOrElse(Nil)
    
-   def hasLocal(tp: Term) = facts.isDefinedAt(tp)
-   def has(tp: Term): Boolean = hasLocal(tp) || parent.map(_.has(tp)).getOrElse(true)
+   override def toString = iterator.map(_.toString).mkString("\n") 
+}
+
+/**
+ * A database of facts obtained through forward proof search
+ * 
+ * For efficiency, each instance only searches for terms that are added when the context is enriched.
+ * Therefore, each [[Goal]] g maintains one instance of Facts, which links to the instance of the g.parent.
+ * Each instance knows the local context of its goal, and maintains only terms that use a local variable.
+ * 
+ * @param parent g.parent.facts
+ * @param newContext g.context
+ */
+class FactsDB {
+   var symbolAtoms : List[(Term, Term)] = Nil
+   
+   /** the database: maps every type to a set of terms of that type
+    *
+    * invariant: facts(tp) is not empty (i.e., non-empty or undefined)  
+    */
+   private val facts = new HashMapToSet[Term,(Goal,Term)]
+   /** the facts added in the previous iteration */
+   private var newFacts : List[(Goal,Term,Term)] = Nil
+   /** the facts added in the current iteration */
+   private var futureFacts : List[(Goal,Term,Term)] = Nil
+   
+   /**
+    *  adds a fact to the database
+    *  @param tm a term that is valid over the full context of this goal
+    *  @param tp its type
+    *  
+    *  the facts are not actually added immediately but queued for addition
+    *  see integrateNewFacts 
+    */
+   def add(g: Goal, tm: Term, tp: Term) {
+      println("adding " + tm + " : " + tp)
+      futureFacts ::= (g,tm,tp)
+   }
+   /**
+    * adds all queued facts to the database 
+    */
+   def integrateFutureFacts {
+      futureFacts foreach {case (g,tm,tp) => facts(tp) += ((g,tm))}
+      newFacts = futureFacts
+      futureFacts = Nil
+   }
+   /** all facts added in the previous iteration */
+   def getNewFacts = newFacts
+   
+   /** the set of terms of a given type
+    *  
+    *  post: non-empty if iterator.contains(tp)
+    */
+   def termsOfTypeAtGoal(g: Goal, templateVars: Context, tp: Term): List[(Substitution, Term,Option[Goal])] = {
+      var res: List[(Substitution, Term,Option[Goal])] = Nil
+      facts.getOrEmpty(tp).foreach {case (h,t) =>
+         
+         if (h below g)
+            res ::= (Nil, t, Some(h))
+         else if (g below h)
+            res ::= (Nil, t, None)
+      }
+      res
+   }
+   
+   def has(g: Goal, tp: Term): Option[Term] = {
+      facts.getOrEmpty(tp).foreach {case (h,t) =>
+         if (g below h) return Some(t)
+      }
+      None
+   }
+   
+   override def toString = facts.toString 
 }
 
 /**
@@ -74,10 +154,18 @@ class Facts(parent: Option[Facts], val newContext: Context) extends Iterable[Ter
  * A goal can be closed if all subgoals of one alternative can be closed
  * 
  * @param subgoals the conjuncts of this alternative 
+ * @param proof the proof term
+ * 
+ * Owners may call `proof()` only if `isSolved == true`.
+ * When creating instances, it is safe to call [[Goal#proof]] to compute the proof term.
  */
-case class Alternative(subgoals: List[Goal]) {
+case class Alternative(subgoals: List[Goal], proof: () => Term) {
    /** true if all subgoals are solved */
    def isSolved: Boolean = subgoals.forall(_.isSolved)
+   def present(depth: Int)(implicit presentObj: Obj => String) = {
+      val gS = subgoals.map {g => Prover.indent(depth) + g.present(depth+1)}
+      gS.mkString("\n")
+   }
 }
 
 /**
@@ -104,8 +192,19 @@ class Goal(val context: Context, val conc: Term) {
    /** the parent node, None only for the root */
    private var parent: Option[Goal] = None
 
-   /** the database of facts found by forward search space from this goal's premises */
-   lazy val facts: Facts = new Facts(parent.map(_.facts), context)
+   /** the database of facts found by forward search */
+   private var facts: FactsDB = null
+   def init(f: FactsDB) {facts = f}
+   
+   def path: List[Goal] = this :: parent.map(_.path).getOrElse(Nil)
+   def below(that: Goal): Boolean = this == that || parent.map(_ below that).getOrElse(false)
+
+   lazy val fullContext: Context = parent.map(_.fullContext).getOrElse(Context()) ++ context
+   lazy val varAtoms: List[(Term,Term)] = parent.map(_.varAtoms).getOrElse(Nil) ::: context.collect {
+      case VarDecl(n,Some(t),_,_) => (OMV(n), t)
+   }
+   lazy val atoms = varAtoms ::: facts.symbolAtoms
+   
    def integrateFutureFacts {
       facts.integrateFutureFacts
       solved = None
@@ -115,7 +214,10 @@ class Goal(val context: Context, val conc: Term) {
    private var alternatives: List[Alternative] = Nil
    /** adds a new alternative in the backward search space */
    def addAlternative(alt: Alternative) {
-      alt.subgoals.foreach {g => g.parent = Some(this)}
+      alt.subgoals.foreach {g =>
+         g.parent = Some(this)
+         g.facts = facts
+      }
       alternatives ::= alt
       solved = None
    }
@@ -126,6 +228,10 @@ class Goal(val context: Context, val conc: Term) {
    
    /** caches the result of isSolved */
    private var solved: Option[Boolean] = None
+   /** stores the proof once the goal is solved */
+   private var proofOption: Option[Term] = None
+   /** the proof term for this goal; pre: isSolved == Some(true) */
+   def proof = proofOption.get
    /** checks if the goal can be closed
     *  - by applying the axiom rule or
     *  - by closing all subgoals of some alternative
@@ -134,19 +240,16 @@ class Goal(val context: Context, val conc: Term) {
     */
    def isSolved: Boolean = {
       if (solved.isDefined) return solved.get
-      val s = alternatives.find(_.isSolved) match {
+      proofOption = alternatives.find(_.isSolved) match {
          case Some(a) =>
-            alternatives = List(a)
-            true
+            Some(a.proof())
          case None =>
-            if (facts.has(conc)) {
-               alternatives = Nil
-               true
-            } else {
-               false
-            }
+            facts.has(this, conc)
       }
+      val s = proofOption.isDefined
       solved = Some(s)
+      if (s)
+        alternatives = Nil
       s
    }
    
@@ -154,8 +257,18 @@ class Goal(val context: Context, val conc: Term) {
    private var backward : List[ApplicableTactic] = Nil
    /** stores the invertible forward rules that have not been applied yet */
    private var forward  : List[ApplicableTactic]  = Nil
-   /** true if no more invertible rules are left */
-   def isExpanded = backward.isEmpty && forward.isEmpty
+   /** stores the backward search rules that have not been applied yet */
+   private var backwardSearch : List[BackwardSearch] = Nil
+   /** initializes the invertible backward/forward tactics that can be applied */
+   def setExpansionTactics(prover: P, backw: List[BackwardInvertible], forw: List[ForwardInvertible]) {
+      backward = parent match {
+         case Some(g) if g.conc == conc => g.backward
+         // TODO it can be redundant to check the applicability of all tactics
+         case _ => backw.flatMap {t => t.apply(prover, conc)} 
+      }
+      val applForw = forw.flatMap {t => t.apply(prover, context)}
+      forward = applForw ::: parent.map(_.forward).getOrElse(Nil)
+   }
    /** 
     *  the invertible backward/forward tactics that have not been applied yet are stored here,
     *  but set and read by the [[Prover]]
@@ -172,16 +285,31 @@ class Goal(val context: Context, val conc: Term) {
          case _ => None
       }
    }
-   /** initializes the invertible backward/forward tactics that can be applied */
-   def setExpansionTactics(prover: P, backw: List[BackwardInvertible], forw: List[ForwardInvertible]) {
-      backward = parent match {
-         case Some(g) if g.conc == conc => g.backward
-         // TODO it can be redundant to check the applicability of all tactics
-         case _ => backw.flatMap {t => t.apply(prover, conc)} 
-      }
-      val applForw = forw.flatMap {t => t.apply(prover, context)}
-      forward = applForw ::: parent.map(_.forward).getOrElse(Nil)
+
+   def setSearchTactics(prover: P, backw: List[BackwardSearch]) {
+      backwardSearch = backw
    }
+   def getNextSearch(prover: P): List[ApplicableTactic] = {
+      backwardSearch match {
+         case Nil => Nil
+         case hd::tl =>
+            backwardSearch = tl
+            hd.apply(prover, this) match {
+               case Nil => getNextSearch(prover)
+               case l => l
+            }
+      }
+   }
+   
+   override def toString = present(0)(o => o.toString)
+   def present(depth: Int)(implicit presentObj: Obj => String): String =
+      proofOption match {
+         case Some(p) => " ! " + context + " |- " + p + " : " + conc
+         case None =>
+            val aS = alternatives.map(a => Prover.indent(depth+1) + "+\n" + a.present(depth+1))
+            val lines = (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
+            lines.mkString("\n")
+      }
 }
 
 /**
@@ -194,11 +322,14 @@ class Goal(val context: Context, val conc: Term) {
  * A prover greedily applies invertible tactics to each new goal (called the expansion phase).
  * Then forward and backward breadth-first searches are performed in parallel.
  */
-class P(goal: Goal, rules: RuleSet) {
+class P(solver: Solver, val goal: Goal, rules: RuleSet) {
    private val invertibleBackward = rules.get(classOf[BackwardInvertible]).toList
    private val invertibleForward  = rules.get(classOf[ForwardInvertible]).toList
    private val searchBackward     = rules.get(classOf[BackwardSearch]).toList.sortBy(_.priority).reverse
    private val searchForward      = rules.get(classOf[ForwardSearch]).toList
+   
+   val facts = new FactsDB
+   
    /**
     * tries to solve the goal
     * @param levels the depth of the breadth-first searches
@@ -206,10 +337,30 @@ class P(goal: Goal, rules: RuleSet) {
     */
    def apply(levels: Int): Boolean = {
       if (goal.isSolved) return true
+      initGoal
       expand(goal)
       if (goal.isSolved) return true
       search(goal, levels)
       goal.isSolved
+   }
+   private def initGoal {
+      goal.init(facts)
+      val imports = solver.controller.library.visibleDirect(ComplexTheory(goal.context))
+      imports.foreach {
+         case OMPMOD(p,_) =>
+            solver.controller.globalLookup.getO(p) match {
+               case Some(t:modules.DeclaredTheory) =>
+                  t.getDeclarations.foreach {
+                     case c: Constant if c.status == Active => c.tp.foreach {t =>
+                        facts.symbolAtoms ::= (c.toTerm, t)
+                     }
+                     case _ =>
+                  }
+               case _ =>
+            }
+         case _ =>
+      }
+      facts.integrateFutureFacts
    }
    /**
     * applies one tactic to a goal and expands the resulting subgoals
@@ -229,12 +380,15 @@ class P(goal: Goal, rules: RuleSet) {
    /** exhaustively applies invertible tactics to a goal */
    private def expand(g: Goal) {
       g.setExpansionTactics(this, invertibleBackward, invertibleForward)
-      g.getNextExpansion foreach {at =>
-         // apply the next invertible tactic, if any
-         val applicable = applyAndExpand(at, g)
-         if (! applicable)
-           // at not applicable, try next tactic
-           expand(g)
+      g.getNextExpansion match {
+         case Some(at) =>
+            // apply the next invertible tactic, if any
+            val applicable = applyAndExpand(at, g)
+            if (! applicable)
+              // at not applicable, try next tactic
+              expand(g)
+         case None =>
+            g.setSearchTactics(this, searchBackward)
       }
    }
    /**
@@ -245,27 +399,25 @@ class P(goal: Goal, rules: RuleSet) {
     */
    private def search(g: Goal, levels: Int) {
       if (g.isSolved || levels == 0) return
-      g.integrateFutureFacts
       // forward search at g
-      searchForward.foreach {e =>
-         e.generate(g.facts)
-         if (g.isSolved) return
+      if (levels <= -1) {
+         searchForward.foreach {e =>
+            e.generate(this, facts)
+            if (g.isSolved) return
+         }
+         g.integrateFutureFacts
       }
       // recurse into subgoals
-      g.getAlternatives.foreach {case Alternative(sgs) =>
-            sgs.foreach {ng => search(ng,levels)}
-            if (g.isSolved) return
+      g.getAlternatives.foreach {case Alternative(sgs,_) =>
+         sgs.foreach {ng => search(ng,levels)}
+         if (g.isSolved) return
       }
       if (g.isSolved) return
       // backward search at g if g is the end product of an expansion phase
       // new goals are expanded immediately and subject to forward/backward search in the next iteration
-      if (g.isExpanded) {
-         searchBackward.foreach {t =>
-            t.apply(this, g) foreach {at =>
-               applyAndExpand(at, g)
-               if (g.isSolved) return
-            }
-         }
+      g.getNextSearch(this).foreach {at =>
+         applyAndExpand(at, g)
+         if (g.isSolved) return
       }
       // repeat
       search(g, levels-1)
@@ -306,4 +458,8 @@ class Prover(controller: Controller) {
       def label = ax.toString
       def apply() = ax
    }
+}
+
+object Prover {
+   def indent(depth: Int) = (0 to depth).map(_ => "  ").mkString("")
 }

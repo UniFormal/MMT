@@ -10,5 +10,5 @@ case class Stack(context: Context) {
 
 object Stack {
    def apply(t: MPath) : Stack = Stack(Context(t))
+   val empty = Stack(Context())
 }
-

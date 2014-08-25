@@ -12,12 +12,8 @@ import Conversions._
  *    
  *  @param templateVars the substitution variables in the template term 
  */
-class Matcher(templateVars: Context) {
+class Matcher(templateVars: Context, log: String => Unit = s => ()) {
    
-   private def log(s: => String) {
-      println(s)
-   }
-
    private var solution : Context = templateVars
    def hasUnsolvedVariables : Boolean = solution.toSubstitution.isEmpty
    /**
@@ -42,11 +38,11 @@ class Matcher(templateVars: Context) {
     *  the matching function
     *  @param goal the term to be matched
     *  @param template the term to match against, this term may contain the templateVars freely
-    *  @param goalVars free Variables of goal, these must be treated in the same way as constants
+    *  @param goalVars free Variables of goal, these must be treated in the same way as constants, may occur in template
     *  @return true if the terms match
     */ 
    def apply(goalVars: Context, goal: Term, template: Term) = {
-      log(s"matching: $goalVars |- $goal = $template")
+      log(s"matching: $goalVars |- $goal = ? $templateVars : $template")
       val res = aux(goal, template)(goalVars, Nil)
       if (res) log("matched: " + getSolution)
       else log("no match")
@@ -70,6 +66,11 @@ class Matcher(templateVars: Context) {
          bound foreach {case (b1,b2) =>
             if (b2 == x2) return goal == OMV(b1)
          }
+         // if x2 is a goal variable, it matches exactly itself
+         goalVars.foreach {vd => if (vd.name == x2) return goal == template}
+         // now x2 must be a template variable (better check anyway, to avoid subtle bugs)
+         if (!templateVars.isDeclared(x2))
+            throw ImplementationError(s"undeclared variable $x2")
          //otherwise, x2 must be in templateVars; if goal does not contain bound variables, solve for x2
          val forbiddenVars = bound.map(_._1)
          if (goal.freeVars.intersect(forbiddenVars) == Nil)
@@ -85,7 +86,7 @@ class Matcher(templateVars: Context) {
          // keep track of bound variables
          val newBound = auxCon(con1, con2).getOrElse(return false)
          val bM  = aux(b1, b2)
-         val scM = (sc1 zip sc2) forall {
+         lazy val scM = (sc1 zip sc2) forall {
             case (s1, s2) => aux(s1, s2)(goalVars, bound ::: newBound)
          }
          bM && scM

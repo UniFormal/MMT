@@ -9,6 +9,13 @@ import info.kwarc.mmt.lf._
 
 import LFS._
 
+/* idea: use spines, sequences may not be split across spines
+ * if length is
+ *  literal: use rules (add flexary ApplyTerm, Beta rules)
+ *  unknown: solve using number of arguments in spine
+ *  term: unclear
+ */
+
 /** |- type ^ n UNIVERSE */
 object UniverseNType extends UniverseRule(ntype.path) {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = tm match {

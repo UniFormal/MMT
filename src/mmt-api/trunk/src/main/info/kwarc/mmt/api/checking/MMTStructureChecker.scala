@@ -67,8 +67,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               contextMeta = contextMeta ++ mt
             }
             checkContext(contextMeta, t.parameters)
+            val tDecls = t.getPrimitiveDeclarations
+            tDecls foreach {d => d.status = Inactive}
             logGroup {
-               t.getPrimitiveDeclarations foreach {d => check(context ++ t.getInnerContext, d)}
+               t.getPrimitiveDeclarations foreach {d =>
+                  check(context ++ t.getInnerContext, d)
+                  d.status = Active
+               }
             }
          case t: DefinedTheory =>
             val dfR = checkTheory(context, t.df)
@@ -204,6 +209,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       e match {
          case ce: ContentElement =>
             new Notify(controller.extman.changeListeners, report).onCheck(ce)
+            //TODO set Checked status
          case _ =>
       }
    }

@@ -5,7 +5,7 @@
 // contrary to the built-in jQuery analogues, these work for 'pref:name' attributes and math elements
 // do not replace calls to these function with the jQuery analogues!
 
-$.fn.hasAttribute = function(name) {  
+$.fn.hasAttribute = function(name) {
 	return (typeof this.attr(name) !== 'undefined' && this.attr(name) !== false);
 };
 
