@@ -344,15 +344,22 @@ object Context {
       c
 	}
 	/** generate new variable name similar to x */
-   private def rename(x: LocalName) = x / ""
-   /** picks a variable name that is fresh for context, preferably x */
+   private def rename(x: LocalName) = {
+      if (x.length == 1)
+         x / "0"
+      else x.last match {
+         case SimpleStep(n) if n.matches("[0-9]+") => x.init / ((n.toInt+1).toString)
+         case _ => x / "0"
+      }
+   }
+   /** picks a variable name that is fresh for context, preferably x1 */
    def pickFresh(context: Context, x1: LocalName): (LocalName,Substitution) = {
       var x = x1
       while (context.isDeclared(x)) {
          x = rename(x)
       }
       (x, x1 / OMV(x))
-   } 
+   }
 	/** returns an alpha-renamed version of con that contains no variable from forbidden, and a substitution that performs the alpha-renaming */
 	def makeFresh(con: Context, forbidden: List[LocalName]) : (Context,Substitution) = {
 	   var sub = Substitution()
