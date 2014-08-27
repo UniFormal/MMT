@@ -253,6 +253,12 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
             log("found opaque constant " + name + ", trying RuleConstantInterpreter")
             val rc = RuleConstantInterpreter.fromNode(symbol, home)
             add(rc, md)
+         case <parameters>{parN}</parameters> =>
+            val par = Context.parse(parN, base)
+            module match {
+               case d: DeclaredTheory => d.parameters = par
+               case _ => throw ParseError("parameters outside declared theory")
+            }
          case <metadata>{_*}</metadata> =>
             val md = MetaData.parse(node, base)
             module.metadata = md
@@ -279,7 +285,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
             val inst = new Instance(homeTerm,name,Path.parseS(p,base),args.toList)
             add(inst, md)
          case scala.xml.Comment(_) =>
-         case _ => throw new ParseError("symbol level element expected: " + symbol)
+         case _ => throw ParseError("symbol level element expected: " + symbol)
       }
    }
    /*
