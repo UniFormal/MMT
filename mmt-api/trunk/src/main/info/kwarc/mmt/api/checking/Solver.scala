@@ -359,7 +359,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    }
    
    private def noActivatableConstraint: Boolean = {
-     true /* solution.declsInContext.forall {
+      solution.declsInContext.forall {
          case (cont, VarDecl(x, Some(tp), None,_)) =>
             implicit val history = new History(Nil)
             history += "proving open goals"
@@ -371,7 +371,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
             }
          case _ =>
             true
-      } */
+      }
    }
 
    /**

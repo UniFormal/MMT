@@ -50,8 +50,7 @@ trait InvertibleTactic extends Tactic {
  * an InvertibleTactic, whose behavior depends only on the conclusion of a goal
  */
 trait BackwardInvertible extends InvertibleTactic {
-   def apply(prover: P, conc: Term): Option[ApplicableTactic]
-   def apply(prover: P, g: Goal): Option[ApplicableTactic] = apply(prover, g.conc)
+   def apply(prover: P, g: Goal): Option[ApplicableTactic]
 }
 
 /**
@@ -93,7 +92,7 @@ trait ForwardSearch extends Tactic {
    /**
     * enriches a database of facts by one iteration
     */
-   def generate(prover: P, facts: FactsDB): Unit
+   def generate(prover: P): Unit
 }
 
 /**
