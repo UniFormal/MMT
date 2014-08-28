@@ -210,7 +210,7 @@ class Controller extends ROController with Logger {
       iterate {e match {
          case nw : ContentElement =>
             localLookup.getO(e.path) match {
-               case Some(old)  =>
+               case Some(old) =>
                   /* optimization for change management
                    * if e.path is already loaded but inactive, and the new e is compatible with it,
                    * we reactivate the existing declaration
@@ -234,10 +234,11 @@ class Controller extends ROController with Logger {
                      // delete the deactivated old one, and add the new one
                      log("deleting deactivated " + old.path)
                      memory.content.update(nw)
-                     notifyListeners.onDelete(nw)
+                     if (old.getOrigin != Some(DefaultAssignment)) // TODO hacky, but need to handle this case somehow
+                         notifyListeners.onDelete(old)
                      notifyListeners.onAdd(nw)
                   }
-               case _ =>
+               case _ => 
                   // the normal case
                   memory.content.add(nw)
                   notifyListeners.onAdd(nw)
