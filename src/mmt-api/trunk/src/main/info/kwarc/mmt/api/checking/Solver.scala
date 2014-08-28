@@ -999,7 +999,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
          log(msg)
          Some(p)
       } else {
-         log(g.present(0))
+         log(g.present(0)(presentObj, None, None))
          None
       }
    }

@@ -19,7 +19,7 @@ import objects.Conversions._
 case class Alternative(subgoals: List[Goal], proof: () => Term) {
    /** true if all subgoals are solved */
    def isSolved: Boolean = subgoals.forall(_.isSolved)
-   def present(depth: Int)(implicit presentObj: Obj => String) = {
+   def present(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]) = {
       val gS = subgoals.map {g => Prover.indent(depth) + g.present(depth+1)}
       gS.mkString("\n")
    }
@@ -58,6 +58,7 @@ class Goal(val context: Context, val conc: Term) {
       case IncludeVarDecl(_,_) => Nil
       case StructureVarDecl(_,_,_) => Nil
       case VarDecl(n,Some(t),_,_) => List((OMV(n), t))
+      case VarDecl(_, None,_,_) => Nil
    }
    
    /** stores the list of alternatives */
@@ -178,12 +179,15 @@ class Goal(val context: Context, val conc: Term) {
    }
    
    override def toString = conc.toString
-   def present(depth: Int)(implicit presentObj: Obj => String): String =
+   def present(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]): String = {
+      val goalHighlight = if (Some(this) == current) "X " else "  "
+      def altHighlight(a: Alternative) = if (Some(a) == newAlt) "+ new\n" else "+ \n"
       proofOption match {
-         case Some(p) => "! " + presentObj(context) + " |- " + presentObj(p) + " : " + presentObj(conc)
+         case Some(p) => goalHighlight + "! " + presentObj(context) + " |- " + presentObj(p) + " : " + presentObj(conc)
          case None =>
-            val aS = alternatives.map(a => Prover.indent(depth+1) + "+\n" + a.present(depth+1))
-            val lines = (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
+            val aS = alternatives.map(a => Prover.indent(depth+1) + altHighlight(a) + a.present(depth+1))
+            val lines = goalHighlight + (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
             lines.mkString("\n")
       }
+   }
 }
