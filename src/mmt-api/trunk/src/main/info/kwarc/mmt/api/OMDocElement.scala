@@ -89,7 +89,9 @@ trait ContentElement extends StructuralElement {
    /** two ContentElement's are compatible
     * if they have the same type, same Path, and agree in all parts that are TermContainer's
     */  
-   def compatible(that: ContentElement): Boolean = {(this, that) match {
+   def compatible(that: ContentElement): Boolean = {
+     this.getOrigin == that.getOrigin &&
+     ((this, that) match {
       case (a: DeclaredTheory, b: DeclaredTheory) =>
          a.path == b.path && a.meta == b.meta && a.parameters == b.parameters
       case (a: DefinedTheory, b: DefinedTheory) =>
@@ -103,7 +105,7 @@ trait ContentElement extends StructuralElement {
       case (a: Structure, b: Structure) =>
          a.getClass == b.getClass && a.path == b.path && (a.isImplicit == b.isImplicit)
       case _ => false
-   }}
+   })}
 }
 
 /*

@@ -75,7 +75,7 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
    /**
     * special case of get with more specific types
     */
-   def getModule(p : MPath) : Module = modulesGetNF(p)
+   def getModule(p : MPath) : Module = getAs(classOf[Module], p)
    
    /**
     * Special case of get that throws GetError with a standard error message
@@ -94,7 +94,7 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
         case 1 => modulesGetNF(mp)
         case _ => get(mp.toGlobalName, error) match {
           case nm: NestedModule => nm.module
-          case s: Structure => s
+//          case s: Structure => s
           case e => error("complex module path did not resolve to a declaration allowed as a module: " + e)
         }
       }
@@ -144,12 +144,15 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
             try {
                getInLink(v, name, error)
             } catch {
-               case PartialLink() => get(v.from % name) match {
+               case PartialLink() =>
+                 val da = get(v.from % name) match {
                   // return default assignment
                   case c:Constant => ConstantAssignment(v.toTerm, name, None, None)
                   case s:Structure => DefLinkAssignment(v.toTerm, name, s.from, Morph.empty)
                   case _ => throw ImplementationError("unimplemented default assignment")
                }
+               da.setOrigin(DefaultAssignment)
+               da
             }
       }
       case OMDL(h,n) % name =>
@@ -158,11 +161,13 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
             getInLink(s, name, error)
          } catch {case PartialLink() =>
             // return default assignment
-            get(s.from % name) match {   
+            val da = get(s.from % name) match {   
                case c:Constant => ConstantAssignment(s.toTerm, name, None, Some(OMID(s.to % (s.name / name))))
                case d:Structure => DefLinkAssignment(s.toTerm, name, d.from, OMDL(s.to, s.name / name))
                case _ => throw ImplementationError("unimplemented default assignment")
             }
+            da.setOrigin(DefaultAssignment)
+            da
          }
       // lookup in complex modules
       case (home @ ComplexTheory(cont)) % name =>
