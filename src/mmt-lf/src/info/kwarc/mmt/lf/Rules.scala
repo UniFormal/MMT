@@ -406,7 +406,7 @@ object PiIntroRule extends PiOrArrowIntroRule(Pi.path) with BackwardInvertible {
    def priority = 5
    def apply(prover: P, goal: Goal) = goal.conc match {
       case Pi(n,a,b) =>
-         onApply {
+         onApply("Pi introduction") {
             val n2 = if (n == OMV.anonymous) LocalName("p") else n
             val (x,sub) = Context.pickFresh(goal.fullContext, n2)
             val sg = new Goal(x%a, b ^? sub)
@@ -452,18 +452,18 @@ class PiOrArrowElimRule(op: GlobalName) extends ElimProvingRule(Nil, op) {
    protected def makeSubgoals(context: Context, goal: Term, fact: Term): Option[Context] = { 
       // tp must be of the form Pi bindings.scope
       val (bindings, scope) = FunType.unapply(fact).get
+      val (paramList, subgoalList) = bindings.span(_._1.isDefined)
+      // we do not allow named arguments after unnamed ones
+      if (subgoalList.exists(_._1.isDefined)) return None
       // the free variables of scope (we drop the types because matching does not need them)
-      val unknowns: Context = bindings.flatMap {
-         case (Some(x),_) => List(VarDecl(x,None,None, None))
-         case _ => Nil
-      }
+      val params = FunType.argsAsContext(paramList)
       // fact may contain free variables from stack.context, so make sure there are no name clashes
       // sub is a renaming from unknowns to unknownsFresh
-      val (unknownsFresh, sub) = Context.makeFresh(unknowns, context.map(_.name))
+      val (paramsFresh, sub) = Context.makeFresh(params, context.map(_.name))
       val scopeFresh = scope ^ sub
       // match goal against scope, trying to solve for scope's free variables
       // TODO using a first-order matcher is too naive in general - for the general case, we need to use the Solver
-      val matcher = new Matcher(unknownsFresh)
+      val matcher = new Matcher(paramsFresh)
       val matchFound = matcher(context, goal, scopeFresh)
       if (!matchFound) return None
       val solution = matcher.getSolution
@@ -526,7 +526,7 @@ object PiElimRule extends PiOrArrowElimRule(Pi.path) with BackwardSearch {
               }
               if (unsolvedParameters.isEmpty) {
                  // yes: make an alternative using the unnamed arguments of tp as subgoals
-                 onApply {makeAlternative(g, tm, argDecls)}.toList
+                 onApply("Pi elimination backward using " + tm) {makeAlternative(g, tm, argDecls)}.toList
               } else {
                  // no: try to match the first unnamed argument against a known fact to instantiate the remaining ones
                  // find the first mentions all remaining unsolved parameters 
@@ -559,7 +559,7 @@ object PiElimRule extends PiOrArrowElimRule(Pi.path) with BackwardSearch {
                                 // substitute the new solutions in the remaining unnamed arguments 
                                 vd.copy(tp = Some(t ^ subs))
                           }
-                          onApply {makeAlternative(g, tm, argDecls2)}.toList
+                          onApply("Pi elimination backward using " + tm) {makeAlternative(g, tm, argDecls2)}.toList
                        }
                  }
               }
