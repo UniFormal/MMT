@@ -18,7 +18,12 @@ import utils._
  * A prover greedily applies invertible tactics to each new goal (called the expansion phase).
  * Then forward and backward breadth-first searches are performed in parallel.
  */
-class P(solver: Solver, val goal: Goal, rules: RuleSet) {
+class P(solver: Solver, val goal: Goal, rules: RuleSet) extends Logger {
+   val report = solver.report
+   def logPrefix = solver.logPrefix
+   
+   private implicit val presentObj = solver.presentObj
+   
    private val invertibleBackward = rules.get(classOf[BackwardInvertible]).toList
    private val invertibleForward  = rules.get(classOf[ForwardInvertible]).toList
    private val searchBackward     = rules.get(classOf[BackwardSearch]).toList.sortBy(_.priority).reverse
@@ -97,6 +102,8 @@ class P(solver: Solver, val goal: Goal, rules: RuleSet) {
       val altOpt = at.apply()
       altOpt foreach {alt =>
          g.addAlternative(alt)
+         log("************************* " + at.label + " at X **************************")
+         log("\n" + goal.present(0)(presentObj, Some(g), Some(alt)))
          if (!g.isSolved) {
             // recursively process subgoals
             alt.subgoals.foreach {sg => expand(sg)}
