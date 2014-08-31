@@ -444,7 +444,7 @@ class NotationBasedPresenter extends ObjectPresenter {
                               def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
                               doFraction(a map aux, b map aux, l)
                            case InferenceMarker =>
-                              checking.Solver.infer(controller, Stack(pc.getContext), t) match {
+                              checking.Solver.infer(controller, pc.getContext, t, None) match {
                                  case Some(tp) =>
                                     //TODO pass PresentationContext
                                     recurse(tp, _ => -1)

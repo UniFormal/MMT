@@ -5,73 +5,6 @@ import objects._
 import objects.Conversions._
 import utils._
 
-/*
-/**
- * A database of facts obtained through forward proof search
- * 
- * For efficiency, each instance only searches for terms that are added when the context is enriched.
- * Therefore, each [[Goal]] g maintains one instance of Facts, which links to the instance of the g.parent.
- * Each instance knows the local context of its goal, and maintains only terms that use a local variable.
- * 
- * @param parent g.parent.facts
- * @param newContext g.context
- */
-class Facts(parent: Option[Facts], newContext: Context) extends Iterable[Term] {
-   /** the database: maps every type to a set of terms of that type
-    *
-    * invariant: facts(tp) is not empty (i.e., non-empty or undefined)  
-    */
-   private val facts = new HashMapToSet[Term,Term]
-   /** the facts added in the previous iteration */
-   private var newFacts : List[(Term,Term)] = Nil
-   /** the facts added in the current iteration */
-   private var futureFacts : List[(Term,Term)] = Nil
-   
-   /**
-    * initializes the database by adding the context to the facts, called in class initializer
-    */
-   private def initFacts {
-      newContext foreach {case VarDecl(n, Some(tp), _,_) =>
-         add(OMV(n), tp)
-      }
-      integrateFutureFacts
-   }
-   initFacts
-
-   /** 
-    *  adds a fact to the database
-    *  @param tm a term that is valid over the full context of this goal
-    *  @param tp its type
-    *  
-    *  the facts are not actually added immediately but queued for addition
-    *  see integrateNewFacts 
-    */
-   def add(tm: Term, tp: Term) {
-      println("adding " + tm + " : " + tp)
-      futureFacts ::= (tm,tp)
-   }
-   /**
-    * adds all queued facts to the database 
-    */
-   def integrateFutureFacts {
-      futureFacts foreach {case (tm,tp) => facts(tp) += tm}
-      newFacts = futureFacts
-      futureFacts = Nil
-   }
-   /** all facts added in the previous iteration */
-   def getNewFacts = newFacts
-   /** an iterator over all types inhabited at this context (including those of the parent goal) */
-   def iterator: Iterator[Term] = facts.keys.iterator ++ parent.map(_.iterator).getOrElse(Nil)
-   /** the set of terms of a given type
-    *  
-    *  post: non-empty if iterator.contains(tp)
-    */
-   def termsOfType(tp: Term): List[Term] =
-      facts.getOrEmpty(tp).toList ::: parent.map(_.termsOfType(tp)).getOrElse(Nil)
-   
-   override def toString = iterator.map(_.toString).mkString("\n") 
-}*/
-
 abstract class Shape
 case class ComplexShape(op: GlobalName, children: List[Shape]) extends Shape
 case class AtomicShape(term: Term) extends Shape
@@ -102,13 +35,13 @@ object Shape {
       case t => AtomicShape(t)
    }
    
-   def matches(s: Shape, t: Shape): Boolean = (s,t) match {
+   def matches(s: Shape, t: Shape): Boolean = ((s,t) match {
       case (ComplexShape(op1, ch1), ComplexShape(op2, ch2)) =>
          op1 == op2 && (ch1 zip ch2).forall{case (x,y) => matches(x,y)}
       case (Wildcard, _) => true
       case (_, Wildcard) => true
       case _ => s == t
-   }
+   })
 }
 
 /**
@@ -117,7 +50,23 @@ object Shape {
  * @param tm the proof term
  * @param tp the proved type
  */
-case class Fact(goal: Goal, tm: Term, tp: Term)
+case class Fact(goal: Goal, tm: Term, tp: Term) {
+   override def toString = tp.toString + "\n     " + tm.toString
+   def present(presentObj: Obj => String) = { 
+      presentObj(tp) + " by " + presentObj(tm)
+   }
+}
+
+/**
+ * an atomic fact: a constant or a variable
+ * @param tm the proof term
+ * @param tp the proved type
+ * @param role the of the constant/variable
+ */
+case class Atom(tm: Term, tp: Term, rl: Option[String]) {
+   def isConstant = tm.isInstanceOf[OMID]
+   def isVariable = tm.isInstanceOf[OMV]
+}
 
 /**
  * A database of facts obtained through forward proof search
@@ -129,18 +78,18 @@ case class Fact(goal: Goal, tm: Term, tp: Term)
  * @param parent g.parent.facts
  * @param newContext g.context
  */
-class FactsDB(shapeDepth: Int) {
-   def log(msg: => String) {}
+class FactsDB(prover: P, shapeDepth: Int) extends frontend.Logger {
+   val report = prover.report
+   def logPrefix = prover.solver.logPrefix + "/facts"
    
-   private var symbolAtoms : List[(Term, Term)] = Nil
-   private[proving] def addSymbolAtom(tm: Term, tp: Term) {
-      symbolAtoms ::= ((tm, tp))
+   private var constantAtoms : List[Atom] = Nil
+   private[proving] def addConstantAtom(a: Atom) {
+      constantAtoms ::= a
    }
-   def getSymbolAtoms = symbolAtoms
+   def getConstantAtoms = constantAtoms
    
-   /** the database: maps every type to a set of terms of that type
-    *
-    * invariant: facts(tp) is not empty (i.e., non-empty or undefined)  
+   /**
+    * the database of (non-atomic) facts, indexed by the shape of the type
     */
    private val facts = new HashMapToSet[Shape,Fact]
    /** the facts added in the current iteration */
@@ -152,19 +101,23 @@ class FactsDB(shapeDepth: Int) {
     *  @param tp its type
     *  
     *  the facts are not actually added immediately but queued for addition
-    *  see integrateNewFacts 
+    *  see integrateFutureFacts 
+    *  
+    *  facts are ignored if their proof does not use a free variable
     */
    def add(f: Fact) {
-      log("adding " + f.tm + " : " + f.tp)
-      futureFacts ::= f
+      if (!f.tm.freeVars.isEmpty)
+         futureFacts ::= f
    }
    /**
     * adds all queued facts to the database 
     */
    private[proving] def integrateFutureFacts {
       futureFacts foreach {f =>
-         val sh = Shape(Nil, Nil, f.tp, shapeDepth)
-         facts(sh) += f
+         val fS = prover.simplifyFact(f) 
+         log("new fact: " + fS.present(prover.presentObj))
+         val sh = Shape(Nil, Nil, fS.tp, shapeDepth)
+         facts(sh) += fS
       }
       futureFacts = Nil
    }
@@ -202,11 +155,14 @@ class FactsDB(shapeDepth: Int) {
     */
    private def matchFact(queryVars: Context, query: Term, f: Fact): Option[(Substitution,Term)] = {
       val (queryFresh, freshSub) = Context.makeFresh(queryVars, f.goal.fullContext.map(_.name)) 
-      val matcher = new Matcher(queryFresh)
-      val matches = matcher(f.goal.fullContext, f.tp, query)
-      if (matches)
-         Some((freshSub ^ matcher.getSolution, f.tm))
-      else
+      val matcher = prover.makeMatcher(f.goal.fullContext, queryFresh)
+      val matches = matcher(f.tp, query)
+      if (matches) {
+         val solution = matcher.getSolution
+         // we need freshSub ^ solution but restricted to those variables that were solved
+         val freshSubRestrict = freshSub.filter {case Sub(_, OMV(qF)) => solution.maps(qF)}
+         Some((freshSubRestrict ^ solution, f.tm))
+      } else
          None
    }
    
@@ -262,5 +218,7 @@ class FactsDB(shapeDepth: Int) {
       None
    }
    
-   override def toString = facts.toString 
+   override def toString = {
+      facts.toString
+   }
 }

@@ -42,7 +42,8 @@ object InferredType extends TermProperty[Term](utils.mmt.baseURI / "clientProper
  * 
  * Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.  
  */
-class Solver(val controller: Controller, val constantContext: Context, initUnknowns: Context, rules: RuleSet) extends Logger {
+class Solver(val controller: Controller, val constantContext: Context, initUnknowns: Context, val rules: RuleSet)
+      extends CheckingCallback with Logger {
    /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */ 
    private var solution : Context = initUnknowns
    /** the unknowns that were solved since the last call of activate (used to determine which constraints are activatable) */
@@ -223,7 +224,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       else {
          val vd = solved.copy(tp = Some(valueS))
          solution = left ::: vd :: right
-         //no need to register this in newsolutions
+         //no need to register this in newsolutions (TODO: or is there?)
          typeCheckSolution(vd)
       }
    }
@@ -715,9 +716,9 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     * post: equality is covered
     */
    private def checkEquality(j: Equality)(implicit history: History): Boolean = {
-      val tm1 = j.t1
-      val tm2 = j.t2
-      val tpOpt = j.t
+      val tm1 = j.tm1
+      val tm2 = j.tm2
+      val tpOpt = j.tpOpt
       implicit val stack = j.stack
       val tm1S = simplify(tm1)
       val tm2S = simplify(tm2)
@@ -730,7 +731,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
          case _ =>
       }
       // solve an unknown
-      val solved = solveEquality(tm1S, tm2S, tpOpt) || solveEquality(tm2S, tm1S, tpOpt)
+      val solved = solveEquality(j) || solveEquality(j.swap)
       if (solved) return true
       
       // 2) find a TermBasedEqualityRule (based on the heads of the terms)
@@ -766,7 +767,6 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    
    /**
     * finds a TermBasedEqualityRule that applies to t1 and any of the terms in t2
-    * rules are looked up based on the torsos of the terms
     * first found rule is returned
     */
    private def findEqRule(t1: Term, others: List[Term])(implicit stack : Stack, history: History, tp: Term) : Option[Continue[Boolean]] = {
@@ -797,7 +797,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
        log("equality (trying rewriting): " + terms1.head + " = " + terms2.head)
        val t1 = terms1.head
        // see if we can expand a definition in t1
-       val t1E = defExp(t1, Context())
+       val t1E = defExp(t1, stack.context) //TODO whole context to look up other definitions?
        val t1EL = safeSimplifyOne(t1E)
        val t1ES = simplify(t1EL)
        val changed = t1ES hashneq t1
@@ -895,43 +895,22 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       Some(remainingFreeVars)
   }
    
-   private def findSolvableVariable(rules: HashSet[SolutionRule], t: Term): Option[(List[SolutionRule],LocalName)] = t match {
-      case OMA(OMS(_), args) =>
-         rules.foreach {r =>
-            r.applicable(t) foreach {i =>
-               findSolvableVariable(rules, args(i)) foreach {case (rs,m) =>
-                  val otherArgs = args.take(i) ::: args.drop(i+1) 
-                  if (otherArgs.forall(a => ! a.freeVars.contains(m)))
-                     return Some((rs:::List(r), m))
-               }
-            }
-         }
-         return None
-      case OMV(m) if solution.isDeclared(m) => Some((Nil, m))
-      case _ => None
-   }
-   
-   /** tries to solve an unknown occurring as the torso of tm1 in terms of tm2.
-    * 
-    * This method should not be called by users (instead, use check(Equality(tm1,tm2,...))).
-    * It is only public because it serves as a callback for SolutionRule's.
-    * (SolutionRule's should not recurse into check(Equality(...)) because it can lead to cycles.)
-    */
-   def solveEquality(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History): Boolean = {
-      tm1 match {
+   /** tries to solve an unknown occurring in tm1 in terms of tm2. */
+   private def solveEquality(j: Equality)(implicit stack: Stack, history: History): Boolean = {
+      j.tm1 match {
          //foundation-independent case: direct solution of an unknown variable
          case OMV(m) =>
-            allowedInSolution(m, tm2) match {
+            allowedInSolution(m, j.tm2) match {
                case None => return false
                case Some(remainingFreeVars) =>
                   if (remainingFreeVars.isEmpty) {
                      // we can solve m already, the remaining unknowns in tm2 can be filled in later
-                     val res = solve(m, tm2)
-                     tpOpt foreach {case tp => solveType(m, tp)}
+                     val res = solve(m, j.tm2)
+                     j.tpOpt foreach {case tp => solveType(m, tp)}
                      res
                   } else {
                      history += ("free variables remain: " + remainingFreeVars.mkString(", "))
-                     delay(Equality(stack,tm1,tm2,tpOpt))
+                     delay(j)
                      // meta-variable solution has free variable --> type error unless free variable disappears later
                      // better: we can rearrange the unknown variables (which ultimately may not depend on each other anyway)
                      // note: tm2 should be simplified - that may make a free variable disappear
@@ -939,12 +918,12 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
             }
          //apply a foundation-dependent solving rule selected by the head of tm1
          case _ =>
-            if (tm1.toString == "3")
-                  true
-
-            findSolvableVariable(rules.get(classOf[SolutionRule]), tm1) match {
+            Solver.findSolvableVariable(rules.get(classOf[SolutionRule]), solution, j.tm1) match {
             case Some((rs, m)) =>
-               rs.head(this)(tm1, tm2, tpOpt)
+               rs.head(j) match {
+                  case Some((j2, msg)) => solveEquality(j2)(j2.stack, history + msg)
+                  case None => false
+               }
             case _ => false
          }
          /*case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tm2.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
@@ -990,13 +969,12 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       log(msg)
       history += msg 
       val g = new Goal(context, conc)
-      val prover = new P(this, g, rules)
-      prover.apply(3)
+      val prover = new P(this, g)
+      prover.apply(5)
       if (g.isSolved) {
          val p = g.proof
-         val msg = "proof: " + presentObj(p)
-         history += msg
-         log(msg)
+         history += "proof: " + presentObj(p)
+         log("proof: " + presentObj(p))
          Some(p)
       } else {
          log(g.present(0)(presentObj, None, None))
@@ -1045,11 +1023,39 @@ object Solver {
          None
   }
   /** infers the type of a term that is known to be well-formed */
-  def infer(controller: Controller, stack: Stack, tm: Term): Option[Term] = {
-      val rules = RuleBasedChecker.collectRules(controller, stack.context)
-      val history = new History(Nil)
-      val solver = new Solver(controller, stack.context, Context(), rules)
-      val tpOpt = solver.inferType(tm, true)(stack, history)
-      tpOpt map {tp => solver.simplify(tp)(stack, history)}
+  def infer(controller: Controller, context: Context, tm: Term, rulesOpt: Option[RuleSet]): Option[Term] = {
+      val rules = rulesOpt.getOrElse {
+         RuleBasedChecker.collectRules(controller, context)
+      }
+      implicit val stack = Stack(Context())
+      implicit val history = new History(Nil)
+      val solver = new Solver(controller, context, Context(), rules)
+      val tpOpt = solver.inferType(tm, true)
+      tpOpt map {tp => solver.simplify(tp)}
   }
+  
+  /**
+    * tests a term for the an occurrence of an unknown variables that can be isolated by applying solution rules
+    * @param rules the solution rules to test with
+    * @param unknowns the list of variables to try to isolate
+    * @param t the term in which to test
+    * @return a pair (rs, n) such that applying rs to t (head first) has a chance of isolating n  
+    */
+   def findSolvableVariable(rules: Iterable[SolutionRule], unknowns: Context, t: Term): Option[(List[SolutionRule],LocalName)] = t match {
+      case OMA(OMS(_), args) =>
+         rules.foreach {r =>
+            r.applicable(t) foreach {i =>
+               findSolvableVariable(rules, unknowns, args(i)) foreach {case (rs,m) =>
+                  val otherArgs = args.take(i) ::: args.drop(i+1) 
+                  if (otherArgs.forall(a => ! a.freeVars.contains(m)))
+                     return Some((rs:::List(r), m))
+               }
+            }
+         }
+         return None
+      case OMV(m) if unknowns.isDeclared(m) => Some((Nil, m))
+      case _ => None
+   }
+   
+
 }

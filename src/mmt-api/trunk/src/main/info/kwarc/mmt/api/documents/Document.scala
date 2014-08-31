@@ -33,9 +33,8 @@ class Document(val path : DPath) extends NarrativeElement {
    /** returns the list of local children (as opposed to remotely referenced ones) in document-order */
    def getLocalItems : List[XRef] = getItems filter (_.isGenerated)
    /** returns the list of modules declared in the document (not user-written references) */
-   def getModulesResolved(lib: Lookup) : List[Module] = getItems flatMap {
-       case r: MRef if r.isGenerated => List(lib.getModule(r.target))
-       case _ => Nil
+   def getModulesResolved(lib: Lookup) : List[Module] = getItems collect {
+       case r: MRef if r.isGenerated => lib.getModule(r.target)
    }
    /**
     * @param controller Controller for looking up documents

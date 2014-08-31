@@ -36,15 +36,17 @@ trait WFJudgement extends Judgement {
  * or
  * context |- t1 = t2       if t = None
  */
-case class Equality(stack: Stack, t1: Term, t2: Term, t: Option[Term]) extends Judgement {
+case class Equality(stack: Stack, tm1: Term, tm2: Term, tpOpt: Option[Term]) extends Judgement {
    lazy val freeVars = {
      val ret = new HashSet[LocalName]
-     val fvs = stack.context.freeVars_ ::: t1.freeVars_ ::: t2.freeVars_ ::: (t.map(_.freeVars_).getOrElse(Nil))
+     val fvs = stack.context.freeVars_ ::: tm1.freeVars_ ::: tm2.freeVars_ ::: (tpOpt.map(_.freeVars_).getOrElse(Nil))
      fvs foreach {n => if (! stack.context.isDeclared(n)) ret += n}
      ret
    }
    override def presentSucceedent(implicit cont: Obj => String): String =
-      cont(t1) + " = " + cont(t2) + (if (t.isDefined) " : " + cont(t.get) else "")
+      cont(tm1) + " = " + cont(tm2) + tpOpt.map(tp => " : " + cont(tp)).getOrElse("")
+   /** swaps left and right side of equality */
+   def swap = Equality(stack, tm2, tm1, tpOpt)
 }
 
 /** represents an equality judgement between contexts

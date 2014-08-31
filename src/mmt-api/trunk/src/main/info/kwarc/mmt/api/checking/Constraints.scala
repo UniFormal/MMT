@@ -83,3 +83,11 @@ class History(private var steps: List[HistoryEntry]) {
       new History(steps.take(lastWFJ+1))
    }
 }
+
+/** a history that ignores all messages */
+object NoHistory extends History(Nil) {
+   override def +=(e: HistoryEntry) {}
+   override def +(e: HistoryEntry) = this
+   override def branch = this
+   override def narrowDownError = this
+}

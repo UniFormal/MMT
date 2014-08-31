@@ -46,27 +46,38 @@ case class Alternative(subgoals: List[Goal], proof: () => Term) {
  * @param tp the conclusion of the sequent     
  */
 
-class Goal(val context: Context, val conc: Term) {
+class Goal(val context: Context, private var concVar: Term) {
    /** the parent node, None only for the root */
-   private var parent: Option[Goal] = None
+   private[proving] var parent: Option[Goal] = None
 
    def path: List[Goal] = this :: parent.map(_.path).getOrElse(Nil)
    def below(that: Goal): Boolean = this == that || parent.map(_ below that).getOrElse(false)
 
+   /** getter for the conclusion (may have been simplified since Goal creation) */
+   def conc = concVar
+   /** sets a new goal, can be used by the prover to simplify goals in place */
+   private[proving] def setConc(newConc: Term)(implicit facts: FactsDB) {
+      concVar = newConc
+      checkAxiomRule
+   }
+   /** the complete context/antecedent (i.e., including the parent's context) of this sequent */
    lazy val fullContext: Context = parent.map(_.fullContext).getOrElse(Context()) ++ context
-   lazy val varAtoms: List[(Term,Term)] = parent.map(_.varAtoms).getOrElse(Nil) ::: context.flatMap {
+   /** the local context of this goal seen as a list of atomic facts that rules can make use of */
+   lazy val varAtoms: List[Atom] = context.flatMap {
       case IncludeVarDecl(_,_) => Nil
       case StructureVarDecl(_,_,_) => Nil
-      case VarDecl(n,Some(t),_,_) => List((OMV(n), t))
+      case VarDecl(n,Some(t),_,_) => List(Atom(OMV(n), t, None))
       case VarDecl(_, None,_,_) => Nil
    }
+   /** the complete context of this goal seen as a list of atomic facts that rules can make use of */
+   lazy val fullVarAtoms: List[Atom] = parent.map(_.fullVarAtoms).getOrElse(Nil) ::: varAtoms
    
    /** stores the list of alternatives */
    private var alternatives: List[Alternative] = Nil
    /** adds a new alternative in the backward search space */
-   def addAlternative(alt: Alternative) {
-      alt.subgoals.foreach {g =>
-         g.parent = Some(this)
+   private[proving] def addAlternative(alt: Alternative) {
+      alt.subgoals.foreach {sg =>
+         sg.parent = Some(this)
       }
       alternatives ::= alt
       solved = None
@@ -75,6 +86,23 @@ class Goal(val context: Context, val conc: Term) {
     * the list of explored directions in the backward search space that can prove the goal
     */
    def getAlternatives = alternatives
+
+   /** stores the finishedness status */
+   private var finished = false
+   /** 
+    *  true if no further proving should be performed at this goal
+    *  pointers to it should be abandoned as soon as the proof term is collected
+    */
+   private[proving] def isFinished = finished
+   /**
+    * recursively abandons all alternatives
+    * (all goals are marked so that existing pointers to them (e.g., in facts) can be abandoned)
+    */
+   private def removeAlternatives {
+      finished = true
+      alternatives.foreach {a => a.subgoals.foreach {sg => sg.removeAlternatives}}
+      alternatives = Nil
+   }
    
    /** caches the result of isSolved */
    private var solved: Option[Boolean] = None
@@ -94,42 +122,34 @@ class Goal(val context: Context, val conc: Term) {
       }
       solved.getOrElse(false)
    }
-   /**
-    * recursively checks if the goal can be closed by using the axiom rule
-    * 
-    * should be called iff there are new facts available (result is cached by isSolved) 
-    */
-   def newFacts(facts: FactsDB) {
+   /** sets the proof of this goal and removes alternatives */
+   private def setSolved(p: Term) {
+      proofOption = Some(p)
+      solved = Some(true)
+      removeAlternatives
+   }
+   
+   /** checks whether this can be closed using the axiom rule, i.e., whether the goal is in the database of facts */
+   private def checkAxiomRule(implicit facts: FactsDB) {
       if (solved != Some(true)) {
          solved = None
          facts.has(this, conc) foreach {p =>
             setSolved(p)
          }
       }
+   }
+   /**
+    * recursively checks if the goal can be closed by using the axiom rule
+    * 
+    * should be called iff there are new facts available (result is cached by isSolved) 
+    */
+   def newFacts(implicit facts: FactsDB) {
+      checkAxiomRule
       alternatives.foreach {a =>
-         a.subgoals.foreach {sg => sg.newFacts(facts)}
+         a.subgoals.foreach {sg => sg.newFacts}
       }
    }
-   /** sets the proof of this goal and finishes up */
-   private def setSolved(p: Term) {
-      proofOption = Some(p)
-      solved = Some(true)
-      setFinished
-   }
-   
-   /** stores the finishedn status */
-   private var finished = false
-   /** 
-    *  true if no further proving should be performed at this goal
-    *  pointers to it should be abandoned as soon as the proof term is collected
-    */
-   private[proving] def isFinished = finished
-   /** recursively abandons all alternatives
-    *  (has to be recursive so that all goals are finished up so that facts can be removed)
-    */
-   private def setFinished {
-   }
-   
+  
    /** stores the invertible backward rules that have not been applied yet */
    private var backward : List[ApplicableTactic] = Nil
    /** stores the invertible forward rules that have not been applied yet */
