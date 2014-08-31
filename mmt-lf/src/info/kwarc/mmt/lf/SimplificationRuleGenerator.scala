@@ -321,14 +321,14 @@ class GeneratedSolutionRule(from: Constant, desc: String, names: OuterInnerNames
             None
       case _ => None
    }
-   def apply(solver: Solver)(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History): Boolean = tm1 match {
+   def apply(j: Equality) = j.tm1 match {
       case ApplySpine(_, args) =>
          val explArgs = names.explArgsInner(args)
          val before = bfrPositions.map(i => explArgs(i))
          val after  = aftPositions.map(i => explArgs(i))
          val t      = explArgs(vPosition)
          // TODO generate new unknowns for the implicit arguments of outer 
-         val inverted = ApplyGeneral(OMS(names.outer), before ::: tm2 :: after)
-         solver.check(Equality(stack, inverted, t, None))(history + ("trying to isolate by inverting " + names.inner.name))
+         val inverted = ApplyGeneral(OMS(names.outer), before ::: j.tm2 :: after)
+         Some((Equality(j.stack, inverted, t, None), "inverting " + names.inner.name))
    }
 }

@@ -71,7 +71,7 @@ abstract class Importer extends TraversingBuildTarget {
         xml.writeFile(node, narrFile)
         // write relational file
         writeToRel(doc, a/relational / inPath)
-        doc.getModulesResolved(controller.library) foreach {mod => {
+        doc.getModulesResolved(controller.globalLookup) foreach {mod => {
            // write content file
            writeToContent(a, mod)
            // write relational file

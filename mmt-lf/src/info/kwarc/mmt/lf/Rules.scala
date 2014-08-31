@@ -157,17 +157,17 @@ object Extensionality extends TypeBasedEqualityRule(Nil, Pi.path) {
  *  
  *  This rule is a special case of Extensionality, but it does not make use of the type.
  */
-object LambdaCongruence extends TermBasedEqualityRule(Nil, Lambda.path, Lambda.path) {
-   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
+object LambdaCongruence extends TermHeadBasedEqualityRule(Nil, Lambda.path, Lambda.path) {
+   def apply(checker: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
       (tm1,tm2) match {
          case (Lambda(x1,a1,t1), Lambda(x2,a2,t2)) =>
             val cont = Continue {
                history += "congruence for lambda"
-               val res1 = solver.check(Equality(stack,a1,a2,None))(history + "equality of domain types")
+               val res1 = checker.check(Equality(stack,a1,a2,None))(history + "equality of domain types")
                val (xn,_) = Context.pickFresh(stack.context, x1)
                val t1sub = t1 ^? (x1 / OMV(xn))
                val t2sub = t2 ^? (x2 / OMV(xn))
-               val res2 = solver.check(Equality(stack ++ xn % a1, t1sub, t2sub, None))(history + "equality of scopes")
+               val res2 = checker.check(Equality(stack ++ xn % a1, t1sub, t2sub, None))(history + "equality of scopes")
                res1 && res2
             }
             Some(cont)
@@ -178,19 +178,22 @@ object LambdaCongruence extends TermBasedEqualityRule(Nil, Lambda.path, Lambda.p
 
 /** Congruence for Pi
  *  
- *  We cannot use CongruenceRule here because we have to flatten nested Pis and consider -> in addition.
+ *  We cannot use HeadBasedEqualityRule here because we have to flatten nested Pis and consider -> in addition.
  */
-object PiCongruence extends TermBasedEqualityRule(Nil, Pi.path, Pi.path) {
-   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
+object PiCongruence extends TermBasedEqualityRule {
+   val head = Pi.path
+   private val heads = List(Some(Pi.path), Some(Arrow.path))
+   def applicable(tm1: Term, tm2: Term) = heads.contains(tm1.head) && heads.contains(tm2.head)
+   def apply(checker: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
       (tm1,tm2) match {
          case (Pi(x1,a1,t1), Pi(x2,a2,t2)) =>
             val cont = Continue {
                history += "congruence for function types"
-               val res1 = solver.check(Equality(stack,a1,a2,None))(history + "equality of domain types")
+               val res1 = checker.check(Equality(stack,a1,a2,None))(history + "equality of domain types")
                val (xn,_) = Context.pickFresh(stack.context, x1)
                val t1sub = t1 ^? (x1 / OMV(xn))
                val t2sub = t2 ^? (x2 / OMV(xn))
-               val res2 = solver.check(Equality(stack ++ xn % a1, t1sub, t2sub, None))(history + "equality of scopes")
+               val res2 = checker.check(Equality(stack ++ xn % a1, t1sub, t2sub, None))(history + "equality of scopes")
                res1 && res2
             }
             Some(cont)
@@ -274,27 +277,27 @@ object SolveMultiple extends SolutionRule(Apply.path) {
       case ApplySpine(OMV(_),_) => Some(0)
       case _ => None
    }
-   def apply(solver: Solver)(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History): Boolean = {
-      tm1 match {
+   def apply(j: Equality): Option[(Equality,String)] = {
+      j.tm1 match {
          case ApplySpine(OMV(u), args) =>
              // solver.unknowns.isDeclared(u) known by precondition
              // make sure tm1 is of the form u x1 ... xn
              val bvarArgs = args map {
                 case OMV(x) => x
-                case _ => return false
+                case _ => return None
              }
              // split context into bind = x1, ..., xn and the rest
-             val (bind, rest) = stack.context.variables.partition {case vd => bvarArgs contains vd.name}
+             val (bind, rest) = j.stack.context.variables.partition {case vd => bvarArgs contains vd.name}
              // this guarantees that all xi are declared in stack.context and are distinct 
-             if (bind.distinct.length != bvarArgs.length) return false
+             if (bind.distinct.length != bvarArgs.length) return None
              //TODO check that no variable declaration in rest depends on an xi
              //TODO use rest instead of stack
              val cont = Context(bind:_*)
              // check that Lambda(cont,tm2) is closed
-             val tm2Closed = tm2.freeVars forall {x => cont.isDeclared(x)}
-             if (! tm2Closed) return false
-             solver.solve(u, Lambda(cont, tm2))
-         case _ => false
+             val tm2Closed = j.tm2.freeVars forall {x => cont.isDeclared(x)}
+             if (! tm2Closed) return None
+             Some((Equality(j.stack, OMV(u), Lambda(cont, j.tm2), None), "binding variables"))
+         case _ => None
       }
    }
 }
@@ -307,15 +310,15 @@ object Solve extends SolutionRule(Apply.path) {
       case Apply(_, _) => Some(0)
       case _ => None
    }
-   def apply(solver: Solver)(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History): Boolean = {
-      tm1 match {
+   def apply(j: Equality): Option[(Equality, String)] = {
+      j.tm1 match {
          case Apply(t, OMV(x)) =>
-             val i = stack.context.lastIndexWhere(_.name == x)
-             if (i == -1) return false
+             val i = j.stack.context.lastIndexWhere(_.name == x)
+             if (i == -1) return None
              var dropped = List(x) // the variables that we will remove from the context
-             var newCon : Context = stack.context.take(i) // the resulting context
+             var newCon : Context = j.stack.context.take(i) // the resulting context
              // iterate over the variables vd after x
-             stack.context.drop(i+1) foreach {vd =>
+             j.stack.context.drop(i+1) foreach {vd =>
                 if (vd.freeVars.exists(dropped.contains _)) {
                    // vd depends on x, we use weakening to drop vd as well
                    dropped ::= vd.name
@@ -327,18 +330,17 @@ object Solve extends SolutionRule(Apply.path) {
              // check whether weakening is applicable: dropped variables may not occur in t or Lambda(x,a,tm2)
              if (t.freeVars.exists(dropped.contains _))
                 // most important special case: x occurs free in t so that eta is not applicable
-                return false
-             if (tm2.freeVars.exists(dropped.filterNot(_ == x) contains _))
-                return false
+                return None
+             if (j.tm2.freeVars.exists(dropped.filterNot(_ == x) contains _))
+                return None
              // get the type of x and abstract over it
-             stack.context.variables(i) match {
+             j.stack.context.variables(i) match {
                 case VarDecl(_, Some(a), _, _) => 
-                   val newStack = stack.copy(context = newCon)
-                   solver.solveEquality(t, Lambda(x, a, tm2), tpOpt map {tp => Pi(x,a,tp)})(
-                         newStack, history + ("solving by binding " + x))
-                case _ => false
+                   val newStack = j.stack.copy(context = newCon)
+                   Some((Equality(newStack, t, Lambda(x, a, j.tm2), j.tpOpt map {tp => Pi(x,a,tp)}), "binding x"))
+                case _ => None
              }
-         case _ => false
+         case _ => None
       }
    }
 }
@@ -374,7 +376,7 @@ object SolveType extends TypeSolutionRule(Apply.path) {
              stack.context.variables(i) match {
                 case VarDecl(_, Some(a), _, _) => 
                    val newStack = stack.copy(context = newCon)
-                   solver.solveTyping(t, Pi(x, a, tp))(newStack, history + ("solving by binding " + x)) // tpOpt map {tp => Pi(x,a,tp)}
+                   solver.solveTyping(t, Pi(x, a, tp))(newStack, history + ("solving by binding " + x))
                 case _ => false
              }
          case _ => false
@@ -432,7 +434,7 @@ object SolvedParameter {
 }
 object UnsolvedParameter {
    def unapply(vd: VarDecl) = vd match {
-      case VarDecl(x, _,None,_) if x != OMV.anonymous => Some(x)
+      case VarDecl(x, Some(tp), None,_) if x != OMV.anonymous => Some((x,tp))
       case _ => None
    }
 }
@@ -449,39 +451,47 @@ class PiOrArrowElimRule(op: GlobalName) extends ElimProvingRule(Nil, op) {
     * @param fact closed (function) type
     * @return the argument types of fact such that applying a function of type fact yields a result of type goal 
     */
-   protected def makeSubgoals(context: Context, goal: Term, fact: Term): Option[Context] = { 
+   protected def makeSubgoals(prover: P, context: Context, goal: Term, fact: Term): Option[Context] = { 
       // tp must be of the form Pi bindings.scope
       val (bindings, scope) = FunType.unapply(fact).get
       val (paramList, subgoalList) = bindings.span(_._1.isDefined)
       // we do not allow named arguments after unnamed ones
-      if (subgoalList.exists(_._1.isDefined)) return None
+      if (subgoalList.exists(_._1.isDefined))
+         return None
+      // we do not allow shadowed parameters
+      val paramNames = paramList.map(_._1)
+      if (paramNames.distinct.length != paramNames.length)
+         return None
       // the free variables of scope (we drop the types because matching does not need them)
       val params = FunType.argsAsContext(paramList)
       // fact may contain free variables from stack.context, so make sure there are no name clashes
       // sub is a renaming from unknowns to unknownsFresh
-      val (paramsFresh, sub) = Context.makeFresh(params, context.map(_.name))
-      val scopeFresh = scope ^ sub
+      val (paramsFresh, rename) = Context.makeFresh(params, context.map(_.name))
+      val scopeFresh = scope ^? rename
       // match goal against scope, trying to solve for scope's free variables
       // TODO using a first-order matcher is too naive in general - for the general case, we need to use the Solver
-      val matcher = new Matcher(paramsFresh)
-      val matchFound = matcher(context, goal, scopeFresh)
+      val matcher = prover.makeMatcher(context, paramsFresh)
+      val matchFound = matcher(goal, scopeFresh)
       if (!matchFound) return None
       val solution = matcher.getSolution
       // now scope ^ sub ^ solution == goal
-      var result: Context = Context()
-      bindings foreach {
+      var result = Context()
+      bindings foreach {b =>
          // named bound variables that are substituted by solution can be filled in
          // others are holes representing subgoals
-         case (Some(x), xtp) =>
-            val xFresh = (x ^ sub).asInstanceOf[OMV].name // sub is a renaming
-            result ++= VarDecl(xFresh, Some(xtp ^ result.toPartialSubstitution), solution(xFresh), None)
-         case (None, anontp) =>
-            result ++= VarDecl(OMV.anonymous, Some(anontp ^ result.toPartialSubstitution), None, None)
+         val renameResult = rename ^ result.toPartialSubstitution // maps unsolved variables to their renaming
+         b match {
+            case (Some(x), xtp) =>
+               val xFresh = (x ^ rename).asInstanceOf[OMV].name // sub is a renaming
+               result ++= VarDecl(xFresh, Some(xtp ^? renameResult), solution(xFresh), None) 
+            case (None, anontp) =>
+               result ++= VarDecl(OMV.anonymous, Some(anontp ^? renameResult), None, None)
+         }
        }
        Some(result)
    }
-   def apply(ev: Term, fact: Term, goal: Term)(implicit stack: Stack) : Option[ApplicableProvingRule] = {
-      makeSubgoals(stack.context, goal, fact) map {con =>
+   def apply(prover: P, ev: Term, fact: Term, goal: Term)(implicit stack: Stack) : Option[ApplicableProvingRule] = {
+      makeSubgoals(prover, stack.context, goal, fact) map {con =>
          new ApplicableProvingRule {
              def label = ev.toString
              def apply = {
@@ -505,16 +515,16 @@ object PiElimRule extends PiOrArrowElimRule(Pi.path) with BackwardSearch {
            case SolvedParameter(_,a) =>
               args ::= {() => a}
            case UnnamedArgument(t) =>
-              val sg = new Goal(g.context, t)
+              val sg = new Goal(Nil, t)
               sgs ::= sg
               args ::= {() => sg.proof}
         }
         Alternative(sgs.reverse, () => ApplyGeneral(tm, args.reverseMap(a => a())))
    }
-   def apply(prover: P, g: Goal) = {
-      (g.varAtoms ::: prover.facts.getSymbolAtoms).flatMap {case (tm,tp) =>
+   def apply(prover: P, g: Goal): List[ApplicableTactic] = {
+      (g.fullVarAtoms ::: prover.facts.getConstantAtoms).flatMap {case Atom(tm,tp,_) =>
          // match return type of tp against g.conc
-         val sgsOpt = makeSubgoals(g.fullContext, g.conc, tp)
+         val sgsOpt = makeSubgoals(prover, g.fullContext, g.conc, tp)
          sgsOpt match {
             case None =>
                // no match
@@ -522,34 +532,34 @@ object PiElimRule extends PiOrArrowElimRule(Pi.path) with BackwardSearch {
             case Some(argDecls) =>
               // matched; check if all named arguments of tp were instantiated
               val unsolvedParameters = argDecls.collect {
-                 case u @ UnsolvedParameter(x) => u
+                 case u @ UnsolvedParameter(_,_) => u
               }
               if (unsolvedParameters.isEmpty) {
                  // yes: make an alternative using the unnamed arguments of tp as subgoals
                  onApply("Pi elimination backward using " + tm) {makeAlternative(g, tm, argDecls)}.toList
               } else {
                  // no: try to match the first unnamed argument against a known fact to instantiate the remaining ones
-                 // find the first mentions all remaining unsolved parameters 
+                 // now find the first argument that mentions all remaining unsolved parameters 
                  val uAOpt = argDecls.find {
                     case UnnamedArgument(t) =>
                        val tvars = t.freeVars
                        unsolvedParameters.forall {p => tvars contains p.name}
                     case _ => false
                  }
-                 uAOpt match {
+                 val appTacs = uAOpt match {
                     case None =>
                        // no progress possible (we might try matching other arguments though)
                        Nil
                     case Some(uA) =>
-                       val UnnamedArgument(t) = uA
-                       // match t against known facts
-                       prover.facts.termsOfTypeAtGoal(g, unsolvedParameters, t) flatMap {case (subs, p) =>
+                       val UnnamedArgument(uAtp) = uA
+                       // match uAtp against known facts
+                       prover.facts.termsOfTypeAtGoal(g, unsolvedParameters, uAtp) flatMap {case (subs, p) =>
                           // update the argument declarations with the new information 
                           val argDecls2 = argDecls.map {
                              case vd if vd == uA =>
                                 // the matched goal is already solved by p
                                 VarDecl(OMV.anonymous, None, Some(p), None)
-                             case vd @ UnsolvedParameter(x) =>
+                             case vd @ UnsolvedParameter(x,_) =>
                                 // the remaining parameters can now be solved
                                 vd.copy(df = subs(x))
                              case vd @ SolvedParameter(_,_) =>
@@ -559,8 +569,33 @@ object PiElimRule extends PiOrArrowElimRule(Pi.path) with BackwardSearch {
                                 // substitute the new solutions in the remaining unnamed arguments 
                                 vd.copy(tp = Some(t ^ subs))
                           }
-                          onApply("Pi elimination backward using " + tm) {makeAlternative(g, tm, argDecls2)}.toList
+                          onApply("Pi elimination backward using " + tm + " and " + prover.presentObj(p) + " : " + prover.presentObj(uAtp ^ subs)) {
+                             makeAlternative(g, tm, argDecls2)
+                          }.toList
                        }
+                 }
+                 if (!appTacs.isEmpty)
+                    appTacs
+                 else {
+                    // if no progress, we try enumerating values for the missing parameters
+                    // but only if there is a single missing parameter
+                    unsolvedParameters match {
+                       case List(uP @ UnsolvedParameter(x,xtp)) =>
+                          prover.facts.termsOfTypeAtGoal(g, Context(), xtp) flatMap {case (_, p) =>
+                             val argDecls2 = argDecls.map {
+                                case vd if vd == uP =>
+                                   VarDecl(x, None, Some(p), None)
+                                case vd @ SolvedParameter(_,_) =>
+                                   vd 
+                                case vd @ UnnamedArgument(t) =>
+                                   vd.copy(tp = Some(t ^? x/p))
+                             }
+                             onApply("Pi elimination backward using " + tm + " and " + prover.presentObj(p) + " : " + prover.presentObj(xtp)) {
+                                makeAlternative(g, tm, argDecls2)
+                             }.toList
+                          }
+                       case _ => Nil
+                    }
                  }
               }
          }
@@ -571,23 +606,26 @@ object PiElimRule extends PiOrArrowElimRule(Pi.path) with BackwardSearch {
 object ArrowElimRule extends PiOrArrowElimRule(Arrow.path) with ForwardSearch {
    def generate(prover: P) {
       // apply all symbols
-      prover.facts.getSymbolAtoms foreach {case (tm,tp) => applyAtom(prover.goal, tm, tp, prover.facts)}
+      prover.facts.getConstantAtoms foreach {case a =>
+         if (a.rl == Some("ForwardRule"))
+            applyAtom(prover.goal, a, prover.facts)
+      }
       // apply all variables of each goal
       applyVarAtoms(prover.goal, prover.facts) 
    }
    /** recursively applies all variables to create new facts */
    private def applyVarAtoms(g: Goal, facts: FactsDB) {
-      g.varAtoms.foreach {case (tm, tp) => applyAtom(g, tm, tp, facts)}
+      g.varAtoms.foreach {case a => applyAtom(g, a, facts)}
       g.getAlternatives.foreach {_.subgoals.foreach {sg => applyVarAtoms(sg, facts)}}
    }
    /** applies one atom (symbol or variable) to all known facts */
-   private def applyAtom(g: Goal, tm: Term, tp: Term, facts: FactsDB) {
-      val (bindings, scope) = FunType.unapply(tp).get
+   private def applyAtom(g: Goal, atom: Atom, facts: FactsDB) {
+      val (bindings, scope) = FunType.unapply(atom.tp).get
       // params: leading named arguments
       val (paramlist, neededArgs) = bindings.span(_._1.isDefined)
       val parameters = FunType.argsAsContext(paramlist) 
       // all the actual logic is implemented separately
-      new ArgumentFinder(facts, tm, scope).apply(g, parameters, Nil, neededArgs)
+      new ArgumentFinder(facts, atom.tm, scope).apply(g, parameters, Nil, neededArgs)
    }
    
    /**
@@ -620,7 +658,7 @@ object ArrowElimRule extends PiOrArrowElimRule(Arrow.path) with ForwardSearch {
                      // if all parameters were instantiated,
                      // we apply fun to all parameters and found arguments
                      // and add the new fact, whose type is obtained by substituting all parameters and named arguments in scope 
-                     val f = Fact(g, ApplyGeneral(fun, sub.map(_.target) ::: foundArgs.map(_._2)), scope ^ (sub ++ foundSubs))
+                     val f = Fact(g, ApplyGeneral(fun, sub.map(_.target) ::: foundArgs.map(_._2)), scope ^? (sub ++ foundSubs))
                      facts.add(f)
                   case None =>
                      // otherwise, we cannot create a new fact

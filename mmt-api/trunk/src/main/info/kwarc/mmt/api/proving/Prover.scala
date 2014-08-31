@@ -18,18 +18,19 @@ import utils._
  * A prover greedily applies invertible tactics to each new goal (called the expansion phase).
  * Then forward and backward breadth-first searches are performed in parallel.
  */
-class P(solver: Solver, val goal: Goal, rules: RuleSet) extends Logger {
+class P(val solver: Solver, val goal: Goal) extends Logger {
    val report = solver.report
-   def logPrefix = solver.logPrefix
+   def logPrefix = solver.logPrefix + "/prover"
    
-   private implicit val presentObj = solver.presentObj
+   implicit val presentObj = solver.presentObj
+   private val rules = solver.rules
    
    private val invertibleBackward = rules.get(classOf[BackwardInvertible]).toList
    private val invertibleForward  = rules.get(classOf[ForwardInvertible]).toList
    private val searchBackward     = rules.get(classOf[BackwardSearch]).toList.sortBy(_.priority).reverse
    private val searchForward      = rules.get(classOf[ForwardSearch]).toList
    
-   val facts = new FactsDB(2)
+   implicit val facts = new FactsDB(this, 2)
    private def initFacts {
       val imports = solver.controller.library.visibleDirect(ComplexTheory(goal.context))
       imports.foreach {
@@ -37,8 +38,9 @@ class P(solver: Solver, val goal: Goal, rules: RuleSet) extends Logger {
             solver.controller.globalLookup.getO(p) match {
                case Some(t:modules.DeclaredTheory) =>
                   t.getDeclarations.foreach {
-                     case c: Constant if c.status == Active => c.tp.foreach {t =>
-                        facts.addSymbolAtom(c.toTerm, t)
+                     case c: Constant if c.status == Active => c.tp.foreach {tp =>
+                        val a = Atom(c.toTerm, tp, c.rl)
+                        facts.addConstantAtom(a)
                      }
                      case _ =>
                   }
@@ -47,7 +49,10 @@ class P(solver: Solver, val goal: Goal, rules: RuleSet) extends Logger {
          case _ =>
       }
    }
-   
+
+   /** convenience function to create a matcher in the current situation */
+   def makeMatcher(context: Context, queryVars: Context) = new Matcher(solver.controller, rules, context, queryVars)
+
    /**
     * tries to solve the goal
     * @param levels the depth of the breadth-first searches
@@ -83,7 +88,7 @@ class P(solver: Solver, val goal: Goal, rules: RuleSet) extends Logger {
    private def backwardSearch(g: Goal, levels: Int) {
       // recurse into subgoals first so that we do not recurse into freshly-added goals
       g.getAlternatives.foreach {case Alternative(sgs,_) =>
-         sgs.foreach {ng => backwardSearch(ng,levels)}
+         sgs.foreach {sg => backwardSearch(sg,levels)}
          if (g.isSolved) return
       }
       // backward search at g
@@ -92,24 +97,46 @@ class P(solver: Solver, val goal: Goal, rules: RuleSet) extends Logger {
          applyAndExpand(at, g)
          if (g.isSolved) return
       }
-   }   
+   }
+   
+   /** statefully changes g to a simpler goal */
+   private def simplifyGoal(g: Goal) {
+      g.setConc(solver.controller.simplifier(g.conc, g.fullContext, rules))
+   }
+   /** simplify a fact */
+   private[proving] def simplifyFact(f: Fact): Fact = {
+      val tpS = solver.controller.simplifier(f.tp, f.goal.fullContext, rules)
+      f.copy(tp = tpS)
+   }
 
    /**
     * applies one tactic to a goal and expands the resulting subgoals
     * @return true if the tactic made any progress
     */
    private def applyAndExpand(at: ApplicableTactic, g: Goal): Boolean = {
-      val altOpt = at.apply()
-      altOpt foreach {alt =>
-         g.addAlternative(alt)
-         log("************************* " + at.label + " at X **************************")
-         log("\n" + goal.present(0)(presentObj, Some(g), Some(alt)))
-         if (!g.isSolved) {
-            // recursively process subgoals
-            alt.subgoals.foreach {sg => expand(sg)}
-         }
+      val alt = at.apply().getOrElse(return false)
+      // simplify the new goal
+      alt.subgoals.foreach {sg =>
+         sg.parent = Some(g) // need to set this before working with the goal
+         simplifyGoal(sg)
       }
-      altOpt.isDefined
+      // avoid cycles/redundancy: skip alternatives with subgoals that we already try to solve
+      val path = g.path
+      val alreadyOnPath = alt.subgoals.exists {sg =>
+         // TODO stronger equality
+         path.exists {ag => (ag.context hasheq sg.context) && (ag.conc hasheq sg.conc)}
+      }
+      if (alreadyOnPath)
+         return false
+      // add the alternative to the proof tree and expand the subgoals
+      g.addAlternative(alt)
+      log("************************* " + at.label + " at X **************************")
+      log("\n" + goal.present(0)(presentObj, Some(g), Some(alt)))
+      if (!g.isSolved) {
+         // recursively process subgoals
+         alt.subgoals.foreach {sg => expand(sg)}
+      }
+      true
    }
    /** exhaustively applies invertible tactics to a goal */
    private def expand(g: Goal) {
@@ -146,7 +173,8 @@ class Prover(controller: Controller) {
             val tp = tpOpt.getOrElse(return Nil)
             if (tp == goal) axioms ::= axiomRule(src) 
             val tpH = tp.head.getOrElse(return Nil)
-            elimProvingRules.filter(_.head == tpH).toList flatMap {r => r(src, tp, goal).toList}
+            //elimProvingRules.filter(_.head == tpH).toList flatMap {r => r(src, tp, goal).toList}
+            Nil // TODO remove when reintegrating into new Prover
       }
       val possibleElim = stack.context flatMap {
          case IncludeVarDecl(p,_) =>

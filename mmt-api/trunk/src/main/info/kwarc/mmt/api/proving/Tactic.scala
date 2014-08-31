@@ -22,10 +22,10 @@ trait Tactic extends Rule {
     * }
     * }}}
     */
-   protected def onApply(l: String)(cont: => Alternative) = {
+   protected def onApply(l: => String)(cont: => Alternative) = {
       val at = new ApplicableTactic {
          def apply() = Some(cont)
-         val label = l
+         def label = l
       }
       Some(at)
    }
@@ -103,7 +103,7 @@ trait ForwardSearch extends Tactic {
  * Low-priority tactics may move expensive computations into the continuation to avoid unnecessary work
  */
 abstract class ApplicableTactic {
-   val label : String
+   def label : String
    /** runs the continuation
     *  @return the new goals, None if application was not possible
     */

@@ -5,7 +5,7 @@ import libraries._
 import objects._
 import objects.Conversions._
 import scala.collection.mutable.{HashMap,HashSet}
-
+/* obsolete
 trait GenericRuleMap {
    def delete(which: Rule => Boolean)
 }
@@ -126,7 +126,7 @@ class RuleStore {
       mkS("abbrev rules", abbrevRules)
       res
    }
-}
+}*/
 
 /** the type of all Rules
  * 
@@ -170,6 +170,12 @@ class RuleSet {
    def getFirst[R<:Rule](cls: Class[R], head: ContentPath): Option[R] = getByHead(cls, head).headOption
 }
 
+/**
+ * passed to [[Rule]]s to permit callbacks to the Solver
+ */
+trait CheckingCallback {
+   def check(j: Judgement)(implicit history: History): Boolean
+}
 
 object TypingRule {
    /**
@@ -279,19 +285,14 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Boolean
 }
 
-/** A TermBasedEqualityRule checks the equality of two terms with certain heads
- *  @param left the head of the first term
- *  @param right the head of the second term 
+/**
+ * A TermBasedEqualityRule checks the equality of two terms without considering types
  */
-abstract class TermBasedEqualityRule(val under: List[GlobalName], val left: GlobalName, val right: GlobalName) extends Rule {
-   val head = left
-   private val opsLeft  = (under:::List(left)).map(p => OMS(p))
-   private val opsRight = (under:::List(right)).map(p => OMS(p))
-   def applicable(tm1: Term, tm2: Term) = (tm1,tm2) match {
-      case (OMA(f1,a1),OMA(f2,a2)) => (f1::a1).startsWith(opsLeft) && (f2::a2).startsWith(opsRight)
-      case (ComplexTerm(c1,_,_,_), ComplexTerm(c2,_,_,_)) => under.isEmpty && c1 == left && c2 == right 
-      case _ => false
-   }
+abstract class TermBasedEqualityRule extends Rule {
+   /** 
+    *  @return true if the rule is applicable to tm1 == tm2 
+    */
+   def applicable(tm1: Term, tm2: Term): Boolean
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm1 the first term
@@ -300,7 +301,24 @@ abstract class TermBasedEqualityRule(val under: List[GlobalName], val left: Glob
     *  @param stack their context
     *  @return true iff the judgment holds
     */
-   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History): Option[Continue[Boolean]]
+   def apply(check: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History): Option[Continue[Boolean]]
+}
+
+
+/** A TermBasedEqualityRule checks the equality of two terms with certain heads
+ *  @param left the head of the first term
+ *  @param right the head of the second term 
+ */
+abstract class TermHeadBasedEqualityRule(val under: List[GlobalName], val left: GlobalName, val right: GlobalName) extends TermBasedEqualityRule {
+   val head = left
+   private val opsLeft  = (under:::List(left)).map(p => OMS(p))
+   private val opsRight = (under:::List(right)).map(p => OMS(p))
+   def applicable(tm1: Term, tm2: Term) = (tm1,tm2) match {
+      case (OMA(f1,a1),OMA(f2,a2)) => (f1::a1).startsWith(opsLeft) && (f2::a2).startsWith(opsRight)
+      case (ComplexTerm(c1,_,_,_), ComplexTerm(c2,_,_,_)) => under.isEmpty && c1 == left && c2 == right 
+      case _ => false
+   }
+   def apply(check: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History): Option[Continue[Boolean]]
 }
 
 /** Congruence as a TermBasedEqualityRule for two terms with the same head
@@ -308,18 +326,18 @@ abstract class TermBasedEqualityRule(val under: List[GlobalName], val left: Glob
  *  This rule can be added whenever a constructor is known to be injective,
  *  which is typically the case for type formation and term introduction.
  */
-class CongruenceRule(head: GlobalName) extends TermBasedEqualityRule(Nil, head, head) {
-   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
+class CongruenceRule(head: GlobalName) extends TermHeadBasedEqualityRule(Nil, head, head) {
+   def apply(checker: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
       (tm1,tm2) match {
          case (ComplexTerm(this.head, args1, cont1, scps1), ComplexTerm(this.head, args2, cont2, scps2)) =>
             if (args1.length == args2.length && cont1.length == cont2.length && scps1.length == scps2.length) {
                val cont = Continue {
                   val args = (args1 zip args2) forall {case (Sub(l1,a1),Sub(l2,a2)) =>
-                     l1 == l2 && solver.check(Equality(stack,a1,a2,None))}
-                  val argsCont = args && solver.check(EqualityContext(stack, cont1, cont2))
+                     l1 == l2 && checker.check(Equality(stack,a1,a2,None))}
+                  val argsCont = args && checker.check(EqualityContext(stack, cont1, cont2))
                   val alpha = (cont2 alpha cont1).get // defined because cont1.length == cont2.length
                   val argsContScps = argsCont && (scps1 zip scps2).forall {case (s1,s2) =>
-                     solver.check(Equality(stack ++ cont1, s1, s2 ^ alpha, None))
+                     checker.check(Equality(stack ++ cont1, s1, s2 ^ alpha, None))
                   }
                   argsContScps
                }
@@ -356,11 +374,18 @@ object ForwardSolutionRule {
    val log = false
 }
 
-/** A SolutionRule tries to solve for an unknown that occurs in a non-solved position.
- * It may also be partial, e.g., by inverting the toplevel operation of a Term without completely isolating an unknown occurring in it.
+/**
+ * A SolutionRule tries to solve for an unknown that occurs in an equality judgement.
  * 
- * @param applications strict apply-operators in whose context head is applied
+ * It may be partial by, e.g., by inverting the toplevel operation of a Term without completely isolating an unknown occurring in it.
+ * 
+ * f(t1) = t2   --->   t1 = g(t2), where t1 contains a target variable that we try to isolate
+ * 
  * @param head the operator that the rule tries to invert
+ * 
+ * Because solution rules must be tried often and may fail, they do not have access to the Solver state
+ * and instead transform one judgement into another.
+ * This also allows reusing them in other situations, in particular when matching already-type-checked terms.
  */
 abstract class SolutionRule(val head: GlobalName) extends Rule {
    /**
@@ -368,17 +393,11 @@ abstract class SolutionRule(val head: GlobalName) extends Rule {
     *   in that case, i is the position of the argument of t1 (starting from 0) that the rule will try to isolate
     */
    def applicable(t: Term) : Option[Int]
-   /** 
-    *  @param solver provides callbacks to the currently solved system of judgments
-    *  @param tm1 the term that contains the unknown to be solved
-    *  @param tm2 the second term
-    *  @param tpOtp the type if known 
-    *  @param stack the context
-    *  @return false if this rule is not applicable;
-    *    if this rule is applicable, it may return true only if the Equality judgement is guaranteed
-    *    (by calling an appropriate callback method such as delay or checkEquality)
+   /**
+    *  @param j the equality in which to isolate a variable on the left side 
+    *  @return the transformed equality and a log message if a step towards isolation was possible
     */
-   def apply(solver: Solver)(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History): Boolean
+   def apply(j: Equality): Option[(Equality,String)]
 }
 
 /** A TypeSolutionRule tries to solve for an unknown that occurs in a non-solved position.
@@ -426,5 +445,5 @@ abstract class ElimProvingRule(val under: List[GlobalName], val head: GlobalName
     * @param stack the context
     * @return if applicable, a continuation that applies the rule
     */
-   def apply(evidence: Term, fact: Term, goal: Term)(implicit stack: Stack): Option[ApplicableProvingRule]
+   def apply(prover: proving.P, evidence: Term, fact: Term, goal: Term)(implicit stack: Stack): Option[ApplicableProvingRule]
 }

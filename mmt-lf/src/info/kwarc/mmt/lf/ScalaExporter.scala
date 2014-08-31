@@ -104,14 +104,11 @@ trait SolutionRules extends uom.RealizationInScala {
             case ApplySpine(OMS(`op`), List(_)) => Some(1)
             case _ => None
          }
-         def apply(solver: Solver)(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History) = (tm1, tm2) match {
-            case (ApplySpine(_, List(t)), rType(y)) => invert(y) match {
-               case Some(x) =>
-                  solver.check(Equality(stack, t, argType(x), None))
-               case None =>
-                  false
+         def apply(j: Equality) = (j.tm1, j.tm2) match {
+            case (ApplySpine(_, List(t)), rType(y)) => invert(y) map {x =>
+                  (Equality(j.stack, t, argType(x), None), "inverting " + op.toString)
             }
-            case _ => false
+            case _ => None
          }
       }
       rule(sr)
@@ -123,14 +120,11 @@ trait SolutionRules extends uom.RealizationInScala {
             case ApplySpine(OMS(`op`), List(_,argType2(_))) => Some(1)
             case _ => None
          }
-         def apply(solver: Solver)(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History) = (tm1, tm2) match {
-            case (ApplySpine(_, List(t, argType2(x2))), rType(y)) => invert(y,x2) match {
-               case Some(x1) =>
-                  solver.check(Equality(stack, t, argType1(x1), None))
-               case None =>
-                  false
+         def apply(j: Equality) = (j.tm1, j.tm2) match {
+            case (ApplySpine(_, List(t, argType2(x2))), rType(y)) => invert(y,x2) map {x1 =>
+                  (Equality(j.stack, t, argType1(x1), None), "inverting " + op.toString)
             }
-            case _ => false
+            case _ => None
          }
       }
    def solve_binary_left(op:GlobalName, argType1: RealizedType, argType2: RealizedType, rType: RealizedType)
@@ -140,14 +134,11 @@ trait SolutionRules extends uom.RealizationInScala {
             case ApplySpine(OMS(`op`), List(argType1(_),_)) => Some(2)
             case _ => None
          }
-         def apply(solver: Solver)(tm1: Term, tm2: Term, tpOpt: Option[Term])(implicit stack: Stack, history: History) = (tm1, tm2) match {
-            case (ApplySpine(_, List(argType1(x1), t)), rType(y)) => invert(x1,y) match {
-               case Some(x2) =>
-                  solver.check(Equality(stack, t, argType2(x2), None))
-               case None =>
-                  false
+         def apply(j: Equality) = (j.tm1, j.tm2) match {
+            case (ApplySpine(_, List(argType1(x1), t)), rType(y)) => invert(x1,y) map {x2 =>
+                  (Equality(j.stack, t, argType2(x2), None), "inverting " + op.toString)
             }
-            case _ => false
+            case _ => None
          }
       }
 }

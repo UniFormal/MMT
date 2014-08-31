@@ -7,7 +7,7 @@ trait Logger {
    // fields are def's not val's to avoid surprises during instantiation/inheritance
    protected def report: Report
    def logPrefix: String
-   protected def log(s : => String) = report(logPrefix, s)
+   protected def log(s : => String, subgroup: Option[String] = None) = report(logPrefix+subgroup.map("-"+_).getOrElse(""), s)
    protected def log(e: Error) = report(e)
    protected def logGroup[A](a: => A) : A = {
       report.indent
@@ -27,14 +27,15 @@ class Report extends Logger {
    private[api] val groups = scala.collection.mutable.Set[String]("user", "error")
 
    /** logs a message if logging is switched on for the group */
-   def apply(group : => String, msg : => String) {
+   def apply(prefix : => String, msg : => String) {
       lazy val caller = {
         val s = Thread.currentThread.getStackTrace()
         //TODO could also be Logger.log etc.
         val i = s.indexWhere(e => e.getClassName == getClass.getName && e.getMethodName == "apply")
         s(i+1).toString
       }
-	   if (groups.contains(group) || groups.contains("*")) handlers.foreach(_.apply(ind, caller, group, msg))
+      val prefixList = utils.MyList.fromString(prefix, "/")
+	   if (prefixList.forall(p => groups.contains(p))) handlers.foreach(_.apply(ind, caller, prefix, msg))
    }
    /** logs an error */
    def apply(e : Error) {
