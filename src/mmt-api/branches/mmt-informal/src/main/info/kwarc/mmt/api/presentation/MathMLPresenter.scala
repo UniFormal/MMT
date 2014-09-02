@@ -204,12 +204,11 @@ class MathMLPresenter extends NotationBasedPresenter {
      }
    }
       
-   /*override def doIdenMarker(arg : Delim)(implicit pc: PresentationContext) {
+   override def doIdenMarker(arg : Delim)(implicit pc: PresentationContext) {
      pc.html.mi {
        pc.out(arg.s)
      }
    }
-   */
    
    override def doErrorMarker(args: List[Cont])(implicit pc: PresentationContext){
      pc.html.merror{

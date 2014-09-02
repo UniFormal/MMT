@@ -189,11 +189,11 @@ class ModuleFlattener(controller : Controller) {
   
   
   private def rewrite(t : Term)(implicit rules : HashMap[Path, Term]) : Term = t match {
-    case OMS(p) => 
+    case OMID(p) => 
       if (rules.isDefinedAt(p)) rules(p) else t
     case OMA(f, args) => OMA(rewrite(f), args.map(rewrite))
     case OMBINDC(b, con, bodies) => OMBINDC(rewrite(b), rewrite(con), bodies.map(rewrite))
-    case _ => t
+    case _ => println(t.getClass, t.toNode);t
   }
    
   private def rewrite(con : Context)(implicit rules : HashMap[Path, Term]) : Context = {
@@ -283,7 +283,7 @@ class FlatteningPresenter extends Presenter(new MathMLPresenter) {
         newThys foreach { t => 
           val out = (folder / t.name.toPath).setExtension("html")
           this.outputTo(out) {
-            wrapScope(standalone, t.path)(doTheory(t))
+            wrapScope(standalone, thy.path)(doTheory(t))
           }
         }
       case view : DeclaredView =>

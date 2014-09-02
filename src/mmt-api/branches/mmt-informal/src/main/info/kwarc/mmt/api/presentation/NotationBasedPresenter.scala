@@ -195,24 +195,11 @@ class NotationBasedPresenter extends ObjectPresenter {
    def doNumberMarker(arg : Delim)(implicit pc: PresentationContext) {
      doOperator("#num_" + arg.s)
    }
-   /*def doIdenMarker(arg : Delim)(implicit pc: PresentationContext) {
+   
+   def doIdenMarker(arg : Delim)(implicit pc: PresentationContext) {
      doOperator("#id_" + arg.s)
    }
-   def doParaMarker(content: List[Delim], open:String="(", close:String=")", separators:List[String])(implicit pc: PresentationContext){
-     var body = ""
-     var i=0
-     val sepLength = separators.length
-     val cont = content.toArray
-     val seps = separators.toArray
-     for(i <- 0 to content.length-1){
-    	 if(i>sepLength) 
-    	   body += cont(i) + ","
-    	 else 
-    	   body += cont(i)+ seps(i) 
-	 }
-     body += cont(i)
-     doOperator(open + body + close)
-   }*/
+
    def doErrorMarker(args: List[Cont])(implicit pc: PresentationContext){
       doOperator("#err_")
 	  doBracketedGroup {
@@ -505,9 +492,8 @@ class NotationBasedPresenter extends ObjectPresenter {
                            doFractionMarker(a map aux, b map aux, l)
                         case NumberMarker(value) => 
                            doNumberMarker(value)
-                        /*case IdenMarker(value) => 
+                        case IdenMarker(value) => 
                            doIdenMarker(value)
-                           */
                         case ErrorMarker(markers)=>
                             def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
                             doErrorMarker(markers map aux)

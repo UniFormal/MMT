@@ -203,20 +203,11 @@ case class NumberMarker(value : Delim) extends PresentationMarker {
   } 
 }
 /**Marker for Identifier in MathML -*/
-/*case class IdenMarker(value: Delim) extends PresentationMarker {
+case class IdenMarker(value: Delim) extends PresentationMarker {
   def flatMap(f : Marker => List[Marker]) = {
     IdenMarker(value)
   } 
 }
-*/
-
-/** Marker for <mfenced> MathML tag*/
-/*case class ParaMarker(content: List[Marker]) extends PresentationMarker{
-  def flatMap(f : Marker => List[Marker]) = {
-    ParaMarker(content.flatMap(f))
-  }
-}
-*/
 
 /**Marker for error elements in MathML*/
 case class ErrorMarker(content: List[Marker]) extends PresentationMarker{
@@ -375,20 +366,9 @@ object PresentationMarker {
               left = others
               sofar ::= NumberMarker(Delim(w.substring(5)))
               
-          /*  case Delim(w) if w.startsWith("#id_") => //mathml identifier
+            case Delim(w) if w.startsWith("#id_") => //mathml identifier
               left = others
               sofar ::= IdenMarker(Delim(w.substring(4)))
-            case Delim("(") => 						//mathml fenced (paranthesis)
-              get_until(List(")"), left, true) match {
-               case None => 
-                 sofar ::= left.head
-                 left = left.tail
-               case Some((taken, end)) => 
-                 val processed = introducePresentationMarkers(taken)
-                 sofar ::= ParaMarker(processed)
-                 left = end
-             }
-             */
               // [tdMarker].label(LABEL)
             case Delim(w) if w.startsWith(".label(") => //TODO: support markers as labels
               if(w.endsWith(")"))
