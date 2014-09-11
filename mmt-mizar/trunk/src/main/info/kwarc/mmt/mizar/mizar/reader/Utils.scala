@@ -35,7 +35,7 @@ object UtilsReader {
 		}
 		
 		val rightsymbolnr = try {
-		  Some((n \ "@leftargnr").text.toInt)
+		  Some((n \ "@rightsymbolnr").text.toInt)
 		} catch {
 		  case _ : Exception => None
 		}

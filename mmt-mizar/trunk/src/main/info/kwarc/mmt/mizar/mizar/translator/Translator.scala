@@ -141,11 +141,11 @@ class MizarCompiler extends archives.Importer {
    	println("Translating article " +  name)
    	
    	TranslationController.currentBase = mml
-       TranslationController.currentVersion = version
-       TranslationController.currentAid = aid
+    TranslationController.currentVersion = version
+    TranslationController.currentAid = aid
+   	UtilsReader.parseFormats(getNode(frx))
    	UtilsReader.parseSymbols(getNode(dcx))
    	UtilsReader.parseSymbols(getNode(idx))
-   	UtilsReader.parseFormats(getNode(frx))
    	
    	ParsingController.selectors(aid) = new scala.collection.mutable.HashMap[Int,Tuple2[Int,Int]]
    	ParsingController.attributes(aid) = new scala.collection.mutable.HashMap[Int,Int]

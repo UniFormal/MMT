@@ -193,12 +193,43 @@ object TranslationController {
 		"x" + i
 	}
 	
-	def makeConstant(n: LocalName, t: Term) =
+	def makeConstant(n: LocalName, t: Term) : Constant =
     Constant(OMMOD(currentTheory), n, None, Some(t), None, None)
-  def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term]) =
+  def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term]) : Constant =
     Constant(OMMOD(currentTheory), n, None, tO, dO, None)
-      
-  def makeDefConstant(kind : String, absnr : Int, tp : Term, df : Term) = {
+    
+  def addNotation(inst : Term, kind : String, absnr : Int) = {
+    val lname = LocalName(kind + absnr.toString)
+    val name = currentTheory ? lname
+    ParsingController.dictionary.getFormatByAbsnr(currentAid, kind, absnr) match {
+      case Some(format) if format.symbol != null => //found a format so will add notation
+        val argnr = format.argnr
+        val leftargnr = format.leftargnr
+        val sname = Delim(format.symbol.name)
+        val args = 1.to(argnr).flatMap {x => 
+          val d = if (x == leftargnr + 1) sname else Delim(",")
+          d :: Arg(x) :: Nil
+        }.toList.tail
+        val markers : List[Marker] = format.rightsymbol match {
+          case None => //single delimiter
+            if (leftargnr == 0) sname :: args
+            else if (leftargnr == argnr) args ::: List(sname)
+            else args
+          case Some(rightsymbol) => // double delimiter 
+            val rsname = Delim(rightsymbol.name)
+            sname :: (args ::: List(rsname)) //TODO, what if not 0 - argnr pair ?
+        }
+        val not = new TextNotation(Mixfix(markers), Precedence.integer(0), None)
+        val alias = ParsingController.resolveDef(currentAid, kind, absnr).map(LocalName(_))
+        val notAss = symbols.Constant(inst, MMTUtils.mainPatternName, alias, None, None, None, NotationContainer(not))
+        TranslationController.controller.add(notAss)
+      case x =>
+        None
+    }
+  }
+	
+	
+  def makeDefConstant(kind : String, absnr : Int, tp : Term, df : Term) : Constant = {
 	  val lname = LocalName(kind + absnr.toString)
 	  val name = currentTheory ? lname
 	  ParsingController.dictionary.getFormatByAbsnr(currentAid, kind, absnr) match {
@@ -221,10 +252,10 @@ object TranslationController {
 	          val rest = 0.to(argnr - 1).toList.map(Arg(_))
 	          first :: (rest ::: List(last))
 	      }
-        val not = new TextNotation(Mixfix(markers), Precedence.integer(0), None)
-        val alias = ParsingController.resolveDef(currentAid, kind, absnr).map(LocalName(_))
-        val notC = NotationContainer.apply(not)
-        Constant(OMMOD(currentTheory), lname, alias ,Some(tp), Some(df), None, notC)
+          val not = new TextNotation(Mixfix(markers), Precedence.integer(0), None)
+          val alias = ParsingController.resolveDef(currentAid, kind, absnr).map(LocalName(_))
+          val notC = NotationContainer.apply(not)
+          Constant(OMMOD(currentTheory), lname, alias ,Some(tp), Some(df), None, notC)
 	    case _ => 
 	      makeConstant(lname, Some(tp), Some(df))
 	  }

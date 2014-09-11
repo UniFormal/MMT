@@ -92,8 +92,6 @@ object ParsingController {
 	  deftheorems(d.defBlockNr) = unmatchedDts //removing used deftheorems
 	  val dts = matchedDts.toList //matched def theorems will be added to the constructed definition
 	  
-	  //println(d.constraid + d.constrkind + d.absconstrnr + dts)
-	  
 	  val args = d.args.getOrElse(throw new Error("Controller.buildDefinition : no args found"))
 	  val prefix = d.isRedef match {
 	    case true => "Redef_" + d.kind + d.patternNr + "_of_" + d.defaid + "_"
@@ -147,8 +145,6 @@ object ParsingController {
 		    }
 		    None //TODO remove for notations		  
 		  case None => 
-		    //println(aid + kind + absnr)
-		    //dictionary.symbols.filter(x => x.aid != None).map(s => (println(s.name + " = " + s.aid + " " + s.kind + " " + s.absnr + " " + s.formatnr + " " + s.symbolnr)))
 		    None
 		}
 	}

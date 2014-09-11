@@ -25,12 +25,15 @@ class Format(val kind : String, val nr : Int, val symbolnr : Int, val argnr : In
   def rightsymbol  = _rightsymbol
   
   def setAid(aid : String) = _aid = Some(aid)
-  def setAbsnr(i : Int) = _absnr
+  def setAbsnr(i : Int) = _absnr = i
   def setSymbol(s : Symbol) = _symbol = s
   def setRightsymbol(sO : Symbol) = _rightsymbol = Some(sO)
+  override def toString = s"F = {kind: $kind, nr: $nr, symnr: $symbolnr, argnr: $argnr, largnr: $leftargnr, rsymbnr: $rightsymbolnr, aid: $aid, absnr: $absnr, sym: $symbol}"
 }
 
-class Symbol(val kind : String, val nr : Int, val name : String)
+class Symbol(val kind : String, val nr : Int, val name : String) {
+  override def toString = s"S = {kind: $kind, nr: $nr, name: $name}"
+}
 
 class Dictionary(var formats : List[Format]) {
   var symbols : List[Symbol] = Nil
@@ -52,7 +55,7 @@ class Dictionary(var formats : List[Format]) {
       //numbers must match
       if (f.symbolnr != s.nr) return false
       //exceptions for primitives
-      if (f.kind == "K" && (s.kind == "{" || s.kind == "[")) return true      
+      if (f.kind == "K" && (s.kind == "{" || s.kind == "[")) return true
       //general rule
       f.kind == s.kind
     }
@@ -69,11 +72,14 @@ class Dictionary(var formats : List[Format]) {
     
     symbols ::= s
     formats.find(matches).map(_.setSymbol(s))
-    formats.find(matchesRight).map(_.setRightsymbol(s))    
+    formats.find(matchesRight).map(_.setRightsymbol(s))     
   }
 
-  def addPattern(kind : String, formatnr : Int, aid : String) {
-    getFormat(kind, formatnr).map(_.setAid(aid))
+  def addPattern(kind : String, formatnr : Int, aid : String, absnr : Int) {
+    getFormat(kind, formatnr) foreach {f =>
+      f.setAid(aid)
+      f.setAbsnr(absnr)
+    }
   }
   
 
@@ -109,7 +115,7 @@ class Dictionary(var formats : List[Format]) {
   
   
   def getFormatByAbsnr(aid : String, kind : String, absnr : Int) : Option[Format] = {
-    formats.find(s => s.kind == kind && s.absnr == absnr && s.aid == Some(aid))
+    formats.find(f => f.kind == kind && f.absnr == absnr && f.aid == Some(aid))
   }
   
   /**

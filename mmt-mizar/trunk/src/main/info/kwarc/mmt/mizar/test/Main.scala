@@ -81,7 +81,9 @@ object Main {
         try {
           dumpPatterns(args(0))
         } catch {
-          case e : Throwable => println("dumping patterns failed, mml base path expected as first argument (ending with /)")
+          case e : Throwable => 
+            println(e)
+            println("dumping patterns failed, mml base path expected as first argument (ending with /)")
         }
 	    //val mizar = new MizarCompiler
         //mizar.init(new Controller)
