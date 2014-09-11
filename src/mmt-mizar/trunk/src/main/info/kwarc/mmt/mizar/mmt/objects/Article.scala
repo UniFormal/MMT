@@ -25,26 +25,26 @@ object artPatterns {
   
   val SynonymicNotation = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("SynonymicNotation"),
       Context(
-          VarDecl("nr", None, None, ???),
-          VarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None, ???),
-          VarDecl("ref", Some(Mizar.constant("prop")), None, ???)
+          VarDecl("nr", None, None, None),
+          VarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None, None),
+          VarDecl("ref", Some(Mizar.constant("prop")), None, None)
           ),
-      Context(VarDecl("notation",Some(OMV("ref")), None, ???))
+      Context(VarDecl("notation",Some(OMV("ref")), None, None))
   )
   
   val AntonymicNotation = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("AntonymicNotation"),
       Context(
-          VarDecl("nr", None, None, ???),
-          VarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None, ???),
-          VarDecl("ref", Some(Mizar.constant("prop")), None, ???)
+          VarDecl("nr", None, None, None),
+          VarDecl("args", Some(Rep(Mizar.constant("tp"),OMV("nr"))), None, None),
+          VarDecl("ref", Some(Mizar.constant("prop")), None, None)
           ),
-      Context(VarDecl("notation", Some(Mizar.apply(Mizar.constant("not"),OMV("ref"))), None, ???))
+      Context(VarDecl("notation", Some(Mizar.apply(Mizar.constant("not"),OMV("ref"))), None, None))
   )
   
   
   val Lemma = Pattern(OMMOD(Mizar.MizarPatternsTh), LocalName("Lemma"),
-      Context(VarDecl("prop", Some(Mizar.constant("prop")),None, ???)),
-      Context(VarDecl("lemma", Some(Mizar.apply(Mizar.constant("proof"), OMV("prop"))), None, ???)))
+      Context(VarDecl("prop", Some(Mizar.constant("prop")),None, None)),
+      Context(VarDecl("lemma", Some(Mizar.apply(Mizar.constant("proof"), OMV("prop"))), None, None)))
   
 }
 

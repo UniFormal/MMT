@@ -65,13 +65,12 @@ object Mizar {
 	def eq(t1 : Term, t2 : Term) = apply(constant("R1"), t1, t2)
 	
 	def exists(v : String, tp : Term, prop : Term) = 
-	  not(OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None, ???)), not(prop)))
+	  not(OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None, None)), not(prop)))
 	
 	def forall(v : String, tp : Term, prop : Term) = 
-	  OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None, ???)), prop)
+	  OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None, None)), prop)
 	
 	def attr(t : Term) = apply(Mizar.constant("attr"), t)
-	  
 	def adjective(cluster : Term, typ : Term) = apply(Mizar.constant("adjective"), typ, cluster)
 	def cluster(a1 : Term, a2 : Term) = apply(Mizar.constant("cluster"), a1, a2) 
 	def choice(tp : Term) = apply(Mizar.constant("choice"), tp)
@@ -79,9 +78,8 @@ object Mizar {
 	  apply(Mizar.constant("fraenkel"), t, Lambda(LocalName(v), Mizar.any, p), Lambda(LocalName(v), Mizar.any, f))
 }
 
-
-
 object MMTUtils {
+    val mainPatternName = OMV.anonymous 
   
 	def getTheoryPath(aid : String) : MPath = {
 	  if (aid == TranslationController.currentAid)
@@ -121,8 +119,6 @@ object MMTUtils {
 			Pi(LocalName("x"), SeqMap(Mizar.any, LocalName("i"), OMI(argNr)), body)
 	}
 	
-	def tmparr(t1 : Term, t2 : Term) : Term = Apply(Mizar.constant("TeST"),Apply(t1, t2))
-	
 	def argTypes(args : String, types : String, argNr : String, body : Term) : Term = {
 	  	     Arrow( 
 	  	         SeqMap(Mizar.be(Index(OMV(args), OMV("i")),Index(OMV(types),OMV("i"))), LocalName("i"), OMV(argNr)),
@@ -130,7 +126,7 @@ object MMTUtils {
 	}
 	
 	def argTypes(args : String, types : List[Term], argNr : Int, body : Term) : Term = {
-	  	     tmparr( 
+	  	     Arrow( 
 	  	         SeqMap(Mizar.be(Index(OMV(args), OMV("i")),Index(Sequence(types : _*),OMV("i"))), LocalName("i"), OMI(argNr)),
 	         	 body)
 	}

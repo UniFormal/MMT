@@ -198,7 +198,6 @@ object ArticleParser{
 	    val start = UtilsReader.parseSourceRef(n)
 	    val end = UtilsReader.parseSourceRef(n.child.last)
 	    val sreg = Some(SourceRegion(start,end))
-	    
 	    var notations = n.child.filter(_.label == "Pattern").map(parseNotationPattern)
 	    notations foreach {not => 
 	      not.sreg = sreg 
@@ -218,8 +217,7 @@ object ArticleParser{
 		val formatnr = (n \ "@formatnr").text.toInt
 		val nr = (n \ "@nr").text.toInt
 		val relnr = (n \ "@relnr").text.toInt
-		
-		ParsingController.dictionary.addPattern(kind, formatnr, aid)
+		ParsingController.dictionary.addPattern(kind, formatnr, aid, absconstrnr)
 		new MizNotation(aid, kind, nr, relnr, constrAid, absconstrnr, antonymic)
 	}
 	

@@ -20,38 +20,39 @@ object MMTResolve {
 			kind match {
 			  case "R" => 
 			    val lname =  aid+kind+absnr match {
-			    	case "HIDDENR1" => "R1" :: Nil
-			    	case "HIDDENR2" => "R2" :: Nil
-			    	case _ => (kind + absnr) :: "pred" :: Nil
+			    	case "HIDDENR1" => "==" :: Nil
+			    	case "HIDDENR2" => "in" :: Nil
+			    	case _ => (kind + absnr) :: MMTUtils.mainPatternName.toPath ::  Nil
 			    }
 			    OMID(MMTUtils.getPath(aid, lname))
 			  case "M" => 
 			    val lname =  aid+kind+absnr match {
-			    	case "HIDDENM1" => "M1" :: Nil	
-			    	case _ => (kind + absnr) :: "mode" :: Nil
+			    	case "HIDDENM1" => "set" :: Nil //oficially object but we use set for now
+			    	case "HIDDENM2" => "set" :: Nil
+			    	case _ => (kind + absnr) :: MMTUtils.mainPatternName.toPath :: Nil
 			    }
 			    OMID(MMTUtils.getPath(aid, lname))
 			  case "K" => 
-			    val lname = (kind + absnr) :: "func" :: Nil
+			    val lname = (kind + absnr) :: MMTUtils.mainPatternName.toPath :: Nil
 			    OMID(MMTUtils.getPath(aid, lname))
 			  case "V" => 
 			    
 			    val lname = try {ParsingController.attributes(aid).get(absnr) match {
-			      case Some(mstr) =>  ("L" + mstr) :: "strict" :: Nil
-			      case None => (kind + absnr) :: "attr" :: Nil
+			      case Some(mstr) =>  ("L" + mstr) :: "strict" :: Nil //non-default for scheme
+			      case None => (kind + absnr):: MMTUtils.mainPatternName.toPath :: Nil
 			    }} catch {
-			      case _ : Throwable =>  (kind + absnr) :: "attr" :: Nil
+			      case _ : Throwable =>  (kind + absnr) :: MMTUtils.mainPatternName.toPath :: Nil
 			    }
 			    OMID(MMTUtils.getPath(aid, lname))
 
 			  case "L" => 
-			    val lname = (kind + absnr) :: "struct" :: Nil
+			    val lname = (kind + absnr) :: MMTUtils.mainPatternName.toPath :: Nil
 			    OMID(MMTUtils.getPath(aid, lname))
 			  case "U" =>
-			    val lname = ("U" + absnr) :: ("sel") :: Nil
+			    val lname = ("U" + absnr) :: MMTUtils.mainPatternName.toPath :: Nil
 			    OMID(MMTUtils.getPath(aid, lname))
 			  case "G" => 
-			    val lname = ("L" + absnr) :: "aggr" :: Nil
+			    val lname = ("L" + absnr) :: "aggr" :: Nil //non-default for scheme
 			    OMID(MMTUtils.getPath(aid, lname))
 			  
 			}
