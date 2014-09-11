@@ -45,7 +45,10 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
          case (Some(t), Some(d)) => OMATTR(OMATTR(varToOMATTR, OMID(mmt.mmttype), t), OMID(mmt.mmtdef), d)
       }
    }
-   def toConstant(home: Term) = symbols.Constant(home, name, None, tp, df, None)
+   def toConstant(home: Term, con : Context) = {
+     val sub = con.map(vd => vd.name / (OMS(home % name)))
+     symbols.Constant(home, name, None, tp map(_^? sub), df map(_^? sub), None)
+   }
    def toNode = <om:OMV name={name.toPath}>{mdNode}{tpN}{dfN}</om:OMV> 
    def toCMLQVars(implicit qvars: Context) = <bvar><ci>{name.toPath}</ci>{(tp.toList:::df.toList).map(_.toCMLQVars)}</bvar>
    def head = tp.flatMap(_.head)
@@ -182,6 +185,21 @@ case class Context(variables : VarDecl*) extends Obj {
       }
       Context(newvars : _*)
    }
+   
+   /** @return an iterator over all declarations in their respective context */
+   def declsInContext = new Iterator[(Context,VarDecl)] {
+      private var sofar = Context()
+      private var todo  = variables
+      def hasNext = !todo.isEmpty
+      def next = {
+         val hd::tl = todo
+         val ret = (sofar,hd)
+         sofar = sofar ++ hd
+         todo = tl
+         ret
+      }
+   }
+   
    /** applies a function to each VarDecl, each time in the respective context
     * @return the list of results
     */
@@ -331,15 +349,22 @@ object Context {
       c
 	}
 	/** generate new variable name similar to x */
-   private def rename(x: LocalName) = x / ""
-   /** picks a variable name that is fresh for context, preferably x */
+   private def rename(x: LocalName) = {
+      if (x.length == 1)
+         x / "0"
+      else x.last match {
+         case SimpleStep(n) if n.matches("[0-9]+") => x.init / ((n.toInt+1).toString)
+         case _ => x / "0"
+      }
+   }
+   /** picks a variable name that is fresh for context, preferably x1 */
    def pickFresh(context: Context, x1: LocalName): (LocalName,Substitution) = {
       var x = x1
       while (context.isDeclared(x)) {
          x = rename(x)
       }
       (x, x1 / OMV(x))
-   } 
+   }
 	/** returns an alpha-renamed version of con that contains no variable from forbidden, and a substitution that performs the alpha-renaming */
 	def makeFresh(con: Context, forbidden: List[LocalName]) : (Context,Substitution) = {
 	   var sub = Substitution()

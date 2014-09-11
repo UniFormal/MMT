@@ -425,7 +425,21 @@ object PresentationMarker {
      } else {
        None
      }
-     
+   }
+   
+   /** recursively replaces all presentation markers with their list of children and flattens the whole list 
+    *  @return all non-presentation markers in m in traversal order
+    */ 
+   def flatten(m: Marker): List[Marker] = m match {
+      case p: PresentationMarker =>
+         var res: List[Marker] = Nil
+         p flatMap {m =>
+            val ms = flatten(m)
+            res = res ::: ms
+            Nil
+         }
+         res
+      case m => List(m)
    }
 }
 /**

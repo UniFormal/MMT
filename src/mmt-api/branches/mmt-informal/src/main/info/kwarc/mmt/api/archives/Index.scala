@@ -46,8 +46,11 @@ abstract class Importer extends TraversingBuildTarget {
     private def writeToContent(a: Archive, mod: Module) {
        val contFile = a.MMTPathToContentPath(mod.path)
        log("[  -> content   ]     " + contFile.getPath)
-       val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{mod.toNode}</omdoc>
-       xml.writeFile(omdocNode, contFile)
+       val w = new presentation.FileWriter(contFile)
+       w("""<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">""")
+       mod.toNode(w)
+       w("</omdoc>")
+       w.done
     }
     /** extract and write the relational information about a knowledge item */
     private def writeToRel(se: StructuralElement, file: File) {
@@ -64,10 +67,11 @@ abstract class Importer extends TraversingBuildTarget {
         // write narration file
         val narrFile = outPath(a, inPath)
         log("[  -> narration ]     " + narrFile)
-        xml.writeFile(doc.toNode, narrFile)
+        val node = doc.toNode
+        xml.writeFile(node, narrFile)
         // write relational file
         writeToRel(doc, a/relational / inPath)
-        doc.getModulesResolved(controller.library) foreach {mod => {
+        doc.getModulesResolved(controller.globalLookup) foreach {mod => {
            // write content file
            writeToContent(a, mod)
            // write relational file
@@ -79,7 +83,13 @@ abstract class Importer extends TraversingBuildTarget {
        val controller = new Controller(report)
        val Current(inFile, narrPath) = curr
        val narrFile = outPath(a, narrPath)
-       val doc = controller.read(narrFile, Some(DPath(a.narrationBase / narrPath)))(new ErrorLogger(report))
+       val doc = try {
+         controller.read(narrFile, Some(DPath(a.narrationBase / narrPath)))(new ErrorLogger(report))
+       } catch {
+         case e: java.io.IOException =>
+           report(LocalError("io error, could not clean content of " + narrFile).setCausedBy(e))
+           return
+       }
        //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly 
        doc.getItems foreach {
           case r: documents.MRef =>

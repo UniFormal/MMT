@@ -14,7 +14,7 @@ abstract class RenderingHandler {
      write(s)
    }
    /** output an XML node */
-   def apply(N : Node) {apply(N.toString)}
+   def apply(N : NodeSeq) {apply(N.toString)}
    
    // Convenience methods for rendering text
    /** output a string with line ending */

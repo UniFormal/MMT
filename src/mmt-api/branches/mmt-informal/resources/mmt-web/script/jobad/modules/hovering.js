@@ -44,7 +44,7 @@ var hovering = {
 		}
 		// hover on variable: select declaration
 		if (target.hasAttribute('jobad:varref')) {
-			var v = $(target).parents().filter(function() {
+			var v = $(target).parents('math').find('*').filter(function() {
                 return $(this).attr('jobad:mmtref') == targetObj.attr('jobad:varref');
 			})
 			mmt.setSelected(v[0]);

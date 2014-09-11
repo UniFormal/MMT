@@ -8,6 +8,14 @@ import objects._
 import utils.MyList.fromList
 import collection.immutable.{HashSet, HashMap}
 
+/* idea: elaboration is structure level simplification
+ * defined -> declared module
+ * mod exp -> materialization
+ * structure -> elaboration
+ * constant of THY type <-> theory
+ * view -> theory ?
+ */
+
 /**
  * Elaborates modules by enriching with induced statements
  */

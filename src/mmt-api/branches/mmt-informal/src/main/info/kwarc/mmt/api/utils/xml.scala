@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.utils
 import scala.xml._
+import scala.io.Source
 
 object xml {
    def openTag(label: String, atts: List[(String,String)], close: Boolean = false) = {
@@ -15,8 +16,8 @@ object xml {
    
    /** reads an XML file and returns the first Node in it */
    def readFile(file : File) : scala.xml.Node = {
-      val src = scala.io.Source.fromFile(file.toJava, "utf-8") // utf-8 forced due to error with default codec
-      val cp = scala.xml.parsing.ConstructingParser.fromSource(src, true)
+      val src = Source.fromFile(file.toJava, "utf-8") // utf-8 forced due to error with default codec
+      val cp = parsing.ConstructingParser.fromSource(src, true)
       val N = try {
          cp.document()(0)
       } catch {case e: Exception =>
@@ -25,14 +26,15 @@ object xml {
       src.close
       N
    }
-   
+
    /** writes an XML Node to a file
     *  
     * overwrites existing files, creates directories if necessary
     */
    def writeFile(N : scala.xml.Node, file : File) {
       val out = File.Writer(file)
-      out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "\n" + new PrettyPrinter(160,2).format(N))
+      val s = new PrettyPrinter(160,2).format(N)
+      out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "\n" + s)
       out.close
    }
   

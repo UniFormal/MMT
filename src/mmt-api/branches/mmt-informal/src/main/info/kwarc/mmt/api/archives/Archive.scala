@@ -20,8 +20,6 @@ case class CompilationStep(from: String, to: String, compiler: Compiler)
 case class Current(file: File, path: List[String])
                                                                        
 abstract class ROArchive extends Storage with Logger {
-  //def traverse(dim: String, in: List[String], filter: String => Boolean)(f: List[String] => Unit)
-
   val rootString: String
   override def toString = "archive " + rootString
   val properties: Map[String, String]
@@ -71,7 +69,7 @@ abstract class WritableArchive extends ROArchive {
     val timestamps = new TimestampManager(this, root / "META-INF" / "timestamps" )
     val errors     = new ErrorManager(this)
     
-    def includeDir(n: String) : Boolean = n != ".svn"
+    def includeDir(n: String) : Boolean = n != ".svn" && n != ".mmt"
 
     val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, this/narration)
     /** Get a module from content folder */ 
@@ -87,10 +85,6 @@ abstract class WritableArchive extends ROArchive {
        }
     }
     
-    // obsolete compilation errors
-    //protected val compErrors = new LinkedHashMap[List[String], List[SourceError]]
-    //def getErrors(l: List[String]) = compErrors.getOrElse(l, Nil)
-
     protected def deleteFile(f: File) {
        log("deleting " + f)
        f.delete

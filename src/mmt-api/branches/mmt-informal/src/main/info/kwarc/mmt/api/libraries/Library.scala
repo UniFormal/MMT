@@ -75,7 +75,7 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
    /**
     * special case of get with more specific types
     */
-   def getModule(p : MPath) : Module = modulesGetNF(p)
+   def getModule(p : MPath) : Module = getAs(classOf[Module], p)
    
    /**
     * Special case of get that throws GetError with a standard error message
@@ -91,8 +91,14 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
     */
    def get(p: Path, error: String => Nothing) : ContentElement = p match {
       case doc : DPath => throw ImplementationError("getting documents from library impossible")
-      case mp: MPath => modulesGetNF(mp)
-      //case doc ? t / !(str)) => getStructure(doc ? t ? str)    
+      case mp: MPath => mp.name.length match {
+        case 1 => modulesGetNF(mp)
+        case _ => get(mp.toGlobalName, error) match {
+          case nm: NestedModule => nm.module
+//          case s: Structure => s
+          case e => error("complex module path did not resolve to a declaration allowed as a module: " + e)
+        }
+      }
       //lookup in atomic modules
       case OMPMOD(p, args) % name => get(p, error) match {
          case t: DefinedTheory =>
@@ -139,12 +145,15 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
             try {
                getInLink(v, name, error)
             } catch {
-               case PartialLink() => get(v.from % name) match {
+               case PartialLink() =>
+                 val da = get(v.from % name) match {
                   // return default assignment
                   case c:Constant => ConstantAssignment(v.toTerm, name, None, None)
                   case s:Structure => DefLinkAssignment(v.toTerm, name, s.from, Morph.empty)
                   case _ => throw ImplementationError("unimplemented default assignment")
                }
+               da.setOrigin(DefaultAssignment)
+               da
             }
       }
       case OMDL(h,n) % name =>
@@ -153,11 +162,13 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
             getInLink(s, name, error)
          } catch {case PartialLink() =>
             // return default assignment
-            get(s.from % name) match {   
+            val da = get(s.from % name) match {   
                case c:Constant => ConstantAssignment(s.toTerm, name, None, Some(OMID(s.to % (s.name / name))))
                case d:Structure => DefLinkAssignment(s.toTerm, name, d.from, OMDL(s.to, s.name / name))
                case _ => throw ImplementationError("unimplemented default assignment")
             }
+            da.setOrigin(DefaultAssignment)
+            da
          }
       // lookup in complex modules
       case (home @ ComplexTheory(cont)) % name =>
@@ -195,9 +206,8 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
          throw GetError("name " + name + " not found in " + cont)
       case TUnion(ts) % name => ts mapFind {t =>
          getO(t % name)
-      } match {
-         case Some(d) => d
-         case None => throw GetError("union of theories has no declarations except includes")
+      } getOrElse {
+         throw GetError("union of theories has no declarations except includes")
       }
       case OMCOMP(Nil) % _ => throw GetError("cannot lookup in identity morphism without domain: " + p)
       case (m @ OMCOMP(hd::tl)) % name =>
@@ -215,9 +225,8 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
       case Morph.empty % name => throw GetError("empty morphism has no assignments")
       case MUnion(ms) % name => ms mapFind {
          m => getO(m % name)
-      } match {
-         case Some(a) => a
-         case None => throw GetError("union of morphisms has no assignments except includes")
+      } getOrElse {
+         throw GetError("union of morphisms has no assignments except includes")
       }
    }
 

@@ -72,17 +72,13 @@ class MWSHarvestExporter extends Exporter {
 
 class ModuleFlattener(controller : Controller) {
   val memory = controller.memory
+  memory.ontology.getInds(ontology.IsTheory) foreach {p => 
+    controller.get(p)
+  } 
+  memory.ontology.getInds(ontology.IsView) foreach {p => 
+    controller.get(p)
+  } 
   val modules = controller.memory.content.getModules
-  
-  def flatten : Controller = {
-    val newCont = new Controller();
-    modules collect {
-      case t : DeclaredTheory => 
-        
-    }
-    
-    controller
-  }
   
   def flatten(t : DeclaredTheory) : DeclaredTheory =  {
     println("Flattening: " + t.path)
@@ -97,7 +93,6 @@ class ModuleFlattener(controller : Controller) {
     views foreach { v => 
       val s = v.from
       implicit val rules = makeRules(v)
-      println(memory.content.visible(s).toSet)
       modules collect {
         case sprime : DeclaredTheory if memory.content.visible(sprime.toTerm).toSet.contains(s) =>
           // here we have v : s -> t and sprime includes s -- (include relation is transitive, reflexive)
@@ -111,7 +106,7 @@ class ModuleFlattener(controller : Controller) {
           */
           //conceptually this should be a structure, but adding the declarations directly is more efficient
           sprime.getDeclarations foreach { 
-            case c : Constant => tbar.add(rewrite(c, s.toMPath, tbar.path))
+            case c : Constant => tbar.add(rewrite(c, s.toMPath, tbar.path, t.getInnerContext))
             case _ => //nothing for now //TODO handle structures
           }
       }
@@ -130,7 +125,6 @@ class ModuleFlattener(controller : Controller) {
     val views = modules collect {
       case v : DeclaredView if v.to == t.toTerm => v
     }
-    
     views foreach { v=>
       val s = v.from
       implicit val rules = makeRules(v)
@@ -138,7 +132,7 @@ class ModuleFlattener(controller : Controller) {
         case sprime : DeclaredTheory if memory.content.visible(sprime.toTerm).toSet.contains(s) => 
           val tvw = new DeclaredTheory(t.parent, sprime.name / v.name, t.meta)
           sprime.getDeclarations foreach { 
-            case c : Constant => tvw.add(rewrite(c, v.path, tbar.path))
+            case c : Constant => tvw.add(rewrite(c, v.path, tbar.path, t.getInnerContext))
             case _ => //nothing for now //TODO handle structures
           }
           thys ::= tvw
@@ -153,6 +147,7 @@ class ModuleFlattener(controller : Controller) {
   private def makeRules(v : DeclaredView) : HashMap[Path, Term] = {
     val path = v.from.toMPath
     var rules = new HashMap[Path,Term]
+    
     v.getDeclarations collect {
       case c : Constant =>
         c.df.foreach {t =>
@@ -162,21 +157,21 @@ class ModuleFlattener(controller : Controller) {
         try {
           controller.get(d.df.toMPath) match {
             case d : DeclaredView => rules ++= makeRules(v)
-            case _ => //nothing to do
+            case x => //nothing to do
           }
           
         } catch {
-          case e : Error => //nothing to do
-          case e : Exception => //nothing to do
+          case e : Error => println(e)//nothing to do
+          case e : Exception => println(e)//nothing to do
         }
     }
     rules
   }
   
-  private def rewrite(d : Declaration, vpath : MPath, newhome : MPath)(implicit rules : HashMap[Path, Term]) : Declaration = d match {
+  private def rewrite(d : Declaration, vpath : MPath, newhome : MPath, context : Context)(implicit rules : HashMap[Path, Term]) : Declaration = d match {
     case c : Constant =>
-      val newtpC = TermContainer(c.tp.map(rewrite))
-      val newdfC = TermContainer(c.df.map(rewrite))
+      val newtpC = TermContainer(c.tp.map(t => controller.simplifier.apply(rewrite(t), context)))
+      val newdfC = TermContainer(c.df.map(t => controller.simplifier.apply(rewrite(t), context)))
       val newname = LocalName(vpath.toPath) / c.home.toMPath.toPath / c.name
       val newCons = new FinalConstant(OMMOD(newhome), newname, c.alias, newtpC, newdfC, c.rl, c.notC)
       import metadata._
@@ -258,13 +253,41 @@ class FlatteningMWSExporter extends Exporter {
     }   
     rh("</mws:harvest>\n")
   }
-  
 }
 
 import presentation._
+import utils.xml._
+
+class IDMathMLPresenter extends MathMLPresenter {
+   /** generalized apply method that takes a callback function to determine the css class of a subterm */
+   override def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
+      implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil, None)
+      doToplevel(o) {
+         recurse(o)
+      }
+   }
+   
+   override def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
+      val nsAtts = List("xmlns" -> namespace("mathml"), "xmlns:jobad" -> namespace("jobad"))
+      val mmtAtts = pc.owner match {
+         case None => Nil
+         case Some(cp) => List("jobad:owner" -> cp.parent.toPath, "jobad:component" -> cp.component.toString, "jobad:mmtref" -> "")
+      }
+      val idAtt = ( "id" -> o.hashCode.toString)
+      // <mstyle displaystyle="true">
+      pc.out(openTag("math",  idAtt :: nsAtts ::: mmtAtts))
+      pc.out(openTag("semantics", Nil))
+      body
+      pc.out(openTag("annotation-xml", List("encoding" -> "MathML-Content")))
+      pc.out(o.toCML.toString)
+      pc.out(closeTag("annotation-xml"))
+      pc.out(closeTag("semantics"))
+      pc.out(closeTag("math"))
+   }
+}
 import metadata._
 
-class FlatteningPresenter extends Presenter(new MathMLPresenter) {
+class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
   def key: String = "flatmws"
   override val outExt = "html"
   def isApplicable(format: String): Boolean = "flatmws" == format

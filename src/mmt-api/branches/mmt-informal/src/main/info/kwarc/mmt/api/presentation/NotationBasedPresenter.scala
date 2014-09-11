@@ -26,6 +26,10 @@ case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: 
    def out(s: String) {rh(s)}
    def child(i: Int) = copy(pos = pos / i)
    def child(p: Position) = copy(pos = pos / p)
+   def getContext: Context = {
+      val ownerCon: Context = owner.toList.flatMap(cp => TheoryExp.getSupport(cp.parent.module).map(IncludeVarDecl(_,Nil)))
+      ownerCon ++ context.map(_.decl)
+   }
    def addCon(con: List[VarData]) = copy(context = context ::: con)
    val html = utils.HTML(out _)
 }
@@ -77,6 +81,14 @@ class NotationBasedPresenter extends ObjectPresenter {
     * @param implicits implicit arguments of the rendered term that are not explicitly placed by the notation (added to first delimiter)
     */
    def doDelimiter(p: GlobalName, d: Delimiter, implicits: List[Cont])(implicit pc: PresentationContext) {
+      pc.out(d.text)
+   }
+   /**
+    * called on every delimiter that is rendered through the notation of a variable
+    * @param n the variable name
+    * @param d the delimiter
+    */
+   def doDelimiter(n: LocalName, d: Delimiter)(implicit pc: PresentationContext) {
       pc.out(d.text)
    }
    /**
@@ -397,126 +409,153 @@ class NotationBasedPresenter extends ObjectPresenter {
     */
    def recurse(obj: Obj, bracket: TextNotation => Int)(implicit pcOrg: PresentationContext): Int = {
          val pc = pcOrg.copy(source = SourceRef.get(obj))
-         val t = obj match {
-            case t: Term => t
-            case _ => return doDefault(obj)(pc)
-         }
-         controller.pragmatic.makePragmatic(t) match {
-            case None =>
-               doDefault(obj)(pc)
-            case Some(objP) =>
-               val PragmaticTerm(op, subargs, context, args, attrib, not, pos) = objP
-               val firstVarNumber = subargs.length+1
-               val firstArgNumber = subargs.length+context.length+1
-               /*
-                * @param ac the component as which the child occurs
-                * @param child the child into which we recurse 
-                * @param currentPosition the position from where we recurse
-                *         -1: left-open argument; 0: middle argument; 1: right-open
-                * @return the result of recursing into the child
-                */
-               def doChild(ac: ArityComponent, child: Obj, currentPosition: Int) = {
-                  // the bracketing function
-                  val precedence = ac.precedence match {
-                    case Some(prec) => prec
-                    case None => not.precedence //take the notation precedence as the default
+        // recovery if no notation or other problem 
+         lazy val default = return doDefault(obj)(pc)
+         obj match {
+           case OMS(p) =>
+               val not = getNotation(p).getOrElse(default)
+               if (not.arity.isConstant) {
+                  not.markers.foreach {
+                     case d: Delimiter =>
+                        val dE = d.expand(p)
+                        doDelimiter(p, dE, Nil)
+                     case _ => ImplementationError("missing case in presenter of OMS")
                   }
-                  val brack = (childNot: TextNotation) => Presenter.bracket(precedence, currentPosition, childNot)
-                  // the additional context of the child
-                  val newCont: Context = ac match {
-                     case _: ArgumentComponent => context
-                     case Var(n,_,_,_) => context.take(n-firstVarNumber)
-                     case _ => Nil
+                 -1
+               } else default
+            case OMV(n) =>
+               val not = pc.context.find(_.name == n).getOrElse(default).decl.not.getOrElse(default)
+               if (not.arity.isConstant) {
+                  not.markers.foreach {
+                     case d: Delimiter =>
+                        doDelimiter(n, d)
+                     case _ => ImplementationError("missing case in presenter of OMV")
                   }
-                  val newVarData = newCont.map {v => VarData(v, Some(op), pc.pos)}
-                  recurse(child, brack)(pc.child(pos(ac.number.abs)).addCon(newVarData))
-               }
-               // all implicit arguments that are not placed by the notation, they are added to the first delimiter
-               val unplacedImplicits = not.arity.flatImplicitArguments(args.length).filter(i => ! not.fixity.markers.contains(i))
-               var unplacedImplicitsDone = false
-               /* processes a list of markers left-to-right
-                *   for ArgumentMarkers, renders argument via doChild
-                *   for DelimiterMarkers, renders delimiter via doDelimiter
-                *   for presentation markers, recurses into groups and arranges them according to doXXX methods
-                */
-               def doMarkers(markers: List[Marker]) {
-                  val numDelims = markers.count(_.isInstanceOf[Delimiter])
-                  var numDelimsSeen = 0
-                  def currentPosition = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
-                  // the while loop removes elements from markersLeft until it is empty
-                  var markersLeft = markers
-                  // the most recently removed marker
-                  var previous : Option[Marker] = None
-                  while (markersLeft != Nil) {
-                     val current = markersLeft.head
-                     markersLeft = markersLeft.tail
-                     val compFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[ArgumentMarker]
-                     //val delimFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.Delimiter]
-                     current match {
-                        case c @ Arg(n,_) =>
-                           doChild(c, args(n-firstArgNumber), currentPosition)
-                           if (compFollows) doSpace(1)
-                        case c @ ImplicitArg(n,_) =>
-                           doImplicit {
+                 -1
+               } else default
+            case t @ ComplexTerm(_,_,_,_) => controller.pragmatic.makePragmatic(t) match {
+               case None =>
+                  default
+               case Some(objP) =>
+                  val PragmaticTerm(op, subargs, context, args, attrib, not, pos) = objP
+                  val firstVarNumber = subargs.length+1
+                  val firstArgNumber = subargs.length+context.length+1
+                  /*
+                   * @param ac the component as which the child occurs
+                   * @param child the child into which we recurse 
+                   * @param currentPosition the position from where we recurse
+                   *         -1: left-open argument; 0: middle argument; 1: right-open
+                   * @return the result of recursing into the child
+                   */
+                  def doChild(ac: ArityComponent, child: Obj, currentPosition: Int) = {
+                     // the bracketing function
+                     val precedence = ac.precedence match {
+                       case Some(prec) => prec
+                       case None => not.precedence //take the notation precedence as the default
+                     }
+                     val brack = (childNot: TextNotation) => Presenter.bracket(precedence, currentPosition, childNot)
+                     // the additional context of the child
+                     val newCont: Context = ac match {
+                        case _: ArgumentComponent => context
+                        case Var(n,_,_,_) => context.take(n-firstVarNumber)
+                        case _ => Nil
+                     }
+                     val newVarData = newCont.zipWithIndex map {case (v,i) =>
+                        VarData(v, Some(op), pc.pos / pos(firstVarNumber+i))
+                     }
+                     recurse(child, brack)(pc.child(pos(ac.number.abs)).addCon(newVarData))
+                  }
+                  // all implicit arguments that are not placed by the notation, they are added to the first delimiter
+                  val unplacedImplicits = not.arity.flatImplicitArguments(args.length).filter(i => ! not.fixity.markers.contains(i))
+                  var unplacedImplicitsDone = false
+                  /* processes a list of markers left-to-right
+                   *   for ArgumentMarkers, renders argument via doChild
+                   *   for DelimiterMarkers, renders delimiter via doDelimiter
+                   *   for presentation markers, recurses into groups and arranges them according to doXXX methods
+                   */
+                  def doMarkers(markers: List[Marker]) {
+                     val numDelims = markers.count(_.isInstanceOf[Delimiter])
+                     var numDelimsSeen = 0
+                     def currentPosition = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
+                     // the while loop removes elements from markersLeft until it is empty
+                     var markersLeft = markers
+                     // the most recently removed marker
+                     var previous : Option[Marker] = None
+                     while (markersLeft != Nil) {
+                        val current = markersLeft.head
+                        markersLeft = markersLeft.tail
+                        val compFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[ArgumentMarker]
+                        //val delimFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.Delimiter]
+                        current match {
+                           case c @ Arg(n,_) =>
                               doChild(c, args(n-firstArgNumber), currentPosition)
                               if (compFollows) doSpace(1)
-                           }
-                        case c @ Var(n, typed, _,_) => //sequence variables impossible due to flattening
-                           doChild(c, context(n-firstVarNumber), currentPosition)
-                           if (compFollows) doSpace(1)
-                        case c @ Subs(n, _) => 
-                          doChild(c, subargs(n - 1), currentPosition)
-                          if (compFollows) doSpace(1)
-                        case AttributedObject =>
-                           // we know attributee.isDefined due to flattening
-                           //TODO
-                        case d: Delimiter =>
-                           val dE = d.expand(op)
-                           val unpImps = if (unplacedImplicitsDone) Nil else unplacedImplicits map {
-                              case c @ ImplicitArg(n,_) =>
-                                  (_: Unit) => doChild(c, args(n-firstArgNumber), 0); ()
-                           }
-                           val letters = dE.text.exists(_.isLetter)
-                           if (letters && previous.isDefined) doSpace(1)
-                           doDelimiter(op, dE, unpImps)(pc.copy(pos = pc.pos / pos(0)))
-                           numDelimsSeen += 1
-                           if (letters && !markersLeft.isEmpty) doSpace(1)
-                        case s: SeqArg => //impossible due to flattening
-                        case GroupMarker(ms) =>
-                           doUnbracketedGroup { doMarkers(ms) }
-                        case s: ScriptMarker =>
-                           def aux(mOpt: Option[Marker]) = mOpt.map {m => (_:Unit) => doMarkers(List(m))} 
-                           doScriptMarker(doMarkers(List(s.main)), aux(s.sup), aux(s.sub), aux(s.over), aux(s.under))
-                        case FractionMarker(a,b,l) =>
-                           def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
-                           doFractionMarker(a map aux, b map aux, l)
-                        case NumberMarker(value) => 
-                           doNumberMarker(value)
-                        case IdenMarker(value) => 
-                           doIdenMarker(value)
-                        case ErrorMarker(markers)=>
-                            def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
-                            doErrorMarker(markers map aux)
-                        case GlyphMarker(source,alt) =>
-                            doGlyphMarker(source,alt)
-                        case LabelMarker(markers,label) =>
-                            def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
-                            doLabelMarker(markers map aux,label)
-                        case PhantomMarker(markers) =>
-                            def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
-                            doPhantomMarker(markers map aux)
-                        case TextMarker(text) =>
-                            doTextMarker(text)
-                        case RootMarker(base, root) =>
-                            def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
-                            doRootMarker(base map aux,root map aux)
-                        case InferenceMarker =>
-                        
-                        case _ => //TODO
+                           case c @ ImplicitArg(n,_) =>
+                              doImplicit {
+                                 doChild(c, args(n-firstArgNumber), currentPosition)
+                                 if (compFollows) doSpace(1)
+                              }
+                           case c @ Var(n, typed, _,_) => //sequence variables impossible due to flattening
+                              doChild(c, context(n-firstVarNumber), currentPosition)
+                              if (compFollows) doSpace(1)
+                           case c @ Subs(n, _) => 
+                              doChild(c, subargs(n - 1), currentPosition)
+                              if (compFollows) doSpace(1)
+                           case AttributedObject =>
+                              // we know attributee.isDefined due to flattening
+                              //TODO
+                           case d: Delimiter =>
+                              val dE = d.expand(op)
+                              val unpImps = if (unplacedImplicitsDone) Nil else unplacedImplicits map {
+                                 case c @ ImplicitArg(n,_) =>
+                                    (_: Unit) => doChild(c, args(n-firstArgNumber), 0); ()
+                              }
+                              val letters = dE.text.exists(_.isLetter)
+                              if (letters && previous.isDefined) doSpace(1)
+                              doDelimiter(op, dE, unpImps)(pc.copy(pos = pc.pos / pos(0)))
+                              numDelimsSeen += 1
+                              if (letters && !markersLeft.isEmpty) doSpace(1)
+                           case s: SeqArg => //impossible due to flattening
+                           case GroupMarker(ms) =>
+                              doUnbracketedGroup { doMarkers(ms) }
+                           case s: ScriptMarker =>
+                              def aux(mOpt: Option[Marker]) = mOpt.map {m => (_:Unit) => doMarkers(List(m))} 
+                              doScriptMarker(doMarkers(List(s.main)), aux(s.sup), aux(s.sub), aux(s.over), aux(s.under))
+                           case FractionMarker(a,b,l) =>
+                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              doFractionMarker(a map aux, b map aux, l)
+                           case NumberMarker(value) => 
+                              doNumberMarker(value)
+                           case IdenMarker(value) => 
+                              doIdenMarker(value)
+                           case ErrorMarker(markers)=>
+                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              doErrorMarker(markers map aux)
+                           case GlyphMarker(source,alt) =>
+                              doGlyphMarker(source,alt)
+                           case LabelMarker(markers,label) =>
+                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              doLabelMarker(markers map aux,label)
+                           case PhantomMarker(markers) =>
+                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              doPhantomMarker(markers map aux)
+                           case TextMarker(text) =>
+                              doTextMarker(text)
+                           case RootMarker(base, root) =>
+                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              doRootMarker(base map aux,root map aux)
+                           case InferenceMarker =>
+                              checking.Solver.infer(controller, pc.getContext, t, None) match {
+                                 case Some(tp) =>
+                                    //TODO pass PresentationContext
+                                    recurse(tp, _ => -1)
+                                 case None =>
+                                    doOperator("?")
+                              }
+                        }
+                        previous = Some(current)
                      }
-                     previous = Some(current)
                   }
-               }
                val br = bracket(not)
                val flatMarkers = not.arity.flatten(not.presentationMarkers,context.length, args.length, attrib)
                br match {
@@ -525,6 +564,8 @@ class NotationBasedPresenter extends ObjectPresenter {
                   case n if n < 0 => doUnbracketedGroup { doMarkers(flatMarkers) }
                }
                br
+            }
+            case _ => default
          }
    }
 }

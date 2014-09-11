@@ -9,6 +9,7 @@ class HashMapToSet[A,B] extends HashMap[A,HashSet[B]] {
     *  It returns the empty set by default.
     */
    override def apply(a : A) : HashSet[B] = getOrElseUpdate(a, HashSet.empty)
+   def getOrEmpty(a : A) : HashSet[B] = getOrElse(a, HashSet.empty)
    /** add a pair to the relation */
    def +=(a: A, b: B) {apply(a) += b}
    /** remove a pair from the relation */
@@ -19,6 +20,17 @@ class HashMapToSet[A,B] extends HashMap[A,HashSet[B]] {
    def cleanup(a : A) {
       val bs = get(a)
       if (bs.isDefined && bs.get.isEmpty) this -= a
+   }
+   
+   override def toString = {
+      val sb = new StringBuilder
+      foreach {case (a,hs) =>
+         if (!hs.isEmpty) {
+            sb.append(a.toString + "\n")
+            hs foreach {b => sb.append("  " + b.toString + "\n")}
+         }
+      }
+      sb.result
    }
 }
 

@@ -36,6 +36,31 @@ trait StructuralElement extends Content with metadata.HasMetaData {
 }
 
 /**
+ * the status of a [[ContentElement]] during a parse-check cycle
+ * 
+ * When reading a input that already exists in memory but may have been changed in the source,
+ * the old instance is kept for change management. 
+ */
+abstract class ElementStatus
+/**
+ * a special case beyond the normal state: the element exists in the theory and has been checked.
+ * This does not guarantee that the element is logically valid: It only guarantees that all invalidity errors have been reported.
+ * 
+ * Most algorithms can treat this status as equivalent to [[Active]].
+ * The main exception are the checking algorithms themselves.
+ */
+case object Checked extends ElementStatus
+/**
+ * the default state: the element exists in the MMT content base
+ */
+case object Active extends ElementStatus
+/**
+ * a temporary state during parsing set by [[Controller#read]]:
+ * the element does not exist in the theory, but is expected to be recreated during the current parse. 
+ */
+case object Inactive extends ElementStatus
+
+/**
  * A ContentElement is any knowledge item that is used to represent mathematical content.
  * These are the core MMT items such as modules, and symbols.
  * This includes virtual knowledge items.
@@ -46,7 +71,8 @@ trait ContentElement extends StructuralElement {
     * 
     * invariant: API client code may assume that this flag is never set   
     */
-   private[api] var inactive: Boolean = false
+   private[api] var status: ElementStatus = Active
+   
    def path : ContentPath
    /** returns all children of this elements */
    def getDeclarations: List[ContentElement]
@@ -63,7 +89,9 @@ trait ContentElement extends StructuralElement {
    /** two ContentElement's are compatible
     * if they have the same type, same Path, and agree in all parts that are TermContainer's
     */  
-   def compatible(that: ContentElement): Boolean = {(this, that) match {
+   def compatible(that: ContentElement): Boolean = {
+     this.getOrigin == that.getOrigin &&
+     ((this, that) match {
       case (a: DeclaredTheory, b: DeclaredTheory) =>
          a.path == b.path && a.meta == b.meta && a.parameters == b.parameters
       case (a: DefinedTheory, b: DefinedTheory) =>
@@ -77,7 +105,7 @@ trait ContentElement extends StructuralElement {
       case (a: Structure, b: Structure) =>
          a.getClass == b.getClass && a.path == b.path && (a.isImplicit == b.isImplicit)
       case _ => false
-   }}
+   })}
 }
 
 /*
@@ -105,6 +133,14 @@ trait NarrativeElement extends StructuralElement with DocumentItem {
 trait Content {
    /** XML representation */
    def toNode : Node
+   /** 
+    *  by default, this prints out toNode
+    *  
+    *  potentially large [[StructuralElement]]s should override it with a memory-efficient implementation
+    */
+   def toNode(rh: RenderingHandler) {
+      rh(toNode)
+   }
    /*
    /** the role, the non-terminal in the MMT grammar producing this item */  
    def role : Role

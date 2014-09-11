@@ -71,6 +71,7 @@ class Controller extends ROController with Logger {
 
    /** the MMT parser (XML syntax) */
    val xmlReader = new XMLReader(report)
+   val xmlStreamer = new XMLStreamer(this)
    /** Twelf-specific parser */
    val twelfParser = new TextReader(this, this.add)
    
@@ -98,7 +99,7 @@ class Controller extends ROController with Logger {
    init
    
    /** @return a notifier for all currently registered [[ChangeListener]]s */
-   private def notifyListeners = new Notify(extman.changeListeners)
+   private def notifyListeners = new Notify(extman.changeListeners, report)
 
    //not sure if this really belong here, map from jobname to some state info
    val states = new collection.mutable.HashMap[String, ParserState]
@@ -219,7 +220,7 @@ class Controller extends ROController with Logger {
       iterate {e match {
          case nw : ContentElement =>
             localLookup.getO(e.path) match {
-               case Some(old)  =>
+               case Some(old) =>
                   /* optimization for change management
                    * if e.path is already loaded but inactive, and the new e is compatible with it,
                    * we reactivate the existing declaration
@@ -230,23 +231,24 @@ class Controller extends ROController with Logger {
                   if (old.compatible(nw)) {
                      log("activating " + old.path)
                      // deactivate all children
-                     old.getDeclarations.foreach {_.inactive = true}
+                     old.getDeclarations.foreach {_.status = Inactive}
                      // update metadata and components
                      old.metadata = nw.metadata
                      nw.getComponents.foreach {case (comp, cont) =>
                         old.getComponent(comp).foreach {_.update(cont)}
                      }
                      // activate the old one
-                     old.inactive = false
+                     old.status = Active
                      notifyListeners.onUpdate(nw)
                   } else {
                      // delete the deactivated old one, and add the new one
                      log("deleting deactivated " + old.path)
                      memory.content.update(nw)
-                     notifyListeners.onDelete(nw)
+                     if (old.getOrigin != Some(DefaultAssignment)) // TODO hacky, but need to handle this case somehow
+                         notifyListeners.onDelete(old)
                      notifyListeners.onAdd(nw)
                   }
-               case _ =>
+               case _ => 
                   // the normal case
                   memory.content.add(nw)
                   notifyListeners.onAdd(nw)
@@ -301,7 +303,7 @@ class Controller extends ROController with Logger {
                case r: MRef => localLookup.getO(r.target) match {
                   case Some(m: Module) =>
                      log("deactivating " + m.path)
-                     m.inactive = true
+                     m.status = Inactive
                      List(m)
                   case _ => Nil
                }
@@ -311,7 +313,7 @@ class Controller extends ROController with Logger {
    }
    /** deletes everything in ce that is marked for deletion (i.e., inactive) */
    private def deleteInactive(ce: ContentElement) {
-      ce.foreachDeclaration {d => if (d.inactive) {
+      ce.foreachDeclaration {d => if (d.status == Inactive) {
          log("deleting deactivated " + d.path)
          delete(d.path)
       }}
@@ -334,15 +336,18 @@ class Controller extends ROController with Logger {
       log("reading " + dpath)
       val result = f.getExtension match {
          case Some("omdoc") =>
-            val N = utils.xml.readFile(f)
-            var doc: Document = null
-            xmlReader.readDocument(dpath, N) {
-               case d: Document =>
+            /* old non-streaming code
+              val N = utils.xml.readFile(f)
+              var doc: Document = null
+              xmlReader.readDocument(dpath, N) {
+                case d: Document =>
                   add(d)
                   doc = d
                case e => add(e)
             }
             doc
+            */
+            xmlStreamer.readDocument(dpath, f)(add)
          case Some("elf") =>
             val source = scala.io.Source.fromFile(f, "UTF-8")
             val (doc, errorList) = twelfParser.readDocument(source, dpath)(pu => textParser(pu)(ErrorThrower))

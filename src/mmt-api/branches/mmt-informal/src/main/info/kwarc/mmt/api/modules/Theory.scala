@@ -17,8 +17,10 @@ abstract class Theory(doc : DPath, name : LocalName) extends Module(doc, name) {
  * @param doc the URI of the parent document
  * @param name the name of the theory
  * @param meta the path of the optional meta-theory
+ * @param parameters the interface/parameters/arguments of the theory
  */
-class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], val parameters: Context = Context())
+// TODO find a way that does not require meta and parameters to be vars
+class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], var parameters: Context = Context())
       extends Theory(doc, name) with DeclaredModule {
    /** the context governing the body: meta-theory, parameters, and this theory */
    def getInnerContext = {
@@ -58,6 +60,7 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
    def toNode =
       <theory name={name.last.toPath} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
         {getMetaDataNode}
+        {if (parameters.isEmpty) Nil else <parameters>{parameters.toNode}</parameters>}
         {innerNodes}
       </theory>
    def toNodeElab = 
@@ -65,6 +68,16 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
         {getMetaDataNode}
         {innerNodesElab}
     </theory>
+   override def toNode(rh: presentation.RenderingHandler) {
+      val metaS = if (meta.isDefined) s""" meta="${meta.get.toPath}"""" else ""
+      rh(s"""<theory name="${name.last.toPath}" base="${doc.toPath}"$metaS>""")
+      rh(getMetaDataNode)
+      if (!parameters.isEmpty) rh(<parameters>{parameters.toNode}</parameters>)
+      getPrimitiveDeclarations.foreach {i =>
+         i.toNode(rh)
+      }
+      rh("</theory>")
+   }
 }
 
 class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) extends Theory(doc, name) with DefinedModule {
