@@ -179,6 +179,39 @@ class NotationBasedPresenter extends ObjectPresenter {
       }
    }
    
+   def doTd(ms : List[Cont])(implicit pc : PresentationContext) {
+     doOperator("[&")
+      ms foreach {e =>
+       doSpace(1)
+       e()
+     }
+     doOperator("&]")
+   }
+   
+   def doTr(ms : List[Cont])(implicit pc : PresentationContext) {
+     doOperator("[\\")
+      ms foreach {e =>
+       doSpace(1)
+       e()
+     }
+     doOperator("\\]")
+   }
+    
+   def doTable(ms : List[Cont])(implicit pc : PresentationContext) {
+     doOperator("[[")
+      ms foreach {e =>
+       doSpace(1)
+       e()
+     }
+     doOperator("]]")
+   }
+   
+   def doWord(s : String)(implicit pc: PresentationContext) {
+     pc.out(s)
+   }
+    
+    
+   
    /** 1 or 2-dimensional notations, true by default */
    def twoDimensional : Boolean = true
    
@@ -443,6 +476,16 @@ class NotationBasedPresenter extends ObjectPresenter {
                            case FractionMarker(a,b,l) =>
                               def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
                               doFraction(a map aux, b map aux, l)
+                           case TdMarker(ms) => 
+                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              doTd(ms map aux)
+                           case TrMarker(ms) => 
+                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              doTr(ms map aux)
+                           case TableMarker(ms) =>
+                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              doTable(ms map aux)
+                           case WordMarker(m) => doWord(m) 
                            case InferenceMarker =>
                               checking.Solver.infer(controller, pc.getContext, t, None) match {
                                  case Some(tp) =>
