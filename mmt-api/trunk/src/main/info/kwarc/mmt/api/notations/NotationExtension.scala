@@ -145,6 +145,7 @@ object FixityParser {
 }
 
 case class PragmaticTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attribution: Boolean, notation: TextNotation, pos: List[Position]) {
+   require(1 + subs.length + con.length + args.length == pos.length, "Positions don't match number of arguments (op, subs, context and args)") 
    def term = ComplexTerm(op, subs, con, args)
 }
 
@@ -176,8 +177,12 @@ object MixfixNotation extends NotationExtension {
    def destructTerm(t: Term)(implicit getNotation: GlobalName => Option[TextNotation]): Option[PragmaticTerm] = t match {
       case ComplexTerm(op, subs, con, args) =>
          getNotation(op) flatMap {not =>
-            if (not.arity.canHandle(subs.length, con.length, args.length, false))
-               Some(PragmaticTerm(op, subs, con, args, false, not, Position.positions(t)))
+            if (not.arity.canHandle(subs.length, con.length, args.length, false)) {
+              val sapos = (0 to (subs.length + args.length)).map(x => Position(x)) // op, subs, args
+              val conpos = (1 to con.length).map(x => Position(subs.length + args.length + 1) / x) // context inside inner binder
+              val allpos = (sapos ++ conpos).toList
+              Some(PragmaticTerm(op, subs, con, args, false, not, allpos))
+            }
             else None
          }
       case _ => None
