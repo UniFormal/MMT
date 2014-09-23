@@ -1,0 +1,51 @@
+<h3>Motivation</h3>
+
+<p>
+URIs are logical identifiers. URLs are physical locations. 
+Both use the same syntax.
+The only difference is that we can dereference a URL, but not necessarily a URI.
+</p>
+
+<p>
+Most of the web seems to prefer URL=URI, i.e., every identifier is also a dereferencable location.
+<br/>
+
+MMT uses a different approach:
+<ul>
+<li>MMT strictly distinguish esbetween URIs and URLs.</li>
+<li>The MMT language defines the syntax of semantics of URIs.</li>
+<li>The MMT system allows full flexibility for the URLs and implements a catalog to translate URIs into URLs.</li>
+</ul>
+
+There are 2 reasons for MMT's approach:
+<ul>
+<li>
+It yields better language and system design if the identifiers are part of the language, but the locations are not.
+In particular, this allows moving or cloning data containers without affecting the validity of the contained data.
+<br/>
+
+But the system complexity increases because one additional component is required: an extra-linguistic catalog that maps identifiers to their locations.
+However, once this component is implemented (as MMT does), the resulting system to be much stronger.
+</li>
+
+<li>
+Any practical server must allow a complex API that goes beyond dereferencing an identifier.<br/>
+
+I estimated most server developers will eventually settle on URLs that look something like
+  <span class="code">http:// SERVER ? uri=URI & OTHERPARAMETERS</span>
+<br/>
+
+Such URLs are necessary anyway to cover the general case, i.e., to allow serving URIs that use other people's domains.
+</li>
+</ul>
+</p>
+
+<h3>MMT URI Format</h3>
+
+An MMT URI consists of 3 components separated by ? characters:
+<ul>
+<li>the namespace: a URI (without query or fragment part)</li>
+<li>the module: a /-separated sequence of names</li>
+<li>the local name: a /-separated sequence of names</li>
+</ul>
+where a name is a string (using only pchars in the sense of the URI specification).
