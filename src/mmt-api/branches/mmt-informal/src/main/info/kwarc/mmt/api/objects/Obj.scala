@@ -224,7 +224,9 @@ case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends
    }
    private[objects] lazy val freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: scopes.flatMap(_.freeVars_).filterNot(x => context.isDeclared(x))      
    def toCMLQVars(implicit qvars: Context) = <apply>{binder.toCMLQVars}{context.map(_.toCMLQVars)}{scopes.map(_.toCMLQVars)}</apply>
-   def subobjects = (Context(), binder) :: context.subobjects ::: scopes.map(s => (context, s))
+   def subobjects = ComplexTerm.subobjects(this) getOrElse {
+     (Context(), binder) :: context.subobjects ::: scopes.map(s => (context, s))
+   }
 }
 
 /**
@@ -255,7 +257,7 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMA(fun ^^ sub, args.map(_ ^^ sub)).from(this)
    private[objects] lazy val freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
    def toCMLQVars(implicit qvars: Context) = <apply>{fun.toCMLQVars}{args.map(_.toCMLQVars)}</apply>
-   def subobjects = subobjectsNoContext(fun :: args)
+   def subobjects = ComplexTerm.subobjects(this) getOrElse subobjectsNoContext(fun :: args)
 }
 
 /**
@@ -476,6 +478,9 @@ object ComplexTerm {
         val sub = Substitution(args.map(Sub(OMV.anonymous, _)) :_*)
         Some((p, sub, con, scopes))
       case _ => None
+   }
+   def subobjects(t: Term) : Option[List[(Context, Obj)]] = unapply(t) map {case (op, subs, con, args) =>
+      (Context(),OMS(op)) :: subs.subobjects ::: con.subobjects ::: args.map(a => (con,a))
    }
 }
 

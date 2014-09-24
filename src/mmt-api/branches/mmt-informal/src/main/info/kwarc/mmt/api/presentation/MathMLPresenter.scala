@@ -242,4 +242,23 @@ class MathMLPresenter extends NotationBasedPresenter {
      }
    }
    
+   override def doTd(ms : List[Cont])(implicit pc: PresentationContext) {
+     pc.html.td {
+       pc.html.mrow {
+         ms foreach {a => a()}
+       }
+     }
+   }
+   
+   override def doTr(ms : List[Cont])(implicit pc: PresentationContext) {
+     pc.html.tr {
+       ms foreach {a => a()}
+     }
+   }
+   
+   override def doTable(ms : List[Cont])(implicit pc: PresentationContext) {
+     pc.html.table {
+       ms foreach {a => a()}
+     }
+   }
 }

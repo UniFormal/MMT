@@ -24,5 +24,5 @@ object Position {
 	/** same Init / i */
 	def apply(i: Int) : Position = Position(List(i))
    /** @return the positions of the subobjects of t */
-   def positions(t: Obj) = t.subobjects.indices.toList.map(i => Position(i))
+    def positions(t: Obj) = (0 until t.subobjects.length).map(i => Position(i)).toList
 }

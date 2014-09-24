@@ -189,7 +189,7 @@ class NotationBasedPresenter extends ObjectPresenter {
        }
      }
    }
-   
+
    def doRootMarker(base : List[Cont], root : List[Cont])(implicit pc: PresentationContext){
      if(root != Nil){
 	     doOperator("'")
@@ -254,6 +254,37 @@ class NotationBasedPresenter extends ObjectPresenter {
     doOperator( ".label(" +label+ ")" )
    }
    
+   def doTd(ms : List[Cont])(implicit pc : PresentationContext) {
+     doOperator("[&")
+      ms foreach {e =>
+       doSpace(1)
+       e()
+     }
+     doOperator("&]")
+   }
+   
+   def doTr(ms : List[Cont])(implicit pc : PresentationContext) {
+     doOperator("[\\")
+      ms foreach {e =>
+       doSpace(1)
+       e()
+     }
+     doOperator("\\]")
+   }
+    
+   def doTable(ms : List[Cont])(implicit pc : PresentationContext) {
+     doOperator("[[")
+      ms foreach {e =>
+       doSpace(1)
+       e()
+     }
+     doOperator("]]")
+   }
+   
+   def doWord(s : String)(implicit pc: PresentationContext) {
+     pc.out(s)
+   }
+    
    /** 1 or 2-dimensional notations, true by default */
    def twoDimensional : Boolean = true
    
@@ -463,7 +494,7 @@ class NotationBasedPresenter extends ObjectPresenter {
                      val newVarData = newCont.zipWithIndex map {case (v,i) =>
                         VarData(v, Some(op), pc.pos / pos(firstVarNumber+i))
                      }
-                     recurse(child, brack)(pc.child(pos(ac.number.abs)).addCon(newVarData))
+                     recurse(child, brack)(pc.child(pos(ac.number.abs - 1)).addCon(newVarData))
                   }
                   // all implicit arguments that are not placed by the notation, they are added to the first delimiter
                   val unplacedImplicits = not.arity.flatImplicitArguments(args.length).filter(i => ! not.fixity.markers.contains(i))
@@ -544,6 +575,16 @@ class NotationBasedPresenter extends ObjectPresenter {
                            case RootMarker(base, root) =>
                               def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
                               doRootMarker(base map aux,root map aux)
+                           case TdMarker(ms) => 
+                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              doTd(ms map aux)
+                           case TrMarker(ms) => 
+                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              doTr(ms map aux)
+                           case TableMarker(ms) =>
+                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              doTable(ms map aux)
+                           case WordMarker(m) => doWord(m) 
                            case InferenceMarker =>
                               checking.Solver.infer(controller, pc.getContext, t, None) match {
                                  case Some(tp) =>
