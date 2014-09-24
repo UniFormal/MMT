@@ -178,10 +178,7 @@ object MixfixNotation extends NotationExtension {
       case ComplexTerm(op, subs, con, args) =>
          getNotation(op) flatMap {not =>
             if (not.arity.canHandle(subs.length, con.length, args.length, false)) {
-              val sapos = (0 to (subs.length + args.length)).map(x => Position(x)) // op, subs, args
-              val conpos = (1 to con.length).map(x => Position(subs.length + args.length + 1) / x) // context inside inner binder
-              val allpos = (sapos ++ conpos).toList
-              Some(PragmaticTerm(op, subs, con, args, false, not, allpos))
+              Some(PragmaticTerm(op, subs, con, args, false, not, Position.positions(t)))
             }
             else None
          }
