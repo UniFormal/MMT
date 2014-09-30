@@ -308,12 +308,16 @@ class Controller extends ROController with Logger {
          delete(d.path)
       }}
    }
+   /** convenience function for reading from a string  */
+   def read(s: String, dpath: DPath, format: String)(implicit errorCont: ErrorHandler) : Document = {
+      read(scala.io.Source.fromString(s), dpath, format)
+   }
    /**
-    * reads a file containing a document and returns the Path of the document found in it
-    * the reader is chosen according to the file ending: omdoc, elf, or mmt
+    * convenience function for reading from a file
+    * file extension is used as format, file URI as default namespace
     * @param f the input file
     * @param docBase the base path to use for relative references
-    * @return the read Document and a list of errors that were encountered
+    * @return the read Document
     */
    def read(f: File, docBase : Option[DPath] = None)(implicit errorCont: ErrorHandler) : Document = {
       // use docBase, fall back to logical document id given by an archive, fall back to file:f
@@ -322,10 +326,24 @@ class Controller extends ROController with Logger {
                      case (arch, p) => DPath(arch.narrationBase / p)
                   } getOrElse
                   DPath(utils.FileURI(f))
+      val src = scala.io.Source.fromFile(f, "UTF-8")
+      read(src, dpath, f.getExtension.getOrElse(""))
+   }
+
+   /**
+    * reads a document
+    * 
+    * @param src the input source
+    * @param dpath the base path to use for relative references
+    * @param format key to choose the reader: e.g., omdoc, elf, or mmt 
+    * @param errorCont continuation to be called on all encountered errors
+    * @return the read Document
+    */
+   def read(src: scala.io.Source, dpath: DPath, format: String)(implicit errorCont: ErrorHandler) : Document = {
       val modules = deactivateDocument(dpath)
-      log("reading " + dpath)
-      val result = f.getExtension match {
-         case Some("omdoc") =>
+      log("reading " + dpath + " with format " + format)
+      val result = format match {
+         case "omdoc" =>
             /* old non-streaming code
               val N = utils.xml.readFile(f)
               var doc: Document = null
@@ -337,20 +355,17 @@ class Controller extends ROController with Logger {
             }
             doc
             */
-            xmlStreamer.readDocument(dpath, f)(add)
-         case Some("elf") =>
-            val source = scala.io.Source.fromFile(f, "UTF-8")
-            val (doc, errorList) = twelfParser.readDocument(source, dpath)(pu => textParser(pu)(ErrorThrower))
-            source.close
+            xmlStreamer.readDocument(dpath, src)(add)
+         case "elf" =>
+            val (doc, errorList) = twelfParser.readDocument(src, dpath)(pu => textParser(pu)(ErrorThrower))
             errorList.foreach {e => errorCont(e)}
             doc
-         case Some("mmt") =>
-            textParser.readFile(dpath, f)
-         case Some(e) =>
-            throw ParseError("unknown file extension: " + f)
-         case None =>
-            throw ParseError("unknown document format: " + f)
+         case "mmt" =>
+            textParser.readString(dpath, src.mkString)
+         case f =>
+            throw ParseError("unknown format: " + f)
       }
+      src.close
       if (! modules.isEmpty) {
          log("deleting the remaining deactivated elements")
          logGroup {
@@ -359,18 +374,7 @@ class Controller extends ROController with Logger {
       }
       result
    }
-   
-   /** like read(f: File) but taking a string in mmt format  */
-   def read(s: String, dpath: DPath)(implicit errorCont: ErrorHandler) : Document = {
-      val modules = deactivateDocument(dpath)
-      log("reading " + dpath)
-      val doc = textParser.readString(dpath, s)
-      log("deleting the remaining deactivated elements")
-      logGroup {
-         modules foreach {m => deleteInactive(m)}
-      }
-      doc
-   }
+
    /** MMT base URI */
    protected var base : Path = DPath(mmt.baseURI)
    /** @return the current base URI */

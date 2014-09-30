@@ -106,10 +106,10 @@ class Goal(val context: Context, private var concVar: Term) {
    
    /** caches the result of isSolved */
    private var solved: Option[Boolean] = None
-   /** stores the proof once the goal is solved */
-   private var proofOption: Option[Term] = None
-   /** the proof term for this goal; pre: isSolved == Some(true) */
-   def proof = proofOption.get
+   /** stores the proof */
+   private var proofVar: Term = Hole(conc)
+   /** stores the proof, contains holes until the goal is solved */
+   def proof = proofVar
    /**
     * checks if the goal can be closed by closing all subgoals of some alternative
     * the result is cached so that the method can be called arbitrarily often without performance penalty
@@ -124,7 +124,7 @@ class Goal(val context: Context, private var concVar: Term) {
    }
    /** sets the proof of this goal and removes alternatives */
    private def setSolved(p: Term) {
-      proofOption = Some(p)
+      proofVar = p
       solved = Some(true)
       removeAlternatives
    }
@@ -202,12 +202,12 @@ class Goal(val context: Context, private var concVar: Term) {
    def present(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]): String = {
       val goalHighlight = if (Some(this) == current) "X " else "  "
       def altHighlight(a: Alternative) = if (Some(a) == newAlt) "+ new\n" else "+ \n"
-      proofOption match {
-         case Some(p) => goalHighlight + "! " + presentObj(context) + " |- " + presentObj(p) + " : " + presentObj(conc)
-         case None =>
-            val aS = alternatives.map(a => Prover.indent(depth+1) + altHighlight(a) + a.present(depth+1))
-            val lines = goalHighlight + (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
-            lines.mkString("\n")
+      if (isSolved) {
+         goalHighlight + "! " + presentObj(context) + " |- " + presentObj(proof) + " : " + presentObj(conc)
+      } else {
+         val aS = alternatives.map(a => Prover.indent(depth+1) + altHighlight(a) + a.present(depth+1))
+         val lines = goalHighlight + (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
+         lines.mkString("\n")
       }
    }
 }

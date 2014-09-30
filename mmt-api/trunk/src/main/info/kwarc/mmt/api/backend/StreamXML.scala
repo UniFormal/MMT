@@ -21,8 +21,7 @@ class XMLStreamer(controller: Controller) extends Logger {streamer =>
    /** the elements whose children are processed immediately */
    private val containers = List("omdoc", "theory", "view")
    
-   def readDocument(base: DPath, file: File)(implicit cont: StructuralElement => Unit): Document = {
-      val input = Source.fromFile(file.toJava, "utf-8") 
+   def readDocument(base: DPath, input: Source)(implicit cont: StructuralElement => Unit): Document = {
       val parser = makeParser(base, input, cont)
       parser.nextch
       parser.document()
