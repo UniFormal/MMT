@@ -78,9 +78,9 @@ case class Atom(tm: Term, tp: Term, rl: Option[String]) {
  * @param parent g.parent.facts
  * @param newContext g.context
  */
-class FactsDB(prover: P, shapeDepth: Int) extends frontend.Logger {
+class FactsDB(prover: P, shapeDepth: Int, outerLogPrefix: String) extends frontend.Logger {
    val report = prover.report
-   def logPrefix = prover.solver.logPrefix + "/facts"
+   def logPrefix = outerLogPrefix + "/facts"
    
    private var constantAtoms : List[Atom] = Nil
    private[proving] def addConstantAtom(a: Atom) {

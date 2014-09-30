@@ -280,12 +280,12 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       errorCont.reset
       implicit val relCont = RelationHandler.ignore
       try {
-         val doc = controller.read(buffer.getText, dpath)
+         val doc = controller.read(buffer.getText, dpath, path.getExtension.getOrElse(""))
          controller.checker(doc) 
          // add narrative structure of doc to outline tree
          buildTree(root, doc)
          // register errors with ErrorList plugin
-      } catch {case e: java.lang.Throwable =>
+      } catch {case e: java.lang.Exception =>
          val msg = e.getClass + ": " + e.getMessage
          val pe = ParseError("unknown error: " + msg).setCausedBy(e)
          errorCont(pe)

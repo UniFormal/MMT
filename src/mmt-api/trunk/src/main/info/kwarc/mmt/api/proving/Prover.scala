@@ -18,24 +18,23 @@ import utils._
  * A prover greedily applies invertible tactics to each new goal (called the expansion phase).
  * Then forward and backward breadth-first searches are performed in parallel.
  */
-class P(val solver: Solver, val goal: Goal) extends Logger {
-   val report = solver.report
-   def logPrefix = solver.logPrefix + "/prover"
+class P(controller: Controller, val goal: Goal, rules: RuleSet, outerLogPrefix: String) extends Logger {
+   val report = controller.report
+   def logPrefix = outerLogPrefix + "/prover"
    
-   implicit val presentObj = solver.presentObj
-   private val rules = solver.rules
+   implicit val presentObj: Obj => String = o => controller.presenter.asString(o)
    
    private val invertibleBackward = rules.get(classOf[BackwardInvertible]).toList
    private val invertibleForward  = rules.get(classOf[ForwardInvertible]).toList
    private val searchBackward     = rules.get(classOf[BackwardSearch]).toList.sortBy(_.priority).reverse
    private val searchForward      = rules.get(classOf[ForwardSearch]).toList
    
-   implicit val facts = new FactsDB(this, 2)
+   implicit val facts = new FactsDB(this, 2, outerLogPrefix)
    private def initFacts {
-      val imports = solver.controller.library.visibleDirect(ComplexTheory(goal.context))
+      val imports = controller.library.visibleDirect(ComplexTheory(goal.context))
       imports.foreach {
          case OMPMOD(p,_) =>
-            solver.controller.globalLookup.getO(p) match {
+            controller.globalLookup.getO(p) match {
                case Some(t:modules.DeclaredTheory) =>
                   t.getDeclarations.foreach {
                      case c: Constant if c.status == Active => c.tp.foreach {tp =>
@@ -51,7 +50,7 @@ class P(val solver: Solver, val goal: Goal) extends Logger {
    }
 
    /** convenience function to create a matcher in the current situation */
-   def makeMatcher(context: Context, queryVars: Context) = new Matcher(solver.controller, rules, context, queryVars)
+   def makeMatcher(context: Context, queryVars: Context) = new Matcher(controller, rules, context, queryVars)
 
    /**
     * tries to solve the goal
@@ -101,11 +100,11 @@ class P(val solver: Solver, val goal: Goal) extends Logger {
    
    /** statefully changes g to a simpler goal */
    private def simplifyGoal(g: Goal) {
-      g.setConc(solver.controller.simplifier(g.conc, g.fullContext, rules))
+      g.setConc(controller.simplifier(g.conc, g.fullContext, rules))
    }
    /** simplify a fact */
    private[proving] def simplifyFact(f: Fact): Fact = {
-      val tpS = solver.controller.simplifier(f.tp, f.goal.fullContext, rules)
+      val tpS = controller.simplifier(f.tp, f.goal.fullContext, rules)
       f.copy(tp = tpS)
    }
 
