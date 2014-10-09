@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.parser.SourceRef
  */
 abstract class Error(val shortMsg : String) extends java.lang.Exception(shortMsg) {
    private var causedBy: Option[java.lang.Throwable] = None
-   def setCausedBy(e: java.lang.Throwable): Error = {causedBy = Some(e); this}
+   def setCausedBy(e: java.lang.Throwable): this.type = {causedBy = Some(e); this}
    //def getCausedBy : Option[java.lang.Throwable] = causedBy
    private def stackTrace : String = getStackTrace.map(_.toString).mkString("","\n","")
    def getLongMessage : String = {

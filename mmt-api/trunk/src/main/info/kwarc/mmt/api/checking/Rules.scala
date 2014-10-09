@@ -168,6 +168,8 @@ class RuleSet {
    }
    def getByHead[R<:Rule](cls: Class[R], head: ContentPath): HashSet[R] = get(cls) filter {r => r.head == head}
    def getFirst[R<:Rule](cls: Class[R], head: ContentPath): Option[R] = getByHead(cls, head).headOption
+   
+   override def toString = rules.toList.map(_.toString).mkString(", ")
 }
 
 /**
@@ -414,36 +416,4 @@ abstract class TypeSolutionRule(val head: GlobalName) extends Rule {
     *    (by calling an appropriate callback method such as delay or checkTyping)
     */
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean
-}
-
-/** A continuation returned by [[IntroProvingRule]] and [[ElimProvingRule]] */
-abstract class ApplicableProvingRule {
-  def label: String
-  //def ranking: Int
-  def apply() : Term
-}
-
-/** An IntroProvingRule solves a goal with a certain head.
- */
-abstract class IntroProvingRule(val under: List[GlobalName], val head: GlobalName) extends Rule with ApplicableUnder {
-   /**
-    * @param goal the type for which a term is needed
-    * @param stack the context
-    * @return if applicable, a continuation that applies the rule
-    */
-   def apply(goal: Term)(implicit stack: Stack): Option[ApplicableProvingRule]
-}
-
-/**
- * An ElimProvingRule uses a term of a given type with a given head.
- */
-abstract class ElimProvingRule(val under: List[GlobalName], val head: GlobalName) extends Rule {
-   /** 
-    * @param evidence the proof of the fact, typically an OMS or OMV
-    * @param fact the type representing the judgment to be used (whose type is formed from head)
-    * @param goal the type for which a term is needed
-    * @param stack the context
-    * @return if applicable, a continuation that applies the rule
-    */
-   def apply(prover: proving.P, evidence: Term, fact: Term, goal: Term)(implicit stack: Stack): Option[ApplicableProvingRule]
 }

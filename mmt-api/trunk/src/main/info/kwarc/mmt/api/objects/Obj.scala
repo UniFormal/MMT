@@ -129,7 +129,7 @@ abstract class Obj extends Content with ontology.BaseType with HasMetaData with 
    def head : Option[ContentPath]
    /** the governing path required by Content is the head, if any */
    def governingPath = head
-   /** replaces metadata of this with those of o
+   /** replaces metadata of this with pointer to those of o
     * 
     * @param o the original object
     * call o2.copyFrom(o1) after transforming o1 into o2 in order to preserve metadata 

@@ -56,7 +56,7 @@ class Goal(val context: Context, private var concVar: Term) {
    /** getter for the conclusion (may have been simplified since Goal creation) */
    def conc = concVar
    /** sets a new goal, can be used by the prover to simplify goals in place */
-   private[proving] def setConc(newConc: Term)(implicit facts: FactsDB) {
+   private[proving] def setConc(newConc: Term)(implicit facts: Facts) {
       concVar = newConc
       checkAxiomRule
    }
@@ -108,7 +108,7 @@ class Goal(val context: Context, private var concVar: Term) {
    private var solved: Option[Boolean] = None
    /** stores the proof */
    private var proofVar: Term = Hole(conc)
-   /** stores the proof, contains holes until the goal is solved */
+   /** stores the proof, contains holes if the goal is not solved */
    def proof = proofVar
    /**
     * checks if the goal can be closed by closing all subgoals of some alternative
@@ -130,7 +130,7 @@ class Goal(val context: Context, private var concVar: Term) {
    }
    
    /** checks whether this can be closed using the axiom rule, i.e., whether the goal is in the database of facts */
-   private def checkAxiomRule(implicit facts: FactsDB) {
+   private def checkAxiomRule(implicit facts: Facts) {
       if (solved != Some(true)) {
          solved = None
          facts.has(this, conc) foreach {p =>
@@ -143,13 +143,13 @@ class Goal(val context: Context, private var concVar: Term) {
     * 
     * should be called iff there are new facts available (result is cached by isSolved) 
     */
-   def newFacts(implicit facts: FactsDB) {
+   def newFacts(implicit facts: Facts) {
       checkAxiomRule
       alternatives.foreach {a =>
          a.subgoals.foreach {sg => sg.newFacts}
       }
    }
-  
+   
    /** stores the invertible backward rules that have not been applied yet */
    private var backward : List[ApplicableTactic] = Nil
    /** stores the invertible forward rules that have not been applied yet */
@@ -157,7 +157,7 @@ class Goal(val context: Context, private var concVar: Term) {
    /** stores the backward search rules that have not been applied yet */
    private var backwardSearch : List[BackwardSearch] = Nil
    /** initializes the invertible backward/forward tactics that can be applied */
-   def setExpansionTactics(prover: P, backw: List[BackwardInvertible], forw: List[ForwardInvertible]) {
+   def setExpansionTactics(prover: Prover, backw: List[BackwardInvertible], forw: List[ForwardInvertible]) {
       backward = parent match {
          case Some(g) if g.conc == conc => g.backward
          // TODO it can be redundant to check the applicability of all tactics
@@ -183,10 +183,10 @@ class Goal(val context: Context, private var concVar: Term) {
       }
    }
 
-   def setSearchTactics(prover: P, backw: List[BackwardSearch]) {
+   def setSearchTactics(prover: Prover, backw: List[BackwardSearch]) {
       backwardSearch = backw
    }
-   def getNextSearch(prover: P): List[ApplicableTactic] = {
+   def getNextSearch(prover: Prover): List[ApplicableTactic] = {
       backwardSearch match {
          case Nil => Nil
          case hd::tl =>
