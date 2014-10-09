@@ -20,7 +20,7 @@ import errorlist._
  * the home directory is obtained from jEdit, e.g., settings/plugins/info.kwarc.mmt.jedit.MMTPlugin
  */
 class MMTPlugin extends EBPlugin with Logger {
-   val controller : Controller = new Controller
+   val controller = new Controller
    val report = controller.report
    val logPrefix = "jedit"
    val errorSource = new DefaultErrorSource("MMT")

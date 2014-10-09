@@ -5,13 +5,30 @@ import objects._
 import objects.Conversions._
 import utils._
 
+/** an approximation of the syntax tree of a [[Term]] that replaces subtrees beyond a certain depth with special leaves
+ *  
+ *  Shapes can be used as keys when indexing sets of terms, as in [[Facts]] 
+ */
 abstract class Shape
+/** a non-replaced node in the syntax/shape tree,
+ *  variable bindings are approximated by the shape of the type
+ */
 case class ComplexShape(op: GlobalName, children: List[Shape]) extends Shape
+/** a leaf representing an atomic subterm (constant, variable, literal) */
 case class AtomicShape(term: Term) extends Shape
+/** a leaf representing a variable bound by a governing [[ComplexShape]] */
 case class BoundShape(index: Int) extends Shape
+/** a leaf representing a wild card used when matching terms against a certain shape */
 case object Wildcard extends Shape
 
 object Shape {
+   /**
+    * @param queryVars variables which yield shape [[Wildcard]]
+    * @param context variables which yield [[BoundShape]]
+    * @param t the term whose shape to compute
+    * @param level the height of the shape's syntax tree
+    * @return the approximation of the term that cuts all branches of the syntax tree at a certain depth 
+    */
    def apply(queryVars: Context, context: Context, t: Term, level: Int): Shape = t match {
       case ComplexTerm(op, subs, cont, args) => {
          if (level == 0) return Wildcard 
@@ -78,7 +95,7 @@ case class Atom(tm: Term, tp: Term, rl: Option[String]) {
  * @param parent g.parent.facts
  * @param newContext g.context
  */
-class FactsDB(prover: P, shapeDepth: Int, outerLogPrefix: String) extends frontend.Logger {
+class Facts(prover: Prover, shapeDepth: Int, outerLogPrefix: String) extends frontend.Logger {
    val report = prover.report
    def logPrefix = outerLogPrefix + "/facts"
    
@@ -182,6 +199,17 @@ class FactsDB(prover: P, shapeDepth: Int, outerLogPrefix: String) extends fronte
          if (goal below f.goal) {
             matchFact(queryVars, query, f) foreach {x => res ::= x}
          }
+      }
+      res
+   }
+   
+   /**
+    * the set of terms of the type required by the goal 
+    */
+   def solutionsOfGoal(goal: Goal): List[Term] = {
+      var res: List[Term] = Nil
+      foreachFact(Nil, goal.conc) {case f =>
+         matchFact(Nil, goal.conc, f) foreach {case (_,x) => res ::= x}
       }
       res
    }

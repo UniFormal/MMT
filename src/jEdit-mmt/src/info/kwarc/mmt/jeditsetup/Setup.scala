@@ -60,6 +60,9 @@ object Setup {
                newCatalog ::= line
          }
       }
+      if (!jcat.exists) {
+         newCatalog = "</MODES>" :: newCatalog ::: List("<MODES>")
+      }
       println("updating " + jcat)
       File.WriteLineWise(jcat, newCatalog.reverse)
       // abbrevs

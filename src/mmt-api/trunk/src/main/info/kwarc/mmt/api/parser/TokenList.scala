@@ -22,6 +22,7 @@ object TokenList {
       )
    /** the Tokenizer
     * @param the string to tokenize
+    * @param em the escape manager containing lexing rules
     * @param first the position of the first character (defaults to 0)
     * @return the resulting TokenList
     * 
@@ -35,7 +36,7 @@ object TokenList {
     * The SourcePositions in the Tokens are only correct if all line endings contain a '\n'.
     * (The '\n' counts when counting the offset.) 
     */
-   def apply(s: String, first: SourcePosition = SourcePosition(0,0,0), em: EscapeManager) : TokenList = {
+   def apply(s: String, em: EscapeManager, first: SourcePosition = SourcePosition(0,0,0)) : TokenList = {
       val l = first.offset + s.length
       // lexing state
       var i = first  // position of net Char in s

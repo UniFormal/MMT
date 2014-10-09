@@ -18,7 +18,7 @@ import utils._
  * A prover greedily applies invertible tactics to each new goal (called the expansion phase).
  * Then forward and backward breadth-first searches are performed in parallel.
  */
-class P(controller: Controller, val goal: Goal, rules: RuleSet, outerLogPrefix: String) extends Logger {
+class Prover(controller: Controller, val goal: Goal, rules: RuleSet, outerLogPrefix: String) extends Logger {
    val report = controller.report
    def logPrefix = outerLogPrefix + "/prover"
    
@@ -29,7 +29,7 @@ class P(controller: Controller, val goal: Goal, rules: RuleSet, outerLogPrefix: 
    private val searchBackward     = rules.get(classOf[BackwardSearch]).toList.sortBy(_.priority).reverse
    private val searchForward      = rules.get(classOf[ForwardSearch]).toList
    
-   implicit val facts = new FactsDB(this, 2, outerLogPrefix)
+   implicit val facts = new Facts(this, 2, outerLogPrefix)
    private def initFacts {
       val imports = controller.library.visibleDirect(ComplexTheory(goal.context))
       imports.foreach {
@@ -66,28 +66,50 @@ class P(controller: Controller, val goal: Goal, rules: RuleSet, outerLogPrefix: 
       goal.isSolved
    }
    
+   /**
+    * a list of possible steps to be used in an interactive proof
+    * @param levels the search depth for forward search 
+    * @return a list of possible solutions (possibly with holes)
+    */
+   def interactive(levels: Int): List[Term] = {
+      initFacts
+      // apply all backward rules one step
+      val backwardOptions = {
+         val i = invertibleBackward.flatMap {r => r(this, goal).toList}
+         val s = searchBackward.flatMap {r => r(this, goal)}
+         (i ::: s).flatMap(_.apply().map(_.proof()).toList)
+      }
+      // apply all forward rules according to levels
+      Range(0,levels) foreach {_ => forwardSearch(true)}
+      val forwardOptions = facts.solutionsOfGoal(goal)
+      (forwardOptions ::: backwardOptions).distinct
+   }
+   
    private def search(levels: Int) {
       if (levels == 0) return
-      backwardSearch(goal, levels)
+      backwardSearch(goal)
       // forward search at all goals
-      searchForward.foreach {e =>
-         e.generate(this)
-      }
-      facts.integrateFutureFacts
-      goal.newFacts(facts)
+      forwardSearch(false)
+      goal.newFacts(facts)     
       if (goal.isSolved) return
       search(levels-1)
+   }
+   
+   private def forwardSearch(interactive: Boolean) {
+      searchForward.foreach {e =>
+         e.generate(this, interactive)
+      }
+      facts.integrateFutureFacts
    }
    
    /**
     * applies backward search to all fully expanded goals
     * @param g the goal to apply tactics to
-    * @param levels the depth of the breadth-first searches 
     */
-   private def backwardSearch(g: Goal, levels: Int) {
+   private def backwardSearch(g: Goal) {
       // recurse into subgoals first so that we do not recurse into freshly-added goals
       g.getAlternatives.foreach {case Alternative(sgs,_) =>
-         sgs.foreach {sg => backwardSearch(sg,levels)}
+         sgs.foreach {sg => backwardSearch(sg)}
          if (g.isSolved) return
       }
       // backward search at g
@@ -150,43 +172,6 @@ class P(controller: Controller, val goal: Goal, rules: RuleSet, outerLogPrefix: 
          case None =>
             g.setSearchTactics(this, searchBackward)
       }
-   }
-}
-
-class Prover(controller: Controller) {
-   
-   def getIntroRules(goal: Term)(implicit stack: Stack,rules: RuleSet) : List[ApplicableProvingRule] = {
-      rules.get(classOf[IntroProvingRule]).filter(_.applicable(goal)).flatMap {r => r(goal).toList}.toList
-   }
-   
-   def applicable(goal: Term)(implicit stack: Stack,rules: RuleSet) : List[ApplicableProvingRule] = {
-      // first look for all intro rules, if any return them
-      val possibleIntro = getIntroRules(goal)
-      if (possibleIntro != Nil) return possibleIntro
-
-      // if none, look for applicable elim rules by inspecting the current theory and context
-      // axioms holds the list of applicable axiom rules, which are found along the way
-      var axioms : List[ApplicableProvingRule] = Nil
-      val elimProvingRules = rules.get(classOf[ElimProvingRule]).toList
-      def doType(src: Term, tpOpt: Option[Term]) : List[ApplicableProvingRule] = {
-            val tp = tpOpt.getOrElse(return Nil)
-            if (tp == goal) axioms ::= axiomRule(src) 
-            val tpH = tp.head.getOrElse(return Nil)
-            //elimProvingRules.filter(_.head == tpH).toList flatMap {r => r(src, tp, goal).toList}
-            Nil // TODO remove when reintegrating into new Prover
-      }
-      val possibleElim = stack.context flatMap {
-         case IncludeVarDecl(p,_) =>
-            val decls = controller.localLookup.getDeclaredTheory(p).getConstants
-            decls flatMap {c => doType(c.toTerm, c.tp)}
-         case vd => doType(vd.toTerm, vd.tp)
-      }
-      axioms.reverse ::: possibleElim
-   }
-   
-   private def axiomRule(ax: Term) = new ApplicableProvingRule {
-      def label = ax.toString
-      def apply() = ax
    }
 }
 
