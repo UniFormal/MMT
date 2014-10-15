@@ -56,6 +56,7 @@ class SVGServer extends ServerExtension("svg") {
     *  @param query the document path
     *  @param body ignored
     */
+   
    def apply(path: List[String], query: String, body: Body) = {
       val path = Path.parse(query, controller.getBase)
       val (arch,inPath) = controller.backend.resolveLogical(path.doc.uri).getOrElse {
@@ -63,7 +64,6 @@ class SVGServer extends ServerExtension("svg") {
       }
       val inPathFile = archives.Archive.narrationSegmentsAsFile(inPath, "omdoc")
       val svgFile = (arch.root / "export" / "svg" / "narration" / inPathFile).setExtension("svg")
-      //log("serving svg from " + svgFile)
       val node = utils.File.read(svgFile)
       Server.TypedTextResponse(node, "image/svg+xml")
    } 

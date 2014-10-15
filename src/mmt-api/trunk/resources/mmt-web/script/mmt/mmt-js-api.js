@@ -2,9 +2,9 @@
 
 // the following functions $.fn.f add functionality to jQuery and can be used as $(...).f
 
+
 // contrary to the built-in jQuery analogues, these work for 'pref:name' attributes and math elements
 // do not replace calls to these function with the jQuery analogues!
-
 $.fn.hasAttribute = function(name) {
 	return (typeof this.attr(name) !== 'undefined' && this.attr(name) !== false);
 };
@@ -66,7 +66,9 @@ var uris = {
 };
 
 var mmt = {
-	/* these are auxiliary variables used to communicate information about the current focus from the context menu entries to the methods; they are not passed as an argument to avoid encoding problems */
+	/* these are auxiliary variables used to communicate information about the 
+	 * current focus from the context menu entries to the methods; they are not 
+	 * passed as an argument to avoid encoding problems */
   	// focus: holds a reference to the object that was clicked by the user
 	focus : null,
 	// focus: true if focus is within a math object
@@ -160,7 +162,35 @@ var mmt = {
 		var relativeURL = '/:mmt?get ' + arr[0] + '?' + arr[1] + '?' + arr[2] + ' ' + act + pres + " respond";
 		return this.makeURL(relativeURL);
 	},
-
+	
+	
+	
+	
+   ajaxPutSVG : function (url, targetClass, async) {
+	//   var temp ;
+		function contSVG(data) {
+		
+			var targetnode = $("."+targetClass).children();
+			//console.log("target node is " + targetnode);
+			targetnode.replaceWith(data.lastChild);
+			
+		}
+		if (async == null) async = true;
+		$.ajax({ 'url': url,
+				 'dataType': 'xml',
+				 'async': async,
+				 'success': contSVG
+			   });
+		
+		
+	
+	},
+		
+	
+   /**
+    * @param url the URL to load from
+    * @param targetid the XML id of the element, whose child to replace with the loaded node
+    */
    ajaxReplaceIn : function (url, targetid, async) {
 		function cont(data) {
 			var targetnode = $('#' + targetid).children();
@@ -206,10 +236,12 @@ var mmt = {
 	sideBarClick : function(event,p) {
 	      if (event.detail == 1) navigation.navigate(p);
 	      else if (event.detail == 2) {
-	         if (graphWindow == null)
-	            openGraph(p);
-	         else
-	            graphWindow.navigateGraph(p);
+	         if (graphWindow == null) {
+	        	 openGraph(p);
+	         }
+	         else{
+	        	 graphWindow.navigateGraph(p); 
+	         }
 	      }
 	},
 

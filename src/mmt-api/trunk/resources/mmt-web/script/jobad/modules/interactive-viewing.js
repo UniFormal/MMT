@@ -26,17 +26,54 @@ var interactiveViewing = {
             res['fold'] = function(){$(mmt.focus).addMClass('math-folded');};
 		}
 		if (mmt.currentURI !== null) {
-			res["show type"] = this.showComp('type');
+			res["type"] = this.showComp('type');
 			res["show definition"] = this.showComp('definition');
-		   res["(un)mark occurrences"] = this.showOccurs;
-         res["show URI"] = function(){alert(mmt.currentURI)};
-         res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
+			
+
+			
+			res["Inline box"] = function() {
+				
+				/*
+				 * var svgDivPrep = "<div id=\"svgDiv\">" + "<p>Some text</p>" + "<button
+				 * id=\"svgButton\">Show less</button><script>$(\"#svgButton\").click(function(){" +
+				 * "$(\"#svgDiv\").hide(1000);});</script></div>";
+				 */
+
+				var svgDivPrep = ""
+						+ "<div class=\"svgDiv\" style=\"width: 1000px; height: 181px; overflow: scroll; resize: both; background: rgb(127, 255, 212);\">"
+						+ "<div>" + "</div>" + "</div>";
+
+				var preSVG = target.attributes.item(1).value;
+				var svgURI = preSVG.split("#")[0];
+				svgURI = ":svg?" + svgURI;
+				$("#main .theory ").append(svgDivPrep);
+				mmt.ajaxPutSVG(svgURI, 'svgDiv');
+
+				/*
+				 * var svgDivPrep = "<div id=\"svgDiv\">" + "<p>Some text</p>" + "<button
+				 * id=\"svgButton\">Show less</button><script>$(\"#svgButton\").click(function(){" +
+				 * "$(\"#svgDiv\").hide(1000);});</script></div>"; $("#main
+				 * .theory .theory-header").css("background", "green"); $("#main
+				 * .theory .theory-header").append(svgDivPrep);
+				 */
+			};
+			
+		res["Show theory graph"] = function(){
+				var preSVG = target.attributes.item(1).value;
+				var svgURI = preSVG.split("#")[0];
+				svgURI = ":svg?" + svgURI;
+				window.open(svgURI);
+				};
+		res["show URI"] = function(){alert(mmt.currentURI)};
+		res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
+        
 		   //res["get OMDoc"] = mmt.openCurrentOMDoc();
 		}
 		return res;
 	},
 	
 	/* functions for context menu items */
+	
 	
 	/* highlights all occurrences of the current URI */
 	showOccurs : function (){

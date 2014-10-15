@@ -90,6 +90,13 @@ table.decllist {
 table.decllist td {
 }
 
+.roxana {
+   background: red;
+   border-left-style: solid;
+   resizable: both;
+   overflow: scroll;
+}
+
 div.flat-container {
        border-style: dotted;
        border-width: thin;
@@ -116,6 +123,7 @@ div.flat-container {
    min-height:50px;
    min-width:300px;
    overflow: scroll;
+   resizable: both;
 }
 
 #inputviewterm, #inputviewtype {
