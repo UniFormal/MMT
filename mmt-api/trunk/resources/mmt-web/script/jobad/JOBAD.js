@@ -89,14 +89,14 @@ if(!_.isUndefined(console)){//Console available
 				console.error(msg);
 			}		
 		}
-	}
+	};
 } else {
 	JOBAD.console = 
 	{
 		"log": function(){},
 		"warn": function(){},
 		"error": function(){}	
-	}
+	};
 }
 
 
