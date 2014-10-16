@@ -119,7 +119,9 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
         //	notations.foreach( pair => Grammar.addTopRule(pair._1.toPath, pair._2.presentationMarkers)) //adding rules to the grammar
        
       val raw = notations.toList.zipWithIndex
-       raw.foreach( x => Grammar.addTopRule(x._1._1.toPath+"N"+x._2.toString, x._1._2.presentationMarkers)) //adding rules to the grammar
+       raw.foreach( x => 
+           if (x._1._2.presentationMarkers != Nil) {
+           Grammar.addTopRule(x._1._1.toPath+"N"+x._2.toString, x._1._2.presentationMarkers)}) //adding rules to the grammar
        val resp = new JSONArray( Grammar.getMarpaGrammar );
 //     val resp = new JSONArray(Grammar.rules.toList.map(_.toString));
       	val params = reqBody.asJSON
@@ -165,9 +167,14 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 	    if (!(uniqueName.endsWith("N482")||uniqueName.startsWith("_coset_"))){
 	    	eventList ::= "event '"+uniqueName+"' = completed "+uniqueName 
 	    }
+		
 	    currentTopRuleNr = getRuleNr(uniqueName)
 	    val content:List[String] = "topLevel"::markers.map(
 	        x => x match { 
+//	          NOTE: #seq_ is used to indicate whether the Delim is 
+//	          inside a sequence argument, since if it is in one
+//	          the text inside the Delim should never be empty
+//	          to avoid infinite left recursion
 	          case Delim(text) => addRule(Delim("#seq_"+text)) 
 	          case _ => addRule(x)
 	        })
@@ -244,7 +251,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		  	      val contentRule = createRule("contentRule"::content)
 		  		  createRule("mtdB"::contentRule::"mtdE"::Nil)
 		  	  }
-		  	  
+		  
 		  	case m : TrMarker => 
 		  	  val content = m.content map addRule
 		  	  if (content.isEmpty) {
@@ -307,7 +314,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 			      } 
 			       if (text == """⁢""" //unicode
 			         && flag == "") { //handling the invisible unicode char used for function application
-			        val v1 = createRule("empty"::Nil)
+			        val v1	 = createRule("empty"::Nil)
 			         val v2 = createRule("moB"::text.toString::"moE"::Nil)
 			        createRule("alternatives"::v1::v2::Nil)
 			      } else {
@@ -348,6 +355,14 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		      val above = addRule(GroupMarker(f.above))
 		      val below = addRule(GroupMarker(f.below))
 		      createRule(List("mfracB",above,below,"mfracE"))
+		   case RootMarker(baseMarkerList, indexMarkerList) =>
+		      	val base = addRule(GroupMarker(baseMarkerList))
+		        if (indexMarkerList == Nil) {
+		          createRule("msqrtB"::base::"msqrtE"::Nil)
+		        } else {
+		          val index = addRule(GroupMarker(indexMarkerList))
+		          createRule("mrootB"::base::index::"mrootE"::Nil)
+		        }
 		   case s : ScriptMarker => 
 		     	val mainRule = addRule(s.main)
 		        var hasSup = false
@@ -418,8 +433,8 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		   case  Var(nr, false, None, precOp) =>  addRule(Arg(nr,precOp))
 		   case Var(nr,false,Some(delim),precOp) => addRule(SeqArg(nr,delim,precOp))
 		   case Subs(nr,precOp) =>  addRule(Arg(nr,precOp))
-		   case SqrtMarker(ml) => 
-		      createRule("msqrtB"::ml.map(addRule):::"msqrtE"::Nil)
+//		   case SqrtMarker(ml) => 
+//		      createRule("msqrtB"::ml.map(addRule):::"msqrtE"::Nil)
 		    case _ =>
 		      println("ERROR: TODO Marker: " + marker.toString)
 		      "'TODO'"
@@ -539,6 +554,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		    			" | mathB ExpressionList mathE "::
 		    			" | emB ExpressionList emE "::
 		    			" | mstyleB ExpressionList mstyleE "::
+		    			" | mrootB ExpressionList mrootE"::
 		    			" | mspaceB mspaceE "::
 		    			" | miSingle "::
 		    			" | moSingle "::
@@ -572,6 +588,7 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 //////////////////////////////////////////////////////////////
 		    		    "mfracB ::=  '<mfrac' attribs '>' "::"mfracE ::=  '</mfrac>' "::
 		    			"msqrtB ::=  '<msqrt' attribs '>' "::"msqrtE ::=  '</msqrt>' "::
+		    			"mrootB ::= '<mroot' attribs '>' "::"mrootE ::= '</mroot>' "::
 		    			"msupB ::=  '<msup' attribs '>' "::"msupE ::=  '</msup>' "::
 		    			"msubB ::=  '<msub' attribs '>' "::"msubE ::=  '</msub>' "::
 		    			"munderB ::=  '<munder' attribs '>' "::"munderE ::=  '</munder>' "::
