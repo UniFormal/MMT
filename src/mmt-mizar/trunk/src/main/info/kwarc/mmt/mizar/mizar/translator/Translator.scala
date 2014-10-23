@@ -110,7 +110,7 @@ class MizarCompiler extends archives.Importer {
    }
    
    def getDPath(docBase : DPath, name : String) : DPath = {
-     docBase / (name + ".miz")
+     docBase / (name + ".omdoc")
    }
    
    /*
