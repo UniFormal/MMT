@@ -14,6 +14,7 @@ import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.web.ServerError
 import info.kwarc.mmt.api.checking._
+import info.kwarc.mmt.api.libraries._
 
 
 class EditingServicePlugin(val controller : Controller) {
@@ -68,44 +69,44 @@ class EditingServicePlugin(val controller : Controller) {
       new MMTMinIncludesResponse(newIncludes.map(_.toString))
   }
   
-  def getTermInference(request: MMTTermInferenceRequest) : MMTTermInferenceResponse = {
-          
-      val mpath = Path.parseM(request.getMPath, mmt.mmtbase)
-      val sref = new SourceRef(mpath.doc.uri, SourceRegion(SourcePosition(-1,0,0),SourcePosition(-1,0,0)))
-      
-      val term = controller.textParser(ParsingUnit(sref, Context(), request.getTerm))(new ErrorLogger(controller.report))
-      
-      def getHoles(term: Term , context : Context) : List[(Term,Context)] = {
-        term match {
-          case Hole(t) => (t,context)::Nil
-          case OMBINDC(nterm,ncontext,nbodyList)=> (nterm::nbodyList).flatMap(getHoles(_,context++ncontext))
-          case OMBIND(nterm,ncontext,nbody) => getHoles(nbody, context++ncontext)
-          case OMA(f, args) => (f :: args).flatMap(getHoles(_, context))
-          case _ => Nil
-        }
-      }
-      //responses in cases
-      val returnNoHoles = "Term Complete"
-      val holeContextList =  getHoles(term,Context())
-      
-      //response: Term Complete if there are no Holes, No Rules if no rule is applicable otherwise return the rules
-      holeContextList match { 
-        case Nil => val returnNoHoles = "Term Complete" :: Nil
-        			new MMTTermInferenceResponse(returnNoHoles)
-        case _ =>  
-          val hole = holeContextList.head._1
-          val context = holeContextList.head._2
-          val prover = new Prover(controller) 
-          val stack = new Stack(context)
-          val rules = prover.applicable(hole,null)(stack)
-          rules match{ 
-        			case Nil => val returnNoRules = "No Rules" :: Nil
-        						new MMTTermInferenceResponse(returnNoRules)
-        			case _ =>  new MMTTermInferenceResponse(rules.map(_.label.toString))
-        						
-          }
-      } 
-  }
+//  def getTermInference(request: MMTTermInferenceRequest) : MMTTermInferenceResponse = {
+//          
+//      val mpath = Path.parseM(request.getMPath, mmt.mmtbase)
+//      val sref = new SourceRef(mpath.doc.uri, SourceRegion(SourcePosition(-1,0,0),SourcePosition(-1,0,0)))
+//      
+//      val term = controller.textParser(ParsingUnit(sref, Context(), request.getTerm))(new ErrorLogger(controller.report))
+//      
+//      def getHoles(term: Term , context : Context) : List[(Term,Context)] = {
+//        term match {
+//          case Hole(t) => (t,context)::Nil
+//          case OMBINDC(nterm,ncontext,nbodyList)=> (nterm::nbodyList).flatMap(getHoles(_,context++ncontext))
+//          case OMBIND(nterm,ncontext,nbody) => getHoles(nbody, context++ncontext)
+//          case OMA(f, args) => (f :: args).flatMap(getHoles(_, context))
+//          case _ => Nil
+//        }
+//      }
+//      //responses in cases
+//      val returnNoHoles = "Term Complete"
+//      val holeContextList =  getHoles(term,Context())
+//      
+//      //response: Term Complete if there are no Holes, No Rules if no rule is applicable otherwise return the rules
+//      holeContextList match { 
+//        case Nil => val returnNoHoles = "Term Complete" :: Nil
+//        			new MMTTermInferenceResponse(returnNoHoles)
+//        case _ =>  
+//          val hole = holeContextList.head._1
+//          val context = holeContextList.head._2
+//          val prover = new Prover(controller) 
+//          val stack = new Stack(context)
+//          val rules = prover.applicable(hole)(stack, null)
+//          rules match{ 
+//        			case Nil => val returnNoRules = "No Rules" :: Nil
+//        						new MMTTermInferenceResponse(returnNoRules)
+//        			case _ =>  new MMTTermInferenceResponse(rules.map(_.label.toString))
+//        						
+//          }
+//      } 
+//  }
   
   def getSymbolCompletion(spathS: String) : List[String] = {
       try {
@@ -212,16 +213,15 @@ class EditingServicePlugin(val controller : Controller) {
         }
 
   
-   private def closestWord(word : String, possibilites : List[String]) : String = {
+   private def closestWord(word : String, possibilites : List[String], firstN : Int = 1) : String = {
       val distances = possibilites.map(x => WordDistance(word,x))
       val min = distances.zipWithIndex.min
       val index = min._2
       val element = min._1
-      //if(element < word.length()/2)
-        possibilites(index)
-      //else
-        //None
+      possibilites(index)
    }
+   
+   
    
    /*checks if there is a similar constant in the includes recursively
     * resolveIncludes should be called first, if not resolved, one can try this
@@ -258,6 +258,20 @@ class EditingServicePlugin(val controller : Controller) {
      new MMTConstantCorrectionResponse(response._1)
    }
    
+   //a function to get the closest match of an include which is not written properly
+   def getIncludeCorrection(request : MMTIncludeCorrectionRequest)(implicit lib: Library): MMTIncludeCorrectionResponse = {
+	  val allPaths = controller.depstore.getInds(ontology.IsTheory).toList //lib.getAllPaths.toList
+	  if(allPaths == Nil){
+	    return new MMTIncludeCorrectionResponse("")
+	  }
+	  val term = request.getTerm()
+	  val possibleMatches = allPaths.map(_.toString)
+	  
+	  val response = closestWord(term,possibleMatches)  
+	  
+	  
+	  new MMTIncludeCorrectionResponse(response)
+   }
   
 
   def getSymbolDefinitions(spathS: String) : Map[String, (String,String)] = {
