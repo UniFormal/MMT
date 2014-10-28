@@ -19,6 +19,7 @@ import tiscaf._
 import scala.collection.mutable.HashMap._
 import info.kwarc.mmt.api.web._
 
+
 class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   private lazy val editingService = new EditingServicePlugin(controller)
   
@@ -34,8 +35,9 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
         case "resolve" :: _ => getResolveIncludesResponse
         case "minIncludes" :: _ => getMinIncludes
         case "symbolCompletion" :: _ => getSymbolCompletion
-        case "termInference" :: _ => getTermInference
+        //case "termInference" :: _ => getTermInference
         case "constantCorrection" :: _ => getConstantCorrection
+        case "includeCorrection" :: _ => getIncludeCorrection
         case _ => error("Invalid request: " + uriComps.mkString("/"))
       }
     } catch {
@@ -161,18 +163,18 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
 	 includesDeclarations.intersect(usedDeclarationsNames).size
  }
  
- private def getTermInference : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-      val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
-      
-      val termS = params.get("term").getOrElse(throw ServerError("No type found")).toString
-      val mpathS = params.get("mpath").getOrElse(throw ServerError("No mpath found")).toString     
-      
-      val resp = editingService.getTermInference(new MMTTermInferenceRequest(termS,mpathS))
-      Server.JsonResponse(new JSONArray(resp.getResponse())).aact(tk)
-    }   
- }
+// private def getTermInference : HLet = new HLet {
+//    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
+//      val reqBody = new Body(tk)
+//      val params = reqBody.asJSON.obj
+//      
+//      val termS = params.get("term").getOrElse(throw ServerError("No type found")).toString
+//      val mpathS = params.get("mpath").getOrElse(throw ServerError("No mpath found")).toString     
+//      
+//      val resp = editingService.getTermInference(new MMTTermInferenceRequest(termS,mpathS))
+//      Server.JsonResponse(new JSONArray(resp.getResponse())).aact(tk)
+//    }   
+// }
  
   private def getConstantCorrection : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
@@ -182,9 +184,26 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
       val constant = params.get("constant").getOrElse(throw ServerError("No type found")).toString
       val mpathS = params.get("mpath").getOrElse(throw ServerError("No mpath found")).toString     
       
+      
       val resp = editingService.getConstantCorrection(new MMTConstantCorrectionRequest(constant,mpathS))
       Server.JsonResponse(new JSONArray(List(resp.getResponse()))).aact(tk)
     }   
  }
+  
+  private def getIncludeCorrection : HLet = new HLet {
+    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try{
+      val reqBody = new Body(tk)
+      val params = reqBody.asJSON.obj
+      
+      val k = new LanguageDictionary(controller)
+      
+      val mpathS = params.get("mpath").getOrElse(throw ServerError("No mpath found")).toString
+      val response = editingService.getIncludeCorrection(new MMTIncludeCorrectionRequest(mpathS))(controller.library)
+      
+      Server.JsonResponse(new JSONArray(List(response.getResponse()))).aact(tk)
+    }
+    
+  }
  
 }
+
