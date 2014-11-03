@@ -1,0 +1,187 @@
+<p>
+MMT includes a human input-oriented text syntax, which is used in particular in the <a href="../applications/jedit.html">jEdit</a> editing workflow.
+</p>
+
+<h2>Structural Delimiters</h2>
+
+<p>
+The only unusual aspect of the syntax is the use of the characters ASCII 28-31 as structural delimiters.
+These are usually considered whitespace, and most fonts do not have glyphs for them.
+Therefore, typing and displaying them depends on the editor and font used.
+</p>
+
+<p>
+The advantage of these delimiters is that they do not clash with any other delimiters used by notations, lexing rules, or external formats that are integrated with MMT.
+Therefore, they permit near-perfect error recovery and make it easy to integrate different sublanguages (e.g., for comments or informal content).
+</p>
+
+<p>
+Every delimiter marks the <b>end</b> of a declaration or a component of a declaration.
+
+<table border="1">
+<tr>
+<th>Delimiter</th><th>Name in ASCII</th><th>Marks end of</th><th>Comment</th>
+</tr>
+<tr>
+    <td>ASCII 28</td><td>FS: file separator</td><td>document</td>
+    <td>redundant if end-of-file follows</td>
+</tr>
+<tr>
+    <td>ASCII 29</td><td>GS: group separator</td><td>module</td>
+    <td>any declaration that has nested declarations, i.e., theory, view, etc.</td>
+</tr>
+<tr>
+    <td>ASCII 30</td><td>RS: record separator</td><td>declaration</td>
+    <td>in particular includes and constants<br/>redundant if end of module follows</td>
+</tr>
+<tr>
+    <td>ASCII 31</td><td>US: unit separator</td><td>component of declaration</td>
+    <td>in particular type, definiens, notation of a constant<br/>redundant if end of declaration follows</td>
+</tr>
+</table>
+
+Note that these form a hierarchy of nested levels and that we can add SPACE as 5th level delimiter, which marks the end of a keyword.
+
+<h3>In jEdit</h3>
+
+The jEdit plugin provides abbreviation definitions for the delimiters.
+But users can define custom abbreviations by editing the abbrev file (in the settings directory), whose syntax is self-explanatory.<br/>
+The Character Map plugin can help as well.
+
+<h3>ViM</h3>
+
+ViM supports the insertion of control characters via the following hotkeys:
+<ul>
+<li>group separator (displayed as ˆ]) - ctrl+shift+]</li>
+<li>• record separator (ˆˆ) - ctrl+shift+ˆ</li>
+<li>• unit separator (ˆ ) - ctrl+shift+</li>
+</ul>
+
+Note that in command mode one can look up the ASCII code of a character by pressing ga.
+
+<h3>Font Support</h3>
+
+GNU unifont is an example of a font that has reasonable glyphs for the delimiters.<br/>
+It also provides many useful glyphs for mathematical operators. 
+
+<h2>Keywords</h2>
+
+The beginning of a (component of a) declaration is marked by a keyword.
+Keywords for declarations are usually alphabetical words whereas keywords for declaration components are usually a single non-alphanumeric character. 
+
+<h3>Content-Related Keywords</h3>
+
+<p>
+Keywords that introduce module-level declarations and that are terminated by GS:
+
+<table border="1">
+<tr>
+<th>Keyword</th><th>Additional syntax</th><th>Introduces a</th><th>Comment</th>
+</tr>
+<tr>
+    <td><span class="code">namespace</span></td><td><span class="code">namespace URI</span></td>
+    <td>default namespace</td>
+    <td></td>
+</tr>
+<tr>
+    <td><span class="code">theory</span></td><td><span class="code">theory NAME =</span></td>
+    <td>theory</td>
+    <td>can be nested</td>
+</tr>
+<tr>
+    <td><span class="code">view</span></td><td><span class="code">view NAME : FROM -> TO =</span>
+    </td><td>view</td>
+    <td></td>
+</tr>
+</table>
+</p>
+
+<p>
+Keywords that introduce statement-level declarations and that are terminated by RS:
+
+<table border="1">
+<tr>
+<th>Keyword</th><th>Additional syntax</th><th>Introduces a</th><th>Comment</th>
+</tr>
+<tr>
+    <td><span class="code">include</span></td><td><span class="code">include NAME</span></td>
+    <td>include declaration in theory or view</td>
+    <td></td>
+</tr>
+<tr>
+    <td><span class="code">constant</span></td><td><span class="code">constant NAME COMPONENTS</span></td>
+    <td>constant declaration in theory or view</td>
+    <td>keyword can be omitted in most cases</td>
+</tr>
+</table>
+</p>
+
+<p>
+Keywords that introduce a component and that are terminated by US:
+
+<table border="1">
+<tr>
+<th>Keyword</th><th>Introduces a</th><th>Comment</th>
+</tr>
+<tr>
+    <td><span class="code">:</span></td>
+    <td>type of a constant (redundant in a view)</td>
+    <td></td>
+</tr>
+<tr>
+    <td><span class="code">=</span></td>
+    <td>definiens of a constant (including its assignment in a view)</td>
+    <td></td>
+</tr>
+<tr>
+    <td><span class="code">#</span></td>
+    <td>notation of a constant</td>
+    <td></td>
+</tr>
+<tr>
+    <td><span class="code">@</span></td>
+    <td>alias of a constant</td>
+    <td>an alternative short name</td>
+</tr>
+<tr>
+    <td><span class="code">role</span></td>
+    <td>role of a constant</td>
+    <td>may be used to signal information to plugins, in particular <a href="../api/index.html#info.kwarc.mmt.api.frontend.ChangeListener">ChangeListeners</a></td>
+</tr>
+</table>
+</p>
+
+<h3>Other Keywords</h3>
+
+These keywords introduce comments and metadata ascriptions.
+They are terminated by GS, RS, or US depending on whether they occur in a document, module, or as a declation component, respectively.
+
+<table border="1">
+<tr>
+<th>Keyword</th><th>Additional syntax</th><th>Introduces a</th><th>Comment</th>
+</tr>
+<tr>
+    <td><span class="code">//</span></td><td><span class="code">// COMMENT</span></td>
+    <td>comment</td>
+    <td>comments until respective delimiter, i.e., neither a line nor a block comments<br/>
+        in particular, declarations can be commented out by prefixing //<br/>
+        whitespace needed after //
+    </td>
+</tr>
+<tr>
+    <td><span class="code">tag</span></td><td><span class="code">tag URI</span></td>
+    <td>tag ascription</td>
+    <td>in particular, a concept axiom or node type in the sense of ontologies</td>
+</tr>
+<tr>
+    <td><span class="code">link</span></td><td><span class="code">link KEY-URI VALUE-URI</span></td>
+    <td>typed link between two knowledge items</td>
+    <td>in particular a relation axiom in the sense of ontologies</td>
+</tr>
+<tr>
+    <td><span class="code">meta</span></td><td><span class="code">meta KEY-URI VALUE-OBJECT</span></td>
+    <td>ascription of an arbitrary mathematical object</td>
+    <td></td>
+</tr>
+</table>
+</p>

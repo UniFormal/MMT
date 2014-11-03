@@ -1,0 +1,8 @@
+\newcommand{\mathml}{MathML\xspace}
+\newcommand{\openmath}{OpenMath\xspace}
+
+\lstset{mathescape}
+
+\newcommand{\coderef}[2][]{\def\@reftemp{}\ifnonempty{#1}{\def\@reftemp{#1.#2}}\href{https://svn.kwarc.info/repos/MMT/doc/api/index.html\#info.kwarc.mmt.\@reftemp}{{\color{red}#2}}}
+
+\newcommand{\api}[2][]{\def\@apitemp{}\ifnonempty{#1}{\def\@apitemp{.#1}}\coderef[api\@apitemp]{#2}}

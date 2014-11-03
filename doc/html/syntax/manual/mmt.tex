@@ -1,0 +1,56 @@
+\documentclass{article}
+\usepackage{graphicx,url,wrapfig,amsmath,amssymb}  %standard packages
+\usepackage{amsthm}
+\usepackage[hide]{ed/ed} %for ednotes
+%\usepackage{xkeyval} %needed for listings package
+%\usepackage{listings} %listings
+%\usepackage{lstomdoc} %for omdoc listings
+%\usepackage{tikz} %diagrams
+%\usetikzlibrary{shapes} %needed for tikz package
+%\usetikzlibrary{arrows} %needed for tikz package
+\usepackage[top=2cm,bottom=2cm,left=2cm,right=2cm]{geometry} %define borders
+
+\usepackage{basics}
+\usepackage[nobook]{theorems}
+\usepackage{listings}
+\usepackage{xmldoc}
+\usepackage{xcolor}
+\usepackage{paralist}
+\usepackage{mmt_new}
+
+\usepackage{local}
+
+\usepackage[bookmarksnumbered,colorlinks,linkcolor=blue,citecolor=red,urlcolor=gray]{hyperref} %pdf hyper links, load this last
+
+\setlength{\hfuzz}{3pt} \hbadness=10001 %make box warning less strict
+
+\title{The {\mmt} Manual}
+\author{Florian Rabe \\
+Jacobs University Bremen}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\omitted}{\op{None}}
+\newcommand{\mmturi}{\ensuremath{\op{MMTURI}}}
+\newcommand{\mmtqname}{\ensuremath{\op{QName}}}
+\newcommand{\mmtname}{\ensuremath{\op{Name}}}
+\newcommand{\snippet}[1]{\texttt{#1}}
+\newcommand{\defemph}[1]{{\bf #1}}
+\newcommand{\translate}[2]{T(#1,#2)}
+\newcommand{\render}[3]{R(#1,#2,#3)}
+\newcommand{\iPrec}{\op{iPrec}}
+\newcommand{\oPrec}{\op{oPrec}}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+This documentation is outdated and subsumed by the one in \url{../html/index.html}.
+\end{center}
+
+\section{XML Syntax and MMT URIs}\label{sec:syntax}
+  \input{syntax}
+
+
+\bibliographystyle{alpha}
+\bibliography{bib/systems,bib/pub_rabe,kwarc}
+\end{document}

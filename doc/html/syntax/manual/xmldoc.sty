@@ -1,0 +1,20 @@
+\newenvironment{elemdescr}{\noindent\vspace{1em}\begin{tabular}{|p{\textwidth}|}\hline}{\hline\end{tabular}}
+\newenvironment{attdescr}[1][10cm]{
+  \begin{minipage}{\textwidth}
+  {\bf Attributes}:\\[.2cm]
+  \begin{tabular}{|l|l|p{#1}|}
+  \hline
+  name & type & value \\
+  \hline
+}{
+  \hline
+  \end{tabular}
+  \end{minipage}\medskip
+}
+\newcommand{\attribute}[3]{\snippet{#1} & #2 & #3 \\}
+
+\newcommand{\elemlabel}[2]{{\bf Label}: \snippet{#1} (#2)\\[.2cm]}
+\newcommand{\children}[2]{{\bf Children}: \snippet{#1}\\[.2cm]}
+\newcommand{\xmlcomment}[1]{{\bf Comment}: #1\\[.2cm]}
+
+\newenvironment{evaluation}{\vspace{1em}{\bf Evaluation}:}{\bigskip}

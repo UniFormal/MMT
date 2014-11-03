@@ -1,0 +1,332 @@
+The {\mmt} language and its semantics have been described in depth in \cite{RK:mmt:10}. Here we will focus on describing the XML syntax to someone who already has a general understanding of {\mmt}.
+
+The semantics of notations is described in Sect.~\ref{sec:notations}.
+
+\subsection{URIs}
+
+We define three data types for addressing {\mmt} elements: the type {\mmturi} of {\mmt} URIs and the types {\mmtname} and {\mmtqname} of unqualified and qualified {\mmt} names. They are defined by the following grammar:
+
+\begin{center}
+\begin{tabular}{|ll@{\tb}c@{\tb}l|}\hline
+MMT URI         & \mmturi  & $\bnfas$ & $N\bnfalt M\bnfalt S$    \\
+Namespace URI   & $N$      & $\bnfas$ & $\op{URI}$, no query, no fragment  \\
+Module URI      & $M$      & $\bnfas$ & $N?\mmtqname \bnfalt ?/\mmtqname$  \\
+Symbol URI      & $S$      & $\bnfas$ & $M?\mmtqname \bnfalt ??\mmtqname \bnfalt ??/\mmtqname$ \\
+Unqualified name& \mmtname & $\bnfas$ & $pchar^+$ \\
+Qualified name  & \mmtqname& $\bnfas$ & $\mmtname (/\mmtname)^*$ \\
+  & $\op{URI}$, $pchar$ & & see RFC 3986~\cite{BerFieMas:05} \\
+\hline
+\end{tabular}
+\end{center}
+
+Namespaces $N$ have no semantics and only serve to disambiguate toplevel declarations.
+Modules are any kind of named resource that introduces a scope within which other resources (i.e., symbols) are introduced such as signatures, theories, ontologies. Modules may be nested, in which case they have qualified names.
+Symbols are any kind of named atomic resource such as constants, functions, predicates, sorts, axioms, theorems. The names of symbols may be qualified as well, which {\mmt} uses to form qualified names for symbols induced by named imports.
+
+We will use $Q$ and $R$ to range over qualified names. In a URI $N[?Q[?R]]$, $N$, $Q$, and $R$ are called the namespace, module name, and symbol name, respectively.
+A URI of this form is called \defemph{absolute} if $N$ is an absolute URI. Otherwise, it is called \defemph{relative} or an {\mmturi} \defemph{reference}.
+Every absolute MMT URI has exactly one of the following three forms: $N$, $N?Q$, or $N?Q?R$ where $N$ is an absolute URI. Every relative MMT URI has exactly one of the following seven forms: $n$, $n?q$, $n?q?r$, $?/q$, $?/q?r$, $??r$, or $??/r$ where $n$ is a relative (possibly empty) URI.
+
+Note that a $pchar$ may be any character permitted in a URI except for ``/'',  ``?'', ``\#'' ``['', ``]'', and ``\%''. Furtermore, all percent-encoded characters are permitted.
+
+\begin{example}
+In this example, we abbreviate \snippet{http://cds.omdoc.org/algebra/algebra.omdoc} with \snippet{A}.
+
+\snippet{O/algebra/algebra.omdoc?monoid?unit} is an absolute symbol URI. It refers to the symbol \snippet{unit} declared in the module \snippet{monoid} declared in the document \snippet{A}.
+
+The $/$-character in the module part separates submodules. \snippet{A?monoid/latex} refers to the module \snippet{latex} declared within the module \snippet{A?monoid} (e.g., a module containing notations to render monoids in Latex syntax).
+
+The $/$-character in the symbol part separates named imports, called structures in MMT. Let \snippet{A?group?mon} refer to an import \snippet{mon} declared within the module \snippet{A?group} that imports the module \snippet{A?monoid}. Then \snippet{A?group?mon/unit} refers to the symbol \snippet{A?monoid?unit} imported via this import. In general, if the symbol part of an MMT URI has $n$ components, then the first $n-1$ must be the names of named imports.
+\end{example}
+
+The resolution of an MMT URI reference $u$ against an absolute base URI $U$ is defined as follows:
+\begin{enumerate}
+	\item $u$ is of the form $n$, $n?q$, or $n?q?r$: $u$ is resolved relative to the namespace $N$ of $U$. (A possible module or symbol name in $U$ are ignored.) If $N'$ is the result of resolving $n$ against $N$ according to RFC 3986, then the resulting MMT URI is $N'$, $N'?q$, or $N'?q?r$, respectively. \\
+	Note that in the special case where $n$ is empty, this implies $N'=n$. (Beware that software packages for the URI data type such as in Java 1.5 might implement the obsolete RFC 2396, where empty $d$ was resolved in the same way as $.$.)
+	\item $u$ is of the form $?/q$ or $?/q?r$: $u$ is resolved relative to the namespace $N$ and module name $Q$ of $U$. (A possible symbol name in $U$ is ignored. It is an error if $U$ has no module name.) The resolution is $N?Q/q$ or $N?Q/q?r$, respectively.
+	\item $u$ is of the form $??r$ or $??/r$ and $U=N?Q?R$. (It is an error if $U$ is a module or document URI.) The resolution is $N?Q?r$ or $N?Q?R/r$, respectively.
+\end{enumerate}
+\medskip
+
+\begin{example}
+Assume a base URI \snippet{http://cds.omdoc.org/algebra/algebra.omdoc?group?mon}. The following table gives examples of resolutions of relative URIs for each of the above six cases. Here we abbreviate \snippet{http://cds.omdoc.org} with \snippet{O}.\smallskip
+
+\begin{tabular}{|l|l|}\hline
+URI   & Resolution \\
+\hline
+\snippet{mathml.omdoc}  &  \snippet{O/algebra/mathml.omdoc} \\
+\snippet{?group}  &  \snippet{O/algebra/algebra.omdoc?group} \\
+\snippet{../logics/fol/fol.omdoc?fol?and}  &  \snippet{O/logics/fol/fol.omdoc?fol?and} \\
+\snippet{?/latex}  &   \snippet{O/algebra/algebra.omdoc?group/latex} \\
+\snippet{?/latex?circ}  &   \snippet{O/algebra/algebra.omdoc?group/latex?circ} \\
+\snippet{??/unit}  &   \snippet{O/algebra/algebra.omdoc?group?mon/unit} \\
+\hline
+\end{tabular}
+\end{example}
+\bigskip
+
+In addition to the above grammars, we introduce the following convention: {\mmturi}s that contain less than two occurrences of $?$, can also be written with $2$ $?s$ by appending $?$. In other words, $n??$ and $N?Q?$ abbreviate $N$ and $N?Q$, respectively.
+
+Thus, (recalling that no $?$-character may occur in URIs that have no query component) every absolute MMT URI can be written uniquely as a $?$-separated triple. The components of this triple are a URI and two $/$-separated lists of strings.
+
+\paragraph{Relationship with URIs}
+Every absolute/relative {\mmturi} is also a legal absolute/relative URI. In particular, if we consider an {\mmturi} $N?Q?R$ as a URI, then $Q?R$ is its query component.
+Moreover, the {\mmturi} resolution of $n?q?r$ against $D?Q?R$ is identical to the usual resolution of relative URIs.
+
+The situation is more complicated for those relative {\mmturi}s that begin with $?/$ or $??$. Here, the resolution must be implemented separately. This is unavoidable: In order to subsume common practices regarding XML namespaces, the module and symbol name must be put into the query component; but URIs do not permit relative resolution within the query component.
+
+\paragraph{Relationship between OpenMath identifiers and {\mmturi}s.}
+Every absolute {\mmturi} is a triple of namespace, module name, and symbol name. This corresponds directly to the cdbase-cd-name triple in OpenMath identifiers \cite{openmath}. Note that {\openmath} use the fragment component when forming URIs from {\openmath} identifiers; {\mmturi}s avoid this because it would preclude efficient retrieval of individual symbols.
+
+
+\subsection{Document Level Elements}
+
+\begin{elemdescr}
+  \elemlabel{omdoc}{a document unit}
+  \begin{attdescr}
+    \attribute{name}{\mmturi}{the optional name of the unit}
+    \attribute{base}{\mmturi}{the base URI for the unit's content, relative to base URI given by parent, empty by default}
+  \end{attdescr}
+  \children{omdoc* \& xref* \& module*}{}
+  \xmlcomment{If this occurs as the root of a document that has a URL, then the name must be omitted or be equal to the last segment of that URL's path.}
+\end{elemdescr}
+
+\begin{elemdescr}
+  \elemlabel{dref}{a reference to an external document unit}
+  \begin{attdescr}
+    \attribute{target}{\mmturi}{the referenced document}
+  \end{attdescr}
+  \children{}{}
+\end{elemdescr}
+
+\begin{elemdescr}
+  \elemlabel{mref}{a reference to an external document unit}
+  \begin{attdescr}
+    \attribute{target}{\mmturi}{the referenced module}
+  \end{attdescr}
+  \children{}{}
+\end{elemdescr}
+
+%\begin{elemdescr}
+%  \elemlabel{omtext}{text}
+%  \begin{attdescr}
+%    \attribute{name}{\mmturi}{the optional name of the omtext}
+%    \attribute{base}{\mmturi}{the base URI for the omtext's content, relative to the base URI given by the parent, empty by default}
+%  \end{attdescr}
+%  \children{p* \& TEXT* }{}
+%  \xmlcomment{This represents unstructured text such as a paragraph.}
+%\end{elemdescr}
+
+\subsection{Module Level Elements}
+
+\begin{elemdescr}
+  \elemlabel{theory}{a theory}
+  \begin{attdescr}
+    \attribute{base}{\mmturi}{the base URI of the module, relative to the base URI given by the parent, empty by default}
+    \attribute{name}{\mmtname}{the name of the view}
+    \attribute{meta}{\mmturi}{the URI of the optional meta-theory, relative to base URI given by parent}
+  \end{attdescr}
+  \children{(include* \& symbol*) | definition\{object\}}{}
+  \xmlcomment{Here, a symbol can be a constant or a structure.}
+  \xmlcomment{Depending on the children, we speak of \emph{declared} and \emph{defined} theories.
+  In the latter case, the definiens is a theory expression.}
+\end{elemdescr}
+
+\begin{elemdescr}
+  \elemlabel{view}{a theory morphism, postulated link}
+  \begin{attdescr}
+    \attribute{base}{\mmturi}{the base URI of the module, relative to the document base, empty by default}
+    \attribute{name}{\mmtname}{the name of the view}
+    \attribute{from}{\mmturi}{the domain of the view, relative to base URI given by parent}
+    \attribute{to}{\mmturi}{the codomain of the view, relative to base URI given by parent}
+  \end{attdescr}
+  \children{(include* \& symbol*) | definition\{object\}}{}
+  \xmlcomment{The symbols are assignments, i.e., their name must be the same as that of a corresponding symbol in the domain, their types are predetermined, and their definientia required.}
+  \xmlcomment{Depending on the children, we speak of \emph{declared} and \emph{defined} views. In the latter case, the definiens is a morphism expression.}
+\end{elemdescr}
+
+\begin{elemdescr}
+  \elemlabel{style}{a named set of notations}
+  \begin{attdescr}[9cm]
+    \attribute{base}{\mmturi}{the base URI of the module, relative to the document base, empty by default}
+    \attribute{name}{\mmtname}{the name of the style}
+    \attribute{for}{\mmturi}{the base URI used for \snippet{for} attributes, relative to the module's base URI, empty by default}
+    \attribute{defaults}{\snippet{use} $|$ \snippet{ignore}}{defaults to \snippet{use}, determines the treatment of default notations given in theories}
+  \end{attdescr}
+  \children{(include* \& notation*) | definition\{notset\}}{}
+  \xmlcomment{Definitions are actually not supported yet and only added for symmetry.}
+\end{elemdescr}
+
+All module level elements are named. The base URI of a module defaults to the document URI. However, a differing URI may be provided with the \snippet{base} attribute of the module or an ancestor. The latter should only be used in generated documents because it prevents reference by location.
+
+A module with name $n$ and base URI $B$ is addressable via the module URI $B?n$. Module URIs (but not module names) must be unique within a file.
+
+A document unit with name $n$ whose parent is addressable as $D$ is addressable as $D/n$. Document unit names must be unique within a document unit.
+
+\subsection{Symbol Level Elements}
+
+Some symbol level elements are named (includes and notations optionally so). If a symbol with name $n$ occurs in a module with URI $M$, the symbol is addressable via the URI $M?n$.
+
+\begin{elemdescr}
+  \elemlabel{include}{inclusion of a theory/view/style into the containing theory/view/styles}
+  \begin{attdescr}
+    \attribute{from}{\mmturi}{the included module, relative to containing module}
+  \end{attdescr}
+  \children{}{}
+\end{elemdescr}
+
+\begin{elemdescr}
+  \elemlabel{constant}{e.g., a sort, function, predicate, judgment, or proof rule}
+  \begin{attdescr}
+    \attribute{name}{\mmtname}{the name of the constant}
+  \end{attdescr}
+    \children{alias\{name\} \& type\{object\}? \& definition\{object\}? \& notation\{notation\}? \& role\{string\}}{}
+    \xmlcomment{Constants can occur both in theories and views. In the latter case, their type is predetermined and must be omitted, and their definiens is required.}
+\end{elemdescr}
+
+\begin{elemdescr}
+  \elemlabel{structure}{named instantiation of another theory, definitional link}
+  \begin{attdescr}
+    \attribute{name}{\mmtname}{the name of the structure}
+    \attribute{from}{\mmturi}{the domain of the structure, relative to containing theory}
+  \end{attdescr}
+  \children{(include* \& symbol*) | definition\{object\}}{}
+  \xmlcomment{A can be an assignment to a constant or an assignment to a structure.}
+  \xmlcomment{Depending on the children, we speak of \emph{declared} and \emph{defined} structures. In the latter case, the definiens is a morphism expression.} 
+\end{elemdescr}
+
+Every notation has a role. The permitted values of \snippet{role} are given in Sect.~\ref{sec:notations}. There are two ways to give notations, direct and via parameters:
+
+\begin{elemdescr}
+  \elemlabel{notation}{a notation}
+  \begin{attdescr}[8.5cm]
+    \attribute{name}{\mmtname}{the optional name of the notation}
+    \attribute{for}{\mmturi}{the optional URI to which the notation applies, relative to base URI of style}
+    \attribute{role}{string}{the simple role to which the notation applies}
+    \attribute{wrap}{\snippet{true | false}}{a flag specifying whether the notation is merged with more specific ones}
+    \attribute{precedence}{$\Z^*$}{the optional output precedence}
+  \end{attdescr}
+  \children{pres}{}
+  \xmlcomment{A notation without a name has no URI. \snippet{precedence} may only be given if the role is bracketable.}
+\end{elemdescr}
+
+\begin{elemdescr}
+  \elemlabel{notation}{a notation}
+  \begin{attdescr}[8.5cm]
+    \attribute{name}{\mmtname}{the optional name of the notation}
+    \attribute{for}{\mmturi}{the optional URI to which the notation applies, relative to base URI of style}
+    \attribute{role}{string}{the simple role to which the notation applies}
+    \attribute{precedence}{$\Z^*$}{the optional output precedence}
+    \attribute{fixity}{string}{the optional fixity: \snippet{pre | post | in | inter | bind}}
+    \attribute{application-style}{string}{the optional application style: \snippet{math | lc}}
+    \attribute{associativity}{string}{the optional associativity: \snippet{none | left | right}}
+    \attribute{implicit}{$\N$}{the number of implicit arguments}
+  \end{attdescr}
+  \children{}{}
+  \xmlcomment{A notation without a name has no URI. \snippet{precedence} may only be given if the role is bracketable.}
+\end{elemdescr}
+
+\subsection{Object Level Elements}
+
+The type \snippet{objects} represents {\mmt} terms. These are given as OpenMath objects wrapped in an OMOBJ element. Furthermore, morphism application of $\mu$ to $\omega$ is encoded in OpenMath using the special theory MMT with base $MMT$:
+\begin{lstlisting}
+<OMA>
+  <OMS base="$MMT$" module="mmt" name="morphism-application"/>
+  $\mu$
+  $\omega$
+</OMA>
+\end{lstlisting}
+
+
+\paragraph{Module Expressions}
+Objects may denote \mmt theories and morphisms.
+Besides OMS elements referring to \mmt theories, theory expressions can arise from, e.g., instantiation, union, and pushout.
+Besides OMS elements referring to \mmt views and structures, morphism expressions can arise from, e.g., instantiation, identity, composition, unit, pushout.
+We use $MMT$ to abbreviate \lstinline|http://omdoc.org/mmt|.
+
+Link $D?Q$:
+\begin{lstlisting}
+<OMS base="$D$" module="$Q$"/>
+\end{lstlisting}
+
+Composition $\öö{\mu_1}{\ldots}{\mu_n}$:
+\begin{lstlisting}
+<OMA>
+  <OMS base="$MMT$" module="mmt" name="composition"/>
+  $\mu_1$
+  $\ldots$
+  $\mu_n$
+</OMA>
+\end{lstlisting}
+
+Identity $\mmtident{\qT}$:
+\begin{lstlisting}
+<OMA>
+  <OMS base="$MMT$" module="mmt" name="identity"/>
+  $T$
+</OMA>
+\end{lstlisting}
+
+Theories are encoded like links.
+
+\subsection{Resolving MMT URIs}
+
+\paragraph{Document level}
+The scheme and authority of a URI $D$ must resolve to some root directory. Then the path of $D$ is resolved relative to that directory. For the resolution of paths, we treat the paths ending in $/$ and those not ending in $/$ as identical.
+
+A path $P$ is resolved relative to the directory $D$ as follows:
+\begin{itemize}
+  \item $P$ is empty, then resolve to $D$.
+	\item If $P=p/P'$ and $p$ is a subdirectory of $D$, then resolve $P'$ relative to $D/p$.
+	\item If $P=p/P'$ and $p$ is a file in $D$, then resolve $P'$ relative to the content of that file (which must be an \snippet{omdoc} element).
+\end{itemize}
+
+A path $P$ is resolved relative to an \snippet{omdoc} element $O$ as follows:
+\begin{itemize}
+  \item $P$ is empty, then resolve to $O$.
+	\item If $P=p/P'$ and $p$ is the value of a \snippet{name} attribute of an \snippet{omdoc} child of $O$, then resolve $P'$ relative to that child.
+\end{itemize}
+
+Note that this makes the file structure transparent in the following sense. Assume a directory $D$ with files $n_1,\ldots,n_r$ containing the respective \snippet{omdoc} element $O_i$. Let $O$ be the file containing
+\begin{lstlisting}
+<omdoc>
+  <omdoc name="$n_1$">
+    $O_1$
+  </omdoc>
+  $\ldots$
+  <omdoc name="$n_r$">
+    $O_r$
+  </omdoc>
+</omdoc>
+\end{lstlisting}
+Then the resolutions of a path relative to $D$ and $O$ are the same.
+
+We can implement this transparency with a standard apache web server: In every directory $D$ add a file \snippet{index.omdoc} containing $O$ as defined above and add a directive in the \snippet{.htaccess} file to serve \snippet{index.omdoc} as the directory listing. (If $D$ should happen to contain a file \snippet{index.omdoc} already, we can pick any other file name for it.) Then apache's path resolution will correspond to the above definition for all paths that do not end in $/$.
+
+The connection to directory listings is stressed if we use this alternative -- semantically equivalent -- definition of $O$:
+\begin{lstlisting}
+<omdoc>
+  <xref target="$n_1$"/>
+  $\ldots$
+  <xref target="$n_r$"/>
+</omdoc>
+\end{lstlisting}
+
+Note that it is always legal to split an \snippet{omdoc} file into directories. However, the opposite is only legal if module names are unique across the directory.
+
+\paragraph{Module Level}
+A module level URI $D?Q$ is resolved by resolving $D$ to an \snippet{omdoc} element $O$ and then resolving $Q$ relative to it as follows:
+\begin{itemize}
+	\item If $Q=q$ is a single segment, then resolve to the module with name $q$ in $O$. Here, the modules in $O$ are the module level children of \snippet{omdoc}-descendants of $O$.
+	\item If $Q=q/Q'$, then resolve $Q'$ relative to the \snippet{omdoc}-wrapped resolution $q$.
+\end{itemize}
+Here we assume that there are no \snippet{base} attributes set in $O$.
+
+\paragraph{Symbol Level}
+A module level URI $D?Q?R$ is resolved by resolving $D?Q$ to a module level element $M$ and then resolving $R$ relative to it as follows:
+\begin{itemize}
+	\item If $R=r$ is a single segment, then resolve to the symbol with name $r$ in $M$. Here, the symbols in $M$ are the symbol level children of \snippet{omdoc}-descendants of $M$.
+	\item If $R=r/R'$, then resolve $R'$ relative to the domain of the structure with name $r$ in $M$ and translate the result along said structure.
+\end{itemize}
+
+Note that the structure of nested \snippet{omdoc} elements is transparent to the resolution of modules and symbols. Thus, the uniqueness of module and symbol names, which is necessary to make resolution well-defined, nested \snippet{omdoc} elements must be disregarded.
