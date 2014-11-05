@@ -1,0 +1,45 @@
+\documentclass[12pt]{article}
+\usepackage[top=2cm,bottom=2cm,left=2cm,right=2cm]{geometry} %define borders
+\usepackage{url}
+\usepackage{paralist}
+\usepackage{xcolor,graphicx,wrapfig,mytikz}
+%\usepackage[T1]{fontenc}
+
+\usepackage[bookmarksnumbered,bookmarksopen,colorlinks,urlcolor=gray,linkcolor=blue,citecolor=blue]{hyperref}
+
+\usepackage{basics}
+
+\newcommand{\defemph}[1]{\textbf{#1}}
+\newcommand{\enclcite}[1]{\cite{#1}}
+\newcommand{\citeByNumber}[1]{\cite{#1}}
+
+\newcommand{\LFI}{LFI}
+\newcommand{\cn}[1]{\mathtt{#1}}
+\newcommand{\pn}{LATIN}
+
+\begin{document}
+
+\author{Florian Rabe}
+\title{MMT: A Foundation-Independent Approach to Formal Knowledge}
+\date{\today}
+\maketitle
+
+\begin{abstract}
+\mmt is a framework for representing declarative languages such as logics, type theories, set theories, etc..
+It achieves a high level of generality by systematically avoiding a commitment to a particular syntax or semantics.
+Instead, individual language features (e.g., $\lambda$-abstraction, conjunction, etc.) and syntax features (keywords, notations, etc.) are defined as separate, reusable modules, from which individual languages are assembled.
+These modules can be declarative by specifying features as \mmt theories or programmatic by providing individual rules as plugins.
+
+Despite this high degree of abstraction, it is possible to implement advanced algorithms generically at the \mmt level.
+These include knowledge management algorithms (e.g, IDE, search, change management) as well as logical algorithms (e.g., parsing, type reconstruction, module system).
+Thus, we can use \mmt to obtain strong implementations of declarative languages at extremely low cost.
+
+Moreover, the focus on modularity and language-independence enables system integration, where \mmt can mediate the exchange of knowledge across different foundational systems and concrete syntaxes.
+\end{abstract}
+
+\input{main}
+
+\bibliographystyle{alpha}
+\bibliography{../../../Program_Data/Latex/bib/pub_rabe,../../../Program_Data/Latex/bib/rabe,../../../Program_Data/Latex/bib/systems,../../../Program_Data/Latex/bib/institutions,../../../Program_Data/Latex/bib/historical,../../../Program_Data/Latex/bib/other}
+
+\end{document}
