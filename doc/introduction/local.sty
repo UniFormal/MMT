@@ -1,0 +1,47 @@
+\newcommand{\Cons}{\mathcal{T}}
+\newcommand{\Ruls}{\mathcal{R}}
+
+\newcommand{\cons}[3]{#1(#2\ifnonempty{#2}{;}#3)}
+\newcommand{\literal}[2]{\mathcal{L}^{#1}(#2)}
+
+\newcommand{\vmk}[1]{\mathcal{V}_{#1}}
+\newcommand{\amk}[1]{\mathcal{A}_{#1}}
+
+\newcommand{\type}{\mathtt{type}}
+\newcommand{\kind}{\mathtt{kind}}
+\newcommand{\lflambda}{\mathtt{lambda}}
+\newcommand{\lfarrow}{\mathtt{arrow}}
+\newcommand{\lfPi}{\mathtt{Pi}}
+\newcommand{\lfapply}{\mathtt{apply}}
+
+\newcommand{\isterm}[3]{\anyjudg{#1}{#2}{#3\;\mathtt{TERM}}}
+\newcommand{\istheo}[1]{\der #1}
+\newcommand{\iscont}[2]{\der_{#1} #2}
+\newcommand{\anyjudg}[3]{#2\der_{#1} #3}
+\newcommand{\ujudg}[1]{#1\;\mathtt{UNIV}}
+\newcommand{\tjudg}[2]{{#1:#2}}
+\newcommand{\ejudg}[3][]{#2=#3\ifnonempty{#1}{:#1}}
+\newcommand{\isinh}[3]{#2\der_{#1}\_:#3}
+\newcommand{\isuniv}[3]{\anyjudg{#1}{#2}{\ujudg{#3}}}
+\newcommand{\oftype}[4]{\anyjudg{#1}{#2}{\tjudg{#3}{#4}}}
+\newcommand{\isequal}[5][]{\anyjudg{#2}{#3}{\ejudg[{#1}]{#4}{#5}}}
+\newcommand{\hastype}[3]{\anyjudg{#1}{#2}{#3:!}}
+
+\newcommand{\false}{\mathtt{false}}
+\newcommand{\true}{\mathtt{true}}
+\newcommand{\com}[1]{\\{\color{gray} \emph{Intuition:} #1}}
+\newcommand{\alg}[1]{#1}
+
+
+%% DHOL
+\newcommand{\prop}{\mathtt{prop}}
+\newcommand{\ded}{\mathtt{ded}}
+\newcommand{\equal}{\mathtt{equal}}
+
+%% sigma types
+\newcommand{\Sg}{\mathtt{Sigma}}
+\newcommand{\tm}{\mathtt{tm}}
+\newcommand{\tp}{\mathtt{tp}}
+\newcommand{\pair}{\mathtt{pair}}
+\newcommand{\pil}{\mathtt{pi1}}
+\newcommand{\pir}{\mathtt{pi2}}
