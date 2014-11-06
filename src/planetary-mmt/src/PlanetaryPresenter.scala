@@ -225,7 +225,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      }
    }
    
-   def doNotation(spath : GlobalName, not : TextNotation)  = {
+   def doNotationTerm(spath : GlobalName, not : TextNotation) : Term = {
      def getVarName(i : Int) : String = {
        val name = ((i % 26) + 'a'.toInt).toChar
        val indices =  (i / 26) match {
@@ -238,14 +238,22 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      val sub = Substitution(arity.subargs.map(sa => Sub(OMV.anonymous, OMV(getVarName(sa.number - 1)))) :_*)
      val con = Context(arity.variables.map(v => VarDecl(LocalName(getVarName(v.number - 1)), None, None, None)) :_*)
      val args = arity.arguments map {a => OMV(getVarName(a.number - 1))}
-     val tm = ComplexTerm(spath, sub, con, args)
+     ComplexTerm(spath, sub, con, args)
+   }
+   
+   def doNotationRendering(spath : GlobalName, not: TextNotation) {
+     val tm = doNotationTerm(spath, not)
+     notPres.notations = List(spath -> not)
+     notPres(tm, None)(rh)
+     notPres.notations = Nil
+   }
+   
+   def doNotation(spath : GlobalName, not : TextNotation)  = {
      tr {
        td { text{not.scope.languages.mkString("/")} }
        td { text{not.arity.length.toString} }
        td {
-         notPres.notations = List(spath -> not)
-         notPres(tm, None)(rh)
-         notPres.notations = Nil
+         doNotationRendering(spath, not)
        }
      }
    }
@@ -253,21 +261,21 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
    def doFlexiformalDeclaration(fd : FlexiformalDeclaration) : Unit = fd match {
      case n : PlainNarration => 
        div("flexiformal plain") {
-         doNarrativeObject(fd.content)
+         doNarrativeObject(fd.df)
        }
      case d : Definition => 
        div(cls = "flexiformal definition", 
            attributes = List(("jobad:defines" -> d.targets.head.toPath))) {
          //span("keyword"){text("definition" )}
-         doNarrativeObject(fd.content)
+         doNarrativeObject(fd.df)
        }
      case x => 
        throw ImplementationError("Presentation for " + x.getClass() + " not implemented yet")
    }
    
-   def doNarrativeObject(no : NarrativeObject) : Unit = no match {
-     case n : NarrativeXML => rh(n.node)
-     case r : NarrativeRef => r.self match {
+   def doNarrativeObject(no : FlexiformalObject) : Unit = no match {
+     case n : FlexiformalXML => rh(n.node)
+     case r : FlexiformalRef => r.self match {
       case false => 
         rh("<span jobad:href=\"" + r.target.toPath + "\">")
         r.objects.foreach(doNarrativeObject)
@@ -277,9 +285,9 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
         r.objects.foreach(doNarrativeObject)
         rh("</span>")
      }
-     case tm : NarrativeTerm =>
+     case tm : FlexiformalTerm =>
        apply(tm.term, None)(rh)
-     case n : NarrativeNode => 
+     case n : FlexiformalNode => 
        rh.writeStartTag(n.node.prefix, n.node.label, n.node.attributes, n.node.scope)
        n.child.map(doNarrativeObject)
        rh.writeEndTag(n.node.prefix, n.node.label)
