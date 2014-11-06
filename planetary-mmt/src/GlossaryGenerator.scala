@@ -20,7 +20,6 @@ object GlossaryGenerator {
   private var presenter: PlanetaryPresenter = null
   private var controller: Controller = null
   private var rh: StringBuilder = null
-  private var langList = "en" :: "de" :: Nil
   def generate(controller: Controller): String = {
     this.controller = controller
     this.presenter = controller.extman.getPresenter("planetary") match {
@@ -49,7 +48,7 @@ object GlossaryGenerator {
             c.notC.verbalizationDim.notations.values.flatten.map(c.path -> _)
         }
     }
-    present(verbs.flatten.flatten)
+    present(verbs.flatten.flatten.toList.distinct)
     rh.get
   }
 
@@ -104,8 +103,8 @@ object GlossaryGenerator {
     val constant = controller.library.getConstant(spath)
     val alternatives = constant.notC.verbalizationDim.notations.values.flatten.flatMap(_.scope.languages.filter(_ != lang)).toSet
     
-    val notations = (constant.notC.parsingDim.notations.values.flatten ++ constant.notC.presentationDim.notations.values.flatten).map(n => spath -> n).toList
-
+    val notations = (constant.notC.parsingDim.notations.values.flatten ++ constant.notC.presentationDim.notations.values.flatten).map(n => spath -> n).toList.distinct
+    
     val defs = controller.depstore.getObjects(spath, isDefinedBy) collect {
           case fp: FragPath if fp.isPath =>
             controller.get(fp.path) match {
@@ -124,12 +123,10 @@ object GlossaryGenerator {
     
     li(cls = "entry") {
       div {
-        span(cls="name keyword", attributes=List("id" -> (presenter.encPath(spath) + "_" + lang))) { 
-          val smks = not.markers map {
-            case d : Delimiter => d.text
-            case x => x.toString //TODO
+        span(cls="name keyword", attributes=List("id" -> (presenter.encPath(spath) + "_" + lang))) {
+          span {
+            presenter.doNotationRendering(spath, not)
           }
-          text(smks.mkString(" ")) 
         }
         //addings defs
         

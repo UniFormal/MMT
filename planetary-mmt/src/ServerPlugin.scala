@@ -285,13 +285,13 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
         val message = new collection.mutable.HashMap[String, Any]()
         p._1 match {
           case se : SourceError =>
-            message("type") = "Error"
+            message("type") = "Fatal"
             message("shortMsg") = se.mainMessage
             message("longMsg") = se.getStackTraceString
             message("srcref") = JSONObject(List("from" -> JSONObject(List("line" -> se.ref.region.start.line, "col" -> se.ref.region.start.column).toMap), 
                                  "to" -> JSONObject(List("line" -> se.ref.region.end.line, "col" -> se.ref.region.end.column).toMap)).toMap)
           case e =>
-            message("type") = "Error"
+            message("type") = "Fatal"
             message("shortMsg") = e.getMessage
             message("longMsg") = e.getStackTraceString
             //no srcref :(
