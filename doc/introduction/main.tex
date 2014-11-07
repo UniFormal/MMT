@@ -331,11 +331,12 @@ The theoretical background of representing the proof and model theory of logics 
 \begin{figure}[htb]
  \begin{center}
  \begin{tikzpicture}
- \node (MMT) at (3,1.5) {MMT};
- \node (L) at (2,0.5) {LF};
- \node (Lx) at (4,0.5) {LF+X};
- \draw[arrow](MMT) -- (L);
- \draw[arrow](MMT) -- (Lx);
+% \node (MMT) at (3,1.5) {MMT};
+ \node (L) at (2,1) {LF};
+ \node (Lx) at (4,1) {LF+X};
+% \draw[arrow](MMT) -- (L);
+% \draw[arrow](MMT) -- (Lx);
+ \draw[mono](L) -- (Lx);
 
  \draw[fill=red!60] (2,-.5) ellipse (3.2cm and .6cm);
  \node[color=red] at (-3.1,-.5) {LATIN logic library};
@@ -369,11 +370,12 @@ The theoretical background of representing the proof and model theory of logics 
  \draw[arrow](B') -- (A');
  \end{tikzpicture}
  \end{center}
-\caption{Library Integration in OAF}\label{fig:oaf}
+\caption{Representing Libraries in \mmt}\label{fig:oaf}
 \end{figure}
 
-The OAF project (2014-2017) aims at \textbf{overcoming the isolation and mutual incompatibility between the various large libraries} of formal knowledge obtained by applying the homogeneous method to various fixed foundations such as Mizar \cite{mizar}, the HOL systems \cite{hol,isabellehol,hollight}, PVS \cite{pvs}, Coq and Matita \cite{coq,matita}, as well as the heterogeneous libraries of TPTP \cite{tptp} and IMPS \cite{imps}.
+The OAF project \cite{project:oaf} (2014-2017) aims at \textbf{overcoming the isolation and mutual incompatibility between the various large libraries} of formal knowledge obtained by applying the homogeneous method to various fixed foundations such as Mizar \cite{mizar}, the HOL systems \cite{hol,isabellehol,hollight}, PVS \cite{pvs}, Coq and Matita \cite{coq,matita}, as well as the heterogeneous libraries of TPTP \cite{tptp} and IMPS \cite{imps}.
 The project proceeds in $2$ phases, both of tremendous difficulty.
+\medskip
 
 In the first phase, we \textbf{make the existing libraries available in a standardized format} by importing them into \mmt.
 This requires two steps for each library:
@@ -387,18 +389,38 @@ But the difficulty of the implementation is huge and can even be impossible with
 Therefore, substantial collaboration from within the respective developer community is indispensable.
 \end{compactenum}
 At this point, these steps have been mostly completed for Mizar and HOL Light, resulting in the \mmt diagram of Fig.~\ref{fig:oaf}.
+\medskip
 
 In the second phase, we will be able to attack the \textbf{library integration problem}.
 This problem cripples state-of-the-art integration attempts between homogeneous systems: Theorems about, for example, the real numbers defined in one foundation cannot be used to reason about the real numbers as defined in another foundation.
 The heterogeneous method could avoid this problem because all formalizations could be moved easily along morphisms.
 Therefore, an important goal is to refactor the existing libraries to be more heterogeneous and to investigate partial or approximate solutions.
 
-%Closely related to the theory-oriented method are \emph{module systems}, which permit namespace and dependency management.
-%Most FV systems provide at least a simple module system in which statements are grouped into modules (usually called theories) that may import other modules.
-%Advanced module systems permit instantiation, translation, and inheritance, which is particularly successful in conjunction with the theory method \cite{asl}.
-%Among FV systems, PVS provides the most sophisticated module system permitting instantiation.
-%The PI developed a module system based on theory morphisms that is part of the Twelf system.
-%\medskip
+A central method will be to use \textbf{interface logics and interface theories} akin to the use of interfaces in software engineering.
+Every problem should be stated in the weakest possible interface logic and theory, and then individual foundations that realize the interface can be used to obtain the proof.
+This is crucial because foundations are usually substantially more expressive than the interface logic needed to state a problem.
+For example, axiomatic set theory, higher-order logic, and constructive type theory are common foundations, but we can give an interface theory for the real numbers in a much weaker logic, e.g., a fragment of second-order logic.
+While giving a logic translation between any two typical foundations can be prohibitively difficult, a weak interface logic can be easily imported into all of them.
+This is no coincidence: Whereas foundations are designed to be simple and logically very expressive (because they should be fixed and implemented once and for all), interface logics should be as inexpressive as possible even if that makes them more complex.
+
+The LATIN logic library already developed most of the needed interface logics.
+This will have to complemented with a library of interface theories for the typical domains of computer science and mathematics.
+
+\begin{wrapfigure}r{4cm}\vspace*{-1em}
+  \begin{tikzpicture}[scale=1.4]
+    \node[draw] (tg1) at (0,0) {$S_1$};
+    \node[draw] (tg2) at (2,0) {$S_2$};
+    \node[draw] (if) at (1,1) {$\begin{array}{l}{T}\\c,\ldots\end{array}$};
+    \draw[->] (if) -- node[left]{$v_1$} (tg1);
+    \draw[->] (if) -- node[right]{$v_2$} (tg2);
+    \draw[dotted,<->] (tg1) --node[below]{$v_1(c)\approx v_2(c)$} (tg2);
+  \end{tikzpicture}
+  \vspace{-2em}
+\end{wrapfigure}
+
+Interfaces also provide a way to integrate libraries by using \textbf{alignments} \cite{RKS:integration:11}.
+In the diagram on the right, an interface theory $T$ is realized by two systems $S_1$ and $S_2$, which is witnessed by two theory morphisms $v_i:T\to S_i$. For a $T$-symbol $c$, we say that $v_1(c)$ and $v_2(c)$ are \emph{aligned} via $(c,v_1,v_2)$.
+Alignments provide a semantically backed concept for cross-references between libraries and provide a starting point for library translations that overcome the library integration problem.
 
 
 %\section{System Integration}
