@@ -370,7 +370,7 @@ class NotationBasedPresenter extends ObjectPresenter {
             case OMS(p) =>
                val not = getNotation(p).getOrElse(default)
                if (not.arity.isConstant) {
-                  not.markers.foreach {
+                  not.markers.foreach { 
                      case d: Delimiter =>
                         val dE = d.expand(p)
                         doDelimiter(p, dE, Nil)
