@@ -101,20 +101,20 @@ class FlexiformalPresenter extends Presenter(new MathMLPresenter) {
    def doFlexiformalDeclaration(fd : FlexiformalDeclaration) : Unit = fd match {
      case n : PlainNarration => 
        div("flexiformal plain") {
-         doNarrativeObject(fd.content)
+         doNarrativeObject(fd.df)
        }
      case d : Definition => 
        div(cls = "flexiformal definition", 
            attributes = List(("jobad:defines" -> d.targets.head.toPath))) {
-         doNarrativeObject(fd.content)
+         doNarrativeObject(fd.df)
        }
      case x => 
        throw ImplementationError("Presentation for " + x.getClass() + " not implemented yet")
    }
    
-   def doNarrativeObject(no : NarrativeObject) : Unit = no match {
-     case n : NarrativeXML => rh(n.node)
-     case r : NarrativeRef => r.self match {
+   def doNarrativeObject(no : FlexiformalObject) : Unit = no match {
+     case n : FlexiformalXML => rh(n.node)
+     case r : FlexiformalRef => r.self match {
      	case false => 
      	  rh("<span jobad:href=\"" + r.target.toPath + "\">")
      	  r.objects.foreach(doNarrativeObject)
@@ -124,8 +124,8 @@ class FlexiformalPresenter extends Presenter(new MathMLPresenter) {
         r.objects.foreach(doNarrativeObject)
         rh("</span>")
      }
-     case tm : NarrativeTerm => apply(tm.term, None)(rh)
-     case n : NarrativeNode => 
+     case tm : FlexiformalTerm => apply(tm.term, None)(rh)
+     case n : FlexiformalNode => 
        rh.writeStartTag(n.node.prefix, n.node.label, n.node.attributes, n.node.scope)
        n.child.map(doNarrativeObject)
        rh.writeEndTag(n.node.prefix, n.node.label)

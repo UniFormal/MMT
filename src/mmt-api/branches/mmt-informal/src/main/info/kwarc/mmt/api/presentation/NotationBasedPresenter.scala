@@ -434,6 +434,49 @@ class NotationBasedPresenter extends ObjectPresenter {
    /** abbreviation for not bracketing */
    private val noBrackets = (_: TextNotation) => -1
    protected def recurse(obj: Obj)(implicit pc: PresentationContext): Int = recurse(obj, noBrackets)(pc)
+   
+   
+   def doPresentationMarker(m : PresentationMarker, doMarkers : List[Marker] => Unit)(implicit pc: PresentationContext) : Unit = m match {
+     case GroupMarker(ms) =>
+       doUnbracketedGroup { doMarkers(ms) }
+     case s: ScriptMarker =>
+       def aux(mOpt: Option[Marker]) = mOpt.map {m => (_:Unit) => doMarkers(List(m))} 
+       doScriptMarker(doMarkers(List(s.main)), aux(s.sup), aux(s.sub), aux(s.over), aux(s.under))
+     case FractionMarker(a,b,l) =>
+       def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+       doFractionMarker(a map aux, b map aux, l)
+     case NumberMarker(value) => 
+       doNumberMarker(value)
+     case IdenMarker(value) => 
+       doIdenMarker(value)
+     case ErrorMarker(markers)=>
+       def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+       doErrorMarker(markers map aux)
+     case GlyphMarker(source,alt) =>
+       doGlyphMarker(source,alt)
+     case LabelMarker(markers,label) =>
+       def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+       doLabelMarker(markers map aux,label)
+     case PhantomMarker(markers) =>
+       def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+       doPhantomMarker(markers map aux)
+     case TextMarker(text) =>
+       doTextMarker(text)
+     case RootMarker(base, root) =>
+       def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+       doRootMarker(base map aux,root map aux)
+     case TdMarker(ms) => 
+       def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+       doTd(ms map aux)
+     case TrMarker(ms) => 
+       def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+       doTr(ms map aux)
+     case TableMarker(ms) =>
+       def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+       doTable(ms map aux)
+     case _ => doMarkers(List(m))
+   }
+
    /** 
     *  @param bracket called to determine whether a non-atomic term rendered with a certain notation should be bracketed
     *  @return true if the term was bracketed
@@ -446,12 +489,18 @@ class NotationBasedPresenter extends ObjectPresenter {
            case OMS(p) =>
                val not = getNotation(p).getOrElse(default)
                if (not.arity.isConstant) {
-                  not.markers.foreach {
+                 def doMarkers(ms : List[Marker]) : Unit = ms match {
+                   case Nil => //nothing to do
+                   case hd :: tl => hd match {
                      case d: Delimiter =>
                         val dE = d.expand(p)
                         doDelimiter(p, dE, Nil)
+                     case p : PresentationMarker => doPresentationMarker(p, doMarkers)
                      case _ => ImplementationError("missing case in presenter of OMS")
-                  }
+                   }
+                   doMarkers(tl)
+                 }
+                 doMarkers(not.presentationMarkers)
                  -1
                } else default
             case OMV(n) =>

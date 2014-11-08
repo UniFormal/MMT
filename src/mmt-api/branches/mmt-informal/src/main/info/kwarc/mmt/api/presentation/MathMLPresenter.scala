@@ -71,7 +71,7 @@ class MathMLPresenter extends NotationBasedPresenter {
          case t   => 
            val s = t match {
              case "&#40;" => "("
-             case "&#41;" => ")"  
+             case "&#41;" => ")"
              case _ => t
            }
            element("mo", ("jobad:href" -> p.toPath) :: jobadattribs, s)
@@ -101,7 +101,9 @@ class MathMLPresenter extends NotationBasedPresenter {
       // <mstyle displaystyle="true">
       pc.out(openTag("math",  idAtt :: nsAtts ::: mmtAtts))
       pc.out(openTag("semantics", Nil))
+      pc.out(openTag("mrow", Nil))
       body
+      pc.out(closeTag("mrow"))
       pc.out(openTag("annotation-xml", List("encoding" -> "MathML-Content")))
       pc.out(o.toCML.toString)
       pc.out(closeTag("annotation-xml"))

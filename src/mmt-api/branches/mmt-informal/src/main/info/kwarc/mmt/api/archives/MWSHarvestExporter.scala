@@ -23,9 +23,9 @@ class MWSHarvestExporter extends Exporter {
   def exportTheory(t: DeclaredTheory, bf: BuildTask) { 
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
-     def narrToCML(n : NarrativeObject) : List[scala.xml.Node] = n match {
-        case nt : NarrativeTerm => List(nt.term.toCML)
-        case nn : NarrativeNode => nn.child.flatMap(narrToCML)
+     def narrToCML(n : FlexiformalObject) : List[scala.xml.Node] = n match {
+        case nt : FlexiformalTerm => List(nt.term.toCML)
+        case nn : FlexiformalNode => nn.child.flatMap(narrToCML)
         case _ => Nil
     }
     t.getDeclarations foreach {d =>
@@ -35,7 +35,7 @@ class MWSHarvestExporter extends Exporter {
                val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML}</mws:expr>
                rh(node.toString + "\n")
             }
-         case (comp, no : NarrativeObject) => 
+         case (comp, no : FlexiformalObject) => 
            val exprs = narrToCML(no)
            exprs foreach {cml =>
             val out = <mws:expr url={CPath(d.path, comp).toPath}><content>{cml}</content></mws:expr>
@@ -209,9 +209,9 @@ class FlatteningMWSExporter extends Exporter {
     val tbar = mf.flatten(t)
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
-     def narrToCML(n : NarrativeObject) : List[scala.xml.Node] = n match {
-        case nt : NarrativeTerm => List(nt.term.toCML)
-        case nn : NarrativeNode => nn.child.flatMap(narrToCML)
+     def narrToCML(n : FlexiformalObject) : List[scala.xml.Node] = n match {
+        case nt : FlexiformalTerm => List(nt.term.toCML)
+        case nn : FlexiformalNode => nn.child.flatMap(narrToCML)
         case _ => Nil
     }
     tbar.getDeclarations foreach {
@@ -221,7 +221,7 @@ class FlatteningMWSExporter extends Exporter {
                val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML}</mws:expr>
                rh(node.toString + "\n")
             }
-         case (comp, no : NarrativeObject) => 
+         case (comp, no : FlexiformalObject) => 
            val exprs = narrToCML(no)
            exprs foreach {cml =>
             val out = <mws:expr url={CPath(d.path, comp).toPath}><content>{cml}</content></mws:expr>

@@ -180,7 +180,9 @@ object MixfixNotation extends NotationExtension {
             if (not.arity.canHandle(subs.length, con.length, args.length, false)) {
               Some(PragmaticTerm(op, subs, con, args, false, not, Position.positions(t)))
             }
-            else None
+            else {
+              None
+            }
          }
       case _ => None
    }

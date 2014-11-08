@@ -159,7 +159,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
                               doNotComponent(d.path $ comp, n)
                             }
                         }
-                     case (comp, no : flexiformal.NarrativeObject) =>
+                     case (comp, no : flexiformal.FlexiformalObject) =>
                       tr(comp.toString) {
                         td { doNarrativeObject(no) }
                       }
@@ -201,9 +201,9 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
       }
    }
    
-   def doNarrativeObject(no : NarrativeObject) : Unit = no match {
-     case n : NarrativeXML => rh(n.node)
-     case r : NarrativeRef => r.self match {
+   def doNarrativeObject(no : FlexiformalObject) : Unit = no match {
+     case n : FlexiformalXML => rh(n.node)
+     case r : FlexiformalRef => r.self match {
       case false => 
         rh("<span jobad:href=\"" + r.target.toPath + "\">")
         r.objects.foreach(doNarrativeObject)
@@ -213,8 +213,8 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
         r.objects.foreach(doNarrativeObject)
         rh("</span>")
       }
-     case tm : NarrativeTerm => apply(tm.term, None)(rh)
-     case n : NarrativeNode => 
+     case tm : FlexiformalTerm => apply(tm.term, None)(rh)
+     case n : FlexiformalNode => 
        rh.writeStartTag(n.node.prefix, n.node.label, n.node.attributes, n.node.scope)
        n.child.map(doNarrativeObject)
        rh.writeEndTag(n.node.prefix, n.node.label)
