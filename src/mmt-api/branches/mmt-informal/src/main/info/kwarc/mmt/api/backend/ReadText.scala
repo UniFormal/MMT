@@ -158,7 +158,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     } catch {
        case e: SourceError =>
           // for fatal errors, return partially parsed document
-          errors = (errors :+ e.copy(fatal = true))
+          errors = (errors :+ e.copy(level = Level.Fatal))
           Pair(doc, errors)
     }
   }
@@ -1271,7 +1271,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
       theory = DefinedTheory(tpath.parent, tpath.name, theoryExp)
       add(theory)
       if (meta.isDefined) {
-         errors :+ TextParseError(toPos(i), "meta-theory of defined theory is ignored").copy(warning = true)
+         errors :+ TextParseError(toPos(i), "meta-theory of defined theory is ignored").copy(level = Level.Warning)
       }
     }
 
@@ -1416,7 +1416,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     if (j == -1) {
        currentNS match {
           case None =>
-             errors :+ TextParseError(toPos(start), "no current namespace defined").copy(warning = true)
+             errors :+ TextParseError(toPos(start), "no current namespace defined").copy(level = Level.Warning)
              None
           case Some(ns) => 
              Some(DPath(ns) ? relativeURI)
@@ -1427,7 +1427,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
        prefixes.get(prefix) match {
           // unknown prefix
           case None =>
-             errors :+ TextParseError(toPos(start), "unknown namespace prefix").copy(warning = true)
+             errors :+ TextParseError(toPos(start), "unknown namespace prefix").copy(level = Level.Warning)
              None
           case Some(ns) =>
              Some(DPath(ns) ? relativeURI.substring(j+1))

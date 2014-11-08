@@ -95,10 +95,10 @@ class NotationBasedParser extends ObjectParser {
     }
 
     val escMan = new EscapeManager(controller.extman.lexerExtensions ::: lexing)
-    val tl = TokenList(pu.term, pu.source.region.start, escMan)
+    val tl = TokenList(pu.term, escMan, pu.source.region.start)
     if (tl.length == 0) {
        makeError("no tokens found: " + pu.term, pu.source.region)
-       return OMSemiFormal(objects.Text("unknown", ""))
+       return DefaultObjectParser(pu)
     }
     
     //scanning
@@ -111,7 +111,7 @@ class NotationBasedParser extends ObjectParser {
           ()
        else {
           makeError("top notation did not match whole input: " + n.toString, pu.source.region)
-          return OMSemiFormal(objects.Text("unknown", pu.term))
+          return DefaultObjectParser(pu)
        }
     }
     // now scan with all notations in increasing order of precedence

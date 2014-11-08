@@ -50,7 +50,7 @@
     <!-- JOBAD Init -->
   <script type="text/javascript">
       var JOBAD1;
-      $(function(){	
+      $(function(){
          JOBAD1 = new JOBAD($("#main,#inputviewterm,#inputviewtype,#results,#breadcrumbs"));
          JOBAD1.modules.load("kwarc.mmt.navigation", []);
          JOBAD1.modules.load("kwarc.mmt.hovering", []);
@@ -149,6 +149,15 @@
          navigation.navigate(p);
       }
    </script>
+   
+   <script>
+  
+   $("#svgDiv #graph1").draggable({
+	    handle: 'rect'
+	}).resizable({
+	    aspectRatio: 1.0
+	});
+   </script> 
 </head>
 
 <body><table>
@@ -182,7 +191,9 @@
        <div id="breadcrumbs">
          <div></div>
        </div>
-
+       
+	   
+	   
        <div id="main">
          <div></div>
        </div>

@@ -20,6 +20,8 @@ var navigation = {
 		// main div
 		var url = mmt.adaptMMTURI(uri, '', true);
 		mmt.ajaxReplaceIn(url, 'main');
+		// mySvg = '/:svg?' + uri;
+		//mmt.ajaxPutSVG(mySvg,'constant\ toggleTarget');
 		// breadcrumbs
 		var bcurl = '/:breadcrumbs?' + uri;
 		mmt.ajaxReplaceIn(bcurl, 'breadcrumbs');
@@ -28,7 +30,7 @@ var navigation = {
 	},
 	
 	navigateServer: function(uri) {
-	   url = '/:admin?navigate ' + uri
+	   url = '/:admin?navigate ' + uri;
 	   $.ajax({'url': url});
 	},
 
@@ -49,7 +51,7 @@ var navigation = {
 			var loaded = mmt.load(elem);
 			var fc = $(elem).children().filterMClass('flat-container');
 			fc.children().replaceWith(loaded);
-			fc.toggle()
+			fc.toggle();
 		}
 		if(target.hasAttribute('foldable')) {
 			var content = $(target).parent().find('table').toggle();				

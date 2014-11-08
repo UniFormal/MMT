@@ -969,7 +969,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       log(msg)
       history += msg 
       val g = new Goal(context, conc)
-      val prover = new P(this, g)
+      val prover = new Prover(controller, g, rules, logPrefix)
       prover.apply(5)
       if (g.isSolved) {
          val p = g.proof

@@ -52,6 +52,7 @@ abstract class WritableArchive extends ROArchive {
     val narrationDim = properties.get("narration").getOrElse("narration")
     val contentDim = properties.get("content").getOrElse("content")
     val relDim = properties.get("relational").getOrElse("relational")
+    val errorDim = properties.get("errors").getOrElse("errors")
     val flatDir = root / "flat"
     
     /**
@@ -63,11 +64,11 @@ abstract class WritableArchive extends ROArchive {
        case `content` => root / contentDim
        case `narration` => root / narrationDim
        case `relational` => root / relDim
+       case `errors` => root / errorDim
        case Dim(path@_*) => root / path.toList
     }
     
     val timestamps = new TimestampManager(this, root / "META-INF" / "timestamps" )
-    val errors     = new ErrorManager(this)
     
     def includeDir(n: String) : Boolean = n != ".svn" && n != ".mmt"
 

@@ -47,6 +47,7 @@ class DeclaredView(doc : DPath, name : LocalName, val from : Term, val to : Term
       case PlainViewInclude(_,_,v) => List(v)
       case _ => Nil
    }
+   def getInnerContext = codomainAsContext
 }
 
   /**

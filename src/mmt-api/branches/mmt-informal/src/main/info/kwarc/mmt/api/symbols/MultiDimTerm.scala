@@ -53,8 +53,15 @@ class TermContainer extends AbstractTermContainer {
    /** setter for the parsed representation without further analysis */
    def parsed_=(t: Option[Term]) {
       val changed = t != _parsed.term
+      /*
+       * TODO assume old-parsed (op), old-analyzed (oa), new-parsed (np), need new-analyzed (na)
+       * metadata of oa points to metadata of op
+       * np contains new metadata (e.g., for source references) even if op == np
+       * if op != np, we compute na anyway, no problem
+       * if op == np, na := oa except that metadata of np must be integrated into metadata of op  
+       */
+      _parsed.term = t
       if (changed) {
-         _parsed.term    = t
          _parsed.time    = System.currentTimeMillis
          _analyzed.dirty = true
       }
@@ -64,8 +71,8 @@ class TermContainer extends AbstractTermContainer {
    /** setter for the analyzed representation */
    def analyzed_=(t: Option[Term]) {
       val changed = t != _analyzed.term
+      _analyzed.term = t  // set this even if equal in order to get the metadata of the new term
       if (changed) {
-         _analyzed.term = t
          _analyzed.time = System.currentTimeMillis
       }
       _analyzed.dirty = false

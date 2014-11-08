@@ -56,7 +56,7 @@ class Goal(val context: Context, private var concVar: Term) {
    /** getter for the conclusion (may have been simplified since Goal creation) */
    def conc = concVar
    /** sets a new goal, can be used by the prover to simplify goals in place */
-   private[proving] def setConc(newConc: Term)(implicit facts: FactsDB) {
+   private[proving] def setConc(newConc: Term)(implicit facts: Facts) {
       concVar = newConc
       checkAxiomRule
    }
@@ -106,10 +106,10 @@ class Goal(val context: Context, private var concVar: Term) {
    
    /** caches the result of isSolved */
    private var solved: Option[Boolean] = None
-   /** stores the proof once the goal is solved */
-   private var proofOption: Option[Term] = None
-   /** the proof term for this goal; pre: isSolved == Some(true) */
-   def proof = proofOption.get
+   /** stores the proof */
+   private var proofVar: Term = Hole(conc)
+   /** stores the proof, contains holes if the goal is not solved */
+   def proof = proofVar
    /**
     * checks if the goal can be closed by closing all subgoals of some alternative
     * the result is cached so that the method can be called arbitrarily often without performance penalty
@@ -124,13 +124,13 @@ class Goal(val context: Context, private var concVar: Term) {
    }
    /** sets the proof of this goal and removes alternatives */
    private def setSolved(p: Term) {
-      proofOption = Some(p)
+      proofVar = p
       solved = Some(true)
       removeAlternatives
    }
    
    /** checks whether this can be closed using the axiom rule, i.e., whether the goal is in the database of facts */
-   private def checkAxiomRule(implicit facts: FactsDB) {
+   private def checkAxiomRule(implicit facts: Facts) {
       if (solved != Some(true)) {
          solved = None
          facts.has(this, conc) foreach {p =>
@@ -143,13 +143,13 @@ class Goal(val context: Context, private var concVar: Term) {
     * 
     * should be called iff there are new facts available (result is cached by isSolved) 
     */
-   def newFacts(implicit facts: FactsDB) {
+   def newFacts(implicit facts: Facts) {
       checkAxiomRule
       alternatives.foreach {a =>
          a.subgoals.foreach {sg => sg.newFacts}
       }
    }
-  
+   
    /** stores the invertible backward rules that have not been applied yet */
    private var backward : List[ApplicableTactic] = Nil
    /** stores the invertible forward rules that have not been applied yet */
@@ -157,7 +157,7 @@ class Goal(val context: Context, private var concVar: Term) {
    /** stores the backward search rules that have not been applied yet */
    private var backwardSearch : List[BackwardSearch] = Nil
    /** initializes the invertible backward/forward tactics that can be applied */
-   def setExpansionTactics(prover: P, backw: List[BackwardInvertible], forw: List[ForwardInvertible]) {
+   def setExpansionTactics(prover: Prover, backw: List[BackwardInvertible], forw: List[ForwardInvertible]) {
       backward = parent match {
          case Some(g) if g.conc == conc => g.backward
          // TODO it can be redundant to check the applicability of all tactics
@@ -183,10 +183,10 @@ class Goal(val context: Context, private var concVar: Term) {
       }
    }
 
-   def setSearchTactics(prover: P, backw: List[BackwardSearch]) {
+   def setSearchTactics(prover: Prover, backw: List[BackwardSearch]) {
       backwardSearch = backw
    }
-   def getNextSearch(prover: P): List[ApplicableTactic] = {
+   def getNextSearch(prover: Prover): List[ApplicableTactic] = {
       backwardSearch match {
          case Nil => Nil
          case hd::tl =>
@@ -202,12 +202,12 @@ class Goal(val context: Context, private var concVar: Term) {
    def present(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]): String = {
       val goalHighlight = if (Some(this) == current) "X " else "  "
       def altHighlight(a: Alternative) = if (Some(a) == newAlt) "+ new\n" else "+ \n"
-      proofOption match {
-         case Some(p) => goalHighlight + "! " + presentObj(context) + " |- " + presentObj(p) + " : " + presentObj(conc)
-         case None =>
-            val aS = alternatives.map(a => Prover.indent(depth+1) + altHighlight(a) + a.present(depth+1))
-            val lines = goalHighlight + (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
-            lines.mkString("\n")
+      if (isSolved) {
+         goalHighlight + "! " + presentObj(context) + " |- " + presentObj(proof) + " : " + presentObj(conc)
+      } else {
+         val aS = alternatives.map(a => Prover.indent(depth+1) + altHighlight(a) + a.present(depth+1))
+         val lines = goalHighlight + (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
+         lines.mkString("\n")
       }
    }
 }

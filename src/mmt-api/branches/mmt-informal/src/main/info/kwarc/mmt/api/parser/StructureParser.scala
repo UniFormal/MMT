@@ -310,7 +310,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                         p => (p.name.toPath, p.path)
                      }
                   } catch {case e: Error =>
-                     errorCont(makeError(delim._2, "error while retrieving patterns, continuing without patterns"))
+                     //errorCont(makeError(delim._2, "error while retrieving patterns, continuing without patterns"))
                      Nil
                   }
             }
@@ -555,7 +555,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                if (state.reader.endOfDocument) {
                   return
                } else
-                  throw makeError(reg, "keyword expected, within " + doc).copy(fatal = true)
+                  throw makeError(reg, "keyword expected, within " + doc).copy(level = Level.Fatal)
             case "document" =>
                val name = readName
                val dpath = doc.path / name
@@ -723,8 +723,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                throw makeError(reg, "end of declaration expected, found and ignored: " + rest)
          }
       } catch {
-         case e: SourceError =>
-            errorCont(e)
+         case e: Error =>
+            // wrap in source error if not source error already
+            val se: SourceError = e match {
+               case se: SourceError => se
+               case e => makeError(currentSourceRegion, "error while parsing: " + e.getMessage).setCausedBy(e)
+            }
+            errorCont(se)
             if (! state.reader.endOfDeclaration)
                state.reader.readDeclaration
       }

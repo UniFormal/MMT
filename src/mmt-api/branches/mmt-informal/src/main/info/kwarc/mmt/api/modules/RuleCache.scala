@@ -6,6 +6,7 @@ import checking._
 import symbols._
 import objects._
 
+// unused
 class RuleCache extends ChangeListener {
   override val logPrefix = "rule-cache"
      
