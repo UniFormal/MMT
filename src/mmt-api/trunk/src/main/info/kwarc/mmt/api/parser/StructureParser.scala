@@ -555,7 +555,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                if (state.reader.endOfDocument) {
                   return
                } else
-                  throw makeError(reg, "keyword expected, within " + doc).copy(fatal = true)
+                  throw makeError(reg, "keyword expected, within " + doc).copy(level = Level.Fatal)
             case "document" =>
                val name = readName
                val dpath = doc.path / name

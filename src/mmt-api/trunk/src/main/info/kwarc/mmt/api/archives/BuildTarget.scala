@@ -135,31 +135,39 @@ abstract class TraversingBuildTarget extends BuildTarget {
    def build(a: Archive, args: List[String], in: List[String] = Nil) {
       buildAux(in)(a)
    }
+   private def makeHandler(a: Archive, inPath: List[String], isDir : Boolean = false) = {
+     val baseFileName = a / errors / key / inPath
+     val errFileName = {
+     if (isDir)
+       baseFileName / ".err"
+     else 
+       baseFileName.setExtension("err")
+     }
+     new ErrorWriter(errFileName, Some(report))
 
-   private def makeHandler = new ErrorContainer(Some(report))
+   }
    
    /** recursive building */
    private def buildAux(in : List[String] = Nil)(implicit a: Archive) {
-       val errorMap = a.errors(key)
        //build every file
        val prefix = "[" + inDim + " -> " + outDim + "] "
        a.traverse[BuildTask](inDim, in, includeFile) ({case Current(inFile,inPath) =>
            val outFile = outPath(a, inPath)
            log(prefix + inFile + " -> " + outFile)
-           val errorCont = errorMap.getOrElseUpdate(inPath, makeHandler)
-           errorCont.reset
+           val errorCont = makeHandler(a, inPath)
            val bf = new BuildTask(inFile, false, inPath, a.narrationBase, outFile, errorCont)
            buildFile(a, bf)
+           errorCont.close
            a.timestamps(this).set(inPath)
            bf
        }, {
           case (Current(inDir, inPath), builtChildren) =>
              val outFile = folderOutPath(a, inPath)
-             val errorCont = errorMap.getOrElseUpdate(inPath, makeHandler)
-             errorCont.reset
+             val errorCont = makeHandler(a, inPath, true)
              val bd = new BuildTask(inDir, true, inPath, a.narrationBase, outFile, errorCont) 
              buildDir(a, bd, builtChildren)
-             bd
+             errorCont.close
+            bd
        })
     }
 
@@ -209,9 +217,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
        }, {case (c @ Current(inDir, inPath), childChanged) =>
           if (childChanged.exists(_ == true)) {
              val outFile = folderOutPath(a, inPath)
-             val errorCont = a.errors(key).getOrElseUpdate(inPath, makeHandler)
-             errorCont.reset
-             val bd = new BuildTask(inDir, true, inPath, a.narrationBase, outFile, errorCont) 
+             val errorCont = makeHandler(a, inPath, true)
+             val bd = new BuildTask(inDir, true, inPath, a.narrationBase, outFile, errorCont)
+             errorCont.close
              buildDir(a, bd, Nil) // TODO pass proper builtChildren
              false
           } else
