@@ -92,7 +92,7 @@ object ArticleTranslator {
 	    val name = TranslationController.getFreeVar()
 	      TranslationController.addLocusVarBinder(OMV(name))
 	    val tp = TypeTranslator.translateTyp(t)
-	    VarDecl(name, Some(tp), None, ???)
+	    VarDecl(name, Some(tp), None, None)
 	  }
 	  val df = Lambda(Context(con :_*), TypeTranslator.translateTerm(f.term))
 	  
@@ -108,7 +108,7 @@ object ArticleTranslator {
 	    val name = TranslationController.getFreeVar()
 	      TranslationController.addLocusVarBinder(OMV(name))
 	    val tp = TypeTranslator.translateTyp(t)
-	    VarDecl(name, Some(tp), None, ???)
+	    VarDecl(name, Some(tp), None, None)
 	  }
 	  val df = Lambda(Context(con :_*), PropositionTranslator.translateFormula(p.form))
 	  
