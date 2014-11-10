@@ -280,7 +280,7 @@ object DefinitionTranslator {
     val args = m.args.map(x => TypeTranslator.translateTyp(x._2))
     val exp = TypeTranslator.translateTyp(m.exp)
     val tp = Arrow(args.map(x => Mizar.tp), Mizar.tp)
-    val con = Context(VarDecl("x", Some(Sequence(args : _*)), None, ???))
+    val con = Context(VarDecl("x", Some(Sequence(args : _*)), None, None))
     val df = Lambda(con, exp)
     
     val const = makeConstant(name, Some(tp), Some(df))

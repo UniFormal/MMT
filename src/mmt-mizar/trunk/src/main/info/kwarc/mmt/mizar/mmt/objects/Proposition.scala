@@ -25,7 +25,7 @@ object MMTFor {
 
 //only for queries, so exists is allowed
 object MMTExists {
-	def apply(vname : String, tp : Term, form : Term) = OMBIND(Mizar.apply(Mizar.constant("ex"), tp), Context(VarDecl(LocalName(vname), Some(Mizar.any), None, ???)), form)
+	def apply(vname : String, tp : Term, form : Term) = OMBIND(Mizar.apply(Mizar.constant("ex"), tp), Context(VarDecl(LocalName(vname), Some(Mizar.any), None, None)), form)
 }
 
 object MMTPred {
