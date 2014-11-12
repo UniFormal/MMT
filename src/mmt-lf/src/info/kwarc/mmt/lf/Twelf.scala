@@ -92,7 +92,7 @@ class Twelf extends Importer with frontend.ChangeListener {
             do {
                msg ::= output.readLine
             } while (! msg.head.startsWith("%%"))
-            bf.errorCont(CompilerError(key, r, msg.reverse, warning))
+            bf.errorCont(CompilerError(key, r, msg.reverse, Level.Warning))
          }
       }
       val doc = try {
