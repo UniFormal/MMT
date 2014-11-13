@@ -40,7 +40,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">Solver</span><span class="result"> extends <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
+        <span class="name">Solver</span><span class="result"> extends <a href="CheckingCallback.html" class="extype" name="info.kwarc.mmt.api.checking.CheckingCallback">CheckingCallback</a> with <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
       </span>
       </h4>
       
@@ -51,11 +51,11 @@ the solution is a <span class="extype" name="Substitution">Substitution</span> t
 If the unknown variables are untyped and rules require a certain type, the Solver adds the type.</p><p>Unsolvable constraints are delayed and reactivated if later solving of unknowns provides further information.
 </p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="file:/C:/frabe/MMT/src/mmt-api/trunk/src/main/info/kwarc/mmt/api/checking/Solver.scala" target="_blank">Solver.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="CheckingCallback.html" class="extype" name="info.kwarc.mmt.api.checking.CheckingCallback">CheckingCallback</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
                 <span class="toggle diagram-link">Type Hierarchy</span>
                 <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#diagrams" target="_blank" class="diagram-help">Learn more about scaladoc diagrams</a>
-                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph587" viewBox="0.00 0.00 128.00 120.00" height="120pt" width="128pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 116)" class="graph" id="graph1"><polygon points="-4,5 -4,-116 125,-116 125,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph587_0"><a xlink:title="info.kwarc.mmt.api.checking.Solver (this class)" xlink:href="#inheritance-diagram"><polygon points="96,-50 24,-50 24,-24 96,-24 96,-50" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-45" x="34" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-35" x="56" text-anchor="start">Solver</text></a></g><!-- node1 --><g class="node trait" id="graph587_1"><a xlink:title="info.kwarc.mmt.api.frontend.Logger" xlink:href="../frontend/Logger.html#inheritance-diagram"><polygon points="97.25,-112 22.75,-112 22.75,-86 97.25,-86 97.25,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-107" x="33" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="55" text-anchor="start">Logger</text></a></g><!-- node1&#45;&gt;node0 --><g class="edge inheritance" id="graph587_1_0"><a xlink:title="Solver is a subtype of Logger"><path d="M60,-80.6826C60,-70.8961 60,-58.9026 60,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="58.2501,-80.8581 60,-85.8581 61.7501,-80.8581 58.2501,-80.8581" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
+                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph575" viewBox="0.00 0.00 225.00 120.00" height="120pt" width="225pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 116)" class="graph" id="graph1"><polygon points="-4,5 -4,-116 222,-116 222,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph575_0"><a xlink:title="info.kwarc.mmt.api.checking.Solver (this class)" xlink:href="#inheritance-diagram"><polygon points="157,-50 85,-50 85,-24 157,-24 157,-50" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-45" x="95" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-35" x="117" text-anchor="start">Solver</text></a></g><!-- node1 --><g class="node trait" id="graph575_1"><a xlink:title="info.kwarc.mmt.api.checking.CheckingCallback" xlink:href="CheckingCallback.html#inheritance-diagram"><polygon points="124,-112 0,-112 0,-86 124,-86 124,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-107" x="10" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="32" text-anchor="start">CheckingCallback</text></a></g><!-- node1&#45;&gt;node0 --><g class="edge inheritance" id="graph575_1_0"><a xlink:title="Solver is a subtype of CheckingCallback"><path d="M77.4459,-82.2924C87.332,-72.2386 99.9662,-59.3904 109.078,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="76.1975,-81.066 73.9395,-85.8581 78.6931,-83.52 76.1975,-81.066" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node trait" id="graph575_2"><a xlink:title="info.kwarc.mmt.api.frontend.Logger" xlink:href="../frontend/Logger.html#inheritance-diagram"><polygon points="217.25,-112 142.75,-112 142.75,-86 217.25,-86 217.25,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-107" x="153" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="175" text-anchor="start">Logger</text></a></g><!-- node2&#45;&gt;node0 --><g class="edge inheritance" id="graph575_2_0"><a xlink:title="Solver is a subtype of Logger"><path d="M164.554,-82.2924C154.668,-72.2386 142.034,-59.3904 132.922,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="163.307,-83.52 168.06,-85.8581 165.803,-81.066 163.307,-83.52" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
               </div></div>
         
 
@@ -73,7 +73,7 @@ If the unknown variables are untyped and rules require a certain type, the Solve
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.checking.Solver"><span>Solver</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Logger"><span>Logger</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.checking.Solver"><span>Solver</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Logger"><span>Logger</span></li><li class="in" name="info.kwarc.mmt.api.checking.CheckingCallback"><span>CheckingCallback</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -94,7 +94,7 @@ If the unknown variables are untyped and rules require a certain type, the Solve
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.checking.Solver#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(controller:info.kwarc.mmt.api.frontend.Controller,constantContext:info.kwarc.mmt.api.objects.Context,initUnknowns:info.kwarc.mmt.api.objects.Context):info.kwarc.mmt.api.checking.Solver"></a>
+      <a id="&lt;init&gt;(controller:info.kwarc.mmt.api.frontend.Controller,constantContext:info.kwarc.mmt.api.objects.Context,initUnknowns:info.kwarc.mmt.api.objects.Context,rules:info.kwarc.mmt.api.checking.RuleSet):info.kwarc.mmt.api.checking.Solver"></a>
       <a id="&lt;init&gt;:Solver"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -102,7 +102,7 @@ If the unknown variables are untyped and rules require a certain type, the Solve
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">Solver</span><span class="params">(<span name="controller">controller: <a href="../frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a></span>, <span name="constantContext">constantContext: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="initUnknowns">initUnknowns: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>)</span>
+        <span class="name">Solver</span><span class="params">(<span name="controller">controller: <a href="../frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a></span>, <span name="constantContext">constantContext: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="initUnknowns">initUnknowns: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="rules">rules: <a href="RuleSet.html" class="extype" name="info.kwarc.mmt.api.checking.RuleSet">RuleSet</a></span>)</span>
       </span>
       </h4>
       <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">controller</dt><dd class="cmt"><p>an MMT controller that is used to look up Rule's and Constant's. No changes are made to the controller.</p></dd><dt class="param">initUnknowns</dt><dd class="cmt"><p>the unknown context
@@ -210,7 +210,7 @@ If the unknown variables are untyped and rules require a certain type, the Solve
       </h4>
       <p class="shortcomment cmt">applies this Solver to one Judgement
  This method can be called multiple times to solve a system of constraints.</p><div class="fullcomment"><div class="comment cmt"><p>applies this Solver to one Judgement
- This method can be called multiple times to solve a system of constraints.</p></div><dl class="paramcmts block"><dt class="param">j</dt><dd class="cmt"><p>the Judgement</p></dd><dt>returns</dt><dd class="cmt"><p>if false, j is disproved; if true, j holds relative to all delayed judgements and errors</p><p> Note that this may return true even if can be disproved, namely if the delayed judgements are disproved later.</p><p> If this returns false, an error must have been registered.
+ This method can be called multiple times to solve a system of constraints.</p></div><dl class="paramcmts block"><dt class="param">j</dt><dd class="cmt"><p>the Judgement</p></dd><dt>returns</dt><dd class="cmt"><p>if false, j is disproved; if true, j holds relative to all delayed judgements</p><p> Note that this may return true even if can be disproved, namely if the delayed judgements are disproved later.</p><p> If this returns false, an error must have been registered.
 </p></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
@@ -240,7 +240,7 @@ If the unknown variables are untyped and rules require a certain type, the Solve
       <p class="shortcomment cmt">checks a judgement</p><div class="fullcomment"><div class="comment cmt"><p>checks a judgement</p><p>This is the method that should be used to recurse into a hypothesis.
 It handles logging and error reporting and delegates to specific methods based on the judgement.</p><p>The apply method is similar but additionally simplifies the judgment.
 </p></div><dl class="paramcmts block"><dt class="param">j</dt><dd class="cmt"><p>the judgement</p></dd><dt>returns</dt><dd class="cmt"><p>like apply
-</p></dd></dl></div>
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.checking.Solver">Solver</a> → <a href="CheckingCallback.html" class="extype" name="info.kwarc.mmt.api.checking.CheckingCallback">CheckingCallback</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.checking.Solver#checkSucceeded" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="checkSucceeded:Boolean"></a>
       <a id="checkSucceeded:Boolean"></a>
@@ -559,7 +559,7 @@ This solution may contain unsolved variables, and there may be unresolved constr
       <p class="shortcomment cmt">infers the type of a term by applying InferenceRule's</p><div class="fullcomment"><div class="comment cmt"><p>infers the type of a term by applying InferenceRule's</p></div><dl class="paramcmts block"><dt class="param">tm</dt><dd class="cmt"><p>the term</p></dd><dt class="param">stack</dt><dd class="cmt"><p>its Context</p></dd><dt>returns</dt><dd class="cmt"><p>the inferred type, if inference succeeded</p><p>This method should not be called by users (instead, use object Solver.check).
 It is only public because it serves as a callback for Rule's.</p><p>pre: context is covered</p><p>post: if result, typing judgment is covered
 </p></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Solver#inferTypeAndThen" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.checking.Solver#inferTypeAndThen" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="inferTypeAndThen(tm:info.kwarc.mmt.api.objects.Term)(stack:info.kwarc.mmt.api.objects.Stack,history:info.kwarc.mmt.api.checking.History)(cont:info.kwarc.mmt.api.objects.Term=&gt;Boolean):Boolean"></a>
       <a id="inferTypeAndThen(Term)(Stack,History)((Term)⇒Boolean):Boolean"></a>
       <h4 class="signature">
@@ -571,7 +571,8 @@ It is only public because it serves as a callback for Rule's.</p><p>pre: context
         <span class="name">inferTypeAndThen</span><span class="params">(<span name="tm">tm: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span name="stack">stack: <a href="../objects/Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="params">(<span name="cont">cont: (<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">performs a type inference and calls a continuation function on the inferred type</p><div class="fullcomment"><div class="comment cmt"><p>performs a type inference and calls a continuation function on the inferred type</p><p>If type inference is not successful, this is delayed.
+</p></div></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -585,22 +586,6 @@ It is only public because it serves as a callback for Rule's.</p><p>pre: context
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Solver#limitedSimplify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="limitedSimplify[A](tm:info.kwarc.mmt.api.objects.Term)(simple:info.kwarc.mmt.api.objects.Term=&gt;Option[A])(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):(info.kwarc.mmt.api.objects.Term,Option[A])"></a>
-      <a id="limitedSimplify[A](Term)((Term)⇒Option[A])(Stack,History):(Term,Option[A])"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">limitedSimplify</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="tm">tm: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span name="simple">simple: (<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>) ⇒ <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="info.kwarc.mmt.api.checking.Solver.limitedSimplify.A">A</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="../objects/Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="result">: (<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>, <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="info.kwarc.mmt.api.checking.Solver.limitedSimplify.A">A</span>])</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">applies ComputationRule's to simplify a term until some condition is satisfied;
- A typical case is transformation into weak head normal form.</p><div class="fullcomment"><div class="comment cmt"><p>applies ComputationRule's to simplify a term until some condition is satisfied;
- A typical case is transformation into weak head normal form.</p></div><dl class="paramcmts block"><dt class="param">tm</dt><dd class="cmt"><p>the term to simplify (It may be simple already.)</p></dd><dt class="param">simple</dt><dd class="cmt"><p>a term is considered simple if this function returns a non-None result</p></dd><dt class="param">stack</dt><dd class="cmt"><p>the context of tm</p></dd><dt>returns</dt><dd class="cmt"><p>(tmS, Some(a)) if tmS is simple and simple(tm)=tmS; (tmS, None) if tmS is not simple but no further simplification rules are applicable
-</p></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="log(e:info.kwarc.mmt.api.Error):Unit"></a>
       <a id="log(Error):Unit"></a>
@@ -615,15 +600,15 @@ It is only public because it serves as a callback for Rule's.</p><p>pre: context
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="log(s:=&gt;String):Unit"></a>
-      <a id="log(⇒String):Unit"></a>
+      <a id="log(s:=&gt;String,subgroup:Option[String]):Unit"></a>
+      <a id="log(⇒String,Option[String]):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="subgroup">subgroup: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol"><span class="name"><a href="../../../../../scala/package.html">None</a></span></span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
@@ -665,7 +650,7 @@ It is only public because it serves as a callback for Rule's.</p><p>pre: context
         <span class="name">logPrefix</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">prefix used when logging</p><div class="fullcomment"><div class="comment cmt"><p>prefix used when logging</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.checking.Solver">Solver</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+      <p class="shortcomment cmt">prefix used when logging (can be changed flexibly to filter the log better)</p><div class="fullcomment"><div class="comment cmt"><p>prefix used when logging (can be changed flexibly to filter the log better)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.checking.Solver">Solver</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.checking.Solver#logState" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="logState(prefix:String):Unit"></a>
       <a id="logState(String):Unit"></a>
@@ -733,6 +718,20 @@ It is only public because it serves as a callback for Rule's.</p><p>pre: context
       </span>
       </h4>
       <p class="shortcomment cmt">used for rendering objects, should be used by rules if they want to log</p>
+    </li><li name="info.kwarc.mmt.api.checking.Solver#prove" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="prove(conc:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):Option[info.kwarc.mmt.api.objects.Term]"></a>
+      <a id="prove(Term)(Stack,History):Option[Term]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">prove</span><span class="params">(<span name="conc">conc: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="../objects/Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt"> tries to prove a goal</p><div class="fullcomment"><div class="comment cmt"><p> tries to prove a goal</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>the proof term if successful
+</p></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.checking.Solver#report" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="report:info.kwarc.mmt.api.frontend.Report"></a>
       <a id="report:Report"></a>
@@ -746,6 +745,19 @@ It is only public because it serves as a callback for Rule's.</p><p>pre: context
       </span>
       </h4>
       <p class="shortcomment cmt">for Logger</p><div class="fullcomment"><div class="comment cmt"><p>for Logger</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.checking.Solver">Solver</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.checking.Solver#rules" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="rules:info.kwarc.mmt.api.checking.RuleSet"></a>
+      <a id="rules:RuleSet"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">rules</span><span class="result">: <a href="RuleSet.html" class="extype" name="info.kwarc.mmt.api.checking.RuleSet">RuleSet</a></span>
+      </span>
+      </h4>
+      
     </li><li name="info.kwarc.mmt.api.checking.Solver#safeSimplify" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="safeSimplify(tm:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):info.kwarc.mmt.api.objects.Term"></a>
       <a id="safeSimplify(Term)(Stack,History):Term"></a>
@@ -758,38 +770,67 @@ It is only public because it serves as a callback for Rule's.</p><p>pre: context
         <span class="name">safeSimplify</span><span class="params">(<span name="tm">tm: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="../objects/Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">simplifies one step along all branches, well-formedness is preserved+reflected</p>
-    </li><li name="info.kwarc.mmt.api.checking.Solver#solve" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="solve(name:info.kwarc.mmt.api.LocalName,value:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):Boolean"></a>
-      <a id="solve(LocalName,Term)(Stack,History):Boolean"></a>
+      <p class="shortcomment cmt">simplifies one step along each branches, well-formedness is preserved+reflected</p>
+    </li><li name="info.kwarc.mmt.api.checking.Solver#safeSimplifyOne" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="safeSimplifyOne(tm:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):info.kwarc.mmt.api.objects.Term"></a>
+      <a id="safeSimplifyOne(Term)(Stack,History):Term"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">solve</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="value">value: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="../objects/Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">safeSimplifyOne</span><span class="params">(<span name="tm">tm: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="../objects/Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">simplifies one step overall</p>
+    </li><li name="info.kwarc.mmt.api.checking.Solver#safeSimplifyUntil" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="safeSimplifyUntil[A](tm1:info.kwarc.mmt.api.objects.Term,tm2:info.kwarc.mmt.api.objects.Term)(simple:(info.kwarc.mmt.api.objects.Term,info.kwarc.mmt.api.objects.Term)=&gt;Option[A])(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):(info.kwarc.mmt.api.objects.Term,info.kwarc.mmt.api.objects.Term,Option[A])"></a>
+      <a id="safeSimplifyUntil[A](Term,Term)((Term,Term)⇒Option[A])(Stack,History):(Term,Term,Option[A])"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">safeSimplifyUntil</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="tm1">tm1: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tm2">tm2: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span name="simple">simple: (<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>, <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>) ⇒ <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="info.kwarc.mmt.api.checking.Solver.safeSimplifyUntil.A">A</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="../objects/Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="result">: (<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>, <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>, <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="info.kwarc.mmt.api.checking.Solver.safeSimplifyUntil.A">A</span>])</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">like the other method but simplifies two terms in parallel</p><div class="fullcomment"><div class="comment cmt"><p>like the other method but simplifies two terms in parallel</p></div><dl class="attributes block"> <dt>Annotations</dt><dd>
+                <span class="name">@tailrec</span><span class="args">()</span>
+              
+        </dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.checking.Solver#safeSimplifyUntil" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="safeSimplifyUntil[A](tm:info.kwarc.mmt.api.objects.Term)(simple:info.kwarc.mmt.api.objects.Term=&gt;Option[A])(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):(info.kwarc.mmt.api.objects.Term,Option[A])"></a>
+      <a id="safeSimplifyUntil[A](Term)((Term)⇒Option[A])(Stack,History):(Term,Option[A])"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">safeSimplifyUntil</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="tm">tm: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span name="simple">simple: (<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>) ⇒ <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="info.kwarc.mmt.api.checking.Solver.safeSimplifyUntil.A">A</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="../objects/Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="result">: (<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>, <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="info.kwarc.mmt.api.checking.Solver.safeSimplifyUntil.A">A</span>])</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">applies <a href="ComputationRule.html" class="extype" name="info.kwarc.mmt.api.checking.ComputationRule">ComputationRule</a>s expands definitions until a condition is satisfied;
+ A typical case is transformation into weak head normal form.</p><div class="fullcomment"><div class="comment cmt"><p>applies <a href="ComputationRule.html" class="extype" name="info.kwarc.mmt.api.checking.ComputationRule">ComputationRule</a>s expands definitions until a condition is satisfied;
+ A typical case is transformation into weak head normal form.</p></div><dl class="paramcmts block"><dt class="param">tm</dt><dd class="cmt"><p>the term to simplify (It may be simple already.)</p></dd><dt class="param">simple</dt><dd class="cmt"><p>a term is considered simple if this function returns a non-None result</p></dd><dt class="param">stack</dt><dd class="cmt"><p>the context of tm</p></dd><dt>returns</dt><dd class="cmt"><p>(tmS, Some(a)) if tmS is simple and simple(tm)=tmS; (tmS, None) if tmS is not simple but no further simplification rules are applicable
+</p></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.checking.Solver#solve" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="solve(name:info.kwarc.mmt.api.LocalName,value:info.kwarc.mmt.api.objects.Term)(implicithistory:info.kwarc.mmt.api.checking.History):Boolean"></a>
+      <a id="solve(LocalName,Term)(History):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">solve</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="value">value: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">registers the solution for an unknown variable</p><div class="fullcomment"><div class="comment cmt"><p>registers the solution for an unknown variable</p><p>If a solution exists already, their equality is checked.</p></div><dl class="paramcmts block"><dt class="param">name</dt><dd class="cmt"><p>the solved variable</p></dd><dt class="param">value</dt><dd class="cmt"><p>the solution; must not contain object variables, but may contain meta-variables that are declared before the solved variable</p></dd><dt>returns</dt><dd class="cmt"><p>true unless the solution differs from an existing one
 precondition: value is well-typed if the overall check succeeds
 </p></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Solver#solveEquality" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="solveEquality(tm1:info.kwarc.mmt.api.objects.Term,tm2:info.kwarc.mmt.api.objects.Term,tpOpt:Option[info.kwarc.mmt.api.objects.Term])(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):Boolean"></a>
-      <a id="solveEquality(Term,Term,Option[Term])(Stack,History):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">solveEquality</span><span class="params">(<span name="tm1">tm1: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tm2">tm2: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tpOpt">tpOpt: <span class="extype" name="scala.Option">Option</span>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="../objects/Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">tries to solve an unknown occurring as the torso of tm1 in terms of tm2.</p><div class="fullcomment"><div class="comment cmt"><p>tries to solve an unknown occurring as the torso of tm1 in terms of tm2.</p><p>This method should not be called by users (instead, use check(Equality(tm1,tm2,...))).
-It is only public because it serves as a callback for SolutionRule's.
-(SolutionRule's should not recurse into check(Equality(...)) because it tends to lead to cycles.)
-</p></div></div>
     </li><li name="info.kwarc.mmt.api.checking.Solver#solveTyping" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="solveTyping(tm:info.kwarc.mmt.api.objects.Term,tp:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):Boolean"></a>
       <a id="solveTyping(Term,Term)(Stack,History):Boolean"></a>
@@ -888,6 +929,8 @@ It is only public because it serves as a callback for SolutionRule's.
         <div id="inheritedMembers">
         <div class="parent" name="info.kwarc.mmt.api.frontend.Logger">
               <h3>Inherited from <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.checking.CheckingCallback">
+              <h3>Inherited from <a href="CheckingCallback.html" class="extype" name="info.kwarc.mmt.api.checking.CheckingCallback">CheckingCallback</a></h3>
             </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">

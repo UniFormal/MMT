@@ -51,7 +51,7 @@
         </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
                 <span class="toggle diagram-link">Type Hierarchy</span>
                 <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#diagrams" target="_blank" class="diagram-help">Learn more about scaladoc diagrams</a>
-                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph636" viewBox="0.00 0.00 140.00 120.00" height="120pt" width="140pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 116)" class="graph" id="graph1"><polygon points="-4,5 -4,-116 137,-116 137,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph636_0"><a xlink:title="info.kwarc.mmt.api.backend.Backend (this class)" xlink:href="#inheritance-diagram"><polygon points="108,-50 24,-50 24,-24 108,-24 108,-50" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-45" x="34" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-35" x="56" text-anchor="start">Backend</text></a></g><!-- node1 --><g class="node trait" id="graph636_1"><a xlink:title="info.kwarc.mmt.api.frontend.Logger" xlink:href="../frontend/Logger.html#inheritance-diagram"><polygon points="103.25,-112 28.75,-112 28.75,-86 103.25,-86 103.25,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-107" x="39" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="61" text-anchor="start">Logger</text></a></g><!-- node1&#45;&gt;node0 --><g class="edge inheritance" id="graph636_1_0"><a xlink:title="Backend is a subtype of Logger"><path d="M66,-80.6826C66,-70.8961 66,-58.9026 66,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="64.2501,-80.8581 66,-85.8581 67.7501,-80.8581 64.2501,-80.8581" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
+                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph616" viewBox="0.00 0.00 140.00 120.00" height="120pt" width="140pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 116)" class="graph" id="graph1"><polygon points="-4,5 -4,-116 137,-116 137,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph616_0"><a xlink:title="info.kwarc.mmt.api.backend.Backend (this class)" xlink:href="#inheritance-diagram"><polygon points="108,-50 24,-50 24,-24 108,-24 108,-50" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-45" x="34" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-35" x="56" text-anchor="start">Backend</text></a></g><!-- node1 --><g class="node trait" id="graph616_1"><a xlink:title="info.kwarc.mmt.api.frontend.Logger" xlink:href="../frontend/Logger.html#inheritance-diagram"><polygon points="103.25,-112 28.75,-112 28.75,-86 103.25,-86 103.25,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-107" x="39" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="61" text-anchor="start">Logger</text></a></g><!-- node1&#45;&gt;node0 --><g class="edge inheritance" id="graph616_1_0"><a xlink:title="Backend is a subtype of Logger"><path d="M66,-80.6826C66,-70.8961 66,-58.9026 66,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="64.2501,-80.8581 66,-85.8581 67.7501,-80.8581 64.2501,-80.8581" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
               </div></div>
         
 
@@ -391,7 +391,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.backend.Backend#load" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.backend.Backend#load" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="load(p:info.kwarc.mmt.api.Path)(implicitcontroller:info.kwarc.mmt.api.frontend.Controller):Unit"></a>
       <a id="load(Path)(Controller):Unit"></a>
       <h4 class="signature">
@@ -404,8 +404,9 @@
       </span>
       </h4>
       <p class="shortcomment cmt">looks up a path in the first Storage that is applicable and sends the content to the reader
-the registered storages are searched in the order of registration
-</p>
+the registered storages are searched in the order of registration</p><div class="fullcomment"><div class="comment cmt"><p>looks up a path in the first Storage that is applicable and sends the content to the reader
+the registered storages are searched in the order of registration</p><p>throws <a href="NotApplicable.html" class="extype" name="info.kwarc.mmt.api.backend.NotApplicable">NotApplicable</a> if the resource is not known/available, <a href="../BackendError.html" class="extype" name="info.kwarc.mmt.api.BackendError">BackendError</a> if it is but something goes wrong
+</p></div></div>
     </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="log(e:info.kwarc.mmt.api.Error):Unit"></a>
       <a id="log(Error):Unit"></a>
@@ -420,15 +421,15 @@ the registered storages are searched in the order of registration
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="log(s:=&gt;String):Unit"></a>
-      <a id="log(⇒String):Unit"></a>
+      <a id="log(s:=&gt;String,subgroup:Option[String]):Unit"></a>
+      <a id="log(⇒String,Option[String]):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="subgroup">subgroup: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol"><span class="name"><a href="../../../../../scala/package.html">None</a></span></span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>

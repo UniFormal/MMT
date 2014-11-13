@@ -40,20 +40,20 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">TypeBasedEqualityRule</span><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></span>
+        <span class="name">TypeBasedEqualityRule</span><span class="result"> extends <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a> with <a href="ApplicableUnder.html" class="extype" name="info.kwarc.mmt.api.checking.ApplicableUnder">ApplicableUnder</a></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A TypeBasedEqualityRule checks the equality of two terms based on the head of their type</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="file:/C:/frabe/MMT/src/mmt-api/trunk/src/main/info/kwarc/mmt/api/checking/Rules.scala" target="_blank">Rules.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="ApplicableUnder.html" class="extype" name="info.kwarc.mmt.api.checking.ApplicableUnder">ApplicableUnder</a>, <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a href="../../reflection/Extensionality$.html" class="extype" name="info.kwarc.mmt.reflection.Extensionality">Extensionality</a>, <a href="../../lf/Extensionality$.html" class="extype" name="info.kwarc.mmt.lf.Extensionality">Extensionality</a></div>
+          <div class="subClasses hiddenContent"><a href="../../reflection/Extensionality$.html" class="extype" name="info.kwarc.mmt.reflection.Extensionality">Extensionality</a>, <a href="../../lf/Extensionality$.html" class="extype" name="info.kwarc.mmt.lf.Extensionality">Extensionality</a>, <a href="../../lf/inhabitation/ProofIrrelevance$.html" class="extype" name="info.kwarc.mmt.lf.inhabitation.ProofIrrelevance">ProofIrrelevance</a></div>
         </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
                 <span class="toggle diagram-link">Type Hierarchy</span>
                 <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#diagrams" target="_blank" class="diagram-help">Learn more about scaladoc diagrams</a>
-                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph596" viewBox="0.00 0.00 239.00 158.00" height="158pt" width="239pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 154)" class="graph" id="graph1"><polygon points="-4,5 -4,-154 236,-154 236,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph596_0"><a xlink:title="info.kwarc.mmt.api.checking.TypeBasedEqualityRule (this class)" xlink:href="#inheritance-diagram"><polygon points="189.25,-88 40.75,-88 40.75,-62 189.25,-62 189.25,-88" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-83" x="51" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-73" x="73" text-anchor="start">TypeBasedEqualityRule</text></a></g><!-- node1 --><g class="node object" id="graph596_1"><a xlink:title="info.kwarc.mmt.lf.Extensionality" xlink:href="../../lf/Extensionality$.html#inheritance-diagram"><polygon points="106.25,-26 -0.25,-26 -0.25,-0 106.25,-0 106.25,-26" stroke="#102966" fill="#3556a7"></polygon><image xlink:href="../../../../../lib/object_diagram.png" y="-21" x="10" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="32" text-anchor="start">Extensionality</text></a></g><!-- node0&#45;&gt;node1 --><g class="edge inheritance" id="graph596_0_1"><a xlink:title="Extensionality is a subtype of TypeBasedEqualityRule"><path d="M98.7688,-58.2924C88.3799,-48.2386 75.1034,-35.3904 65.528,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="97.6433,-59.6385 102.453,-61.8581 100.077,-57.1234 97.6433,-59.6385" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node object" id="graph596_2"><a xlink:title="info.kwarc.mmt.reflection.Extensionality" xlink:href="../../reflection/Extensionality$.html#inheritance-diagram"><polygon points="231.25,-26 124.75,-26 124.75,-0 231.25,-0 231.25,-26" stroke="#102966" fill="#3556a7"></polygon><image xlink:href="../../../../../lib/object_diagram.png" y="-21" x="135" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="157" text-anchor="start">Extensionality</text></a></g><!-- node0&#45;&gt;node2 --><g class="edge inheritance" id="graph596_0_2"><a xlink:title="Extensionality is a subtype of TypeBasedEqualityRule"><path d="M131.493,-58.2924C142.049,-48.2386 155.54,-35.3904 165.27,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="130.163,-57.1425 127.749,-61.8581 132.577,-59.677 130.163,-57.1425" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node3 --><g class="node trait" id="graph596_3"><a xlink:title="info.kwarc.mmt.api.checking.Rule" xlink:href="Rule.html#inheritance-diagram"><polygon points="147.25,-150 82.75,-150 82.75,-124 147.25,-124 147.25,-150" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-145" x="93" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-135" x="115" text-anchor="start">Rule</text></a></g><!-- node3&#45;&gt;node0 --><g class="edge inheritance" id="graph596_3_0"><a xlink:title="TypeBasedEqualityRule is a subtype of Rule"><path d="M115,-118.683C115,-108.896 115,-96.9026 115,-88.1238" stroke="#d4d4d4" fill="none"></path><polygon points="113.25,-118.858 115,-123.858 116.75,-118.858 113.25,-118.858" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
+                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph582" viewBox="0.00 0.00 372.00 158.00" height="158pt" width="372pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 154)" class="graph" id="graph1"><polygon points="-4,5 -4,-154 369,-154 369,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph582_0"><a xlink:title="info.kwarc.mmt.api.checking.TypeBasedEqualityRule (this class)" xlink:href="#inheritance-diagram"><polygon points="252.25,-88 103.75,-88 103.75,-62 252.25,-62 252.25,-88" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-83" x="114" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-73" x="136" text-anchor="start">TypeBasedEqualityRule</text></a></g><!-- node1 --><g class="node object" id="graph582_1"><a xlink:title="info.kwarc.mmt.lf.Extensionality" xlink:href="../../lf/Extensionality$.html#inheritance-diagram"><polygon points="106.25,-26 -0.25,-26 -0.25,-0 106.25,-0 106.25,-26" stroke="#102966" fill="#3556a7"></polygon><image xlink:href="../../../../../lib/object_diagram.png" y="-21" x="10" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="32" text-anchor="start">Extensionality</text></a></g><!-- node0&#45;&gt;node1 --><g class="edge inheritance" id="graph582_0_1"><a xlink:title="Extensionality is a subtype of TypeBasedEqualityRule"><path d="M147.997,-59.5985C126.693,-49.3726 98.41,-35.7968 78.258,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="147.439,-61.2721 152.704,-61.8581 148.954,-58.1167 147.439,-61.2721" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node object" id="graph582_2"><a xlink:title="info.kwarc.mmt.reflection.Extensionality" xlink:href="../../reflection/Extensionality$.html#inheritance-diagram"><polygon points="231.25,-26 124.75,-26 124.75,-0 231.25,-0 231.25,-26" stroke="#102966" fill="#3556a7"></polygon><image xlink:href="../../../../../lib/object_diagram.png" y="-21" x="135" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="157" text-anchor="start">Extensionality</text></a></g><!-- node0&#45;&gt;node2 --><g class="edge inheritance" id="graph582_0_2"><a xlink:title="Extensionality is a subtype of TypeBasedEqualityRule"><path d="M178,-56.6826C178,-46.8961 178,-34.9026 178,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="176.25,-56.8581 178,-61.8581 179.75,-56.8581 176.25,-56.8581" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node3 --><g class="node object" id="graph582_3"><a xlink:title="info.kwarc.mmt.lf.inhabitation.ProofIrrelevance" xlink:href="../../lf/inhabitation/ProofIrrelevance$.html#inheritance-diagram"><polygon points="364,-26 250,-26 250,-0 364,-0 364,-26" stroke="#102966" fill="#3556a7"></polygon><image xlink:href="../../../../../lib/object_diagram.png" y="-21" x="260" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="282" text-anchor="start">ProofIrrelevance</text></a></g><!-- node0&#45;&gt;node3 --><g class="edge inheritance" id="graph582_0_3"><a xlink:title="ProofIrrelevance is a subtype of TypeBasedEqualityRule"><path d="M208.686,-59.7273C230.704,-49.4867 260.05,-35.8374 280.934,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="207.901,-58.1626 204.105,-61.8581 209.377,-61.3362 207.901,-58.1626" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node4 --><g class="node trait" id="graph582_4"><a xlink:title="info.kwarc.mmt.api.checking.Rule" xlink:href="Rule.html#inheritance-diagram"><polygon points="156.25,-150 91.75,-150 91.75,-124 156.25,-124 156.25,-150" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-145" x="102" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-135" x="124" text-anchor="start">Rule</text></a></g><!-- node4&#45;&gt;node0 --><g class="edge inheritance" id="graph582_4_0"><a xlink:title="TypeBasedEqualityRule is a subtype of Rule"><path d="M138.376,-120.027C147.388,-110.014 158.822,-97.3091 167.089,-88.1238" stroke="#d4d4d4" fill="none"></path><polygon points="136.972,-118.971 134.928,-123.858 139.573,-121.312 136.972,-118.971" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node5 --><g class="node trait" id="graph582_5"><a xlink:title="info.kwarc.mmt.api.checking.ApplicableUnder" xlink:href="ApplicableUnder.html#inheritance-diagram"><polygon points="291,-150 175,-150 175,-124 291,-124 291,-150" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-145" x="185" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-135" x="207" text-anchor="start">ApplicableUnder</text></a></g><!-- node5&#45;&gt;node0 --><g class="edge inheritance" id="graph582_5_0"><a xlink:title="TypeBasedEqualityRule is a subtype of ApplicableUnder"><path d="M218.358,-120.027C209.179,-110.014 197.533,-97.3091 189.114,-88.1238" stroke="#d4d4d4" fill="none"></path><polygon points="217.201,-121.355 221.87,-123.858 219.781,-118.99 217.201,-121.355" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
               </div></div>
         
 
@@ -71,7 +71,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.checking.TypeBasedEqualityRule"><span>TypeBasedEqualityRule</span></li><li class="in" name="info.kwarc.mmt.api.checking.Rule"><span>Rule</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.checking.TypeBasedEqualityRule"><span>TypeBasedEqualityRule</span></li><li class="in" name="info.kwarc.mmt.api.checking.ApplicableUnder"><span>ApplicableUnder</span></li><li class="in" name="info.kwarc.mmt.api.checking.Rule"><span>Rule</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -92,7 +92,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.checking.TypeBasedEqualityRule#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(head:info.kwarc.mmt.api.GlobalName):info.kwarc.mmt.api.checking.TypeBasedEqualityRule"></a>
+      <a id="&lt;init&gt;(under:List[info.kwarc.mmt.api.GlobalName],head:info.kwarc.mmt.api.GlobalName):info.kwarc.mmt.api.checking.TypeBasedEqualityRule"></a>
       <a id="&lt;init&gt;:TypeBasedEqualityRule"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -100,7 +100,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">TypeBasedEqualityRule</span><span class="params">(<span name="head">head: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>)</span>
+        <span class="name">TypeBasedEqualityRule</span><span class="params">(<span name="under">under: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a>]</span>, <span name="head">head: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>)</span>
       </span>
       </h4>
       <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">head</dt><dd class="cmt"><p>the head of the type of the two terms
@@ -196,6 +196,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.checking.ApplicableUnder#applicable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="applicable(tp:info.kwarc.mmt.api.objects.Term):Boolean"></a>
+      <a id="applicable(Term):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">applicable</span><span class="params">(<span name="tp">tp: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ApplicableUnder.html" class="extype" name="info.kwarc.mmt.api.checking.ApplicableUnder">ApplicableUnder</a></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -360,35 +373,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Rule#parent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="parent:info.kwarc.mmt.api.objects.Term"></a>
-      <a id="parent:Term"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">parent</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the home theory in which this rule lives</p><div class="fullcomment"><div class="comment cmt"><p>the home theory in which this rule lives</p><p>a rule is only applicable if the home theory is included</p><p>by default, the theory of the head operator
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Rule#path" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="path:info.kwarc.mmt.api.GlobalName"></a>
-      <a id="path:GlobalName"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">path</span><span class="result">: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">an MMT URI that identifies the rule, by default the head
-</p><div class="fullcomment"><div class="comment cmt"><p>an MMT URI that identifies the rule, by default the head
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -415,6 +399,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a> → AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.checking.TypeBasedEqualityRule#under" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="under:List[info.kwarc.mmt.api.GlobalName]"></a>
+      <a id="under:List[GlobalName]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">under</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a>]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.checking.TypeBasedEqualityRule">TypeBasedEqualityRule</a> → <a href="ApplicableUnder.html" class="extype" name="info.kwarc.mmt.api.checking.ApplicableUnder">ApplicableUnder</a></dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -472,7 +469,9 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="info.kwarc.mmt.api.checking.Rule">
+        <div class="parent" name="info.kwarc.mmt.api.checking.ApplicableUnder">
+              <h3>Inherited from <a href="ApplicableUnder.html" class="extype" name="info.kwarc.mmt.api.checking.ApplicableUnder">ApplicableUnder</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.checking.Rule">
               <h3>Inherited from <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></h3>
             </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>

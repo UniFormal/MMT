@@ -239,6 +239,20 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.checking.Solver#findSolvableVariable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="findSolvableVariable(rules:Iterable[info.kwarc.mmt.api.checking.SolutionRule],unknowns:info.kwarc.mmt.api.objects.Context,t:info.kwarc.mmt.api.objects.Term):Option[(List[info.kwarc.mmt.api.checking.SolutionRule],info.kwarc.mmt.api.LocalName)]"></a>
+      <a id="findSolvableVariable(Iterable[SolutionRule],Context,Term):Option[(List[SolutionRule],LocalName)]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">findSolvableVariable</span><span class="params">(<span name="rules">rules: <a href="../../../../../scala/package.html#Iterable[+A]=Iterable[A]" class="extmbr" name="scala.Iterable">Iterable</a>[<a href="SolutionRule.html" class="extype" name="info.kwarc.mmt.api.checking.SolutionRule">SolutionRule</a>]</span>, <span name="unknowns">unknowns: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[(<a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="SolutionRule.html" class="extype" name="info.kwarc.mmt.api.checking.SolutionRule">SolutionRule</a>], <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a>)]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">tests a term for the an occurrence of an unknown variables that can be isolated by applying solution rules</p><div class="fullcomment"><div class="comment cmt"><p>tests a term for the an occurrence of an unknown variables that can be isolated by applying solution rules</p></div><dl class="paramcmts block"><dt class="param">rules</dt><dd class="cmt"><p>the solution rules to test with</p></dd><dt class="param">unknowns</dt><dd class="cmt"><p>the list of variables to try to isolate</p></dd><dt class="param">t</dt><dd class="cmt"><p>the term in which to test</p></dd><dt>returns</dt><dd class="cmt"><p>a pair (rs, n) such that applying rs to t (head first) has a chance of isolating n
+</p></dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <a id="getClass():Class[_]"></a>
@@ -265,6 +279,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.checking.Solver#infer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="infer(controller:info.kwarc.mmt.api.frontend.Controller,context:info.kwarc.mmt.api.objects.Context,tm:info.kwarc.mmt.api.objects.Term,rulesOpt:Option[info.kwarc.mmt.api.checking.RuleSet]):Option[info.kwarc.mmt.api.objects.Term]"></a>
+      <a id="infer(Controller,Context,Term,Option[RuleSet]):Option[Term]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">infer</span><span class="params">(<span name="controller">controller: <a href="../frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a></span>, <span name="context">context: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="tm">tm: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="rulesOpt">rulesOpt: <span class="extype" name="scala.Option">Option</span>[<a href="RuleSet.html" class="extype" name="info.kwarc.mmt.api.checking.RuleSet">RuleSet</a>]</span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">infers the type of a term that is known to be well-formed</p>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>

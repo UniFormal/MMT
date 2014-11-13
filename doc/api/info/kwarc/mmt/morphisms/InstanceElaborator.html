@@ -370,15 +370,15 @@ but they must clean up after themselves in this method
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../api/frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="log(s:=&gt;String):Unit"></a>
-      <a id="log(⇒String):Unit"></a>
+      <a id="log(s:=&gt;String,subgroup:Option[String]):Unit"></a>
+      <a id="log(⇒String,Option[String]):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="subgroup">subgroup: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol"><span class="name"><a href="../../../../scala/package.html">None</a></span></span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../api/frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
@@ -502,18 +502,19 @@ but they must clean up after themselves in this method
       </h4>
       <p class="shortcomment cmt">called after clearing the Constant</p><div class="fullcomment"><div class="comment cmt"><p>called after clearing the Constant</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/frontend/ChangeListener.html" class="extype" name="info.kwarc.mmt.api.frontend.ChangeListener">ChangeListener</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.ChangeListener#onDelete" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="onDelete(path:info.kwarc.mmt.api.Path):Unit"></a>
-      <a id="onDelete(Path):Unit"></a>
+      <a id="onDelete(old:info.kwarc.mmt.api.ContentElement):Unit"></a>
+      <a id="onDelete(ContentElement):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">onDelete</span><span class="params">(<span name="path">path: <a href="../api/Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">onDelete</span><span class="params">(<span name="old">old: <a href="../api/ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">called after deleting the element</p><div class="fullcomment"><div class="comment cmt"><p>called after deleting the element</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/frontend/ChangeListener.html" class="extype" name="info.kwarc.mmt.api.frontend.ChangeListener">ChangeListener</a></dd></dl></div>
+      <p class="shortcomment cmt">called after deleting the element</p><div class="fullcomment"><div class="comment cmt"><p>called after deleting the element</p></div><dl class="paramcmts block"><dt class="param">old</dt><dd class="cmt"><p>the now-deleted element
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/frontend/ChangeListener.html" class="extype" name="info.kwarc.mmt.api.frontend.ChangeListener">ChangeListener</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.ChangeListener#onNavigate" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="onNavigate(p:info.kwarc.mmt.api.Path):Unit"></a>
       <a id="onNavigate(Path):Unit"></a>

@@ -156,18 +156,18 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.parser.TokenList#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="apply(s:String,first:info.kwarc.mmt.api.parser.SourcePosition,em:info.kwarc.mmt.api.parser.EscapeManager):info.kwarc.mmt.api.parser.TokenList"></a>
-      <a id="apply(String,SourcePosition,EscapeManager):TokenList"></a>
+      <a id="apply(s:String,em:info.kwarc.mmt.api.parser.EscapeManager,first:info.kwarc.mmt.api.parser.SourcePosition):info.kwarc.mmt.api.parser.TokenList"></a>
+      <a id="apply(String,EscapeManager,SourcePosition):TokenList"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="first">first: <a href="SourcePosition.html" class="extype" name="info.kwarc.mmt.api.parser.SourcePosition">SourcePosition</a> = <span class="symbol"><span class="name"><a href="SourcePosition$.html">SourcePosition(0,0,0)</a></span></span></span>, <span name="em">em: <a href="EscapeManager.html" class="extype" name="info.kwarc.mmt.api.parser.EscapeManager">EscapeManager</a></span>)</span><span class="result">: <a href="TokenList.html" class="extype" name="info.kwarc.mmt.api.parser.TokenList">TokenList</a></span>
+        <span class="name">apply</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="em">em: <a href="EscapeManager.html" class="extype" name="info.kwarc.mmt.api.parser.EscapeManager">EscapeManager</a></span>, <span name="first">first: <a href="SourcePosition.html" class="extype" name="info.kwarc.mmt.api.parser.SourcePosition">SourcePosition</a> = <span class="symbol"><span class="name"><a href="SourcePosition$.html">SourcePosition(0,0,0)</a></span></span></span>)</span><span class="result">: <a href="TokenList.html" class="extype" name="info.kwarc.mmt.api.parser.TokenList">TokenList</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">the Tokenizer</p><div class="fullcomment"><div class="comment cmt"><p>the Tokenizer</p></div><dl class="paramcmts block"><dt class="param">first</dt><dd class="cmt"><p>the position of the first character (defaults to 0)</p></dd><dt>returns</dt><dd class="cmt"><p>the resulting TokenList</p><p>tokens are sequences of letters or individual other Unicode characters</p><p>whitespace separates Tokens and is never part of a Token</p><p>connectors connect the preceding and the succeeding Tokens into a single Token;
+      <p class="shortcomment cmt">the Tokenizer</p><div class="fullcomment"><div class="comment cmt"><p>the Tokenizer</p></div><dl class="paramcmts block"><dt class="param">em</dt><dd class="cmt"><p>the escape manager containing lexing rules</p></dd><dt class="param">first</dt><dd class="cmt"><p>the position of the first character (defaults to 0)</p></dd><dt>returns</dt><dd class="cmt"><p>the resulting TokenList</p><p>tokens are sequences of letters or individual other Unicode characters</p><p>whitespace separates Tokens and is never part of a Token</p><p>connectors connect the preceding and the succeeding Tokens into a single Token;
 the connector is part of the Token</p><p>The SourcePositions in the Tokens are only correct if all line endings contain a '\n'.
 (The '\n' counts when counting the offset.)
 </p></dd></dl></div>

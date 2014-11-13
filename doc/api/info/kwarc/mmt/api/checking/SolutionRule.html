@@ -44,18 +44,17 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A SolutionRule tries to solve for an unknown that occurs in a non-solved position.
-It may also be partial, e.g., by inverting the toplevel operation of a Term without completely isolating an unknown occurring in it.
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A SolutionRule tries to solve for an unknown that occurs in an equality judgement.</p><p>It may be partial by, e.g., by inverting the toplevel operation of a Term without completely isolating an unknown occurring in it.</p><p>f(t1) = t2   ---&gt;   t1 = g(t2), where t1 contains a target variable that we try to isolate
 </p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="file:/C:/frabe/MMT/src/mmt-api/trunk/src/main/info/kwarc/mmt/api/checking/Rules.scala" target="_blank">Rules.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a href="Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a href="../../lf/Solve$.html" class="extype" name="info.kwarc.mmt.lf.Solve">Solve</a>, <a href="../../lf/SolveMultiple$.html" class="extype" name="info.kwarc.mmt.lf.SolveMultiple">SolveMultiple</a></div>
+          <div class="subClasses hiddenContent"><a href="../../lf/GeneratedSolutionRule.html" class="extype" name="info.kwarc.mmt.lf.GeneratedSolutionRule">GeneratedSolutionRule</a>, <a href="../../lf/Solve$.html" class="extype" name="info.kwarc.mmt.lf.Solve">Solve</a>, <a href="../../lf/SolveMultiple$.html" class="extype" name="info.kwarc.mmt.lf.SolveMultiple">SolveMultiple</a></div>
         </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
                 <span class="toggle diagram-link">Type Hierarchy</span>
                 <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#diagrams" target="_blank" class="diagram-help">Learn more about scaladoc diagrams</a>
-                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph592" viewBox="0.00 0.00 197.00 158.00" height="158pt" width="197pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 154)" class="graph" id="graph1"><polygon points="-4,5 -4,-154 194,-154 194,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph592_0"><a xlink:title="info.kwarc.mmt.api.checking.SolutionRule (this class)" xlink:href="#inheritance-diagram"><polygon points="136,-88 36,-88 36,-62 136,-62 136,-88" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-83" x="46" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-73" x="68" text-anchor="start">SolutionRule</text></a></g><!-- node1 --><g class="node object" id="graph592_1"><a xlink:title="info.kwarc.mmt.lf.Solve" xlink:href="../../lf/Solve$.html#inheritance-diagram"><polygon points="68.25,-26 -0.25,-26 -0.25,-0 68.25,-0 68.25,-26" stroke="#102966" fill="#3556a7"></polygon><image xlink:href="../../../../../lib/object_diagram.png" y="-21" x="10" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="32" text-anchor="start">Solve</text></a></g><!-- node0&#45;&gt;node1 --><g class="edge inheritance" id="graph592_0_1"><a xlink:title="Solve is a subtype of SolutionRule"><path d="M72.1569,-58.0271C63.4784,-48.0135 52.4679,-35.3091 44.5073,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="70.8799,-59.2258 75.477,-61.8581 73.5248,-56.9335 70.8799,-59.2258" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node object" id="graph592_2"><a xlink:title="info.kwarc.mmt.lf.SolveMultiple" xlink:href="../../lf/SolveMultiple$.html#inheritance-diagram"><polygon points="189.25,-26 86.75,-26 86.75,-0 189.25,-0 189.25,-26" stroke="#102966" fill="#3556a7"></polygon><image xlink:href="../../../../../lib/object_diagram.png" y="-21" x="97" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="119" text-anchor="start">SolveMultiple</text></a></g><!-- node0&#45;&gt;node2 --><g class="edge inheritance" id="graph592_0_2"><a xlink:title="SolveMultiple is a subtype of SolutionRule"><path d="M99.8431,-58.0271C108.522,-48.0135 119.532,-35.3091 127.493,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="98.4752,-56.9335 96.523,-61.8581 101.12,-59.2258 98.4752,-56.9335" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node3 --><g class="node trait" id="graph592_3"><a xlink:title="info.kwarc.mmt.api.checking.Rule" xlink:href="Rule.html#inheritance-diagram"><polygon points="118.25,-150 53.75,-150 53.75,-124 118.25,-124 118.25,-150" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-145" x="64" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-135" x="86" text-anchor="start">Rule</text></a></g><!-- node3&#45;&gt;node0 --><g class="edge inheritance" id="graph592_3_0"><a xlink:title="SolutionRule is a subtype of Rule"><path d="M86,-118.683C86,-108.896 86,-96.9026 86,-88.1238" stroke="#d4d4d4" fill="none"></path><polygon points="84.2501,-118.858 86,-123.858 87.7501,-118.858 84.2501,-118.858" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
+                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph577" viewBox="0.00 0.00 360.00 158.00" height="158pt" width="360pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 154)" class="graph" id="graph1"><polygon points="-4,5 -4,-154 357,-154 357,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph577_0"><a xlink:title="info.kwarc.mmt.api.checking.SolutionRule (this class)" xlink:href="#inheritance-diagram"><polygon points="247,-88 147,-88 147,-62 247,-62 247,-88" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-83" x="157" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-73" x="179" text-anchor="start">SolutionRule</text></a></g><!-- node1 --><g class="node class" id="graph577_1"><a xlink:title="info.kwarc.mmt.lf.GeneratedSolutionRule" xlink:href="../../lf/GeneratedSolutionRule.html#inheritance-diagram"><polygon points="144.25,-26 -0.25,-26 -0.25,-0 144.25,-0 144.25,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="10" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="32" text-anchor="start">GeneratedSolutionRule</text></a></g><!-- node0&#45;&gt;node1 --><g class="edge inheritance" id="graph577_0_1"><a xlink:title="GeneratedSolutionRule is a subtype of SolutionRule"><path d="M166.997,-59.5985C145.693,-49.3726 117.41,-35.7968 97.258,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="166.439,-61.2721 171.704,-61.8581 167.954,-58.1167 166.439,-61.2721" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node object" id="graph577_2"><a xlink:title="info.kwarc.mmt.lf.Solve" xlink:href="../../lf/Solve$.html#inheritance-diagram"><polygon points="231.25,-26 162.75,-26 162.75,-0 231.25,-0 231.25,-26" stroke="#102966" fill="#3556a7"></polygon><image xlink:href="../../../../../lib/object_diagram.png" y="-21" x="173" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="195" text-anchor="start">Solve</text></a></g><!-- node0&#45;&gt;node2 --><g class="edge inheritance" id="graph577_0_2"><a xlink:title="Solve is a subtype of SolutionRule"><path d="M197,-56.6826C197,-46.8961 197,-34.9026 197,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="195.25,-56.8581 197,-61.8581 198.75,-56.8581 195.25,-56.8581" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node3 --><g class="node object" id="graph577_3"><a xlink:title="info.kwarc.mmt.lf.SolveMultiple" xlink:href="../../lf/SolveMultiple$.html#inheritance-diagram"><polygon points="352.25,-26 249.75,-26 249.75,-0 352.25,-0 352.25,-26" stroke="#102966" fill="#3556a7"></polygon><image xlink:href="../../../../../lib/object_diagram.png" y="-21" x="260" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="282" text-anchor="start">SolveMultiple</text></a></g><!-- node0&#45;&gt;node3 --><g class="edge inheritance" id="graph577_0_3"><a xlink:title="SolveMultiple is a subtype of SolutionRule"><path d="M222.411,-59.34C240.083,-49.1447 263.36,-35.7155 279.985,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="221.502,-57.8436 218.046,-61.8581 223.251,-60.8753 221.502,-57.8436" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node4 --><g class="node trait" id="graph577_4"><a xlink:title="info.kwarc.mmt.api.checking.Rule" xlink:href="Rule.html#inheritance-diagram"><polygon points="229.25,-150 164.75,-150 164.75,-124 229.25,-124 229.25,-150" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-145" x="175" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-135" x="197" text-anchor="start">Rule</text></a></g><!-- node4&#45;&gt;node0 --><g class="edge inheritance" id="graph577_4_0"><a xlink:title="SolutionRule is a subtype of Rule"><path d="M197,-118.683C197,-108.896 197,-96.9026 197,-88.1238" stroke="#d4d4d4" fill="none"></path><polygon points="195.25,-118.858 197,-123.858 198.75,-118.858 195.25,-118.858" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
               </div></div>
         
 
@@ -93,7 +92,7 @@ It may also be partial, e.g., by inverting the toplevel operation of a Term with
         <div id="allMembers">
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
-              <ol><li name="info.kwarc.mmt.api.checking.SolutionRule#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+              <ol><li name="info.kwarc.mmt.api.checking.SolutionRule#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="&lt;init&gt;(head:info.kwarc.mmt.api.GlobalName):info.kwarc.mmt.api.checking.SolutionRule"></a>
       <a id="&lt;init&gt;:SolutionRule"></a>
       <h4 class="signature">
@@ -105,7 +104,10 @@ It may also be partial, e.g., by inverting the toplevel operation of a Term with
         <span class="name">SolutionRule</span><span class="params">(<span name="head">head: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>)</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">head</dt><dd class="cmt"><p>the operator that the rule tries to invert</p><p>Because solution rules must be tried often and may fail, they do not have access to the Solver state
+and instead transform one judgement into another.
+This also allows reusing them in other situations, in particular when matching already-type-checked terms.
+</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -113,21 +115,34 @@ It may also be partial, e.g., by inverting the toplevel operation of a Term with
 
         <div id="values" class="values members">
               <h3>Abstract Value Members</h3>
-              <ol><li name="info.kwarc.mmt.api.checking.SolutionRule#apply" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
-      <a id="apply(solver:info.kwarc.mmt.api.checking.Solver)(tm1:info.kwarc.mmt.api.objects.Term,tm2:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):Boolean"></a>
-      <a id="apply(Solver)(Term,Term)(Stack,History):Boolean"></a>
+              <ol><li name="info.kwarc.mmt.api.checking.SolutionRule#applicable" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="applicable(t:info.kwarc.mmt.api.objects.Term):Option[Int]"></a>
+      <a id="applicable(Term):Option[Int]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="solver">solver: <a href="Solver.html" class="extype" name="info.kwarc.mmt.api.checking.Solver">Solver</a></span>)</span><span class="params">(<span name="tm1">tm1: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tm2">tm2: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="../objects/Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">applicable</span><span class="params">(<span name="t">t: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">solver</dt><dd class="cmt"><p>provides callbacks to the currently solved system of judgments</p></dd><dt class="param">tm1</dt><dd class="cmt"><p>the term that contains the unknown to be solved</p></dd><dt class="param">tm2</dt><dd class="cmt"><p>the second term</p></dd><dt class="param">stack</dt><dd class="cmt"><p>the context</p></dd><dt>returns</dt><dd class="cmt"><p>false if this rule is not applicable;
-   if this rule is applicable, it may return true only if the Equality Judgement is guaranteed
-   (by calling an appropriate callback method such as delay or checkEquality)
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>Some(i) if the rule is applicable to t1 in the judgment t1=t2,
+  in that case, i is the position of the argument of t1 (starting from 0) that the rule will try to isolate
+</p></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.checking.SolutionRule#apply" visbl="pub" data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="apply(j:info.kwarc.mmt.api.objects.Equality):Option[(info.kwarc.mmt.api.objects.Equality,String)]"></a>
+      <a id="apply(Equality):Option[(Equality,String)]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">apply</span><span class="params">(<span name="j">j: <a href="../objects/Equality.html" class="extype" name="info.kwarc.mmt.api.objects.Equality">Equality</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[(<a href="../objects/Equality.html" class="extype" name="info.kwarc.mmt.api.objects.Equality">Equality</a>, <span class="extype" name="scala.Predef.String">String</span>)]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">j</dt><dd class="cmt"><p>the equality in which to isolate a variable on the left side</p></dd><dt>returns</dt><dd class="cmt"><p>the transformed equality and a log message if a step towards isolation was possible
 </p></dd></dl></div>
     </li></ol>
             </div>
@@ -308,7 +323,10 @@ It may also be partial, e.g., by inverting the toplevel operation of a Term with
         <span class="name">head</span><span class="result">: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">an MMT URI that is used to indicate when the Rule is applicable</p><div class="fullcomment"><div class="comment cmt"><p>an MMT URI that is used to indicate when the Rule is applicable</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.checking.SolutionRule">SolutionRule</a> → <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></dd></dl></div>
+      <p class="shortcomment cmt">the operator that the rule tries to invert</p><div class="fullcomment"><div class="comment cmt"><p>the operator that the rule tries to invert</p><p>Because solution rules must be tried often and may fail, they do not have access to the Solver state
+and instead transform one judgement into another.
+This also allows reusing them in other situations, in particular when matching already-type-checked terms.
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.checking.SolutionRule">SolutionRule</a> → <a href="Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -361,35 +379,6 @@ It may also be partial, e.g., by inverting the toplevel operation of a Term with
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Rule#parent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="parent:info.kwarc.mmt.api.objects.Term"></a>
-      <a id="parent:Term"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">parent</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the home theory in which this rule lives</p><div class="fullcomment"><div class="comment cmt"><p>the home theory in which this rule lives</p><p>a rule is only applicable if the home theory is included</p><p>by default, the theory of the head operator
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Rule#path" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="path:info.kwarc.mmt.api.GlobalName"></a>
-      <a id="path:GlobalName"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">path</span><span class="result">: <a href="../GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">an MMT URI that identifies the rule, by default the head
-</p><div class="fullcomment"><div class="comment cmt"><p>an MMT URI that identifies the rule, by default the head
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>

@@ -47,7 +47,7 @@
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>the extensionality rule (equivalent to Eta) x:A|-f x = g x  ---&gt;  f = g  : Pi x:A. B
 If possible, the name of the new variable x is taken from f, g, or their type; otherwise, a fresh variable is invented.</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="file:/C:/frabe/MMT/src/mmt-lf/src/info/kwarc/mmt/lf/Rules.scala" target="_blank">Rules.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="../api/checking/TypeBasedEqualityRule.html" class="extype" name="info.kwarc.mmt.api.checking.TypeBasedEqualityRule">TypeBasedEqualityRule</a>, <a href="../api/checking/Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a>, <a href="../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../api/checking/TypeBasedEqualityRule.html" class="extype" name="info.kwarc.mmt.api.checking.TypeBasedEqualityRule">TypeBasedEqualityRule</a>, <a href="../api/checking/ApplicableUnder.html" class="extype" name="info.kwarc.mmt.api.checking.ApplicableUnder">ApplicableUnder</a>, <a href="../api/checking/Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a>, <a href="../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -65,7 +65,7 @@ If possible, the name of the new variable x is taken from f, g, or their type; o
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.lf.Extensionality"><span>Extensionality</span></li><li class="in" name="info.kwarc.mmt.api.checking.TypeBasedEqualityRule"><span>TypeBasedEqualityRule</span></li><li class="in" name="info.kwarc.mmt.api.checking.Rule"><span>Rule</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.lf.Extensionality"><span>Extensionality</span></li><li class="in" name="info.kwarc.mmt.api.checking.TypeBasedEqualityRule"><span>TypeBasedEqualityRule</span></li><li class="in" name="info.kwarc.mmt.api.checking.ApplicableUnder"><span>ApplicableUnder</span></li><li class="in" name="info.kwarc.mmt.api.checking.Rule"><span>Rule</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -156,6 +156,19 @@ If possible, the name of the new variable x is taken from f, g, or their type; o
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.checking.ApplicableUnder#applicable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="applicable(tp:info.kwarc.mmt.api.objects.Term):Boolean"></a>
+      <a id="applicable(Term):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">applicable</span><span class="params">(<span name="tp">tp: <a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/checking/ApplicableUnder.html" class="extype" name="info.kwarc.mmt.api.checking.ApplicableUnder">ApplicableUnder</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.lf.Extensionality#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="apply(solver:info.kwarc.mmt.api.checking.Solver)(tm1:info.kwarc.mmt.api.objects.Term,tm2:info.kwarc.mmt.api.objects.Term,tp:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):Boolean"></a>
       <a id="apply(Solver)(Term,Term,Term)(Stack,History):Boolean"></a>
@@ -332,35 +345,6 @@ If possible, the name of the new variable x is taken from f, g, or their type; o
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Rule#parent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="parent:info.kwarc.mmt.api.objects.Term"></a>
-      <a id="parent:Term"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">parent</span><span class="result">: <a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the home theory in which this rule lives</p><div class="fullcomment"><div class="comment cmt"><p>the home theory in which this rule lives</p><p>a rule is only applicable if the home theory is included</p><p>by default, the theory of the head operator
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/checking/Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Rule#path" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="path:info.kwarc.mmt.api.GlobalName"></a>
-      <a id="path:GlobalName"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">path</span><span class="result">: <a href="../api/GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">an MMT URI that identifies the rule, by default the head
-</p><div class="fullcomment"><div class="comment cmt"><p>an MMT URI that identifies the rule, by default the head
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/checking/Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -387,6 +371,19 @@ If possible, the name of the new variable x is taken from f, g, or their type; o
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/checking/Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a> → AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.checking.TypeBasedEqualityRule#under" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="under:List[info.kwarc.mmt.api.GlobalName]"></a>
+      <a id="under:List[GlobalName]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">under</span><span class="result">: <a href="../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../api/GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a>]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/checking/TypeBasedEqualityRule.html" class="extype" name="info.kwarc.mmt.api.checking.TypeBasedEqualityRule">TypeBasedEqualityRule</a> → <a href="../api/checking/ApplicableUnder.html" class="extype" name="info.kwarc.mmt.api.checking.ApplicableUnder">ApplicableUnder</a></dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -446,6 +443,8 @@ If possible, the name of the new variable x is taken from f, g, or their type; o
         <div id="inheritedMembers">
         <div class="parent" name="info.kwarc.mmt.api.checking.TypeBasedEqualityRule">
               <h3>Inherited from <a href="../api/checking/TypeBasedEqualityRule.html" class="extype" name="info.kwarc.mmt.api.checking.TypeBasedEqualityRule">TypeBasedEqualityRule</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.checking.ApplicableUnder">
+              <h3>Inherited from <a href="../api/checking/ApplicableUnder.html" class="extype" name="info.kwarc.mmt.api.checking.ApplicableUnder">ApplicableUnder</a></h3>
             </div><div class="parent" name="info.kwarc.mmt.api.checking.Rule">
               <h3>Inherited from <a href="../api/checking/Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></h3>
             </div><div class="parent" name="scala.AnyRef">

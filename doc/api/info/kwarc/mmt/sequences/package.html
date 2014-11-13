@@ -1,0 +1,207 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>sequences - MMT - info.kwarc.mmt.sequences</title>
+          <meta name="description" content="sequences - MMT - info.kwarc.mmt.sequences" />
+          <meta name="keywords" content="sequences MMT info.kwarc.mmt.sequences" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../lib/tools.tooltip.js"></script>
+      <script type="text/javascript" src="../../../../lib/modernizr.custom.js"></script><script type="text/javascript" src="../../../../lib/diagrams.js" id="diagrams-js"></script>
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../index.html';
+            var hash = 'info.kwarc.mmt.sequences.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img src="../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../package.html" class="extype" name="info">info</a>.<a href="../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt">mmt</a></p>
+        <h1>sequences</h1>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">sequences</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="info.kwarc.mmt.sequences.NatSolver" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NatSolverextendsAnyRef"></a>
+      <a id="NatSolver:NatSolver"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="NatSolver.html"><span class="name">NatSolver</span></a><span class="result"> extends <a href="../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="info.kwarc.mmt.sequences.ApplyTerm" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ApplyTerm"></a>
+      <a id="ApplyTerm:ApplyTerm"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ApplyTerm$.html"><span class="name">ApplyTerm</span></a><span class="result"> extends <a href="../api/checking/InferenceRule.html" class="extype" name="info.kwarc.mmt.api.checking.InferenceRule">InferenceRule</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.sequences.EllipsisInfer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="EllipsisInfer"></a>
+      <a id="EllipsisInfer:EllipsisInfer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="EllipsisInfer$.html"><span class="name">EllipsisInfer</span></a><span class="result"> extends <a href="../api/checking/InferenceRule.html" class="extype" name="info.kwarc.mmt.api.checking.InferenceRule">InferenceRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt"> i, i/low, i/up |- t_i : a_i : type ---&gt;  |- [t_i] i=m <sup> n : [a_i] i=m </sup> n
+ i, i/low, i/up |- t_i : type       ---&gt;  |- [t_i] i=m <sup> n : type </sup> (n-m)
+</p>
+    </li><li name="info.kwarc.mmt.sequences.IndexInfer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="IndexInfer"></a>
+      <a id="IndexInfer:IndexInfer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="IndexInfer$.html"><span class="name">IndexInfer</span></a><span class="result"> extends <a href="../api/checking/InferenceRule.html" class="extype" name="info.kwarc.mmt.api.checking.InferenceRule">InferenceRule</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.sequences.LFS" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="LFS"></a>
+      <a id="LFS:LFS"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="LFS$.html"><span class="name">LFS</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="info.kwarc.mmt.sequences.NTypeTerm" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NTypeTerm"></a>
+      <a id="NTypeTerm:NTypeTerm"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="NTypeTerm$.html"><span class="name">NTypeTerm</span></a><span class="result"> extends <a href="../api/checking/InferenceRule.html" class="extype" name="info.kwarc.mmt.api.checking.InferenceRule">InferenceRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">|- type ^ n : kind</p>
+    </li><li name="info.kwarc.mmt.sequences.NatInhabitable" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NatInhabitable"></a>
+      <a id="NatInhabitable:NatInhabitable"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="NatInhabitable$.html"><span class="name">NatInhabitable</span></a><span class="result"> extends <a href="../api/checking/InhabitableRule.html" class="extype" name="info.kwarc.mmt.api.checking.InhabitableRule">InhabitableRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">|- nat INHABITABLE</p>
+    </li><li name="info.kwarc.mmt.sequences.UniverseNType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="UniverseNType"></a>
+      <a id="UniverseNType:UniverseNType"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="UniverseNType$.html"><span class="name">UniverseNType</span></a><span class="result"> extends <a href="../api/checking/UniverseRule.html" class="extype" name="info.kwarc.mmt.api.checking.UniverseRule">UniverseRule</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">|- type ^ n UNIVERSE</p>
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

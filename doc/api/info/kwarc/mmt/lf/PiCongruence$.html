@@ -44,7 +44,7 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Congruence for Pi</p><p> We cannot use CongruenceRule here because we have to flatten nested Pis and consider -&gt; in addition.
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Congruence for Pi</p><p> We cannot use HeadBasedEqualityRule here because we have to flatten nested Pis and consider -&gt; in addition.
 </p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="file:/C:/frabe/MMT/src/mmt-lf/src/info/kwarc/mmt/lf/Rules.scala" target="_blank">Rules.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a href="../api/checking/TermBasedEqualityRule.html" class="extype" name="info.kwarc.mmt.api.checking.TermBasedEqualityRule">TermBasedEqualityRule</a>, <a href="../api/checking/Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a>, <a href="../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
@@ -156,19 +156,33 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.lf.PiCongruence#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="apply(solver:info.kwarc.mmt.api.checking.Solver)(tm1:info.kwarc.mmt.api.objects.Term,tm2:info.kwarc.mmt.api.objects.Term,tp:Option[info.kwarc.mmt.api.objects.Term])(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):Option[info.kwarc.mmt.api.checking.Continue[Boolean]]"></a>
-      <a id="apply(Solver)(Term,Term,Option[Term])(Stack,History):Option[Continue[Boolean]]"></a>
+    </li><li name="info.kwarc.mmt.lf.PiCongruence#applicable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="applicable(tm1:info.kwarc.mmt.api.objects.Term,tm2:info.kwarc.mmt.api.objects.Term):Boolean"></a>
+      <a id="applicable(Term,Term):Boolean"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="solver">solver: <a href="../api/checking/Solver.html" class="extype" name="info.kwarc.mmt.api.checking.Solver">Solver</a></span>)</span><span class="params">(<span name="tm1">tm1: <a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tm2">tm2: <a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tp">tp: <span class="extype" name="scala.Option">Option</span>[<a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="../api/objects/Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="../api/checking/History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../api/checking/Continue.html" class="extype" name="info.kwarc.mmt.api.checking.Continue">Continue</a>[<span class="extype" name="scala.Boolean">Boolean</span>]]</span>
+        <span class="name">applicable</span><span class="params">(<span name="tm1">tm1: <a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tm2">tm2: <a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">solver</dt><dd class="cmt"><p>provides callbacks to the currently solved system of judgments</p></dd><dt class="param">tm1</dt><dd class="cmt"><p>the first term</p></dd><dt class="param">tm2</dt><dd class="cmt"><p>the second term</p></dd><dt class="param">tp</dt><dd class="cmt"><p>their type</p></dd><dt class="param">stack</dt><dd class="cmt"><p>their context</p></dd><dt>returns</dt><dd class="cmt"><p>true iff the judgment holds
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>true if the rule is applicable to tm1 == tm2
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.lf.PiCongruence">PiCongruence</a> → <a href="../api/checking/TermBasedEqualityRule.html" class="extype" name="info.kwarc.mmt.api.checking.TermBasedEqualityRule">TermBasedEqualityRule</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.lf.PiCongruence#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="apply(checker:info.kwarc.mmt.api.checking.CheckingCallback)(tm1:info.kwarc.mmt.api.objects.Term,tm2:info.kwarc.mmt.api.objects.Term,tp:Option[info.kwarc.mmt.api.objects.Term])(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):Option[info.kwarc.mmt.api.checking.Continue[Boolean]]"></a>
+      <a id="apply(CheckingCallback)(Term,Term,Option[Term])(Stack,History):Option[Continue[Boolean]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">apply</span><span class="params">(<span name="checker">checker: <a href="../api/checking/CheckingCallback.html" class="extype" name="info.kwarc.mmt.api.checking.CheckingCallback">CheckingCallback</a></span>)</span><span class="params">(<span name="tm1">tm1: <a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tm2">tm2: <a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tp">tp: <span class="extype" name="scala.Option">Option</span>[<a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="../api/objects/Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="../api/checking/History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../api/checking/Continue.html" class="extype" name="info.kwarc.mmt.api.checking.Continue">Continue</a>[<span class="extype" name="scala.Boolean">Boolean</span>]]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">tm1</dt><dd class="cmt"><p>the first term</p></dd><dt class="param">tm2</dt><dd class="cmt"><p>the second term</p></dd><dt class="param">tp</dt><dd class="cmt"><p>their type</p></dd><dt class="param">stack</dt><dd class="cmt"><p>their context</p></dd><dt>returns</dt><dd class="cmt"><p>true iff the judgment holds
 </p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.lf.PiCongruence">PiCongruence</a> → <a href="../api/checking/TermBasedEqualityRule.html" class="extype" name="info.kwarc.mmt.api.checking.TermBasedEqualityRule">TermBasedEqualityRule</a></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
@@ -267,7 +281,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.TermBasedEqualityRule#head" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.lf.PiCongruence#head" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="head:info.kwarc.mmt.api.GlobalName"></a>
       <a id="head:GlobalName"></a>
       <h4 class="signature">
@@ -279,7 +293,7 @@
         <span class="name">head</span><span class="result">: <a href="../api/GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">an MMT URI that is used to indicate when the Rule is applicable</p><div class="fullcomment"><div class="comment cmt"><p>an MMT URI that is used to indicate when the Rule is applicable</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/checking/TermBasedEqualityRule.html" class="extype" name="info.kwarc.mmt.api.checking.TermBasedEqualityRule">TermBasedEqualityRule</a> → <a href="../api/checking/Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></dd></dl></div>
+      <p class="shortcomment cmt">an MMT URI that is used to indicate when the Rule is applicable</p><div class="fullcomment"><div class="comment cmt"><p>an MMT URI that is used to indicate when the Rule is applicable</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.lf.PiCongruence">PiCongruence</a> → <a href="../api/checking/Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -293,19 +307,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.TermBasedEqualityRule#left" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="left:info.kwarc.mmt.api.GlobalName"></a>
-      <a id="left:GlobalName"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">left</span><span class="result">: <a href="../api/GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/checking/TermBasedEqualityRule.html" class="extype" name="info.kwarc.mmt.api.checking.TermBasedEqualityRule">TermBasedEqualityRule</a></dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -345,48 +346,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Rule#parent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="parent:info.kwarc.mmt.api.objects.Term"></a>
-      <a id="parent:Term"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">parent</span><span class="result">: <a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the home theory in which this rule lives</p><div class="fullcomment"><div class="comment cmt"><p>the home theory in which this rule lives</p><p>a rule is only applicable if the home theory is included</p><p>by default, the theory of the head operator
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/checking/Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Rule#path" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="path:info.kwarc.mmt.api.GlobalName"></a>
-      <a id="path:GlobalName"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">path</span><span class="result">: <a href="../api/GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">an MMT URI that identifies the rule, by default the head
-</p><div class="fullcomment"><div class="comment cmt"><p>an MMT URI that identifies the rule, by default the head
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/checking/Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.TermBasedEqualityRule#right" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="right:info.kwarc.mmt.api.GlobalName"></a>
-      <a id="right:GlobalName"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">right</span><span class="result">: <a href="../api/GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/checking/TermBasedEqualityRule.html" class="extype" name="info.kwarc.mmt.api.checking.TermBasedEqualityRule">TermBasedEqualityRule</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>

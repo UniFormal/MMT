@@ -299,19 +299,6 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.symbols.Constant#compNames" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="compNames:List[(ProductwithSerializablewithinfo.kwarc.mmt.api.DeclarationComponent,Int)]"></a>
-      <a id="compNames:List[(ProductwithSerializablewithDeclarationComponent,Int)]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">compNames</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[(<span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span> with <a href="../api/DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a>, <span class="extype" name="scala.Int">Int</span>)]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">content items may provide short names for their components, Nil by default</p><div class="fullcomment"><div class="comment cmt"><p>content items may provide short names for their components, Nil by default</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/symbols/Constant.html" class="extype" name="info.kwarc.mmt.api.symbols.Constant">Constant</a> → <a href="../api/Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.ContentElement#compatible" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="compatible(that:info.kwarc.mmt.api.ContentElement):Boolean"></a>
       <a id="compatible(ContentElement):Boolean"></a>
@@ -329,33 +316,6 @@ if they have the same type, same Path, and agree in all parts that are TermConta
 </p><div class="fullcomment"><div class="comment cmt"><p>two ContentElement's are compatible
 if they have the same type, same Path, and agree in all parts that are TermContainer's
 </p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.symbols.Constant#components" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="components:List[info.kwarc.mmt.api.Content]"></a>
-      <a id="components:List[Content]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">components</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<a href="../api/Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the components are an abstract definition of the children of a content item that are used for presentation</p><div class="fullcomment"><div class="comment cmt"><p>the components are an abstract definition of the children of a content item that are used for presentation</p><p>Other algorithms than presentation should use the corresponding methods of ContentElement
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/symbols/Constant.html" class="extype" name="info.kwarc.mmt.api.symbols.Constant">Constant</a> → <a href="../api/Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.Content#contComponents" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="contComponents:info.kwarc.mmt.api.presentation.ContentComponents"></a>
-      <a id="contComponents:ContentComponents"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">contComponents</span><span class="result">: <a href="../api/presentation/ContentComponents.html" class="extype" name="info.kwarc.mmt.api.presentation.ContentComponents">ContentComponents</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">this ContentComponents object permits accessing components by name</p><div class="fullcomment"><div class="comment cmt"><p>this ContentComponents object permits accessing components by name</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.symbols.Constant#df" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="df:Option[info.kwarc.mmt.api.objects.Term]"></a>
       <a id="df:Option[Term]"></a>
@@ -463,7 +423,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.ContentElement#getComponent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.StructuralElement#getComponent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getComponent(c:info.kwarc.mmt.api.DeclarationComponent):Option[info.kwarc.mmt.api.ComponentContainer]"></a>
       <a id="getComponent(DeclarationComponent):Option[ComponentContainer]"></a>
       <h4 class="signature">
@@ -475,7 +435,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="name">getComponent</span><span class="params">(<span name="c">c: <a href="../api/DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../api/ComponentContainer.html" class="extype" name="info.kwarc.mmt.api.ComponentContainer">ComponentContainer</a>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">returns a specific component if present</p><div class="fullcomment"><div class="comment cmt"><p>returns a specific component if present</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a></dd></dl></div>
+      <p class="shortcomment cmt">returns a specific component if present</p><div class="fullcomment"><div class="comment cmt"><p>returns a specific component if present</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.symbols.Constant#getComponents" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getComponents:List[(ProductwithSerializablewithinfo.kwarc.mmt.api.DeclarationComponent,info.kwarc.mmt.api.ComponentContainer)]"></a>
       <a id="getComponents:List[(ProductwithSerializablewithDeclarationComponent,ComponentContainer)]"></a>
@@ -488,7 +448,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="name">getComponents</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[(<span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span> with <a href="../api/DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a>, <a href="../api/ComponentContainer.html" class="extype" name="info.kwarc.mmt.api.ComponentContainer">ComponentContainer</a>)]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">returns all term components of this elements</p><div class="fullcomment"><div class="comment cmt"><p>returns all term components of this elements</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/symbols/Constant.html" class="extype" name="info.kwarc.mmt.api.symbols.Constant">Constant</a> → <a href="../api/ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a></dd></dl></div>
+      <p class="shortcomment cmt">returns all term components of this elements</p><div class="fullcomment"><div class="comment cmt"><p>returns all term components of this elements</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/symbols/Constant.html" class="extype" name="info.kwarc.mmt.api.symbols.Constant">Constant</a> → <a href="../api/StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.symbols.Constant#getDeclarations" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getDeclarations:scala.collection.immutable.Nil.type"></a>
       <a id="getDeclarations:Nil.type"></a>
@@ -501,7 +461,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="name">getDeclarations</span><span class="result">: <span class="extype" name="scala.collection.immutable.Nil">Nil</span>.type</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">returns all children of this elements</p><div class="fullcomment"><div class="comment cmt"><p>returns all children of this elements</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/symbols/Constant.html" class="extype" name="info.kwarc.mmt.api.symbols.Constant">Constant</a> → <a href="../api/ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a></dd></dl></div>
+      <p class="shortcomment cmt">returns all children of this elements</p><div class="fullcomment"><div class="comment cmt"><p>returns all children of this elements</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/symbols/Constant.html" class="extype" name="info.kwarc.mmt.api.symbols.Constant">Constant</a> → <a href="../api/ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a> → <a href="../api/StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.metadata.HasMetaData#getMetaDataNode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getMetaDataNode:scala.xml.NodeSeq"></a>
       <a id="getMetaDataNode:NodeSeq"></a>
@@ -528,19 +488,6 @@ if they have the same type, same Path, and agree in all parts that are TermConta
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.StructuralElement#governingPath" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="governingPath:Option[info.kwarc.mmt.api.ContentPath]"></a>
-      <a id="governingPath:Option[ContentPath]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">governingPath</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../api/ContentPath.html" class="extype" name="info.kwarc.mmt.api.ContentPath">ContentPath</a>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the governingPath is used to define the owner of components in a CPath</p><div class="fullcomment"><div class="comment cmt"><p>the governingPath is used to define the owner of components in a CPath</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a> → <a href="../api/Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
       <a id="hashCode():Int"></a>
@@ -791,19 +738,6 @@ the main exception are generated anonymous modules
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/symbols/LazyConstant.html" class="extype" name="info.kwarc.mmt.api.symbols.LazyConstant">LazyConstant</a> → <a href="../api/symbols/Constant.html" class="extype" name="info.kwarc.mmt.api.symbols.Constant">Constant</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.symbols.Constant#role" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="role:info.kwarc.mmt.api.Role_Constant"></a>
-      <a id="role:Role_Constant"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">role</span><span class="result">: <a href="../api/Role_Constant.html" class="extype" name="info.kwarc.mmt.api.Role_Constant">Role_Constant</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the role, the non-terminal in the MMT grammar producing this item</p><div class="fullcomment"><div class="comment cmt"><p>the role, the non-terminal in the MMT grammar producing this item</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/symbols/Constant.html" class="extype" name="info.kwarc.mmt.api.symbols.Constant">Constant</a> → <a href="../api/Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.StructuralElement#setOrigin" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setOrigin(o:info.kwarc.mmt.api.Origin):Unit"></a>
       <a id="setOrigin(Origin):Unit"></a>
@@ -843,6 +777,20 @@ the main exception are generated anonymous modules
       </span>
       </h4>
       <p class="shortcomment cmt">XML representation</p><div class="fullcomment"><div class="comment cmt"><p>XML representation</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/symbols/Constant.html" class="extype" name="info.kwarc.mmt.api.symbols.Constant">Constant</a> → <a href="../api/Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.Content#toNode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toNode(rh:info.kwarc.mmt.api.presentation.RenderingHandler):Unit"></a>
+      <a id="toNode(RenderingHandler):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toNode</span><span class="params">(<span name="rh">rh: <a href="../api/presentation/RenderingHandler.html" class="extype" name="info.kwarc.mmt.api.presentation.RenderingHandler">RenderingHandler</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt"> by default, this prints out toNode</p><div class="fullcomment"><div class="comment cmt"><p> by default, this prints out toNode</p><p> potentially large <span class="extype" name="StructuralElement">StructuralElement</span>s should override it with a memory-efficient implementation
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.symbols.Constant#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
       <a id="toString():String"></a>

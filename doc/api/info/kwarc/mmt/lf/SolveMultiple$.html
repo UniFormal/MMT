@@ -155,21 +155,34 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.lf.SolveMultiple#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="apply(solver:info.kwarc.mmt.api.checking.Solver)(tm1:info.kwarc.mmt.api.objects.Term,tm2:info.kwarc.mmt.api.objects.Term)(implicitstack:info.kwarc.mmt.api.objects.Stack,implicithistory:info.kwarc.mmt.api.checking.History):Boolean"></a>
-      <a id="apply(Solver)(Term,Term)(Stack,History):Boolean"></a>
+    </li><li name="info.kwarc.mmt.lf.SolveMultiple#applicable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="applicable(tm1:info.kwarc.mmt.api.objects.Term):Option[Int]"></a>
+      <a id="applicable(Term):Option[Int]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="solver">solver: <a href="../api/checking/Solver.html" class="extype" name="info.kwarc.mmt.api.checking.Solver">Solver</a></span>)</span><span class="params">(<span name="tm1">tm1: <a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tm2">tm2: <a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="stack">stack: <a href="../api/objects/Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="history">history: <a href="../api/checking/History.html" class="extype" name="info.kwarc.mmt.api.checking.History">History</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">applicable</span><span class="params">(<span name="tm1">tm1: <a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">solver</dt><dd class="cmt"><p>provides callbacks to the currently solved system of judgments</p></dd><dt class="param">tm1</dt><dd class="cmt"><p>the term that contains the unknown to be solved</p></dd><dt class="param">tm2</dt><dd class="cmt"><p>the second term</p></dd><dt class="param">stack</dt><dd class="cmt"><p>the context</p></dd><dt>returns</dt><dd class="cmt"><p>false if this rule is not applicable;
-   if this rule is applicable, it may return true only if the Equality Judgement is guaranteed
-   (by calling an appropriate callback method such as delay or checkEquality)
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>Some(i) if the rule is applicable to t1 in the judgment t1=t2,
+  in that case, i is the position of the argument of t1 (starting from 0) that the rule will try to isolate
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.lf.SolveMultiple">SolveMultiple</a> → <a href="../api/checking/SolutionRule.html" class="extype" name="info.kwarc.mmt.api.checking.SolutionRule">SolutionRule</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.lf.SolveMultiple#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="apply(j:info.kwarc.mmt.api.objects.Equality):Option[(info.kwarc.mmt.api.objects.Equality,String)]"></a>
+      <a id="apply(Equality):Option[(Equality,String)]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">apply</span><span class="params">(<span name="j">j: <a href="../api/objects/Equality.html" class="extype" name="info.kwarc.mmt.api.objects.Equality">Equality</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[(<a href="../api/objects/Equality.html" class="extype" name="info.kwarc.mmt.api.objects.Equality">Equality</a>, <span class="extype" name="scala.Predef.String">String</span>)]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">j</dt><dd class="cmt"><p>the equality in which to isolate a variable on the left side</p></dd><dt>returns</dt><dd class="cmt"><p>the transformed equality and a log message if a step towards isolation was possible
 </p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.lf.SolveMultiple">SolveMultiple</a> → <a href="../api/checking/SolutionRule.html" class="extype" name="info.kwarc.mmt.api.checking.SolutionRule">SolutionRule</a></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
@@ -333,35 +346,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Rule#parent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="parent:info.kwarc.mmt.api.objects.Term"></a>
-      <a id="parent:Term"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">parent</span><span class="result">: <a href="../api/objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">the home theory in which this rule lives</p><div class="fullcomment"><div class="comment cmt"><p>the home theory in which this rule lives</p><p>a rule is only applicable if the home theory is included</p><p>by default, the theory of the head operator
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/checking/Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Rule#path" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="path:info.kwarc.mmt.api.GlobalName"></a>
-      <a id="path:GlobalName"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">path</span><span class="result">: <a href="../api/GlobalName.html" class="extype" name="info.kwarc.mmt.api.GlobalName">GlobalName</a></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">an MMT URI that identifies the rule, by default the head
-</p><div class="fullcomment"><div class="comment cmt"><p>an MMT URI that identifies the rule, by default the head
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../api/checking/Rule.html" class="extype" name="info.kwarc.mmt.api.checking.Rule">Rule</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>

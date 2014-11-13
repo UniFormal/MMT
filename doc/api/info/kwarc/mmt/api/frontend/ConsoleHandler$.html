@@ -170,15 +170,15 @@
       <p class="shortcomment cmt">logs a message</p><div class="fullcomment"><div class="comment cmt"><p>logs a message</p></div><dl class="paramcmts block"><dt class="param">ind</dt><dd class="cmt"><p>indentation level</p></dd><dt class="param">group</dt><dd class="cmt"><p>generating component</p></dd><dt class="param">msg</dt><dd class="cmt"><p>the message
 </p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.frontend.ConsoleHandler">ConsoleHandler</a> → <a href="ReportHandler.html" class="extype" name="info.kwarc.mmt.api.frontend.ReportHandler">ReportHandler</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.ReportHandler#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="apply(ind:Int,e:info.kwarc.mmt.api.Error):Unit"></a>
-      <a id="apply(Int,Error):Unit"></a>
+      <a id="apply(ind:Int,e:info.kwarc.mmt.api.Error,debug:Boolean):Unit"></a>
+      <a id="apply(Int,Error,Boolean):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="ind">ind: <span class="extype" name="scala.Int">Int</span></span>, <span name="e">e: <a href="../Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">apply</span><span class="params">(<span name="ind">ind: <span class="extype" name="scala.Int">Int</span></span>, <span name="e">e: <a href="../Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a></span>, <span name="debug">debug: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <p class="shortcomment cmt">logs as an error (categories &quot;error&quot; and &quot;debug&quot; for short and long message, respectively)</p><div class="fullcomment"><div class="comment cmt"><p>logs as an error (categories &quot;error&quot; and &quot;debug&quot; for short and long message, respectively)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="ReportHandler.html" class="extype" name="info.kwarc.mmt.api.frontend.ReportHandler">ReportHandler</a></dd></dl></div>
@@ -224,6 +224,19 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.ConsoleHandler#contentErrorHighlight" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="contentErrorHighlight(s:String):String"></a>
+      <a id="contentErrorHighlight(String):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">contentErrorHighlight</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.frontend.ConsoleHandler">ConsoleHandler</a> → <a href="ReportHandler.html" class="extype" name="info.kwarc.mmt.api.frontend.ReportHandler">ReportHandler</a></dd></dl></div>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -409,6 +422,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.ConsoleHandler#systemErrorHighlight" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="systemErrorHighlight(s:String):String"></a>
+      <a id="systemErrorHighlight(String):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">systemErrorHighlight</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.frontend.ConsoleHandler">ConsoleHandler</a> → <a href="ReportHandler.html" class="extype" name="info.kwarc.mmt.api.frontend.ReportHandler">ReportHandler</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.ReportHandler#time" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="time:String"></a>
       <a id="time:String"></a>

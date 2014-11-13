@@ -183,7 +183,7 @@
         <span class="name">apply</span><span class="params">(<span name="sp">sp: <a href="KeywordBasedParser.html" class="extype" name="info.kwarc.mmt.api.parser.KeywordBasedParser">KeywordBasedParser</a></span>, <span name="s">s: <a href="ParserState.html" class="extype" name="info.kwarc.mmt.api.parser.ParserState">ParserState</a></span>, <span name="se">se: <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></span>, <span name="k">k: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Called to parse a declaration if the respective keyword has been read.</p><div class="fullcomment"><div class="comment cmt"><p>Called to parse a declaration if the respective keyword has been read.</p></div><dl class="paramcmts block"><dt class="param">sp</dt><dd class="cmt"><p>the StructureParser that is calling this extension</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.parser.CommentIgnorer">CommentIgnorer</a> → <a href="ParserExtension.html" class="extype" name="info.kwarc.mmt.api.parser.ParserExtension">ParserExtension</a></dd></dl></div>
+      <p class="shortcomment cmt">Called to parse a declaration if the respective keyword has been read.</p><div class="fullcomment"><div class="comment cmt"><p>Called to parse a declaration if the respective keyword has been read.</p></div><dl class="paramcmts block"><dt class="param">sp</dt><dd class="cmt"><p>the StructureParser that is calling this extension</p></dd><dt class="param">s</dt><dd class="cmt"><p>the current parsing state</p></dd><dt class="param">se</dt><dd class="cmt"><p>the current structural element (Document, DeclaredModule, or Constant)</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.parser.CommentIgnorer">CommentIgnorer</a> → <a href="ParserExtension.html" class="extype" name="info.kwarc.mmt.api.parser.ParserExtension">ParserExtension</a></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -376,15 +376,15 @@ but they must clean up after themselves in this method
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="log(s:=&gt;String):Unit"></a>
-      <a id="log(⇒String):Unit"></a>
+      <a id="log(s:=&gt;String,subgroup:Option[String]):Unit"></a>
+      <a id="log(⇒String,Option[String]):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="subgroup">subgroup: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol"><span class="name"><a href="../../../../../scala/package.html">None</a></span></span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
