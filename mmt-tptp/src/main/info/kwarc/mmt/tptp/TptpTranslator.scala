@@ -349,7 +349,9 @@ class TptpTranslator {
   }
 
   def error(msg: String, item: Any): Option[StructuralElement] = {
-    errors = CompilerError(SourceRef(FileURI(file),SourcePosition(-1,-1,-1).toRegion), msg + " " + item.toString::Nil, true)::errors
+    errors = CompilerError("tptp", SourceRef(FileURI(file),SourcePosition(-1,-1,-1).toRegion),
+                            msg + " " + item.toString:: Nil, level = Level.Warning
+                          )::errors
     None
   }
   
