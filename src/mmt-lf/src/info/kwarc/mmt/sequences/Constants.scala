@@ -4,6 +4,7 @@ import info.kwarc.mmt.lf._
 import info.kwarc.mmt.api._
 import utils._
 import objects._
+import uom._
 
 object LFS {
    val _base = Typed._base
@@ -12,48 +13,28 @@ object LFS {
    val nat   = _path ? "nat"
    val zero  = _path ? "zero"
    val one   = _path ? "one"
-   //val plus = lfssymbol("plus")
-   //val minus = lfssymbol("minus")
-   //val times = lfssymbol("times")
    
-   object succ {
-      val path = _path ? "succ"
-      def apply(n: Term) = OMA(OMS(path), List(n))
-      def unapply(t: Term) = t match {
-         case OMA(OMS(this.path), List(n)) => Some(n)
-         case _ => None
-      }
-   }
-   object leq {
-      val path = _path ? "leq"
-      def apply(m: Term, n: Term) = OMA(OMS(path), List(m,n))
-      def unapply(t: Term) = t match {
-         case OMA(OMS(this.path), List(m,n)) => Some((m,n))
-         case _ => None
-      }
-   }
-   
-   object ntype {
-      val path = _path ? "ntype"
-      def apply(n: Term) = OMA(OMS(path), List(n))
-      def unapply(t: Term) = t match {
-         case OMA(OMS(this.path), List(n)) => Some(n)
-         case _ => None
-      }
-   }
-   
-   object index {
-      val path = _path ? "index"
-      def apply(s: Term, n: Term) = OMA(OMS(path), List(s,n))
-      def unapply(t: Term) = t match {
-         case OMA(OMS(this.path), List(s,n)) => Some((s,n))
-         case _ => None
-      }
-   }
-   
+   object succ  extends UnaryConstantScala(_path, "succ")
+   object leq   extends BinaryConstantScala(_path, "leq")
+   object plus  extends BinaryConstantScala(_path, "plus")
+   object minus extends BinaryConstantScala(_path, "minus")
+   object ntype extends UnaryConstantScala(_path, "ntype")
+   object index extends BinaryConstantScala(_path, "index")
+
    object ellipsis {
       val path = _path ? "ellipsis"
-      def apply(from: Term, to: Term, index: LocalName, body: Term): Term = ???
-      def unapply(t: Term): Option[(Term, Term, LocalName, Term)] = ???
+      def apply(from: Term, to: Term, index: LocalName, body: Term): Term =
+         ComplexTerm(path, Substitution(OMV("from")/from, OMV("to")/to), Context(OMV(index) % OMS(nat)), List(body))
+      def unapply(t: Term): Option[(Term, Term, LocalName, Term)] = t match {
+         case ComplexTerm(this.path,
+                Substitution(Sub(_,from),Sub(_,to)),
+                Context(VarDecl(index, Some(OMS(nat)), None, _)),
+                List(body)
+              ) => Some((from, to, index, body))
+         case _ => None
+      }
    }
+   
+   object natlit extends info.kwarc.mmt.api.objects.StandardInt
+   natlit.init(nat, DPath(URI("http","real.omdoc.org")) ? "StandardNat")
 }

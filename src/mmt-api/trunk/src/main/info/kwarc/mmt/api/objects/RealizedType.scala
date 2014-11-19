@@ -44,7 +44,7 @@ abstract class RealizedType extends SemanticType {
    private var _synType: GlobalName = null
    private var _realization: MPath = null
    /** Due to various constraints including limitations of the Scala type system,
-    *  the most convenient solution is to initialize synType and home as null.
+    *  the most convenient solution is to initialize _synType and _realization as null.
     *  
     *  Therefore, instances of RealizedType must set them by calling this method exactly once.
     *  MMT does that automatically when using a Scala object as a realization.
@@ -62,6 +62,14 @@ abstract class RealizedType extends SemanticType {
    def home = _realization 
    /** the path of the corresponding RealizedTypeConstant */
    def path = home ? synType.name
+   /**
+    * two RealizedTypes are equal if they realize the same type and arise from the same realization 
+    */
+   override def equals(that: Any) = that match {
+      case that: RealizedType =>
+         synType == that.synType && home == that.home 
+      case _ => false
+   }
    /** apply method to construct OMLITs as rt(u) */
    def apply(u: univ) = OMLIT(this)(u)
    /** unapply method to pattern-match OMLITs as rt(u) */

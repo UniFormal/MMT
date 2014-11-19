@@ -391,21 +391,21 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       }
    }
    
-   /** UOM simplification */
-   private def simplify(t : Term)(implicit stack: Stack, history: History) = {
+   /** unsafe: via UOM */
+   def simplify(t : Term)(implicit stack: Stack, history: History) = {
       val tS = controller.simplifier(t, constantContext ++ solution ++ stack.context, rules)
       if (tS != t)
          history += ("simplified: " + presentObj(t) + " ~~> " + presentObj(tS))
       tS
    }
    
-   /** simplifies one step along each branches, well-formedness is preserved+reflected */
+   /** simplifies safelfy one step along each branches, well-formedness is preserved+reflected */
    //TODO merge with limitedSimplify; offer simplification strategies
-   def safeSimplify(tm: Term)(implicit stack: Stack, history: History): Term = tm match {
+   private def safeSimplify(tm: Term)(implicit stack: Stack, history: History): Term = tm match {
       case _:OMID | _:OMV | _:OMLITTrait => tm
       case ComplexTerm(op, subs, cont, args) =>
          val rOpt = rules.getFirst(classOf[ComputationRule], op)
-         rOpt flatMap {rule => rule(this)(tm)} match {
+         rOpt flatMap {rule => rule(this)(tm, false)} match {
             case Some(tmS) =>
                log("simplified: " + tm + " ~~> " + tmS)
                history += "simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS)
@@ -421,11 +421,11 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    }
    
    /** simplifies one step overall */
-   def safeSimplifyOne(tm: Term)(implicit stack: Stack, history: History): Term = tm.head match {
+   private def safeSimplifyOne(tm: Term)(implicit stack: Stack, history: History): Term = tm.head match {
       case Some(h) =>
          val rOpt = rules.getByHead(classOf[ComputationRule], h)
          rOpt foreach {rule =>
-            rule(this)(tm) match {
+            rule(this)(tm, false) match {
                case Some(tmS) =>
                   log("simplified: " + tm + " ~~> " + tmS)
                   return tmS
@@ -725,7 +725,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       // 1) base cases, e.g., identical terms, solving unknowns
       // identical terms
       if (tm1S hasheq tm2S) return true
-         // different literals are always non-equal
+      // different literals are always non-equal
       (tm1S, tm2S) match {
          case (l1: OMLIT, l2: OMLIT) => if (l1.value != l2.value) return error(s"$l1 and $l2 are inequal literals")
          case _ =>
