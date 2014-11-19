@@ -287,6 +287,21 @@ trait ConstantScala {
    lazy val term = objects.OMID(path)
 }
 
+class UnaryConstantScala(val parent: MPath, val name: String) extends ConstantScala {
+   def apply(arg: Term) = path(arg)
+   def unapply(t: Term) = t match {
+      case OMA(OMS(this.path), List(a)) => Some(a)
+      case _ => None
+   }
+}
+class BinaryConstantScala(val parent: MPath, val name: String) extends ConstantScala {
+   def apply(arg1: Term, arg2: Term) = path(arg1, arg2)
+   def unapply(t: Term) = t match {
+      case OMA(OMS(this.path), List(a1, a2)) => Some((a1,a2))
+      case _ => None
+   }
+}
+
 trait ViewScala extends TheoryScala
 
 object ConstantScala {

@@ -207,13 +207,14 @@ object PiCongruence extends TermBasedEqualityRule {
  * This rule also normalizes nested applications so that it implicitly implements the currying rule (f s) t = f(s,t).
  */ 
 object Beta extends ComputationRule(Apply.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Term] = {
+   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       var reduced = false // remembers if there was a reduction
       // auxiliary recursive function to beta-reduce as often as possible
       // returns Some(reducedTerm) or None if no reduction
       def reduce(f: Term, args: List[Term]): Option[Term] = (f,args) match {
-         case (Lambda(x,a,t), s :: rest) => 
-            solver.check(Typing(stack, s, a))(history + "argument must have domain type") //TODO what if false?
+         case (Lambda(x,a,t), s :: rest) =>
+            if (!covered)
+               solver.check(Typing(stack, s, a))(history + "argument must have domain type") //TODO what if false?
             reduced = true
             reduce(t ^? (x / s), rest)
          case (f, Nil) =>
@@ -239,6 +240,9 @@ object Beta extends ComputationRule(Apply.path) {
    }
 }
 
+/** 
+ *  should be redundant, but maybe more efficient
+ */
 object UnsafeBeta extends BreadthRule(Apply.path){
    val apply = (args: List[Term]) => {
       // collects the substitution that will be applied (thus, we only substitute once even if there are multiple nested redexes) 
@@ -265,7 +269,7 @@ object UnsafeBeta extends BreadthRule(Apply.path){
 /** A simplification rule that implements A -> B = Pi x:A.B  for fresh x.
  * LocalName.Anon is used for x */ 
 object ExpandArrow extends ComputationRule(Arrow.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Term] = tm match {
+   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
       case Arrow(a,b) => Some(Pi(OMV.anonymous, a, b))
       case _ => None
    }
@@ -385,7 +389,8 @@ object SolveType extends TypeSolutionRule(Apply.path) {
 }
 
 object TheoryTypeWithLF extends ComputationRule(ModExp.theorytype) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) = tm match {
-      case TheoryType(params) => if (params.isEmpty) None else Some(Pi(params, TheoryType(Nil)))
+   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = tm match {
+      case TheoryType(params) =>
+         if (params.isEmpty) None else Some(Pi(params, TheoryType(Nil)))
    }
 }
