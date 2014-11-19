@@ -212,6 +212,8 @@ object ExpandEllipsis extends ComputationRule(Apply.path) {
       tm match {
          case ApplySpine(f, args) =>
             val argsS = args.flatMap {
+               case LFS.ntype(LFS.natlit(n)) =>
+                  (1 to n.toInt).toList.map(_ => OMS(Typed.ktype))
                case LFS.ellipsis(m, n, i, t) =>
                   val mS = solver.simplify(m)
                   val nS = solver.simplify(n)
