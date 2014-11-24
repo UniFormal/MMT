@@ -17,8 +17,6 @@
 
 \renewcommand{\emph}[1]{\alert{#1}}
 
-\setbeamertemplate{headline}{\small\hfill\insertsection \hfill\hbox{}}%\insertsubsection\tb}
-
 \begin{document}
 
 \title{MMT: A Foundation-Independent Approach to Declarative Languages}
@@ -247,6 +245,7 @@ theory FOL: LF {
   include Logic
   term        : type               $\lstrem{higher-order abstract syntax}$
   forall      : (term $\arr$ prop) $\arr$ prop     #   $\forall$ V1 . 2
+  equal       : term $\arr$ term $\arr$ prop       #   1 $\doteq$ 2
 }
 \end{lstlisting}
 %  forallIntro : $\Pi$F.($\Pi$x.$\vdash$ (F x)) $\to$ $\vdash$ $\forall$($\lambda$x.F x)
@@ -260,6 +259,7 @@ theory FOL: LF {
   include Logic
   term        : type
   forall      : (term $\arr$ prop) $\arr$ prop     #   $\forall$ V1 . 2
+  equal       : term $\arr$ term $\arr$ prop       #   1 $\doteq$ 2
 }
 \end{lstlisting}
 %  forallIntro : $\Pi$F.($\Pi$x.$\vdash$ (F x)) $\to$ $\vdash$ $\forall$($\lambda$x.F x)
@@ -268,21 +268,49 @@ theory FOL: LF {
 Algebraic theories in MMT/LF/FOL:
 \begin{lstlisting}[frame=single]
 theory Magma : FOL {
-  comp : term $\arr$ term $\arr$ term # 1 $\circ$ 2
-}
-theory SemiGroup        : FOL {include Magma, ...}
+  comp : term $\arr$ term $\arr$ term # 1 $\circ$ 2}
+theory SemiGroup : FOL {
+  include Magma, 
+  assoc : $\vdash \; \forall \lambda x:\text{term}.\forall y:\text{term}.\forall \lambda z:\text{term}. (x\circ y)\circ z \doteq x \circ(y\circ z)$}
 theory CommutativeGroup : FOL {include SemiGroup, ...}
 theory Ring : FOL {
-  additive: CommutativeGroup
+  additive:       CommutativeGroup
   multiplicative: Semigroup
-  $\ldots$
+  ...
 }
 \end{lstlisting}
 \end{frame}
 
+\begin{frame}\frametitle{Small Scale Example (3)}
+The example as a diagram of \mmt theories
+\begin{center}
+\begin{tikzpicture}
+\node (leg) at (4,-1)  {dashed arrows: meta-theories};
+\node (LF) at (0,0)  {$\mathtt{LF}$};
+\node (Log) at (-2,-2) {$\mathtt{Logic}$};
+\node (F) at (0,-2) {$\mathtt{FOL}$};
+\node (M) at (-4,-4) {$\mathtt{Magma}$};
+\node (S) at (0,-4) {$\mathtt{SemiGroup}$};
+\node (C) at (4,-4) {$\mathtt{CommutativeGroup}$};
+\node (R) at (2,-6)  {$\mathtt{Ring}$};
+\draw[dashed,mono](LF) -- (F);
+\draw[dashed,mono](LF) -- (Log);
+\draw[dashed,mono](F) -- (M);
+\draw[dashed,mono](F) -- (S);
+\draw[dashed,mono](F) -- (C);
+\draw[dashed,mono](F) -- (R);
+\draw[mono](Log) -- (F);
+\draw[mono](M) -- (S);
+\draw[mono](S) -- (C);
+\draw[arrow](C) -- node[right] {$\mathtt{additive}$} (R);
+\draw[arrow](S) -- node[left] {$\mathtt{multiplicative}$} (R);
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
 \begin{frame}\frametitle{Theories and Theory Morphisms}
 \begin{itemize}
- \item Theories
+\item Theories
    \begin{itemize}
     \item uniform representation of
 	   \begin{itemize}
@@ -294,7 +322,8 @@ theory Ring : FOL {
     \item little theories: state every result in smallest possible theory
      \lec{maximizes reuse}
    \end{itemize}
- \item Theory morphisms
+
+\item Theory morphisms
    \begin{itemize}
     \item uniform representation of
 	   \begin{itemize}
@@ -936,22 +965,50 @@ MMT implements foundation-independent type reconstruction
 \end{frame}
 
 \begin{frame}\frametitle{Browser Features: 2-dimensional Notations}
+\begin{itemize}
+\item Notations may use presentation MathML for complex renderings
+\item Here: a fragment of the HOL Light library in the browser
+\end{itemize}
+
 \includegraphics[width=\textwidth]{img/2dnot.jpg}
 \end{frame}
 
 \begin{frame}\frametitle{Browser Features: Proof Trees}
+\begin{itemize}
+\item Notations are expressive enough to render proofs as trees
+\item Here: example solutions for a logic course
+\end{itemize}
+
 \includegraphics[width=\textwidth]{img/web-big.jpg}
 \end{frame}
 
 \begin{frame}\frametitle{Browser Features: Type Inferece}
+\begin{itemize}
+\item Interactive type inference for the selected subexpression
+\item Here: definition of the polymorphic universal quantifier in MMT/LF/HOLLight
+\end{itemize}
+
 \includegraphics[width=\textwidth]{img/type-inference.jpg}
 \end{frame}
 
 \begin{frame}\frametitle{Browser Features: Parsing}
+\begin{itemize}
+\item Parser and checker can be easily integrated, e.g., into the web pages
+\item Here:
+ \begin{itemize}
+ \item a simple formula in MMT/LF/HOLLight/Arith
+ \item a text box with the formula (left)
+ \item the rendering after parsing and analysis (right)
+ \end{itemize}
+\end{itemize}
+\framebox{
 \includegraphics[width=\textwidth]{img/parse.jpg}
+}
 \end{frame}
 
 \begin{frame}\frametitle{Example Service: Search}
+A search query in the HOL Light library with $2$ example results:
+
 \includegraphics[width=\textwidth]{img/search.jpg}
 \end{frame}
 
@@ -1006,7 +1063,7 @@ Inferred arguments are inserted during compilation:
 
 \hrule\medskip
 
-\includegraphics[width=\textwidth]{latex-mmt.jpg}
+\includegraphics[width=\textwidth]{img/latex-mmt.jpg}
 \thispagestyle{empty}
 \end{frame}
 

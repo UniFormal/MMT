@@ -104,35 +104,106 @@ Secondly, it is a library of test problems (i.e., theories in which some stateme
 
 Thirdly, it is a suite of tools for syntax-checking, presenting, and transforming TPTP problems into other languages (mostly the input syntaxes of various theorem provers).
 
-\system{OpenTheory}
+\system{OpenTheory} was specifically developed for the HOL family of systems.
+It aims at exporting libraries in order to reimport them in other provers.
+Consequently, it provides support for abstracting from definitions (which may be incompatible between libraries) and preserving high-level proof steps (which are more robust to import).
 
 \paragraph{MMT}
-While TPTP fixes a small set of logics, whose semantics is assumed to be given externally, \mmt is logic-independent and allows (in fact: requires) representing the syntax and semantics of the logic itself.
-All TPTP logics have been defined inside MMT/LF and an exporter from TPTP to MMT/LF is available.
-In fact, this constitutes the official (and executable) definition of semantically valid TPTP theories.
+While TPTP and OpenTheory fix a small set of logics, whose semantics is assumed to be given externally, \mmt is logic-independent and allows (in fact: requires) representing the syntax and semantics of the logic itself.
 
-\mmt does not focus on theorem proving but can be used in the same way as TPTP.
+All TPTP logics have been defined inside \mmt/LF and an exporter from TPTP to \mmt/LF is available.
+In fact, this constitutes the official (and executable) definition of semantically valid TPTP theories.
+All variants of HOL have been or can easily be represented in \mmt/LF.
+
+\mmt does not focus on theorem proving and exchange between specific theorem provers.
+Therefore, TPTP and OpenTheory provide better tool support for their specific family of logics.
 
 \section{Logical Frameworks}
 
+Logical frameworks are formalism in which the syntax and semantics of logics (and similar languages) can be defined.
+\cite{rabe:howto:14} gives an overview.
+
+Declarative frameworks $F$ are themselves a logic and allow representing other logics $L$ as theories of $F$.
+Results abouts $F$ such as normalization or type-checking induce according results for each $L$.
+Typically, declarative frameworks focus on proof theoretical aspects tend towards constructive mathematics, thus excluding many traditionally accepted proofs and proof techniques.
+
+Abstract logical frameworks define logics using abstract sets of sentences and models or (less often) proofs.
+They are often formulated in terms of category theory.
+They do not focus on concrete syntax of logics and are not limited to finite or computable logic definitions.
+
 \subsection{Declarative and Proof-Theoretical}
 
-\system{LF} is a logical framework based on a version of typed lambda calculus that extends simple type theory with dependent function types. Twelf is a well-known concrete implementation of LF. LF is a logical framework that can be used to define concrete logics, based on the judgments-as-types methodology. As such it can serve as the meta-theory of many methematical frameworks ? which, however, will tend to be forms of constructive mathematics, thus excluding many traditionally accepted proofs and proof techniques.
-MMT can be used to represent LF and use it as the meta-theory for imported LF-based logics. MMT has a concrete-syntax plugin for Twelf,
+\system{LF} is a logical framework based on the dependently-typed $\lambda$-calculus.
+It uses the judgments-as-types methodology.
+In particular, logic definitions usually use a declaration $\mathtt{proof}:\mathtt{form}\to\mathtt{type}$ such that $\mathtt{proof}\,F$ is the type of proofs of $F$.
 
-\system{Dedukti}
+Twelf \cite{twelf} is the most mature concrete implementation of LF.
+It includes a theorem prover for meta-theorems, i.e., theorems \emph{about} the defined logics.
 
-\system{Isabelle} is a logical framework as well as an LCF-style interactive theorem prover.  Most of what has been said about other logical frameworks applies here as well.  MMT has no emphasis on theorem proving, but can be used to represent Isabelle as a logical framework and logics defined using Isabelle, such as that of Isabelle/HOL.
+A wide variety of logics have been defined in Twelf \cite{CHKMR:latinabs:11}.
+It includes an exporter to \mmt syntax.
+
+\system{Dedukti} implements LF modulo rewriting.
+By supplying rewrite rules (whose confluence Dedukti assumes) in addition to an LF theory, users can give more elegant logic encodings.
+
+A number of logic libraries have been exported to Dedukti, which is envisioned as a universal proof checker.
+An export from Dedukti to \mmt is planned.
+
+\system{Isabelle} is a logical framework based on intuitionistic higher-order logic.
+Seen as a pure type system \cite{tps} with propositions-as-types, its underlying Pure logic is very similar to LF.
+The key declaration in a logic definition is usually of the form $\mathtt{true}:\mathtt{form}\to\mathtt{prop}$.
+
+Isabelle includes an LCF-style interactive theorem prover for proving object theorems, i.e., theorems \emph{within} the defined logic.
+Most of the proof support in Isabelle is optimized for individual logics defined in Isabelle, most importantly Isabelle/HOL with which Isabelle is often identified.
+Other logic definitions with sizable libraries are Isabelle/ZF and Isabelle/FOL.
+
+\paragraph{MMT}
+\mmt abstracts from and subsumes declarative logical frameworks.
+Thus, the logical framework can be chosen and evolved flexibly.
+Moreover, almost all of the tool support in \mmt is defined independent of the logical framework.
+\mmt currently lacks sophisticated theorem provers as in Twelf or Isabelle.
+
+A declarative framework $F$ is represented in \mmt as a theory \mmt/$F$.
+Then logics $L$ defined in $F$ are represented as theories \mmt/$F$/$L$, and $L$-theories $T$ are represented as theories \mmt/$F$/$L$/$T$.
+Thus, $F$, $L$, and $T$ are \mmt theories, and $L$ has meta-theory $F$ and $T$ has meta-theory $L$.
+
+The semantics of an \mmt theory is defined by its meta-theory.
+For theories without meta-theory such as $F$ above, the semantics can be supplied by a set of inference rules implemented in a plugin.
+\mmt includes a plugin that defines the necessary rules for several logical frameworks related to LF, including in particular LF itself, LF with rewriting, and LF with shallow polymorphism.
+The semantics of other frameworks can be defined accordingly.
 
 \subsection{Abstract and Model-Theoretical}
 
-\system{Institutions} is another logical framework, based on categorical model theory.  It is difficult to compare LF and institutions because the approaches are almost orthogonal, but like LF, the framework of institutions can be used to define concrete logical systems.  Much of the specifics of concrete logics are in fact instantiations of generic, categorically definable concepts in the institutional framework.
-LFI is a logical framework that can be viewed as a synthesis of the LF approach and the institutions approach, combining the advantages of each in one unified framework. It allows the specifier to specify the foundations needed to define the semantics ? proof theory and model theory ? of concrete mathematical formalisms in a fully explicit and formal way, while many specific aspects are as it were inherited from the higher-level theory.
-As before, MMT is so the speak one level higher up. The observation from LFI that many concepts can be defined at a higher level and then be inherited was extended one step further in MMT, thereby also offering a major simplification in the sense of representational uniformity. Theories at all levels ? logical frameworks, logical theories, abstract mathematical theories and concrete mathematical theories are all represented uniformly in MMT, using the same representational formalism.
+\system{Institutions} is the most developed abstract logical framework.
+Logics are defined as a tuple of a category of theories, two functor mapping theories to sentences model classes respectively, and a satisfaction relation between sentences and models.
+Most logics can be formulated as institutions, and many meta-theorems can be generalized to the institution-independent level \cite{institutionindependent}.
 
-\system{Hets}
+Institutions live inside category theory and provide no tool support in themselves.
+From a practical perspective, their primary strength is that they introduce intuitions and methodologies that, if followed, yield elegant implementations.
 
-\section{Selected Individual Proof Assistants}
+\system{Hets} is an implementation of institutions.
+It defines the data type of institutions as a class in a programming language.
+On top of that, it adds support for parsers and checkers, logic translations (institution comorphisms), modular specifications, and the shipping of proof obligations to external provers.
+
+It comes with a number of built-in individual institutions and translations, centered around the CASL family of logics \cite{caslmanual}.
+Contrary to declarative frameworks, adding a new institution requires modifying the Hets source code.
+
+\paragraph{MMT}
+\cite{rabe:howto:14,rabe:combining:10} can be viewed as a synthesis of the declarative and the institutions approach, combining the advantages of each in one unified framework.
+The basic idea is to use declarative logical frameworks as the environment in which logics, theories, formulas, proofs, and models are defined concretely (and for which tool support is available) and institutions as the platonic background in which these objects exist (and in which meta-logical results are established).
+
+In particular, \cite{rabe:combining:10} shows how logic definitions in LF induce institutions.
+This was used in \cite{CHKMRS:lfhets:11} to write logic definitions in Twelf, export them to \mmt, and then import the logic definitions into Hets.
+
+\mmt does not provide any explicit support for institutions, but the available primitives are designed to represent those institutions induced by declarative frameworks.
+This yields a major simplification in the sense of representational uniformity: Theories at all levels -- logical frameworks, logics, and abstract and  concrete mathematical theories, and mathematical foundations -- are represented uniformly as \mmt theories.
+
+Consider a theory \mmt/$F$/$L$/$T$, i.e., a theory $T$ of a logic $L$ defined in a declarative framework $F$.
+Then formulas, proofs, and other expressions over $T$ are represented as \mmt objects over $T$.
+Consider, moreover, a foundation of mathematics (e.g., any of the languages from Sect.~\ref{sec:foundations}) defined as an \mmt theory: this could be for example \mmt/$LF$/$ZFC$ as in \cite{IR:foundations-lf:10}.
+Then models of $T$ are represented as \mmt theory morphisms $T\to ZFC$.
+
+\section{Selected Individual Proof Assistants}\label{sec:foundations}
 
 While interchange formats and logical frameworks do not focus on a particular logic, the deepest tool support (in particular for type-checking and automated and interactive theorem proving) has been built for specific logics.
 These usually come with an idiosyncratic text input language, a tactic language, a module system, a dedicated (usually monolithic) tool for parsing, type-checking, and proving, and a library of formalized theories.
@@ -144,6 +215,10 @@ The following list is not complete and tries to focus on languages that provide 
 
 Each of these languages $L$ can be represented in \mmt, either directly, i.e., without a meta-theory, or with a logical framework as its meta-theory.
 In either case, the respective library can be represented as an \mmt library with meta-theory $L$.
+\medskip
+
+There is relatively little survey literature that compares these systems across the board.
+\cite{wiedijk_provers} and the related work in \cite{RK:mmt:10} survey individual aspects.
 
 \subsection{Higher-Order Logic}
 
@@ -155,9 +230,10 @@ In either case, the respective library can be represented as an \mmt library wit
 
 \subsection{Set Theory}
 
-\system{Mizar} provides, next to a system, also a rich language for representing mathematical theorems and proofs. While there is an emphasis on proof checking, so that only verified theorems are included in the extensive Mizar library, the language can also be used for just representing mathematical theories.
-Mizar is based on specific logical and set-theoretic foundations, rather similar to ZFC, while MMT has no predefined foundations. The specific foundations of Mizar can be represented as an MMT theory, though, and be used as the meta-theory for imported Mizar theories.
-MMT has a concrete-syntax plugin for Mizar that can be used to parse and import the Mizar library.
+\system{Mizar}
+%provides, next to a system, also a rich language for representing mathematical theorems and proofs. While there is an emphasis on proof checking, so that only verified theorems are included in the extensive Mizar library, the language can also be used for just representing mathematical theories.
+%Mizar is based on specific logical and set-theoretic foundations, rather similar to ZFC, while MMT has no predefined foundations. The specific foundations of Mizar can be represented as an MMT theory, though, and be used as the meta-theory for imported Mizar theories.
+%MMT has a concrete-syntax plugin for Mizar that can be used to parse and import the Mizar library.
 
 \system[isabelle_zf]{Isabelle/ZF}
 
@@ -177,8 +253,9 @@ MMT has a concrete-syntax plugin for Mizar that can be used to parse and import 
 
 \system{PVS}
 
-\system{Specware} provides, next to a system, a language for representing mathematical theories, called ?specs? in Specware parlance.  Although there is an emphasis on defining computable functions for which executable code can be generated, the language also allows one to specify functions and other mathematical objects by their properties, independent of notions of executability.  Specware is also a module system in which one can specify morphisms between specs, both simple import morphisms and more complicated morphisms involving translations and interpretations.  There is no notion of one spec being the meta-theory of another spec: all live at the same level, and the foundations, although not formally specified, are fixed.
-MMT is like Specware in that it is also a module system allowing one to define morphisms between theories.  Unlike Specware, it accommodates several levels.
+\system{Specware}
+%provides, next to a system, a language for representing mathematical theories, called ?specs? in Specware parlance.  Although there is an emphasis on defining computable functions for which executable code can be generated, the language also allows one to specify functions and other mathematical objects by their properties, independent of notions of executability.  Specware is also a module system in which one can specify morphisms between specs, both simple import morphisms and more complicated morphisms involving translations and interpretations.  There is no notion of one spec being the meta-theory of another spec: all live at the same level, and the foundations, although not formally specified, are fixed.
+%MMT is like Specware in that it is also a module system allowing one to define morphisms between theories.  Unlike Specware, it accommodates several levels.
 
 %\ednote{What about the converse? Which existing systems or frameworks can be used to represent MMT and use that representation to import MMT theories?}
 \bibliographystyle{alpha}
