@@ -1,0 +1,187 @@
+\documentclass[12pt]{article}
+\usepackage[top=2cm,bottom=2cm,left=2cm,right=2cm]{geometry}
+\usepackage{url}
+\usepackage{paralist}
+\usepackage{xcolor,graphicx,wrapfig,mytikz}
+%\usepackage[T1]{fontenc}
+
+\usepackage[bookmarksnumbered,bookmarksopen,colorlinks,urlcolor=gray,linkcolor=blue,citecolor=blue]{hyperref}
+
+\usepackage{basics}
+
+\newcommand{\system}[2][]{\paragraph{#2}#2 \ifnonempty[\cite{#2}]{#1}{\cite{#1}}}
+
+\begin{document}
+
+\title{How is \mmt different from System X, Y, Z, \ldots ?}
+\author{Florian Rabe}
+\date{\today\footnote{The latest version of this document is available at \url{https://svn.kwarc.info/repos/MMT/doc/introduction/mmt-vs-X.pdf}.}}
+\maketitle
+
+\begin{abstract}
+This is an overview of systems and frameworks for mathematics and logic along with high-level descriptions of how they relate to/differ from \mmt.
+\footnote{This document is based on a note by Lambert Meertens.}
+
+See \url{https://svn.kwarc.info/repos/MMT/doc/introduction/mmt.pdf} for an overview of and references to \mmt.
+
+The present version of this document is incomplete and will be extended from time to time.
+\end{abstract}
+
+\section{Interchange Formats}
+
+These are not tools but languages intended as representation formats for other tools, in particular for the interchange of data between systems.
+They usually come with a suite of tools or libraries for parsing and serializing data.
+With the exception of \mmt, the languages do not define mathematical well-formedness and the parsers cannot verify it.
+
+\subsection{General Purpose}
+
+\system{XML}
+is a format that allows representing any kind of structured data.
+It is agnostic about the kind of data being represented, and users must define and document an XML language (= a set of XML tags, often called a schema) for each kind of data.
+When applied to logic tools, it is usually used to represent syntax trees (using one XML tag for each non-terminal symbol) with respect to the context-free grammar underlying the tool.
+
+Most programming languages provide libraries for parsing and serializing XML.
+Some logic tools offer exports in custom XML languages for exporting their data, e.g., Mizar.
+
+\system{JSON}
+is similar to XML in motivation and applications.
+Its syntax is less verbose, and its handling of data types is more refined.
+It is widely used in web applications, but not commonly used in logic tools.
+
+\paragraph{MMT}
+\mmt is designed specifically for representing mathematical and logical data, in particular formal theories.
+It offers an XML language as one representation format, but adds modularity, context-sensitivity, and the representation of semantics.
+
+\subsection{Logic-Independent}
+
+\system{OpenMath} consists of two parts.
+Firstly, it is an XML language for representing mathematical formulas, called OpenMath objects.
+These objects are similar to S-expressions except that they add binding, key-value attributions, and a fixed set of literals.
+The leafs of the S-expressions may be references to symbols, which are introduced in OpenMath content dictionaries.
+
+Secondly, it is a collection of content dictionaries aiming primarily at the fragment of mathematics taught at the high-school level.
+These content dictionaries declare symbols and describe their meaning and usage.
+Content dictionaries remain oriented on single mathematical formulas in a fragment of traditional mathematics, and is not usable for representing more abstract mathematics or mathematical theories.
+
+\system{MathML} consists of two parts.
+Firstly, content MathML is an XML language that is essentially isomorphic to OpenMath (different XML tags but same meaning).
+
+Secondly, presentation MathML is an XML language for the shape of mathematical formulas.
+For example, where content MathML uses a primitive for ``exponentiation applied to $x$ and $n$'', presentation MathML uses a primitive for ``$x$ with a superscript $n$''.
+
+Given notations for all symbols, it is possible to translate from content to presentation MathML (although \mmt appears to be only tool that implements the general case well); the reverse transformation is AI-complete.
+
+MathML is an official part of HMTL, and many browsers (most notably Firefox) are able to render presentation MathML formulas at LaTeX-level quality.
+
+\system{OMDoc} is an XML language aiming at representing all of mathematics.
+It subsumes OpenMath and content MathML as alternatives for representing formulas and presentation MathML for representing semi-formal formulas (i.e., formulas whose content structure is not or only partially known).
+
+It adds primitives for formal theories (theories and morphisms, type declarations, axioms/theorems).
+It also adds LaTeX-style narrative features such as text, sectioning, lists, and citations.
+
+\paragraph{MMT}
+\mmt is both a restriction and an improvement of OMDoc.
+It is restricted to the formal aspects and excludes the semi-formal and narrative aspects (although this is ongoing work).
+The XML language that \mmt uses is essentially a fragment of OMDoc.
+
+Contrary to OpenMath, MathML, and OMDoc, \mmt allows representing the semantics of mathematical objects and theories.
+For example, \mmt defines and can check whether a used symbol is declared and imported into the current scope.
+If the respective type systems and logics are represented as \mmt theories themselves, \mmt defines and can check whether objects are well-formed or true.
+
+OpenMath, MathML, and OMDoc focus on the creation of a language standard and relegate the development of tools to users of the standard.
+\mmt additionally provides a reference implementation with a suite of services.
+For example, \mmt theories can provide notations for symbols, and \mmt can use these notations to parse text representations and to render content as HTML (including presentation MathML for formulas).
+
+\subsection{Logic-Specific}
+
+\system{TPTP} consists of three parts.
+
+Firstly, it is a text-based Prolog-parsable interchange syntax for a family of related logics.
+The TPTP syntax is context-free and expressive enough to represent formal theories of a large variety of logics, but only for some logics the exact syntax has been officially specified.
+Originally this was only untyped first-order logic; later it was extended to typed first-order logic, higher-order logic, and their variants with arithmetic and shallow polymorphism.
+
+Secondly, it is a library of test problems (i.e., theories in which some statements are marked as axioms and others as conjectures) for automated theorem provers for one of the TPTP logics (mostly first-order logic).
+
+Thirdly, it is a suite of tools for syntax-checking, presenting, and transforming TPTP problems into other languages (mostly the input syntaxes of various theorem provers).
+
+\system{OpenTheory}
+
+\paragraph{MMT}
+While TPTP fixes a small set of logics, whose semantics is assumed to be given externally, \mmt is logic-independent and allows (in fact: requires) representing the syntax and semantics of the logic itself.
+All TPTP logics have been defined inside MMT/LF and an exporter from TPTP to MMT/LF is available.
+In fact, this constitutes the official (and executable) definition of semantically valid TPTP theories.
+
+\mmt does not focus on theorem proving but can be used in the same way as TPTP.
+
+\section{Logical Frameworks}
+
+\subsection{Declarative and Proof-Theoretical}
+
+\system{LF} is a logical framework based on a version of typed lambda calculus that extends simple type theory with dependent function types. Twelf is a well-known concrete implementation of LF. LF is a logical framework that can be used to define concrete logics, based on the judgments-as-types methodology. As such it can serve as the meta-theory of many methematical frameworks ? which, however, will tend to be forms of constructive mathematics, thus excluding many traditionally accepted proofs and proof techniques.
+MMT can be used to represent LF and use it as the meta-theory for imported LF-based logics. MMT has a concrete-syntax plugin for Twelf,
+
+\system{Dedukti}
+
+\system{Isabelle} is a logical framework as well as an LCF-style interactive theorem prover.  Most of what has been said about other logical frameworks applies here as well.  MMT has no emphasis on theorem proving, but can be used to represent Isabelle as a logical framework and logics defined using Isabelle, such as that of Isabelle/HOL.
+
+\subsection{Abstract and Model-Theoretical}
+
+\system{Institutions} is another logical framework, based on categorical model theory.  It is difficult to compare LF and institutions because the approaches are almost orthogonal, but like LF, the framework of institutions can be used to define concrete logical systems.  Much of the specifics of concrete logics are in fact instantiations of generic, categorically definable concepts in the institutional framework.
+LFI is a logical framework that can be viewed as a synthesis of the LF approach and the institutions approach, combining the advantages of each in one unified framework. It allows the specifier to specify the foundations needed to define the semantics ? proof theory and model theory ? of concrete mathematical formalisms in a fully explicit and formal way, while many specific aspects are as it were inherited from the higher-level theory.
+As before, MMT is so the speak one level higher up. The observation from LFI that many concepts can be defined at a higher level and then be inherited was extended one step further in MMT, thereby also offering a major simplification in the sense of representational uniformity. Theories at all levels ? logical frameworks, logical theories, abstract mathematical theories and concrete mathematical theories are all represented uniformly in MMT, using the same representational formalism.
+
+\system{Hets}
+
+\section{Selected Individual Proof Assistants}
+
+While interchange formats and logical frameworks do not focus on a particular logic, the deepest tool support (in particular for type-checking and automated and interactive theorem proving) has been built for specific logics.
+These usually come with an idiosyncratic text input language, a tactic language, a module system, a dedicated (usually monolithic) tool for parsing, type-checking, and proving, and a library of formalized theories.
+
+Interoperability between these tools is usually non-existent or highly brittle.
+Usually, each pair of tools differs in non-trivial ways in all of the following respects: the syntax (i.e., well-formedness) and semantics (i.e., provability) of the logic underlying the tool, the concrete input syntax used for it, the tactic language, the module system, and the definitions used in the library.
+
+The following list is not complete and tries to focus on languages that provide the expressivity and proof support to be practical for the verification of mathematical theories or software.
+
+Each of these languages $L$ can be represented in \mmt, either directly, i.e., without a meta-theory, or with a logical framework as its meta-theory.
+In either case, the respective library can be represented as an \mmt library with meta-theory $L$.
+
+\subsection{Higher-Order Logic}
+
+\system{HOL}
+
+\system[hollight]{HOL Light}
+
+\system[isabellehol]{Isabelle/HOL}
+
+\subsection{Set Theory}
+
+\system{Mizar} provides, next to a system, also a rich language for representing mathematical theorems and proofs. While there is an emphasis on proof checking, so that only verified theorems are included in the extensive Mizar library, the language can also be used for just representing mathematical theories.
+Mizar is based on specific logical and set-theoretic foundations, rather similar to ZFC, while MMT has no predefined foundations. The specific foundations of Mizar can be represented as an MMT theory, though, and be used as the meta-theory for imported Mizar theories.
+MMT has a concrete-syntax plugin for Mizar that can be used to parse and import the Mizar library.
+
+\system[isabelle_zf]{Isabelle/ZF}
+
+\subsection{Dependent Type Theory}
+
+\system{Agda}
+
+\system{Coq}
+
+\system{Matita}
+
+\system{Nuprl}
+
+\subsection{Other Foundations}
+
+\system{ACL2}
+
+\system{PVS}
+
+\system{Specware} provides, next to a system, a language for representing mathematical theories, called ?specs? in Specware parlance.  Although there is an emphasis on defining computable functions for which executable code can be generated, the language also allows one to specify functions and other mathematical objects by their properties, independent of notions of executability.  Specware is also a module system in which one can specify morphisms between specs, both simple import morphisms and more complicated morphisms involving translations and interpretations.  There is no notion of one spec being the meta-theory of another spec: all live at the same level, and the foundations, although not formally specified, are fixed.
+MMT is like Specware in that it is also a module system allowing one to define morphisms between theories.  Unlike Specware, it accommodates several levels.
+
+%\ednote{What about the converse? Which existing systems or frameworks can be used to represent MMT and use that representation to import MMT theories?}
+\bibliographystyle{alpha}
+\bibliography{../../../Program_Data/Latex/bib/pub_rabe,../../../Program_Data/Latex/bib/rabe,../../../Program_Data/Latex/bib/systems,../../../Program_Data/Latex/bib/institutions,../../../Program_Data/Latex/bib/historical,../../../Program_Data/Latex/bib/other}
+
+\end{document}
