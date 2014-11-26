@@ -31,7 +31,7 @@ The present version of this document is incomplete and will be extended from tim
 
 These are not tools but languages intended as representation formats for other tools, in particular for the interchange of data between systems.
 They usually come with a suite of tools or libraries for parsing and serializing data.
-With the exception of \mmt, the languages do not define mathematical well-formedness and the parsers cannot verify it.
+Other than \mmt, the languages do not define mathematical well-formedness and the parsers cannot verify it.
 
 \subsection{General Purpose}
 
@@ -41,12 +41,12 @@ It is agnostic about the kind of data being represented, and users must define a
 When applied to logic tools, it is usually used to represent syntax trees (using one XML tag for each non-terminal symbol) with respect to the context-free grammar underlying the tool.
 
 Most programming languages provide libraries for parsing and serializing XML.
-Some logic tools offer exports in custom XML languages for exporting their data, e.g., Mizar.
+Some logic-specific tools offer exports in custom XML languages for exporting their data, e.g., Mizar.
 
 \system{JSON}
 is similar to XML in motivation and applications.
 Its syntax is less verbose, and its handling of data types is more refined.
-It is widely used in web applications, but not commonly used in logic tools.
+It is widely used in web applications but not commonly used in logic tools.
 
 \paragraph{MMT}
 \mmt is designed specifically for representing mathematical and logical data, in particular formal theories.
@@ -55,18 +55,19 @@ It offers an XML language as one representation format, but adds modularity, con
 \subsection{Logic-Independent}
 
 \system{OpenMath} consists of two parts.
+
 Firstly, it is an XML language for representing mathematical formulas, called OpenMath objects.
 These objects are similar to S-expressions except that they add binding, key-value attributions, and a fixed set of literals.
-The leafs of the S-expressions may be references to symbols, which are introduced in OpenMath content dictionaries.
+The leafs of the objects may be references to globally visible symbols, which are declared in OpenMath content dictionaries.
 
 Secondly, it is a collection of content dictionaries aiming primarily at the fragment of mathematics taught at the high-school level.
 These content dictionaries declare symbols and describe their meaning and usage.
-Content dictionaries remain oriented on single mathematical formulas in a fragment of traditional mathematics, and is not usable for representing more abstract mathematics or mathematical theories.
 
-\system{MathML} consists of two parts.
-Firstly, content MathML is an XML language that is essentially isomorphic to OpenMath (different XML tags but same meaning).
+Content dictionaries remain oriented on single mathematical formulas in a fragment of traditional mathematics and are not usable for representing the semantics of mathematical theories or type systems.
 
-Secondly, presentation MathML is an XML language for the shape of mathematical formulas.
+\system{MathML} consists of two XML languages.
+Firstly, \emph{content} MathML is essentially isomorphic to OpenMath (different XML tags but same meaning).
+Secondly, \emph{presentation} MathML marks up the shape (the presentation) of mathematical formulas.
 For example, where content MathML uses a primitive for ``exponentiation applied to $x$ and $n$'', presentation MathML uses a primitive for ``$x$ with a superscript $n$''.
 
 Given notations for all symbols, it is possible to translate from content to presentation MathML (although \mmt appears to be only tool that implements the general case well); the reverse transformation is AI-complete.
@@ -74,7 +75,8 @@ Given notations for all symbols, it is possible to translate from content to pre
 MathML is an official part of HMTL, and many browsers (most notably Firefox) are able to render presentation MathML formulas at LaTeX-level quality.
 
 \system{OMDoc} is an XML language aiming at representing all of mathematics.
-It subsumes OpenMath and content MathML as alternatives for representing formulas and presentation MathML for representing semi-formal formulas (i.e., formulas whose content structure is not or only partially known).
+
+It subsumes OpenMath/content MathML for representing formulas and presentation MathML for representing formulas whose content structure is not or only partially known. (OMDoc calls the latter semi-formal objects.)
 
 It adds primitives for formal theories (theories and morphisms, type declarations, axioms/theorems).
 It also adds LaTeX-style narrative features such as text, sectioning, lists, and citations.
@@ -86,23 +88,26 @@ The XML language that \mmt uses is essentially a fragment of OMDoc.
 
 Contrary to OpenMath, MathML, and OMDoc, \mmt allows representing the semantics of mathematical objects and theories.
 For example, \mmt defines and can check whether a used symbol is declared and imported into the current scope.
-If the respective type systems and logics are represented as \mmt theories themselves, \mmt defines and can check whether objects are well-formed or true.
+More difficultly, if the respective type systems and logics are represented as \mmt theories themselves, \mmt defines and can check whether objects are well-formed or true.
 
-OpenMath, MathML, and OMDoc focus on the creation of a language standard and relegate the development of tools to users of the standard.
-\mmt additionally provides a reference implementation with a suite of services.
-For example, \mmt theories can provide notations for symbols, and \mmt can use these notations to parse text representations and to render content as HTML (including presentation MathML for formulas).
+OpenMath, MathML, and OMDoc focus on the creation of a language standard and relegate the development of tools to expected users of the standard.
+\mmt additionally provides a reference implementation with a well-integrated suite of services.
+For example, \mmt theories can provide notations for symbols, and \mmt can use these notations to parse text representations and to render content as HTML/presentation MathML.
 
 \subsection{Logic-Specific}
 
 \system{TPTP} consists of three parts.
 
 Firstly, it is a text-based Prolog-parsable interchange syntax for a family of related logics.
-The TPTP syntax is context-free and expressive enough to represent formal theories of a large variety of logics, but only for some logics the exact syntax has been officially specified.
+The TPTP syntax is context-free and expressive enough to represent formal theories of a large variety of logics.
+But the fragment of the TPTP syntax that corresponds to the well-formed formulas has been officially specified only for some individual logics.
 Originally this was only untyped first-order logic; later it was extended to typed first-order logic, higher-order logic, and their variants with arithmetic and shallow polymorphism.
 
-Secondly, it is a library of test problems (i.e., theories in which some statements are marked as axioms and others as conjectures) for automated theorem provers for one of the TPTP logics (mostly first-order logic).
+Secondly, it is a library of test problems (i.e., theories in which some statements are marked as axioms and others as conjectures) for automated theorem provers.
+As such, it has become a standardization layer that makes logic tools interoperable.
+However, this interoperability is mostly restricted to first-order logic tools; for more complex type systems and logics, the ad hoc specification of the well-formed fragments has proved very challenging.
 
-Thirdly, it is a suite of tools for syntax-checking, presenting, and transforming TPTP problems into other languages (mostly the input syntaxes of various theorem provers).
+Thirdly, it is a suite of tools for syntax-checking, presenting, and transforming TPTP problems into other languages (mostly into the input syntaxes of various theorem provers).
 
 \system{OpenTheory} was specifically developed for the HOL family of systems.
 It aims at exporting libraries in order to reimport them in other provers.
@@ -112,23 +117,25 @@ Consequently, it provides support for abstracting from definitions (which may be
 While TPTP and OpenTheory fix a small set of logics, whose semantics is assumed to be given externally, \mmt is logic-independent and allows (in fact: requires) representing the syntax and semantics of the logic itself.
 
 All TPTP logics have been defined inside \mmt/LF and an exporter from TPTP to \mmt/LF is available.
-In fact, this constitutes the official (and executable) definition of semantically valid TPTP theories.
+In fact, this constitutes the official (and executable) definition of well-formed TPTP theories.
 All variants of HOL have been or can easily be represented in \mmt/LF.
 
 \mmt does not focus on theorem proving and exchange between specific theorem provers.
-Therefore, TPTP and OpenTheory provide better tool support for their specific family of logics.
+Therefore, TPTP and OpenTheory provide better tool support for their specific application and their specific family of logics.
 
 \section{Logical Frameworks}
 
-Logical frameworks are formalism in which the syntax and semantics of logics (and similar languages) can be defined.
+Logical frameworks are formalisms in which the syntax and semantics of logics (and similar languages) can be defined.
 \cite{rabe:howto:14} gives an overview.
+Two groups of frameworks can be distinguished.
 
-Declarative frameworks $F$ are themselves a logic and allow representing other logics $L$ as theories of $F$.
-Results abouts $F$ such as normalization or type-checking induce according results for each $L$.
-Typically, declarative frameworks focus on proof theoretical aspects tend towards constructive mathematics, thus excluding many traditionally accepted proofs and proof techniques.
+A \emph{declarative} framework $F$ is themselves a logic and allows representing other logics $L$ as theories of $F$.
+Results about $F$ such as normalization or type-checking induce according results for each $L$.
+Typically but not necessarily, declarative frameworks focus on proof theoretical and constructive aspects, thus excluding many traditionally accepted proofs and proof techniques.
+\cite{logicalframeworks} gives an overview.
 
-Abstract logical frameworks define logics using abstract sets of sentences and models or (less often) proofs.
-They are often formulated in terms of category theory.
+An \emph{abstract} logical framework defines logics using abstract sets of sentences and models or (less often) proofs.
+Abstract frameworks are often formulated in terms of category theory.
 They do not focus on concrete syntax of logics and are not limited to finite or computable logic definitions.
 
 \subsection{Declarative and Proof-Theoretical}
@@ -140,8 +147,8 @@ In particular, logic definitions usually use a declaration $\mathtt{proof}:\math
 Twelf \cite{twelf} is the most mature concrete implementation of LF.
 It includes a theorem prover for meta-theorems, i.e., theorems \emph{about} the defined logics.
 
-A wide variety of logics have been defined in Twelf \cite{CHKMR:latinabs:11}.
-It includes an exporter to \mmt syntax.
+A wide variety of logics have been defined in Twelf, e.g., in the LATIN library \cite{CHKMR:latinabs:11}.
+It includes an exporter to \mmt's XML language.
 
 \system{Dedukti} implements LF modulo rewriting.
 By supplying rewrite rules (whose confluence Dedukti assumes) in addition to an LF theory, users can give more elegant logic encodings.
@@ -153,8 +160,8 @@ An export from Dedukti to \mmt is planned.
 Seen as a pure type system \cite{tps} with propositions-as-types, its underlying Pure logic is very similar to LF.
 The key declaration in a logic definition is usually of the form $\mathtt{true}:\mathtt{form}\to\mathtt{prop}$.
 
-Isabelle includes an LCF-style interactive theorem prover for proving object theorems, i.e., theorems \emph{within} the defined logic.
-Most of the proof support in Isabelle is optimized for individual logics defined in Isabelle, most importantly Isabelle/HOL with which Isabelle is often identified.
+Isabelle includes an LCF-style interactive theorem prover and a tactic language for proving object theorems, i.e., theorems \emph{within} the defined logic.
+Despite being logic-independent, most of the proof support in Isabelle is optimized for individual logics defined in Isabelle, most importantly Isabelle/HOL, with which Isabelle is often mistakenly identified.
 Other logic definitions with sizable libraries are Isabelle/ZF and Isabelle/FOL.
 
 \paragraph{MMT}
@@ -163,19 +170,20 @@ Thus, the logical framework can be chosen and evolved flexibly.
 Moreover, almost all of the tool support in \mmt is defined independent of the logical framework.
 \mmt currently lacks sophisticated theorem provers as in Twelf or Isabelle.
 
-A declarative framework $F$ is represented in \mmt as a theory \mmt/$F$.
-Then logics $L$ defined in $F$ are represented as theories \mmt/$F$/$L$, and $L$-theories $T$ are represented as theories \mmt/$F$/$L$/$T$.
-Thus, $F$, $L$, and $T$ are \mmt theories, and $L$ has meta-theory $F$ and $T$ has meta-theory $L$.
+A declarative framework $F$ is represented in \mmt as a theory $F$.
+Then logics $L$ defined in $F$ are represented as theories $L$ with meta-theory $F$, and $L$-theories $T$ are represented as theories $T$ with meta-theory $L$.
 
 The semantics of an \mmt theory is defined by its meta-theory.
-For theories without meta-theory such as $F$ above, the semantics can be supplied by a set of inference rules implemented in a plugin.
-\mmt includes a plugin that defines the necessary rules for several logical frameworks related to LF, including in particular LF itself, LF with rewriting, and LF with shallow polymorphism.
+Thus, if the semantics of $F$ is defined, it induces the semantics of $L$ and $T$.
+For theories without meta-theory such as $F$, the semantics can be defined by a set of inference rules implemented in a plugin.
+
+\mmt includes a set of plugins that define the inference rules for several frameworks related to LF, including in particular LF itself, LF with rewriting, and LF with shallow polymorphism.
 The semantics of other frameworks can be defined accordingly.
 
 \subsection{Abstract and Model-Theoretical}
 
 \system{Institutions} is the most developed abstract logical framework.
-Logics are defined as a tuple of a category of theories, two functor mapping theories to sentences model classes respectively, and a satisfaction relation between sentences and models.
+Logics are defined as a tuple of a category of theories, two functors mapping theories to sentences and model classes respectively, and a satisfaction relation between sentences and models.
 Most logics can be formulated as institutions, and many meta-theorems can be generalized to the institution-independent level \cite{institutionindependent}.
 
 Institutions live inside category theory and provide no tool support in themselves.
@@ -198,9 +206,9 @@ This was used in \cite{CHKMRS:lfhets:11} to write logic definitions in Twelf, ex
 \mmt does not provide any explicit support for institutions, but the available primitives are designed to represent those institutions induced by declarative frameworks.
 This yields a major simplification in the sense of representational uniformity: Theories at all levels -- logical frameworks, logics, and abstract and  concrete mathematical theories, and mathematical foundations -- are represented uniformly as \mmt theories.
 
-Consider a theory \mmt/$F$/$L$/$T$, i.e., a theory $T$ of a logic $L$ defined in a declarative framework $F$.
+Consider a theory $T$ of a logic $L$ defined in a declarative framework $F$.
 Then formulas, proofs, and other expressions over $T$ are represented as \mmt objects over $T$.
-Consider, moreover, a foundation of mathematics (e.g., any of the languages from Sect.~\ref{sec:foundations}) defined as an \mmt theory: this could be for example \mmt/$LF$/$ZFC$ as in \cite{IR:foundations-lf:10}.
+Consider, moreover, a foundation of mathematics (e.g., any of the languages from Sect.~\ref{sec:foundations}) defined as an \mmt theory: this could be for example a theory $ZFC$ with meta-theory LF as in \cite{IR:foundations-lf:10}.
 Then models of $T$ are represented as \mmt theory morphisms $T\to ZFC$.
 
 \section{Selected Individual Proof Assistants}\label{sec:foundations}
@@ -211,7 +219,7 @@ These usually come with an idiosyncratic text input language, a tactic language,
 Interoperability between these tools is usually non-existent or highly brittle.
 Usually, each pair of tools differs in non-trivial ways in all of the following respects: the syntax (i.e., well-formedness) and semantics (i.e., provability) of the logic underlying the tool, the concrete input syntax used for it, the tactic language, the module system, and the definitions used in the library.
 
-The following list is not complete and tries to focus on languages that provide the expressivity and proof support to be practical for the verification of mathematical theories or software.
+The following list is not complete and tries to focus on languages that provide the expressivity and proof support to be practical for the verification of mathematics or software.
 
 Each of these languages $L$ can be represented in \mmt, either directly, i.e., without a meta-theory, or with a logical framework as its meta-theory.
 In either case, the respective library can be represented as an \mmt library with meta-theory $L$.
