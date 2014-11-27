@@ -6,18 +6,12 @@ import utils._
 import objects._
 import uom._
 
+import Nat._
+
 object LFS {
    val _base = Typed._base
    val _path = _base ? "LFS"
    
-   val nat   = _path ? "nat"
-   val zero  = _path ? "zero"
-   val one   = _path ? "one"
-   
-   object succ  extends UnaryConstantScala(_path, "succ")
-   object leq   extends BinaryConstantScala(_path, "leq")
-   object plus  extends BinaryConstantScala(_path, "plus")
-   object minus extends BinaryConstantScala(_path, "minus")
    object ntype extends UnaryConstantScala(_path, "ntype")
    object index extends BinaryConstantScala(_path, "index")
 
@@ -34,7 +28,4 @@ object LFS {
          case _ => None
       }
    }
-   
-   object natlit extends info.kwarc.mmt.api.objects.StandardInt
-   natlit.init(nat, DPath(URI("http","real.omdoc.org")) ? "StandardNat")
 }

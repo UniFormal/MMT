@@ -79,7 +79,7 @@ class OAF(uri: URI, root: File, val report: Report) extends Logger {
          val mi = localPath / "META-INF"
          mi.mkdir
          (localPath / "source").mkdir
-         File.write(mi / "MANIFEST.MF", s"""id: ${uri.path}\n""")
+         File.write(mi / "MANIFEST.MF", s"id: ${uri.path}\n")
          git(root, "init", localPath.toString)
          git(root, "add", ".", localPath.toString)
       }

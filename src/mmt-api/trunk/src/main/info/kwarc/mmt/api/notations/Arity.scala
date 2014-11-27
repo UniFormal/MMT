@@ -201,7 +201,7 @@ case class Arity(subargs: List[ArgumentComponent],
       val (perSeqArg, seqArgCutOff) = distributeArgs(args)
       val (perSeqVar, seqVarCutOff) = distributeVars(0)
       arguments flatMap {
-         case ImplicitArg(n, _) => List(ImplicitArg(remapFun(perSeqArg, seqArgCutOff, perSeqVar, seqVarCutOff)(n)))
+         case ImplicitArg(n,_) => List(ImplicitArg(remapFun(perSeqArg, seqArgCutOff, perSeqVar, seqVarCutOff)(n)))
          case _ => Nil
       }
    }

@@ -359,6 +359,9 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
            }
    }
    
+   /**
+    * @return true if unsolved variables can be filled in by prover
+    */
    private def noActivatableConstraint: Boolean = {
       solution.declsInContext.forall {
          case (cont, VarDecl(x, Some(tp), None,_)) =>
@@ -503,6 +506,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
             case j: Equality => checkEquality(j)
             case j: Universe => checkUniverse(j)
             case j: Inhabitable => checkInhabitable(j)
+            case j: Inhabited => checkInhabited(j)
          }
       }
    }
@@ -514,7 +518,6 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     * pre: context and type are covered
     *
     * post: typing judgment is covered
-    *  
     */
    private def checkTyping(j: Typing)(implicit history: History) : Boolean = {
      val tm = j.tm
@@ -964,6 +967,21 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       }
    }
 
+   /**
+    * proves an inhabitation judgment by theorem proving
+    * 
+    * pre: context and type are covered
+    *
+    * post: inhabitation judgment is covered
+    */
+   private def checkInhabited(j : Inhabited)(implicit history: History): Boolean = {
+      val res = prove(j.context, j.tp)
+      if (res.isDefined)
+         true
+      else
+         delay(j)
+   }
+  
    private def prove(context: Context, conc: Term)(implicit history: History): Option[Term] = {
       val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
       log(msg)

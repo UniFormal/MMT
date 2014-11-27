@@ -333,7 +333,7 @@ object Marker {
             else
                Delim(s.substring(2))
          case s: String if s.startsWith("%I") =>
-            // In ---> implicit argument
+            // In or Gn ---> implicit argument or implicit guard
             try {
                val n = s.substring(2).toInt
                ImplicitArg(n)
