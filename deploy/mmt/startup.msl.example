@@ -1,0 +1,6 @@
+// The file startup.msl, if it exists, is always executed on startup.
+// The following are example commands that are useful here.
+
+log console
+
+oaf root PATH/TO/WORKING/COPIES http://gl.mathhub.info
