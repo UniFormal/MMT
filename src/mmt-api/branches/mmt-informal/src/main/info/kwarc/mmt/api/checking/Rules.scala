@@ -5,128 +5,6 @@ import libraries._
 import objects._
 import objects.Conversions._
 import scala.collection.mutable.{HashMap,HashSet}
-/* obsolete
-trait GenericRuleMap {
-   def delete(which: Rule => Boolean)
-}
-
-abstract class GenericRuleMapOne[I, R <: Rule] extends HashMap[I,R] with GenericRuleMap {
-   def delete(which: Rule => Boolean) {
-      iterator foreach {case (k,r) => if (which(r)) this -= k}
-   }
-}
-
-abstract class GenericRuleSetMap[I, R <: Rule] extends utils.HashMapToSet[I,R] with GenericRuleMap {
-   def delete(which: Rule => Boolean) {
-      values foreach {
-         s => s.iterator foreach {
-            r => if (which(r)) s -= r
-         }
-      }
-   }
-}
-
-/** rules indexed and uniquely determined by a single Path */
-class RuleMap[R <: Rule] extends GenericRuleMapOne[ContentPath,R] {
-}
-/** rules indexed and uniquely determined by a pair of Path's */
-class RuleMap2[R <: Rule] extends GenericRuleMapOne[(ContentPath,ContentPath),R]
-
-/** rules indexed by a single Path, which multiple rules may share */
-class RuleSetMap[R <: Rule] extends GenericRuleSetMap[ContentPath,R]
-/** rules indexed by a pair of Paths, which multiple rules may share */
-class RuleSetMap2[R <: Rule] extends GenericRuleSetMap[(ContentPath,ContentPath), R]
-
-/** A RuleStore maintains sets of foundation-dependent rules that are used by a Solver.
- * 
- *  It maintains a separate set of TypingRule's for every subtype of Rule; the Rule's are indexed by their heads.
- *  An instance of RuleStore is created by the ExtensionManager.
- */
-class RuleStore {
-   val typingRules = new RuleMap[TypingRule]
-   val inferenceRules = new RuleMap[InferenceRule]
-   val computationRules = new RuleMap[ComputationRule]
-   val inhabitableRules = new RuleMap[InhabitableRule]
-   val universeRules = new RuleMap[UniverseRule]
-   val typeBasedEqualityRules = new RuleMap[TypeBasedEqualityRule]
-   val termBasedEqualityRules = new RuleSetMap2[TermBasedEqualityRule]
-   val solutionRules = new RuleMap[SolutionRule]
-   val typeSolutionRules = new RuleMap[TypeSolutionRule]
-   val forwardSolutionRules = new RuleMap[ForwardSolutionRule]
-   
-   val introProvingRules = new RuleSetMap[IntroProvingRule]
-   val elimProvingRules = new RuleSetMap[ElimProvingRule]
-
-   /** the DepthRule's that this UOM will use, hashed by (outer,inner) pairs */
-   val depthRules = new RuleSetMap2[uom.DepthRule]
-   /** the BreadthRule's that this UOM will use, hashed by (outer,inner) pairs */
-   val breadthRules = new RuleSetMap[uom.BreadthRule]
-   /** the AbbrevRule's that this UOM will use, hashed by the abbreviating operator */
-   val abbrevRules = new RuleSetMap[uom.AbbrevRule]
-   
-   private val all = List(typingRules, inferenceRules, computationRules, universeRules, inhabitableRules,
-                     typeBasedEqualityRules , termBasedEqualityRules, solutionRules, typeSolutionRules, forwardSolutionRules, 
-                     introProvingRules, elimProvingRules, depthRules, breadthRules, abbrevRules)
-   
-   /** add some Rule to this RuleStore */
-   def add(rs: Rule*) {
-      rs foreach {
-         case r: TypingRule => typingRules(r.head) = r
-         case r: InferenceRule => inferenceRules(r.head) = r
-         case r: ComputationRule => computationRules(r.head) = r
-         case r: InhabitableRule => inhabitableRules(r.head) = r
-         case r: UniverseRule => universeRules(r.head) = r
-         case r: TypeBasedEqualityRule => typeBasedEqualityRules(r.head) = r
-         case r: TermBasedEqualityRule => termBasedEqualityRules((r.left,r.right)) += r
-         case r: SolutionRule => solutionRules(r.head) = r
-         case r: TypeSolutionRule => typeSolutionRules(r.head) = r
-         case r: ForwardSolutionRule => forwardSolutionRules(r.head) = r
-         case r: IntroProvingRule => introProvingRules(r.head) += r
-         case r: ElimProvingRule => elimProvingRules(r.head) += r
-         case r: uom.DepthRule => depthRules((r.outer,r.inner)) += r
-         case r: uom.BreadthRule => breadthRules(r.head) += r
-         case r: uom.AbbrevRule => abbrevRules(r.head) += r
-      }
-   }
-   def add(rs: RuleSet) {
-      rs.getAll.foreach(add(_))
-   }
-   def delete(which: Rule => Boolean) {
-      all foreach {_.delete(which)}
-   }
-   
-   def stringDescription = {
-      var res = ""
-      def mkM[A<:Rule](label: String, map: HashMap[ContentPath,A]) {
-         if (! map.isEmpty) {
-            res += "  " + label + "\n"
-            map.values.foreach {r => res += "    " + r.toString + "\n\n"}
-         }
-      }
-      def mkS[A, B<:Rule](label: String, map: utils.HashMapToSet[A,B]) {
-         if (! map.isEmpty) {
-            res += "  " + label + "\n"
-            map.foreach {e => e._2.foreach {r => res += "    " + r.toString + "\n\n"}}
-         }
-      }
-      mkM("typing rules", typingRules) 
-      mkM("inference rules", inferenceRules)
-      mkM("computation rules", computationRules)
-      mkM("inhabitable rules", inhabitableRules)
-      mkM("universe rules", universeRules)
-      mkM("equality rules", typeBasedEqualityRules)
-      mkS("term-based equality rules", termBasedEqualityRules)
-      mkM("solution rules", solutionRules)
-      mkM("type solution rules", typeSolutionRules)
-      mkM("forwardSolution rules", forwardSolutionRules)
-      mkS("intro proving rules", introProvingRules)
-      mkS("elim proving rules", elimProvingRules)
-      mkS("depth rules", depthRules)
-      mkS("breadth rules", breadthRules)
-      mkS("abbrev rules", abbrevRules)
-      res
-   }
-}*/
 
 /** the type of all Rules
  * 
@@ -177,6 +55,8 @@ class RuleSet {
  */
 trait CheckingCallback {
    def check(j: Judgement)(implicit history: History): Boolean
+   /** unsafe simplification */
+   def simplify(t : Term)(implicit stack: Stack, history: History): Term
 }
 
 object TypingRule {
@@ -238,12 +118,13 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
  */
 abstract class ComputationRule(val head: GlobalName) extends Rule {
    /** 
-    *  @param solver provides callbacks to the currently solved system of judgments
+    *  @param check provides callbacks to the currently solved system of judgments
     *  @param tm the term to simplify
+    *  @param covered if true, term can be assumed to be well-formed
     *  @param context its context
     *  @return the simplified term if simplification was possible
     */
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History): Option[Term]
+   def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term]
 }
 
 /** A UnaryTermRule checks a [[UnaryTermJudgement]]

@@ -7,7 +7,13 @@ import objects._
  * @see DepthRule
  * @see BreadthRule)
  */
-abstract class Change
+abstract class Change {
+   /** corresponds to Option.orelse */
+   def orelse(that: => Change): Change = this match {
+      case NoChange => that
+      case c => c
+   }
+}
 
 /** A LocalChange leaves the structure of a term unchanged, but changes its arguments
  * @param inside the new argument list

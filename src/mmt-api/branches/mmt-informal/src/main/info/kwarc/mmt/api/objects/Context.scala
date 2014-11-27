@@ -121,10 +121,17 @@ case class Context(variables : VarDecl*) extends Obj {
       throw LookupError(name, this)
    }
    def isDeclared(name : LocalName) = index(name).isDefined
-   /** returns the de Bruijn index of a variable, starting from 0 */
+   /** @return the de Bruijn index of the variable, starting from 0 */
    def index(name: LocalName): Option[Int] = variables.lastIndexWhere(_.name == name) match { 
 	   case -1 => None
 	   case i => Some(variables.length - i - 1) 
+   }
+   /** @return the prefix up to and excluding the variable */
+   def before(name: LocalName): Context = {
+      index(name) match {
+         case None => this 
+         case Some(i) => Context(variables.take(variables.length-i):_*)
+      }
    }
    
    /**

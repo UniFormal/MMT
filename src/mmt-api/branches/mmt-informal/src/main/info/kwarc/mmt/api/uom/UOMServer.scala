@@ -14,6 +14,8 @@ case class UOMState(t : Term, context: Context, rules: RuleSet, path : List[Int]
   /** precomputes the available rules */
   val breadthRules = rules.get(classOf[BreadthRule])
   /** precomputes the available rules */
+  val compRules = rules.get(classOf[ComputationRule])
+  /** precomputes the available rules */
   val abbrevRules = rules.get(classOf[AbbrevRule])
   /** precomputes the available rules */
   val matchRules = rules.get(classOf[InverseOperator])
@@ -150,7 +152,7 @@ class UOM extends ObjectSimplifier {
                   else {
                      //state (3)
                      //log("applying breadth rules to " + outer(argsSS))
-                     applyBreadthRules(outer, argsSS) match {
+                     applyBreadthRules(outer, argsSS) orelse applyCompRules(t) match {
                         case GlobalChange(tSS) =>
                            // go back to state (1), remember that a global change was produced
                            applyAux(tSS, true)
@@ -221,7 +223,7 @@ class UOM extends ObjectSimplifier {
       }
    }
    
-   /** applies all BreadthRule's that are applicable at toplevel of an OMA
+  /** applies all BreadthRule's that are applicable at toplevel of an OMA
     * @param outer the toplevel symbol
     * @param args the arguments
     * */
@@ -248,6 +250,30 @@ class UOM extends ObjectSimplifier {
    private def applyAbbrevRules(p: GlobalName)(implicit state: UOMState): Change = {
       state.abbrevRules.filter(_.head == p) foreach {rule =>
          return GlobalChange(rule.term)
+      }
+      NoChange
+   }
+
+   /** callback for calling checking rules, used in applyCompRules */
+   private def callback(state: UOMState) = new CheckingCallback {
+      def check(j: Judgement)(implicit history: History) = j match {
+         case j: Equality =>
+            apply(j.tm1, j.context, state.rules) == apply(j.tm2, j.context, state.rules)
+         case j: EqualityContext =>
+            apply(j.context1, j.context, state.rules) == apply(j.context2, j.context, state.rules)
+         case _ => false
+      }
+      def simplify(t: Term)(implicit stack: Stack, history: History) =
+         apply(t, stack.context, state.rules)
+   }
+
+   /** applies all computation rules */
+   private def applyCompRules(tm: Term)(implicit context: Context, state: UOMState): Change = {
+      val cb = callback(state)
+      state.compRules.foreach {rule =>
+         rule(cb)(tm, true)(Stack(context), NoHistory).foreach {tmS =>
+            return GlobalChange(tmS)
+         }
       }
       NoChange
    }
