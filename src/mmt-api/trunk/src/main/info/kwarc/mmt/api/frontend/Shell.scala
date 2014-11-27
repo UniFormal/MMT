@@ -10,7 +10,7 @@ import javax.swing.UIManager
  * The command syntax is given by the Action class and the parser in its companion object.
 
  */
-class Shell() extends {
+class Shell extends {
    lazy val controller = new Controller
    private var shell = true
 
@@ -34,8 +34,7 @@ class Shell() extends {
       
       try {
          // execute startup arguments
-         val folder = File(getClass.getProtectionDomain.getCodeSource.getLocation.getPath)
-         println(folder)
+         val folder = File(getClass.getProtectionDomain.getCodeSource.getLocation.getPath).up
          val startup = folder / "startup.msl"
          if (startup.exists)
             controller.handle(ExecFile(startup, None))
