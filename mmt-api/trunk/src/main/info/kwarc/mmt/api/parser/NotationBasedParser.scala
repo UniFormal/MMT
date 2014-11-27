@@ -282,7 +282,7 @@ class NotationBasedParser extends ObjectParser {
                   // order the arguments
                   val orderedArgs = args.sortBy(_._1)
                   // compute the number of subargs
-                  //   - arguments before the context (always implict)
+                  //   - arguments before the context (always implicit)
                   //   - initial implicit arguments
                   val numInitImplArgs = arity.variables.headOption match {
                      case Some(h) => h.number - 1

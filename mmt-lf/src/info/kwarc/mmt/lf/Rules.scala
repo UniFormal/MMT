@@ -392,5 +392,6 @@ object TheoryTypeWithLF extends ComputationRule(ModExp.theorytype) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = tm match {
       case TheoryType(params) =>
          if (params.isEmpty) None else Some(Pi(params, TheoryType(Nil)))
+      case _ => None
    }
 }
