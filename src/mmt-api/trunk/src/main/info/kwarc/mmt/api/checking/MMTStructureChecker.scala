@@ -394,6 +394,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             val argsR = args map {a => checkTerm(context++bound, a)}
             pCont(c)
             ComplexTerm(c, subsR, boundR, argsR).from(s)
+         case OMA(f,args) =>
+            val fR = checkTerm(context, f)
+            val argsR = args map {a => checkTerm(context, a)}
+            OMA(fR, argsR)
          case OMATTR(arg, key, value) =>
             val argR = checkTerm(context, arg)
             checkTerm(context, key)

@@ -43,6 +43,9 @@ object Traverser {
 	         val newSubs = subs.map(s => s.copy(target = rec(s.target)))
 	         val newArgs = args.map(a => rec(a)(con ++ bound, state))
 	         ComplexTerm(op, newSubs, recCon(bound), newArgs).from(t)
+	      case OMA(f, args) => 
+	         val newArgs = args.map(a => rec(a))
+	         OMA(rec(f), newArgs)
 	      case OMPMOD(p, args) =>
 	         val newArgs = args.map(rec)
 	         OMPMOD(p, newArgs).from(t)
