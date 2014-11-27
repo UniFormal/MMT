@@ -56,7 +56,7 @@ class Report extends Logger {
    def addHandler(h: ReportHandler) {
       log("logging to " + h)
       h.init
-      handlers ::= h
+      handlers = (handlers ::: List(h)).distinct
    }
    /** removes all ReportHandlers with a certain id */
    def removeHandler(id: String) {handlers = handlers.filter(_.id != id)}

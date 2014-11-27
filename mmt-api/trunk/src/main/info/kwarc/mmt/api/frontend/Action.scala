@@ -25,7 +25,7 @@ object Action extends RegexParsers {
    private def commented = (comment ^^ {c => NoAction}) | (action ~ opt(comment) ^^ {case a ~ _ => a}) | empty ^^ {_ => NoAction}
    private def empty = "\\s*"r
    private def comment = "//.*"r
-   private def action = log | mathpath | archive | extension | mws | server | windowaction | execfile | defactions |scala |
+   private def action = log | mathpath | archive | oaf | extension | mws | server | windowaction | execfile | defactions |scala |
       setbase | read | graph | check | navigate | printall | printallxml | diff | clear | exit | getaction // getaction must be at end for default get
 
    private def log = logfilets | logfile | loghtml | logconsole | logon | logoff
@@ -43,9 +43,8 @@ object Action extends RegexParsers {
      private def mathpathSVN = "svn" ~> uri ~ int ~ (str ?) ~ (str ?) ^^ {case uri ~ rev ~ user ~ pass => AddMathPathSVN(uri, rev, user, pass)}
      private def mathpathJava = "java" ~> file ^^ {f => AddMathPathJava(f)}
 
-   private def archive = archopen | archclone | archdim | archmar | svnarchopen | archbuild
+   private def archive = archopen | archdim | archmar | svnarchopen | archbuild
      private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)} //deprecated, use mathpath archive
-     private def archclone = "archive" ~> "clone" ~> file ~ uri ^^ {case f ~ u => ArchiveClone(f,u)}
      private def svnarchopen = "SVNArchive" ~> "add" ~> str ~ int ^^ {case url ~ rev => AddSVNArchive(url,rev)}
      private def archbuild = "build" ~> str ~ str ~ (str ?) ~ (str *) ^^ {
        case id ~ keymod ~ in ~ args =>
@@ -67,6 +66,12 @@ object Action extends RegexParsers {
            "relational" | "delete" | "integrate" | "test" | "close"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
 
+   private def oaf = "oaf" ~> (oafRoot | oafClone | oafPull | oafPush)
+     private def oafRoot   = "root" ~> file ~ (uri ?) ^^ {case f ~ u => OAFRoot(f, u)}
+     private def oafClone = "clone" ~> str ^^ {case s => OAFClone(s)}
+     private def oafPull  = "pull" ^^ {_ => OAFPull}
+     private def oafPush  = "push" ^^ {_ => OAFPush}
+     
    private def extension = "extension" ~> str ~ (strMaybeQuoted *) ^^ {case c ~ args => AddExtension(c, args)}
    private def mws = "mws" ~> uri ^^ {u => AddMWS(u)}
 
@@ -259,6 +264,36 @@ case class AddMathPathSVN(uri: URI, rev: Int, user: Option[String], password: Op
  */
 case class AddMathPathJava(javapath: File) extends Action {override def toString = "mathpath java " + javapath}
 
+/**
+ * sets the root for a remote OAF
+ * @param uri the root URI of the OAF, e.g., http://gl.mathhub.info/
+ * @param file the local directory in which to create clones
+ * 
+ * concrete syntax: oaf root file:FILE [uri:URI]
+ */
+case class OAFRoot(file : File, uri: Option[URI]) extends Action {override def toString = "oaf root " + file + " " + uri.getOrElse("")}
+
+/**
+ * clone an archive from a remote OAF
+ *
+ * concrete syntax: oaf close path:STRING
+ */
+case class OAFClone(path: String) extends Action {override def toString = "oaf clone " + path}
+
+/**
+ * pulls all repostitories from remote OAF
+ * 
+ * concrete syntax: oaf pull
+ */
+case object OAFPull extends Action {override def toString = "oaf pull"}
+
+/**
+ * pushes all repostitories to remote OAF
+ * 
+ * concrete syntax: oaf push
+ */
+case object OAFPush extends Action {override def toString = "oaf push"}
+
 /** registers a compiler
  * @param cls the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"
  * @param args a list of arguments that will be passed to the compiler's init method
@@ -266,9 +301,6 @@ case class AddMathPathJava(javapath: File) extends Action {override def toString
  * concrete syntax: importer cls:CLASS args:STRING*
  */
 case class AddExtension(cls: String, args: List[String]) extends Action {override def toString = "extension " + cls + args.mkString(" ", " ", "")}
-
-/** clone a git archive */
-case class ArchiveClone(folder: File, uri: URI) extends Action {override def toString = "archive clone " + folder + " " + uri}
 
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive add " + folder}

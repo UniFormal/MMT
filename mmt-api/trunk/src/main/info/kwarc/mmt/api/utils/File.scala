@@ -50,6 +50,8 @@ case class File(toJava: java.io.File) {
        case None => this
        case Some(s) => File(toString.substring(0, toString.length - s.length - 1))
    }
+   /** @return subdirectories of this directory */
+   def subdirs = toJava.list.toList.map(this/_).filter(_.toJava.isDirectory)
    /** delete this, recursively if directory */
    def deleteDir {
       toJava.list foreach {n =>

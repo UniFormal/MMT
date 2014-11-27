@@ -1,12 +1,10 @@
 package info.kwarc.mmt.api.utils
 
 object ShellCommand {
-   /**
-    * @param command the commnd to run
-    * @return error message if not successful
-    */
-   def run(command: String*): Option[String] = {
-      val proc = new java.lang.ProcessBuilder(command: _*).start() // use .inheritIO() for debugging
+   private def runInOpt(dir: Option[File], command: String*) = {
+      val pb = new java.lang.ProcessBuilder(command: _*)// use .inheritIO() for debugging
+      dir.foreach {d => pb.directory(d.toJava)}
+      val proc = pb.start()
       proc.waitFor
       val ev = proc.exitValue
       if (ev != 0) {
@@ -16,4 +14,15 @@ object ShellCommand {
       } else
          None
    }
+   
+   /**
+    * @param command the commnd to run
+    * @return error message if not successful
+    */
+   def run(command: String*): Option[String] = runInOpt(None, command:_*)
+   /**
+    * like run
+    * @param dir the directory in which to run the command
+    */
+   def runIn(dir: File, command: String*): Option[String] = runInOpt(Some(dir), command:_*)
 }

@@ -392,7 +392,11 @@ class Controller extends ROController with Logger {
    
    protected var actionDefinitions: List[Defined] = Nil
    protected var currentActionDefinition: Option[Defined] = None
-
+   
+   /** interface to a remote OAF */
+   protected var oaf: Option[OAF] = None
+   protected def getOAF = oaf.getOrElse {throw GeneralError("no oaf defined, use 'oaf root'")}
+   
    /** executes a string command */
    def handleLine(l : String) {
         try {
@@ -479,18 +483,6 @@ class Controller extends ROController with Logger {
                         logError("unknown dimension " + d + ", ignored")
                   }
             }
-         case ArchiveClone(folder, repos) =>
-            def cloneRecursively(r: URI) {
-               val lcOpt = new OAF(folder, report).clone(r)
-               lcOpt foreach {lc =>
-                  val archs = backend.openArchive(lc)
-                  archs foreach {a =>
-                     val deps = MyList.fromString(a.properties.getOrElse("dependencies", ""))
-                     deps foreach {d => cloneRecursively(URI(d))}
-                  }
-               }
-            }
-            cloneRecursively(repos)
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 
             arch.toMar(file)
@@ -498,6 +490,24 @@ class Controller extends ROController with Logger {
             extman.addExtension(c, args)
          case AddMWS(uri) =>
             extman.mws = Some(new MathWebSearch(uri.toURL))
+         case OAFRoot(dir, uriOpt) =>
+            if (!dir.isDirectory)
+               throw GeneralError(dir + " is not a directory")
+            oaf = Some(new OAF(uriOpt.getOrElse(OAF.defaultURL), dir, report))
+         case OAFClone(path) =>
+            def cloneRecursively(p: String) {
+               val lcOpt = getOAF.clone(p)
+               lcOpt foreach {lc =>
+                  val archs = backend.openArchive(lc)
+                  archs foreach {a =>
+                     val deps = MyList.fromString(a.properties.getOrElse("dependencies", ""))
+                     deps foreach {d => cloneRecursively(URI(d).pathAsString)}
+                  }
+               }
+            }
+            cloneRecursively(path)
+         case OAFPull => getOAF.pull            
+         case OAFPush => getOAF.push
 	      case SetBase(b) =>
 	         base = b
 	         report("response", "base: " + base)
