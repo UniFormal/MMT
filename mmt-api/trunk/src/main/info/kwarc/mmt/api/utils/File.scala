@@ -26,6 +26,8 @@ case class File(toJava: java.io.File) {
    def /(s:String) : File = File(new java.io.File(toJava, s))
    /** appends a list of path segments */
    def /(ss:List[String]) : File = ss.foldLeft(this) {case (sofar,next) => sofar / next}
+   /** parent directory */
+   def up = File(toJava.getParentFile)
    /** the list of file/directory/volume label names making up this file path */ 
    def segments: List[String] = {
       val name = toJava.getName
