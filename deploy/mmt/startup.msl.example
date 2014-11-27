@@ -2,5 +2,6 @@
 // The following are example commands that are useful here.
 
 log console
+log+ oaf
 
 oaf root PATH/TO/WORKING/COPIES http://gl.mathhub.info
