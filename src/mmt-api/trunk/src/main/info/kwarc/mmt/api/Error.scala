@@ -58,6 +58,9 @@ case class InvalidObject(obj: objects.Obj, s: String) extends Invalid("invalid o
 /** errors that occur when judgements do not hold */
 case class InvalidUnit(unit: checking.CheckingUnit, history: checking.History, msg: String) extends Invalid("invalid unit: " + msg)
 
+/** other errors */
+case class GeneralError(s : String) extends Error("general error: " + s)
+
 /** errors that occur when adding a knowledge item */
 case class AddError(s : String) extends Error("add error: " + s)
 /** errors that occur when updating a knowledge item */

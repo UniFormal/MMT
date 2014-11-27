@@ -1,7 +1,8 @@
 package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.backend._
-import info.kwarc.mmt.api.utils._
+import backend._
+import utils._
+import FileConversion._
 
 import javax.swing.UIManager
 
@@ -30,9 +31,18 @@ class Shell() extends {
          case _ =>
       }
       UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()) // standard GUI configuration
-      val commands = args.toList.mkString(" ").split(" ; ")
+      
       try {
+         // execute startup arguments
+         val folder = File(getClass.getProtectionDomain.getCodeSource.getLocation.getPath)
+         println(folder)
+         val startup = folder / "startup.msl"
+         if (startup.exists)
+            controller.handle(ExecFile(startup, None))
+         // execute command line arguments
+         val commands = args.toList.mkString(" ").split(" ; ")
          commands foreach controller.handleLine
+         // wait for interactive commands
          if (shell)
             println("This is the MMT shell\nSee https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.frontend.Action for the available commands\n\n")
          val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
