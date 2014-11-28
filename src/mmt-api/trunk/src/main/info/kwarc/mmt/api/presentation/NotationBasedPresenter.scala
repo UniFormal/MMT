@@ -324,8 +324,10 @@ class NotationBasedPresenter extends ObjectPresenter {
          }
          -1
       case Sub(n,t) =>
-         doVariable(n)
-         doOperator("=")
+         if (n != OMV.anonymous) {
+            doVariable(n)
+            doOperator("=")
+         }
          recurse(t, noBrackets)
          -1
       case c: Context =>
@@ -411,14 +413,15 @@ class NotationBasedPresenter extends ObjectPresenter {
                      val brack = (childNot: TextNotation) => Presenter.bracket(precedence, currentPosition, childNot)
                      // the additional context of the child
                      val newCont: Context = ac match {
-                        case _: ArgumentComponent => context
+                        case a: ArgumentComponent =>
+                           if (a.number < firstVarNumber) Nil else context
                         case Var(n,_,_,_) => context.take(n-firstVarNumber)
                         case _ => Nil
                      }
                      val newVarData = newCont.zipWithIndex map {case (v,i) =>
                         VarData(v, Some(op), pc.pos / pos(firstVarNumber+i))
                      }
-                     recurse(child, brack)(pc.child(pos(ac.number.abs)).addCon(newVarData))
+                     recurse(child, brack)(pc.child(pos(ac.number)).addCon(newVarData))
                   }
                   // all implicit arguments that are not placed by the notation, they are added to the first delimiter
                   val unplacedImplicits = not.arity.flatImplicitArguments(args.length).filter(i => ! not.fixity.markers.contains(i))
@@ -443,11 +446,13 @@ class NotationBasedPresenter extends ObjectPresenter {
                         //val delimFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.Delimiter]
                         current match {
                            case c @ Arg(n,_) =>
-                              doChild(c, args(n-firstArgNumber), currentPosition)
+                              val child = if (n < firstArgNumber) subargs(n-1) else args(n-firstArgNumber)
+                              doChild(c, child, currentPosition)
                               if (compFollows) doSpace(1)
                            case c @ ImplicitArg(n,_) =>
+                              val child = if (n < firstArgNumber) subargs(n-1) else args(n-firstArgNumber)
                               doImplicit {
-                                 doChild(c, args(n-firstArgNumber), currentPosition)
+                                 doChild(c, child, currentPosition)
                                  if (compFollows) doSpace(1)
                               }
                            case c @ Var(n, typed, _,_) => //sequence variables impossible due to flattening
@@ -499,7 +504,7 @@ class NotationBasedPresenter extends ObjectPresenter {
                      }
                   }
                   val br = bracket(not)
-                  val flatMarkers = not.arity.flatten(not.presentationMarkers,context.length, args.length, attrib)
+                  val flatMarkers = not.arity.flatten(not.presentationMarkers, subargs.length, context.length, args.length, attrib)
                   br match {
                      case n if n > 0 => doBracketedGroup { doMarkers(flatMarkers) }
                      case 0 =>          doOptionallyBracketedGroup { doMarkers(flatMarkers) }

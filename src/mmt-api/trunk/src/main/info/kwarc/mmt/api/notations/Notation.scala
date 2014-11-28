@@ -41,7 +41,7 @@ class TextNotation(val fixity: Fixity, val precedence: Precedence, val meta: Opt
    /** @return the list of markers used for parsing/presenting with this notations */
    lazy val markers: List[Marker] = fixity.markers
    /** @return the arity of this notation */
-   lazy val arity = {
+   lazy val arity: Arity = {
       // remove presentation markers
       val markersWithoutPres = markers.flatMap(PresentationMarker.flatten)
       // find first and last variable component

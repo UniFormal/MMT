@@ -527,11 +527,12 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
      val solved = solveTyping(tm, tp)
      if (solved) return true
      def checkByInference(tpS: Term): Boolean = {
-         inferType(tm)(stack, history.branch) match {
+         val hisbranch = history.branch
+         inferType(tm)(stack, hisbranch) match {
             case Some(itp) =>
                check(Subtyping(stack, itp, tpS))(history + ("inferred type must conform to expected type; the term is: " + presentObj(tm)))
             case None =>
-               delay(Typing(stack, tm, tpS, j.tpSymb))(history + "type inference failed")
+               delay(Typing(stack, tm, tpS, j.tpSymb))(hisbranch + "type inference failed")
          }
      }
      tm match {
@@ -631,7 +632,9 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
               case Some(rule) =>
                  history += ("applying rule for " + rule.head.name.toString)
                  rule(this)(tmS, covered)
-              case None => None
+              case None =>
+                 history += "no applicable rule"
+                 None
             }
         }
      }
