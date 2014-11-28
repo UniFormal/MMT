@@ -384,6 +384,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             pCont(path)
             //wrap in implicit morphism?
             s
+         case _:OMID =>
+            null
          case OMV(name) =>
             if (! context.isDeclared(name))
                errorCont(InvalidObject(s, "variable is not declared"))

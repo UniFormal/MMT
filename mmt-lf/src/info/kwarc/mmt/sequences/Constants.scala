@@ -8,11 +8,17 @@ import uom._
 
 import Nat._
 
+object TypeSequences {
+   val _base = Typed._base
+   val _path = _base ? "TypeSequences"
+   
+   object ntype extends UnaryConstantScala(_path, "ntype")
+}
+
 object LFS {
    val _base = Typed._base
    val _path = _base ? "LFS"
    
-   object ntype extends UnaryConstantScala(_path, "ntype")
    object index extends BinaryConstantScala(_path, "index")
 
    object ellipsis {

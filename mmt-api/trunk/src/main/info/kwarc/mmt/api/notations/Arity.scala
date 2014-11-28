@@ -74,9 +74,9 @@ case class Arity(subargs: List[ArgumentComponent],
     * if there is more than 1 sequence arguments, the available arguments are evenly distributed over the sequences
     * remaining arguments are distributed in order of content position
     */
-   private def distributeArgs(numArgs: Int) : (Int, Int) = {
-      val seqArgPositions = arguments.flatMap {
-         case SeqArg(n,_,_) if n > 0 => List(n)
+   private def distributeArgs(argComps: List[ArgumentComponent], numArgs: Int) : (Int, Int) = {
+      val seqArgPositions = argComps.flatMap {
+         case SeqArg(n,_,_) => List(n)
          case _ => Nil
       }
       distribute(numArgs, arguments.length, seqArgPositions)
@@ -92,15 +92,25 @@ case class Arity(subargs: List[ArgumentComponent],
       distribute(numVars, variables.length, seqVarPositions)
    }
    /** maps component positions to position in flattened notation, by including the arguments of the preceding sequences */
-   private def remapFun(perSeqArg: Int, seqArgCutOff: Int, perSeqVar: Int, seqVarCutOff: Int)(p: Int): Int = {
-         var i = p.abs
-         components foreach {
+   private def remapFun(perSeqSub: Int, seqSubCutOff: Int, perSeqVar: Int, seqVarCutOff: Int,
+                        perSeqArg: Int, seqArgCutOff: Int)(p: Int): Int = {
+         var i = p
+         subargs foreach {
             case SeqArg(n,_,_) if n < p =>
-               i += perSeqArg - 1
-               if (n < seqArgCutOff) i += 1
+               i += perSeqSub - 1
+               if (n < seqSubCutOff) i += 1
+            case _ =>
+         }
+         variables foreach {
             case Var(n,_,Some(_),_) if n < p => 
                i += perSeqVar - 1
                if (n < seqVarCutOff) i += 1
+            case _ =>
+         }
+         arguments foreach {
+            case SeqArg(n,_,_) if n < p =>
+               i += perSeqArg - 1
+               if (n < seqArgCutOff) i += 1
             case _ =>
          }
          i
@@ -112,7 +122,7 @@ case class Arity(subargs: List[ArgumentComponent],
    def groupArgs(args: List[Term]) : List[List[Term]] = {
       var remain = args
       var result : List[List[Term]] = Nil
-      val (perSeq,cutoff) = distributeArgs(remain.length)
+      val (perSeq,cutoff) = distributeArgs(arguments, remain.length)
       arguments foreach {
          case _:Arg | _ :ImplicitArg =>
             result ::= List(remain.head)
@@ -165,10 +175,11 @@ case class Arity(subargs: List[ArgumentComponent],
     * 
     * pre: canHandle(vars, args) == true
     */
-   def flatten(markers: List[Marker], vars: Int, args: Int, attrib: Boolean) : List[Marker] = {
-      val (perSeqArg, seqArgCutOff) = distributeArgs(args)
+   def flatten(markers: List[Marker], subs: Int, vars: Int, args: Int, attrib: Boolean) : List[Marker] = {
+      val (perSeqSub, seqSubCutOff) = distributeArgs(subargs, args)
       val (perSeqVar, seqVarCutOff) = distributeVars(vars)
-      val remap = remapFun(perSeqArg, seqArgCutOff, perSeqVar, seqVarCutOff) _
+      val (perSeqArg, seqArgCutOff) = distributeArgs(arguments, args)
+      val remap = remapFun(perSeqSub, seqSubCutOff, perSeqVar, seqVarCutOff, perSeqArg, seqArgCutOff) _
       def flattenOne(m: Marker): List[Marker] = m match {
          case Arg(n,p) =>
             List(Arg(remap(n),p))
@@ -198,10 +209,12 @@ case class Arity(subargs: List[ArgumentComponent],
     *  @return the list of remapped implicit arguments
     */
    def flatImplicitArguments(args: Int) : List[ImplicitArg] = {
-      val (perSeqArg, seqArgCutOff) = distributeArgs(args)
+      val (perSeqSub, seqSubCutOff) = distributeArgs(subargs, args)
       val (perSeqVar, seqVarCutOff) = distributeVars(0)
+      val (perSeqArg, seqArgCutOff) = distributeArgs(arguments, args)
       arguments flatMap {
-         case ImplicitArg(n,_) => List(ImplicitArg(remapFun(perSeqArg, seqArgCutOff, perSeqVar, seqVarCutOff)(n)))
+         case ImplicitArg(n,_) =>
+            List(ImplicitArg(remapFun(perSeqSub, seqSubCutOff, perSeqVar, seqVarCutOff, perSeqArg, seqArgCutOff)(n)))
          case _ => Nil
       }
    }

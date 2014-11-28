@@ -7,6 +7,7 @@ import objects.Conversions._
 
 import info.kwarc.mmt.lf._
 
+import TypeSequences._
 import LFS._
 import Nat._
 
@@ -20,7 +21,7 @@ import Nat._
 /** |- type ^ n UNIVERSE */
 object UniverseNType extends UniverseRule(ntype.path) {
    def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = tm match {
-      case LFS.ntype(n) =>
+      case TypeSequences.ntype(n) =>
          solver.check(Typing(stack, n, OMS(nat))) //TODO already covered by precondition or universe rules?
    }
 }
@@ -28,8 +29,9 @@ object UniverseNType extends UniverseRule(ntype.path) {
 /** |- type ^ n : kind */
 object NTypeTerm extends InferenceRule(ntype.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
-      case LFS.ntype(n) =>
-         solver.check(Typing(stack, n, OMS(nat)))
+      case TypeSequences.ntype(n) =>
+         if (!covered)
+            solver.check(Typing(stack, n, OMS(nat)))
          Some(OMS(Typed.kind))
       case _ => None
    }
@@ -89,7 +91,7 @@ object IndexInfer extends InferenceRule(index.path, OfType.path) {
          solver.check(Typing(stack, at, OMS(Nat.nat)))
          val sTOpt = solver.inferType(s)
          sTOpt flatMap {
-            case LFS.ntype(n) =>
+            case TypeSequences.ntype(n) =>
                if (covered || checkWithin(solver)(OMS(one), at, n))
                   Some(OMS(Typed.ktype))
                else
@@ -182,7 +184,7 @@ object ExpandEllipsis extends ComputationRule(Apply.path) {
       tm match {
          case ApplySpine(f, args) =>
             val argsS = args.flatMap {
-               case LFS.ntype(Nat.natlit(n)) =>
+               case TypeSequences.ntype(Nat.natlit(n)) =>
                   (1 to n.toInt).toList.map(_ => OMS(Typed.ktype))
                case LFS.ellipsis(m, n, i, t) =>
                   val mS = solver.simplify(m)
@@ -208,7 +210,7 @@ object ExpandEllipsis extends ComputationRule(Apply.path) {
             val conExp: Context = con.flatMap {
                case vd @ VarDecl(name, Some(t), None, _) if expandable(name) =>
                   t match {
-                     case LFS.ntype(Nat.natlit(n)) =>
+                     case TypeSequences.ntype(Nat.natlit(n)) =>
                         val types = (1 to n.toInt).toList.map(_ => OMS(Typed.ktype))
                         val vds = seqVarToList(name, 1, types)
                         expansions = (vd, vds) :: expansions
