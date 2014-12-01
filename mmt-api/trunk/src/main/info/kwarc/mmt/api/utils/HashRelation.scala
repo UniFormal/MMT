@@ -18,8 +18,7 @@ class HashMapToSet[A,B] extends HashMap[A,HashSet[B]] {
    def pairs : Iterator[(A,B)] = flatMap({case (a, s) => s.map(b => (a,b))}).iterator
    /** remove the entry for a if there are no b such (a,b) is in the relation */
    def cleanup(a : A) {
-      val bs = get(a)
-      if (bs.isDefined && bs.get.isEmpty) this -= a
+      get(a).foreach {b => if (b.isEmpty) this -= a}
    }
    
    override def toString = {

@@ -112,6 +112,7 @@ object File {
       }
       fw.close
    }
+
    /**
     * convenience method for reading a file into a string
     * 
@@ -123,8 +124,10 @@ object File {
       ReadLineWise(f) {l => s += l + "\n"}
       s
    }
+
    /** convenience method to obtain a typical (buffered, UTF-8) reader for a file */
    def Reader(f: File) = new BufferedReader(new InputStreamReader(new FileInputStream(f.toJava), java.nio.charset.Charset.forName("UTF-8")))
+
    /** convenience method to read a file line by line
     *  @param f the file
     *  @param proc a function applied to every line (without line terminator)
