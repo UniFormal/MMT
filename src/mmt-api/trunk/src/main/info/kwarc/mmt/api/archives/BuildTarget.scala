@@ -81,7 +81,7 @@ class BuildTask(val inFile: File, val isDir: Boolean, val inPath: List[String], 
    def contentMPath = Archive.ContentPathToMMTPath(inPath)
    /** the DPath corresponding to the inFile if inFile is a folder in a content-structured dimension */
    def contentDPath = Archive.ContentPathToDPath(inPath)
-   /** the DPath corrresponding to the inFile if inFile is in a narration-structured dimension */
+   /** the DPath corresponding to the inFile if inFile is in a narration-structured dimension */
    def narrationDPath = DPath(base / inPath)
    /** the name of the folder if inFile is a folder */
    def dirName: String = outFile.segments.init.last
@@ -97,6 +97,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
    def inDim:  ArchiveDimension 
   /** the output archive folder */
    def outDim: ArchiveDimension
+   /** if true, multiple files/folders are built in parallel */
+   def parallel: Boolean = false
      
    /** the file extension used for generated files, defaults to outDim, override as needed */
    def outExt: String = outDim match {
@@ -151,7 +153,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
    private def buildAux(in : List[String] = Nil)(implicit a: Archive) {
        //build every file
        val prefix = "[" + inDim + " -> " + outDim + "] "
-       a.traverse[BuildTask](inDim, in, includeFile) ({case Current(inFile,inPath) =>
+       a.traverse[BuildTask](inDim, in, includeFile, parallel) ({case Current(inFile,inPath) =>
            val outFile = outPath(a, inPath)
            log(prefix + inFile + " -> " + outFile)
            val errorCont = makeHandler(a, inPath)
@@ -188,7 +190,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
    /** recursively delete output files */
    def clean (a: Archive, args: List[String], in: List[String] = Nil) {
-       a.traverse[Unit](outDim, in, Archive.extensionIs(outExt))({c => cleanFile(a, c)}, {case (c,_) => cleanDir(a, c)})
+       a.traverse[Unit](outDim, in, Archive.extensionIs(outExt), true)({c => cleanFile(a, c)}, {case (c,_) => cleanDir(a, c)})
    }
    
    /** recursively reruns build if the input file has changed
@@ -196,7 +198,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
      * the decision is made based on the time stamps and the system's last-modified date
      */  
    def update(a: Archive, args: List[String], in: List[String] = Nil) {
-       a.traverse[Boolean](inDim, in, _ => true) ({case c @ Current(inFile, inPath) =>
+       a.traverse[Boolean](inDim, in, _ => true, parallel) ({case c @ Current(inFile, inPath) =>
           a.timestamps(this).modified(inPath) match {
              case Deleted =>
                 val outFile = outPath(a, inPath)

@@ -34,31 +34,35 @@ class RelStore(report : frontend.Report) {
 
    /** adds a RelationalElement */
    def +=(d : RelationalElement) {
-      log(d.toString)
-      d match {
-        case Relation(dep, subj, obj) =>                  
-           subjects += ((dep, obj), subj)
-           objects += ((subj, dep), obj)           
-           dependencies += ((subj, obj), dep)
-        case Individual(p, tp) =>
-           types(p) = tp
-           individuals += (tp, p)
+      this.synchronized {
+         log(d.toString)
+         d match {
+           case Relation(dep, subj, obj) =>                  
+              subjects += ((dep, obj), subj)
+              objects += ((subj, dep), obj)           
+              dependencies += ((subj, obj), dep)
+           case Individual(p, tp) =>
+              types(p) = tp
+              individuals += (tp, p)
+         }
       }
    }
    
    /** deletes all RelationalElements with a given subject */
    def deleteSubject(subj : Path) {
-     types -= subj
-     individuals.values.foreach {v => v -= subj} 
-     subjects.values.foreach {v => v -= subj}
-     objects.keys.foreach {k =>
-        if (k._1 == subj)
-           objects -= k 
-     }
-     dependencies.keys.foreach {k =>
-        if (k._1 == subj)
-           dependencies -= k 
-     }
+      this.synchronized {
+        types -= subj
+        individuals.values.foreach {v => v -= subj} 
+        subjects.values.foreach {v => v -= subj}
+        objects.keys.foreach {k =>
+           if (k._1 == subj)
+              objects -= k 
+        }
+        dependencies.keys.foreach {k =>
+           if (k._1 == subj)
+              dependencies -= k 
+        }
+      }
    }
 
    def queryList(start : Path, q : RelationExp) : List[Path] = {
@@ -121,10 +125,12 @@ class RelStore(report : frontend.Report) {
    }
    /** deletes all declarations */
    def clear {
-      dependencies.clear
-      subjects.clear
-      objects.clear
-      individuals.clear
-      types.clear
+      this.synchronized {
+         dependencies.clear
+         subjects.clear
+         objects.clear
+         individuals.clear
+         types.clear
+      }
    }
 }

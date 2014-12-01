@@ -96,18 +96,15 @@ abstract class WritableArchive extends ROArchive {
     def MMTPathToContentPath(m: MPath) : File = this/content / Archive.MMTPathToContentPath(m)
 
     /** traverses a dimension calling continuations on files and subdirectories */
-    def traverse[A](dim: ArchiveDimension, in: List[String], filter: String => Boolean, sendLog: Boolean = true)
+    def traverse[A](dim: ArchiveDimension, in: List[String], filter: String => Boolean, parallel: Boolean, sendLog: Boolean = true)
                      (onFile: Current => A, onDir: (Current,List[A]) => A = (_:Current,_:List[A]) => ()) : Option[A] = { 
+        def recurse(n: String): List[A] =
+           traverse(dim, in ::: List(n), filter, parallel, sendLog)(onFile, onDir).toList
         val inFile = this / dim / in
         if (inFile.isDirectory) {
            if (sendLog) log("entering " + inFile)
-           val results = inFile.list flatMap {n =>
-              if (includeDir(n)) {
-                  val r = traverse(dim, in ::: List(n), filter, sendLog)(onFile, onDir)
-                  r.toList
-              } else
-                 Nil
-           }
+           val children = inFile.list.filter(includeDir).sorted
+           val results = if (parallel) children.par flatMap recurse else children flatMap recurse
            val result = onDir(Current(inFile,in), results.toList)
            if (sendLog) log("leaving  " + inFile)
            Some(result)
@@ -137,11 +134,6 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
     extends WritableArchive with ValidatedArchive with ScalaArchive with ZipArchive {
 
    val rootString = root.toString
-   def clean(in: List[String] = Nil, dim: String) {
-       traverse(Dim(dim), in, _ => true) {case Current(inFile, inPath) =>
-         deleteFile(inFile)
-       }
-    }
 
   /**
    * computes the flattened theories by elaborating the patterns
@@ -207,7 +199,7 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
 
   def readRelational(in: List[String] = Nil, controller: Controller, kd: String) {
        if ((this/relational).exists) {
-          traverse(relational, in, Archive.extensionIs(kd)) {case Current(inFile, inPath) =>
+          traverse(relational, in, Archive.extensionIs(kd), true) {case Current(inFile, inPath) =>
              utils.File.ReadLineWise(inFile) {line => 
                val re = RelationalElement.parse(line, DPath(narrationBase))
                re match {

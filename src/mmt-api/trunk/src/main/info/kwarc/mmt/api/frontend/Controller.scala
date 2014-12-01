@@ -164,7 +164,10 @@ class Controller extends ROController with Logger {
       log("retrieving " + path)
       logGroup {
          try {
-            backend.load(path)(this)
+            // loading objects into memory changes state, so make sure only one object is loaded at a time
+            this.synchronized {
+               backend.load(path)(this)
+            }
          } catch {
             case NotApplicable(msg) =>
                throw GetError("backend: " + msg) 
@@ -344,17 +347,6 @@ class Controller extends ROController with Logger {
       log("reading " + dpath + " with format " + format)
       val result = format match {
          case "omdoc" =>
-            /* old non-streaming code
-              val N = utils.xml.readFile(f)
-              var doc: Document = null
-              xmlReader.readDocument(dpath, N) {
-                case d: Document =>
-                  add(d)
-                  doc = d
-               case e => add(e)
-            }
-            doc
-            */
             xmlStreamer.readDocument(dpath, src)(add)
          case "elf" =>
             val (doc, errorList) = twelfParser.readDocument(src, dpath)(pu => textParser(pu)(ErrorThrower))
