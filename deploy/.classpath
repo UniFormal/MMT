@@ -3,13 +3,14 @@
 	<classpathentry kind="lib" path="lfcatalog/lfcatalog.jar"/>
 	<classpathentry kind="lib" path="lib/svnkit.jar"/>
 	<classpathentry kind="lib" path="lib/tiscaf.jar"/>
-	<classpathentry kind="lib" path="mmt/mmt-api.jar"/>
-	<classpathentry kind="lib" path="mmt/mmt-lf.jar" sourcepath="/mmt-lf"/>
-	<classpathentry kind="lib" path="mmt/mmt-lfs.jar"/>
-	<classpathentry kind="lib" path="mmt/mmt-mizar.jar"/>
-	<classpathentry kind="lib" path="mmt/mmt-owl.jar"/>
-	<classpathentry kind="lib" path="mmt/mmt-tptp.jar"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
-	<classpathentry kind="lib" path="mmt/planetary-mmt.jar"/>
+	<classpathentry kind="lib" path="main/mmt-api.jar"/>
+	<classpathentry kind="lib" path="main/mmt-lf.jar"/>
+	<classpathentry kind="lib" path="main/mmt-lfs.jar"/>
+	<classpathentry kind="lib" path="main/mmt-mizar.jar"/>
+	<classpathentry kind="lib" path="main/mmt-owl.jar"/>
+	<classpathentry kind="lib" path="main/mmt-stex.jar"/>
+	<classpathentry kind="lib" path="main/mmt-tptp.jar"/>
+	<classpathentry kind="lib" path="main/planetary-mmt.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
