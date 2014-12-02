@@ -31,9 +31,9 @@
         <pathelement location="${deploy}/lib/scala-compiler.jar"/>
         <pathelement location="${deploy}/lib/scala-reflect.jar"/>
     	<pathelement location="${build.main}"/>
-        <pathelement location="${deploy}/mmt/mmt-api.jar"/>
+        <pathelement location="${deploy}/main/mmt-api.jar"/>
     	<pathelement location="${tiscaf}"/>
-    	<pathelement location="${deploy}/mmt/mmt-lf.jar"/>
+    	<pathelement location="${deploy}/main/mmt-lf.jar"/>
     </path>
 		
     <path id="scaladoc.classpath">
@@ -84,7 +84,7 @@
 			</manifest>
 			<fileset dir="${build}/main"/>
 			
-			<fileset file="${deploy}/mmt/mmt-api.jar" />			
+			<fileset file="${deploy}/main/mmt-api.jar" />			
  			<zipfileset dir="${src}" prefix="src"/>	
 			<zipfileset dir="${lib}" includes="*.txt" prefix="META-INF"/>
 		</jar>
@@ -110,8 +110,8 @@
             </main>
             <!-- Jar dependencies, which will be packaged as lib/*.jar -->
             <lib>
-                <fileset file="${deploy}/mmt/mmt-api.jar" />  
-                <fileset file="${deploy}/mmt/mmt-lf.jar" />     
+                <fileset file="${deploy}/main/mmt-api.jar" />  
+                <fileset file="${deploy}/main/mmt-lf.jar" />     
             	<fileset file="${scala.dir}/scala-library.jar" />
             	<fileset file="${tiscaf}" />
             </lib>

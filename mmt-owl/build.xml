@@ -8,8 +8,8 @@
         <pathelement location="${deploy}/lib/scala-reflect.jar"/>
         <pathelement location="${deploy}/lib/scala-compiler.jar"/>
         <pathelement location="${deploy}/lib/tiscaf.jar"/>
-    	<pathelement location="${deploy}/mmt/mmt-api.jar"/>
-    	<pathelement location="${deploy}/mmt/mmt-lf.jar"/>
+    	<pathelement location="${deploy}/main/mmt-api.jar"/>
+    	<pathelement location="${deploy}/main/mmt-lf.jar"/>
     	<pathelement location="lib/owlapi-bin.jar"/>
         <pathelement location="bin"/>
     </path>
@@ -51,7 +51,7 @@
     </target>
 -->
     <target name="deploy" depends="build">
-        <copy todir="${deploy}/mmt">
+        <copy todir="${deploy}/main">
             <fileset file="${ant.project.name}.jar"/>
         </copy>
     </target>

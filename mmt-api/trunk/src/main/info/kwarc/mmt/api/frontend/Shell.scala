@@ -20,15 +20,20 @@ class Shell extends {
          // send command to existing instance listening at a port, and quit
          case "-send" :: port :: rest =>
             val uri = (URI("http", "localhost:" + port) / ":admin") ? rest.mkString("", " ", "") 
-            val ret = utils.xml.get(uri.toJava.toURL)
-            println(ret.toString)
+            try {
+               val ret = utils.xml.get(uri.toJava.toURL)
+               println(ret.toString)
+            } catch {case e:Exception =>
+               println("error while connecting to remote MMT: " + e.getMessage)
+            }
             sys.exit
-         // execute command line arguments but do not read from standard input
-         case "-noshell" :: rest =>
+         // execute a file and exit
+         case "-file" :: name :: Nil =>
+            args = List("file", name)  
             shell = false
-            args = rest
-         // default behavior: execute command line arguments, read further commands from standard input
+         // default behavior: execute command line arguments and exit; shell if no arguments
          case _ =>
+            shell = args.isEmpty
       }
       UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()) // standard GUI configuration
       

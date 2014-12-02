@@ -10,7 +10,7 @@
         <pathelement location="${deploy}/lib/scala-reflect.jar"/>
         <pathelement location="${deploy}/lfcatalog/lfcatalog.jar"/>
         <pathelement location="${deploy}/lib/tiscaf.jar"/>
-    	<pathelement location="${deploy}/mmt/branches/informal/immt-api.jar"/>
+    	<pathelement location="${deploy}/main/branches/informal/immt-api.jar"/>
         <pathelement location="bin"/>
     </path>
     <path id="scaladoc.classpath">
@@ -51,7 +51,7 @@
     </target>
 -->
     <target name="deploy" depends="build">
-        <copy todir="${deploy}/mmt">
+        <copy todir="${deploy}/main">
             <fileset file="${ant.project.name}.jar"/>
         </copy>
     </target>
