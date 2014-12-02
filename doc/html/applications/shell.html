@@ -1,26 +1,4 @@
-<h2>Running the MMT Shell</h2>
-
-The deploy/ folder includes 2 run scripts (with .bat/.sh file endings to be used on Windows/Unix):
-<ul>
- <li>run-plain.sh: opens an empty MMT shell</li>
- <li>run-file.sh:  runs the MMT script provided as the only command line argument</li>
-</ul>
-
-An MMT script is a text file containing one shell command per line. (Empty lines are allowed.)<br/>
-The customary file ending for MMT scripts is msl.<br/>
-
-Users may wish to
-<ul>
- <li>add the deploy folder to the PATH enviroment variable or to define 'mmt' as an alias for run-file.sh</li>
- <li>assciate msl files with the run-file scripts</li>
-</ul>
-
-<h2>ANSI Formatting</h2>
-
-Some shell output uses <a href="http://en.wikipedia.org/wiki/ANSI_escape_code">ANSI escapes</a> for highlighting.
-
-To display the formating, you can use <a href="https://github.com/adoxa/ansicon">ansicon</a> for the windows console or <a href="http://mihai-nita.net/2013/06/03/eclipse-plugin-ansi-in-console/">ansi console</a> for the eclipse console. (Both are optional and very easy to install and use.)
-Unix shells should understand it natively.
+The MMT shell is invoked by <a href="../run.html">running</a> <span class="code">mmt</span>.
 
 <h2>Shell Commands</h2>
 
@@ -29,6 +7,21 @@ The language of shell commands is implemented by the <a href="../../api/index.ht
 Each subclass comes with scaladoc and can be best understood by browsing the known subclasses in the API documentation.<br/>
 
 The up-to-date context-free grammar for shell commands is part of the constructor parser in the companion object <a href="/api/info/kwarc/mmt/api/frontend/Action$.html">Action</a> and can be best understood by reading the source code.<br/>
+
+<h2>ANSI Formatting in the MMT Shell</h2>
+
+Some shell output uses <a href="http://en.wikipedia.org/wiki/ANSI_escape_code">ANSI escapes</a> for highlighting.
+
+To display the formating, you can use <a href="https://github.com/adoxa/ansicon">ansicon</a> for the windows console or <a href="http://mihai-nita.net/2013/06/03/eclipse-plugin-ansi-in-console/">ansi console</a> for the eclipse console. (Both are optional and very easy to install and use.)
+Unix shells should understand it natively.
+
+<h2>MMT Scripts</h2>
+
+An MMT script is a text file containing one shell command per line. (Empty lines are allowed, lines starting with <span class="code">//</span> are ignored.)<br/>
+
+The customary file ending for MMT scripts is <span class="code">.msl</span>.<br/>
+
+These scripts can be run with the <span class="code">file</span> command below.
 
 <h2>Individual Shell Commands</h2>
 
@@ -45,7 +38,7 @@ Some common argument types are:
 <h3>Basic Commands</h3>
 
 <div class="code">exit</div>
-exits the shell.
+exits MMT (releases all resources and terminates all spawned threads).
 
 <div class="code">extension STRING</div>
 registers the <a href="../extensions.html">extension</a> whose qualified Java class name is STRING.
@@ -92,8 +85,8 @@ begins the definition of a named macro.
 <div class="code">end</div>
 ends the current macro definition.
 
-<div class="code">do FOLDER STRING</div>
-runs a previously registered macro defined file residing in FOLDER.
+<div class="code">do STRING [FOLDER]</div>
+runs the previously registered macro (FOLDER can be used to disambiguate between multiple macros of the same name defined in different folders)
 
 <h3>Working with MMT content</h3>
 
@@ -160,18 +153,31 @@ Every URI U/REST is mapped to itself.
 
 <h3>Archives and Building</h3>
 
-<div class="code">archive clone FILE URI</div>
-git-clones the archive with the given URI and then recursively clones all its dependencies;
-all working copies are stored as subfolders of the given folder.
-
 <div class="code">archive ID relational</div>
 loads the relational knowledge into memory. 
 
-<p>
+<div class="code">build ID TARGET</div>
+runs a build target.
 See the documentation of the <a href="build.html">build tool</a> for details on running build commands on archives.
-</p>
+
+<h3>Remote Archives</h3>
+
+<div class="code">oaf root FOLDER URI</div>
+sets a local folder as the root for git-clones of archives in the <a href="../oaf.html">OAF</a>.
+
+<div class="code">oaf clone GROUP/REPOS</div>
+git-clones the archive URI/GROUP/REPOS into FOLDER/GROUP/REPOS and recursively clones its dependencies.
+
+<div class="code">oaf pull</div>
+git-pulls (git pull origin master) all repositories in FOLDER.
+
+<div class="code">oaf pushes</div>
+git-pushes all repositories in FOLDER.
 
 <h3>Applications</h3>
+
+Note that GUI and HTTP server run in separate threads.
+MMT will not terminate if these threads are still active.
 
 <div class="code">server on PORT</div>
 starts the <a href="http.html">HTTP server</a> at the port PORT. 
