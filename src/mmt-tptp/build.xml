@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="mmt-tptp" default="deploy" basedir=".">
-
 	 
 	<property name="deploy" value="../../deploy"/>
 	
@@ -10,8 +9,8 @@
         <pathelement location="${deploy}/lib/scala-reflect.jar"/>
         <pathelement location="${deploy}/lib/scala-compiler.jar"/>
         <pathelement location="${deploy}/lib/tiscaf.jar"/>
-    	<pathelement location="${deploy}/mmt/mmt-api.jar"/>
-    	<pathelement location="${deploy}/mmt/mmt-lf.jar"/>
+    	<pathelement location="${deploy}/main/mmt-api.jar"/>
+    	<pathelement location="${deploy}/main/mmt-lf.jar"/>
     	<pathelement location="lib/tptp-parser.jar"/>
     	<pathelement location="lib/antlr-3.2.jar"/>
         <pathelement location="bin"/>
@@ -55,7 +54,7 @@
     </target>
 -->
     <target name="deploy" depends="build">
-        <copy todir="${deploy}/mmt">
+        <copy todir="${deploy}/main">
             <fileset file="${ant.project.name}.jar"/>
         </copy>
     </target>

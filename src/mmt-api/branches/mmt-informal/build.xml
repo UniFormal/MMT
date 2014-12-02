@@ -41,7 +41,7 @@
     </target>
 
     <target name="deploy" depends="build">
-        <copy todir="${deploy}/mmt/branches/informal">
+        <copy todir="${deploy}/main/branches/informal">
             <fileset file="${ant.project.name}.jar"/>
         </copy>
     </target>

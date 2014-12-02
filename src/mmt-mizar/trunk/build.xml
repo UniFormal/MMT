@@ -12,9 +12,9 @@
 		<pathelement location="${deploy}/lib/scala-reflect.jar"/>
 		<pathelement location="${deploy}/lib/scala-compiler.jar"/>
 		<pathelement location="${deploy}/lib/tiscaf.jar"/>
-		<pathelement location="${deploy}/mmt/branches/informal/immt-api.jar"/>
-		<pathelement location="${deploy}/mmt/mmt-lfs.jar"/>
-		<pathelement location="${deploy}/mmt/mmt-lf.jar"/>
+		<pathelement location="${deploy}/main/branches/informal/immt-api.jar"/>
+		<pathelement location="${deploy}/main/mmt-lfs.jar"/>
+		<pathelement location="${deploy}/main/mmt-lf.jar"/>
 	</path>
 	<!-- This defines the task scalac (which is similar to javac but for scala). -->
 	<taskdef resource="scala/tools/ant/antlib.xml" classpathref="scalac.classpath"/>
@@ -35,14 +35,14 @@
         <jar destfile="${ant.project.name}.jar">
             <manifest>
                 <!-- TODO: remove this -->
-                <attribute name="Class-Path" value="${deploy}/lib/scala-library.jar ${deploy}/lfcatalog/lfcatalog.jar ${deploy}/mmt/mmt-api.jar"/>
+                <attribute name="Class-Path" value="${deploy}/lib/scala-library.jar ${deploy}/lfcatalog/lfcatalog.jar ${deploy}/main/mmt-api.jar"/>
             </manifest>
             <fileset dir="bin"/>
         </jar>
     </target>
 
    <target name="deploy" depends="build">
-       <copy todir="${deploy}/mmt">
+       <copy todir="${deploy}/main">
            <fileset file="${ant.project.name}.jar"/>
        </copy>
    </target>
