@@ -12,25 +12,30 @@ import javax.swing.UIManager
  */
 class Shell extends {
    lazy val controller = new Controller
-   private var shell = true
 
    def main(a : Array[String]) : Unit = {
       var args = a.toList
+      var shell = true
       args match {
          // send command to existing instance listening at a port, and quit
          case "-send" :: port :: rest =>
             val uri = (URI("http", "localhost:" + port) / ":admin") ? rest.mkString("", " ", "") 
             try {
+               println("sending: " + uri.toString)
                val ret = utils.xml.get(uri.toJava.toURL)
                println(ret.toString)
             } catch {case e:Exception =>
                println("error while connecting to remote MMT: " + e.getMessage)
             }
             sys.exit
-         // execute a file and exit
+         // execute command line arguments and drop to shell
+         case "-shell" :: rest =>
+            args = rest
+            shell = true
+         // '-file N' is short for '-shell file N'
          case "-file" :: name :: Nil =>
             args = List("file", name)  
-            shell = false
+            shell = true
          // default behavior: execute command line arguments and exit; shell if no arguments
          case _ =>
             shell = args.isEmpty

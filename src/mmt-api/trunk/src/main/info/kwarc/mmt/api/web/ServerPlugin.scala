@@ -175,9 +175,14 @@ class AdminServer extends ServerExtension("admin") {
    override def destroy {
       report.removeHandler("admin")
    }
-   def apply(path: List[String], query: String, body: Body) = {
+   def apply(path: List[String], query: String, body: Body): HLet = {
       val c = query.replace("%20", " ")
       val act = frontend.Action.parseAct(c, controller.getBase, controller.getHome)
+      if (act == Exit) {
+         // special case for sending a response when exiting
+         (new Thread {override def run {Thread.sleep(2); sys.exit}}).start
+         return Server.XmlResponse(<exited/>)
+      }
       logCache.clear
       controller.handle(act)
       val r = logCache.recall
