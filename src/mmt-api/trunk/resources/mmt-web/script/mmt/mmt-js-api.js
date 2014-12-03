@@ -62,7 +62,6 @@ $.fn.filterMClass = function(cl){
 /* some common URIs */
 var uris = {
    lf : "http://cds.omdoc.org/urtheories?LF",
-   mathmlstyle : "http://cds.omdoc.org/styles/omdoc/mathml.omdoc?html5",
 };
 
 var mmt = {
@@ -104,9 +103,6 @@ var mmt = {
 		}
 	},
 	
-	/* the notation style is used for operations that must be executed relative to a sytle, e.g., presentation */
-	notstyle : uris.mathmlstyle,
-
 	/* the active theory is used for operations that must be executed relative to a theory, e.g., parsing */
 	getActiveTheory : function() {
 	   return $('#activetheory').val();
@@ -153,9 +149,8 @@ var mmt = {
 	 */
 	adaptMMTURI : function (uri, act, present) {
 		var arr = this.splitMMTURI(uri);
-		if (present && this.notstyle !== null) {
-			//var pres = " present " + this.notstyle; //use this for style-based presenter
-		   var pres = " present html"; //use this for html presenter
+		if (present) {
+		   var pres = " present html";
 		}
 		else
 			var pres = '';
