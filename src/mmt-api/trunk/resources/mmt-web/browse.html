@@ -62,15 +62,6 @@
        });
    });
     
-   var graphWindow = null;
-   function openGraph(p) {
-      if (p == null)
-         p = "";
-      else
-         p = "?" + p;
-      graphWindow = window.open('graph.html' + p);
-   };
-   
    $(function(){
       var inpbox = $('#inputbox');
       var ana = $('#inputanalyze')[0];
@@ -108,9 +99,6 @@
      function toggleClick(elem,label){
         var cls = label != null ? label : 'toggleTarget'
         $(elem).parent().closest('div').find('.' + cls).toggle()
-     };
-     function SVGClick(url){
-        navigation.navigate(url)
      };
   </script>
   
@@ -154,7 +142,6 @@
       <div id="title">The MMT Web Server</div>
       <div id="menu_bar">
         <!--<span class="pagelink"><a href="/search.html">Search</a></span>-->
-        <span class="pagelink"><a href="javascript:openGraph()">Graph View</a></span>
         <span class="pagelink"><a href="/admin.html" target="_blank">Administration</a></span>
         <span class="pagelink"><a href="/help.html" target="_blank">Help</a></span>
       </div>
@@ -163,12 +150,6 @@
    
   <tr>
       <td class="layout">
-         <div id="styleselector">
-            Style: <span id="currentstyle"/><br/>
-            <!--<input type="text" size="20" id="inputstyle"></input><button onclick="javascript:setStyle($('#inputstyle').val())">set</button> -->
-         </div>
-    
-   
        <div id="sidebar">
           <div id="pathtree"></div>
        </div>
@@ -178,9 +159,7 @@
        <div id="breadcrumbs">
          <div></div>
        </div>
-       
-	   
-	   
+
        <div id="main">
          <div></div>
        </div>
