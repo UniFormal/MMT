@@ -10,7 +10,6 @@ var navigation = {
 	},
 	
 	init: function(JOBADInstance) {
-		$('#currentstyle').text(mmt.notstyle.split("?").pop());
 		var query = window.location.search.substring(1);
 		if (query != "")
 		   this.navigate(query);
