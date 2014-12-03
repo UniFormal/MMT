@@ -45,6 +45,17 @@ case class URI(scheme: Option[String], authority: Option[String], path: List[Str
      } else if (query != u.query) URI(None, None, Nil, false, u.query, u.fragment)
      else if (fragment != u.fragment) URI(None, None, Nil, false, None, u.fragment)
      else URI(None, None, Nil, false, None, None)
+   /**
+    * changes the (file) extension of the last path segment (if any) to ext
+    * extension is added if none exists
+    */
+   def setExtension(ext: String) =
+      if (!path.isEmpty) {
+         val oldLast = path.last
+         val newLast = File(oldLast).setExtension(ext).segments.last
+         copy(path = path.init ::: List(newLast))
+      } else
+         this
    /** parses a URI and resolves it against this */
    def resolve(s : String) : URI = resolve(URI(s))
    /** resolves a URI against this one (using the java.net.URI resolution algorithm except when u has no scheme, authority, path) */

@@ -139,33 +139,6 @@ class SearchServer extends ServerExtension("search") {
    }
 }
 
-/** part of web browser */
-class BreadcrumbsServer extends ServerExtension("breadcrumbs") {
-   def apply(path: List[String], query: String, body: Body) = {
-      val mmtpath = Path.parse(query, controller.getBase)
-      val ancs = mmtpath.ancestors.reverse
-      var mpathfound = false
-      var spathfound = false
-      val html = utils.HTML.builder
-      import html._
-      def gsep() = span {text {"?"}}
-      def lsep() = span {text {"/"}}
-      // strangely, the client somehow does not handle this right if the XML is given literally, might be due to namespaces
-      div(attributes = List("xmlns" -> utils.xml.namespace("xhtml"), "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
-         ancs.foreach {p =>
-            p match {
-               case p : MPath if ! mpathfound => mpathfound = true; gsep()
-               case p : GlobalName if ! spathfound => spathfound = true; gsep()
-               case p if p.^! == p => Nil
-               case _ => lsep()
-            }
-            span("mmturi", attributes=List("jobad:href" -> p.toPath)) {text {p.last}}
-         }
-      }
-      Server.XmlResponse(html.result)
-   }
-}
-
 /** interprets the query as an MMT [[frontend.Action]] and executes it */
 class AdminServer extends ServerExtension("admin") {
    private val logCache = new CacheHandler("admin")

@@ -13,10 +13,31 @@ import javax.swing.UIManager
 class Shell extends {
    lazy val controller = new Controller
 
+   private val helptext = """
+usage:
+  mmt -help
+    display this help
+  mmt -send PORT COMMANDS
+    execute COMMANDS by mmt instance listening at PORT
+  mmt [-shell | -noshell] [COMMANDS]
+    execute COMMANDS and possibly take further commands on the MMT shell.
+    (If neither flag is provided, a shell is displayed iff COMMANDS is empty.)
+    Even if there is no shell, mmt only exits when all secondary threads (e.g., GUI, HTTP server) have terminated. 
+"""
+   
+   private val shelltitle = """
+This is the MMT shell.
+See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.frontend.Action for the available commands.
+
+"""
+   
    def main(a : Array[String]) : Unit = {
       var args = a.toList
       var shell = true
       args match {
+         case "-help" :: _ =>
+            println(helptext)
+            sys.exit
          // send command to existing instance listening at a port, and quit
          case "-send" :: port :: rest =>
             val uri = (URI("http", "localhost:" + port) / ":admin") ? rest.mkString("", " ", "") 
@@ -32,6 +53,11 @@ class Shell extends {
          case "-shell" :: rest =>
             args = rest
             shell = true
+         // execute command line arguments and terminate
+         // if the server is started, we only terminate when the server thread does 
+         case "-noshell" :: rest =>
+            args = rest
+            shell = false
          // '-file N' is short for '-shell file N'
          case "-file" :: name :: Nil =>
             args = List("file", name)  
@@ -53,7 +79,7 @@ class Shell extends {
          commands foreach controller.handleLine
          // wait for interactive commands
          if (shell)
-            println("This is the MMT shell\nSee https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.frontend.Action for the available commands\n\n")
+            println(shelltitle)
          val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
          while (shell) {
             val command = Input.readLine()

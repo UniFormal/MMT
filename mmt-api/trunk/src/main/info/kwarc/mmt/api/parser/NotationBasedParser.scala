@@ -370,7 +370,7 @@ class NotationBasedParser extends ObjectParser {
                            makeError("no context or substitution allowed in module application", te.region)
                         OMPMOD(con, finalArgs)
                      case con: GlobalName =>
-                       prag.makeStrict(level, con, finalSub, Context(finalVars : _*), finalArgs, attrib)(
+                       prag.makeStrict(level, con, finalSub, Context(finalVars : _*), finalArgs, attrib, notation)(
                               () => newUnknown(newArgument, boundVars)
                         )
                   }

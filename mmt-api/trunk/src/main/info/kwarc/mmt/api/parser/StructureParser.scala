@@ -18,7 +18,7 @@ import scala.collection.mutable.{ListMap,HashMap}
  * @param reader the input stream, from which the parser reads
  * @param container the MMT URI of the input stream (used for back-references)
  */
-class ParserState(val reader: Reader, val container: DPath, val errorCont: ErrorHandler) {
+class ParserState(val reader: Reader, val ps: ParsingStream, val errorCont: ErrorHandler) {
    /**
     * the namespace mapping set by
     * {{{
@@ -29,13 +29,13 @@ class ParserState(val reader: Reader, val container: DPath, val errorCont: Error
     * the initial default namespace is the URI of the container
     */
    var namespaces = new utils.NamespaceMap
-   namespaces.default = container.uri
+   namespaces.default = ps.base.uri
    
    /** the position at which the current StructuralElement started */ 
    var startPosition = reader.getSourcePosition
    
    def copy(reader: Reader = reader) = {
-      val s = new ParserState(reader, container, errorCont)
+      val s = new ParserState(reader, ps, errorCont)
       s.namespaces = namespaces
       s
    }
@@ -84,7 +84,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    protected def seCont(se: StructuralElement)(implicit state: ParserState) {
       log(se.toString)
       val reg = currentSourceRegion
-      SourceRef.update(se, SourceRef(state.container.uri,reg))
+      SourceRef.update(se, SourceRef(state.ps.source,reg))
       try {controller.add(se)}
       catch {case e: Error =>
          val se = makeError(reg, "after parsing: " + e.getMessage)
@@ -128,13 +128,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    }
    
    def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) : Document = {
-      val (d, _) = apply(new ParserState(new Reader(ps.stream), ps.dpath, errorCont))
+      val (d, _) = apply(new ParserState(new Reader(ps.stream), ps, errorCont))
       d
    }
    
    private def apply(state : ParserState) : (Document,ParserState) = {
-      val dpath = state.container
-      state.namespaces.default = dpath.uri
+      val dpath = state.ps.base
       val doc = new Document(dpath)
       seCont(doc)(state)
       logGroup {
@@ -146,7 +145,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
    /** convenience function to create SourceError's */
    protected def makeError(reg: SourceRegion, s: String)(implicit state: ParserState) =
-      SourceError("structure-parser", SourceRef(state.container.uri, reg), s)
+      SourceError("structure-parser", SourceRef(state.ps.source, reg), s)
   
    /** the region from the start of the current structural element to the current position */
    protected def currentSourceRegion(implicit state: ParserState) =
@@ -189,7 +188,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       catch {case e: ParseError => 
          throw makeError(reg, "invalid identifier: " + e.getMessage)
       }
-      val ref = SourceRef(state.container.uri, reg)
+      val ref = SourceRef(state.ps.source, reg)
       (ref, mp)
    }
   /** read a GlobalName from the stream
@@ -225,7 +224,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     */
    def readParsedObject(context: Context)(implicit state: ParserState) = {
       val (obj, reg) = state.reader.readObject
-      val pu = ParsingUnit(SourceRef(state.container.uri, reg), context, obj)
+      val pu = ParsingUnit(SourceRef(state.ps.source, reg), context, obj)
       val parsed = puCont(pu)
       (obj,reg,parsed)
    }
@@ -513,7 +512,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         delim match {
           case "::" =>
             val (obj, reg) = state.reader.readObject
-            val pu = ParsingUnit(SourceRef(state.container.uri, reg), Context(tpath), obj, None)
+            val pu = ParsingUnit(SourceRef(state.ps.source, reg), Context(tpath), obj, None)
             val parsed = puCont(pu)
             parsed match {
               case OMBINDC(_, cont, Nil) =>
@@ -524,7 +523,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           case ">>" =>
             val (obj, reg) = state.reader.readObject
             // keep parameters in the context
-            val pu = ParsingUnit(SourceRef(state.container.uri, reg), pr ++ tpath, obj, None)
+            val pu = ParsingUnit(SourceRef(state.ps.source, reg), pr ++ tpath, obj, None)
             val parsed = puCont(pu)
             parsed match {
               case OMBINDC(_, cont, Nil) =>
@@ -748,9 +747,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    def readModule(dpath : DPath, modS : String, docBaseO : Option[DPath] = None,
           namespace : ListMap[String, DPath] = new ListMap, errorCont: ErrorHandler) {
      //building parsing state
-     val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(modS)))
-     val state = new ParserState(r, docBaseO.getOrElse(null), errorCont)
-     docBaseO.map(dp => state.namespaces.default = dp.uri)
+     val br = new java.io.BufferedReader(new java.io.StringReader(modS))
+     val r = new Reader(br)
+     val ps = new ParsingStream(dpath.uri, docBaseO.getOrElse(dpath), br)
+     val state = new ParserState(r, ps, errorCont)
      namespace map { p =>
        state.namespaces.prefixes(p._1) = p._2.uri
      }
@@ -770,9 +770,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    def readConstant(mpath : MPath, conS : String, docBaseO : Option[DPath] = None, 
                     namespace : ListMap[String, DPath] = new ListMap, errorCont: ErrorHandler) = {
      //building parsing state
-     val r = new Reader(new java.io.BufferedReader(new java.io.StringReader(conS)))
-     val state = new ParserState(r, docBaseO.getOrElse(null), errorCont)
-     docBaseO.map(dp => state.namespaces.default = dp.uri)
+     val br = new java.io.BufferedReader(new java.io.StringReader(conS))
+     val r = new Reader(br)
+     val ps = new ParsingStream(mpath.doc.uri, docBaseO.getOrElse(mpath.doc), br)
+     val state = new ParserState(r, ps, errorCont)
      namespace map { p =>
        state.namespaces.prefixes(p._1) = p._2.uri
      }
