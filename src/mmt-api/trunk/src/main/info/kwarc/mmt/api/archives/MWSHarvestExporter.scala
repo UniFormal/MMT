@@ -14,8 +14,7 @@ import scala.xml.Node
 import parser._
 
 class MWSHarvestExporter extends Exporter {
-  val outDim = Dim("export", "mws")
-  val key = "mws-harvest"
+  val key = "mws"
   override val outExt = "harvest"
     
   def exportTheory(t: DeclaredTheory, bf: BuildTask) { 

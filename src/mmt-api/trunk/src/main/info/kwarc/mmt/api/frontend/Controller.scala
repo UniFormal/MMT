@@ -328,7 +328,7 @@ class Controller extends ROController with Logger {
                   backend.resolvePhysical(f).map {
                      case (arch, p) => DPath(arch.narrationBase / p)
                   } getOrElse
-                  DPath(utils.FileURI(f))
+                  DPath(FileURI(f))
       val src = scala.io.Source.fromFile(f, "UTF-8")
       read(src, dpath, f.getExtension.getOrElse(""))
    }
@@ -337,6 +337,7 @@ class Controller extends ROController with Logger {
     * reads a document
     * 
     * @param src the input source
+    * @param srcURI the URI of the input source (needed for source references)
     * @param dpath the base path to use for relative references
     * @param format key to choose the reader: e.g., omdoc, elf, or mmt 
     * @param errorCont continuation to be called on all encountered errors
@@ -353,7 +354,8 @@ class Controller extends ROController with Logger {
             errorList.foreach {e => errorCont(e)}
             doc
          case "mmt" =>
-            textParser.readString(dpath, src.mkString)
+            val srcURI = dpath.uri.setExtension(format)
+            textParser.readString(srcURI, dpath, src.mkString)
          case f =>
             throw ParseError("unknown format: " + f)
       }

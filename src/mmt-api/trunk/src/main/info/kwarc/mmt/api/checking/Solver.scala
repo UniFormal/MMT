@@ -316,7 +316,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
      dcOpt match {
         case None =>
            // no activatable constraint
-           if (errors.isEmpty)
+           if (delayed.isEmpty && errors.isEmpty)
               noActivatableConstraint
            else
               false
