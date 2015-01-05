@@ -1,6 +1,0 @@
-<registry>
-  <repository location="http://cds.omdoc.org/">
-    <wc location="omdoc" root="/home/dimitar/projects/cds/old/omdoc"/>
-    <wc location="foundations" root="/home/dimitar/projects/cds/old/foundations"/> <!-- lf -->
-  </repository>
-</registry>
