@@ -28,7 +28,6 @@ class TptpCompiler extends Importer with backend.QueryTransformer {
     val dirPath = bf.inPath.init
     val AxProb = if (dirPath.contains("Axioms")) "Axioms" else "Problems"
     val fileDir = dirPath.drop(dirPath.lastIndexOf(AxProb))
-    bf.outFile.toJava.getParentFile.mkdirs
     
     // translate the input file to OMDoc
     val translator = new TptpTranslator()

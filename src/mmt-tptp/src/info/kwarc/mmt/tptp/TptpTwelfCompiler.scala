@@ -32,8 +32,6 @@ class TptpTwelfCompiler extends TraversingBuildTarget {
     val flags = "-flf -d- -q2"
     val cmd = "tcsh " + tptp2x + " " + flags + " " + bf.inFile.toString
     // log(cmd)
-    bf.outFile.toJava.getParentFile.mkdirs
     cmd #> bf.outFile.toString !
   }
 }
-
