@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 import scala.collection.mutable.{ListMap,LinkedHashMap}
 
-// redundant at tthe moment, but we might use it later
+// redundant at the moment, but we might use it later
 
 /**
  * maintains all errors produced while running [[BuildTarget]]s on an archive

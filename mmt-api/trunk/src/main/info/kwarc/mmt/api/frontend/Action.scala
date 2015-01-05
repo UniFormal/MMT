@@ -303,7 +303,7 @@ case object OAFPush extends Action {override def toString = "oaf push"}
 case class AddExtension(cls: String, args: List[String]) extends Action {override def toString = "extension " + cls + args.mkString(" ", " ", "")}
 
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
-case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive add " + folder}
+case class AddArchive(folder : java.io.File) extends Action {override def toString = "mathpath archive " + folder}
 
 /** add a SVN Archive */
 case class AddSVNArchive(url : String,  rev : Int) extends Action {override def toString = "SVN archive add " + url + "@" + rev}

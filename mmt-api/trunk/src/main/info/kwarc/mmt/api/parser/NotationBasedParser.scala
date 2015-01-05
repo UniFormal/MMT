@@ -27,7 +27,7 @@ class NotationBasedParser extends ObjectParser {
    private lazy val prag = controller.pragmatic   
    
    /**
-    * builds parsers notation context based on content in the controller 
+    * builds parser's notation context based on content in the controller 
     * and the scope (base path) of the parsing unit
     * returned list is sorted (in increasing order) by priority
     */

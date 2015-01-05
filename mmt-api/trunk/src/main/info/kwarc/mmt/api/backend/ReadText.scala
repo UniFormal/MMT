@@ -324,9 +324,6 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
       val obj = try {
          puCont(pu)
       } catch {
-         case e: ParseError =>
-            errors = errors :+ TextParseError(toPos(start), "object continuation caused ParseError: " + e.getMessage)
-            DefaultObjectParser(pu)(ErrorThrower)
          case e: Error =>
             errors = errors :+ TextParseError(toPos(start), "object continuation caused error: " + e.getMessage)
             DefaultObjectParser(pu)(ErrorThrower)
@@ -1394,14 +1391,11 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
 
   /** tells the controller given as class parameter to add the StructuralElement */
   private def add(e : StructuralElement) {
-    //controller.add(e)
     cont(e)
   }
 
-
   private def min(a: Int, b: Int) = if (a <= b) a else b
-
-
+  
   /** Convert a module name to its URI. Only namespace prefixes are checked.
     * @param start position of the first character of the module name (for error reporting)
     * @param moduleName the module name as a string

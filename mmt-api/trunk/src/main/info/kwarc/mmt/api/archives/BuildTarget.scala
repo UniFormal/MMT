@@ -158,6 +158,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
            log(prefix + inFile + " -> " + outFile)
            val errorCont = makeHandler(a, inPath)
            val bf = new BuildTask(inFile, false, inPath, a.narrationBase, outFile, errorCont)
+           outFile.up.mkdirs
            buildFile(a, bf)
            errorCont.close
            a.timestamps(this).set(inPath)

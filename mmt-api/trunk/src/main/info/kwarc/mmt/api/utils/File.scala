@@ -28,6 +28,8 @@ case class File(toJava: java.io.File) {
    def /(ss:List[String]) : File = ss.foldLeft(this) {case (sofar,next) => sofar / next}
    /** parent directory */
    def up = File(toJava.getParentFile)
+   /** file name */
+   def name = File(toJava.getName)
    /** the list of file/directory/volume label names making up this file path */ 
    def segments: List[String] = {
       val name = toJava.getName
@@ -80,7 +82,7 @@ object File {
    def apply(s: String) : File = File(new java.io.File(s))
    
    def Writer(f: File) = {
-      f.toJava.getParentFile.mkdirs
+      f.up.toJava.mkdirs
       new PrintWriter(new OutputStreamWriter(
          new BufferedOutputStream(new FileOutputStream(f.toJava)),
          java.nio.charset.Charset.forName("UTF-8")
