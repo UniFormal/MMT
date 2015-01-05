@@ -17,14 +17,13 @@ object Twelf {
       val i = s.lastIndexOf(":")
       val file = File(s.substring(0,i))
       val numbers = s.substring(i+1).split("[-\\.]")
-      val reg = parser.SourceRegion(parser.SourcePosition(-1, numbers(0).toInt - 1, numbers(1).toInt - 1),
-                                    parser.SourcePosition(-1, numbers(2).toInt - 1, numbers(3).toInt - 1))
+      val reg = parser.SourceRegion(parser.SourcePosition(-1, numbers(0).toInt, numbers(1).toInt),
+                                    parser.SourcePosition(-1, numbers(2).toInt, numbers(3).toInt))
       parser.SourceRef(utils.FileURI(file), reg)
-                          
    }
 }
 
-/** Utility for starting the catalog and calling the Twelf compiler
+/** importer wrapper for Twelf, which starts the catalog
   */
 class Twelf extends Importer with frontend.ChangeListener {
    val key = "twelf-omdoc"
@@ -42,12 +41,16 @@ class Twelf extends Importer with frontend.ChangeListener {
    /** 
     * creates and intializes a Catalog
     * first argument is the location of the twelf-server script
+    * second argument optionally gives the input dimension (default: the source folder)
     */
    override def start(args: List[String]) {
-      checkNumberOfArguments(1,1,args)
+      checkNumberOfArguments(1,2,args)
       path = File(args(0))
       catalog = new Catalog(HashSet(), HashSet("*.elf"), HashSet(".svn"), port, true, report("lfcatalog", _))
       catalog.init    //  throws PortUnavailable
+      if (args.length >= 2) {
+         _inDim = Dim(args(1))
+      }
    }
    override def onNewArchive(arch: Archive) {
       val dim = arch.properties.get("twelf").getOrElse(arch.sourceDim)
@@ -65,12 +68,11 @@ class Twelf extends Importer with frontend.ChangeListener {
      * @param out the file in which to put the generated OMDoc
      */
    def importDocument(bf: BuildTask, seCont: documents.Document => Unit) {
-      File(bf.outFile.getParent).mkdirs
       val procBuilder = new java.lang.ProcessBuilder(path.toString)
-      procBuilder.redirectErrorStream()
-      val proc = procBuilder.start()
-      val input = new PrintWriter(proc.getOutputStream(), true)
-      val output = new BufferedReader(new InputStreamReader(proc.getInputStream()))
+      procBuilder.redirectErrorStream
+      val proc = procBuilder.start
+      val input = new PrintWriter(proc.getOutputStream, true)
+      val output = new BufferedReader(new InputStreamReader(proc.getInputStream))
       val inFileAsString = bf.inFile.toString
       val outFile = bf.inFile.setExtension("omdoc")
       input.println("set chatter " + chatter)
