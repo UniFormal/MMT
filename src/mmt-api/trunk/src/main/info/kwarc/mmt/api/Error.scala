@@ -112,7 +112,9 @@ abstract class ErrorHandler {
 class ErrorContainer(report: Option[frontend.Report]) extends ErrorHandler {
    private var errors: List[Error] = Nil
    protected def addError(e: Error) {
-      errors ::= e
+      this.synchronized {
+        errors ::= e
+      }
       report.foreach {r => r(e)}
    }
    def isEmpty = errors.isEmpty

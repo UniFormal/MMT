@@ -77,6 +77,8 @@ trait Exporter extends BuildTarget { self =>
       def outDim: Dim = Dim("export", self.key, inDim.toString)
       override def outExt = self.outExt
       override protected val folderName = self.folderName
+      override def parallel = false
+
    }
    
    /**
