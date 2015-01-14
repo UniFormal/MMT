@@ -20,6 +20,12 @@ class DocStore(mem : ROMemory, report : Report) extends RODocStore {
          val d = try {documents(r.parent)} catch {case _ : Throwable => throw AddError("document does not exist in " + r)}
          d.add(r)
          mem.ontology += ontology.Declares(d.path, r.target)
+      case rg : XRefGroup => 
+         val d = try {documents(rg.parent)} catch {case _ : Throwable => throw AddError("document does not exist in " + rg)}
+         d.add(rg)
+         rg.refs foreach {r => 
+           mem.ontology += ontology.Declares(d.path, r.target)
+         }
    }}
    /** retrieves a document from the DocStore */
    def get(p : DPath) = {

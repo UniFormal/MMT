@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.documents
 import info.kwarc.mmt.api._
 
 
+
 /**
  * An XRef represents a reference from a document to an external document part or module.
  * An XRef is semantically equivalent to copy-pasting the referenced module.
@@ -57,3 +58,11 @@ object SRef {
 class NRRef(p: DPath, target: DPath) extends XRef(p, target) {
    def toNode = <nref href={target.toPath}/>
 }  
+
+case class XRefGroup(val parent : DPath, val refs : List[XRef]) extends NarrativeElement {
+  def append(ref : XRef) : XRefGroup = XRefGroup(parent, refs ::: List(ref))
+  def toNode = <group> {refs.map(_.toNode)}</group>
+  def getDeclarations = Nil
+  def children = Nil
+  def path = parent 
+}
