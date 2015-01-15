@@ -1,6 +1,6 @@
 
 package info.kwarc.mmt.api.gui
-
+/*
 import javafx.application.Platform
 import javafx.scene.Scene
 import javafx.stage.Stage
@@ -92,3 +92,4 @@ class FXFrame extends JFrame("MMT-FX") {
    add(panel)
    setVisible(true)
 }
+*/

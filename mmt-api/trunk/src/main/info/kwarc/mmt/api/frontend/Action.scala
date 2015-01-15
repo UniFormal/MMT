@@ -36,16 +36,14 @@ object Action extends RegexParsers {
      private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
      private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
      
-   private def mathpath = "mathpath" ~> (mathpathArchive | mathpathLocal | mathpathFS | mathpathSVN | mathpathJava)
+   private def mathpath = "mathpath" ~> (mathpathArchive | mathpathLocal | mathpathFS | mathpathJava)
      private def mathpathArchive = "archive" ~> file ^^ {f => AddArchive(f)}
      private def mathpathLocal = "local" ^^ {case _ => Local}
      private def mathpathFS = "fs" ~> uri ~ file ^^ {case u ~ f => AddMathPathFS(u,f)}
-     private def mathpathSVN = "svn" ~> uri ~ int ~ (str ?) ~ (str ?) ^^ {case uri ~ rev ~ user ~ pass => AddMathPathSVN(uri, rev, user, pass)}
      private def mathpathJava = "java" ~> file ^^ {f => AddMathPathJava(f)}
 
-   private def archive = archopen | archdim | archmar | svnarchopen | archbuild
+   private def archive = archopen | archdim | archmar | archbuild
      private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)} //deprecated, use mathpath archive
-     private def svnarchopen = "SVNArchive" ~> "add" ~> str ~ int ^^ {case url ~ rev => AddSVNArchive(url,rev)}
      private def archbuild = "build" ~> str ~ str ~ (str ?) ~ (str *) ^^ {
        case id ~ keymod ~ in ~ args =>
             val segs = MyList.fromString(in.getOrElse(""), "/")
@@ -243,21 +241,6 @@ case object Local extends Action {override def toString = "mathpath local"}
  */
 case class AddMathPathFS(uri: URI, file : File) extends Action {override def toString = "mathpath fs " + uri + " " + file}
 
-/** add catalog entry for a remote SVN repository
- * @param uri URI the remote URI
- * @param rev the revision to use, -1 for head
- * @param user user name to use, if any
- * @param password password to use if any
- * All URIs of the form uri/SUFFIX are looked in the repository
- * 
- * concrete syntax: mathpath svn uri:URI rev:INT user:[STRING] password:[STRING]
- */
-case class AddMathPathSVN(uri: URI, rev: Int, user: Option[String], password: Option[String]) extends Action {
-   override def toString = "mathpath svn " + uri +
-      (if (rev == -1) "" else " " + rev) +
-      (user.map(" " + _).getOrElse("") + password.map(" " + _).getOrElse(""))
-}
-
 /**
  * add catalog entry for realizations in Java
  * @param javapath the Java path entry, will be passed to [[java.net.URLClassLoader]]
@@ -304,9 +287,6 @@ case class AddExtension(cls: String, args: List[String]) extends Action {overrid
 
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder : java.io.File) extends Action {override def toString = "mathpath archive " + folder}
-
-/** add a SVN Archive */
-case class AddSVNArchive(url : String,  rev : Int) extends Action {override def toString = "SVN archive add " + url + "@" + rev}
 
 /** builds a dimension in a previously opened archive */
 case class ArchiveBuild(id: String, dim: String, modifier: archives.BuildTargetModifier, in : List[String], params: List[String] = Nil) extends Action {
