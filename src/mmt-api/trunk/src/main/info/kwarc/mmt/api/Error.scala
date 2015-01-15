@@ -39,7 +39,7 @@ case class SourceError(
     origin: String, ref: SourceRef, mainMessage: String, extraMessages: List[String] = Nil, level: Level = Level.Error
  ) extends Error("source error (origin) at " + ref.toString + ": " + mainMessage) {
     override def getMessage = mainMessage + extraMessages.mkString("\n","\n","\n")
-    override def toNode = <error type={this.getClass().toString} shortMsg={this.shortMsg} level={this.level.toString} sref={ref.region.toString}> {this.getLongMessage} </error> 
+    override def toNode = <error type={this.getClass().toString} shortMsg={this.shortMsg} level={this.level.toString} sref={ref.toString}> {this.getLongMessage} </error> 
 }
 /** errors that occur during compiling */
 object CompilerError {
@@ -135,9 +135,9 @@ class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends Error
   private var haserrors = false
   protected def addError(e: Error) {
     report.foreach {r => r(e)}
-    if (haserrors) {
+    if (!haserrors) {
        haserrors = true
-       file.write("<errors>")
+       file.write("<errors>\n")
     }
     file.write(e.toNode.toString)
   }
@@ -146,7 +146,7 @@ class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends Error
    */
   def close {
     if (haserrors) {
-       file.write("</errors>")
+       file.write("\n</errors>")
        file.close
     } else {
        fileName.toJava.delete

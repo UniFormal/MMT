@@ -26,6 +26,7 @@ object SourceRegion {
       else throw ParseError("illegal source region: " + s)
    }
   def ofString(s: String) = SourceRegion(SourcePosition(0,0,0),SourcePosition(s.length-1,0,s.length-1))
+  val none = SourceRegion(SourcePosition.none,SourcePosition.none)
 }
 
 /** position in a source block; both one and two-dimensional coordinates are maintained
@@ -83,6 +84,7 @@ object SourcePosition {
       }
       else throw ParseError("illegal source position: " + s)
    }
+   val none = SourcePosition(-1,-1,-1)
 }
 
 /** region in an identified source block
