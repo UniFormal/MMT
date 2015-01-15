@@ -139,14 +139,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
    }
    private def makeHandler(a: Archive, inPath: List[String], isDir : Boolean = false) = {
      val baseFileName = a / errors / key / inPath
-     val errFileName = {
-     if (isDir)
+     val errFileName = if (isDir)
        baseFileName / ".err"
      else 
        baseFileName.setExtension("err")
-     }
      new ErrorWriter(errFileName, Some(report))
-
    }
    
    /** recursive building */

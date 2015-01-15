@@ -93,11 +93,11 @@ object File {
     * 
     * overwrites existing files, creates directories if necessary
     * @param f the target file
-    * @param s the content to write
+    * @param strings the content to write
     */
-   def write(f: File, s: String) {
+   def write(f: File, strings: String*) {
       val fw = Writer(f)
-      fw.write(s)
+      strings.foreach {s => fw.write(s)}
       fw.close
    }
    /**
@@ -122,9 +122,9 @@ object File {
     * @return s the file content (line terminators are \n)
     */
    def read(f: File): String = {
-      var s : String = ""
-      ReadLineWise(f) {l => s += l + "\n"}
-      s
+      val s = new StringBuilder
+      ReadLineWise(f) {l => s.append(l + "\n")}
+      s.result
    }
 
    /** convenience method to obtain a typical (buffered, UTF-8) reader for a file */
