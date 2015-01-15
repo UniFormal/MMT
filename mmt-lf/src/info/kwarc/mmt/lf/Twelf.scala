@@ -2,7 +2,8 @@ package info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import archives._
 import backend._
-import utils.File
+import parser._
+import utils.{File,FileURI}
 import utils.FileConversion._
 
 import info.kwarc.mmt.twelf.Catalog
@@ -17,9 +18,9 @@ object Twelf {
       val i = s.lastIndexOf(":")
       val file = File(s.substring(0,i))
       val numbers = s.substring(i+1).split("[-\\.]")
-      val reg = parser.SourceRegion(parser.SourcePosition(-1, numbers(0).toInt, numbers(1).toInt),
-                                    parser.SourcePosition(-1, numbers(2).toInt, numbers(3).toInt))
-      parser.SourceRef(utils.FileURI(file), reg)
+      val reg = SourceRegion(SourcePosition(-1, numbers(0).toInt, numbers(1).toInt),
+                                    SourcePosition(-1, numbers(2).toInt, numbers(3).toInt))
+      SourceRef(utils.FileURI(file), reg)
    }
 }
 
@@ -73,7 +74,8 @@ class Twelf extends Importer with frontend.ChangeListener {
       val proc = procBuilder.start
       val input = new PrintWriter(proc.getOutputStream, true)
       val output = new BufferedReader(new InputStreamReader(proc.getInputStream))
-      val inFileAsString = bf.inFile.toString
+      val inFile = bf.inFile
+      val inFileAsString = inFile.toString
       val outFile = bf.inFile.setExtension("omdoc")
       input.println("set chatter " + chatter)
       input.println("set unsafe " + unsafe)
@@ -97,11 +99,21 @@ class Twelf extends Importer with frontend.ChangeListener {
             bf.errorCont(CompilerError(key, r, msg.reverse, Level.Warning))
          }
       }
+      def error(msg: String) {
+         val ref = SourceRef(FileURI(inFile), parser.SourceRegion.none)
+         val e = CompilerError(key, ref, List(msg), Level.Fatal)
+         bf.errorCont(e)
+      }  
+      if (! outFile.exists) {
+          error("unknown error: Twelf produced no omdoc file")
+          return
+      }
       val doc = try {
          controller.read(outFile, Some(bf.narrationDPath))(bf.errorCont)
        } catch {
-         case e: java.io.IOException =>
-           return
+         case e: scala.xml.parsing.FatalError =>
+            error("XML error in omdoc file (likely too big for Twelf to write)")
+            return
        }
       seCont(doc)
    }
