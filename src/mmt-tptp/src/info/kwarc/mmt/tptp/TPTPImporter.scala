@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import archives._
 import documents._
 import utils._
+import FileConversion._
 
 class TPTPImporter extends TraversingBuildTarget {
    val key: String = "tptp-twelf"
@@ -43,14 +44,22 @@ class TPTPImporter extends TraversingBuildTarget {
          bt.errorCont(LocalError(s))
          return
       }
-      val rawtwelf = File.read(outFile)
-      val prefix = s"""
-%namespace "${a.narrationBase}".
+      // outFile wraps module header/footer around non-modular tempFile
+      val tempFile = outFile.setExtension("temp")
+      outFile.renameTo(tempFile)
+      val outWriter = File.Writer(outFile)
+      val prefix = s"""%namespace "${a.narrationBase}".
 %namespace tptp = "http://latin.omdoc.org/logics/tptp".
 
 %sig ${bt.inFile.removeExtension.name} = {
    %meta tptp.THF.
 """
-      File.write(outFile, prefix + rawtwelf + "}.")
+      outWriter.write(prefix)
+      File.ReadLineWise(tempFile) {l =>
+         outWriter.println(l)
+      }
+      outWriter.println("}.")
+      outWriter.close
+      tempFile.delete
    }
 }
