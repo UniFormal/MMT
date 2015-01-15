@@ -21,11 +21,6 @@ import gui._
 import io.BufferedSource
 import java.io.FileInputStream
 
-import org.tmatesoft.svn.core._
-import io._
-import auth._
-import wc.SVNWCUtil
-
 /** An exception that is throw when a needed knowledge item is not available.
  * A Controller catches it and retrieves the item dynamically.  
  */
@@ -417,14 +412,6 @@ class Controller extends ROController with Logger {
 	      case AddMathPathFS(uri,file) =>
 	         val lc = LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, file)
 	         backend.addStore(lc)
-	      case AddMathPathSVN(uri, rev, user, pass) =>
-	         val repos = SVNRepositoryFactory.create(SVNURL.parseURIEncoded(uri.toString))
-            user foreach {u =>
-              val authManager = SVNWCUtil.createDefaultAuthenticationManager(u, pass.getOrElse(""))
-              repos.setAuthenticationManager(authManager)
-            }
-            val s = SVNRepo(uri.schemeNull, uri.authorityNull, uri.pathAsString, repos, rev)
-            backend.addStore(s)
          case AddMathPathJava(file) =>
             backend.openRealizationArchive(file)
 	      case Local =>
@@ -440,8 +427,6 @@ class Controller extends ROController with Logger {
 	            }
 	            notifier.onNewArchive(a)
 	         }
-         case AddSVNArchive(url, rev) =>
-           backend.openArchive(url, rev)
          case ArchiveBuild(id, key, mod, in, args) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
             key match {

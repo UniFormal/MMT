@@ -16,8 +16,6 @@ class BackendPane(backend: Backend) extends {val ta = new JTextArea} with JScrol
             s += ra.toString
          case l: LocalCopy =>
             s += "mathpath fs " + l.localBase + " " + l.base + "\n"
-         case r: SVNRepo =>
-            s += r.toString //TODO better printing
       }
       ta.setText(s) 
    }

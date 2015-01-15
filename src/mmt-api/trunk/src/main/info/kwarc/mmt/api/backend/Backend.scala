@@ -11,11 +11,6 @@ import java.util.zip._
 import utils.File
 import utils.FileConversion._
 
-import org.tmatesoft.svn.core._
-import org.tmatesoft.svn.core.io._
-import org.tmatesoft.svn.core.auth._
-import org.tmatesoft.svn.core.wc.SVNWCUtil
-
 // local XML databases or query engines to access local XML files: baseX or Saxon
 
 case class NotApplicable(message: String = "") extends java.lang.Throwable
@@ -70,44 +65,6 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
           val relativePrefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
           virtDoc(entries, relativePrefix)
         } else throw BackendError("file/folder " + target + " not found or not accessible", path)
-      loadXML(uri, N)
-   }
-}
-
-/** a Storage that retrieves repository URIs over SVN connection */
-case class SVNRepo(scheme : String, authority : String, prefix : String, repository : SVNRepository, defaultRev : Int = -1) extends Storage  {
-   def localBase = URI(scheme + "://" + authority + prefix) 
-   
-   def load(path : Path)(implicit controller: Controller) {load(path, defaultRev)}
-   def load(path : Path, rev: Int)(implicit controller: Controller) {
-      val uri = path.doc.uri
-      val target = getSuffix(localBase, uri).mkString("/")
-      
-      val revision = path.doc.version match {
-        case None => rev
-        case Some(s) => try {s.toInt} catch {case _ : Throwable => rev}
-      }
-      val N : scala.xml.Node = repository.checkPath(target, revision) match {
-        case SVNNodeKind.FILE => 
-          var fileProperties : SVNProperties = new SVNProperties()
-          val  baos : java.io.ByteArrayOutputStream = new java.io.ByteArrayOutputStream()
-          repository.getFile(target, revision, null, baos)
-          scala.xml.Utility.trim(scala.xml.XML.loadString(baos.toString))
-        case SVNNodeKind.DIR =>
-          val coll : java.util.Collection[SVNDirEntry] = null
-          val entries = repository.getDir(target, revision, null, coll)
-          val prefix = if (target != "") target + "/" else ""
-          var it = entries.iterator()
-          var strEntries : List[SVNDirEntry] = Nil
-          while (it.hasNext()) {
-            it.next match {
-              case e : SVNDirEntry => strEntries = e :: strEntries
-              case _ => None
-            }
-          }
-          virtDoc(strEntries.reverse.map(x => x.getURL.getPath), prefix) //TODO check if path is correct
-        case SVNNodeKind.NONE => throw BackendError("not found or not accessible", path)
-      }
       loadXML(uri, N)
    }
 }
@@ -177,7 +134,6 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
    /** releases all ressources held by storages */
    def cleanup = {
      stores.map(x => x match {
-       case SVNRepo(scheme,authority,prefix,repo, rev) => repo.closeSession() // closes all svn sessions
        case _ => None
      })
    }
@@ -320,42 +276,8 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
    //TODO this must be redesigned
    def copyStorages(newRev : Int = -1) : List[Storage] = {
      stores.map(s => s match {
-       case SVNRepo(sch, auth, pref, repo, rev) => new SVNRepo(sch,auth,pref, repo, newRev)
        case _ => s
      })
-   }
-  
-   /** creates and registers an SVNArchive */
-   def openArchive(url : String, rev : Int) : SVNArchive = {
-     log("opening archive at " + url + ":" + rev)
-     val repository = SVNRepositoryFactory.create( SVNURL.parseURIEncoded( url ) )
-     val authManager : ISVNAuthenticationManager = SVNWCUtil.createDefaultAuthenticationManager()
-     repository.setAuthenticationManager(authManager)
-     repository.checkPath(".", rev) match {
-       case SVNNodeKind.DIR =>
-         val properties = new scala.collection.mutable.ListMap[String, String]
-         val manifest = "META-INF/MANIFEST.MF"
-         repository.checkPath(manifest, rev) match {
-           case SVNNodeKind.FILE =>
-             val  baos : java.io.ByteArrayOutputStream = new java.io.ByteArrayOutputStream()
-             repository.getFile(manifest, rev, null, baos)
-             val lines = baos.toString().split("\n").map(_.trim).filterNot(line => line.startsWith("//") || line.isEmpty)
-             lines map { line =>
-               val p = line.indexOf(":")
-               val key = line.substring(0,p).trim
-               val value = line.substring(p+1).trim
-               properties(key) = value
-               //TODO handle catalog key
-             }
-             val arch = new SVNArchive(repository, properties, report, rev)
-             addStore(arch)
-             arch
-
-           case _ => throw NotApplicable()
-         }
-       case SVNNodeKind.FILE => throw NotApplicable() //TODO
-       case _ => throw NotApplicable()
-     }
    }
    
    /** auxiliary function of openArchive */

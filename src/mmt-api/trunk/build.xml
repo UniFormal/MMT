@@ -8,7 +8,6 @@
         <fileset dir="${deploy}/lib/">
           <include name="*.jar"/>
         </fileset>
-    	<pathelement location="lib/jfxrt.jar"/>
         <pathelement location="bin"/>
     </path>
 	
