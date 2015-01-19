@@ -1,27 +1,3 @@
-/**
- * Marpa Server Plugin
- * ------------------------------------------
- * Toloaca Ion  <i.toloaca@jacobs-university.de>
- * ------------------------------------------
- * 		General information: 
- * 	New notations are written in sTeX, afterwards LaTeXML is used to convert those to .omdoc ,
- * then MMT is used to parse the .omdoc documents and to store the relevant notations.
- * 		
- *   	Purpose of this code:
- * 	The code below uses the notations stored in MMT as Markers (Scala datatypes) to create a Marpa 
- * grammar and make it available via a post request.
- *  	
- *  	 Details about the code:
- *    To convert from Markers to a Marpa grammar an intermediate format is used (List[String]). 
- * Although the format might have been omitted, using tokenized strings make the recursion and
- * the transformation from Markers to the grammar easier, and creating unique rules also becomes easier.
- *    To create the rules, a recursion is used that starts creating the rules first from the 
- * deepest nested Markers. This means that when adding a rule - it is enough to check whether a rule
- * with the same content is already in the grammar or not (which wouldn't be the case if the rules would 
- * be created in inverse order).
- *    For each top level rule an event is created and for each argument of such rule a relevant action
- * is added to the grammar.
- */
 package info.kwarc.mmt.marpa
 
 import scala.Option.option2Iterable
@@ -67,73 +43,14 @@ import info.kwarc.mmt.api.web.ServerExtension
 import info.kwarc.mmt.stex.STeXImporter
 import info.kwarc.mmt.stex.sTeX
 import tiscaf.HLet
-
+import info.kwarc.mmt.api._
 import tiscaf.HTalk
+import info.kwarc.mmt.api.objects._
 
-case class PlanetaryError(val text : String) extends Error(text)
-
-
-class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
-  override val logPrefix = "marpa"
-     /** Server */   
-  def apply(uriComps: List[String], query: String, body : Body): HLet = {
-    try {
-      uriComps match {
-        //Here the post request is handled
-        case "getGrammar" :: _ => getGrammarResponse
-        case _ => errorResponse("Invalid request: " + uriComps.mkString("/"), List(new PlanetaryError("Invalid Request" + uriComps)))
-       }
-    } catch {
-      case e : Error => 
-        log(e.shortMsg) 
-        errorResponse(e.shortMsg, List(e))
-      case e : Exception => 
-        errorResponse("Exception occured : " + e.getStackTrace(), List(e))
-    }
-  }
+abstract class GenericRule
+case class Rule(name:String, content: List[String]) extends GenericRule
   
-  //The post request response is defined here 
-  def getGrammarResponse : HLet  = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-      val reqBody = new Body(tk)
-      val notations = controller.library.getModules flatMap {
-        case t : DeclaredTheory 
-        	//if t.path.toPath == "http://mathhub.info/smglom/mv/equal.omdoc?equal" 
-        	=> 
-          val not = t.getDeclarations collect {
-            case c : Constant => c.notC.presentationDim.notations.values.flatten.map(not => c.path -> not) //produces (name, notation) pairs
-          } 
-          not.flatten
-        case _ => Nil
-      } //notations is now an iterable of (name, notation) pairs
-      
-      
-     
-//      val symbol = notations.head.name
-//      //val prototype = OMA(OMS(symbol), List(args))
-      //prototype.toNode
-// 
-//       val xmlNotations = notations.map(n => (n.name.toPath, n.presentationMarkers))
-//       val resp = new JSONArray(xmlNotations.map(_.toString))
-   // 	notations.foreach( x => println(x.arity.length)) PRINT NOTATION ARGUMENT NUMBER
-        //	notations.foreach( pair => Grammar.addTopRule(pair._1.toPath, pair._2.presentationMarkers)) //adding rules to the grammar
-       
-      val raw = notations.toList.zipWithIndex
-       raw.foreach( x => 
-           if (x._1._2.presentationMarkers != Nil) {
-           Grammar.addTopRule(x._1._1.toPath+"N"+x._2.toString, x._1._2.presentationMarkers)}) //adding rules to the grammar
-       val resp = new JSONArray( Grammar.getMarpaGrammar );
-//     val resp = new JSONArray(Grammar.rules.toList.map(_.toString));
-      	val params = reqBody.asJSON
-      	Server.JsonResponse(resp).aact(tk)
-    }
-  }
- 
-
- 
-  abstract class GenericRule
-  case class Rule(name:String, content: List[String]) extends GenericRule
-  object Grammar {
+object Grammar {
       var currentTopRuleNr = ""
 	  var rules = Set.empty[Rule]  
 	  private var NotationContent = List.empty[String]
@@ -669,98 +586,4 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
 		   result
 		   } 	
 	  } 
-}
-  
-  
-  
-  def getNotations : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-      val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
-      val spathS = params.get("spath").getOrElse(throw ServerError("No spath found")).toString
-      val languageO = params.get("language").map(_.toString)
-      val dimensionO = params.get("dimension").map(_.toString)
-      
-      val spath = Path.parse(spathS)
-      controller.get(spath) match {
-        case c : Constant =>
-          var notations = dimensionO match {
-            case None => c.notC.getAllNotations
-            case Some("parsing") => c.notC.parsingDim.notations.values.flatten
-            case Some("presentation") => c.notC.presentationDim.notations.values.flatten
-            case Some("verbalization") => c.notC.verbalizationDim.notations.values.flatten
-            case Some(s) => throw ServerError("Invalid notation dimension: '" + s  + "'. Expected parsing, presentation or verbalization")
-          }
-          
-          notations = languageO match {
-            case None => notations
-            case Some(lang) => notations.filter(_.scope.languages.contains(lang))
-          }
-          Server.JsonResponse(JSONArray(notations.map(n => JSONArray(toStringMarkers(n))).toList)).aact(tk)
-        case x => throw ServerError("Expected path pointing to constant, found :" + x.getClass())
-      }
-    }
-  }
-  
-  private def toStringMarkers(not : TextNotation) : List[String] = {
-   not.parsingMarkers flatMap {
-      case a : Arg => Some("_")
-      case a : SeqArg => Some("_...")
-      case a : ImplicitArg => None
-      case d : Delimiter => Some(d.text)
-      case v : Var => Some("_")
-      case _ => None
-    }
-  }
-  
-  
-  //utils
-  private def errorResponse(text : String, errors : List[Throwable]) : HLet = {
-    JsonResponse("", s"MMT Error in Planetary extension: $text ", errors)
-  }
-  
-  private def JsonResponse(content : String, info : String, errors : List[Throwable]) : HLet = {
-    val response = new collection.mutable.HashMap[String, Any]()
-    response("content") = content
-    if (errors == Nil) { //no errors
-      val status = new collection.mutable.HashMap[String, Any]()
-      status("conversion") = 0 //success
-      val messages = new collection.mutable.HashMap[String, Any]()
-      if (info != "") {
-        val message = new collection.mutable.HashMap[String, Any]()
-        message("type") = "Info"
-        message("shortMsg") = info
-        message("shortMsg") = info
-        //no srcref
-        messages("0") = JSONObject(message.toMap)
-      }
-      status("messages") = JSONObject(messages.toMap)
-      response("status") = JSONObject(status.toMap)        
-    } else {
-      val status = new collection.mutable.HashMap[String, Any]()
-      status("conversion") = 2 //failed with errors
-      val messages = new collection.mutable.HashMap[String, Any]()
-      errors.zipWithIndex foreach { p => 
-        val message = new collection.mutable.HashMap[String, Any]()
-        p._1 match {
-          case se : SourceError =>
-            message("type") = "Error"
-            message("shortMsg") = se.mainMessage
-            message("shortMsg") = se.getStackTraceString
-            message("srcref") = JSONObject(List("from" -> JSONObject(List("line" -> se.ref.region.start.line, "col" -> se.ref.region.start.column).toMap), 
-                                 "to" -> JSONObject(List("line" -> se.ref.region.end.line, "col" -> se.ref.region.end.column).toMap)).toMap)
-          case e =>
-            message("type") = "Error"
-            message("shortMsg") = e.getMessage
-            message("longMsg") = e.getStackTraceString
-            //no srcref :(
-          }
-          messages(p._2.toString) = JSONObject(message.toMap)
-      }
-      status("messages") = JSONObject(messages.toMap)
-      response("status") = JSONObject(status.toMap)
-    }
-      log("Sending Response: " + response)
-      Server.JsonResponse(JSONObject(response.toMap))     
-  }
 }
