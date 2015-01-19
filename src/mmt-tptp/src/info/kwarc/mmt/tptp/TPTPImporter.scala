@@ -12,13 +12,13 @@ class TPTPImporter extends TraversingBuildTarget {
    val outDim = Dim("twelf")
    def includeFile(name: String) =
       name.endsWith(".ax") || name.endsWith(".p") || name.endsWith(".tptp")
- 
+
    /** command to run TPTP */
    private var tptpCommand: List[String] = null
 
    /**
     * expects command to run TPTP as arguments, e.g.,
-    *  
+    *
     * "C:\Program Files\swipl\bin\swipl.exe" -f C:/other/oaff/TPTP/Distribution/TPTP2X/tptp2x.main -g tptp2X('INFILE',none,lf,'OUTDIR'),halt.
     */
    override def start(args: List[String]) {
@@ -27,15 +27,15 @@ class TPTPImporter extends TraversingBuildTarget {
       tptpCommand = args
    }
 
-   private def escape(f: File) = f.toString.replace("\\","/") 
-   
+   private def escape(f: File) = f.toString.replace("\\","/")
+
    def buildFile(a: Archive, bt: BuildTask) {
       if (bt.inFile.toJava.length > 1000000) {
          bt.errorCont(LocalError("skipped big file: " + bt.inFile))
          return
       }
       val outFile = bt.outFile.setExtension("elf")
-      val command = tptpCommand.map {s => 
+      val command = tptpCommand.map {s =>
          s.replace("INFILE", escape(bt.inFile)).replace("OUTDIR", escape(outFile.up))
       }
       log(command.mkString("  "))
