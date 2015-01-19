@@ -26,8 +26,11 @@
 
     <modules>
         <module>tiscaf</module>
+        <module>lfcatalog/trunk</module>
         <module>mmt-api/branches/mmt-informal</module>
         <module>mmt-api/trunk</module>
+        <module>mmt-lf</module>
+        <module>mmt-tptp</module>
 <!--
         <module>mmt-webEdit</module>
         <module>mmt-stex</module>
