@@ -510,7 +510,7 @@ class STeXImporter extends Importer {
       argMap(argName) match{
         case ProtoArg(nr) => Arg(nr, None) :: Nil //TODO add precedence back and fix printing and parsing of Args with precedence Some(getPrecedence(n))
         case ProtoVar(nr) => Var(nr, false, None, None) :: Nil //TODO Some(getPrecedence(n)
-        case ProtoSub(nr) => Subs(nr, None) :: Nil //Some(getPrecedence(n))
+        case ProtoSub(nr) => Arg(nr, None) :: Nil //Some(getPrecedence(n))
       }
     case "iterate" =>
       val argName = (n \ "@name").text
