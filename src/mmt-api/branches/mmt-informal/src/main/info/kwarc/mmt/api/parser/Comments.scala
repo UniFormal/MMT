@@ -14,7 +14,7 @@ object CommentHandler extends ParserExtension {
   
   def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, k: String) {
     val (commentS, _) = s.reader.readAll
-    val container = s.container ? objects.OMV.anonymous
+    //val container = s.container ? objects.OMV.anonymous
     //val narr = new flexiformal.PlainNarration(objects.OMMOD(container), new flexiformal.NarrativeText(commentS))
     //controller.add(narr)    
   }

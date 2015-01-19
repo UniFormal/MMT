@@ -31,9 +31,9 @@ class Pragmatics(controller: Controller) {
          applicable.maxBy(_.priority) 
       }
    }
-   def makeStrict(level: Option[MPath], op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean
+   def makeStrict(level: Option[MPath], op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation
          )(implicit newUnkwown: () => Term) : Term = {
-      applicableByLevel(level).constructTerm(op, subs, con, args, attrib)
+      applicableByLevel(level).constructTerm(op, subs, con, args, attrib, not)
    }
    
    /** the default treatment for application-like constructions without a known operator

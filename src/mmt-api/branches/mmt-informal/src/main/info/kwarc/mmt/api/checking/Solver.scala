@@ -316,7 +316,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
      dcOpt match {
         case None =>
            // no activatable constraint
-           if (errors.isEmpty)
+           if (delayed.isEmpty && errors.isEmpty)
               noActivatableConstraint
            else
               false
@@ -359,6 +359,9 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
            }
    }
    
+   /**
+    * @return true if unsolved variables can be filled in by prover
+    */
    private def noActivatableConstraint: Boolean = {
       solution.declsInContext.forall {
          case (cont, VarDecl(x, Some(tp), None,_)) =>
@@ -503,6 +506,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
             case j: Equality => checkEquality(j)
             case j: Universe => checkUniverse(j)
             case j: Inhabitable => checkInhabitable(j)
+            case j: Inhabited => checkInhabited(j)
          }
       }
    }
@@ -514,7 +518,6 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     * pre: context and type are covered
     *
     * post: typing judgment is covered
-    *  
     */
    private def checkTyping(j: Typing)(implicit history: History) : Boolean = {
      val tm = j.tm
@@ -524,11 +527,12 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
      val solved = solveTyping(tm, tp)
      if (solved) return true
      def checkByInference(tpS: Term): Boolean = {
-         inferType(tm)(stack, history.branch) match {
+         val hisbranch = history.branch
+         inferType(tm)(stack, hisbranch) match {
             case Some(itp) =>
                check(Subtyping(stack, itp, tpS))(history + ("inferred type must conform to expected type; the term is: " + presentObj(tm)))
             case None =>
-               delay(Typing(stack, tm, tpS, j.tpSymb))(history + "type inference failed")
+               delay(Typing(stack, tm, tpS, j.tpSymb))(hisbranch + "type inference failed")
          }
      }
      tm match {
@@ -628,7 +632,9 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
               case Some(rule) =>
                  history += ("applying rule for " + rule.head.name.toString)
                  rule(this)(tmS, covered)
-              case None => None
+              case None =>
+                 history += "no applicable rule"
+                 None
             }
         }
      }
@@ -964,6 +970,21 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       }
    }
 
+   /**
+    * proves an inhabitation judgment by theorem proving
+    * 
+    * pre: context and type are covered
+    *
+    * post: inhabitation judgment is covered
+    */
+   private def checkInhabited(j : Inhabited)(implicit history: History): Boolean = {
+      val res = prove(j.context, j.tp)
+      if (res.isDefined)
+         true
+      else
+         delay(j)
+   }
+  
    private def prove(context: Context, conc: Term)(implicit history: History): Option[Term] = {
       val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
       log(msg)

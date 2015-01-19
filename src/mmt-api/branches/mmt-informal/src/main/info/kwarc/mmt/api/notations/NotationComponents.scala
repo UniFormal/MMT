@@ -116,12 +116,6 @@ case class Var(number: Int, typed: Boolean, sep: Option[Delim], precedence : Opt
    override def isSequence = sep.isDefined
 }
 
-//TODO add name
-case class Subs(number: Int, precedence : Option[Precedence] = None) extends Marker with ScopeComponent {
-  override def toString = "S" + number.toString
-}
-
-
 case object AttributedObject extends Marker {
    override def toString = "%a" 
 }
@@ -454,7 +448,7 @@ sealed trait ArityComponent {
 }
 sealed trait ArgumentComponent extends ArityComponent
 sealed trait VariableComponent extends ArityComponent
-sealed trait ScopeComponent extends ArityComponent
+//sealed trait ScopeComponent extends ArityComponent
 
 object Marker {
    def parse(s: String) = s match {
@@ -468,7 +462,7 @@ object Marker {
             else
                Delim(s.substring(2))
          case s: String if s.startsWith("%I") =>
-            // In ---> implicit argument
+            // In or Gn ---> implicit argument or implicit guard
             try {
                val n = s.substring(2).toInt
                ImplicitArg(n)
@@ -497,9 +491,6 @@ object Marker {
                Var(n, false, Some(Delim(sep)))
             } else
                throw ParseError("not a valid marker " + s)
-         case s : String if s.startsWith("S") => 
-           val nr = s.substring(1).toInt
-           Subs(nr)
          case s: String if s.endsWith("…") =>
             //nsep… ---> sequence argument/scope
             var i = 0

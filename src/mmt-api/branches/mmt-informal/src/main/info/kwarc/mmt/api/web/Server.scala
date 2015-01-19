@@ -182,7 +182,6 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
     def resolve(req: HReqData): Option[HLet] = {
       log("request for /" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query)
       req.uriPath.split("/").toList match {
-        case ":tree" :: _ => Some(TreeResponse)
         case ":change" :: _ => Some(ChangeResponse)
         case ":mws" :: _ => Some(MwsResponse)
         case ":parse" :: _ => Some(ParserResponse)
@@ -331,7 +330,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
         val dpathS = tk.req.param("dpath").getOrElse(throw ServerError("expected dpath"))
         val dpath = DPath(URI(dpathS))
         log("Received content : " + content)
-        controller.textParser.readString(dpath, content)(ErrorThrower)
+        controller.textParser.readString(dpath.uri, dpath, content)(ErrorThrower)
         TextResponse("Success").aact(tk)
       } catch {
         case e : Error => errorResponse(e).aact(tk)
@@ -429,47 +428,6 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
         case _ => errorResponse("invalid theory name in query : {tk.req.query}").aact(tk)
       }
     }
-  }
-
-  private def TreeResponse = new HLet {
-     def aact(tk: HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
-          val q = tk.req.query
-          val node = if (q == ":root")
-            <root>{
-              controller.backend.getArchives map { a => Util.item(DPath(a.narrationBase), "closed", Some(a.id)) }
-            }</root>
-          else {
-            val path = Path.parse(q, controller.getBase)
-            val role = controller.depstore.getType(path)
-            path match {
-              case p: DPath =>
-                val doc = controller.getDocument(p)
-                <root>{ doc.getItems.map { i => Util.item(i.target, "closed") } }</root>
-              case p: MPath =>
-                val rels: List[(String, RelationExp)] = role match {
-                  case Some(ontology.IsTheory) =>
-                    List(("meta for", -HasMeta), ("included into", -Includes),
-                      ("instantiated in", -RelationExp.HasStructureFrom),
-                      ("views out of", -HasDomain * HasType(IsView)), ("views into", -HasCodomain * HasType(IsView)))
-                  case Some(IsView) => List(("included into", -Includes), ("domain", +HasDomain), ("codomain", +HasCodomain))
-                  case _ => Nil // should be impossible
-                }
-                val results = rels map { case (desc, rel) => (desc, controller.depstore.queryList(path, rel)) }
-                val resultsNonNil = results.filterNot(_._2.isEmpty)
-                <root>{
-                  resultsNonNil map {
-                    case (desc, res) =>
-                      <item state="closed">
-                  <content><name class="treerelation">{ desc }</name></content>
-                  { res.map(Util.item(_, "closed")) }
-                </item>
-                  }
-                }</root>
-              case _ => throw ImplementationError("only children of documents and modules can be taken")
-            }
-          }
-          XmlResponse(node).aact(tk)
-     }
   }
 }
 

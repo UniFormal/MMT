@@ -5,8 +5,10 @@ import objects._
 import symbols._
 import documents._
 import frontend._
+import utils._
 
-/** a ParsingUnit represents a term that is to be parsed
+/**
+ * ParsingUnit encapsulates the input of an [[ObjectParser]]
  * @param source the source reference of the string to parse
  * @param context the context against which to parse
  * @param term the term to parse
@@ -14,7 +16,13 @@ import frontend._
  */
 case class ParsingUnit(source: SourceRef, context: Context, term: String, top: Option[ParsingRule] = None)
 
-class ParsingStream(val dpath: DPath, val stream: java.io.BufferedReader)
+/**
+ * ParsingStream encapsulates the input of a [[StructureParser]]
+ * @param source the source URI of the stream
+ * @param base the initial base URI to use while parsing
+ * @param stream the stream to parse
+ */
+class ParsingStream(val source: URI, val base: DPath, val stream: java.io.BufferedReader)
 
 /**
  * an ObjectParser handles ParsingUnits
@@ -66,12 +74,13 @@ trait StructureParser extends Extension {
    
    /**
     * Reads from a string
+    * @param url the location of the contained document
+    * @param base the id of the contained document
     * @param text the string
-    * @param dpath the id/location of the contained document
     */
-   def readString(dpath: DPath, text: String)(implicit errorCont: ErrorHandler) = {
+   def readString(src: URI, base: DPath, text: String)(implicit errorCont: ErrorHandler) = {
       val r = new java.io.BufferedReader(new java.io.StringReader(text))
-      val ps = new ParsingStream(dpath, r)
+      val ps = new ParsingStream(src, base, r)
       try {
          apply(ps)
       } finally {
@@ -83,9 +92,11 @@ trait StructureParser extends Extension {
     * @param text the string
     * @param dpath the id of the file
     */
-   def readFile(dpath: DPath, f: utils.File)(implicit errorCont: ErrorHandler) = {
+   def readFile(f: File)(implicit errorCont: ErrorHandler) = {
      val r = utils.File.Reader(f)
-     val ps = new ParsingStream(dpath, r)
+     val url = FileURI(f)
+     val base = DPath(FileURI(f.setExtension("omdoc")))
+     val ps = new ParsingStream(url, base, r)
      try {
         apply(ps)
      } finally {

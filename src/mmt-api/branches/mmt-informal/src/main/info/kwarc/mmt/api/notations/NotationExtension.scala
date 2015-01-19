@@ -91,7 +91,7 @@ case class Postfix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity 
  *  
  * @param assoc merge with nested bindings using the same binder; currently ignored
  * 
- * assumes arguments are one variable and one scope; expl is currently ignored
+ * assumes arguments are one variable and one scope; expl must be 1
  */
 case class Bindfix(delim: Delimiter, impl: Int, expl: Int, assoc: Boolean) extends SimpleFixity {
    def markers = List(delim, Var(impl+1, true, None), Delim("."), Arg(impl+2))
@@ -159,7 +159,7 @@ abstract class NotationExtension {
    def applicableLevel: Option[MPath]
    def isApplicable(t: Term): Boolean
    /** called to construct a term after a notation produced by this was used for parsing */
-   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean)
+   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation)
             (implicit unknown: () => Term): Term
    def constructTerm(fun: Term, args: List[Term]): Term
    /** called to deconstruct a term before presentation */
@@ -171,7 +171,7 @@ object MixfixNotation extends NotationExtension {
    def priority = 0
    def applicableLevel = None
    def isApplicable(t: Term) = true
-   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean)
+   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation)
       (implicit unknown: () => Term) = ComplexTerm(op, subs, con, args)
    def constructTerm(fun: Term, args: List[Term]) = OMA(fun, args)
    def destructTerm(t: Term)(implicit getNotation: GlobalName => Option[TextNotation]): Option[PragmaticTerm] = t match {
@@ -196,6 +196,8 @@ case class HOAS(apply: GlobalName, bind: GlobalName, typeAtt: GlobalName)
  * OMA(apply, op, OMBIND(bind, context, args)) <--> OMBIND(op, context, args)
  * 
  * x: OMA(typeAtt, tp) <--> x: tp
+ * 
+ * assumption: HOAS notations do not have arguments before context
  */
 class HOASNotation(val language: MPath, val hoas: HOAS) extends NotationExtension {
    def priority = 1
@@ -205,13 +207,13 @@ class HOASNotation(val language: MPath, val hoas: HOAS) extends NotationExtensio
       case None => false
    }
    
-   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean)
+   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation)
                 (implicit unknown: () => Term) : Term = {
       if (attrib) {
          val ptp = if (subs.isEmpty && con.isEmpty && args.isEmpty)
             OMS(op)
          else
-            constructTerm(op, subs, con, args, false)
+            constructTerm(op, subs, con, args, false, not)
          hoas.typeAtt(ptp)
       } else {
          // for now: strict form treats substitution as extra arguments
@@ -259,6 +261,15 @@ class HOASNotation(val language: MPath, val hoas: HOAS) extends NotationExtensio
    }
 }
 
+/**
+ * Church-style higher-order abstract (obj) syntax within LF-style higher-order abstract syntax (meta), 
+ * 
+ * e.g.,
+ *  apply: tm A=>B -> tm B -> tm B
+ *  lam  : (tm A -> tm B) -> tm A=>B
+ * 
+ * assumption: notations give meta-arguments as arguments before context  
+ */
 class NestedHOASNotation(language: MPath, obj: HOAS, meta: HOAS) extends NotationExtension {
    def priority = 2
    def applicableLevel = Some(language)
@@ -282,22 +293,30 @@ class NestedHOASNotation(language: MPath, obj: HOAS, meta: HOAS) extends Notatio
    private def binding(con: Context, scope: Term)(implicit unknown: () => Term): Term =
       con.foldRight(scope) {case (next, sofar) => binding(next, sofar)}
    
-   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean
+   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation
                    )(implicit unknown: () => Term) : Term = {
       if (attrib) {
          val ptp = if (subs.isEmpty && con.isEmpty && args.isEmpty)
             OMS(op)
          else
-            constructTerm(op, subs, con, args, false)
+            constructTerm(op, subs, con, args, false, not)
          meta.apply(OMS(obj.typeAtt), ptp)
       } else {
-         // subargs are considered to be meta arguments
-         val subargs = subs.map(_.target)
-         val opmeta = metaapplication(op, subargs)
+         // 2 components are considered to be meta-arguments
+         // - the subargs
+         // - if there are no variables, the leading implicit args
+         // the remaining args are considered object arguments
+         val numLeadingImplArgs = if (con.isEmpty) {
+            not.arity.arguments.takeWhile(_.isInstanceOf[ImplicitArg]).length
+         } else
+            0
+         val metaargs = subs.map(_.target) ::: args.take(numLeadingImplArgs)
+         val objArgs = args.drop(numLeadingImplArgs)
+         val opmeta = metaapplication(op, metaargs)
          if (con.isEmpty) {
-            application(opmeta, args)
-         } else if (args.length == 1) {
-            application(opmeta, binding(con, args.head))
+            application(opmeta, objArgs)
+         } else if (objArgs.length == 1) {
+            application(opmeta, binding(con, objArgs.head))
          } else throw InvalidNotation("")
       }
    }
@@ -320,6 +339,8 @@ class NestedHOASNotation(language: MPath, obj: HOAS, meta: HOAS) extends Notatio
    }
    
    def destructTerm(t: Term)(implicit getNotation: GlobalName => Option[TextNotation]): Option[PragmaticTerm] = {
+      if (t.toString == "(LF?apply Kernel?Comb Kernel?bool Kernel?bool (LF?apply Kernel?Comb Kernel?bool (LF?apply Kernel?fun Kernel?bool Kernel?bool) (LF?apply Kernel?equal Kernel?bool) (LF?apply Kernel?Comb Kernel?bool Kernel?bool (LF?apply Kernel?Comb Kernel?bool (LF?apply Kernel?fun Kernel?bool Kernel?bool) bool?/\\ p) q)) p)")
+         true
       val (op, metaArgs, objArgs) = unapplication(t).getOrElse(return None)
       val not = getNotation(op).getOrElse(return None)
       val paths = (0 until objArgs.length).toList.map(i => Position((0 until i).toList.map(_ => 4)))
@@ -328,9 +349,16 @@ class NestedHOASNotation(language: MPath, obj: HOAS, meta: HOAS) extends Notatio
       val opMetaPos = if (metaArgs.isEmpty) List(opMetaPath)
          else (0 until metaArgs.length+1).toList.map(i => opMetaPath / (i+1))
       val arity = not.arity
-      if (arity.canHandle(0,0,metaArgs.length+objArgs.length, false)) {
+      val numLeadingImplArgs = if (arity.variables.isEmpty) 
+            arity.arguments.takeWhile(_.isInstanceOf[ImplicitArg]).length
+         else
+            0
+      val numSubArgs = metaArgs.length - numLeadingImplArgs
+      val subargs = metaArgs.take(numSubArgs)
+      val args = metaArgs.drop(numSubArgs) ::: objArgs
+      if (arity.canHandle(subargs.length,0,args.length, false)) {
          // List(), List(4), ..., List(4, ..., 4)
-         val tP = PragmaticTerm(op, Nil, Nil, metaArgs ::: objArgs, false, not, opMetaPos ::: objArgPos)
+         val tP = PragmaticTerm(op, subargs.map(Sub(OMV.anonymous, _)), Nil, args, false, not, opMetaPos ::: objArgPos)
          Some(tP)
       } else if (objArgs.length == 1) {
          val (con, scope) = unbinding(objArgs.last)
@@ -342,7 +370,8 @@ class NestedHOASNotation(language: MPath, obj: HOAS, meta: HOAS) extends Notatio
             val tP = PragmaticTerm(op, metaArgs.map(Sub(OMV.anonymous, _)), con, List(scope), false,
                                    not, opMetaPos ::: conPos ::: List(scopePos))
             Some(tP)
-         } else None
+         } else
+            None
       } else None
    }
 }

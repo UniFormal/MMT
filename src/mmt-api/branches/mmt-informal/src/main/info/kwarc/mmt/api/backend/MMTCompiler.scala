@@ -12,7 +12,9 @@ import scala.collection.mutable.HashSet
  */
 class MMTCompiler extends archives.Importer {
   val key = "mmt-omdoc"
-
+  
+  override def parallel = false
+     
   def includeFile(n: String) : Boolean = n.endsWith(".mmt") || n.endsWith(".elf")
     
   def importDocument(bf: archives.BuildTask, seCont: documents.Document => Unit) {

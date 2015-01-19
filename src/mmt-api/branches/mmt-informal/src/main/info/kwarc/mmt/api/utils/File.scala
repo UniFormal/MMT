@@ -26,6 +26,10 @@ case class File(toJava: java.io.File) {
    def /(s:String) : File = File(new java.io.File(toJava, s))
    /** appends a list of path segments */
    def /(ss:List[String]) : File = ss.foldLeft(this) {case (sofar,next) => sofar / next}
+   /** parent directory */
+   def up = File(toJava.getParentFile)
+   /** file name */
+   def name = File(toJava.getName)
    /** the list of file/directory/volume label names making up this file path */ 
    def segments: List[String] = {
       val name = toJava.getName
@@ -50,6 +54,8 @@ case class File(toJava: java.io.File) {
        case None => this
        case Some(s) => File(toString.substring(0, toString.length - s.length - 1))
    }
+   /** @return subdirectories of this directory */
+   def subdirs = toJava.list.toList.map(this/_).filter(_.toJava.isDirectory)
    /** delete this, recursively if directory */
    def deleteDir {
       toJava.list foreach {n =>
@@ -76,7 +82,7 @@ object File {
    def apply(s: String) : File = File(new java.io.File(s))
    
    def Writer(f: File) = {
-      f.toJava.getParentFile.mkdirs
+      f.up.toJava.mkdirs
       new PrintWriter(new OutputStreamWriter(
          new BufferedOutputStream(new FileOutputStream(f.toJava)),
          java.nio.charset.Charset.forName("UTF-8")
@@ -87,11 +93,11 @@ object File {
     * 
     * overwrites existing files, creates directories if necessary
     * @param f the target file
-    * @param s the content to write
+    * @param strings the content to write
     */
-   def write(f: File, s: String) {
+   def write(f: File, strings: String*) {
       val fw = Writer(f)
-      fw.write(s)
+      strings.foreach {s => fw.write(s)}
       fw.close
    }
    /**
@@ -108,6 +114,7 @@ object File {
       }
       fw.close
    }
+
    /**
     * convenience method for reading a file into a string
     * 
@@ -115,12 +122,14 @@ object File {
     * @return s the file content (line terminators are \n)
     */
    def read(f: File): String = {
-      var s : String = ""
-      ReadLineWise(f) {l => s += l + "\n"}
-      s
+      val s = new StringBuilder
+      ReadLineWise(f) {l => s.append(l + "\n")}
+      s.result
    }
+
    /** convenience method to obtain a typical (buffered, UTF-8) reader for a file */
    def Reader(f: File) = new BufferedReader(new InputStreamReader(new FileInputStream(f.toJava), java.nio.charset.Charset.forName("UTF-8")))
+
    /** convenience method to read a file line by line
     *  @param f the file
     *  @param proc a function applied to every line (without line terminator)

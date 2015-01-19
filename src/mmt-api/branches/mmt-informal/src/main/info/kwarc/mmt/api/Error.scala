@@ -39,7 +39,7 @@ case class SourceError(
     origin: String, ref: SourceRef, mainMessage: String, extraMessages: List[String] = Nil, level: Level = Level.Error
  ) extends Error("source error (origin) at " + ref.toString + ": " + mainMessage) {
     override def getMessage = mainMessage + extraMessages.mkString("\n","\n","\n")
-    override def toNode = <error type={this.getClass().toString} shortMsg={this.shortMsg} level={this.level.toString} sref={ref.region.toString}> {this.getLongMessage} </error> 
+    override def toNode = <error type={this.getClass().toString} shortMsg={this.shortMsg} level={this.level.toString} sref={ref.toString}> {this.getLongMessage} </error> 
 }
 /** errors that occur during compiling */
 object CompilerError {
@@ -57,6 +57,9 @@ case class InvalidElement(elem: StructuralElement, s : String, causedBy: Error =
 case class InvalidObject(obj: objects.Obj, s: String) extends Invalid("invalid object (" + s + "): " + obj)
 /** errors that occur when judgements do not hold */
 case class InvalidUnit(unit: checking.CheckingUnit, history: checking.History, msg: String) extends Invalid("invalid unit: " + msg)
+
+/** other errors */
+case class GeneralError(s : String) extends Error("general error: " + s)
 
 /** errors that occur when adding a knowledge item */
 case class AddError(s : String) extends Error("add error: " + s)
@@ -82,13 +85,22 @@ case class LookupError(name : LocalName, context: objects.Context) extends Error
 /** base class for errors that are thrown by an extension */
 abstract class ExtensionError(prefix: String, s : String) extends Error(prefix + ": " + s)
 
-/** the type of continuation functions for error handling */
+/**
+ * the type of continuation functions for error handling
+ * 
+ * An ErrorHandler is passed in most situations in which a component (in particular [[archives.BuildTarget]]s)
+ * might produce a non-fatal error.
+ */
 abstract class ErrorHandler {
    private var newErrors = false
    def mark {newErrors = false}
    /** true if new errors occurred since the last call to mark */
    def hasNewErrors = newErrors
-   /** registers an error */
+   /**
+    * registers an error
+    * 
+    * This should be called exactly once on every error, usually in the order in which they are found.
+    */
    def apply(e: Error) {
       newErrors = true
       addError(e)
@@ -96,11 +108,13 @@ abstract class ErrorHandler {
    protected def addError(e: Error)
 }
 
-/** passed along processing pipe lines to collect errors */
+/** stores errors in a list */
 class ErrorContainer(report: Option[frontend.Report]) extends ErrorHandler {
    private var errors: List[Error] = Nil
    protected def addError(e: Error) {
-      errors ::= e
+      this.synchronized {
+        errors ::= e
+      }
       report.foreach {r => r(e)}
    }
    def isEmpty = errors.isEmpty
@@ -108,26 +122,50 @@ class ErrorContainer(report: Option[frontend.Report]) extends ErrorHandler {
    def getErrors = errors.reverse 
 }
 
+/**
+ * writes errors to a file in XML syntax
+ * 
+ * @param fileName the file to write the errors into (convention: file ending 'err')
+ *  (only created if there are errors) 
+ * @param report if given, errors are also reported
+ *  
+ */
 class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends ErrorHandler {
-
-  private val file = File.Writer(fileName)
-  file.write("<errors>")
+  private lazy val file = File.Writer(fileName)
+  private var haserrors = false
   protected def addError(e: Error) {
     report.foreach {r => r(e)}
+    if (!haserrors) {
+       haserrors = true
+       file.write("<errors>\n")
+    }
     file.write(e.toNode.toString)
   }
+  /**
+   * closes the file
+   */
   def close {
-    file.write("</errors>")
-    file.close
+    if (haserrors) {
+       file.write("\n</errors>")
+       file.close
+    } else {
+       fileName.toJava.delete
+    }
   }
 }
 
+/**
+ * reports errors
+ */
 class ErrorLogger(report: frontend.Report) extends ErrorHandler {
    protected def addError(e: Error) {
       report(e)
    }
 }
 
+/**
+ * throws errors
+ */
 object ErrorThrower extends ErrorHandler {
    protected def addError(e: Error) {
       throw e

@@ -40,62 +40,64 @@ class TextNotation(val fixity: Fixity, val precedence: Precedence, val meta: Opt
                    val scope : NotationScope = NotationScope.default) extends metadata.HasMetaData {
    /** @return the list of markers used for parsing/presenting with this notations */
    lazy val markers: List[Marker] = fixity.markers
-   /** @return the arity of this fixity */
-   lazy val arity = {
-      var args: List[ArgumentComponent] = Nil
-      var vars : List[VariableComponent] = Nil
-      var subargs : List[ScopeComponent] = Nil
-      
+   /** @return the arity of this notation */
+   lazy val arity: Arity = {
+      // remove presentation markers
+      val markersWithoutPres = markers.flatMap(PresentationMarker.flatten)
+      // find first and last variable component
+      val varPositions = markersWithoutPres.flatMap {
+         case v: VariableComponent => List(v.number)
+         case _ => Nil
+      }
+      val firstVar = if (varPositions.isEmpty) 0 else varPositions.min
+      val lastVar  = if (varPositions.isEmpty) 0 else varPositions.max
+      // collect components from markers
+      var subs: List[ArgumentComponent] = Nil // arguments before firstVar
+      var vars: List[VariableComponent] = Nil // variables (must be between firstVar and lastVar)
+      var args: List[ArgumentComponent] = Nil // arguments after lastVar
       var attrib : Int = 0
-      //collect components from markers
-      markers.flatMap(PresentationMarker.flatten) foreach {
+      markersWithoutPres foreach {
          case a: ArgumentComponent =>
-            args ::= a
+            if (a.number > lastVar) args ::= a
+            else if (a.number < firstVar) subs ::= a
+            else {
+              throw ParseError("illegal components in notation " + this)
+            }
          case v: VariableComponent =>
             vars ::= v
-         case s : ScopeComponent => 
-            subargs ::= s
          case AttributedObject =>
-            attrib += 1 
+            attrib += 1
          case _ =>
       }
-      // sort by component number
+      // note: now, if varPositions.isEmpty, then subs.isEmpty
+      // sort all 3 lists by component number
+      subs = subs.sortBy(_.number)
       vars = vars.distinct.sortBy(_.number)
       args = args.distinct.sortBy(_.number)
-      // args with all implicit argument components added
-      var argsWithImpl: List[ArgumentComponent] = Nil
-      var i = vars.lastOption.map(_.number).getOrElse(subargs.lastOption.map(_.number).getOrElse(0)) + 1 // the first expected argument position
-      args foreach {a =>
-         while (i < a.number) {
-            //add implicit argument in front of the current one
-            argsWithImpl ::= ImplicitArg(i)
+      // add implicit argument components into the gaps in args and subs
+      def addImplicits(ac: List[ArgumentComponent], from: Int) = {
+         var result: List[ArgumentComponent] = Nil
+         var i = from
+         ac foreach {a =>
+            //add implicit arguments in front of a
+            while (i < a.number) {
+               result ::= ImplicitArg(i)
+               i += 1
+            }
+            result ::= a
             i += 1
          }
-         argsWithImpl ::= a
-         i += 1
+         result.reverse
       }
-      args = argsWithImpl.reverse
-      // subargs with all implicit argument components added
-      // the last expected subarg position
-      var lastSubArg = vars.headOption match {
-         case Some(v) => v.number-1
-         case None => args.headOption match {
-            case Some(a) => a.number-1
-            case None => 0
-         }
-      }
-      //val subargs = (0 until lastSubArg).toList.map {i => ImplicitArg(i+1)}
-      //TODO: check all args.number < vars.number < scopes.numbers; no gaps in variables or scopes
-/*    arguments are behind the variables now
-      //add implicit arguments after the last one (the first variable tells us if there are implicit arguments after the last one)
-      val totalArgs = vars.headOption.map(_.number).getOrElse(i) - 1
-      while (i <= totalArgs) {
-         argsWithImpl ::= ImplicitArg(i)
-         i += 1
-      }*/
+      subs = addImplicits(subs, 1)
+      args = addImplicits(args, lastVar+1)
+      // add implicit arguments between subs and vars
+      var lastSub = subs.lastOption.map(_.number).getOrElse(0)
+      val implsBeforeVar = ((lastSub+1) until firstVar).toList.map {i => ImplicitArg(i)}
+      subs = subs ::: implsBeforeVar 
       // the attribution
       val attribution = attrib > 0
-      Arity(subargs, vars, args, attribution)
+      Arity(subs, vars, args, attribution)
    }
    /** @return the list of markers that should be used for parsing */
    lazy val parsingMarkers = markers flatMap {

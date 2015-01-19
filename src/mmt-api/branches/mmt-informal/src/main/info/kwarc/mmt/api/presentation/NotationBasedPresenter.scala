@@ -147,9 +147,9 @@ class NotationBasedPresenter extends ObjectPresenter {
     *  each script is passed as a continuation that must be called at the appropriate place
     *  @param main the object
     *  
-    * See [[parser.ScriptMarker]] for the meaning of the scripts
+    * See [[notations.ScriptMarker]] for the meaning of the scripts
     */
-   def doScriptMarker(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext) {
+   def doScript(main: => Unit, sup: Option[Cont], sub: Option[Cont], over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext) {
       def aux(sOpt: Option[Cont], oper: String) {sOpt match {
             case Some(script) => doOperator(oper); script()
             case None =>
@@ -162,7 +162,7 @@ class NotationBasedPresenter extends ObjectPresenter {
       doSpace(1)
    }
    
-   def doFractionMarker(above: List[Cont], below: List[Cont], line: Boolean)(implicit pc: PresentationContext) {
+   def doFraction(above: List[Cont], below: List[Cont], line: Boolean)(implicit pc: PresentationContext) {
       doBracketedGroup {
          above.head()
          above.foreach {e => 
@@ -285,6 +285,8 @@ class NotationBasedPresenter extends ObjectPresenter {
      pc.out(s)
    }
     
+    
+   
    /** 1 or 2-dimensional notations, true by default */
    def twoDimensional : Boolean = true
    
@@ -295,7 +297,9 @@ class NotationBasedPresenter extends ObjectPresenter {
     *         a notation to use for presenting o'
     */ 
    implicit protected def getNotation(p: GlobalName): Option[TextNotation] = {
-      Presenter.getNotation(controller, p, twoDimensional)
+      val n = Presenter.getNotation(controller, p, twoDimensional)
+      println(p,n)
+      n
    }
    /**
     * called on objects for which no notation is available
@@ -369,14 +373,16 @@ class NotationBasedPresenter extends ObjectPresenter {
          }
          1
       case OMSemiFormal(parts) => parts.foreach {
-
             case Formal(t) => recurse(t)
             case objects.Text(format, t) => pc.out(t)
             case XMLNode(n) => pc.out(n.toString)
          }
          1
       case VarDecl(n,tp,df, not) =>
-         doVariable(n)
+         n match {
+            case LocalName(List(ComplexStep(_))) => doOperator("include")
+            case _ => doVariable(n)
+         }
          tp foreach {t =>
             if (metadata.Generated.get(o)) {
                doInferredType {
@@ -398,10 +404,10 @@ class NotationBasedPresenter extends ObjectPresenter {
          }
          -1
       case Sub(n,t) =>
-          if (n != OMV.anonymous) { //omiting assignment if label is missing 
+         if (n != OMV.anonymous) {
             doVariable(n)
             doOperator("=")
-          }
+         }
          recurse(t, noBrackets)
          -1
       case c: Context =>
@@ -434,17 +440,15 @@ class NotationBasedPresenter extends ObjectPresenter {
    /** abbreviation for not bracketing */
    private val noBrackets = (_: TextNotation) => -1
    protected def recurse(obj: Obj)(implicit pc: PresentationContext): Int = recurse(obj, noBrackets)(pc)
-   
-   
    def doPresentationMarker(m : PresentationMarker, doMarkers : List[Marker] => Unit)(implicit pc: PresentationContext) : Unit = m match {
      case GroupMarker(ms) =>
        doUnbracketedGroup { doMarkers(ms) }
      case s: ScriptMarker =>
        def aux(mOpt: Option[Marker]) = mOpt.map {m => (_:Unit) => doMarkers(List(m))} 
-       doScriptMarker(doMarkers(List(s.main)), aux(s.sup), aux(s.sub), aux(s.over), aux(s.under))
+       doScript(doMarkers(List(s.main)), aux(s.sup), aux(s.sub), aux(s.over), aux(s.under))
      case FractionMarker(a,b,l) =>
        def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
-       doFractionMarker(a map aux, b map aux, l)
+       doFraction(a map aux, b map aux, l)
      case NumberMarker(value) => 
        doNumberMarker(value)
      case IdenMarker(value) => 
@@ -536,14 +540,15 @@ class NotationBasedPresenter extends ObjectPresenter {
                      val brack = (childNot: TextNotation) => Presenter.bracket(precedence, currentPosition, childNot)
                      // the additional context of the child
                      val newCont: Context = ac match {
-                        case _: ArgumentComponent => context
+                        case a: ArgumentComponent =>
+                           if (a.number < firstVarNumber) Nil else context
                         case Var(n,_,_,_) => context.take(n-firstVarNumber)
                         case _ => Nil
                      }
                      val newVarData = newCont.zipWithIndex map {case (v,i) =>
                         VarData(v, Some(op), pc.pos / pos(firstVarNumber+i))
                      }
-                     recurse(child, brack)(pc.child(pos(ac.number.abs - 1)).addCon(newVarData))
+                     recurse(child, brack)(pc.child(pos(ac.number)).addCon(newVarData))
                   }
                   // all implicit arguments that are not placed by the notation, they are added to the first delimiter
                   val unplacedImplicits = not.arity.flatImplicitArguments(args.length).filter(i => ! not.fixity.markers.contains(i))
@@ -568,18 +573,17 @@ class NotationBasedPresenter extends ObjectPresenter {
                         //val delimFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.Delimiter]
                         current match {
                            case c @ Arg(n,_) =>
-                              doChild(c, args(n-firstArgNumber), currentPosition)
+                              val child = if (n < firstArgNumber) subargs(n-1) else args(n-firstArgNumber)
+                              doChild(c, child, currentPosition)
                               if (compFollows) doSpace(1)
                            case c @ ImplicitArg(n,_) =>
+                              val child = if (n < firstArgNumber) subargs(n-1) else args(n-firstArgNumber)
                               doImplicit {
-                                 doChild(c, args(n-firstArgNumber), currentPosition)
+                                 doChild(c, child, currentPosition)
                                  if (compFollows) doSpace(1)
                               }
                            case c @ Var(n, typed, _,_) => //sequence variables impossible due to flattening
                               doChild(c, context(n-firstVarNumber), currentPosition)
-                              if (compFollows) doSpace(1)
-                           case c @ Subs(n, _) => 
-                              doChild(c, subargs(n - 1), currentPosition)
                               if (compFollows) doSpace(1)
                            case AttributedObject =>
                               // we know attributee.isDefined due to flattening
@@ -600,10 +604,10 @@ class NotationBasedPresenter extends ObjectPresenter {
                               doUnbracketedGroup { doMarkers(ms) }
                            case s: ScriptMarker =>
                               def aux(mOpt: Option[Marker]) = mOpt.map {m => (_:Unit) => doMarkers(List(m))} 
-                              doScriptMarker(doMarkers(List(s.main)), aux(s.sup), aux(s.sub), aux(s.over), aux(s.under))
+                              doScript(doMarkers(List(s.main)), aux(s.sup), aux(s.sub), aux(s.over), aux(s.under))
                            case FractionMarker(a,b,l) =>
                               def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
-                              doFractionMarker(a map aux, b map aux, l)
+                              doFraction(a map aux, b map aux, l)
                            case NumberMarker(value) => 
                               doNumberMarker(value)
                            case IdenMarker(value) => 
@@ -646,14 +650,14 @@ class NotationBasedPresenter extends ObjectPresenter {
                         previous = Some(current)
                      }
                   }
-               val br = bracket(not)
-               val flatMarkers = not.arity.flatten(not.presentationMarkers,context.length, args.length, attrib)
-               br match {
-                  case n if n > 0 => doBracketedGroup { doMarkers(flatMarkers) }
-                  case 0 =>          doOptionallyBracketedGroup { doMarkers(flatMarkers) }
-                  case n if n < 0 => doUnbracketedGroup { doMarkers(flatMarkers) }
-               }
-               br
+                  val br = bracket(not)
+                  val flatMarkers = not.arity.flatten(not.presentationMarkers, subargs.length, context.length, args.length, attrib)
+                  br match {
+                     case n if n > 0 => doBracketedGroup { doMarkers(flatMarkers) }
+                     case 0 =>          doOptionallyBracketedGroup { doMarkers(flatMarkers) }
+                     case n if n < 0 => doUnbracketedGroup { doMarkers(flatMarkers) }
+                  }
+                  br
             }
             case _ => default
          }

@@ -25,7 +25,7 @@ object Action extends RegexParsers {
    private def commented = (comment ^^ {c => NoAction}) | (action ~ opt(comment) ^^ {case a ~ _ => a}) | empty ^^ {_ => NoAction}
    private def empty = "\\s*"r
    private def comment = "//.*"r
-   private def action = log | mathpath | archive | extension | mws | server | windowaction | execfile | defactions |scala |
+   private def action = log | mathpath | archive | oaf | extension | mws | server | windowaction | execfile | defactions |scala |
       setbase | read | graph | check | navigate | printall | printallxml | diff | clear | exit | getaction // getaction must be at end for default get
 
    private def log = logfilets | logfile | loghtml | logconsole | logon | logoff
@@ -36,17 +36,14 @@ object Action extends RegexParsers {
      private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
      private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
      
-   private def mathpath = "mathpath" ~> (mathpathArchive | mathpathLocal | mathpathFS | mathpathSVN | mathpathJava)
+   private def mathpath = "mathpath" ~> (mathpathArchive | mathpathLocal | mathpathFS | mathpathJava)
      private def mathpathArchive = "archive" ~> file ^^ {f => AddArchive(f)}
      private def mathpathLocal = "local" ^^ {case _ => Local}
      private def mathpathFS = "fs" ~> uri ~ file ^^ {case u ~ f => AddMathPathFS(u,f)}
-     private def mathpathSVN = "svn" ~> uri ~ int ~ (str ?) ~ (str ?) ^^ {case uri ~ rev ~ user ~ pass => AddMathPathSVN(uri, rev, user, pass)}
      private def mathpathJava = "java" ~> file ^^ {f => AddMathPathJava(f)}
 
-   private def archive = archopen | archclone | archdim | archmar | svnarchopen | archbuild
+   private def archive = archopen | archdim | archmar | archbuild
      private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)} //deprecated, use mathpath archive
-     private def archclone = "archive" ~> "clone" ~> file ~ uri ^^ {case f ~ u => ArchiveClone(f,u)}
-     private def svnarchopen = "SVNArchive" ~> "add" ~> str ~ int ^^ {case url ~ rev => AddSVNArchive(url,rev)}
      private def archbuild = "build" ~> str ~ str ~ (str ?) ~ (str *) ^^ {
        case id ~ keymod ~ in ~ args =>
             val segs = MyList.fromString(in.getOrElse(""), "/")
@@ -67,6 +64,12 @@ object Action extends RegexParsers {
            "relational" | "delete" | "integrate" | "test" | "close"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
 
+   private def oaf = "oaf" ~> (oafRoot | oafClone | oafPull | oafPush)
+     private def oafRoot   = "root" ~> file ~ (uri ?) ^^ {case f ~ u => OAFRoot(f, u)}
+     private def oafClone = "clone" ~> str ^^ {case s => OAFClone(s)}
+     private def oafPull  = "pull" ^^ {_ => OAFPull}
+     private def oafPush  = "push" ^^ {_ => OAFPush}
+     
    private def extension = "extension" ~> str ~ (strMaybeQuoted *) ^^ {case c ~ args => AddExtension(c, args)}
    private def mws = "mws" ~> uri ^^ {u => AddMWS(u)}
 
@@ -238,26 +241,41 @@ case object Local extends Action {override def toString = "mathpath local"}
  */
 case class AddMathPathFS(uri: URI, file : File) extends Action {override def toString = "mathpath fs " + uri + " " + file}
 
-/** add catalog entry for a remote SVN repository
- * @param uri URI the remote URI
- * @param rev the revision to use, -1 for head
- * @param user user name to use, if any
- * @param password password to use if any
- * All URIs of the form uri/SUFFIX are looked in the repository
- * 
- * concrete syntax: mathpath svn uri:URI rev:INT user:[STRING] password:[STRING]
- */
-case class AddMathPathSVN(uri: URI, rev: Int, user: Option[String], password: Option[String]) extends Action {
-   override def toString = "mathpath svn " + uri +
-      (if (rev == -1) "" else " " + rev) +
-      (user.map(" " + _).getOrElse("") + password.map(" " + _).getOrElse(""))
-}
-
 /**
  * add catalog entry for realizations in Java
  * @param javapath the Java path entry, will be passed to [[java.net.URLClassLoader]]
  */
 case class AddMathPathJava(javapath: File) extends Action {override def toString = "mathpath java " + javapath}
+
+/**
+ * sets the root for a remote OAF
+ * @param uri the root URI of the OAF, e.g., http://gl.mathhub.info/
+ * @param file the local directory in which to create clones
+ * 
+ * concrete syntax: oaf root file:FILE [uri:URI]
+ */
+case class OAFRoot(file : File, uri: Option[URI]) extends Action {override def toString = "oaf root " + file + " " + uri.getOrElse("")}
+
+/**
+ * clone an archive from a remote OAF
+ *
+ * concrete syntax: oaf close path:STRING
+ */
+case class OAFClone(path: String) extends Action {override def toString = "oaf clone " + path}
+
+/**
+ * pulls all repostitories from remote OAF
+ * 
+ * concrete syntax: oaf pull
+ */
+case object OAFPull extends Action {override def toString = "oaf pull"}
+
+/**
+ * pushes all repostitories to remote OAF
+ * 
+ * concrete syntax: oaf push
+ */
+case object OAFPush extends Action {override def toString = "oaf push"}
 
 /** registers a compiler
  * @param cls the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"
@@ -267,14 +285,8 @@ case class AddMathPathJava(javapath: File) extends Action {override def toString
  */
 case class AddExtension(cls: String, args: List[String]) extends Action {override def toString = "extension " + cls + args.mkString(" ", " ", "")}
 
-/** clone a git archive */
-case class ArchiveClone(folder: File, uri: URI) extends Action {override def toString = "archive clone " + folder + " " + uri}
-
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
-case class AddArchive(folder : java.io.File) extends Action {override def toString = "archive add " + folder}
-
-/** add a SVN Archive */
-case class AddSVNArchive(url : String,  rev : Int) extends Action {override def toString = "SVN archive add " + url + "@" + rev}
+case class AddArchive(folder : java.io.File) extends Action {override def toString = "mathpath archive " + folder}
 
 /** builds a dimension in a previously opened archive */
 case class ArchiveBuild(id: String, dim: String, modifier: archives.BuildTargetModifier, in : List[String], params: List[String] = Nil) extends Action {

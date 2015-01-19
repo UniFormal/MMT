@@ -1,19 +1,40 @@
 package info.kwarc.mmt.api.utils
 
+import java.io._
+
 object ShellCommand {
-   /**
-    * @param command the commnd to run
-    * @return error message if not successful
-    */
-   def run(command: String*): Option[String] = {
-      val proc = new java.lang.ProcessBuilder(command: _*).start() // use .inheritIO() for debugging
+   private def runInOpt(dir: Option[File], command: String*) = {
+      val pb = new java.lang.ProcessBuilder(command: _*)// use .inheritIO() for debugging
+      pb.redirectErrorStream(true)
+      dir.foreach {d => pb.directory(d.toJava)}
+      val proc = pb.start()
+      
+      // read all output immediately to make sure proc does not deadlock if buffer size is limited
+      val output = new StringBuilder
+      val outputReader = new BufferedReader(new InputStreamReader(proc.getInputStream))
+      var line: String = null
+      while ({line = outputReader.readLine; line != null}) {
+         output.append(line)
+      }
+
       proc.waitFor
+      outputReader.close
+      
       val ev = proc.exitValue
       if (ev != 0) {
-         val scanner = new java.util.Scanner(proc.getErrorStream).useDelimiter("\\A")
-         val message = if (scanner.hasNext) scanner.next else ""
-         Some(message)
+         Some(output.result)
       } else
          None
    }
+   
+   /**
+    * @param command the command to run
+    * @return output+error stream if not successful
+    */
+   def run(command: String*): Option[String] = runInOpt(None, command:_*)
+   /**
+    * like run
+    * @param dir the directory in which to run the command
+    */
+   def runIn(dir: File, command: String*): Option[String] = runInOpt(Some(dir), command:_*)
 }

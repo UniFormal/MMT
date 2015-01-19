@@ -16,7 +16,7 @@ import objects._
  *  some arguments, some variables: binder, OMBINDC(s, vars, args)
  *  as above but exactly 1 argument: usual binders, generalized binders as suggested by Davenport, Kohlhase, MKM 2010
  */
-case class Arity(subargs: List[ScopeComponent],
+case class Arity(subargs: List[ArgumentComponent],
                  variables: List[VariableComponent],
                  arguments: List[ArgumentComponent], attribution: Boolean) {
    def components = variables ::: arguments
@@ -31,7 +31,8 @@ case class Arity(subargs: List[ScopeComponent],
       case _ => false
    }
    def numNormalSubs = subargs.count {
-      case Subs(n,_) => true
+      case Arg(n,_) => true
+      case ImplicitArg(_,_) => true
       case _ => false
    }
    def numNormalArgs = arguments.count {
@@ -73,9 +74,9 @@ case class Arity(subargs: List[ScopeComponent],
     * if there is more than 1 sequence arguments, the available arguments are evenly distributed over the sequences
     * remaining arguments are distributed in order of content position
     */
-   private def distributeArgs(numArgs: Int) : (Int, Int) = {
-      val seqArgPositions = arguments.flatMap {
-         case SeqArg(n,_,_) if n > 0 => List(n)
+   private def distributeArgs(argComps: List[ArgumentComponent], numArgs: Int) : (Int, Int) = {
+      val seqArgPositions = argComps.flatMap {
+         case SeqArg(n,_,_) => List(n)
          case _ => Nil
       }
       distribute(numArgs, arguments.length, seqArgPositions)
@@ -91,15 +92,25 @@ case class Arity(subargs: List[ScopeComponent],
       distribute(numVars, variables.length, seqVarPositions)
    }
    /** maps component positions to position in flattened notation, by including the arguments of the preceding sequences */
-   private def remapFun(perSeqArg: Int, seqArgCutOff: Int, perSeqVar: Int, seqVarCutOff: Int)(p: Int): Int = {
-         var i = p.abs
-         components foreach {
+   private def remapFun(perSeqSub: Int, seqSubCutOff: Int, perSeqVar: Int, seqVarCutOff: Int,
+                        perSeqArg: Int, seqArgCutOff: Int)(p: Int): Int = {
+         var i = p
+         subargs foreach {
             case SeqArg(n,_,_) if n < p =>
-               i += perSeqArg - 1
-               if (n < seqArgCutOff) i += 1
+               i += perSeqSub - 1
+               if (n < seqSubCutOff) i += 1
+            case _ =>
+         }
+         variables foreach {
             case Var(n,_,Some(_),_) if n < p => 
                i += perSeqVar - 1
                if (n < seqVarCutOff) i += 1
+            case _ =>
+         }
+         arguments foreach {
+            case SeqArg(n,_,_) if n < p =>
+               i += perSeqArg - 1
+               if (n < seqArgCutOff) i += 1
             case _ =>
          }
          i
@@ -111,7 +122,7 @@ case class Arity(subargs: List[ScopeComponent],
    def groupArgs(args: List[Term]) : List[List[Term]] = {
       var remain = args
       var result : List[List[Term]] = Nil
-      val (perSeq,cutoff) = distributeArgs(remain.length)
+      val (perSeq,cutoff) = distributeArgs(arguments, remain.length)
       arguments foreach {
          case _:Arg | _ :ImplicitArg =>
             result ::= List(remain.head)
@@ -143,7 +154,6 @@ case class Arity(subargs: List[ScopeComponent],
    }
    /** @return true if ComplexTerm(name, subs, vars, args) has enough components for this arity and provides for an attribution if necessary */
    def canHandle(subs: Int, vars: Int, args: Int, att: Boolean) = {
-     
       (numNormalSubs == subs || (numNormalSubs < subs && numSeqSubs >= 1)) &&
       (numNormalVars == vars || (numNormalVars < vars && numSeqVars >= 1)) &&
       (numNormalArgs == args || (numNormalArgs < args && numSeqArgs >= 1)) &&
@@ -165,10 +175,11 @@ case class Arity(subargs: List[ScopeComponent],
     * 
     * pre: canHandle(vars, args) == true
     */
-   def flatten(markers: List[Marker], vars: Int, args: Int, attrib: Boolean) : List[Marker] = {
-      val (perSeqArg, seqArgCutOff) = distributeArgs(args)
+   def flatten(markers: List[Marker], subs: Int, vars: Int, args: Int, attrib: Boolean) : List[Marker] = {
+      val (perSeqSub, seqSubCutOff) = distributeArgs(subargs, args)
       val (perSeqVar, seqVarCutOff) = distributeVars(vars)
-      val remap = remapFun(perSeqArg, seqArgCutOff, perSeqVar, seqVarCutOff) _
+      val (perSeqArg, seqArgCutOff) = distributeArgs(arguments, args)
+      val remap = remapFun(perSeqSub, seqSubCutOff, perSeqVar, seqVarCutOff, perSeqArg, seqArgCutOff) _
       def flattenOne(m: Marker): List[Marker] = m match {
          case Arg(n,p) =>
             List(Arg(remap(n),p))
@@ -181,8 +192,6 @@ case class Arity(subargs: List[ScopeComponent],
             List(ImplicitArg(remap(n),p))
          case Var(n, tpd, None, p) =>
             List(Var(remap(n), tpd, None, p))
-         case Subs(n, p) => 
-            List(Subs(remap(n), p))
          case v @ Var(n, tpd, Some(sep), p) =>
             val length = if (n < seqVarCutOff) perSeqVar+1 else perSeqVar
             val first = remap(n)
@@ -200,10 +209,12 @@ case class Arity(subargs: List[ScopeComponent],
     *  @return the list of remapped implicit arguments
     */
    def flatImplicitArguments(args: Int) : List[ImplicitArg] = {
-      val (perSeqArg, seqArgCutOff) = distributeArgs(args)
+      val (perSeqSub, seqSubCutOff) = distributeArgs(subargs, args)
       val (perSeqVar, seqVarCutOff) = distributeVars(0)
+      val (perSeqArg, seqArgCutOff) = distributeArgs(arguments, args)
       arguments flatMap {
-         case ImplicitArg(n, _) => List(ImplicitArg(remapFun(perSeqArg, seqArgCutOff, perSeqVar, seqVarCutOff)(n)))
+         case ImplicitArg(n,_) =>
+            List(ImplicitArg(remapFun(perSeqSub, seqSubCutOff, perSeqVar, seqVarCutOff, perSeqArg, seqArgCutOff)(n)))
          case _ => Nil
       }
    }

@@ -15,7 +15,7 @@ import modules._
  */
 abstract class BasicTheoryParser(objectParser: ObjectParser, meta: Option[MPath]) extends Parser(objectParser) {
    def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) : Document = {
-      val uri = ps.dpath.uri
+      val uri = ps.base.uri
       val ns = DPath(uri.copy(path = uri.path.init))
       val name = LocalName(uri.path.last)
       val thy = new DeclaredTheory(ns, name, meta)

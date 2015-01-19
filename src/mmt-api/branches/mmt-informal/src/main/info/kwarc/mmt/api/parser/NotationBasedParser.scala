@@ -27,7 +27,7 @@ class NotationBasedParser extends ObjectParser {
    private lazy val prag = controller.pragmatic   
    
    /**
-    * builds parsers notation context based on content in the controller 
+    * builds parser's notation context based on content in the controller 
     * and the scope (base path) of the parsing unit
     * returned list is sorted (in increasing order) by priority
     */
@@ -184,15 +184,23 @@ class NotationBasedParser extends ObjectParser {
          case Token(word, _, _,_) =>
             val name = LocalName.parse(word)
             if (boundVars.contains(name) || pu.context.exists(_.name == name)) {
-               //single Tokens may be bound variables
+               //single Tokens may be bound variables ...
                OMV(name)
             } else if (word == "_") {
                // unbound _ is a fresh unknown variable
                newUnknown(newExplicitUnknown, boundVars)
             } else if (word.count(_ == '?') > 0) {
+                // ... or qualified identifiers
+                val segments = utils.MyList.fromString(word, "\\?")
+                // recognizing identifiers ?THY?SYM is awkward because it would require always lexing initial ? as identifiers
+                // but we cannot always prepend ? because the identifier could also be NS?THY
+                // Therefore, we prepend ? using a heuristic
+                val qid =
+                   if (segments.length == 2 && ! segments(0).contains(':') &&
+                       Character.isUpperCase(segments(0).charAt(0))) "?" + word
+                   else word
                 try {
-                   Path.parse(word, pu.context.getIncludes.last) match {
-                      //or identifiers
+                   Path.parse(qid, pu.context.getIncludes.last) match {
                       case p: ContentPath => OMID(p)
                       case p =>
                          makeError("content path expected: " + p, te.region)
@@ -213,6 +221,7 @@ class NotationBasedParser extends ObjectParser {
          case ml : MatchedList =>
             val notation = ml.an.rule.notation
             val arity = notation.arity
+            val firstVar = arity.firstVarNumberIfAny
             //log("constructing term for notation: " + ml.an)
             val found = ml.an.getFound
             // compute the names of all bound variables, in abstract syntax order
@@ -230,21 +239,32 @@ class NotationBasedParser extends ObjectParser {
                val pos = newBVars.indexWhere(_ == (vm, name))
                newBVarNames.take(pos)
             }
-            //stores the variable declaration list (name + type) in concrete syntax order together with their position in the abstract syntax
+            // 3 lists for the children, in concrete syntax order, together with their position in the abstract syntax
+            // the arguments before the variables
+            var subs : List[(Int,Term)] = Nil
+            // the variable declaration list (name + type)
             var vars : List[(Var,SourceRegion,LocalName,Option[Term])] = Nil
-            //stores the argument list in concrete syntax order, together with their position in the abstract syntax
-            var args : List[(Int,Term)] = Nil 
-            // We walk through found, computing arguments/variable declarations/scopes
-            // by recursively processing the respective TokenListElem in ml.tokens
+            // the arguments behind the variables
+            var args : List[(Int,Term)] = Nil
+            // We walk through found and fill subs, vars, and args by
+            // recursively processing the respective TokenListElem in ml.tokens
             var i = 0 //the position of the next TokenListElem in ml.tokens
             found foreach {
                case _:FoundDelim =>
-               case FoundArg(_,n) =>
-                     //an argument, all newBVars are added to the context
-                     args ::= (n,makeTerm(ml.tokens(i), boundVars ::: newBVarNames))
+               case FoundArg(_,n) if n < firstVar =>
+                  // argument before the variables
+                  subs ::= (n,makeTerm(ml.tokens(i), boundVars))
                   i += 1
+               case FoundArg(_,n) =>
+                  // argument behind the variables: as above but all newBVarNames are added to the context
+                  args ::= (n,makeTerm(ml.tokens(i), boundVars ::: newBVarNames))
+                  i += 1
+               // sequence arguments: as the two cases above, but as many TokenListElement as the sequence has elements
+               case FoundSeqArg(n, fas) if n < firstVar =>
+                  val toks = ml.tokens.slice(i, i+fas.length)
+                  subs = subs ::: toks.map(t => (n,makeTerm(t, boundVars)))
+                  i += fas.length
                case FoundSeqArg(n, fas) =>
-                  // a sequence argument, so take as many TokenListElement as the sequence has elements
                   val toks = ml.tokens.slice(i, i+fas.length)
                   args = args ::: toks.map(t => (n,makeTerm(t, boundVars ::: newBVarNames)))
                   i += fas.length
@@ -269,32 +289,37 @@ class NotationBasedParser extends ObjectParser {
             if (con == utils.mmt.brackets)
                args(0)._2
             else {
-            // the head of the produced Term
-            val head = OMID(con)
-            //construct a Term according to args, vars, and scopes
-            //this includes sorting args and vars according to the abstract syntax
-            if (arity.isConstant && args == Nil && vars == Nil && !attrib) {
-               //no args, vars, scopes --> OMID
-               head
-            } else {
-                  // order the variables
-                  val orderedVars = vars.sortBy(_._1.number)
-                  // order the arguments
-                  val orderedArgs = args.sortBy(_._1)
-                  // compute the number of subargs
-                  //   - arguments before the context (always implict)
-                  //   - initial implicit arguments
-                  val numInitImplArgs = arity.variables.headOption match {
-                     case Some(h) => h.number - 1
-                     case None => orderedArgs.headOption match {
-                        case Some((n,_)) => n - 1
-                        case None => 0
-                     }
+               //construct a Term according to subs, vars, and args
+               //this includes sorting args and vars according to the abstract syntax
+               if (arity.isConstant && args == Nil && vars == Nil && !attrib) {
+                  //no args, vars, scopes --> OMID
+                  OMID(con)
+               } else {
+                  // add implicit arguments before the variables
+                  val finalSubs : List[Term] = arity.subargs.flatMap {
+                     case ImplicitArg(_,_) =>
+                        List(newUnknown(newArgument, boundVars))
+                     case Arg(n,_) =>
+                        val a = subs.find(_._1 == n).get // must exist if notation matched
+                        List(a._2)
+                     case SeqArg(n,_,_) =>
+                        val as = subs.filter(_._1 == n)
+                        as.map(_._2)
                   }
-                  val subArgs = Range(0, numInitImplArgs).toList.map(_ => newUnknown(newArgument, boundVars))
-                  val finalSubs = Substitution(subArgs.map(a => Sub(OMV.anonymous, a)) :_*)
+                  val finalSub = Substitution(finalSubs.map(a => Sub(OMV.anonymous, a)) :_*)
+                  // add implicit arguments behind the variables (same as above except for using newBVarNames)
+                  val finalArgs : List[Term] = arity.arguments.flatMap {
+                     case ImplicitArg(_,_) =>
+                        List(newUnknown(newArgument, boundVars ::: newBVarNames))
+                     case Arg(n,_) =>
+                        val a = args.find(_._1 == n).get // must exist if notation matched
+                        List(a._2)
+                     case SeqArg(n,_,_) =>
+                        val as = args.filter(_._1 == n)
+                        as.map(_._2)
+                  }
                   // compute the variables
-                  val finalVars = orderedVars.map {
+                  val finalVars = vars.sortBy(_._1.number).map {
                      case (vm, reg, vname, tp) =>
                         val (finalTp, unknown) = if (! vm.typed)
                            (None, false)
@@ -316,7 +341,8 @@ class NotationBasedParser extends ObjectParser {
                         SourceRef.update(vd, pu.source.copy(region = reg))
                         vd
                   }
-                  // compute the arguments after the context
+/* old code - can be deleted if no bugs are observed
+                  // compute the arguments after the variables
                   var finalArgs : List[Term] = Nil
                   orderedArgs.foreach {case (i,arg) =>
                      // add implicit arguments as needed
@@ -329,6 +355,7 @@ class NotationBasedParser extends ObjectParser {
                   val numLastImplArgs = arity.arguments.reverse.takeWhile(_.isInstanceOf[ImplicitArg]).length
                   Range(0, numLastImplArgs).foreach(_ => finalArgs ::= newUnknown(newArgument, boundVars))
                   finalArgs = finalArgs.reverse
+ */
                   // construct the term
                   // the level of the notation: if not provided, default to the meta-theory of the constant
                   val level = notation.meta orElse {
@@ -343,11 +370,12 @@ class NotationBasedParser extends ObjectParser {
                            makeError("no context or substitution allowed in module application", te.region)
                         OMPMOD(con, finalArgs)
                      case con: GlobalName =>
-                       prag.makeStrict(level, con, finalSubs, Context(finalVars : _*), finalArgs, attrib)(
+                       prag.makeStrict(level, con, finalSub, Context(finalVars : _*), finalArgs, attrib, notation)(
                               () => newUnknown(newArgument, boundVars)
                         )
                   }
-               }}
+               }
+            }
          case ul : UnmatchedList =>
             if (ul.tl.length == 1)
                // process the single TokenListElement

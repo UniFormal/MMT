@@ -21,11 +21,6 @@ import gui._
 import io.BufferedSource
 import java.io.FileInputStream
 
-import org.tmatesoft.svn.core._
-import io._
-import auth._
-import wc.SVNWCUtil
-
 /** An exception that is throw when a needed knowledge item is not available.
  * A Controller catches it and retrieves the item dynamically.  
  */
@@ -164,7 +159,10 @@ class Controller extends ROController with Logger {
       log("retrieving " + path)
       logGroup {
          try {
-            backend.load(path)(this)
+            // loading objects into memory changes state, so make sure only one object is loaded at a time
+            this.synchronized {
+               backend.load(path)(this)
+            }
          } catch {
             case NotApplicable(msg) =>
                throw GetError("backend: " + msg) 
@@ -335,7 +333,7 @@ class Controller extends ROController with Logger {
                   backend.resolvePhysical(f).map {
                      case (arch, p) => DPath(arch.narrationBase / p)
                   } getOrElse
-                  DPath(utils.FileURI(f))
+                  DPath(FileURI(f))
       val src = scala.io.Source.fromFile(f, "UTF-8")
       read(src, dpath, f.getExtension.getOrElse(""))
    }
@@ -344,6 +342,7 @@ class Controller extends ROController with Logger {
     * reads a document
     * 
     * @param src the input source
+    * @param srcURI the URI of the input source (needed for source references)
     * @param dpath the base path to use for relative references
     * @param format key to choose the reader: e.g., omdoc, elf, or mmt 
     * @param errorCont continuation to be called on all encountered errors
@@ -354,24 +353,14 @@ class Controller extends ROController with Logger {
       log("reading " + dpath + " with format " + format)
       val result = format match {
          case "omdoc" =>
-            /* old non-streaming code
-              val N = utils.xml.readFile(f)
-              var doc: Document = null
-              xmlReader.readDocument(dpath, N) {
-                case d: Document =>
-                  add(d)
-                  doc = d
-               case e => add(e)
-            }
-            doc
-            */
             xmlStreamer.readDocument(dpath, src)(add)
          case "elf" =>
             val (doc, errorList) = twelfParser.readDocument(src, dpath)(pu => textParser(pu)(ErrorThrower))
             errorList.foreach {e => errorCont(e)}
             doc
          case "mmt" =>
-            textParser.readString(dpath, src.mkString)
+            val srcURI = dpath.uri.setExtension(format)
+            textParser.readString(srcURI, dpath, src.mkString)
          case f =>
             throw ParseError("unknown format: " + f)
       }
@@ -402,7 +391,11 @@ class Controller extends ROController with Logger {
    
    protected var actionDefinitions: List[Defined] = Nil
    protected var currentActionDefinition: Option[Defined] = None
-
+   
+   /** interface to a remote OAF */
+   protected var oaf: Option[OAF] = None
+   protected def getOAF = oaf.getOrElse {throw GeneralError("no oaf defined, use 'oaf root'")}
+   
    /** executes a string command */
    def handleLine(l : String) {
         try {
@@ -429,14 +422,6 @@ class Controller extends ROController with Logger {
 	      case AddMathPathFS(uri,file) =>
 	         val lc = LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, file)
 	         backend.addStore(lc)
-	      case AddMathPathSVN(uri, rev, user, pass) =>
-	         val repos = SVNRepositoryFactory.create(SVNURL.parseURIEncoded(uri.toString))
-            user foreach {u =>
-              val authManager = SVNWCUtil.createDefaultAuthenticationManager(u, pass.getOrElse(""))
-              repos.setAuthenticationManager(authManager)
-            }
-            val s = SVNRepo(uri.schemeNull, uri.authorityNull, uri.pathAsString, repos, rev)
-            backend.addStore(s)
          case AddMathPathJava(file) =>
             backend.openRealizationArchive(file)
 	      case Local =>
@@ -452,8 +437,6 @@ class Controller extends ROController with Logger {
 	            }
 	            notifier.onNewArchive(a)
 	         }
-         case AddSVNArchive(url, rev) =>
-           backend.openArchive(url, rev)
          case ArchiveBuild(id, key, mod, in, args) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
             key match {
@@ -489,18 +472,6 @@ class Controller extends ROController with Logger {
                         logError("unknown dimension " + d + ", ignored")
                   }
             }
-         case ArchiveClone(folder, repos) =>
-            def cloneRecursively(r: URI) {
-               val lcOpt = new OAF(folder, report).clone(r)
-               lcOpt foreach {lc =>
-                  val archs = backend.openArchive(lc)
-                  archs foreach {a =>
-                     val deps = MyList.fromString(a.properties.getOrElse("dependencies", ""))
-                     deps foreach {d => cloneRecursively(URI(d))}
-                  }
-               }
-            }
-            cloneRecursively(repos)
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 
             arch.toMar(file)
@@ -508,6 +479,24 @@ class Controller extends ROController with Logger {
             extman.addExtension(c, args)
          case AddMWS(uri) =>
             extman.mws = Some(new MathWebSearch(uri.toURL))
+         case OAFRoot(dir, uriOpt) =>
+            if (!dir.isDirectory)
+               throw GeneralError(dir + " is not a directory")
+            oaf = Some(new OAF(uriOpt.getOrElse(OAF.defaultURL), dir, report))
+         case OAFClone(path) =>
+            def cloneRecursively(p: String) {
+               val lcOpt = getOAF.clone(p)
+               lcOpt foreach {lc =>
+                  val archs = backend.openArchive(lc)
+                  archs foreach {a =>
+                     val deps = MyList.fromString(a.properties.getOrElse("dependencies", ""))
+                     deps foreach {d => cloneRecursively(URI(d).pathAsString)}
+                  }
+               }
+            }
+            cloneRecursively(path)
+         case OAFPull => getOAF.pull            
+         case OAFPush => getOAF.push
 	      case SetBase(b) =>
 	         base = b
 	         report("response", "base: " + base)
