@@ -34,32 +34,36 @@ class TPTPImporter extends TraversingBuildTarget {
          bt.errorCont(LocalError("skipped big file: " + bt.inFile))
          return
       }
-      val outFile = bt.outFile.setExtension("elf")
-      val command = tptpCommand.map {s =>
-         s.replace("INFILE", escape(bt.inFile)).replace("OUTDIR", escape(outFile.up))
-      }
-      log(command.mkString("  "))
-      val result = ShellCommand.run(command :_*)
-      result foreach {s =>
-         bt.errorCont(LocalError(s))
-         return
-      }
-      // outFile wraps module header/footer around non-modular tempFile
-      val tempFile = outFile.setExtension("temp")
-      outFile.renameTo(tempFile)
-      val outWriter = File.Writer(outFile)
-      val prefix = s"""%namespace "${a.narrationBase}".
+      try {
+         val outFile = bt.outFile.setExtension("elf")
+         val command = tptpCommand.map { s =>
+            s.replace("INFILE", escape(bt.inFile)).replace("OUTDIR", escape(outFile.up))
+         }
+         log(command.mkString("  "))
+         val result = ShellCommand.run(command: _*)
+         result foreach { s =>
+            bt.errorCont(LocalError(s))
+            return
+         }
+         // outFile wraps module header/footer around non-modular tempFile
+         val tempFile = outFile.setExtension("temp")
+         outFile.renameTo(tempFile)
+         val outWriter = File.Writer(outFile)
+         val prefix = s"""%namespace "${a.narrationBase}".
 %namespace tptp = "http://latin.omdoc.org/logics/tptp".
 
 %sig ${bt.inFile.removeExtension.name} = {
    %meta tptp.THF.
 """
-      outWriter.write(prefix)
-      File.ReadLineWise(tempFile) {l =>
-         outWriter.println(l)
-      }
-      outWriter.println("}.")
-      outWriter.close
-      tempFile.delete
+         outWriter.write(prefix)
+         File.ReadLineWise(tempFile) { l =>
+            outWriter.println(l)
+         }
+         outWriter.println("}.")
+         outWriter.close
+         tempFile.delete
+      } catch {
+         case e: Throwable => bt.errorCont(LocalError("exception for file: " + bt.inFile + "\n" + e.getMessage))
+      }   
    }
 }
