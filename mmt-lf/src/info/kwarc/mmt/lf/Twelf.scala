@@ -28,9 +28,9 @@ object Twelf {
   */
 class Twelf extends Importer with frontend.ChangeListener {
    val key = "twelf-omdoc"
-   
+
    def includeFile(n: String) : Boolean = n.endsWith(".elf")
-   
+
    private var path : File = null
    /** Twelf setting "set unsafe ..." */
    var unsafe : Boolean = true
@@ -38,8 +38,8 @@ class Twelf extends Importer with frontend.ChangeListener {
    var chatter : Int = 5
    var catalog : Catalog = null
    var port = 8083
-   
-   /** 
+
+   /**
     * creates and intializes a Catalog
     * first argument is the location of the twelf-server script
     * second argument optionally gives the input dimension (default: the source folder)
@@ -61,10 +61,10 @@ class Twelf extends Importer with frontend.ChangeListener {
    override def destroy {
       catalog.destroy
    }
-   
-   /** 
+
+   /**
      * Compile a Twelf file to OMDoc
-     * @param in the input Twelf file 
+     * @param in the input Twelf file
      * @param dpath unused (could be passed to Twelf as the default namespace in the future)
      * @param out the file in which to put the generated OMDoc
      */
@@ -103,8 +103,8 @@ class Twelf extends Importer with frontend.ChangeListener {
          val ref = SourceRef(FileURI(inFile), parser.SourceRegion.none)
          val e = CompilerError(key, ref, List(msg), Level.Fatal)
          bf.errorCont(e)
-      }  
-      if (! outFile.exists) {
+      }
+      if (! (outFile.exists && outFile.length > 0)) {
           error("unknown error: Twelf produced no omdoc file")
           return
       }
@@ -117,7 +117,7 @@ class Twelf extends Importer with frontend.ChangeListener {
        }
       seCont(doc)
    }
-   
+
    def importString(inText : String, dpath : DPath)(implicit errorCont: ErrorHandler) {
      val tmp = File(System.getProperty("java.io.tmpdir"))
      val inFileName = tmp / "in.elf"
@@ -126,5 +126,5 @@ class Twelf extends Importer with frontend.ChangeListener {
      val bf = new archives.BuildTask(File(inFileName), false, List("string"), dpath.uri, File(outFileName), errorCont)
      importDocument(bf, doc => ())
    }
-   
+
 }
