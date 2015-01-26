@@ -77,6 +77,10 @@ class Twelf extends Importer with frontend.ChangeListener {
       val inFile = bf.inFile
       val inFileAsString = inFile.toString
       val outFile = bf.inFile.setExtension("omdoc")
+      if (inFile.length > 100000000) {
+         bf.errorCont(LocalError("skipped big elf file: " + inFile))
+         return
+      }
       input.println("set chatter " + chatter)
       input.println("set unsafe " + unsafe)
       input.println("set catalog " + catalog.queryURI)
