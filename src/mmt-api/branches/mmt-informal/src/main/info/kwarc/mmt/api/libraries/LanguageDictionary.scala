@@ -119,14 +119,18 @@ class LanguageDictionary(controller : Controller) {
 	  } 
 	}
 	
-	
+	//extracting the markers and turning them into string
+	  def toStringMethod(x: TextNotation) : String = {
+	    val mks = x.markers.map {
+	      case d : Delimiter => d.text
+	      case m => m.toString
+	    }
+	    clean(mks.mkString(" "))
+	  }
+	  
 	def getDictionary() = {
 	  val languages = consLang.toList.flatMap({case(gl,x)=> x.toList.map({case(lang,not) => lang})}).distinct
-	  var langmap = new HashMap[String,HashMap[String,List[(String,String)]]]()
-	  
-	  //extracting the markers and turning them into string
-	  def toStringMethod = (x: TextNotation) => x.markers.map(_.toString).mkString(" ")
-	  
+	  var langmap = new HashMap[String,HashMap[String,HashMap[String,List[String]]]]()
 	  languages.foreach(x => languages.foreach(y =>if(x!=y){
 	    val globalNames = getConstByLanguage(List(x,y))
 	    globalNames.foreach(gl => {
@@ -140,11 +144,15 @@ class LanguageDictionary(controller : Controller) {
 		          val lang2 = toStringMethod(textnotation2)
 		          if(lang1 != "" && lang2 != ""){
 				      if(!langmap.contains(x)){
-				        langmap(x) = new HashMap[String,List[(String,String)]]()
-				        langmap(x)(y) = List((lang1,lang2))
-				      }else{
-				        langmap(x)(y) = (lang1,lang2)::langmap(x)(y)
+				        langmap(x) = new HashMap[String,HashMap[String,List[String]]]()
 				      }
+				      if (!langmap(x).contains(y)) {
+				        langmap(x)(y) = new HashMap[String, List[String]]()
+				      }
+				      if (!langmap(x)(y).contains(lang1)) {
+				        langmap(x)(y)(lang1) = Nil
+				      }
+				      langmap(x)(y)(lang1) ::= lang2
 		          }
 	          }))
 	          
@@ -155,17 +163,41 @@ class LanguageDictionary(controller : Controller) {
 	  langmap
 	}
 	
+	def clean(s : String) : String = {
+     val seq : Seq[Char] = s.toIndexedSeq.flatMap {
+       case '\n' => List(' ')
+       case ',' => Nil
+       case '"' => Nil
+       case '[' | '{' | '}'| ']' => Nil
+       case x => List(x)
+     }
+     seq.mkString
+   }
+	
+	def getDefLinks() : JSONObject = {
+	  val paths = controller.depstore.getInds(ontology.IsConstant)
+	  val constants = paths.map(x => controller.get(x)).toList.collect(x => x match{
+	    case c: Constant => {
+	      c.notC.verbalizationDim.notations.values.toList.flatten map {n => 
+	        clean(toStringMethod(n)) -> c.path.toPath
+	      }
+	    }
+	  }).flatten.toMap
+	  new JSONObject(constants)
+	}
+	
+	
 	def getDictionaryJSON() : JSONObject = {
 	  val map = getDictionary()
 
 	  new JSONObject(map.map({
 	    case(key,value) => (key,new JSONObject(value.map({
-	      case(k,v) => (k,new JSONArray(v))
-	      }
-	    ).toMap))
-	    }
-	  ).toMap)
-
+	      case(k,v) => (k,new JSONObject(v.map({
+	        case (k2,v2) => (k2,
+	          new JSONArray(v2))
+	      }).toMap
+	      ))}).toMap
+	      ))}).toMap)
 	}
   
 }
