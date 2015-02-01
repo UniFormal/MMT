@@ -49,7 +49,6 @@ import info.kwarc.mmt.api.notations.TdMarker
 import info.kwarc.mmt.api.notations.TextNotation
 import info.kwarc.mmt.api.notations.PlaceholderDelimiter
 import info.kwarc.mmt.api.notations.SymbolName
-import info.kwarc.mmt.api.notations.Subs
 import info.kwarc.mmt.api.notations.InstanceName
 
 import info.kwarc.mmt.api.notations.Var
@@ -70,6 +69,28 @@ import tiscaf.HLet
 import info.kwarc.mmt.api._
 import tiscaf.HTalk
 import info.kwarc.mmt.api.objects._
+import info.kwarc.sally4.nnexus.factories.comm.MarpaStatus
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+
+class MarpaBody(tk: HTalk) extends Body(tk: HTalk) {
+    def asMarpaStatus : MarpaStatus = {
+        val byteArray: Array[Byte] = tk.req.octets.getOrElse(throw ServerError("no body found"))
+        var bis : ByteArrayInputStream = null
+        var ois : ObjectInputStream = null
+        var obj : Object = null
+        try {
+          bis = new ByteArrayInputStream(byteArray)
+          ois = new ObjectInputStream(bis)
+          obj =  ois.readObject()
+        } finally {
+          if (bis != null) bis.close
+          if (ois != null) ois.close
+        }
+        obj.asInstanceOf[MarpaStatus]
+    }
+} 
 
 case class PlanetaryError(val text : String) extends Error(text)
 
@@ -94,13 +115,14 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
     }
   }
   
+  
   //The post request response is defined here 
   def getGrammarResponse : HLet  = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
+    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
       val reqBody = new Body(tk)
       val notations = controller.library.getModules flatMap {
         case t : DeclaredTheory 
-        	//if t.path.toPath == "http://mathhub.info/smglom/mv/equal.omdoc?equal" 
+        	//if t.path.toPath == "http://mathhub.info/smglom/calculus/onesidedlimit.omdoc?onesidedlimit?leftsided-limit" 
         	=> 
           val not = t.getDeclarations collect {
             case c : Constant => c.notC.presentationDim.notations.values.flatten.map(not => c.path -> not) //produces (name, notation) pairs
@@ -120,16 +142,35 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
   }
     
   def getContentMathML : HLet  = new HLet {
-      	def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-	    	val reqBody = new Body(tk)
-//	    	val params
-//	    	println("ReqBody = " + Json.parse(reqBody.asJSON))
-	    	val strlist = List("a","b","c")
-	    	val resp = new JSONArray(strlist)
-	      	val params = reqBody.asJSON
-	      	Server.JsonResponse(resp).aact(tk)
-      	}
+        def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
+            val reqBody : MarpaStatus = new MarpaBody(tk).asMarpaStatus
+            println("MarpaStatus.status = " + reqBody.getStatus)
+            val result = doNotationTerm( pairIndexNotation(0)._1._1 ,pairIndexNotation(0)._1._2 , List("abc", "cde", "fdh"))
+            val str = List("getContentMathML Default Response")
+            val resp = new JSONArray(str)
+            Server.JsonResponse(resp).aact(tk)	
+        }
   }
+  
+  
+  def doNotationTerm(spath : GlobalName, 
+       not : TextNotation,
+       argumentValues : List[String]) : Term = {
+     val arity = not.arity
+     
+     //arity.canHandle(numberOfSubstitution, nrOfVariables, nrOfArguments)
+     val sub = Substitution(arity.subargs.map(sa => Sub(OMV.anonymous, OMV( argumentValues(sa.number-1) ))) : _*)
+     val con = Context(arity.variables.map(v => VarDecl(LocalName(argumentValues(v.number-1)), None, None, None)) :_*)
+     val args = arity.arguments map {a => OMV(argumentValues(a.number-1))} // args(i)
+     val term = ComplexTerm(spath, sub, con, args)
+     println( "path = " + spath.toString + "\n notation = " + not.toString)
+     println ("subs = " + arity.subargs.size)
+     println ("con = " + arity.variables.size)
+     println ("args = " + arity.arguments.size)
+     println( "\nTerm = " + term.toCML.toString)
+     term
+  }
+  
   //utils
   private def errorResponse(text : String, errors : List[Throwable]) : HLet = {
     JsonResponse("", s"MMT Error in Planetary extension: $text ", errors)
@@ -191,25 +232,6 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
     }
   }
 
-  def doNotationTerm(spath : GlobalName, 
-       not : TextNotation
-       /*args : List[Term] */) : Term = {
-     def getVarName(i : Int) : String = {
-       val name = ((i % 26) + 'a'.toInt).toChar
-       val indices =  (i / 26) match {
-         case 0 => ""
-         case n => n.toString
-       }
-       name.toString + indices
-     }
-     val arity = not.arity
-    
-     //arity.canHandle(numberOfSubstitution, nrOfVariables, nrOfArguments)
-     val sub = Substitution(arity.subargs.map(sa => Sub(OMV.anonymous, OMV(getVarName(sa.number - 1)))) : _*)
-     val con = Context(arity.variables.map(v => VarDecl(LocalName(getVarName(v.number - 1)), None, None, None)) :_*)
-     val args = arity.arguments map {a => OMV(getVarName(a.number - 1))} // args(i)
-     ComplexTerm(spath, sub, con, args)
-  }
 }
 
 
