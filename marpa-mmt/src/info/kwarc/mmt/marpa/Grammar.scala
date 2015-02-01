@@ -25,7 +25,7 @@ import info.kwarc.mmt.api.notations.TdMarker
 import info.kwarc.mmt.api.notations.TextNotation
 import info.kwarc.mmt.api.notations.PlaceholderDelimiter
 import info.kwarc.mmt.api.notations.SymbolName
-import info.kwarc.mmt.api.notations.Subs
+
 import info.kwarc.mmt.api.notations.InstanceName
 
 import info.kwarc.mmt.api.notations.Var
@@ -134,19 +134,50 @@ object Grammar {
 			case Arg(argNr,precedence) => {
 						   val content =  precedence match {
 						        case Some(x) => 
-				"renderB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::"renderE"::Nil
+						        	"renderB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::"renderE"::Nil
 				
 						        case None    =>
-				 "renderB"::"nrB"::argNr.toString::"nrE"::"renderE"::Nil
+						        	"renderB"::"nrB"::argNr.toString::"nrE"::"renderE"::Nil
 						   }
 						   val result = createArgRule(currentTopRuleNr, argNr.toString + "Arg")
 						   result
 						
 				    }
+			
+		   case Var(argNr, false, None, precedence) =>  {
+						   val content =  precedence match {
+						        case Some(x) => 
+						        	"rendervarB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::"rendervarE"::Nil
+				
+						        case None    =>
+						        	"rendervarB"::"nrB"::argNr.toString::"nrE"::"rendervarE"::Nil
+						   }
+						   val result = createArgRule(currentTopRuleNr, argNr.toString + "Var")
+						   result
+				    }
+		   
+		   case Var(argNr,false,Some(delim),precedence) => {
+		    				val Delim(text) = delim
+				    		val delimName = addRule(Delim("#seq_"+text))
+				    		val argName :String = createArgRule(currentTopRuleNr, argNr.toString +"VarSeq")
+				    		val content = precedence match {
+				    		  case Some(x) => 
+				     		   
+				     		    "iteratevarB"::"nrB"::argNr.toString::"nrE"::"prB"::x.toString::"prE"::
+				    		    "separatorB"::delimName::"separatorE"::argName ::"iteratevarE"::Nil
+				    		  case None => 
+				    		    "iteratevarB"::"nrB"::argNr.toString::"nrE"::"separatorB"::delimName::
+				    		    "separatorE"::argName::"iteratevarE"::Nil
+				    		}
+				    		val result = createRule(content)
+				    		result
+				    }	
+
+			
 		    case SeqArg(argNr,delim,precedence) => {
 		    				val Delim(text) = delim
 				    		val delimName = addRule(Delim("#seq_"+text))
-				    		val argName :String = createArgRule(currentTopRuleNr, argNr.toString +"Seq")
+				    		val argName :String = createArgRule(currentTopRuleNr, argNr.toString +"ArgSeq")
 				    		val content = precedence match {
 				    		  case Some(x) => 
 				     		   
@@ -210,7 +241,7 @@ object Grammar {
 		  	case Delim(rawW) =>
 		  	  //first check if this Delim is from a Sequence Argument - if so the rule
 		  	  //cannot be nullable
-		  	  var flag = ""
+		  	  var flag = "" 
 		  	  var w = if (rawW.startsWith("#seq_")) {
 		  	    flag = "#seq_" 
 		  	    rawW.substring(5)
@@ -229,7 +260,7 @@ object Grammar {
 			        text = " "
 			          
 			      } 
-			       if (text == """⁢""" //unicode
+			       if ((text == """⁢""" || text == "⁡")  //unicode
 			         && flag == "") { //handling the invisible unicode char used for function application
 			        val v1	 = createRule("empty"::Nil)
 			         val v2 = createRule("moB"::text.toString::"moE"::Nil)
@@ -347,9 +378,7 @@ object Grammar {
 		       }
 		       
 		       result
-		   case  Var(nr, false, None, precOp) =>  addRule(Arg(nr,precOp))
-		   case Var(nr,false,Some(delim),precOp) => addRule(SeqArg(nr,delim,precOp))
-		   case Subs(nr,precOp) =>  addRule(Arg(nr,precOp))
+		   	//	   case Subs(nr,precOp) =>  addRule(Arg(nr,precOp))
 //		   case SqrtMarker(ml) => 
 //		      createRule("msqrtB"::ml.map(addRule):::"msqrtE"::Nil)
 		    case _ =>
@@ -378,6 +407,7 @@ object Grammar {
 	      case List("miB",text,"miE") => name + "::= " + "miB '" + text + "' miE" 
 	      case List("mnB",text,"mnE") => name + "::= " + "mnB '" + text + "' mnE" 
 	      case "renderB"::tl => name + "::= argRule" 
+	      case "rendervarB"::tl => name + "::= argRule" 
 	      case "iterateB"::tl => 
 	        			val Some(delim) = content.find(x=> 
 	        			   if (content.indexOf(x)>0) {
@@ -387,9 +417,17 @@ object Grammar {
 	        			   if (content.indexOf(x)>0) {
 	        			      content(content.indexOf(x)-1) == "separatorE"
 	        			   } else false)
-					//	name + "::= " +  argName + " " + delim + " " + name + " || " + argName + " " + delim + " " + argName
 						name + "::= " + argName + " "+delim+" "+ name +"_  \n"+ name +"_::= " +argName+" | "+argName + " " + delim + " "  + name+"_"
-						//name + "::= " +  "Expression" + " " + delim + " " + name + " || " + "Expression" + " " + delim + " " + "Expression"
+		  case "iteratevarB"::tl => 
+	        			val Some(delim) = content.find(x=> 
+	        			   if (content.indexOf(x)>0) {
+	        			      content(content.indexOf(x)-1) == "separatorB"
+	        			   } else false)
+	        			val Some(argName) = content.find(x=> 
+	        			   if (content.indexOf(x)>0) {
+	        			      content(content.indexOf(x)-1) == "separatorE"
+	        			   } else false)
+						name + "::= " + argName + " "+delim+" "+ name +"_  \n"+ name +"_::= " +argName+" | "+argName + " " + delim + " "  + name+"_"
 		
 	      case "msubB"::mainRule::subRule::"msubE"::Nil => 
 	        name + "::= " + (content mkString " ")
