@@ -6,22 +6,48 @@ import parser.SourceRef
  * @param msg the error message 
  */
 abstract class Error(val shortMsg : String) extends java.lang.Exception(shortMsg) {
-   private var causedBy: Option[java.lang.Throwable] = None
-   def setCausedBy(e: java.lang.Throwable): this.type = {causedBy = Some(e); this}
-   //def getCausedBy : Option[java.lang.Throwable] = causedBy
-   private def stackTrace : String = getStackTrace.map(_.toString).mkString("","\n","")
-   def getLongMessage : String = {
-      val causedByMsg = causedBy match {
-        case None => ""
-        case Some(e: Error) => "\n\ncaused by\n" + e.getLongMessage
-        case Some(e) => "\n\ncaused by\n" + e.getClass + ": " + e.getMessage + e.getStackTrace.map(_.toString).mkString("\n","\n","")
-      }
-      getMessage + "\ndetected at\n" + stackTrace + causedByMsg
+   /** additional message text, override as needed */
+   def extraMessage = ""
+   /** the severity of the error, override as needed */ 
+   def level = Level.Error
+   private var causedBy: Option[Throwable] = None
+   /** get the error due to which this error was thrown */ 
+   def setCausedBy(e: Throwable): this.type = {
+      causedBy = Some(e)
+      this
+   }
+   protected def causedByToNode = causedBy match {
+      case Some(e: Error) => e.toNode
+      case Some(e) => <error type={e.getClass.getName} shortMsg={e.getMessage}>{Stacktrace.asNode(e)}</error>
+      case None => Nil
+   }
+   protected def causedByToString = causedBy match {
+     case None => ""
+     case Some(e: Error) => "\n\ncaused by\n" + e.toStringLong
+     case Some(e) => "\n\ncaused by\n" + e.getClass + ": " + e.getMessage + e.getStackTrace.map(_.toString).mkString("\n","\n","")
    }
    override def toString = shortMsg
-   def toNode : scala.xml.Node = <error type={this.getClass().toString} shortMsg={this.shortMsg}> {this.getLongMessage} </error> 
+   def toStringLong : String = {
+      shortMsg + "\n" + extraMessage + "\ndetected at\n" + Stacktrace.asString(this) + causedByToString
+   }
+   def toNode : scala.xml.Elem =
+      <error type={this.getClass.getName} shortMsg={this.shortMsg} level={this.level.toString}>
+        {extraMessage}
+        {Stacktrace.asNode(this)}
+        {causedByToNode}
+      </error> 
 }
 
+/**
+ * auxiliary functions for handling Java stack traces
+ */
+object Stacktrace {
+   def asString(e: Throwable) = e.getStackTrace.map(_.toString).mkString("","\n","")
+   def asNode(e: Throwable) =
+      <stacktrace>{e.getStackTrace.map(e => <element>{e.toString}</element>)}</stacktrace>
+}
+
+/** error levels, see [[Error]] */
 object Level {
   type Level = Int 
   val Info = 0
@@ -36,10 +62,10 @@ import Level._
 case class ParseError(s : String) extends Error("parse error: " + s)
 /** errors that occur when parsing a knowledge item */
 case class SourceError(
-    origin: String, ref: SourceRef, mainMessage: String, extraMessages: List[String] = Nil, level: Level = Level.Error
- ) extends Error("source error (origin) at " + ref.toString + ": " + mainMessage) {
-    override def getMessage = mainMessage + extraMessages.mkString("\n","\n","\n")
-    override def toNode = <error type={this.getClass().toString} shortMsg={this.shortMsg} level={this.level.toString} sref={ref.toString}> {this.getLongMessage} </error> 
+    origin: String, ref: SourceRef, mainMessage: String, extraMessages: List[String] = Nil, override val level: Level = Level.Error
+ ) extends Error(s"source error ($origin) at " + ref.toString + ": " + mainMessage) {
+    override def extraMessage = extraMessages.mkString("\n","\n","\n")
+    override def toNode = xml.addAttr(xml.addAttr(super.toNode, "sref", ref.toString), "target", origin) 
 }
 /** errors that occur during compiling */
 object CompilerError {
@@ -139,7 +165,7 @@ class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends Error
        haserrors = true
        file.write("<errors>\n")
     }
-    file.write(e.toNode.toString)
+    file.write(e.toNode.toString+"\n\n")
   }
   /**
    * closes the file

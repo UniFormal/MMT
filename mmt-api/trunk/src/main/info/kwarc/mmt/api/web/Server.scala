@@ -82,9 +82,7 @@ object Server {
   def errorResponse(msg: String): HLet = errorResponse(ServerError(msg))
   /** a response that sends an HTML error message to the browser */
   def errorResponse(error: Error): HLet = {
-     val ns = utils.xml.namespace("html")
-     val node = <div xmlns={ns}>{error.getLongMessage.split("\\n").map(s => <p>{s}</p>)}</div>
-     XmlResponse(node)
+     XmlResponse(error.toNode)
   }
 }
 
