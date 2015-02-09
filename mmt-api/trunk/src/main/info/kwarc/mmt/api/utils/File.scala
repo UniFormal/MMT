@@ -29,7 +29,7 @@ case class File(toJava: java.io.File) {
    /** parent directory */
    def up = File(toJava.getParentFile)
    /** file name */
-   def name = File(toJava.getName)
+   def name = toJava.getName
    /** the list of file/directory/volume label names making up this file path */ 
    def segments: List[String] = {
       val name = toJava.getName

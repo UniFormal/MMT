@@ -63,6 +63,19 @@ object xml {
       N % (new scala.xml.UnprefixedAttribute(key, value, scala.xml.Null))
    }
    
+   /** returns the list of namespaces of a node */
+   def namespaces(nb: NamespaceBinding, seen: List[String] = Nil): List[(String,String)] = nb match {
+      case TopScope => Nil
+      case NamespaceBinding(p,u,parent) =>
+         val pNonNull = if (p == null) "" else p
+         val thisOne = if (seen contains pNonNull)
+            // skip prefixes that are overridden by deeper ones
+            Nil
+         else
+            List((pNonNull,u))
+         thisOne ::: namespaces(parent, pNonNull :: seen)
+   }
+
    // decode all occurrences of %HH
    def decodeURI(s: String) : String = {
       var in = s
