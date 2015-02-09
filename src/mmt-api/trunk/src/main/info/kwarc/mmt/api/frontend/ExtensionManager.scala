@@ -140,8 +140,10 @@ class ExtensionManager(controller: Controller) extends Logger {
        try {
           ext.start(args)
        } catch {
-          case e: Error => throw RegistrationError("error while starting extension: " + e.getMessage).setCausedBy(e)
-          case e: Exception => throw RegistrationError("unknown error while starting extension: " + e.getClass.toString + ": " + e.getMessage)
+          case e: Error =>
+             throw RegistrationError("error while starting extension: " + e.getMessage).setCausedBy(e)
+          case e: Exception =>
+             throw RegistrationError("unknown error while starting extension: " + e.getClass.toString + ": " + e.getMessage).setCausedBy(e)
        }
        if (ext.isInstanceOf[Foundation]) {
           log("  ... as foundation")
