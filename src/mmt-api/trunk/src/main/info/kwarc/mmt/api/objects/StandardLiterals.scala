@@ -33,7 +33,7 @@ object OMSTR extends RealizedType {
 
 /** URI literals, concrete syntax is uri"..." */
 object URILiteral extends RealizedType {
-   init(OpenMath.OMSTR.path, OpenMath._path)
+   init(OpenMath._path ? "URI", OpenMath._path)
    type univ = utils.URI
    def fromString(s: String) = utils.URI(s)
    override def lex = quotedLiteral("uri")
