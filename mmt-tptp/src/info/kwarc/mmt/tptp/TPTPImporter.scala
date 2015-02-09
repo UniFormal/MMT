@@ -30,10 +30,10 @@ class TPTPImporter extends TraversingBuildTarget {
    private def escape(f: File) = f.toString.replace("\\","/")
 
    def buildFile(a: Archive, bt: BuildTask) {
-      if (bt.inFile.toJava.length > 1000000) {
+      /*if (bt.inFile.toJava.length > 1000000) {
          bt.errorCont(LocalError("skipped big file: " + bt.inFile))
          return
-      }
+      }*/
       try {
          val outFile = bt.outFile.setExtension("elf")
          val command = tptpCommand.map { s =>
@@ -49,10 +49,11 @@ class TPTPImporter extends TraversingBuildTarget {
          val tempFile = outFile.setExtension("temp")
          outFile.renameTo(tempFile)
          val outWriter = File.Writer(outFile)
+         val problemName = bt.inFile.removeExtension.name.replace(".", "_") 
          val prefix = s"""%namespace "${a.narrationBase}".
 %namespace tptp = "http://latin.omdoc.org/logics/tptp".
 
-%sig ${bt.inFile.removeExtension.name} = {
+%sig $problemName = {
    %meta tptp.THF.
 """
          outWriter.write(prefix)
@@ -63,7 +64,12 @@ class TPTPImporter extends TraversingBuildTarget {
          outWriter.close
          tempFile.delete
       } catch {
-         case e: Throwable => bt.errorCont(LocalError("exception for file: " + bt.inFile + "\n" + e.getMessage))
-      }   
+         case e: Throwable =>
+            val msg = e.getMessage match {
+               case null => "(no message)"
+               case m => m
+            }
+            bt.errorCont(LocalError("exception for file: " + bt.inFile + "\n" + msg).setCausedBy(e))
+         }   
    }
 }
