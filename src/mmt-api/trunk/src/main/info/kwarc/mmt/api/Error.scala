@@ -63,8 +63,8 @@ case class ParseError(s : String) extends Error("parse error: " + s)
 /** errors that occur when parsing a knowledge item */
 case class SourceError(
     origin: String, ref: SourceRef, mainMessage: String, extraMessages: List[String] = Nil, override val level: Level = Level.Error
- ) extends Error(s"source error ($origin) at " + ref.toString + ": " + mainMessage) {
-    override def extraMessage = extraMessages.mkString("\n","\n","\n")
+ ) extends Error(mainMessage) {
+    override def extraMessage = s"source error ($origin) at " + ref.toString + extraMessages.mkString("\n","\n","\n")
     override def toNode = xml.addAttr(xml.addAttr(super.toNode, "sref", ref.toString), "target", origin) 
 }
 /** errors that occur during compiling */
