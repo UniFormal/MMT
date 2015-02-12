@@ -61,7 +61,7 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
       val target = base / getSuffix(localBase,uri)
       val N = if (target.isFile) utils.xml.readFile(target)
         else if (target.isDirectory) {
-          val entries = target.list().toList.filter(x => x != ".svn" && x != ".omdoc") //TODO: should be an exclude pattern
+          val entries = target.list().toList.diff(List(".svn", ".omdoc")).sorted
           val relativePrefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
           virtDoc(entries, relativePrefix)
         } else throw BackendError("file/folder " + target + " not found or not accessible", path)
