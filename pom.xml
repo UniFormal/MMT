@@ -39,9 +39,8 @@
     </modules>
 
     <properties>
-        <maven-bundle-plugin.version>2.4.0</maven-bundle-plugin.version>
         <osgi.version>5.0.0</osgi.version>
-        <maven-bundle-plugin.version>2.4.0</maven-bundle-plugin.version>
+        <maven-bundle-plugin.version>2.5.3</maven-bundle-plugin.version>
         <!-- KWARC Public Key ID -->
         <gpg.keyname>F67C6F05</gpg.keyname>
 
@@ -224,7 +223,7 @@
         <plugin>
             <groupId>org.apache.felix</groupId>
             <artifactId>maven-bundle-plugin</artifactId>
-            <version>2.5.3</version>
+            <version>${maven-bundle-plugin.version}</version>
             <extensions>true</extensions>
             <configuration>
                 <instructions>
