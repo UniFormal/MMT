@@ -178,3 +178,4 @@ class Prover(controller: Controller, val goal: Goal, rules: RuleSet, outerLogPre
 object Prover {
    def indent(depth: Int) = (0 to depth).map(_ => "  ").mkString("")
 }
+

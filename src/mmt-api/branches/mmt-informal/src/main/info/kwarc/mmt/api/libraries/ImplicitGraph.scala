@@ -198,3 +198,4 @@ class ThinGeneratedCategory {
       impl.clear
    }
 }
+

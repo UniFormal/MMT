@@ -177,7 +177,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
      * deletes the output file by default, may be overridden to, e.g., delete auxiliary files
      */ 
    def cleanFile(a: Archive, curr: Current) {
-      delete(curr.file)
+      val outFile = outPath(a, curr.path)
+      delete(outFile)
    }
    /** additional method that implementations may provide: cleans one directory
      * @param a the containing archive  
@@ -199,14 +200,12 @@ abstract class TraversingBuildTarget extends BuildTarget {
        a.traverse[Boolean](inDim, in, _ => true, parallel) ({case c @ Current(inFile, inPath) =>
           a.timestamps(this).modified(inPath) match {
              case Deleted =>
-                val outFile = outPath(a, inPath)
                 cleanFile(a, c)
                 true
              case Added =>
                 buildAux(inPath)(a)
                 true
              case Modified =>
-                val outFile = outPath(a, inPath)
                 cleanFile(a, c)
                 buildAux(inPath)(a)
                 false
