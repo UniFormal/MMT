@@ -598,8 +598,13 @@ class STeXImporter extends Importer {
   def parseDPath(s : String) : DPath = {
     val parts = s.split("/").toList
     parts match {
-      case group :: project :: "source" :: name :: Nil => //MathHub URI
-        mhBase / group / project / (name + ".omdoc")
+      case group :: project :: "source" :: tl => //MathHub URI
+        tl match {
+          case Nil => throw STeXParseError("Expected group/project/'source'/name for document path. Got: " + s + " (empty document name)", None)
+          case l =>  
+            val base = mhBase / group / project 
+            l.init.foldLeft(base)((dc, x) => dc / x) / (l.last + ".omdoc")
+        }
       case _ => throw STeXParseError("Expected group/project/'source'/name for document path. Got: " + s, None)
     }
   }
