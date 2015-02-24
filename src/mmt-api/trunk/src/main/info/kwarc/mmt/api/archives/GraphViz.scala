@@ -46,6 +46,9 @@ class GraphViz extends Exporter {
       gv.exportDot(dotFile)
       val result = ShellCommand.run(graphviz, "-Tsvg", "-o" + bt.outFile, dotFile.toString)
       result foreach {m => bt.errorCont(LocalError(m))}
+      val outString = File.read(bt.outFile)
+      val outStringPostProcessed = outString.replace("xlink:title", "class")
+      File.write(bt.outFile, outStringPostProcessed)
    }
    
 /*   def buildFile(a: Archive, bf: BuildFile) = {
