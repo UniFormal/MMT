@@ -223,7 +223,6 @@ class NotationBasedPresenter extends ObjectPresenter {
     */ 
    implicit protected def getNotation(p: GlobalName): Option[TextNotation] = {
       val n = Presenter.getNotation(controller, p, twoDimensional)
-      println(p,n)
       n
    }
    /**

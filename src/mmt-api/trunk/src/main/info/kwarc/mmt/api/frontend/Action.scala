@@ -50,7 +50,9 @@ object Action extends RegexParsers {
             val (key,mod) = if (keymod.startsWith("-"))
                (keymod.substring(1), archives.Clean)
             else if (keymod.endsWith("*"))
-               (keymod.substring(0,keymod.length-1), archives.Update)
+               (keymod.substring(0,keymod.length-1), archives.Update(true,false))
+            else if (keymod.endsWith("!"))
+               (keymod.substring(0,keymod.length-1), archives.Update(true,true))
             else
                (keymod, archives.Build)
             ArchiveBuild(id, key, mod, segs, args)

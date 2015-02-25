@@ -88,13 +88,17 @@ object Server {
 
 /** straightforward abstraction for web style key-value queries; no encoding, no duplicate keys */
 case class WebQuery(pairs: List[(String,String)]) {
+   /** @return the value of the key, if present */
    def apply(key: String) : Option[String] = pairs.find(_._1 == key).map(_._2) 
+   /** @return the string value of the key, default value if not present */
    def string(key: String, default: String = ""): String = apply(key).getOrElse(default)
-   def boolean(key: String, default: Boolean = false) = apply(key).getOrElse(default.toString) match {
+   /** @return the boolean value of the key, default value if not present */
+   def boolean(key: String, default: Boolean = false) = apply(key).getOrElse(default.toString).toLowerCase match {
       case "false" => false
       case "" | "true" => true
       case s => throw ParseError("boolean expected: " + s)
    }
+   /** @return the integer value of the key, default value if not present */
    def int(key: String, default: Int = 0) = {
       val s = apply(key).getOrElse(default.toString) 
       try {s.toInt}
@@ -270,7 +274,6 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
                termParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), objects.Context(scope), str))(ErrorThrower)
              } catch {
                case e : Throwable =>
-                 println(e)
                  throw e
              }
 
