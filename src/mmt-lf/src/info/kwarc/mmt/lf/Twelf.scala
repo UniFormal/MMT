@@ -53,10 +53,15 @@ class Twelf extends Importer with frontend.ChangeListener {
          _inDim = Dim(args(1))
       }
    }
-   override def onNewArchive(arch: Archive) {
+   override def onArchiveOpen(arch: Archive) {
       val dim = arch.properties.get("twelf").getOrElse(arch.sourceDim)
       val stringLoc = (arch.root / dim).getPath
       catalog.addStringLocation(stringLoc)
+   }
+   override def onArchiveClose(arch: Archive) {
+      val dim = arch.properties.get("twelf").getOrElse(arch.sourceDim)
+      val stringLoc = (arch.root / dim).getPath
+      catalog.deleteStringLocation(stringLoc)
    }
    override def destroy {
       catalog.destroy
