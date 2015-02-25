@@ -36,6 +36,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    private def doName(s: String) {
       span("name") {text(s)}
    }
+   // private def doName(p: ContentPath) { span ... text(p.name.toString)}
    /** renders a MMT URI outside a math object */
    private def doPath(p: Path) {
       span("mmturi", attributes=List("jobad:href" -> p.toPath)) {

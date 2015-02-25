@@ -65,7 +65,7 @@ abstract class Importer extends TraversingBuildTarget {
     /** index a document */
     private def indexDocument(a: Archive, doc: Document, inPath: List[String]) {
         // write narration file
-        val narrFile = outPath(a, inPath)
+        val narrFile = getOutFile(a, inPath)
         log("[  -> narration ]     " + narrFile)
         val node = doc.toNode
         xml.writeFile(node, narrFile)
@@ -78,11 +78,11 @@ abstract class Importer extends TraversingBuildTarget {
            writeToRel(mod, a/relational / Archive.MMTPathToContentPath(mod.path))
         }}
    }
-   /** deletes content, narration, and relational */
+   /** additionally deletes content and relational */
    override def cleanFile(a: Archive, curr: Current) {
        val controller = new Controller(report)
        val Current(inFile, narrPath) = curr
-       val narrFile = outPath(a, narrPath)
+       val narrFile = getOutFile(a, narrPath)
        val doc = try {
          controller.read(narrFile, Some(DPath(a.narrationBase / narrPath)))(new ErrorLogger(report))
        } catch {
@@ -99,7 +99,7 @@ abstract class Importer extends TraversingBuildTarget {
           case r: documents.DRef => //TODO recursively delete subdocuments
        }
        delete((a/relational / narrPath).setExtension("rel"))
-       delete(narrFile)
+       super.cleanFile(a, curr)
     }
     override def cleanDir(a: Archive, curr: Current) {
        val inPathFile = Archive.narrationSegmentsAsFile(curr.path, "omdoc")

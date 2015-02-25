@@ -157,26 +157,18 @@ class ErrorContainer(report: Option[frontend.Report]) extends ErrorHandler {
  *  
  */
 class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends ErrorHandler {
-  private lazy val file = File.Writer(fileName)
-  private var haserrors = false
+  private val file = File.Writer(fileName)
+  file.write("<errors>\n")
   protected def addError(e: Error) {
     report.foreach {r => r(e)}
-    if (!haserrors) {
-       haserrors = true
-       file.write("<errors>\n")
-    }
     file.write(e.toNode.toString+"\n\n")
   }
   /**
    * closes the file
    */
   def close {
-    if (haserrors) {
-       file.write("\n</errors>")
-       file.close
-    } else {
-       fileName.toJava.delete
-    }
+     file.write("\n</errors>")
+     file.close
   }
 }
 

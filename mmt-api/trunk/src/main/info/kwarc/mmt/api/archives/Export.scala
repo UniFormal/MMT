@@ -55,14 +55,14 @@ trait Exporter extends BuildTarget { self =>
      narrationExporter.build(a, args, in)
    }
    
-   def update(a: Archive, args: List[String], in: List[String]) {
-     contentExporter.build(a, args, in)
-     narrationExporter.build(a, args, in)
+   def update(a: Archive, args: List[String], up: Update, in: List[String]) {
+     contentExporter.update(a, args, up, in)
+     narrationExporter.update(a, args, up, in)
    }
    
    def clean (a: Archive, args: List[String], in: List[String]) {
-     contentExporter.build(a, args, in)
-     narrationExporter.build(a, args, in)
+     contentExporter.clean(a, args, in)
+     narrationExporter.clean(a, args, in)
    }
    
    /** the file name for files representing folders, defaults to "", override as needed */

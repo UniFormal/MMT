@@ -193,16 +193,14 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
           val folder = root.getParentFile
           val name = root.getName
           val newRoot = folder / (name + "-unpacked")
-          // timestamp to remember last unpacking
-          val ts = new Timestamps(folder, newRoot / "META-INF" / "timestamps")
-          val mod = ts.modified(List(name)) 
+          // check if root is younger than manifest in newRoot
+          val mod = Modification(root, newRoot / "META-INF" / "MANIFEST.MF")
           if (mod == Modified) {
              newRoot.deleteDir
           }
           if (List(Added, Modified) contains mod) {
              // unpack it
              extractMar(root, newRoot)
-             ts.set(List(name))
           }
           if (mod == Unmodified)
              log("skipping unpacked, unmodified archive " + newRoot)

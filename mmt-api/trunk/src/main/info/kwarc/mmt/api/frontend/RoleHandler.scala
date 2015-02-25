@@ -22,7 +22,9 @@ trait ChangeListener extends Extension {
    /** called when navigating to an element */
    def onNavigate(p: Path) {}
    /** called when a new archive is added */
-   def onNewArchive(a: archives.Archive) {}
+   def onArchiveOpen(a: archives.Archive) {}
+   /** called when an archive is removed */
+   def onArchiveClose(a: archives.Archive) {}
 }
 
 /**
@@ -48,5 +50,6 @@ class Notify(listeners: List[ChangeListener], report: Report) {
    def onClear                           {tryAll(_.onClear)}
    def onCheck(c: ContentElement)        {tryAll(_.onCheck(c))}
    def onNavigate(p: Path)               {tryAll(_.onNavigate(p))}
-   def onNewArchive(a: archives.Archive) {tryAll(_.onNewArchive(a))}
+   def onArchiveOpen(a: archives.Archive) {tryAll(_.onArchiveOpen(a))}
+   def onArchiveClose(a: archives.Archive) {tryAll(_.onArchiveClose(a))}
 }
