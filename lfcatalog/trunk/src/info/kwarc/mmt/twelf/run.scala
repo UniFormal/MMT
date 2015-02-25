@@ -37,7 +37,7 @@ object Run {
         }
         else {
           try { port = Integer.parseInt(args(1)) }
-          catch { case _ => println("error: port number expected\n\n" + usage); sys.exit(1) }
+          catch { case _: Exception => println("error: port number expected\n\n" + usage); sys.exit(1) }
           patternsAndLocations = patternsAndLocations.drop(2)
         }   
       // read the patterns and locations

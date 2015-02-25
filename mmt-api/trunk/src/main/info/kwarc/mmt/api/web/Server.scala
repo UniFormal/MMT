@@ -4,10 +4,7 @@ import info.kwarc.mmt.api._
 
 import frontend._
 import backend._
-import ontology._
-import modules._
-import objects._
-import utils.URI
+import utils._
 
 import tiscaf._
 import tiscaf.let._
@@ -16,9 +13,6 @@ import scala.util.parsing.json.{ JSONType, JSONArray, JSONObject }
 import scala.xml._
 import scala.concurrent._
 
-import java.net.HttpURLConnection
-import java.net._
-import java.io._
 
 case class ServerError(msg: String) extends Error(msg)
 
@@ -56,9 +50,15 @@ object Server {
 
   /**
    * An XML response that the server sends back to the browser
-   * @param node the XML message that is sent in the HTTP body
+   * @param s the XML message that is sent in the HTTP body
    */
   def XmlResponse(s: String): HLet = TextResponse(s, "xml")
+
+  /**
+   * A json response
+   * @param json the message that is sent in the HTTP body
+   */
+  def JsonResponse(json: JSON) = TypedTextResponse(json.toString, "application/json")
 
   /**
    * An XML response that the server sends back to the browser

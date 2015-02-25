@@ -92,7 +92,7 @@ object loadResource {
         try {
           return Some(scala.io.Source.fromInputStream(zippedFile, encoding))
         } catch {
-          case _ => throw EncodingException("critical error: " + path + " inside JAR cannot be opened in the " + encoding + " encoding")
+          case _: Exception => throw EncodingException("critical error: " + path + " inside JAR cannot be opened in the " + encoding + " encoding")
         }
     }
     else {
@@ -103,7 +103,7 @@ object loadResource {
           filePath = (if (resourceFolder.startsWith("file:")) resourceFolder.substring("file:".length) else resourceFolder) + path
         }
         catch {
-          case _ => return None
+          case _: Exception => return None
         }
         val file = new java.io.File(filePath)  // the file on disk
         if (file.exists) {
@@ -112,7 +112,7 @@ object loadResource {
           try {
             return Some(scala.io.Source.fromInputStream(inputStream, encoding))
           } catch {
-            case _ => throw EncodingException("critical error: " + filePath + " inside JAR cannot be opened in the " + encoding + " encoding")
+            case _: Exception => throw EncodingException("critical error: " + filePath + " inside JAR cannot be opened in the " + encoding + " encoding")
           }
         }
         else
