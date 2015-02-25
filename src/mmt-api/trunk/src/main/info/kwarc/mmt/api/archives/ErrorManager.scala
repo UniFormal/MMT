@@ -11,7 +11,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 /** an [[Error]] as reconstructed from an error file */
 case class BuildError(archive: String, target: String, path: List[String], tp: String, level: Level.Level,
-                      sourceRef: parser.SourceRef, shortMsg: String, longMsg: String, stackTrace: String)
+                      sourceRef: parser.SourceRef, shortMsg: String, longMsg: String, stackTrace: String) {
+  def toJSON: JSON = ???
+  
+}
 
 /**
  * maintains the errors of an archive, mapping (target,path) to error list
@@ -54,6 +57,8 @@ class ErrorManager extends Extension {
       var bes : List[BuildError] = Nil
       node.child.foreach {child =>
          // TODO parse child
+        // SourceRef.fromURI(URI.parse())
+        // Level.parse
          val be = BuildError(a.id, target, path, ???, ???, ???, ???, ???, ???)
          bes ::= be
       }
@@ -89,6 +94,8 @@ class ErrorManager extends Extension {
       }
    }
    
+   import JSONConversions._
+  
    /** serves lists of [[Error]]s */
    private val serve = new ServerExtension("errors") {
       def apply(path: List[String], query: String, body: Body) = {
@@ -96,7 +103,8 @@ class ErrorManager extends Extension {
          val result = iterator.filter {be =>
             true // TODO select BuildErrors according to query 
          }
-         Server.XmlResponse(<todo/>)
+         val json = JSONArray(result.toList.map(_.toJSON) :_*)
+         Server.JsonResponse(json)
       }
    }
 }
