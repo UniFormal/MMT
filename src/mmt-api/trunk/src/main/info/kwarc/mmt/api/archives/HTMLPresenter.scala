@@ -33,8 +33,8 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    protected val htmlRh = utils.HTML(s => rh(s))
    import htmlRh._
    
-   private def doName(s: String) {
-      span("name") {text(s)}
+   private def doName(p: Path) {
+      span("name", attributes=List(("jobad:href",p.toPath))) {text(p.last.toString)}
    }
    // private def doName(p: ContentPath) { span ... text(p.name.toString)}
    /** renders a MMT URI outside a math object */
@@ -129,11 +129,12 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    
    def doDeclaration(d: Declaration) {
             val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
-            div("constant toggleTarget") {
+            div("constant toggleTarget inlineBoxSibling ") {
                div("constant-header") {
-                 span {doName(d.name.toString)}
+                 span {doName(d.path)}
+             
                  def toggle(label: String) {
-                    button("compToggle", onclick = s"toggleClick(this.parentNode,'$label')") {text("show/hide " + label)}
+                    button("compToggle btn btn-warning ", onclick = s"toggleClick(this.parentNode,'$label')") {text("+/-" + label)}
                  }
                  d.getComponents.foreach {case (comp, tc) => if (tc.isDefined) 
                     toggle(comp.toString)
@@ -168,7 +169,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
                   }
                   if (! d.metadata.getTags.isEmpty)
                      tr("tags") {
-                     td {span("compLabel"){text{"tags"}}}
+                     td {span("compLabel"){text{" ---tags"}}}
                      td {d.metadata.getTags.foreach {
                         k => div("tag") {text(k.toPath)}
                      }}
@@ -192,7 +193,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    
    def doTheory(t: DeclaredTheory) {
       div("theory") {
-         div("theory-header", onclick="toggleClick(this)") {doName(t.name.toString)}
+         div("theory-header", onclick="toggleClick(this)") {doName(t.path)}
          t.getPrimitiveDeclarations foreach doDeclaration
       }
    }
