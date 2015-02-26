@@ -37,7 +37,7 @@ $.fn.removeMClass = function(cl){
          this.setAttribute('class', newclassesAttr);
    });
    return this;
-}
+};
 /* toggle class cl in all matched elements */
 $.fn.toggleMClass = function(cl){
    this.each(function(){
@@ -97,8 +97,27 @@ var mmt = {
 		   this.currentPosition = null;
 		}
 		if (elem.hasAttribute("jobad:href")) {
+			console.log("I am here with jobadhref");
+
 			mmt.currentURI = elem.getAttribute('jobad:href');
-		} else {
+		} else if ($(elem).parent().hasAttribute("xlink:href")) {
+			console.log('I am here with attribute xlink href');
+			var str =  $(elem).parent().attr("xlink:href");
+			console.log(str);
+			mmt.currentURI = str;
+		} else if ($(elem).hasAttribute("href"))
+		{
+			// console.log("I am here with href attribute");
+			var y = $(elem).attr("onclick");
+			var z = y.split(",");
+			var len = z[1].length;
+			var s = z[1].substring(2, len-2);
+			mmt.currentURI = s;
+		}
+		
+		else {
+			// console.log("I am here with null");
+
 		   mmt.currentURI = null;
 		}
 	},
@@ -158,30 +177,26 @@ var mmt = {
 		return this.makeURL(relativeURL);
 	},
 	
-	
-	
-	
-   ajaxPutSVG : function (url, targetClass, async) {
-	//   var temp ;
-		function contSVG(data) {
-		
-			var targetnode = $("."+targetClass).children();
-			//console.log("target node is " + targetnode);
-			targetnode.replaceWith(data.lastChild);
-			
+   ajaxAppend : function (url, targetid, async) {
+	   function cont(data) {
+		   var inlineBox = "<div class='inlineBox'><table><tr><td class='inlineTitle'>X</td></tr><tr><td class='inlineBody'></td></tr></table></div>"
+		   //$(currentElem).closest(boxSibling).after(inlineBox).append(data.lastChild);
+		   //var targetnode = $('#' + targetid).children();
+		   //$('#' + targetid).innerHTML = data;
+		   //targetnode.replaceWith(data);
+		   var svgDiv = $('#' + targetid);
+		   var serializer = new XMLSerializer();
+		   var xmlString = serializer.serializeToString(data);
+		   svgDiv.append(xmlString);
 		}
 		if (async == null) async = true;
 		$.ajax({ 'url': url,
 				 'dataType': 'xml',
 				 'async': async,
-				 'success': contSVG
+				 'success': cont
 			   });
-		
-		
-	
 	},
 		
-	
    /**
     * @param url the URL to load from
     * @param targetid the XML id of the element, whose child to replace with the loaded node
@@ -320,7 +335,7 @@ var XML = {
 	elem : function (tag, content, key1, value1, key2, value2) {
 		var att1 = (key1 == null) ? "" : this.attr(key1,value1);
 		var att2 = (key2 == null) ? "" : this.attr(key2,value2);
-		var atts = att1 + att2
+		var atts = att1 + att2;
 		var begin = '<' + tag + atts;
 		if (content == null) {
 			return begin + '/>';
