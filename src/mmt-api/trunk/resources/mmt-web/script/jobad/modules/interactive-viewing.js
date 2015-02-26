@@ -16,7 +16,9 @@ var interactiveViewing = {
 		mmt.setCurrentPosition(target);
 		var res = this.visibMenu();
       if (mmt.focusIsMath) {
+    	  
 			var me = this;
+		
 			res["infer type"] = me.inferType;
 			res["simplify"] = me.simplify;
 		   var folded = $(mmt.focus).closest('.math-folded');
@@ -26,46 +28,63 @@ var interactiveViewing = {
             res['fold'] = function(){$(mmt.focus).addMClass('math-folded');};
 		}
 		if (mmt.currentURI !== null) {
+			
 			res["type"] = this.showComp('type');
 			res["show definition"] = this.showComp('definition');
-			
-
-			
-			res["Inline box"] = function() {
+			res["Show graph inline"] = function() {
+				var targetParent = target.parentElement.parentElement;
+				var svgDiv = document.createElement('div');
+				svgDiv.id = 'svgDiv';
+				$(targetParent).append(svgDiv);
 				
-				/*
-				 * var svgDivPrep = "<div id=\"svgDiv\">" + "<p>Some text</p>" + "<button
-				 * id=\"svgButton\">Show less</button><script>$(\"#svgButton\").click(function(){" +
-				 * "$(\"#svgDiv\").hide(1000);});</script></div>";
-				 */
+				
+				
+				var button = document.createElement('button');
+				button.id = 'btn';
+				$(svgDiv).append(button);
+				$('#btn').text('Hide Graph');
+				
+				$('#btn').click(function() {
+				    $('#svgDiv').hide();
+				});
+				
+				var x = document.getElementsByTagName('svg');
+				
+				var button2 = document.createElement('button2');
+				button2.id = 'btn2';
+				$(targetParent).append(button2);
+				$('#btn2').text('Drag button');
+				
+				
+				var s = Snap(x);
+					
+			    s.drag();
+				
+				
+				var box = $(targetParent).parents().eq(2);
+				box[0].style.overflow = 'scroll';
+				box[0].style.resize = 'both';
+				box[0].style.width = 'auto';
+				box[0].style.height = 'auto';
 
-				var svgDivPrep = ""
-						+ "<div class=\"svgDiv\" style=\"width: 1000px; height: 181px; overflow: scroll; resize: both; background: rgb(127, 255, 212);\">"
-						+ "<div>" + "</div>" + "</div>";
-
+				
 				var preSVG = target.attributes.item(1).value;
 				var svgURI = preSVG.split("#")[0];
 				svgURI = ":svg?" + svgURI;
-				$("#main .theory ").append(svgDivPrep);
-				mmt.ajaxPutSVG(svgURI, 'svgDiv');
-
-				/*
-				 * var svgDivPrep = "<div id=\"svgDiv\">" + "<p>Some text</p>" + "<button
-				 * id=\"svgButton\">Show less</button><script>$(\"#svgButton\").click(function(){" +
-				 * "$(\"#svgDiv\").hide(1000);});</script></div>"; $("#main
-				 * .theory .theory-header").css("background", "green"); $("#main
-				 * .theory .theory-header").append(svgDivPrep);
-				 */
+				mmt.ajaxAppend(svgURI, 'svgDiv');
 			};
-			
-		res["Show theory graph"] = function(){
-				var preSVG = target.attributes.item(1).value;
-				var svgURI = preSVG.split("#")[0];
-				svgURI = ":svg?" + svgURI;
-				window.open(svgURI);
-				};
+
+		res["Show graph in new window"] = function(){
+						var preSVG = target.attributes.item(1).value;
+						var svgURI = preSVG.split("#")[0];
+						svgURI = ":svg?" + svgURI;
+						window.open(svgURI);
+						};
+	
 		res["show URI"] = function(){alert(mmt.currentURI)};
 		res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
+		res["Show in Mizar"] = function(){alert("This is will be the Mizar concept based on alignments")};
+		res["Show in HOLLight"] = function(){alert("This will be the HOLLight concept based on alignments")};
         
 		   //res["get OMDoc"] = mmt.openCurrentOMDoc();
 		}
@@ -116,6 +135,11 @@ var interactiveViewing = {
 					  }
 				  }
 				 );
+	},
+	
+	createInlineBox: function(origin, body) {
+		var behind = $(origin).parent('.inlineBox');
+		
 	},
 	
 	/* shows a component of the current MMT URI in a dialog */
