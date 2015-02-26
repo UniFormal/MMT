@@ -33,10 +33,9 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    protected val htmlRh = utils.HTML(s => rh(s))
    import htmlRh._
    
-   private def doName(p: Path) {
-      span("name", attributes=List(("jobad:href",p.toPath))) {text(p.last.toString)}
+   private def doName(p: ContentPath) {
+      span("name", attributes=List(("jobad:href",p.toPath))) {text(p.name.toString)}
    }
-   // private def doName(p: ContentPath) { span ... text(p.name.toString)}
    /** renders a MMT URI outside a math object */
    private def doPath(p: Path) {
       span("mmturi", attributes=List("jobad:href" -> p.toPath)) {
