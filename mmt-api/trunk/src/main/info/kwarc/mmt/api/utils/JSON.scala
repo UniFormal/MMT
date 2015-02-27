@@ -35,5 +35,5 @@ case class JSONArray(values: JSON*) extends JSON {
 }
 
 case class JSONObject(map: (String,JSON)*) extends JSON {
-  override def toString = map.map { case (k, v) => s"""${k.toString}: ${v.toString}"""}.mkString("{", ",\n", "}")
+  override def toString = map.map { case (k, v) => s""""${k.toString}": ${v.toString}"""}.mkString("{", ",\n", "}")
 }
