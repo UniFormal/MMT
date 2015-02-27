@@ -1,14 +1,14 @@
 package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
-import frontend._
-import parser.SourceRef
-import utils._
-import web._
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.parser.SourceRef
+import info.kwarc.mmt.api.utils._
+import info.kwarc.mmt.api.web._
 
-import scala.collection.mutable.HashMap
-import scala.concurrent.Future
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.xml.{Elem, Node}
 
 /** an [[Error]] as reconstructed from an error file */
@@ -22,7 +22,7 @@ case class BuildError(archive: String, target: String, path: List[String],
 /**
  * maintains the errors of an archive, mapping (target,path) to error list
  */
-class ErrorMap(val archive: Archive) extends HashMap[(String,List[String]), List[BuildError]]
+class ErrorMap(val archive: Archive) extends mutable.HashMap[(String, List[String]), List[BuildError]]
 
 /**
  * maintains all errors produced while running [[BuildTarget]]s on [[Archive]]s
@@ -44,7 +44,7 @@ class ErrorManager extends Extension with Logger {
     * load all errors of this archive
     */
    def loadAllErrors(a: Archive) {
-      a.traverse(errors, Nil, _ => true, false) {case Current(_, target :: path) =>
+     a.traverse(errors, Nil, _ => true, parallel = false) { case Current(_, target :: path) =>
          loadErrors(a, target, path)
       }
    }
@@ -115,8 +115,6 @@ class ErrorManager extends Extension with Logger {
          errorMaps = errorMaps.filter(_.archive != a)
       }
    }
-
-   import JSONConversions._
 
    /** serves lists of [[Error]]s */
    private val serve = new ServerExtension("errors") {
