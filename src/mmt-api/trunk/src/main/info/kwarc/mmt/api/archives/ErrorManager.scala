@@ -96,7 +96,8 @@ class ErrorManager extends Extension with Logger {self =>
         val as = x.attributes
         attrs map (a => as.get(a).getOrElse("").toString)
       }
-      val List(tgt, srcRef, errType, shortMsg, level) = getAttrs(List("target", "sref", "type", "shortMsg", "level"), x)
+      val List(tgt, srcRef, errType, shortMsg, level) = 
+        getAttrs(List("target", "sref", "type", "shortMsg", "level"), x)
       def infoMessage(msg: String) =
         log(msg + "\nFile: " + f + "\nNode: " + shortMsg)
       var lvl: Level.Level = Level.Error
