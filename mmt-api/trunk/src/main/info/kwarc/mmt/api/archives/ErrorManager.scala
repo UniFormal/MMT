@@ -112,7 +112,7 @@ class ErrorManager extends Extension with Logger {
       val elems = others filter (_.isInstanceOf[Elem])
       val srcR = if (srcRef.isEmpty) None else Some(SourceRef.fromURI(URI(srcRef)))
       if (elems.nonEmpty)
-        infoMessage("ignored sub-elements")
+        infoMessage("ignored sub-elements: " + elems)
       val be = BuildError(a, target, path, errType, lvl, srcR, shortMsg, longMsg, trace)
       bes ::= be
     }
@@ -167,9 +167,14 @@ class ErrorManager extends Extension with Logger {
         assert(args.length == be.length)
         args.zip(be).forall { case (a, b) => b.contains(a)}
       }
-
-      val json = JSONArray(result.toList.take(limit).map(l =>
-        JSONObject(Table.columns.zip(l.map(s => JSONString(s))): _*)): _*)
+      var json: JSON = JSONNull
+      log("PATH:" + path)
+      path match {
+        case List("count2") => json = JSONArray(JSONObject("count" -> JSONInt(result.length)))
+        case _ =>
+          json = JSONArray(result.toList.take(limit).map(l =>
+            JSONObject(Table.columns.zip(l.map(s => JSONString(s))): _*)): _*)
+      }
       Server.JsonResponse(json)
     }
   }
