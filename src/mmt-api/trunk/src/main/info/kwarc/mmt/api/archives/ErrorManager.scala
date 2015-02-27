@@ -168,7 +168,6 @@ class ErrorManager extends Extension with Logger {
         args.zip(be).forall { case (a, b) => b.indexOf(a) > -1}
       }
       var json: JSON = JSONNull
-      log("PATH:" + path)
       path match {
         case List("count2") => json = JSONArray(JSONObject("count" -> JSONInt(result.length)))
         case List("group", field) =>
