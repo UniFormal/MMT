@@ -1,5 +1,8 @@
 package info.kwarc.mmt.api.archives
 
+import java.text.SimpleDateFormat
+import java.util.Date
+
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.parser.SourceRef
@@ -12,11 +15,26 @@ import scala.concurrent.Future
 import scala.xml.{Elem, Node}
 
 /** an [[Error]] as reconstructed from an error file */
-case class BuildError(archive: String, target: String, path: List[String],
+case class BuildError(archive: Archive, target: String, path: List[String],
                       tp: String, level: Level.Level, sourceRef: parser.SourceRef,
                       shortMsg: String, longMsg: String,
                       stackTrace: List[List[String]]) {
-  def toJSON: JSON = ???
+  def toJSON: JSON = {
+    val File(f) = archive / errors / target / path
+    import info.kwarc.mmt.api.utils.JSONConversions._
+    JSONObject(
+      "id" -> "0", // to be removed later
+      "errLevel" -> level.toString,
+      "errType" -> tp,
+      "fileName" -> f.getPath,
+      "fileDate" -> new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(f.lastModified)),
+      "target" -> target,
+      "sourceRef" -> sourceRef.toString,
+      "shortMsg" -> shortMsg,
+      "longMsg" -> longMsg,
+      "stackTrace" -> stackTrace.flatten.mkString("\n")
+    )
+  }
 }
 
 /**
@@ -81,7 +99,7 @@ class ErrorManager extends Extension with Logger {
       val elems = others filter (_.isInstanceOf[Elem])
       if (elems.nonEmpty)
         infoMessage("ignored sub-elements")
-      val be = BuildError(a.id, target, path, errType, lvl, SourceRef.fromURI(URI(srcRef)), shortMsg, longMsg, trace)
+      val be = BuildError(a, target, path, errType, lvl, SourceRef.fromURI(URI(srcRef)), shortMsg, longMsg, trace)
       bes ::= be
     }
     val em = apply(a.id)
