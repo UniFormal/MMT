@@ -16,15 +16,15 @@ import scala.xml.{Elem, Node}
 
 object Table {
   val columns: List[String] = List("id", // to be removed later
-      "errLevel",
-      "errType",
-      "fileName",
-      "fileDate",
-      "target",
-      "sourceRef",
-      "shortMsg",
-      "longMsg",
-      "stackTrace")
+    "errLevel",
+    "errType",
+    "fileName",
+    "fileDate",
+    "target",
+    "sourceRef",
+    "shortMsg",
+    "longMsg",
+    "stackTrace")
 }
 
 /** an [[Error]] as reconstructed from an error file */
@@ -32,9 +32,9 @@ case class BuildError(archive: Archive, target: String, path: List[String],
                       tp: String, level: Level.Level, sourceRef: Option[parser.SourceRef],
                       shortMsg: String, longMsg: String,
                       stackTrace: List[List[String]]) {
-  def toJSON: JSON = {
+  def toStrList: List[String] = {
     val File(f) = archive / errors / target / path
-    val row = List("0", // to be removed later
+    List("0", // to be removed later
       level.toString,
       tp,
       f.getPath,
@@ -44,9 +44,7 @@ case class BuildError(archive: Archive, target: String, path: List[String],
       shortMsg,
       longMsg,
       stackTrace.flatten.mkString("\n")
-    ) map JSONString
-    assert(row.length == Table.columns.length)
-    JSONObject(Table.columns zip row: _*)
+    )
   }
 }
 
@@ -58,7 +56,8 @@ class ErrorMap(val archive: Archive) extends mutable.HashMap[(String, List[Strin
 /**
  * maintains all errors produced while running [[BuildTarget]]s on [[Archive]]s
  */
-class ErrorManager extends Extension with Logger {self =>
+class ErrorManager extends Extension with Logger {
+  self =>
   override val logPrefix = "errormanager"
   /** the mutable data: one ErrorMap per open Archive */
   private var errorMaps: List[ErrorMap] = Nil
@@ -96,7 +95,7 @@ class ErrorManager extends Extension with Logger {self =>
         val as = x.attributes
         attrs map (a => as.get(a).getOrElse("").toString)
       }
-      val List(tgt, srcRef, errType, shortMsg, level) = 
+      val List(tgt, srcRef, errType, shortMsg, level) =
         getAttrs(List("target", "sref", "type", "shortMsg", "level"), x)
       def infoMessage(msg: String) =
         log(msg + "\nFile: " + f + "\nNode: " + shortMsg)
@@ -132,10 +131,11 @@ class ErrorManager extends Extension with Logger {self =>
   override def start(args: List[String]) {
     controller.extman.addExtension(cl)
     controller.extman.addExtension(serve)
-    controller.backend.getArchives.foreach {a => loadAllErrors(a)}
+    controller.backend.getArchives.foreach { a => loadAllErrors(a)}
   }
+
   override def destroy {
-     //TODO remove cl and serve
+    //TODO remove cl and serve
   }
 
   /** adds/deletes [[ErrorMap]]s for each opened/closed [[Archive]] */
@@ -156,14 +156,20 @@ class ErrorManager extends Extension with Logger {self =>
 
   /** serves lists of [[Error]]s */
   private val serve = new ServerExtension("errors") {
-    override def logPrefix= self.logPrefix
+    override def logPrefix = self.logPrefix
+
     def apply(path: List[String], query: String, body: Body) = {
       val wq = WebQuery.parse(query)
+      val args = Table.columns map (wq.string(_))
       val limit = wq.int("limit", 100)
-      val result = iterator.filter { be =>
-        true // TODO select BuildErrors according to query
+      val bes = iterator.map(_.toStrList)
+      val result = bes.filter { be =>
+        assert(args.length == be.length)
+        args.zip(be).forall { case (a, b) => b.contains(a)}
       }
-      val json = JSONArray(result.toList.take(limit).map(_.toJSON): _*)
+
+      val json = JSONArray(result.toList.take(limit).map(l =>
+        JSONObject(Table.columns.zip(l.map(s => JSONString(s))): _*)): _*)
       Server.JsonResponse(json)
     }
   }
