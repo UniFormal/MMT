@@ -1,19 +1,22 @@
 package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
-import utils._
 import frontend._
+import parser.SourceRef
+import utils._
 import web._
 
-import scala.collection.mutable.{HashMap}
+import scala.collection.mutable.HashMap
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.xml.{Elem, Node}
 
 /** an [[Error]] as reconstructed from an error file */
-case class BuildError(archive: String, target: String, path: List[String], tp: String, level: Level.Level,
-                      sourceRef: parser.SourceRef, shortMsg: String, longMsg: String, stackTrace: String) {
+case class BuildError(archive: String, target: String, path: List[String],
+                      tp: String, level: Level.Level, sourceRef: parser.SourceRef,
+                      shortMsg: String, longMsg: String,
+                      stackTrace: List[List[String]]) {
   def toJSON: JSON = ???
-  
 }
 
 /**
@@ -24,10 +27,10 @@ class ErrorMap(val archive: Archive) extends HashMap[(String,List[String]), List
 /**
  * maintains all errors produced while running [[BuildTarget]]s on [[Archive]]s
  */
-class ErrorManager extends Extension {
-   
-   /** the mutable data: one ErrorMap per open Archive */
-   private var errorMaps: List[ErrorMap] = Nil
+class ErrorManager extends Extension with Logger {
+  override val logPrefix = this.getClass.toString
+  /** the mutable data: one ErrorMap per open Archive */
+  private var errorMaps: List[ErrorMap] = Nil
 
    /**
     * @param id the archive
@@ -35,7 +38,7 @@ class ErrorManager extends Extension {
     */
    def apply(id: String): ErrorMap =
       errorMaps.find(_.archive.id == id).getOrElse(throw GeneralError("archive does not exist: " + id))
-      
+
    /**
     * @param a the archive
     * load all errors of this archive
@@ -45,7 +48,7 @@ class ErrorManager extends Extension {
          loadErrors(a, target, path)
       }
    }
-   
+
    /**
     * @param a the archive
     * @param target the build target
@@ -53,19 +56,38 @@ class ErrorManager extends Extension {
     * load all errors of a build target applied to a file
     */
    def loadErrors(a: Archive, target: String, path: List[String]) {
-      val node = xml.readFile(a/errors/target/path)
-      var bes : List[BuildError] = Nil
-      node.child.foreach {child =>
-         // TODO parse child
-        // SourceRef.fromURI(URI.parse())
-        // Level.parse
-         val be = BuildError(a.id, target, path, ???, ???, ???, ???, ???, ???)
-         bes ::= be
-      }
-      val em = apply(a.id)
-      em((target,path)) = bes.reverse
+     val f = a / errors / target / path
+     val node = xml.readFile(f)
+     var bes: List[BuildError] = Nil
+     node.child.foreach { x =>
+       val (stacks, others) = x.child partition (_.label == "stacktrace")
+       def getAttrs(attrs: List[String], x: Node): List[String] = {
+         val as = x.attributes
+         attrs map (a => as.get(a).getOrElse("").toString)
+       }
+       val List(tgt, srcRef, errType, shortMsg, level) = getAttrs(List("target", "sref", "type", "shortMsg", "level"), x)
+       def infoMessage(msg: String) =
+         log(msg + "\nFile: " + f + "\nNode: " + shortMsg)
+       var lvl: Level.Level = Level.Error
+       if (level.isEmpty) infoMessage("empty error level")
+       else
+         try {
+           lvl = Level.parse(level)
+         } catch {
+           case e: ParseError => infoMessage(e.getMessage)
+         }
+       val trace: List[List[String]] = stacks.toList map (e => e.child.toList map (_.text))
+       val longMsg: String = (others map (_.text)).mkString
+       val elems = others filter (_.isInstanceOf[Elem])
+       if (elems.nonEmpty)
+         infoMessage("ignored sub-elements")
+       val be = BuildError(a.id, target, path, errType, lvl, SourceRef.fromURI(URI(srcRef)), shortMsg, longMsg, trace)
+       bes ::= be
+     }
+     val em = apply(a.id)
+     em((target, path)) = bes.reverse
    }
-   
+
    /** iterator over all errors given as (archive, target, path, error) */
    def iterator: Iterator[BuildError] = {
       errorMaps.iterator.flatMap {em =>
@@ -78,7 +100,7 @@ class ErrorManager extends Extension {
       controller.extman.addExtension(cl)
       controller.extman.addExtension(serve)
    }
-   
+
    /** adds/deletes [[ErrorMap]]s for each opened/closed [[Archive]] */
    private val cl = new ChangeListener {
       /** creates an [[ErrorMap]] for the archive and asynchronously loads its errors */
@@ -93,15 +115,15 @@ class ErrorManager extends Extension {
          errorMaps = errorMaps.filter(_.archive != a)
       }
    }
-   
+
    import JSONConversions._
-  
+
    /** serves lists of [[Error]]s */
    private val serve = new ServerExtension("errors") {
       def apply(path: List[String], query: String, body: Body) = {
          val wq = WebQuery.parse(query)
          val result = iterator.filter {be =>
-            true // TODO select BuildErrors according to query 
+            true // TODO select BuildErrors according to query
          }
          val json = JSONArray(result.toList.map(_.toJSON) :_*)
          Server.JsonResponse(json)
