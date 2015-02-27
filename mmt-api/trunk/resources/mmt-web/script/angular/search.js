@@ -38,19 +38,19 @@ angular.module('searchApp', []).controller('SearchController',
         $scope.groupMode = true;
         $scope.clear();
         $scope.columns[$scope.field].x = true;
-        $http.get('/sally/error/group/' + $scope.field + $scope.query($scope.maxGroups)).success(function(data) {
+        $http.get(':errors/group/' + $scope.field + $scope.query($scope.maxGroups)).success(function(data) {
           $scope.groups = data;
         });
     };
     $scope.search = function() {
         $scope.groupMode = false;
-        $http.get('/sally/error/search2' + $scope.query($scope.maxNumber)).success(function(data) {
+        $http.get(':errors/search2' + $scope.query($scope.maxNumber)).success(function(data) {
           $scope.results = data;
         });
       $scope.count();
     };
     $scope.count = function() {
-        $http.get('/sally/error/count2' + $scope.query($scope.maxNumber)).success(function(data) {
+        $http.get(':errors/count2' + $scope.query($scope.maxNumber)).success(function(data) {
           $scope.number = data[0].count;
         });
     };
