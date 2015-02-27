@@ -8,7 +8,7 @@ import scala.util.parsing.json.JSONFormat
 sealed abstract class JSON {
 }
 
-case object JSONNull {
+case object JSONNull extends JSON {
   override def toString = "null"
 }
 
