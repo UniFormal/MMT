@@ -36,32 +36,25 @@ var interactiveViewing = {
 				var svgDiv = document.createElement('div');
 				svgDiv.id = 'svgDiv';
 				$(targetParent).append(svgDiv);
-				
-				
-				
 				var button = document.createElement('button');
 				button.id = 'btn';
+				
 				$(svgDiv).append(button);
 				$('#btn').text('Hide Graph');
-				
 				$('#btn').click(function() {
-				    $('#svgDiv').hide();
+					$( "#svgDiv" ).remove();
 				});
 				
 				var x = document.getElementsByTagName('svg');
-				
-				var button2 = document.createElement('button2');
+				console.log(x);
+
+				/*var button2 = document.createElement('button2');
 				button2.id = 'btn2';
 				$(targetParent).append(button2);
-				$('#btn2').text('Drag button');
-				
-				
-				var s = Snap(x);
-					
-			    s.drag();
-				
+				$('#btn2').text('Drag button');*/
 				
 				var box = $(targetParent).parents().eq(2);
+				console.log(box[0]);
 				box[0].style.overflow = 'scroll';
 				box[0].style.resize = 'both';
 				box[0].style.width = 'auto';
