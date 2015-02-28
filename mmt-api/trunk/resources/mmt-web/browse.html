@@ -6,24 +6,26 @@
 <title>MMT Web Server</title>
 
 <!-- START -->
-
+<!-- <script src="jquery-1.11.2.min.js"></script> -->
+<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+    <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script> 
 
 <!-- END  -->
 
-  <script src="http://snapsvg.io/assets/js/snap.svg-min.js"></script>
-  <script src="/application/html/js/adobe-webplatform/Snap.svg/snap.svg-min.js"></script>
-  <script src="http://snapsvg.io/assets/js/prism.js"></script>
+ 
+ 
   <link rel="stylesheet" type="text/css" href="/css/mmt.css"/>
   <link rel="stylesheet" type="text/css" href="/css/browser.css"/>
   <link rel="stylesheet" type="text/css" href="/css/JOBAD.css"/>
   <link rel="stylesheet" type="text/css" href="/css/jquery/jquery-ui.css"/>
   <!-- <link rel="stylesheet" type="text/css" href="/css/jquery/ui.base.css"/> -->
   <link rel="shortcut icon" href="/mmt2.png" />
-  <script type="text/javascript" src="/script/jquery/jquery.js"></script>
-  <script src="jquery-1.11.2.min.js"></script>
+  <!-- <script type="text/javascript" src="/script/jquery/jquery.js"></script> -->
+  
   <!-- <script type="text/javascript" src="/script/jquery/jquery.xmlns.js"/> -->
 
   <script src="script/codemirror2/lib/codemirror.js"></script>
@@ -199,8 +201,7 @@
     		 
     		 	 var s = $(first).attr('style');
     		 	 var res = s.substring(0, 43); 
-    		 	 console.log(res);
-    		 	 dump(res);
+    		 	 
     		 	  $("#first").attr('style', res);
     		 	  
     			  $("#first").show();
@@ -216,7 +217,7 @@
     $(function(){
     	 $("#remove-start").on('click', function() {
     		
-    			$('#first).attr('style', 'visibility: hidden');
+    			$("#first").attr('style', 'visibility: hidden');
 
     		});
     });
@@ -254,7 +255,7 @@
         		<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
        			 	<ul class="nav navbar-nav navbar-left">
 <!--        			 		<li><a href="#"> <img src="../images/logommt.jpg" style="width: 50px; height: 20px"></a></li>
- -->       			 			<li id="start"><a  href="#" data-toggle="collapse"> Start</a></li>
+ -->       			 			<li id="start"><a  href="#" data-toggle="collapse"> Start</a></li> 
        				 </ul>
        			 
             		<ul class="nav navbar-nav navbar-right">
@@ -274,12 +275,12 @@
 <div id="page-wrapper">
 <!-- side bar -->
 	<div class = "first_column" style = "width: 25%; float: left; padding-top: 40px; visibility: hidden" id="first">
-		<nav id="pathtree" class="navbar-default navbar-side" role="navigation" >
+		<nav  class="navbar-default navbar-side" role="navigation" >
 			<div  class="sidebar-collapse" style="height: 700px">
-            	<ul class="nav" id="main-menu">
-            		<li class="text-center"></li>
-            		<li ><a href="#"><i class="fa fa-bar-chart-o fa-3x"></i> Mizar</a></li>	
-                </ul>
+            	
+			<div id="sidebar">
+          		<div id="pathtree"></div>
+       		</div>
 			</div>
 		</nav> 
 	</div>  
