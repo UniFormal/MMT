@@ -195,7 +195,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
    
    /** @return status of input file, obtained by comparing to error file */
    private def modified(a: Archive, path: List[String]): (Modification, Boolean) = {
-      val errorFile = (a / errors / key / path).setExtension("err")
+      val errorFile = getErrorFile(a, path)
       val inFile = a / inDim / path
       val mod = Modification(inFile, errorFile)
       val hadErrors = errorFile.toJava.length > 19 // TODO evil but more efficient than parsing the error file
