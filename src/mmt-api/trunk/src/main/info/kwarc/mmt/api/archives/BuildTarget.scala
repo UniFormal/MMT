@@ -111,7 +111,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
    
    protected def getOutFile(a: Archive, inPath: List[String]) = (a / outDim / inPath).setExtension(outExt)
    protected def getFolderOutFile(a: Archive, inPath: List[String]) = a / outDim / inPath / (folderName + "." + outExt)
-   protected def getErrorFile(a: Archive, inPath: List[String]) = (a / errors / key / inPath).setExtension(".err")
+   protected def getErrorFile(a: Archive, inPath: List[String]) = (a / errors / key / inPath).setExtension("err")
    protected def getFolderErrorFile(a: Archive, inPath: List[String]) = a / errors / key / inPath / (folderName + ".err")
    
    /**
