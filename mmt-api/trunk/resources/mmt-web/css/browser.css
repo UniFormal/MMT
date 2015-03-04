@@ -239,3 +239,56 @@ math.math-selected {
 	font-size: large;
 }
 
+.bigDiv {
+	
+	resize = 'both';
+	width = inherit;
+	height = 'auto';
+	border-width: 5px;
+	border-radius: 10px;
+	border-style: solid;
+	margin-top: 10px;
+	border-color: lightblue;  
+	clear: both;
+	padding-bottom: 15px;
+	margin-left: 35px;
+    margin-right: 35px;
+	//position: relative;
+	//background-color: lightblue;
+}
+
+.titleDiv {
+  height: 40px;
+  //border-width: 1px;
+  //border-radius: 10px;
+ // border-style: solid;
+  //border-color: Wheat;  
+  clear: both;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+  margin-left: 35px;
+  margin-right: 35px;
+  
+}
+
+.contDiv {
+	
+	resize = 'both';
+	width = inherit;
+	height = 'auto';
+	//border-width: 5px;
+	//border-radius: 10px;
+	//border-style: solid;
+	margin-top: 10px;
+	//border-color: lightblue;  
+	clear: both;
+	padding-bottom: 15px;
+	margin-left: 50px;
+    margin-right: 50px;
+	
+}
+
+.btnDiv {
+	height: 20px;
+	float: right;
+}

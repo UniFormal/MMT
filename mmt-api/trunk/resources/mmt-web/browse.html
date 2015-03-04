@@ -7,8 +7,10 @@
 
 <!-- START -->
 <!-- <script src="jquery-1.11.2.min.js"></script> -->
-<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+<!-- <script src="http://code.jquery.com/jquery-1.9.1.js"></script> -->
+	<script type="text/javascript" src="/script/jquery/jquery-1.11.2.js"></script>
     <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+   
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
@@ -238,7 +240,7 @@
 	
 	<!-- top bar -->
  		<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-    			<div class="container">
+    			<div style="margin-left: 20px; margin-right: 20px">
     				<div class="navbar-header">
             			<button type="button" class="navbar-toggle" data-toggle="collapse"
                    			 data-target="#bs-example-navbar-collapse-1">
@@ -251,9 +253,8 @@
         			</div>
 
         		<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-       			 	<ul class="nav navbar-nav navbar-left">
-<!--        			 		<li><a href="#"> <img src="../images/logommt.jpg" style="width: 50px; height: 20px"></a></li>
- -->       			 			<li id="start"><a  href="#" data-toggle="collapse"> Show archives </a></li> 
+       			 	<ul class="nav navbar-nav navbar-left">       			 		
+       			 			<li id="start"><a  href="#" data-toggle="collapse"> Show archives </a></li> 
        				 </ul>
        			 
             		<ul class="nav navbar-nav navbar-right">
@@ -261,7 +262,7 @@
                 		<li><a href="/help.html">Help</a></li>
                 		<li><a href="#" id="showSearch">Search</a></li>
                 		<li><a href="#" id="showParse">Parse</a></li>		
-                		<li><a href="#" id="svgMan">SVG</a></li>
+                		<!-- <li><a href="#" id="svgMan">SVG</a></li> -->
                 		
                 		
             		</ul>

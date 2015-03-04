@@ -32,7 +32,9 @@ var interactiveViewing = {
 			res["type"] = this.showComp('type');
 			res["show definition"] = this.showComp('definition');
 			res["Show graph inline"] = function() {
-				var targetParent = target.parentElement.parentElement;
+				
+				var targetParent = $(target).closest(".inlineBoxSibling");
+
 				var svgDiv = document.createElement('div');
 				svgDiv.id = 'svgDiv';
 				$(targetParent).append(svgDiv);
@@ -40,27 +42,19 @@ var interactiveViewing = {
 				button.id = 'btn';
 				
 				$(svgDiv).append(button);
+				var x = document.getElementById('svgDiv');
+				x.style.overflow='scroll';
+				x.style.resize = 'both';
+				x.style.width = 'auto';
+				x.style.height = 'auto';
+
+				
 				$('#btn').text('Hide Graph');
 				$('#btn').click(function() {
 					$( "#svgDiv" ).remove();
 				});
 				
-				var x = document.getElementsByTagName('svg');
-				console.log(x);
 
-				/*var button2 = document.createElement('button2');
-				button2.id = 'btn2';
-				$(targetParent).append(button2);
-				$('#btn2').text('Drag button');*/
-				
-				var box = $(targetParent).parents().eq(2);
-				console.log(box[0]);
-				box[0].style.overflow = 'scroll';
-				box[0].style.resize = 'both';
-				box[0].style.width = 'auto';
-				box[0].style.height = 'auto';
-
-				
 				var preSVG = target.attributes.item(1).value;
 				var svgURI = preSVG.split("#")[0];
 				svgURI = ":svg?" + svgURI;
@@ -78,8 +72,9 @@ var interactiveViewing = {
 		res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
 		res["Show in Mizar"] = function(){alert("This is will be the Mizar concept based on alignments")};
 		res["Show in HOLLight"] = function(){alert("This will be the HOLLight concept based on alignments")};
-        
-		   //res["get OMDoc"] = mmt.openCurrentOMDoc();
+		res["SVG"] = this.createInlineBox(target, mmt.currentURI);
+
+		//res["get OMDoc"] = mmt.openCurrentOMDoc();
 		}
 		return res;
 	},
@@ -131,8 +126,41 @@ var interactiveViewing = {
 	},
 	
 	createInlineBox: function(origin, body) {
-		var behind = $(origin).parent('.inlineBox');
 		
+		var targetParent = $(origin).closest(".inlineBoxSibling");
+		var newDiv = document.createElement('div');
+		var btnDiv = document.createElement('div');
+		
+		$(newDiv).addClass( "bigDiv");
+		$(btnDiv).addClass( "btnDiv");
+		var titleDiv = document.createElement('div');
+		$(titleDiv).addClass( "titleDiv");
+		$(titleDiv).append("<h3 style=\"color: lightgrey\">"+body+"</h3>");
+		
+		var contentDiv = document.createElement('div');
+		$(contentDiv).addClass( "contDiv");
+		
+		$(targetParent).append(newDiv);
+		$(newDiv).append(btnDiv);
+		$(newDiv).append(titleDiv);
+		$(newDiv).append(contentDiv);
+	
+		var button = document.createElement('button');
+		
+		$(btnDiv).append(button);
+		$(button).text('Hide');
+	    
+		$(button).click(function() {
+			var temp = $(button).closest(".bigDiv");
+			$(temp).remove();
+		});
+		
+		var preSVG = target.attributes.item(1).value;
+		var svgURI = preSVG.split("#")[0];
+		svgURI = ":svg?" + svgURI;
+		
+		mmt.ajaxAppendBox(svgURI, contentDiv);
+	
 	},
 	
 	/* shows a component of the current MMT URI in a dialog */

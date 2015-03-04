@@ -177,9 +177,13 @@ var mmt = {
 		return this.makeURL(relativeURL);
 	},
 	
+	/**
+	    * @param url the URL to load from
+	    * @param targetid the XML id of the element, where it appends
+	    */
    ajaxAppend : function (url, targetid, async) {
 	   function cont(data) {
-		   var inlineBox = "<div class='inlineBox'><table><tr><td class='inlineTitle'>X</td></tr><tr><td class='inlineBody'></td></tr></table></div>"
+		   //var inlineBox = "<div class='inlineBox'><table><tr><td class='inlineTitle'>X</td></tr><tr><td class='inlineBody'></td></tr></table></div>"
 		   //$(currentElem).closest(boxSibling).after(inlineBox).append(data.lastChild);
 		   //var targetnode = $('#' + targetid).children();
 		   //$('#' + targetid).innerHTML = data;
@@ -197,6 +201,40 @@ var mmt = {
 			   });
 	},
 		
+	/**
+	    * @param url the URL to load from
+	    * @param targetid the XML id of the element, where it appends
+	    */
+	   ajaxAppendBeta : function (url, targetclass, async) {
+		   function cont(data) {
+			   var targetnode = $('.' + targetclass);
+			   var serializer = new XMLSerializer();
+			   var xmlString = serializer.serializeToString(data);
+			   targetnode.append(xmlString);
+			}
+			if (async == null) async = true;
+			$.ajax({ 'url': url,
+					 'dataType': 'xml',
+					 'async': async,
+					 'success': cont
+				   });
+		},
+		
+		ajaxAppendBox : function (url, targetnode, async) {
+			   function cont(data) {
+				   
+				   var serializer = new XMLSerializer();
+				   var xmlString = serializer.serializeToString(data);
+				   $(targetnode).append(xmlString);
+				}
+				if (async == null) async = true;
+				$.ajax({ 'url': url,
+						 'dataType': 'xml',
+						 'async': async,
+						 'success': cont
+					   });
+			},
+			
    /**
     * @param url the URL to load from
     * @param targetid the XML id of the element, whose child to replace with the loaded node
@@ -213,6 +251,7 @@ var mmt = {
 				 'success': cont
 			   });
 	},
+	
 	
 	load : function (elem) {
 	   if (elem.hasAttribute('jobad:load')) {
