@@ -49,7 +49,7 @@
     <button ng-click="search()">search</button>
     maximal entries:
     <input type="number" min="0" max="10000" ng-model="maxNumber"/>
-    <span ng-show="!groupMode">
+    <span ng-show="!groupMode || groups.length <= 10">
         <span ng-show="number > results.length">{{number}} entries (showing {{results.length}})</span>
         <span ng-show="number <= results.length">result: {{results.length}}</span>
     </span>
