@@ -165,7 +165,7 @@ class ErrorManager extends Extension with Logger {
       val bes = iterator.map(_.toStrList)
       val result = bes.filter { be =>
         assert(args.length == be.length)
-        args.zip(be).forall { case (a, b) => b.indexOf(a) > -1}
+        args.zip(be).forall { case (a, b) => b.replace('+', ' ').indexOf(a) > -1}
       }
       var json: JSON = JSONNull
       path match {
