@@ -172,15 +172,15 @@ class ErrorManager extends Extension with Logger {
         case List("count2") => json = JSONArray(JSONObject("count" -> JSONInt(result.length)))
         case List("group", field) =>
           val idx = Table.columns.indexOf(field)
-          assert (idx >= 0) 
+          assert(idx >= 0)
           val l: List[String] = result.map(be => be(idx)).toList.sorted
           val g = l.groupBy(identity).mapValues(_.length).toList.sortBy(_._2).reverse
           json = JSONArray(g.take(limit).map { case (s, i) =>
-              JSONObject("count" -> JSONInt(i), "content" -> JSONString(s))
+            JSONObject("count" -> JSONInt(i), "content" -> JSONString(s))
           }: _*)
         case _ =>
           json = JSONArray(result.toList.take(limit).map(l =>
-            JSONObject(Table.columns.zip(l.map(JSONString(_))): _*)): _*)
+            JSONObject(Table.columns.zip(l map JSONString): _*)): _*)
       }
       Server.JsonResponse(json)
     }
