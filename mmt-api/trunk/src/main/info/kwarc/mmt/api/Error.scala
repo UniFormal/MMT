@@ -18,7 +18,7 @@ abstract class Error(val shortMsg : String) extends java.lang.Exception(shortMsg
    }
    protected def causedByToNode = causedBy match {
       case Some(e: Error) => e.toNode
-      case Some(e) => <error type={e.getClass.getName} shortMsg={e.getMessage}>{Stacktrace.asNode(e)}</error>
+      case Some(e) => <cause type={e.getClass.getName} shortMsg={e.getMessage}>{Stacktrace.asNode(e)}</cause>
       case None => Nil
    }
    protected def causedByToString = causedBy match {
@@ -43,8 +43,10 @@ abstract class Error(val shortMsg : String) extends java.lang.Exception(shortMsg
  */
 object Stacktrace {
    def asString(e: Throwable) = e.getStackTrace.map(_.toString).mkString("","\n","")
-   def asNode(e: Throwable) =
-      <stacktrace>{e.getStackTrace.map(e => <element>{e.toString}</element>)}</stacktrace>
+   def asNode(e: Throwable) = e.getStackTrace.toList match {
+     case Nil => Nil
+     case st => <stacktrace>{st.map(e => <element>{e.toString}</element>)}</stacktrace>
+   }
 }
 
 /** error levels, see [[Error]] */
@@ -175,7 +177,7 @@ class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends Error
    * closes the file
    */
   def close {
-     file.write("\n</errors>")
+     file.write("</errors>\n")
      file.close
   }
 }
