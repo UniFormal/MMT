@@ -56,7 +56,6 @@ angular.module('searchApp', []).controller('SearchController',
     };
     $scope.search();
     $scope.group();
-    $scope.count();
     $scope.sort = {
         col: 'id',
         asc: false
