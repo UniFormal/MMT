@@ -31,11 +31,7 @@ abstract class Error(val shortMsg : String) extends java.lang.Exception(shortMsg
       shortMsg + "\n" + extraMessage + "\ndetected at\n" + Stacktrace.asString(this) + causedByToString
    }
    def toNode : scala.xml.Elem =
-      <error type={this.getClass.getName} shortMsg={this.shortMsg} level={this.level.toString}>
-        {extraMessage}
-        {Stacktrace.asNode(this)}
-        {causedByToNode}
-      </error> 
+      <error type={this.getClass.getName} shortMsg={this.shortMsg} level={this.level.toString}>{extraMessage}{Stacktrace.asNode(this)}{causedByToNode}</error>
 }
 
 /**
