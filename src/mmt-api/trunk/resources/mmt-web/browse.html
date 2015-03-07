@@ -5,20 +5,13 @@
   <!-- <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/> --> 
 <title>MMT Web Server</title>
 
-<!-- START -->
-<!-- <script src="jquery-1.11.2.min.js"></script> -->
-<!-- <script src="http://code.jquery.com/jquery-1.9.1.js"></script> -->
-	<script type="text/javascript" src="/script/jquery/jquery-1.11.2.js"></script>
-    <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-   
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script> 
+<script type="text/javascript" src="/script/jquery/jquery-1.11.2.js"></script>
+<script type="text/javascript" src="/script/jquery/jquery-ui.js"></script>
+<script type="text/javascript" src="/script/jquery/jquery.min.js"></script>
 
-<!-- END  -->
-
- 
+<link rel="stylesheet" type="text/css" href="/css/bootstrap/bootstrap.min.css">
+<link rel="stylesheet" href="/css/bootstrap/bootstrap-theme.min.css">
+<script type="text/javascript" src="/script/bootstrap/bootstrap.min.js"></script> 
  
   <link rel="stylesheet" type="text/css" href="/css/mmt.css"/>
   <link rel="stylesheet" type="text/css" href="/css/browser.css"/>
@@ -26,10 +19,7 @@
   <link rel="stylesheet" type="text/css" href="/css/jquery/jquery-ui.css"/>
   <!-- <link rel="stylesheet" type="text/css" href="/css/jquery/ui.base.css"/> -->
   <link rel="shortcut icon" href="/mmt2.png" />
-  <!-- <script type="text/javascript" src="/script/jquery/jquery.js"></script> -->
   
-  <!-- <script type="text/javascript" src="/script/jquery/jquery.xmlns.js"/> -->
-
   <script src="script/codemirror2/lib/codemirror.js"></script>
   <link rel="stylesheet" href="script/codemirror2/lib/codemirror.css"/>
   <script src="script/codemirror2/mode/lf/lf.js"></script>
@@ -196,30 +186,13 @@
   
 
    </script>
-  
-  <script type="text/javascript">
-    $(function(){
-    	 $("#start").on('click', function() {
-    		 
-    		 	 var s = $(first).attr('style');
-    		 	 var res = s.substring(0, 43); 
-    		 	 
-    		 	  $("#first").attr('style', res);
-    		 	  
-    			  $("#first").show();
 
-    		});
-    });
-  
-
-   </script>
    
-   
+});
    <script type="text/javascript">
     $(function(){
-    	 $("#remove-start").on('click', function() {
-    		
-    			$("#first").attr('style', 'visibility: hidden');
+    	$( "#start" ).click(function() {     
+    		   $('#first').toggle("slide", { direction: "left" }, 1000);
 
     		});
     });
@@ -254,7 +227,7 @@
 
         		<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
        			 	<ul class="nav navbar-nav navbar-left">       			 		
-       			 			<li id="start"><a  href="#" data-toggle="collapse"> Show archives </a></li> 
+       			 			<li id="start"><a  href="#" data-toggle="collapse"> Show/Hide archives </a></li> 
        				 </ul>
        			 
             		<ul class="nav navbar-nav navbar-right">
@@ -273,7 +246,7 @@
 
 <div id="page-wrapper">
 <!-- side bar -->
-	<div class = "first_column" style = "width: 25%; float: left; padding-top: 40px; visibility: hidden" id="first">
+	<div class = "first_column" style = "width: 25%; float: left; padding-top: 40px;" id="first">
 		<nav  id="pathtree" class="navbar-default navbar-side" role="navigation" >
 			<div  class="sidebar-collapse" style="height: 700px">
             	

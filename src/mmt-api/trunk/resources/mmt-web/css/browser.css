@@ -292,3 +292,6 @@ math.math-selected {
 	height: 20px;
 	float: right;
 }
+.compLabel {
+	margin-right: 10px;
+}
