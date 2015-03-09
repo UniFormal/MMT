@@ -39,6 +39,9 @@ abstract class SemanticType {
 
 /**
  * A RealizedType couples a syntactic type with a semantic type.
+ * 
+ * Note that equals is overridden.
+ * Semantically different instances of RealizedType must differ according to the overridden equals method.
  */
 abstract class RealizedType extends SemanticType {
    private var _synType: GlobalName = null
@@ -67,7 +70,7 @@ abstract class RealizedType extends SemanticType {
     */
    override def equals(that: Any) = that match {
       case that: RealizedType =>
-         synType == that.synType && home == that.home 
+         synType == that.synType && home == that.home
       case _ => false
    }
    /** apply method to construct OMLITs as rt(u) */

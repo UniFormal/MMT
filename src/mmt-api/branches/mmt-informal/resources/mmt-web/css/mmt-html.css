@@ -1,5 +1,6 @@
 span.name {
  font-weight: bold; 
+  color: #0000CD
 }
 
 tr.definition, tr.domain, tr.codomain,
@@ -15,14 +16,20 @@ div.constant {
   border-radius: 5px;
   border-style: solid;
   margin-top: 10px;
+  padding-bottom: 30px;
+  padding-top: 100px;
 }
 
 span.compToggle {
   margin-left:10px;
   background-color: Wheat;
   margin-right: 10px;
+  
 }
 
 span.compLabel {
   background-color: Wheat;
 }
+
+
+

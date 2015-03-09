@@ -96,7 +96,7 @@ abstract class ReportHandler(val id: String) {
       }
       apply(ind, caller, "error", msg)
       if (debug)
-         apply(ind, caller, "debug", e.getLongMessage)
+         apply(ind, caller, "debug", e.toStringLong)
    }
    def systemErrorHighlight(s: String): String = s
    def contentErrorHighlight(s: String): String = s
@@ -166,7 +166,7 @@ class HtmlFileHandler(filename : File) extends FileHandler(filename) {
       file.println(s"""<div class="log error" style="margin-left: $ind%">""")
       file.println(s"""<div><span class="timestamp">$time</span><span class="error-short">${e.shortMsg}</span></div>""")
       if (debug) {
-         e.getLongMessage.split("\\n").toList.foreach {line =>
+         e.toStringLong.split("\\n").toList.foreach {line =>
             file.println(s"""<div class="error-long"><span>${line}</span></div>""")
          }
       }

@@ -29,7 +29,7 @@ case class File(toJava: java.io.File) {
    /** parent directory */
    def up = File(toJava.getParentFile)
    /** file name */
-   def name = File(toJava.getName)
+   def name = toJava.getName
    /** the list of file/directory/volume label names making up this file path */ 
    def segments: List[String] = {
       val name = toJava.getName
@@ -54,8 +54,10 @@ case class File(toJava: java.io.File) {
        case None => this
        case Some(s) => File(toString.substring(0, toString.length - s.length - 1))
    }
+   /** @return children of this directory */
+   def children: List[File] = toJava.list.toList.sorted.map(this / _)
    /** @return subdirectories of this directory */
-   def subdirs = toJava.list.toList.map(this/_).filter(_.toJava.isDirectory)
+   def subdirs = children.filter(_.toJava.isDirectory)
    /** delete this, recursively if directory */
    def deleteDir {
       toJava.list foreach {n =>

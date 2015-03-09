@@ -488,24 +488,44 @@ object ComplexTerm {
  * Obj contains the parsing methods for objects.
  */
 object Obj {
-   //read basattr and compute new base
-   private def newBase(N : Node, base : Path) : Path = {
-      val b = xml.attr(N,"base")
-      if (b == "") base else Path.parse(b, base)
-   }
-   //base: base reference, may be set by any object
-   //lib: optional library against which to validate and parse paths
-   /** parses a term relative to a base address */
+   /** parses a term relative to a base address
+    *  @param Nmd node to parse (may contain metadata) 
+    *  @param base base URI to resolve relative URIs
+    *  @return the parsed term
+    *  
+    *  The URIs in 'base' attributes may contain CURIEs (e.g., xml:p="long URI" ... base="p:").
+    *  However, all namespace bindings must be in effect at the top level of the node; inner bindings are ignored.
+    */
    def parseTerm(Nmd : Node, base : Path) : Term = {
-      //N can set local cdbase attribute; if not, it is copied from the parent
+      implicit val nsmap = NamespaceMap.fromXML(Nmd)
+      Nmd match {
+         case <OMOBJ>{o}</OMOBJ> => parseTermRec(o, base)
+         case o => parseTermRec(o, base)
+      }
+   }
+   /**
+    * handles the 'base' attribute of a node
+    * @param N the current node
+    * @param base the current base URI
+    * @return the base URI to be used for N
+    */
+   private def newBase(N : Node, base : Path)(implicit nsmap: NamespaceMap) : Path = {
+      val b = xml.attr(N,"base")
+      val bExp = nsmap.expand(b)
+      if (bExp == "") base else Path.parse(bExp, base)
+   }
+   /**
+    * the recursion for parseTermTop
+    */
+   private def parseTermRec(Nmd : Node, base : Path)(implicit nsmap: NamespaceMap) : Term = {
       val nbase = newBase(Nmd, base)
       //this function unifies the two cases for binders in the case distinction below
       def doBinder(binder : Node, context : Node, scopes : List[Node]) = {
-         val bind = parseTerm(binder, nbase)
+         val bind = parseTermRec(binder, nbase)
          val cont = Context.parse(context, base)
          if (cont.isEmpty)
             throw new ParseError("at least one variable required in " + cont.toString)
-         val scopesP = scopes.map(parseTerm(_, nbase))
+         val scopesP = scopes.map(parseTermRec(_, nbase))
          OMBINDC(bind, cont, scopesP)
       }
       val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, nbase)
@@ -521,23 +541,23 @@ object Obj {
          case <OMA>{child @ _*}</OMA> =>
             if (child.length == 0)
                throw ParseError("No operator given: " + N.toString)
-            val fun = parseTerm(child.head, base)
-            val args = child.tail.toList.map(parseTerm(_, nbase))
+            val fun = parseTermRec(child.head, base)
+            val args = child.tail.toList.map(parseTermRec(_, nbase))
             OMA(fun, args)
          case <OME>{child @ _*}</OME> =>
             throw ParseError("OME not supported - use OMA: " + N.toString)
          case <OMBIND>{binder}{context}{scopes @ _*}</OMBIND> =>
             doBinder(binder, context, scopes.toList)
          case <OMATTR><OMATP>{key}{value}</OMATP>{rest @ _*}</OMATTR> =>
-            val k = parseTerm(key, nbase)
+            val k = parseTermRec(key, nbase)
             if (! k.isInstanceOf[OMID])
                throw new ParseError("key must be OMS in " + N.toString)
-            val v = parseTerm(value, nbase)
+            val v = parseTermRec(value, nbase)
             if (rest.length == 0)
                throw ParseError("not a well-formed attribution: " + N.toString)
             val n = if (rest.length == 1)
                rest(0) else <OMATTR>{rest}</OMATTR>
-            val t = parseTerm(n, nbase)
+            val t = parseTermRec(n, nbase)
             OMATTR(t, k.asInstanceOf[OMID], v)
          case <OMFOREIGN>{_*}</OMFOREIGN> => OMFOREIGN(N)
          case <OMSF>{nodes @ _*}</OMSF> =>            
@@ -545,7 +565,7 @@ object Obj {
                case node @ <text>{scala.xml.PCData(t)}</text> => Text(xml.attr(node, "format"), t)
                case node @ <text>{scala.xml.Text(t)}</text> => Text(xml.attr(node, "format"), t) //some parsers don't use PCData
                case <node>{n}</node> => XMLNode(n)
-               case n => Formal(parseTerm(n, nbase))
+               case n => Formal(parseTermRec(n, nbase))
             }
             OMSemiFormal(sf)
          case <OMI>{i}</OMI> => OMI.parse(i.toString)
@@ -555,23 +575,20 @@ object Obj {
             val tp = Path.parseS(xml.attr(N, "type"), base)
             val v = xml.attr(N, "value")
             UnknownOMLIT(v, tp)
-         case <OMOBJ>{o}</OMOBJ> => parseTerm(o, nbase)
-         case <OMMOR>{o}</OMMOR> => parseTerm(o, nbase) //TODO this should be deprecated
-         case <OMTHY>{o}</OMTHY> => parseTerm(o, nbase) //TODO this should be deprecated
-         case <OMREL>{o}</OMREL> => parseTerm(o, nbase) //TODO this should be deprecated
          case _ => throw ParseError("not a well-formed term: " + N.toString)
       }
       mdOpt.foreach {md => o.metadata = md}
       o
    }
-   private def parseOMS(N : Node, base : Path) : Path = N match {
+   private def parseOMS(N : Node, base : Path)(implicit nsmap: NamespaceMap) : Path = N match {
       case <OMS/> =>
         val doc = xml.attr(N,"base")
+        val docExp = nsmap.expand(doc)
         val mod = xml.attr(N,"module")
         val name = xml.attr(N,"name")
-        Path.parse(doc, mod, name, "", base)
+        Path.parse(docExp, mod, name, "", base)
       case <OMS>{n}</OMS> =>
-        val mod = parseTerm(n, base)
+        val mod = parseTermRec(n, base)
         val name = xml.attr(N,"name")
         mod % name
       case _ => throw ParseError("not a well-formed identifier: " + N.toString)

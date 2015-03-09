@@ -1,6 +1,8 @@
 package info.kwarc.mmt.api.web
 
 import scala.xml._
+
+ 
 import scala.util.parsing.json.{JSONType, JSONArray, JSONObject}
 
 import info.kwarc.mmt.api._
@@ -8,11 +10,12 @@ import libraries._
 import ontology._
 import modules._
 
-object Util {
-   def item(p : Path, state : String, label : Option[String] = None) = 
+object Util {   
+  
+  def item(p : Path, state : String, label : Option[String] = None) = 
       <item id={p.toPath} state={state}>
         <content><name href="#" onclick={"mmt.sideBarClick(event, '" + p.toPath + "')"}>{label.getOrElse(p.last)}</name></content>
-      </item>
+        </item>
    
    /** returns a string identifying the kind of an edge */
    def edgeKind(e: Edge) : String = e match {

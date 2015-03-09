@@ -69,25 +69,24 @@ class GraphExporter(theories: Iterable[Path], views: Iterable[Path], tg: TheoryG
          case _ =>
             id.last
       }
-      val tooltipAtt = "tooltip=\"" + tp + " " + id.toPath + "\""
+      val tooltipAtt = s"""tooltip="graph$tp""""
       val styleAtts = if (external) "style=filled,fillcolor=gray," else ""
-      val uriAtt = "href=\"javascript:parent.SVGClick('" + id.toPath + "')\""
+      val uriAtt = s"""href="${id.toPath}""""
       "\"" + id.toPath + "\" [label=\"" + label + "\"," + tooltipAtt + "," + styleAtts + uriAtt + "];"
    }
    private def dotEdge(id:Option[Path], from: Path, to: Path, tp: String, external: Boolean) = {
       val idAtts = id match {
-         case None => "tooltip=\"" + tp + "\""
-         case Some(id) => "label=\"" + id.last + "\", tooltip=\"" + tp + " " + id.toPath + "\"" + 
-           "href=\"javascript:parent.SVGClick('" + id.toPath + "')\"" 
+         case None => s"""tooltip="graph$tp""""
+         case Some(id) => s"""label="${id.last}" tooltip="graph$tp" href="${id.toPath}"""" 
       }
-      val styleAtts = tp match {
+     /*val styleAtts = tp match {
          case "view" => "style=dashed,color=\"blue:blue\""
          case "structure" => "style=bold,color=red"
          case "include" => "style=solid,color=black"
          case "meta" => "style=solid,color=green"
-      }
+      }*/
       val weight = if (external) 1 else 10
-      "\"" + from.toPath + "\" -> \"" + to.toPath + "\" " + s"[$idAtts,$styleAtts,weight=$weight];"
+      "\"" + from.toPath + "\" -> \"" + to.toPath + "\" " + s"[$idAtts,weight=$weight];"
    }
    /**
     * exports in dot format

@@ -68,8 +68,6 @@ abstract class WritableArchive extends ROArchive {
        case Dim(path@_*) => root / path.toList
     }
     
-    val timestamps = new TimestampManager(this, root / "META-INF" / "timestamps" )
-    
     def includeDir(n: String) : Boolean = n != ".svn" && n != ".mmt"
 
     val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, this/narration)

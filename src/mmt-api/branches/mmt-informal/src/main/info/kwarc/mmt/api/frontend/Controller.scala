@@ -430,12 +430,11 @@ class Controller extends ROController with Logger {
 	          backend.addStore(LocalSystem(b)) 
          case AddArchive(f) =>
 	         val archs = backend.openArchive(f)
-	         val notifier = notifyListeners
 	         archs.foreach {a =>
 	            a.properties.get("classpath").foreach {cp =>
 	               handle(AddMathPathJava(a.root/cp))
 	            }
-	            notifier.onNewArchive(a)
+	            notifyListeners.onArchiveOpen(a)
 	         }
          case ArchiveBuild(id, key, mod, in, args) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
@@ -464,6 +463,7 @@ class Controller extends ROController with Logger {
                case "close"        =>
                   val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
                   backend.closeArchive(id)
+                  notifyListeners.onArchiveClose(arch)
                case d =>
                   extman.getTarget(d) match {
                      case Some(buildTarget) =>

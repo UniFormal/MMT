@@ -5,10 +5,7 @@ import scala.util.parsing.json._
 
 import frontend._
 import backend._
-import ontology._
-import modules._
-import objects._
-import utils.URI
+import utils._
 
 import tiscaf._
 import tiscaf.let._
@@ -17,9 +14,6 @@ import scala.util.parsing.json.{ JSONType, JSONArray, JSONObject }
 import scala.xml._
 import scala.concurrent._
 
-import java.net.HttpURLConnection
-import java.net._
-import java.io._
 
 case class ServerError(msg: String) extends Error(msg)
 
@@ -57,9 +51,15 @@ object Server {
 
   /**
    * An XML response that the server sends back to the browser
-   * @param node the XML message that is sent in the HTTP body
+   * @param s the XML message that is sent in the HTTP body
    */
   def XmlResponse(s: String): HLet = TextResponse(s, "xml")
+
+  /**
+   * A json response
+   * @param json the message that is sent in the HTTP body
+   */
+  def JsonResponse(json: JSON) = TypedTextResponse(json.toString, "application/json")
 
   /**
    * An XML response that the server sends back to the browser
@@ -83,21 +83,23 @@ object Server {
   def errorResponse(msg: String): HLet = errorResponse(ServerError(msg))
   /** a response that sends an HTML error message to the browser */
   def errorResponse(error: Error): HLet = {
-     val ns = utils.xml.namespace("html")
-     val node = <div xmlns={ns}>{error.getLongMessage.split("\\n").map(s => <p>{s}</p>)}</div>
-     XmlResponse(node)
+     XmlResponse(error.toNode)
   }
 }
 
 /** straightforward abstraction for web style key-value queries; no encoding, no duplicate keys */
 case class WebQuery(pairs: List[(String,String)]) {
+   /** @return the value of the key, if present */
    def apply(key: String) : Option[String] = pairs.find(_._1 == key).map(_._2) 
+   /** @return the string value of the key, default value if not present */
    def string(key: String, default: String = ""): String = apply(key).getOrElse(default)
-   def boolean(key: String, default: Boolean = false) = apply(key).getOrElse(default.toString) match {
+   /** @return the boolean value of the key, default value if not present */
+   def boolean(key: String, default: Boolean = false) = apply(key).getOrElse(default.toString).toLowerCase match {
       case "false" => false
       case "" | "true" => true
       case s => throw ParseError("boolean expected: " + s)
    }
+   /** @return the integer value of the key, default value if not present */
    def int(key: String, default: Int = 0) = {
       val s = apply(key).getOrElse(default.toString) 
       try {s.toInt}

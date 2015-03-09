@@ -3,28 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <!-- <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/> --> 
+<title>MMT Web Server</title>
 
+<script type="text/javascript" src="/script/jquery/jquery-1.11.2.js"></script>
+<script type="text/javascript" src="/script/jquery/jquery-ui.js"></script>
+<script type="text/javascript" src="/script/jquery/jquery.min.js"></script>
+
+<link rel="stylesheet" type="text/css" href="/css/bootstrap/bootstrap.min.css">
+<link rel="stylesheet" href="/css/bootstrap/bootstrap-theme.min.css">
+<script type="text/javascript" src="/script/bootstrap/bootstrap.min.js"></script> 
+ 
   <link rel="stylesheet" type="text/css" href="/css/mmt.css"/>
   <link rel="stylesheet" type="text/css" href="/css/browser.css"/>
   <link rel="stylesheet" type="text/css" href="/css/JOBAD.css"/>
   <link rel="stylesheet" type="text/css" href="/css/jquery/jquery-ui.css"/>
-  <!-- Latest compiled and minified CSS -->
   <!-- <link rel="stylesheet" type="text/css" href="/css/jquery/ui.base.css"/> -->
   <link rel="shortcut icon" href="/mmt2.png" />
-  <script type="text/javascript" src="/script/jquery/jquery.js"></script>
-  <!-- <script type="text/javascript" src="/script/jquery/jquery.xmlns.js"/> -->
-  <!-- Latest compiled and minified JavaScript -->
-<!-- Latest compiled and minified CSS -->
-<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css">
-
-<!-- Optional theme -->
-<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap-theme.min.css">
-
-<!-- Latest compiled and minified JavaScript -->
-<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.0/js/bootstrap.min.js"></script>
-
-
-
+  
   <script src="script/codemirror2/lib/codemirror.js"></script>
   <link rel="stylesheet" href="script/codemirror2/lib/codemirror.css"/>
   <script src="script/codemirror2/mode/lf/lf.js"></script>
@@ -47,10 +42,12 @@
   <script type="text/javascript" src="/script/jobad/modules/interactive-viewing.js"></script>
    
     <!-- JOBAD Init -->
+     
+   
   <script type="text/javascript">
       var JOBAD1;
       $(function(){
-         JOBAD1 = new JOBAD($("#main,#inputviewterm,#inputviewtype,#results,#breadcrumbs"));
+         JOBAD1 = new JOBAD($("#main,#inputviewterm,#inputviewtype,#results,#breadcrumbs,#sidebar"));
          JOBAD1.modules.load("kwarc.mmt.navigation", []);
          JOBAD1.modules.load("kwarc.mmt.hovering", []);
          JOBAD1.modules.load("kwarc.mmt.intvw", []);
@@ -114,6 +111,8 @@
      };
   </script>
   
+  
+  
   <script type="text/javascript">
       function search(){
          var base   = $('#base').val();
@@ -121,6 +120,7 @@
          var name   = $('#name').val();
          var theory = $('#theory').val();
          var pattern= $('#pattern').val();
+
          var type   = $('#type').is(':checked');
          var definition= $('#definition').is(':checked');
 		   $.ajax({'url': '/:search',
@@ -137,106 +137,233 @@
       }
    </script>
    
-   <script>
+    <script type="text/javascript">
+    $(function(){
+    	 $("#showSearch").on('click', function() {
+    		 
+    		      $("#searchrow").removeAttr("style");
+    			  $("#searchrow").show();
+
+    		});
+    });
   
-   $("#svgDiv #graph1").draggable({
-	    handle: 'rect'
-	}).resizable({
-	    aspectRatio: 1.0
-	});
-   </script> 
+
+   </script>
+   
+   <script type="text/javascript">
+    $(function(){
+    	 $("#showParse").on('click', function() {
+    		 
+    		      $("#parserow").removeAttr("style");
+    			  $("#parserow").show();
+
+    		});
+    });
+  
+
+   </script>
+   
+   <script type="text/javascript">
+    $(function(){
+    	 $("#remove-search").on('click', function() {
+    		
+    			$('#searchrow').attr('style', 'visibility: hidden');
+
+    		});
+    });
+  
+
+   </script>
+   
+   <script type="text/javascript">
+    $(function(){
+    	 $("#remove-parse").on('click', function() {
+    		
+    			$('#parserow').attr('style', 'visibility: hidden');
+
+    		});
+    });
+  
+
+   </script>
+
+   
+});
+   <script type="text/javascript">
+    $(function(){
+    	$( "#start" ).click(function() {     
+    		   $('#first').toggle("slide", { direction: "left" }, 1000);
+
+    		});
+    });
+  
+
+   </script>
+   body
+   { margin-top: 125px;}
+   
+   .navbar-fixed-top .nav {
+    padding: 15px 0;
+}
+
 </head>
 
-<body><table>
-     
-  <tr><td colspan="2" class="layout">
-    <div id="top">
-      <div id="title">The MMT Web Server</div>
-      <div id="menu_bar">
-        <!--<span class="pagelink"><a href="/search.html">Search</a></span>-->
-        <span class="pagelink"><a href="/admin.html" target="_blank">Administration</a></span>
-        <span class="pagelink"><a href="/help.html" target="_blank">Help</a></span>
-      </div>
-    </div>
-  </td></tr>
-   
-  <tr>
-      <td class="layout">
-       <div id="sidebar">
-          <div id="pathtree"></div>
-       </div>
-     </td>
-    
-     <td class="layout">
-       <div id="breadcrumbs">
-         <div></div>
-       </div>
+<body>
+	<div id="wrapper" >
+	
+	<!-- top bar -->
+ 		<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    			<div style="margin-left: 20px; margin-right: 20px">
+    				<div class="navbar-header">
+            			<button type="button" class="navbar-toggle" data-toggle="collapse"
+                   			 data-target="#bs-example-navbar-collapse-1">
+							<span class="sr-only">Toggle navigation</span>
+			                <span class="icon-bar"></span>
+			                <span class="icon-bar"></span>
+			                <span class="icon-bar"></span>
 
-       <div id="main">
-         <div></div>
-       </div>
-    </td>
-  </tr>
-</table>  
+            			</button>       
+        			</div>
 
-<div id="parse">
-<button onclick="toggleClick(this)">show/hide</button>
-<b>Parse-analyze-simplify-present</b>
-<table class="toggleTarget">
-  <tr>
-    <td class="layout">
-      <div>
-        <span>Enter an object over theory: </span>
-        <input type="text" style="resize:horizontal;" size="30" class="activetheory" id="activetheory"></input>
-      </div>
-    </td>
-    <td>
-        <span><input type="checkbox" id="inputanalyze"/>analyze</span>
-        <span><input type="checkbox" id="inputsimplify"/>simplify</span>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      <textarea id="inputbox"></textarea>
-    </td>
-    <td>
-      result: <span id="inputviewterm"><div></div></div><br/>
-      inferred type:<span id="inputviewtype"><div></div></div>
-    </td>
-  </tr>
-</table>
+        		<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+       			 	<ul class="nav navbar-nav navbar-left">       			 		
+       			 			<li id="start"><a  href="#" data-toggle="collapse"> Show/Hide archives </a></li> 
+       				 </ul>
+       			 
+            		<ul class="nav navbar-nav navbar-right">
+                		<li><a href="/admin.html">Admin</a></li>
+                		<li><a href="/help.html">Help</a></li>
+                		<li><a href="#" id="showSearch">Search</a></li>
+                		<li><a href="#" id="showParse">Parse</a></li>		
+                		<!-- <li><a href="#" id="svgMan">SVG</a></li> -->
+                		
+                		
+            		</ul>
+        		</div>
+    		</div>
+		</nav>
+	<!-- /top bar -->
+
+<div id="page-wrapper">
+<!-- side bar -->
+	<div class = "first_column" style = "width: 25%; float: left; padding-top: 40px;" id="first">
+		<nav  id="pathtree" class="navbar-default navbar-side" role="navigation" >
+			<div  class="sidebar-collapse" style="height: 700px">
+            	
+			</div>
+		</nav> 
+	</div>  
+	
+<!-- page content --> 
+	<div class = "second_column" style = " width: 70%; float: right; padding-right: 2%; ">
+		<div id="page-inner">
+		<div class="row">
+				<div id="breadcrumbs" class="col-md-8">
+					<div class="panel panel-back noti-box">
+						<span class="icon-box bg-color-red set-icon">
+							<i class="fa fa-envelope-o"></i>
+						</span>
+					</div>
+				</div>
+			</div>
+			
+	<div class="row">		
+		<div id="main" class="col-md-11">           
+				<div class="panel panel-back noti-box">
+	            	<span class="icon-box bg-color-green set-icon">
+	                	<i class="fa fa-bars"></i>
+	                </span>
+	            </div>
+		</div>
+	</div>
+	
+		<div class="row" id="searchrow" style="visibility: hidden">
+				<div id="search" class="col-md-8" >
+					<div class="panel panel-back noti-box">
+						<span class="icon-box bg-color-red set-icon">
+							<i class="fa fa-envelope-o"></i>
+								
+									
+										<table class="toggleTarget">
+  											<tr><td colspan="2" class="layout">
+    											 <div class="searchgroup">Enter 
+    											 	<a href="http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html#sum">Java regular expressions</a> to filter based on the URI of a declaration<br/>
+   														  <table>
+        														<tr><td class="uriregexp">Namespace</td><td>
+        															<input type="text" size="30" id="base"></input></div></td></tr>
+
+     															<tr><td class="uriregexp">Theory</td><td>
+     																<input type="text" size="30" id="module"></input></div></td></tr>
+     																	
+     															<tr><td class="uriregexp">Name</td><td>
+     																<input type="text" size="30" id="name"></input></div></td></tr>
+     													</table>
+     											</div>
+											     <div>Roles:
+											        <span><input type="checkbox" id="constant"/>primitive</span>
+											        <span><input type="checkbox" id="defined"/>defined</span>
+											        <span><input type="checkbox" id="axiom"/>axiom</span>
+											        <span><input type="checkbox" id="theorem"/>theorem</span>
+											     </div>
+											     <div class="searchgroup">
+											       Enter an expression over theory <input type="text" size="50" id="theory" class="activetheory"></input> to match inside the <input type="checkbox" id="type" checked="checked"/> type or <input type="checkbox" id="definition"/> definiens of a declaration<br/>
+											       <input type="text" size="50" id="pattern"></input><br/>
+											       <p class="help-block">Use $x,y,z:query to enter unification variables.</p>
+											        
+											     </div>
+     								<div style="margin-bottom: 30px; margin-right: 15px"><input class ="btn btn-primary btn-lg btn-block" type="button" value="Search" id="search" onclick="search()"/></div>
+     								<div><button class="btn btn-default btn-xs" id="remove-search">Close</button></div>
+    							 <div id="results"><div/></div>
+ 							 </td></tr></table
+  
+						</span>
+					</div>
+				</div>
+			</div>
+			<div class="row" id="parserow" style="visibility: hidden">
+				<div id="parse" class="col-md-8"  >
+					<table class="toggleTarget">
+  						<tr>
+   							 <td class="layout">
+     							 <div id="inlineBox"></div>
+     								 <div>
+    								    <span>Enter an object over theory: </span>
+       										 <input type="text" style="resize:horizontal;" size="30" class="activetheory" id="activetheory"></input>
+    								 </div>
+   							 </td>
+   							 <td>
+        						<span><input type="checkbox" id="inputanalyze"/>analyze</span>
+      							<span><input type="checkbox" id="inputsimplify"/>simplify</span>
+   							 </td>
+ 						 </tr>
+ 						 <tr>
+  							 <td>
+    							  <textarea id="inputbox"></textarea>
+   							 </td>
+    						 <td>
+     							result: <span id="inputviewterm"><div></div></div><br/>
+     							 inferred type:<span id="inputviewtype"><div></div></div>
+   							 </td>
+  					</tr>
+				</table>
+				<div><button class="btn btn-default" id="remove-parse">Close</button></div>
+				
+			</div>
+			
+		</div>
+</div>
 </div>
 
-<div id="search">
-<button onclick="toggleClick(this)">show/hide</button>
-<b>Search</b>
-<table class="toggleTarget">
-  <tr><td colspan="2" class="layout">
-     <div class="searchgroup">Enter <a href="http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html#sum">Java regular expressions</a> to filter based on the URI of a declaration<br/>
-     <table>
-        <tr><td class="uriregexp">Namespace</td><td><input type="text" size="30" id="base"></input></div></td></tr>
-     
-     <tr><td class="uriregexp">Theory</td><td><input type="text" size="30" id="module"></input></div></td></tr>
-     <tr><td class="uriregexp">Name</td><td><input type="text" size="30" id="name"></input></div></td></tr>
-     </table>
-     </div>
-     <!--<div>Roles:
-        <span><input type="checkbox" id="constant"/>primitive</span>
-        <span><input type="checkbox" id="defined"/>defined</span>
-        <span><input type="checkbox" id="axiom"/>axiom</span>
-        <span><input type="checkbox" id="theorem"/>theorem</span>
-     </div>-->
-     <div class="searchgroup">
-       Enter an expression over theory <input type="text" size="50" id="theory" class="activetheory"></input> to match inside the <input type="checkbox" id="type" checked="checked"/> type or <input type="checkbox" id="definition"/> definiens of a declaration<br/>
-       <input type="text" size="50" id="pattern"></input><br/>
-        Use $x,y,z:query to enter unification variables.
-     </div>
-     <div><input type="button" value="Search" id="search" onclick="search()"/></div>
-     <div id="results"><div/></div>
-  </td></tr>
+
+<div id="latin-dialog"></div>
+</div>
+<!-- <div id="footer">
+      <div class="container">
+
+      </div>
+ </div> -->
 </div>
 
-<div id="latin-dialog"><span/></div>
 </body>
 
 </html>

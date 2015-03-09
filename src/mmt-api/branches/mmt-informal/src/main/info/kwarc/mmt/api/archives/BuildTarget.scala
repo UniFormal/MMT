@@ -11,8 +11,9 @@ sealed abstract class BuildTargetModifier {
 case object Clean  extends BuildTargetModifier {
    def toString(dim: String) = "-" + dim
 }
-case object Update extends BuildTargetModifier {
-   def toString(dim: String) = dim + "*"
+case class Update(ifChanged: Boolean, ifHadErrors: Boolean) extends BuildTargetModifier {
+   def key = (if (ifChanged) "*" else "") + (if (ifHadErrors) "!" else "")
+   def toString(dim: String) = dim + key
 }
 case object Build  extends BuildTargetModifier {
    def toString(dim: String) = dim
@@ -35,7 +36,7 @@ abstract class BuildTarget extends Extension {
    /** build this target in a given archive */
    def build (a: Archive, args: List[String], in: List[String])
    /** update this target in a given archive */
-   def update(a: Archive, args: List[String], in: List[String])
+   def update(a: Archive, args: List[String], up: Update, in: List[String])
    /** clean this target in a given archive */
    def clean (a: Archive, args: List[String], in: List[String])
 
@@ -51,7 +52,7 @@ abstract class BuildTarget extends Extension {
       if (reqArgs != args.length)
          throw ParseError("wrong nunmber of arguments, required: " + reqArgs)
       modifier match {
-         case Update => update(arch, args, in)
+         case up: Update => update(arch, args, up, in)
          case Clean  => clean(arch, args, in)
          case Build  => build(arch, args, in)
       }
@@ -108,8 +109,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
    /** the name that is used for the special file representing the containing folder, empty by default */
    protected val folderName = ""
    
-   protected def outPath(a: Archive, inPath: List[String]) = (a / outDim / inPath).setExtension(outExt)
-   protected def folderOutPath(a: Archive, inPath: List[String]) = a / outDim / inPath / (folderName + "." + outExt)
+   protected def getOutFile(a: Archive, inPath: List[String]) = (a / outDim / inPath).setExtension(outExt)
+   protected def getFolderOutFile(a: Archive, inPath: List[String]) = a / outDim / inPath / (folderName + "." + outExt)
+   protected def getErrorFile(a: Archive, inPath: List[String]) = (a / errors / key / inPath).setExtension("err")
+   protected def getFolderErrorFile(a: Archive, inPath: List[String]) = a / errors / key / inPath / (folderName + ".err")
    
    /**
     * there is no inExt, instead we test to check which files should be used; 
@@ -138,11 +141,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
       buildAux(in)(a)
    }
    private def makeHandler(a: Archive, inPath: List[String], isDir : Boolean = false) = {
-     val baseFileName = a / errors / key / inPath
-     val errFileName = if (isDir)
-       baseFileName / ".err"
-     else 
-       baseFileName.setExtension("err")
+     val errFileName = if (isDir) getFolderErrorFile(a, inPath)
+                             else getErrorFile(a, inPath)
      new ErrorWriter(errFileName, Some(report))
    }
    
@@ -151,18 +151,18 @@ abstract class TraversingBuildTarget extends BuildTarget {
        //build every file
        val prefix = "[" + inDim + " -> " + outDim + "] "
        a.traverse[BuildTask](inDim, in, includeFile, parallel) ({case Current(inFile,inPath) =>
-           val outFile = outPath(a, inPath)
+           val outFile = getOutFile(a, inPath)
            log(prefix + inFile + " -> " + outFile)
            val errorCont = makeHandler(a, inPath)
            val bf = new BuildTask(inFile, false, inPath, a.narrationBase, outFile, errorCont)
            outFile.up.mkdirs
            buildFile(a, bf)
            errorCont.close
-           a.timestamps(this).set(inPath)
+           // a.timestamps(this).set(inPath) not needed anymore
            bf
        }, {
           case (Current(inDir, inPath), builtChildren) =>
-             val outFile = folderOutPath(a, inPath)
+             val outFile = getFolderOutFile(a, inPath)
              val errorCont = makeHandler(a, inPath, true)
              val bd = new BuildTask(inDir, true, inPath, a.narrationBase, outFile, errorCont) 
              buildDir(a, bd, builtChildren)
@@ -177,8 +177,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
      * deletes the output file by default, may be overridden to, e.g., delete auxiliary files
      */ 
    def cleanFile(a: Archive, curr: Current) {
-      val outFile = outPath(a, curr.path)
+      val outFile = getOutFile(a, curr.path)
       delete(outFile)
+      delete(getErrorFile(a, curr.path))
    }
    /** additional method that implementations may provide: cleans one directory
      * @param a the containing archive  
@@ -192,30 +193,44 @@ abstract class TraversingBuildTarget extends BuildTarget {
        a.traverse[Unit](outDim, in, Archive.extensionIs(outExt), true)({c => cleanFile(a, c)}, {case (c,_) => cleanDir(a, c)})
    }
    
+   /** @return status of input file, obtained by comparing to error file */
+   private def modified(a: Archive, path: List[String]): (Modification, Boolean) = {
+      val errorFile = getErrorFile(a, path)
+      val inFile = a / inDim / path
+      val mod = Modification(inFile, errorFile)
+      val hadErrors = errorFile.toJava.length > 19 // TODO evil but more efficient than parsing the error file
+      (mod, hadErrors)
+   }
+   
    /** recursively reruns build if the input file has changed
      *  
      * the decision is made based on the time stamps and the system's last-modified date
      */  
-   def update(a: Archive, args: List[String], in: List[String] = Nil) {
+   def update(a: Archive, args: List[String], up: Update, in: List[String] = Nil) {
        a.traverse[Boolean](inDim, in, _ => true, parallel) ({case c @ Current(inFile, inPath) =>
-          a.timestamps(this).modified(inPath) match {
-             case Deleted =>
+          modified(a, inPath) match {
+             case (Deleted,_) =>
                 cleanFile(a, c)
                 true
-             case Added =>
+             case (Added, _) =>
                 buildAux(inPath)(a)
                 true
-             case Modified =>
-                cleanFile(a, c)
-                buildAux(inPath)(a)
+             case (Modified, hadErrors) =>
+                if (up.ifChanged || (hadErrors && up.ifHadErrors)) {
+                   cleanFile(a, c)
+                   buildAux(inPath)(a)
+                }
                 false
-             case Unmodified =>
-                //nothing to do
+             case (Unmodified, hadErrors) =>
+                if (hadErrors && up.ifHadErrors) {
+                   cleanFile(a, c)
+                   buildAux(inPath)(a)
+                }
                 false
           }
        }, {case (c @ Current(inDir, inPath), childChanged) =>
           if (childChanged.exists(_ == true)) {
-             val outFile = folderOutPath(a, inPath)
+             val outFile = getFolderOutFile(a, inPath)
              val errorCont = makeHandler(a, inPath, true)
              val bd = new BuildTask(inDir, true, inPath, a.narrationBase, outFile, errorCont)
              errorCont.close

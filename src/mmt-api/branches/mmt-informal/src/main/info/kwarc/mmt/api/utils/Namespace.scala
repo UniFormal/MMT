@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.utils
 
 class NamespaceMap {
-   var default : URI = URI("")
+   var default : URI = URI("") // = prefixes.getOrElse("", URI(""))
    val prefixes = new scala.collection.mutable.ListMap[String,URI]
    /** expands a CURIE into a URI */
    def expand(s: String): String = {
@@ -24,6 +24,13 @@ class NamespaceMap {
    }
 }
 
+import scala.xml._
+
 object NamespaceMap {
    def legalPrefix(s: String) = s.indexOf(":") == -1  //too generous
+   def fromXML(n: Node) = {
+      val nm = new NamespaceMap
+      xml.namespaces(n.scope).foreach {case (p,u) => nm.prefixes(p) = URI(u)}
+      nm
+   }
 }

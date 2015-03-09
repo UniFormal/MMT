@@ -19,6 +19,8 @@ math {
 mo {
     color: black;
     font-weight: normal;
+    font-size: large
+    
 }
 
 mo.symdecl {

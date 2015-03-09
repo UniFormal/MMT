@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html ng-app="searchApp">
+<meta charset="UTF-8">
+<head>
+    <script src="script/angularjs/angular-1.3.14/angular.js"></script>
+    <script src="script/errorview/errorview.js"></script>
+    <link rel="stylesheet" href="css/errorview.css"/>
+</head>
+<body>
+<h3 style="display:inline">Error viewer</h3>
+(see <a href="http://gl.kwarc.info/cmaeder/mmt-errorview/blob/master/README.md">
+    gitlab repository</a> for more information)
+<div ng-controller="SearchController">
+    <p/>
+    group by
+    <select ng-click="group()" ng-model="field" ng-init="columns[shortMsg].long"
+            ng-options="columns[key].long for key in colProps | filter : '!id'"></select>
+    as overview with clickable maximal rows:
+    <input type="number" min="0" max="10000" ng-click="group()"
+           ng-model="maxGroups"/>
+    <table ng-if="groupMode || groups.length <= 10 ">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>{{columns[field].long}} ({{groups.length}} rows)</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="g in groups">
+            <td>{{g.count}}</td>
+            <td ng-click="columns[field].search = g.content; search()"
+                style="cursor:pointer">{{g.content}}
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <p/>
+    display: 
+    <span ng-repeat="key in colProps">
+        <input type="checkbox" ng-model="columns[key].x"/>
+        {{columns[key].long}}&nbsp;&nbsp;
+    </span>
+
+    <p>restrict the number of displayed entries to support fast searches in
+        every column. Click "search" to reload choice (revealing undisplayed
+        entries).</p>
+    <button ng-click="clear()">clear filters</button>
+    <button ng-click="search()">search</button>
+    maximal entries:
+    <input type="number" min="0" max="10000" ng-model="maxNumber"/>
+    <span ng-show="!groupMode || groups.length <= 10">
+        <span ng-show="number > results.length">{{number}} entries (showing {{results.length}})</span>
+        <span ng-show="number <= results.length">result: {{results.length}}</span>
+    </span>
+
+    <p/>
+    <table ng-if="!groupMode || groups.length <= 10">
+        <thead>
+        <tr>
+            <th ng-repeat="key in colProps" ng-if="columns[key].x">
+                <span ng-click="sort.col = key; sort.asc = !sort.asc"
+                      style="cursor:pointer">
+                    <span ng-show="sort.col == key">
+                        <span ng-show="sort.asc">&#9650;</span>
+                        <span ng-show="!sort.asc">&#9660;</span>
+                    </span>
+                    {{columns[key].long}}
+                </span>
+                <br/>
+                <input type="text" ng-model="columns[key].search" size="5"/>
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="res in results | filter : matchFilters() | orderBy : sort.col : sort.asc">
+            <td ng-repeat="key in colProps" ng-if="columns[key].x">
+                {{res[key]}}
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
