@@ -21,7 +21,7 @@ abstract class STeXError(msg : String) extends Error(msg)
 
 case class STeXParseError(msg : String, sref : Option[SourceRef]) extends STeXError(msg) {
   private def srefS = sref.map(_.region.toString).getOrElse("")
-  override def toNode = <error type={this.getClass().toString} shortMsg={this.shortMsg} level={Level.Error.toString} sref={srefS}> {this.getLongMessage.toString} </error>
+  override def toNode = <error type={this.getClass().toString} shortMsg={this.shortMsg} level={Level.Error.toString} sref={srefS}> {this.extraMessage} </error>
 }
 case class STeXLookupError(msg : String) extends STeXError(msg)
 
@@ -40,7 +40,7 @@ class STeXImporter extends Importer {
       if (reqArgs != args.length)
          throw ParseError("wrong number of arguments, required: " + reqArgs)
       modifier match {
-         case Update => update(arch, args, in)
+         case up : Update => update(arch, args, up, in)
          case Clean  => clean(arch, args, in)
          case Build  => 
            //running twice, first to load all theories, then to successfully parse objects
