@@ -44,14 +44,7 @@ class ParserState(val reader: Reader, val ps: ParsingStream, val errorCont: Erro
 /** matches the keyword for a view */
 object ViewKey {
    def unapply(s: String) = s match {
-      case "view" | "morphism" => Some(())
-      case _ => None
-   }
-}
-/** matches the keyword for a structure */
-object StructureKey {
-   def unapply(s: String) = s match {
-      case "structure" => Some(())
+      case "view" | "morphism" => Some(s)
       case _ => None
    }
 }
@@ -576,11 +569,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                state.namespaces.prefixes(n) = ns.uri
             case "theory" =>
                readTheory(doc.path, Context())
-            case ViewKey() => readView(doc.path, Context(), false)
+            case ViewKey(_) => readView(doc.path, Context(), false)
             case "implicit" =>
                val (keyword2, reg2) = state.reader.readToken
                keyword2 match {
-                  case ViewKey() => readView(doc.path, Context(), true)
+                  case ViewKey(_) => readView(doc.path, Context(), true)
                   case _ => throw makeError(reg2, "only views can be implicit here")
                }
             case k =>
@@ -653,9 +646,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                      SourceRef.update(as.df, inclRef)
                      seCont(as)
                }
-            case StructureKey() => readStructure(mpath, context, false)
+            case "structure" => readStructure(mpath, context, false)
             case "theory" => readTheory(mod.path, context)
-            case ViewKey() => readView(mod.path, context, false)
+            case ViewKey(_) => readView(mod.path, context, false)
             //Pattern
             case "pattern" =>
               mod match {
@@ -688,8 +681,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             case "implicit" =>
                val (keyword2, reg2) = state.reader.readToken
                keyword2 match {
-                  case ViewKey() => readView(mpath, context, true)
-                  case StructureKey() => readStructure(mpath, context, true)
+                  case ViewKey(_) => readView(mpath, context, true)
+                  case "structure" => readStructure(mpath, context, true)
                   case _ => throw makeError(reg2, "only links can be implicit here")
                }
             case k =>
