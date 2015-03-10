@@ -27,12 +27,10 @@
     <modules>
         <module>tiscaf</module>
         <module>lfcatalog/trunk</module>
-        <module>mmt-api/branches/mmt-informal</module>
         <module>mmt-api/trunk</module>
         <module>mmt-lf</module>
         <module>mmt-tptp</module>
         <module>mmt-stex</module>
-        <module>mmt-webEdit</module>
         <!--
                 <module>planetary-mmt</module>
         -->
@@ -52,8 +50,8 @@
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
         <encoding>UTF-8</encoding>
-        <scala.tools.version>2.10</scala.tools.version>
-        <scala.version>2.10.4</scala.version>
+        <scala.tools.version>2.11</scala.tools.version>
+        <scala.version>2.11.6</scala.version>
     </properties>
 
     <profiles>
@@ -140,6 +138,11 @@
         <dependency>
             <groupId>org.scala-lang</groupId>
                 <artifactId>scala-compiler</artifactId>
+            <version>${scala.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-reflect</artifactId>
             <version>${scala.version}</version>
         </dependency>
     </dependencies>
