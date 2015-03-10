@@ -10,19 +10,19 @@ import scala.tools.nsc._
  */
 class MMTILoop(controller: Controller) extends interpreter.ILoop {
    /** this is overridden in order to bind variables after the interpreter has been created */
-   override def loop() {
-      if (isAsync) awaitInitialized()
-      //bind not working with latest scala version
-      intp beQuietDuring {
-         intp.interpret("import info.kwarc.mmt.api._")
-         intp.bind("controller", controller)
-         val interpolator = new MMTInterpolator(controller)
-         intp.bind("interpolator", interpolator)
-         val isimp = new InteractiveSimplifier(controller, this)
-         intp.bind("isimp", isimp)
-         intp.interpret("import interpolator._")
-      }
-      super.loop()
+   override def createInterpreter() {
+     if (addedClasspath != "")
+       settings.classpath append addedClasspath
+     intp = new ILoopInterpreter
+     intp beQuietDuring {
+       intp.interpret("import info.kwarc.mmt.api._")
+       intp.bind("controller", controller)
+       val interpolator = new MMTInterpolator(controller)
+       intp.bind("interpolator", interpolator)
+       val isimp = new InteractiveSimplifier(controller, this)
+       intp.bind("isimp", isimp)
+       intp.interpret("import interpolator._")
+     }
    }
    override def printWelcome() {
       out.println
@@ -34,6 +34,7 @@ class MMTILoop(controller: Controller) extends interpreter.ILoop {
    override def prompt = "scala-mmt> "
    def run {
       val settings = new Settings
+      settings.Yreplsync.value = true
       settings.usejavacp.value = true // make sure all classes of the Java classpath are available
       //settings.sourceReader.value = "SimpleReader"
       process(settings)
