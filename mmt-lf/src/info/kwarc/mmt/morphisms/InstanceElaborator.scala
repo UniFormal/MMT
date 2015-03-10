@@ -21,7 +21,7 @@ class InstanceElaborator extends ChangeListener {
         // th = pat args
         controller.globalLookup.getO(pat) match {
            case Some(c: Constant) => c.tp match {
-              case Some(FunType(_, TheoryType())) =>
+              case Some(FunType(_, TheoryType(_))) =>
                  // pat : {params} THEORY
                  c.df match {
                     case Some(FunTerm(params, body)) =>
