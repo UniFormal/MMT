@@ -243,3 +243,49 @@ abstract class TraversingBuildTarget extends BuildTarget {
        })
    }
 }
+
+/**
+ * convenience class for quickly defining a BuildTarget that runs multiple other targets
+ */
+abstract class MetaBuildTarget(keys: List[String]) extends BuildTarget {
+   /** @return the arguments to pass to the target with key k, override as needed */ 
+   def arguments(k: String): List[String] = Nil
+   private def targets = keys.map {k => controller.extman.getTarget(k).getOrElse {
+      throw LocalError("unknown target: " + k)
+   }}
+   def build (a: Archive, args: List[String], in: List[String]) {
+      targets.foreach {t => t.build(a, arguments(t.key), in)}
+   }
+   def update(a: Archive, args: List[String], up: Update, in: List[String]) {
+      targets.foreach {t => t.update(a, arguments(t.key), up, in)}
+   }
+   def clean (a: Archive, args: List[String], in: List[String]) {
+      targets.foreach {t => t.clean(a, arguments(t.key), in)}
+   }
+}
+
+/**
+ * a build target that chains other targets, namely the ones passed as arguments
+ * 
+ * no arguments are passed to the individual targets
+ * the path is passed to all traversing build targets whose inDim is not content
+ */
+class MultipleBuildTargets extends BuildTarget {
+   val key = "multiple"
+   private def targets(keys: List[String]) = keys.map {k => controller.extman.getTarget(k).getOrElse {
+      throw LocalError("unknown target: " + k)
+   }}
+   private def path(t: BuildTarget, in: List[String]) = t match {
+      case t: TraversingBuildTarget if t.inDim != content => in
+      case _ => Nil
+   }
+   def build (a: Archive, args: List[String], in: List[String]) {
+      targets(args).foreach {t => t.build(a, Nil, path(t,in))}
+   }
+   def update(a: Archive, args: List[String], up: Update, in: List[String]) {
+      targets(args).foreach {t => t.update(a, Nil, up, path(t,in))}
+   }
+   def clean (a: Archive, args: List[String], in: List[String]) {
+      targets(args).foreach {t => t.clean(a, Nil, path(t,in))}
+   }
+}

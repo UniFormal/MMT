@@ -44,8 +44,8 @@ object Action extends RegexParsers {
 
    private def archive = archopen | archdim | archmar | archbuild
      private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)} //deprecated, use mathpath archive
-     private def archbuild = "build" ~> str ~ str ~ (str ?) ~ (str *) ^^ {
-       case id ~ keymod ~ in ~ args =>
+     private def archbuild = "build" ~> archiveList ~ str ~ (str ?) ~ (str *) ^^ {
+       case ids ~ keymod ~ in ~ args =>
             val segs = MyList.fromString(in.getOrElse(""), "/")
             val (key,mod) = if (keymod.startsWith("-"))
                (keymod.substring(1), archives.Clean)
@@ -55,9 +55,9 @@ object Action extends RegexParsers {
                (keymod.substring(0,keymod.length-1), archives.Update(true,true))
             else
                (keymod, archives.Build)
-            ArchiveBuild(id, key, mod, segs, args)
+            ArchiveBuild(ids, key, mod, segs, args)
      }
-     private def archdim = "archive" ~> str ~ dimension ~ (str ?) ^^ {
+     private def archdim = "archive" ~> archiveList ~ dimension ~ (str ?) ^^ {
        case id ~ dim ~ s =>
             val segs = MyList.fromString(s.getOrElse(""), "/")
             ArchiveBuild(id, dim, archives.Build, segs)
@@ -65,7 +65,7 @@ object Action extends RegexParsers {
      private def dimension = "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
            "relational" | "delete" | "integrate" | "test" | "close"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
-
+     
    private def oaf = "oaf" ~> (oafRoot | oafClone | oafPull | oafPush)
      private def oafRoot   = "root" ~> file ~ (uri ?) ^^ {case f ~ u => OAFRoot(f, u)}
      private def oafClone = "clone" ~> str ^^ {case s => OAFClone(s)}
@@ -121,6 +121,8 @@ object Action extends RegexParsers {
    /* common non-terminals */
    private def path = str ^^ {s => Path.parse(s, base)}
    private def mpath = str ^^ {s => Path.parseM(s, base)}
+   private def archiveList = ("\\[.*\\]"r) ^^ {s => MyList.fromString(s.substring(1,s.length-1), ",")} |
+                             str ^^ {s => List(s)} 
    private def file = str ^^ {s => File(home.resolve(s))}
    private def uri = str ^^ {s => URI(s)}
    private def int = str ^^ {s => s.toInt}
@@ -291,8 +293,8 @@ case class AddExtension(cls: String, args: List[String]) extends Action {overrid
 case class AddArchive(folder : java.io.File) extends Action {override def toString = "mathpath archive " + folder}
 
 /** builds a dimension in a previously opened archive */
-case class ArchiveBuild(id: String, dim: String, modifier: archives.BuildTargetModifier, in : List[String], params: List[String] = Nil) extends Action {
-   override def toString = "build " + id + " " + modifier.toString(dim) + " " + in.mkString(" ","/","")
+case class ArchiveBuild(ids: List[String], dim: String, modifier: archives.BuildTargetModifier, in : List[String], params: List[String] = Nil) extends Action {
+   override def toString = "build " + ids.mkString("[",",","]") + " " + modifier.toString(dim) + " " + in.mkString(" ","/","")
 }
 
 /** builds a dimension in a previously opened archive */
