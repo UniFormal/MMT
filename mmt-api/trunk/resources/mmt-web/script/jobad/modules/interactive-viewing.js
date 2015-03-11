@@ -33,7 +33,7 @@ var interactiveViewing = {
 			res["show definition"] = function(){me.showComp('definition');};
 			res["show URI"] = function(){alert(mmt.currentURI);};
 			res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
-			res["SVG"] = function() {
+			res["show graph"] = function() {
 				
 			var preSVG = target.attributes.item(1).value;
 			var svgURI = preSVG.split("#")[0];
@@ -43,6 +43,21 @@ var interactiveViewing = {
 			var contentNode = mmt.createInlineBox(target, mmt.currentURI);
 			mmt.ajaxAppendBox(svgURI, contentNode);
 			};
+			
+			res["See alignments (prototype version)"] = function() {
+				
+				var response = "<table width=\"100%\">" +
+						"<tr><td><a href=\"#\">Bool</a></td>" +
+						"<td><a href=\"#\">HOL Light</a></td>" +
+						"</tr><tr><td><a href=\"#\">Bool</a></td>" +
+						"<td><a href=\"#\">Mizar</a></td>" +
+						"</tr><tr><td><a href=\"#\">Bool</a></td>" +
+						"<td><a href=\"#\">Open Math</a></td></tr></table>";
+						
+				var alignNode = mmt.createInlineBox(target, "Alignments for bool");
+				$(alignNode).append(response);
+				//mmt.ajaxAlignments(response, alignNode);
+				};
 		
 		//res["get OMDoc"] = mmt.openCurrentOMDoc();
 		}
