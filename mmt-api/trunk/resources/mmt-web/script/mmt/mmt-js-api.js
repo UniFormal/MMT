@@ -398,7 +398,7 @@ var qmtAux = {
 
 // functions to build and run QMT queries
 var qmt = {
-   // helper functions to build queries (as XML strings)
+    // helper functions to build queries (as XML strings)
 	literalPath : function (p) {return XML.elem('literal', null, 'uri', p);},
 	literalString : function (p) {return XML.elem('literal', p);},
 	bound      : function(i) {return XML.elem('bound', null, 'index', i);},
@@ -424,6 +424,22 @@ var qmt = {
 		    dataType : 'xml',
 			processData:false,
 			contentType:'text/plain',
+			success:cont,
+		});
+	},
+};
+
+//functions to build and run MMT actions
+var action = {
+	// helper functions to build actions (as strings)
+	build: function(a,t,p) {return "build " + a + " " + t + (p == null? "" : " " + p);},
+	exit: "exit",
+	
+	/* executes an action (as constructed by helper functions) via ajax and runs a continuation on the result */
+	exec : function(a, cont) {
+		$.ajax({
+			url: mmt.makeURL('/:admin') + "?" + a, 
+            dataType : 'xml',
 			success:cont,
 		});
 	},
