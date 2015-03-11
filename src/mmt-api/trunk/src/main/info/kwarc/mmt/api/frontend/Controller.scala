@@ -427,7 +427,7 @@ class Controller extends ROController with Logger {
 	            notifyListeners.onArchiveOpen(a)
 	         }
          case ArchiveBuild(ids, key, mod, in, args) => ids.foreach {id =>
-            val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
+            val arch = backend.getArchive(id) getOrElse(throw GetError("archive not found: " + id))
             key match {
                case "check" => arch.check(in, this)
                case "validate" => arch.validate(in, this)
