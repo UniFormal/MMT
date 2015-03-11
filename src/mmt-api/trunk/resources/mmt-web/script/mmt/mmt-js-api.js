@@ -183,11 +183,7 @@ var mmt = {
 	    */
    ajaxAppend : function (url, targetid, async) {
 	   function cont(data) {
-		   //var inlineBox = "<div class='inlineBox'><table><tr><td class='inlineTitle'>X</td></tr><tr><td class='inlineBody'></td></tr></table></div>"
-		   //$(currentElem).closest(boxSibling).after(inlineBox).append(data.lastChild);
-		   //var targetnode = $('#' + targetid).children();
-		   //$('#' + targetid).innerHTML = data;
-		   //targetnode.replaceWith(data);
+		   
 		   var svgDiv = $('#' + targetid);
 		   var serializer = new XMLSerializer();
 		   var xmlString = serializer.serializeToString(data);
@@ -304,11 +300,6 @@ var mmt = {
 	*/
 	setLatinDialog : function (content, title){
 		var dia = $("#latin-dialog");
-		console.log("dia is " + dia);
-		console.log("title is " + title);
-        console.log("dia[0] is "+dia[0]);
-        console.log("dia[0].firstChild is "  +dia[0].firstChild);
-
 		dia.dialog('option', 'title', title);
 		dia[0].replaceChild(content, dia[0].firstChild);
 		dia.dialog('open');
@@ -317,40 +308,32 @@ var mmt = {
 	createInlineBox : function (origin, title) {
 		
 		var targetParent = $(origin).closest(".inlineBoxSibling");
+		
 		var newDiv = document.createElement('div');
 		var btnDiv = document.createElement('div');
-
+		var titleDiv = document.createElement('div');
+		var contentDiv = document.createElement('div');
+		var button_hide = document.createElement('button');
+		var button_close = document.createElement('button');
+		
 		$(newDiv).addClass( "bigDiv");
 		$(newDiv).addClass( "container-fluid");
-
-		
 		$(btnDiv).addClass( "btnDiv");
-		var titleDiv = document.createElement('div');
-		$(titleDiv).addClass( "titleDiv");
-		$(titleDiv).append("<h3 style=\"color: lightgrey\">"+title+"</h3>");
-
-		var contentDiv = document.createElement('div');
+		$(button_hide).addClass( "inlineBtn");
+		$(button_close).addClass( "inlineBtn");
+		$(titleDiv).addClass( "titleDiv");	
 		$(contentDiv).addClass( "contDiv");
 
 		$(targetParent).append(newDiv);
 		$(newDiv).append(btnDiv);
 		$(newDiv).append(titleDiv);
 		$(newDiv).append(contentDiv);
-
-		var button_hide = document.createElement('button');
-		var button_close = document.createElement('button');
-		$(button_hide).addClass( "inlineBtn");
-		$(button_close).addClass( "inlineBtn");
-
-
+		$(titleDiv).append("<h3 style=\"color: lightgrey\">"+title+"</h3>");
 		$(btnDiv).append(button_close);
 		$(btnDiv).append(button_hide);
-
-
-
+		
 		$(button_hide).text('Show/Hide');
 		$(button_close).text('Close');
-
 
 		$(button_close).click(function() {
 			var temp = $(button_close).closest(".bigDiv");
@@ -358,13 +341,12 @@ var mmt = {
 		});
 		
 		$(button_hide).click(function() {
-			
 			$(contentDiv).toggle();
 		});
 		
 		//$(newDiv).draggable();
 		//$(contentDiv).resizable();
-
+		
 		return contentDiv;
 	},
 	
@@ -491,3 +473,20 @@ var qmt = {
 	
 	
 };
+
+//functions to build and run MMT actions
+var action = {
+	// helper functions to build actions (as strings)
+    build: function(a,t,p) {return "build " + a + " " + t + (p == null? "" : " " + p);},
+	exit: "exit",
+
+	/* executes an action (as constructed by helper functions) via ajax and runs a continuation on the result */
+	exec : function(a, cont) {
+		$.ajax({
+			url: mmt.makeURL('/:admin') + "?" + a,
+            dataType : 'xml',
+			success:cont,
+		});
+	},
+
+ };
