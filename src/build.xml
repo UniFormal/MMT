@@ -1,46 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="mmt-api" default="all" basedir=".">
-    <property name="deploy" value="../deploy"/>
 <!-- export ANT_OPTS=-XX:MaxPermSize=512m
 to avoid: java.lang.OutOfMemoryError: PermGen space
  -->
     <target name="tiscaf">
-      <ant dir="tiscaf" target="deploy" inheritAll="false"/>
+      <ant dir="tiscaf" target="deploy"/>
     </target>
     <target name="api">
-      <ant dir="mmt-api/trunk" target="deploy" inheritAll="false"/>
+      <ant dir="mmt-api/trunk" target="deploy"/>
     </target>
     <target name="lfcatalog">
-        <ant dir="lfcatalog/trunk" target="deploy" inheritAll="false"/>
+        <ant dir="lfcatalog/trunk" target="deploy"/>
     </target>
     <target name="lf">
-      <ant dir="mmt-lf" target="deploy" inheritAll="false"/>
+      <ant dir="mmt-lf" target="deploy"/>
     </target>
     <target name="tptp">
-        <ant dir="mmt-tptp" target="deploy" inheritAll="false"/>
+        <ant dir="mmt-tptp" target="deploy"/>
     </target>
     <target name="jedit">
-      <ant dir="jEdit-mmt" target="deploy" inheritAll="false"/>
+      <ant dir="jEdit-mmt" target="deploy"/>
     </target>
     <target name="all" depends="tiscaf,api,lfcatalog,lf,tptp"/>
 
     <target name="clean-tiscaf">
-        <ant dir="tiscaf" target="clean" inheritAll="false"/>
+        <ant dir="tiscaf" target="clean"/>
     </target>
     <target name="clean-api">
-      <ant dir="mmt-api/trunk" target="clean" inheritAll="false"/>
+      <ant dir="mmt-api/trunk" target="clean"/>
     </target>
     <target name="clean-lfcatalog">
-      <ant dir="lfcatalog/trunk" target="clean" inheritAll="false"/>
+      <ant dir="lfcatalog/trunk" target="clean"/>
     </target>
     <target name="clean-lf">
-        <ant dir="mmt-lf" target="clean" inheritAll="false"/>
+        <ant dir="mmt-lf" target="clean"/>
     </target>
     <target name="clean-tptp">
-        <ant dir="mmt-tptp" target="clean" inheritAll="false"/>
+        <ant dir="mmt-tptp" target="clean"/>
     </target>
     <target name="clean-jedit">
-      <ant dir="jEdit-mmt" target="clean" inheritAll="false"/>
+      <ant dir="jEdit-mmt" target="clean"/>
     </target>
 
     <target name="clean" depends="clean-tiscaf,clean-api,clean-lfcatalog,clean-lf,clean-tptp,clean-jedit"/>
