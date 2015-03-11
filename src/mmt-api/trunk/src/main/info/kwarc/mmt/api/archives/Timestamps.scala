@@ -3,7 +3,7 @@ import info.kwarc.mmt.api._
 import utils._
 import utils.FileConversion._
 
-abstract class Modification
+sealed abstract class Modification
 case object Added extends Modification
 case object Deleted extends Modification
 case object Modified extends Modification

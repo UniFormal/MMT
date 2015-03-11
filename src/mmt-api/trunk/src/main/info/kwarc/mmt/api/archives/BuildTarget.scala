@@ -158,6 +158,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
            outFile.up.mkdirs
            buildFile(a, bf)
            errorCont.close
+           controller.notifyListeners.onFileBuilt(a, this, inPath)
            // a.timestamps(this).set(inPath) not needed anymore
            bf
        }, {
@@ -173,13 +174,14 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
    /** additional method that implementations may provide: cleans one file
      * @param a the containing archive  
-     * @param curr the outDim file to be deleted
-     * deletes the output file by default, may be overridden to, e.g., delete auxiliary files
+     * @param curr the inDim whose output is to be deleted
+     * deletes the output and error file by default, may be overridden to, e.g., delete auxiliary files
      */ 
    def cleanFile(a: Archive, curr: Current) {
       val outFile = getOutFile(a, curr.path)
       delete(outFile)
       delete(getErrorFile(a, curr.path))
+      controller.notifyListeners.onFileBuilt(a, this, curr.path)
    }
    /** additional method that implementations may provide: cleans one directory
      * @param a the containing archive  

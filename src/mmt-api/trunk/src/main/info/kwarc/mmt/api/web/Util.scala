@@ -10,41 +10,15 @@ import libraries._
 import ontology._
 import modules._
 
+/**
+ * utility functions for web services
+ */
 object Util {   
-  
-  def item(p : Path, state : String, label : Option[String] = None) = 
-      <item id={p.toPath} state={state}>
-        <content><name href="#" onclick={"mmt.sideBarClick(event, '" + p.toPath + "')"}>{label.getOrElse(p.last)}</name></content>
-        </item>
-   
-   /** returns a string identifying the kind of an edge */
-   def edgeKind(e: Edge) : String = e match {
-      case ViewEdge(_) => "View"
-      case StructureEdge(_) => "Structure"
-      case IncludeEdge => "Include"
-      case MetaEdge => "Meta"
-   }
-   /** returns the URI of an edge, empty if none */
-   def edgeUri(e: Edge) : String = e match {
-      case ViewEdge(p) => p.toPath
-      case StructureEdge(p) => p.toPath
-      case IncludeEdge => ""
-      case MetaEdge => ""
-   }
-   /** returns short name of an edge, empty if none */
-   def edgeName(e: Edge) : String = e match {
-      case ViewEdge(p) => p.last
-      case StructureEdge(p) => p.last
-      case IncludeEdge => ""
-      case MetaEdge => ""
-   }
-   
-   
-  /** returns a stream to a resource within the JAR file. If it's not found in the JAR, then it looks into the file system
+  /** returns a stream to a resource from within the JAR file or (if run from classes) the file system
     * @param path to the resource, starting with a slash, e.g. /some-path/resource.txt. 
     * If the resource is in the JAR, then the JAR must look like 
     *       jar-name.jar/some-path/resource.txt
-    * If the resource is a separate file and the code is run from outside any JAR, then the folder structure must look like
+    * If the resource is a separate file and the code is run from classes, the folder structure must look like
     *       project-folder
     *        |--bin/main/info/...
     *        |--resources/mmt-web/ 

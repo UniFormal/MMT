@@ -87,7 +87,7 @@ class ErrorManager extends Extension with Logger {
    */
   def loadErrors(a: Archive, target: String, path: List[String]) {
     val f = a / errors / target / path
-    val node = xml.readFile(f)
+    val node = if (f.toJava.exists) xml.readFile(f) else <errors></errors>
     var bes: List[BuildError] = Nil
     node.child.foreach { x =>
       val (stacks, others) = x.child partition (_.label == "stacktrace")
@@ -150,7 +150,14 @@ class ErrorManager extends Extension with Logger {
 
     /** deletes the [[ErrorMap]] */
     override def onArchiveClose(a: Archive) {
-      errorMaps = errorMaps.filter(_.archive != a)
+       errorMaps = errorMaps.filter(_.archive != a)
+    }
+    
+    /** reloads the errors */ 
+    override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: List[String]) {
+       Future {
+          loadErrors(a, t.key, p)
+       }
     }
   }
 
