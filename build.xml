@@ -1,29 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="mmt-api" default="all" basedir=".">
     <property name="deploy" value="../deploy"/>
-    
+<!-- export ANT_OPTS=-XX:MaxPermSize=512m
+to avoid: java.lang.OutOfMemoryError: PermGen space
+ -->
+    <target name="tiscaf">
+      <ant dir="tiscaf" target="deploy" inheritAll="false"/>
+    </target>
     <target name="api">
       <ant dir="mmt-api/trunk" target="deploy" inheritAll="false"/>
+    </target>
+    <target name="lfcatalog">
+        <ant dir="lfcatalog/trunk" target="deploy" inheritAll="false"/>
     </target>
     <target name="lf">
       <ant dir="mmt-lf" target="deploy" inheritAll="false"/>
     </target>
+    <target name="tptp">
+        <ant dir="mmt-tptp" target="deploy" inheritAll="false"/>
+    </target>
     <target name="jedit">
       <ant dir="jEdit-mmt" target="deploy" inheritAll="false"/>
     </target>
-    <target name="all" depends="api,lf,jedit"/>
+    <target name="all" depends="tiscaf,api,lfcatalog,lf,tptp"/>
 
+    <target name="clean-tiscaf">
+        <ant dir="tiscaf" target="clean" inheritAll="false"/>
+    </target>
     <target name="clean-api">
       <ant dir="mmt-api/trunk" target="clean" inheritAll="false"/>
     </target>
+    <target name="clean-lfcatalog">
+      <ant dir="lfcatalog/trunk" target="clean" inheritAll="false"/>
+    </target>
     <target name="clean-lf">
-      <ant dir="mmt-lf" target="clean" inheritAll="false"/>
+        <ant dir="mmt-lf" target="clean" inheritAll="false"/>
+    </target>
+    <target name="clean-tptp">
+        <ant dir="mmt-tptp" target="clean" inheritAll="false"/>
     </target>
     <target name="clean-jedit">
       <ant dir="jEdit-mmt" target="clean" inheritAll="false"/>
     </target>
 
-    <target name="clean" depends="clean-api,clean-lf,clean-jedit"/>
+    <target name="clean" depends="clean-tiscaf,clean-api,clean-lfcatalog,clean-lf,clean-tptp,clean-jedit"/>
 
     <path id="classpath">
         <fileset dir="../deploy/lib/">
@@ -38,7 +58,7 @@
         <fileset dir="mmt-tptp/lib/">
           <include name="*.jar"/>
         </fileset>
-    	  <pathelement location="mmt-api/trunk/lib/jfxrt.jar"/>
+        <pathelement location="mmt-api/trunk/lib/jfxrt.jar"/>
         <pathelement location="../deploy/lfcatalog/lfcatalog.jar"/>
     </path>
     <taskdef resource="scala/tools/ant/antlib.xml" classpathref="classpath"/>
@@ -47,8 +67,8 @@
         <scaladoc destdir="../doc/api" doctitle="MMT" srcdir="." classpathref="classpath" docsourceurl="file:/€{FILE_PATH}.scala" diagrams="yes">
           <include name="mmt-api/trunk/src/**/*.scala"/>
           <include name="mmt-lf/src/**/*.scala"/>
-        	 <include name="jEdit-mmt/src/**/*.scala"/>
-        	 <exclude name="latex-mmt/src/**/*.scala"/>
+            <exclude name="jEdit-mmt/src/**/*.scala"/>
+            <exclude name="latex-mmt/src/**/*.scala"/>
           <exclude name="mmt-mizar/trunk/src/**/*.scala"/>
           <include name="mmt-owl/src/**/*.scala"/>
           <include name="mmt-tptp/src/**/*.scala"/>
