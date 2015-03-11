@@ -240,10 +240,11 @@ math.math-selected {
 }
 
 .bigDiv {
+	resize: both;
+    overflow: auto;
 	
-	resize = 'both';
-	width = inherit;
-	height = 'auto';
+	//width = inherit;
+	//height = 'auto';
 	border-width: 5px;
 	border-radius: 10px;
 	border-style: solid;
@@ -273,9 +274,9 @@ math.math-selected {
 
 .contDiv {
 	
-	resize = 'both';
-	width = inherit;
-	height = 'auto';
+	
+	//width = inherit;
+	height = auto;
 	//border-width: 5px;
 	//border-radius: 10px;
 	//border-style: solid;
@@ -288,10 +289,19 @@ math.math-selected {
 	
 }
 
+.inlineBtn{
+	float:right;
+	position: relative;
+}
 .btnDiv {
 	height: 20px;
 	float: right;
+	
 }
 .compLabel {
 	margin-right: 10px;
+}
+span.name {
+	margin-right: 10px;
+	
 }

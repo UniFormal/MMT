@@ -28,52 +28,22 @@ var interactiveViewing = {
             res['fold'] = function(){$(mmt.focus).addMClass('math-folded');};
 		}
 		if (mmt.currentURI !== null) {
+			var me = this;
+			res["type"] = function(){me.showComp('type');};
+			res["show definition"] = function(){me.showComp('definition');};
+			res["show URI"] = function(){alert(mmt.currentURI);};
+			res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
+			res["SVG"] = function() {
+				
+			var preSVG = target.attributes.item(1).value;
+			var svgURI = preSVG.split("#")[0];
+			svgURI = ":svg?" + svgURI;
 			
-			res["type"] = this.showComp('type');
-			res["show definition"] = this.showComp('definition');
-			res["Show graph inline"] = function() {
-				
-				var targetParent = $(target).closest(".inlineBoxSibling");
-
-				var svgDiv = document.createElement('div');
-				svgDiv.id = 'svgDiv';
-				$(targetParent).append(svgDiv);
-				var button = document.createElement('button');
-				button.id = 'btn';
-				
-				$(svgDiv).append(button);
-				var x = document.getElementById('svgDiv');
-				x.style.overflow='scroll';
-				x.style.resize = 'both';
-				x.style.width = 'auto';
-				x.style.height = 'auto';
-
-				
-				$('#btn').text('Hide Graph');
-				$('#btn').click(function() {
-					$( "#svgDiv" ).remove();
-				});
-				
-
-				var preSVG = target.attributes.item(1).value;
-				var svgURI = preSVG.split("#")[0];
-				svgURI = ":svg?" + svgURI;
-				mmt.ajaxAppend(svgURI, 'svgDiv');
+		    //var svgURI = ":svg?" + mmt.currentURI;
+			var contentNode = mmt.createInlineBox(target, mmt.currentURI);
+			mmt.ajaxAppendBox(svgURI, contentNode);
 			};
-
-		res["Show graph in new window"] = function(){
-						var preSVG = target.attributes.item(1).value;
-						var svgURI = preSVG.split("#")[0];
-						svgURI = ":svg?" + svgURI;
-						window.open(svgURI);
-						};
-	
-		res["show URI"] = function(){alert(mmt.currentURI)};
-		res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
-		res["Show in Mizar"] = function(){alert("This is will be the Mizar concept based on alignments")};
-		res["Show in HOLLight"] = function(){alert("This will be the HOLLight concept based on alignments")};
-		res["SVG"] = this.createInlineBox(target, mmt.currentURI);
-
+		
 		//res["get OMDoc"] = mmt.openCurrentOMDoc();
 		}
 		return res;
@@ -99,9 +69,11 @@ var interactiveViewing = {
 				  function(result) {
 					  try {
 						  var pres = result.firstChild.firstChild.firstChild;
-						  mmt.setLatinDialog(pres, 'type');
+						  var contentNode = mmt.createInlineBox(target, 'type');
+						  $(contentNode).append(pres);
 					  } catch(err) { // probably result is an error report
-						  mmt.setLatinDialog(result.firstChild, 'type');
+						  var errorNode = mmt.createInlineBox(target, 'error');
+						  $(errorNode).append(result.firstChild);
 					  }
 				  }
 				 );
@@ -109,68 +81,46 @@ var interactiveViewing = {
 	
 	/* sends a simplification query to server for the currentComponent and currentPosition */
 	simplify : function (){
+		
 		var query = qmt.present(qmt.simplify(
 		    qmt.subobject(qmt.component(qmt.literalPath(mmt.currentElement), mmt.currentComponent), mmt.currentPosition),
 		    uris.lf
 		));
+		
 		qmt.exec(query,
 				  function(result) {
 					  try {
 						  var pres = result.firstChild.firstChild.firstChild;
-						  mmt.setLatinDialog(pres, 'simplified');
+						  var contentNode = mmt.createInlineBox(target, 'simplified');
+						  $(contentNode).append(pres);
 					  } catch(err) { // probably result is an error report
-						  mmt.setLatinDialog(result.firstChild, 'simplified');
+						  var errorNode = mmt.createInlineBox(target, 'error');
+						  $(errorNode).append(result.firstChild);
 					  }
 				  }
 				 );
 	},
 	
-	createInlineBox: function(origin, body) {
-		
-		var targetParent = $(origin).closest(".inlineBoxSibling");
-		var newDiv = document.createElement('div');
-		var btnDiv = document.createElement('div');
-		
-		$(newDiv).addClass( "bigDiv");
-		$(btnDiv).addClass( "btnDiv");
-		var titleDiv = document.createElement('div');
-		$(titleDiv).addClass( "titleDiv");
-		$(titleDiv).append("<h3 style=\"color: lightgrey\">"+body+"</h3>");
-		
-		var contentDiv = document.createElement('div');
-		$(contentDiv).addClass( "contDiv");
-		
-		$(targetParent).append(newDiv);
-		$(newDiv).append(btnDiv);
-		$(newDiv).append(titleDiv);
-		$(newDiv).append(contentDiv);
 	
-		var button = document.createElement('button');
-		
-		$(btnDiv).append(button);
-		$(button).text('Hide');
-	    
-		$(button).click(function() {
-			var temp = $(button).closest(".bigDiv");
-			$(temp).remove();
-		});
-		
-		var preSVG = target.attributes.item(1).value;
-		var svgURI = preSVG.split("#")[0];
-		svgURI = ":svg?" + svgURI;
-		
-		mmt.ajaxAppendBox(svgURI, contentDiv);
-	
-	},
 	
 	/* shows a component of the current MMT URI in a dialog */
 	showComp : function(comp) {
-	   return function(){
+	   
 		   var query = qmt.present(qmt.component(qmt.literalPath(mmt.currentURI), comp));
 		   qmt.exec(query,
-			   	     function(result){mmt.setLatinDialog(result.firstChild.firstChild.firstChild, mmt.currentURI);}
-				      );
-		}
+			   	     function(result){
+			   			try{
+						   var pres = result.firstChild.firstChild.firstChild;
+						   var contentNode = mmt.createInlineBox(target, comp + " -> " + mmt.currentURI);
+						   $(contentNode).append(pres);
+			   			} catch (err)
+			   			{
+			   				
+							   var errorNode = mmt.createInlineBox(target, "error");
+							   $(errorNode).append(result.firstChild);
+			   			}
+			   			});
+		
 	},
 	
 	
