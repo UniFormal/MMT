@@ -19,14 +19,9 @@ var navigation = {
 		// main div
 		var url = mmt.adaptMMTURI(uri, '', true);
 		mmt.ajaxReplaceIn(url, 'main');
-		// mySvg = '/:svg?' + uri;
-		//mmt.ajaxPutSVG(mySvg,'constant\ toggleTarget');
-		// breadcrumbs
 		var bcurl = '/:breadcrumbs?' + uri;
 		mmt.ajaxReplaceIn(bcurl, 'breadcrumbs');
-                // initialize SVG pan
-		
-                setSVGPanRoot($('svg')[0]);
+       // setSVGPanRoot($('svg')[0]);
 	},
 	
 	navigateServer: function(uri) {

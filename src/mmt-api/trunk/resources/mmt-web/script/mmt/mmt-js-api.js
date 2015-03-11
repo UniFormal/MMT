@@ -107,7 +107,7 @@ var mmt = {
 			mmt.currentURI = str;
 		} else if ($(elem).hasAttribute("href"))
 		{
-			// console.log("I am here with href attribute");
+			 console.log("I am here with href attribute");
 			var y = $(elem).attr("onclick");
 			var z = y.split(",");
 			var len = z[1].length;
@@ -116,7 +116,7 @@ var mmt = {
 		}
 		
 		else {
-			// console.log("I am here with null");
+			 console.log("I am here with null");
 
 		   mmt.currentURI = null;
 		}
@@ -228,10 +228,11 @@ var mmt = {
 				   $(targetnode).append(xmlString);
 				}
 				if (async == null) async = true;
-				$.ajax({ 'url': url,
-						 'dataType': 'xml',
-						 'async': async,
-						 'success': cont
+				$.ajax({  'type': "GET",
+					      'url': url,      
+						  'dataType': 'xml',
+						  'async': async,
+						  'success': cont
 					   });
 			},
 			
@@ -303,10 +304,70 @@ var mmt = {
 	*/
 	setLatinDialog : function (content, title){
 		var dia = $("#latin-dialog");
+		console.log("dia is " + dia);
+		console.log("title is " + title);
+        console.log("dia[0] is "+dia[0]);
+        console.log("dia[0].firstChild is "  +dia[0].firstChild);
+
 		dia.dialog('option', 'title', title);
 		dia[0].replaceChild(content, dia[0].firstChild);
 		dia.dialog('open');
 	},
+	
+	createInlineBox : function (origin, title) {
+		
+		var targetParent = $(origin).closest(".inlineBoxSibling");
+		var newDiv = document.createElement('div');
+		var btnDiv = document.createElement('div');
+
+		$(newDiv).addClass( "bigDiv");
+		$(newDiv).addClass( "container-fluid");
+
+		
+		$(btnDiv).addClass( "btnDiv");
+		var titleDiv = document.createElement('div');
+		$(titleDiv).addClass( "titleDiv");
+		$(titleDiv).append("<h3 style=\"color: lightgrey\">"+title+"</h3>");
+
+		var contentDiv = document.createElement('div');
+		$(contentDiv).addClass( "contDiv");
+
+		$(targetParent).append(newDiv);
+		$(newDiv).append(btnDiv);
+		$(newDiv).append(titleDiv);
+		$(newDiv).append(contentDiv);
+
+		var button_hide = document.createElement('button');
+		var button_close = document.createElement('button');
+		$(button_hide).addClass( "inlineBtn");
+		$(button_close).addClass( "inlineBtn");
+
+
+		$(btnDiv).append(button_close);
+		$(btnDiv).append(button_hide);
+
+
+
+		$(button_hide).text('Show/Hide');
+		$(button_close).text('Close');
+
+
+		$(button_close).click(function() {
+			var temp = $(button_close).closest(".bigDiv");
+			$(temp).remove();
+		});
+		
+		$(button_hide).click(function() {
+			
+			$(contentDiv).toggle();
+		});
+		
+		//$(newDiv).draggable();
+		//$(contentDiv).resizable();
+
+		return contentDiv;
+	},
+	
 	
 	getSelectedParent : function (elem){
 		var s = $(elem).parents().andSelf().filterMClass('math-selected');
@@ -398,7 +459,7 @@ var qmtAux = {
 
 // functions to build and run QMT queries
 var qmt = {
-    // helper functions to build queries (as XML strings)
+   // helper functions to build queries (as XML strings)
 	literalPath : function (p) {return XML.elem('literal', null, 'uri', p);},
 	literalString : function (p) {return XML.elem('literal', p);},
 	bound      : function(i) {return XML.elem('bound', null, 'index', i);},
@@ -427,20 +488,6 @@ var qmt = {
 			success:cont,
 		});
 	},
-};
-
-//functions to build and run MMT actions
-var action = {
-	// helper functions to build actions (as strings)
-	build: function(a,t,p) {return "build " + a + " " + t + (p == null? "" : " " + p);},
-	exit: "exit",
 	
-	/* executes an action (as constructed by helper functions) via ajax and runs a continuation on the result */
-	exec : function(a, cont) {
-		$.ajax({
-			url: mmt.makeURL('/:admin') + "?" + a, 
-            dataType : 'xml',
-			success:cont,
-		});
-	},
+	
 };
