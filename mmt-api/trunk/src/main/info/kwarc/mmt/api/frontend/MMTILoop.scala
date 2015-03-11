@@ -11,18 +11,18 @@ import scala.tools.nsc._
 class MMTILoop(controller: Controller) extends interpreter.ILoop {
    /** this is overridden in order to bind variables after the interpreter has been created */
    override def createInterpreter() {
-     if (addedClasspath != "")
-       settings.classpath append addedClasspath
-     intp = new ILoopInterpreter
-     intp beQuietDuring {
-       intp.interpret("import info.kwarc.mmt.api._")
-       intp.bind("controller", controller)
-       val interpolator = new MMTInterpolator(controller)
-       intp.bind("interpolator", interpolator)
-       val isimp = new InteractiveSimplifier(controller, this)
-       intp.bind("isimp", isimp)
-       intp.interpret("import interpolator._")
-     }
+      if (addedClasspath != "")
+         settings.classpath append addedClasspath
+      intp = new ILoopInterpreter
+      intp beQuietDuring {
+         intp.interpret("import info.kwarc.mmt.api._")
+         intp.bind("controller", controller)
+         val interpolator = new MMTInterpolator(controller)
+         intp.bind("interpolator", interpolator)
+         val isimp = new InteractiveSimplifier(controller, this)
+         intp.bind("isimp", isimp)
+         intp.interpret("import interpolator._")
+      }
    }
    override def printWelcome() {
       out.println
