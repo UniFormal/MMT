@@ -180,12 +180,21 @@ class HtmlFileHandler(filename : File) extends FileHandler(filename) {
 }
 
 /** remembers logged lines */
-class CacheHandler(id: String) extends ReportHandler(id) {
-   //this should not be here, if needed, a special LogHandler should be added temporarily
+class RecordingHandler(id: String) extends ReportHandler(id) {
    private var memory : List[String] = Nil
-   def recall = memory.reverse
-   def clear {memory = Nil}
+   private var recording = false
+   def record {
+      recording = true
+   }
+   def stop = {
+      recording = false
+      memory.reverse
+   }
+   def clear {
+      memory = Nil
+   }
    def apply(ind: Int, caller: String, group: String, msg: String) {
-      memory ::= indentString(ind) + group + ": " + msg
+      if (recording)
+         memory ::= indentString(ind) + group + ": " + msg
    }
 }

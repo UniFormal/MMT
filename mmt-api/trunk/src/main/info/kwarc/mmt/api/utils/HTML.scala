@@ -4,12 +4,13 @@ import scala.xml.Utility.escape
 
 /**
  * a partial implementation of HTML designed for easily building and emitting HTML documents
- * @param out a continuation function called on the text snippets making up the HTML document
  * 
  * see [[archives.HTMLExporter]] for a usage example
  */
 abstract class HTML {
+   /** continuation function called on the text snippets making up the HTML document */
    def out(s: String)
+   
    private var nextid = 0
    /** @return a fresh id */
    def freshid: String = {
@@ -17,6 +18,8 @@ abstract class HTML {
       nextid += 1
       "_" + id
    }
+   
+   /** @return the string key="value" if value is non-empty, empty string otherwise */
    private def optAttr(key: String, value: String) = if (value == "") "" else s""" $key="${escape(value)}""""
    /**
     * Most HTML tags inherit from this class
@@ -48,6 +51,7 @@ abstract class HTML {
          apply()(body)
       }
    }
+
    val html = new Element("html")
    val head = new Element("head")
    val body = new Element("body")
@@ -85,48 +89,62 @@ abstract class HTML {
    val h5 = new Element("h5")
    val h6 = new Element("h6")
    val h7 = new Element("h7")
+
    val p  = new Element("p")
-   
    val button = new Element("button")
-   
-   def br {out("<br/>")} 
+
+   /** br element */
+   def br {out("<br/>")}
+   /** anchor element */
    def a(ref: String)(body: => Unit) {
       out(s"""<a href="$ref">""")
       body
       out("</a>")
    }
+   /** object element */
    def htmlobject(ref: String, tp: String) {
       out(s"""<object type="$tp" data="$ref"></object>""")
    }
+   /** iframe element */
    def iframe(src: String){
       out(s"""<iframe src="$src">""")
       out("</iframe>")
    }
+   /** img element */
    def img(src: String) {
      out(s"""<img src="$src"/>""")
    }
-   
+   /** embed element */
    def embed(src: String) {
      out(s"""<embed src="$src"/>""")
    }
-   
+   /** text node */
    def text(s : String) {
      out(escape(s))
    }
+   /** outputs a node as is */
+   def literalNode(n: scala.xml.Node) {
+     out(n.toString)
+   }
    
    /**
-    * produces a script tag pointing to a javascript file
+    * produces a script element for a javascript file
     * @param src the src attribute (i.e., the javascript file)
     */
    def javascript(src: String) {
       out(s"""<script type="text/javascript" src="$src"></script>""")
    }
    /**
-    * produces a link tag pointing to a css file
+    * produces a link tag for a css file
     * @param src the href attribute (i.e., the css file)
     */
    def css(src: String) {
       out(s"""<link rel="stylesheet" type="text/css" href="$src"></link>""")
+   }
+
+   /** creates a javascript function application */
+   object JS {
+      def apply(fun: String)(args: String*) = fun + args.map(a => "'" + a + "'" ).mkString("(", ",", ")")
    }
 }
 
@@ -135,7 +153,9 @@ object HTML {
       def out(s: String) {f(s)}
    }
    def builder = new HTML {
-      var result: String = ""
-      def out(s: String) {result += s}
+      private var _result: String = ""
+      def result = _result
+      def reset {_result = ""}
+      def out(s: String) {_result += s}
    }
 }

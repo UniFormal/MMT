@@ -94,7 +94,7 @@ class Controller extends ROController with Logger {
    init
    
    /** @return a notifier for all currently registered [[ChangeListener]]s */
-   private def notifyListeners = new Notify(extman.changeListeners, report)
+   private[api] def notifyListeners = new Notify(extman.changeListeners, report)
 
    //not sure if this really belong here, map from jobname to some state info
    val states = new collection.mutable.HashMap[String, ParserState]
