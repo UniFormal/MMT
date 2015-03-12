@@ -15,9 +15,10 @@ import scala.concurrent.Future
 import scala.xml.{Elem, Node}
 
 object Table {
-  val columns: List[String] = List("id", // to be removed later
+  val columns: List[String] = List(
     "errLevel",
     "errType",
+    "archive",
     "fileName",
     "fileDate",
     "target",
@@ -33,12 +34,12 @@ case class BuildError(archive: Archive, target: String, path: List[String],
                       shortMsg: String, longMsg: String,
                       stackTrace: List[List[String]]) {
   def toStrList: List[String] = {
-    val File(f) = archive / errors / target / path
-    List("0", // to be removed later
-      level.toString,
+    val f = archive / errors / target / path
+    List(level.toString,
       tp,
-      f.getPath,
-      new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(f.lastModified)),
+      archive.id,
+      path.mkString("/"),
+      new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(f.toJava.lastModified)),
       target,
       sourceRef.map(_.toString).getOrElse(""),
       shortMsg,
