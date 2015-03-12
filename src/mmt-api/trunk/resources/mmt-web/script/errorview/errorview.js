@@ -1,9 +1,9 @@
 angular.module('searchApp', []).controller('SearchController',
   [ '$scope', '$http', function($scope, $http) {
     $scope.columns =
-      { id : { x : false, long : 'id', search : '' }
-      , errLevel : { x : true, long : 'level', search : '' }
+      { errLevel : { x : true, long : 'level', search : '' }
       , errType : { x : false, long : 'error type', search : '' }
+      , archive : { x : true, long : 'archive', search : '' }
       , fileName : { x : true, long : 'file name', search : '' }
       , fileDate : { x : false, long : 'modified', search : '' }
       , target : { x : true, long : 'target', search : '' }
