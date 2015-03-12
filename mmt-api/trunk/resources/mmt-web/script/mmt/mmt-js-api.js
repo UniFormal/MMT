@@ -483,7 +483,7 @@ var action = {
 	/* executes an action (as constructed by helper functions) via ajax and runs a continuation on the result */
 	exec : function(a, cont) {
 		$.ajax({
-			url: mmt.makeURL('/:admin') + "?" + a,
+			url: mmt.makeURL('/:action') + "?" + a,
             dataType : 'xml',
 			success:cont,
 		});
