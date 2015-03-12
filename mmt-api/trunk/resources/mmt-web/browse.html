@@ -47,7 +47,7 @@
   <script type="text/javascript">
       var JOBAD1;
       $(function(){
-         JOBAD1 = new JOBAD($("#main,#inputviewterm,#inputviewtype,#results,#breadcrumbs,#sidebar"));
+         JOBAD1 = new JOBAD($("#main,#inputviewterm,#inputviewtype,#results,#breadcrumbs,#sidebar,#pathtree, #second_column"));
          JOBAD1.modules.load("kwarc.mmt.navigation", []);
          JOBAD1.modules.load("kwarc.mmt.hovering", []);
          JOBAD1.modules.load("kwarc.mmt.intvw", []);
@@ -320,7 +320,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="row" id="parserow" style="visibility: hidden">
+			<div class="row inlineBoxSibling" id="parserow" style="visibility: hidden">
 				<div id="parse" class="col-md-8"  >
 					<table class="toggleTarget">
   						<tr>

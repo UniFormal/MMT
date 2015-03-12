@@ -308,8 +308,18 @@ var mmt = {
 	createInlineBox : function (origin, title) {
 		
 		var targetParent = $(origin).closest(".inlineBoxSibling");
-		
 		var newDiv = document.createElement('div');
+		
+		// no inlineBoxSiling class found near
+		// make inline box appear at the top in ths case
+		if (targetParent.length === 0) {	
+			//targetParent =  document.getElementById("main");
+			$(newDiv).insertBefore( "#main" );
+		}
+		else {
+			$(targetParent).append(newDiv);
+		}
+		
 		var btnDiv = document.createElement('div');
 		var titleDiv = document.createElement('div');
 		var contentDiv = document.createElement('div');
@@ -324,7 +334,7 @@ var mmt = {
 		$(titleDiv).addClass( "titleDiv");	
 		$(contentDiv).addClass( "contDiv");
 
-		$(targetParent).append(newDiv);
+		
 		$(newDiv).append(btnDiv);
 		$(newDiv).append(titleDiv);
 		$(newDiv).append(contentDiv);

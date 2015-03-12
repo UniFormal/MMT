@@ -50,9 +50,9 @@ span.pagelink a:hover {
 }
 
 #breadcrumbs {
-   height: 20px;
+   height: 30px;
    font-size:20px;
-   padding-top: 3%;
+   margin-top: 3%;
      
 }
 #breadcrumbs .mmturi {
@@ -63,7 +63,7 @@ span.pagelink a:hover {
 
 #sidebar {
   
-   overflow: scroll;
+   //overflow: scroll;
    
 }
 
