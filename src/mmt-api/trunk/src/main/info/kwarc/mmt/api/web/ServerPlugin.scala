@@ -146,7 +146,7 @@ class ActionServer extends ServerExtension("action") {
       report.addHandler(logCache)
    }
    override def destroy {
-      report.removeHandler("admin")
+      report.removeHandler(logPrefix)
    }
    def apply(path: List[String], query: String, body: Body): HLet = {
       val c = query.replace("%20", " ")
