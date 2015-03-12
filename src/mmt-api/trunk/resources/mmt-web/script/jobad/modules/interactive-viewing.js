@@ -21,7 +21,7 @@ var interactiveViewing = {
 		
 			res["infer type"] = me.inferType;
 			res["simplify"] = me.simplify;
-		   var folded = $(mmt.focus).closest('.math-folded');
+ 		   var folded = $(mmt.focus).closest('.math-folded');
          if (folded.length !== 0)
             res['unfold'] = function(){folded.removeMClass('math-folded');};
          else
@@ -29,17 +29,17 @@ var interactiveViewing = {
 		}
 		if (mmt.currentURI !== null) {
 			var me = this;
-			res["type"] = function(){me.showComp('type');};
-			res["show definition"] = function(){me.showComp('definition');};
 			res["show URI"] = function(){alert(mmt.currentURI);};
 			res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
+			res["show type"] = function(){me.showComp('type');};
+			res["show definition"] = function(){me.showComp('definition');};
 			res["show graph"] = function() {
 				
-			var preSVG = target.attributes.item(1).value;
+			/*var preSVG = target.attributes.item(1).value;
 			var svgURI = preSVG.split("#")[0];
-			svgURI = ":svg?" + svgURI;
+			svgURI = ":svg?" + svgURI;*/
 			
-		    //var svgURI = ":svg?" + mmt.currentURI;
+		    var svgURI = ":svg?" + mmt.currentURI;
 			var contentNode = mmt.createInlineBox(target, mmt.currentURI);
 			mmt.ajaxAppendBox(svgURI, contentNode);
 			};
@@ -96,12 +96,10 @@ var interactiveViewing = {
 	
 	/* sends a simplification query to server for the currentComponent and currentPosition */
 	simplify : function (){
-		
 		var query = qmt.present(qmt.simplify(
 		    qmt.subobject(qmt.component(qmt.literalPath(mmt.currentElement), mmt.currentComponent), mmt.currentPosition),
 		    uris.lf
 		));
-		
 		qmt.exec(query,
 				  function(result) {
 					  try {
@@ -119,8 +117,7 @@ var interactiveViewing = {
 	
 	
 	/* shows a component of the current MMT URI in a dialog */
-	showComp : function(comp) {
-	   
+	showComp : function(comp) {  
 		   var query = qmt.present(qmt.component(qmt.literalPath(mmt.currentURI), comp));
 		   qmt.exec(query,
 			   	     function(result){
