@@ -129,15 +129,15 @@ class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
           } 
           not.flatten
         case _ => Nil
-      } //notations is now an iterable of (name, notation) pairs
+       } //notations is now an iterable of (name, notation) pairs
              
        pairIndexNotation = notations.toList.zipWithIndex
        pairIndexNotation.foreach( x => 
            if (x._1._2.presentationMarkers != Nil) {
            Grammar.addTopRule(x._1._1.toPath+"N"+x._2.toString, x._1._2.presentationMarkers)}) //adding rules to the grammar
        val resp = new JSONArray( Grammar.getMarpaGrammar );
-      	val params = reqBody.asJSON
-      	Server.JsonResponse(resp).aact(tk)
+       val params = reqBody.asJSON
+       Server.JsonResponse(resp).aact(tk)
     }
   }
     
