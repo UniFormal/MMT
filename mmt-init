@@ -46,7 +46,7 @@ do_start()
 	# Return
 	#   0 if daemon has been or was started
 	#   2 if daemon could not be started
-	do_status ||
+	do_status > /dev/null ||
         start-stop-daemon -v --start --chuid maeder:maeder \
           --make-pidfile -p $PIDFILE --background \
           --exec $DAEMON \
@@ -70,26 +70,24 @@ do_stop()
 	# Return
 	#   0 if daemon has been stopped
 	#   other if a failure occurred
-        do_status > /dev/null && pkill -P `cat $PIDFILE`
-        rm -f $PIDFILE
-        do_status
+        do_status > /dev/null && pkill -P `cat $PIDFILE` && rm -fv $PIDFILE
 }
 
 case "$1" in
   start)
-	[ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
+	log_daemon_msg "Starting $DESC" "$NAME"
 	do_start
 	case "$?" in
-		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
-		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+		0|1) log_end_msg 0 ;;
+		2) log_end_msg 1 ;;
 	esac
 	;;
   stop)
-	[ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
+	log_daemon_msg "Stopping $DESC" "$NAME"
 	do_stop
 	case "$?" in
-		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
-		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+		0|1) log_end_msg 0 ;;
+		2) log_end_msg 1 ;;
 	esac
 	;;
   status)
