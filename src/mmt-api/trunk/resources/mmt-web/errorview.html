@@ -27,11 +27,11 @@
             <th>{{columns[field].long}} ({{groups.length}} rows)</th>
         </tr>
         </thead>
-        <tbody>
+        <tbody style="cursor:pointer">
         <tr ng-repeat="g in groups">
             <td>{{g.count}}</td>
-            <td ng-click="columns[field].search = g.content; search()"
-                style="cursor:pointer">{{g.content}}
+            <td ng-click="columns[field].search = g.content; search()">
+                {{g.content}}
             </td>
         </tr>
         </tbody>
@@ -59,10 +59,9 @@
     <p/>
     <table>
         <thead>
-        <tr>
+        <tr style="cursor:pointer">
             <th ng-repeat="key in colProps" ng-if="columns[key].x">
-                <span ng-click="sort.col = key; sort.asc = !sort.asc"
-                      style="cursor:pointer">
+                <span ng-click="sort.col = key; sort.asc = !sort.asc">
                     <span ng-show="sort.col == key">
                         <span ng-show="sort.asc">&#9650;</span>
                         <span ng-show="!sort.asc">&#9660;</span>
@@ -74,8 +73,9 @@
             </th>
         </tr>
         </thead>
-        <tbody>
-        <tr ng-repeat="res in results | filter : matchFilters() | orderBy : sort.col : sort.asc">
+        <tbody style="cursor:pointer">
+        <tr ng-repeat="res in results | filter : matchFilters() | orderBy : sort.col : sort.asc"
+            ng-click="build(res)">
             <td ng-repeat="key in colProps" ng-if="columns[key].x">
                 {{res[key]}}
             </td>
