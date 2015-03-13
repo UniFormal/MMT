@@ -45,12 +45,12 @@ abstract class BuildTarget extends Extension {
     *  @param modifier chooses build, clean, or update
     *  @param arch the archive to build on
     *  @param in the folder inside the archive's inDim folder to which building in restricted (i.e., Nil for whole archive)
-    *  @param additional arguments for the discretion of the BuildTarget; number must be equal to requiredArguments(modifier)
+    *  @param args arguments for the discretion of the BuildTarget; number must be equal to requiredArguments(modifier)
     */
    def apply(modifier: BuildTargetModifier, arch: Archive, in: List[String], args: List[String]) {
       val reqArgs = requiredArguments(modifier)
       if (reqArgs != args.length)
-         throw ParseError("wrong nunmber of arguments, required: " + reqArgs)
+         throw ParseError("wrong number of arguments, required: " + reqArgs)
       modifier match {
          case up: Update => update(arch, args, up, in)
          case Clean  => clean(arch, args, in)
@@ -124,14 +124,14 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
    /** the main abstract method that implementations must provide: builds one file
      * @param a the containing archive  
-     * @param bfFile information about input/output file etc
+     * @param bf information about input/output file etc
      */ 
    def buildFile(a: Archive, bf: BuildTask)
 
    /** similar to buildOne but called on every directory (after all its children have been processed)
      * @param a the containing archive  
      * @param bd information about input/output file etc
-     * @param buildChildren results from building the children
+     * @param builtChildren results from building the children
      * This does nothing by default and can be overridden if needed.
      */ 
    def buildDir(a: Archive, bd: BuildTask, builtChildren: List[BuildTask]) {}

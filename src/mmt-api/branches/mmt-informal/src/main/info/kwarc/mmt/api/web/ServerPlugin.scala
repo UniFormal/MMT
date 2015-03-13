@@ -43,14 +43,32 @@ class SVGServer extends ServerExtension("svg") {
    
    def apply(path: List[String], query: String, body: Body) = {
       val path = Path.parse(query, controller.getBase)
-      val (arch,inPath) = controller.backend.resolveLogical(path.doc.uri).getOrElse {
-         throw LocalError("illegal path: " + query)
+      val (inNarr, newPath) = path match {
+        // doc path
+         case dp: DPath => (true, dp)
+         // module path
+         case mp: MPath => (false, mp)
+         case gp: GlobalName => (false, gp.module.toMPath)
+         case cp: CPath => (false, cp.parent.module.toMPath) 
       }
-      val inPathFile = archives.Archive.narrationSegmentsAsFile(inPath, "omdoc")
-      val svgFile = (arch.root / "export" / "svg" / "narration" / inPathFile).setExtension("svg")
-      val node = utils.File.read(svgFile)
+      val svgFile = if (inNarr) {
+          val dp = newPath.asInstanceOf[DPath]
+	      val (arch,inPath) = controller.backend.resolveLogical(dp.uri).getOrElse {
+	         throw LocalError("illegal path: " + query)
+	      }
+	      val inPathFile = archives.Archive.narrationSegmentsAsFile(inPath, "omdoc")
+	      arch.root / "export" / "svg" / "narration" / inPathFile
+      } else {
+          val mp = newPath.asInstanceOf[MPath]
+	      val arch = controller.backend.findOwningArchive(mp).getOrElse {
+	         throw LocalError("illegal path: " + query)
+	      } 
+          val inPathFile = archives.Archive.MMTPathToContentPath(mp)
+          arch.root / "export" / "svg" / "content" / inPathFile
+      }
+      val node = utils.File.read(svgFile.setExtension("svg"))
       Server.TypedTextResponse(node, "image/svg+xml")
-   } 
+   }
 }
 
 /** interprets the body as a QMT [[ontology.Query]] and evaluates it */
@@ -147,7 +165,7 @@ class ActionServer extends ServerExtension("action") {
       report.addHandler(logCache)
    }
    override def destroy {
-      report.removeHandler("admin")
+      report.removeHandler(logPrefix)
    }
    def apply(path: List[String], query: String, body: Body): HLet = {
       val c = query.replace("%20", " ")

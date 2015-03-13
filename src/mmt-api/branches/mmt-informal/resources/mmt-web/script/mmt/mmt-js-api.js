@@ -107,7 +107,7 @@ var mmt = {
 			mmt.currentURI = str;
 		} else if ($(elem).hasAttribute("href"))
 		{
-			// console.log("I am here with href attribute");
+			 console.log("I am here with href attribute");
 			var y = $(elem).attr("onclick");
 			var z = y.split(",");
 			var len = z[1].length;
@@ -116,7 +116,7 @@ var mmt = {
 		}
 		
 		else {
-			// console.log("I am here with null");
+			 console.log("I am here with null");
 
 		   mmt.currentURI = null;
 		}
@@ -183,11 +183,7 @@ var mmt = {
 	    */
    ajaxAppend : function (url, targetid, async) {
 	   function cont(data) {
-		   //var inlineBox = "<div class='inlineBox'><table><tr><td class='inlineTitle'>X</td></tr><tr><td class='inlineBody'></td></tr></table></div>"
-		   //$(currentElem).closest(boxSibling).after(inlineBox).append(data.lastChild);
-		   //var targetnode = $('#' + targetid).children();
-		   //$('#' + targetid).innerHTML = data;
-		   //targetnode.replaceWith(data);
+		   
 		   var svgDiv = $('#' + targetid);
 		   var serializer = new XMLSerializer();
 		   var xmlString = serializer.serializeToString(data);
@@ -228,10 +224,11 @@ var mmt = {
 				   $(targetnode).append(xmlString);
 				}
 				if (async == null) async = true;
-				$.ajax({ 'url': url,
-						 'dataType': 'xml',
-						 'async': async,
-						 'success': cont
+				$.ajax({  'type': "GET",
+					      'url': url,      
+						  'dataType': 'xml',
+						  'async': async,
+						  'success': cont
 					   });
 			},
 			
@@ -307,6 +304,62 @@ var mmt = {
 		dia[0].replaceChild(content, dia[0].firstChild);
 		dia.dialog('open');
 	},
+	
+	createInlineBox : function (origin, title) {
+		
+		var targetParent = $(origin).closest(".inlineBoxSibling");
+		var newDiv = document.createElement('div');
+		
+		// no inlineBoxSiling class found near
+		// make inline box appear at the top in ths case
+		if (targetParent.length === 0) {	
+			//targetParent =  document.getElementById("main");
+			$(newDiv).insertBefore( "#main" );
+		}
+		else {
+			$(targetParent).append(newDiv);
+		}
+		
+		var btnDiv = document.createElement('div');
+		var titleDiv = document.createElement('div');
+		var contentDiv = document.createElement('div');
+		var button_hide = document.createElement('button');
+		var button_close = document.createElement('button');
+		
+		$(newDiv).addClass( "bigDiv");
+		$(newDiv).addClass( "container-fluid");
+		$(btnDiv).addClass( "btnDiv");
+		$(button_hide).addClass( "inlineBtn");
+		$(button_close).addClass( "inlineBtn");
+		$(titleDiv).addClass( "titleDiv");	
+		$(contentDiv).addClass( "contDiv");
+
+		
+		$(newDiv).append(btnDiv);
+		$(newDiv).append(titleDiv);
+		$(newDiv).append(contentDiv);
+		$(titleDiv).append("<h3 style=\"color: lightgrey\">"+title+"</h3>");
+		$(btnDiv).append(button_close);
+		$(btnDiv).append(button_hide);
+		
+		$(button_hide).text('Show/Hide');
+		$(button_close).text('Close');
+
+		$(button_close).click(function() {
+			var temp = $(button_close).closest(".bigDiv");
+			$(temp).remove();
+		});
+		
+		$(button_hide).click(function() {
+			$(contentDiv).toggle();
+		});
+		
+		//$(newDiv).draggable();
+		//$(contentDiv).resizable();
+		
+		return contentDiv;
+	},
+	
 	
 	getSelectedParent : function (elem){
 		var s = $(elem).parents().andSelf().filterMClass('math-selected');
@@ -398,7 +451,7 @@ var qmtAux = {
 
 // functions to build and run QMT queries
 var qmt = {
-    // helper functions to build queries (as XML strings)
+   // helper functions to build queries (as XML strings)
 	literalPath : function (p) {return XML.elem('literal', null, 'uri', p);},
 	literalString : function (p) {return XML.elem('literal', p);},
 	bound      : function(i) {return XML.elem('bound', null, 'index', i);},
@@ -427,20 +480,23 @@ var qmt = {
 			success:cont,
 		});
 	},
+	
+	
 };
 
 //functions to build and run MMT actions
 var action = {
 	// helper functions to build actions (as strings)
-	build: function(a,t,p) {return "build " + a + " " + t + (p == null? "" : " " + p);},
+    build: function(a,t,p) {return "build " + a + " " + t + (p == null? "" : " " + p);},
 	exit: "exit",
-	
+
 	/* executes an action (as constructed by helper functions) via ajax and runs a continuation on the result */
 	exec : function(a, cont) {
 		$.ajax({
-			url: mmt.makeURL('/:admin') + "?" + a, 
+			url: mmt.makeURL('/:action') + "?" + a,
             dataType : 'xml',
 			success:cont,
 		});
 	},
-};
+
+ };
