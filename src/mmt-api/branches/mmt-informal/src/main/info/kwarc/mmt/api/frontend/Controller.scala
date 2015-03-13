@@ -94,7 +94,17 @@ class Controller extends ROController with Logger {
    init
    
    /** @return a notifier for all currently registered [[ChangeListener]]s */
-   private def notifyListeners = new Notify(extman.changeListeners, report)
+   private[api] def notifyListeners = new Notify(extman.changeListeners, report)
+   
+   def get(fpath : flexiformal.FragPath) : Content = {
+      def getFrag(c : Content, indices : List[Int]) : Content = indices match {
+        case Nil => c
+        case hd :: tl => getFrag(c.children(hd), tl)
+      }
+      val s= get(fpath.path)
+      getFrag(s, fpath.fragment.indices)
+   }
+
 
    //not sure if this really belong here, map from jobname to some state info
    val states = new collection.mutable.HashMap[String, ParserState]
@@ -194,16 +204,6 @@ class Controller extends ROController with Logger {
           
       }
    }
-   
-   def get(fpath : flexiformal.FragPath) : Content = {
-     def getFrag(c : Content, indices : List[Int]) : Content = indices match {
-       case Nil => c
-       case hd :: tl => getFrag(c.children(hd), tl)
-     }
-     val s= get(fpath.path)
-     getFrag(s, fpath.fragment.indices)
-   }
-   
    /** retrieves a knowledge item */
    def get(path : Path) : StructuralElement = {
       path match {
@@ -436,8 +436,8 @@ class Controller extends ROController with Logger {
 	            }
 	            notifyListeners.onArchiveOpen(a)
 	         }
-         case ArchiveBuild(id, key, mod, in, args) =>
-            val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
+         case ArchiveBuild(ids, key, mod, in, args) => ids.foreach {id =>
+            val arch = backend.getArchive(id) getOrElse(throw GetError("archive not found: " + id))
             key match {
                case "check" => arch.check(in, this)
                case "validate" => arch.validate(in, this)
@@ -449,11 +449,6 @@ class Controller extends ROController with Logger {
                   arch.readRelational(in, this, "rel")
                   arch.readRelational(in, this, "occ")
                   log("done reading relational index")
-               /*
-               case "notation" => 
-                  arch.readNotation(in, this)
-                  log("done reading notation index")
-                */
                case "integrate"    => arch.integrateScala(this, in)
                case "test"         =>
                   if (in.length != 1)
@@ -472,6 +467,7 @@ class Controller extends ROController with Logger {
                         logError("unknown dimension " + d + ", ignored")
                   }
             }
+         }
          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found")) 
             arch.toMar(file)

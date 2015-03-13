@@ -5,13 +5,20 @@ import ontology._
 import documents._
 import Server._
 
+/**
+ * serves a tree-based navigation component for an HTML page
+ */
 class TreeView extends ServerExtension("tree") {
+   private def item(p : Path, state : String, label : Option[String] = None) = 
+      <item id={p.toPath} state={state}>
+        <content><name href="#" onclick={"mmt.sideBarClick(event, '" + p.toPath + "')"}>{label.getOrElse(p.last)}</name></content>
+        </item>
    def apply(path: List[String], query: String, body: Body) = {
        val q = query
        val node = if (q == ":root")
          <root>{
            controller.backend.getArchives.sortBy(_.id.toLowerCase) map {a =>
-              Util.item(DPath(a.narrationBase), "closed", Some(a.id))
+              item(DPath(a.narrationBase), "closed", Some(a.id))
            }
          }</root>
        else {
@@ -25,7 +32,7 @@ class TreeView extends ServerExtension("tree") {
                 case (r: MRef, s: DRef) => true
                 case (r,s)  => r.target.last <= s.target.last
              } 
-             <root>{ docitems.map { i => Util.item(i.target, "closed") } }</root>
+             <root>{ docitems.map { i => item(i.target, "closed") } }</root>
            case p: MPath =>
              val rels: List[(String, RelationExp)] = role match {
                case Some(ontology.IsTheory) =>
@@ -42,7 +49,7 @@ class TreeView extends ServerExtension("tree") {
                  case (desc, res) =>
                    <item state="closed">
                   <content><name class="treerelation">{ desc }</name></content>
-                  { res.map(Util.item(_, "closed")) }
+                  { res.map(item(_, "closed")) }
                 </item>
                }
              }</root>
@@ -53,7 +60,9 @@ class TreeView extends ServerExtension("tree") {
    }
 }
 
-/** part of web browser */
+/**
+ * serves a bread crumbs-style navigation component for an HTML page
+ */
 class BreadcrumbsServer extends ServerExtension("breadcrumbs") {
    def apply(path: List[String], query: String, body: Body) = {
       val mmtpath = Path.parse(query, controller.getBase)
@@ -62,16 +71,16 @@ class BreadcrumbsServer extends ServerExtension("breadcrumbs") {
       var spathfound = false
       val html = utils.HTML.builder
       import html._
-      def gsep() = span {text {"?"}}
-      def lsep() = span {text {"/"}}
+      def gsep = span {text {"?"}}
+      def lsep = span {text {"/"}}
       // strangely, the client somehow does not handle this right if the XML is given literally, might be due to namespaces
       div(attributes = List("xmlns" -> utils.xml.namespace("xhtml"), "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
          ancs.foreach {p =>
             p match {
-               case p : MPath if ! mpathfound => mpathfound = true; gsep()
-               case p : GlobalName if ! spathfound => spathfound = true; gsep()
+               case p : MPath if ! mpathfound => mpathfound = true; gsep
+               case p : GlobalName if ! spathfound => spathfound = true; gsep
                case p if p.^! == p => Nil
-               case _ => lsep()
+               case _ => lsep
             }
             span("mmturi", attributes=List("jobad:href" -> p.toPath)) {text {p.last}}
          }

@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
+import archives._
 
 /**
  * A ChangeListener is an Extension that is called on every Constant
@@ -22,9 +23,11 @@ trait ChangeListener extends Extension {
    /** called when navigating to an element */
    def onNavigate(p: Path) {}
    /** called when a new archive is added */
-   def onArchiveOpen(a: archives.Archive) {}
+   def onArchiveOpen(a: Archive) {}
    /** called when an archive is removed */
-   def onArchiveClose(a: archives.Archive) {}
+   def onArchiveClose(a: Archive) {}
+   /** called when a file was built */
+   def onFileBuilt(a: Archive, target: TraversingBuildTarget, path: List[String]) {}
 }
 
 /**
@@ -52,4 +55,5 @@ class Notify(listeners: List[ChangeListener], report: Report) {
    def onNavigate(p: Path)               {tryAll(_.onNavigate(p))}
    def onArchiveOpen(a: archives.Archive) {tryAll(_.onArchiveOpen(a))}
    def onArchiveClose(a: archives.Archive) {tryAll(_.onArchiveClose(a))}
+   def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: List[String]) {tryAll(_.onFileBuilt(a,t,p))}
 }

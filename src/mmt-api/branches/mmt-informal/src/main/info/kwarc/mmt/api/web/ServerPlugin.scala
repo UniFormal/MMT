@@ -33,23 +33,6 @@ abstract class ServerExtension(context: String) extends Extension {
   def apply(path: List[String], query: String, body: Body): HLet
 }
 
-/** execute the query as an MMT [[frontend.GetAction]] */
-class ActionServer extends ServerExtension("mmt") {
-    def apply(path: List[String], query: String, body: Body) = {
-       val action = Action.parseAct(query, controller.getBase, controller.getHome)
-        val resp: String = action match {
-          case GetAction(a: ToWindow) =>
-             a.make(controller)
-             <done action={a.toString}/>.toString
-          case GetAction(a: Respond) =>
-             a.get(controller)
-          case _ =>
-             <notallowed action={action.toString}/>.toString
-        }
-        Server.XmlResponse(resp)
-    }
-}
-
 /** interprets the query as an MMT document URI and returns the SVG representation of the theory graph */
 class SVGServer extends ServerExtension("svg") {
    /**
@@ -140,9 +123,26 @@ class SearchServer extends ServerExtension("search") {
    }
 }
 
-/** interprets the query as an MMT [[frontend.Action]] and executes it */
-class AdminServer extends ServerExtension("admin") {
-   private val logCache = new CacheHandler("admin")
+/** interprets the query as an MMT [[frontend.GetAction]] and returns the result */
+class GetActionServer extends ServerExtension("mmt") {
+    def apply(path: List[String], query: String, body: Body) = {
+       val action = Action.parseAct(query, controller.getBase, controller.getHome)
+        val resp: String = action match {
+          case GetAction(a: ToWindow) =>
+             a.make(controller)
+             <done action={a.toString}/>.toString
+          case GetAction(a: Respond) =>
+             a.get(controller)
+          case _ =>
+             <notallowed action={action.toString}/>.toString
+        }
+        Server.XmlResponse(resp)
+    }
+}
+
+/** interprets the query as an MMT [[frontend.Action]] and returns the log output */
+class ActionServer extends ServerExtension("action") {
+   private lazy val logCache = new RecordingHandler(logPrefix)
    override def start(args: List[String]) {
       report.addHandler(logCache)
    }
@@ -157,9 +157,10 @@ class AdminServer extends ServerExtension("admin") {
          (new Thread {override def run {Thread.sleep(2); sys.exit}}).start
          return Server.XmlResponse(<exited/>)
       }
-      logCache.clear
+      logCache.record
       controller.handle(act)
-      val r = logCache.recall
+      val r = logCache.stop
+      logCache.clear
       val html = utils.HTML.builder
       import html._
       div {r.reverse foreach {l => div {text {l}}}}

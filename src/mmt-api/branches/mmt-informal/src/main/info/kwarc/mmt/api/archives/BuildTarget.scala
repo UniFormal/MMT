@@ -158,6 +158,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
            outFile.up.mkdirs
            buildFile(a, bf)
            errorCont.close
+           controller.notifyListeners.onFileBuilt(a, this, inPath)
            // a.timestamps(this).set(inPath) not needed anymore
            bf
        }, {
@@ -173,13 +174,14 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
    /** additional method that implementations may provide: cleans one file
      * @param a the containing archive  
-     * @param curr the outDim file to be deleted
-     * deletes the output file by default, may be overridden to, e.g., delete auxiliary files
+     * @param curr the inDim whose output is to be deleted
+     * deletes the output and error file by default, may be overridden to, e.g., delete auxiliary files
      */ 
    def cleanFile(a: Archive, curr: Current) {
       val outFile = getOutFile(a, curr.path)
       delete(outFile)
       delete(getErrorFile(a, curr.path))
+      controller.notifyListeners.onFileBuilt(a, this, curr.path)
    }
    /** additional method that implementations may provide: cleans one directory
      * @param a the containing archive  
@@ -239,5 +241,43 @@ abstract class TraversingBuildTarget extends BuildTarget {
           } else
              false
        })
+   }
+}
+
+/**
+ * a build target that chains multiple other targets
+ */
+class MetaBuildTarget extends BuildTarget {
+   private var _key = ""
+   private var targets: List[BuildTarget] = Nil
+
+   def key = _key
+   /**
+    * first argument: the key of this build target
+    * remaining arguments: the build targets to chain
+    */
+   override def start(args: List[String]) {
+      _key = args.headOption.getOrElse {
+         throw LocalError("at least one argument required")
+      }
+      targets = args.tail.map {k => controller.extman.getTarget(k).getOrElse {
+         throw LocalError("unknown target: " + k)
+      }}
+   }
+   /** @return the arguments to pass to the target with key k, override as needed */ 
+   def arguments(k: String): List[String] = Nil
+   /** @return the path to pass to the target t, override as needed */ 
+   def path(t: BuildTarget, in: List[String]) = t match {
+      case t: TraversingBuildTarget if t.inDim != content => in
+      case _ => Nil
+   }
+   def build (a: Archive, args: List[String], in: List[String]) {
+      targets.foreach {t => t.build(a, arguments(t.key), path(t,in))}
+   }
+   def update(a: Archive, args: List[String], up: Update, in: List[String]) {
+      targets.foreach {t => t.update(a, arguments(t.key), up, path(t,in))}
+   }
+   def clean (a: Archive, args: List[String], in: List[String]) {
+      targets.foreach {t => t.clean(a, arguments(t.key), path(t,in))}
    }
 }

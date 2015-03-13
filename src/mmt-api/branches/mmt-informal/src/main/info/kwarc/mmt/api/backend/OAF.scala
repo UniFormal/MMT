@@ -42,7 +42,7 @@ class WindowsGit(sh: String = "sh") extends Git {
  * @param root the directory in which clones are created
  * @param report for logging
  */
-class OAF(uri: URI, root: File, val report: Report) extends Logger {
+class OAF(val uri: URI, val root: File, val report: Report) extends Logger {
    val logPrefix = "oaf"
    /** choose UnixGit or WindowsGit depending on OS */
    private val gitCommand = if (System.getProperty("os.name").startsWith("Windows")) new WindowsGit() else UnixGit
