@@ -16,11 +16,11 @@
     <p/>
     group by
     <select ng-click="group()" ng-model="field" ng-init="columns[shortMsg].long"
-            ng-options="columns[key].long for key in colProps | filter : '!id'"></select>
+            ng-options="columns[key].long for key in colProps "></select>
     as overview with clickable maximal rows:
     <input type="number" min="0" max="10000" ng-click="group()"
            ng-model="maxGroups"/>
-    <table ng-if="groupMode || groups.length <= 10 ">
+    <table>
         <thead>
         <tr>
             <th>#</th>
@@ -51,13 +51,13 @@
     <button ng-click="search()">search</button>
     maximal entries:
     <input type="number" min="0" max="10000" ng-model="maxNumber"/>
-    <span ng-show="!groupMode || groups.length <= 10">
+    <span>
         <span ng-show="number > results.length">{{number}} entries (showing {{results.length}})</span>
         <span ng-show="number <= results.length">result: {{results.length}}</span>
     </span>
 
     <p/>
-    <table ng-if="!groupMode || groups.length <= 10">
+    <table>
         <thead>
         <tr>
             <th ng-repeat="key in colProps" ng-if="columns[key].x">
