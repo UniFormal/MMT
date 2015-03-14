@@ -76,7 +76,7 @@ object ConsoleWriter extends RenderingHandler {
 class FileWriter(val filename : File) extends RenderingHandler {
    private val file = utils.File.Writer(filename)
 	def write(s : String) {
-	  file.print(s)
+	  file.write(s)
 	}
    override def done {file.close}
 }
