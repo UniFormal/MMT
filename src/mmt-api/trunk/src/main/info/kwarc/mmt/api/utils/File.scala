@@ -78,6 +78,15 @@ object FileURI {
      else None
 }
 
+/** MMT's default way to write to files; uses buffering, UTF-8, and \n */
+class StandardPrintWriter(f: File) extends
+  OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(f.toJava)),
+                     java.nio.charset.Charset.forName("UTF-8")) {
+  def println(s: String) {
+     write(s + "\n")
+  }
+}
+
 /** This defines some very useful methods to interact with text files at a high abstraction level. */
 object File {
    /** constructs a File from a string, using the java.io.File parser */  
@@ -85,10 +94,7 @@ object File {
    
    def Writer(f: File) = {
       f.up.toJava.mkdirs
-      new PrintWriter(new OutputStreamWriter(
-         new BufferedOutputStream(new FileOutputStream(f.toJava)),
-         java.nio.charset.Charset.forName("UTF-8")
-       ))
+      new StandardPrintWriter(f)
    }
    /**
     * convenience method for writing a string into a file
