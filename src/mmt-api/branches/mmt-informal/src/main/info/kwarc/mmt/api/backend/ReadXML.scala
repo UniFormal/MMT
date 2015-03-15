@@ -83,6 +83,17 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
              log("mref to " + t + " found")
 	         val r = SRef(doc.path, Path.parseS(t,base), false)
 	         add(r)
+         case <group/> => 
+             val xrefs = node.child map {c =>
+               val t = xml.attr(node, "target")
+               c.label  match {
+                 case "dref" => DRef(doc.path, Path.parseD(t,base), false)
+                 case "mref" => MRef(doc.path, Path.parseM(t,base), false)
+                 case "sref" => SRef(doc.path, Path.parseS(t,base), false)
+               }
+             }
+             val gp = new XRefGroup(doc.path, xrefs.toList)
+             add(gp)
          case scala.xml.Comment(_) =>
          case <metadata>{_*}</metadata> =>
             val md = MetaData.parse(node, base)
