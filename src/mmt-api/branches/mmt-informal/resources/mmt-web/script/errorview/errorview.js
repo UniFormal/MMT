@@ -42,6 +42,11 @@ angular.module('searchApp', []).controller('SearchController',
           $scope.groups = data;
         });
     };
+    $scope.build = function(res) {
+        action.exec(action.build(res.archive, res.target, res.fileName), function(data) {
+           alert('What is here: ' + data)
+        });
+    }
     $scope.search = function() {
         $scope.groupMode = false;
         $http.get(':errors/search2' + $scope.query($scope.maxNumber)).success(function(data) {
