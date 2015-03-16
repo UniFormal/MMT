@@ -22,7 +22,7 @@ class TreeView extends ServerExtension("tree") {
            }
          }</root>
        else {
-         val path = Path.parse(q, controller.getBase)
+         val path = Path.parse(q, controller.getNamespaceMap)
          val role = controller.depstore.getType(path)
          path match {
            case p: DPath =>
@@ -65,7 +65,7 @@ class TreeView extends ServerExtension("tree") {
  */
 class BreadcrumbsServer extends ServerExtension("breadcrumbs") {
    def apply(path: List[String], query: String, body: Body) = {
-      val mmtpath = Path.parse(query, controller.getBase)
+      val mmtpath = Path.parse(query, controller.getNamespaceMap)
       val ancs = mmtpath.ancestors.reverse
       var mpathfound = false
       var spathfound = false

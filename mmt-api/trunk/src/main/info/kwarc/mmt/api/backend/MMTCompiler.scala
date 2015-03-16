@@ -15,7 +15,7 @@ class MMTCompiler extends archives.Importer {
   
   override def parallel = false
      
-  def includeFile(n: String) : Boolean = n.endsWith(".mmt") || n.endsWith(".elf")
+  def includeFile(n: String) : Boolean = n.endsWith(".mmt")// || n.endsWith(".elf")
     
   def importDocument(bf: archives.BuildTask, seCont: documents.Document => Unit) {
      val name = File(bf.inPath.last).setExtension("omdoc").segments.last // set extension to omdoc (hacky)

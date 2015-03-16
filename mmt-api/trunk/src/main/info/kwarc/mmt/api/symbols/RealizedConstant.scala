@@ -29,7 +29,7 @@ object RuleConstantInterpreter {
       fromString(name, thy)
    }
    def fromString(s: String, thy: MPath): RuleConstant = {
-      val name = LocalName.parse(s, thy)
+      val name = LocalName.parse(s, NamespaceMap(thy))
       val java = name.steps.mkString(".")
       val rule = try {
          val cls = Class.forName(java + "$")

@@ -91,10 +91,10 @@ abstract class RelationalElement {
 }
 
 object RelationalElement {
-   def parse(s: String, base: Path) : RelationalElement = {
+   def parse(s: String, nsMap: NamespaceMap) : RelationalElement = {
       s.split(" ").toList match {
-         case List(tp, ind) => Individual(Path.parse(ind, base), Unary.parse(tp))
-         case List(rel, subj, obj) => Relation(Binary.parse(rel), Path.parse(subj, base), Path.parse(obj, base))
+         case List(tp, ind) => Individual(Path.parse(ind, nsMap), Unary.parse(tp))
+         case List(rel, subj, obj) => Relation(Binary.parse(rel), Path.parse(subj, nsMap), Path.parse(obj, nsMap))
          case _ => throw ParseError("not a valid relational element: " + s)
       }
    }

@@ -73,14 +73,14 @@ trait StructureParser extends Extension {
    def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) : Document
    
    /**
-    * Reads from a string
-    * @param url the location of the contained document
-    * @param base the id of the contained document
+    * Reads a document from a string
+    * @param src the location of document
+    * @param dpath the URI of the document
     * @param text the string
     */
-   def readString(src: URI, base: DPath, text: String)(implicit errorCont: ErrorHandler) = {
+   def readString(src: URI, dpath: DPath, text: String)(implicit errorCont: ErrorHandler) = {
       val r = new java.io.BufferedReader(new java.io.StringReader(text))
-      val ps = new ParsingStream(src, base, r)
+      val ps = new ParsingStream(src, dpath, r)
       try {
          apply(ps)
       } finally {

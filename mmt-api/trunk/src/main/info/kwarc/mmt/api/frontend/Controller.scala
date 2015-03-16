@@ -365,9 +365,11 @@ class Controller extends ROController with Logger {
    }
 
    /** MMT base URI */
-   protected var base : Path = DPath(mmt.baseURI)
+   protected var nsMap = NamespaceMap.empty
+   /** @return the current namespace map */
+   def getNamespaceMap = nsMap
    /** @return the current base URI */
-   def getBase = base
+   def getBase = nsMap.base
    /** base URL In the local system */
    protected var home = File(System.getProperty("user.dir"))
    /** @return the current home directory */
@@ -389,7 +391,7 @@ class Controller extends ROController with Logger {
    /** executes a string command */
    def handleLine(l : String) {
         try {
-           val act = Action.parseAct(l, base, home)
+           val act = Action.parseAct(l, getBase, home)
            handle(act)
         } catch {
            case e: Error =>
@@ -484,8 +486,8 @@ class Controller extends ROController with Logger {
          case OAFPull => getOAF.pull            
          case OAFPush => getOAF.push
 	      case SetBase(b) =>
-	         base = b
-	         report("response", "base: " + base)
+	         nsMap = nsMap(b)
+	         report("response", "base: " + getBase)
 	      case ServerOn(port) => server match {
             case Some(serv) => logError("server already started on port " + serv.port)
             case None if Util.isTaken(port) => logError("port " + port + " is taken, server not started.")

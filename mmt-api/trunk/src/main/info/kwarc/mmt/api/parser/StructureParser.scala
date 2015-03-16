@@ -1,12 +1,13 @@
 package info.kwarc.mmt.api.parser
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.patterns._
-import info.kwarc.mmt.api.symbols._
+import documents._
+import modules._
+import notations._
+import objects._
+import patterns._
+import symbols._
+import utils._
 
 import scala.collection.mutable.ListMap
 
@@ -26,8 +27,7 @@ class ParserState(val reader: Reader, val ps: ParsingStream, val errorCont: Erro
    *
    * the initial default namespace is the URI of the container
    */
-  var namespaces = new utils.NamespaceMap
-  namespaces.default = ps.base.uri
+  var namespaces = NamespaceMap(DPath(ps.base.uri))
 
   /** the position at which the current StructuralElement started */
   var startPosition = reader.getSourcePosition
@@ -166,13 +166,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /** read a DPath from the stream
     * @throws SourceError iff ill-formed or empty
     */
-  def readDPath(base: Path)(implicit state: ParserState): DPath = {
+  def readDPath(newBase: Path)(implicit state: ParserState): DPath = {
     val (s, reg) = state.reader.readToSpace
     if (s == "")
       throw makeError(reg, "MMT URI expected")
-    val sexp = state.namespaces.expand(s)
     try {
-      Path.parseD(sexp, base)
+      Path.parseD(s, state.namespaces(newBase))
     }
     catch {
       case e: ParseError =>
@@ -183,13 +182,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /** read a MPath from the stream
     * @throws SourceError iff ill-formed or empty
     */
-  def readMPath(base: Path)(implicit state: ParserState): (SourceRef, MPath) = {
+  def readMPath(newBase: Path)(implicit state: ParserState): (SourceRef, MPath) = {
     val (s, reg) = state.reader.readToSpace
     if (s == "")
       throw makeError(reg, "MMT URI expected")
-    val sexp = state.namespaces.expand(s)
     val mp = try {
-      Path.parseM(sexp, base)
+      Path.parseM(s, state.namespaces(newBase))
     }
     catch {
       case e: ParseError =>
@@ -202,13 +200,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /** read a GlobalName from the stream
     * @throws SourceError iff ill-formed or empty
     */
-  def readSPath(base: MPath)(implicit state: ParserState): GlobalName = {
+  def readSPath(newBase: Path)(implicit state: ParserState): GlobalName = {
     val (s, reg) = state.reader.readToSpace
     if (s == "")
       throw makeError(reg, "MMT URI expected")
-    val sexp = state.namespaces.expand(s)
     try {
-      Path.parseS(sexp, base)
+      Path.parseS(s, state.namespaces(newBase))
     }
     catch {
       case e: ParseError =>
@@ -252,7 +249,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     if (nc(c).isDefined)
       errorCont(makeError(treg, "notation of this constant already given, ignored"))
     else {
-      val notation = TextNotation.parse(notString, cpath)
+      val notation = TextNotation.parse(notString, state.namespaces(cpath))
       nc(c) = notation
     }
   }
@@ -589,11 +586,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case "namespace" =>
           // default namespace is set relative to current default namespace
           val ns = readDPath(DPath(state.namespaces.default))
-          state.namespaces.default = ns.uri
+          state.namespaces = state.namespaces(DPath(ns.uri))
         case "import" =>
           val (n, _) = state.reader.readToken
           val ns = readDPath(DPath(state.namespaces.default))
-          state.namespaces.prefixes(n) = ns.uri
+          state.namespaces.add(n, ns.uri)
         case "theory" =>
           readTheory(doc.path, Context())
         case ViewKey(_) => readView(doc.path, Context(), false)
@@ -765,15 +762,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    * @param namespace the namespace declarations found so far
    */
   def readModule(dpath: DPath, modS: String, docBaseO: Option[DPath] = None,
-                 namespace: ListMap[String, DPath] = new ListMap, errorCont: ErrorHandler) {
+                 prefixes: List[(String, URI)] = Nil, errorCont: ErrorHandler) {
     //building parsing state
     val br = new java.io.BufferedReader(new java.io.StringReader(modS))
     val r = new Reader(br)
     val ps = new ParsingStream(dpath.uri, docBaseO.getOrElse(dpath), br)
     val state = new ParserState(r, ps, errorCont)
-    namespace map { p =>
-      state.namespaces.prefixes(p._1) = p._2.uri
-    }
+    state.namespaces = state.namespaces.copy(prefixes = prefixes)
     val doc = controller.getDocument(dpath)
     //calling parse function
     readInDocument(doc)(state)
@@ -788,15 +783,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    * @param namespace the namespace declarations found so far
    */
   def readConstant(mpath: MPath, conS: String, docBaseO: Option[DPath] = None,
-                   namespace: ListMap[String, DPath] = new ListMap, errorCont: ErrorHandler) = {
+                   prefixes: List[(String, URI)] = Nil, errorCont: ErrorHandler) = {
     //building parsing state
     val br = new java.io.BufferedReader(new java.io.StringReader(conS))
     val r = new Reader(br)
     val ps = new ParsingStream(mpath.doc.uri, docBaseO.getOrElse(mpath.doc), br)
     val state = new ParserState(r, ps, errorCont)
-    namespace map { p =>
-      state.namespaces.prefixes(p._1) = p._2.uri
-    }
+    state.namespaces = state.namespaces.copy(prefixes = prefixes)
 
     val thy = controller.globalLookup.getTheory(mpath) match {
       case d: DeclaredTheory => d

@@ -21,18 +21,22 @@ class XMLStreamer(controller: Controller) extends Logger {streamer =>
    /** the elements whose children are processed immediately */
    private val containers = List("omdoc", "theory", "view")
    
-   def readDocument(base: DPath, input: Source)(implicit cont: StructuralElement => Unit): Document = {
-      val parser = makeParser(base, input, cont)
+   /**
+    * @param dpath the URI of the document
+    * @param input the document
+    */
+   def readDocument(dpath: DPath, input: Source)(implicit cont: StructuralElement => Unit): Document = {
+      val parser = makeParser(dpath, input, cont)
       parser.nextch
       parser.document()
-      parser.root.asInstanceOf[Document]
+      parser.root
    }
 
-   private def makeParser(base: DPath, input: Source, cont: StructuralElement => Unit) = new ConstructingParser(input, false) {
+   private def makeParser(dpath: DPath, input: Source, cont: StructuralElement => Unit) = new ConstructingParser(input, false) {
       /** the stack of currently open tags, innermost first */
       private var openTags : List[StructuralElement] = Nil
       /** holds the root element once parsing has finished */
-      var root: StructuralElement = null
+      var root: Document = null
    
       /** like cont, but also pushes the parsed element onto openTags */
       private def catchSE(se: StructuralElement) {
@@ -53,12 +57,12 @@ class XMLStreamer(controller: Controller) extends Logger {streamer =>
             case "omdoc" if openTags.isEmpty =>
                // toplevel container
                streamer.log("streaming in top element")
-               reader.readDocument(base, elem)(catchSE)
-               root = openTags.head
+               reader.readDocument(dpath, elem)(catchSE)
+               root = openTags.head.asInstanceOf[Document]
             case l if containers contains l =>
                // nested container
                streamer.log("streaming in " + l)
-               reader.readIn(openTags.head, elem)(catchSE)
+               reader.readIn(root.getNamespaceMap, openTags.head, elem)(catchSE)
             case _ =>
                // in all other cases, we push a dummy element
                openTags ::= null
@@ -86,7 +90,7 @@ class XMLStreamer(controller: Controller) extends Logger {streamer =>
                  streamer.log("done streaming in " + label)
                } else {
                  streamer.log("processing " + label)
-                 reader.readIn(hd, n)(cont)
+                 reader.readIn(root.getNamespaceMap, hd, n)(cont)
                }
                // either way, n is handled at this point and can be dropped
                NodeSeq.Empty
