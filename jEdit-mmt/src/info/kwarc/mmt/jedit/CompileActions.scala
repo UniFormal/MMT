@@ -21,7 +21,7 @@ class CompileActions(mmtplugin: MMTPlugin) {
       log("compile" + " " + archive + " " + path.mkString("","/",""))
       val arch = controller.backend.getArchive(archive).getOrElse(return)
       // call build method on the respective archive
-      controller.handle(frontend.ArchiveBuild(archive, "mmt-omdoc", archives.Build, path, Nil))
+      controller.handle(frontend.ArchiveBuild(List(archive), "mmt-omdoc", archives.Build, path, Nil))
    }
    /** compiles a buffer or directory */
    def compile(file: String) {
