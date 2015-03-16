@@ -31,6 +31,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
         case "getRelated" :: _ => getRelated
         case "getNotations" :: _ => getNotations
         case "getDefinitions" :: _ => getDefinitions
+        case "generateGlossary" :: _ => generateGlossary
         case _ => errorResponse("Invalid request: " + uriComps.mkString("/"), List(new PlanetaryError("Invalid Request" + uriComps)))
        }
     } catch {
@@ -195,7 +196,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
           JsonResponse(response, errors.map(e => e.getStackTrace().mkString("\n")).mkString("\n\n"), errors).aact(tk)
         case "mmt" => 
           val is = new java.io.InputStreamReader(new java.io.ByteArrayInputStream(bodyS.getBytes()))
-          val ps = new parser.ParsingStream(dpath, new java.io.BufferedReader(is))
+          val ps = new parser.ParsingStream(utils.URI("tmp"),dpath, new java.io.BufferedReader(is))
           val doc = controller.textParser(ps)(new ErrorLogger(report))
           val response = doc.toNodeResolved(controller.memory.content).toString    
           JsonResponse(response, "", Nil).aact(tk)
@@ -215,6 +216,18 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
         errorResponse("Exception occured : " + e.getStackTrace().mkString("\n"), List(e)).aact(tk)
     }
   }
+  
+  private def generateGlossary : HLet = new HLet {
+    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
+      val location = utils.File("/var/data/localmh/MathHub/glossary.html")
+      val glossary = GlossaryGenerator.generate(controller)
+      utils.File.write(location, glossary)
+      Server.TextResponse("Success").aact(tk)
+    } catch {
+      case e : Exception => Server.TextResponse(e.getMessage() + "\n" + e.getStackTraceString).aact(tk)
+    }
+  }
+  
   
   private def getPresentationResponse : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {

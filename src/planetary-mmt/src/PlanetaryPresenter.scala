@@ -75,48 +75,6 @@ abstract class PlanetaryAbstractPresenter(name : String) extends Presenter(new p
   }
 }
 
-class PlanetaryHeadersPresenter extends PlanetaryAbstractPresenter("planetary-headers") {
-  def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) = {
-     this._rh = rh
-     s match { 
-       case doc : Document => 
-         wrapScope(standalone, doc.path)(doDocument(doc))
-       case thy : DeclaredTheory => 
-         wrapScope(standalone, thy.path)(doTheory(thy))
-       case view : DeclaredView =>
-         wrapScope(standalone, view.path)(doView(view))
-       case d : Declaration => rh("Headers presenter not applicable to declarations " + s.getClass().toString())
-       case _ => rh("TODO: Not implemented yet, presentation function for " + s.getClass().toString())
-     }
-     //TODO? reset this._rh 
-   }
-  
-  import htmlRh._
-  def doDocument(doc : Document) = {
-    div("document") {
-      ul("doc-body") {
-        doc.getItems foreach {
-          case d: DRef => li("dref") {
-            rh(<span jobad:href={d.target.toPath} data-relative="true"> {d.target.last} </span>)
-          }
-          case m: MRef => li("mref") {a(m.target.last) {text{m.target.last}}}
-          case s: SRef => li("sref") {a(s.target.last) {text{s.target.last}}}
-        }
-      }
-    }
-  }
-  
-  def doTheory(t : DeclaredTheory) = {
-    //TODO
-  } 
-  
-  def doView(t : DeclaredView) = { 
-    //TODO
-  }
-  
-}
-
-
 class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
    
    def setRh(rh : RenderingHandler) = this._rh = rh 
@@ -237,7 +195,15 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      val arity = not.arity
      val sub = Substitution(arity.subargs.map(sa => Sub(OMV.anonymous, OMV(getVarName(sa.number - 1)))) :_*)
      val con = Context(arity.variables.map(v => VarDecl(LocalName(getVarName(v.number - 1)), None, None, None)) :_*)
-     val args = arity.arguments map {a => OMV(getVarName(a.number - 1))}
+     val args = arity.arguments flatMap {
+       case s : SeqArg => 
+         val baseName = getVarName(s.number - 1)
+         val first = OMV(baseName + "1")
+         val middle = OMSTR("…")
+         val last = OMV(baseName + "n")
+         List(first, middle, last)
+       case a => List(OMV(getVarName(a.number - 1)))
+     }
      ComplexTerm(spath, sub, con, args)
    }
    
@@ -314,28 +280,36 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
       }
    }
    
+   
+   def doRef(r : XRef) = r match {
+     case d: DRef => 
+       li("dref") {
+         rh(<span jobad:href={d.target.toPath} data-relative="true"> {d.target.last} </span>)
+       }
+     case m : MRef =>
+       controller.get(m.target) match {
+         case t : DeclaredTheory => 
+           if (t.name != OMV.anonymous) {
+	         li("mref") {
+		      doTheory(t)
+	         }
+           }
+         case v : DeclaredView => 
+           li("mref") {
+	         doView(v)
+           }
+       }
+     case s => throw ImplementationError("Presenting for " + s.getClass() + " not implemented yet ")
+   }
+   
    def doDocument(doc: Document) {
      div("document") {
-       ul("doc-body") { doc.getItems foreach {
-         case d: DRef => 
-           //val doc = controller.getDocument(d.path)
-           li("dref") {
-             doName(d.target, true) 
-           }
-         case m : MRef =>
-           controller.get(m.target) match {
-             case t : DeclaredTheory => 
-               if (t.name != OMV.anonymous) {
-                 li("mref") {
-                   doTheory(t)
-                 }
-               }
-             case v : DeclaredView => 
-               li("mref") {
-                 doView(v)
-               }
-             case s => throw ImplementationError("Presenting for " + s.getClass() + " not implemented yet ")
-           }
+       ul("doc-body") { doc.getDeclarations foreach {
+         case x : XRef => doRef(x)
+         case rg : XRefGroup => 
+           rh("<div class=\"group\">")
+           rg.refs foreach {x => doRef(x)}
+           rh("</div>")
          case s => throw ImplementationError("Presenting for " + s.getClass() + " not implemented yet ")
        }}
      }
