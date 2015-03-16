@@ -87,7 +87,7 @@ class MizarCompiler extends archives.Importer {
    
    def getVersion(f : File) : String = {
      f.toJava.getParentFile().getName() match {
-       case null => "5.22"
+       case null => "522"
        case s => s
      }
    }
@@ -104,7 +104,8 @@ class MizarCompiler extends archives.Importer {
      val version = getVersion(bf.inFile)
      val aid = getAid(bf.inFile)
      translateArticle(mmlBase, version, aid.toUpperCase(), bf.narrationDPath.^!)
-     val doc = controller.getDocument(bf.narrationDPath)
+     val mizdpath = getDPath(bf.narrationDPath.^!, aid.toLowerCase())
+     val doc = controller.getDocument(mizdpath)
      log("INDEXING ARTICLE: " + bf.narrationDPath.last)
      seCont(doc)
    }
@@ -156,7 +157,6 @@ class MizarCompiler extends archives.Importer {
    	
    	val dpath = getDPath(docBase, name)
    	val doc = new Document(dpath)
-   	
    	TranslationController.add(doc)
    	val th = new DeclaredTheory(TranslationController.currentThyBase, TranslationController.localPath, Some(Mizar.MizarPatternsTh))	
    
@@ -167,8 +167,8 @@ class MizarCompiler extends archives.Importer {
    	//TranslationController.add(PlainInclude(Mizar.HiddenTh, th.path))
    	TranslationController.controller.add(MRef(doc.path, th.path, true))
    	ArticleTranslator.translateArticle(article)
-       TranslationController.clear()   
-       ParsingController.dictionary.clear()
-       addToLib(version, aid)
+    TranslationController.clear()   
+    ParsingController.dictionary.clear()
+    addToLib(version, aid)
    }
 }
