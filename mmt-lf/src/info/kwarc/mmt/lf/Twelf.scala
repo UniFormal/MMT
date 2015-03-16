@@ -118,7 +118,8 @@ class Twelf extends Importer with frontend.ChangeListener {
           return
       }
       val doc = try {
-         controller.read(outFile, Some(bf.narrationDPath))(bf.errorCont)
+         val dp = bf.narrationDPath
+         controller.read(outFile, Some(dp.copy(uri = dp.uri.setExtension("omdoc"))))(bf.errorCont)
        } catch {
          case e: scala.xml.parsing.FatalError =>
             error("XML error in omdoc file (likely too big for Twelf to write)")
