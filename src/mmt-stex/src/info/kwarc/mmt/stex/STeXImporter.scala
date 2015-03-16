@@ -21,7 +21,7 @@ abstract class STeXError(msg : String) extends Error(msg)
 
 case class STeXParseError(msg : String, sref : Option[SourceRef]) extends STeXError(msg) {
   private def srefS = sref.map(_.region.toString).getOrElse("")
-  override def toNode = <error type={this.getClass().toString} shortMsg={this.shortMsg} level={Level.Error.toString} sref={srefS}> {this.extraMessage} </error>
+  override def toNode = <error type={this.getClass().toString} shortMsg={this.shortMsg} level={Level.Error.toString} sref={srefS}> {this.getStackTraceString} </error>
 }
 case class STeXLookupError(msg : String) extends STeXError(msg)
 
@@ -228,7 +228,7 @@ class STeXImporter extends Importer {
           //getting symbol info
           val cd = (n \ "@cd").text
           val name = (n \ "@name").text
-          val refPath = Path.parseM("?" + cd, doc.path)
+          val refPath = Path.parseM("?" + cd, NamespaceMap(doc.path))
           val refName = refPath ? LocalName(name)
           val c = controller.memory.content.getConstant(refName, p => "Notation for nonexistent constant " + p)
           //getting macro info
@@ -320,7 +320,7 @@ class STeXImporter extends Importer {
       case "OMS" =>
         val cd = (protoBody \ "@cd").text
         val name = (protoBody \ "@name").text
-        val refPath = Path.parseM("?" + cd, dpath)
+        val refPath = Path.parseM("?" + cd, NamespaceMap(dpath))
         refPath ? LocalName(name)
       case _ => throw ParseError("invalid prototype" + protoBody)
     }
@@ -434,7 +434,7 @@ class STeXImporter extends Importer {
     }
   
   def translateTerm(n : scala.xml.Node)(implicit dpath : DPath, mpath : MPath) : Term = {
-    Obj.parseTerm(rewriteNode(n), dpath)
+    Obj.parseTerm(rewriteNode(n), NamespaceMap(dpath))
   }
   
   def cleanNamespaces(node : scala.xml.Node) : Node = node match {
