@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.webedit
 import info.kwarc.mmt.api._
 import frontend._
+import info.kwarc.mmt.api.libraries.LanguageDictionary
 
 
 object Main {
@@ -20,5 +21,11 @@ object Main {
            controller.cleanup
            throw e
       }
+      val dict = new LanguageDictionary(controller)
+      //val json = dict.getDictionaryJSON().toString()
+      val json = dict.getDefLinks().toString()
+      
+      val f = utils.File("/home/mihnea/test.json")
+      utils.File.write(f, json)
    }
 }
