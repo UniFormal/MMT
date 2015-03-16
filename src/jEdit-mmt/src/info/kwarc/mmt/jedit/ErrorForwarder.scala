@@ -77,7 +77,7 @@ class ErrorListForwarder(errorSource: DefaultErrorSource, controller: Controller
          val error = new DefaultErrorSource.DefaultError(
              errorSource, ErrorSource.ERROR, src.toString, 0, 0, 1, "error with unknown location: " + e.getMessage
          )
-         e.getLongMessage.split("\\n").foreach {m => error.addExtraMessage(m)}
+         e.toStringLong.split("\\n").foreach {m => error.addExtraMessage(m)}
          errorSource.addError(error)
    }
 }
