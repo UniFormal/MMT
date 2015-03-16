@@ -180,7 +180,7 @@ class ActionServer extends ServerExtension("action") {
       logCache.clear
       val html = utils.HTML.builder
       import html._
-      div {r.reverse foreach {l => div {text {l}}}}
+      div {r foreach {l => div {text {l}}}}
       Server.XmlResponse(html.result)
    }
 }

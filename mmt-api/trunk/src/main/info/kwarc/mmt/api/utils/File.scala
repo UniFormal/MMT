@@ -41,15 +41,23 @@ case class File(toJava: java.io.File) {
    }
    def isAbsolute = toJava.isAbsolute
    override def toString = toJava.toString
+  /** @return the last file extension (if any) */
    def getExtension : Option[String] = {
        val name = toJava.getName
        val posOfDot = name.lastIndexOf(".")
        if (posOfDot == -1) None else Some(name.substring(posOfDot + 1))
    }
+   /** sets the file extension (replaces existing extension, if any) */
    def setExtension(ext: String) : File = getExtension match {
        case None => File(toString + "." + ext)
        case Some(s) => File(toString.substring(0, toString.length - s.length) + ext)
    }
+  /** appends a file extension (possibly resulting in multiple extensions) */
+  def addExtension(ext: String) = getExtension match {
+    case None => setExtension(ext)
+    case Some(e) => setExtension(e + "." + ext)
+  }
+  /** removes the last file extension (if any) */
    def removeExtension : File = getExtension match {
        case None => this
        case Some(s) => File(toString.substring(0, toString.length - s.length - 1))
