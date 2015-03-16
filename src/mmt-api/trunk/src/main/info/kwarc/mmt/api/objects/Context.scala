@@ -341,10 +341,10 @@ object Context {
    /** a context consisting of a single theory */
    def apply(p: MPath): Context = Context((IncludeVarDecl(p,Nil)))
 	/** parses an OMBVAR into a context */
-	def parse(Nmd : scala.xml.Node, base : Path) : Context = {
-	   val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, base)
+	def parse(Nmd : scala.xml.Node, nsMap: NamespaceMap) : Context = {
+	   val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, nsMap)
 	   val c = n match {
-	      case <om:OMBVAR>{decls @ _*}</om:OMBVAR> =>  decls.toList.map(VarDecl.parse(_, base))
+	      case <om:OMBVAR>{decls @ _*}</om:OMBVAR> =>  decls.toList.map(VarDecl.parse(_, nsMap))
          case _ => throw ParseError("not a well-formed context: " + n.toString)
 	   }
       mdOpt.foreach {md => c.metadata = md}
@@ -386,25 +386,25 @@ object Context {
 
 /** helper object */
 object VarDecl {
-   private def parseComponents(N: Seq[Node], base: Path) : (Option[Term], Option[Term], Option[TextNotation], Boolean) = {
+   private def parseComponents(N: Seq[Node], nsMap: NamespaceMap) : (Option[Term], Option[Term], Option[TextNotation], Boolean) = {
       var tp : Option[Term] = None
       var df : Option[Term] = None
       var not: Option[TextNotation] = None
       var inferred = false
       N.toList.foreach {
-            case <type>{t}</type> => tp = Some(Obj.parseTerm(t, base))
-            case <definition>{t}</definition> => df = Some(Obj.parseTerm(t, base))
-            case <notation>{n}</notation> => not = Some(TextNotation.parse(n, base))
+            case <type>{t}</type> => tp = Some(Obj.parseTerm(t, nsMap))
+            case <definition>{t}</definition> => df = Some(Obj.parseTerm(t, nsMap))
+            case <notation>{n}</notation> => not = Some(TextNotation.parse(n, nsMap))
             case _ => inferred = true // for Twelf: all other children mark inferred types
       }
       (tp, df, not, inferred)
    }
-   def parse(Nmd: Node, base: Path) : VarDecl = {
-      val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, base)
+   def parse(Nmd: Node, nsMap: NamespaceMap) : VarDecl = {
+      val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, nsMap)
       n match {      
          case <OMV>{body @ _*}</OMV> =>
             val name = LocalName.parse(xml.attr(n, "name"))
-            val (tp, df, not, inferred) = parseComponents(body, base)
+            val (tp, df, not, inferred) = parseComponents(body, nsMap)
             val vd = VarDecl(name, tp, df, not)
             mdOpt.foreach {md => vd.metadata = md}
             if (inferred) metadata.Generated.set(vd) // for Twelf export compatibility, TODO remove
@@ -416,10 +416,10 @@ object VarDecl {
 /** helper object */
 object Substitution {
 	/** parsers an OMBVAR into a substitution */
-	def parse(Nmd : scala.xml.Node, base : Path) : Substitution = {
-      val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, base)
+	def parse(Nmd : scala.xml.Node, nsMap: NamespaceMap) : Substitution = {
+      val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, nsMap)
 	   val s = n match {
-   		case <om:OMBVAR>{sbs @ _*}</om:OMBVAR> => sbs.toList.map(Sub.parse(_, base))
+   		case <om:OMBVAR>{sbs @ _*}</om:OMBVAR> => sbs.toList.map(Sub.parse(_, nsMap))
          case _ => throw ParseError("not a well-formed substitution: " + n.toString)
       }
       mdOpt.foreach {md => s.metadata = md}
@@ -428,10 +428,10 @@ object Substitution {
 }
 /** helper object */
 object Sub {
-   def parse(Nmd: Node, base: Path) = {
-      val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, base)      
+   def parse(Nmd: Node, nsMap: NamespaceMap) = {
+      val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, nsMap)      
       val s = n match {
-         case <OMV>{e}</OMV> => Sub(LocalName.parse(xml.attr(n, "name")), Obj.parseTerm(e, base))
+         case <OMV>{e}</OMV> => Sub(LocalName.parse(xml.attr(n, "name")), Obj.parseTerm(e, nsMap))
          case _ => throw ParseError("not a well-formed case in a substitution: " + n.toString)
       }
       mdOpt.foreach {md => s.metadata = md}

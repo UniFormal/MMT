@@ -41,7 +41,7 @@ class SVGServer extends ServerExtension("svg") {
     */
    
    def apply(path: List[String], query: String, body: Body) = {
-      val path = Path.parse(query, controller.getBase)
+      val path = Path.parse(query, controller.getNamespaceMap)
       val (inNarr, newPath) = path match {
         // doc path
          case dp: DPath => (true, dp)

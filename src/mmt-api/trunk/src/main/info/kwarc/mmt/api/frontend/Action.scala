@@ -19,7 +19,7 @@ import scala.util.parsing.combinator._
  * It is straightforward to understand the grammar from the source code.
  */
 object Action extends RegexParsers {
-   private var base : Path = null
+   private var nsMap : NamespaceMap = null
    private var home : File = null
    
    private def commented = (comment ^^ {c => NoAction}) | (action ~ opt(comment) ^^ {case a ~ _ => a}) | empty ^^ {_ => NoAction}
@@ -119,8 +119,8 @@ object Action extends RegexParsers {
       private def gui = "gui" ~> ("on" | "off") ^^ {s => BrowserAction(s)}
    
    /* common non-terminals */
-   private def path = str ^^ {s => Path.parse(s, base)}
-   private def mpath = str ^^ {s => Path.parseM(s, base)}
+   private def path = str ^^ {s => Path.parse(s, nsMap)}
+   private def mpath = str ^^ {s => Path.parseM(s, nsMap)}
    private def archiveList = ("\\[.*\\]"r) ^^ {s => MyList.fromString(s.substring(1,s.length-1), ",")} |
                              str ^^ {s => List(s)} 
    private def file = str ^^ {s => File(home.resolve(s))}
@@ -131,7 +131,7 @@ object Action extends RegexParsers {
    private def quotedStr = ("\".*\""r) ^^ {s => s.substring(1,s.length-1)}       //regular expression for quoted string (that may contain whitespace)
    /** parses an action from a string, relative to a base path */
    def parseAct(s:String, b : Path, h: File) : Action = {
-      base = b
+      nsMap = NamespaceMap(b)
       home = h
       val p =
          try {parseAll(commented,s)}

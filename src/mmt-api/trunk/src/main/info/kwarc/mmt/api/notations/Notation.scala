@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.notations
 
 import info.kwarc.mmt.api._
 import NotationConversions._
+import utils._
 import utils.MyList._
 import modules._
 import symbols._
@@ -261,7 +262,7 @@ object TextNotation {
    }
    
    /** XML parsing methods */
-   def parse(n : scala.xml.Node, base : Path) : TextNotation = n.label match {
+   def parse(n : scala.xml.Node, nsMap : NamespaceMap) : TextNotation = n.label match {
     case "text-notation" | "notation" =>  // TODO text-notation is deprecated
       val precedence = utils.xml.attr(n, "precedence") match {
          case "" => Precedence.integer(0)
@@ -269,7 +270,7 @@ object TextNotation {
       }
       val meta = utils.xml.attr(n, "meta") match {
          case "" => None
-         case s => Some(Path.parseM(s, base))
+         case s => Some(Path.parseM(s, nsMap))
       }
       val scope = n.child.find(_.label == "scope") match {
         case None => NotationScope.default
@@ -305,12 +306,12 @@ object TextNotation {
     *
     * the default precedence is 0; exception: if the notation contains (, it is above bracketLevel
     */
-   def parse(str : String, base : Path) : TextNotation = {
+   def parse(str : String, nsMap : NamespaceMap) : TextNotation = {
        var tokens = str.split("\\s+").toList.filter(_ != "")
        val meta = tokens match {
           case "meta" :: mt :: rest =>
              tokens = rest
-             Some(Path.parseM(mt, base))
+             Some(Path.parseM(mt, nsMap))
           case "meta" :: Nil =>
              throw ParseError("theory expected")
           case _ => None

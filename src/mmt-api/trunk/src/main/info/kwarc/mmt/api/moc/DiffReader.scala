@@ -26,19 +26,21 @@ class DiffReader(controller : Controller) {
         changes ::= change
       }
       val level = (n \ "@level").text
-      val base = Path.parse((n \ "@base").text)    
+      val base = Path.parse((n \ "@base").text)
+      val nsMap = NamespaceMap(base)
       level match {
         case "module" =>  
-          val path = Path.parseM((n \ "@path").text, base)
-          n.child.foreach {c => controller.xmlReader.readInDocument(path.doc, None, c)(cont)}
+          val path = Path.parseM((n \ "@path").text, nsMap)
+          n.child.foreach {c => controller.xmlReader.readInDocument(NamespaceMap(path.doc), None, c)(cont)}
         case "declaration" => 
-          val path = Path.parseS((n \ "@path").text, base)
-          n.child foreach {c => controller.xmlReader.readInModule(path.module.toMPath, base, None, c)(cont)}
+          val path = Path.parseS((n \ "@path").text, nsMap)
+          n.child foreach {c => controller.xmlReader.readInModule(path.module.toMPath, NamespaceMap(base), None, c)(cont)}
       }
       changes = changes.reverse
       changes
     case "update" => 
       val base = Path.parse((n \ "@base").text)
+      val nsMap = NamespaceMap(base)
       val path = Path.parse((n \ "@path").text) match {
         case c : ContentPath => c
         case p => throw ImplementationError("Expected content path found : " + p.toPath)
@@ -46,8 +48,8 @@ class DiffReader(controller : Controller) {
       val compName = DeclarationComponent.parse((n \ "@name").text)
       val oldXMLO = n.child.find(x => x.label == "old")
       val newXMLO = n.child.find(x => x.label == "new")
-      val old = oldXMLO.map(Obj.parseTerm(_, base))
-      val nw  = newXMLO.map(Obj.parseTerm(_, base))
+      val old = oldXMLO.map(Obj.parseTerm(_, nsMap))
+      val nw  = newXMLO.map(Obj.parseTerm(_, nsMap))
       List(UpdateComponent(path, compName, old, nw))
   }
 }

@@ -171,8 +171,8 @@ object LocalName {
    def apply(step: String) : LocalName = LocalName(SimpleStep(step))
    def apply(p: MPath) : LocalName = LocalName(ComplexStep(p))
    /** parses a LocalName, complex segments are parsed relative to base */
-   def parse(s: String, base: Path): LocalName = LocalRef.parse(s).toLocalName(base)
-   def parse(s:String): LocalName = parse(s, utils.mmt.mmtbase)
+   def parse(s: String, nsMap : NamespaceMap): LocalName = LocalRef.parse(s).toLocalName(nsMap)
+   def parse(s:String): LocalName = parse(s, NamespaceMap.empty)
 }
 
 /** a step in a LocalName */
@@ -215,10 +215,10 @@ object LNEmpty {
  * @param absolute a flag whether the reference is absolute (i.e., starts with a slash)
  */
 case class LocalRef(segments : List[String], absolute : Boolean) {
-   def toLocalName(base: Path) = {
+   def toLocalName(nsMap : NamespaceMap) = {
       val steps = segments map {s =>
          if (s.startsWith("["))
-            ComplexStep(Path.parseM(s.substring(1,s.length - 1), base))
+            ComplexStep(Path.parseM(s.substring(1,s.length - 1), nsMap))
          else
             SimpleStep(s)
       }
@@ -280,24 +280,29 @@ object Path {
    /** the empty path */
    lazy val empty : Path = Path.parse("")
 
-   def parse(s : String) : Path = parse(s, utils.mmt.mmtbase)
+   def parse(s : String) : Path = parse(s, NamespaceMap.empty)
    /** parses an MMT-URI reference into a triple and then makes it absolute */
-   def parse(s : String, base : Path) : Path = {
+   def parse(s : String, nsMap : NamespaceMap) : Path = {
       val (d,m,n,c) = split(s)
-      parse(d,m,n,c,base)
+      parse(d,m,n,c,nsMap)
    }
    // merge(x,y) merges the URI or LocalPath x with the relative or absolute reference y
    private def mergeD(bd : Option[DPath], d : DPath) : DPath = if (bd.isEmpty) d else DPath(bd.get.uri.resolve(d.uri)) 
-   private def mergeN(base: Path, bl : Option[LocalName], l : LocalRef) : LocalName =
+   private def mergeN(nsMap : NamespaceMap, bl : Option[LocalName], l : LocalRef) : LocalName =
       if (bl.isEmpty || l.absolute)
-         l.toLocalName(base)
+         l.toLocalName(nsMap)
       else
-         bl.get / l.toLocalName(base)
+         bl.get / l.toLocalName(nsMap)
    /** turns an MMT-URI reference (d,m,n) into an MMT-URI relative to base (omitting a component is possible by making it empty) */
-   def parse(dS : String, m : String, n : String, comp: String, base : Path) : Path = {
-      val d = uriParseCache(dS)
+   def parse(dS : String, m : String, n : String, comp: String, nsMap : NamespaceMap) : Path = {
+      val base = nsMap.base
       //to make the case distinctions simpler, all omitted (= empty) components become None
-      val doc = if (d.scheme == None && d.authority == None && d.path == Nil) None else Some(DPath(d))
+      val docOpt = if (dS == "") None else Some(dS)
+      val doc = docOpt.map {s =>
+         val sExp = nsMap.expand(s)
+         val d = uriParseCache(sExp)
+         DPath(d)
+      }
       def wrap(l : LocalRef) = if (l.segments.isEmpty) None else Some(l)
       val mod = wrap(LocalRef.parse(m))
       val name = wrap(LocalRef.parse(n))
@@ -305,13 +310,13 @@ object Path {
       val (bdoc, bmod, bname) = base.toTriple
       //now explicit case distinctions to be sure that all cases are covered
       val path = (bdoc, bmod, bname, doc, mod, name) match {
-         case (Some(bd), Some(bm), _, None,    None,    Some(n)) => bd ? bm ? mergeN(base, bname, n)
-         case (Some(bd), _       , _, None,    Some(m), None   ) => bd ? mergeN(base, bmod, m)
-         case (Some(bd), _       , _, None,    Some(m), Some(n)) => bd ? mergeN(base, bmod, m) ? n.toLocalName(base)
+         case (Some(bd), Some(bm), _, None,    None,    Some(n)) => bd ? bm ? mergeN(nsMap, bname, n)
+         case (Some(bd), _       , _, None,    Some(m), None   ) => bd ? mergeN(nsMap, bmod, m)
+         case (Some(bd), _       , _, None,    Some(m), Some(n)) => bd ? mergeN(nsMap, bmod, m) ? n.toLocalName(nsMap)
          case (_       , _       , _, None,    None,    None   ) => base
          case (_       , _       , _, Some(d), None,    None   ) => mergeD(bdoc, d)
-         case (_       , _       , _, Some(d), Some(m), None   ) => mergeD(bdoc, d) ? m.toLocalName(base)
-         case (_       , _       , _, Some(d), Some(m), Some(n)) => mergeD(bdoc, d) ? m.toLocalName(base) ? n.toLocalName(base)
+         case (_       , _       , _, Some(d), Some(m), None   ) => mergeD(bdoc, d) ? m.toLocalName(nsMap)
+         case (_       , _       , _, Some(d), Some(m), Some(n)) => mergeD(bdoc, d) ? m.toLocalName(nsMap) ? n.toLocalName(nsMap)
          case _ => throw ParseError("(" + doc + ", " + mod + ", " + name + ") cannot be resolved against " + base) 
       }
       val pathR = pathCache.get(path)
@@ -351,22 +356,22 @@ object Path {
       (comp(0), comp(1), comp(2), comp(3))
    }
    /** as parse but fails if the result is not a component level URI */
-   def parseC(s : String, base : Path) : CPath = parse(s,base) match {
+   def parseC(s : String, nsMap : NamespaceMap) : CPath = parse(s,nsMap) match {
       case p : CPath => p
       case p => throw ParseError("component path expected: " + p) 
    }
    /** as parse but fails if the result is not a symbol level URI */
-   def parseS(s : String, base : Path) : GlobalName = parse(s,base) match {
+   def parseS(s : String, nsMap : NamespaceMap) : GlobalName = parse(s,nsMap) match {
       case p : GlobalName => p
       case p => throw ParseError("symbol path expected: " + p) 
    }
    /** as parse but fails if the result is not a module level URI */
-   def parseM(s : String, base : Path) : MPath = parse(s,base) match {
+   def parseM(s : String, nsMap : NamespaceMap) : MPath = parse(s,nsMap) match {
       case p : MPath => p
       case p => throw ParseError("module path expected: " + p) 
    }
    /** as parse but fails if the result is not a document level URI */
-   def parseD(s : String, base : Path) : DPath = parse(s,base) match {
+   def parseD(s : String, nsMap : NamespaceMap) : DPath = parse(s,nsMap) match {
       case p : DPath => p
       case p => throw ParseError("document path expected: " + p) 
    }

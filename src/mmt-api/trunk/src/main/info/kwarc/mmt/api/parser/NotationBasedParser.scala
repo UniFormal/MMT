@@ -200,7 +200,7 @@ class NotationBasedParser extends ObjectParser {
                        Character.isUpperCase(segments(0).charAt(0))) "?" + word
                    else word
                 try {
-                   Path.parse(qid, pu.context.getIncludes.last) match {
+                   Path.parse(qid, NamespaceMap(pu.context.getIncludes.last)) match {
                       case p: ContentPath => OMID(p)
                       case p =>
                          makeError("content path expected: " + p, te.region)

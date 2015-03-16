@@ -164,7 +164,7 @@ object NotationContainer {
    def parse(ns: scala.xml.NodeSeq, name : GlobalName): NotationContainer = {
       val nc = new NotationContainer
       ns foreach {c =>
-         val tn = TextNotation.parse(c, name)
+         val tn = TextNotation.parse(c, NamespaceMap(name))
          utils.xml.attr(c, "dimension") match {
             case "1" | "" => nc.parsingDim.set(tn)
             case "2"      => nc.presentationDim.set(tn)

@@ -44,7 +44,7 @@ object TermPattern {
    }
    /** parses $ qvars:query, all unknown variables are turned into additional query variables */
    def parse(controller: Controller, theory: String, pattern: String): TermPattern = {
-      val mp = Path.parseM(theory, utils.mmt.mmtcd)
+      val mp = Path.parseM(theory, NamespaceMap(utils.mmt.mmtcd))
       val pu = ParsingUnit(SourceRef.anonymous(pattern), Context(mp), pattern, Some(qvarRule))
       val unkQP = controller.textParser(pu)(ErrorThrower)
       val (unk, qP) = ObjectParser.splitOffUnknowns(unkQP)

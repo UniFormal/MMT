@@ -339,7 +339,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     var i = start
     while (i < flat.length) {
       if (delimiters exists {d => flat.startsWith(d, i)}) {
-         val not = TextNotation.parse(getSlice(start, i - 1), cpath)
+         val not = TextNotation.parse(getSlice(start, i - 1), NamespaceMap(cpath))
          return Pair(not, i)
       } else {
          i += 1
@@ -591,7 +591,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
         case e : SourceError => errors = (errors :+ e)   // add to the list of errors returned
     }
 
-    return Pair(MetaData(properties.map(keyValue => new MetaDatum(Path.parseS("??" + keyValue._1, MetaDatum.keyBase), OMSTR(keyValue._2))).toSeq : _*), endsAt + 1)
+    return Pair(MetaData(properties.map(keyValue => new MetaDatum(Path.parseS("??" + keyValue._1, NamespaceMap(MetaDatum.keyBase)), OMSTR(keyValue._2))).toSeq : _*), endsAt + 1)
   }
 
   // ------------------------------- symbol level -------------------------------
@@ -853,7 +853,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
       case None => throw TextParseError(toPos(start), "structure has no definiens and its domain is not specified")
       case Some(dom) =>
         // It's a DeclaredStructure with empty body
-        structure = SimpleDeclaredStructure(parent.toTerm, LocalName(name), Path.parseM(dom.toString, parent.path), isImplicit)
+        structure = SimpleDeclaredStructure(parent.toTerm, LocalName(name), Path.parseM(dom.toString, NamespaceMap(parent.path)), isImplicit)
         add(structure)
     }
 
