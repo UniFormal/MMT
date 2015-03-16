@@ -18,7 +18,7 @@ abstract class QueryExtension(val name: String, val in: QueryType, val out: Quer
    protected lazy val extman = controller.extman // must be lazy because controller is initially null
    protected lazy val lup = controller.globalLookup
    protected def mpath(params: List[String]) = params match {
-      case p::Nil => Path.parseM(p, utils.mmt.mmtbase)
+      case p::Nil => Path.parseM(p, NamespaceMap.empty)
       case Nil => throw ParseError("paramater expected")
       case _ => throw ParseError("exactly one paramater expected")
    } 

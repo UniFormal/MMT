@@ -12,13 +12,10 @@ import utils.MyList._
  * 
  * @param path the URI of the document; for toplevel documents, this is a URL
  */
-class Document(val path : DPath) extends NarrativeElement {
-   /** constructs a non-empty document */
-   def this(path : DPath, inititems : List[DocumentItem]) = {
-	   this(path)
-	   inititems foreach add
-   }
-   private var items : List[DocumentItem] = Nil
+class Document(val path : DPath, inititems : List[DocumentItem] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty) extends NarrativeElement {
+   private var items : List[DocumentItem] = inititems
+   /** returns the namespace map that was used while parsing the document */
+   def getNamespaceMap = nsMap
    /** returns the list of children of the document (including narration) */
    def getDeclarations = items.flatMap {
       case d: NarrativeElement => List(d)

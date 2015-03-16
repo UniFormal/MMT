@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.libraries
 
 import collection.mutable.HashMap
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.MPath
 import info.kwarc.mmt.api.objects.Term
@@ -72,7 +73,7 @@ class LanguageDictionary(controller : Controller) {
 	
 	//matches the constant's toText method and translates it. There is a another method for matching markers
 	def getTranslation(constant : String, language : String) : Option[List[TextNotation]] = {
-	  val notation = TextNotation.parse(constant, mmt.mmtbase)
+	  val notation = TextNotation.parse(constant, NamespaceMap.empty)
 
 	  val globalNameConst = findConstant(notation.toText, x => x.toText)
 	  globalNameConst match {
@@ -84,7 +85,7 @@ class LanguageDictionary(controller : Controller) {
 	
 	//translates the constant given its markers in strings
 	def getTranslationByMarkers(constantMarkers : String, language : String) : Option[List[TextNotation]] = {
-	  val notation = TextNotation.parse(constantMarkers, mmt.mmtbase)
+	  val notation = TextNotation.parse(constantMarkers, NamespaceMap.empty)
 	  
 	  def toStringMethod = (x: TextNotation) => x.markers.map(_.toString).mkString(" ")
 	  

@@ -42,7 +42,7 @@ class SVGServer extends ServerExtension("svg") {
     */
    
    def apply(path: List[String], query: String, body: Body) = {
-      val path = Path.parse(query, controller.getBase)
+      val path = Path.parse(query, controller.getNamespaceMap)
       val (inNarr, newPath) = path match {
         // doc path
          case dp: DPath => (true, dp)
@@ -192,7 +192,7 @@ class MwsQuery extends ServerExtension("mwsq") {
 	  val bodyS = body.asString
 	  val bjson = body.asJSON
 	  val mpathS = bjson.obj.getOrElse("mpath", throw ServerError("mpath not given")).toString
-	  val mpath : MPath = Path.parseM(mpathS, mmt.mmtbase)
+	  val mpath : MPath = Path.parseM(mpathS, NamespaceMap.empty)
 	  val tmS = bjson.obj.getOrElse("input", throw ServerError("input not given")).toString
 	  var context = Context(mpath)
 	  val parts = tmS.split(" ").toList map {s =>

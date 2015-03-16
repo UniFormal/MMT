@@ -31,10 +31,10 @@ case class OMExtended2[u](E: TermExtension2[u], e: u) {
 object FlexiformalDeclaration {
   def parseObject(n : scala.xml.Node)(implicit base : Path) : FlexiformalObject = n.label match {
     case _ if ((n \ "@type").text == "XML") => new FlexiformalXML(n)
-    case "OMOBJ" => new FlexiformalTerm(Obj.parseTerm(scala.xml.Utility.trim(n), base))
+    case "OMOBJ" => new FlexiformalTerm(Obj.parseTerm(scala.xml.Utility.trim(n), NamespaceMap(base)))
     case "ref" if n.prefix == "omdoc" => 
       val targetS = (n \ "@target").text
-      val target = Path.parse(targetS, base)
+      val target = Path.parse(targetS, NamespaceMap(base))
       val objects = n.child.map(parseObject)
       val self = (n \ "@self").text match {
         case "true" => true 
@@ -57,10 +57,10 @@ object FlexiformalDeclaration {
       new PlainNarration(OMMOD(mpath), name, None, r)
     case "definition" =>
       val targetsS = (n \ "@for").text.split(" ")
-      val targets = targetsS.map(st => Path.parseS(st, base))
+      val targets = targetsS.map(st => Path.parseS(st, NamespaceMap(base)))
       val metadataXML = n.child.find(_.label == "metadata")
       val contentXML = n.child.find(c => (c.label != "metadata") && (c.label != "#PCDATA")).get
-      val metadata = metadataXML.map(MetaData.parse(_, base))
+      val metadata = metadataXML.map(MetaData.parse(_, NamespaceMap(base)))
       val content = parseObject(contentXML)(base)
       val d = new Definition(OMMOD(mpath), name, targets.toList, None, content)
       metadata.map(d.metadata = _)

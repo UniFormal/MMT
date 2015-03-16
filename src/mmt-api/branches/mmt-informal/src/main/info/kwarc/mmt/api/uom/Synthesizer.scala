@@ -30,7 +30,7 @@ object Integrator {
        return Nil
      if (line.startsWith(uomstart)) {
        line = line.substring(uomstart.length()) // remove the UOM start tag
-       return (Path.parseS(line, base), getCode(in))::getSnippets(in, base)
+       return (Path.parseS(line, NamespaceMap(base)), getCode(in))::getSnippets(in, base)
      }
      return getSnippets(in, base)
    }
