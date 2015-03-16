@@ -70,8 +70,7 @@ object TranslationController {
         anonConstNr += 1
         "AnonLm" + anonConstNr
     }
-	
-	
+    
 	def addSourceRef(mmtEl : metadata.HasMetaData, mizEl : MizAny) = mizEl.sreg match {
       case None => None
       case Some(sregion) => 
@@ -209,7 +208,10 @@ object TranslationController {
         val args = 1.to(argnr).flatMap {x => 
           val d = if (x == leftargnr + 1) sname else Delim(",")
           d :: Arg(x) :: Nil
-        }.toList.tail
+        }.toList match {
+          case Nil => Nil
+          case l => l.tail //to remove first extra delimiter (need args separated by delim)
+        }
         val markers : List[Marker] = format.rightsymbol match {
           case None => //single delimiter
             if (leftargnr == 0) sname :: args
