@@ -494,7 +494,7 @@ var action = {
 	exec : function(a, cont) {
 		$.ajax({
 			url: mmt.makeURL('/:action') + "?" + a,
-            dataType : 'xml',
+            dataType : 'text',
 			success:cont,
 		});
 	},
