@@ -171,7 +171,8 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
     //override def buffered = true
     override def chunked = true // Content-Length is not set at the beginning of the response, so we can stream info while computing/reading from disk
     def resolve(req: HReqData): Option[HLet] = {
-      log("request for /" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query)
+      lazy val reqString = "/" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query
+      log("request for " + reqString)
       req.uriPath.split("/").toList match {
         case ":change" :: _ => Some(ChangeResponse)
         case ":mws" :: _ => Some(MwsResponse)
@@ -187,6 +188,9 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
                         pl(tl, req.query, new Body(tk))
                      } catch {
                         case e: Error => errorResponse(e)
+                        case e: Exception =>
+                           val le = pl.LocalError("unknown error while serving " + reqString).setCausedBy(e)
+                           errorResponse(le)
                      }
                      hl.aact(tk)
                   }

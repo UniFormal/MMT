@@ -12,7 +12,7 @@ import utils._
 import scala.collection.mutable.ListMap
 
 /**
- * This class bundles all state that is maintained by a [[info.kwarc.mmt.api.parser.StructureParser]]
+ * This class bundles all state that is maintained by a [[StructureParser]]
  *
  * @param reader the input stream, from which the parser reads (see ps below)
  * @param ps the encapsulated input that contains the buffered reader (also encapsulated in reader!)
@@ -56,10 +56,10 @@ object ViewKey {
  * 1) High-level read methods that read MMT-related entities from a stream,
  * which implementing classes can use.
  * These methods throw do not read more than necessary from the stream and
- * throw [[info.kwarc.mmt.api.SourceError]] where appropriate.
+ * throw [[SourceError]] where appropriate.
  *
  * 2) It is stateless and maintains the parse state via an implicit argument of type
- * [[info.kwarc.mmt.api.parser.ParserState]] in most functions.
+ * [[ParserState]] in most functions.
  *
  * 3) It leaves processing of MMT entities application-independently via high-level continuation functions. 
  */
@@ -130,7 +130,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   private def apply(state: ParserState): (Document, ParserState) = {
     val dpath = state.ps.base
-    val doc = new Document(dpath)
+    val doc = new Document(dpath, Nil, state.namespaces)
     seCont(doc)(state)
     logGroup {
       readInDocument(doc)(state)
@@ -590,14 +590,14 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case "import" =>
           val (n, _) = state.reader.readToken
           val ns = readDPath(DPath(state.namespaces.default))
-          state.namespaces.add(n, ns.uri)
+          state.namespaces = state.namespaces.add(n, ns.uri)
         case "theory" =>
-          readTheory(doc.path, Context())
-        case ViewKey(_) => readView(doc.path, Context(), false)
+          readTheory(doc.path, Context.empty)
+        case ViewKey(_) => readView(doc.path, Context.empty, false)
         case "implicit" =>
           val (keyword2, reg2) = state.reader.readToken
           keyword2 match {
-            case ViewKey(_) => readView(doc.path, Context(), true)
+            case ViewKey(_) => readView(doc.path, Context.empty, true)
             case _ => throw makeError(reg2, "only views can be implicit here")
           }
         case k =>

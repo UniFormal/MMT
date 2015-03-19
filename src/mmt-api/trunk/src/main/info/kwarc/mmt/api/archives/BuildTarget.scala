@@ -159,12 +159,17 @@ abstract class TraversingBuildTarget extends BuildTarget {
        val prefix = "[" + inDim + " -> " + outDim + "] "
        a.traverse[BuildTask](inDim, in, includeFile, parallel) ({case Current(inFile,inPath) =>
            val outFile = getOutFile(a, inPath)
-           log(prefix + inFile + " -> " + outFile)
+           report("archive", prefix + inFile + " -> " + outFile)
            val errorCont = makeHandler(a, inPath)
            val bf = new BuildTask(inFile, false, inPath, a.narrationBase, outFile, errorCont)
            outFile.up.mkdirs
            try {
              buildFile(a, bf)
+           } catch {
+              case e: Error => errorCont(e)
+              case e: Exception =>
+                 val le = LocalError("unknown build error: " + e.getMessage).setCausedBy(e)
+                 errorCont(le)
            } finally {
              errorCont.close
            }
