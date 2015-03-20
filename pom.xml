@@ -30,10 +30,11 @@
         <module>mmt-api/trunk</module>
         <module>mmt-lf</module>
         <module>mmt-tptp</module>
-        <!--
+        <module>mmt-api/branches/mmt-informal</module>
         <module>mmt-stex</module>
-        <module>mmt-webEdit</module>
         <module>planetary-mmt</module>
+        <!--
+        <module>mmt-webEdit</module>
         -->
     </modules>
 
