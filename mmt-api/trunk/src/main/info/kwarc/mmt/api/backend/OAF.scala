@@ -64,7 +64,7 @@ class OAF(val uri: URI, val root: File, val report: Report) extends Logger {
       if (localPath.exists) {
          log("target directory exists, skipping")
       } else {
-         val success = git(root, "clone", (uri/path).toString + ".git", localPath.toString)
+         val success = git(root, "clone", (uri/path).toString + ".git", path)
          if (!success) return None
       }
       Some(localPath)

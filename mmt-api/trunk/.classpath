@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src/main"/>
-	<classpathentry kind="src" path="src/test"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/deploy-wrapper/lib/svnkit.jar"/>
@@ -9,6 +8,8 @@
 	<classpathentry kind="lib" path="/deploy-wrapper/lib/scala-compiler.jar"/>
 	<classpathentry kind="lib" path="/deploy-wrapper/lib/tiscaf.jar"/>
 	<classpathentry kind="lib" path="lib/jfxrt.jar"/>
-	<classpathentry kind="lib" path="/deploy-wrapper/lib/scalatest_2.10-2.0.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/scalatest.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/scala-xml.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/scala-parser-combinators.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
