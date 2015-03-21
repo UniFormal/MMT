@@ -47,13 +47,14 @@ The class must be on the class Java path already.
 <div class="code">base URI</div>
 sets the base URI to U.
 
-<div class="code">scala</div>
+<div class="code">scala [COMMAND]</div>
 drops to the scala shell.
 Within the scala shell, some special features are available:
 <ul>
 <li>The variable <span class="code">controller</span> is bound to the MMT <a href="controller.html">controller</a>, which gives users full access to the internal MMT state.</li>
-<li>MMT interpolations is active: for example, the string mmt"TERM" parses TERM as an MMT term and returns the resulting object.</li>
+<li>MMT <a href="../../api/index.html#info.kwarc.mmt.api.frontend.MMTInterpolator$MMTContext">interpolations</a> are active: for example, the string mmt"TERM" parses TERM as an MMT term and returns the resulting object.</li>
 </ul>
+If COMMAND is provided, it is executed immediately (as a Scala REPL command).
 
 <h3>Logging</h3>
 
