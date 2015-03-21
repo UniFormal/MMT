@@ -75,7 +75,7 @@ class MathMLPresenter extends NotationBasedPresenter {
             pc.out(mo)
             implicits.foreach {i =>
                doSpace(1)
-               doImplicit {i()}
+               doImplicit {i(())}
             }
          }
       } else
