@@ -505,8 +505,8 @@ class Controller extends ROController with Logger {
             case None => log("server not running")
           }
 	      case Scala(fOpt) =>
-	         val interp = new MMTILoop(this, fOpt)
-            interp.run
+            val interp = new MMTILoop(this)
+            interp.run(fOpt)
 	      case Clear => clear
 	      case ExecFile(f, nameOpt) =>
 	         val folder = f.getParentFile
