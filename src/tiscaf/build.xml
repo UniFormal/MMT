@@ -6,9 +6,7 @@
 	
     <!-- The variable scalac.classpath holds all paths needed for the scalac task. -->
     <path id="scalac.classpath">
-        <pathelement location="${deploy}/lib/scala-library.jar"/>
-        <pathelement location="${deploy}/lib/scala-reflect.jar"/>
-        <pathelement location="${deploy}/lib/scala-compiler.jar"/>
+        <fileset dir="${deploy}/lib/" includes="*.jar"/>
         <pathelement location="build"/>
     </path>
     <path id="scaladoc.classpath">
