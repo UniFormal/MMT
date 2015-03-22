@@ -15,24 +15,21 @@ var interactiveViewing = {
 	   target = targetArray[0];  //for some reason jobad passes [target] instead of target
 		mmt.setCurrentPosition(target);
 		var res = this.visibMenu();
-      if (mmt.focusIsMath) {
-    	  
+        if (mmt.focusIsMath) {
 			var me = this;
-		
-			res["infer type"] = me.inferType;
-			res["simplify"] = me.simplify;
- 		   var folded = $(mmt.focus).closest('.math-folded');
-         if (folded.length !== 0)
-            res['unfold'] = function(){folded.removeMClass('math-folded');};
-         else
-            res['fold'] = function(){$(mmt.focus).addMClass('math-folded');};
+			res["infer type"] = function(){me.showComputationResult("i", "inferred")};
+			res["simplify"] = function(){me.showComputationResult("s", "simplified")};
+ 		    var folded = $(mmt.focus).closest('.math-folded');
+            if (folded.length !== 0)
+               res['unfold'] = function(){folded.removeMClass('math-folded');};
+            else
+               res['fold'] = function(){$(mmt.focus).addMClass('math-folded');};
 		}
 		if (mmt.currentURI !== null) {
 			var me = this;
+			res["show declaration"] = function(){me.showComp(null);};
 			res["show URI"] = function(){alert(mmt.currentURI);};
 			res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
-			res["show type"] = function(){me.showComp('type');};
-			res["show definition"] = function(){me.showComp('definition');};
 			res["show graph"] = function() {
 				
 			/*var preSVG = target.attributes.item(1).value;
@@ -66,7 +63,6 @@ var interactiveViewing = {
 	
 	/* functions for context menu items */
 	
-	
 	/* highlights all occurrences of the current URI */
 	showOccurs : function (){
 		$('mo').filter(function(index){
@@ -74,67 +70,41 @@ var interactiveViewing = {
 	   }).toggleMClass('math-occurrence');
 	},
 	
-	/* sends type inference query to server for the currentComponent and currentPosition */
-	inferType : function (){
-		var query = qmt.present(qmt.infer(
-		    qmt.subobject(qmt.component(qmt.literalPath(mmt.currentElement), mmt.currentComponent), mmt.currentPosition),
-		    uris.lf
-		));
-		qmt.exec(query,
-				  function(result) {
-					  try {
-						  var pres = result.firstChild.firstChild.firstChild;
-						  var contentNode = mmt.createInlineBox(target, 'type');
-						  $(contentNode).append(pres);
-					  } catch(err) { // probably result is an error report
-						  var errorNode = mmt.createInlineBox(target, 'error');
-						  $(errorNode).append(result.firstChild);
-					  }
-				  }
-				 );
+	/* showQuery where the query is for the result of applying a wrapper function to the selected expression;
+	 * typical wrappers: qmt.infer, qmt.simplify
+	 */
+	showComputationResult : function (key, title){
+		var q = qmt.subobject(qmt.component(qmt.literalPath(mmt.currentElement), mmt.currentComponent), mmt.currentPosition) 
+		if (key == "i")
+		  q = qmt.infer(q, uris.lf)
+    	else if (key == "s")
+  		  q = qmt.simplify(q, uris.lf)
+		this.showQuery(qmt.present(q), title);
 	},
-	
-	/* sends a simplification query to server for the currentComponent and currentPosition */
-	simplify : function (){
-		var query = qmt.present(qmt.simplify(
-		    qmt.subobject(qmt.component(qmt.literalPath(mmt.currentElement), mmt.currentComponent), mmt.currentPosition),
-		    uris.lf
-		));
-		qmt.exec(query,
-				  function(result) {
-					  try {
-						  var pres = result.firstChild.firstChild.firstChild;
-						  var contentNode = mmt.createInlineBox(target, 'simplified');
-						  $(contentNode).append(pres);
-					  } catch(err) { // probably result is an error report
-						  var errorNode = mmt.createInlineBox(target, 'error');
-						  $(errorNode).append(result.firstChild);
-					  }
-				  }
-				 );
+	/* showQuery where the query if for (if comp is non-null: a component of) the declaration of the current MMT URI */
+	showComp : function(comp) {
+		   var q = qmt.literalPath(mmt.currentURI)
+		   if (comp != null)
+			   q = qmt.present(qmt.component(q, comp))
+		   else
+			   q = qmt.presentDecl(q)
+		   var title = (comp != null ? comp + " of " : "") + mmt.currentURI
+		   this.showQuery(q, title)
 	},
-	
-	
-	
-	/* shows a component of the current MMT URI in a dialog */
-	showComp : function(comp) {  
-		   var query = qmt.present(qmt.component(qmt.literalPath(mmt.currentURI), comp));
-		   qmt.exec(query,
-			   	     function(result){
-			   			try{
-						   var pres = result.firstChild.firstChild.firstChild;
-						   var contentNode = mmt.createInlineBox(target, comp + " -> " + mmt.currentURI);
-						   $(contentNode).append(pres);
-			   			} catch (err)
-			   			{
-			   				
-							   var errorNode = mmt.createInlineBox(target, "error");
-							   $(errorNode).append(result.firstChild);
-			   			}
-			   			});
-		
+	/* sends a query to the server and shows the presented result */
+	showQuery : function(query, title) {
+      qmt.exec(query,
+   	     function(result){
+   			try {
+			   var pres = result.firstChild.firstChild.firstChild;
+			   var contentNode = mmt.createInlineBox(target, title);
+			   $(contentNode).append(pres);
+   			} catch (err) {
+			   var errorNode = mmt.createInlineBox(target, "error");
+			   $(errorNode).append(result.firstChild);
+   			}
+   	  });
 	},
-	
 	
 	/* Helper Functions  */
 	setVisib : function(prop, val){

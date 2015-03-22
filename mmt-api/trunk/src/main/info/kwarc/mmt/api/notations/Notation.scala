@@ -285,15 +285,8 @@ object TextNotation {
             ("mixfix", args)
          } else {
             val fix = utils.xml.attr(n, "fixity")
-            // temporary for legacy Twelf export (2013-05-30)
-            val impl = utils.xml.attr(n, "implicit")
-            if (impl != "")
-               (fix, List(impl))
-            // standard case: arbitrary fixity and arguments
-            else {
-               val args = utils.xml.attr(n,"arguments").split("\\s+").toList.filter(_!="")
-               (fix,args)
-            }
+            val args = utils.xml.attr(n,"arguments").split("\\s+").toList.filter(_!="")
+            (fix,args)
          }
       }
       val fixity = FixityParser.parse(fixityString, arguments)
