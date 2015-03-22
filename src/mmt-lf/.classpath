@@ -6,5 +6,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/mmt-api"/>
 	<classpathentry kind="lib" path="/deploy-wrapper/lib/tiscaf.jar"/>
 	<classpathentry kind="lib" path="/deploy-wrapper/lfcatalog/lfcatalog.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/scala-xml.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

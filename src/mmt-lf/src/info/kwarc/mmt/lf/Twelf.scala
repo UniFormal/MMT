@@ -52,6 +52,7 @@ class Twelf extends Importer with frontend.ChangeListener {
       if (args.length >= 2) {
          _inDim = Dim(args(1))
       }
+      controller.backend.getArchives foreach onArchiveOpen
    }
    override def onArchiveOpen(arch: Archive) {
       val dim = arch.properties.get("twelf").getOrElse(arch.sourceDim)
