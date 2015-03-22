@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import objects._
 
 /* This works but it's unclear how imports and definitions of one parse can be reused in the next one */
-
+/*
 class Reflect {
    private val u = scala.reflect.runtime.universe
    private val tbf = new scala.tools.reflect.ToolBoxFactory(u) {
@@ -20,4 +20,4 @@ class Reflect {
       t
    }
    
-}
+}*/
