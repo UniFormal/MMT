@@ -34,7 +34,11 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    import htmlRh._
    
    private def doName(p: ContentPath) {
-      span("name", attributes=List(("jobad:href",p.toPath))) {text(p.name.toString)}
+      val name = p.name match {
+         case LocalName(ComplexStep(t)::Nil) => t.name.toString // hardcoding the import case of includes
+         case n => n.toString 
+      }
+      span("name", attributes=List(("jobad:href",p.toPath))) {text(name)}
    }
    /** renders a MMT URI outside a math object */
    private def doPath(p: Path) {

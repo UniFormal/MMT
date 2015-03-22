@@ -33,18 +33,38 @@ abstract class Error(val shortMsg : String) extends java.lang.Exception(shortMsg
       shortMsg + "\n" + extraMessage + "\ndetected at\n" + Stacktrace.asString(this) + causedByToString
    }
    def toNode : scala.xml.Elem =
-      <error type={this.getClass.getName} shortMsg={this.shortMsg} level={this.level.toString}>{if (extraMessage.isEmpty) Nil
-        else extraMessage}{Stacktrace.asNode(this)}{causedByToNode}</error>
+      <error type={getClass.getName} shortMsg={shortMsg} level={level.toString}>
+         {if (extraMessage.isEmpty) Nil else extraMessage}
+         {Stacktrace.asNode(this)}
+         {causedByToNode}
+      </error>
+   def toHTML: String = HTML.build {h => import h._
+      div("error") {
+         div {text(this.getClass.getName + " of level " + level.toString)}
+         div {text(shortMsg)}
+         if (!extraMessage.isEmpty) div {text {extraMessage}}
+         div {
+            Stacktrace.asStringList(this).foreach {s =>
+               div {span {text {s}}}
+            }
+         }
+         causedBy.foreach {
+            case e: Error => div {literal(e.toHTML)}
+            case e: Throwable => div {text {e.getClass + " : " + e.getMessage}}
+         }
+      }
+   }
 }
 
 /**
  * auxiliary functions for handling Java stack traces
  */
 object Stacktrace {
-   def asString(e: Throwable) = e.getStackTrace.map(_.toString).mkString("","\n","")
-   def asNode(e: Throwable) = e.getStackTrace.toList match {
+   def asStringList(e: Throwable) = e.getStackTrace.map(_.toString).toList
+   def asString(e: Throwable) = asStringList(e).mkString("","\n","")
+   def asNode(e: Throwable) = asStringList(e) match {
      case Nil => Nil
-     case st => <stacktrace>{st.map(e => <element>{e.toString}</element>)}</stacktrace>
+     case st => <stacktrace>{st.map(s => <element>{s}</element>)}</stacktrace>
    }
 }
 
