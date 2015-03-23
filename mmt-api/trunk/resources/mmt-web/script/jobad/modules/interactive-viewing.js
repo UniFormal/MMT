@@ -12,7 +12,7 @@ var interactiveViewing = {
 	
 
 	contextMenuEntries: function(targetArray, JOBADInstance) {
-	   target = targetArray[0];  //for some reason jobad passes [target] instead of target
+		target = targetArray[0];  //for some reason jobad passes [target] instead of target
 		mmt.setCurrentPosition(target);
 		var res = this.visibMenu();
         if (mmt.focusIsMath) {
@@ -31,29 +31,14 @@ var interactiveViewing = {
 			res["show URI"] = function(){alert(mmt.currentURI);};
 			res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
 			res["show graph"] = function() {
-				
-			/*var preSVG = target.attributes.item(1).value;
-			var svgURI = preSVG.split("#")[0];
-			svgURI = ":svg?" + svgURI;*/
-			
-		    var svgURI = ":svg?" + mmt.currentURI;
-			var contentNode = mmt.createInlineBox(target, mmt.currentURI);
-			mmt.ajaxAppendBox(svgURI, contentNode);
-			};
-			
-			res["See alignments (prototype version)"] = function() {
-				
-				var response = "<table width=\"100%\">" +
-						"<tr><td><a href=\"#\">Bool</a></td>" +
-						"<td><a href=\"#\">HOL Light</a></td>" +
-						"</tr><tr><td><a href=\"#\">Bool</a></td>" +
-						"<td><a href=\"#\">Mizar</a></td>" +
-						"</tr><tr><td><a href=\"#\">Bool</a></td>" +
-						"<td><a href=\"#\">Open Math</a></td></tr></table>";
-						
+				var svgURI = ":svg?" + mmt.currentURI;
+				var contentNode = mmt.createInlineBox(target, mmt.currentURI);
+				mmt.ajaxAppendBox(svgURI, contentNode);		
+				};
+			res["Alignments"] = function() {
+				var  cont =  ":align?" + mmt.currentURI;
 				var alignNode = mmt.createInlineBox(target, "Alignments for bool");
-				$(alignNode).append(response);
-				//mmt.ajaxAlignments(response, alignNode);
+				mmt.ajaxAppendBox(cont, alignNode);		
 				};
 		
 		//res["get OMDoc"] = mmt.openCurrentOMDoc();
