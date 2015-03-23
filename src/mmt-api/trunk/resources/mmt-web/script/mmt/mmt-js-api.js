@@ -181,40 +181,8 @@ var mmt = {
 	    * @param url the URL to load from
 	    * @param targetid the XML id of the element, where it appends
 	    */
-   ajaxAppend : function (url, targetid, async) {
-	   function cont(data) {
-		   
-		   var svgDiv = $('#' + targetid);
-		   var serializer = new XMLSerializer();
-		   var xmlString = serializer.serializeToString(data);
-		   svgDiv.append(xmlString);
-		}
-		if (async == null) async = true;
-		$.ajax({ 'url': url,
-				 'dataType': 'xml',
-				 'async': async,
-				 'success': cont
-			   });
-	},
+  
 		
-	/**
-	    * @param url the URL to load from
-	    * @param targetid the XML id of the element, where it appends
-	    */
-	   ajaxAppendBeta : function (url, targetclass, async) {
-		   function cont(data) {
-			   var targetnode = $('.' + targetclass);
-			   var serializer = new XMLSerializer();
-			   var xmlString = serializer.serializeToString(data);
-			   targetnode.append(xmlString);
-			}
-			if (async == null) async = true;
-			$.ajax({ 'url': url,
-					 'dataType': 'xml',
-					 'async': async,
-					 'success': cont
-				   });
-		},
 		
 		ajaxAppendBox : function (url, targetnode, async) {
 			   function cont(data) {
@@ -239,7 +207,12 @@ var mmt = {
    ajaxReplaceIn : function (url, targetid, async) {
 		function cont(data) {
 			var targetnode = $('#' + targetid).children();
-			targetnode.replaceWith(data.firstChild);
+			
+			// adapt code to ignore the graph 
+			var cont = data.firstChild;
+			$(cont).find(".graph").remove();
+			targetnode.replaceWith(cont);
+
 		}
 		if (async == null) async = true;
 		$.ajax({ 'url': url,
@@ -306,15 +279,18 @@ var mmt = {
 	},
 	
 	createInlineBox : function (origin, title) {
-		
 		var targetParent = $(origin).closest(".inlineBoxSibling");
 		var newDiv = document.createElement('div');
-		
-		// no inlineBoxSiling class found near
-		// make inline box appear at the top in ths case
-		if (targetParent.length === 0) {	
-			//targetParent =  document.getElementById("main");
-			$(newDiv).insertBefore( "#main" );
+		 // if no inlineBoxSibling is found as parent then append as 
+		// child first of main div
+		if (targetParent.length === 0) {			
+			var list = $("#main").children();
+			if(list.length === 0) {
+				$(newDiv).insertAfter("#main");
+			}
+			else {
+				$(newDiv).insertBefore(list[0]);
+			}
 		}
 		else {
 			$(targetParent).append(newDiv);
@@ -333,7 +309,6 @@ var mmt = {
 		$(button_close).addClass( "inlineBtn");
 		$(titleDiv).addClass( "titleDiv");	
 		$(contentDiv).addClass( "contDiv");
-
 		
 		$(newDiv).append(btnDiv);
 		$(newDiv).append(titleDiv);
@@ -353,10 +328,24 @@ var mmt = {
 		$(button_hide).click(function() {
 			$(contentDiv).toggle();
 		});
+				
+		// scroll to the new inline box
+		var el = $(contentDiv);
+		var elOffset = el.offset().top;
+		var elHeight = el.height();
+		var windowHeight = $(window).height();
+		var offset;
+		if (elHeight < windowHeight) {
+			offset = elOffset - ((windowHeight / 2) - (elHeight / 2));
+			}else {
+				offset = elOffset;
+			}
+		var speed = 400;
+		$('html, body').animate({scrollTop:offset}, speed);
 		
 		//$(newDiv).draggable();
 		//$(contentDiv).resizable();
-		
+				
 		return contentDiv;
 	},
 	
