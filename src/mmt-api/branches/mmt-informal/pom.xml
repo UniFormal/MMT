@@ -13,11 +13,6 @@
     </parent>
     <dependencies>
         <dependency>
-            <groupId>org.tmatesoft.svnkit</groupId>
-            <artifactId>svnkit</artifactId>
-            <version>1.7.8</version>
-        </dependency>
-        <dependency>
             <groupId>info.kwarc.mmt</groupId>
             <artifactId>mmt-tiscaf</artifactId>
             <version>1.0.1</version>
