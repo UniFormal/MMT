@@ -56,7 +56,7 @@ class MMTInterpolator(controller: frontend.Controller) {
          val strings = sc.parts.iterator
          val args = ts.iterator
          val buf = new StringBuffer(strings.next)
-         var cont = Context()
+         var cont = Context.empty
          var i = 0
          while(strings.hasNext) {
             val name = LocalName("$_" + i.toString)
@@ -95,14 +95,14 @@ class MMTInterpolator(controller: frontend.Controller) {
       /** uom"s" parses and simplifies s */
       def uom(ts: Term*): Term = {
          val t = mmt(ts : _*)
-	     controller.simplifier(t, Context(theory))
+	      controller.simplifier(t, Context(theory))
       }
       /** r"s" parses and type-checks s */
       def r(ts: Term*): Term = parse(sc, ts.toList, None, true)
       /** s"s" parses, type-checks, and simplifies s */
       def rs(ts: Term*): Term = {
          val t = r(ts : _*)
-	     controller.simplifier(t, Context(theory))
+	      controller.simplifier(t, Context(theory))
       }
       /** cont"s" parses s into a Context */
       def cont(ts: Term*) : Context = {
@@ -122,5 +122,9 @@ class MMTInterpolator(controller: frontend.Controller) {
         val t = uom(ts : _*)
         controller.presenter.asString(t)
       }
+      /** standard string interpolation that is executed immediately as an MMT action */
+      def act(ss: String*): Unit = {
+         shell(sc.s(ss))
+      } 
    }
 }

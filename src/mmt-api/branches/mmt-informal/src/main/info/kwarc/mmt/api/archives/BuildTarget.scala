@@ -88,6 +88,13 @@ class BuildTask(val inFile: File, val isDir: Boolean, val inPath: List[String], 
    def dirName: String = outFile.segments.init.last
 }
 
+case class ArchivePath(segments: List[String]) {
+   def toFile = File(toString)
+   def setExtension(e: String) = ArchivePath(toFile.setExtension(e).segments)
+   def removeExtension = ArchivePath(toFile.removeExtension.segments)
+   override def toString = segments.mkString("/")
+}
+
 /**
  * This trait provides common functionality for BuildTargets that traverse all files in the input dimension.
  * 
@@ -111,7 +118,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
    
    protected def getOutFile(a: Archive, inPath: List[String]) = (a / outDim / inPath).setExtension(outExt)
    protected def getFolderOutFile(a: Archive, inPath: List[String]) = a / outDim / inPath / (folderName + "." + outExt)
-   protected def getErrorFile(a: Archive, inPath: List[String]) = (a / errors / key / inPath).setExtension("err")
+   protected def getErrorFile(a: Archive, inPath: List[String]) = (a / errors / key / inPath).addExtension("err")
    protected def getFolderErrorFile(a: Archive, inPath: List[String]) = a / errors / key / inPath / (folderName + ".err")
    
    /**
@@ -152,12 +159,20 @@ abstract class TraversingBuildTarget extends BuildTarget {
        val prefix = "[" + inDim + " -> " + outDim + "] "
        a.traverse[BuildTask](inDim, in, includeFile, parallel) ({case Current(inFile,inPath) =>
            val outFile = getOutFile(a, inPath)
-           log(prefix + inFile + " -> " + outFile)
+           report("archive", prefix + inFile + " -> " + outFile)
            val errorCont = makeHandler(a, inPath)
            val bf = new BuildTask(inFile, false, inPath, a.narrationBase, outFile, errorCont)
            outFile.up.mkdirs
-           buildFile(a, bf)
-           errorCont.close
+           try {
+             buildFile(a, bf)
+           } catch {
+              case e: Error => errorCont(e)
+              case e: Exception =>
+                 val le = LocalError("unknown build error: " + e.getMessage).setCausedBy(e)
+                 errorCont(le)
+           } finally {
+             errorCont.close
+           }
            controller.notifyListeners.onFileBuilt(a, this, inPath)
            // a.timestamps(this).set(inPath) not needed anymore
            bf

@@ -134,8 +134,12 @@ abstract class HTML {
    def text(s : String) {
      out(escape(s))
    }
-   /** outputs a node as is */
-   def literalNode(n: scala.xml.Node) {
+   /** outputs as is */
+   def literal(s: String) {
+     out(s)
+   }
+   /** outputs as is */
+   def literal(n: scala.xml.Node) {
      out(n.toString)
    }
    
@@ -163,6 +167,11 @@ abstract class HTML {
 object HTML {
    def apply(f: String => Unit) = new HTML {
       def out(s: String) {f(s)}
+   }
+   def build(f: HTML => Unit) = {
+      val h = builder
+      f(h)
+      h.result
    }
    def builder = new HTML {
       private var _result: String = ""

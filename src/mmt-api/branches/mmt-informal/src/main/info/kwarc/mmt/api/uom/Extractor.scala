@@ -34,7 +34,7 @@ object Scala {
 }
 
 object OpenMath {
-   val _path = DPath(utils.URI("http", "mmt.kwarc.info") / "openmath") ? "Base"
+   val _path = DPath(utils.URI("http", "www.openmath.org") / "cd") ? "OpenMath"
    object FMP {
        val path = _path ? "FMP"
    }

@@ -84,7 +84,7 @@ object Action extends RegexParsers {
    private def define = "define " ~> str ^^ {s => Define(s)}
    private def enddefine = "end" ^^ {case _ => EndDefine}
    private def dodefined = "do " ~> str ~ (file?) ^^ {case s ~ f => Do(f, s)}
-   private def scala = "scala" ^^ {_ => Scala}
+   private def scala = "scala" ~> ("[^\\n]*"r) ^^ {s => val t = s.trim; Scala(if (t == "") None else Some(t))}
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
    private def read = "read" ~> file ^^ {f => Read(f)}
    private def graph = "graph" ~> file ^^ {f => Graph(f)}
@@ -309,7 +309,7 @@ case object PrintAll extends Action
 /** print all loaded knowledge items to STDOUT in XML syntax */
 case object PrintAllXML extends Action
 
-case object Scala extends Action {override def toString = "scala"}
+case class Scala(init: Option[String]) extends Action {override def toString = "scala"}
 
 /** start up the HTTP server
  * @param port the port to listen to

@@ -10,11 +10,20 @@ import scala.tools.nsc._
  */
 class MMTILoop(controller: Controller) extends interpreter.ILoop {
    /** this is overridden in order to bind variables after the interpreter has been created */
-   override def createInterpreter() {
-      if (addedClasspath != "")
-         settings.classpath append addedClasspath
-      intp = new ILoopInterpreter
-      intp beQuietDuring {
+   override def createInterpreter {
+      super.createInterpreter
+      init
+   }
+   override def printWelcome {
+      out.println
+      out.println("This is a Scala interpreter running within MMT; ':help' lists commands.")
+      out.println("Use 'controller' to access the current MMT Controller.")
+      out.println
+      out.flush
+   }
+   override def prompt = "scala-mmt> "
+   private def init {
+     intp beQuietDuring {
          intp.interpret("import info.kwarc.mmt.api._")
          intp.bind("controller", controller)
          val interpolator = new MMTInterpolator(controller)
@@ -24,19 +33,22 @@ class MMTILoop(controller: Controller) extends interpreter.ILoop {
          intp.interpret("import interpolator._")
       }
    }
-   override def printWelcome() {
-      out.println
-      out.println("This is a Scala interpreter running within MMT; it may take a few seconds for the prompt to appear; ':help' lists commands.")
-      out.println("Use 'controller' to access the current MMT Controller, use 'mmt\"expression\"' to invoke the MMT parser.")
-      out.println
-      out.flush
-   }
-   override def prompt = "scala-mmt> "
-   def run {
+   /** run a command and return or interactively read commands */
+   def run(command: Option[String]) {
       val settings = new Settings
-      settings.Yreplsync.value = true
       settings.usejavacp.value = true // make sure all classes of the Java classpath are available
       //settings.sourceReader.value = "SimpleReader"
-      process(settings)
+      command match {
+         case None =>
+            settings.Yreplsync.value = true
+            out.println("It may take a few seconds for the Scala prompt to appear.")
+            process(settings)
+         case Some(c) =>
+            // code copied from process(settings) but without going into the loop
+            this.settings = settings
+            createInterpreter
+            intp.interpret(c)
+            closeInterpreter
+      }
    }
 }

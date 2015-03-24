@@ -29,16 +29,16 @@ object Table {
 }
 
 /** an [[Error]] as reconstructed from an error file */
-case class BuildError(archive: Archive, target: String, path: List[String],
+case class BuildError(archive: Archive, target: String, path: ArchivePath,
                       tp: String, level: Level.Level, sourceRef: Option[parser.SourceRef],
                       shortMsg: String, longMsg: String,
                       stackTrace: List[List[String]]) {
   def toStrList: List[String] = {
-    val f = archive / errors / target / path
+    val f = archive / errors / target / path.segments
     List(level.toString,
       tp,
       archive.id,
-      path.mkString("/"),
+      path.toString,
       new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(f.toJava.lastModified)),
       target,
       sourceRef.map(_.toString).getOrElse(""),
@@ -114,7 +114,7 @@ class ErrorManager extends Extension with Logger {
       val srcR = if (srcRef.isEmpty) None else Some(SourceRef.fromURI(URI(srcRef)))
       if (elems.nonEmpty)
         infoMessage("ignored sub-elements: " + elems)
-      val be = BuildError(a, target, path, errType, lvl, srcR, shortMsg, longMsg, trace)
+      val be = BuildError(a, target, ArchivePath(path).removeExtension, errType, lvl, srcR, shortMsg, longMsg, trace)
       bes ::= be
     }
     val em = apply(a.id)

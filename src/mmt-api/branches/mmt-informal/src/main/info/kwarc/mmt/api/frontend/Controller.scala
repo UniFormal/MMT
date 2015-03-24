@@ -242,7 +242,7 @@ class Controller extends ROController with Logger {
                      // delete the deactivated old one, and add the new one
                      log("deleting deactivated " + old.path)
                      memory.content.update(nw)
-                     if (old.getOrigin != Some(DefaultAssignment)) // TODO hacky, but need to handle this case somehow
+                     if (old.getOrigin != DefaultAssignment) // TODO hacky, but need to handle this case somehow
                          notifyListeners.onDelete(old)
                      notifyListeners.onAdd(nw)
                   }
@@ -514,9 +514,9 @@ class Controller extends ROController with Logger {
               server = None
             case None => log("server not running")
           }
-	      case Scala =>
-	         val interp = new MMTILoop(this)
-            interp.run
+	      case Scala(fOpt) =>
+            val interp = new MMTILoop(this)
+            interp.run(fOpt)
 	      case Clear => clear
 	      case ExecFile(f, nameOpt) =>
 	         val folder = f.getParentFile

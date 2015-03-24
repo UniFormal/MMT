@@ -1,7 +1,6 @@
 package info.kwarc.mmt.api.web
 
 import info.kwarc.mmt.api._
-import scala.util.parsing.json._
 
 import frontend._
 import backend._
@@ -10,7 +9,6 @@ import utils._
 import tiscaf._
 import tiscaf.let._
 
-import scala.util.parsing.json.{ JSONType, JSONArray, JSONObject }
 import scala.xml._
 import scala.concurrent._
 
@@ -67,23 +65,11 @@ object Server {
    */
   def XmlResponse(node: scala.xml.Node): HLet = TextResponse(node.toString, "xml")
   
-  /**
-   * A Json response that the server sends back to the browser 
-   * @param json the Json message that is sent in the HTTP body
-   */
-  def JsonResponse(json: JSONType): HLet = new HSimpleLet {
-    def act(tk: HTalk) {
-      val out: Array[Byte] = json.toString.getBytes("UTF-8")
-      checkCORS(tk).setContentLength(out.size) // if not buffered
-        .setContentType("application/json; charset=utf8")
-        .write(out)
-    }
-  }
   /** a response that sends an HTML error message to the browser */
   def errorResponse(msg: String): HLet = errorResponse(ServerError(msg))
   /** a response that sends an HTML error message to the browser */
   def errorResponse(error: Error): HLet = {
-     XmlResponse(error.toNode)
+     TextResponse("<errors><error>"+error.toHTML+"</error></errors>", "xml")
   }
 }
 
@@ -142,11 +128,11 @@ class Body(tk: HTalk) {
        scala.xml.Utility.trim(bodyXML)
      }
   
-  def asJSON : JSONObject = {
+  def asJSON : scala.util.parsing.json.JSONObject = {
     val reqBody = new Body(tk)
     val bodyS = reqBody.asString
-    JSON.parseRaw(bodyS) match {
-      case Some(j : JSONObject) => j
+    scala.util.parsing.json.JSON.parseRaw(bodyS) match {
+      case Some(j : scala.util.parsing.json.JSONObject) => j
       case _ => throw ServerError("Invalid JSON " + bodyS)
     }
   }
@@ -182,7 +168,8 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
     //override def buffered = true
     override def chunked = true // Content-Length is not set at the beginning of the response, so we can stream info while computing/reading from disk
     def resolve(req: HReqData): Option[HLet] = {
-      log("request for /" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query)
+      lazy val reqString = "/" + req.uriPath + " " + req.uriExt.getOrElse("") + "?" + req.query
+      log("request for " + reqString)
       req.uriPath.split("/").toList match {
         case ":change" :: _ => Some(ChangeResponse)
         case ":mws" :: _ => Some(MwsResponse)
@@ -198,6 +185,9 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
                         pl(tl, req.query, new Body(tk))
                      } catch {
                         case e: Error => errorResponse(e)
+                        case e: Exception =>
+                           val le = pl.LocalError("unknown error while serving " + reqString).setCausedBy(e)
+                           errorResponse(le)
                      }
                      hl.aact(tk)
                   }
@@ -383,14 +373,14 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
                 val presenter = new archives.HTMLExporter() 
                 presenter(module)(rb)
                 val thyString = rb.get
-                val response = new collection.mutable.HashMap[String,Any]()
-                response("success") = "true"                                      
+                var response: List[(String,JSON)] = Nil
+                response ::= "success" -> JSONBoolean(true)                                      
                 val sdiff = controller.detectChanges(List(mod))
                 save match {
                   case false => //just detecting refinements
                     val refs = controller.detectRefinements(sdiff)
-                    response("info") = JSONArray(refs)
-                    response("pres") =  thyString
+                    response ::= "info" -> JSONArray(refs.map(JSONString(_)):_*)
+                    response ::= "pres" -> JSONString(thyString)
                   case true => //updating and returning list of done updates
                     val pchanges = tk.req.param("pchanges").map(_.split("\n").toList).getOrElse(Nil)       
                     val boxedPaths = controller.update(sdiff, pchanges)
@@ -412,20 +402,20 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
                           Nil.toSet
                       case _ => Nil.toSet
                     }}
-                    response("pres") = JSONArray(invPaths(controller.getBase).map(_.toString).toList)
+                    response ::= "pres" -> JSONArray(invPaths(controller.getBase).toList.map(x => JSONString(x.toString)) :_*)
                 }
-                JsonResponse(JSONObject(response.toMap)).aact(tk)
+                JsonResponse(JSONObject(response :_*)).aact(tk)
               }  catch {
                 case e : Throwable =>
-                  e.printStackTrace()
-                  TextResponse(e.getMessage()).aact(tk)
+                  val st = Stacktrace.asStringList(e).mkString("\n","\n","\n")
+                  TextResponse(e.getMessage + st).aact(tk)
               }
             case l => //parsing failed -> returning errors 
-              val response = new collection.mutable.HashMap[String,Any]()
-              response("success") = "false"
-              response("info") = JSONArray(Nil)
-              response("pres") = l.map(e => (<p>{e.getStackTrace().toString}</p>).toString).mkString("")
-              JsonResponse(JSONObject(response.toMap)).aact(tk)
+              var response: List[(String, JSON)] = Nil
+              response ::= "success" -> JSONBoolean(false)
+              response ::= "info" -> JSONArray()
+              response ::= "pres" -> JSONString(l.map(e => (<p>{e.getStackTrace().toString}</p>).toString).mkString(""))
+              JsonResponse(JSONObject(response :_*)).aact(tk)
           }
         case _ => errorResponse("invalid theory name in query : {tk.req.query}").aact(tk)
       }
@@ -433,55 +423,3 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
   }
 }
 
-  /*
-  def kindToColor(kind: String) : String = kind match {
-      case "Meta" => "#0000ff"
-      case "Include" => "#adad85"
-      case "Struvture" => "#00ee00"
-      case "View" => "#52527a"
-    }
-  
-  /**
-   * returns the JSON object representing a graph
-   * @param p the MMT URI that is currently focused (ignored for now)
-   */
-  def graph(p: Path): JSONType = {
-    val tg = new TheoryGraph(controller.depstore)
-    JSONArray(
-      tg.nodes.toList map { f =>
-        JSONObject(Map(
-          "id" -> f.toPath,
-          "name" -> f.last,
-          "data" -> JSONObject(Map(
-              "$type" -> "ellipse",
-              "$height" -> 15,
-              "$width" -> 15,
-              "$color" -> "#ff0000"
-          )),
-          "adjacencies" -> JSONArray(
-            tg.edgesFrom(f) map {
-              case (t, edges) =>               
-                JSONObject(Map(
-                  "nodeTo" -> t.toPath,
-                  "nodeFrom" -> f.toPath,
-                  "data" -> JSONObject(Map(
-                    "$type" -> "multiple_arrow",
-//                    "$color" -> kindToColor(Util.edgeKind(edges(0).edge)),
-                    "$direction" -> JSONArray(
-                        edges map {
-                          case EdgeTo(_, e, backwards) =>
-                        		JSONObject(Map(
-                        				"from" -> (if (backwards) t else f).toPath,
-                        				"to" -> (if (backwards) f else t).toPath,
-                        				"backwards" -> backwards,
-                        				"kind" -> Util.edgeKind(e),
-                        				"uri" -> Util.edgeUri(e),
-                        				"name" -> Util.edgeName(e),
-                        				"inref" -> tg.nodes.toList.contains(t).toString()
-                        		))})
-                        )))
-
-            )}))
-      )})
-  }
-  */

@@ -345,6 +345,7 @@ case class Substitution(subs : Sub*) extends Obj {
 object Context {
    /** a context consisting of a single theory */
    def apply(p: MPath): Context = Context((IncludeVarDecl(p,Nil)))
+   val empty = Context()
 	/** parses an OMBVAR into a context */
 	def parse(Nmd : scala.xml.Node, nsMap: NamespaceMap) : Context = {
 	   val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, nsMap)
@@ -420,6 +421,7 @@ object VarDecl {
 }
 /** helper object */
 object Substitution {
+   def empty = Substitution()
 	/** parsers an OMBVAR into a substitution */
 	def parse(Nmd : scala.xml.Node, nsMap: NamespaceMap) : Substitution = {
       val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, nsMap)

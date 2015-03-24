@@ -156,7 +156,9 @@ trait IndentedExporter extends Exporter {
 abstract class FoundedExporter(meta: MPath, found: MPath) extends Exporter {
    protected def covered(m: MPath): Boolean = {
       objects.TheoryExp.metas(OMMOD(m))(controller.globalLookup).exists {
-         mt => controller.library.visibleDirect(OMMOD(mt)) contains OMMOD(meta)
+         mt =>
+            val vis = controller.library.visibleDirect(OMMOD(mt))
+            vis contains OMMOD(meta)
       }
    }
    def exportTheory(t: DeclaredTheory, bf: BuildTask) {

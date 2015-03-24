@@ -35,7 +35,7 @@ case class Mixfix(markers: List[Marker]) extends Fixity {
  *    Example: union : {a:tp} tm (a set => a set => a set) where a set = a => bool, impl = 1, expl = 2
  */
 abstract class SimpleFixity extends Fixity {
-   /** number number of initial implicit arguments (inferred by parser, skipped by printer) */
+   /** number of initial implicit arguments (inferred by parser, skipped by printer) */
    def impl: Int
    /** expl number of subsequent explicit arguments (needed to trigger notation during parsing, rendered by printer) */
    def expl: Int
@@ -103,8 +103,6 @@ case class Bindfix(delim: Delimiter, impl: Int, expl: Int, assoc: Boolean) exten
 
 /**
  * parses MixFix and SimpleFixity
- * 
- * 
  */
 object FixityParser {
    private def toInt(s: String) = try {s.toInt} catch {case e: Exception => throw ParseError("number expected, found: " + s)}
