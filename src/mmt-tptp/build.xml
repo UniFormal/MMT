@@ -8,6 +8,7 @@
         <pathelement location="${deploy}/lib/scala-library.jar"/>
         <pathelement location="${deploy}/lib/scala-reflect.jar"/>
         <pathelement location="${deploy}/lib/scala-compiler.jar"/>
+        <pathelement location="${deploy}/lib/scala-xml.jar"/>
         <pathelement location="${deploy}/lib/tiscaf.jar"/>
     	<pathelement location="${deploy}/main/mmt-api.jar"/>
     	<pathelement location="${deploy}/main/mmt-lf.jar"/>
