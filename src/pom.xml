@@ -33,9 +33,7 @@
         <module>mmt-api/branches/mmt-informal</module>
         <module>mmt-stex</module>
         <module>planetary-mmt</module>
-        <!--
         <module>mmt-webEdit</module>
-        -->
     </modules>
 
     <properties>
