@@ -12,7 +12,8 @@ import info.kwarc.mmt.api.flexiformal._
 import info.kwarc.mmt.stex._
 import symbols.{Constant}
 
-import scala.util.parsing.json._
+import utils._
+//import scala.util.parsing.json._
 import tiscaf._
 import scala.concurrent._
 
@@ -44,7 +45,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   }
   
   def getNotations : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
+    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
       val reqBody = new Body(tk)
       val params = reqBody.asJSON.obj
       val spathS = params.get("spath").getOrElse(throw ServerError("No spath found")).toString
@@ -66,7 +67,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
             case None => notations
             case Some(lang) => notations.filter(_.scope.languages.contains(lang))
           }
-          Server.JsonResponse(JSONArray(notations.map(n => JSONArray(toStringMarkers(n))).toList)).aact(tk)
+          Server.JsonResponse(JSONArray(notations.map(n => JSONArray(toStringMarkers(n).map(s => JSONString(s)) : _*)).toSeq :_*)).aact(tk)
         case x => throw ServerError("Expected path pointing to constant, found :" + x.getClass())
       }
     }
@@ -84,7 +85,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   }
   
   private def getDefinitions : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
+    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
       val reqBody = new Body(tk)
       val params = reqBody.asJSON.obj
       val spathS = params.get("spath").getOrElse(throw ServerError("No spath found")).toString
@@ -110,12 +111,12 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
         }
       }
       
-      Server.JsonResponse(JSONArray(resultNodes.toList)).aact(tk)
+      Server.JsonResponse(JSONArray(resultNodes.map(s => JSONString(s)).toSeq :_*)).aact(tk)
     }
   }
   
   private def getRelated : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
+    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
       val reqBody = new Body(tk)
       val params = reqBody.asJSON.obj
       log("Received immt query request : " + params.toString)
@@ -224,7 +225,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       utils.File.write(location, glossary)
       Server.TextResponse("Success").aact(tk)
     } catch {
-      case e : Exception => Server.TextResponse(e.getMessage() + "\n" + e.getStackTraceString).aact(tk)
+      case e : Exception => Server.TextResponse(e.getMessage() + "\n" + e.getStackTrace.mkString("\n")).aact(tk)
     }
   }
   
@@ -270,51 +271,51 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   }
   
   private def JsonResponse(content : String, info : String, errors : List[Throwable]) : HLet = {
-    val response = new collection.mutable.HashMap[String, Any]()
-    response("content") = content
+    val response = new collection.mutable.HashMap[String, JSON]()
+    response("content") = JSONString(content)
     if (errors == Nil) { //no errors
-      val status = new collection.mutable.HashMap[String, Any]()
-      status("conversion") = 0 //success
-      val messages = new collection.mutable.HashMap[String, Any]()
+      val status = new collection.mutable.HashMap[String, JSON]()
+      status("conversion") = JSONInt(0) //success
+      val messages = new collection.mutable.HashMap[String, JSON]()
       if (info != "") {
-        val message = new collection.mutable.HashMap[String, Any]()
-        message("type") = "Info"
-        message("shortMsg") = info
-        message("longMsg") = info
+        val message = new collection.mutable.HashMap[String, JSON]()
+        message("type") = JSONString("Info")
+        message("shortMsg") = JSONString(info)
+        message("longMsg") = JSONString(info)
         //no srcref
-        messages("0") = JSONObject(message.toMap)
+        messages("0") = JSONObject(message.toSeq : _*)
       }
-      status("messages") = JSONObject(messages.toMap)
-      response("status") = JSONObject(status.toMap)        
+      status("messages") = JSONObject(messages.toSeq : _*)
+      response("status") = JSONObject(status.toSeq : _*)        
     } else { //there are errors
-      val status = new collection.mutable.HashMap[String, Any]()
+      val status = new collection.mutable.HashMap[String, JSON]()
       if (content == "") {
-        status("conversion") = 2 //failed with errors
+        status("conversion") = JSONInt(2) //failed with errors
       } else {
-        status("conversion") = 2 //success with errors
+        status("conversion") = JSONInt(2) //success with errors
       }
-      val messages = new collection.mutable.HashMap[String, Any]()
+      val messages = new collection.mutable.HashMap[String, JSON]()
       errors.zipWithIndex foreach { p => 
-        val message = new collection.mutable.HashMap[String, Any]()
+        val message = new collection.mutable.HashMap[String, JSON]()
         p._1 match {
           case se : SourceError =>
-            message("type") = "Fatal"
-            message("shortMsg") = se.mainMessage
-            message("longMsg") = se.getStackTraceString
-            message("srcref") = JSONObject(List("from" -> JSONObject(List("line" -> se.ref.region.start.line, "col" -> se.ref.region.start.column).toMap), 
-                                 "to" -> JSONObject(List("line" -> se.ref.region.end.line, "col" -> se.ref.region.end.column).toMap)).toMap)
+            message("type") = JSONString("Fatal")
+            message("shortMsg") = JSONString(se.mainMessage)
+            message("longMsg") = JSONString(se.getStackTrace.mkString("\n"))
+            message("srcref") = JSONObject(List("from" -> JSONObject(List("line" -> JSONInt(se.ref.region.start.line), "col"-> JSONInt(se.ref.region.start.column)) : _*), 
+                                 "to" -> JSONObject(List("line" -> JSONInt(se.ref.region.end.line), "col" -> JSONInt(se.ref.region.end.column)) : _*)) : _*)
           case e =>
-            message("type") = "Fatal"
-            message("shortMsg") = e.getMessage
-            message("longMsg") = e.getStackTraceString
+            message("type") = JSONString("Fatal")
+            message("shortMsg") = JSONString(e.getMessage)
+            message("longMsg") = JSONString(e.getStackTrace.mkString("\n"))
             //no srcref :(
           }
-          messages(p._2.toString) = JSONObject(message.toMap)
+          messages(p._2.toString) = JSONObject(message.toSeq : _*)
       }
-      status("messages") = JSONObject(messages.toMap)
-      response("status") = JSONObject(status.toMap)
+      status("messages") = JSONObject(messages.toSeq : _*)
+      response("status") = JSONObject(status.toSeq : _*)
     }
       log("Sending Response: " + response)
-      Server.JsonResponse(JSONObject(response.toMap))     
+      Server.JsonResponse(JSONObject(response.toSeq : _*))     
   }
 }
