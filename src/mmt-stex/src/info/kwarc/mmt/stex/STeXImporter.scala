@@ -21,7 +21,7 @@ abstract class STeXError(msg : String) extends Error(msg)
 
 case class STeXParseError(msg : String, sref : Option[SourceRef]) extends STeXError(msg) {
   private def srefS = sref.map(_.region.toString).getOrElse("")
-  override def toNode = <error type={this.getClass().toString} shortMsg={this.shortMsg} level={Level.Error.toString} sref={srefS}> {this.getStackTraceString} </error>
+  override def toNode = <error type={this.getClass().toString} shortMsg={this.shortMsg} level={Level.Error.toString} sref={srefS}> {this.getStackTrace.mkString("\n")} </error>
 }
 case class STeXLookupError(msg : String) extends STeXError(msg)
 
@@ -66,7 +66,7 @@ class STeXImporter extends Importer {
       cont(doc)
     } catch {
       case e : Throwable => 
-        log("WARNING: Skipping article due to error: " + e.toString() + " \n" + e.getStackTraceString) //skipping declaration
+        log("WARNING: Skipping article due to error: " + e.toString() + " \n" + e.getStackTrace.mkString("\n")) //skipping declaration
     }
   }
   
