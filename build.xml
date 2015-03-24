@@ -57,7 +57,6 @@ to avoid: java.lang.OutOfMemoryError: PermGen space
         <fileset dir="mmt-tptp/lib/">
           <include name="*.jar"/>
         </fileset>
-        <pathelement location="mmt-api/trunk/lib/jfxrt.jar"/>
         <pathelement location="../deploy/lfcatalog/lfcatalog.jar"/>
     </path>
     <taskdef resource="scala/tools/ant/antlib.xml" classpathref="classpath"/>
