@@ -21,7 +21,10 @@ to avoid: java.lang.OutOfMemoryError: PermGen space
     <target name="jedit">
       <ant dir="jEdit-mmt" target="deploy"/>
     </target>
-    <target name="all" depends="tiscaf,api,lfcatalog,lf,tptp,jedit"/>
+    <target name="owl">
+      <ant dir="mmt-owl" target="deploy"/>
+    </target>
+   <target name="all" depends="tiscaf,api,lfcatalog,lf,tptp,jedit,owl"/>
 
     <target name="clean-tiscaf">
         <ant dir="tiscaf" target="clean"/>
@@ -41,8 +44,11 @@ to avoid: java.lang.OutOfMemoryError: PermGen space
     <target name="clean-jedit">
       <ant dir="jEdit-mmt" target="clean"/>
     </target>
+    <target name="clean-owl">
+        <ant dir="mmt-owl" target="clean"/>
+    </target>
 
-    <target name="clean" depends="clean-tiscaf,clean-api,clean-lfcatalog,clean-lf,clean-tptp,clean-jedit"/>
+    <target name="clean" depends="clean-tiscaf,clean-api,clean-lfcatalog,clean-lf,clean-tptp,clean-jedit,clean-owl"/>
 
     <path id="classpath">
         <fileset dir="../deploy/lib/">
