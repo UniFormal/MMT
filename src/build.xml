@@ -21,7 +21,7 @@ to avoid: java.lang.OutOfMemoryError: PermGen space
     <target name="jedit">
       <ant dir="jEdit-mmt" target="deploy"/>
     </target>
-    <target name="all" depends="tiscaf,api,lfcatalog,lf,tptp"/>
+    <target name="all" depends="tiscaf,api,lfcatalog,lf,tptp,jedit"/>
 
     <target name="clean-tiscaf">
         <ant dir="tiscaf" target="clean"/>

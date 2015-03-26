@@ -2,5 +2,5 @@
 jedit.jars=/C:/frabe/Program_Data/jEdit/jars
 
 root=../..
-deploy=${root}/deploy/mmt
+deploy=${root}/deploy/main
 scala.dir=${root}/deploy/lib
