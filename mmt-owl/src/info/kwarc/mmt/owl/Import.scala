@@ -262,7 +262,7 @@ class Import (manager : OWLOntologyManager, controller : Controller) {
 	     //datatype attribution to remember which type		 		  
 	}
 
-	def facetToLF (f: OWLFacetRestriction) : Term = { null
+	def facetToLF (f: OWLFacetRestriction) : Term = {
 		val arg1 = f.getFacet()
 		val dec = IRItoLocalName(arg1.getIRI)
 		val arg2 = f.getFacetValue()

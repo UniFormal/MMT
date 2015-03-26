@@ -261,7 +261,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	        			   }
 	  	        val argsList = args.tail.map(facetToOWL)
 	  	        // argsList.toSet returns one-element set even when argsList has two different elements. Bug? 
-	  	        dataFactory.getOWLDatatypeRestriction(dataType, asJavaSet(argsList.toSet))
+	  	        dataFactory.getOWLDatatypeRestriction(dataType, argsList.toSet)
 	  	    	  	    
           case _ => throw Exception("none of the data ranges")
    	   }
@@ -351,7 +351,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	  case OMA(OWL2OMS("OWL2SUB", "subClassOf"), args) =>
 	  	   	   val subClass = classToOWL(args(0))
 	  	       val superClass = classToOWL(args(1))
-	  	       dataFactory.getOWLSubClassOfAxiom(subClass, superClass, asJavaSet(annotationList.toSet)) 
+	  	       dataFactory.getOWLSubClassOfAxiom(subClass, superClass, setAsJavaSet(annotationList.toSet))
 	  	      // java.util.Set<? extends OWLAnnotation> annotations
 	  	       	  	        
 	  	  case OMA(OWL2OMS("OWL2", "disjointUnionOf"), args) =>
@@ -360,7 +360,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	  	      					case _ => throw Exception("not a class")
 	  	       }
 	  	       val argsList = args.tail.map(classToOWL)
-	  	       dataFactory.getOWLDisjointUnionAxiom(firstClass, asJavaSet(argsList.toSet))
+	  	       dataFactory.getOWLDisjointUnionAxiom(firstClass, setAsJavaSet(argsList.toSet))
 	  	       	  	   	       
 	  	  case OMA(OWL2OMS("OWL2SUB", "equivalentClasses"), args) =>
 	  	      	val argsList = args.map(classToOWL)
@@ -506,7 +506,7 @@ class Export (manager : OWLOntologyManager , controller : Controller) {
 	      manager.addAxiom(ontology, axiom)
         //case consType : Option[OMSTR]
 	  	//case consType : Option[OMI]
-	   null
+	  // null
    }
    
 	def annotationPropertyToOWL(gname : GlobalName ) : OWLAnnotationProperty = { 

@@ -25,7 +25,7 @@ object Diff{
 	
 	if(args.length < 1) 
 	{ println("USAGE: info.kwarc.mmt.owl.Diff NEWFILE [OLDFILE]")  
-	  exit
+	  sys.exit
 	}
 	
 	currentVersion = new File(args(0))
@@ -39,7 +39,7 @@ object Diff{
 	  if(currentDir == null)
 	  { if( (((new File(".svn"))./("text-base"))./(currentName + ".svn-base")).exists() == false)
 	    { println("USAGE: info.kwarc.mmt.owl.Diff NEWFILE OLDFILE")  
-	      exit
+	      sys.exit
 	    }
 	    else 
 	      //.svn/text-base/Name.svn-base 
@@ -48,7 +48,7 @@ object Diff{
 	  else
 	  {  if(((((new File(currentDir))./(".svn"))./("text-base"))./(currentName + ".svn-base")).exists() == false)
 	  	 { println("USAGE: info.kwarc.mmt.owl.Diff NEWFILE OLDFILE")  
-	       exit
+	       sys.exit
 	  	 }
 		 else
 			  // DIR/.svn/text-base/NAME.svn-base

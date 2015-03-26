@@ -28,7 +28,7 @@ import info.kwarc.mmt.api.utils.URI
 	   //http://docs.omdoc.org/older.omdoc
 	    if(args.length < 1) 
 	    { println("USAGE: DocumentPath")  
-	      exit
+	      sys.exit
 	    }
 	    
 		val dpath : DPath = new DPath(URI(args(0)))
