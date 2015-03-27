@@ -1,7 +1,6 @@
 package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import utils._
-import utils.FileConversion._
 
 sealed abstract class Modification
 case object Added extends Modification

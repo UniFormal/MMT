@@ -9,7 +9,6 @@ import symbols._
 import archives._
 import utils._
 import objects._
-import utils.FileConversion._
 
 
 /** apply/unapply methods for the constructor Scala(code: String): Term to represent escaped Scala code in an MMT Term */

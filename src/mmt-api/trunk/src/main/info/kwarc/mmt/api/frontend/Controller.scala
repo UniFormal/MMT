@@ -13,7 +13,6 @@ import ontology._
 import notations._
 import web._
 import utils._
-import utils.FileConversion._
 import uom._
 import moc._
 import gui._

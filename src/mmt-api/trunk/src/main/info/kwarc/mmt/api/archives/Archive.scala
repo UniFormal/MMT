@@ -9,7 +9,6 @@ import patterns._
 import symbols._
 import objects._
 import utils._
-import utils.FileConversion._
 
 import scala.collection.mutable._
 import scala.xml.NodeSeq

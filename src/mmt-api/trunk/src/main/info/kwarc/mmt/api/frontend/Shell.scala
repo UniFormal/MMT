@@ -2,7 +2,6 @@ package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
 import backend._
 import utils._
-import FileConversion._
 
 import javax.swing.UIManager
 

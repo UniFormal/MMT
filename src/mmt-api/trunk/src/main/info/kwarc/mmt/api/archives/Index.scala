@@ -7,7 +7,6 @@ import modules._
 import objects._
 import ontology._
 import utils._
-import utils.FileConversion._
 
 /**
  * a build target for importing an archive in some source syntax

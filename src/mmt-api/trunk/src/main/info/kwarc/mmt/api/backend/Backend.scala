@@ -9,7 +9,6 @@ import info.kwarc.mmt.api.utils.MyList.fromList
 import java.util.zip._
 
 import utils.File
-import utils.FileConversion._
 
 // local XML databases or query engines to access local XML files: baseX or Saxon
 
@@ -164,7 +163,7 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
     * @return the opened archives   
     * @throws NotApplicable if the root is neither a folder nor a mar file
     */
-   def openArchive(root: java.io.File) : List[Archive] = {
+   def openArchive(root: File) : List[Archive] = {
       if (root.isDirectory) {
           val manifest = root / "META-INF" / "MANIFEST.MF"
           if (manifest.exists) {
@@ -190,7 +189,7 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
              root.list.toList flatMap (n => openArchive(root / n))
           }
       } else if (root.isFile && root.getPath.endsWith(".mar")) {    // a MAR archive file
-          val folder = root.getParentFile
+          val folder = root.up
           val name = root.getName
           val newRoot = folder / (name + "-unpacked")
           // check if root is younger than manifest in newRoot

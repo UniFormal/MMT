@@ -1,6 +1,5 @@
 package info.kwarc.mmt.doc
 import info.kwarc.mmt.api.utils._
-import FileConversion._
 
 /**
  * AdjustScaladoc C:\MMT
