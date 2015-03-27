@@ -4,7 +4,6 @@ import archives._
 import backend._
 import parser._
 import utils.{File,FileURI}
-import utils.FileConversion._
 
 import info.kwarc.mmt.twelf.Catalog
 
