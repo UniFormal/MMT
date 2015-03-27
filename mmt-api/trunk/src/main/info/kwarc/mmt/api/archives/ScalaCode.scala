@@ -3,7 +3,6 @@ import info.kwarc.mmt.api._
 import frontend._
 import backend._
 import utils._
-import utils.FileConversion._
 
 trait ScalaArchive extends WritableArchive {
   

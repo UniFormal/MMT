@@ -160,10 +160,8 @@ object File {
          r.close
       }
    }
-}
-
-/** implicit conversions between File and java.io.File */ 
-object FileConversion {
+   /** implicit conversion Java <-> Scala */
    implicit def scala2Java(file: File) : java.io.File = file.toJava
+   /** implicit conversion Java <-> Scala */
    implicit def java2Scala(file: java.io.File) : File = File(file)
 }

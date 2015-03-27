@@ -4,7 +4,6 @@ import frontend._
 import backend._
 import modules._
 import utils._
-import utils.FileConversion._
 
 import java.io.{FileInputStream, FileOutputStream}
 import java.util.zip._
@@ -44,7 +43,7 @@ trait ZipArchive extends WritableArchive {
      * pack everything in a mar zip archive.
      * @param target the target mar file. Default is <name>.mar in the root folder, where <name> is the name of the root
      */
-    def toMar(target: java.io.File = root / (root.getName + ".mar")) {
+    def toMar(target: File = root / (root.getName + ".mar")) {
         log("building math archive at " + target.getPath)
         val out = new ZipOutputStream(new FileOutputStream(target))
         val buffer = new Array[Byte](100000)   // 100KB buffer size

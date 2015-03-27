@@ -8,7 +8,6 @@ import documents._
 import patterns._
 import symbols._
 import utils._
-import utils.FileConversion._
 
 import scala.util.parsing.combinator._
 

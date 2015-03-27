@@ -3,7 +3,6 @@ package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import frontend._
 import utils.File
-import utils.FileConversion._
 
 sealed abstract class BuildTargetModifier {
    def toString(dim: String) : String

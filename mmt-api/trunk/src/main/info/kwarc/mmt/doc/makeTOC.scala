@@ -1,6 +1,5 @@
 package info.kwarc.mmt.doc
 import info.kwarc.mmt.api.utils._
-import FileConversion._
 
 /** An auxiliary application for generating the documentation web site.
  *  It lists the folder passed as its first argument and writes it out as an html snippet.
