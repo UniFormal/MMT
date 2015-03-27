@@ -34,6 +34,7 @@
         <module>mmt-stex</module>
         <module>planetary-mmt</module>
         <module>mmt-webEdit</module>
+        <module>mmt-owl</module>
         <module>jEdit-mmt</module>
     </modules>
 
