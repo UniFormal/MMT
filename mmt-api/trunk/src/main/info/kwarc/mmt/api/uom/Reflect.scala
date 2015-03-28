@@ -19,5 +19,7 @@ class Reflect {
       val t = eval(p).asInstanceOf[Term]
       t
    }
-   
+ 
+   /** an example for using context bounds and reflection */
+   //def make[A: TypeTag](a: Any): A = process(a, implicitly[TypeTag[A]].tpe).asInstanceOf[A]
 }*/
