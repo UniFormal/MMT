@@ -19,7 +19,6 @@ import info.kwarc.mmt.lf._
 
 //import jomdoc.objects.{Term,OMS,OMI}
 
-import info.kwarc.mmt.api.utils.FileConversion._
 import info.kwarc.mmt.api.utils._
 
 import scala.collection.immutable.List

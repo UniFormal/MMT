@@ -1,13 +1,9 @@
 package info.kwarc.mmt.jedit
 
-import org.gjt.sp.jedit._
-
-import errorlist._
-
 import info.kwarc.mmt.api._
-import archives.source
-import utils._
-import utils.FileConversion._
+import info.kwarc.mmt.api.archives.source
+import info.kwarc.mmt.api.utils._
+import org.gjt.sp.jedit._
 
 /** This class is factored out from MMTPlugin to structure the code better.
  * It collects all compilation-related functionality. */

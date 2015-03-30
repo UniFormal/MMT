@@ -1,10 +1,7 @@
 package info.kwarc.mmt.tptp
 
-import info.kwarc.mmt.api._
-import archives._
-import documents._
-import utils._
-import FileConversion._
+import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.utils._
 
 class TPTPImporter extends TraversingBuildTarget {
    val key: String = "tptp-twelf"
@@ -39,7 +36,7 @@ class TPTPImporter extends TraversingBuildTarget {
          val command = tptpCommand.map { s =>
             s.replace("INFILE", escape(bt.inFile)).replace("OUTDIR", escape(outFile.up))
          }
-         log(command.mkString("  "))
+         log(command.mkString(" "))
          val result = ShellCommand.run(command: _*)
          result foreach { s =>
             bt.errorCont(LocalError(s))

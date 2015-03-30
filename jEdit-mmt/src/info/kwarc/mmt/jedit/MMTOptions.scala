@@ -1,9 +1,7 @@
 package info.kwarc.mmt.jedit
-import org.gjt.sp.jedit._
-
 import info.kwarc.mmt.api._
-import utils._
-import utils.FileConversion._
+import info.kwarc.mmt.api.utils._
+import org.gjt.sp.jedit._
 
 /** interface to the jedit settings file and the options dialog */
 abstract class MMTOption[A] {
