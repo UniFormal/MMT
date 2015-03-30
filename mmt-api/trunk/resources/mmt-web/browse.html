@@ -68,8 +68,6 @@
 	<div class="col-md-12">
 		<div class="col-md-offset-3 col-md-6">
 					<div class="btn-group btn-group-lg  btn-group-justified" role="group" aria-label="top">
-						<a type="button" class="btn btn-primary" id="start" ng-show="startClicked == 0" ng-click="start()"><b>Archives</b></a>
-						<a type="button" class="btn btn-success" ng-show="startClicked == 1" ng-click="startClicked = 0; showArc = 0; showMain = 0; showMainKey = 0"><b>Archives</b></a>
 						<a type="button" class="btn btn-primary" ng-show="searchClicked == 0" ng-click="searchClicked = 1; showSearch = 1; showSearchKey = 1"><b>Search</b></a>
 						<a type="button" class="btn btn-success" ng-show="searchClicked == 1" ng-click="searchClicked = 0; showSearch = 0; showSearchKey = 0"><b>Search</b></a>
 						<a type="button" class="btn btn-primary" ng-show="parseClicked == 0" ng-click="parseClicked = 1; showParse = 1; showParseKey = 1"><b>Parse</b></a>
@@ -89,10 +87,16 @@
 	</div>
 
 	<div class="col-md-4">
-		<div class="panel panel-default" id="panelArc" ng-show="showArc == 1">
+		<div class="panel panel-default" id="panelArc">
 			<div class="bg-primary">
 				<div class="panel-heading">
 					<b>Archives</b>
+					<button class="btn btn-info btn-xs pull-right" ng-show="showMainKey==1" ng-click="showMainKey=0">
+						<span class="glyphicon glyphicon-chevron-up" aria-hidden="true"></span>
+					</button>
+					<button class="btn btn-info btn-xs pull-right" ng-show="showMainKey==0" ng-click="showMainKey=1">
+						<span class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
+					</button>
 				</div>
 			</div>
 			<div class="panel-body" ng-show="showMainKey==1">
@@ -106,7 +110,7 @@
 
 	<!-- page content -->
 	<div class = "col-md-8">
-		<div class="panel panel-default" id="panel0" ng-show="showMain == 1">
+		<div class="panel panel-default" id="panel0">
 			<div class="bg-primary">
 				<div class="panel-heading">
 					<b>Main</b>
@@ -268,6 +272,9 @@
 			<div class="panel panel-default" id="panel3" ng-show="showParse==1">
 				<div class="panel-heading">
 					<b>Parse</b>
+					<button class="btn btn-info btn-xs pull-right" ng-show="showParse==1" ng-click="showParseKey=0; showParse=0; parseClicked=0">
+						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+					</button>
 					<button class="btn btn-info btn-xs pull-right" ng-show="showParseKey==1" ng-click="showParseKey=0">
 						<span class="glyphicon glyphicon-chevron-up" aria-hidden="true"></span>
 					</button>
