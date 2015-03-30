@@ -1,7 +1,7 @@
 package info.kwarc.mmt.jeditsetup
 
+import info.kwarc.mmt.api.utils.File._
 import info.kwarc.mmt.api.utils._
-import FileConversion._
 
 object Setup {
    def main(args: Array[String]) {
@@ -19,15 +19,15 @@ object Setup {
       val setup = programLocation.getParentFile
       val jedit = File(args(1))
       val install = installOpt.get
-      
+
       println("trying to (un)install from " + setup + " to " + jedit)
       if (! setup.isDirectory || ! jedit.isDirectory) {
          println("error: not valid directories")
          sys.exit
       }
-      
+
       /** copies or delete a file depending on install/uninstall */
-      def copyOrDelete(f: List[String]) { 
+      def copyOrDelete(f: List[String]) {
          if (install) {
             copy(setup / f, jedit / f)
          } else {
@@ -54,7 +54,7 @@ object Setup {
             if (line.contains("</MODES>")) {
                File.ReadLineWise(scat) {l => newCatalog ::= l}
             }
-            newCatalog ::= line 
+            newCatalog ::= line
          } else {
             if (! modeEntries.exists(e => line.contains(e)))
                newCatalog ::= line

@@ -5,7 +5,6 @@ import java.io.File
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.moc._
-import info.kwarc.mmt.api.utils.FileConversion._
 
 import scala.xml._
 

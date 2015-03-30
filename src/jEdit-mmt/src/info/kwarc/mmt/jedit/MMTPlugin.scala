@@ -1,16 +1,12 @@
 package info.kwarc.mmt.jedit
 
-import info.kwarc.mmt.api._
-import parser._
-import frontend._
-import utils._
-import utils.FileConversion._
-
-import org.gjt.sp.jedit._
-import textarea._
-import msg._
-
 import errorlist._
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.utils.File._
+import org.gjt.sp.jedit._
+import org.gjt.sp.jedit.msg._
+import org.gjt.sp.jedit.textarea._
 
 
 /**
@@ -24,9 +20,9 @@ class MMTPlugin extends EBPlugin with Logger {
    val report = controller.report
    val logPrefix = "jedit"
    val errorSource = new DefaultErrorSource("MMT")
-   
+
    val compileActions = new CompileActions(this)
-   
+
    /** implements onNavigate hook in terms of the methods of MMTHyperlink */
    val mmtListener = new ChangeListener {
       override def onNavigate(p: Path) {
@@ -40,7 +36,7 @@ class MMTPlugin extends EBPlugin with Logger {
          }
       }
    }
-   
+
    /** called by jEdit when plugin is loaded */
    override def start {
       val home = getPluginHome
@@ -64,7 +60,7 @@ class MMTPlugin extends EBPlugin with Logger {
       controller.cleanup
       errorlist.ErrorSource.unregisterErrorSource(errorSource)
    }
-   
+
    private def customizeEditPane(editPane: EditPane) {
        val ta = editPane.getTextArea
        val painter = ta.getPainter
@@ -115,7 +111,7 @@ object MMTPlugin {
     * @param buffer a buffer
     * @param index offset in the buffer
     * @return the id at the offset, if any, as (line,beginOffsetInBuffer,endOffsetInBuffer,id)
-    */ 
+    */
    def getCurrentID(buffer: Buffer, index: Int) : Option[(Int,Int,Int,String)] = {
       val line = buffer.getLineOfOffset(index)
       val lineStart = buffer.getLineStartOffset(line)
