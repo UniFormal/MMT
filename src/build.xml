@@ -21,6 +21,9 @@ to avoid: java.lang.OutOfMemoryError: PermGen space
     <target name="jedit">
       <ant dir="jEdit-mmt" target="deploy"/>
     </target>
+    <target name="jedit-install">
+      <ant dir="jEdit-mmt" target="install"/>
+    </target>
     <target name="owl">
       <ant dir="mmt-owl" target="deploy"/>
     </target>
