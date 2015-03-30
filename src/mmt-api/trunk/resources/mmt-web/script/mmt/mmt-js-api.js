@@ -135,7 +135,7 @@ var mmt = {
          var thy = arr[0] + '?' + arr[1]
          this.activeTheory = thy;
          $('#parseForm #activetheory').val(thy);
-		  $('#searchForm #activetheory').val(thy);
+		  $('#searchForm #theory').val(thy);
 
 	  }
    },

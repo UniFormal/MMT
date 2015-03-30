@@ -64,6 +64,62 @@ browserApp.controller('browserController', function ($scope, $log) {
     };
 
     $(function () {
+        $("#pathtree").jstree({
+            "core" : {"animation": 0},
+            "xml_data" : {
+                "ajax" : {
+                    "url" : "/:tree",
+                    "data" : function(node) {return (node == -1) ? ":root" : node.attr("id");}
+                },
+                "xsl" : "nest"
+            },
+            "themes" : {"theme" : "classic", "icons" : false},
+            "plugins" : ["xml_data", "themes", "ui", "hotkeys"]
+        });
+    });
+
+    $(function(){
+        var inpbox = $('#parseForm #inputbox');
+        var ana = $('#parseForm #inputanalyze')[0];
+        var simp = $('#parseForm #inputsimplify')[0];
+        function simpPres(e) {
+            var eS = simp.checked ? qmt.simplify(e) : e;
+            return qmt.present(eS);
+        }
+        $('#parseForm #inputbox,#parseForm #inputanalyze,#parseForm #inputsimplify').on('change keyup paste', function(){
+            var q = qmt.parse(qmt.literalString(inpbox.val()));
+            if (ana.checked) {
+                var qA = qmt.analyze(q);
+                q = qmt.let(qA, qmt.tuple(simpPres(qmt.bound(1)) + simpPres(qmt.bound(2))));
+            } else {
+                q = simpPres(q);
+            }
+            qmt.exec(q,
+                function(resultNode){
+                    var result = $(resultNode.firstChild).children();
+                    var inpviewterm = $('#parseForm #inputviewterm')[0];
+                    var inpviewtype = $('#parseForm #inputviewtype')[0];
+                    var tm = result[0].firstChild;
+                    var tp = ana.checked ? result[1].firstChild : window.document.createElement('div');
+                    inpviewterm.replaceChild(tm, inpviewterm.firstChild);
+                    inpviewtype.replaceChild(tp, inpviewtype.firstChild);
+                }
+            );
+        })
+    });
+
+    $(function(){$('#latin-dialog').dialog({ autoOpen: false})});
+
+    function toggleClick(elem,label){
+        var cls = label != null ? label : 'toggleTarget';
+        $(elem).parent().closest('div').find('.' + cls).toggle();
+    }
+
+    function resultClick(p){
+        navigation.navigate(p);
+    }
+
+    $(function () {
         $('[data-toggle="tooltip"]').tooltip()
     });
 

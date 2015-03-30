@@ -40,8 +40,7 @@
   <script type="text/javascript" src="script/jobad/modules/interactive-viewing.js"></script>
 
     <!-- JOBAD Init -->
-     
-   
+
   <script type="text/javascript">
       var JOBAD1;
       $(function(){
@@ -54,78 +53,6 @@
   </script>
 	<script src="script/angularjs/angular-1.3.14/angular.js"></script>
 	<script src="script/browseController.js"></script>
-  <script type="text/javascript">
-    $(function () {
-       $("#pathtree").jstree({
-           "core" : {"animation": 0},
-           "xml_data" : {
-              "ajax" : {
-                 "url" : "/:tree",
-                 "data" : function(node) {return (node == -1) ? ":root" : node.attr("id");}
-              },
-              "xsl" : "nest"
-           },
-           "themes" : {"theme" : "classic", "icons" : false},
-           "plugins" : ["xml_data", "themes", "ui", "hotkeys"]
-       });
-   });
-
-   $(function(){
-      var inpbox = $('input#inputbox');
-      var ana = $('input#inputanalyze')[0];
-      var simp = $('input#inputsimplify')[0];
-      function simpPres(e) {
-         var eS = simp.checked ? qmt.simplify(e) : e;
-         return qmt.present(eS);
-      }
-      $('#parseForm #inputbox,#parseForm #inputanalyze,#parseForm #inputsimplify').on('change keyup paste', function(){
-         var q = qmt.parse(qmt.literalString(inpbox.val()));
-         if (ana.checked) {
-            var qA = qmt.analyze(q);
-            q = qmt.let(qA, qmt.tuple(simpPres(qmt.bound(1)) + simpPres(qmt.bound(2))));
-         } else {
-            q = simpPres(q);
-         }
-		   qmt.exec(q,
-		      function(resultNode){
-		         var result = $(resultNode.firstChild).children();
-		         var inpviewterm = $('#parseForm #inputviewterm')[0];
-		         var inpviewtype = $('#parseForm #inputviewtype')[0];
-		         var tm = result[0].firstChild
-		         var tp = ana.checked ? result[1].firstChild : window.document.createElement('div');
-		         inpviewterm.replaceChild(tm, inpviewterm.firstChild);
-		         inpviewtype.replaceChild(tp, inpviewtype.firstChild);
-		      }
-		   );
-		})
-   });
-
-   $(function(){$('#latin-dialog').dialog({ autoOpen: false})});
-  </script>
-  
-  <script type="text/javascript">
-     function toggleClick(elem,label){
-        var cls = label != null ? label : 'toggleTarget'
-        $(elem).parent().closest('div').find('.' + cls).toggle()
-     }
-  </script>
-  
-  
-  
-  <script type="text/javascript">
-      function resultClick(p){
-         navigation.navigate(p);
-      }
-   </script>
-
-   <script type="text/javascript">
-    $(function(){
-    	$( "#start" ).click(function() {     
-    		   $('#first').toggle("slide", { direction: "left" }, 1000);
-
-    		});
-    });
-   </script>
 
 </head>
 
@@ -227,7 +154,7 @@
 				</button>
 			</div>
 			<div class="panel-body" ng-show="showSearchKey==1">
-				<form class="form-horizontal" name="searchForm">
+				<form class="form-horizontal" id="searchForm" name="searchForm">
 					<div class="form-group">
 						<div class="centered">
 							<label for="base" class="control-label">
@@ -370,23 +297,24 @@
 						</div>
 						<div class="form-group">
 							<div class="col-md-offset-4">
-								<textarea class="form-control" name="inputBox" rows="3"></textarea>
+								<textarea class="form-control" id="inputbox" rows="3"></textarea>
 							</div>
 						</div>
+
 						<div class="form-group">
 							<div class="col-md-offset-1">
-								<label for="parseResult" class="col-md-3 control-label">
+								<label class="col-md-3 control-label">
 									<div class="pull-right">Result:</div>
 								</label>
-								<div class="col-md-4" name="parseResult" id="parseResult"><span name="inputViewTerm" id="inputviewterm"></span></div>
+								<div class="col-md-4" id="inputviewterm"><span></span></div>
 							</div>
 						</div>
 						<div class="form-group">
 							<div class="col-md-offset-1">
-								<label for="inferredType" class="col-md-3 control-label">
+								<label class="col-md-3 control-label">
 									<div class="pull-right">Inferred Type:</div>
 								</label>
-								<div class="col-md-4" name="inferredType" id="inferredType"><span name="inputViewType" id="inputviewtype"></span></div>
+								<div class="col-md-4" id="inputviewtype"><div><span></span></div></div>
 							</div>
 						</div>
 					</form>
