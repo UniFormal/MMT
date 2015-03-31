@@ -3,6 +3,8 @@ package info.kwarc.mmt.api.utils
 import scala.xml._
 import scala.reflect.runtime.universe._
 
+trait Group
+
 /**
  * This class uses Scala reflection to parse XML into user-defined case classes.
  * 
@@ -20,8 +22,8 @@ import scala.reflect.runtime.universe._
  *   * t: A where A is one the case classes: recursive call on the single child of the child with tag t
  *   * t: Option[A]: accordingly, but the child may be absent
  *   * t: List[A]: accordingly but the child may have any number of children
- *   * _a: A: recursive call on the first remaining child
- *   * children: List[A]: result of recursively processing all remaining children
+ *   * _a: A, Option[A], List[A]: like the t-cases above but taking the next available child(ren)
+ *      These must come last.
  *   The type A does not have to be a case class, e.g., the elements in a list can have the tags of subclasses of A.
  */
 class XMLToScala(pkg: String) {
@@ -31,7 +33,7 @@ class XMLToScala(pkg: String) {
    /** the Type of String */
    private val StringType = typeOf[String]
    /** It's non-trivial to construct Type programmatically. So we take them by reflecting Dummy */
-   private case class Dummy(a: Int, b: Boolean, c: List[Int], d: Option[Int])
+   private case class Dummy(a: Int, b: Boolean, c: List[Int], d: Option[Int], e: Group)
    /** the argument types of Dummy */
    private val dummyTypes = typeOf[Dummy].companion.member(TermName("apply")).asMethod.paramLists.flatten.toList.map(_.asTerm.info)
    /** the Type of Int (strangely != typeOf[Int]) */
@@ -51,6 +53,8 @@ class XMLToScala(pkg: String) {
    private object ListType extends TypeRefMatcher(dummyTypes(2).asInstanceOf[TypeRef].sym)
    /** matches the Type of List[A] */
    private object OptionType extends TypeRefMatcher(dummyTypes(3).asInstanceOf[TypeRef].sym)
+   /** the Type of Group */
+   private val GroupType = dummyTypes(4)
    
    /** thrown on all errors, e.g., when expected classes are not present or XML nodes are not present */
    case class ExtractError(msg: String) extends Exception(msg)
@@ -73,9 +77,16 @@ class XMLToScala(pkg: String) {
       val c = Class.forName(pkg + "." + scalaName(node.label))
       apply(node, m.classSymbol(c).toType)
    }
+   
+   private case class Argument(scalaName: Name, userName: String, scalaType: Type)
 
-   /** parse a Node of expected Type tp */
-   private def apply(node: Node, tp: Type): Any = {
+   /** 
+    *  abstracts away Scala's reflection boilerplate
+    *  @param tp the case class to instantiate
+    *  @param obtain computes the argument value for each argument declaration of that case class
+    *  @return the instance of that case class using the obtained argument values
+    */
+   private def makeInstance(tp: Type)(obtain: Argument => Any): Any = {
       /* Type = Scala type of reflected Scala types
        * Symbol = reflection of a declaration
        * module = companion object
@@ -85,9 +96,22 @@ class XMLToScala(pkg: String) {
       // the symbol of its apply method
       val applyMethodSymbol = tp.companion.member(TermName("apply")).asMethod
       // the arguments Name:Type of the apply methods, and the string representation of the Name
-      val args: List[(Name, String, Type)] = applyMethodSymbol.paramLists.flatten.map {arg =>
-         (arg.name, arg.name.decodedName.toString, arg.asTerm.info)
+      val arguments: List[Argument] = applyMethodSymbol.paramLists.flatten.map {arg =>
+         Argument(arg.name, arg.name.decodedName.toString, arg.asTerm.info)
       }
+      val values = arguments map obtain
+      // evaluate moduleSymbol (to a singleton class) and get its runtime instance 
+      val module = m.reflectModule(moduleSymbol).instance
+      // evaluate the apply method of the instance
+      val applyMethod = m.reflect(module).reflectMethod(applyMethodSymbol)
+      // call the apply method on the values computed above
+      val result = applyMethod(values:_*)
+      //println("found: " + result)
+      result
+   }
+
+   /** parse a Node of expected Type tp */
+   private def apply(node: Node, tp: Type): Any = {
       // the remaining children of node (removed once processed) 
       var children = cleanNodes(node.child.toList).zipWithIndex
       /** finds the string V by looking at (i) key="V" (ii) <key>V</key> (iii) "" */
@@ -97,7 +121,7 @@ class XMLToScala(pkg: String) {
          if (att != "")
             att
          else {
-            val keyChildren = getKeyedChild(key)
+            val keyChildren = getKeyedChild(key, false)
             keyChildren match {
                case Some(Text(s) :: Nil) => s
                case Some(nodes) if nodes.forall(_.isInstanceOf[SpecialNode]) => nodes.text // turn Text, EntityRef, Atom etc. into a single Text node
@@ -107,45 +131,60 @@ class XMLToScala(pkg: String) {
          }
       }
       /** finds the nodes NODES by looking at (i) <label>NODES</label> (ii) None */
-      def getKeyedChild(scalaKey: String): Option[List[Node]] = {
+      def getKeyedChild(scalaKey: String, keepLabel: Boolean): Option[List[Node]] = {
          val label = xmlName(scalaKey)
          val (child, i) = children.find {case (c,_) => c.label == label}.getOrElse {
             return None
          }
          children = children.filter(_._2 != i)
-         Some(cleanNodes(child.child.toList))
+         if (keepLabel)
+            Some(List(child))
+         else
+            Some(cleanNodes(child.child.toList))
       }
       
       /** compute argument values one by one depending on the needed type */
-      val values = args.map {
+      def getArgumentValue(arg: Argument): Any = arg match {
          // base type: use getAttributeOrChild
-         case (n, nS, StringType) =>
+         case Argument(n, nS, StringType) =>
             getAttributeOrChild(nS)
-         case (n, nS, IntType) =>
+         case Argument(n, nS, IntType) =>
             val s = getAttributeOrChild(nS)
             try {s.toInt}
             catch {case _: Exception => throw ExtractError(s"integer expected at key $nS: $s")}
-         case (n, nS, BoolType) =>
+         case Argument(n, nS, BoolType) =>
             val s = getAttributeOrChild(nS)
             s.toLowerCase match {
                case "true" => true
                case "false" | "" => false
                case b => throw ExtractError(s"boolean expected at key $nS: $b")
             }
-         // special argument "children": all remaining nodes
-         case (_, "children", _) =>
-            children.map {c => apply(c._1)}
          // special argument _name: first remaining node
-         case (_, nS, _) if nS.startsWith("_") =>
-            val (child, _) = children.head
-            children = children.tail
-            apply(child)
+         case Argument(_, nS, argTp) if nS.startsWith("_") =>
+            argTp match {
+               case ListType(elemType) =>
+                  val vs = children.map {c => apply(c._1)}
+                  children = Nil
+                  vs
+               case OptionType(elemType) =>
+                  if (children.isEmpty) None
+                  else {
+                     val (child,_) = children.head
+                     children = children.tail
+                     Some(apply(child))
+                  }
+               case _ =>
+                  val (child, _) = children.head
+                  children = children.tail
+                  apply(child)
+            }
          // default case: use getKeyedChild
-         case (n, nS, argTp) =>
+         case Argument(n, nS, argTp) =>
             lazy val wrongLength = ExtractError(s"no child with label $nS (of type $argTp) found in $node")
             lazy val noNode      = ExtractError(s"$nS does not have exactly one child (of type $argTp) in $node")
             var omitted = false
-            val childNodes = getKeyedChild(nS).getOrElse {
+            val (keepLabel, nS2) = if (nS.endsWith("_")) (true, nS.substring(0,nS.length-1)) else (false, nS)
+            val childNodes = getKeyedChild(nS2, keepLabel).getOrElse {
                omitted = true
                Nil
             }
@@ -165,6 +204,9 @@ class XMLToScala(pkg: String) {
                      Some(apply(childNodes.head))
                   else
                      throw wrongLength
+               // group A
+               case _ if argTp <:< GroupType =>
+                  makeInstance(argTp)(getArgumentValue)
                // A
                case _ =>
                   if (omitted)
@@ -175,40 +217,37 @@ class XMLToScala(pkg: String) {
                      apply(childNodes.head)
             }
       }
-      // evaluate moduleSymbol (to a singleton class) and get its runtime instance 
-      val module = m.reflectModule(moduleSymbol).instance
-      // evaluate the apply method of the instance
-      val applyMethod = m.reflect(module).reflectMethod(applyMethodSymbol)
-      // call the apply method on the values computed above
-      val result = applyMethod(values:_*)
-      //println("found: " + result)
-      result
+      makeInstance(tp)(getArgumentValue)
    }
 }
 
 // case classes for testing
 
-case class A(a: String, b: Int, c: Boolean, d: B, e: List[B], f: Option[B], g: Option[C], children: List[C])
-case class B(a: String, children: List[B])
+case class A(a: String, b: Int, c: Boolean, d: B, e: List[B], f: Option[B], g: Option[C], _cs: List[C])
+case class B(a: String, _bs: List[B])
 abstract class C
 case class Ca(a: String) extends C
 case class Cb(_c1: C, _c2: C) extends C
+case class Cc(a: String, bc: G, d: String) extends C
+case class G(b: String, h: H) extends Group
+case class H(c: String) extends Group
 
 // test cases
 object Test {
    val n1 = <A a="a" b="1" c="true">
               <d><B><a>a</a></B></d>
               <e><B a="a1"/> <B a="a2"/></e>
-              <g><Ca a="a"/></g>
+              <g><Ca a="a" b="b" c="c"/></g>
               <Ca a="a"/>
               <Cb><Ca a="a0"/> <Ca a="a1"/></Cb>
+              <Cc a="a" b="b" c="c" d="d"/>
             </A>
    val r1 = A("a", 1, true,
                B("a", Nil),
                List(B("a1",Nil), B("a2",Nil)),
                None,
                Some(Ca("a")),
-               List(Ca("a"), Cb(Ca("a0"), Ca("a1")))
+               List(Ca("a"), Cb(Ca("a0"), Ca("a1")), Cc("a", G("b", H("c")), "d"))
              )
    def main(args: Array[String]) {
       val a1 = new XMLToScala("info.kwarc.mmt.api.utils").apply(n1)
