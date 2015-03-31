@@ -39,7 +39,6 @@ browserApp.controller('browserController', function ($scope, $log) {
     };
 
     $scope.search = function () {
-        $scope.showSearchKey = 0;
         $scope.showResultsKey = 1;
         var base   = $scope.baseInput;
         var module = $scope.moduleInput;
@@ -124,7 +123,7 @@ browserApp.controller('browserController', function ($scope, $log) {
     });
 
     $(function () {
-        $('[data-toggle="popover"]').popover()
+        $('[data-toggle="popover"]').popover({html:true})
     });
 
 });
