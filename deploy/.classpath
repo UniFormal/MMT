@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry exported="true" kind="lib" path="lfcatalog/lfcatalog.jar"/>
-	<classpathentry kind="lib" path="lib/svnkit.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/tiscaf.jar"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="lib" path="main/mmt-api.jar"/>
