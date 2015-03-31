@@ -10,7 +10,7 @@ class PVSImporter extends Importer {
    def includeFile(n: String) : Boolean = n.endsWith(".xml")
    _inDim = Dim("xml")
    
-   private val parseXML = new XMLToScala("info.kwarc.mmt.pvs")
+   private val parseXML = new XMLToScala("info.kwarc.mmt.pvs.syntax")
    
    def importDocument(bf: BuildTask, seCont: Document => Unit) {
       val t = parseXML(bf.inFile)
