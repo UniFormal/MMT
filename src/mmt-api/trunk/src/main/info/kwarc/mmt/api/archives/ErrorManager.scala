@@ -34,7 +34,7 @@ case class BuildError(archive: Archive, target: String, path: ArchivePath,
                       shortMsg: String, longMsg: String,
                       stackTrace: List[List[String]]) {
   def toStrList: List[String] = {
-    val f = archive / errors / target / path.segments
+    val f = (archive / errors / target / path.segments).addExtension("err")
     List(level.toString,
       tp,
       archive.id,
