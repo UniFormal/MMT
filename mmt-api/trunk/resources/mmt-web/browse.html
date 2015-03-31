@@ -63,24 +63,20 @@
 	<!-- bar -->
 	<br><br/>
 	<div class="col-md-12">
+		<div class="pull-right">
+			<a tabindex="0" class="text-info" role="button" data-toggle="popover" data-trigger="focus" data-placement="left" data-content="See the documentation <a href='https://svn.kwarc.info/repos/MMT/doc/html/index.html'>here</a> in the MMT repository for an overview of features!"><b>Help</b></a>
+		</div>
+	</div>
+	<div class="col-md-12">
 		<div class="centered"><h2 class="text-muted"><b>MMT</b></h2></div>
 	</div>
 	<div class="col-md-12">
-		<div class="col-md-offset-3 col-md-6">
+		<div class="col-md-offset-5 col-md-2">
 					<div class="btn-group btn-group-lg  btn-group-justified" role="group" aria-label="top">
 						<a type="button" class="btn btn-primary" ng-show="searchClicked == 0" ng-click="searchClicked = 1; showSearch = 1; showSearchKey = 1"><b>Search</b></a>
 						<a type="button" class="btn btn-success" ng-show="searchClicked == 1" ng-click="searchClicked = 0; showSearch = 0; showSearchKey = 0"><b>Search</b></a>
-						<a type="button" class="btn btn-primary" ng-show="parseClicked == 0" ng-click="parseClicked = 1; showParse = 1; showParseKey = 1"><b>Parse</b></a>
 						<a type="button" class="btn btn-success" ng-show="parseClicked == 1" ng-click="parseClicked = 0; showParse = 0; showParseKey = 0"><b>Parse</b></a>
-						<a type="button" class="btn btn-success" ng-show="showHelpKey==1" ng-click="showHelpKey=0"><b>Help</b></a>
-						<a type="button" class="btn btn-primary" ng-show="showHelpKey==0" ng-click="showHelpKey=1"><b>Help</b></a>
-					</div>
-					<div class="panel panel-default" ng-show="showHelpKey==1">
-						<div class="panel-body bg-info">
-							<div class="centered">
-								<p><h4><b>See the documentation <a href="https://svn.kwarc.info/repos/MMT/doc/html/index.html">here</a> in the MMT repository for an overview of features!</b></h4></p>
-							</div>
-						</div>
+						<a type="button" class="btn btn-primary" ng-show="parseClicked == 0" ng-click="parseClicked = 1; showParse = 1; showParseKey = 1"><b>Parse</b></a>
 					</div>
 		</div>
 		<br> <br> <br> <br>
@@ -143,7 +139,7 @@
 	</div>
 
 
-	<div class = "col-md-offset-2 col-md-8">
+	<div class = "col-md-4">
 		<div class="panel panel-default" id="panel1" ng-show="showSearch == 1">
 			<div class="panel-heading">
 				<b>Search Form</b>
@@ -156,108 +152,82 @@
 				<button class="btn btn-info btn-xs pull-right" ng-show="showSearchKey==0" ng-click="showSearchKey=1">
 					<span class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
 				</button>
+				<button class="btn btn-info btn-xs pull-right" ng-show="showSearch==1"
+						data-toggle="popover" data-trigger="focus" data-placement="left" data-content="Enter <a href='http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html#sum'>Java regular expressions</a> to filter based on the URI of a declaration">
+					<span class="glyphicon glyphicon-asterisk" aria-hidden="true"></span>
+				</button>
 			</div>
 			<div class="panel-body" ng-show="showSearchKey==1">
 				<form class="form-horizontal" id="searchForm" name="searchForm">
 					<div class="form-group">
-						<div class="centered">
-							<label for="base" class="control-label">
-								<div class="alert alert-info" role="alert">
-									Enter <a href="http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html#sum">Java regular expressions</a> to filter based on the URI of a declaration<br/>
-								</div>
-							</label>
-						</div>
-					</div>
-					<div class="form-group">
-						<label for="base" class="col-md-2 control-label"><div class="pull-right">Namespace</div></label>
-						<div class="col-md-3">
+						<label for="base" class="col-md-4 control-label"><div class="pull-right">Namespace</div></label>
+						<div class="col-md-6">
 							<input type="text" class="form-control" size="30" ng-model="baseInput" id="base"/>
 						</div>
 					</div>
 					<div class="form-group">
-						<label for="module" class="col-md-2 control-label"><div class="pull-right">Theory</div></label>
-						<div class="col-md-3">
+						<label for="module" class="col-md-4 control-label"><div class="pull-right">Theory</div></label>
+						<div class="col-md-6">
 							<input type="text" class="form-control" ng-model="moduleInput" size="30" id="module"/>
 						</div>
 					</div>
 					<div class="form-group">
-						<label for="name" class="col-md-2 control-label"><div class="pull-right">Name</div></label>
-						<div class="col-md-3">
+						<label for="name" class="col-md-4 control-label"><div class="pull-right">Name</div></label>
+						<div class="col-md-6">
 							<input type="text" class="form-control" ng-model="nameInput" size="30" id="name"/>
 						</div>
 					</div>
 					<div class="form-group">
-						<label class="col-md-2 control-label"><div class="pull-right">Roles</div></label>
-						<div class="checkbox col-md-10">
+						<label class="col-md-4 control-label"><div class="pull-right">Roles</div></label>
+						<div class="checkbox col-md-6">
 							<label><input type="checkbox" ng-model="rolesConstant" id="constant"> Primitive </label>
-						</div>
-					</div>
-					<div class="form-group">
-						<div class="col-md-offset-2 col-md-10">
-							<div class="checkbox">
-								<label><input type="checkbox" ng-model="rolesDefined" id="defined"> Defined </label>
-							</div>
-						</div>
-					</div>
-					<div class="form-group">
-						<div class="col-md-offset-2 col-md-10">
-							<div class="checkbox">
-								<label><input type="checkbox" ng-model="rolesAxiom" id="axiom"> Axiom </label>
-							</div>
-						</div>
-					</div>
-					<div class="form-group">
-						<div class="col-md-offset-2 col-md-10">
-							<div class="checkbox">
-								<label><input type="checkbox" ng-model="rolesTheorem" id="theorem"> Theorem </label>
-							</div>
+							<label><input type="checkbox" ng-model="rolesDefined" id="defined"> Defined </label>
+							<label><input type="checkbox" ng-model="rolesAxiom" id="axiom"> Axiom </label>
+							<label><input type="checkbox" ng-model="rolesTheorem" id="theorem"> Theorem </label>
 						</div>
 					</div>
 					<div class="form-group">
 						<label for="theory" class="col-md-4 control-label"><div class="pull-right">Enter an expression over theory</div></label>
-						<div class="col-md-3">
+						<div class="col-md-6">
 							<input type="text" size="30" class="form-control" ng-model="theoryInput" id="theory" class="activetheory">
 						</div>
 					</div>
 					<div class="form-group">
 						<label for="type" class="col-md-4 control-label"><div class="pull-right">The expression matches inside the </div></label>
-						<div class="checkbox col-md-1">
+						<div class="checkbox col-md-2">
 							<label><input type="checkbox" id="type" ng-model="expType" checked="checked"/>Type</label>
 						</div>
-						<label for="type" class="col-md-2 control-label"><div class="pull-right"> or </div></label>
-						<div class="checkbox col-md-4">
+						<label for="type" class="col-md-1 control-label"> or </label>
+						<div class="checkbox col-md-2">
 							<label><input type="checkbox" ng-model="expDef" id="definition"/>Definitions of a Declaration</label>
 						</div>
 					</div>
 					<div class="form-group">
 						<div class="col-md-offset-4">
-							<div class="col-md-3">
+							<div class="col-md-6">
 								<input type="text" size="30" class="form-control" ng-model="patternInput" id="pattern">
 							</div>
+
 						</div>
 					</div>
 					<div class="form-group">
 						<div class="col-md-offset-4">
 							<p class="help-block">Use $x,y,z:query to enter unification variables.</p>
-						</div>
-					</div>
-					<div class="form-group">
-						<div class="col-md-offset-8">
-							<div class="col-md-7">
-								<button class="btn btn-primary btn-block" ng-model="searchFinal" value="Search" id="search" ng-click="search()">Search</button>
-							</div>
+							<a role="button" class="bg-info pull-right" value="Search" id="search" ng-click="search()">
+								<b>Search</b> <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+							</a>
 						</div>
 					</div>
 				</form>
 			</div>
 		</div>
 	</div>
-	<div class="col-md-offset-4 col-md-4">
+	<div class="col-md-4">
 
-		<div class="panel panel-default" id="panel2" ng-show="showSearch==1; showResultsKey==1">
+		<div class="panel panel-default" id="panel2" ng-show="showSearch==1 && showResultsKey==1">
 			<div class="panel-heading">
 				<b>Search Results</b>
-				<button class="btn btn-info btn-xs pull-right" ng-show="showResultsKey==1" ng-click="showResultsKey=0; showSearchKey=1">
+				<button class="btn btn-info btn-xs pull-right" ng-show="showResultsKey==1" ng-click="showResultsKey=0">
 					<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
 				</button>
 			</div>
@@ -267,8 +237,8 @@
 		</div>
 	</div>
 
-	<div class="col-md-12">
-		<div class="col-md-offset-2 col-md-8">
+
+		<div class="col-md-8">
 			<div class="panel panel-default" id="panel3" ng-show="showParse==1">
 				<div class="panel-heading">
 					<b>Parse</b>
@@ -329,7 +299,7 @@
 			</div>
 		</div>
 
-	</div>
+
 
 </div>
 
