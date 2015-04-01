@@ -85,7 +85,8 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
      tS
    }
    
-   private def pushout(cpath : CPath, vpath : MPath) : Term = {
+   
+   def pushout(cpath : CPath, vpaths : MPath*) : Term = {
      val comp = controller.get(cpath.parent) match {
        case c : Constant => cpath.component match {
          case DefComponent => c.df.getOrElse(throw FrameitError("No definition found for constant: " + cpath.parent))
@@ -94,14 +95,17 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
        case s => throw FrameitError("Expected component term found " + s.toString)
      }
      log(comp.toString)
+     vpaths.foldLeft(comp)((tm, v) => pushout(tm, v))
+   }
+   
+   private def pushout(tm : Term, vpath : MPath) : Term = {
      val view = controller.get(vpath) match {
        case v : DeclaredView => v
        case s => throw FrameitError("Expected view found " + s.toString)
      }
      
      val rules = makeRules(view)
-     
-     pushout(comp)(rules)     
+     pushout(tm)(rules)
    }
    
    private def makeRules(v : DeclaredView) : HashMap[Path, Term]= {
