@@ -30,8 +30,8 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
        }
      } catch {
        case e : Error => 
-         log(e.longMsg)
-         errorResponse(e.longMsg)
+         log(e.shortMsg)
+         errorResponse(e.shortMsg)
        case e : Exception => 
          errorResponse("Exception occured : " + e.getMessage())
      }
@@ -73,16 +73,16 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
        var tmS = tm.toString
        TextResponse(tmS).aact(tk)
      } catch {
-       case e : Error => log(e.longMsg);errorResponse(e.shortMsg).aact(tk)
+       case e : Error => log(e.shortMsg);errorResponse(e.shortMsg).aact(tk)
        case e : Exception => errorResponse("Exception occured : " + e.getMessage()).aact(tk)
      }
    }
    
    private def simplify(t : Term, home : MPath) : Term = {
      log("Before: " + t.toString)
-     val tS = controller.uom.simplify(t, OMMOD(home))
+     val tS = controller.simplifier(t, objects.Context(VarDecl(OMV.anonymous, None, Some(OMMOD(home)), None)))
      log("After: " + tS.toString)
-     tS 
+     tS
    }
    
    private def pushout(cpath : CPath, vpath : MPath) : Term = {
@@ -108,7 +108,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
      v.from match {
        case OMMOD(p) =>
          var rules = new HashMap[Path,Term]
-         v.components collect {
+         v.getDeclarations collect {
            case c : Constant =>
              c.df.foreach {t =>
                println((p ? c.name).toString + " #->#" + t.toString)
@@ -130,7 +130,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
    
    private def pushout(con : Context)(implicit rules : HashMap[Path, Term]) : Context = {
      val vars = con.variables map {
-       case VarDecl(n, tp, df) => VarDecl(n, tp.map(pushout), df.map(pushout))
+       case VarDecl(n, tp, df, not) => VarDecl(n, tp.map(pushout), df.map(pushout), not)
      }
      Context(vars : _*)
    }
