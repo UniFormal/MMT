@@ -15,10 +15,65 @@ import tiscaf._
 
 case class FrameitError(val text : String) extends Error(text)
 
+class FrameViewer(controller : Controller){
+  
+  def pushout(cpath : CPath, vpaths : MPath*) : Term = {
+     val comp = controller.get(cpath.parent) match {
+       case c : Constant => cpath.component match {
+         case DefComponent => c.df.getOrElse(throw FrameitError("No definition found for constant: " + cpath.parent))
+         case TypeComponent => c.tp.getOrElse(throw FrameitError("No type found for constant: " + cpath.parent))      
+       }
+       case s => throw FrameitError("Expected component term found " + s.toString)
+     }
+     vpaths.foldLeft(comp)((tm, v) => pushout(tm, v))
+   }
+   
+   private def pushout(tm : Term, vpath : MPath) : Term = {
+     val view = controller.get(vpath) match {
+       case v : DeclaredView => v
+       case s => throw FrameitError("Expected view found " + s.toString)
+     }
+     
+     val rules = makeRules(view)
+     pushout(tm)(rules)
+   }
+   
+   private def makeRules(v : DeclaredView) : HashMap[Path, Term]= {
+     v.from match {
+       case OMMOD(p) =>
+         var rules = new HashMap[Path,Term]
+         v.getDeclarations collect {
+           case c : Constant =>
+             c.df.foreach {t =>
+               println((p ? c.name).toString + " #->#" + t.toString)
+               rules += (p ? c.name -> t)
+             }
+         }
+         rules
+       case _ => throw FrameitError("view.from not OMMOD " + v.from)
+     }
+   }
+   
+   private def pushout(t : Term)(implicit rules : HashMap[Path, Term]) : Term = t match {
+     case OMS(p) => 
+       if (rules.isDefinedAt(p)) rules(p) else t
+     case OMA(f, args) => OMA(pushout(f), args.map(pushout))
+     case OMBIND(b, con, body) => OMBIND(pushout(b), pushout(con), pushout(body))
+     case _ => t
+   }
+   
+   private def pushout(con : Context)(implicit rules : HashMap[Path, Term]) : Context = {
+     val vars = con.variables map {
+       case VarDecl(n, tp, df, not) => VarDecl(n, tp.map(pushout), df.map(pushout), not)
+     }
+     Context(vars : _*)
+   }
+}
 
 class FrameitPlugin extends ServerExtension("frameit") with Logger {
   
   override val logPrefix = "frameit"
+  val fv = new FrameViewer(controller)
     
    /** Server */
    def apply(uriComps: List[String], query : String, body : web.Body): HLet = {
@@ -69,7 +124,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
          case _ => throw FrameitError("expected view")
        }
        
-       val tm = simplify(pushout(cpath, vpath), view.to.toMPath)
+       val tm = simplify(fv.pushout(cpath, vpath), view.to.toMPath)
        var tmS = tm.toString
        TextResponse(tmS).aact(tk)
      } catch {
@@ -83,60 +138,6 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger {
      val tS = controller.simplifier(t, objects.Context(VarDecl(OMV.anonymous, None, Some(OMMOD(home)), None)))
      log("After: " + tS.toString)
      tS
-   }
-   
-   
-   def pushout(cpath : CPath, vpaths : MPath*) : Term = {
-     val comp = controller.get(cpath.parent) match {
-       case c : Constant => cpath.component match {
-         case DefComponent => c.df.getOrElse(throw FrameitError("No definition found for constant: " + cpath.parent))
-         case TypeComponent => c.tp.getOrElse(throw FrameitError("No type found for constant: " + cpath.parent))      
-       }
-       case s => throw FrameitError("Expected component term found " + s.toString)
-     }
-     log(comp.toString)
-     vpaths.foldLeft(comp)((tm, v) => pushout(tm, v))
-   }
-   
-   private def pushout(tm : Term, vpath : MPath) : Term = {
-     val view = controller.get(vpath) match {
-       case v : DeclaredView => v
-       case s => throw FrameitError("Expected view found " + s.toString)
-     }
-     
-     val rules = makeRules(view)
-     pushout(tm)(rules)
-   }
-   
-   private def makeRules(v : DeclaredView) : HashMap[Path, Term]= {
-     v.from match {
-       case OMMOD(p) =>
-         var rules = new HashMap[Path,Term]
-         v.getDeclarations collect {
-           case c : Constant =>
-             c.df.foreach {t =>
-               println((p ? c.name).toString + " #->#" + t.toString)
-               rules += (p ? c.name -> t)
-             }
-         }
-         rules
-       case _ => throw FrameitError("view.from not OMMOD " + v.from)
-     }
-   }
-   
-   private def pushout(t : Term)(implicit rules : HashMap[Path, Term]) : Term = t match {
-     case OMS(p) => 
-       if (rules.isDefinedAt(p)) rules(p) else t
-     case OMA(f, args) => OMA(pushout(f), args.map(pushout))
-     case OMBIND(b, con, body) => OMBIND(pushout(b), pushout(con), pushout(body))
-     case _ => t
-   }
-   
-   private def pushout(con : Context)(implicit rules : HashMap[Path, Term]) : Context = {
-     val vars = con.variables map {
-       case VarDecl(n, tp, df, not) => VarDecl(n, tp.map(pushout), df.map(pushout), not)
-     }
-     Context(vars : _*)
    }
    
    // Utils
