@@ -19,7 +19,12 @@
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="MMT web service"
 NAME=mmt
-DAEMON=/home/maeder/MMT/src/mmt-server.sh
+DAEMON=/usr/bin/screen
+dir=/var/data/localmh/ext/MMT
+ARGS="-D -m /usr/bin/java -Xmx2048m \
+ -cp $dir/lib/*:$dir/lfcatalog/*:$dir/main/* info.kwarc.mmt.api.frontend.Run \
+ file /var/data/localmh/MathHub/meta/inf/config/OAF/oaf.msl"
+
 
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME-init
@@ -49,7 +54,7 @@ do_start()
 	do_status > /dev/null ||
         start-stop-daemon -v --start --chuid maeder:maeder \
           --make-pidfile -p $PIDFILE --background \
-          --exec $DAEMON \
+          --exec $DAEMON  -- $ARGS\
 		|| return 2
 
 	# Add code here, if necessary, that waits for the process to be ready
@@ -59,7 +64,7 @@ do_start()
 
 do_status()
 {
-	status_of_proc -p "$PIDFILE" java "$NAME"
+	status_of_proc -p "$PIDFILE" screen "$NAME"
 }
 
 #
@@ -116,5 +121,3 @@ case "$1" in
 	exit 3
 	;;
 esac
-
-:
