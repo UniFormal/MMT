@@ -27,7 +27,13 @@ to avoid: java.lang.OutOfMemoryError: PermGen space
     <target name="owl">
       <ant dir="mmt-owl" target="deploy"/>
     </target>
-   <target name="all" depends="tiscaf,api,lfcatalog,lf,tptp,jedit,owl"/>
+    <target name="lfs">
+      <ant dir="mmt-lfs" target="deploy"/>
+    </target>
+    <target name="mizar">
+      <ant dir="mmt-mizar/trunk" target="deploy"/>
+    </target>
+   <target name="all" depends="tiscaf,api,lfcatalog,lf,tptp,jedit,owl,lfs,mizar"/>
 
     <target name="clean-tiscaf">
         <ant dir="tiscaf" target="clean"/>
@@ -50,8 +56,13 @@ to avoid: java.lang.OutOfMemoryError: PermGen space
     <target name="clean-owl">
         <ant dir="mmt-owl" target="clean"/>
     </target>
-
-    <target name="clean" depends="clean-tiscaf,clean-api,clean-lfcatalog,clean-lf,clean-tptp,clean-jedit,clean-owl"/>
+    <target name="clean-lfs">
+        <ant dir="mmt-lfs" target="clean"/>
+    </target>
+    <target name="clean-mizar">
+        <ant dir="mmt-mizar/trunk" target="clean"/>
+    </target>
+    <target name="clean" depends="clean-tiscaf,clean-api,clean-lfcatalog,clean-lf,clean-tptp,clean-jedit,clean-owl,clean-lfs,clean-mizar"/>
 
     <path id="classpath">
         <fileset dir="../deploy/lib/">
