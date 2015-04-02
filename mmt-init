@@ -52,7 +52,7 @@ do_start()
 	#   0 if daemon has been or was started
 	#   2 if daemon could not be started
 	do_status > /dev/null ||
-        start-stop-daemon -v --start --chuid maeder:maeder \
+        start-stop-daemon -v --start --chuid www-data:www-data \
           --make-pidfile -p $PIDFILE --background \
           --exec $DAEMON  -- $ARGS\
 		|| return 2
