@@ -51,10 +51,10 @@ do_start()
 	# Return
 	#   0 if daemon has been or was started
 	#   2 if daemon could not be started
-	do_status > /dev/null ||
+	do_status > /dev/null || \
         start-stop-daemon -v --start --chuid www-data:www-data \
           --make-pidfile -p $PIDFILE --background \
-          --exec $DAEMON  -- $ARGS\
+          --exec $DAEMON -- $ARGS \
 		|| return 2
 
 	# Add code here, if necessary, that waits for the process to be ready
@@ -75,7 +75,10 @@ do_stop()
 	# Return
 	#   0 if daemon has been stopped
 	#   other if a failure occurred
-        do_status > /dev/null && pkill -P `cat $PIDFILE` && rm -fv $PIDFILE
+        do_status > /dev/null && \
+        start-stop-daemon -v --stop --user www-data \
+           --exec $DAEMON -p $PIDFILE --retry=TERM/30/KILL/5 --oknodo && \
+        rm -fv $PIDFILE
 }
 
 case "$1" in
