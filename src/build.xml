@@ -33,7 +33,10 @@ to avoid: java.lang.OutOfMemoryError: PermGen space
     <target name="mizar">
       <ant dir="mmt-mizar/trunk" target="deploy"/>
     </target>
-   <target name="all" depends="tiscaf,api,lfcatalog,lf,tptp,jedit,owl,lfs,mizar"/>
+    <target name="frameit">
+      <ant dir="frameit-mmt" target="deploy"/>
+    </target>
+   <target name="all" depends="tiscaf,api,lfcatalog,lf,tptp,jedit,owl,lfs,mizar,frameit"/>
 
     <target name="clean-tiscaf">
         <ant dir="tiscaf" target="clean"/>
@@ -62,7 +65,10 @@ to avoid: java.lang.OutOfMemoryError: PermGen space
     <target name="clean-mizar">
         <ant dir="mmt-mizar/trunk" target="clean"/>
     </target>
-    <target name="clean" depends="clean-tiscaf,clean-api,clean-lfcatalog,clean-lf,clean-tptp,clean-jedit,clean-owl,clean-lfs,clean-mizar"/>
+    <target name="clean-frameit">
+        <ant dir="frameit-mmt" target="clean"/>
+    </target>
+    <target name="clean" depends="clean-tiscaf,clean-api,clean-lfcatalog,clean-lf,clean-tptp,clean-jedit,clean-owl,clean-lfs,clean-mizar,clean-frameit"/>
 
     <path id="classpath">
         <fileset dir="../deploy/lib/">
