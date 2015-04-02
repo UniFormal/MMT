@@ -25,10 +25,15 @@ class FrameViewer(controller : Controller){
        }
        case s => throw FrameitError("Expected component term found " + s.toString)
      }
-     vpaths.foldLeft(comp)((tm, v) => pushout(tm, v))
+     pushout(comp, vpaths : _*)
    }
+  
+  def pushout(tm : Term, vpaths : MPath*) : Term = {
+    vpaths.foldLeft(tm)((t, v) => pushoutOne(tm, v))
+  }
+  
    
-   private def pushout(tm : Term, vpath : MPath) : Term = {
+   private def pushoutOne(tm : Term, vpath : MPath) : Term = {
      val view = controller.get(vpath) match {
        case v : DeclaredView => v
        case s => throw FrameitError("Expected view found " + s.toString)
