@@ -1,0 +1,39 @@
+.code, pre {
+   font-family: monospace; 
+   color: gray;
+}
+
+div.code {
+   border:solid;
+   border-width: 1;
+   margin-top: 5px;
+}
+.blueBG {
+    background: royalblue;
+}
+.frame {
+   background:lightgray;
+   text-align: center;
+}
+
+/*.sidebargroup {*/
+  /*color:olive;*/
+  /*list-style-type: none;*/
+/*}*/
+
+/*.sidebarelement {*/
+  /*color:blue;*/
+  /*text-decoration:underline;*/
+/*}*/
+
+br {
+   margin-bottom:5px;
+}
+
+li {
+   margin-top:5px;
+}
+
+.centered {
+    text-align: center;
+}

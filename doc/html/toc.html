@@ -1,50 +1,124 @@
-<link rel="stylesheet" type="text/css" href="style.css"/><ul class="sidebargroup" >
-<li class="sidebarelement" onclick="parent.goto('api.html')">api.html</li>
-<li>applications<ul class="sidebargroup" >
-<li class="sidebarelement" onclick="parent.goto('applications/build.html')">build.html</li>
-<li class="sidebarelement" onclick="parent.goto('applications/gui.html')">gui.html</li>
-<li class="sidebarelement" onclick="parent.goto('applications/http.html')">http.html</li>
-<li class="sidebarelement" onclick="parent.goto('applications/index.html')">index.html</li>
-<li class="sidebarelement" onclick="parent.goto('applications/jedit.html')">jedit.html</li>
-<li class="sidebarelement" onclick="parent.goto('applications/shell.html')">shell.html</li>
-<li class="sidebarelement" onclick="parent.goto('applications/web.html')">web.html</li>
-</ul>
-</li><li class="sidebarelement" onclick="parent.goto('archives.html')">archives.html</li>
-<li class="sidebarelement" onclick="parent.goto('backend.html')">backend.html</li>
-<li class="sidebarelement" onclick="parent.goto('build.html')">build.html</li>
-<li class="sidebarelement" onclick="parent.goto('configure.html')">configure.html</li>
-<li class="sidebarelement" onclick="parent.goto('content.html')">content.html</li>
-<li class="sidebarelement" onclick="parent.goto('controller.html')">controller.html</li>
-<li class="sidebarelement" onclick="parent.goto('demos.html')">demos.html</li>
-<li class="sidebarelement" onclick="parent.goto('extensions.html')">extensions.html</li>
-<li class="sidebarelement" onclick="parent.goto('independence.html')">independence.html</li>
-<li class="sidebarelement" onclick="parent.goto('install.html')">install.html</li>
-<li>language<ul class="sidebargroup" >
-<li class="sidebarelement" onclick="parent.goto('language/index.html')">index.html</li>
-<li class="sidebarelement" onclick="parent.goto('language/literals.html')">literals.html</li>
-<li class="sidebarelement" onclick="parent.goto('language/namespaces.html')">namespaces.html</li>
-</ul>
-</li><li class="sidebarelement" onclick="parent.goto('language.html')">language.html</li>
-<li class="sidebarelement" onclick="parent.goto('log.html')">log.html</li>
-<li class="sidebarelement" onclick="parent.goto('memory.html')">memory.html</li>
-<li class="sidebarelement" onclick="parent.goto('oaf.html')">oaf.html</li>
-<li class="sidebarelement" onclick="parent.goto('papers.html')">papers.html</li>
-<li class="sidebarelement" onclick="parent.goto('projects.html')">projects.html</li>
-<li class="sidebarelement" onclick="parent.goto('query.html')">query.html</li>
-<li class="sidebarelement" onclick="parent.goto('related.html')">related.html</li>
-<li class="sidebarelement" onclick="parent.goto('repos.html')">repos.html</li>
-<li class="sidebarelement" onclick="parent.goto('run.html')">run.html</li>
-<li class="sidebarelement" onclick="parent.goto('services.html')">services.html</li>
-<li>syntax<ul class="sidebargroup" >
-<li class="sidebarelement" onclick="parent.goto('syntax/index.html')">index.html</li>
-<li>manual<ul class="sidebargroup" >
-</ul>
-</li><li class="sidebarelement" onclick="parent.goto('syntax/text-parser.html')">text-parser.html</li>
-<li class="sidebarelement" onclick="parent.goto('syntax/text.html')">text.html</li>
-<li class="sidebarelement" onclick="parent.goto('syntax/xml-parser.html')">xml-parser.html</li>
-<li class="sidebarelement" onclick="parent.goto('syntax/xml.html')">xml.html</li>
-</ul>
-</li><li class="sidebarelement" onclick="parent.goto('title.html')">title.html</li>
-<li class="sidebarelement" onclick="parent.goto('twelfmod.html')">twelfmod.html</li>
-<li class="sidebarelement" onclick="parent.goto('uris.html')">uris.html</li>
-</ul>
+<script src="script/jquery.min.js"></script>
+<link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css">
+<script src="bootstrap/js/bootstrap.min.js"></script>
+<script src="script/angular.js"></script>
+<script type="text/javascript" src="script/script.js"></script>
+<link rel="stylesheet" type="text/css" href="css/style.css"/>
+
+<div role="tabpanel">
+        <ul class="nav nav-pills bg-success" role="tablist">
+            <li role="presentation" class="dropdown">
+                <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                    Applications <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu" role="menu">
+                    <li role="presentation"><a href="#appbuild" aria-controls="appbuild" role="tab" data-toggle="tab">Build</a></li>
+                    <li role="presentation"><a href="#appgui" aria-controls="appgui" role="tab" data-toggle="tab">GUI</a></li>
+                    <li role="presentation"><a href="#apphttp" aria-controls="apphttp" role="tab" data-toggle="tab">HTTP</a></li>
+                    <li role="presentation"><a href="#appindex" aria-controls="appindex" role="tab" data-toggle="tab">Index</a></li>
+                    <li role="presentation"><a href="#appjedit" aria-controls="appjedit" role="tab" data-toggle="tab">JEdit</a></li>
+                    <li role="presentation"><a href="#appshell" aria-controls="appshell" role="tab" data-toggle="tab">Shell</a></li>
+                    <li role="presentation"><a href="#appweb" aria-controls="appweb" role="tab" data-toggle="tab">Web</a></li>
+                </ul>
+            </li>
+            <li role="presentation" class="dropdown">
+                <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                    Language <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu" role="menu">
+                    <li role="presentation"><a href="#langindex" aria-controls="langindex" role="tab" data-toggle="tab">Index</a></li>
+                    <li role="presentation"><a href="#langliterals" aria-controls="langliterals" role="tab" data-toggle="tab">Literals</a></li>
+                    <li role="presentation"><a href="#langnamespace" aria-controls="langnamespace" role="tab" data-toggle="tab">Namespaces</a></li>
+                </ul>
+            </li>
+            <li role="presentation" class="dropdown">
+                <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                    Syntax <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu" role="menu">
+                    <li role="presentation"><a href="#synindex" aria-controls="synindex" role="tab" data-toggle="tab">Index</a></li>
+                    <li role="presentation"><a href="#syntextparser" aria-controls="syntextparser" role="tab" data-toggle="tab">Text Parser</a></li>
+                    <li role="presentation"><a href="#syntext" aria-controls="syntext" role="tab" data-toggle="tab">Text</a></li>
+                    <li role="presentation"><a href="#synparser" aria-controls="synparser" role="tab" data-toggle="tab">XML Parser</a></li>
+                    <li role="presentation"><a href="#synxml" aria-controls="synxml" role="tab" data-toggle="tab">XML</a></li>
+                </ul>
+            </li>
+            <li role="presentation" class="dropdown">
+                <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                    Others <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu" role="menu">
+                    <li role="presentation"><a href="#api" aria-controls="api" role="tab" data-toggle="tab">API</a></li>
+                    <li role="presentation"><a href="#archives" aria-controls="archives" role="tab" data-toggle="tab">Archives</a></li>
+                    <li role="presentation"><a href="#backend" aria-controls="backend" role="tab" data-toggle="tab">Backend</a></li>
+                    <li role="presentation"><a href="#build" aria-controls="build" role="tab" data-toggle="tab">Build</a></li>
+                    <li role="presentation"><a href="#configure" aria-controls="configure" role="tab" data-toggle="tab">Configure</a></li>
+                    <li role="presentation"><a href="#content" aria-controls="content" role="tab" data-toggle="tab">Content</a></li>
+                    <li role="presentation"><a href="#controller" aria-controls="controller" role="tab" data-toggle="tab">Controller</a></li>
+                    <li role="presentation"><a href="#demos" aria-controls="demos" role="tab" data-toggle="tab">Demos</a></li>
+                    <li role="presentation"><a href="#extensions" aria-controls="extensions" role="tab" data-toggle="tab">Extensions</a></li>
+                    <li role="presentation"><a href="#independence" aria-controls="independence" role="tab" data-toggle="tab">Independence</a></li>
+                    <li role="presentation"><a href="#install" aria-controls="install" role="tab" data-toggle="tab">Install</a></li>
+                    <li role="presentation"><a href="#language" aria-controls="language" role="tab" data-toggle="tab">Language</a></li>
+                    <li role="presentation"><a href="#log" aria-controls="log" role="tab" data-toggle="tab">Log</a></li>
+                    <li role="presentation"><a href="#memory" aria-controls="memory" role="tab" data-toggle="tab">Memory</a></li>
+                    <li role="presentation"><a href="#oaf" aria-controls="oaf" role="tab" data-toggle="tab">OAF</a></li>
+                    <li role="presentation"><a href="#papers" aria-controls="papers" role="tab" data-toggle="tab">Papers</a></li>
+                    <li role="presentation"><a href="#projects" aria-controls="projects" role="tab" data-toggle="tab">Projects</a></li>
+                    <li role="presentation"><a href="#query" aria-controls="query" role="tab" data-toggle="tab">Query</a></li>
+                    <li role="presentation"><a href="#related" aria-controls="related" role="tab" data-toggle="tab">Related</a></li>
+                    <li role="presentation"><a href="#repos" aria-controls="repos" role="tab" data-toggle="tab">Repos</a></li>
+                    <li role="presentation"><a href="#run" aria-controls="run" role="tab" data-toggle="tab">Run</a></li>
+                    <li role="presentation"><a href="#services" aria-controls="services" role="tab" data-toggle="tab">Services</a></li>
+                    <li role="presentation" class="active"><a href="#title" aria-controls="title" role="tab" data-toggle="tab">Title</a></li>
+                    <li role="presentation"><a href="#twelf" aria-controls="twelf" role="tab" data-toggle="tab">Twelf Module</a></li>
+                    <li role="presentation"><a href="#uris" aria-controls="uris" role="tab" data-toggle="tab">URIs</a></li>
+                </ul>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div role="tabpanel" class="tab-pane" id="api"><object type="text/html" data="api.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="appbuild" ><object type="text/html" data="applications/build.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="appgui" ><object type="text/html" data="applications/gui.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="apphttp" ><object type="text/html" data="applications/http.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="appindex" ><object type="text/html" data="applications/index.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="appjedit" ><object type="text/html" data="applications/jedit.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="appshell" ><object type="text/html" data="applications/shell.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="appweb" ><object type="text/html" data="applications/web.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="archives" ><object type="text/html" data="archives.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="backend" ><object type="text/html" data="backend.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="build" ><object type="text/html" data="build.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="configure" ><object type="text/html" data="configure.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="content" ><object type="text/html" data="content.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="controller" ><object type="text/html" data="controller.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="demos" ><object type="text/html" data="demos.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="extensions" ><object type="text/html" data="extensions.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="independence" ><object type="text/html" data="independence.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="install" ><object type="text/html" data="install.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="langindex" ><object type="text/html" data="language/index.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="langliterals" ><object type="text/html" data="language/literals.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="langnamespace" ><object type="text/html" data="language/namespaces.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="language" ><object type="text/html" data="language.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="log" ><object type="text/html" data="log.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="memory" ><object type="text/html" data="memory.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="oaf" ><object type="text/html" data="oaf.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="papers" ><object type="text/html" data="papers.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="projects" ><object type="text/html" data="projects.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="query" ><object type="text/html" data="query.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="related" ><object type="text/html" data="related.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="repos" ><object type="text/html" data="repos.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="run" ><object type="text/html" data="run.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="services" ><object type="text/html" data="services.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="synindex" ><object type="text/html" data="syntax/index.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="syntextparser" ><object type="text/html" data="syntax/text-parser.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="syntext" ><object type="text/html" data="syntax/text.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="synparser" ><object type="text/html" data="syntax/xml-parser.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="synxml" ><object type="text/html" data="syntax/xml.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane active" id="title" ><object type="text/html" data="title.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="twelf" ><object type="text/html" data="twelfmod.html" style="width:100%; height:90%; margin:0%;"></object></div>
+            <div role="tabpanel" class="tab-pane" id="uris" ><object type="text/html" data="uris.html" style="width:100%; height:90%; margin:0%;"></object></div>
+
+        </div>
+</div>

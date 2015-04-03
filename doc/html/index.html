@@ -1,41 +1,22 @@
-<html>
+<html ng-app="helpApp">
   <head>
-      <script type="text/javascript" src="https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/script/jquery/jquery.js"></script>
-      <script type="text/javascript" src="script.js"></script>
-      <link rel="stylesheet" type="text/css" href="style.css"/>
+      <script src="script/jquery.min.js"></script>
+      <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+      <link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css">
+      <script src="bootstrap/js/bootstrap.min.js"></script>
+      <script src="script/angular.js"></script>
+      <script type="text/javascript" src="script/script.js"></script>
+      <link rel="stylesheet" type="text/css" href="css/style.css"/>
       <link rel="alternate" type="application/atom+xml" href="https://svn.kwarc.info/repos/frabe/www/news.atom" title="News Feed">
       <title>MMT: A Foundation-Independent Approach to Formal Knowledge</title>
   </head>
-<body>
-
-<table style="width:100%;height:100%">
-
-<tr style="height:5%">
-<td colspan="2" class="frame">
-The MMT Language and System: Documentation
-</td>
-</tr>
-
-<tr style="height:90%">
-
-<td style="width:20%">
-<iframe id="sidebar" src="toc.html" height="100%" width="100%" style="border:0"></iframe>
-</td>
-
-<td>
-<iframe id="content" src="title.html" onload="addStyle()"  style="border:1" height="100%" width="100%" seamless="seamless"></iframe>
-</td>
-
-</tr>
-
-<tr style="height:5%">
-<td colspan="2" class="frame">
-MMT is developed and maintained by <a href="http://kwarc.info/frabe/">Florian Rabe</a>.<br/>
-</td>
-
-</tr>
-
-</table>
-
+<body class="bg-success">
+    <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+        <div class="navbar-header">
+                <a class="navbar-brand" href="index.html">The MMT Language and System: Documentation</a>
+        </div>
+    </nav>
+    <div class="col-md-12"><object type="text/html" data="toc.html" style="width:100%; height:90%; margin:0%;"></object></div>
+    <div class="navbar-footer centered"><b>MMT is developed and maintained by <a href="http://kwarc.info/frabe/">Florian Rabe</a>.</b></div>
 </body>
 </html>
