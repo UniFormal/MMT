@@ -2,9 +2,7 @@ package info.kwarc.mmt.api.backend
 import info.kwarc.mmt.api._
 import frontend._
 import utils._
-import parser._
-
-import scala.collection.mutable.HashSet
+import checking._
 
 /** a Compiler that uses the generic MMT functions to parse and check a file
  *  
@@ -21,7 +19,7 @@ class MMTCompiler extends archives.Importer {
      val name = File(bf.inPath.last).setExtension("omdoc").segments.last // set extension to omdoc (hacky)
      val dpath = DPath(bf.base / bf.inPath.init / name) // bf.narrationDPath except for extension
      val doc = controller.read(bf.inFile, Some(dpath))(bf.errorCont)
-     controller.checker(doc)(bf.errorCont, checking.RelationHandler.ignore)
+     controller.checker(doc)(new CheckingEnvironment(bf.errorCont, RelationHandler.ignore))
      seCont(doc)
   }
 }

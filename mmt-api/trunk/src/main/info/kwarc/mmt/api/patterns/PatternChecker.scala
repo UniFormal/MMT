@@ -116,9 +116,6 @@ class Matcher(controller : Controller, var metaContext : Context) {
         	  							if (a.last == b.last) //Some(Substitution(Sub("OMID match",OMID(a))))  else None
         									Some(Substitution())
         									else None
-        	// integers (not needed in THF0)
-        	// ------ do not occur in TPTP.THF case; sequences not suppored yet, so not needed -------							
-        	case (OMI(i),OMI(j)) => if (i == j) { Some(Substitution(Sub("OMI match",OMI(i)))) } else None
         	// variables
             case (OMV(v),OMV(w)) => if ((v == w) && (con.isDeclared(v) && con.isDeclared(w)))
               Some(Substitution(Sub(OMV(w).name,OMV(v)))) 

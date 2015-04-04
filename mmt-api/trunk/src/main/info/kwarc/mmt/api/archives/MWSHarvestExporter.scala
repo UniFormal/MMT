@@ -9,9 +9,10 @@ import backend._
 import objects._
 import utils._
 import documents._
+import parser._
+
 import scala.collection.immutable.{HashMap}
 import scala.xml.Node
-import parser._
 
 class MWSHarvestExporter extends Exporter {
   val key = "mws"

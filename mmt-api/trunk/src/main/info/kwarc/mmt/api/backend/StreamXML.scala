@@ -26,13 +26,13 @@ class XMLStreamer(controller: Controller) extends Logger {streamer =>
     * @param input the document
     */
    def readDocument(dpath: DPath, input: Source)(implicit cont: StructuralElement => Unit): Document = {
-      val parser = makeParser(dpath, input, cont)
+      val parser = new Parser(dpath, input, cont)
       parser.nextch
       parser.document()
       parser.root
    }
 
-   private def makeParser(dpath: DPath, input: Source, cont: StructuralElement => Unit) = new ConstructingParser(input, false) {
+   private class Parser(dpath: DPath, input: Source, cont: StructuralElement => Unit) extends ConstructingParser(input, false) {
       /** the stack of currently open tags, innermost first */
       private var openTags : List[StructuralElement] = Nil
       /** holds the root element once parsing has finished */

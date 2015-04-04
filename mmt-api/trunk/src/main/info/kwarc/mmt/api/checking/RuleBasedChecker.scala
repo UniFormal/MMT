@@ -15,7 +15,7 @@ import frontend._
 class RuleBasedChecker extends ObjectChecker {
    override val logPrefix = "object-checker"
 
-   def apply(cu: CheckingUnit)(implicit errorCont: ErrorHandler, relCont: RelationHandler) {
+   def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) {
       log("checking unit " + cu.component + ": " + cu.judgement.present(o => controller.presenter.asString(o)))
       val tc = controller.globalLookup.getComponent(cu.component) match {
          case tc: TermContainer => tc
@@ -23,7 +23,6 @@ class RuleBasedChecker extends ObjectChecker {
       }
       tc.dependsOn.clear
       // ** checking **
-      val rules = RuleBasedChecker.collectRules(controller, cu.context)
       log("using " + rules.getAll.mkString(", "))
       val solver = new Solver(controller, cu.context, cu.unknowns, rules)
       solver.logPrefix = cu.component.toString
@@ -45,7 +44,7 @@ class RuleBasedChecker extends ObjectChecker {
       if (success) {
          log("success")
          solver.getDependencies foreach {d =>
-            relCont(ontology.DependsOn(cu.component, d))
+            env.reCont(ontology.DependsOn(cu.component, d))
             tc.dependsOn += d
          }
       } else {
@@ -54,12 +53,12 @@ class RuleBasedChecker extends ObjectChecker {
             solver.logState(logPrefix)
             val errors = solver.getErrors
             errors foreach {e =>
-               errorCont(InvalidUnit(cu, e.narrowDownError, cu.present(solver.presentObj)))
+               env.errorCont(InvalidUnit(cu, e.narrowDownError, cu.present(solver.presentObj)))
             }
             if (errors.isEmpty) {
                solver.getConstraints foreach {dc =>
                   val h = dc.history + "unresolved constraint"
-                  errorCont(InvalidUnit(cu, h, cu.present(solver.presentObj)))
+                  env.errorCont(InvalidUnit(cu, h, cu.present(solver.presentObj)))
                }
             }
          }
@@ -86,27 +85,5 @@ class RuleBasedChecker extends ObjectChecker {
          else
             Traverser(this, t)
       }
-   }
-}
-
-object RuleBasedChecker {
-   def collectRules(controller: Controller, context: Context): RuleSet = {
-      val imports = controller.library.visibleDirect(ComplexTheory(context))
-      val rs = new RuleSet
-      imports.foreach {
-         case OMPMOD(p,_) =>
-            controller.globalLookup.getO(p) match {
-               case Some(t:DeclaredTheory) =>
-                  // trying all declarations because some rules might be generated
-                  t.getDeclarations.foreach {
-                     case rc: RuleConstant =>
-                           rs.declares(rc.df)
-                     case _ => Nil
-                  }
-               case _ => Nil
-            }
-         case _ => Nil
-      }
-      rs
    }
 }

@@ -348,11 +348,22 @@ object OMATTRMany {
 sealed trait OMLITTrait extends Term {
    def synType: GlobalName
    def head = None
+   def path = synType / toString
    def toNode = <om:OMLIT value={toString} type={synType.toPath}/>
    def toCMLQVars(implicit qvars: Context) = <m:lit value={toString} type={synType.toPath}/>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
    def subobjects = Nil
+
+   /** checks equality, including the case [[OMLIT]] =?= [[UnknownOMLIT]] */
+   override def equals(that: Any): Boolean = (this, that) match {
+      case (l: OMLIT, m: OMLIT) => l.rt == m.rt && l.value == m.value
+      case (l: UnknownOMLIT, m: UnknownOMLIT) => l.synType == m.synType && l.value == m.value
+      case (l: OMLIT, m: UnknownOMLIT) =>
+         (l.synType == m.synType) && l == l.rt.parse(m.value) 
+      case (l: UnknownOMLIT, m: OMLIT) => m == l
+      case _ => false
+   } 
 }
 
 /**
@@ -365,11 +376,7 @@ sealed trait OMLITTrait extends Term {
  * invariant for structurally well-formed literals: the value is valid and normal, i.e,
  *   rt.valid(value) and rt.normalform(value) == value
  */
-sealed abstract class OMLIT(val rt: RealizedType) extends Term with OMLITTrait {
-   override def equals(that: Any) = that match {
-      case l: OMLIT => rt == l.rt && value == l.value
-      case _ => false
-   }
+sealed abstract class OMLIT(val rt: uom.RealizedType) extends Term with OMLITTrait {
    val value: rt.univ
    def synType = rt.synType
    override def toString = rt.toString(value)
@@ -380,7 +387,7 @@ object OMLIT {
     * the canonical way to construct literals
     * the value is always normalized and checked for validity
     */
-   def apply(rt: RealizedType)(v: rt.univ) = {
+   def apply(rt: uom.RealizedType)(v: rt.univ) = {
       new OMLIT(rt) {
          val value = {
             // This always type checks, but the Scala compiler cannot prove it and needs a type cast
@@ -397,9 +404,11 @@ object OMLIT {
  *  
  *  This class is awkward but necessary to permit a lookup-free parser, which delays parsing of literals to a later phase.
  *  UnknownOMLITs are replaced with OMLITs in the [[libraries.StructureChecker]].
+ *  
+ *  @param synType the type of the this literal
  */
 case class UnknownOMLIT(value: String, synType: GlobalName) extends Term with OMLITTrait {
-   override def toString = value 
+   override def toString = value
 }
 
 /**

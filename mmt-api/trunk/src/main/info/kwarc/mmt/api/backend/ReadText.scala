@@ -29,7 +29,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
   private implicit var lineStarts = new ArraySeq [(Int, Int)] (0)
 
   /** list of parsing errors in the file */
-  private var errors = LinkedList[SourceError] ()
+  private var errors : List[SourceError] = Nil
 
   /** temporary variable used during parsing: saves the last SemanticCommentBlock */
   private var keepComment : Option[MetaData] = None
@@ -49,7 +49,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
   private def init() {
     flat = ""
     lineStarts = new ArraySeq [(Int, Int)] (0)
-    errors = LinkedList[SourceError] ()
+    errors = Nil
     keepComment = None
     currentNS = None
     prefixes = new LinkedHashMap[String,URI] ()
@@ -57,7 +57,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     // read the file and update lines, flat and lineStarts
     var lineNumber = 0
     for (x <- lines) {
-      lineStarts = lineStarts :+ Pair(flat.length, lineNumber)
+      lineStarts = lineStarts :+ (flat.length, lineNumber)
       flat += x + "\n"
       lineNumber += 1
     }
@@ -78,7 +78,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     * @return a LinkedList of errors that occurred during parsing
     * @throws SourceError for non-recoverable errors that occurred during parsing
     * note that line and column numbers start from 0 */
-  def readDocument(source : scala.io.Source, dpath_ : DPath)(puCont_ : ParsingUnit => Term) : Pair[Document, LinkedList[SourceError]] =
+  def readDocument(source : scala.io.Source, dpath_ : DPath)(puCont_ : ParsingUnit => Term) : (Document, List[SourceError]) =
   {
     // initialization
     lines = source.getLines.toArray
@@ -91,7 +91,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     readDocument()
   }
 
-  def readDocument(source : String, dpath_ : DPath)(puCont_ : ParsingUnit => Term) : Pair[Document, LinkedList[SourceError]] = {
+  def readDocument(source : String, dpath_ : DPath)(puCont_ : ParsingUnit => Term) : (Document, List[SourceError]) = {
     //initialization
     lines = source.split("\n").toArray
     dpath = dpath_
@@ -101,7 +101,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
   }
   
   /*
-  def readTheory(source : String, ns_ : URI)(puCont_ : ParsingUnit => Term) : Pair[Theory, LinkedList[SourceError]] = {
+  def readTheory(source : String, ns_ : URI)(puCont_ : ParsingUnit => Term) : (Theory, List[SourceError]) = {
     //init
     lines = source.split("\n").toArray
     puCont = puCont_
@@ -110,7 +110,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
   }
 */
 
-  private def readDocument() : Pair[Document, LinkedList[SourceError]] = {
+  private def readDocument() : (Document, List[SourceError]) = {
     var i = 0  // position in the flattened file
 
     // add (empty, for now) narrative document to the controller
@@ -154,12 +154,12 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
          i = skipwscomments(i)       // check whether there is a new semantic comment
        }
        addSourceRef(doc, 0, i)
-       Pair(doc, errors)
+       (doc, errors)
     } catch {
        case e: SourceError =>
           // for fatal errors, return partially parsed document
-          errors = (errors :+ e.copy(level = Level.Fatal))
-          Pair(doc, errors)
+          errors ::= e.copy(level = Level.Fatal)
+          (doc, errors)
     }
   }
 
@@ -284,7 +284,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
    * @return the parsed term, position after the term
    * @throws SourceError if there are unmatched right brackets }
    */
-  private def crawlTerm(start: Int, delimChars: List[Char], delimiters: List[String], component: CPath, context: Context) : Pair[Term, Int] =
+  private def crawlTerm(start: Int, delimChars: List[Char], delimiters: List[String], component: CPath, context: Context) : (Term, Int) =
   {
     var i = start
     while (i < flat.length) {
@@ -325,22 +325,22 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
          puCont(pu)
       } catch {
          case e: Error =>
-            errors = errors :+ TextParseError(toPos(start), "object continuation caused error: " + e.getMessage)
+            errors ::= TextParseError(toPos(start), "object continuation caused error: " + e.getMessage)
             DefaultObjectParser(pu)(ErrorThrower)
       }
       
-      Pair(obj, i)
+      (obj, i)
     }
 
     throw TextParseError(toPos(i), "end of file reached while reading term")
   }
 
-  private def crawlNotation(start: Int, delimiters: List[String], cpath : GlobalName): Pair[TextNotation,Int] = {
+  private def crawlNotation(start: Int, delimiters: List[String], cpath : GlobalName): (TextNotation,Int) = {
     var i = start
     while (i < flat.length) {
       if (delimiters exists {d => flat.startsWith(d, i)}) {
          val not = TextNotation.parse(getSlice(start, i - 1), NamespaceMap(cpath))
-         return Pair(not, i)
+         return (not, i)
       } else {
          i += 1
       }
@@ -384,20 +384,20 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     * @param start the position of the quotes at the beginning of the string
     * @return the string, position after the final quote
     * @throws SourceError if the string does not close */
-  private def crawlString(start: Int) : Pair[String, Int] =
+  private def crawlString(start: Int) : (String, Int) =
   {
     val endsAt = flat.indexOf('"', start + 1)    // position of the final quotes
     if (endsAt == -1)
       throw TextParseError(toPos(start), "the string does not close")
-    return Pair(flat.substring(start + 1, endsAt), endsAt + 1)
+    return (flat.substring(start + 1, endsAt), endsAt + 1)
   }
   
   
   /** reads an identifier.
     * @param start the position of the first character of the identifier
-    * @return Pair(identifier as a string, position after the last character of the identifier)
+    * @return (identifier as a string, position after the last character of the identifier)
     * @throws SourceError if the current position does not start an identifier */
-  private def crawlIdentifier(start: Int) : Pair[String, Int] =
+  private def crawlIdentifier(start: Int) : (String, Int) =
   {
     var i = start                     // the current position
     var c = flat.codePointAt(i)       // the current code point
@@ -414,7 +414,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     val myId = flat.substring(start, i)
     if (myId.isEmpty)
       throw TextParseError(toPos(start), "identifier expected")
-    return Pair(myId, i)
+    return (myId, i)
   }
 
 
@@ -515,7 +515,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
         throw TextParseError(toPos(i), "current namespace must be defined before the namespace alias declaration")
       else {
         val absoluteRemoteURI = currentNS.get.resolve(uri).normalize
-        prefixes += Pair(alias, absoluteRemoteURI)
+        prefixes += ((alias, absoluteRemoteURI))
       }
     }
     return 1 + endsAt
@@ -544,7 +544,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     * @return The first return value is the structured comment, saved as Metadata, whose end position is on the final %. The second return value is the position after the block.
     * @throws SourceError if the comment does not close. Syntactical errors are only printed
     */
-  private def crawlSemanticCommentBlock(start: Int) : Pair[MetaData, Int] =
+  private def crawlSemanticCommentBlock(start: Int) : (MetaData, Int) =
   {
     var endsAt : Int = flat.indexOf("*%", start)    // position of the final *
     if (endsAt == -1)
@@ -559,7 +559,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
 
     // Add the short comment
     if (firstPropertyLine >= 1 && commentLines(0).trim.nonEmpty)
-      properties += Pair("short", commentLines(0).trim)
+      properties += (("short", commentLines(0).trim))
 
     // Add the long comment
     if (firstPropertyLine >= 2)
@@ -568,7 +568,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
         val longCommentLines = commentLines.slice(1, firstPropertyLine)
         val firstNonEmptyLine = longCommentLines.indexWhere(_.trim.nonEmpty)
         val lastNonEmptyLine = longCommentLines.lastIndexWhere(_.trim.nonEmpty)
-        properties += Pair("long", longCommentLines.slice(firstNonEmptyLine, lastNonEmptyLine + 1).mkString("\n"))
+        properties += (("long", longCommentLines.slice(firstNonEmptyLine, lastNonEmptyLine + 1).mkString("\n")))
       }
 
     // Add the key-value properties
@@ -585,13 +585,13 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
                 c = keyValue.codePointAt(i)
                 i += Character.charCount(c);
             }
-            properties += Pair(keyValue.take(i).trim, keyValue.drop(i).trim)
+            properties += ((keyValue.take(i).trim, keyValue.drop(i).trim))
         }
     } catch {
-        case e : SourceError => errors = (errors :+ e)   // add to the list of errors returned
+        case e : SourceError => errors ::= e   // add to the list of errors returned
     }
 
-    return Pair(MetaData(properties.map(keyValue => new MetaDatum(Path.parseS("??" + keyValue._1, NamespaceMap(MetaDatum.keyBase)), OMSTR(keyValue._2))).toSeq : _*), endsAt + 1)
+    return (MetaData(properties.map(keyValue => new MetaDatum(Path.parseS("??" + keyValue._1, NamespaceMap(MetaDatum.keyBase)), OMSTR(keyValue._2))).toSeq : _*), endsAt + 1)
   }
 
   // ------------------------------- symbol level -------------------------------
@@ -872,7 +872,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
   }
 
   // parse a parameter list [param_1]...[param_n]
-  private def crawlParameterList(start: Int, theory: MPath) : Pair[Context, Int] = {
+  private def crawlParameterList(start: Int, theory: MPath) : (Context, Int) = {
      var parameterContext = Context()
      var i = start
      if (flat.startsWith("[", i)) {
@@ -891,7 +891,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
   }
 
   // parses a single parameter x1 : T1 = D1]
-  private def crawlParameter(start: Int, theory: MPath, context: Context) : Pair[VarDecl, Int] =
+  private def crawlParameter(start: Int, theory: MPath, context: Context) : (VarDecl, Int) =
   {
      var i = start
 
@@ -1268,7 +1268,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
       theory = DefinedTheory(tpath.parent, tpath.name, theoryExp)
       add(theory)
       if (meta.isDefined) {
-         errors :+ TextParseError(toPos(i), "meta-theory of defined theory is ignored").copy(level = Level.Warning)
+         errors ::= TextParseError(toPos(i), "meta-theory of defined theory is ignored").copy(level = Level.Warning)
       }
     }
 
@@ -1410,7 +1410,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
     if (j == -1) {
        currentNS match {
           case None =>
-             errors :+ TextParseError(toPos(start), "no current namespace defined").copy(level = Level.Warning)
+             errors ::= TextParseError(toPos(start), "no current namespace defined").copy(level = Level.Warning)
              None
           case Some(ns) => 
              Some(DPath(ns) ? relativeURI)
@@ -1421,7 +1421,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
        prefixes.get(prefix) match {
           // unknown prefix
           case None =>
-             errors :+ TextParseError(toPos(start), "unknown namespace prefix").copy(level = Level.Warning)
+             errors ::= TextParseError(toPos(start), "unknown namespace prefix").copy(level = Level.Warning)
              None
           case Some(ns) =>
              Some(DPath(ns) ? relativeURI.substring(j+1))
@@ -1438,7 +1438,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
       lineStarts.filter(p => (p._1 <= index)).last
     } catch {
       // this catches the degenerate case where .last fails; this happens iff the input file is empty 
-      case _ : java.util.NoSuchElementException => Pair(0,0)
+      case _ : java.util.NoSuchElementException => (0,0)
     } 
     SourcePosition(index, pair._2, index - pair._1)  // the column may be the bogus space character at the end of the line
   }
@@ -1587,7 +1587,7 @@ class TextReader(val controller: frontend.Controller, cont : StructuralElement =
      i = positionAfter
      i = skipwscomments(i)
      val instancePath = parent % nameI     
-     val Pair(t,posAfter) = if (flat.charAt(i) != '.') {
+     val (t,posAfter) = if (flat.charAt(i) != '.') {
         crawlTerm(i, Nil, Nil, instancePath $ TypeComponent, context)
      }
      else

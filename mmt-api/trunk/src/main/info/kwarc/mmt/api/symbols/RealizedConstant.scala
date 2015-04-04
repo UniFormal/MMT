@@ -7,21 +7,20 @@ import utils._
 
 import scala.xml.Node 
 
-/** A RealizedConstant is a semantic entity whose precise structure is not accessible to the syntax
- *  but which exposes functionality that the syntax can make use of.
+
+/**
+ * A RuleConstant is a declaration whose value is an externally provided rule.
+ * Its inner structure is not representable in or accessible to MMT,
+ * but it exposes functionality that MMT can use and that defines the semantics of MMT.
+ * 
+ * @param df the rule this declaration provides
  */
-abstract class RealizedConstant extends Declaration {
-   def toNode = <realizedconstant name={name.toPath}/>
+class RuleConstant(val home : Term, val name : LocalName, val df: Rule) extends Declaration {
+   def toNode = <ruleconstant name={name.toPath}/>
    override def toString = name.toString
-   def getComponents = Nil
+   def getComponents = Nil //List((DefComponent, df))
    def getDeclarations = Nil
 }
-
-/** A RealizedConstant representing the opaque realization of a type */
-class RealizedTypeConstant(val home : Term, val name : LocalName, val real: RealizedType) extends RealizedConstant
-
-/** A RealizedConstant representing a rule */
-class RuleConstant(val home : Term, val name : LocalName, val df: Rule) extends RealizedConstant
 
 object RuleConstantInterpreter {
    def fromNode(n: Node, thy: MPath): RuleConstant = {

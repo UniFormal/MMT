@@ -165,8 +165,10 @@ class NotationBasedParser extends ObjectParser {
         case _ => Nil
      }
      val les = decls.flatMap {
-        case r: RealizedTypeConstant =>
-           r.real.lexerExtension.toList
+        case r: RuleConstant => r.df match {
+           case rt: uom.RealizedType => rt.lexerExtension.toList
+           case _ => Nil
+        }
         case _ => Nil
      }
      (nots, les)

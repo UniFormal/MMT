@@ -117,26 +117,27 @@ class SearchServer extends ServerExtension("search") {
       }
       val sq = SearchQuery(pp, comps, tp)
       val res = search(sq, true)
-      val html = utils.HTML.builder
-      import html._
-      div(attributes = List("xmlns" -> xml.namespace("html"), "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
-         res.foreach {r =>
-            div("result") {
-               val CPath(par, comp) = r.cpath
-               div {
-                  text {comp.toString + " of "}
-                  span("mmturi", attributes=List("jobad:href" -> par.toPath)) {text {par.last}}
-               }
-               r match {
-                  case SearchResult(cp, pos, None) =>
-                  case SearchResult(cp, pos, Some(term)) =>
-                     def style(pc: presentation.PresentationContext) = if (pc.pos == pos) "resultmatch" else ""
-                     div {mmlpres(term, Some(cp), style)(new presentation.HTMLRenderingHandler(html))}
+      val htmlres = HTML.build {h =>
+         import h._
+         div(attributes = List("xmlns" -> xml.namespace("html"), "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
+            res.foreach {r =>
+               div("result") {
+                  val CPath(par, comp) = r.cpath
+                  div {
+                     text {comp.toString + " of "}
+                     span("mmturi", attributes=List("jobad:href" -> par.toPath)) {text {par.last}}
+                  }
+                  r match {
+                     case SearchResult(cp, pos, None) =>
+                     case SearchResult(cp, pos, Some(term)) =>
+                        def style(pc: presentation.PresentationContext) = if (pc.pos == pos) "resultmatch" else ""
+                        div {mmlpres(term, Some(cp), style)(new presentation.HTMLRenderingHandler(h))}
+                  }
                }
             }
          }
       }
-      Server.XmlResponse(html.result)
+      Server.XmlResponse(htmlres)
    }
 }
 
@@ -178,9 +179,10 @@ class ActionServer extends ServerExtension("action") {
       controller.handle(act)
       val r = logCache.stop
       logCache.clear
-      val html = utils.HTML.builder
-      import html._
-      div {r foreach {l => div {text {l}}}}
-      Server.XmlResponse(html.result)
+      val html = utils.HTML.build {h =>
+         import h._
+         div {r foreach {l => div {text {l}}}}
+      }
+      Server.XmlResponse(html)
    }
 }

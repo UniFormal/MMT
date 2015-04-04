@@ -263,8 +263,8 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                      }
                   }
             }
-         case <realizedconstant/> =>
-            log("found opaque constant " + name + ", trying RuleConstantInterpreter")
+         case <ruleconstant/> =>
+            log("found rule constant " + name + ", trying RuleConstantInterpreter")
             val rc = RuleConstantInterpreter.fromNode(symbol, home)
             add(rc, md)
          case <parameters>{parN}</parameters> =>
