@@ -24,7 +24,7 @@ trait ValidatedArchive extends WritableArchive {
       traverse(content, in, Archive.extensionIs("omdoc"), false) {case Current(_, inPath) =>
          rels.clear
          val mpath = Archive.ContentPathToMMTPath(inPath)
-         checker(mpath)(new ErrorLogger(report), relHandler)
+         checker(mpath)(new CheckingEnvironment(new ErrorLogger(report), relHandler))
          val relFile = (this/relational / inPath).setExtension("occ")
          val relFileHandle = File.Writer(relFile)
          rels foreach {r => relFileHandle.write(r.toPath + "\n")}
@@ -36,7 +36,7 @@ trait ValidatedArchive extends WritableArchive {
     def validate(in: List[String] = Nil, controller: Controller) {
       traverse(content, in, Archive.extensionIs("omdoc"), false) {case Current(_, inPath) =>
          val mpath = Archive.ContentPathToMMTPath(inPath)
-         val errors = controller.checker(mpath)(new ErrorLogger(report), RelationHandler.ignore)
+         val errors = controller.checker(mpath)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore))
       }
     }
 }

@@ -141,7 +141,7 @@ class NotationBasedPresenter extends ObjectPresenter {
    def doInferredType(body: => Unit)(implicit pc: PresentationContext) {}
    
    /** auxiliary type for a continuation function */
-   type Cont = Unit => Unit
+   type Cont = () => Unit
    /** called to render a scripted object - an optional decorated by several optional scripts
     *  
     *  each script is passed as a continuation that must be called at the appropriate place
@@ -466,7 +466,7 @@ class NotationBasedPresenter extends ObjectPresenter {
                               val dE = d.expand(op)
                               val unpImps = if (unplacedImplicitsDone) Nil else unplacedImplicits map {
                                  case c @ ImplicitArg(n,_) =>
-                                     (_: Unit) => doChild(c, args(n-firstArgNumber), 0); ()
+                                     () => doChild(c, args(n-firstArgNumber), 0); ()
                               }
                               val letters = dE.text.exists(_.isLetter)
                               if (letters && previous.isDefined) doSpace(1)
@@ -477,19 +477,19 @@ class NotationBasedPresenter extends ObjectPresenter {
                            case GroupMarker(ms) =>
                               doMarkers(ms)
                            case s: ScriptMarker =>
-                              def aux(mOpt: Option[Marker]) = mOpt.map {m => (_:Unit) => doMarkers(List(m))} 
+                              def aux(mOpt: Option[Marker]) = mOpt.map {m => () => doMarkers(List(m))} 
                               doScript(doMarkers(List(s.main)), aux(s.sup), aux(s.sub), aux(s.over), aux(s.under))
                            case FractionMarker(a,b,l) =>
-                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              def aux(m: Marker) = () => doMarkers(List(m)) 
                               doFraction(a map aux, b map aux, l)
                            case TdMarker(ms) => 
-                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              def aux(m: Marker) = () => doMarkers(List(m)) 
                               doTd(ms map aux)
                            case TrMarker(ms) => 
-                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              def aux(m: Marker) = () => doMarkers(List(m)) 
                               doTr(ms map aux)
                            case TableMarker(ms) =>
-                              def aux(m: Marker) = (_:Unit) => doMarkers(List(m)) 
+                              def aux(m: Marker) = () => doMarkers(List(m)) 
                               doTable(ms map aux)
                            case WordMarker(m) => doWord(m) 
                            case InferenceMarker =>

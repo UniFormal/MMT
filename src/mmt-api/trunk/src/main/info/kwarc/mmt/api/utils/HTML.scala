@@ -152,19 +152,21 @@ abstract class HTML {
    }
 }
 
+/** collects HTML in a String */
+class HTMLBuilder extends HTML {
+   private var _result: String = ""
+   def out(s: String) {_result += s}  
+   def result = _result
+   def reset {_result = ""}
+}
+
 object HTML {
    def apply(f: String => Unit) = new HTML {
       def out(s: String) {f(s)}
    }
    def build(f: HTML => Unit) = {
-      val h = builder
+      val h = new HTMLBuilder
       f(h)
       h.result
-   }
-   def builder = new HTML {
-      private var _result: String = ""
-      def result = _result
-      def reset {_result = ""}
-      def out(s: String) {_result += s}
    }
 }

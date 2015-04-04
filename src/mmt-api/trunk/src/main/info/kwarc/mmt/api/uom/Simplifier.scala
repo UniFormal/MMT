@@ -21,7 +21,7 @@ trait StructureSimplifier extends Extension {
 abstract class Simplifier(val objectLevel: ObjectSimplifier) extends StructureSimplifier with LeveledExtension {
    def apply(obj: Obj, context: Context, rules: RuleSet): obj.ThisType = objectLevel(obj, context, rules)
    def apply(obj: Obj, context: Context): obj.ThisType = {
-      val rules = RuleBasedChecker.collectRules(controller, context)
+      val rules = RuleSet.collectRules(controller, context)
       apply(obj, context, rules)
    }
 }

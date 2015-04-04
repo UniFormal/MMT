@@ -4,23 +4,6 @@ import info.kwarc.mmt.api._
 import libraries._
 import objects._
 import objects.Conversions._
-import scala.collection.mutable.{HashMap,HashSet}
-
-/** the type of all Rules
- * 
- * All Rules have an apply method that is passed a Solver for callbacks.
- * The Solver does not implement any back-tracking. Therefore, rules may only use callbacks if their effects are required.
- */
-trait Rule {
-   /** an MMT URI that is used to indicate when the Rule is applicable */
-   val head: GlobalName
-   override def toString = {
-      var name = getClass.getName
-      if (name.endsWith("$"))
-         name = name.substring(0,name.length-1)
-      "rule " + name + " for " + head
-   }
-}
 
 class Continue[A](a: => A) {
    def apply() = a
@@ -30,25 +13,6 @@ object Continue {
    def apply[A](a : => A) = new Continue(a)
 }
 
-/** A RuleSet groups some Rule's. Its construction and use corresponds to algebraic theories. */
-class RuleSet {
-   private val rules = new HashSet[Rule]
-
-   def declares(rs: Rule*) {rs foreach {rules += _}}
-   def imports(rss: RuleSet*) {rss foreach {rules ++= _.rules}}
-   
-   def getAll = rules
-   def get[R<:Rule](cls: Class[R]): HashSet[R] = rules flatMap {r =>
-      if (cls.isInstance(r))
-         List(r.asInstanceOf[R])
-      else
-         Nil
-   }
-   def getByHead[R<:Rule](cls: Class[R], head: ContentPath): HashSet[R] = get(cls) filter {r => r.head == head}
-   def getFirst[R<:Rule](cls: Class[R], head: ContentPath): Option[R] = getByHead(cls, head).headOption
-   
-   override def toString = rules.toList.map(_.toString).mkString(", ")
-}
 
 /**
  * passed to [[Rule]]s to permit callbacks to the Solver
@@ -58,6 +22,9 @@ trait CheckingCallback {
    /** unsafe simplification */
    def simplify(t : Term)(implicit stack: Stack, history: History): Term
 }
+
+/** super class of all rules primarily used by the [[Solver]] */
+trait CheckingRule extends Rule
 
 object TypingRule {
    /**
@@ -70,7 +37,7 @@ object TypingRule {
  *  It may recursively call other checks.
  *  @param head the head of the type to which this rule is applicable 
  */
-abstract class TypingRule(val head: GlobalName) extends Rule {
+abstract class TypingRule(val head: GlobalName) extends CheckingRule {
    /**
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm the term
@@ -86,7 +53,7 @@ abstract class TypingRule(val head: GlobalName) extends Rule {
 /**
  * A SubtypingRule handles [[Subtyping]] judgements
  */
-abstract class SubtypingRule extends Rule {
+abstract class SubtypingRule extends CheckingRule {
    def applicable(tp1: Term, tp2: Term): Boolean
    /**
     * pre all arguments covered
@@ -99,7 +66,7 @@ abstract class SubtypingRule extends Rule {
  *  It may recursively infer the types of components.
  *  @param head the head of the term whose type this rule infers 
  */
-abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) extends Rule {
+abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) extends CheckingRule {
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm the term
@@ -116,7 +83,7 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
  *  The rule must preserve equality and well-typedness of the simplified term. If necessary, additional checks must be performed.
  *  @param head the head of the term this rule can simplify 
  */
-abstract class ComputationRule(val head: GlobalName) extends Rule {
+abstract class ComputationRule(val head: GlobalName) extends CheckingRule {
    /** 
     *  @param check provides callbacks to the currently solved system of judgments
     *  @param tm the term to simplify
@@ -130,7 +97,7 @@ abstract class ComputationRule(val head: GlobalName) extends Rule {
 /** A UnaryTermRule checks a [[UnaryTermJudgement]]
  *  @param head the head of the term 
  */
-abstract class UnaryTermRule(val head: GlobalName) extends Rule {
+abstract class UnaryTermRule(val head: GlobalName) extends CheckingRule {
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param term the Term
@@ -156,7 +123,7 @@ trait ApplicableUnder extends Rule {
 /** A TypeBasedEqualityRule checks the equality of two terms based on the head of their type
  *  @param head the head of the type of the two terms 
  */
-abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: GlobalName) extends Rule with ApplicableUnder {
+abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: GlobalName) extends CheckingRule with ApplicableUnder {
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm1 the first term
@@ -171,7 +138,7 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
 /**
  * A TermBasedEqualityRule checks the equality of two terms without considering types
  */
-abstract class TermBasedEqualityRule extends Rule {
+abstract class TermBasedEqualityRule extends CheckingRule {
    /** 
     *  @return true if the rule is applicable to tm1 == tm2 
     */
@@ -238,7 +205,7 @@ class CongruenceRule(head: GlobalName) extends TermHeadBasedEqualityRule(Nil, he
  * @param priority rules with high priority are applied to a freshly activated constraint is activated;
  *   others when no activatable constraint exists 
  */
-abstract class ForwardSolutionRule(val head: GlobalName, val priority: ForwardSolutionRule.Priority) extends Rule {
+abstract class ForwardSolutionRule(val head: GlobalName, val priority: ForwardSolutionRule.Priority) extends CheckingRule {
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param decl the declaration of an unknown
@@ -270,7 +237,7 @@ object ForwardSolutionRule {
  * and instead transform one judgement into another.
  * This also allows reusing them in other situations, in particular when matching already-type-checked terms.
  */
-abstract class SolutionRule(val head: GlobalName) extends Rule {
+abstract class SolutionRule(val head: GlobalName) extends CheckingRule {
    /**
     * @return Some(i) if the rule is applicable to t1 in the judgment t1=t2,
     *   in that case, i is the position of the argument of t1 (starting from 0) that the rule will try to isolate
@@ -286,7 +253,7 @@ abstract class SolutionRule(val head: GlobalName) extends Rule {
 /** A TypeSolutionRule tries to solve for an unknown that occurs in a non-solved position.
  * It may also be partial, e.g., by inverting the toplevel operation of a Term without completely isolating an unknown occurring in it.
  */
-abstract class TypeSolutionRule(val head: GlobalName) extends Rule {
+abstract class TypeSolutionRule(val head: GlobalName) extends CheckingRule {
    /** 
     *  @param solver provides callbacks to the currently solved system of judgments
     *  @param tm the term that contains the unknown to be solved

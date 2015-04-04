@@ -105,7 +105,6 @@ class ExtensionManager(controller: Controller) extends Logger {
       List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
                                 new ontology.Present, new ontology.PresentDecl).foreach(addExtension(_))
       lexerExtensions ::= GenericEscapeLexer
-      lexerExtensions ::= QuoteLexer
       lexerExtensions ::= UnicodeReplacer
       lexerExtensions ::= new PrefixedTokenLexer('\\')
       

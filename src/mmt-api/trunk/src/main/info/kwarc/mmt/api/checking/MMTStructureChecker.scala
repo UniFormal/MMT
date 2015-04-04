@@ -30,30 +30,28 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
    private implicit lazy val content = controller.globalLookup
    override val logPrefix = "checker"
 
-  /** global variables the arguments of apply (better: pass them around as implicit arguments) */
-  private implicit var errorCont: ErrorHandler = null
-  private implicit var reCont: RelationHandler = null
+   /** variant of CheckingEnvironment that carries around more structure */
+   private class Environment(val ce: CheckingEnvironment, val rules: RuleSet, p: Path) {
+      def pCont(q: Path) {ce.reCont(RefersTo(q, p))}
+      def errorCont(e: Error) {ce.errorCont(e)}
+   }
   
-   /** checks a StructuralElement
+   /**
+    * checks a StructuralElement
     * @param e the element to check
     */
-   def apply(e : StructuralElement)(implicit errorCont: ErrorHandler, reCont: RelationHandler) {
-      this.errorCont = errorCont
-      this.reCont = reCont
-      try {check(Context(), e)}
-      finally {
-         this.errorCont = null // better a null pointer exception than letting arguments escape scope
-         this.reCont = null
-      }
+   def apply(e : StructuralElement)(implicit ce: CheckingEnvironment) {
+      check(Context(), e)
    }
    /**
     * @param context all variables and theories that may be used in e (including the theory in which is declared)
     * @param e the element to check
     */
-   private def check(context: Context, e : StructuralElement) {
+   private def check(context: Context, e : StructuralElement)(implicit ce: CheckingEnvironment) {
+      val rules = RuleSet.collectRules(controller, context)
+      implicit val env = new Environment(ce, rules, e.path)
       val path = e.path
       log("checking " + path)
-      implicit val pCont = (p: Path) => {reCont(RefersTo(path, p))}
       e match {
          case d: Document =>
             d.getLocalItems foreach {i => check(context, i)}
@@ -110,14 +108,14 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                            //TODO check if p is included into link.from
                            s.dfC.analyzed = dfR
                         case _ =>
-                           errorCont(InvalidElement(s, "cannot infer atomic domain of assignment"))
+                           env.errorCont(InvalidElement(s, "cannot infer atomic domain of assignment"))
                      }
                   } else {
                      val sOrg = content.getStructure(thy.path ? s.name)
                      // infer and set s.from if not provided
                      if (s.tpC.isDefined) {
                         if (! TheoryExp.equal(sOrg.from, s.from))
-                           errorCont(InvalidElement(s, "import-assignment has bad domain: found " + s.from + " expected " + sOrg.from))
+                           env.errorCont(InvalidElement(s, "import-assignment has bad domain: found " + s.from + " expected " + sOrg.from))
                      } else {
                         s.tpC.analyzed = s.from
                      }
@@ -155,7 +153,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                val (unknowns, tR, valid) = prepareTerm(t)
                if (valid) {
                   val j = Inhabitable(Stack(Context()), tR)
-                  objectChecker(CheckingUnit(c.path $ TypeComponent, context, unknowns, j))
+                  objectChecker(CheckingUnit(c.path $ TypeComponent, context, unknowns, j), env.rules)
                }
             }
             // == additional check in a link ==
@@ -180,7 +178,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                   c.tp match {
                      case Some(tp) =>
                         val j = Typing(Stack(Context()), dR, tp, None)
-                        objectChecker(CheckingUnit(c.path $ DefComponent, context, unknowns, j))
+                        objectChecker(CheckingUnit(c.path $ DefComponent, context, unknowns, j), env.rules)
                      case None =>
                         //TODO infer type
                   }
@@ -200,7 +198,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                }
                case _ => // cOrg has no definiens, nothing to do
             }
-         case rc: RealizedConstant =>
+         case rc: RuleConstant =>
          case _ =>
             //succeed for everything else but signal error
             logError("unchecked " + path)
@@ -238,34 +236,34 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     *  @param t the theory
     *  @return the reconstructed theory
     */
-   private def checkTheory(context : Context, t : Term)(implicit pCont: Path => Unit) : Term = {
+   private def checkTheory(context : Context, t : Term)(implicit env: Environment) : Term = {
      t match {
         case OMPMOD(p, args) =>
            val thy = try {
               controller.globalLookup.get(p)
            } catch {
               case e: Error =>
-              errorCont(InvalidObject(t, "unknown identifier: " + p.toPath).setCausedBy(e))
+              env.errorCont(InvalidObject(t, "unknown identifier: " + p.toPath).setCausedBy(e))
               return t
            }
            thy match {
               case thy: Theory =>
                  val pars = thy.parameters
-                 pCont(p)
+                 env.pCont(p)
                  val subs = (pars / args).getOrElse {
-                    errorCont(InvalidObject(t, "bad number of arguments, expected " + pars.length))
+                    env.errorCont(InvalidObject(t, "bad number of arguments, expected " + pars.length))
                     context.id
                  }
                  checkSubstitution(context, subs, pars, Context(), false)
               case _ =>
-                 errorCont(InvalidObject(t, "not a theory identifier" + p.toPath))
+                 env.errorCont(InvalidObject(t, "not a theory identifier" + p.toPath))
            }
            t
         case ComplexTheory(body) =>
            val bodyR = checkContext(context, body)
            ComplexTheory(bodyR)
         case _ =>
-           errorCont(InvalidObject(t, "not a valid theory"))
+           env.errorCont(InvalidObject(t, "not a valid theory"))
            t
       }
    }
@@ -278,7 +276,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     *  @param codOpt the codomain
     *  @return the reconstructed morphism (with implicit morphisms inserted), its domain, and codomain
     */
-   private def checkMorphism(context: Context, m: Term, domOpt: Option[Term], codOpt: Option[Term])(implicit pCont: Path => Unit) : (Term, Term, Term) = {
+   private def checkMorphism(context: Context, m: Term, domOpt: Option[Term], codOpt: Option[Term])(implicit env: Environment) : (Term, Term, Term) = {
       val dom = domOpt orElse Morph.domain(m)(content) getOrElse {
          throw InvalidObject(m, "cannot infer domain of morphism")
       }
@@ -288,13 +286,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       val (mR, domI, codI) = m match {
         case OMMOD(p) =>
            val l = controller.globalLookup.getLink(p)
-           pCont(p)
+           env.pCont(p)
            (m, l.from, l.to)
         case OMDL(to, name) =>
            checkTheory(context, to)
            content.get(to % name) match {
               case l: Structure =>
-                 pCont(l.path)
+                 env.pCont(l.path)
                  (m, l.from, l.to)
               case _ =>
                  throw InvalidObject(m,"invalid morphism")
@@ -334,7 +332,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       val mRR = (implDom, implCod) match {
          case (Some(l0), Some(l1)) => OMCOMP(l0, mR, l1)
          case _ =>
-           errorCont(InvalidObject(m, "ill-formed morphism: expected " + dom + " -> " + cod + ", found " + domI + " -> " + codI))
+           env.errorCont(InvalidObject(m, "ill-formed morphism: expected " + dom + " -> " + cod + ", found " + domI + " -> " + codI))
            m
       }
       (mRR, dom, cod)
@@ -343,7 +341,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
    /**
     * special case of checkMorphism, where the morphism is checked relative to its codomain
     */
-   private def checkRealization(context: Context, r: Term, dom: Term)(implicit pCont: Path => Unit) =
+   private def checkRealization(context: Context, r: Term, dom: Term)(implicit env: Environment) =
       checkMorphism(context, r, Some(dom), Some(TheoryExp.empty))
 
    /**
@@ -352,10 +350,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @param s the term
     * @return the reconstructed term
     */
-   private def checkTermTop(context : Context, t : Term)(implicit pCont: Path => Unit) : (Term, Boolean) = {
-      errorCont.mark
+   private def checkTermTop(context : Context, t : Term)(implicit env: Environment) : (Term, Boolean) = {
+      env.ce.errorCont.mark
       val tR = checkTerm(context, t)
-      (tR, ! errorCont.hasNewErrors)
+      (tR, ! env.ce.errorCont.hasNewErrors)
    }
    /**
     * Checks structural well-formedness of a term in context relative to a home theory.
@@ -363,7 +361,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @param s the term
     * @return the reconstructed term
     */
-   private def checkTerm(context : Context, s : Term)(implicit pCont: Path => Unit) : Term = {
+   private def checkTerm(context : Context, s : Term)(implicit env: Environment) : Term = {
       s match {
 //         case OMID(GlobalName(h, IncludeStep(from) / ln)) =>
 //            if (! content.imports(from, h))
@@ -372,29 +370,29 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
          case OMS(path) =>
             val ceOpt = try {content.getO(path)}
                     catch {case e: GetError =>
-                                errorCont(InvalidObject(s, "ill-formed constant reference"))
+                                env.errorCont(InvalidObject(s, "ill-formed constant reference"))
                     }
             ceOpt match {
                case Some(d : Declaration) =>
                   if (! content.hasImplicit(d.home, ComplexTheory(context)))
-                     errorCont(InvalidObject(s, "constant " + d.path + " is not imported into current context " + context))
+                     env.errorCont(InvalidObject(s, "constant " + d.path + " is not imported into current context " + context))
                case _ =>
-                  errorCont(InvalidObject(s, path + " does not refer to constant"))
+                  env.errorCont(InvalidObject(s, path + " does not refer to constant"))
             }
-            pCont(path)
+            env.pCont(path)
             //wrap in implicit morphism?
             s
          case _:OMID =>
             null
          case OMV(name) =>
             if (! context.isDeclared(name))
-               errorCont(InvalidObject(s, "variable is not declared"))
+               env.errorCont(InvalidObject(s, "variable is not declared"))
             s
          case ComplexTerm(c, subs, bound, args) =>
             val subsR = subs map {case Sub(v, t) => Sub(v, checkTerm(context, t))}
             val boundR = checkContext(context, bound)
             val argsR = args map {a => checkTerm(context++bound, a)}
-            pCont(c)
+            env.pCont(c)
             ComplexTerm(c, subsR, boundR, argsR).from(s)
          case OMA(f,args) =>
             val fR = checkTerm(context, f)
@@ -410,25 +408,24 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             val argR = checkTerm(context ++ from, arg)
             OMM(argR, morphR).from(s)
          case l: OMLIT =>
-            content.getO(l.rt.path) match {
-               case Some(rc: RealizedTypeConstant) =>
-                  checkTerm(context, OMS(rc.path))
-                  if (rc.real != l.rt)
-                     errorCont(InvalidObject(s, "illegal literal - " + l.rt.path + " is not the right realized type"))
-               case Some(_) =>
-                  errorCont(InvalidObject(s, "illegal literal - " + l.rt.path + " exists but is not a realized type"))
-               case None =>
-                  errorCont(InvalidObject(s, "illegal literal - realized type " + l.rt.path + " is unknown"))
-            }
+            val synType = l.rt.synType
+            checkTerm(context, OMS(synType))
+            val rts = env.rules.getByHead(classOf[uom.RealizedType], synType)
+            if (! (rts contains l.rt))
+               env.errorCont(InvalidObject(s, "literal not in scope: " + l.toString))               
             l
          // resolve type and parse unknown literal, return OMLIT
-         case UnknownOMLIT(v, tp) => 
-            content.getO(tp) match {
-               case Some(rc: RealizedTypeConstant) =>
-                  checkTerm(context, OMS(rc.path))
-                  rc.real.parse(v).from(s)
+         case UnknownOMLIT(v, synType) =>
+            checkTerm(context, OMS(synType))
+            val rts = env.rules.getByHead(classOf[uom.RealizedType], synType).toList
+            rts match {
+               case rule :: Nil =>
+                  rule.parse(v).from(s)
+               case Nil =>
+                  env.errorCont(InvalidObject(s, "unknown literal type"))
+                  s
                case _ =>
-                  errorCont(InvalidObject(s, "unknown literal type"))
+                  env.errorCont(InvalidObject(s, "multiple literal rules for the same type"))
                   s
             }
          case OMFOREIGN(node) => s //TODO
@@ -438,14 +435,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
    }
 
    /**
-    * Checks structural well-formedness of a context relative to a home theory and a context.
-    * @param home the home theory
+    * Checks structural well-formedness of a context relative to a context.
     * @param context the context of con
     * @param con the context to check
     * @return the reconstructed context
     * if context is valid, then this succeeds iff context ++ con is valid
     */
-   private def checkContext(context: Context, con: Context)(implicit pCont: Path => Unit) : Context = {
+   private def checkContext(context: Context, con: Context)(implicit env: Environment) : Context = {
       con.mapVarDecls {case (c, vd) =>
            val currentContext = context ++ c
            vd match {
@@ -459,7 +455,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                        val subsR = checkSubstitution(currentContext, dfSubs, tpCon, Context(), true)
                        ComplexMorphism(subsR)
                     case _ =>
-                       errorCont(InvalidObject(vd, "definiens of theory-level variable must be a partial substitution, found " + df))
+                       env.errorCont(InvalidObject(vd, "definiens of theory-level variable must be a partial substitution, found " + df))
                        df
                  }}
                  StructureVarDecl(name, tp, dfR)
@@ -484,7 +480,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @param allowPartial if true, do not require totality of subs
     * @return the reconstructed substitution
     */
-   private def checkSubstitution(context: Context, subs: Substitution, from: Context, to: Context, allowPartial: Boolean)(implicit pCont: Path => Unit) : Substitution = {
+   private def checkSubstitution(context: Context, subs: Substitution, from: Context, to: Context, allowPartial: Boolean)(implicit env: Environment) : Substitution = {
       // collect all names to be mapped
       var fromDomain = from.getDomain
       var subsDomain = subs.asContext.getDomain
@@ -504,7 +500,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
          matchingDomElems match {
             case List(de @ DomainElement(p, defined, subdomainOpt)) =>
                if (defined)
-                  errorCont(InvalidObject(subs, "found map for " + n + ", but domain already has definition for " + p))
+                  env.errorCont(InvalidObject(subs, "found map for " + n + ", but domain already has definition for " + p))
                else {
                   // n maps p: remove de from fromDomain
                   if (p == n) {
@@ -522,21 +518,21 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                            // for that, a DomainElement would need the whole substitution domain, not just the List[LocalName]
                            subsDomain :::= defs.map(ln => DomainElement(p / ln, true, None))
                         case None =>
-                           errorCont(InvalidObject(subs, "found map for " + n + ", but domain declares basic name " + p))
+                           env.errorCont(InvalidObject(subs, "found map for " + n + ", but domain declares basic name " + p))
                      }
                   }
                }
             case Nil =>
-               errorCont(InvalidObject(subs, "found map for " + n + ", but domain declares no matching name (may also happen if a substitution declares multiple maps for the same name)"))
+               env.errorCont(InvalidObject(subs, "found map for " + n + ", but domain declares no matching name (may also happen if a substitution declares multiple maps for the same name)"))
             case ns =>
-               errorCont(InvalidObject(subs, "found map for " + n + ", but domain declares " + ns.mkString(", ")))
+               env.errorCont(InvalidObject(subs, "found map for " + n + ", but domain declares " + ns.mkString(", ")))
          }
       }
       // subs is total if all names in fromDomain have been removed or are defined to begin with
       if (! allowPartial) {
          val left = fromDomain.filterNot(_.defined) 
          if (! left.isEmpty)
-            errorCont(InvalidObject(subs, "not total, missing cases for " + left.map(_.name).mkString(", ")))
+            env.errorCont(InvalidObject(subs, "not total, missing cases for " + left.map(_.name).mkString(", ")))
       }
       // finally, check the individual maps in subs
       subs.map {
@@ -548,6 +544,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
    /** 
     *  special case of checkSubstitution for total substitutions into the empty context
     */
-   private def checkSubstitutionRealization(context: Context, subs: Substitution, from: Context)(implicit pCont: Path => Unit) =
+   private def checkSubstitutionRealization(context: Context, subs: Substitution, from: Context)(implicit env: Environment) =
       checkSubstitution(context, subs, from, Context(), false)
 }

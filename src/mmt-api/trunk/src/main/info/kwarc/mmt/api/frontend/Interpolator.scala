@@ -8,27 +8,6 @@ import parser._
 
 import scala.math.BigInt.int2bigInt
 
-object MMT2ScalaConv {
-  implicit def OM2int(tm : Term) : Int = tm match {
-    case OMI(i) => i.toInt
-    case _ => throw new Exception("Invalid Conversion")
-  }
-  
-  implicit def OM2float(tm : Term) : Double = tm match {
-    case OMI(i) => i.toDouble
-    case OMF(i) => i
-    case _ => throw new Exception("Invalid Conversion")
-
-  }
-  
-  implicit def OM2List(tm : Term) : Vector[Term] = tm match {
-    case OMA(OMS(p), args) 
-      if (p == DPath(utils.URI("http://www.openmath.org/cd")) ? "linalg2" ? "vector") => 
-        Vector(args :_*)
-    case _ => throw new Exception("Invalid Conversion")
-  }
-}
-
 /**
  * provides convenience methods to be used in an interactive Scala interpreter session
  * 

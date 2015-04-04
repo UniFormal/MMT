@@ -558,7 +558,7 @@ class Controller extends ROController with Logger {
 	         val gv = new GraphExporter(tg.nodes.toIterable, Nil, tg)
             gv.exportDot(f)
 	      case Check(p) =>
-	         checker(p)(new ErrorLogger(report), RelationHandler.ignore)
+	         checker(p)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore))
 	      case Navigate(p) =>
 	         notifyListeners.onNavigate(p)
 	      case a : GetAction => a.make(this)

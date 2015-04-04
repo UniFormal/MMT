@@ -8,7 +8,7 @@ import symbols._
 /**
  * a model of an MMT theory in Scala
  */
-abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
+abstract class RealizationInScala extends DeclaredTheory(null, null, None) with RuleCreators {
    // getClass only works inside the body, i.e., after initializing the super class
    // so we make the constructor arguments null and override afterwards
    // this will fail if one of the arguments is accessed during initialization of the superclass
@@ -52,25 +52,51 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
 
    realizes {add(symbols.PlainInclude(_path, path))}
    
-   private val invertTag = "invert"
-   
-   /**
-    * adds a [[RealizedTypeConstant]] to this model
-    */
-   def universe(synType: GlobalName)(rt: RealizedType) {
-      if (rt.synType == null) rt.init(synType, path) // included RealizedTypes are already initialized
-      val tc = new RealizedTypeConstant(toTerm, synType.name, rt)
-      add(tc)
-   }
    /**
     * adds a [[RuleConstant]] realizing r.head as r to this model
     * @param r a BreadthRule for n-ary operators and an AbbrevRule for nullary operators
     */
-   def rule(r: => checking.Rule) {
+   def rule(r: Rule) {
       val rc = new symbols.RuleConstant(toTerm, r.head.name, r)
       add(rc)
    }
+  
+   private var _axioms: List[(String, () => Term, Term => Boolean)] = Nil
+   def _assert(name: String, term: () => Term, assertion: Term => Boolean) {_axioms ::= ((name, term, assertion))}
+   def _test(controller: frontend.Controller, log: String => Unit) {
+      _axioms.foreach {
+         case (n, tL, a) =>
+           log("test case " + n)
+           try {
+             val t = tL()
+             //log("term: " + controller.presenter.asString(t))
+             val tS = controller.simplifier(t, Context(_path))
+             //log("simplified: " + controller.presenter.asString(tS))
+             val result = a(tS)
+             log((if (result) "PASSED" else "FAILED") + "\n")
+           } catch {
+             case Unimplemented(f) => log("unimplemented " + f + "\n")
+             case e: Error => log("error :" + e.toString + "\n")
+           }
+      }
+   }
+}
+
+/**
+ * mixes helper functions into a [[RealizationInScala]] that allow creating rules conveniently
+ */
+trait RuleCreators {
+   def rule(r: Rule): Unit
+   private val invertTag = "invert"
    
+   /**
+    * adds a rule for implementing a type
+    */
+   def universe(synType: GlobalName)(rt: RealizedType) {
+      if (rt.synType == null) rt.init(synType) // included RealizedTypes are already initialized
+      rule(rt)
+   }
+   /** adds a rule for implementing a nullary symbol */
    def function(op:GlobalName, rType: RealizedType)(comp: rType.univ) {
       val ar = new AbbrevRule(op, rType(comp))
       rule(ar)
@@ -83,6 +109,7 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
       }
       rule(inv)
    }
+   /** adds a rule for implementing a unary symbol */
    def function(op:GlobalName, argType1: RealizedType, rType: RealizedType)(comp: argType1.univ => rType.univ) {
       val ro = new RealizedOperator(op) {
          val argTypes = List(argType1)
@@ -250,27 +277,6 @@ abstract class RealizationInScala extends DeclaredTheory(null, null, None) {
          }
       }
       rule(inv)
-   }
-
-   
-   private var _axioms: List[(String, Unit => Term, Term => Boolean)] = Nil
-   def _assert(name: String, term: Unit => Term, assertion: Term => Boolean) {_axioms ::= ((name, term, assertion))}
-   def _test(controller: frontend.Controller, log: String => Unit) {
-      _axioms.foreach {
-         case (n, tL, a) =>
-           log("test case " + n)
-           try {
-             val t = tL()
-             //log("term: " + controller.presenter.asString(t))
-             val tS = controller.simplifier(t, Context(_path))
-             //log("simplified: " + controller.presenter.asString(tS))
-             val result = a(tS)
-             log((if (result) "PASSED" else "FAILED") + "\n")
-           } catch {
-             case Unimplemented(f) => log("unimplemented " + f + "\n")
-             case e: Error => log("error :" + e.toString + "\n")
-           }
-      }
    }
 }
 

@@ -7,6 +7,7 @@ case class UOMError(msg: String) extends java.lang.Throwable
 
 case class Unimplemented(msg: String) extends java.lang.Throwable
 
+/** convenience class to construct computation rules */
 class Implementation(constantName : GlobalName, function : List[Term] => Term) extends BreadthRule(constantName) {
   def name = constantName
   val apply: Rewrite = (args : List[Term]) => {
@@ -27,9 +28,11 @@ class Implementation(constantName : GlobalName, function : List[Term] => Term) e
   }
 }
 
+/** various convenience methods to construct [[BreadthRule]]s
+ *  
+ *  A and S represent arguments and sequence arguments
+ */
 object Implementation {
-   /** convenience factory for functions of type obj*  -> obj */
-   def S(name: GlobalName)(f: List[Term] => Term) = new Implementation(name, f)
    /** convenience factory for functions of type  -> obj */
    def constant(name: GlobalName)(f: () => Term) =
       new AbbrevRule(name, f())
@@ -60,6 +63,8 @@ object Implementation {
       if (args.length != 5) throw UOMError("bad number of arguments")
       f(args(0), args(1), args(2), args(3), args(4))
    }
+   /** convenience factory for functions of type obj*  -> obj */
+   def S(name: GlobalName)(f: List[Term] => Term) = new Implementation(name, f)
    /** convenience factory for functions of type obj x obj* -> obj */
    def AS(name: GlobalName)(f: (Term,List[Term]) => Term): Implementation = S(name) {args =>
       if (args.isEmpty) throw UOMError("too few arguments")

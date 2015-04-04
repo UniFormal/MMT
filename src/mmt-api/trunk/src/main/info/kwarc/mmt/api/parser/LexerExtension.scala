@@ -54,7 +54,7 @@ class PrefixedTokenLexer(delim: Char) extends LexerExtension {
   def apply(s: String, index: Int, firstPosition: SourcePosition) = {
      var i = index+1
      while (i < s.length && s(i).isLetter) {
-           i += 1
+        i += 1
      }
      val text = s.substring(index, i)
      Token(text, firstPosition, true)
@@ -181,18 +181,6 @@ class NumberLiteralLexer(floatAllowed: Boolean) extends LexFunction {
   }
 }
 
-/** parses the numbers lexed by NumberLiteralLexer into OMI or OMF */
-object NumberLiteralParser extends ParseFunction {
-   def apply(begin: String, text: String, end: String) =
-      if (text.contains("."))
-         OMF(text.toFloat)
-      else
-         OMI(text.toInt)
-}
-
-/** groups a NumberLiteralLexer and a NumberLiteralParser */
-class NumberLiterals(floatAllowed: Boolean) extends LexParseExtension(new NumberLiteralLexer(floatAllowed), NumberLiteralParser)
-
 /**
  * an EscapeHandler that detects tokens delimited by begin and end
  * 
@@ -226,7 +214,7 @@ class AsymmetricEscapeLexer(begin: String, end: String) extends LexFunction {
  * @param delim the begin and end Char
  * @param exceptAfter the escape character to use delim within the escaped text
  * 
- * typical example: SymmetricEscapeHandler(", \)
+ * typical example: SymmetricEscapeLexer(", \)
  */
 class SymmetricEscapeLexer(delim: Char, exceptAfter: Char) extends LexFunction  {
   def applicable(s: String, i: Int) = s(i) == delim
@@ -238,16 +226,16 @@ class SymmetricEscapeLexer(delim: Char, exceptAfter: Char) extends LexFunction  
         } else
            i += 1
      }
-     val text = s.substring(index+1,i-1)
-     (delim.toString, text, delim.toString)
+     val text = s.substring(index+1,i)
+     (delim.toString, text, if (i < s.length) delim.toString else "")
   }
 }
 
-class LiteralParser(rt: RealizedType) extends ParseFunction {
+class LiteralParser(rt: uom.RealizedType) extends ParseFunction {
    def apply(begin: String, text: String, end: String) = rt.parse(text)
 }
 
-class FixedLengthLiteralLexer(rt: RealizedType, begin: String, length: Int) extends LexerExtension {
+class FixedLengthLiteralLexer(rt: uom.RealizedType, begin: String, length: Int) extends LexerExtension {
    def applicable(s: String, i: Int) = s.substring(i).startsWith(begin)
    def apply(s: String, i: Int, firstPosition: SourcePosition) = {
       val from = i+begin.length

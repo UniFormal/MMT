@@ -35,7 +35,7 @@ trait HistoryEntry {
 }
 
 /** a HistoryEntry that consists of a string, meant as a log or error message */
-case class Comment(text: Unit => String) extends HistoryEntry {
+case class Comment(text: () => String) extends HistoryEntry {
    override def toString = text()
    def present(implicit cont: Obj => String) = text()
 }
@@ -52,11 +52,11 @@ class History(private var steps: List[HistoryEntry]) {
    /** creates and returns a new branch with a child appended to the leaf */
    def +(e: HistoryEntry) : History = new History(e::steps)
    /** shortcut for adding a Comment leaf */
-   def +(s: => String) : History = this + new Comment(_ => s)
+   def +(s: => String) : History = this + new Comment(() => s)
    /** appends a child to the leaf */
    def +=(e: HistoryEntry) {steps ::= e}
    /** appends a child to the leaf */
-   def +=(s: => String) {this += Comment(_ => s)}
+   def +=(s: => String) {this += Comment(() => s)}
    /** creates a copy of the history that can be passed when branching */
    def branch = new History(steps)
    /** get the steps */

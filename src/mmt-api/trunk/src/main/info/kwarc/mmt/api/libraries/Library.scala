@@ -112,7 +112,7 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
                case Some((d,LocalName(Nil))) => d // perfect match
                case Some((d, ln)) => d match {
                   // a prefix exists and resolves to d, a suffix ln is left
-                  case _: Constant | _: RealizedConstant => error("local name " + ln + " left after resolving to constant")
+                  case _: Constant | _: RuleConstant => error("local name " + ln + " left after resolving to constant")
                   case s: Structure =>
                       val sym = getSymbol(s.from % ln, p => error("could not lookup source symbol " + p)) // resolve ln in the domain of d
                       translateByLink(sym, s, error) // translate sym along l

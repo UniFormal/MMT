@@ -17,6 +17,9 @@ object RelationHandler {
    def ignore = new RelationHandler {def apply(r: RelationalElement) {}}
 }
 
+class CheckingEnvironment(val errorCont: ErrorHandler, val reCont: RelationHandler)
+
+
 /**
  * checks objects
  * 
@@ -24,17 +27,17 @@ object RelationHandler {
  */
 trait ObjectChecker extends Extension {
    /**
-    * @param cu the cheching unit to check
-    * @param errorCont a continuation that will be called on every validation error
-    * @param relCont a continuation that will be called on found relations
+    * @param cu the checking unit to check
+    * @param rules rules to use during checking
+    * @param env continuation functions
     */
-   def apply(cu: CheckingUnit)(implicit errorCont: ErrorHandler, relCont: RelationHandler)
+   def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment)
 }
 
 object ObjectChecker {
    /** does nothing */
    def ignore = new ObjectChecker {
-      def apply(cu: CheckingUnit)(implicit errorCont: ErrorHandler, relCont: RelationHandler) {}
+      def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) {}
    }
 }
 
@@ -48,9 +51,9 @@ trait StructureChecker extends Extension {
     * checks a StructuralElement
     * @param e the element to check
     */
-   def apply(e : StructuralElement)(implicit errorCont: ErrorHandler, relCont: RelationHandler)
+   def apply(e : StructuralElement)(implicit env: CheckingEnvironment)
    /** checks a StructuralElement, given by its URI */
-   def apply(p: Path)(implicit errorCont: ErrorHandler, relCont: RelationHandler) {
+   def apply(p: Path)(implicit env: CheckingEnvironment) {
       apply(controller.get(p))
    }
 }
@@ -61,10 +64,11 @@ trait StructureChecker extends Extension {
  */
 abstract class Checker(val objectLevel: ObjectChecker) extends StructureChecker with ObjectChecker with LeveledExtension {
   /** relegates to objectChecker */
-  def apply(cu: CheckingUnit)(implicit errorCont: ErrorHandler, relCont: RelationHandler) =
-     objectLevel(cu)
+  def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) =
+     objectLevel(cu, rules)
 }
 
+// unused
 abstract class Interpreter(parser: Parser, checker: Checker) extends Importer {
    def importDocument(bf: BuildTask, seCont: documents.Document => Unit) {
       

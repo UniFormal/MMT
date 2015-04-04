@@ -34,27 +34,12 @@ object Scala {
 
 object OpenMath {
    val _path = DPath(utils.URI("http", "www.openmath.org") / "cd") ? "OpenMath"
-   object FMP {
-       val path = _path ? "FMP"
-   }
-   object OMI {
-      val path = _path ? "OMI"
-   }
-   object OMF {
-      val path = _path ? "OMF"
-   }
-   object OMSTR {
-      val path = _path ? "OMSTR"
-   }
 }
-
-
-case class ExtractError(s: String) extends Error(s)
 
 import GenericScalaExporter._
 
 class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path) {
-   val key = "scala_om"
+   val key = "om-scala"
    override val outExt = "scala"
    override protected val folderName = "NAMESPACE"
    
@@ -91,7 +76,7 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
       case OMBIND(b, con, sc) => s"${termToScala(b)}(${contextToScala(con)}, ${termToScala(sc)})"
       case OMS(p)   => nameToScalaQ(p)
       case OMV(n)   => n.toPath
-      case l: OMLIT => s"OMLIT(${l.rt.toString()})(${l.value.toString})"
+      case l: OMLIT => s"OMLIT(${l.rt.toString})(${l.value.toString})"
       case t: OMSemiFormal => "(throw ParseError(\"\"\"informal term " + t.toString + "\"\"\"))"
    }
    // drops types, definiens
@@ -150,10 +135,10 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
      rh.writeln(s"trait ${nameToScala(t.name)} extends RealizationInScala$includes {")
      t.getDeclarations foreach {
         case c: Constant =>
-          if (c.tp == Some(OMID(OpenMath.FMP.path))) {
+          if (c.rl == Some("FMP")) {
              val qname = nameToScalaQ(c.path)
              val qnameString = "\"" + qname + "\""
-             rh.writeln(s"  val $qname = _assert($qnameString, _ => ${termToScala(c.df.get)}, _ == logic1_true())\n")
+             rh.writeln(s"  val $qname = _assert($qnameString, _ => ${termToScala(c.tp.get)}, _ == logic1_true())\n")
           } else {
              val arity = c.not.map(_.arity).getOrElse(Arity.constant)
              val scalaArgs = arityToScala(arity)
@@ -216,7 +201,7 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
      var rules = ""
      from.getDeclarations foreach {
         case c: Constant =>
-          if (c.tp != Some(OMID(OpenMath.FMP.path))) {
+          if (c.rl != Some("FMP")) {
              val implemented = nameToScala(from.path.name) + "." + nameToScala(c.name) + ".path"
              val apath = v.path ? c.name
              val aO = v.getO(c.name)

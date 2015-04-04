@@ -1033,7 +1033,7 @@ object Solver {
   def check(controller: Controller, stack: Stack, tm: Term): Option[(Term,Term)] = {
       val (unknowns,tmU) = parser.ObjectParser.splitOffUnknowns(tm)
       val etp = LocalName("expected_type")
-      val rules = RuleBasedChecker.collectRules(controller, stack.context)
+      val rules = RuleSet.collectRules(controller, stack.context)
       val solver = new Solver(controller, stack.context, unknowns ++ VarDecl(etp, None, None, None), rules)
       val j = Typing(stack, tmU, OMV(etp), None)
       solver(j)
@@ -1046,7 +1046,7 @@ object Solver {
   /** infers the type of a term that is known to be well-formed */
   def infer(controller: Controller, context: Context, tm: Term, rulesOpt: Option[RuleSet]): Option[Term] = {
       val rules = rulesOpt.getOrElse {
-         RuleBasedChecker.collectRules(controller, context)
+         RuleSet.collectRules(controller, context)
       }
       implicit val stack = Stack(Context())
       implicit val history = new History(Nil)

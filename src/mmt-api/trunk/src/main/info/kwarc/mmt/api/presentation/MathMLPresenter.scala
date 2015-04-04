@@ -75,7 +75,7 @@ class MathMLPresenter extends NotationBasedPresenter {
             pc.out(mo)
             implicits.foreach {i =>
                doSpace(1)
-               doImplicit {i(())}
+               doImplicit {i()}
             }
          }
       } else
@@ -145,7 +145,7 @@ class MathMLPresenter extends NotationBasedPresenter {
             case (None,None)        => mbp()
          }
       }
-      def subsup(x: Unit) {
+      def subsup() {
          (sub, sup) match {
             case (Some(b), Some(p)) => pc.html.msubsup {main; R(b); R(p)}
             case (Some(b), None)    => pc.html.msub    {main; R(b)}
