@@ -20,8 +20,6 @@ object Nat {
    object leq   extends BinaryLFConstantScala(_path, "leq")
    object plus  extends BinaryLFConstantScala(_path, "plus")
    object minus extends BinaryLFConstantScala(_base ? "NatMinus", "minus")
-   object natlit extends info.kwarc.mmt.api.objects.StandardInt
-   natlit.init(nat, DPath(URI("http","real.omdoc.org")) ? "StandardNat")
-   
-   
+   object natlit extends uom.StandardNat with uom.RealizedType 
+   natlit.init(nat)
 }
