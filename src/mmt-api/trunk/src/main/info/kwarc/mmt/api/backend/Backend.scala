@@ -84,7 +84,7 @@ class RealizationArchive(file: File, val loader: java.net.URLClassLoader) extend
       val c = try {Class.forName(s, true, loader)}
          catch {
             case e: ClassNotFoundException =>
-               throw NotApplicable("class + " + s + " not found")
+               throw NotApplicable("class " + s + " not found")
             case e: ExceptionInInitializerError =>
                throw BackendError("class for " + mp + " exists, but an error occurred when initializing it", mp).setCausedBy(e)
             case e: LinkageError =>
@@ -186,7 +186,8 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
              List(arch)
           } else {
              log(root + " is not an archive - recursing")
-             root.list.toList flatMap (n => openArchive(root / n))
+             // folders beginning with . are skipped
+             root.list.toList flatMap (n => if (n.startsWith(".")) Nil else openArchive(root / n))
           }
       } else if (root.isFile && root.getPath.endsWith(".mar")) {    // a MAR archive file
           val folder = root.up
