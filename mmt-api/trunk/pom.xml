@@ -27,7 +27,6 @@
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_2.11</artifactId>
             <version>2.2.4</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
