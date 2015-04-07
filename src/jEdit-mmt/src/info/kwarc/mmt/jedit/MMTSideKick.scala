@@ -160,7 +160,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
             a.obj match {
                case Hole(t) =>
                   val g = new proving.Goal(a.context, t)
-                  val rules = RuleBasedChecker.collectRules(controller, a.context) //TODO should be cached
+                  val rules = RuleSet.collectRules(controller, a.context) //TODO should be cached
                   val prover = new proving.Prover(controller, g, rules, logPrefix)
                   log(g.present(2)(prover.presentObj, None,None))
                   val options = prover.interactive(3)
@@ -207,7 +207,8 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val root = tree.root
       implicit val errorCont = new ErrorListForwarder(mmt.errorSource, controller, path)
       errorCont.reset
-      implicit val relCont = RelationHandler.ignore
+      val relCont = RelationHandler.ignore
+      implicit val env = new CheckingEnvironment(errorCont, relCont)
       try {
          val doc = controller.read(buffer.getText, dpath, path.getExtension.getOrElse(""))
          controller.checker(doc) 
