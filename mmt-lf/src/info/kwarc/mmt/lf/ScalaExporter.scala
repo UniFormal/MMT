@@ -50,15 +50,15 @@ class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) 
                      case None =>
                         scalaVal(c.path, "RealizedType")
                      case Some(d) => d match {
-                        case OMS(p) =>
-                           scalaValDef(c.path, Some("RealizedType"), nameToScalaQ(p))
+                        // nice idea but does not work well; better expand all definitions if they are used later
+                        // case OMS(p) => scalaValDef(c.path, Some("RealizedType"), nameToScalaQ(p))
                         case _ =>
                            scalaVal(c.path, "RealizedType")
                      }
                   }
                   (decl, ini)
                } else {
-                  // create "realizes {function(name)(argType1, ..., argTypeN, retType)(function)}
+                  // create "realizes {function(name, argType1, ..., argTypeN, retType)(function)}
                   val (argsE, retE) = typeEras(tp)
                   val lts = (argsE ::: List(retE)).map(nameToScalaQ).mkString(", ")
                   val ini = s"  realizes {function($synName, $lts)($semName)}"
@@ -96,8 +96,10 @@ class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) 
 }
 
 import checking._
+import uom._
 
-trait SolutionRules extends uom.RealizationInScala {
+/** this can be mixed into Scala-models of MMT theories to simplify adding additional rules */
+trait SolutionRules extends RealizationInScala {
    def solve_unary(op:GlobalName, argType: RealizedType, rType: RealizedType)(invert: rType.univ => Option[argType.univ]) = {
       val sr = new SolutionRule(op / "invert") {
          def applicable(tm1: Term) = tm1 match {
@@ -114,8 +116,8 @@ trait SolutionRules extends uom.RealizationInScala {
       rule(sr)
    }
    def solve_binary_right(op:GlobalName, argType1: RealizedType, argType2: RealizedType, rType: RealizedType)
-            (invert: (rType.univ,argType2.univ) => Option[argType1.univ]) =
-      new SolutionRule(op / "right-invert") {
+            (invert: (rType.univ,argType2.univ) => Option[argType1.univ]) = {
+      val sr = new SolutionRule(op / "right-invert") {
          def applicable(tm1: Term) = tm1 match {
             case ApplySpine(OMS(`op`), List(_,argType2(_))) => Some(1)
             case _ => None
@@ -127,9 +129,11 @@ trait SolutionRules extends uom.RealizationInScala {
             case _ => None
          }
       }
+      rule(sr)
+   }
    def solve_binary_left(op:GlobalName, argType1: RealizedType, argType2: RealizedType, rType: RealizedType)
-            (invert: (argType1.univ,rType.univ) => Option[argType2.univ]) =
-      new SolutionRule(op / "left-invert") {
+            (invert: (argType1.univ,rType.univ) => Option[argType2.univ]) = {
+      val sr = new SolutionRule(op / "left-invert") {
          def applicable(tm1: Term) = tm1 match {
             case ApplySpine(OMS(`op`), List(argType1(_),_)) => Some(2)
             case _ => None
@@ -141,4 +145,6 @@ trait SolutionRules extends uom.RealizationInScala {
             case _ => None
          }
       }
+      rule(sr)
+   }
 }
