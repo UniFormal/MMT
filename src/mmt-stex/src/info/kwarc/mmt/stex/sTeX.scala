@@ -7,7 +7,7 @@ object sTeX {
     val name = p match {
       case s : GlobalName => s.module.toMPath.name.toPath
       case m : MPath => m.name.toPath
-      case d : DPath => d.last
+      case d : DPath => d.last.split('.').toList.init.mkString(".") // removing extension
       case c : CPath => c.parent.module.toMPath.name.toPath
     }
     name.split("\\.").toList match {
