@@ -30,7 +30,7 @@ object GenericScalaExporter {
    /** package URI */
    def dpathToScala(d: DPath, key: List[String] = Nil) = {
       val u = d.uri
-      var auth = utils.MyList.fromString(u.authority.getOrElse(""), "\\.").reverse
+      var auth = utils.stringToList(u.authority.getOrElse(""), "\\.").reverse
       (auth ::: key ::: u.path).mkString(".")
    }
    def scalaToDPath(j: String, key: List[String] = Nil) = {

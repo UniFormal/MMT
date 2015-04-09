@@ -31,12 +31,6 @@ class ControllerState {
    var nsMap = NamespaceMap.empty
    /** base URL In the local system */
    var home = File(System.getProperty("user.dir"))
-   /**
-    * @param h sets the current home directory relative to which path names in commands are executed
-    * 
-    * initially the current working directory
-    */
-   def setHome(h: File) {home = h}
    
    var actionDefinitions: List[Defined] = Nil
    var currentActionDefinition: Option[Defined] = None
@@ -118,7 +112,13 @@ class Controller extends ROController with Logger {
    /** @return the current home directory */
    def getHome = state.home
    /** @return the value of an environment variable */
-   def getEnvVar(name: String) = state.environmentVariables.get(name)
+   def getEnvVar(name: String) = state.environmentVariables.get(name) orElse Option(System.getenv.get(name))
+   /**
+    * @param h sets the current home directory relative to which path names in commands are executed
+    * 
+    * initially the current working directory
+    */
+   def setHome(h: File) {state.home = h}
    
    private def init {
       extman.addDefaultExtensions
@@ -486,7 +486,7 @@ class Controller extends ROController with Logger {
                lcOpt foreach {lc =>
                   val archs = backend.openArchive(lc)
                   archs foreach {a =>
-                     val deps = MyList.fromString(a.properties.getOrElse("dependencies", ""))
+                     val deps = stringToList(a.properties.getOrElse("dependencies", ""))
                      deps foreach {d => cloneRecursively(URI(d).pathAsString)}
                   }
                }

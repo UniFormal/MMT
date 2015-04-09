@@ -45,7 +45,7 @@ object Action extends RegexParsers {
      private def archopen = "archive" ~> "add" ~> file ^^ {f => AddArchive(f)} //deprecated, use mathpath archive
      private def archbuild = "build" ~> archiveList ~ str ~ (str ?) ~ (str *) ^^ {
        case ids ~ keymod ~ in ~ args =>
-            val segs = MyList.fromString(in.getOrElse(""), "/")
+            val segs = stringToList(in.getOrElse(""), "/")
             val (key,mod) = if (keymod.startsWith("-"))
                (keymod.substring(1), archives.Clean)
             else if (keymod.endsWith("*"))
@@ -58,7 +58,7 @@ object Action extends RegexParsers {
      }
      private def archdim = "archive" ~> archiveList ~ dimension ~ (str ?) ^^ {
        case id ~ dim ~ s =>
-            val segs = MyList.fromString(s.getOrElse(""), "/")
+            val segs = stringToList(s.getOrElse(""), "/")
             ArchiveBuild(id, dim, archives.Build, segs)
      }
      private def dimension = "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
@@ -121,7 +121,7 @@ object Action extends RegexParsers {
    /* common non-terminals */
    private def path = str ^^ {s => Path.parse(s, nsMap)}
    private def mpath = str ^^ {s => Path.parseM(s, nsMap)}
-   private def archiveList = ("\\[.*\\]"r) ^^ {s => MyList.fromString(s.substring(1,s.length-1), ",")} |
+   private def archiveList = ("\\[.*\\]"r) ^^ {s => stringToList(s.substring(1,s.length-1), ",")} |
                              str ^^ {s => List(s)} 
    private def file = str ^^ {s => File(home.resolve(s))}
    private def uri = str ^^ {s => URI(s)}
