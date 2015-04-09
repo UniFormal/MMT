@@ -6,4 +6,4 @@ log+ oaf
 
 oaf root PATH/TO/WORKING/COPIES http://gl.mathhub.info
 
-envar Twelf PATH/TO/Twelf
+envar Twelf PATH/TO/TWELF
