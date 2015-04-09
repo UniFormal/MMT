@@ -8,7 +8,7 @@ import archives._
 class PVSImporter extends Importer {
    val key = "pvs-omdoc"
    def includeFile(n: String) : Boolean = n.endsWith(".xml")
-   _inDim = Dim("xml")
+   override def inDim = RedirectableDimension("pvsxml")
    
    private val parseXML = new XMLToScala("info.kwarc.mmt.pvs.syntax")
    

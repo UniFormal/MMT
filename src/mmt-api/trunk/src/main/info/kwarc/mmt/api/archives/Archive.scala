@@ -13,8 +13,6 @@ import utils._
 import scala.collection.mutable._
 import scala.xml.NodeSeq
 
-//case class CompilationError(s: String) extends Exception(s)
-case class CompilationStep(from: String, to: String, compiler: Compiler)
 /** convenience class for traversing an Archive */
 case class Current(file: File, path: List[String])
                                                                        
@@ -44,24 +42,26 @@ abstract class WritableArchive extends ROArchive {
     val root : File
     val id = properties("id")
     val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
-   
-    val sourceDim = properties.get("source").getOrElse("source")
-    val narrationDim = properties.get("narration").getOrElse("narration")
-    val contentDim = properties.get("content").getOrElse("content")
-    val relDim = properties.get("relational").getOrElse("relational")
-    val errorDim = properties.get("errors").getOrElse("errors")
-    val flatDir = root / "flat"
-    
+    /** the NamespaceMap built from the ns and ns-prefix properties */
+    val namespaceMap = {
+       var nsMap = NamespaceMap.empty
+       val Matcher = new utils.StringMatcher2("", "-", "")
+       properties.foreach {
+          case ("ns", uri) => nsMap = nsMap.base(uri)
+          case (Matcher("ns", prefix), uri) => nsMap = nsMap.add(prefix, uri)
+          case _ =>
+       }
+       nsMap
+    }
     /**
      * @param dim a dimension in the archive
      * @return the relative path to that
      */
     def /(dim: ArchiveDimension) : File = dim match {
-       case `source` => root / sourceDim
-       case `content` => root / contentDim
-       case `narration` => root / narrationDim
-       case `relational` => root / relDim
-       case `errors` => root / errorDim
+       case r @ RedirectableDimension(key, _) => properties.get(key) match {
+          case Some(p) => root / p
+          case None => this / r.default
+       }
        case Dim(path@_*) => root / path.toList
     }
     
@@ -155,7 +155,7 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
               case _ => mod.toNode
            }
            val flatNodeOMDoc = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">{flatNode}</omdoc>
-           xml.writeFile(flatNodeOMDoc, flatDir / in)
+           xml.writeFile(flatNodeOMDoc, this / flat / in)
            controller.delete(mpath)
         }
        log("done:  [CONT -> FLAT]        -> " + inFile)

@@ -21,15 +21,18 @@ object Twelf {
                                     SourcePosition(-1, numbers(2).toInt, numbers(3).toInt))
       SourceRef(utils.FileURI(file), reg)
    }
+   val dim = RedirectableDimension("twelf", Some(source))
 }
 
 /** importer wrapper for Twelf, which starts the catalog
   */
 class Twelf extends Importer with frontend.ChangeListener {
    val key = "twelf-omdoc"
+   override def inDim = Twelf.dim
 
    def includeFile(n: String) : Boolean = n.endsWith(".elf")
 
+   /** path to Twelf executable */
    private var path : File = null
    /** Twelf setting "set unsafe ..." */
    var unsafe : Boolean = true
@@ -40,27 +43,21 @@ class Twelf extends Importer with frontend.ChangeListener {
 
    /**
     * creates and intializes a Catalog
-    * first argument is the location of the twelf-server script
-    * second argument optionally gives the input dimension (default: the source folder)
+    * first argument is the location of the twelf-server script; alternatively set variable GraphViz
     */
    override def start(args: List[String]) {
-      checkNumberOfArguments(1,2,args)
-      path = File(args(0))
+      val p = getFromFirstArgOrEnvvar(args, "Twelf")
+      path = File(p)
       catalog = new Catalog(HashSet(), HashSet("*.elf"), HashSet(".svn"), port, true, report("lfcatalog", _))
       catalog.init    //  throws PortUnavailable
-      if (args.length >= 2) {
-         _inDim = Dim(args(1))
-      }
       controller.backend.getArchives foreach onArchiveOpen
    }
    override def onArchiveOpen(arch: Archive) {
-      val dim = arch.properties.get("twelf").getOrElse(arch.sourceDim)
-      val stringLoc = (arch.root / dim).getPath
+      val stringLoc = (arch / Twelf.dim).getPath
       catalog.addStringLocation(stringLoc)
    }
    override def onArchiveClose(arch: Archive) {
-      val dim = arch.properties.get("twelf").getOrElse(arch.sourceDim)
-      val stringLoc = (arch.root / dim).getPath
+      val stringLoc = (arch / Twelf.dim).getPath
       catalog.deleteStringLocation(stringLoc)
    }
    override def destroy {

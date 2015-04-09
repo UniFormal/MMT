@@ -31,11 +31,15 @@ trait Extension extends Logger {
       this.controller = controller
       report = controller.report
    }
-   
-   protected def checkNumberOfArguments(min: Int, max: Int, args: List[String]) {
-      if (args.length < min || args.length > max)
-         throw LocalError("bad number of arguments: " + args.mkString(" ") + "; expected: " + min + " to " + max)
+
+   protected def getFromFirstArgOrEnvvar(args: List[String], name: String): String = {
+      args match {
+         case Nil => controller.getEnvVar(name).getOrElse(throw LocalError(s"1 argument or environment variable $name needed"))
+         case hd::Nil => hd
+         case _ => throw LocalError("too many arguments: " + args.mkString(" ") + "; expected: 1") 
+      }
    }
+   
    /** extension-specific initialization (override as needed, empty by default) */
    def start(args: List[String]) {}
    /** extension-specific cleanup (override as needed, empty by default)
