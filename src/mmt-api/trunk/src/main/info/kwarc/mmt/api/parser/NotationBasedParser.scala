@@ -193,7 +193,7 @@ class NotationBasedParser extends ObjectParser {
                newUnknown(newExplicitUnknown, boundVars)
             } else if (word.count(_ == '?') > 0) {
                 // ... or qualified identifiers
-                val segments = utils.MyList.fromString(word, "\\?")
+                val segments = utils.stringToList(word, "\\?")
                 // recognizing identifiers ?THY?SYM is awkward because it would require always lexing initial ? as identifiers
                 // but we cannot always prepend ? because the identifier could also be NS?THY
                 // Therefore, we prepend ? using a heuristic

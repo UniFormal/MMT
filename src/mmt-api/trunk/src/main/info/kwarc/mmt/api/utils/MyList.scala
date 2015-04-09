@@ -28,8 +28,4 @@ class MyList[A](val l : List[A]) {
 object MyList {
    implicit def fromList[A](l : List[A]) : MyList[A] = new MyList[A](l)
    implicit def toList[A](m: MyList[A]) : List[A] = m.l
-   def fromString(s: String, sep: String = "\\s") = s.split(sep).toList match {
-      case List("") => Nil
-      case l => l
-   }
 }

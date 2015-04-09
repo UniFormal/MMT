@@ -87,7 +87,6 @@ case class URI(scheme: Option[String], authority: Option[String], path: List[Str
 }
    
 object URI {
-   private def nullToNone(s: String) = if (s == null) None else Some(s)
    private val pattern = java.util.regex.Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?") // pattern taken from RFC 3986   /** transforms a Java URI into a URI */
    def apply(uri : java.net.URI) : URI = URI(uri.toString)
    /** parses a URI (using the regular expression from the RFC) */
@@ -95,8 +94,8 @@ object URI {
       val m = pattern.matcher(s)
       if (m.matches == false)
           throw new java.net.URISyntaxException(s, "malformed URI reference")
-      val scheme = nullToNone(m.group(2))
-      val authority = nullToNone(m.group(4))
+      val scheme = Option(m.group(2))
+      val authority = Option(m.group(4))
       val jpath = m.group(5)
       val (pathString, absolute) = {
          if (jpath.startsWith("/")) (jpath.substring(1), true)
@@ -105,8 +104,8 @@ object URI {
       var path = pathString.split("/",-1).toList
       if (path == List(""))  //note: split returns at least List(""), never Nil
          path = Nil
-      val query = nullToNone(m.group(7))
-      val fragment = nullToNone(m.group(9))
+      val query = Option(m.group(7))
+      val fragment = Option(m.group(9))
       URI(scheme, authority, path, absolute, query, fragment)
    }
    /** returns a relative URI with scheme and authority only */

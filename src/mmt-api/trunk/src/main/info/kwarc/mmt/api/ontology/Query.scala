@@ -319,7 +319,7 @@ object Query {
          Projection(parse(t), i)
       case <function>{a}</function> =>
          val name = xml.attr(n, "name")
-         val params = MyList.fromString(xml.attr(n, "param")) 
+         val params = stringToList(xml.attr(n, "param")) 
          val arg = parse(a)
          val fun = queryFunctions.find(_.name == name).getOrElse {
             throw ParseError("illegal function: " + name)

@@ -21,7 +21,6 @@ class TptpTwelfCompiler extends TraversingBuildTarget {
   private var tptp2x : File = null
   /** one argument - path to TPTP folder */
   override def start(args: List[String]) {
-     checkNumberOfArguments(1,1,args)
      tptp2x = File(args(0)) / "TPTP2X" / "tptp2X"     
   }
   

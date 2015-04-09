@@ -96,7 +96,7 @@ case class WebQuery(pairs: List[(String,String)]) {
 object WebQuery {
   /** parses k1=v1&...&kn=vn */
   def parse(query: String): WebQuery = {
-     val kvs = utils.MyList.fromString(query, "&")
+     val kvs = utils.stringToList(query, "&")
      val pairs = kvs map {s =>
         val i = s.indexOf("=")
         if (i == -1 || i == s.length-1) (s, "")
