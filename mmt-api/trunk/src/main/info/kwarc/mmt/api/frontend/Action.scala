@@ -196,7 +196,7 @@ case class SetBase(base : Path) extends Action {override def toString = "base " 
  * 
  * concrete syntax: envvar name "value"
  */
-case class SetEnvVar(name: String, value: String) extends Action {override def toString = s"""envar $name "$value""""}
+case class SetEnvVar(name: String, value: String) extends Action {override def toString = s"""envvar $name "$value""""}
 
 /** load a file containing commands and execute them, fails on first error if any
  * concrete syntax: file file:FILE
