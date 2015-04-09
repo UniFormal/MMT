@@ -25,6 +25,29 @@ import java.io.FileInputStream
  */
 case class NotFound(path : Path) extends java.lang.Throwable
 
+/** minor variables kept by the controller, usually modifiable via actions */
+class ControllerState {
+   /** MMT base URI */
+   var nsMap = NamespaceMap.empty
+   /** base URL In the local system */
+   var home = File(System.getProperty("user.dir"))
+   /**
+    * @param h sets the current home directory relative to which path names in commands are executed
+    * 
+    * initially the current working directory
+    */
+   def setHome(h: File) {home = h}
+   
+   var actionDefinitions: List[Defined] = Nil
+   var currentActionDefinition: Option[Defined] = None
+
+   var environmentVariables = new scala.collection.mutable.ListMap[String,String]
+   
+   /** interface to a remote OAF */
+   var oaf: Option[OAF] = None
+   def getOAF = oaf.getOrElse {throw GeneralError("no oaf defined, use 'oaf root'")}   
+}
+
 /** An interface to a controller containing read-only methods. */
 abstract class ROController {
    val memory : ROMemory
@@ -85,6 +108,17 @@ class Controller extends ROController with Logger {
    val refiner = new moc.PragmaticRefiner(Set(moc.pragmaticRename, pragmaticAlphaRename))
    /** moc.propagator - handling change propagation */
    val propagator = new moc.OccursInImpactPropagator(memory)
+   
+   /** all other mutable fields */
+   protected val state = new ControllerState
+   /** @return the current namespace map */
+   def getNamespaceMap = state.nsMap
+   /** @return the current base URI */
+   def getBase = state.nsMap.base
+   /** @return the current home directory */
+   def getHome = state.home
+   /** @return the value of an environment variable */
+   def getEnvVar(name: String) = state.environmentVariables.get(name)
    
    private def init {
       extman.addDefaultExtensions
@@ -363,34 +397,10 @@ class Controller extends ROController with Logger {
       result
    }
 
-   /** MMT base URI */
-   protected var nsMap = NamespaceMap.empty
-   /** @return the current namespace map */
-   def getNamespaceMap = nsMap
-   /** @return the current base URI */
-   def getBase = nsMap.base
-   /** base URL In the local system */
-   protected var home = File(System.getProperty("user.dir"))
-   /** @return the current home directory */
-   def getHome = home
-   /**
-    * @param h sets the current home directory relative to which path names in commands are executed
-    * 
-    * initially the current working directory
-    */
-   def setHome(h: File) {home = h}
-   
-   protected var actionDefinitions: List[Defined] = Nil
-   protected var currentActionDefinition: Option[Defined] = None
-   
-   /** interface to a remote OAF */
-   protected var oaf: Option[OAF] = None
-   protected def getOAF = oaf.getOrElse {throw GeneralError("no oaf defined, use 'oaf root'")}
-   
    /** executes a string command */
    def handleLine(l : String) {
         try {
-           val act = Action.parseAct(l, getBase, home)
+           val act = Action.parseAct(l, getBase, getHome)
            handle(act)
         } catch {
            case e: Error =>
@@ -401,9 +411,9 @@ class Controller extends ROController with Logger {
    }
    /** executes an Action */
    def handle(act : Action) : Unit = {
-	  currentActionDefinition foreach {case Defined(file, name, acts) =>
+	  state.currentActionDefinition foreach {case Defined(file, name, acts) =>
 	      if (act != EndDefine) {
-	         currentActionDefinition = Some(Defined(file, name, acts ::: List(act)))
+	         state.currentActionDefinition = Some(Defined(file, name, acts ::: List(act)))
    	      report("user", "  " + name + ":  " + act.toString)
    	      return
 	      }
@@ -469,10 +479,10 @@ class Controller extends ROController with Logger {
          case OAFRoot(dir, uriOpt) =>
             if (!dir.isDirectory)
                throw GeneralError(dir + " is not a directory")
-            oaf = Some(new OAF(uriOpt.getOrElse(OAF.defaultURL), dir, report))
+            state.oaf = Some(new OAF(uriOpt.getOrElse(OAF.defaultURL), dir, report))
          case OAFClone(path) =>
             def cloneRecursively(p: String) {
-               val lcOpt = getOAF.clone(p)
+               val lcOpt = state.getOAF.clone(p)
                lcOpt foreach {lc =>
                   val archs = backend.openArchive(lc)
                   archs foreach {a =>
@@ -482,11 +492,13 @@ class Controller extends ROController with Logger {
                }
             }
             cloneRecursively(path)
-         case OAFPull => getOAF.pull            
-         case OAFPush => getOAF.push
+         case OAFPull => state.getOAF.pull            
+         case OAFPush => state.getOAF.push
 	      case SetBase(b) =>
-	         nsMap = nsMap(b)
+	         state.nsMap = state.nsMap(b)
 	         report("response", "base: " + getBase)
+         case SetEnvVar(n,v) =>
+            state.environmentVariables(n) = v
 	      case ServerOn(port) => server match {
             case Some(serv) => logError("server already started on port " + serv.port)
             case None if Util.isTaken(port) => logError("port " + port + " is taken, server not started.")
@@ -510,38 +522,38 @@ class Controller extends ROController with Logger {
 	      case ExecFile(f, nameOpt) =>
 	         val folder = f.getParentFile
 	         // store old state, and initialize fresh state
-	         val oldHome = home
-	         val oldCAD = currentActionDefinition
-	         home = folder
-	         currentActionDefinition = None
+	         val oldHome = state.home
+	         val oldCAD = state.currentActionDefinition
+	         state.home = folder
+	         state.currentActionDefinition = None
 	         // excecute the file
             File.read(f).split("\\n").foreach(handleLine)
-            if (currentActionDefinition.isDefined)
+            if (state.currentActionDefinition.isDefined)
                throw ParseError("end of definition expected")
             // restore old state
-	         home = oldHome
-	         currentActionDefinition = oldCAD
+	         state.home = oldHome
+	         state.currentActionDefinition = oldCAD
 	         // run the actionDefinition, if given
 	         nameOpt foreach {name =>
 	            handle(Do(Some(folder), name))
 	         }
 	      case Define(name) =>
-	         currentActionDefinition match {
+	         state.currentActionDefinition match {
 	            case None =>
-	               currentActionDefinition = Some(Defined(home, name, Nil))
+	               state.currentActionDefinition = Some(Defined(state.home, name, Nil))
 	            case Some(_) =>
 	               throw ParseError("end of definition expected")
 	         }
 	      case EndDefine =>
-	         currentActionDefinition match {
+	         state.currentActionDefinition match {
 	            case Some(a) =>
-	               actionDefinitions ::= a
-	               currentActionDefinition = None
+	               state.actionDefinitions ::= a
+	               state.currentActionDefinition = None
 	            case None =>
 	               throw ParseError("no definition to end")
 	         }
 	      case Do(file, name) =>
-	         actionDefinitions.find {a => (file.isEmpty || a.file == file.get) && a.name == name} match {
+	         state.actionDefinitions.find {a => (file.isEmpty || a.file == file.get) && a.name == name} match {
 	            case Some(Defined(_, _, actions)) =>
 	               actions foreach handle
 	            case None =>

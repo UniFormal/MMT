@@ -19,10 +19,10 @@ case class ParsingUnit(source: SourceRef, context: Context, term: String, top: O
 /**
  * ParsingStream encapsulates the input of a [[StructureParser]]
  * @param source the source URI of the stream
- * @param base the initial base URI to use while parsing
+ * @param nsMap defined namespaces
  * @param stream the stream to parse
  */
-class ParsingStream(val source: URI, val base: DPath, val stream: java.io.BufferedReader)
+class ParsingStream(val source: URI, val nsMap: NamespaceMap, val stream: java.io.BufferedReader)
 
 /**
  * an ObjectParser handles ParsingUnits
@@ -80,7 +80,7 @@ trait StructureParser extends Extension {
     */
    def readString(src: URI, dpath: DPath, text: String)(implicit errorCont: ErrorHandler) = {
       val r = new java.io.BufferedReader(new java.io.StringReader(text))
-      val ps = new ParsingStream(src, dpath, r)
+      val ps = new ParsingStream(src, NamespaceMap(dpath), r)
       try {
          apply(ps)
       } finally {
@@ -96,7 +96,7 @@ trait StructureParser extends Extension {
      val r = utils.File.Reader(f)
      val url = FileURI(f)
      val base = DPath(FileURI(f.setExtension("omdoc")))
-     val ps = new ParsingStream(url, base, r)
+     val ps = new ParsingStream(url, NamespaceMap(base), r)
      try {
         apply(ps)
      } finally {

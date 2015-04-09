@@ -169,7 +169,6 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
           if (manifest.exists) {
              log("opening archive defined by " + manifest)
              val properties = new scala.collection.mutable.ListMap[String,String]
-             var compsteps : Option[List[CompilationStep]] = Some(Nil) 
              if (manifest.isFile) {
                 File.ReadLineWise(manifest) {case line =>
                    val tline = line.trim

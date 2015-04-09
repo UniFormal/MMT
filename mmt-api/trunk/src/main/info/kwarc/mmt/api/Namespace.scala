@@ -5,10 +5,14 @@ import utils._
 case class NamespaceMap(base: Path, prefixes: List[(String,URI)] = Nil) {
    /** change the base */
    def apply(newBase: Path) = copy(base = newBase)
+   /** change the base (relative to this NamespaceMap) */
+   def base(s: String) = copy(base = Path.parse(s, this))
    /** resolve a prefix */
    def get(p: String) = prefixes.find(_._1 == p).map(_._2)
-   /** define a new prefix */
-   def add(p: String, u: URI) = copy(prefixes = (p,u)::prefixes)
+   /** define a new prefix (URI is relative to default) */
+   def add(p: String, u: URI): NamespaceMap = copy(prefixes = (p,default.resolve(u))::prefixes)
+   /** define a new prefix as a string (which is relative to this NamespaceMap) */
+   def add(p: String, u: String): NamespaceMap = add(p, URI(expand(u)))
    /** default namespace (URI of base) */
    def default = base.doc.uri // = prefixes.getOrElse("", URI(""))
    /** expands a CURIE into a URI */

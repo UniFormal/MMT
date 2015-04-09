@@ -25,9 +25,9 @@ class ParserState(val reader: Reader, val ps: ParsingStream, val errorCont: Erro
    * }}}
    * commands
    *
-   * the initial default namespace is the URI of the container
+   * the initial namespace map
    */
-  var namespaces = NamespaceMap(DPath(ps.base.uri))
+  var namespaces = ps.nsMap
 
   /** the position at which the current StructuralElement started */
   var startPosition = reader.getSourcePosition
@@ -129,7 +129,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   private def apply(state: ParserState): (Document, ParserState) = {
-    val dpath = state.ps.base
+    val dpath = DPath(state.ps.source)
     val doc = new Document(dpath, Nil, state.namespaces)
     seCont(doc)(state)
     logGroup {
@@ -766,9 +766,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     //building parsing state
     val br = new java.io.BufferedReader(new java.io.StringReader(modS))
     val r = new Reader(br)
-    val ps = new ParsingStream(dpath.uri, docBaseO.getOrElse(dpath), br)
+    val nsMap = NamespaceMap(docBaseO.getOrElse(dpath), prefixes)
+    val ps = new ParsingStream(dpath.uri, nsMap, br)
     val state = new ParserState(r, ps, errorCont)
-    state.namespaces = state.namespaces.copy(prefixes = prefixes)
     val doc = controller.getDocument(dpath)
     //calling parse function
     readInDocument(doc)(state)
@@ -787,9 +787,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     //building parsing state
     val br = new java.io.BufferedReader(new java.io.StringReader(conS))
     val r = new Reader(br)
-    val ps = new ParsingStream(mpath.doc.uri, docBaseO.getOrElse(mpath.doc), br)
+    val nsMap = NamespaceMap(docBaseO.getOrElse(mpath.doc), prefixes)
+    val ps = new ParsingStream(mpath.doc.uri, nsMap, br)
     val state = new ParserState(r, ps, errorCont)
-    state.namespaces = state.namespaces.copy(prefixes = prefixes)
 
     val thy = controller.globalLookup.getTheory(mpath) match {
       case d: DeclaredTheory => d

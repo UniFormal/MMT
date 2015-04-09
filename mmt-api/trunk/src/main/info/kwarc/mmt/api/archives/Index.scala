@@ -16,11 +16,11 @@ import utils._
  *  
  */
 abstract class Importer extends TraversingBuildTarget {
-   protected var _inDim: ArchiveDimension = source
    /** source by default, may be overridden */
-   def inDim = _inDim
+   def inDim = source
    /** narration, produces also content and relational */ 
    val outDim = narration
+   /** omdoc */
    override val outExt = "omdoc"
 
    /** the main abstract method to be implemented by importers
@@ -120,18 +120,8 @@ abstract class StringBasedImporter extends Importer {
 /** a trivial importer that reads OMDoc documents and returns them */
 class OMDocImporter extends Importer {
    val key = "index"
+   override def inDim = RedirectableDimension("omdoc", Some(source))
    def includeFile(s: String) = s.endsWith(".omdoc")
-   
-   /**
-    * 1 argument - the input dimension, defaults to source
-    */
-   override def start(args: List[String]) {
-      args match {
-         case Nil =>
-         case a :: Nil => _inDim = Dim(a)
-         case _ => throw LocalError("too many arguments") 
-      }
-   }
    
    def importDocument(bf: BuildTask, seCont: Document => Unit) = {
       val doc = controller.read(bf.inFile, Some(bf.narrationDPath))(bf.errorCont)

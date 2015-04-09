@@ -10,4 +10,10 @@ import archives._
   * The list of open archives is maintained by the [[backend.Backend]].
   */
 package object archives {
+   val source = RedirectableDimension("source")
+   val content = RedirectableDimension("content")
+   val narration = RedirectableDimension("narration")
+   val relational = RedirectableDimension("relational")
+   val errors = RedirectableDimension("errors")
+   val flat = RedirectableDimension("flat")
 }

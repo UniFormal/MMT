@@ -71,8 +71,9 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
          // execute startup arguments
          val folder = File(getClass.getProtectionDomain.getCodeSource.getLocation.getPath).up
          val startup = folder / "startup.msl"
-         if (startup.exists)
+         if (startup.exists) {
             controller.handle(ExecFile(startup, None))
+         }
          // execute command line arguments
          val commands = args.toList.mkString(" ").split(" ; ")
          commands foreach controller.handleLine

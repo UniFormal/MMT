@@ -31,7 +31,7 @@ abstract class BuildTarget extends Extension {
 
    /** number of required arguments, defaults to 0, override as needed */
    def requiredArguments(m: BuildTargetModifier): Int = 0
-
+   
    /** build this target in a given archive */
    def build (a: Archive, args: List[String], in: List[String])
    /** update this target in a given archive */
@@ -87,6 +87,9 @@ class BuildTask(val inFile: File, val isDir: Boolean, val inPath: List[String], 
    def dirName: String = outFile.segments.init.last
 }
 
+/**
+ * a path in an [[Archive]], relative to an [[ArchiveDimension]], used when traversing
+ */
 case class ArchivePath(segments: List[String]) {
    def toFile = File(toString)
    def setExtension(e: String) = ArchivePath(toFile.setExtension(e).segments)

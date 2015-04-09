@@ -25,7 +25,7 @@ object Action extends RegexParsers {
    private def empty = "\\s*"r
    private def comment = "//.*"r
    private def action = log | mathpath | archive | oaf | extension | mws | server | windowaction | execfile | defactions |scala |
-      setbase | read | graph | check | navigate | printall | printallxml | diff | clear | exit | getaction // getaction must be at end for default get
+      setbase | envvar | read | graph | check | navigate | printall | printallxml | diff | clear | exit | getaction // getaction must be at end for default get
 
    private def log = logfilets | logfile | loghtml | logconsole | logon | logoff
      private def logfile = "log file" ~> file ^^ {f => AddReportHandler(new TextFileHandler(f, false))}
@@ -85,6 +85,7 @@ object Action extends RegexParsers {
    private def dodefined = "do " ~> str ~ (file?) ^^ {case s ~ f => Do(f, s)}
    private def scala = "scala" ~> ("[^\\n]*"r) ^^ {s => val t = s.trim; Scala(if (t == "") None else Some(t))}
    private def setbase = "base" ~> path ^^ {p => SetBase(p)}
+   private def envvar = "envvar" ~> str ~ quotedStr ^^ {case name ~ value => SetEnvVar(name, value)}
    private def read = "read" ~> file ^^ {f => Read(f)}
    private def graph = "graph" ~> file ^^ {f => Graph(f)}
    private def check = "check" ~> path ^^ {p => Check(p)}
@@ -189,6 +190,13 @@ case class LoggingOff(group : String) extends Action {override def toString = "l
  * concrete syntax: base base:URI
  */
 case class SetBase(base : Path) extends Action {override def toString = "base " + base}
+
+/**
+ * set an environment variable
+ * 
+ * concrete syntax: envvar name "value"
+ */
+case class SetEnvVar(name: String, value: String) extends Action {override def toString = s"""envar $name "$value""""}
 
 /** load a file containing commands and execute them, fails on first error if any
  * concrete syntax: file file:FILE
