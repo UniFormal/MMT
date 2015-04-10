@@ -16,7 +16,7 @@
     <properties>
         <bundle.export-package>tiscaf*</bundle.export-package>
     </properties>
-
-    <dependencies>
-    </dependencies>
+    <build>
+        <sourceDirectory>src/main</sourceDirectory>
+    </build>
 </project>
