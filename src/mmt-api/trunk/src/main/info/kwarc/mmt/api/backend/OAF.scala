@@ -57,6 +57,24 @@ class OAF(val uri: URI, val root: File, val report: Report) extends Logger {
             true
       }
    }
+   /** @return the ssh of the remote git manager - git@authority: */
+   def ssh = "git@" + uri.authority.getOrElse("") + ":"
+   /** initializes a repository */
+   def init(pathS: String) {
+      val path = utils.stringToList(pathS, "/")
+      val repos = root / path
+      val readme = "README.txt"
+      val mf = "MANIFEST.MF"
+      repos.mkdirs
+      git(repos, "init")
+      File.write(repos / "source" / readme, "commit your sources in this folder")
+      git(repos, "add", s"source/$readme")
+      File.WriteLineWise(repos / mf, List(s"id: $pathS", s"narration-base: http://mathhub.info/$pathS"))
+      git(repos, "add", mf)
+      git(repos, "commit", "-m", "\"automatically created by MMT\"")
+      git(repos, "remote", "add", "origin", ssh + pathS + ".git")
+      git(repos, "push", "origin", "master")
+   }
    /** clones a repository */
    def clone(path: String): Option[File] = {
       val localPath = root / path
@@ -65,22 +83,6 @@ class OAF(val uri: URI, val root: File, val report: Report) extends Logger {
       } else {
          val success = git(root, "clone", (uri/path).toString + ".git", path)
          if (!success) return None
-      }
-      Some(localPath)
-   }
-   /** initializes a repository */
-   def init(uri: URI): Option[File] = {
-      //untested
-      val localPath = root / uri.path
-      if (localPath.exists) {
-         logError("target directory exists")
-      } else {
-         val mi = localPath / "META-INF"
-         mi.mkdir
-         (localPath / "source").mkdir
-         File.write(mi / "MANIFEST.MF", s"id: ${uri.path}\n")
-         git(root, "init", localPath.toString)
-         git(root, "add", ".", localPath.toString)
       }
       Some(localPath)
    }
@@ -101,5 +103,5 @@ class OAF(val uri: URI, val root: File, val report: Report) extends Logger {
 }
 
 object OAF {
-   val defaultURL = URI("http", "gl.mathhub.info") 
+   val defaultURL = URI("http", "gl.mathhub.info")
 }

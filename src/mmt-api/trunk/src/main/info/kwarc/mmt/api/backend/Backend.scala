@@ -165,11 +165,12 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
     */
    def openArchive(root: File) : List[Archive] = {
       if (root.isDirectory) {
-          val manifest = root / "META-INF" / "MANIFEST.MF"
-          if (manifest.exists) {
-             log("opening archive defined by " + manifest)
-             val properties = new scala.collection.mutable.ListMap[String,String]
-             if (manifest.isFile) {
+          val manifestLocations = List(root / "META-INF", root).map(_ / "MANIFEST.MF")
+          val manifestOpt = manifestLocations.find(_.isFile)
+          manifestOpt match {
+             case Some(manifest) =>
+                log("opening archive defined by " + manifest)
+                val properties = new scala.collection.mutable.ListMap[String,String]
                 File.ReadLineWise(manifest) {case line =>
                    val tline = line.trim
                    if (! tline.startsWith("//") && tline != "") {
@@ -179,14 +180,13 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
                       properties(key) = value
                    }
                 }
-             }
-             val arch = new Archive(root, properties, report)
-             addStore(arch)
-             List(arch)
-          } else {
-             log(root + " is not an archive - recursing")
-             // folders beginning with . are skipped
-             root.list.toList flatMap (n => if (n.startsWith(".")) Nil else openArchive(root / n))
+                val arch = new Archive(root, properties, report)
+                addStore(arch)
+                List(arch)
+             case None =>
+                log(root + " is not an archive - recursing")
+                // folders beginning with . are skipped
+                root.list.toList flatMap (n => if (n.startsWith(".")) Nil else openArchive(root / n))
           }
       } else if (root.isFile && root.getPath.endsWith(".mar")) {    // a MAR archive file
           val folder = root.up
