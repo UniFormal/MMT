@@ -65,8 +65,9 @@ object Action extends RegexParsers {
            "relational" | "delete" | "integrate" | "test" | "close"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
      
-   private def oaf = "oaf" ~> (oafRoot | oafClone | oafPull | oafPush)
+   private def oaf = "oaf" ~> (oafRoot | oafInit | oafClone | oafPull | oafPush)
      private def oafRoot   = "root" ~> file ~ (uri ?) ^^ {case f ~ u => OAFRoot(f, u)}
+     private def oafInit = "init" ~> str ^^ {case s => OAFInit(s)}
      private def oafClone = "clone" ~> str ^^ {case s => OAFClone(s)}
      private def oafPull  = "pull" ^^ {_ => OAFPull}
      private def oafPush  = "push" ^^ {_ => OAFPush}
@@ -266,6 +267,13 @@ case class AddMathPathJava(javapath: File) extends Action {override def toString
  * concrete syntax: oaf root file:FILE [uri:URI]
  */
 case class OAFRoot(file : File, uri: Option[URI]) extends Action {override def toString = "oaf root " + file + " " + uri.getOrElse("")}
+
+/**
+ * clone an archive from a remote OAF
+ *
+ * concrete syntax: oaf close path:STRING
+ */
+case class OAFInit(path: String) extends Action {override def toString = "oaf init " + path}
 
 /**
  * clone an archive from a remote OAF

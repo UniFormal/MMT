@@ -480,6 +480,8 @@ class Controller extends ROController with Logger {
             if (!dir.isDirectory)
                throw GeneralError(dir + " is not a directory")
             state.oaf = Some(new OAF(uriOpt.getOrElse(OAF.defaultURL), dir, report))
+         case OAFInit(path) =>
+            state.getOAF.init(path)
          case OAFClone(path) =>
             def cloneRecursively(p: String) {
                val lcOpt = state.getOAF.clone(p)
