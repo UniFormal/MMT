@@ -154,10 +154,6 @@
         <id>ossrh</id>
         <url>https://oss.sonatype.org/content/repositories/snapshots</url>
       </snapshotRepository>
-      <repository>
-        <id>ossrh</id>
-        <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-      </repository>
     </distributionManagement>
 
     <licenses>
@@ -166,21 +162,6 @@
         <url>http://www.gnu.org/licenses/gpl.txt</url>
      </license>
     </licenses>
-
-    <repositories>
-        <repository>
-            <id>scala-tools.org</id>
-            <name>Scala-tools Maven2 Repository</name>
-            <url>http://scala-tools.org/repo-releases</url>
-        </repository>
-    </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>scala-tools.org</id>
-            <name>Scala-tools Maven2 Repository</name>
-            <url>http://scala-tools.org/repo-releases</url>
-        </pluginRepository>
-    </pluginRepositories>
 
     <build>
     <sourceDirectory>src</sourceDirectory>
