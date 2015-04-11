@@ -44,6 +44,10 @@ exits MMT (releases all resources and terminates all spawned threads).
 registers the <a href="../extensions.html">extension</a> whose qualified Java class name is STRING.
 The class must be on the class Java path already.
 
+<div class="code">envvar NAME STRING</div>
+sets a variable that can be used later.
+The typical use is to define all machine-specific paths in a fixed place.
+
 <div class="code">base URI</div>
 sets the base URI to U.
 
@@ -165,6 +169,9 @@ See the documentation of the <a href="build.html">build tool</a> for details on 
 
 <div class="code">oaf root FOLDER URI</div>
 sets a local folder as the root for git-clones of archives in the <a href="../oaf.html">OAF</a>.
+
+<div class="code">oaf init GROUP/REPOS</div>
+git-inits the archive URI/GROUP/REPOS in FOLDER/GROUP/REPOS (after it was created on the remote server).
 
 <div class="code">oaf clone GROUP/REPOS</div>
 git-clones the archive URI/GROUP/REPOS into FOLDER/GROUP/REPOS and recursively clones its dependencies.
