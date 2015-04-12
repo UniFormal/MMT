@@ -8,8 +8,14 @@ div.code {
    border-width: 1;
    margin-top: 5px;
 }
-.blueBG {
-    background: royalblue;
+.bg-white {
+    background: lightgray;
+    overflow-scrolling: auto;
+    margin: 3%;
+}
+
+.addBorder {
+    border: 6px solid black;
 }
 .frame {
    background:lightgray;
@@ -36,4 +42,17 @@ li {
 
 .centered {
     text-align: center;
+}
+
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    /* Set the fixed height of the footer here */
+    height: 60px;
+    background-color: #f5f5f5;
+}
+
+.maxH {
+    max-lines: 3;
 }

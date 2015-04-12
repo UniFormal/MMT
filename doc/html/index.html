@@ -1,22 +1,121 @@
 <html ng-app="helpApp">
-  <head>
-      <script src="script/jquery.min.js"></script>
-      <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
-      <link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css">
-      <script src="bootstrap/js/bootstrap.min.js"></script>
-      <script src="script/angular.js"></script>
-      <script type="text/javascript" src="script/script.js"></script>
-      <link rel="stylesheet" type="text/css" href="css/style.css"/>
-      <link rel="alternate" type="application/atom+xml" href="https://svn.kwarc.info/repos/frabe/www/news.atom" title="News Feed">
-      <title>MMT: A Foundation-Independent Approach to Formal Knowledge</title>
-  </head>
-<body class="bg-success">
-    <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+
+<head>
+    <script src="script/jquery.min.js"></script>
+    <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css">
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="script/angular.js"></script>
+    <script src="script/angular-route.js"></script>
+    <script type="text/javascript" src="script/script.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/style.css"/>
+    <link rel="alternate" type="application/atom+xml" href="https://svn.kwarc.info/repos/frabe/www/news.atom" title="News Feed">
+    <title>MMT: A Foundation-Independent Approach to Formal Knowledge</title>
+</head>
+
+<body style="background-color: lightgray">
+
+<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container-fluid">
+
         <div class="navbar-header">
-                <a class="navbar-brand" href="index.html">The MMT Language and System: Documentation</a>
+            <a class="navbar-brand" href="index.html"><b>The MMT Language and System: Documentation</b></a>
         </div>
-    </nav>
-    <div class="col-md-12"><object type="text/html" data="toc.html" style="width:100%; height:90%; margin:0%;"></object></div>
-    <div class="navbar-footer centered"><b>MMT is developed and maintained by <a href="http://kwarc.info/frabe/">Florian Rabe</a>.</b></div>
+
+        <div class="collapse navbar-collapse" style="margin-right: 1%">
+            <ul class="nav navbar-nav navbar-right">
+                <div role="tabpanel">
+                    <ul class="nav nav-pills" role="tablist">
+                        <li role="presentation" class="dropdown">
+                            <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                                Main Pages <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li role="presentation"><a href="#api" aria-controls="api" role="tab" data-toggle="tab">API</a></li>
+                                <li role="presentation"><a href="#archives" aria-controls="archives" role="tab" data-toggle="tab">Archives</a></li>
+                                <li role="presentation"><a href="#backend" aria-controls="backend" role="tab" data-toggle="tab">Backend</a></li>
+                                <li role="presentation"><a href="#build" aria-controls="build" role="tab" data-toggle="tab">Build</a></li>
+                                <li role="presentation"><a href="#configure" aria-controls="configure" role="tab" data-toggle="tab">Configure</a></li>
+                                <li role="presentation"><a href="#content" aria-controls="content" role="tab" data-toggle="tab">Content</a></li>
+                                <li role="presentation"><a href="#controller" aria-controls="controller" role="tab" data-toggle="tab">Controller</a></li>
+                                <li role="presentation"><a href="#demos" aria-controls="demos" role="tab" data-toggle="tab">Demos</a></li>
+                                <li role="presentation"><a href="#extensions" aria-controls="extensions" role="tab" data-toggle="tab">Extensions</a></li>
+                                <li role="presentation"><a href="#independence" aria-controls="independence" role="tab" data-toggle="tab">Independence</a></li>
+                                <li role="presentation"><a href="#install" aria-controls="install" role="tab" data-toggle="tab">Install</a></li>
+                                <li role="presentation"><a href="#language" aria-controls="language" role="tab" data-toggle="tab">Language</a></li>
+                                <li role="presentation"><a href="#log" aria-controls="log" role="tab" data-toggle="tab">Log</a></li>
+                                <li role="presentation"><a href="#memory" aria-controls="memory" role="tab" data-toggle="tab">Memory</a></li>
+                                <li role="presentation"><a href="#oaf" aria-controls="oaf" role="tab" data-toggle="tab">OAF</a></li>
+                                <li role="presentation"><a href="#papers" aria-controls="papers" role="tab" data-toggle="tab">Papers</a></li>
+                                <li role="presentation"><a href="#projects" aria-controls="projects" role="tab" data-toggle="tab">Projects</a></li>
+                                <li role="presentation"><a href="#query" aria-controls="query" role="tab" data-toggle="tab">Query</a></li>
+                                <li role="presentation"><a href="#related" aria-controls="related" role="tab" data-toggle="tab">Related</a></li>
+                                <li role="presentation"><a href="#repos" aria-controls="repos" role="tab" data-toggle="tab">Repos</a></li>
+                                <li role="presentation"><a href="#run" aria-controls="run" role="tab" data-toggle="tab">Run</a></li>
+                                <li role="presentation"><a href="#services" aria-controls="services" role="tab" data-toggle="tab">Services</a></li>
+                                <li role="presentation"><a href="#title" aria-controls="title" role="tab" data-toggle="tab">Title</a></li>
+                                <li role="presentation"><a href="#twelfmod" aria-controls="twelfmod" role="tab" data-toggle="tab">Twelf Module</a></li>
+                                <li role="presentation"><a href="#uris" aria-controls="uris" role="tab" data-toggle="tab">URIs</a></li>
+                            </ul>
+                        </li>
+                        <li role="presentation" class="dropdown" data-trigger="focus">
+                            <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                                Applications <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li role="presentation"><a href="#applications-build" aria-controls="applications-build" role="tab" data-toggle="tab">Build</a></li>
+                                <li role="presentation"><a href="#applications-gui" aria-controls="applications-gui" role="tab" data-toggle="tab">GUI</a></li>
+                                <li role="presentation"><a href="#applications-http" aria-controls="applications-http" role="tab" data-toggle="tab">HTTP</a></li>
+                                <li role="presentation"><a href="#applications-index" aria-controls="applications-index" role="tab" data-toggle="tab">Index</a></li>
+                                <li role="presentation"><a href="#applications-jedit" aria-controls="applications-jedit" role="tab" data-toggle="tab">JEdit</a></li>
+                                <li role="presentation"><a href="#applications-shell" aria-controls="applications-shell" role="tab" data-toggle="tab">Shell</a></li>
+                                <li role="presentation"><a href="#applications-web" aria-controls="applications-web" role="tab" data-toggle="tab">Web</a></li>
+                            </ul>
+                        </li>
+                        <li role="presentation" class="dropdown">
+                            <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                                Language <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li role="presentation"><a href="#language-index" aria-controls="language-index" role="tab" data-toggle="tab">Index</a></li>
+                                <li role="presentation"><a href="#language-literals" aria-controls="language-literals" role="tab" data-toggle="tab">Literals</a></li>
+                                <li role="presentation"><a href="#language-namespaces" aria-controls="language-namespaces" role="tab" data-toggle="tab">Namespaces</a></li>
+                            </ul>
+                        </li>
+                        <li role="presentation" class="dropdown">
+                            <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                                Syntax <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li role="presentation"><a href="#syntax-index" aria-controls="syntax-index" role="tab" data-toggle="tab">Index</a></li>
+                                <li role="presentation"><a href="#syntax-text-parser" aria-controls="syntax-text-parser" role="tab" data-toggle="tab">Text Parser</a></li>
+                                <li role="presentation"><a href="#syntax-text" aria-controls="syntax-text" role="tab" data-toggle="tab">Text</a></li>
+                                <li role="presentation"><a href="#syntax-xml-parser" aria-controls="syntax-xml-parser" role="tab" data-toggle="tab">XML Parser</a></li>
+                                <li role="presentation"><a href="#syntax-xml" aria-controls="syntax-xml" role="tab" data-toggle="tab">XML</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                </div>
+            </ul></div>
+    </div>
+</nav>
+
+<div style="margin-top: 4%; margin-bottom: 4%; margin-left: 2%; margin-right: 2%">
+    <b><div ng-view>Loading...</div></b>
+</div>
+
+<footer>
+    <div class="navbar navbar-default navbar-fixed-bottom">
+        <div class="container">
+            <div class="centered" id="footer-body">
+                <b>MMT is developed and maintained by <a href="http://kwarc.info/frabe/">Florian Rabe</a>.</b>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
 </body>
+
 </html>
