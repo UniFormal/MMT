@@ -29,9 +29,8 @@ class FrameViewer(controller : Controller){
    }
   
   def pushout(tm : Term, vpaths : MPath*) : Term = {
-    vpaths.foldLeft(tm)((t, v) => pushoutOne(tm, v))
+    vpaths.foldLeft(tm)((t, v) => pushoutOne(t, v))
   }
-  
    
    private def pushoutOne(tm : Term, vpath : MPath) : Term = {
      val view = controller.get(vpath) match {
@@ -50,7 +49,6 @@ class FrameViewer(controller : Controller){
          v.getDeclarations collect {
            case c : Constant =>
              c.df.foreach {t =>
-               println((p ? c.name).toString + " #->#" + t.toString)
                rules += (p ? c.name -> t)
              }
          }
