@@ -1,5 +1,7 @@
 package info.kwarc.mmt.stex
 
+import java.nio.file.Files
+
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.utils.{File, ShellCommand}
@@ -26,7 +28,10 @@ class STeX extends Importer with frontend.ChangeListener {
         bt.errorCont(LocalError(s))
         return
       }
-      val logFile = bt.outFile.setExtension("ltxlog")
+      val lmhOut = bt.inFile.setExtension("omdoc")
+      val logFile = bt.inFile.setExtension("ltxlog")
+      if (lmhOut.exists()) Files.move(lmhOut.toPath, bt.outFile.toPath)
+      log(logFile.toString)
     }
     catch {
       case e: Throwable =>
