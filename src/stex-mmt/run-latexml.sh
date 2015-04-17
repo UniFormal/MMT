@@ -27,7 +27,14 @@ fi
 
 dir=`dirname $inputfile`
 
-repoDir=`dirname $dir` # strip off final "source" path segment
+restdir=$dir
+source=`basename $restdir`
+while [ ! "$source" == "source" ]
+do
+  restdir=`dirname $restdir`
+  source=`basename $restdir`
+done 
+repoDir=`dirname $restdir` # strip off final "source" path segment
 
 repo=`basename $repoDir`
 groupDir=`dirname $repoDir`
