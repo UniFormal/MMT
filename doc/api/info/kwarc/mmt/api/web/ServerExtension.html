@@ -1,5 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!DOCTYPE html >
 <html>
         <head>
           <title>ServerExtension - MMT - info.kwarc.mmt.api.web.ServerExtension</title>
@@ -31,7 +30,13 @@
       <div id="definition">
         <img src="../../../../../lib/class_big.png" />
         <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.api.web">web</a></p>
-        <h1>ServerExtension</h1>
+        <h1>ServerExtension</h1><h3><span class="morelinks"><div>Related Doc:
+            <a href="package.html" class="extype" name="info.kwarc.mmt.api.web">package web</a>
+          </div></span></h3><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       </div>
 
       <h4 id="signature" class="signature">
@@ -40,21 +45,21 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">ServerExtension</span><span class="result"> extends <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></span>
+        <span class="name">ServerExtension</span><span class="result"> extends <a href="../frontend/FormatBasedExtension.html" class="extype" name="info.kwarc.mmt.api.frontend.FormatBasedExtension">FormatBasedExtension</a></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>An MMT extensions that handles certain requests in MMT's HTTP server.</p><p>It will be called on URIs of the form http://server:port/:CONTEXT/PATH?QUERY
-</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="file:/C:/frabe/MMT/src/mmt-api/trunk/src/main/info/kwarc/mmt/api/web/ServerPlugin.scala" target="_blank">ServerPlugin.scala</a></dd></dl><div class="toggleContainer block">
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="../../../../../../../src/mmt-api/trunk/src/main/info/kwarc/mmt/api/web/ServerPlugin.scala" target="_blank">ServerPlugin.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a>, <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../frontend/FormatBasedExtension.html" class="extype" name="info.kwarc.mmt.api.frontend.FormatBasedExtension">FormatBasedExtension</a>, <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a>, <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block">
-          <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a href="ActionServer.html" class="extype" name="info.kwarc.mmt.api.web.ActionServer">ActionServer</a>, <a href="AdminServer.html" class="extype" name="info.kwarc.mmt.api.web.AdminServer">AdminServer</a>, <a href="BreadcrumbsServer.html" class="extype" name="info.kwarc.mmt.api.web.BreadcrumbsServer">BreadcrumbsServer</a>, <a href="QueryServer.html" class="extype" name="info.kwarc.mmt.api.web.QueryServer">QueryServer</a>, <a href="SVGServer.html" class="extype" name="info.kwarc.mmt.api.web.SVGServer">SVGServer</a>, <a href="SearchServer.html" class="extype" name="info.kwarc.mmt.api.web.SearchServer">SearchServer</a></div>
-        </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
+            <span class="toggle">Known Subclasses</span>
+            <div class="subClasses hiddenContent"><a href="ActionServer.html" class="extype" name="info.kwarc.mmt.api.web.ActionServer">ActionServer</a>, <a href="BreadcrumbsServer.html" class="extype" name="info.kwarc.mmt.api.web.BreadcrumbsServer">BreadcrumbsServer</a>, <a href="GetActionServer.html" class="extype" name="info.kwarc.mmt.api.web.GetActionServer">GetActionServer</a>, <a href="ParseExtension.html" class="extype" name="info.kwarc.mmt.api.web.ParseExtension">ParseExtension</a>, <a href="PostServer.html" class="extype" name="info.kwarc.mmt.api.web.PostServer">PostServer</a>, <a href="QueryServer.html" class="extype" name="info.kwarc.mmt.api.web.QueryServer">QueryServer</a>, <a href="SVGServer.html" class="extype" name="info.kwarc.mmt.api.web.SVGServer">SVGServer</a>, <a href="SearchServer.html" class="extype" name="info.kwarc.mmt.api.web.SearchServer">SearchServer</a>, <a href="TreeView.html" class="extype" name="info.kwarc.mmt.api.web.TreeView">TreeView</a></div>
+          </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
                 <span class="toggle diagram-link">Type Hierarchy</span>
                 <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#diagrams" target="_blank" class="diagram-help">Learn more about scaladoc diagrams</a>
-                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph25" viewBox="0.00 0.00 725.00 158.00" height="158pt" width="725pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 154)" class="graph" id="graph1"><polygon points="-4,5 -4,-154 722,-154 722,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph25_0"><a xlink:title="info.kwarc.mmt.api.web.ServerExtension (this class)" xlink:href="#inheritance-diagram"><polygon points="425,-88 309,-88 309,-62 425,-62 425,-88" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-83" x="319" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-73" x="341" text-anchor="start">ServerExtension</text></a></g><!-- node1 --><g class="node class" id="graph25_1"><a xlink:title="info.kwarc.mmt.api.web.ActionServer" xlink:href="ActionServer.html#inheritance-diagram"><polygon points="100,-26 0,-26 0,-0 100,-0 100,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="10" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="32" text-anchor="start">ActionServer</text></a></g><!-- node0&#45;&gt;node1 --><g class="edge inheritance" id="graph25_0_1"><a xlink:title="ActionServer is a subtype of ServerExtension"><path d="M303.815,-62.549C251.548,-53.0036 175.392,-38.9269 109,-26 106.127,-25.4406 103.177,-24.8601 100.201,-24.2697" stroke="#d4d4d4" fill="none"></path><polygon points="303.564,-64.282 308.797,-63.4584 304.193,-60.8389 303.564,-64.282" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node class" id="graph25_2"><a xlink:title="info.kwarc.mmt.api.web.AdminServer" xlink:href="AdminServer.html#inheritance-diagram"><polygon points="218,-26 118,-26 118,-0 218,-0 218,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="128" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="150" text-anchor="start">AdminServer</text></a></g><!-- node0&#45;&gt;node2 --><g class="edge inheritance" id="graph25_0_2"><a xlink:title="AdminServer is a subtype of ServerExtension"><path d="M321.762,-60.3604C287.464,-50.0194 240.775,-35.9422 207.871,-26.0213" stroke="#d4d4d4" fill="none"></path><polygon points="321.437,-62.0902 326.729,-61.8581 322.447,-58.7392 321.437,-62.0902" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node3 --><g class="node class" id="graph25_3"><a xlink:title="info.kwarc.mmt.api.web.BreadcrumbsServer" xlink:href="BreadcrumbsServer.html#inheritance-diagram"><polygon points="366,-26 236,-26 236,-0 366,-0 366,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="246" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="268" text-anchor="start">BreadcrumbsServer</text></a></g><!-- node0&#45;&gt;node3 --><g class="edge inheritance" id="graph25_0_3"><a xlink:title="BreadcrumbsServer is a subtype of ServerExtension"><path d="M349.722,-58.2924C338.663,-48.2386 324.529,-35.3904 314.336,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="348.767,-59.7896 353.644,-61.8581 351.121,-57.1998 348.767,-59.7896" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node4 --><g class="node class" id="graph25_4"><a xlink:title="info.kwarc.mmt.api.web.QueryServer" xlink:href="QueryServer.html#inheritance-diagram"><polygon points="483.25,-26 384.75,-26 384.75,-0 483.25,-0 483.25,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="395" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="417" text-anchor="start">QueryServer</text></a></g><!-- node0&#45;&gt;node4 --><g class="edge inheritance" id="graph25_0_4"><a xlink:title="QueryServer is a subtype of ServerExtension"><path d="M384.54,-58.2924C395.767,-48.2386 410.114,-35.3904 420.462,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="383.116,-57.2188 380.558,-61.8581 385.451,-59.8261 383.116,-57.2188" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node5 --><g class="node class" id="graph25_5"><a xlink:title="info.kwarc.mmt.api.web.SVGServer" xlink:href="SVGServer.html#inheritance-diagram"><polygon points="596,-26 502,-26 502,-0 596,-0 596,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="512" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="534" text-anchor="start">SVGServer</text></a></g><!-- node0&#45;&gt;node5 --><g class="edge inheritance" id="graph25_0_5"><a xlink:title="SVGServer is a subtype of ServerExtension"><path d="M408.76,-60.2331C440.091,-49.9041 482.565,-35.9016 512.535,-26.0213" stroke="#d4d4d4" fill="none"></path><polygon points="408.031,-58.6305 403.83,-61.8581 409.127,-61.9546 408.031,-58.6305" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node6 --><g class="node class" id="graph25_6"><a xlink:title="info.kwarc.mmt.api.web.SearchServer" xlink:href="SearchServer.html#inheritance-diagram"><polygon points="717.25,-26 614.75,-26 614.75,-0 717.25,-0 717.25,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="625" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="647" text-anchor="start">SearchServer</text></a></g><!-- node0&#45;&gt;node6 --><g class="edge inheritance" id="graph25_0_6"><a xlink:title="SearchServer is a subtype of ServerExtension"><path d="M429.909,-61.3762C484.802,-50.3609 563.464,-34.5758 614.64,-24.3064" stroke="#d4d4d4" fill="none"></path><polygon points="429.563,-59.6606 425.005,-62.3603 430.251,-63.0922 429.563,-59.6606" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node7 --><g class="node trait" id="graph25_7"><a xlink:title="info.kwarc.mmt.api.frontend.Extension" xlink:href="../frontend/Extension.html#inheritance-diagram"><polygon points="411.25,-150 322.75,-150 322.75,-124 411.25,-124 411.25,-150" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-145" x="333" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-135" x="355" text-anchor="start">Extension</text></a></g><!-- node7&#45;&gt;node0 --><g class="edge inheritance" id="graph25_7_0"><a xlink:title="ServerExtension is a subtype of Extension"><path d="M367,-118.683C367,-108.896 367,-96.9026 367,-88.1238" stroke="#d4d4d4" fill="none"></path><polygon points="365.25,-118.858 367,-123.858 368.75,-118.858 365.25,-118.858" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
+                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph1" viewBox="0.00 0.00 1088.00 158.00" height="158pt" width="1088pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 154)" class="graph" id="graph1"><polygon points="-4,5 -4,-154 1085,-154 1085,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph1_0"><a xlink:title="info.kwarc.mmt.api.web.ServerExtension (this class)" xlink:href="#inheritance-diagram"><polygon points="638,-88 522,-88 522,-62 638,-62 638,-88" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-83" x="532" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-73" x="554" text-anchor="start">ServerExtension</text></a></g><!-- node1 --><g class="node class" id="graph1_1"><a xlink:title="info.kwarc.mmt.api.web.ActionServer" xlink:href="ActionServer.html#inheritance-diagram"><polygon points="100,-26 0,-26 0,-0 100,-0 100,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="10" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="32" text-anchor="start">ActionServer</text></a></g><!-- node0&#45;&gt;node1 --><g class="edge inheritance" id="graph1_0_1"><a xlink:title="ActionServer is a subtype of ServerExtension"><path d="M516.704,-69.5526C426.048,-62.7289 254.145,-48.1008 109,-26 106.107,-25.5594 103.14,-25.0717 100.152,-24.5523" stroke="#d4d4d4" fill="none"></path><polygon points="516.641,-71.3027 521.758,-69.9313 516.902,-67.8125 516.641,-71.3027" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node class" id="graph1_2"><a xlink:title="info.kwarc.mmt.api.web.BreadcrumbsServer" xlink:href="BreadcrumbsServer.html#inheritance-diagram"><polygon points="248,-26 118,-26 118,-0 248,-0 248,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="128" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="150" text-anchor="start">BreadcrumbsServer</text></a></g><!-- node0&#45;&gt;node2 --><g class="edge inheritance" id="graph1_0_2"><a xlink:title="BreadcrumbsServer is a subtype of ServerExtension"><path d="M516.898,-64.8748C451.764,-55.3964 347.223,-40.0186 257,-26 254.171,-25.5604 251.281,-25.1077 248.363,-24.6474" stroke="#d4d4d4" fill="none"></path><polygon points="516.708,-66.6154 521.908,-65.6034 517.212,-63.1518 516.708,-66.6154" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node3 --><g class="node class" id="graph1_3"><a xlink:title="info.kwarc.mmt.api.web.GetActionServer" xlink:href="GetActionServer.html#inheritance-diagram"><polygon points="382,-26 266,-26 266,-0 382,-0 382,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="276" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="298" text-anchor="start">GetActionServer</text></a></g><!-- node0&#45;&gt;node3 --><g class="edge inheritance" id="graph1_0_3"><a xlink:title="GetActionServer is a subtype of ServerExtension"><path d="M523.466,-60.7499C479.243,-50.3852 418.272,-36.095 375.415,-26.0504" stroke="#d4d4d4" fill="none"></path><polygon points="523.235,-62.4931 528.503,-61.9303 524.034,-59.0854 523.235,-62.4931" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node4 --><g class="node class" id="graph1_4"><a xlink:title="info.kwarc.mmt.api.web.ParseExtension" xlink:href="ParseExtension.html#inheritance-diagram"><polygon points="515.25,-26 400.75,-26 400.75,-0 515.25,-0 515.25,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="411" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="433" text-anchor="start">ParseExtension</text></a></g><!-- node0&#45;&gt;node4 --><g class="edge inheritance" id="graph1_0_4"><a xlink:title="ParseExtension is a subtype of ServerExtension"><path d="M550.717,-59.5985C529.924,-49.3726 502.32,-35.7968 482.652,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="550.052,-61.2218 555.311,-61.8581 551.597,-58.0811 550.052,-61.2218" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node5 --><g class="node class" id="graph1_5"><a xlink:title="info.kwarc.mmt.api.web.PostServer" xlink:href="PostServer.html#inheritance-diagram"><polygon points="626.25,-26 533.75,-26 533.75,-0 626.25,-0 626.25,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="544" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="566" text-anchor="start">PostServer</text></a></g><!-- node0&#45;&gt;node5 --><g class="edge inheritance" id="graph1_0_5"><a xlink:title="PostServer is a subtype of ServerExtension"><path d="M580,-56.6826C580,-46.8961 580,-34.9026 580,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="578.25,-56.8581 580,-61.8581 581.75,-56.8581 578.25,-56.8581" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node6 --><g class="node class" id="graph1_6"><a xlink:title="info.kwarc.mmt.api.web.QueryServer" xlink:href="QueryServer.html#inheritance-diagram"><polygon points="743.25,-26 644.75,-26 644.75,-0 743.25,-0 743.25,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="655" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="677" text-anchor="start">QueryServer</text></a></g><!-- node0&#45;&gt;node6 --><g class="edge inheritance" id="graph1_0_6"><a xlink:title="QueryServer is a subtype of ServerExtension"><path d="M607.854,-59.34C627.225,-49.1447 652.741,-35.7155 670.965,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="606.679,-57.9807 603.07,-61.8581 608.309,-61.0779 606.679,-57.9807" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node7 --><g class="node class" id="graph1_7"><a xlink:title="info.kwarc.mmt.api.web.SVGServer" xlink:href="SVGServer.html#inheritance-diagram"><polygon points="856,-26 762,-26 762,-0 856,-0 856,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="772" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="794" text-anchor="start">SVGServer</text></a></g><!-- node0&#45;&gt;node7 --><g class="edge inheritance" id="graph1_0_7"><a xlink:title="SVGServer is a subtype of ServerExtension"><path d="M631.295,-60.5602C670.793,-50.2114 724.904,-36.0339 763.008,-26.0504" stroke="#d4d4d4" fill="none"></path><polygon points="630.459,-58.9701 626.066,-61.9303 631.346,-62.3558 630.459,-58.9701" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node8 --><g class="node class" id="graph1_8"><a xlink:title="info.kwarc.mmt.api.web.SearchServer" xlink:href="SearchServer.html#inheritance-diagram"><polygon points="977.25,-26 874.75,-26 874.75,-0 977.25,-0 977.25,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="885" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="907" text-anchor="start">SearchServer</text></a></g><!-- node0&#45;&gt;node8 --><g class="edge inheritance" id="graph1_0_8"><a xlink:title="SearchServer is a subtype of ServerExtension"><path d="M643.365,-63.8384C701.178,-54.4459 788.936,-39.8844 865,-26 868.079,-25.4379 871.243,-24.8492 874.434,-24.2471" stroke="#d4d4d4" fill="none"></path><polygon points="642.868,-62.146 638.213,-64.6745 643.429,-65.6008 642.868,-62.146" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node9 --><g class="node class" id="graph1_9"><a xlink:title="info.kwarc.mmt.api.web.TreeView" xlink:href="TreeView.html#inheritance-diagram"><polygon points="1080.25,-26 995.75,-26 995.75,-0 1080.25,-0 1080.25,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="1006" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="1028" text-anchor="start">TreeView</text></a></g><!-- node0&#45;&gt;node9 --><g class="edge inheritance" id="graph1_0_9"><a xlink:title="TreeView is a subtype of ServerExtension"><path d="M643.297,-68.6734C723.434,-61.4357 865.573,-46.9499 986,-26 989.104,-25.4601 992.3,-24.8519 995.51,-24.2032" stroke="#d4d4d4" fill="none"></path><polygon points="642.932,-66.949 638.109,-69.1396 643.246,-70.4349 642.932,-66.949" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node10 --><g class="node trait" id="graph1_10"><a xlink:title="info.kwarc.mmt.api.frontend.FormatBasedExtension" xlink:href="../frontend/FormatBasedExtension.html#inheritance-diagram"><polygon points="654,-150 506,-150 506,-124 654,-124 654,-150" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-145" x="516" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-135" x="538" text-anchor="start">FormatBasedExtension</text></a></g><!-- node10&#45;&gt;node0 --><g class="edge inheritance" id="graph1_10_0"><a xlink:title="ServerExtension is a subtype of FormatBasedExtension"><path d="M580,-118.683C580,-108.896 580,-96.9026 580,-88.1238" stroke="#d4d4d4" fill="none"></path><polygon points="578.25,-118.858 580,-123.858 581.75,-118.858 578.25,-118.858" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
               </div></div>
         
 
@@ -72,7 +77,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="info.kwarc.mmt.api.web.ServerExtension"><span>ServerExtension</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Extension"><span>Extension</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Logger"><span>Logger</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="info.kwarc.mmt.api.web.ServerExtension"><span>ServerExtension</span></li><li class="in" name="info.kwarc.mmt.api.frontend.FormatBasedExtension"><span>FormatBasedExtension</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Extension"><span>Extension</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Logger"><span>Logger</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -103,14 +108,18 @@
       <span class="symbol">
         <span class="name">ServerExtension</span><span class="params">(<span name="context">context: <span class="extype" name="scala.Predef.String">String</span></span>)</span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@&lt;init&gt;(context:String):info.kwarc.mmt.api.web.ServerExtension" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt"></p>
     </li></ol>
             </div>
 
         <div id="types" class="types members">
               <h3>Type Members</h3>
-              <ol><li name="info.kwarc.mmt.api.frontend.Extension.LocalError" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+              <ol><li name="info.kwarc.mmt.api.frontend.Extension.LocalError" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="LocalErrorextendsExtensionErrorwithProductwithSerializable"></a>
       <a id="LocalError:LocalError"></a>
       <h4 class="signature">
@@ -121,8 +130,12 @@
       <span class="symbol">
         <a href="../frontend/Extension$LocalError.html"><span class="name">LocalError</span></a><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="../ExtensionError.html" class="extype" name="info.kwarc.mmt.api.ExtensionError">ExtensionError</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
-      </h4>
-      <p class="comment cmt">a custom error class for this extension</p>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.frontend.Extension@LocalErrorextendsExtensionErrorwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">a custom error class for this extension</p><div class="fullcomment"><div class="comment cmt"><p>a custom error class for this extension</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
     </li></ol>
             </div>
 
@@ -139,7 +152,11 @@
       <span class="symbol">
         <span class="name">apply</span><span class="params">(<span name="path">path: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="query">query: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="body">body: <a href="Body.html" class="extype" name="info.kwarc.mmt.api.web.Body">Body</a></span>)</span><span class="result">: <span class="extype" name="tiscaf.HLet">HLet</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@apply(path:List[String],query:String,body:info.kwarc.mmt.api.web.Body):tiscaf.HLet" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">handles the HTTP request</p><div class="fullcomment"><div class="comment cmt"><p>handles the HTTP request</p></div><dl class="paramcmts block"><dt class="param">path</dt><dd class="cmt"><p>the PATH from above (excluding CONTEXT)</p></dd><dt class="param">query</dt><dd class="cmt"><p>the QUERY from above</p></dd><dt class="param">body</dt><dd class="cmt"><p>the body of the request</p></dd><dt>returns</dt><dd class="cmt"><p>the HTTP response</p><p>Implementing classes can and should use Server.XmlResponse etc to construct responses conveniently.</p><p>Errors thrown by this method are caught and sent back to the browser.
 </p></dd></dl></div>
     </li></ol>
@@ -148,19 +165,6 @@
         <div id="values" class="values members">
               <h3>Concrete Value Members</h3>
               <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="!=(x$1:AnyRef):Boolean"></a>
-      <a id="!=(AnyRef):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="scala.Any#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="!=(x$1:Any):Boolean"></a>
       <a id="!=(Any):Boolean"></a>
       <h4 class="signature">
@@ -171,8 +175,12 @@
       <span class="symbol">
         <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="##():Int"></a>
       <a id="##():Int"></a>
@@ -184,22 +192,13 @@
       <span class="symbol">
         <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@##():Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="==(x$1:AnyRef):Boolean"></a>
-      <a id="==(AnyRef):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="scala.Any#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="==(x$1:Any):Boolean"></a>
       <a id="==(Any):Boolean"></a>
       <h4 class="signature">
@@ -210,8 +209,12 @@
       <span class="symbol">
         <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@==(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -223,21 +226,12 @@
       <span class="symbol">
         <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.frontend.Extension#checkNumberOfArguments" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="checkNumberOfArguments(min:Int,max:Int,args:List[String]):Unit"></a>
-      <a id="checkNumberOfArguments(Int,Int,List[String]):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">checkNumberOfArguments</span><span class="params">(<span name="min">min: <span class="extype" name="scala.Int">Int</span></span>, <span name="max">max: <span class="extype" name="scala.Int">Int</span></span>, <span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>
@@ -249,9 +243,16 @@
       <span class="symbol">
         <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@clone():Object" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Extension#controller" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -265,7 +266,11 @@
       <span class="symbol">
         <span class="name">controller</span><span class="result">: <a href="../frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@controller:info.kwarc.mmt.api.frontend.Controller" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Extension#defaultPrefix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="defaultPrefix:String"></a>
@@ -278,7 +283,11 @@
       <span class="symbol">
         <span class="name">defaultPrefix</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@defaultPrefix:String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Extension#destroy" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="destroy:Unit"></a>
@@ -291,7 +300,11 @@
       <span class="symbol">
         <span class="name">destroy</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@destroy:Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">extension-specific cleanup (override as needed, empty by default)</p><div class="fullcomment"><div class="comment cmt"><p>extension-specific cleanup (override as needed, empty by default)</p><p>Extensions may create persistent data structures and processes,
 but they must clean up after themselves in this method
 </p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
@@ -306,7 +319,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="scala.AnyRef#equals" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="equals(x$1:Any):Boolean"></a>
@@ -319,7 +336,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@equals(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
@@ -332,9 +353,16 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@finalize():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -348,8 +376,29 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@getClass():Class[_]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#getFromFirstArgOrEnvvar" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getFromFirstArgOrEnvvar(args:List[String],name:String):String"></a>
+      <a id="getFromFirstArgOrEnvvar(List[String],String):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getFromFirstArgOrEnvvar</span><span class="params">(<span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@getFromFirstArgOrEnvvar(args:List[String],name:String):String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
       <a id="hashCode():Int"></a>
@@ -361,7 +410,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@hashCode():Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.web.ServerExtension#isApplicable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isApplicable(cont:String):Boolean"></a>
@@ -374,9 +427,13 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">isApplicable</span><span class="params">(<span name="cont">cont: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@isApplicable(cont:String):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">cont</dt><dd class="cmt"><p>the context of the request</p></dd><dt>returns</dt><dd class="cmt"><p>true if cont is equal to this.context
-</p></dd></dl></div>
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.web.ServerExtension">ServerExtension</a> → <a href="../frontend/FormatBasedExtension.html" class="extype" name="info.kwarc.mmt.api.frontend.FormatBasedExtension">FormatBasedExtension</a></dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -388,7 +445,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="log(e:info.kwarc.mmt.api.Error):Unit"></a>
@@ -401,7 +462,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">log</span><span class="params">(<span name="e">e: <a href="../Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@log(e:info.kwarc.mmt.api.Error):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="log(s:=&gt;String,subgroup:Option[String]):Unit"></a>
@@ -414,7 +479,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="subgroup">subgroup: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol"><span class="name"><a href="../../../../../scala/package.html">None</a></span></span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@log(s:=&gt;String,subgroup:Option[String]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Logger#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="logError(s:=&gt;String):Unit"></a>
@@ -427,7 +496,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">logError</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@logError(s:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Logger#logGroup" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="logGroup[A](a:=&gt;A):A"></a>
@@ -440,7 +513,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">logGroup</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="a">a: ⇒ <span class="extype" name="info.kwarc.mmt.api.frontend.Logger.logGroup.A">A</span></span>)</span><span class="result">: <span class="extype" name="info.kwarc.mmt.api.frontend.Logger.logGroup.A">A</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@logGroup[A](a:=&gt;A):A" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Extension#logPrefix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="logPrefix:String"></a>
@@ -453,7 +530,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">logPrefix</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@logPrefix:String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">the prefix used to identify this extension for logging, by default the class name</p><div class="fullcomment"><div class="comment cmt"><p>the prefix used to identify this extension for logging, by default the class name</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
@@ -466,7 +547,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notify():Unit"></a>
@@ -479,7 +564,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@notify():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notifyAll():Unit"></a>
@@ -492,7 +581,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@notifyAll():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Extension#report" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="report:info.kwarc.mmt.api.frontend.Report"></a>
@@ -505,7 +598,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">report</span><span class="result">: <a href="../frontend/Report.html" class="extype" name="info.kwarc.mmt.api.frontend.Report">Report</a></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@report:info.kwarc.mmt.api.frontend.Report" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.frontend.Extension#start" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="start(args:List[String]):Unit"></a>
@@ -518,7 +615,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">start</span><span class="params">(<span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@start(args:List[String]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">extension-specific initialization (override as needed, empty by default)</p><div class="fullcomment"><div class="comment cmt"><p>extension-specific initialization (override as needed, empty by default)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
@@ -531,7 +632,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
@@ -544,7 +649,11 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@toString():String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
@@ -557,9 +666,16 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@wait():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -573,9 +689,16 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -589,9 +712,16 @@ but they must clean up after themselves in this method
       <span class="symbol">
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.web.ServerExtension@wait(x$1:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li></ol>
@@ -603,7 +733,9 @@ but they must clean up after themselves in this method
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="info.kwarc.mmt.api.frontend.Extension">
+        <div class="parent" name="info.kwarc.mmt.api.frontend.FormatBasedExtension">
+              <h3>Inherited from <a href="../frontend/FormatBasedExtension.html" class="extype" name="info.kwarc.mmt.api.frontend.FormatBasedExtension">FormatBasedExtension</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.frontend.Extension">
               <h3>Inherited from <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></h3>
             </div><div class="parent" name="info.kwarc.mmt.api.frontend.Logger">
               <h3>Inherited from <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></h3>

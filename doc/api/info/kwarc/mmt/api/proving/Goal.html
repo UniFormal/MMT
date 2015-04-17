@@ -1,5 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!DOCTYPE html >
 <html>
         <head>
           <title>Goal - MMT - info.kwarc.mmt.api.proving.Goal</title>
@@ -31,7 +30,13 @@
       <div id="definition">
         <img src="../../../../../lib/class_big.png" />
         <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.api.proving">proving</a></p>
-        <h1>Goal</h1>
+        <h1>Goal</h1><h3><span class="morelinks"><div>Related Doc:
+            <a href="package.html" class="extype" name="info.kwarc.mmt.api.proving">package proving</a>
+          </div></span></h3><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       </div>
 
       <h4 id="signature" class="signature">
@@ -49,13 +54,13 @@ In fact, a goal is also a node in the backwards proof search: A goal stores not 
 but a list of <a href="Alternative.html" class="extype" name="info.kwarc.mmt.api.proving.Alternative">Alternative</a> ways to prove it each of which stores a list of subgoals.</p><p>Moreover, a goal stores the explored part of a the forward proof search space:
 a set of facts implied by the goals premises, updated externally.</p><p>The prover expands new goals greedily by applying invertible rules,
 and each goal stores those invertible rules that have not been applied yet.
-</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="file:/C:/frabe/MMT/src/mmt-api/trunk/src/main/info/kwarc/mmt/api/proving/Goal.scala" target="_blank">Goal.scala</a></dd></dl><div class="toggleContainer block">
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="../../../../../../../src/mmt-api/trunk/src/main/info/kwarc/mmt/api/proving/Goal.scala" target="_blank">Goal.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
                 <span class="toggle diagram-link">Type Hierarchy</span>
                 <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#diagrams" target="_blank" class="diagram-help">Learn more about scaladoc diagrams</a>
-                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph134" viewBox="0.00 0.00 122.00 120.00" height="120pt" width="122pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 116)" class="graph" id="graph1"><polygon points="-4,5 -4,-116 119,-116 119,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph134_0"><a xlink:title="info.kwarc.mmt.api.proving.Goal (this class)" xlink:href="#inheritance-diagram"><polygon points="90,-50 24,-50 24,-24 90,-24 90,-50" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-45" x="34" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-35" x="56" text-anchor="start">Goal</text></a></g><!-- node1 --><g class="node class" id="graph134_1"><a xlink:title="scala.AnyRef"><polygon points="95.25,-112 18.75,-112 18.75,-86 95.25,-86 95.25,-112" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-107" x="29" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="51" text-anchor="start">AnyRef</text></a></g><!-- node1&#45;&gt;node0 --><g class="edge inheritance" id="graph134_1_0"><a xlink:title="Goal is a subtype of AnyRef"><path d="M57,-80.6826C57,-70.8961 57,-58.9026 57,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="55.2501,-80.8581 57,-85.8581 58.7501,-80.8581 55.2501,-80.8581" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
+                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph1" viewBox="0.00 0.00 122.00 120.00" height="120pt" width="122pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 116)" class="graph" id="graph1"><polygon points="-4,5 -4,-116 119,-116 119,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph1_0"><a xlink:title="info.kwarc.mmt.api.proving.Goal (this class)" xlink:href="#inheritance-diagram"><polygon points="90,-50 24,-50 24,-24 90,-24 90,-50" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-45" x="34" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-35" x="56" text-anchor="start">Goal</text></a></g><!-- node1 --><g class="node class" id="graph1_1"><a xlink:title="scala.AnyRef"><polygon points="95.25,-112 18.75,-112 18.75,-86 95.25,-86 95.25,-112" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-107" x="29" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="51" text-anchor="start">AnyRef</text></a></g><!-- node1&#45;&gt;node0 --><g class="edge inheritance" id="graph1_1_0"><a xlink:title="Goal is a subtype of AnyRef"><path d="M57,-80.6826C57,-70.8961 57,-58.9026 57,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="55.2501,-80.8581 57,-85.8581 58.7501,-80.8581 55.2501,-80.8581" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
               </div></div>
         
 
@@ -104,7 +109,11 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">Goal</span><span class="params">(<span name="context">context: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>, <span name="concVar">concVar: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@&lt;init&gt;(context:info.kwarc.mmt.api.objects.Context,concVar:info.kwarc.mmt.api.objects.Term):info.kwarc.mmt.api.proving.Goal" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">context</dt><dd class="cmt"><p>the premises added to the sequent by this goal;
                the full antecedent arises by prepending the one of the parent goal</p></dd></dl></div>
     </li></ol>
@@ -117,19 +126,6 @@ and each goal stores those invertible rules that have not been applied yet.
         <div id="values" class="values members">
               <h3>Value Members</h3>
               <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="!=(x$1:AnyRef):Boolean"></a>
-      <a id="!=(AnyRef):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="scala.Any#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="!=(x$1:Any):Boolean"></a>
       <a id="!=(Any):Boolean"></a>
       <h4 class="signature">
@@ -140,8 +136,12 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="##():Int"></a>
       <a id="##():Int"></a>
@@ -153,22 +153,13 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@##():Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="==(x$1:AnyRef):Boolean"></a>
-      <a id="==(AnyRef):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="scala.Any#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="==(x$1:Any):Boolean"></a>
       <a id="==(Any):Boolean"></a>
       <h4 class="signature">
@@ -179,8 +170,12 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@==(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -192,7 +187,11 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.proving.Goal#below" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="below(that:info.kwarc.mmt.api.proving.Goal):Boolean"></a>
@@ -205,7 +204,11 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">below</span><span class="params">(<span name="that">that: <a href="" class="extype" name="info.kwarc.mmt.api.proving.Goal">Goal</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@below(that:info.kwarc.mmt.api.proving.Goal):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
@@ -218,9 +221,16 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@clone():Object" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li><li name="info.kwarc.mmt.api.proving.Goal#conc" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
@@ -234,7 +244,11 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">conc</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@conc:info.kwarc.mmt.api.objects.Term" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">getter for the conclusion (may have been simplified since Goal creation)</p>
     </li><li name="info.kwarc.mmt.api.proving.Goal#context" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="context:info.kwarc.mmt.api.objects.Context"></a>
@@ -247,7 +261,11 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">context</span><span class="result">: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@context:info.kwarc.mmt.api.objects.Context" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">the premises added to the sequent by this goal;
                the full antecedent arises by prepending the one of the parent goal</p>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -261,7 +279,11 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="scala.AnyRef#equals" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="equals(x$1:Any):Boolean"></a>
@@ -274,7 +296,11 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@equals(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
@@ -287,12 +313,19 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@finalize():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
               
         </dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.proving.Goal#fullContext" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.proving.Goal#fullContext" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="fullContext:info.kwarc.mmt.api.objects.Context"></a>
       <a id="fullContext:Context"></a>
       <h4 class="signature">
@@ -303,8 +336,12 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">fullContext</span><span class="result">: <a href="../objects/Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>
       </span>
-      </h4>
-      <p class="shortcomment cmt">the complete context/antecedent (i.</p><div class="fullcomment"><div class="comment cmt"><p>the complete context/antecedent (i.e., including the parent's context) of this sequent</p></div></div>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@fullContext:info.kwarc.mmt.api.objects.Context" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">the complete context/antecedent (i.e., including the parent's context) of this sequent</p>
     </li><li name="info.kwarc.mmt.api.proving.Goal#fullVarAtoms" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="fullVarAtoms:List[info.kwarc.mmt.api.proving.Atom]"></a>
       <a id="fullVarAtoms:List[Atom]"></a>
@@ -316,7 +353,11 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">fullVarAtoms</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Atom.html" class="extype" name="info.kwarc.mmt.api.proving.Atom">Atom</a>]</span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@fullVarAtoms:List[info.kwarc.mmt.api.proving.Atom]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">the complete context of this goal seen as a list of atomic facts that rules can make use of</p>
     </li><li name="info.kwarc.mmt.api.proving.Goal#getAlternatives" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="getAlternatives:List[info.kwarc.mmt.api.proving.Alternative]"></a>
@@ -329,7 +370,11 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">getAlternatives</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Alternative.html" class="extype" name="info.kwarc.mmt.api.proving.Alternative">Alternative</a>]</span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@getAlternatives:List[info.kwarc.mmt.api.proving.Alternative]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">the list of explored directions in the backward search space that can prove the goal
 </p>
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -343,7 +388,11 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@getClass():Class[_]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.proving.Goal#getNextExpansion" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="getNextExpansion:Option[info.kwarc.mmt.api.proving.ApplicableTactic]"></a>
@@ -356,7 +405,11 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">getNextExpansion</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="ApplicableTactic.html" class="extype" name="info.kwarc.mmt.api.proving.ApplicableTactic">ApplicableTactic</a>]</span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@getNextExpansion:Option[info.kwarc.mmt.api.proving.ApplicableTactic]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt"> the invertible backward/forward tactics that have not been applied yet are stored here,
  but set and read by the <a href="Prover.html" class="extype" name="info.kwarc.mmt.api.proving.Prover">Prover</a>
  this method retrieves the next tactic to apply
@@ -372,7 +425,11 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">getNextSearch</span><span class="params">(<span name="prover">prover: <a href="Prover.html" class="extype" name="info.kwarc.mmt.api.proving.Prover">Prover</a></span>)</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="ApplicableTactic.html" class="extype" name="info.kwarc.mmt.api.proving.ApplicableTactic">ApplicableTactic</a>]</span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@getNextSearch(prover:info.kwarc.mmt.api.proving.Prover):List[info.kwarc.mmt.api.proving.ApplicableTactic]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
@@ -385,7 +442,11 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@hashCode():Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -398,7 +459,11 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.proving.Goal#isSolved" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="isSolved:Boolean"></a>
@@ -411,7 +476,11 @@ and each goal stores those invertible rules that have not been applied yet.
       <span class="symbol">
         <span class="name">isSolved</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@isSolved:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">checks if the goal can be closed by closing all subgoals of some alternative
 the result is cached so that the method can be called arbitrarily often without performance penalty
 </p>
@@ -426,7 +495,11 @@ the result is cached so that the method can be called arbitrarily often without 
       <span class="symbol">
         <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.proving.Goal#newFacts" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="newFacts(implicitfacts:info.kwarc.mmt.api.proving.Facts):Unit"></a>
@@ -439,7 +512,11 @@ the result is cached so that the method can be called arbitrarily often without 
       <span class="symbol">
         <span class="name">newFacts</span><span class="params">(<span class="implicit">implicit </span><span name="facts">facts: <a href="Facts.html" class="extype" name="info.kwarc.mmt.api.proving.Facts">Facts</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@newFacts(implicitfacts:info.kwarc.mmt.api.proving.Facts):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">recursively checks if the goal can be closed by using the axiom rule</p><div class="fullcomment"><div class="comment cmt"><p>recursively checks if the goal can be closed by using the axiom rule</p><p>should be called iff there are new facts available (result is cached by isSolved)
 </p></div></div>
     </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -453,7 +530,11 @@ the result is cached so that the method can be called arbitrarily often without 
       <span class="symbol">
         <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@notify():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notifyAll():Unit"></a>
@@ -466,7 +547,11 @@ the result is cached so that the method can be called arbitrarily often without 
       <span class="symbol">
         <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@notifyAll():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.proving.Goal#path" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="path:List[info.kwarc.mmt.api.proving.Goal]"></a>
@@ -479,7 +564,11 @@ the result is cached so that the method can be called arbitrarily often without 
       <span class="symbol">
         <span class="name">path</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="" class="extype" name="info.kwarc.mmt.api.proving.Goal">Goal</a>]</span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@path:List[info.kwarc.mmt.api.proving.Goal]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="info.kwarc.mmt.api.proving.Goal#present" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="present(depth:Int)(implicitpresentObj:info.kwarc.mmt.api.objects.Obj=&gt;String,implicitcurrent:Option[info.kwarc.mmt.api.proving.Goal],implicitnewAlt:Option[info.kwarc.mmt.api.proving.Alternative]):String"></a>
@@ -492,7 +581,11 @@ the result is cached so that the method can be called arbitrarily often without 
       <span class="symbol">
         <span class="name">present</span><span class="params">(<span name="depth">depth: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="presentObj">presentObj: (<a href="../objects/Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a>) ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="current">current: <span class="extype" name="scala.Option">Option</span>[<a href="" class="extype" name="info.kwarc.mmt.api.proving.Goal">Goal</a>]</span>, <span name="newAlt">newAlt: <span class="extype" name="scala.Option">Option</span>[<a href="Alternative.html" class="extype" name="info.kwarc.mmt.api.proving.Alternative">Alternative</a>]</span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@present(depth:Int)(implicitpresentObj:info.kwarc.mmt.api.objects.Obj=&gt;String,implicitcurrent:Option[info.kwarc.mmt.api.proving.Goal],implicitnewAlt:Option[info.kwarc.mmt.api.proving.Alternative]):String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="info.kwarc.mmt.api.proving.Goal#proof" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="proof:info.kwarc.mmt.api.objects.Term"></a>
@@ -505,7 +598,11 @@ the result is cached so that the method can be called arbitrarily often without 
       <span class="symbol">
         <span class="name">proof</span><span class="result">: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@proof:info.kwarc.mmt.api.objects.Term" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">stores the proof, contains holes if the goal is not solved</p>
     </li><li name="info.kwarc.mmt.api.proving.Goal#setExpansionTactics" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="setExpansionTactics(prover:info.kwarc.mmt.api.proving.Prover,backw:List[info.kwarc.mmt.api.proving.BackwardInvertible],forw:List[info.kwarc.mmt.api.proving.ForwardInvertible]):Unit"></a>
@@ -518,7 +615,11 @@ the result is cached so that the method can be called arbitrarily often without 
       <span class="symbol">
         <span class="name">setExpansionTactics</span><span class="params">(<span name="prover">prover: <a href="Prover.html" class="extype" name="info.kwarc.mmt.api.proving.Prover">Prover</a></span>, <span name="backw">backw: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="BackwardInvertible.html" class="extype" name="info.kwarc.mmt.api.proving.BackwardInvertible">BackwardInvertible</a>]</span>, <span name="forw">forw: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="ForwardInvertible.html" class="extype" name="info.kwarc.mmt.api.proving.ForwardInvertible">ForwardInvertible</a>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@setExpansionTactics(prover:info.kwarc.mmt.api.proving.Prover,backw:List[info.kwarc.mmt.api.proving.BackwardInvertible],forw:List[info.kwarc.mmt.api.proving.ForwardInvertible]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">initializes the invertible backward/forward tactics that can be applied</p>
     </li><li name="info.kwarc.mmt.api.proving.Goal#setSearchTactics" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="setSearchTactics(prover:info.kwarc.mmt.api.proving.Prover,backw:List[info.kwarc.mmt.api.proving.BackwardSearch]):Unit"></a>
@@ -531,7 +632,11 @@ the result is cached so that the method can be called arbitrarily often without 
       <span class="symbol">
         <span class="name">setSearchTactics</span><span class="params">(<span name="prover">prover: <a href="Prover.html" class="extype" name="info.kwarc.mmt.api.proving.Prover">Prover</a></span>, <span name="backw">backw: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="BackwardSearch.html" class="extype" name="info.kwarc.mmt.api.proving.BackwardSearch">BackwardSearch</a>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@setSearchTactics(prover:info.kwarc.mmt.api.proving.Prover,backw:List[info.kwarc.mmt.api.proving.BackwardSearch]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
@@ -544,7 +649,11 @@ the result is cached so that the method can be called arbitrarily often without 
       <span class="symbol">
         <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.proving.Goal#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
@@ -557,7 +666,11 @@ the result is cached so that the method can be called arbitrarily often without 
       <span class="symbol">
         <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@toString():String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.proving.Goal">Goal</a> → AnyRef → Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.proving.Goal#varAtoms" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="varAtoms:List[info.kwarc.mmt.api.proving.Atom]"></a>
@@ -570,7 +683,11 @@ the result is cached so that the method can be called arbitrarily often without 
       <span class="symbol">
         <span class="name">varAtoms</span><span class="result">: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Atom.html" class="extype" name="info.kwarc.mmt.api.proving.Atom">Atom</a>]</span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@varAtoms:List[info.kwarc.mmt.api.proving.Atom]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">the local context of this goal seen as a list of atomic facts that rules can make use of</p>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
@@ -583,9 +700,16 @@ the result is cached so that the method can be called arbitrarily often without 
       <span class="symbol">
         <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@wait():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -599,9 +723,16 @@ the result is cached so that the method can be called arbitrarily often without 
       <span class="symbol">
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -615,9 +746,16 @@ the result is cached so that the method can be called arbitrarily often without 
       <span class="symbol">
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.proving.Goal@wait(x$1:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li></ol>

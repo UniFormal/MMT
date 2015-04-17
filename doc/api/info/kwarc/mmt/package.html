@@ -1,5 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!DOCTYPE html >
 <html>
         <head>
           <title>mmt - MMT - info.kwarc.mmt</title>
@@ -31,7 +30,11 @@
       <div id="definition">
         <img src="../../../lib/package_big.png" />
         <p id="owner"><a href="../../package.html" class="extype" name="info">info</a>.<a href="../package.html" class="extype" name="info.kwarc">kwarc</a></p>
-        <h1>mmt</h1>
+        <h1>mmt</h1><span class="permalink">
+      <a href="../../../index.html#info.kwarc.mmt.package" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" />
+      </a>
+    </span>
       </div>
 
       <h4 id="signature" class="signature">
@@ -67,7 +70,7 @@
 
         <div id="values" class="values members">
               <h3>Value Members</h3>
-              <ol><li name="info.kwarc.mmt.api" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+              <ol><li name="info.kwarc.mmt.api" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="api"></a>
       <a id="api:api"></a>
       <h4 class="signature">
@@ -78,8 +81,17 @@
       <span class="symbol">
         <a href="api/package.html"><span class="name">api</span></a>
       </span>
-      </h4>
-      <p class="comment cmt">This is the main package of the MMT API.</p>
+      </h4><span class="permalink">
+      <a href="../../../index.html#info.kwarc.mmt.package@api" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">This is the main package of the MMT API.</p><div class="fullcomment"><div class="comment cmt"><p>This is the main package of the MMT API.
+It holds subpackages for all data structures, data containers, and the central algorithms and
+services.</p><p>Some classes that are used everywhere are defined in this package, in particular:</p><ul><li>MMT URIs in the class <a href="api/Path.html" class="extype" name="info.kwarc.mmt.api.Path">Path</a></li><li>processing and content <a href="api/Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a>s</li></ul><p>The subpackages are</p><ul><li>The MMT data structures are defined in the packages<ul><li><a href="api/documents/package.html" class="extype" name="info.kwarc.mmt.api.documents">documents</a></li><li><a href="api/modules/package.html" class="extype" name="info.kwarc.mmt.api.modules">modules</a></li><li><a href="api/symbols/package.html" class="extype" name="info.kwarc.mmt.api.symbols">symbols</a></li><li><a href="api/objects/package.html" class="extype" name="info.kwarc.mmt.api.objects">objects</a>
+   The former 3 statefully maintain their child content and use an MMT URI to refer to their parent element.
+   Objects are stateless (except for metadata and <a href="api/objects/ClientProperties.html" class="extype" name="info.kwarc.mmt.api.objects.ClientProperties">objects.ClientProperties</a>).</li></ul></li><li>The package <a href="api/frontend/package.html" class="extype" name="info.kwarc.mmt.api.frontend">frontend</a> maintains several classes that are essential for understanding the whole code.</li></ul><p>  Data structures and containers for associated content are defined in the packages</p><ul><li><a href="api/opaque/package.html" class="extype" name="info.kwarc.mmt.api.opaque">opaque</a>: external (i.e., informal, computation) content</li><li><a href="api/ontology/package.html" class="extype" name="info.kwarc.mmt.api.ontology">ontology</a>: relational data, query language, and query engine</li><li><a href="api/metadata/package.html" class="extype" name="info.kwarc.mmt.api.metadata">metadata</a>: metadata annotations (stateful children of content)</li></ul><ul><li>The central data container is in the package<ul><li><a href="api/libraries/package.html" class="extype" name="info.kwarc.mmt.api.libraries">libraries</a>: maintains the diagram of theories</li></ul></li><li>Central algrorithms are defined in the packages<ul><li><span class="extype" name="parsing">parsing</span>: reading of native MMT text syntax</li><li><a href="api/presentation/package.html" class="extype" name="info.kwarc.mmt.api.presentation">presentation</a>: HTML+presentation MathML generation</li><li><a href="api/notations/package.html" class="extype" name="info.kwarc.mmt.api.notations">notations</a>: the common code or parsing and presentation</li><li><a href="api/checking/package.html" class="extype" name="info.kwarc.mmt.api.checking">checking</a>: structural checking, type reconstruction</li><li><a href="api/proving/package.html" class="extype" name="info.kwarc.mmt.api.proving">proving</a>: theorem prover</li><li><a href="api/uom/package.html" class="extype" name="info.kwarc.mmt.api.uom">uom</a>: simplification of objects</li><li><a href="api/moc/package.html" class="extype" name="info.kwarc.mmt.api.moc">moc</a>: change management</li></ul></li></ul><p>  All algorithms are defined in two separate levels for structure and objects.
+  See <a href="api/frontend/LeveledExtension.html" class="extype" name="info.kwarc.mmt.api.frontend.LeveledExtension">frontend.LeveledExtension</a>.</p><ul><li>User and machine interfaces are defined in the packages<ul><li><a href="api/gui/package.html" class="extype" name="info.kwarc.mmt.api.gui">gui</a>: graphical</li><li><a href="api/web/package.html" class="extype" name="info.kwarc.mmt.api.web">web</a>: HTTP</li><li><a href="api/frontend/package.html" class="extype" name="info.kwarc.mmt.api.frontend">frontend</a>: shell and scala-toplevel prompt</li></ul></li><li>Interfaces to physical storage are defined in the packages<ul><li><a href="api/backend/package.html" class="extype" name="info.kwarc.mmt.api.backend">backend</a>: abstraction from physical storage</li><li><a href="api/archives/package.html" class="extype" name="info.kwarc.mmt.api.archives">archives</a>: MMT archives (= projects), build system, also a kind of physical storage</li></ul></li></ul><p>  The package defines general purpose APIs for files, URIs, HTML building, etc.</p></div></div>
     </li><li name="info.kwarc.mmt.doc" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="doc"></a>
       <a id="doc:doc"></a>
@@ -91,7 +103,11 @@
       <span class="symbol">
         <a href="doc/package.html"><span class="name">doc</span></a>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../index.html#info.kwarc.mmt.package@doc" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="info.kwarc.mmt.jedit" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="jedit"></a>
@@ -104,7 +120,11 @@
       <span class="symbol">
         <a href="jedit/package.html"><span class="name">jedit</span></a>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../index.html#info.kwarc.mmt.package@jedit" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="info.kwarc.mmt.jeditsetup" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="jeditsetup"></a>
@@ -117,7 +137,11 @@
       <span class="symbol">
         <a href="jeditsetup/package.html"><span class="name">jeditsetup</span></a>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../index.html#info.kwarc.mmt.package@jeditsetup" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="info.kwarc.mmt.lf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="lf"></a>
@@ -130,7 +154,11 @@
       <span class="symbol">
         <a href="lf/package.html"><span class="name">lf</span></a>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../index.html#info.kwarc.mmt.package@lf" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="info.kwarc.mmt.morphisms" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="morphisms"></a>
@@ -143,7 +171,11 @@
       <span class="symbol">
         <a href="morphisms/package.html"><span class="name">morphisms</span></a>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../index.html#info.kwarc.mmt.package@morphisms" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="info.kwarc.mmt.owl" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="owl"></a>
@@ -156,7 +188,28 @@
       <span class="symbol">
         <a href="owl/package.html"><span class="name">owl</span></a>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../index.html#info.kwarc.mmt.package@owl" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="info.kwarc.mmt.pvs" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="pvs"></a>
+      <a id="pvs:pvs"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="pvs/package.html"><span class="name">pvs</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#info.kwarc.mmt.package@pvs" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="info.kwarc.mmt.reflection" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="reflection"></a>
@@ -169,7 +222,11 @@
       <span class="symbol">
         <a href="reflection/package.html"><span class="name">reflection</span></a>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../index.html#info.kwarc.mmt.package@reflection" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="info.kwarc.mmt.sequences" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="sequences"></a>
@@ -182,7 +239,28 @@
       <span class="symbol">
         <a href="sequences/package.html"><span class="name">sequences</span></a>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../index.html#info.kwarc.mmt.package@sequences" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="info.kwarc.mmt.specware" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="specware"></a>
+      <a id="specware:specware"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="specware/package.html"><span class="name">specware</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#info.kwarc.mmt.package@specware" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="info.kwarc.mmt.tptp" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="tptp"></a>
@@ -195,7 +273,28 @@
       <span class="symbol">
         <a href="tptp/package.html"><span class="name">tptp</span></a>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../index.html#info.kwarc.mmt.package@tptp" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="info.kwarc.mmt.twelf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="twelf"></a>
+      <a id="twelf:twelf"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="twelf/package.html"><span class="name">twelf</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#info.kwarc.mmt.package@twelf" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li></ol>
             </div>

@@ -1,5 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!DOCTYPE html >
 <html>
         <head>
           <title>sequences - MMT - info.kwarc.mmt.sequences</title>
@@ -31,7 +30,11 @@
       <div id="definition">
         <img src="../../../../lib/package_big.png" />
         <p id="owner"><a href="../../../package.html" class="extype" name="info">info</a>.<a href="../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt">mmt</a></p>
-        <h1>sequences</h1>
+        <h1>sequences</h1><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.sequences.package" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
       </div>
 
       <h4 id="signature" class="signature">
@@ -61,42 +64,13 @@
         <div id="allMembers">
         
 
-        <div id="types" class="types members">
-              <h3>Type Members</h3>
-              <ol><li name="info.kwarc.mmt.sequences.NatSolver" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="NatSolverextendsAnyRef"></a>
-      <a id="NatSolver:NatSolver"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="NatSolver.html"><span class="name">NatSolver</span></a><span class="result"> extends <a href="../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
-      </span>
-      </h4>
-      
-    </li></ol>
-            </div>
+        
 
         
 
         <div id="values" class="values members">
               <h3>Value Members</h3>
-              <ol><li name="info.kwarc.mmt.sequences.ApplyTerm" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ApplyTerm"></a>
-      <a id="ApplyTerm:ApplyTerm"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="ApplyTerm$.html"><span class="name">ApplyTerm</span></a><span class="result"> extends <a href="../api/checking/InferenceRule.html" class="extype" name="info.kwarc.mmt.api.checking.InferenceRule">InferenceRule</a></span>
-      </span>
-      </h4>
-      
-    </li><li name="info.kwarc.mmt.sequences.EllipsisInfer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+              <ol><li name="info.kwarc.mmt.sequences.EllipsisInfer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="EllipsisInfer"></a>
       <a id="EllipsisInfer:EllipsisInfer"></a>
       <h4 class="signature">
@@ -107,11 +81,36 @@
       <span class="symbol">
         <a href="EllipsisInfer$.html"><span class="name">EllipsisInfer</span></a><span class="result"> extends <a href="../api/checking/InferenceRule.html" class="extype" name="info.kwarc.mmt.api.checking.InferenceRule">InferenceRule</a></span>
       </span>
-      </h4>
-      <p class="comment cmt"> i, i/low, i/up |- t_i : a_i : type ---&gt;  |- [t_i] i=m <sup> n : [a_i] i=m </sup> n
- i, i/low, i/up |- t_i : type       ---&gt;  |- [t_i] i=m <sup> n : type </sup> (n-m)
+      </h4><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.sequences.package@EllipsisInfer" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt"> i, i/low, i/up |- t(i) : a_i : type ---&gt;  |- [t(i)] i=m <sup> n : [a_i] i=m </sup> n
+ i, i/low, i/up |- t(i) : type       ---&gt;  |- [t(i)] i=m <sup> n : type </sup> (n-m+1)
 </p>
-    </li><li name="info.kwarc.mmt.sequences.IndexInfer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.sequences.ExpandEllipsis" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ExpandEllipsis"></a>
+      <a id="ExpandEllipsis:ExpandEllipsis"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ExpandEllipsis$.html"><span class="name">ExpandEllipsis</span></a><span class="result"> extends <a href="../api/checking/ComputationRule.html" class="extype" name="info.kwarc.mmt.api.checking.ComputationRule">ComputationRule</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.sequences.package@ExpandEllipsis" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">the beta-style rule [E(i)]_{i=1}^n  ---&gt;  E(1),...,E(n)</p><div class="fullcomment"><div class="comment cmt"><p>the beta-style rule [E(i)]_{i=1}^n  ---&gt;  E(1),...,E(n)</p><p>The rule is applied only in argument sequences and contexts.
+In contexts, it is only applied if the sequence variable occurs only with literal indices,
+in which case each x.1 is replaced with x/&quot;1&quot; etc.
+If the sequence variable occurs in any other way (e.g., as x or x.n), it is not expanded.
+</p></div></div>
+    </li><li name="info.kwarc.mmt.sequences.IndexInfer" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="IndexInfer"></a>
       <a id="IndexInfer:IndexInfer"></a>
       <h4 class="signature">
@@ -122,8 +121,25 @@
       <span class="symbol">
         <a href="IndexInfer$.html"><span class="name">IndexInfer</span></a><span class="result"> extends <a href="../api/checking/InferenceRule.html" class="extype" name="info.kwarc.mmt.api.checking.InferenceRule">InferenceRule</a></span>
       </span>
-      </h4>
-      
+      </h4><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.sequences.package@IndexInfer" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt"> |- s : [t(i)] i=m <sup> n : [a_i] i=m </sup> n
+ |- ! : m &lt;= a
+ |- ! : a &lt;= n
+ --------------------------------------
+ |- s.a : t(a)</p><div class="fullcomment"><div class="comment cmt"><p> |- s : [t(i)] i=m <sup> n : [a_i] i=m </sup> n
+ |- ! : m &lt;= a
+ |- ! : a &lt;= n
+ --------------------------------------
+ |- s.a : t(a)</p><p> |- s : type^n
+ |- ! : 1 &lt;= a
+ |- ! : a &lt;= n
+ --------------------------------------
+ |- s.a : type
+</p></div></div>
     </li><li name="info.kwarc.mmt.sequences.LFS" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="LFS"></a>
       <a id="LFS:LFS"></a>
@@ -135,7 +151,11 @@
       <span class="symbol">
         <a href="LFS$.html"><span class="name">LFS</span></a>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.sequences.package@LFS" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="info.kwarc.mmt.sequences.NTypeTerm" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="NTypeTerm"></a>
@@ -148,21 +168,46 @@
       <span class="symbol">
         <a href="NTypeTerm$.html"><span class="name">NTypeTerm</span></a><span class="result"> extends <a href="../api/checking/InferenceRule.html" class="extype" name="info.kwarc.mmt.api.checking.InferenceRule">InferenceRule</a></span>
       </span>
-      </h4>
-      <p class="comment cmt">|- type ^ n : kind</p>
-    </li><li name="info.kwarc.mmt.sequences.NatInhabitable" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="NatInhabitable"></a>
-      <a id="NatInhabitable:NatInhabitable"></a>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.sequences.package@NTypeTerm" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">|- type ^ n : kind</p>
+    </li><li name="info.kwarc.mmt.sequences.Nat" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Nat"></a>
+      <a id="Nat:Nat"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="NatInhabitable$.html"><span class="name">NatInhabitable</span></a><span class="result"> extends <a href="../api/checking/InhabitableRule.html" class="extype" name="info.kwarc.mmt.api.checking.InhabitableRule">InhabitableRule</a></span>
+        <a href="Nat$.html"><span class="name">Nat</span></a>
       </span>
-      </h4>
-      <p class="comment cmt">|- nat INHABITABLE</p>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.sequences.package@Nat" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="info.kwarc.mmt.sequences.TypeSequences" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TypeSequences"></a>
+      <a id="TypeSequences:TypeSequences"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="TypeSequences$.html"><span class="name">TypeSequences</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.sequences.package@TypeSequences" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
     </li><li name="info.kwarc.mmt.sequences.UniverseNType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="UniverseNType"></a>
       <a id="UniverseNType:UniverseNType"></a>
@@ -174,8 +219,12 @@
       <span class="symbol">
         <a href="UniverseNType$.html"><span class="name">UniverseNType</span></a><span class="result"> extends <a href="../api/checking/UniverseRule.html" class="extype" name="info.kwarc.mmt.api.checking.UniverseRule">UniverseRule</a></span>
       </span>
-      </h4>
-      <p class="comment cmt">|- type ^ n UNIVERSE</p>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.sequences.package@UniverseNType" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">|- type ^ n UNIVERSE</p>
     </li></ol>
             </div>
 

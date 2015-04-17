@@ -1,5 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!DOCTYPE html >
 <html>
         <head>
           <title>reflection - MMT - info.kwarc.mmt.reflection</title>
@@ -31,7 +30,11 @@
       <div id="definition">
         <img src="../../../../lib/package_big.png" />
         <p id="owner"><a href="../../../package.html" class="extype" name="info">info</a>.<a href="../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt">mmt</a></p>
-        <h1>reflection</h1>
+        <h1>reflection</h1><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.reflection.package" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
       </div>
 
       <h4 id="signature" class="signature">
@@ -67,7 +70,7 @@
 
         <div id="values" class="values members">
               <h3>Value Members</h3>
-              <ol><li name="info.kwarc.mmt.reflection.Computation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+              <ol><li name="info.kwarc.mmt.reflection.Computation" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="Computation"></a>
       <a id="Computation:Computation"></a>
       <h4 class="signature">
@@ -78,8 +81,12 @@
       <span class="symbol">
         <a href="Computation$.html"><span class="name">Computation</span></a><span class="result"> extends <a href="../api/checking/ComputationRule.html" class="extype" name="info.kwarc.mmt.api.checking.ComputationRule">ComputationRule</a></span>
       </span>
-      </h4>
-      <p class="comment cmt">|- m: p -&gt; .</p>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.reflection.package@Computation" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">|- m: p -&gt; .</p><div class="fullcomment"><div class="comment cmt"><p>|- m: p -&gt; .  ---&gt; |- elim(refl(p, t), m) = m(t)</p></div></div>
     </li><li name="info.kwarc.mmt.reflection.ElimInfer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ElimInfer"></a>
       <a id="ElimInfer:ElimInfer"></a>
@@ -91,8 +98,12 @@
       <span class="symbol">
         <a href="ElimInfer$.html"><span class="name">ElimInfer</span></a><span class="result"> extends <a href="../api/checking/InferenceRule.html" class="extype" name="info.kwarc.mmt.api.checking.InferenceRule">InferenceRule</a></span>
       </span>
-      </h4>
-      <p class="comment cmt">|- t: formation(p,a)  ---&gt;  |- elim(t,m) : m(a)
+      </h4><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.reflection.package@ElimInfer" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">|- t: formation(p,a)  ---&gt;  |- elim(t,m) : m(a)
 </p>
     </li><li name="info.kwarc.mmt.reflection.Extensionality" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Extensionality"></a>
@@ -105,8 +116,12 @@
       <span class="symbol">
         <a href="Extensionality$.html"><span class="name">Extensionality</span></a><span class="result"> extends <a href="../api/checking/TypeBasedEqualityRule.html" class="extype" name="info.kwarc.mmt.api.checking.TypeBasedEqualityRule">TypeBasedEqualityRule</a></span>
       </span>
-      </h4>
-      <p class="comment cmt">p |- eval(t1) = eval(t2): a  ---&gt;  |- t1 = t2 : formation(p,a)
+      </h4><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.reflection.package@Extensionality" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">p |- eval(t1) = eval(t2): a  ---&gt;  |- t1 = t2 : formation(p,a)
 </p>
     </li><li name="info.kwarc.mmt.reflection.FormationInfer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="FormationInfer"></a>
@@ -119,8 +134,12 @@
       <span class="symbol">
         <a href="FormationInfer$.html"><span class="name">FormationInfer</span></a><span class="result"> extends <a href="../api/checking/InferenceRule.html" class="extype" name="info.kwarc.mmt.api.checking.InferenceRule">InferenceRule</a></span>
       </span>
-      </h4>
-      <p class="comment cmt">p |- t: U  ---&gt;  |- formation(p,t) : U
+      </h4><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.reflection.package@FormationInfer" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">p |- t: U  ---&gt;  |- formation(p,t) : U
 </p>
     </li><li name="info.kwarc.mmt.reflection.ReflInfer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ReflInfer"></a>
@@ -133,8 +152,12 @@
       <span class="symbol">
         <a href="ReflInfer$.html"><span class="name">ReflInfer</span></a><span class="result"> extends <a href="../api/checking/InferenceRule.html" class="extype" name="info.kwarc.mmt.api.checking.InferenceRule">InferenceRule</a></span>
       </span>
-      </h4>
-      <p class="comment cmt">p |- t: a  ---&gt;  |- refl(p,t) : formation(p,a)
+      </h4><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.reflection.package@ReflInfer" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">p |- t: a  ---&gt;  |- refl(p,t) : formation(p,a)
 </p>
     </li><li name="info.kwarc.mmt.reflection.Terms" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Terms"></a>
@@ -147,7 +170,11 @@
       <span class="symbol">
         <a href="Terms$.html"><span class="name">Terms</span></a><span class="result"> extends <a href="../api/uom/TheoryScala.html" class="extype" name="info.kwarc.mmt.api.uom.TheoryScala">TheoryScala</a></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.reflection.package@Terms" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="info.kwarc.mmt.reflection.TypingRule" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TypingRule"></a>
@@ -160,8 +187,12 @@
       <span class="symbol">
         <a href="TypingRule$.html"><span class="name">TypingRule</span></a><span class="result"> extends <a href="../api/checking/TypingRule.html" class="extype" name="info.kwarc.mmt.api.checking.TypingRule">TypingRule</a></span>
       </span>
-      </h4>
-      <p class="comment cmt">p |- eval(t) : a  ---&gt;  |- q: formation(p,a)
+      </h4><span class="permalink">
+      <a href="../../../../index.html#info.kwarc.mmt.reflection.package@TypingRule" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">p |- eval(t) : a  ---&gt;  |- q: formation(p,a)
 </p>
     </li></ol>
             </div>

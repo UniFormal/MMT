@@ -1,5 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!DOCTYPE html >
 <html>
         <head>
           <title>ArchiveDimension - MMT - info.kwarc.mmt.api.archives.ArchiveDimension</title>
@@ -31,12 +30,18 @@
       <div id="definition">
         <img src="../../../../../lib/class_big.png" />
         <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.api.archives">archives</a></p>
-        <h1>ArchiveDimension</h1>
+        <h1>ArchiveDimension</h1><h3><span class="morelinks"><div>Related Doc:
+            <a href="package.html" class="extype" name="info.kwarc.mmt.api.archives">package archives</a>
+          </div></span></h3><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       </div>
 
       <h4 id="signature" class="signature">
       <span class="modifier_kind">
-        <span class="modifier">sealed abstract </span>
+        <span class="modifier">abstract </span>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
@@ -44,16 +49,17 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><dl class="attributes block"> <dt>Source</dt><dd><a href="file:/C:/frabe/MMT/src/mmt-api/trunk/src/main/info/kwarc/mmt/api/archives/ArchiveDimension.scala" target="_blank">ArchiveDimension.scala</a></dd></dl><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>an identifiers for a subfolder of an archive</p><p>use &quot;archive / dim&quot; to obtain the location of this folder in an archive</p><p>see the package object for predefined dimensions
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="../../../../../../../src/mmt-api/trunk/src/main/info/kwarc/mmt/api/archives/ArchiveDimension.scala" target="_blank">ArchiveDimension.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block">
-          <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a href="Dim.html" class="extype" name="info.kwarc.mmt.api.archives.Dim">Dim</a>, <a href="content$.html" class="extype" name="info.kwarc.mmt.api.archives.content">content</a>, <a href="errors$.html" class="extype" name="info.kwarc.mmt.api.archives.errors">errors</a>, <a href="narration$.html" class="extype" name="info.kwarc.mmt.api.archives.narration">narration</a>, <a href="relational$.html" class="extype" name="info.kwarc.mmt.api.archives.relational">relational</a>, <a href="source$.html" class="extype" name="info.kwarc.mmt.api.archives.source">source</a></div>
-        </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
+            <span class="toggle">Known Subclasses</span>
+            <div class="subClasses hiddenContent"><a href="Dim.html" class="extype" name="info.kwarc.mmt.api.archives.Dim">Dim</a>, <a href="RedirectableDimension.html" class="extype" name="info.kwarc.mmt.api.archives.RedirectableDimension">RedirectableDimension</a></div>
+          </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
                 <span class="toggle diagram-link">Type Hierarchy</span>
                 <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#diagrams" target="_blank" class="diagram-help">Learn more about scaladoc diagrams</a>
-                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph659" viewBox="0.00 0.00 552.00 158.00" height="158pt" width="552pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 154)" class="graph" id="graph1"><polygon points="-4,5 -4,-154 549,-154 549,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph659_0"><a xlink:title="info.kwarc.mmt.api.archives.ArchiveDimension (this class)" xlink:href="#inheritance-diagram"><polygon points="320.25,-88 197.75,-88 197.75,-62 320.25,-62 320.25,-88" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-83" x="208" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-73" x="230" text-anchor="start">ArchiveDimension</text></a></g><!-- node1 --><g class="node class" id="graph659_1"><a xlink:title="info.kwarc.mmt.api.archives.Dim" xlink:href="Dim.html#inheritance-diagram"><polygon points="62.25,-26 -0.25,-26 -0.25,-0 62.25,-0 62.25,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="10" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="32" text-anchor="start">Dim</text></a></g><!-- node0&#45;&gt;node1 --><g class="edge inheritance" id="graph659_0_1"><a xlink:title="Dim is a subtype of ArchiveDimension"><path d="M205.101,-60.6729C167.673,-51.2943 116.697,-38.274 72,-26 68.8532,-25.1359 65.5769,-24.2143 62.3086,-23.2805" stroke="#d4d4d4" fill="none"></path><polygon points="204.783,-62.3973 210.059,-61.9137 205.633,-59.002 204.783,-62.3973" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node object" id="graph659_2"><a xlink:title="info.kwarc.mmt.api.archives.content" xlink:href="content$.html#inheritance-diagram"><polygon points="159,-26 81,-26 81,-0 159,-0 159,-26" stroke="#102966" fill="#3556a7"></polygon><image xlink:href="../../../../../lib/object_diagram.png" y="-21" x="91" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="113" text-anchor="start">content</text></a></g><!-- node0&#45;&gt;node2 --><g class="edge inheritance" id="graph659_0_2"><a xlink:title="content is a subtype of ArchiveDimension"><path d="M226.232,-59.8556C202.476,-49.601 170.684,-35.8781 148.087,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="225.587,-61.4832 230.871,-61.8581 226.974,-58.2698 225.587,-61.4832" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node3 --><g class="node object" id="graph659_3"><a xlink:title="info.kwarc.mmt.api.archives.errors" xlink:href="errors$.html#inheritance-diagram"><polygon points="247,-26 177,-26 177,-0 247,-0 247,-26" stroke="#102966" fill="#3556a7"></polygon><image xlink:href="../../../../../lib/object_diagram.png" y="-21" x="187" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="209" text-anchor="start">errors</text></a></g><!-- node0&#45;&gt;node3 --><g class="edge inheritance" id="graph659_0_3"><a xlink:title="errors is a subtype of ArchiveDimension"><path d="M246.279,-57.7607C238.468,-47.7889 228.628,-35.2278 221.497,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="245.028,-59.0011 249.489,-61.8581 247.783,-56.8428 245.028,-59.0011" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node4 --><g class="node object" id="graph659_4"><a xlink:title="info.kwarc.mmt.api.archives.narration" xlink:href="narration$.html#inheritance-diagram"><polygon points="348.25,-26 265.75,-26 265.75,-0 348.25,-0 348.25,-26" stroke="#102966" fill="#3556a7"></polygon><image xlink:href="../../../../../lib/object_diagram.png" y="-21" x="276" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="298" text-anchor="start">narration</text></a></g><!-- node0&#45;&gt;node4 --><g class="edge inheritance" id="graph659_0_4"><a xlink:title="narration is a subtype of ArchiveDimension"><path d="M271.991,-57.7607C279.969,-47.7889 290.018,-35.2278 297.301,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="270.47,-56.8605 268.714,-61.8581 273.204,-59.047 270.47,-56.8605" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node5 --><g class="node object" id="graph659_5"><a xlink:title="info.kwarc.mmt.api.archives.relational" xlink:href="relational$.html#inheritance-diagram"><polygon points="451.25,-26 366.75,-26 366.75,-0 451.25,-0 451.25,-26" stroke="#102966" fill="#3556a7"></polygon><image xlink:href="../../../../../lib/object_diagram.png" y="-21" x="377" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="399" text-anchor="start">relational</text></a></g><!-- node0&#45;&gt;node5 --><g class="edge inheritance" id="graph659_0_5"><a xlink:title="relational is a subtype of ArchiveDimension"><path d="M294.057,-59.9773C319.815,-49.6739 354.449,-35.8202 378.947,-26.0213" stroke="#d4d4d4" fill="none"></path><polygon points="293.347,-58.3763 289.355,-61.8581 294.647,-61.6259 293.347,-58.3763" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node6 --><g class="node object" id="graph659_6"><a xlink:title="info.kwarc.mmt.api.archives.source" xlink:href="source$.html#inheritance-diagram"><polygon points="544.25,-26 469.75,-26 469.75,-0 544.25,-0 544.25,-26" stroke="#102966" fill="#3556a7"></polygon><image xlink:href="../../../../../lib/object_diagram.png" y="-21" x="480" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="502" text-anchor="start">source</text></a></g><!-- node0&#45;&gt;node6 --><g class="edge inheritance" id="graph659_0_6"><a xlink:title="source is a subtype of ArchiveDimension"><path d="M315.609,-60.7296C355.913,-51.2209 411.333,-38.0229 460,-26 463.107,-25.2325 466.327,-24.4284 469.558,-23.6156" stroke="#d4d4d4" fill="none"></path><polygon points="314.739,-59.1367 310.274,-61.9876 315.542,-62.5433 314.739,-59.1367" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node7 --><g class="node class" id="graph659_7"><a xlink:title="scala.AnyRef"><polygon points="297.25,-150 220.75,-150 220.75,-124 297.25,-124 297.25,-150" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-145" x="231" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-135" x="253" text-anchor="start">AnyRef</text></a></g><!-- node7&#45;&gt;node0 --><g class="edge inheritance" id="graph659_7_0"><a xlink:title="ArchiveDimension is a subtype of AnyRef"><path d="M259,-118.683C259,-108.896 259,-96.9026 259,-88.1238" stroke="#d4d4d4" fill="none"></path><polygon points="257.25,-118.858 259,-123.858 260.75,-118.858 257.25,-118.858" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
+                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph1" viewBox="0.00 0.00 233.00 158.00" height="158pt" width="233pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 154)" class="graph" id="graph1"><polygon points="-4,5 -4,-154 230,-154 230,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph1_0"><a xlink:title="info.kwarc.mmt.api.archives.ArchiveDimension (this class)" xlink:href="#inheritance-diagram"><polygon points="153.25,-88 30.75,-88 30.75,-62 153.25,-62 153.25,-88" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-83" x="41" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-73" x="63" text-anchor="start">ArchiveDimension</text></a></g><!-- node1 --><g class="node class" id="graph1_1"><a xlink:title="info.kwarc.mmt.api.archives.Dim" xlink:href="Dim.html#inheritance-diagram"><polygon points="62.25,-26 -0.25,-26 -0.25,-0 62.25,-0 62.25,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="10" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="32" text-anchor="start">Dim</text></a></g><!-- node0&#45;&gt;node1 --><g class="edge inheritance" id="graph1_0_1"><a xlink:title="Dim is a subtype of ArchiveDimension"><path d="M76.0306,-58.2924C65.8093,-48.2386 52.7469,-35.3904 43.3259,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="74.8639,-59.5995 79.6557,-61.8581 77.3183,-57.1042 74.8639,-59.5995" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node class" id="graph1_2"><a xlink:title="info.kwarc.mmt.api.archives.RedirectableDimension" xlink:href="RedirectableDimension.html#inheritance-diagram"><polygon points="225.25,-26 80.75,-26 80.75,-0 225.25,-0 225.25,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="91" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="113" text-anchor="start">RedirectableDimension</text></a></g><!-- node0&#45;&gt;node2 --><g class="edge inheritance" id="graph1_0_2"><a xlink:title="RedirectableDimension is a subtype of ArchiveDimension"><path d="M107.969,-58.2924C118.191,-48.2386 131.253,-35.3904 140.674,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="106.682,-57.1042 104.344,-61.8581 109.136,-59.5995 106.682,-57.1042" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node3 --><g class="node class" id="graph1_3"><a xlink:title="scala.AnyRef"><polygon points="130.25,-150 53.75,-150 53.75,-124 130.25,-124 130.25,-150" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-145" x="64" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-135" x="86" text-anchor="start">AnyRef</text></a></g><!-- node3&#45;&gt;node0 --><g class="edge inheritance" id="graph1_3_0"><a xlink:title="ArchiveDimension is a subtype of AnyRef"><path d="M92,-118.683C92,-108.896 92,-96.9026 92,-88.1238" stroke="#d4d4d4" fill="none"></path><polygon points="90.2501,-118.858 92,-123.858 93.7501,-118.858 90.2501,-118.858" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
               </div></div>
         
 
@@ -92,7 +98,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="info.kwarc.mmt.api.archives.ArchiveDimension#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(toString:String):info.kwarc.mmt.api.archives.ArchiveDimension"></a>
+      <a id="&lt;init&gt;():info.kwarc.mmt.api.archives.ArchiveDimension"></a>
       <a id="&lt;init&gt;:ArchiveDimension"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -100,9 +106,13 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">ArchiveDimension</span><span class="params">(<span name="toString">toString: <span class="extype" name="scala.Predef.String">String</span></span>)</span>
+        <span class="name">ArchiveDimension</span><span class="params">()</span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@&lt;init&gt;():info.kwarc.mmt.api.archives.ArchiveDimension" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li></ol>
             </div>
@@ -114,19 +124,6 @@
         <div id="values" class="values members">
               <h3>Value Members</h3>
               <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="!=(x$1:AnyRef):Boolean"></a>
-      <a id="!=(AnyRef):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="scala.Any#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="!=(x$1:Any):Boolean"></a>
       <a id="!=(Any):Boolean"></a>
       <h4 class="signature">
@@ -137,8 +134,12 @@
       <span class="symbol">
         <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="##():Int"></a>
       <a id="##():Int"></a>
@@ -150,22 +151,13 @@
       <span class="symbol">
         <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@##():Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="==(x$1:AnyRef):Boolean"></a>
-      <a id="==(AnyRef):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="scala.Any#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="==(x$1:Any):Boolean"></a>
       <a id="==(Any):Boolean"></a>
       <h4 class="signature">
@@ -176,8 +168,12 @@
       <span class="symbol">
         <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@==(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -189,7 +185,11 @@
       <span class="symbol">
         <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
@@ -202,9 +202,16 @@
       <span class="symbol">
         <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@clone():Object" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -218,7 +225,11 @@
       <span class="symbol">
         <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="scala.AnyRef#equals" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="equals(x$1:Any):Boolean"></a>
@@ -231,7 +242,11 @@
       <span class="symbol">
         <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@equals(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
@@ -244,9 +259,16 @@
       <span class="symbol">
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@finalize():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -260,7 +282,11 @@
       <span class="symbol">
         <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@getClass():Class[_]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
@@ -273,7 +299,11 @@
       <span class="symbol">
         <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@hashCode():Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -286,7 +316,11 @@
       <span class="symbol">
         <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
@@ -299,7 +333,11 @@
       <span class="symbol">
         <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notify():Unit"></a>
@@ -312,7 +350,11 @@
       <span class="symbol">
         <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@notify():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notifyAll():Unit"></a>
@@ -325,7 +367,11 @@
       <span class="symbol">
         <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@notifyAll():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
@@ -338,21 +384,29 @@
       <span class="symbol">
         <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.archives.ArchiveDimension#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="toString:String"></a>
-      <a id="toString:String"></a>
+    </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toString():String"></a>
+      <a id="toString():String"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">toString</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.archives.ArchiveDimension">ArchiveDimension</a> → AnyRef → Any</dd></dl></div>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@toString():String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -364,9 +418,16 @@
       <span class="symbol">
         <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@wait():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -380,9 +441,16 @@
       <span class="symbol">
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -396,9 +464,16 @@
       <span class="symbol">
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.ArchiveDimension@wait(x$1:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li></ol>

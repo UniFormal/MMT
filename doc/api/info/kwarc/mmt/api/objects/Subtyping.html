@@ -1,5 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!DOCTYPE html >
 <html>
         <head>
           <title>Subtyping - MMT - info.kwarc.mmt.api.objects.Subtyping</title>
@@ -31,7 +30,13 @@
       <div id="definition">
         <img src="../../../../../lib/class_big.png" />
         <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.api.objects">objects</a></p>
-        <h1>Subtyping</h1>
+        <h1>Subtyping</h1><h3><span class="morelinks"><div>Related Doc:
+            <a href="package.html" class="extype" name="info.kwarc.mmt.api.objects">package objects</a>
+          </div></span></h3><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       </div>
 
       <h4 id="signature" class="signature">
@@ -40,19 +45,19 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">Subtyping</span><span class="params">(<span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="tp1">tp1: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tp2">tp2: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="BinaryObjJudgement.html" class="extype" name="info.kwarc.mmt.api.objects.BinaryObjJudgement">BinaryObjJudgement</a> with <span class="extype" name="scala.Product">scala.Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">Subtyping</span><span class="params">(<span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="tp1">tp1: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tp2">tp2: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span><span class="result"> extends <a href="BinaryObjJudgement.html" class="extype" name="info.kwarc.mmt.api.objects.BinaryObjJudgement">BinaryObjJudgement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>represents a subtyping judgement
 context |- tp1 &lt;: tp2
-</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="file:/C:/frabe/MMT/src/mmt-api/trunk/src/main/info/kwarc/mmt/api/objects/Judgements.scala" target="_blank">Judgements.scala</a></dd></dl><div class="toggleContainer block">
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="../../../../../../../src/mmt-api/trunk/src/main/info/kwarc/mmt/api/objects/Judgements.scala" target="_blank">Judgements.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">scala.Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <a href="BinaryObjJudgement.html" class="extype" name="info.kwarc.mmt.api.objects.BinaryObjJudgement">BinaryObjJudgement</a>, <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a>, <a href="../checking/HistoryEntry.html" class="extype" name="info.kwarc.mmt.api.checking.HistoryEntry">HistoryEntry</a>, <a href="../utils/HashEquality.html" class="extype" name="info.kwarc.mmt.api.utils.HashEquality">HashEquality</a>[<a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a>], <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <a href="BinaryObjJudgement.html" class="extype" name="info.kwarc.mmt.api.objects.BinaryObjJudgement">BinaryObjJudgement</a>, <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a>, <a href="../checking/HistoryEntry.html" class="extype" name="info.kwarc.mmt.api.checking.HistoryEntry">HistoryEntry</a>, <a href="../utils/HashEquality.html" class="extype" name="info.kwarc.mmt.api.utils.HashEquality">HashEquality</a>[<a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a>], <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
                 <span class="toggle diagram-link">Type Hierarchy</span>
                 <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#diagrams" target="_blank" class="diagram-help">Learn more about scaladoc diagrams</a>
-                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph353" viewBox="0.00 0.00 382.00 120.00" height="120pt" width="382pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 116)" class="graph" id="graph1"><polygon points="-4,5 -4,-116 379,-116 379,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph353_0"><a xlink:title="info.kwarc.mmt.api.objects.Subtyping (this class)" xlink:href="#inheritance-diagram"><polygon points="251.25,-50 162.75,-50 162.75,-24 251.25,-24 251.25,-50" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-45" x="173" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-35" x="195" text-anchor="start">Subtyping</text></a></g><!-- node1 --><g class="node class" id="graph353_1"><a xlink:title="info.kwarc.mmt.api.objects.BinaryObjJudgement" xlink:href="BinaryObjJudgement.html#inheritance-diagram"><polygon points="136,-112 0,-112 0,-86 136,-86 136,-112" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-107" x="10" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="32" text-anchor="start">BinaryObjJudgement</text></a></g><!-- node1&#45;&gt;node0 --><g class="edge inheritance" id="graph353_1_0"><a xlink:title="Subtyping is a subtype of BinaryObjJudgement"><path d="M100.768,-83.8556C124.524,-73.601 156.316,-59.8781 178.913,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="100.026,-82.2698 96.1287,-85.8581 101.413,-85.4832 100.026,-82.2698" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node trait" id="graph353_2"><a xlink:title="scala.Product"><polygon points="260,-112 154,-112 154,-86 260,-86 260,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-107" x="164" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="186" text-anchor="start">scala.Product</text></a></g><!-- node2&#45;&gt;node0 --><g class="edge inheritance" id="graph353_2_0"><a xlink:title="Subtyping is a subtype of scala.Product"><path d="M207,-80.6826C207,-70.8961 207,-58.9026 207,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="205.25,-80.8581 207,-85.8581 208.75,-80.8581 205.25,-80.8581" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node3 --><g class="node trait" id="graph353_3"><a xlink:title="scala.Serializable"><polygon points="374,-112 278,-112 278,-86 374,-86 374,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-107" x="288" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="310" text-anchor="start">Serializable</text></a></g><!-- node3&#45;&gt;node0 --><g class="edge inheritance" id="graph353_3_0"><a xlink:title="Subtyping is a subtype of Serializable"><path d="M297.437,-83.5985C277.156,-73.3726 250.23,-59.7968 231.046,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="296.666,-85.1696 301.919,-85.8581 298.242,-82.0444 296.666,-85.1696" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
+                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph1" viewBox="0.00 0.00 356.00 120.00" height="120pt" width="356pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 116)" class="graph" id="graph1"><polygon points="-4,5 -4,-116 353,-116 353,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph1_0"><a xlink:title="info.kwarc.mmt.api.objects.Subtyping (this class)" xlink:href="#inheritance-diagram"><polygon points="238.25,-50 149.75,-50 149.75,-24 238.25,-24 238.25,-50" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-45" x="160" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-35" x="182" text-anchor="start">Subtyping</text></a></g><!-- node1 --><g class="node class" id="graph1_1"><a xlink:title="info.kwarc.mmt.api.objects.BinaryObjJudgement" xlink:href="BinaryObjJudgement.html#inheritance-diagram"><polygon points="136,-112 0,-112 0,-86 136,-86 136,-112" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-107" x="10" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="32" text-anchor="start">BinaryObjJudgement</text></a></g><!-- node1&#45;&gt;node0 --><g class="edge inheritance" id="graph1_1_0"><a xlink:title="Subtyping is a subtype of BinaryObjJudgement"><path d="M98.2431,-83.5985C119.718,-73.3726 148.227,-59.7968 168.54,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="97.2599,-82.1284 93.498,-85.8581 98.7647,-85.2884 97.2599,-82.1284" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node trait" id="graph1_2"><a xlink:title="scala.Product"><polygon points="233.25,-112 154.75,-112 154.75,-86 233.25,-86 233.25,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-107" x="165" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="187" text-anchor="start">Product</text></a></g><!-- node2&#45;&gt;node0 --><g class="edge inheritance" id="graph1_2_0"><a xlink:title="Subtyping is a subtype of Product"><path d="M194,-80.6826C194,-70.8961 194,-58.9026 194,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="192.25,-80.8581 194,-85.8581 195.75,-80.8581 192.25,-80.8581" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node3 --><g class="node trait" id="graph1_3"><a xlink:title="scala.Serializable"><polygon points="348,-112 252,-112 252,-86 348,-86 348,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-107" x="262" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="284" text-anchor="start">Serializable</text></a></g><!-- node3&#45;&gt;node0 --><g class="edge inheritance" id="graph1_3_0"><a xlink:title="Subtyping is a subtype of Serializable"><path d="M274.101,-83.34C256.089,-73.1447 232.364,-59.7155 215.419,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="273.336,-84.918 278.549,-85.8581 275.06,-81.8721 273.336,-84.918" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
               </div></div>
         
 
@@ -101,7 +106,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">Subtyping</span><span class="params">(<span name="stack">stack: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>, <span name="tp1">tp1: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="tp2">tp2: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>)</span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@&lt;init&gt;(stack:info.kwarc.mmt.api.objects.Stack,tp1:info.kwarc.mmt.api.objects.Term,tp2:info.kwarc.mmt.api.objects.Term):info.kwarc.mmt.api.objects.Subtyping" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li></ol>
             </div>
@@ -113,19 +122,6 @@ context |- tp1 &lt;: tp2
         <div id="values" class="values members">
               <h3>Value Members</h3>
               <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="!=(x$1:AnyRef):Boolean"></a>
-      <a id="!=(AnyRef):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="scala.Any#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="!=(x$1:Any):Boolean"></a>
       <a id="!=(Any):Boolean"></a>
       <h4 class="signature">
@@ -136,8 +132,12 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="##():Int"></a>
       <a id="##():Int"></a>
@@ -149,22 +149,13 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@##():Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="==(x$1:AnyRef):Boolean"></a>
-      <a id="==(AnyRef):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="scala.Any#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="==(x$1:Any):Boolean"></a>
       <a id="==(Any):Boolean"></a>
       <h4 class="signature">
@@ -175,8 +166,12 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@==(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -188,7 +183,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
@@ -201,9 +200,16 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@clone():Object" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li><li name="info.kwarc.mmt.api.objects.Judgement#context" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -217,7 +223,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">context</span><span class="result">: <a href="Context.html" class="extype" name="info.kwarc.mmt.api.objects.Context">Context</a></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@context:info.kwarc.mmt.api.objects.Context" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a></dd></dl></div>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
@@ -230,7 +240,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
@@ -243,9 +257,16 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@finalize():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li><li name="info.kwarc.mmt.api.objects.BinaryObjJudgement#freeVars" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -259,8 +280,15 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">freeVars</span><span class="result">: <span class="extype" name="scala.collection.mutable.HashSet">HashSet</span>[<a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a>]</span>
       </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BinaryObjJudgement.html" class="extype" name="info.kwarc.mmt.api.objects.BinaryObjJudgement">BinaryObjJudgement</a> → <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a></dd></dl></div>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@freeVars:scala.collection.mutable.HashSet[info.kwarc.mmt.api.LocalName]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>the set of names of the meta-variables occurring in this judgment
+   Constraints must come with a Context binding all object variables occurring freely in any expressions;
+   therefore, the remaining free variables are meta-variables
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BinaryObjJudgement.html" class="extype" name="info.kwarc.mmt.api.objects.BinaryObjJudgement">BinaryObjJudgement</a> → <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a></dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <a id="getClass():Class[_]"></a>
@@ -272,7 +300,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@getClass():Class[_]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.utils.HashEquality#hash" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hash:Int"></a>
@@ -285,7 +317,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">hash</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@hash:Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">the hash code</p><div class="fullcomment"><div class="comment cmt"><p>the hash code</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../utils/HashEquality.html" class="extype" name="info.kwarc.mmt.api.utils.HashEquality">HashEquality</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.utils.HashEquality#hasheq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hasheq(that:info.kwarc.mmt.api.utils.HashEquality[A]):Boolean"></a>
@@ -298,7 +334,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">hasheq</span><span class="params">(<span name="that">that: <a href="../utils/HashEquality.html" class="extype" name="info.kwarc.mmt.api.utils.HashEquality">HashEquality</a>[<a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a>]</span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@hasheq(that:info.kwarc.mmt.api.utils.HashEquality[A]):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">this hasheq that is the same as this == that, but fails immediately if false</p><div class="fullcomment"><div class="comment cmt"><p>this hasheq that is the same as this == that, but fails immediately if false</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../utils/HashEquality.html" class="extype" name="info.kwarc.mmt.api.utils.HashEquality">HashEquality</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.utils.HashEquality#hashneq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashneq(that:info.kwarc.mmt.api.utils.HashEquality[A]):Boolean"></a>
@@ -311,7 +351,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">hashneq</span><span class="params">(<span name="that">that: <a href="../utils/HashEquality.html" class="extype" name="info.kwarc.mmt.api.utils.HashEquality">HashEquality</a>[<a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a>]</span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@hashneq(that:info.kwarc.mmt.api.utils.HashEquality[A]):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">this hasheq that is the same as this == that, but fails immediately if false</p><div class="fullcomment"><div class="comment cmt"><p>this hasheq that is the same as this == that, but fails immediately if false</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../utils/HashEquality.html" class="extype" name="info.kwarc.mmt.api.utils.HashEquality">HashEquality</a></dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -324,7 +368,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
@@ -337,7 +385,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notify():Unit"></a>
@@ -350,7 +402,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@notify():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notifyAll():Unit"></a>
@@ -363,7 +419,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@notifyAll():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.objects.Judgement#present" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="present(implicitcont:info.kwarc.mmt.api.objects.Obj=&gt;String):String"></a>
@@ -376,7 +436,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">present</span><span class="params">(<span class="implicit">implicit </span><span name="cont">cont: (<a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a>) ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@present(implicitcont:info.kwarc.mmt.api.objects.Obj=&gt;String):String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <p class="shortcomment cmt">a toString method that may call a continuation on its objects
 </p><div class="fullcomment"><div class="comment cmt"><p>a toString method that may call a continuation on its objects
 </p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a> → <a href="../checking/HistoryEntry.html" class="extype" name="info.kwarc.mmt.api.checking.HistoryEntry">HistoryEntry</a></dd></dl></div>
@@ -391,7 +455,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">presentAntecedent</span><span class="params">(<span class="implicit">implicit </span><span name="cont">cont: (<a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a>) ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@presentAntecedent(implicitcont:info.kwarc.mmt.api.objects.Obj=&gt;String):String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.objects.BinaryObjJudgement#presentSucceedent" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="presentSucceedent(implicitcont:info.kwarc.mmt.api.objects.Obj=&gt;String):String"></a>
@@ -404,7 +472,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">presentSucceedent</span><span class="params">(<span class="implicit">implicit </span><span name="cont">cont: (<a href="Obj.html" class="extype" name="info.kwarc.mmt.api.objects.Obj">Obj</a>) ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@presentSucceedent(implicitcont:info.kwarc.mmt.api.objects.Obj=&gt;String):String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BinaryObjJudgement.html" class="extype" name="info.kwarc.mmt.api.objects.BinaryObjJudgement">BinaryObjJudgement</a> → <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.objects.Subtyping#stack" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="stack:info.kwarc.mmt.api.objects.Stack"></a>
@@ -417,7 +489,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">stack</span><span class="result">: <a href="Stack.html" class="extype" name="info.kwarc.mmt.api.objects.Stack">Stack</a></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@stack:info.kwarc.mmt.api.objects.Stack" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.objects.Subtyping">Subtyping</a> → <a href="Judgement.html" class="extype" name="info.kwarc.mmt.api.objects.Judgement">Judgement</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
@@ -430,7 +506,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="info.kwarc.mmt.api.objects.Subtyping#tp1" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="tp1:info.kwarc.mmt.api.objects.Term"></a>
@@ -443,7 +523,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">tp1</span><span class="result">: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@tp1:info.kwarc.mmt.api.objects.Term" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="info.kwarc.mmt.api.objects.Subtyping#tp2" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="tp2:info.kwarc.mmt.api.objects.Term"></a>
@@ -456,7 +540,11 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">tp2</span><span class="result">: <a href="Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@tp2:info.kwarc.mmt.api.objects.Term" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
@@ -469,9 +557,16 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@wait():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -485,9 +580,16 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -501,9 +603,16 @@ context |- tp1 &lt;: tp2
       <span class="symbol">
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
-      </h4>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.objects.Subtyping@wait(x$1:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">()</span>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
               
         </dd></dl></div>
     </li></ol>
@@ -520,7 +629,7 @@ context |- tp1 &lt;: tp2
             </div><div class="parent" name="java.io.Serializable">
               <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
             </div><div class="parent" name="scala.Product">
-              <h3>Inherited from <span class="extype" name="scala.Product">scala.Product</span></h3>
+              <h3>Inherited from <span class="extype" name="scala.Product">Product</span></h3>
             </div><div class="parent" name="scala.Equals">
               <h3>Inherited from <span class="extype" name="scala.Equals">Equals</span></h3>
             </div><div class="parent" name="info.kwarc.mmt.api.objects.BinaryObjJudgement">
