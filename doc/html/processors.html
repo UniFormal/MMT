@@ -1,0 +1,62 @@
+<p>
+MMT uses several abstractions for processing content.<br/>
+Implementations can be provided as <a href="extensions.html">extensions</a> and are chosen based on appropriate identifiers (e.g., the format to which a parser is applicable).
+</p>
+
+<p>
+Each abstraction comes with at least one main implementation, which is parametrized by a set of rules.<br/>
+This allows a second (simpler but less flexible) way to customize MMT by supplying a different set of rules.<br/>
+The type of rule depends on the processor (e.g., notations for a parser).
+</p>
+
+<p>
+All processors are divided into three kinds.
+One kind handles structure (e.g., declarations) and one objects.
+The third kind is pairs up a structure and an object processor.
+</p>
+
+<table border="1">
+<tr><td/><td/><th colspan="4">abstract interface</th><th colspan="3">main implementation(s)<th/>
+<tr><th>process</th><th>level</th><th>class (extends)</th>
+    <th>identified by</th><th>input</th><th>output</th>
+    <th>class</th><th>parametrized by set of</th><th>identifier</th></tr>
+<tr><th rowspan="3">parsing</th><td>objects</td><td><a href="../api/index.html#info.kwarc.mmt.api.parser.ObjectParser">ObjectParser</a></td>
+    <td></td><td>string with some extra data</td><td>object</td>
+    <td><a href="../api/index.html#info.kwarc.mmt.api.parser.NotationBasedParser">NotationBasedParser</a></td><td>notations in scope</td><td></td></tr>
+<tr><td>structure</td><td><a href="../api/index.html#info.kwarc.mmt.api.parser.StructureParser">StructureParser</a></td>
+    <td></td><td>stream with some extra data</td><td>document</td>
+    <td><a href="../api/index.html#info.kwarc.mmt.api.parser.KeywordBasedParser">KeywordBasedParser</a></td><td>keyword handlers</td><td></td></tr>
+<tr><td>both</td><td><a href="../api/index.html#info.kwarc.mmt.api.parser.Parser">Parser</a></td>
+    <td>input format</td><td></td><td></td>
+    <td colspan="2">new KeywordBasedParser(new NotationBasedParser)</td><td>"mmt"</td></tr>
+
+<tr><th rowspan="3">checking</th><td>objects</td><td><a href="../api/index.html#info.kwarc.mmt.api.checking.ObjectChecker">ObjectChecker</a></td>
+    <td></td><td>object with unknown parts</td><td>object with unknown parts inferred</td>
+    <td><a href="../api/index.html#info.kwarc.mmt.api.checking.RuleBasedChecker">RuleBasedChecker</a></td><td>typing rules in scope</td><td></td></tr>
+<tr><td>structure</td><td><a href="../api/index.html#info.kwarc.mmt.api.checking.StructureChecker">StructureChecker</a></td>
+    <td></td><td>structural element</td><td>nothing</td>
+    <td><a href="../api/index.html#info.kwarc.mmt.api.checking.MMTStructureChecker">MMTStructureChecker</a></td><td>not parametrized</td><td></td></tr>
+<tr><td>both</td><td><a href="../api/index.html#info.kwarc.mmt.api.checking.Checker">Checker</a></td>
+    <td>id</td><td></td><td></td>
+    <td colspan="2">new MMTStructureChecker(new RuleBasedChecker)</td><td>"mmt"</td></tr>
+
+<tr><th>interpretation</th><td></td><td><a href="../api/index.html#info.kwarc.mmt.api.checking.Interpreter">Interpreter</a> (<a href="../api/index.html#info.kwarc.mmt.api.archives.Importer">Importer</a>)</td><td>input format</td><td colspan="2">pair of parser and checker</td>
+    <td colspan="2">new Interpreter(<br/>&nbsp;&nbsp;new KeywordBasedParser(new NotationBasedParser),<br/>
+    &nbsp;&nbsp;new MMTStructureChecker(new RuleBasedChecker)<br/>)</td><td>"mmt"</td>
+</tr>
+
+<tr><th rowspan="3">presentation</th><td>objects</td><td><a href="../api/index.html#info.kwarc.mmt.api.presentation.ObjectPresenter">ObjectPresenter</a></td>
+    <td></td><td>object</td><td>according to format</td>
+    <td><a href="../api/index.html#info.kwarc.mmt.api.presentation.NotationBasedPresenter">NotationBasedPresenter</a><br/>
+    <a href="../api/index.html#info.kwarc.mmt.api.presentation.MathMLPresenter">MathMLPresenter</a>
+    </td><td>notations in scope</td><td></td></tr>
+<tr><td>structure</td><td><a href="../api/index.html#info.kwarc.mmt.api.presentation.StructurePresenter">StructurePresenter</a></td>
+    <td></td><td>structural element</td><td>according to format</td>
+    <td><a href="../api/index.html#info.kwarc.mmt.api.presentation.MMTStructurePresenter">MMTStructurePresenter</a><br/>
+    <a href="../api/index.html#info.kwarc.mmt.api.presentation.HTMLPresenter">HTMLPresenter</a>
+    </td><td>not parametrized</td><td></td></tr>
+<tr><td>both</td><td><a href="../api/index.html#info.kwarc.mmt.api.presentation.Presenter">Presenter</a> (<a href="../api/index.html#info.kwarc.mmt.api.archives.Exporter">Exporter</a>)</td>
+    <td>output format</td><td></td><td></td>
+    <td colspan="2">new MMTStructurePresenter(new NotationBasedPresenter)<br/>new HTMLPresenter(new MathMLPresenter)</td>
+    <td>"present-text-notations"<br/>"html"</td></tr>
+</table>
