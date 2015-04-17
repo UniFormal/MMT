@@ -25,10 +25,10 @@ abstract class Importer extends TraversingBuildTarget {
 
    /** the main abstract method to be implemented by importers
     *  
-    *  @param information about the input document and error reporting
+    *  @param buildTask about the input document and error reporting
     *  @param seCont a continuation function to be called on every generated document
     */
-   def importDocument(bf: BuildTask, seCont: Document => Unit)
+   def importDocument(buildTask: BuildTask, seCont: Document => Unit)
 
    def buildFile(a: Archive, bf: BuildTask) {
       importDocument(bf, doc => indexDocument(a, doc, bf.inPath))
