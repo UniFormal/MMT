@@ -35,11 +35,11 @@ class STeX extends Importer with frontend.ChangeListener {
     }
   }
 
-  def line2Level(line: String): Option[Level.Level] = {
-    val msgLine = """(Info|Warning|Error|Fatal):.*""".r
+  def line2Level(line: String): (Option[Level.Level], String) = {
+    val msgLine = """(Info|Warning|Error|Fatal):(.*)""".r
     line match {
-      case msgLine(lev) => Some(str2Level(lev))
-      case _ => None
+      case msgLine(lev, rest) => (Some(str2Level(lev)), rest)
+      case _ => (None, line)
     }
   }
 
@@ -80,11 +80,11 @@ class STeX extends Importer with frontend.ChangeListener {
         val itr = source.getLines()
         while (itr.hasNext) {
           val line = itr.next()
-          val newLevel = line2Level(line)
+          val (newLevel, restLine) = line2Level(line)
           if (newLevel.isDefined) {
             reportError()
             optLevel = newLevel
-            msg = List(line)
+            msg = List(restLine)
             newMsg = false
           }
           else if (line.startsWith("\t")) {
