@@ -15,7 +15,33 @@ class STeX extends Importer with frontend.ChangeListener {
   private var lmlPath: File = File("run-latexml.sh")
 
   def includeFile(n: String): Boolean =
-    n.endsWith(".tex") && ! n.endsWith("localpaths.tex")
+    n.endsWith(".tex") && !n.endsWith("localpaths.tex")
+
+  def str2Level(lev: String): Level.Level = lev match {
+    case "Info" => Level.Info
+    case "Error" => Level.Error
+    case "Fatal" => Level.Fatal
+    case _ => Level.Warning
+  }
+
+  def line2Region(sLine: String, inFile: File): SourceRegion = {
+    val regEx = """#textrange\(from=(\d+);(\d+),to=(\d+);(\d+)\)""".r
+    val range = sLine.stripPrefix(inFile.toString)
+    range match {
+      case regEx(l1, c1, l2, c2) =>
+        SourceRegion(SourcePosition(-1, l1.toInt, c1.toInt),
+          SourcePosition(-1, l2.toInt, c2.toInt))
+      case _ => SourceRegion.none
+    }
+  }
+
+  def line2Level(line: String): Option[Level.Level] = {
+    val msgLine = """(Info|Warning|Error|Fatal):.*""".r
+    line match {
+      case msgLine(lev) => Some(str2Level(lev))
+      case _ => None
+    }
+  }
 
   /**
    * Compile a .tex file to OMDoc
@@ -33,52 +59,41 @@ class STeX extends Importer with frontend.ChangeListener {
       val lmhOut = bt.inFile.setExtension("omdoc")
       val logFile = bt.inFile.setExtension("ltxlog")
       if (lmhOut.exists()) Files.move(lmhOut.toPath, bt.outFile.toPath)
+      var optLevel: Option[Level.Level] = None
+      var msg: List[String] = Nil
+      var newMsg = true
+      var region = SourceRegion.none
+      def reportError() = {
+        optLevel match {
+          case Some(lev) =>
+            val ref = SourceRef(FileURI(bt.inFile), region)
+            bt.errorCont(CompilerError(key, ref, msg.reverse, lev))
+            optLevel = None
+          case None =>
+        }
+        msg = Nil
+        newMsg = true
+        region = SourceRegion.none
+      }
       if (logFile.exists()) {
         val source = scala.io.Source.fromFile(logFile)
         val itr = source.getLines()
-        var msg: List[String] = Nil
-        var newMsg = true
-        var optLevel: Option[Level.Level] = None
-        var region = SourceRegion.none
-        def reportError() = {
-          optLevel match {
-            case Some(lev) =>
-              val ref = SourceRef(FileURI(bt.inFile), region)
-              bt.errorCont(CompilerError(key, ref, msg.reverse, lev))
-              optLevel = None
-            case None =>
-          }
-          msg = Nil
-          newMsg = true
-          region = SourceRegion.none
-        }
         while (itr.hasNext) {
           val line = itr.next()
-          val msgLine = """(Info|Warning|Error|Fatal):.*""".r
-          line match {
-            case msgLine(lev) =>
-              optLevel = Some(lev match {
-                case "Info" => Level.Info
-                case "Error" => Level.Error
-                case "Fatal" => Level.Fatal
-                case _ => Level.Warning
-              })
-              msg = List(line)
-              newMsg = false
-            case _ => if (line.startsWith("\t")) {
-              val sLine = line.substring(1)
-              val regEx = """#textrange\(from=(\d+);(\d+),to=(\d+);(\d+)\)""".r
-              val range = sLine.stripPrefix(bt.inFile.toString)
-              range match {
-                case regEx(l1, c1, l2, c2) =>
-                  region = SourceRegion(SourcePosition(-1, l1.toInt, c1.toInt),
-                    SourcePosition(-1, l2.toInt, c2.toInt))
-                case _ =>
-              }
-              if (region == SourceRegion.none) msg = sLine :: msg
-            }
-            else reportError()
+          val newLevel = line2Level(line)
+          if (newLevel.isDefined) {
+            reportError()
+            optLevel = newLevel
+            msg = List(line)
+            newMsg = false
           }
+          else if (line.startsWith("\t")) {
+            val sLine = line.substring(1)
+            val newRegion = line2Region(sLine, bt.inFile)
+            if (newRegion == SourceRegion.none) msg = sLine :: msg
+            else region = newRegion
+          }
+          else reportError()
         }
         reportError()
       }
