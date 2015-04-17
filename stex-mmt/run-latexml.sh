@@ -50,9 +50,10 @@ fi
 
 cd $dir
 
-exec ${LATEXML_BASE}/bin/latexmlc --profile smglom \
+exec ${LATEXML_BASE}/bin/latexmlc --quiet --profile smglom \
   --path=/var/data/localmh/sty $dir/${theory}.tex \
   --destination=$dir/${theory}.omdoc \
   --log=$dir/${theory}.ltxlog \
   --preamble=$repoDir/lib/pre.tex \
-  --postamble=$repoDir/lib/post.tex
+  --postamble=$repoDir/lib/post.tex \
+  --expire=10
