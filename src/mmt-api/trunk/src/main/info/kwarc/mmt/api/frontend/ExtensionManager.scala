@@ -7,6 +7,7 @@ import libraries._
 import archives.BuildTarget
 import ontology.QueryExtension
 import parser._
+import checking._
 import utils._
 import web._
 import utils.MyList._
@@ -50,6 +51,15 @@ trait Extension extends Logger {
    def destroy {}
 }
 
+/** extensions classes that can be tested for applicability based on a format string */
+trait FormatBasedExtension extends Extension {
+   /** 
+    *  @param format the format/key/other identifier, for which an extension is needed
+    *  @return true if this extension is applicable
+    */
+   def isApplicable(format: String): Boolean
+}
+
 /**
  * Common super class of all extensions, whose functionality is systematically split between structure and object level
  * 
@@ -74,16 +84,27 @@ trait LeveledExtension extends Extension {
  */
 class ExtensionManager(controller: Controller) extends Logger {
    
-   private[api] var foundations   : List[Foundation]   = Nil
-   private[api] var targets       : List[BuildTarget]  = Nil
-   private[api] var querytransformers : List[QueryTransformer] = Nil
-   private[api] var changeListeners   : List[ChangeListener]  = Nil
-   private[api] var presenters    : List[Presenter]    = Nil
-   private[api] var serverPlugins : List[ServerExtension] = Nil
-   private[api] var loadedPlugins : List[Plugin]       = Nil
-   private[api] var parserExtensions : List[ParserExtension] = Nil
-   private[api] var queryExtensions : List[QueryExtension] = Nil
+   private[api] var extensions : List[Extension] = Nil
+   private val knownExtensionTypes = List(
+         classOf[Plugin], classOf[Foundation], classOf[ParserExtension], classOf[QueryTransformer],
+         classOf[QueryExtension],
+         classOf[ChangeListener], classOf[ServerExtension],
+         classOf[Parser], classOf[Checker], classOf[Interpreter], classOf[Presenter],
+         classOf[BuildTarget]
+         )
+         
 
+   def get[E <: Extension](cls: Class[E]): List[E] = extensions.flatMap {e =>
+      if (cls.isInstance(e)) List(e.asInstanceOf[E]) else Nil
+   }
+   def get[E <: FormatBasedExtension](cls: Class[E], format: String): Option[E] = extensions.flatMap {e =>
+      if (cls.isInstance(e)) {
+         val fbe = e.asInstanceOf[E]
+         if (fbe.isApplicable(format)) List(fbe)
+         else Nil
+      } else Nil
+   }.headOption
+   
    var lexerExtensions : List[LexerExtension] = Nil
    var notationExtensions: List[notations.NotationExtension] = Nil
 
@@ -93,8 +114,14 @@ class ExtensionManager(controller: Controller) extends Logger {
    val logPrefix = "extman"
 
    def addDefaultExtensions {
+      // MMT's defaults for the main algorithms
+      val nbp = new NotationBasedParser
+      val kwp = new KeywordBasedParser(nbp)
+      val rbc = new RuleBasedChecker
+      val msc = new MMTStructureChecker(rbc)
+      val mmtint = new TwoStepInterpreter(kwp, msc)
+      List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint).foreach {e => addExtension(e)}
       //targets and presenters
-      List(new MMTCompiler).foreach {e => addExtension(e)}
       List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter,
            TextPresenter, OMDocPresenter, controller.presenter).foreach {
         e => addExtension(e)
@@ -134,100 +161,54 @@ class ExtensionManager(controller: Controller) extends Logger {
    def addExtension(ext: Extension, args: List[String] = Nil) {
        log("adding extension " + ext.getClass.toString)
        ext.init(controller)
+       extensions ::= ext
        if (ext.isInstanceOf[Plugin]) {
+          val loadedPlugins = get(classOf[Plugin])
           log("  ... as plugin")
           val pl = ext.asInstanceOf[Plugin]
-          loadedPlugins ::= pl
           pl.dependencies foreach {d => if (! loadedPlugins.exists(_.getClass == java.lang.Class.forName(d))) addExtension(d, Nil)}
        }
        try {
           ext.start(args)
        } catch {
           case e: Error =>
+             removeExtension(ext)
              throw RegistrationError("error while starting extension: " + e.getMessage).setCausedBy(e)
           case e: Exception =>
+             removeExtension(ext)
              throw RegistrationError("unknown error while starting extension: " + e.getClass.toString + ": " + e.getMessage).setCausedBy(e)
        }
-       if (ext.isInstanceOf[Foundation]) {
-          log("  ... as foundation")
-          foundations ::= ext.asInstanceOf[Foundation]
-       }
-       if (ext.isInstanceOf[ChangeListener]) {
-          log("  ... as change listener")
-          changeListeners ::= ext.asInstanceOf[ChangeListener]
-       }
-       if (ext.isInstanceOf[BuildTarget]) {
-          log("  ... as build target")
-          targets ::= ext.asInstanceOf[BuildTarget]
-       }
-       if (ext.isInstanceOf[QueryTransformer]) {
-          log("  ... as query transformer")
-          querytransformers ::= ext.asInstanceOf[QueryTransformer]
-       }
-       if (ext.isInstanceOf[Presenter]) {
-          log("  ... as presenter")
-          presenters ::= ext.asInstanceOf[Presenter]
-       }
-       if (ext.isInstanceOf[ParserExtension]) {
-          log("  ... as parser extension")
-          parserExtensions ::= ext.asInstanceOf[ParserExtension]
-       }
-       if (ext.isInstanceOf[QueryExtension]) {
-          log("  ... as query extension")
-          queryExtensions ::= ext.asInstanceOf[QueryExtension]
-       }
-       if (ext.isInstanceOf[ServerExtension]) {
-          log("  ... as server plugin")
-          serverPlugins ::= ext.asInstanceOf[ServerExtension]
+       knownExtensionTypes.foreach {cls =>
+          if (cls.isInstance(ext))
+             log("... as " + cls.getName)
        }
    }
+   
+   /** remove an extension (must have been stopped already) */
+   def removeExtension(ext: Extension) {
+      extensions = extensions diff List(ext)
+   }
 
-   /** retrieves an applicable build target */
-   def getTarget(key: String) : Option[BuildTarget] = targets.find(t => t.key == key)
-   /** retrieves an applicable query transformer */
-   def getQueryTransformer(src: String) : Option[QueryTransformer] = querytransformers.find(_.isApplicable(src))
-   /** retrieves an applicable Presenter */
-   def getPresenter(format: String) : Option[Presenter] = presenters.find(_.isApplicable(format))
-   /** retrieves an applicable server plugin */
-   def getServerPlugin(cont : String) : Option[ServerExtension] = serverPlugins.find(_.isApplicable(cont))
    /** retrieves an applicable parser extension */
-   def getParserExtension(se: StructuralElement, keyword: String) : Option[ParserExtension] = parserExtensions find {_.isApplicable(se, keyword)}
+   def getParserExtension(se: StructuralElement, keyword: String) : Option[ParserExtension] =
+      get(classOf[ParserExtension]) find {_.isApplicable(se, keyword)}
    /** retrieves the closest Foundation that covers a theory, if any */
-   def getFoundation(p: MPath) : Option[Foundation] = foundations find {_.foundTheory == p} orElse {
+   def getFoundation(p: MPath) : Option[Foundation] = get(classOf[Foundation]) find {_.foundTheory == p} orElse {
       val mt = objects.TheoryExp.metas(objects.OMMOD(p))(controller.globalLookup)
       mt mapFind getFoundation
    }
    def getFoundation(thy: objects.Term) : Option[Foundation] =
       objects.TheoryExp.metas(thy)(controller.globalLookup) mapFind getFoundation
    
-   /** retrieves all registered extensions */
-   private def getAll = (foundations:::targets:::querytransformers:::changeListeners:::presenters:::
-                        serverPlugins:::parserExtensions:::queryExtensions:::loadedPlugins).distinct
-   
    def stringDescription = {
-      def mkL(label: String, es: List[Extension]) =
-         if (es.isEmpty) "" else label + "\n" + es.map("  " + _.toString + "\n").mkString("") + "\n\n"
-      mkL("foundations", foundations) +
-      mkL("build targets", targets) +
-      mkL("query transformers", querytransformers) +
-      mkL("change listeners", changeListeners) +
-      mkL("presenters", presenters) +
-      mkL("server plugins", serverPlugins) +
-      mkL("parser extensions", parserExtensions) +
-      mkL("query extensions", queryExtensions) +
-      mkL("plugins", loadedPlugins) 
+      knownExtensionTypes.map {cls =>
+         val es = get(cls)
+         if (es.isEmpty) "" else cls.getName + "\n" + es.map("  " + _.toString + "\n").mkString("") + "\n\n"
+      }.mkString("")
    }
    
    def cleanup {
-      getAll.foreach(_.destroy)
-      foundations = Nil
-      targets = Nil
-      querytransformers = Nil
-      changeListeners = Nil
-      presenters = Nil
-      serverPlugins = Nil
-      loadedPlugins = Nil
-      parserExtensions = Nil
-      queryExtensions = Nil
+      extensions.foreach(_.destroy)
+      extensions = Nil
    }
 }

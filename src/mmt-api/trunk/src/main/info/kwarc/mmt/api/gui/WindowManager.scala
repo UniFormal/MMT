@@ -23,6 +23,7 @@ class Window(val id: String, wm: WindowManager) extends JWindow() {
 }
 
 class WindowManager(val controller: Controller) {
+   UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()) // standard GUI configuration
    private var windows : List[Window] = Nil
    private var gui: Option[JFrame] = None
    def openBrowser {

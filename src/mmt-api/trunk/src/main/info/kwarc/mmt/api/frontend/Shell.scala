@@ -64,9 +64,7 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
          // default behavior: execute command line arguments and exit; shell if no arguments
          case _ =>
             shell = args.isEmpty
-      }
-      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()) // standard GUI configuration
-      
+      }      
       try {
          // execute startup arguments
          val folder = File(getClass.getProtectionDomain.getCodeSource.getLocation.getPath).up
@@ -90,7 +88,7 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
            controller.report(e)
            controller.cleanup
            throw e
-         case e : Throwable =>
+         case e : Exception =>
            controller.cleanup
            throw e
       }

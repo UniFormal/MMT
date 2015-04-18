@@ -86,7 +86,7 @@ trait Exporter extends BuildTarget { self =>
     */
    private lazy val contentExporter = new TraversingBuildTarget with ExportInfo {
       val inDim = content
-      def buildFile(a: Archive, bf: BuildTask) {
+      def buildFile(bf: BuildTask) {
          val mp = Archive.ContentPathToMMTPath(bf.inPath)
          val mod = controller.globalLookup.getModule(mp)
          outputTo(bf.outFile) {
@@ -100,7 +100,7 @@ trait Exporter extends BuildTarget { self =>
          }
       }
       
-      override def buildDir(a: Archive, bd: BuildTask, builtChildren: List[BuildTask]) = {
+      override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]) = {
         val dp = Archive.ContentPathToDPath(bd.inPath)
         val (nss,mps) = builtChildren.filter(! _.skipped).partition(_.isDir)
         outputTo(bd.outFile) {
@@ -115,15 +115,15 @@ trait Exporter extends BuildTarget { self =>
    private lazy val narrationExporter = new TraversingBuildTarget with ExportInfo {
       val inDim = narration
 
-      def buildFile(a: Archive, bf: BuildTask) = {
+      def buildFile(bf: BuildTask) = {
         val doc = controller.getDocument(bf.narrationDPath)
         outputTo(bf.outFile) {
            exportDocument(doc, bf)
         }
       }
 
-      override def buildDir(a: Archive, bd: BuildTask, builtChildren: List[BuildTask]) = {
-        val doc = controller.getDocument(DPath(a.narrationBase / bd.inPath))
+      override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]) = {
+        val doc = controller.getDocument(bd.narrationDPath)
         outputTo(bd.outFile) {
            exportDocument(doc, bd)
         }

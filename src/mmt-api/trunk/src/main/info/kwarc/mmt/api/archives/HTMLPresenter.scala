@@ -27,8 +27,6 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
      this._rh = null 
    }
    
-   def isApplicable(format : String) = format == "html"
-   
    // easy-to-use HTML markup
    protected val htmlRh = utils.HTML(s => rh(s))
    import htmlRh._

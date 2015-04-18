@@ -26,6 +26,7 @@ import objects.Conversions._
   //  This works well for links, for theories it is questionable. Refusing declaration with non-primitive names might be forbidden.
   //  When retrieving, more specific entries overrule the more general ones.
 class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectChecker) {
+   val id = "mmt"
    private lazy val extman = controller.extman
    private implicit lazy val content = controller.globalLookup
    override val logPrefix = "checker"
@@ -206,7 +207,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       // call the registered change listeners
       e match {
          case ce: ContentElement =>
-            new Notify(controller.extman.changeListeners, report).onCheck(ce)
+            new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(ce)
             //TODO set Checked status
          case _ =>
       }

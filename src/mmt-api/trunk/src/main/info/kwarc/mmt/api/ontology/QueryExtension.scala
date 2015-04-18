@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
 import frontend._
 import objects._
+import presentation.Presenter
 
 import QueryTypeConversion._
 
@@ -29,14 +30,17 @@ abstract class QueryExtension(val name: String, val in: QueryType, val out: Quer
    def evaluate(argument: BaseType, params: List[String]): List[BaseType]
 }
 
+import parser._
+
 /** parsing of strings into objects */
+//TODO take format argument, currently always "mmt"
 class Parse extends QueryExtension("parse", StringType, ObjType) {
    def evaluate(argument: BaseType, params: List[String]) = {
       val mp = mpath(params)
       argument match { 
          case StringValue(s) =>
-           val pu = parser.ParsingUnit(parser.SourceRef.anonymous(s), Context(mp), s) 
-           controller.textParser(pu)(ErrorThrower)
+           val pu = ParsingUnit(SourceRef.anonymous(s), Context(mp), s, NamespaceMap.empty) 
+           controller.objectParser(pu)(ErrorThrower)
          case _ => throw ImplementationError("evaluation of ill-typed query")
       }
    }
@@ -96,7 +100,7 @@ class Present extends QueryExtension("present", ObjType, XMLType) {
       argument match {
         case o : Obj =>
            val rb = new presentation.StringBuilder
-           val pr = extman.getPresenter(params(0)).getOrElse(throw ParseError("unknown format"))
+           val pr = extman.get(classOf[Presenter], params(0)).getOrElse(throw ParseError("unknown format"))
            pr(o, None)(rb)
            XMLValue(scala.xml.XML.loadString(rb.get))
         case _ => throw ImplementationError("evaluation of ill-typed query")
@@ -112,7 +116,7 @@ class PresentDecl extends QueryExtension("presentDecl", PathType, XMLType) {
         case p: Path => 
            val rb = new presentation.StringBuilder
            val e = controller.get(p)
-           val pr = extman.getPresenter(params(0)).getOrElse(throw ParseError("unknown format"))
+           val pr = extman.get(classOf[Presenter], params(0)).getOrElse(throw ParseError("unknown format"))
            pr(e)(rb)
            XMLValue(scala.xml.XML.loadString(rb.get))
         case _ => throw ImplementationError("evaluation of ill-typed query")

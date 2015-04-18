@@ -24,18 +24,6 @@ abstract class ROArchive extends Storage with Logger {
   val logPrefix = "archive"
   
   val narrationBackend : Storage
-  
-  /** Get a module from content folder (wrapped in <omdoc>) */
-  def get(m: MPath) : scala.xml.Node
-
-  def load(p: Path)(implicit controller: Controller) {p match {
-    case doc : DPath => narrationBackend.load(doc)
-    case mod : MPath =>
-      val node = try { get(mod) }
-      catch {case e: java.io.FileNotFoundException => throw NotApplicable("file not found")}
-      loadXML(mod.doc.uri, node)
-    case OMMOD(m) % _ => load(m)
-  }}
 }
 
 abstract class WritableArchive extends ROArchive {
@@ -68,11 +56,17 @@ abstract class WritableArchive extends ROArchive {
     def includeDir(n: String) : Boolean = n != ".svn" && n != ".mmt"
 
     val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, this/narration)
-    /** Get a module from content folder */ 
-    def get(m: MPath) : scala.xml.Node = {
-       val p = MMTPathToContentPath(m)
-       utils.xml.readFile(p)
-    }
+    
+    def load(p: Path)(implicit controller: Controller) {p match {
+      case doc : DPath => narrationBackend.load(doc)
+      case mod : MPath =>
+         val p = MMTPathToContentPath(mod)
+         if (!p.exists) throw NotApplicable("file not found")
+         // dpath is a dummy URI to be used when creating the Document that contains the module mod 
+         val dpath = DPath(narrationBase / Archive.MMTPathToContentPath(mod))
+         loadXML(mod.doc.uri, dpath, File.Reader(p))
+      case OMMOD(m) % _ => load(m)
+    }}
     
     protected val custom : ArchiveCustomization = {
        properties.get("customization") match {
@@ -137,7 +131,7 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
    * @param in input path
    * @param controller the controller
    */
-    def produceFlat(in: List[String], controller: Controller) {
+   def produceFlat(in: List[String], controller: Controller) {
        val inFile = this/content/ in
        log("to do: [CONT -> FLAT]        -> " + inFile)
        if (inFile.isDirectory) {

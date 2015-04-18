@@ -15,6 +15,8 @@ class SearchPane(controller: Controller) extends JPanel {
    private val query = new JPanel
    private val theory = new JTextField(20)
    private val queryText = new JTextField(30)
+   private val formatText = new JTextField(10)
+   formatText.setText("mmt")
    private val searchButton = Swing.Button("search")(search)
    theory.setText("http://cds.omdoc.org/examples?PL")
    query.add(new JLabel("theory:"))
@@ -22,6 +24,7 @@ class SearchPane(controller: Controller) extends JPanel {
    queryText.setText("$x,y: x ⇒ y")
    query.add(new JLabel("query:"))
    query.add(queryText)
+   query.add(formatText)
    query.add(searchButton)
    add(query, BorderLayout.NORTH)
    
@@ -34,7 +37,8 @@ class SearchPane(controller: Controller) extends JPanel {
    private def search {
       val mws = controller.extman.mws.getOrElse(throw ParseError("no mws defined"))
       val q = queryText.getText
-      val mwsQuery = TermPattern.parse(controller, theory.getText, q)
+      val format = formatText.getText
+      val mwsQuery = TermPattern.parse(controller, theory.getText, q, format)
       val mwsResults = mws(MathWebSearchQuery(mwsQuery))
       // node for all results in this search
       val root = new DefaultMutableTreeNode(q)

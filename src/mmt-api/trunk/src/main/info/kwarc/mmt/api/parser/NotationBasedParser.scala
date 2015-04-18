@@ -24,6 +24,7 @@ case class ParsingRule(name: ContentPath, notation: TextNotation) {
  */
 class NotationBasedParser extends ObjectParser {
    override val logPrefix = "parser"
+   def isApplicable(format: String) = format == "mmt"
    private lazy val prag = controller.pragmatic   
    
    /**
@@ -202,7 +203,7 @@ class NotationBasedParser extends ObjectParser {
                        Character.isUpperCase(segments(0).charAt(0))) "?" + word
                    else word
                 try {
-                   Path.parse(qid, NamespaceMap(pu.context.getIncludes.last)) match {
+                   Path.parse(qid, pu.nsMap) match {
                       case p: ContentPath => OMID(p)
                       case p =>
                          makeError("content path expected: " + p, te.region)

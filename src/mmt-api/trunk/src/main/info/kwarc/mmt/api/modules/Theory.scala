@@ -22,6 +22,7 @@ abstract class Theory(doc : DPath, name : LocalName) extends Module(doc, name) {
 // TODO find a way that does not require meta and parameters to be vars
 class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], var parameters: Context = Context())
       extends Theory(doc, name) with DeclaredModule {
+   def getComponents = meta.toList.map(p => (TypeComponent, new FinalTermContainer(OMMOD(p))))
    /** the context governing the body: meta-theory, parameters, and this theory */
    def getInnerContext = {
       val self = IncludeVarDecl(path, parameters.id.map(_.target))

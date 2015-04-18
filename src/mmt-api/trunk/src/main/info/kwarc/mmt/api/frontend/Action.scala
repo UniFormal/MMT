@@ -89,7 +89,7 @@ object Action extends RegexParsers {
    private def envvar = "envvar" ~> str ~ quotedStr ^^ {case name ~ value => SetEnvVar(name, value)}
    private def read = "read" ~> file ^^ {f => Read(f)}
    private def graph = "graph" ~> file ^^ {f => Graph(f)}
-   private def check = "check" ~> path ^^ {p => Check(p)}
+   private def check = "check" ~> path ~ (str?) ^^ {case p ~ idOpt => Check(p, idOpt.getOrElse("mmt"))}
    private def navigate = "navigate" ~> path ^^ {p => Navigate(p)}
    private def printall = "printAll" ^^ {case _ => PrintAll}
    private def printallxml = "printXML" ^^ {case _ => PrintAllXML}
@@ -231,8 +231,8 @@ case class Graph(target : File) extends Action {override def toString = "graph "
  */
 case class Read(file : File) extends Action {override def toString = "read " + file}
 
-/** check a knowledge item */
-case class Check(p : Path) extends Action {override def toString = "check " + p}
+/** check a knowledge item with respect to a certain checker */
+case class Check(p : Path, id: String) extends Action {override def toString = s"check $p $id"}
 
 /** navigate to knowledge item */
 case class Navigate(p : Path) extends Action {override def toString = "navigate " + p}
@@ -458,7 +458,7 @@ abstract class MakeConcrete {
 /** takes a content element and renders it using notations */
 case class Present(c : MakeAbstract, param : String) extends MakeConcrete {
    def make(controller : Controller, rb : RenderingHandler) {
-      val presenter = controller.extman.getPresenter(param).getOrElse {
+      val presenter = controller.extman.get(classOf[presentation.Presenter], param).getOrElse {
          throw PresentationError("no presenter found: " + param)
       }
       c.make(controller) match {

@@ -34,19 +34,12 @@ trait ObjectChecker extends Extension {
    def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment)
 }
 
-object ObjectChecker {
-   /** does nothing */
-   def ignore = new ObjectChecker {
-      def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) {}
-   }
-}
-
 /**
  * checks structural elements
  * 
  * see also [[Checker]]
  */
-trait StructureChecker extends Extension {
+trait StructureChecker extends FormatBasedExtension {
    /**
     * checks a StructuralElement
     * @param e the element to check
@@ -58,19 +51,25 @@ trait StructureChecker extends Extension {
    }
 }
 
+/** trivial checkers that do nothing */
+object NullChecker {
+   object objects extends ObjectChecker {
+      def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) {}
+   }
+   object structure extends Checker(objects) {
+      val id = "null"
+      def apply(e : StructuralElement)(implicit env: CheckingEnvironment) {}
+   }
+}
 
 /**
  * the designated super class for all checkers
  */
 abstract class Checker(val objectLevel: ObjectChecker) extends StructureChecker with ObjectChecker with LeveledExtension {
+  val id : String
+  def isApplicable(s: String) = s == id
   /** relegates to objectChecker */
   def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) =
      objectLevel(cu, rules)
 }
 
-// unused
-abstract class Interpreter(parser: Parser, checker: Checker) extends Importer {
-   def importDocument(bf: BuildTask, seCont: documents.Document => Unit) {
-      
-   }
-}

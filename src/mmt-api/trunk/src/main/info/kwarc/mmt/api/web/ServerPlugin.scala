@@ -12,7 +12,7 @@ import tiscaf._
  * 
  * @param cont the CONTEXT
  */
-abstract class ServerExtension(context: String) extends Extension {
+abstract class ServerExtension(context: String) extends FormatBasedExtension {
   /**
    * @param cont the context of the request
    * @return true if cont is equal to this.context
@@ -30,6 +30,22 @@ abstract class ServerExtension(context: String) extends Extension {
    * Errors thrown by this method are caught and sent back to the browser.
    */
   def apply(path: List[String], query: String, body: Body): HLet
+}
+
+/** 
+ * interprets the body as MMT content
+ */
+class PostServer extends ServerExtension("post") {
+    def apply(path: List[String], query: String, body: Body) = {
+        val wq = WebQuery.parse(query)
+        val content = wq.string("body", throw ServerError("found no body in post req"))
+        val format = wq.string("format", "mmt")
+        val dpathS = wq.string("dpath", throw ServerError("expected dpath"))
+        val dpath = DPath(URI(dpathS))
+        log("Received content : " + content)
+        controller.read(parser.ParsingStream.fromString(content, dpath, format), true)(ErrorThrower)
+        Server.TextResponse("Success")
+    }
 }
 
 /** interprets the query as an MMT document URI and returns the SVG representation of the theory graph */
@@ -80,7 +96,7 @@ class QueryServer extends ServerExtension("query") {
    def apply(path: List[String], httpquery: String, body: Body) = {
       val mmtquery = body.asXML
       log("qmt query: " + mmtquery)
-      val q = Query.parse(mmtquery)(controller.extman.queryExtensions)
+      val q = Query.parse(mmtquery)(controller.extman.get(classOf[QueryExtension]))
       //log("qmt query: " + q.toString)
       Query.infer(q)(Nil) // type checking
       val res = controller.evaluator.evaluate(q)
@@ -106,13 +122,14 @@ class SearchServer extends ServerExtension("search") {
       val name = wq("name")
       val theory = wq("theory")
       val pattern = wq("pattern")
+      val format = wq.string("format", "mmt")
       val intype = wq.boolean("type")  
       val indef = wq.boolean("definition")
       val allcomps = List(TypeComponent, DefComponent)
       val comps = allcomps.zip(List(intype,indef)).filter(_._2).map(_._1)
       val pp = PathPattern(base, mod, name)
       val tp = (theory, pattern) match {
-         case (Some(t), Some(p)) => Some(TermPattern.parse(controller, t, p))
+         case (Some(t), Some(p)) => Some(TermPattern.parse(controller, t, p, format))
          case (_, _) => None
       }
       val sq = SearchQuery(pp, comps, tp)

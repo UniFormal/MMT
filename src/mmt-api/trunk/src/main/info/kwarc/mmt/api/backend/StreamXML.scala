@@ -3,47 +3,89 @@ package info.kwarc.mmt.api.backend
 import info.kwarc.mmt.api._
 import documents._
 import modules._
+import symbols._
+import objects._
 import frontend._
 import utils._
+import parser._
 
 import scala.xml.{MetaData,NamespaceBinding,Elem,NodeSeq}
 import scala.xml.parsing.ConstructingParser
 import scala.io.Source
 
+/** an awkward conversion from java.io.Reader to scala.io.Source
+ *  needed in [[XMLStreamer]] because ParsingStream uses the former, but ConstructingParser the latter 
+ */
+class SourceFromReader(r: java.io.Reader) extends Source {
+   val iter = new Iterator[Char] {
+      private var lastRead: Option[Char] = null
+      private def readOne {
+         if (lastRead == null) {
+            val c = r.read
+            lastRead = if (c == -1) None else Some(c.toChar)
+         }
+      }
+      def next = {
+         readOne
+         val c = lastRead.get
+         lastRead = null
+         c
+      }
+      def hasNext = {
+         readOne
+         lastRead.isDefined
+      }
+   }
+}
+
+/** a straightforward ObjectParser that relegates to Obj.parse */
+object XMLObjectParser extends ObjectParser {
+   def isApplicable(s: String) = s == "openmath"
+   def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): Term = {
+      val xml = scala.xml.XML.loadString(pu.term)
+      val o = Obj.parseTerm(xml, pu.nsMap)
+      o
+   }
+}
+
 /** 
  * similar to [[XMLReader]] but streams parsed elements into the continuation function
  */
 // DefinedTheory and DefinedView are parsed wrong
-class XMLStreamer(controller: Controller) extends Logger {streamer =>
-   private lazy val reader = controller.xmlReader
-   val report = controller.report
-   val logPrefix = "streamer"
-   /** the elements whose children are processed immediately */
+class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
+   val format = "omdoc"
+   override val logPrefix = "streamer"
+   private lazy val reader = new XMLReader(report)
+
+   /** the structural elements whose children are processed immediately */
    private val containers = List("omdoc", "theory", "view")
-   
-   /**
-    * @param dpath the URI of the document
-    * @param input the document
-    */
-   def readDocument(dpath: DPath, input: Source)(implicit cont: StructuralElement => Unit): Document = {
-      val parser = new Parser(dpath, input, cont)
+
+   def apply(ps: parser.ParsingStream)(implicit errorCont: ErrorHandler): Document = {
+      val parser = new ConsParser(ps.dpath, new SourceFromReader(ps.stream))
       parser.nextch
-      parser.document()
+      errorCont.catchIn {
+         parser.document()
+      }
       parser.root
    }
-
-   private class Parser(dpath: DPath, input: Source, cont: StructuralElement => Unit) extends ConstructingParser(input, false) {
+   
+   /** XML parser that streams documents/modules and calls the reader on the other ones */
+   private class ConsParser(dpath: DPath, input: Source) extends ConstructingParser(input, false) {
       /** the stack of currently open tags, innermost first */
       private var openTags : List[StructuralElement] = Nil
       /** holds the root element once parsing has finished */
       var root: Document = null
    
-      /** like cont, but also pushes the parsed element onto openTags */
+      private def add(se: StructuralElement) {
+         controller.add(se)
+      }
+      /** like add, but also pushes the parsed element onto openTags */
       private def catchSE(se: StructuralElement) {
-         cont(se)
+         add(se)
          // hack: push the expected container element (will also be called for XRef's though)
          se match {
             case _:Document | _:DeclaredModule => openTags ::= se
+            case nm: NestedModule => openTags ::= nm.module
             case _ =>
          }
       }
@@ -75,7 +117,7 @@ class XMLStreamer(controller: Controller) extends Logger {streamer =>
                         scope: NamespaceBinding, empty: Boolean, nodes: NodeSeq) = {
          // the element to be read
          val n = Elem(pre, label, attrs, scope, empty, nodes:_*)
-         // pop n from openTags 
+         // pop n from openTags
          openTags = openTags.tail
          // check where we are in the XML
          openTags match {
@@ -90,7 +132,7 @@ class XMLStreamer(controller: Controller) extends Logger {streamer =>
                  streamer.log("done streaming in " + label)
                } else {
                  streamer.log("processing " + label)
-                 reader.readIn(root.getNamespaceMap, hd, n)(cont)
+                 reader.readIn(root.getNamespaceMap, hd, n)(add)
                }
                // either way, n is handled at this point and can be dropped
                NodeSeq.Empty

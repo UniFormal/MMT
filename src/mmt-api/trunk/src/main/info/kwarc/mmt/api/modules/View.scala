@@ -48,12 +48,13 @@ class DeclaredView(doc : DPath, name : LocalName, val from : Term, val to : Term
       case _ => Nil
    }
    def getInnerContext = codomainAsContext
+   def getComponents = List((DomComponent,new FinalTermContainer(from)),(CodComponent,new FinalTermContainer(to)))
 }
 
   /**
    * A DefinedView represents an MMT view given by an existing morphism.<p>
    * 
-   * @param doc the {@link info.kwarc.mmt.api.names.Path} of the parent document
+   * @param doc the [[Path]] of the parent document
    * @param name the name of the view
    * @param from the domain theory
    * @param to the codomain theory
