@@ -350,7 +350,8 @@ class Controller extends ROController with Logger {
       log((if(interpret) "interpreting " else "parsing ") + ps.source + " with format " + ps.format +
             (if (mayImport) "; using importer if necessary" else ""))
       var interpreterOpt = if (interpret) {
-         extman.get(classOf[Interpreter], ps.format)
+         extman.get(classOf[Interpreter], ps.format) orElse
+         extman.get(classOf[Parser], ps.format).map(p => new OneStepInterpreter(p))
       } else {
          val parserOpt = extman.get(classOf[Parser], ps.format) orElse {
             extman.get(classOf[TwoStepInterpreter], ps.format).map(_.parser)  

@@ -110,6 +110,10 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       }
       tree
    }
+   
+   override def stop {
+      // this should interrupt parsing, but it's tricky because we don't even know which extension it is 
+   }
 
    private def getRegion(e: metadata.HasMetaData) : Option[SourceRegion] = SourceRef.get(e).map(_.region)
    /* build the sidekick outline tree: document node */

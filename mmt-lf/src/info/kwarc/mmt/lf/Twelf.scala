@@ -34,11 +34,12 @@ class Twelf extends Importer with frontend.ChangeListener {
    /** path to Twelf executable */
    private var path : File = null
    /** Twelf setting "set unsafe ..." */
-   var unsafe : Boolean = true
+   private val unsafe : Boolean = true
    /** Twelf setting "set chatter ..." */
-   var chatter : Int = 5
-   var catalog : Catalog = null
-   var port = 8083
+   private val chatter : Int = 5
+   /** initial port of lfcatalog */
+   private val port = 8083
+   private var catalog : Catalog = null
 
    /**
     * creates and initializes a Catalog
@@ -52,8 +53,13 @@ class Twelf extends Importer with frontend.ChangeListener {
       controller.backend.getArchives foreach onArchiveOpen
    }
    override def onArchiveOpen(arch: Archive) {
-      val stringLoc = (arch / Twelf.dim).getPath
-      catalog.addStringLocation(stringLoc)
+      val stringLocs = arch.properties.get("lfcatalog-locations") match {
+         case None =>
+            List(arch / Twelf.dim)
+         case Some(s) =>
+            utils.stringToList(s, "\\s").map {f => arch / Twelf.dim / f}
+      }
+      stringLocs.foreach {l => catalog.addStringLocation(l.getPath)}      
    }
    override def onArchiveClose(arch: Archive) {
       val stringLoc = (arch / Twelf.dim).getPath
@@ -82,12 +88,16 @@ class Twelf extends Importer with frontend.ChangeListener {
          bf.errorCont(LocalError("skipped big elf file: " + inFile))
          return
       }
-      input.println("set chatter " + chatter)
-      input.println("set unsafe " + unsafe)
-      input.println("set catalog " + catalog.queryURI)
-      input.println("loadFile " + inFileAsString)
-      input.println("Print.OMDoc.printDoc " + inFileAsString + " " + outFile)
-      input.println("OS.exit")
+      def toTwelf(s: String) {
+         log(s)
+         input.println(s)
+      }
+      toTwelf("set chatter " + chatter)
+      toTwelf("set unsafe " + unsafe)
+      toTwelf("set catalog " + catalog.queryURI)
+      toTwelf("loadFile " + inFileAsString)
+      toTwelf("Print.OMDoc.printDoc " + inFileAsString + " " + outFile)
+      toTwelf("OS.exit")
       var line : String = null
       while ({line = output.readLine; line != null}) {
          line = line.trim

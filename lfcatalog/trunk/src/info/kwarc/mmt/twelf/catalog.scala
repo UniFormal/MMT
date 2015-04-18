@@ -30,7 +30,7 @@ object Catalog {
   * @param port port on which the server runs. Default value is 8080
   * @param searchPort specifies whether the catalog should search for available ports incrementally if the specified port is not available
   * @param log : String => Unit the function used for logging. Default is a function that logs to stdout
-  * @param crawlingInterval interval, in seconds, between two automatic crawls. Default value is 5 sec
+  * @param crawlingInterval interval, in seconds, between two automatic crawls. Default value is 30 sec
   * @param deletingInterval interval, in seconds, between two automatic deletions (from hashes) of files that no longer exist on disk. Default value is 17 sec
   */
 class Catalog(val locationsParam: HashSet[String] = HashSet(), 
@@ -39,7 +39,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
                var port: Int = 8080, 
                val searchPort: Boolean = false,
                val log: String => Unit = println,
-               val crawlingInterval: Int = 5, 
+               val crawlingInterval: Int = 30, 
                val deletingInterval: Int = 17) {
   import Catalog._
   
