@@ -58,7 +58,7 @@ object Run {
     
     // accept console input
     while (true) {
-          val input = Console.readLine.trim
+          val input = scala.io.StdIn.readLine.trim
           val words : Array[String] = input.split("\\s")
           if (words.length >= 1)
             if (words(0) == "exit") {       // exit the program

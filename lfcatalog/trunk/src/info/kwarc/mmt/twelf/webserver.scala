@@ -36,7 +36,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
          try {
            adminHtml = Option(scala.xml.parsing.XhtmlParser(bufferedSource).head.asInstanceOf[scala.xml.Elem])
          } catch {
-           case _ =>
+           case _: Exception =>
               catalog.log("critical error: /server-resources/admin.html inside JAR contains malformed XML")   // this should never happen
               sys.exit(1)
          } finally {
@@ -93,7 +93,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
                                     </li>) }</ul> }
      case <inclusions/> => {<ul>{ catalog.getInclusions.flatMap(s => <li>{ s }</li>) }</ul> }
      case <exclusions/> => {<ul>{ catalog.getExclusions.flatMap(s => <li>{ s }</li>) }</ul> }
-     case Elem(a, b, c, d, ch @_*) => Elem(a, b, c, d, ch.map(updateLocations) : _*)
+     case Elem(a, b, c, d, ch @_*) => Elem(a, b, c, d, true, ch.map(updateLocations) : _*)
      case other => other
   }
   
@@ -190,7 +190,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
             }
             if (position.isDefined) {
                 catalog.log("OK")
-                Some(TextResponse(text, Some(Pair("X-Source-url", "file:" + position.get))))
+                Some(TextResponse(text, Some(("X-Source-url", "file:" + position.get))))
             }
             else {
                 catalog.log("NOT FOUND")
@@ -239,7 +239,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
             stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
             val position = catalog.getPosition(stringUri)
             catalog.log("OK")
-            Some(TextResponse(position, Some(Pair("X-Source-url", "file:" + position))))
+            Some(TextResponse(position, Some(("X-Source-url", "file:" + position))))
           } catch {
               case e: java.net.URISyntaxException => {catalog.log("NOT FOUND"); Some(TextResponse("Invalid URI: " + stringUri, None))}
               case CatalogError(s)    => {catalog.log("NOT FOUND"); Some(TextResponse("Unknown URI: " + stringUri, None))}
@@ -254,7 +254,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
             stringUri = java.net.URLDecoder.decode(req.query.substring("uri=".length), "UTF-8")
             val position = catalog.getPosition(stringUri)
             catalog.log("OK")
-            Some(TextResponse("", Some(Pair("X-Source-url", "file:" + position))))
+            Some(TextResponse("", Some(("X-Source-url", "file:" + position))))
           } catch {
               case e: java.net.URISyntaxException => {catalog.log("NOT FOUND"); Some(TextResponse("Invalid URI: " + stringUri, None))}
               case CatalogError(s)    => {catalog.log("NOT FOUND"); Some(TextResponse("Unknown URI: " + stringUri, None))}
@@ -315,7 +315,7 @@ class WebServer(catalog : Catalog, port : Int) extends HServer {
     * @param text the message that is sent in the HTTP body
     * @param header optionally, a custom header tag, given as Pair(tag, content) that is added to the HTTP header
     */
-  private def TextResponse(text : String, header : Option[Pair[String, String]]) : HLet = new HSimpleLet {
+  private def TextResponse(text : String, header : Option[(String, String)]) : HLet = new HSimpleLet {
     def act(tk : HTalk) {
       val out = text.getBytes("UTF-8")
       // !sending data in the header as well!
