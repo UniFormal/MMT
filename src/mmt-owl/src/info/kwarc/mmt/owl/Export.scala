@@ -543,15 +543,9 @@ object Export {
     val manager: OWLOntologyManager = OWLManager.createOWLOntologyManager()
     val exporter = new Export(manager, controller)
 
-    //val source : File = new File(arg(0))
-    //val target : File = new File(arg(1))
-
-    //val file : File = new File("examples\\ex2.owl");
-
-    val source: File = File(new java.io.File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base2.omdoc"))
-    val target: File = File(new java.io.File("C:\\Users\\toshiba\\Desktop\\OWLMMTYedek\\TestTogether\\Base\\base2ToOWL.owl"))
-
-    val doc: DPath = controller.read(source).path
+    val source = utils.File(args(0))
+    val target = utils.File(args(1))
+    val doc: DPath = controller.read(parser.ParsingStream.fromFile(source), false).path
 
     def writeToFile(iri: IRI, trg: File) {
       val onto = manager.getOntology(iri)

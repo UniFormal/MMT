@@ -21,8 +21,8 @@ object FirstTry {
     val older: File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\try.omdoc")
     val current: File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\try.omdoc")
 
-    val olderDoc: DPath = firstController.read(older).path
-    val currentDoc: DPath = secondController.read(current).path
+    val olderDoc: DPath = firstController.read(parser.ParsingStream.fromFile(older), false).path
+    val currentDoc: DPath = secondController.read(parser.ParsingStream.fromFile(current), false).path
 
     var diff = Differ.diff(firstController, secondController, olderDoc, currentDoc)
     val pretty = new PrettyPrinter(150, 3)
