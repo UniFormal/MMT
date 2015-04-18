@@ -30,10 +30,11 @@ class MMTConsole extends console.Shell("mmt") {
       try {
          controller.handleLine(command)
       } catch {
-         case e: info.kwarc.mmt.api.Error => controller.report(e)
+         case e: Exception => controller.report("error", e.getMessage)
+      } finally {
+         controller.report.removeHandler(han.id)
+         success = Some(true)
+         output.commandDone()
       }
-      controller.report.removeHandler(han.id)
-      success = Some(true)
-      output.commandDone()
    }
 }

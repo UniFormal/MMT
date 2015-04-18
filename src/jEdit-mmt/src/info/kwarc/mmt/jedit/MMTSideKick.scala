@@ -24,120 +24,6 @@ import utils.MyList.fromList
 import javax.swing.tree.DefaultMutableTreeNode
 import scala.collection.JavaConversions.seqAsJavaList
 
-case class MyPosition(offset : Int) extends javax.swing.text.Position {
-   def getOffset = offset
-}
-
-/** node in the sidekick outline tree: common ancestor class
- * @param name the label of the asset
- * @param region the source region of the asset
- */ 
-abstract class MMTAsset(name: String, val region: SourceRegion)
-  extends enhanced.SourceAsset(name, region.start.line, MyPosition(region.start.offset)) {
-  setEnd(MyPosition(region.end.offset+1))
-  def getScope : Option[Term]
-}
-
-/** node in the sidekick outline tree: declarations
- * @param elem the node in the MMT syntax tree
- */ 
-class MMTElemAsset(val elem : StructuralElement, name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
-   //note: shortDescription == name, shown in tree
-   setLongDescription(path.toPath)  // tool tip
-   //setIcon
-   def path = elem.path
-   def getScope : Option[objects.Term] = elem match {
-      case _ : NarrativeElement => None
-      case c : ContentElement => c match {
-        case t: DeclaredTheory => Some(objects.OMMOD(t.path))
-        case v: modules.View => None //would have to be parsed to be available
-        case d: Declaration => Some(d.home)
-        case _ => None
-      }
-   }
-}
-
-/** node in the sidekick outline tree: terms
- * @param term the node in the MMT syntax tree
- * @param parent the component containing the term
- * @param subobjectPosition the position in that term
- */ 
-class MMTObjAsset(val obj: Obj, val context: Context, val parent: CPath, name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
-  obj.head map {case p =>
-    setLongDescription(p.toPath)
-  }
-  def getTheory = parent.parent.module
-  def getScope = Some(getTheory)
-}
-
-class MMTNotAsset(owner: ContentPath, label: String, not: TextNotation, reg: SourceRegion) extends MMTAsset(label, reg) {
-   def getScope = Some(owner.module)
-}
-
-/**
- * @param view the current jEdit view
- * @param controller the current MMT controller
- * @param constants the MMT constants that are applicable here 
- * @param text the partial identifier that is completed
- * @param items the list of completion labels that is displayed
- */
-class IDCompletion(view : org.gjt.sp.jedit.View, controller: Controller, constants: List[Constant], text: String, items: List[String])
-  extends SideKickCompletion(view, text, items) {
-  // this methods modifies the textArea after the user selected a completion
-   override def insert(index: Int) {
-     val con = constants(index)
-     //the text to insert and after how many characters to place the caret
-     val (newText,shift): (String,Int) = con.not match {
-        case None =>
-           val s = con.name.toPath + " "
-           (s, s.length + 1)
-        case Some(not) =>
-           val text = not.parsingMarkers.map {
-              case d: Delimiter => d.expand(con.path).text
-              case w: WordMarker => " " + w.word + " "
-              case SeqArg(_,sep,_) => " " + sep.text + " "
-              case a:Arg => " "
-              case _:ImplicitArg => ""
-              case v: Var => " "
-              case p: PresentationMarker => ""
-              case AttributedObject => ""
-           }.mkString("")
-           val sh = not.parsingMarkers.head match {
-              case d: Delimiter => d.text.length + 1
-              case _ => 0
-           }
-           (text, sh)
-     }
-     //replace text with newText and move the caret by shift
-     val ta = view.getEditPane.getTextArea
-     val caret = ta.getCaretPosition
-     ta.setSelection(new Selection.Range(caret-text.length, caret))
-     ta.setSelectedText(newText)
-     ta.setCaretPosition(caret-text.length+shift)
-   }
-}
-
-/**
- * @param text the string that is to be completed
- * @param items the list of completions
- */
-class ProverCompletion(view : org.gjt.sp.jedit.View, controller: Controller, region: SourceRegion, options: List[Term])
-  extends SideKickCompletion(view, "", options.map(o => controller.presenter.asString(o))) {
-  // this methods modifies the textArea after the user selected a completion
-  override def insert(index: Int) {
-     // the new subterm, result of applying the rule
-     val newTerm = options(index)
-     val newText = controller.presenter.asString(newTerm)
-     // replace the old subterm with the new one
-     // TODO decide whether to put brackets
-     // TODO put cursor in front of first hole, reparse buffer
-     val ta = view.getEditPane.getTextArea
-     ta.setSelection(new Selection.Range(region.start.offset, region.end.offset+1))
-     ta.setSelectedText(newText)
-  }
-}
-
-
 class MMTSideKick extends SideKickParser("mmt") with Logger {
    // gets jEdit's instance of MMTPlugin, jEdit will load the plugin if it is not loaded yet
    val mmt : MMTPlugin = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).asInstanceOf[MMTPlugin]
@@ -195,23 +81,24 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       }
       new IDCompletion(view, controller, Nil, "", Nil)
    }
-
+   
    def parse(buffer: Buffer, errorSource: DefaultErrorSource) : SideKickParsedData = {
       val path = File(buffer.getPath)
-      val dpath = controller.backend.resolvePhysical(path) match {
-         case None => DPath(utils.FileURI(path))
-         case Some((a,p)) => DPath(a.narrationBase / p)
+      val uri = utils.FileURI(path)
+      val text = buffer.getText
+      val ps = controller.backend.resolvePhysical(path) match {
+         case None =>
+            ParsingStream.fromString(text, DPath(uri), path.getExtension.getOrElse(""))
+         case Some((a,p)) =>
+            ParsingStream.fromSourceFile(a, p, Some(ParsingStream.stringToReader(text)))
       }
       log("parsing " + path)
       val tree = new SideKickParsedData(path.toJava.getName)
       val root = tree.root
       implicit val errorCont = new ErrorListForwarder(mmt.errorSource, controller, path)
       errorCont.reset
-      val relCont = RelationHandler.ignore
-      implicit val env = new CheckingEnvironment(errorCont, relCont)
       try {
-         val doc = controller.read(buffer.getText, dpath, path.getExtension.getOrElse(""))
-         controller.checker(doc) 
+         val doc = controller.read(ps, true, true) 
          // add narrative structure of doc to outline tree
          buildTreeDoc(root, doc)
          // register errors with ErrorList plugin
@@ -248,7 +135,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val reg = getRegion(mod) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
       val child = new DefaultMutableTreeNode(new MMTElemAsset(mod, moduleLabel(mod) + " " + mod.path.last, reg))
       node.add(child)
-      buildTreeComps(node, mod, context, reg)
+      buildTreeComps(child, mod, context, reg)
       mod match {
          case m: DeclaredModule =>
             m.getPrimitiveDeclarations foreach {d => buildTreeDecl(child, d, context ++ m.getInnerContext, reg)}
