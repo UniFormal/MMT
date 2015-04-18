@@ -18,7 +18,7 @@ import info.kwarc.mmt.lf._
 
 class MizarCompiler extends archives.Importer {
    val key = "mizar-omdoc"
-   def includeFile(s: String) = s.endsWith(".miz")
+   def inExts = List("miz")
    
 	val lib : collection.mutable.Map[String,List[String]] = new collection.mutable.HashMap[String,List[String]]
 	def addToLib(version : String, article : String) {
