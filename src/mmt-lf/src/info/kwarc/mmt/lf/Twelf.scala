@@ -24,13 +24,12 @@ object Twelf {
    val dim = RedirectableDimension("twelf", Some(source))
 }
 
-/** importer wrapper for Twelf, which starts the catalog
-  */
+/** importer wrapper for Twelf, which starts the catalog */
 class Twelf extends Importer with frontend.ChangeListener {
    val key = "twelf-omdoc"
    override def inDim = Twelf.dim
 
-   def includeFile(n: String) : Boolean = n.endsWith(".elf")
+   def inExts = List("elf","twelf","lf")
 
    /** path to Twelf executable */
    private var path : File = null
@@ -42,7 +41,7 @@ class Twelf extends Importer with frontend.ChangeListener {
    var port = 8083
 
    /**
-    * creates and intializes a Catalog
+    * creates and initializes a Catalog
     * first argument is the location of the twelf-server script; alternatively set variable GraphViz
     */
    override def start(args: List[String]) {
@@ -116,22 +115,23 @@ class Twelf extends Importer with frontend.ChangeListener {
       }
       val doc = try {
          val dp = bf.narrationDPath
-         controller.read(outFile, Some(dp.copy(uri = dp.uri.setExtension("omdoc"))))(bf.errorCont)
+         val ps = ParsingStream.fromFile(outFile, Some(dp.copy(uri = dp.uri.setExtension("omdoc"))))
+         controller.read(ps, false)(bf.errorCont)
        } catch {
          case e: scala.xml.parsing.FatalError =>
             error("XML error in omdoc file (likely too big for Twelf to write)")
             return
        }
-      seCont(doc)
+       seCont(doc)
    }
-
+/*
    def importString(inText : String, dpath : DPath)(implicit errorCont: ErrorHandler) {
      val tmp = File(System.getProperty("java.io.tmpdir"))
      val inFileName = tmp / "in.elf"
      val outFileName = tmp / "out.omdoc"
-     utils.File.write(inFileName,inText)
+     File.write(inFileName,inText)
      val bf = new archives.BuildTask(File(inFileName), false, List("string"), dpath.uri, File(outFileName), errorCont)
      importDocument(bf, doc => ())
    }
-
+*/
 }
