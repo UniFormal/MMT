@@ -10,7 +10,7 @@ import archives._
 
 class PVSImporter extends Importer {
    val key = "pvs-omdoc"
-   def includeFile(n: String) : Boolean = n.endsWith(".xml")
+   def inExts = List("xml")
    override def inDim = RedirectableDimension("pvsxml")
    
    private val parseXML = syntax.parser
