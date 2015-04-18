@@ -613,8 +613,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
 
 class OWLCompiler extends archives.Importer {
   val key = "owl-omdoc"
-
-  override def includeFile(f: String) = f.endsWith("owl")
+  def inExts = List("owl")
 
   def importDocument(bf: archives.BuildTask, seCont: documents.Document => Unit) {
     val source: File = bf.inFile
