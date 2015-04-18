@@ -5,6 +5,7 @@ import backend._
 import documents._
 import modules._
 import objects._
+import parser._
 import ontology._
 import utils._
 
@@ -15,30 +16,34 @@ import utils._
  * OMDoc produced by [[Compiler]]s is indexed automatically.
  *  
  */
-abstract class Importer extends TraversingBuildTarget {
+abstract class Importer extends TraversingBuildTarget {imp =>
    /** source by default, may be overridden */
    def inDim = source
+   /** the file extensions to which this may be applicable */
+   def inExts: List[String]
    /** narration, produces also content and relational */ 
    val outDim = narration
    /** omdoc */
    override val outExt = "omdoc"
+   
+   def includeFile(s: String) = inExts.exists(e => s.endsWith("." + e))
 
    /** the main abstract method to be implemented by importers
     *  
-    *  @param buildTask about the input document and error reporting
-    *  @param seCont a continuation function to be called on every generated document
+    *  @param bt information about the input document and error reporting
+    *  @param index a continuation function to be called on every generated document
     */
-   def importDocument(buildTask: BuildTask, seCont: Document => Unit)
+   def importDocument(bt: BuildTask, index: Document => Unit)
 
-   def buildFile(a: Archive, bf: BuildTask) {
-      importDocument(bf, doc => indexDocument(a, doc, bf.inPath))
+   def buildFile(bf: BuildTask) {
+      importDocument(bf, doc => indexDocument(bf.archive, doc, bf.inPath))
    }
-   
-   override def buildDir(a: Archive, bd: BuildTask, builtChildren: List[BuildTask]) {
+
+   override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]) {
       bd.outFile.up.mkdirs
-      val doc = controller.get(DPath(a.narrationBase / bd.inPath)).asInstanceOf[Document]
+      val doc = controller.get(DPath(bd.archive.narrationBase / bd.inPath)).asInstanceOf[Document]
       val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
-      writeToRel(doc, a/relational / inPathFile)
+      writeToRel(doc, bd.archive/relational / inPathFile)
    }
     
     /** Write a module to content folder */
@@ -70,12 +75,14 @@ abstract class Importer extends TraversingBuildTarget {
         xml.writeFile(node, narrFile)
         // write relational file
         writeToRel(doc, a/relational / inPath)
-        doc.getModulesResolved(controller.globalLookup) foreach {mod => {
-           // write content file
-           writeToContent(a, mod)
-           // write relational file
-           writeToRel(mod, a/relational / Archive.MMTPathToContentPath(mod.path))
-        }}
+        doc.getModulesResolved(controller.globalLookup) foreach {mod => indexModule(a, mod)}
+   }
+    /** index a module */
+    private def indexModule(a: Archive, mod: Module) {
+        // write content file
+        writeToContent(a, mod)
+        // write relational file
+        writeToRel(mod, a/relational / Archive.MMTPathToContentPath(mod.path))
    }
    /** additionally deletes content and relational */
    override def cleanFile(a: Archive, curr: Current) {
@@ -83,7 +90,7 @@ abstract class Importer extends TraversingBuildTarget {
        val Current(inFile, narrPath) = curr
        val narrFile = getOutFile(a, narrPath)
        val doc = try {
-         controller.read(narrFile, Some(DPath(a.narrationBase / narrPath)))(new ErrorLogger(report))
+         controller.read(ParsingStream.fromFile(narrFile, Some(DPath(a.narrationBase / narrPath)), Some(a.namespaceMap)), false)(new ErrorLogger(report))
        } catch {
          case e: java.io.IOException =>
            report(LocalError("io error, could not clean content of " + narrFile).setCausedBy(e))
@@ -104,27 +111,36 @@ abstract class Importer extends TraversingBuildTarget {
        val inPathFile = Archive.narrationSegmentsAsFile(curr.path, "omdoc")
        delete((a/relational / inPathFile).setExtension("rel"))
     }
-}
-
-/** An StringBasedImporter is a more flexible importer whose input does not have to be a file */
-abstract class StringBasedImporter extends Importer {
-   /** the main abstract method to import a document given by its content */
-   def importString(base: DPath, input: String, seCont: Document => Unit)
-
-   def importDocument(bf: BuildTask, seCont: Document => Unit) {
-      val input = utils.File.read(bf.inFile)
-      importString(bf.narrationDPath, input, seCont)
-   }
+    
+    
+   /**
+    * an Interpreter that calls this importer to interpret a parsing stream
+    * 
+    * This Interpreter is only applicable if it can determine an archive that the parsing stream is created from.
+    * In that case, it will import the file, i.e., change the state of the archive.
+    */
+    object asInterpreter extends checking.Interpreter {
+      init(imp.controller)
+      def format = imp.inExts.headOption.getOrElse(imp.key)
+      def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) = {
+         val (arch, path) = controller.backend.resolveLogical(ps.source).getOrElse {
+            throw LocalError("cannot find source file for URI: " + ps.source)
+         }
+         imp.build(arch, Nil, path)
+         controller.get(ps.dpath).asInstanceOf[Document]
+      }   
+    }
 }
 
 /** a trivial importer that reads OMDoc documents and returns them */
 class OMDocImporter extends Importer {
    val key = "index"
    override def inDim = RedirectableDimension("omdoc", Some(source))
-   def includeFile(s: String) = s.endsWith(".omdoc")
+   def inExts = List("omdoc")
    
    def importDocument(bf: BuildTask, seCont: Document => Unit) = {
-      val doc = controller.read(bf.inFile, Some(bf.narrationDPath))(bf.errorCont)
+      val ps = ParsingStream.fromFile(bf.inFile, Some(bf.narrationDPath), Some(bf.archive.namespaceMap))
+      val doc = controller.read(ps, false)(bf.errorCont)
       seCont(doc)
    }
 }

@@ -78,15 +78,15 @@ case class WebQuery(pairs: List[(String,String)]) {
    /** @return the value of the key, if present */
    def apply(key: String) : Option[String] = pairs.find(_._1 == key).map(_._2) 
    /** @return the string value of the key, default value if not present */
-   def string(key: String, default: String = ""): String = apply(key).getOrElse(default)
+   def string(key: String, default: => String = ""): String = apply(key).getOrElse(default)
    /** @return the boolean value of the key, default value if not present */
-   def boolean(key: String, default: Boolean = false) = apply(key).getOrElse(default.toString).toLowerCase match {
+   def boolean(key: String, default: => Boolean = false) = apply(key).getOrElse(default.toString).toLowerCase match {
       case "false" => false
       case "" | "true" => true
       case s => throw ParseError("boolean expected: " + s)
    }
    /** @return the integer value of the key, default value if not present */
-   def int(key: String, default: Int = 0) = {
+   def int(key: String, default: => Int = 0) = {
       val s = apply(key).getOrElse(default.toString) 
       try {s.toInt}
       catch {case _: Exception => throw ParseError("integer expected: " + s)}
@@ -163,10 +163,8 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
       req.uriPath.split("/").toList match {
         case ":change" :: _ => Some(ChangeResponse)
         case ":mws" :: _ => Some(MwsResponse)
-        case ":parse" :: _ => Some(ParserResponse)
-        case ":post" :: _ => Some(PostResponse)
         case hd::tl if hd.startsWith(":") =>
-          controller.extman.getServerPlugin(hd.substring(1)) match {
+          controller.extman.get(classOf[ServerExtension], hd.substring(1)) match {
             case Some(pl) =>
                val hlet = new HLet {
                   def aact(tk: HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
@@ -236,7 +234,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
           case _ => 30
         }
         val query = tk.req.query
-        val qt = controller.extman.getQueryTransformer(query).getOrElse(TrivialQueryTransformer)
+        val qt = controller.extman.get(classOf[QueryTransformer], query).getOrElse(TrivialQueryTransformer)
         val (mwsquery, params) = query match {
           case "mizar" =>
             val bodyXML = body.asXML
@@ -259,10 +257,9 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
                  }
                case _ => throw ServerError("expected a scope (mpath) passed in header")
              }
-             val termParser = controller.textParser
              val tm = try {
                val str = body.asString
-               termParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), objects.Context(scope), str))(ErrorThrower)
+               controller.objectParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), objects.Context(scope), str, NamespaceMap(scope.doc)))(ErrorThrower)
              } catch {
                case e : Throwable =>
                  throw e
@@ -299,28 +296,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
       resp.aact(tk)
     }
   }
-  
-  /** 
-   * PostResponse is a response to a requests that posts content to MMT
-   *  
-   */
-  private def PostResponse : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
-      try {
-        val content = tk.req.param("body").getOrElse(throw ServerError("found no body in post req"))
-        val format = tk.req.param("format").getOrElse("mmt")
-        val dpathS = tk.req.param("dpath").getOrElse(throw ServerError("expected dpath"))
-        val dpath = DPath(URI(dpathS))
-        log("Received content : " + content)
-        controller.textParser.readString(dpath.uri, dpath, content)(ErrorThrower)
-        TextResponse("Success").aact(tk)
-      } catch {
-        case e : Error => errorResponse(e).aact(tk)
-      }
-    }    
-  }
-  
-  
+    
   private def ChangeResponse : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
       try {
@@ -333,81 +309,6 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
         TextResponse("Success").aact(tk)
       } catch {
         case e : Error => errorResponse(e).aact(tk) 
-      }
-    }
-  }
-
-
-  private def ParserResponse : HLet = new HLet {
-    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
-      val text = tk.req.param("text").getOrElse(throw ServerError("found no text to parse"))
-      val save = tk.req.param("save").map(_ == "true").getOrElse(false) //if save parameter is "true" then save otherwise don't
-      tk.req.query.split("\\?").toList match {
-        case strDPath :: strThy :: Nil =>
-          val dpath = DPath(URI(strDPath))
-          val mpath = dpath ? strThy
-          val ctrl = new Controller(controller.report)
-          val reader = new TextReader(controller, ctrl.add)
-          val res = reader.readDocument(text, dpath)(pu => controller.textParser(pu)(ErrorThrower))
-          res._2.toList match {
-            case Nil => //no error -> parsing successful
-              try {
-                val mod = ctrl.memory.content.getModule(mpath)
-                val nset = DPath(URI("http://cds.omdoc.org/styles/lf/mathml.omdoc")) ? "twelf"  //TODO get style from server js use ExtensionManager.getPresenter
-                val rb = new presentation.StringBuilder()
-                val module = if(save) {
-                  controller.get(mpath)
-                } else {
-                  mod
-                }
-                val presenter = new archives.HTMLExporter() 
-                presenter(module)(rb)
-                val thyString = rb.get
-                var response: List[(String,JSON)] = Nil
-                response ::= "success" -> JSONBoolean(true)                                      
-                val sdiff = controller.detectChanges(List(mod))
-                save match {
-                  case false => //just detecting refinements
-                    val refs = controller.detectRefinements(sdiff)
-                    response ::= "info" -> JSONArray(refs.map(JSONString(_)):_*)
-                    response ::= "pres" -> JSONString(thyString)
-                  case true => //updating and returning list of done updates
-                    val pchanges = tk.req.param("pchanges").map(_.split("\n").toList).getOrElse(Nil)       
-                    val boxedPaths = controller.update(sdiff, pchanges)
-
-                    def invPaths(p : Path, parents : Set[Path] = Nil.toSet) : Set[Path] = {
-                    println("calling for path " + p + " with parents " + parents.mkString(", "))  
-                    p match {
-                      case d : DPath => 
-                        controller.getDocument(d).getItems.flatMap(x => invPaths(x.target, parents + d)).toSet
-                      case m : MPath => 
-                        val affected = boxedPaths exists {cp => cp.parent match {
-                          case gn : GlobalName => gn.module.toMPath == m
-                          case mp : MPath => mp == p 
-                          case _ => false
-                        }}
-                        if (affected)
-                          parents + p
-                        else 
-                          Nil.toSet
-                      case _ => Nil.toSet
-                    }}
-                    response ::= "pres" -> JSONArray(invPaths(controller.getBase).toList.map(x => JSONString(x.toString)) :_*)
-                }
-                JsonResponse(JSONObject(response :_*)).aact(tk)
-              }  catch {
-                case e : Throwable =>
-                  val st = Stacktrace.asStringList(e).mkString("\n","\n","\n")
-                  TextResponse(e.getMessage + st).aact(tk)
-              }
-            case l => //parsing failed -> returning errors 
-              var response: List[(String, JSON)] = Nil
-              response ::= "success" -> JSONBoolean(false)
-              response ::= "info" -> JSONArray()
-              response ::= "pres" -> JSONString(l.map(e => (<p>{e.getStackTrace().toString}</p>).toString).mkString(""))
-              JsonResponse(JSONObject(response :_*)).aact(tk)
-          }
-        case _ => errorResponse("invalid theory name in query : {tk.req.query}").aact(tk)
       }
     }
   }

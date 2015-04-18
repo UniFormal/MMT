@@ -3,7 +3,12 @@ package info.kwarc.mmt.api.utils
 import scala.xml._
 import scala.reflect.runtime.universe._
 
+/** a marker for classes representing groups of attributes/children, used by [[XMLToScala]] */
 trait Group
+
+/** thrown on all errors, e.g., when expected classes are not present or XML nodes are not present */
+case class ExtractError(msg: String) extends Exception(msg)
+   
 
 /**
  * This class uses Scala reflection to parse XML into user-defined case classes.
@@ -56,9 +61,6 @@ class XMLToScala(pkg: String) {
    /** the Type of Group */
    private val GroupType = dummyTypes(4)
    
-   /** thrown on all errors, e.g., when expected classes are not present or XML nodes are not present */
-   case class ExtractError(msg: String) extends Exception(msg)
-   
    /** convert Scala id names to xml tag/key names */
    private def xmlName(s: String) = s.replace("_", "-")
    /** convert xml tag/key names to Scala id names */
@@ -74,7 +76,11 @@ class XMLToScala(pkg: String) {
    def apply(file: File): Any = apply(xml.readFile(file))
    /** parse a Node */
    def apply(node: Node): Any = {
-      val c = Class.forName(pkg + "." + scalaName(node.label))
+      val c = try {
+         Class.forName(pkg + "." + scalaName(node.label))
+      } catch {
+         case e: java.lang.ClassNotFoundException => throw ExtractError("no class for " + node)
+      }
       apply(node, m.classSymbol(c).toType)
    }
    
@@ -114,13 +120,24 @@ class XMLToScala(pkg: String) {
    private def apply(node: Node, tp: Type): Any = {
       // the remaining children of node (removed once processed) 
       var children = cleanNodes(node.child.toList).zipWithIndex
+      // the used attributes of node (added once processed)
+      var attributesTaken: List[String] = Nil
       /** finds the string V by looking at (i) key="V" (ii) <key>V</key> (iii) "" */
       def getAttributeOrChild(scalaKey: String): String = {
+         // special case: _key yields the body of the node, which must be text
+         if (scalaKey.startsWith("_")) {
+            children.map(_._1) match {
+               case nodes if nodes.forall(_.isInstanceOf[SpecialNode]) =>
+                  return nodes.text
+               case nodes => throw ExtractError(s"text node expected in child $scalaKey: $nodes")
+            }
+         }
          val key = xmlName(scalaKey)
          val att = xml.attr(node, key)
-         if (att != "")
+         if (att != "" && !attributesTaken.contains(key)) {
+            attributesTaken ::= key
             att
-         else {
+         } else {
             val keyChildren = getKeyedChild(key, false)
             keyChildren match {
                case Some(Text(s) :: Nil) => s
@@ -150,8 +167,9 @@ class XMLToScala(pkg: String) {
             getAttributeOrChild(nS)
          case Argument(n, nS, IntType) =>
             val s = getAttributeOrChild(nS)
-            try {s.toInt}
-            catch {case _: Exception => throw ExtractError(s"integer expected at key $nS: $s")}
+            if (s == "") 0 else
+               try {s.toInt}
+               catch {case _: Exception => throw ExtractError(s"integer expected at key $nS: $s")}
          case Argument(n, nS, BoolType) =>
             val s = getAttributeOrChild(nS)
             s.toLowerCase match {
@@ -174,14 +192,17 @@ class XMLToScala(pkg: String) {
                      Some(apply(child))
                   }
                case _ =>
+                  if (children == Nil) {
+                     throw ExtractError(s"no child left for $nS (of type $argTp) in " + node)
+                  }
                   val (child, _) = children.head
                   children = children.tail
                   apply(child)
             }
          // default case: use getKeyedChild
          case Argument(n, nS, argTp) =>
-            lazy val wrongLength = ExtractError(s"no child with label $nS (of type $argTp) found in $node")
-            lazy val noNode      = ExtractError(s"$nS does not have exactly one child (of type $argTp) in $node")
+            lazy val noNode      = ExtractError(s"no child with label $nS (of type $argTp) found in $node")
+            lazy val wrongLength = ExtractError(s"$nS does not have exactly one child (of type $argTp) in $node")
             var omitted = false
             val (keepLabel, nS2) = if (nS.endsWith("_")) (true, nS.substring(0,nS.length-1)) else (false, nS)
             val childNodes = getKeyedChild(nS2, keepLabel).getOrElse {

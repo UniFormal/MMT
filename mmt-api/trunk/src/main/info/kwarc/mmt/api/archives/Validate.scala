@@ -19,7 +19,7 @@ trait ValidatedArchive extends WritableArchive {
             controller.memory.ontology += r
          }
       }
-      val checker = new MMTStructureChecker(ObjectChecker.ignore)
+      val checker = new MMTStructureChecker(NullChecker.objects)
       checker.init(controller)
       traverse(content, in, Archive.extensionIs("omdoc"), false) {case Current(_, inPath) =>
          rels.clear
@@ -36,7 +36,7 @@ trait ValidatedArchive extends WritableArchive {
     def validate(in: List[String] = Nil, controller: Controller) {
       traverse(content, in, Archive.extensionIs("omdoc"), false) {case Current(_, inPath) =>
          val mpath = Archive.ContentPathToMMTPath(inPath)
-         val errors = controller.checker(mpath)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore))
+         controller.handle(Check(mpath, "mmt"))
       }
     }
 }

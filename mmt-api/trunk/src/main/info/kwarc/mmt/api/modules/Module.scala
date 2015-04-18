@@ -21,7 +21,6 @@ abstract class Module(val parent : DPath, val name : LocalName) extends ContentE
  */
 trait DeclaredModule extends Module with Body {
    /** the meta-theory, domain, and codomain are not part of the term components because it is just a Path */
-   def getComponents = Nil
    def getInnerContext: Context
 }
 

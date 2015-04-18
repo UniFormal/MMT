@@ -127,9 +127,11 @@ sealed abstract class VerbalizationMarker extends Marker {
 }
 
 case class WordMarker(word : String) extends VerbalizationMarker {
+  override def toString = word 
   def toParsing = Delim(word) :: Nil
 }
 
+// TODO add toString method in presentation markers
 
 /** PresentationMarker's occur in two-dimensional notations
  *

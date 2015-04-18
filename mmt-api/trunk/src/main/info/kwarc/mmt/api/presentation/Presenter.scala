@@ -26,7 +26,7 @@ trait ObjectPresenter extends Extension {
 /**
  * the type of presenters that can handle structural elements
  *  
- * see also [Presenter]]
+ * see also [[Presenter]]
  */
 trait StructurePresenter extends Extension {
    def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler)
@@ -39,6 +39,8 @@ trait StructurePresenter extends Extension {
 
 /**
  * the designated super class of all presenters
+ * 
+ * The format for which a Presenter is applicable is the same as the key used to run it as an exporter.
  */
 abstract class Presenter(val objectLevel: ObjectPresenter)
    extends archives.Exporter with StructurePresenter with ObjectPresenter with LeveledExtension {
@@ -47,8 +49,6 @@ abstract class Presenter(val objectLevel: ObjectPresenter)
   def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) = objectLevel(o, origin)
    
   def outDim = Dim("export", "presentation", key)
-
-  def isApplicable(format: String): Boolean
   
   def exportDocument(doc : documents.Document, bf: BuildTask) = apply(doc, true)(rh)
   def exportTheory(thy : DeclaredTheory, bf: BuildTask) = apply(thy, true)(rh)
@@ -125,7 +125,7 @@ object ObjectTextPresenter extends ObjectPresenter {
 object TextPresenter extends Presenter(ObjectTextPresenter) {
    val key = "present-text"
    override def outExt = "txt"
-   def isApplicable(format: String) = format == "text"
+   override def isApplicable(format: String) = format == "text"
    def apply(c : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {
       rh(c.toString)
    }
@@ -153,7 +153,7 @@ object OpenMathPresenter extends ObjectPresenter {
 object OMDocPresenter extends Presenter(OpenMathPresenter) {
    val key = "present-omdoc"
    override def outExt = "omdoc"
-   def isApplicable(format: String) = format == "xml"
+   override def isApplicable(format: String) = format == "xml"
    private val pp = new scala.xml.PrettyPrinter(100, 2)
    def apply(c : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {
       val sb = new scala.collection.mutable.StringBuilder

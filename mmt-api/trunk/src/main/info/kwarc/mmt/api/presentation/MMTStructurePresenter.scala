@@ -18,7 +18,6 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
    val key = "present-text-notations"
    override def outExt = "mmt"
   
-   def isApplicable(format: String) = format == "text/notations"
    def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {apply(e, 0)(rh)}
    
    private def apply(e : StructuralElement, indent: Int)(implicit rh: RenderingHandler) {
@@ -75,6 +74,8 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             apply(v.to, Some(v.path $ CodComponent))
             rh(" =\n")
             v.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
+         case nm: NestedModule =>
+            apply(nm.module, indent+1)
          case s: DeclaredStructure =>
             rh("structure " + s.name + " : ")
             apply(s.from, Some(s.path $ TypeComponent))

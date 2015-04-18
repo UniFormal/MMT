@@ -5,10 +5,9 @@ import frontend._
 import archives._
 
 import scala.xml._
-import info.kwarc.mmt.api.utils.MyList.fromList
-import java.util.zip._
 
-import utils.File
+import java.util.zip._
+import java.io.BufferedReader 
 
 // local XML databases or query engines to access local XML files: baseX or Saxon
 
@@ -18,8 +17,9 @@ case class NotApplicable(message: String = "") extends java.lang.Throwable
  * An abstraction over physical storage units that hold MMT content
  */
 abstract class Storage {
-   protected def loadXML(u: URI, n:Node)(implicit controller: Controller) {
-      controller.xmlReader.readDocument(DPath(u), n) {e => controller.add(e)}
+   protected def loadXML(u: URI, dpath: DPath, reader: BufferedReader)(implicit controller: Controller) {
+      val ps = new parser.ParsingStream(u, dpath, NamespaceMap(dpath), "omdoc", reader)
+      controller.read(ps, false)(ErrorThrower)
    }
    protected def getSuffix(base : utils.URI, uri : utils.URI) : List[String] = {
       val b = base.pathNoTrailingSlash
@@ -29,8 +29,10 @@ abstract class Storage {
       else
          throw NotApplicable()
       }
-   protected def virtDoc(entries : List[String], prefix : String) =
-      <omdoc>{entries.map(n => <dref target={prefix + n}/>)}</omdoc>
+   protected def virtDoc(entries : List[String], prefix : String) = {
+      val s = <omdoc>{entries.map(n => <dref target={prefix + n}/>)}</omdoc>.toString
+      new BufferedReader(new java.io.StringReader(s))
+   }
    
    /**
     * dereferences a path and sends the content to a reader
@@ -38,6 +40,8 @@ abstract class Storage {
     * a storage may send more/additional content, e.g., the containing file or a dependency closure,
     */
    def load(path : Path)(implicit controller: Controller)
+   /** called to release all held resources, override as needed */
+   def destroy {}
 }
 
 /** a Storage that retrieves file URIs from the local system */
@@ -47,8 +51,7 @@ case class LocalSystem(base : URI) extends Storage {
       val uri = base.resolve(path.doc.uri)
       val _ = getSuffix(localBase, uri)
       val file = new java.io.File(uri.toJava)
-      val N = utils.xml.readFile(file)
-      loadXML(uri, N)
+      loadXML(uri, path.doc, File.Reader(file))
    }
 }
 
@@ -58,13 +61,13 @@ case class LocalCopy(scheme : String, authority : String, prefix : String, base 
    def load(path : Path)(implicit controller: Controller) {
       val uri = path.doc.uri
       val target = base / getSuffix(localBase,uri)
-      val N = if (target.isFile) utils.xml.readFile(target)
+      val reader = if (target.isFile) File.Reader(target)
         else if (target.isDirectory) {
-          val entries = target.list().toList.diff(List(".svn", ".omdoc")).sorted
+          val entries = target.list.toList.sorted.diff(List(".svn"))
           val relativePrefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
           virtDoc(entries, relativePrefix)
         } else throw BackendError("file/folder " + target + " not found or not accessible", path)
-      loadXML(uri, N)
+      loadXML(uri, path.doc, reader)
    }
 }
 
@@ -130,12 +133,8 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
    /** retrieves all Stores */
    def getStores : List[Storage] = stores
 
-   /** releases all ressources held by storages */
-   def cleanup = {
-     stores.map(x => x match {
-       case _ => None
-     })
-   }
+   /** releases all resources held by storages */
+   def cleanup {stores.foreach(_.destroy)}
    
    /**
     * looks up a path in the first Storage that is applicable and sends the content to the reader
@@ -169,7 +168,6 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
           val manifestOpt = manifestLocations.find(_.isFile)
           manifestOpt match {
              case Some(manifest) =>
-                log("opening archive defined by " + manifest)
                 val properties = new scala.collection.mutable.ListMap[String,String]
                 File.ReadLineWise(manifest) {case line =>
                    val tline = line.trim
@@ -180,9 +178,15 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
                       properties(key) = value
                    }
                 }
-                val arch = new Archive(root, properties, report)
-                addStore(arch)
-                List(arch)
+                if (properties.isDefinedAt("id")) {
+                   log("adding archive defined by " + manifest)
+                   val arch = new Archive(root, properties, report)
+                   addStore(arch)
+                   List(arch)
+                } else {
+                   log(manifest + " does not contain id, skipping this archive")
+                   Nil
+                }
              case None =>
                 log(root + " is not an archive - recursing")
                 // folders beginning with . are skipped
@@ -219,14 +223,13 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
       }
    }
    /** retrieve an Archive by its id */
-   def getArchive(id: String) : Option[Archive] = stores mapFind {
-      case a: Archive => if (a.properties.get("id") == Some(id)) Some(a) else None
-      case _ => None
+   def getArchive(id: String) : Option[Archive] = stores collectFirst {
+      case a: Archive if a.properties.get("id") == Some(id) => a
    }
    /** retrieves all Archives */
-   def getArchives : List[Archive] = stores mapPartial {
-      case a: Archive => Some(a)
-      case _ => None
+   def getArchives : List[Archive] = stores flatMap {
+      case a: Archive => List(a)
+      case _ => Nil
    }
    /**
     * @param p a module URI

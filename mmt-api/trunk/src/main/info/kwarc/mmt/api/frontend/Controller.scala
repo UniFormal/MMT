@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
+import archives._
 import backend._
 import presentation._
 import libraries._
@@ -71,20 +72,14 @@ class Controller extends ROController with Logger {
    val library = memory.content
    val docstore = memory.narration
    
+   /* TODO these should be extensions; parser and checker already are */
    /** text-based presenter for error messages, logging, etc. */
    val presenter: Presenter = new MMTStructurePresenter(new NotationBasedPresenter {override def twoDimensional = false})
-   /** the MMT parser (native MMT text syntax) */
-   val textParser: Parser = new KeywordBasedParser(new NotationBasedParser)
-   /** default structure checker and type reconstructor */
-   val checker: Checker = new MMTStructureChecker(new RuleBasedChecker)
    /** elaborator and universal machine for simplification */
    val simplifier: Simplifier = new StepBasedElaborator(new UOM)
-
-   /** the MMT parser (XML syntax) */
-   val xmlReader = new XMLReader(report)
-   val xmlStreamer = new XMLStreamer(this)
-   /** Twelf-specific parser */
-   val twelfParser = new TextReader(this, this.add)
+   
+   /** convenience for getting the default object parser */
+   def objectParser = extman.get(classOf[ObjectParser], "mmt").get
    
    /** converts between strict and pragmatic syntax using [[NotationExtension]]s */
    val pragmatic = new Pragmatics(this)
@@ -97,7 +92,7 @@ class Controller extends ROController with Logger {
    /** the query engine */
    val evaluator = new ontology.Evaluator(this)
    /** the window manager */
-   val winman = new WindowManager(this)
+   lazy val winman = new WindowManager(this) // lazy so that GUI dependencies are optional
    /** moc.refiner - handling pragmatic changes in scope */ 
    val refiner = new moc.PragmaticRefiner(Set(moc.pragmaticRename, pragmaticAlphaRename))
    /** moc.propagator - handling change propagation */
@@ -122,12 +117,12 @@ class Controller extends ROController with Logger {
    
    private def init {
       extman.addDefaultExtensions
-      List(presenter, textParser, checker, simplifier).foreach {_.init(this)}
+      List(presenter, simplifier).foreach {_.init(this)}
    }
    init
    
    /** @return a notifier for all currently registered [[ChangeListener]]s */
-   private[api] def notifyListeners = new Notify(extman.changeListeners, report)
+   private[api] def notifyListeners = new Notify(extman.get(classOf[ChangeListener]), report)
 
    //not sure if this really belong here, map from jobname to some state info
    val states = new collection.mutable.HashMap[String, ParserState]
@@ -312,6 +307,7 @@ class Controller extends ROController with Logger {
       report.cleanup
       // stop server
       server foreach {_.stop}
+      server = None
    }
 
    /** deletes a document, deactivates and returns its modules */
@@ -339,62 +335,46 @@ class Controller extends ROController with Logger {
          delete(d.path)
       }}
    }
-   /** convenience function for reading from a string  */
-   def read(s: String, dpath: DPath, format: String)(implicit errorCont: ErrorHandler) : Document = {
-      read(scala.io.Source.fromString(s), dpath, format)
-   }
+   
    /**
-    * convenience function for reading from a file
-    * file extension is used as format, file URI as default namespace
-    * @param f the input file
-    * @param docBase the base path to use for relative references
-    * @return the read Document
-    */
-   def read(f: File, docBase : Option[DPath] = None)(implicit errorCont: ErrorHandler) : Document = {
-      // use docBase, fall back to logical document id given by an archive, fall back to file:f
-      val dpath = docBase orElse
-                  backend.resolvePhysical(f).map {
-                     case (arch, p) => DPath(arch.narrationBase / p)
-                  } getOrElse
-                  DPath(FileURI(f))
-      val src = scala.io.Source.fromFile(f, "UTF-8")
-      read(src, dpath, f.getExtension.getOrElse(""))
-   }
-
-   /**
-    * reads a document
+    * parses a ParsingStream with an appropriate parser and optionally checks it
     * 
-    * @param src the input source
-    * @param srcURI the URI of the input source (needed for source references)
-    * @param dpath the base path to use for relative references
-    * @param format key to choose the reader: e.g., omdoc, elf, or mmt 
+    * @param ps the input
+    * @param interpret if true, try to use an interpreter, not a parser
+    * @param mayImport if true, use an importer as a fallback
     * @param errorCont continuation to be called on all encountered errors
     * @return the read Document
     */
-   def read(src: scala.io.Source, dpath: DPath, format: String)(implicit errorCont: ErrorHandler) : Document = {
-      val modules = deactivateDocument(dpath)
-      log("reading " + dpath + " with format " + format)
-      val result = format match {
-         case "omdoc" =>
-            xmlStreamer.readDocument(dpath, src)(add)
-         case "elf" =>
-            val (doc, errorList) = twelfParser.readDocument(src, dpath)(pu => textParser(pu)(ErrorThrower))
-            errorList.foreach {e => errorCont(e)}
-            doc
-         case "mmt" =>
-            val srcURI = dpath.uri.setExtension(format)
-            textParser.readString(srcURI, dpath, src.mkString)
-         case f =>
-            throw ParseError("unknown format: " + f)
+   def read(ps: ParsingStream, interpret: Boolean, mayImport: Boolean = false)(implicit errorCont: ErrorHandler) : Document = {
+      val modules = deactivateDocument(ps.dpath)
+      log((if(interpret) "interpreting " else "parsing ") + ps.source + " with format " + ps.format +
+            (if (mayImport) "; using importer if necessary" else ""))
+      var interpreterOpt = if (interpret) {
+         extman.get(classOf[Interpreter], ps.format)
+      } else {
+         val parserOpt = extman.get(classOf[Parser], ps.format) orElse {
+            extman.get(classOf[TwoStepInterpreter], ps.format).map(_.parser)  
+         }
+         parserOpt.map {p => new OneStepInterpreter(p)}
       }
-      src.close
+      interpreterOpt = interpreterOpt orElse {
+         if (mayImport) {
+            extman.get(classOf[Importer]).find {imp =>
+               imp.inExts contains ps.format
+            }.map {imp => imp.asInterpreter}
+         } else None
+      }
+      val interpreter = interpreterOpt.getOrElse {
+         throw GeneralError(s"no ${if(interpret) "interpreter" else "parser"} for format ${ps.format} found")
+      }
+      val doc = interpreter(ps)
       if (! modules.isEmpty) {
          log("deleting the remaining deactivated elements")
          logGroup {
             modules foreach {m => deleteInactive(m)}
          }
       }
-      result
+      doc
    }
 
    /** executes a string command */
@@ -461,7 +441,7 @@ class Controller extends ROController with Logger {
                   backend.closeArchive(id)
                   notifyListeners.onArchiveClose(arch)
                case d =>
-                  extman.getTarget(d) match {
+                  extman.get(classOf[BuildTarget], d) match {
                      case Some(buildTarget) =>
                         buildTarget(mod, arch, in, args)
                      case None =>
@@ -566,13 +546,20 @@ class Controller extends ROController with Logger {
 	      case LoggingOff(g) => report.groups -= g
 	      case NoAction => ()
 	      case Read(f) =>
-	         read(f)(new ErrorLogger(report))
+            val ps = backend.resolvePhysical(f) match {
+               case Some((arch, p)) => ParsingStream.fromSourceFile(arch, p)
+               case None => ParsingStream.fromFile(f)
+            }
+            read(ps, false, true)(new ErrorLogger(report))
+	      case Check(p, id) =>
+            val checker = extman.get(classOf[Checker], id).getOrElse {
+               throw GeneralError(s"no checker $id found")
+            }
+	         checker(p)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore))
 	      case Graph(f) =>
 	         val tg = new TheoryGraph(depstore)
 	         val gv = new GraphExporter(tg.nodes.toIterable, Nil, tg)
             gv.exportDot(f)
-	      case Check(p) =>
-	         checker(p)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore))
 	      case Navigate(p) =>
 	         notifyListeners.onNavigate(p)
 	      case a : GetAction => a.make(this)

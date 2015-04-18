@@ -65,6 +65,7 @@ object ViewKey {
  */
 class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser) {
   override val logPrefix = "structure-parser"
+  val format = "mmt"
 
   /**
    * A continuation function called on every StructuralElement that was found
@@ -129,7 +130,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   private def apply(state: ParserState): (Document, ParserState) = {
-    val dpath = DPath(state.ps.source)
+    val dpath = state.ps.dpath
     val doc = new Document(dpath, Nil, state.namespaces)
     seCont(doc)(state)
     logGroup {
@@ -233,7 +234,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    */
   def readParsedObject(context: Context)(implicit state: ParserState) = {
     val (obj, reg) = state.reader.readObject
-    val pu = ParsingUnit(SourceRef(state.ps.source, reg), context, obj)
+    val pu = ParsingUnit(SourceRef(state.ps.source, reg), context, obj, state.namespaces)
     val parsed = puCont(pu)
     (obj, reg, parsed)
   }
@@ -529,7 +530,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       delim match {
         case "::" =>
           val (obj, reg) = state.reader.readObject
-          val pu = ParsingUnit(SourceRef(state.ps.source, reg), Context(tpath), obj, None)
+          val pu = ParsingUnit(SourceRef(state.ps.source, reg), Context(tpath), obj, state.namespaces, None)
           val parsed = puCont(pu)
           parsed match {
             case OMBINDC(_, cont, Nil) =>
@@ -540,7 +541,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case ">>" =>
           val (obj, reg) = state.reader.readObject
           // keep parameters in the context
-          val pu = ParsingUnit(SourceRef(state.ps.source, reg), pr ++ tpath, obj, None)
+          val pu = ParsingUnit(SourceRef(state.ps.source, reg), pr ++ tpath, obj, state.namespaces, None)
           val parsed = puCont(pu)
           parsed match {
             case OMBINDC(_, cont, Nil) =>
@@ -754,7 +755,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   /** API Functions for parsing fragments, TODO refactor **/
 
-  /**
+/*  /**
    * reads a module from a string
    * @param dpath the uri of the parent document
    * @param modS the module string
@@ -799,6 +800,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     //calling parse function
     readInModule(thy, mpath, thy.getInnerContext, patterns)(state)
   }
+  */
 }
 
 class SequentialReader extends java.io.Reader {

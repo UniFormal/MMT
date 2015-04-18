@@ -9,11 +9,12 @@ import info.kwarc.mmt.api.objects._
 
 
 class DiffReader(controller : Controller) {
+  private val xmlReader = new XMLReader(controller.report)
   def apply(n : scala.xml.Node) : Diff = n.label match {
     case "omdoc-diff" => 
       val changes = n.child.map(parseChange).toList
       new Diff(changes.flatten)
-  }
+  }  
   
   def parseChange(n : scala.xml.Node) : List[Change] = n.label match {
     case "add" | "delete" => 
@@ -31,10 +32,10 @@ class DiffReader(controller : Controller) {
       level match {
         case "module" =>  
           val path = Path.parseM((n \ "@path").text, nsMap)
-          n.child.foreach {c => controller.xmlReader.readInDocument(NamespaceMap(path.doc), None, c)(cont)}
+          n.child.foreach {c => xmlReader.readInDocument(NamespaceMap(path.doc), None, c)(cont)}
         case "declaration" => 
           val path = Path.parseS((n \ "@path").text, nsMap)
-          n.child foreach {c => controller.xmlReader.readInModule(path.module.toMPath, NamespaceMap(base), None, c)(cont)}
+          n.child foreach {c => xmlReader.readInModule(path.module.toMPath, NamespaceMap(base), None, c)(cont)}
       }
       changes = changes.reverse
       changes

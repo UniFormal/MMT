@@ -262,7 +262,6 @@ import metadata._
 class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
   def key: String = "flatmws"
   override val outExt = "html"
-  def isApplicable(format: String): Boolean = "flatmws" == format
   lazy val mf = new ModuleFlattener(controller)
   def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) = {
     this._rh = rh

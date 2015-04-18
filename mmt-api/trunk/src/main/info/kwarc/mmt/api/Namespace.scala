@@ -14,7 +14,7 @@ case class NamespaceMap(base: Path, prefixes: List[(String,URI)] = Nil) {
    /** define a new prefix as a string (which is relative to this NamespaceMap) */
    def add(p: String, u: String): NamespaceMap = add(p, URI(expand(u)))
    /** default namespace (URI of base) */
-   def default = base.doc.uri // = prefixes.getOrElse("", URI(""))
+   def default = base.doc.uri
    /** expands a CURIE into a URI */
    def expand(s: String): String = {
       val u = URI(s)

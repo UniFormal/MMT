@@ -201,6 +201,7 @@ case class Arity(subargs: List[ArgumentComponent],
          case d: Delimiter =>
             List(d)
          case p: PresentationMarker => List(p flatMap flattenOne)
+         case w: WordMarker => List(w)
       }
       markers flatMap flattenOne
    }

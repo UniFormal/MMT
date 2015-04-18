@@ -21,10 +21,11 @@ case object Build  extends BuildTargetModifier {
 /** A BuildTarget provides build/update/clean methods that generate one or more dimensions in an [[Archive]]
  *  from an input dimension.
  */
-abstract class BuildTarget extends Extension {
+abstract class BuildTarget extends FormatBasedExtension {
    /** a string identifying this build target, used for parsing commands, logging, error messages
     */
    def key: String
+   def isApplicable(format: String) = format == key
    
    /** defaults to the key */
    override def logPrefix = key
@@ -69,14 +70,15 @@ abstract class BuildTarget extends Extension {
  *  
  * @param inFile the input file
  * @param inPath the path of the input file inside the archive, relative to the input dimension
- * @param base the narration-base of the containing archive
  * @param outFile the intended output file
  * @param errorCont BuildTargets should report errors here 
  */
-class BuildTask(val inFile: File, val isDir: Boolean, val inPath: List[String], val base: utils.URI,
+class BuildTask(val archive: Archive, val inFile: File, val isDir: Boolean, val inPath: List[String],
                 val outFile: File, val errorCont: ErrorHandler) {
    /** build targets should set this to true if they skipped the file so that it is not passed on to the parent directory */
    var skipped = false
+   /** the narration-base of the containing archive */
+   val base = archive.narrationBase
    /** the MPath corresponding to the inFile if inFile is a file in a content-structured dimension */
    def contentMPath = Archive.ContentPathToMMTPath(inPath)
    /** the DPath corresponding to the inFile if inFile is a folder in a content-structured dimension */
@@ -92,6 +94,7 @@ class BuildTask(val inFile: File, val isDir: Boolean, val inPath: List[String], 
  */
 case class ArchivePath(segments: List[String]) {
    def toFile = File(toString)
+   def getExtension = toFile.getExtension
    def setExtension(e: String) = ArchivePath(toFile.setExtension(e).segments)
    def removeExtension = ArchivePath(toFile.removeExtension.segments)
    override def toString = segments.mkString("/")
@@ -132,18 +135,16 @@ abstract class TraversingBuildTarget extends BuildTarget {
    def includeFile(name: String) : Boolean
 
    /** the main abstract method that implementations must provide: builds one file
-     * @param a the containing archive  
      * @param bf information about input/output file etc
      */ 
-   def buildFile(a: Archive, bf: BuildTask)
+   def buildFile(bf: BuildTask)
 
    /** similar to buildOne but called on every directory (after all its children have been processed)
-     * @param a the containing archive  
      * @param bd information about input/output file etc
      * @param builtChildren results from building the children
      * This does nothing by default and can be overridden if needed.
      */ 
-   def buildDir(a: Archive, bd: BuildTask, builtChildren: List[BuildTask]) {}
+   def buildDir(bd: BuildTask, builtChildren: List[BuildTask]) {}
    
    /** entry point for recursive building */
    def build(a: Archive, args: List[String], in: List[String] = Nil) {
@@ -163,10 +164,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
            val outFile = getOutFile(a, inPath)
            report("archive", prefix + inFile + " -> " + outFile)
            val errorCont = makeHandler(a, inPath)
-           val bf = new BuildTask(inFile, false, inPath, a.narrationBase, outFile, errorCont)
+           val bf = new BuildTask(a, inFile, false, inPath, outFile, errorCont)
            outFile.up.mkdirs
            try {
-             buildFile(a, bf)
+             buildFile(bf)
            } catch {
               case e: Error => errorCont(e)
               case e: Exception =>
@@ -182,8 +183,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
           case (Current(inDir, inPath), builtChildren) =>
              val outFile = getFolderOutFile(a, inPath)
              val errorCont = makeHandler(a, inPath, true)
-             val bd = new BuildTask(inDir, true, inPath, a.narrationBase, outFile, errorCont) 
-             buildDir(a, bd, builtChildren)
+             val bd = new BuildTask(a, inDir, true, inPath, outFile, errorCont) 
+             buildDir(bd, builtChildren)
              errorCont.close
             bd
        })
@@ -251,9 +252,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
           if (childChanged.exists(_ == true)) {
              val outFile = getFolderOutFile(a, inPath)
              val errorCont = makeHandler(a, inPath, true)
-             val bd = new BuildTask(inDir, true, inPath, a.narrationBase, outFile, errorCont)
+             val bd = new BuildTask(a, inDir, true, inPath, outFile, errorCont)
              errorCont.close
-             buildDir(a, bd, Nil) // TODO pass proper builtChildren
+             buildDir(bd, Nil) // TODO pass proper builtChildren
              false
           } else
              false
@@ -277,7 +278,7 @@ class MetaBuildTarget extends BuildTarget {
       _key = args.headOption.getOrElse {
          throw LocalError("at least one argument required")
       }
-      targets = args.tail.map {k => controller.extman.getTarget(k).getOrElse {
+      targets = args.tail.map {k => controller.extman.get(classOf[BuildTarget], k).getOrElse {
          throw LocalError("unknown target: " + k)
       }}
    }

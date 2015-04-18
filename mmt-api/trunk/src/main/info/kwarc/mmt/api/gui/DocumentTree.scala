@@ -5,7 +5,8 @@ import frontend._
 import archives._
 import documents._
 import modules._
-import objects._ 
+import objects._
+import presentation._
 import utils.MyList._
 
 import javax.swing._
@@ -88,14 +89,14 @@ class TreePane(controller: Controller) extends JPanel {
 
    setLayout(new BorderLayout())
 
-   val items = List(Item("plain", "text"), Item("text", "text/notations"), Item("XML", "xml"), Item("other", "other"))
+   val items = List(Item("plain", "text"), Item("text", "present-text-notations"), Item("XML", "xml"), Item("other", "other"))
    val presenterTextArea = new JTextField("", 30)
    private val toolbar = new JPanel
    private val buttons = Swing.RadioButtonPanel(items : _*){id =>
       mode = id
       if (mode == "other") {
          val other = presenterTextArea.getText
-         if (controller.extman.getPresenter(other).isEmpty) {
+         if (controller.extman.get(classOf[Presenter], other).isEmpty) {
             presenterTextArea.setText("error: " + other)
             mode = "text"
          } else
@@ -141,7 +142,7 @@ class TreePane(controller: Controller) extends JPanel {
    }
    private def setCurrentElement {
       val se = history(current)
-      val presenter = controller.extman.getPresenter(mode).get // defined due to check above
+      val presenter = controller.extman.get(classOf[Presenter], mode).get // defined due to check above
       val rb = new presentation.StringBuilder
       presenter(se)(rb)
       content.setText(rb.get) 

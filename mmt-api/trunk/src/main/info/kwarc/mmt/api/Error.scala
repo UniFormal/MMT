@@ -161,6 +161,8 @@ abstract class ErrorHandler {
       newErrors = true
       addError(e)
    }
+   /** evaluates a command with this class as the exception handler */
+   def catchIn(a: => Unit) {try {a} catch {case e: Error => addError(e)}}
    protected def addError(e: Error)
 }
 
