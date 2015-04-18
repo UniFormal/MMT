@@ -12,6 +12,8 @@ class Plugin extends frontend.Plugin {
       em.addExtension(new SimplificationRuleGenerator)
       // build targets
       em.addExtension(new ScalaExporter)
+      // Twelf parser
+      em.addExtension(new TwelfParser)
       // pragmatic features
       em.notationExtensions ::= new notations.HOASNotation(LF._path, LF.hoas)
    }
