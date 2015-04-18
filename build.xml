@@ -33,6 +33,12 @@ to avoid: java.lang.OutOfMemoryError: PermGen space
     <target name="mizar">
       <ant dir="mmt-mizar/trunk" target="deploy"/>
     </target>
+    <target name="pvs">
+      <ant dir="mmt-pvs" target="deploy"/>
+    </target>
+    <target name="specware">
+      <ant dir="mmt-specware" target="deploy"/>
+    </target>
     <target name="frameit">
       <ant dir="frameit-mmt" target="deploy"/>
     </target>
@@ -89,13 +95,16 @@ to avoid: java.lang.OutOfMemoryError: PermGen space
     <target name="scaladoc">
         <mkdir dir="../doc/api"/>
         <scaladoc destdir="../doc/api" doctitle="MMT" srcdir="." classpathref="classpath" docsourceurl="file:/€{FILE_PATH}.scala" diagrams="yes">
-          <include name="mmt-api/trunk/src/**/*.scala"/>
+          <include name="mmt-api/trunk/src/main/**/*.scala"/>
           <include name="mmt-lf/src/**/*.scala"/>
-            <exclude name="jEdit-mmt/src/**/*.scala"/>
-            <exclude name="latex-mmt/src/**/*.scala"/>
+          <include name="lfcatalog/trunk/src/**/*.scala"/>
+          <include name="jEdit-mmt/src/**/*.scala"/>
+          <exclude name="latex-mmt/src/**/*.scala"/>
           <exclude name="mmt-mizar/trunk/src/**/*.scala"/>
           <include name="mmt-owl/src/**/*.scala"/>
           <include name="mmt-tptp/src/**/*.scala"/>
+          <include name="mmt-pvs/src/**/*.scala"/>
+          <include name="mmt-specware/src/**/*.scala"/>
         </scaladoc>
     </target>
 </project>
