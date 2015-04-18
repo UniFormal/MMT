@@ -156,6 +156,7 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
       getInList(stores, p)
    }
    
+   private def manifestLocations(root: File) = List(root / "META-INF", root).map(_ / "MANIFEST.MF")
    /** 
     * opens archives: an archive folder, or a mar file, or any other folder recursively
     * @param root the file/folder containing the archive(s)
@@ -164,8 +165,7 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
     */
    def openArchive(root: File) : List[Archive] = {
       if (root.isDirectory) {
-          val manifestLocations = List(root / "META-INF", root).map(_ / "MANIFEST.MF")
-          val manifestOpt = manifestLocations.find(_.isFile)
+          val manifestOpt = manifestLocations(root).find(_.isFile)
           manifestOpt match {
              case Some(manifest) =>
                 val properties = new scala.collection.mutable.ListMap[String,String]
@@ -197,7 +197,8 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
           val name = root.getName
           val newRoot = folder / (name + "-unpacked")
           // check if root is younger than manifest in newRoot
-          val mod = Modification(root, newRoot / "META-INF" / "MANIFEST.MF")
+          val newManifest = manifestLocations(root).find(_.isFile).head
+          val mod = Modification(root, newManifest)
           if (mod == Modified) {
              newRoot.deleteDir
           }

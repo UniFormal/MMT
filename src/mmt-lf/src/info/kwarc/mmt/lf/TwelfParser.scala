@@ -18,17 +18,9 @@ class TwelfParser extends Parser(new NotationBasedParser) {
   val format = "elf"
   
   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): Document = {
-    //initialization
-    var line: String = null
-    var lineList: List[String] = Nil
-    while ({line = ps.stream.readLine; line != null}){
-       lineList ::= line
-    }
-    lines = lineList.reverse.toArray
-    dpath = ps.dpath
-    init()
+    init(ps)
     val (doc, errors) = readDocument()
-    errors foreach {e => errorCont(e)}
+    errors reverseMap {e => errorCont(e)}
     doc
   }
   
@@ -49,20 +41,30 @@ class TwelfParser extends Parser(new NotationBasedParser) {
   /** temporary variable used during parsing: saves the last SemanticCommentBlock */
   private var keepComment : Option[MetaData] = None
 
-  /** physical document path */
+  /** logical document URI */
   private var dpath : DPath = null
+  /** physical document URI */
+  private var source : URI = null
 
   // mapping from namespace prefixes to their URI
-  private var prefixes = NamespaceMap.empty
+  private var prefixes:  NamespaceMap = null
   private def currentNS = prefixes.default
 
  
-  private def init() {
+  private def init(ps: ParsingStream) {
+    var line: String = null
+    var lineList: List[String] = Nil
+    while ({line = ps.stream.readLine; line != null}){
+       lineList ::= line
+    }
+    lines = lineList.reverse.toArray
+    dpath = ps.dpath
+    source = ps.source
     flat = ""
     lineStarts = new ArraySeq [(Int, Int)] (0)
     errors = Nil
     keepComment = None
-    prefixes = NamespaceMap(dpath)
+    prefixes = ps.nsMap(dpath)
 
     // read the file and update lines, flat and lineStarts
     var lineNumber = 0
@@ -78,7 +80,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
   
   /** errors that occur during parsing */
    object TextParseError {
-     def apply(pos: SourcePosition, s : String) = SourceError("structure-parser", SourceRef(dpath.uri, pos.toRegion), s)
+     def apply(pos: SourcePosition, s : String) = SourceError("structure-parser", SourceRef(source, pos.toRegion), s)
    }
 
   // ------------------------------- document level -------------------------------
