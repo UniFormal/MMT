@@ -15,7 +15,7 @@ import scala.collection.mutable.{HashSet, LinkedHashSet, MutableList, LinkedHash
   * @param declaredNamespaces list of current namespaces declared in the document
   * @param The errors that occurred during parsing */
 class Document(val url: URI, val associatedComment: Option[SemanticCommentBlock], val modules: MutableList[ModuleBlock], 
-                val prefixes: LinkedHashMap[String,URI], val declaredNamespaces: LinkedHashSet[URI], var errors: LinkedList[ParseError]) {
+                val prefixes: LinkedHashMap[String,URI], val declaredNamespaces: LinkedHashSet[URI], var errors: List[ParseError]) {
   
   /** Time, in miliseconds, when the file was last modified */
   var lastModified : Long = -1
@@ -36,11 +36,16 @@ class Document(val url: URI, val associatedComment: Option[SemanticCommentBlock]
   * @param b start column
   * @param c end line
   * @param d end column */
-class Position(a: Int, b: Int, c: Int, d: Int) extends Pair(Pair(a,b), Pair(c,d)) {
+class Position(a: Int, b: Int, c: Int, d: Int) {
     
   /** @param x start position (line and column)
       @param y end position (line and column) */
-  def this(x: Pair[Int,Int], y: Pair[Int,Int]) = this(x._1, x._2, y._1, y._2)
+  def this(x: (Int,Int), y: (Int,Int)) = this(x._1, x._2, y._1, y._2)
+  
+  /** begin */
+  def _1 = (a,b)
+  /** end */
+  def _2 = (c,d)
   
   /** Format: startline.startcol-endline.endcol */
   override def toString = a + "." + b + "-" + c + "." + d

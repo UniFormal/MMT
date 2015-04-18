@@ -33,7 +33,7 @@ class FileCrawler(file : File) {
   private implicit var lineStarts = new ArraySeq [(Int, Int)] (0)
   
   /** list of parsing errors in the file */
-  private var errors = LinkedList[ParseError] ()
+  private var errors : List[ParseError] = Nil
   
   /** temporary variable used during parsing: saves the last SemanticCommentBlock */
   private var keepComment : Option[SemanticCommentBlock] = None
@@ -50,7 +50,7 @@ class FileCrawler(file : File) {
   }
   var lineNumber = 0
   for (x <- lines) {
-    lineStarts = lineStarts :+ Pair(flat.length, lineNumber)
+    lineStarts = lineStarts :+ (flat.length, lineNumber)
     flat += x + "\n"
     lineNumber += 1
   }
@@ -108,7 +108,7 @@ class FileCrawler(file : File) {
             throw ParseError(toPair(i, lineStarts) + ": error: current namespace must be defined before the namespace alias declaration")
           else {
             val absoluteRemoteURI = currentNS.get.resolve(uri).normalize
-            prefixes += Pair(name.get, absoluteRemoteURI)
+            prefixes += ((name.get, absoluteRemoteURI))
           }
       }
       else if (flat.startsWith("%sig", i)) {
@@ -313,12 +313,12 @@ class FileCrawler(file : File) {
     * @param start the position of the quotes at the beginning of the string
     * @return a pair of the string and the position after the final "
     * @throws ParseError if the string does not close */
-  private def crawlString(start: Int) : Pair[String, Int] = 
+  private def crawlString(start: Int) : (String, Int) = 
   {
     val endsAt = flat.indexOf('"', start + 1)    // position of the final quotes
     if (endsAt == -1)
       throw ParseError(toPair(start, lineStarts) + ": error: the string does not close")
-    return Pair(flat.substring(start + 1, endsAt), endsAt + 1)
+    return (flat.substring(start + 1, endsAt), endsAt + 1)
   }
   
   
@@ -326,7 +326,7 @@ class FileCrawler(file : File) {
     * @param start the position of the first character of the identifier
     * @return Pair(identifier as a string, position after the last character of the identifier)
     * @throws ParseError if the current position does not start an identifier */
-  private def crawlIdentifier(start: Int) : Pair[String, Int] = 
+  private def crawlIdentifier(start: Int) : (String, Int) = 
   {
     var i = start                     // the current position
     var c = flat.codePointAt(i)       // the current code point
@@ -343,7 +343,7 @@ class FileCrawler(file : File) {
     val myId = flat.substring(start, i)
     if (myId.isEmpty)
       throw ParseError(toPair(start, lineStarts) + ": error: identifier expected")
-    return Pair(myId, i)
+    return (myId, i)
   }
   
   
@@ -354,7 +354,7 @@ class FileCrawler(file : File) {
     * @param start the position of the initial %
     * @return (Option[alias], URI, position). If this is a namespace alias declaration, then URI is the relative URI that alias points to. If this is an absolute namespace declaration, then the first return value is None and URI is the absolute URI that was read. In all cases, position is the position after the closing dot
     * @throws ParseError for syntactical errors */
-  private def crawlNamespaceBlock(start: Int) : Triple[Option[String], URI, Int] = 
+  private def crawlNamespaceBlock(start: Int) : (Option[String], URI, Int) = 
   {
     var i = skipws(start + "%namespace".length)    // jump over %namespace
     
@@ -367,7 +367,7 @@ class FileCrawler(file : File) {
       } catch {
         case exc: java.net.URISyntaxException => throw ParseError(toPair(i, lineStarts) + ": error: " + exc.getMessage)
       }
-      return Triple(None, uri, 1 + expectNext(positionAfterString, ".", toPair(start, lineStarts) + ": error: %namespace statement does not end with a dot", false))
+      return (None, uri, 1 + expectNext(positionAfterString, ".", toPair(start, lineStarts) + ": error: %namespace statement does not end with a dot", false))
       
     }
     // A namespace alias declaration
@@ -384,7 +384,7 @@ class FileCrawler(file : File) {
       } catch {
         case exc: java.net.URISyntaxException => throw ParseError(toPair(i, lineStarts) + ": error: " + exc.getMessage)
       }
-      return Triple(Some(alias), uri, 1 + expectNext(positionAfterString, ".", toPair(start, lineStarts) + ": error: %namespace statement does not end with a dot", false))
+      return (Some(alias), uri, 1 + expectNext(positionAfterString, ".", toPair(start, lineStarts) + ": error: %namespace statement does not end with a dot", false))
     }
   }
   
@@ -411,7 +411,7 @@ class FileCrawler(file : File) {
     * @return The first return value is the structured comment, saved in a block, whose end position is on the final %. The second return value is the position after the block.
     * @throws ParseError if the comment does not close. Syntactical errors are only printed
     */
-  private def crawlSemanticCommentBlock(start: Int) : Pair[SemanticCommentBlock, Int] = 
+  private def crawlSemanticCommentBlock(start: Int) : (SemanticCommentBlock, Int) = 
   {
     var endsAt : Int = flat.indexOf("*%", start)    // position of the final *
     if (endsAt == -1)
@@ -426,7 +426,7 @@ class FileCrawler(file : File) {
     
     // Add the short comment
     if (firstPropertyLine >= 1 && commentLines(0).trim.nonEmpty)
-      properties += Pair("short", commentLines(0).trim)
+      properties += (("short", commentLines(0).trim))
       
     // Add the long comment
     if (firstPropertyLine >= 2)
@@ -435,7 +435,7 @@ class FileCrawler(file : File) {
         val longCommentLines = commentLines.slice(1, firstPropertyLine)
         val firstNonEmptyLine = longCommentLines.indexWhere(_.trim.nonEmpty)
         val lastNonEmptyLine = longCommentLines.lastIndexWhere(_.trim.nonEmpty)
-        properties += Pair("long", longCommentLines.slice(firstNonEmptyLine, lastNonEmptyLine + 1).mkString("\n"))
+        properties += (("long", longCommentLines.slice(firstNonEmptyLine, lastNonEmptyLine + 1).mkString("\n")))
       }
     
     // Add the key-value properties
@@ -453,12 +453,12 @@ class FileCrawler(file : File) {
                 c = keyValue.codePointAt(i)
                 i += Character.charCount(c);
             }
-            properties += Pair(keyValue.take(i).trim, keyValue.drop(i).trim)
+            properties += ((keyValue.take(i).trim, keyValue.drop(i).trim))
         }
     } catch {
         case e : ParseError => errors = (errors :+ e)   // add to the list of errors returned
     }
-    return Pair(new SemanticCommentBlock(entireComment, properties, 
+    return (new SemanticCommentBlock(entireComment, properties, 
                                           new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))), 
                  endsAt + 1)
   }
@@ -472,7 +472,7 @@ class FileCrawler(file : File) {
     * @param parentURI the URI of the parent module
     * @return Pair(a CstDecl containing the information from the constant declaration, position after the block)
     * @throws ParseError for syntactical errors */
-  private def crawlCstDecl(start: Int, parentURI: URI) : Pair[CstDeclBlock, Int] = 
+  private def crawlCstDecl(start: Int, parentURI: URI) : (CstDeclBlock, Int) = 
   {
     var i = start
     if (flat.startsWith("%abbrev", i)) {
@@ -484,7 +484,7 @@ class FileCrawler(file : File) {
     val endsAt = skipUntilDot(i) - 1
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
     val url = new URI(Catalog.getPath(file) + "#" + position)
-    return Pair(CstDeclBlock(parentURI ? cstName, url, cstName, position), endsAt + 1)
+    return (CstDeclBlock(parentURI ? cstName, url, cstName, position), endsAt + 1)
   }
   
   
@@ -494,7 +494,7 @@ class FileCrawler(file : File) {
     * @param currentNS the current namespace
     * @return Pair(a StrDecl containing the information from the structure declaration, position after the block)
     * @throws ParseError for syntactical errors */
-  private def crawlStrDecl(start: Int, parentURI: URI, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : Pair[StrDeclBlock, Int] = 
+  private def crawlStrDecl(start: Int, parentURI: URI, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : (StrDeclBlock, Int) = 
   {
     var i = start
     val children = new MutableList[AssignmentBlock] ()
@@ -537,7 +537,7 @@ class FileCrawler(file : File) {
     val endsAt = skipUntilDot(i) - 1       // skip over %open statement
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
     val url = new URI(Catalog.getPath(file) + "#" + position)
-    return Pair(StrDeclBlock(parentURI ? structureName, url, structureName, children, domain, position), endsAt + 1)
+    return (StrDeclBlock(parentURI ? structureName, url, structureName, children, domain, position), endsAt + 1)
   }
   
   
@@ -546,7 +546,7 @@ class FileCrawler(file : File) {
     * @param parentURI the URI of the parent module
     * @return Pair(a CstAssignment containing the information from the constant assignment, position after the block)
     * @throws ParseError for syntactical errors */
-  private def crawlCstAssignment(start: Int, parentURI: URI) : Pair[CstAssignmentBlock, Int] = 
+  private def crawlCstAssignment(start: Int, parentURI: URI) : (CstAssignmentBlock, Int) = 
   {
     var i = start
     val (cstName, positionAfter) = crawlIdentifier(i)  // read constant name
@@ -558,7 +558,7 @@ class FileCrawler(file : File) {
     val endsAt = skipUntilDot(i) - 1
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
     val url = new URI(Catalog.getPath(file) + "#" + position)
-    return Pair(CstAssignmentBlock(parentURI ? constantName, url, constantName, position), endsAt + 1)
+    return (CstAssignmentBlock(parentURI ? constantName, url, constantName, position), endsAt + 1)
   }
   
   
@@ -567,7 +567,7 @@ class FileCrawler(file : File) {
     * @param parentURI the URI of the parent module
     * @return Pair(a StrAssignment containing the information from the structure assignment, position after the block)
     * @throws ParseError for syntactical errors */
-  private def crawlStrAssignment(start: Int, parentURI: URI) : Pair[StrAssignmentBlock, Int] = 
+  private def crawlStrAssignment(start: Int, parentURI: URI) : (StrAssignmentBlock, Int) = 
   {
     var i = start
     if (i + "%struct".length + 2 >= flat.length)
@@ -583,7 +583,7 @@ class FileCrawler(file : File) {
     val endsAt = skipUntilDot(i) - 1
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
     val url = new URI(Catalog.getPath(file) + "#" + position)
-    return Pair(StrAssignmentBlock(parentURI ? structureName, url, structureName, position), endsAt + 1)
+    return (StrAssignmentBlock(parentURI ? structureName, url, structureName, position), endsAt + 1)
   }
   
   
@@ -667,7 +667,7 @@ class FileCrawler(file : File) {
     * @param prefixes the mapping from aliases to namespaces
     * @return Pair(a SigBlock containing the information from the theory, position after the block)
     * @throws ParseError for syntactical errors */
-  private def crawlSigBlock(start: Int, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : Pair[SigBlock, Int] = 
+  private def crawlSigBlock(start: Int, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : (SigBlock, Int) = 
   {
     var i = skipwscomments(start + "%sig".length)   // jump over %sig
     val (sigName, positionAfter) = crawlIdentifier(i)
@@ -684,7 +684,7 @@ class FileCrawler(file : File) {
     val endsAt = expectNext(i, ".", toPair(start, lineStarts) + ": error: signature does not end with a dot")
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
     val url = new URI(Catalog.getPath(file) + "#" + position)
-    return Pair(new SigBlock(uri, url, sigName, children, deps, position), endsAt + 1)
+    return (new SigBlock(uri, url, sigName, children, deps, position), endsAt + 1)
   }
   
   
@@ -754,7 +754,7 @@ class FileCrawler(file : File) {
     * @param prefixes the mapping from aliases to namespaces
     * @return Pair(the set of URIs of the signatures in the sequence, position after the sequence)
     * @throws ParseError for syntactical errors */
-  private def crawlSignatureUnion(start: Int, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : Pair[LinkedHashSet[URI], Int] =
+  private def crawlSignatureUnion(start: Int, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : (LinkedHashSet[URI], Int) =
   {
     var sigs = LinkedHashSet[URI] ()
     var i = start
@@ -770,7 +770,7 @@ class FileCrawler(file : File) {
       }
     }
     val endsAt = i
-    return Pair(sigs, endsAt)
+    return (sigs, endsAt)
   }
   
   
@@ -780,7 +780,7 @@ class FileCrawler(file : File) {
     * @param prefixes the mapping from aliases to namespaces
     * @return Pair(a ViewBlock containing the information from the view, position after the block)
     * @throws ParseError for syntactical errors */
-  private def crawlViewBlock(start: Int, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : Pair[ViewBlock, Int] = 
+  private def crawlViewBlock(start: Int, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : (ViewBlock, Int) = 
   {
     var i = start + "%view".length     // jump over %view
     i = skipws(i)
@@ -825,7 +825,7 @@ class FileCrawler(file : File) {
     val position = new Position(toPair(start, lineStarts), toPair(endsAt, lineStarts))
     val url = new URI(Catalog.getPath(file) + "#" + position)
     
-    return Pair(new ViewBlock(uri, url, viewName, children, deps, viewDomainURI, viewCodomain, position), endsAt + 1)
+    return (new ViewBlock(uri, url, viewName, children, deps, viewDomainURI, viewCodomain, position), endsAt + 1)
   }
   
   
@@ -866,9 +866,9 @@ class FileCrawler(file : File) {
   * @param index the one-dimensional coordinate to be transformed into two-dimensional
   * @param lineStarts array of pairs <position in the flat array, the number of the line that starts at this position>. All indexes are 0-based.
   * @return Pair(line, column) */
-  def toPair(index: Int, lineStarts: ArraySeq[(Int, Int)]) : Pair[Int,Int] = 
+  def toPair(index: Int, lineStarts: ArraySeq[(Int, Int)]) : (Int,Int) = 
   {
     val pair  = lineStarts.filter(p => (p._1 <= index)).last
-    Pair(pair._2, index - pair._1)  // the column may be the bogus space character at the end of the line
+    (pair._2, index - pair._1)  // the column may be the bogus space character at the end of the line
   }
 }

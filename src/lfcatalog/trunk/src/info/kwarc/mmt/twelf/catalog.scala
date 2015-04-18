@@ -589,7 +589,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
               case ParseError(s) => {
                 if (document == null) {    // then store an empty Document with this error
                     val theError = ParseError(Time + getOriginalPath(location) + ":" + s)
-                    document = new Document(new URI(Catalog.getPath(location)), None, new MutableList(), new LinkedHashMap(), new LinkedHashSet(), LinkedList(theError))
+                    document = new Document(new URI(Catalog.getPath(location)), None, new MutableList(), new LinkedHashMap(), new LinkedHashSet(), List(theError))
                 }
               }
           }
