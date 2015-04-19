@@ -56,3 +56,8 @@ li {
 .maxH {
     max-lines: 3;
 }
+.dropdown-menu {
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}

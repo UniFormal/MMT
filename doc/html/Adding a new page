@@ -1,0 +1,9 @@
+- Edit "package.json".
+- In "package.json", choose the desired 'group of pages' object to add the page to, and add the following:
+
+        {"pageUrl": "X", "pageId": "Y", "name": "Z"}
+        
+        -   X is the actual URL of the page.
+        -   Y should be any unique ID for the page, preferably use the actual URL X as an ID. 
+            NOTE: In case of a long path, Y should not have any slashes '/', remove them or put '-' instead.
+        -   Z is the name of the page shown in the dropdown menu. 

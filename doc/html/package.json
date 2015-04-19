@@ -1,0 +1,54 @@
+{
+  "mainPages": [
+    {"pageUrl": "api.html", "pageId": "api.html", "name": "API"},
+    {"pageUrl": "archives.html", "pageId": "archives.html", "name": "Archives"},
+    {"pageUrl": "backend.html", "pageId": "backend.html", "name": "Backend"},
+    {"pageUrl": "build.html", "pageId": "build.html", "name": "Build"},
+    {"pageUrl": "configure.html", "pageId": "configure.html", "name": "Configure"},
+    {"pageUrl": "content.html", "pageId": "content.html", "name": "Content"},
+    {"pageUrl": "controller.html", "pageId": "controller.html", "name": "Controller"},
+    {"pageUrl": "demos.html", "pageId": "demos.html", "name": "Demos"},
+    {"pageUrl": "extensions.html", "pageId": "extensions.html", "name": "Extensions"},
+    {"pageUrl": "independence.html", "pageId": "independence.html", "name": "Independence"},
+    {"pageUrl": "install.html", "pageId": "install.html", "name": "Install"},
+    {"pageUrl": "language.html", "pageId": "language.html", "name": "Language"},
+    {"pageUrl": "log.html", "pageId": "log.html", "name": "Log"},
+    {"pageUrl": "memory.html", "pageId": "memory.html", "name": "Memory"},
+    {"pageUrl": "oaf.html", "pageId": "oaf.html", "name": "OAF"},
+    {"pageUrl": "papers.html", "pageId": "papers.html", "name": "Papers"},
+    {"pageUrl": "processors.html", "pageId": "processors.html", "name": "Processors"},
+    {"pageUrl": "projects.html", "pageId": "projects.html", "name": "Projects"},
+    {"pageUrl": "query.html", "pageId": "query.html", "name": "Query"},
+    {"pageUrl": "related.html", "pageId": "related.html", "name": "Related"},
+    {"pageUrl": "repos.html", "pageId": "repos.html", "name": "Repos"},
+    {"pageUrl": "run.html", "pageId": "run.html", "name": "Run"},
+    {"pageUrl": "services.html", "pageId": "services.html", "name": "Services"},
+    {"pageUrl": "title.html", "pageId": "title.html", "name": "Title"},
+    {"pageUrl": "twelfmod.html", "pageId": "twelfmod.html", "name": "Twelf Module"},
+    {"pageUrl": "uris.html", "pageId": "uris.html", "name": "URIs"}
+  ],
+
+  "applications": [
+    {"pageUrl": "applications/build.html", "pageId": "applications-build.html", "name": "Build"},
+    {"pageUrl": "applications/gui.html", "pageId": "applications-gui.html", "name": "GUI"},
+    {"pageUrl": "applications/http.html", "pageId": "applications-http.html", "name": "HTTP"},
+    {"pageUrl": "applications/index.html", "pageId": "applications-index.html", "name": "Index"},
+    {"pageUrl": "applications/jedit.html", "pageId": "applications-jedit.html", "name": "jEdit"},
+    {"pageUrl": "applications/shell.html", "pageId": "applications-shell.html", "name": "Shell"},
+    {"pageUrl": "applications/web.html", "pageId": "applications-web.html", "name": "Web"}
+  ],
+
+  "language": [
+    {"pageUrl": "language/index.html", "pageId": "language-index.html", "name": "Index"},
+    {"pageUrl": "language/literals.html", "pageId": "language-literals.html", "name": "Literals"},
+    {"pageUrl": "language/namespaces.html", "pageId": "language-namespaces.html", "name": "Namespaces"}
+  ],
+
+  "syntax": [
+    {"pageUrl": "syntax/index.html", "pageId": "syntax-index.html", "name": "Index"},
+    {"pageUrl": "syntax/text.html", "pageId": "syntax-text.html", "name": "Text"},
+    {"pageUrl": "syntax/text-parser.html", "pageId": "syntax-text-parser.html", "name": "Text Parser"},
+    {"pageUrl": "syntax/xml.html", "pageId": "syntax-xml.html", "name": "XML"},
+    {"pageUrl": "syntax/xml-parser.html", "pageId": "syntax-xml-parser.html", "name": "XML Parser"}
+  ]
+}
