@@ -66,7 +66,8 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
          case _ =>
             shell = args.isEmpty
       }
-      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()) // standard GUI configuration
+      //TODO commented out temporarily, should refactor instead
+      //UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()) // standard GUI configuration
       
       try {
          // execute startup arguments
