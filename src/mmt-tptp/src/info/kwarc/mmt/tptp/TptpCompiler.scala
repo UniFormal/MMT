@@ -16,11 +16,12 @@ import presentation._
 /**
  * TPTP Compiler, translates TPTP sources to OMDoc
  */
+// deprecated, probably obsolete
 class TptpCompiler extends Importer with backend.QueryTransformer {
   val key = "tptp-omdoc"  
 
   /** for now only fof files */
-  def inExts = List("tptp") // && n.contains(TptpUtils.FORM)
+  def inExts = List("tptp")
 
   def importDocument(bf: archives.BuildTask, seCont: documents.Document => Unit) {
     val fileName = bf.inPath.last

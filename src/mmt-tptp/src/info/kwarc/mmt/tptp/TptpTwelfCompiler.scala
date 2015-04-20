@@ -12,6 +12,7 @@ import scala.sys.process._ // need this to execute shell commands
 /**
  * TPTP twelf Compiler, translates TPTP sources to twelf using tptp2x
  */
+// deprecated, probably obsolete
 class TptpTwelfCompiler extends TraversingBuildTarget {
   val key = "tptp-twelf"
   val inDim = source
