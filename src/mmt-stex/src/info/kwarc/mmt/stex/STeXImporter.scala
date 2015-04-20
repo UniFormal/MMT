@@ -668,7 +668,7 @@ class STeXImporter extends Importer {
     val srcidx = plainFrags.indexOf("source")
     val preSrcFragsRev = plainFrags.take(srcidx).reverse
     val defArchive = getNParent(preSrcFragsRev, 0).getOrElse(baseArchive)
-    val defGroup = getNParent(preSrcFragsRev, 0).getOrElse(baseGroup)
+    val defGroup = getNParent(preSrcFragsRev, 1).getOrElse(baseGroup)
     
     val (group, archive, fragPath) = plainFrags match {
       case "source" :: tl => (defGroup,defArchive,tl)
