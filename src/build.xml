@@ -42,7 +42,10 @@ to avoid: java.lang.OutOfMemoryError: PermGen space
     <target name="frameit">
       <ant dir="frameit-mmt" target="deploy"/>
     </target>
-   <target name="all" depends="tiscaf,api,lfcatalog,lf,tptp,jedit,owl,lfs,mizar,frameit"/>
+    <target name="stex">
+      <ant dir="stex-mmt" target="deploy"/>
+    </target>
+   <target name="all" depends="tiscaf,api,lfcatalog,lf,tptp,jedit,owl,lfs,mizar,frameit,pvs,specware,stex"/>
 
     <target name="clean-tiscaf">
         <ant dir="tiscaf" target="clean"/>
