@@ -79,9 +79,7 @@ class STeX extends Importer with frontend.ChangeListener {
       }
       if (logFile.exists()) {
         val source = scala.io.Source.fromFile(logFile)
-        val itr = source.getLines()
-        while (itr.hasNext) {
-          val line = itr.next()
+        source.getLines().foreach { line =>
           val (newLevel, restLine) = line2Level(line)
           if (newLevel.isDefined) {
             reportError()
