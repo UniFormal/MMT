@@ -25,7 +25,7 @@ class TptpTwelfCompiler extends TraversingBuildTarget {
   }
   
   def includeFile(n: String) = n.endsWith(".tptp")
-  def buildFile(a: Archive, bf: BuildTask) {
+  def buildFile(bf: BuildTask) {
     // should be  .../TPTP/TPTP2X  
     //  runs tptp2X script with parameters -flf format twelf -d- output directory - stdout
     val flags = "-flf -d- -q2"
