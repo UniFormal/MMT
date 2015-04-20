@@ -20,8 +20,8 @@ class TptpCompiler extends Importer with backend.QueryTransformer {
   val key = "tptp-omdoc"  
 
   /** for now only fof files */
-  def includeFile(n: String) : Boolean = n.endsWith(".tptp") && n.contains(TptpUtils.FORM)
-  
+  def inExts = List("tptp") // && n.contains(TptpUtils.FORM)
+
   def importDocument(bf: archives.BuildTask, seCont: documents.Document => Unit) {
     val fileName = bf.inPath.last
     // compute TPTP directory in which the input file is (e.g. Axioms/SET007/inputFile)
@@ -35,7 +35,6 @@ class TptpCompiler extends Importer with backend.QueryTransformer {
     seCont(d)
   }
 	
-   def isApplicable(s: String) = s == "tptp"
 	def transformSearchQuery(n: scala.xml.Node, params : List[String]) : List[scala.xml.Node] = {
 	   val translator = new TptpTranslator()
 	   val s = n match {

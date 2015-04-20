@@ -8,8 +8,9 @@ class TPTPImporter extends TraversingBuildTarget {
   val inDim = source
   val outDim = Dim("twelf")
 
-  def includeFile(name: String) =
-    name.endsWith(".ax") || name.endsWith(".p") || name.endsWith(".tptp")
+  def inExts = List("ax", "p", "tptp")
+
+  def includeFile(n: String) = inExts.exists(e => n.endsWith("." + e))
 
   /** command to run TPTP */
   private var tptpCommand: List[String] = null
@@ -27,7 +28,7 @@ class TPTPImporter extends TraversingBuildTarget {
 
   private def escape(f: File) = f.toString.replace("\\", "/")
 
-  def buildFile(a: Archive, bt: BuildTask) {
+  def buildFile(bt: BuildTask) {
     /*if (bt.inFile.toJava.length > 1000000) {
        bt.errorCont(LocalError("skipped big file: " + bt.inFile))
        return
@@ -49,7 +50,7 @@ class TPTPImporter extends TraversingBuildTarget {
       outFile.renameTo(tempFile)
       val outWriter = File.Writer(outFile)
       val problemName = bt.inFile.removeExtension.name.replace(".", "_")
-      val prefix = s"""%namespace "${a.narrationBase}".
+      val prefix = s"""%namespace "${bt.archive.narrationBase}".
 %namespace tptp = "http://latin.omdoc.org/logics/tptp".
 
 %sig $problemName = {

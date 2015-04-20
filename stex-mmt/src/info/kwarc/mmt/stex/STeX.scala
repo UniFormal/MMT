@@ -14,8 +14,10 @@ class STeX extends Importer with frontend.ChangeListener {
 
   private var lmlPath: File = File("run-latexml.sh")
 
-  def includeFile(n: String): Boolean =
-    n.endsWith(".tex") && !n.endsWith("localpaths.tex")
+  override def includeFile(n: String): Boolean =
+    super.includeFile(n) && !n.endsWith("localpaths.tex")
+
+  def inExts = List("tex")
 
   def str2Level(lev: String): Level.Level = lev match {
     case "Info" => Level.Info
