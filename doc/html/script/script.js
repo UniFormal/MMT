@@ -11,12 +11,24 @@ helpApp.config(['$routeProvider', '$locationProvider', '$provide', function ($ro
             when('/language/:page', {templateUrl: function(params){ return 'language/'+ params.page;}, controller: 'viewController'}).
             when('/syntax/:page', {templateUrl: function(params){ return 'syntax/'+ params.page;}, controller: 'viewController'}).
             otherwise({redirectTo: '/title.html'});
+
+
     }]);
 
 
 helpApp.controller('viewController',['$scope', '$route', '$routeParams', '$location', '$log', '$window', '$http', '$filter',
     function($scope, $route, $routeParams, $location, $log, $window, $http, $filter) {
 
+        $(document).ready(function() {
+            $('a[href*="html"]').click(function(e) {
+                e.preventDefault();
+                var url = $(this).attr('href');
+                var n = 0;
+                for(var i=0;i<url.length;i++){if(url[i]==='/'){n++;}}
+                if(n<=1){url = url.replace(url, "#" + url);}
+                $window.location.href = url;
+            });
+        });
 }]);
 
 helpApp.controller('pagesController',['$scope', '$log', '$http', '$filter', function($scope, $log, $http, $filter) {
@@ -31,7 +43,7 @@ helpApp.controller('pagesController',['$scope', '$log', '$http', '$filter', func
         }
 
         function handleSuccess(data) {
-            $log.debug('Request returned ' + $filter('json')(data) + '.');
+            //$log.debug('Request returned ' + $filter('json')(data) + '.');
             $scope.mainPages = data.mainPages;
             $scope.syntaxPages = data.syntax;
             $scope.languagePages = data.language;
