@@ -126,8 +126,12 @@ abstract class Importer extends TraversingBuildTarget {imp =>
          val (arch, path) = controller.backend.resolveLogical(ps.source).getOrElse {
             throw LocalError("cannot find source file for URI: " + ps.source)
          }
-         imp.build(arch, Nil, path)
-         controller.get(ps.dpath).asInstanceOf[Document]
+         imp.build(arch, Nil, path, Some(errorCont))
+         try {
+            controller.get(ps.dpath).asInstanceOf[Document]
+         } catch {
+            case e: Error => throw LocalError("no document produced")
+         }
       }   
     }
 }

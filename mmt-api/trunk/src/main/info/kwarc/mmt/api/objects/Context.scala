@@ -338,6 +338,10 @@ case class Substitution(subs : Sub*) extends Obj {
 
 /** helper object */
 object Context {
+   /** implicit conversion between a context and a list of variable declarations */
+   implicit def list2context(l : List[VarDecl]) : Context = Context(l : _*)
+   implicit def context2list(c: Context) : List[VarDecl] = c.variables.toList
+   implicit def vardec2context(d: VarDecl) : Context = Context(d)
    /** a context consisting of a single theory */
    def apply(p: MPath): Context = Context((IncludeVarDecl(p,Nil)))
    val empty = Context()
@@ -416,7 +420,11 @@ object VarDecl {
 }
 /** helper object */
 object Substitution {
-   def empty = Substitution()
+   /** implicit conversion between a substitution and a list of maps */
+   implicit def list2substitution(l : List[Sub]) : Substitution = Substitution(l:_*)
+   implicit def substitution2list(s: Substitution) : List[Sub] = s.subs.toList
+   implicit def varsub2substitution(s: Sub) : Substitution = Substitution(s)   
+   val empty = Substitution()
 	/** parsers an OMBVAR into a substitution */
 	def parse(Nmd : scala.xml.Node, nsMap: NamespaceMap) : Substitution = {
       val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, nsMap)

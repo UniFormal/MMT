@@ -147,8 +147,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
    def buildDir(bd: BuildTask, builtChildren: List[BuildTask]) {}
    
    /** entry point for recursive building */
-   def build(a: Archive, args: List[String], in: List[String] = Nil) {
-      buildAux(in)(a)
+   def build(a: Archive, args: List[String], in: List[String] = Nil) = build(a,args,in, None)
+   def build(a: Archive, args: List[String], in: List[String], errorCont: Option[ErrorHandler]) {
+      buildAux(in)(a, errorCont)
    }
    private def makeHandler(a: Archive, inPath: List[String], isDir : Boolean = false) = {
      val errFileName = if (isDir) getFolderErrorFile(a, inPath)
@@ -157,13 +158,17 @@ abstract class TraversingBuildTarget extends BuildTarget {
    }
    
    /** recursive building */
-   private def buildAux(in : List[String] = Nil)(implicit a: Archive) {
+   private def buildAux(in : List[String] = Nil)(implicit a: Archive, eCOpt: Option[ErrorHandler]) {
        //build every file
        val prefix = "[" + inDim + " -> " + outDim + "] "
        a.traverse[BuildTask](inDim, in, includeFile, parallel) ({case Current(inFile,inPath) =>
            val outFile = getOutFile(a, inPath)
            report("archive", prefix + inFile + " -> " + outFile)
-           val errorCont = makeHandler(a, inPath)
+           var errorWriter = makeHandler(a, inPath)
+           val errorCont = eCOpt match {
+              case None => errorWriter
+              case Some(eC) => new MultipleErrorHandler(List(eC,errorWriter))
+           }
            val bf = new BuildTask(a, inFile, false, inPath, outFile, errorCont)
            outFile.up.mkdirs
            try {
@@ -174,7 +179,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
                  val le = LocalError("unknown build error: " + e.getMessage).setCausedBy(e)
                  errorCont(le)
            } finally {
-             errorCont.close
+             errorWriter.close
            }
            controller.notifyListeners.onFileBuilt(a, this, inPath)
            // a.timestamps(this).set(inPath) not needed anymore
@@ -233,18 +238,18 @@ abstract class TraversingBuildTarget extends BuildTarget {
                 cleanFile(a, c)
                 true
              case (Added, _) =>
-                buildAux(inPath)(a)
+                buildAux(inPath)(a, None)
                 true
              case (Modified, hadErrors) =>
                 if (up.ifChanged || (hadErrors && up.ifHadErrors)) {
                    cleanFile(a, c)
-                   buildAux(inPath)(a)
+                   buildAux(inPath)(a, None)
                 }
                 false
              case (Unmodified, hadErrors) =>
                 if (hadErrors && up.ifHadErrors) {
                    cleanFile(a, c)
-                   buildAux(inPath)(a)
+                   buildAux(inPath)(a, None)
                 }
                 false
           }

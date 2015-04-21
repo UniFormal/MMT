@@ -166,6 +166,13 @@ abstract class ErrorHandler {
    protected def addError(e: Error)
 }
 
+/** combines the actions of multiple handlers */
+class MultipleErrorHandler(handlers: List[ErrorHandler]) extends ErrorHandler {
+   def addError(e: Error) {
+      handlers.foreach {_.apply(e)}
+   }
+}
+
 /** stores errors in a list */
 class ErrorContainer(report: Option[frontend.Report]) extends ErrorHandler {
    private var errors: List[Error] = Nil
