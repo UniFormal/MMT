@@ -54,15 +54,20 @@ class SpecwareImporter extends Importer {
    def importDocument(bt: BuildTask, index: Document => Unit) {
       val swC = new SwCommand(bt.archive, bt.inFile)
       log(swC.command.mkString(" "))
+      swC.outFile.delete
+      swC.errFile.delete
       val result = swC.run
       result foreach {r =>
          throw LocalError("failed to run Specware: " + r)
       }
       swC.getErrors foreach {e => bt.errorCont(SourceError(key, e.getSourceRef, e.shortMsg))}
-      
-      val dp = bt.narrationDPath
-      val ps = ParsingStream.fromFile(swC.outFile, Some(dp.copy(uri = dp.uri.setExtension("omdoc"))))
-      val doc = controller.read(ps, false)(bt.errorCont)
-      index(doc)
+      if (swC.outFile.exists) {
+         val dp = bt.narrationDPath
+         val ps = ParsingStream.fromFile(swC.outFile, Some(dp.copy(uri = dp.uri.setExtension("omdoc"))))
+         val doc = controller.read(ps, false)(bt.errorCont)
+         index(doc)
+      } else {
+         bt.errorCont(LocalError("no output file produced"))
+      }
    }
 }
