@@ -57,7 +57,7 @@ fi
 
 cd $restdir  # source directory
 
-exec ${LATEXML_BASE}/bin/latexmlc --quiet --profile smglom \
+exec ${LATEXML_BASE}/bin/latexmlc --quiet --profile stex-smglom-module \
   --path=/var/data/localmh/sty $dir/${theory}.tex \
   --destination=$dir/${theory}.omdoc \
   --log=$dir/${theory}.ltxlog \
