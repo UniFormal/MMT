@@ -35,16 +35,16 @@ class XMLToScala(pkg: String) {
    /** mirrors are used to evaluated reflected objects */
    private val m = runtimeMirror(getClass.getClassLoader)
 
-   /** the Type of String */
-   private val StringType = typeOf[String]
    /** It's non-trivial to construct Type programmatically. So we take them by reflecting Dummy */
-   private case class Dummy(a: Int, b: Boolean, c: List[Int], d: Option[Int], e: Group)
+   private case class Dummy(a: Int, b: Boolean, c: List[Int], d: Option[Int], e: Group, f: String)
    /** the argument types of Dummy */
    private val dummyTypes = typeOf[Dummy].companion.member(TermName("apply")).asMethod.paramLists.flatten.toList.map(_.asTerm.info)
    /** the Type of Int (strangely != typeOf[Int]) */
    private val IntType = dummyTypes(0)
    /** the Type of Boolean */
    private val BoolType = dummyTypes(1)
+   /** the Type of String */
+   private val StringType = dummyTypes(5)
    /** matches the Type of a unary type operator */
    private class TypeRefMatcher(sym: Symbol) {
       def unapply(tp: Type): Option[Type] = {
@@ -60,7 +60,7 @@ class XMLToScala(pkg: String) {
    private object OptionType extends TypeRefMatcher(dummyTypes(3).asInstanceOf[TypeRef].sym)
    /** the Type of Group */
    private val GroupType = dummyTypes(4)
-   
+      
    /** convert Scala id names to xml tag/key names */
    private def xmlName(s: String) = s.replace("_", "-")
    /** convert xml tag/key names to Scala id names */
@@ -163,7 +163,8 @@ class XMLToScala(pkg: String) {
       /** compute argument values one by one depending on the needed type */
       def getArgumentValue(arg: Argument): Any = arg match {
          // base type: use getAttributeOrChild
-         case Argument(n, nS, StringType) =>
+         case Argument(n, nS, _) if showRaw(arg.scalaType) == showRaw(StringType) =>
+            // in jEdit, arg.scalaType == StringType is false; no idea why
             getAttributeOrChild(nS)
          case Argument(n, nS, IntType) =>
             val s = getAttributeOrChild(nS)
@@ -201,7 +202,7 @@ class XMLToScala(pkg: String) {
             }
          // default case: use getKeyedChild
          case Argument(n, nS, argTp) =>
-            lazy val noNode      = ExtractError(s"no child with label $nS (of type $argTp) found in $node")
+            lazy val noNode      = ExtractError(s"no child with label $nS (of type ${showRaw(argTp)} ${showRaw(StringType)} found in $node")
             lazy val wrongLength = ExtractError(s"$nS does not have exactly one child (of type $argTp) in $node")
             var omitted = false
             val (keepLabel, nS2) = if (nS.endsWith("_")) (true, nS.substring(0,nS.length-1)) else (false, nS)
