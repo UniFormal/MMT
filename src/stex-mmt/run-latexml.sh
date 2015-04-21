@@ -2,12 +2,12 @@
 
 # require exactly one argument
 if [ "$#" -ne 1 ]
-then 
+then
   echo "usage: `basename $0` <file>[.tex]"
   exit 1
 fi
 
-# take latexmlc and PERL5LIB from (possibly external) LATEXML_BASE 
+# take latexmlc and PERL5LIB from (possibly external) LATEXML_BASE
 : ${LATEXML_BASE:=/var/data/localmh/ext/LaTeXML}
 
 # avoid to compute PERL5LIB from "which latexmlc"
@@ -20,10 +20,10 @@ theory=`basename $inputfile .tex`
 
 # ignore all.*tex files
 if [ "$theory" == "all" -o "${theory:0:4}" == "all." ]
-then 
+then
   echo "ignoring argument: $1"
   exit 0
-fi 
+fi
 
 dir=`dirname $inputfile`
 
@@ -33,7 +33,7 @@ while [ ! "$source" == "source" ]
 do
   restdir=`dirname $restdir`
   source=`basename $restdir`
-done 
+done
 repoDir=`dirname $restdir` # strip off final "source" path segment
 
 repo=`basename $repoDir`
@@ -50,12 +50,12 @@ cat << EOF > $dir/localpaths.tex
 \defpath{MathHub}{$baseDir}
 \mhcurrentrepos{$group/$repo}
 \input{$repoDir/lib/WApersons}
-% we also set the base URI for the LaTeXML transformation 
+% we also set the base URI for the LaTeXML transformation
 \baseURI[\MathHub{}]{https://mathhub.info/$group/$repo}
 EOF
 fi
 
-cd $dir
+cd $restdir  # source directory
 
 exec ${LATEXML_BASE}/bin/latexmlc --quiet --profile smglom \
   --path=/var/data/localmh/sty $dir/${theory}.tex \
