@@ -1,92 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="mmt-api" default="all" basedir=".">
-<!-- export ANT_OPTS=-XX:MaxPermSize=512m
-to avoid: java.lang.OutOfMemoryError: PermGen space
- -->
-    <target name="tiscaf">
-      <ant dir="tiscaf" target="deploy"/>
-    </target>
-    <target name="api">
-      <ant dir="mmt-api/trunk" target="deploy"/>
-    </target>
-    <target name="lfcatalog">
-        <ant dir="lfcatalog/trunk" target="deploy"/>
-    </target>
-    <target name="lf">
-      <ant dir="mmt-lf" target="deploy"/>
-    </target>
-    <target name="tptp">
-        <ant dir="mmt-tptp" target="deploy"/>
-    </target>
-    <target name="jedit">
-      <ant dir="jEdit-mmt" target="deploy"/>
-    </target>
     <target name="jedit-install">
-      <ant dir="jEdit-mmt" target="install"/>
+        <ant dir="jEdit-mmt" target="install"/>
     </target>
-    <target name="owl">
-      <ant dir="mmt-owl" target="deploy"/>
+    <target name="template">
+        <ant target="${target}" dir="tiscaf"/>
+        <ant target="${target}" dir="mmt-api/trunk"/>
+        <ant target="${target}" dir="stex-mmt"/>
+        <ant target="${target}" dir="lfcatalog/trunk"/>
+        <ant target="${target}" dir="mmt-lf"/>
+        <ant target="${target}" dir="mmt-tptp"/>
+        <ant target="${target}" dir="jEdit-mmt"/>
+        <ant target="${target}" dir="mmt-owl"/>
+        <ant target="${target}" dir="mmt-lfs"/>
+        <ant target="${target}" dir="mmt-mizar/trunk"/>
+        <ant target="${target}" dir="mmt-pvs"/>
+        <ant target="${target}" dir="mmt-specware"/>
+        <ant target="${target}" dir="frameit-mmt"/>
     </target>
-    <target name="lfs">
-      <ant dir="mmt-lfs" target="deploy"/>
+    <target name="deploy">
+        <antcall target="template">
+            <param name="target" value="deploy"/>
+        </antcall>
     </target>
-    <target name="mizar">
-      <ant dir="mmt-mizar/trunk" target="deploy"/>
+    <target name="all" depends="deploy"/>
+    <target name="clean">
+        <antcall target="template">
+            <param name="target" value="clean"/>
+        </antcall>
     </target>
-    <target name="pvs">
-      <ant dir="mmt-pvs" target="deploy"/>
-    </target>
-    <target name="specware">
-      <ant dir="mmt-specware" target="deploy"/>
-    </target>
-    <target name="frameit">
-      <ant dir="frameit-mmt" target="deploy"/>
-    </target>
-    <target name="stex">
-      <ant dir="stex-mmt" target="deploy"/>
-    </target>
-   <target name="all" depends="tiscaf,api,lfcatalog,lf,tptp,jedit,owl,lfs,mizar,frameit,pvs,specware,stex"/>
-
-    <target name="clean-tiscaf">
-        <ant dir="tiscaf" target="clean"/>
-    </target>
-    <target name="clean-api">
-      <ant dir="mmt-api/trunk" target="clean"/>
-    </target>
-    <target name="clean-lfcatalog">
-      <ant dir="lfcatalog/trunk" target="clean"/>
-    </target>
-    <target name="clean-lf">
-        <ant dir="mmt-lf" target="clean"/>
-    </target>
-    <target name="clean-tptp">
-        <ant dir="mmt-tptp" target="clean"/>
-    </target>
-    <target name="clean-jedit">
-      <ant dir="jEdit-mmt" target="clean"/>
-    </target>
-    <target name="clean-owl">
-        <ant dir="mmt-owl" target="clean"/>
-    </target>
-    <target name="clean-lfs">
-        <ant dir="mmt-lfs" target="clean"/>
-    </target>
-    <target name="clean-mizar">
-        <ant dir="mmt-mizar/trunk" target="clean"/>
-    </target>
-    <target name="clean-frameit">
-        <ant dir="frameit-mmt" target="clean"/>
-    </target>
-    <target name="clean-pvs">
-      <ant dir="mmt-pvs" target="clean"/>
-    </target>
-    <target name="clean-specware">
-      <ant dir="mmt-specware" target="clean"/>
-    </target>
-    <target name="clean-stex">
-      <ant dir="stex-mmt" target="clean"/>
-    </target>
-    <target name="clean" depends="clean-tiscaf,clean-api,clean-lfcatalog,clean-lf,clean-tptp,clean-jedit,clean-owl,clean-lfs,clean-mizar,clean-frameit,clean-pvs,clean-specware,clean-stex"/>
 
     <path id="classpath">
         <fileset dir="../deploy/lib/">
