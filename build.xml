@@ -77,7 +77,16 @@ to avoid: java.lang.OutOfMemoryError: PermGen space
     <target name="clean-frameit">
         <ant dir="frameit-mmt" target="clean"/>
     </target>
-    <target name="clean" depends="clean-tiscaf,clean-api,clean-lfcatalog,clean-lf,clean-tptp,clean-jedit,clean-owl,clean-lfs,clean-mizar,clean-frameit"/>
+    <target name="clean-pvs">
+      <ant dir="mmt-pvs" target="clean"/>
+    </target>
+    <target name="clean-specware">
+      <ant dir="mmt-specware" target="clean"/>
+    </target>
+    <target name="clean-stex">
+      <ant dir="stex-mmt" target="clean"/>
+    </target>
+    <target name="clean" depends="clean-tiscaf,clean-api,clean-lfcatalog,clean-lf,clean-tptp,clean-jedit,clean-owl,clean-lfs,clean-mizar,clean-frameit,clean-pvs,clean-specware,clean-stex"/>
 
     <path id="classpath">
         <fileset dir="../deploy/lib/">
