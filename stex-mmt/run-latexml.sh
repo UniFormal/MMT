@@ -61,6 +61,6 @@ exec ${LATEXML_BASE}/bin/latexmlc --quiet --profile stex-smglom-module \
   --path=/var/data/localmh/sty $dir/${theory}.tex \
   --destination=$dir/${theory}.omdoc \
   --log=$dir/${theory}.ltxlog \
-  --preamble=$repoDir/lib/pre.tex \
-  --postamble=$repoDir/lib/post.tex \
+  --preamble=$repoDir/lib/pre.de.tex \
+  --postamble=$repoDir/lib/post.de.tex \
   --expire=10
