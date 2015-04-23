@@ -89,6 +89,10 @@ abstract class Importer extends TraversingBuildTarget {imp =>
        val controller = new Controller(report)
        val Current(inFile, narrPath) = curr
        val narrFile = getOutFile(a, narrPath)
+       if (!narrFile.exists) {
+          super.cleanFile(a, curr)
+          return
+       }
        val doc = try {
          controller.read(ParsingStream.fromFile(narrFile, Some(DPath(a.narrationBase / narrPath)), Some(a.namespaceMap)), false)(new ErrorLogger(report))
        } catch {

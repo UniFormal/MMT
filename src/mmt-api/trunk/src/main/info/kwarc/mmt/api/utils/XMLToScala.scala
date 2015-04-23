@@ -73,7 +73,7 @@ class XMLToScala(pkg: String) {
    }
    
    /** read and parse a file */
-   def apply(file: File): Any = apply(xml.readFile(file))
+   def apply(file: File) : Any = apply(xml.readFile(file))
    /** parse a Node */
    def apply(node: Node): Any = {
       val c = try {
@@ -81,7 +81,8 @@ class XMLToScala(pkg: String) {
       } catch {
          case e: java.lang.ClassNotFoundException => throw ExtractError("no class for " + node)
       }
-      apply(node, m.classSymbol(c).toType)
+      val foundType = m.classSymbol(c).toType
+      apply(node, foundType)
    }
    
    private case class Argument(scalaName: Name, userName: String, scalaType: Type)
@@ -111,13 +112,29 @@ class XMLToScala(pkg: String) {
       // evaluate the apply method of the instance
       val applyMethod = m.reflect(module).reflectMethod(applyMethodSymbol)
       // call the apply method on the values computed above
-      val result = applyMethod(values:_*)
-      //println("found: " + result)
+      val result = try {
+         applyMethod(values:_*)
+      } catch {case e: java.lang.IllegalArgumentException =>
+         // the values don't conform to the expected types
+         // this should never happen if apply is implemented correctly
+         val msg = println(s"error creating value of type $tp")
+         val exp = arguments.map(a => a.scalaType.toString)
+         val found = values.map(_.toString)
+         throw ExtractError(s"$msg\nexpected: $exp\nfound$found")
+      }
       result
    }
 
-   /** parse a Node of expected Type tp */
-   private def apply(node: Node, tp: Type): Any = {
+   /** parse a Node of expected Type expType */
+   private def apply(node: Node, expType: Type): Any = {
+      val c = try {
+         Class.forName(pkg + "." + scalaName(node.label))
+      } catch {
+         case e: java.lang.ClassNotFoundException => throw ExtractError("no class for " + node)
+      }
+      val foundType = m.classSymbol(c).toType
+      if (! (foundType <:< expType))
+         throw ExtractError(s"expected $expType\nfound $node")
       // the remaining children of node (removed once processed) 
       var children = cleanNodes(node.child.toList).zipWithIndex
       // the used attributes of node (added once processed)
@@ -182,7 +199,7 @@ class XMLToScala(pkg: String) {
          case Argument(_, nS, argTp) if nS.startsWith("_") =>
             argTp match {
                case ListType(elemType) =>
-                  val vs = children.map {c => apply(c._1)}
+                  val vs = children.map {c => apply(c._1, elemType)}
                   children = Nil
                   vs
                case OptionType(elemType) =>
@@ -190,7 +207,7 @@ class XMLToScala(pkg: String) {
                   else {
                      val (child,_) = children.head
                      children = children.tail
-                     Some(apply(child))
+                     Some(apply(child, elemType))
                   }
                case _ =>
                   if (children == Nil) {
@@ -198,7 +215,7 @@ class XMLToScala(pkg: String) {
                   }
                   val (child, _) = children.head
                   children = children.tail
-                  apply(child)
+                  apply(child,argTp)
             }
          // default case: use getKeyedChild
          case Argument(n, nS, argTp) =>
@@ -217,13 +234,13 @@ class XMLToScala(pkg: String) {
                   if (omitted)
                      Nil
                   else
-                     childNodes.map(apply(_))
+                     childNodes.map(apply(_, elemType))
                // Option[A]
                case OptionType(elemType) =>
                   if (omitted)
                      None
                   else if (childNodes.length == 1)
-                     Some(apply(childNodes.head))
+                     Some(apply(childNodes.head, elemType))
                   else
                      throw wrongLength
                // group A
@@ -236,10 +253,10 @@ class XMLToScala(pkg: String) {
                   else if (childNodes.length != 1)
                      throw wrongLength
                   else
-                     apply(childNodes.head)
+                     apply(childNodes.head, argTp)
             }
       }
-      makeInstance(tp)(getArgumentValue)
+      makeInstance(foundType)(getArgumentValue)
    }
 }
 

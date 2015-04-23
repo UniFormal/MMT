@@ -452,6 +452,20 @@ object OMSemiFormal {
 }
 
 /**
+ * experimental constructor for labels and labelled terms
+ * 
+ * These could be used for the typed/defined fields in a record type/value or the selection function. 
+ */
+case class OML(vd: VarDecl) extends Term {
+    private[objects] def freeVars_ = vd.freeVars
+    def head = None
+    def subobjects = subobjectsNoContext(vd.tp.toList ::: vd.df.toList)
+    def substitute(sub: Substitution)(implicit sa: SubstitutionApplier) = OML(vd ^^ sub)
+    def toCMLQVars(implicit qvars: Context) = <m:label>{vd.toCMLQVars}</m:label>
+    def toNode = vd.toNode.copy(label = "OML")
+}
+
+/**
  * ComplexTerm provides apply/unapply methods to unify OMA and OMBINDC as well as named arguments and complex binders
  * 
  * It does not subsume the OMID case
@@ -510,7 +524,7 @@ object Obj {
          val bind = parseTermRec(binder)
          val cont = Context.parse(context, nsMap)
          if (cont.isEmpty)
-            throw new ParseError("at least one variable required in " + cont.toString)
+            throw new ParseError("at least one variable required in " + Nmd.toString)
          val scopesP = scopes.map(parseTermRec(_))
          OMBINDC(bind, cont, scopesP)
       }
@@ -530,10 +544,15 @@ object Obj {
             val fun = parseTermRec(child.head)
             val args = child.tail.toList.map(parseTermRec(_))
             OMA(fun, args)
-         case <OME>{child @ _*}</OME> =>
-            throw ParseError("OME not supported - use OMA: " + N.toString)
          case <OMBIND>{binder}{context}{scopes @ _*}</OMBIND> =>
             doBinder(binder, context, scopes.toList)
+         case <OMLIT/> =>
+            val tp = Path.parseS(xml.attr(N, "type"), nsMap)
+            val v = xml.attr(N, "value")
+            UnknownOMLIT(v, tp)
+         case <OMI>{i}</OMI> => OMI.parse(i.toString)
+         case <OMSTR>{s @ _*}</OMSTR> => OMSTR.parse(s.toString)
+         case <OMF/> => OMF.parse(xml.attr(N, "dec"))
          case <OMATTR><OMATP>{key}{value}</OMATP>{rest @ _*}</OMATTR> =>
             val k = parseTermRec(key)
             if (! k.isInstanceOf[OMID])
@@ -545,6 +564,8 @@ object Obj {
                rest(0) else <OMATTR>{rest}</OMATTR>
             val t = parseTermRec(n)
             OMATTR(t, k.asInstanceOf[OMID], v)
+         case <OME>{child @ _*}</OME> =>
+            throw ParseError("OME not supported - use OMA: " + N.toString)
          case <OMFOREIGN>{_*}</OMFOREIGN> => OMFOREIGN(N)
          case <OMSF>{nodes @ _*}</OMSF> =>
             val sf = nodes.toList.map {
@@ -553,13 +574,9 @@ object Obj {
                case n => Formal(parseTermRec(n))
             }
             OMSemiFormal(sf)
-         case <OMI>{i}</OMI> => OMI.parse(i.toString)
-         case <OMSTR>{s @ _*}</OMSTR> => OMSTR.parse(s.toString)
-         case <OMF/> => OMF.parse(xml.attr(N, "dec"))
-         case <OMLIT/> =>
-            val tp = Path.parseS(xml.attr(N, "type"), nsMap)
-            val v = xml.attr(N, "value")
-            UnknownOMLIT(v, tp)
+         case l:scala.xml.Elem if l.label == "OML" =>
+            val vd = VarDecl.parse(l.copy(label = "OMV"), nsMap)
+            OML(vd)
          case _ => throw ParseError("not a well-formed term: " + N.toString)
       }
       mdOpt.foreach {md => o.metadata = md}
