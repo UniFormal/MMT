@@ -12,22 +12,16 @@ class CompileActions(mmtplugin: MMTPlugin) {
    private val controller = mmtplugin.controller
    private def log(msg: String) {controller.report("jedit-compile", msg)}
    
-   /** compiles a path (may be a directory) in an archive */
-   def compile(archive: String, path: List[String]) {
-      log("compile" + " " + archive + " " + path.mkString("","/",""))
-      val arch = controller.backend.getArchive(archive).getOrElse(return)
-      // call build method on the respective archive
-      controller.handle(frontend.ArchiveBuild(List(archive), "mmt-omdoc", archives.Build, path, Nil))
-   }
    /** compiles a buffer or directory */
-   def compile(file: String) {
-      controller.backend.getArchives find {a => file.startsWith((a/source).toString)} match {
-         case None =>
-           log("not compiling buffer/directory " + file)
-         case Some(a) =>
-           log("compiling buffer/directory " + file)
-           val path = File(file.substring(a.root.toString.length + 8)).segments
-           compile(a.id, path)
+   def compile(f: String) {
+      val file = File(f)
+      implicit val errorCont = new ErrorListForwarder(errorSource, controller, file)
+      errorCont.reset
+      if (file.isFile) {
+         log("compiling buffer " + file)
+         try {
+            controller.build(file)
+         } catch {case e: Error => errorCont(e)}
       }
    }
    def compileCurrent(view: View) {
@@ -41,7 +35,7 @@ class CompileActions(mmtplugin: MMTPlugin) {
       files foreach {vfsfile =>
          val file = vfsfile.getPath
          // save if the file is open
-         if (vfsfile.getType == io.VFSFile.DIRECTORY) {
+         if (vfsfile.getType != io.VFSFile.DIRECTORY) {
             val buffer = jEdit.getBuffer(file)
             if (buffer != null) {
                buffer.save(view, null)

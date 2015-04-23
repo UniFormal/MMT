@@ -38,9 +38,11 @@
         <fileset file="MMTPlugin.jar"/>
       </copy>
       <copy todir="${deploy}/../jedit-plugin/plugin/jars">
-           <fileset file="${deploy}/MMTPlugin.jar"/>
+          <fileset file="${deploy}/MMTPlugin.jar"/>
       	  <fileset file="${deploy}/mmt-api.jar"/>
       	  <fileset file="${deploy}/mmt-lf.jar"/>
+    	  <fileset file="${deploy}/mmt-specware.jar"/>
+    	  <fileset file="${deploy}/mmt-pvs.jar"/>
       </copy>
    </target>
    
