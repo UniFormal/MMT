@@ -1,7 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="mmt-api" default="all" basedir=".">
+    <target name="tiscaf">
+      <ant dir="tiscaf" target="deploy"/>
+    </target>
+    <target name="api">
+      <ant dir="mmt-api/trunk" target="deploy"/>
+    </target>
+    <target name="lfcatalog">
+        <ant dir="lfcatalog/trunk" target="deploy"/>
+    </target>
+    <target name="lf">
+      <ant dir="mmt-lf" target="deploy"/>
+    </target>
+    <target name="tptp">
+        <ant dir="mmt-tptp" target="deploy"/>
+    </target>
+    <target name="jedit">
+      <ant dir="jEdit-mmt" target="deploy"/>
+    </target>
     <target name="jedit-install">
-        <ant dir="jEdit-mmt" target="install"/>
+      <ant dir="jEdit-mmt" target="install"/>
+    </target>
+    <target name="owl">
+      <ant dir="mmt-owl" target="deploy"/>
+    </target>
+    <target name="lfs">
+      <ant dir="mmt-lfs" target="deploy"/>
+    </target>
+    <target name="mizar">
+      <ant dir="mmt-mizar/trunk" target="deploy"/>
+    </target>
+    <target name="pvs">
+      <ant dir="mmt-pvs" target="deploy"/>
+    </target>
+    <target name="specware">
+      <ant dir="mmt-specware" target="deploy"/>
     </target>
     <target name="template">
         <ant target="${target}" dir="tiscaf"/>
