@@ -27,14 +27,22 @@ fi
 
 dir=`dirname $inputfile`
 
-restdir=$dir
-source=`basename $restdir`
-while [ ! "$source" == "source" ]
+sourceDir=$dir
+source=`basename $sourceDir`
+# nonsense happens without "source"
+while [ ! "$source" == "source" -a ! "$source" == "/" ]
 do
-  restdir=`dirname $restdir`
-  source=`basename $restdir`
+  sourceDir=`dirname $sourceDir`
+  source=`basename $sourceDir`
 done
-repoDir=`dirname $restdir` # strip off final "source" path segment
+
+if [ ! "$source" == "source" ]
+then
+  echo "missing \"source\" path segment in input: $inputfile" 
+  exit 0
+fi
+
+repoDir=`dirname $sourceDir` # strip off final "source" path segment
 
 repo=`basename $repoDir`
 groupDir=`dirname $repoDir`
@@ -55,7 +63,7 @@ cat << EOF > $dir/localpaths.tex
 EOF
 fi
 
-cd $restdir  # source directory
+cd $sourceDir  # source directory
 
 exec ${LATEXML_BASE}/bin/latexmlc --quiet --profile stex-smglom-module \
   --path=/var/data/localmh/sty $dir/${theory}.tex \
