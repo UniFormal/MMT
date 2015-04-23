@@ -28,16 +28,19 @@ class SpecwareImporter extends Importer {
    def inExts = List("sw")
    
    private var swdir: File = null
+   private var debug = false
 
    /** parses the XML file of Specware errors */
    private val ErrorParser = new XMLToScala("info.kwarc.mmt.specware.errors")
 
    /** wraps around the Specware executable to compile one file */
    private class SwCommand(arch: Archive, inFile: File) {
-      val workDir = swdir / "Applications" / "Specware" / "bin" / "windows"
+      val windows = System.getProperty("os.name").startsWith("Windows")
+      val workDir = swdir / "Applications" / "Specware" / "bin" / (if (windows) "windows" else "linux")
+      val binName = if (debug) "specware-local-xmlprint.cmd" else if (windows) "specware-xmlprint.cmd" else "specware-xmlprint"
       val inUId = FileURI(inFile).pathAsString
       val physRoot = FileURI(arch / source)
-      val command = List(workDir / "specware-local-xmlprint.cmd", physRoot, arch.narrationBase).map(_.toString) ::: List(inUId, "nil")
+      val command = List(workDir / binName, physRoot, arch.narrationBase).map(_.toString) ::: List(inUId, "nil")
       def run = ShellCommand.runIn(workDir, command:_*)
       private val baseFile = inFile.up / "omdoc" / inFile.name
       val outFile = baseFile.setExtension("omdoc")
@@ -47,7 +50,12 @@ class SpecwareImporter extends Importer {
 
    /** one argument: the location of the Specware directory */
    override def start(args: List[String]) {
-      val p = getFromFirstArgOrEnvvar(args, "Specware")
+      val rest = if (args.headOption == Some("debug")) {
+         debug = true
+         args.tail
+      } else
+         args
+      val p = getFromFirstArgOrEnvvar(rest, "Specware")
       swdir = File(p)
    }
    
