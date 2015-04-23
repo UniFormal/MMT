@@ -6,6 +6,8 @@ package info.kwarc.mmt.api.utils
 case class URI(scheme: Option[String], authority: Option[String], path: List[String] = Nil, private val abs: Boolean = false, query: Option[String] = None, fragment: Option[String] = None) {
    /** true if the path is absolute; automatically set to true if scheme or authority are present */ 
    def absolute = abs || scheme.isDefined || authority.isDefined
+   /** drop authority, path, query, fragment, append authority */
+   def colon(n : String) : URI = URI(scheme, Some(n))
    /** drop path, query, fragment, append (absolute) path of length 1 */
    def !/(n : String) : URI = this !/ List(n)
    /** drop path, query, fragment, append (absolute) path */
@@ -120,6 +122,8 @@ object URI {
    def empty = URI(None,None)
    /** the URI "file:" */
    val file = scheme("file")
+   /** the URI "http:" */
+   val http = scheme("http")
    /** returns a URI with no scheme or authority and relative path */
    def relative(path: String*) = URI(None, None, path.toList, false)
    implicit def toJava(u : URI) : java.net.URI = u.toJava

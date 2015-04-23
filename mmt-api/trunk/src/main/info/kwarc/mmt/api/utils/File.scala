@@ -30,7 +30,9 @@ case class File(toJava: java.io.File) {
    def up = File(toJava.getParentFile)
    /** file name */
    def name = toJava.getName
-   /** the list of file/directory/volume label names making up this file path */ 
+   /** the list of file/directory/volume label names making up this file path
+    *  absolute Unix paths begin with an empty segment
+    */ 
    def segments: List[String] = {
       val name = toJava.getName
       val par = toJava.getParentFile

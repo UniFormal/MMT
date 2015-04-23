@@ -60,8 +60,10 @@ abstract class BuildTarget extends FormatBasedExtension {
    
    /** auxiliary method for deleting a file */
    protected def delete(f: File) {
-       log("deleting " + f)
-       f.delete
+      if (f.exists) {
+        log("deleting " + f)
+        f.delete
+      }
    }
 }
 
@@ -133,6 +135,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
     * This must be such that all auxiliary files are skipped. 
     */
    def includeFile(name: String) : Boolean
+   /**
+    * true by default; override to skip auxiliary directories
+    * TODO actually check for this
+    */
+   def includeDir(name: String) : Boolean = true
 
    /** the main abstract method that implementations must provide: builds one file
      * @param bf information about input/output file etc
@@ -162,6 +169,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
        //build every file
        val prefix = "[" + inDim + " -> " + outDim + "] "
        a.traverse[BuildTask](inDim, in, includeFile, parallel) ({case Current(inFile,inPath) =>
+           if (!inFile.isFile)
+              throw LocalError("file does not exist: " + inPath)
            val outFile = getOutFile(a, inPath)
            report("archive", prefix + inFile + " -> " + outFile)
            var errorWriter = makeHandler(a, inPath)
@@ -191,7 +200,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
              val bd = new BuildTask(a, inDir, true, inPath, outFile, errorCont) 
              buildDir(bd, builtChildren)
              errorCont.close
-            bd
+             bd
        })
     }
 
@@ -223,7 +232,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       val errorFile = getErrorFile(a, path)
       val inFile = a / inDim / path
       val mod = Modification(inFile, errorFile)
-      val hadErrors = errorFile.toJava.length > 19 // TODO evil but more efficient than parsing the error file
+      val hadErrors = errorFile.exists && errorFile.length > 25 // TODO evil hack but more efficient than reading the error file
       (mod, hadErrors)
    }
    
