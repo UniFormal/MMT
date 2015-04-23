@@ -18,8 +18,6 @@ inputfile="$(readlink -f $1)"
 
 theory="$(basename $inputfile .tex)"
 
-lang="${theory##*.}"
-
 # ignore all.*tex files
 if [ "$theory" == "all" -o "${theory:0:4}" == "all." ]
 then
@@ -65,12 +63,54 @@ cat << EOF > "$dir/localpaths.tex"
 EOF
 fi
 
+lang="${theory##*.}"
+
+if [ "$lang" == "$theory" ] # has no extension
+then
+  lang=""
+else
+  dotlang=".$lang"
+fi
+
+preamble1="$repoDir/lib/pre.tex"
+postamble1="$repoDir/lib/post.tex"
+preamble2="$repoDir/lib/pre$dotlang.tex"
+postamble2="$repoDir/lib/post$dotlang.tex"
+
+if [ -f "$preamble2" ]
+then
+  preamble="$preamble2"
+else
+  preamble="$preamble1"
+  if [ ! "$lang" == "" ]
+  then
+    echo "missing preamble for language: $lang"
+  fi
+fi
+
+if [ -f "$postamble2" ]
+then
+  postamble="$postamble2"
+else
+  postamble="$postamble1"
+  if [ ! "$lang" == "" ]
+  then
+    echo "missing postamble for language: $lang"
+  fi
+fi
+
+if [ ! -f "$preamble" -o ! -f "$postamble" ]
+then
+  echo "missing pre- or postamble files: $preamble, $postamble"
+  exit 0
+fi
+
 cd $sourceDir  # source directory
 
 exec ${LATEXML_BASE}/bin/latexmlc --quiet --profile stex-smglom-module \
   --path=/var/data/localmh/sty "$dir/${theory}.tex" \
   --destination="$dir/${theory}.omdoc" \
   --log="$dir/${theory}.ltxlog" \
-  --preamble="$repoDir/lib/pre.de.tex" \
-  --postamble="$repoDir/lib/post.de.tex" \
+  --preamble="$preamble" \
+  --postamble="$postamble" \
   --expire=10
