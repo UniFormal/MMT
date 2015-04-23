@@ -79,7 +79,10 @@ case class File(toJava: java.io.File) {
 
 /** constructs and pattern-matches absolute file:URIs in terms of absolute File's */
 object FileURI {
-   def apply(f: File) = URI(Some("file"), None, f.segments, f.isAbsolute)
+   def apply(f: File) = {
+     val ss = f.segments
+     URI(Some("file"), None, if (ss.headOption == Some("")) ss.tail else ss, f.isAbsolute)
+   }
    def unapply(u: URI) : Option[File] =
      if ((u.scheme == None || u.scheme == Some("file")) && (u.authority == None || u.authority == Some("")))
        Some(File(new java.io.File(u.copy(scheme = Some("file"), authority = None)))) // empty authority makes some Java versions throw error
