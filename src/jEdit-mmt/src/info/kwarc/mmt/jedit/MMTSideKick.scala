@@ -102,7 +102,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          // add narrative structure of doc to outline tree
          buildTreeDoc(root, doc)
          // register errors with ErrorList plugin
-      } catch {case e: java.lang.Exception =>
+      } catch {case e: Exception =>
          val msg = e.getClass + ": " + e.getMessage
          val pe = ParseError("unknown error: " + msg).setCausedBy(e)
          errorCont(pe)
@@ -116,6 +116,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    }
 
    private def getRegion(e: metadata.HasMetaData) : Option[SourceRegion] = SourceRef.get(e).map(_.region)
+   
    /* build the sidekick outline tree: document node */
    private def buildTreeDoc(node: DefaultMutableTreeNode, doc: Document) {
       val reg = getRegion(doc) getOrElse SourceRegion(SourcePosition(0,0,0),SourcePosition(0,0,0))
@@ -125,7 +126,14 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
         case d: DRef =>
            buildTreeDoc(child, controller.getDocument(d.target))
         case m: MRef =>
-           buildTreeMod(child, controller.localLookup.getModule(m.target), Context(), reg)
+           try {
+              val mod = controller.localLookup.getModule(m.target)
+              buildTreeMod(child, mod, Context(), reg)
+           } catch {case e: Error =>
+              // graceful degradation in case module could not be parsed
+              val child = new DefaultMutableTreeNode(new MMTAsset(m.target.name.toPath + " (unknown)", reg) {def getScope = null})
+              node.add(child)
+           }
       }
    }
    
