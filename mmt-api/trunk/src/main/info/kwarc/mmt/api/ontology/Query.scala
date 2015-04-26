@@ -135,6 +135,10 @@ case class Transitive(q : RelationExp) extends RelationExp {
    def unary_- = Transitive(- q)
    override def toString = "(" + q + ")*"
 }
+/** the symmetric closure of a relation */
+object Symmetric {
+    def apply(q : RelationExp) = Choice(q, -q)
+}
 /** the union of a list of relations */
 case class Choice(qs : RelationExp*) extends RelationExp {
    def unary_- = Choice(qs.map(- _) : _*)
