@@ -65,10 +65,12 @@ case object RefersTo extends Binary("refers to", "is refered to by")
 case object Declares extends Binary("contains declaration of", "is declared in")
 // symbol - symbol, module - module
 case object IsAliasFor extends Binary("is alias for", "has alias") 
+// symbol - symbol
+case object IsAlignedWith extends Binary("is aligned with", "is aligned with") 
 
 /** helper methods for Binary items */
 object Binary {
-   val all = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares)
+   val all = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,IsAlignedWith)
    def parse(s: String) : Binary = all.find(_.toString == s) match {
       case Some(i) => i
       case _ => throw ParseError("binary predicate expected, found: " + s)
