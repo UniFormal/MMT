@@ -107,7 +107,7 @@ var mmt = {
 			mmt.currentURI = str;
 		} else if ($(elem).hasAttribute("href"))
 		{
-			 console.log("I am here with href attribute");
+			console.log("I am here with href attribute");
 			var y = $(elem).attr("onclick");
 			var z = y.split(",");
 			var len = z[1].length;
@@ -279,78 +279,108 @@ var mmt = {
 		dia[0].replaceChild(content, dia[0].firstChild);
 		dia.dialog('open');
 	},
-	
-	createInlineBox : function (origin, title) {
-		var targetParent = $(origin).closest(".inlineBoxSibling");
-		var newDiv = document.createElement('div');
-		 // if no inlineBoxSibling is found as parent then append as 
-		// child first of main div
-		if (targetParent.length === 0) {			
-			var list = $("#main").children();
-			if(list.length === 0) {
-				$(newDiv).insertAfter("#main");
-			}
-			else {
-				$(newDiv).insertBefore(list[0]);
-			}
-		}
-		else {
-			$(targetParent).append(newDiv);
-		}
-		
-		var btnDiv = document.createElement('div');
-		var titleDiv = document.createElement('div');
-		var contentDiv = document.createElement('div');
-		var button_hide = document.createElement('button');
-		var button_close = document.createElement('button');
-		
-		$(newDiv).addClass( "bigDiv");
-		$(newDiv).addClass( "container-fluid");
-		$(btnDiv).addClass( "btnDiv");
-		$(button_hide).addClass( "inlineBtn");
-		$(button_close).addClass( "inlineBtn");
-		$(titleDiv).addClass( "titleDiv");	
-		$(contentDiv).addClass( "contDiv");
-		
-		$(newDiv).append(btnDiv);
-		$(newDiv).append(titleDiv);
-		$(newDiv).append(contentDiv);
-		$(titleDiv).append("<h3 style=\"color: lightgrey\">"+title+"</h3>");
-		$(btnDiv).append(button_close);
-		$(btnDiv).append(button_hide);
-		
-		$(button_hide).text('Show/Hide');
-		$(button_close).text('Close');
-
-		$(button_close).click(function() {
-			var temp = $(button_close).closest(".bigDiv");
-			$(temp).remove();
-		});
-		
-		$(button_hide).click(function() {
-			$(contentDiv).toggle();
-		});
-				
-		// scroll to the new inline box
-		var el = $(contentDiv);
-		var elOffset = el.offset().top;
-		var elHeight = el.height();
-		var windowHeight = $(window).height();
-		var offset;
-		if (elHeight < windowHeight) {
-			offset = elOffset - ((windowHeight / 2) - (elHeight / 2));
-			}else {
-				offset = elOffset;
-			}
-		var speed = 400;
-		$('html, body').animate({scrollTop:offset}, speed);
-		
-		//$(newDiv).draggable();
-		//$(contentDiv).resizable();
-				
-		return contentDiv;
+	/**
+	 * Insert an inline box to a selected (origin).
+	 * If no inlineBoxSibling is found then origin is #main.
+	 * The created box can be dragged and rescaled.
+	 * 
+	 * @param origin the node where the inline box will be appended
+	 * @param title the title of the box
+	 * @param width optional string parameter setting the width of the box
+	 * @returns the content node of the inline box
+	 */
+	createInlineBox: function(origin, title, width) {
+	    var targetParent = $(origin).closest(".inlineBoxSibling");
+	    var outerDiv = document.createElement('div');
+	    var newDiv = document.createElement('div');
+	    $(outerDiv).addClass("container-fluid")
+	    $(outerDiv).append(newDiv)
+	    
+	    if (targetParent.length === 0) {
+	        var list = $("#main").children();
+	        if (list.length === 0) {
+	            $(outerDiv).insertAfter("#main");
+	        }
+	        else {
+	            $(outerDiv).insertBefore(list[0]);
+	        }
+	    }
+	    else {
+	        $(targetParent).append(outerDiv);
+	    }
+	    
+	    if (typeof width == 'string') {
+	        $(newDiv).width(width)
+	    }
+	    
+	    var btnDiv = document.createElement('div');
+	    var titleDiv = document.createElement('div');
+	    var contentDiv = document.createElement('div');
+	    var button_hide = document.createElement('button');
+	    var button_close = document.createElement('button');
+	    $(newDiv).addClass("panel panel-default");
+	    $(newDiv).addClass("bigDiv");
+	    $(titleDiv).addClass("bg-primary")
+	    $(btnDiv).addClass("panel-heading");
+	    $(contentDiv).addClass("contDiv");
+	    $(titleDiv).append(btnDiv);
+	    $(newDiv).append(titleDiv);
+	    $(newDiv).append(contentDiv);
+	    $(btnDiv).append("<b>" + title + "</b");
+	    $(btnDiv).append(button_close);
+	    $(btnDiv).append(button_hide);
+	    $(button_hide).addClass("btn btn-info btn-xs pull-right")
+	    $(button_close).addClass("btn btn-info btn-xs pull-right")
+	    $(button_hide).append(
+	        "<span class=\" minus glyphicon glyphicon-minus-sign\" aria-hidden=\"true\"></span>"
+	    );
+	    $(button_close).append(
+	        "<span class=\"glyphicon glyphicon-remove-sign\" aria-hidden=\"true\"></span>"
+	    )
+	    $(outerDiv).draggable({
+	        handle: newDiv,
+	        cursor: "move"
+	    });
+	    $(newDiv).resizable({
+	        minHeight: 250,
+	        minWidth: 250
+	    })
+	    $(button_close).click(function() {
+	        var temp = $(button_close).closest(".panel")[0];
+	        $(temp).remove();
+	    });
+	    var minus = true
+	    $(button_hide).click(function() {
+	        $(contentDiv).toggle();
+	        if (minus) {
+	            $(".minus").switchClass("glyphicon-minus-sign",
+	                "glyphicon-plus-sign");
+	            minus = false
+	        }
+	        else {
+	            $(".minus").switchClass("glyphicon-plus-sign",
+	                "glyphicon-minus-sign");
+	            minus = true
+	        }
+	    });
+	    // scroll to the new inline box
+	    var el = $(contentDiv);
+	    var elOffset = el.offset().top;
+	    var elHeight = el.height();
+	    var windowHeight = $(window).height();
+	    var offset;
+	    if (elHeight < windowHeight) {
+	        offset = elOffset - ((windowHeight / 2) - (elHeight / 2));
+	    }
+	    else {
+	        offset = elOffset;
+	    }
+	    var speed = 400;
+	    $('html, body').animate({
+	        scrollTop: offset
+	    }, speed);
+	    return contentDiv;
 	},
-	
 	
 	getSelectedParent : function (elem){
 		var s = $(elem).parents().andSelf().filterMClass('math-selected');
