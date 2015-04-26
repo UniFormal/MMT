@@ -32,16 +32,60 @@ var interactiveViewing = {
 			res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
 			res["show graph"] = function() {
 				var svgURI = ":svg?" + mmt.currentURI;
-				var contentNode = mmt.createInlineBox(target, mmt.currentURI);
+				var title =  mmt.currentURI.split('/');
+				var contentNode = mmt.createInlineBox(target, title.slice(-1)[0], '50%');
 				mmt.ajaxAppendBox(svgURI, contentNode);		
-				};
-			res["Alignments"] = function() {
+				};			
+			res["show alignments"] = function() {
 				var  cont =  ":align?" + mmt.currentURI;
-				var alignNode = mmt.createInlineBox(target, "Alignments for bool");
+				var title =  mmt.currentURI.split('/')
+				var alignNode = mmt.createInlineBox(target, "Alignments for symbol " + title.slice(-1)[0]);
 				mmt.ajaxAppendBox(cont, alignNode);		
 				};
-		
-		//res["get OMDoc"] = mmt.openCurrentOMDoc();
+			res["comment"] = function() {
+			    // query to create the comment box
+			    var query = ":comment_box?" + mmt.currentURI;
+			    var title = mmt.currentURI.split('/')
+			    var commNode = mmt.createInlineBox(target, "New comment: " + title.slice(-
+			        1)[0]);
+			    var first = document.createElement('div');
+			    $(first).append("<form id=\"form-id\" method=\"post\">" +
+			        "<input class=\"comm\" id=\"user-id\" type=\"text\" " +
+			        "placeholder=\"Your name\" name=\"user\" required>" +
+			        "<textarea  id=\"comm-id\" name=\"comment\"" +
+			        " placeholeder=\"say something\" class=\"form-control\" rows=\"3\"></textarea>" +
+			        "<input class=\"btn btn-info comm pull-right\" " +
+			        "id=\"btn-id\"type=\"submit\" value=\"Submit\"></form>")
+			    $(commNode).append(first);
+			    mmt.ajaxAppendBox(query, commNode);
+			    $("#btn-id").click(function() {
+			        var data = {
+			            user: $("#user-id").val(),
+			            comment: $("#comm-id").val()
+			        }
+			        var toSend = JSON.stringify(data);
+			        $("#form-id").submit(function() {
+			            var url = ":submit_comment?" + mmt.currentURI
+			            $.ajax({
+			                url: url,
+			                type: 'POST',
+			                data: toSend,
+			                contentType: 'text',
+			                success: function(data) {
+			                    var replace =
+			                        "<div><h3 style=\"color: blue\">" +
+			                        "Thank you for your comment!</h3></div>"
+			                    $(first).replaceWith(
+			                        replace)
+			                }
+			            });
+
+			            return false;
+			        });
+
+			    });
+
+			};		// res["get OMDoc"] = mmt.openCurrentOMDoc();
 		}
 		return res;
 	},
