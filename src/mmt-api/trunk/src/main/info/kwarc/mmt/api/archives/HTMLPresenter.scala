@@ -130,12 +130,12 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    
    def doDeclaration(d: Declaration) {
             val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
-            div("constant toggleTarget inlineBoxSibling ") {
-               div("constant-header") {
+            div(" test constant toggleTarget inlineBoxSibling ") {
+               div(" constant-header") {
                  span {doName(d.path)}
-             
+                 
                  def toggle(label: String) {
-                    button("compToggle  btn-default ", onclick = s"toggleClick(this.parentNode,'$label')") {text(label)}
+                    button("compToggle  btn btn-sm btn-default pull-right", onclick = s"toggleClick(this.parentNode,'$label')") {text(label)}
                  }
                  d.getComponents.foreach {case (comp, tc) => if (tc.isDefined) 
                     toggle(comp.toString)
@@ -193,7 +193,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    }
    
    def doTheory(t: DeclaredTheory) {
-      div("theory") {
+      div("theory container-fluid") {
          div("theory-header", onclick="toggleClick(this)") {doName(t.path)}
          t.getPrimitiveDeclarations foreach doDeclaration
       }
