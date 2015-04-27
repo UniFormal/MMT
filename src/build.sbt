@@ -56,6 +56,13 @@ lazy val mmtTptp = (project in file("mmt-tptp")).
     name := "mmt-tptp"
   )
 
+lazy val mmt = (project in file(".")).
+  dependsOn(mmtTptp, mmtStex).
+  settings(commonSettings: _*).
+  settings(
+    name := "mmt"
+  )
+
 lazy val jedit = (project in file("jEdit-mmt")).
   dependsOn(mmtApi).
   settings(commonSettings: _*).
