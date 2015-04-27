@@ -2,7 +2,9 @@ lazy val commonSettings = Seq(
   organization := "info.kwarc.mmt",
   version := "1.0.1",
   scalaVersion := "2.11.6",
-  scalaSource in Compile := baseDirectory.value / "src"
+  sourcesInBase := false,
+  scalaSource in Compile := baseDirectory.value / "src",
+  resourceDirectory in Compile := baseDirectory.value / "resources" 
 )
 
 lazy val tiscaf = (project in file("tiscaf")).
@@ -19,6 +21,7 @@ lazy val mmtApi = (project in file("mmt-api/trunk")).
     scalaSource in Compile := baseDirectory.value / "src/main",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-compiler" % scalaVersion.value,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
       "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.3",
       "org.scala-lang.modules" %% "scala-xml" % "1.0.3")
   )
