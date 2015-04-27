@@ -41,10 +41,10 @@ var interactiveViewing = {
 				var title =  mmt.currentURI.split('/')
 				var alignNode = mmt.createInlineBox(target, "Alignments for symbol " + title.slice(-1)[0]);
 				mmt.ajaxAppendBox(cont, alignNode);		
-				};
+				};				
 			res["comment"] = function() {
 			    // query to create the comment box
-			    var query = ":comment_box?" + mmt.currentURI;
+			    var query = mmt.currentURI;
 			    var title = mmt.currentURI.split('/')
 			    var commNode = mmt.createInlineBox(target, "New comment: " + title.slice(-
 			        1)[0]);
