@@ -4,7 +4,8 @@ lazy val commonSettings = Seq(
   scalaVersion := "2.11.6",
   sourcesInBase := false,
   scalaSource in Compile := baseDirectory.value / "src",
-  resourceDirectory in Compile := baseDirectory.value / "resources" 
+  resourceDirectory in Compile := baseDirectory.value / "resources",
+  mainClass in (Compile, run) := Some("info.kwarc.mmt.api.frontend.Run") 
 )
 
 lazy val tiscaf = (project in file("tiscaf")).
