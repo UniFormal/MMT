@@ -10,6 +10,8 @@ import info.kwarc.mmt.api.metadata.HasMetaData
 import info.kwarc.mmt.api.metadata.MetaData
 import info.kwarc.mmt.api.metadata.MetaDatum
 import scala.util.parsing.json._
+import scala.io.Source
+import java.io.FileNotFoundException
 
 /**
  * An MMT extensions that handles certain requests in MMT's HTTP server.
@@ -219,10 +221,16 @@ class ActionServer extends ServerExtension("action") {
 class AlignServer extends ServerExtension("align") {
   override def start(args: List[String]) {
     val root = File(System.getProperty("user.dir")).up.up.up.up
-   // println("Root is " + root)
     val f = root + "/archives/meta/inf/config/OAF/alignments/alignments.rel"
     val folder = File(f)
-    read(folder)
+    try {
+    	read(folder)
+    }
+    catch {
+    	case ex: Exception => {
+    		println(ex)
+    	}
+    }
   }
   def apply(path: List[String], query: String, body: Body) = {
 		val path = Path.parse(query, controller.getNamespaceMap)
@@ -266,6 +274,7 @@ class AlignServer extends ServerExtension("align") {
         }
       }
       val response = "<div xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:jobad=\"http://omdoc.org/presentation\">" + node_hol + node_miz + "</div>"
+     println("res is " + response)
       Server.XmlResponse(response)
     }
   }
@@ -283,18 +292,7 @@ class AlignServer extends ServerExtension("align") {
     args.foreach(println)
   }
   def getAlignments(p: Path): List[Path] = {
-    controller.depstore.queryList(p, Symmetric(ToObject(IsAlignedWith)))
-  }
-}
-/**
- * GET request to server to create the comment box
- * should be combined with SubmitCommentServer
- *
- */
-class CommentBoxServer extends ServerExtension("comment_box") {
-  def apply(path: List[String], query: String, body: Body) = {
-    val node = ""
-    Server.XmlResponse(node)
+    controller.depstore.queryList(p, Symmetric(Transitive(ToObject(IsAlignedWith))))
   }
 }
 
@@ -334,7 +332,17 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
     val root = File(System.getProperty("user.dir")).up.up.up.up
     val f = root + archive + user + end + ".xml"
     val folder = File(f)
-    write(folder, resp);
+    try {
+ 			 write(folder, resp);
+			} 
+		catch {
+			case ex: Exception =>{
+				println(ex)
+				}
+		}
+		finally {
+ 			 Server.XmlResponse("<p>not ok</p>")
+ 			}   
     Server.XmlResponse("<p>OK</p>")
   }
   def Writer(f: File) = {
@@ -347,3 +355,5 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
     fw.close
   }
 }
+
+
