@@ -220,7 +220,7 @@ class ActionServer extends ServerExtension("action") {
  */
 class AlignServer extends ServerExtension("align") {
   override def start(args: List[String]) {
-    controller.backend.getArchive("meta/inf").foreach {a =>
+    val root = controller.backend.getArchive("meta/inf").foreach {a =>
        val f = a.root / "config" / "OAF" / "alignments" / "alignments.rel"
        val folder = File(f)
        try {
