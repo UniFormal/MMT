@@ -1,6 +1,7 @@
 package info.kwarc.mmt.pvs.syntax
 
-import info.kwarc.mmt.api.utils.Group
+import info.kwarc.mmt.api.utils.{XMLToScala,Group}
+import XMLToScala.checkString
 
 /* Conventions needed for the XML parser
  *  * class names and field names correspond to the tag and attribute names in the XML syntax
@@ -24,18 +25,21 @@ case class theory(named: NamedDecl, theory_formals: List[FormalParameter],
 
 case class exporting(place: String, exporting_kind: String,
            exporting_names: List[name], exporting_but_names: List[name], exporting_theory_names: List[theory_name]) {
-   assert(List("nil", "all", "closure", "default") contains exporting_kind)
+   checkString(exporting_kind, "nil", "all", "closure", "default")
 }
 
 // ********** datatypes
-
 /**
- * Recursive types can occur at the top level, or as a declaration.
- * The latter are inline-datatypes, and are the same except that formals are not allowed.
+ * an ADT-like datatype declared at toplevel, see also [[InlineDatatypeBody]]
+ *
+ * for historical reasons, imports can occur separately in addition to within formals although that is redundant  
  */
-// ??? List[importing] outside formals?
-case class datatype(named: NamedDecl, formals: List[FormalParameter], _constructors: List[constructor]) extends Module
-// case class codatatype extends Module missing in rnc
+case class TopDatatypeBody(named: NamedDecl, formals: List[FormalParameter], importings: List[importing],
+                            _constructors: List[constructor]) extends Group
+/** a top-level datatype with least fixed point semantics */
+case class datatype(_body: TopDatatypeBody) extends Module
+/** a top-level datatype with greatest fixed point semantics */
+case class codatatype(_body: TopDatatypeBody) extends Module
 
 /** constructor of an inductive data type
  *  @param ordnum constructors are numbered consecutively for convenience
@@ -72,7 +76,7 @@ case class formal_theory_decl(named: ChainedDecl, _name: theory_name) extends Fo
  *  This is the same as [[Decl]] except for also allowing assumptions (= axioms).
  */
 sealed trait AssumingDecl
-/** a: F for a formula F */
+/** a: F for a formula F (semantically, an axiom in the list of formal parameters, becomes tcc when instantiating the theory) */
 case class assumption(named: ChainedDecl, assertion: Assertion) extends AssumingDecl
 
 /** a declaration in the body of theory */ 
@@ -80,39 +84,43 @@ sealed trait Decl extends AssumingDecl
 
 // ********** basic declarations
 
-/** a TYPE [= A] (??? formal parameter in rnc) */
-//??? chained?
-case class type_decl(named: NamedDecl, ne: NonEmptiness, df: Option[DeclaredType]) extends Decl
-/** a TYPE FROM A (a is subtype of A) ??? unnamed in rnc? */
-case class type_from_decl(named: ChainedDecl, ne: NonEmptiness, _type: Type) extends Decl
-/** a TYPE = A ??? relation to type-decl? */
-case class type_def_decl(named: NamedDecl, ne: NonEmptiness, df: DeclaredType, _def: Type) extends Decl
+/** a TYPE (may be asserted to be non-empty */
+case class type_decl(named: ChainedDecl, nonempty_p: Boolean) extends Decl
+/** a TYPE FROM A (a is subtype of A) */
+case class type_from_decl(named: ChainedDecl, nonempty_p: Boolean, _type: DeclaredType) extends Decl
+/** a(arg_formals) TYPE = A (defined types may be dependent) */
+case class type_def_decl(named: NamedDecl, ne: NonEmptiness, arg_formals: List[bindings], df: DeclaredType) extends Decl
 /**
  * c(G) : A [= t]
  */
 case class const_decl(named: ChainedDecl, arg_formals: List[bindings], tp: DeclaredType, _def: Option[Expr]) extends Decl with Group
-/** defined constant that is always defined ??? def missing in rnc */
+/** defined constant that is always expanded */
 case class macro_decl(decl: const_decl) extends Decl
 
 /* can all have formals */
 /** named import (parameters, instantiations, and renamings are part of the name); rnc to be revisited */
 case class theory_decl(named: ChainedDecl, domain: theory_name) extends Decl
 /** c(G) : A [= t] where c is a recursive function */
-case class def_decl(named: ChainedDecl, tp: DeclaredType, _def: Expr,
+case class def_decl(named: ChainedDecl, arg_formals: List[bindings], tp: DeclaredType, _def: Expr,
                     _measure: Expr, _order: Option[Expr]) extends Decl
 
 // ********** complex declarations
 
 /** inductive definition */
-case class ind_decl(unnamed: NamedDecl, tp: DeclaredType, _body: Expr) extends Decl
+case class ind_decl(named: NamedDecl, tp: DeclaredType, _body: Expr) extends Decl
 /** coinductive definition */
-case class coind_decl(unnamed: NamedDecl, tp: DeclaredType, _body: Expr) extends Decl
-/** like adt but with decl_formals instead of theory_formals */
-case class inline_datatype(unnamed: NamedDecl, tp: DeclaredType) extends Decl
+case class coind_decl(named: NamedDecl, tp: DeclaredType, _body: Expr) extends Decl
+
+/** an ADT-like datatype declared inside a theory, see also [[TopDatatypeBody]] */
+case class InlineDatatypeBody(named: NamedDecl, arg_formals: List[bindings], _constructors: List[constructor]) extends Group
+/** an inline ADT with least fixed point semantics */
+case class inline_datatype(body: InlineDatatypeBody) extends Decl
+/** an inline ADT with greatest fixed point semantics */
+case class inline_codatatype(body: InlineDatatypeBody) extends Decl
 
 // ********** assertions
 
-/** a: F for a formula F ??? different to assumption? */
+/** a: F for a formula F */
 case class axiom_decl(named: ChainedDecl, assertion: Assertion) extends Decl
 /** a: F for a formula F (has proof, which is not exported) */
 case class formula_decl(named: ChainedDecl, assertion: Assertion) extends Decl
@@ -122,20 +130,17 @@ case class tcc_decl(named: ChainedDecl, assertion: Assertion) extends Decl
 // ********** judgements
 
 /** named theorem-flavor statement in the meta-logic */
-// ??? Type or DeclaredType
 trait Judgement extends Decl
 /** p: |- A <: B */
-case class subtype_judgement(named: OptNamedDecl, _sub: Type, _sup: Type) extends Judgement
+case class subtype_judgement(named: OptNamedDecl, _sub: DeclaredType, _sup: DeclaredType) extends Judgement
 /** p: |- t: A (some limitations on t) */
-// ??? missing in rnc
-case class expr_judgement(named: OptNamedDecl, _expr: Expr, _type: Type) extends Judgement
+case class expr_judgement(named: OptNamedDecl, _expr: Expr, tp: DeclaredType) extends Judgement
 /** p: |- name: A (special case of expr_judgement) */
-case class name_judgement(named: OptNamedDecl, _name: name_expr, _type: Type) extends Judgement
+case class name_judgement(named: OptNamedDecl, _name: name_expr, tp: DeclaredType) extends Judgement
 /** p: |- number: A (special case of expr_judgement) */
-case class number_judgement(named: OptNamedDecl, _number: number_expr, _type: Type) extends Judgement
-/** p: |- name(bindings) : A */
-// ??? _type occurs first in rnc
-case class application_judgement(named: OptNamedDecl, _name: name_expr, bindings: List[binding], _type: Type) extends Judgement
+case class number_judgement(named: OptNamedDecl, _number: number_expr, tp: DeclaredType) extends Judgement
+/** p: |- name(arg_formals) : A */
+case class application_judgement(named: OptNamedDecl, _name: name_expr, arg_formals: List[bindings], tp: DeclaredType) extends Judgement
 // ??? recursive judgment missing in rnc
 
 // ********** non-denoting declarations
@@ -144,16 +149,18 @@ case class application_judgement(named: OptNamedDecl, _name: name_expr, bindings
 case class var_decl(id: String, unnamed: UnnamedDecl, tp: DeclaredType) extends Decl
 
 /** conversion f (makes f an implicit conversion */
-case class conversion_decl(unnamed: UnnamedDecl, _expr: Expr) extends Decl
+case class conversion_decl(unnamed: UnnamedDecl, kind: String, _expr: Expr) extends Decl {
+   checkString(kind, "add", "remove")
+}
 
 /** name of a formula that is loaded as a conditional rewrite rule */
 case class auto_rewrite(unnamed: UnnamedDecl, kind: String, rewrite_name: List[rewrite_name]) extends Decl {
-   assert(List("plus", "minus") contains kind)
+   checkString(kind, "plus", "minus")
 }
 
 /** reference to a formula that is to be used in rewriting */
 case class rewrite_name(place: String, kind: String, _name: name, _res: resolution, _spec: rewrite_name_spec) {
-   assert(List("lazy", "eager", "macro") contains kind)
+   checkString(kind, "lazy", "eager", "macro")
 }
 /** user-provided information for disambiguation in a rewrite_name */
 case class rewrite_name_spec() // element rewrite-name-spec {type-expr | formula_name}
@@ -163,3 +170,28 @@ case class lib_decl(id: String, unnamed: UnnamedDecl, library: String) extends D
 
 /** include T, can occur in formal parameters without semantic change in case parameters already need included declarations */
 case class importing(unnamed: UnnamedDecl, name: theory_name) extends Decl with FormalParameter
+
+// ****************************************
+// ********** commonly used groups of attributes/children
+
+/** common parts of a named declaration in a theory */
+case class NamedDecl(id: String, place: String, formals: List[FormalParameter]) extends Group
+/**
+ * formal parameters only allowed if optional id is given
+ */
+case class OptNamedDecl(id: Option[String], place: String, formals: List[FormalParameter], semi_colon_p: Boolean) extends Group
+/** like NamedDecl but may be chained */
+case class ChainedDecl(named: NamedDecl, chain_p: Boolean, semi_colon_p: Boolean) extends Group
+/** common parts of an unnamed declaration in a theory */
+case class UnnamedDecl(place: String, chain_p: Boolean, semi_colon_p: Boolean) extends Group
+
+/** */
+case class DeclaredType(_declared: Type, _internal: Type) extends Group
+/**
+ * formula can have free variables
+ */
+case class Assertion(kind: String, _formula: Expr) extends Group {
+   assert(List("assumption", "axiom", "challenge", "claim", "conjecture", "corollary", "fact", "formula", "law",
+               "lemma", "obligation", "postulate", "proposition", "sublemma", "theorem") contains kind)
+}
+case class NonEmptiness(nonempty_p: Boolean, contains: Option[Expr]) extends Group

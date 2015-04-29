@@ -1,9 +1,12 @@
 package info.kwarc.mmt.pvs.syntax
 
-import info.kwarc.mmt.api.utils.Group
+import info.kwarc.mmt.api._
+import utils._
 
 /** PVS objects are theories, types, and expressions */
-sealed trait Object
+sealed trait Object {
+   def place: String
+}
 
 // ****************************************
 // ********** types
@@ -13,22 +16,21 @@ sealed trait Type extends Object with domain
 /** a */
 case class type_name(place: String, name: name, _res: Option[resolution]) extends Type
 /** a(args) */
-case class type_application(place: String, _type: type_name, _arguments: List[typearg]) extends Type
+case class type_application(place: String, _type: type_name, _arguments: List[Expr]) extends Type
 /** A -> B or (x:A) -> B */
 case class function_type(place: String, _from: domain, _to: Type) extends Type
-/** predicate subtype -- A|F */
-case class subtype(place: String, _of: Type, _by: Expr) extends Type
+/** predicate subtype -- {x:A|F} */
+case class setsubtype(place: String, bindings: List[binding], _by: Expr) extends Type
+/** (p): type, for a predicate p: _type = a => bool; _ */
+case class expr_as_type(place: String, _expr: Expr, _type: Option[Type]) extends Type
 /** flexary, possibly dependent product -- e.g., A1 * (x2:A2) * ... * An */
 case class tuple_type(place: String, _domains: List[domain]) extends Type
 /** A1 + ... + An */
 case class cotuple_type(place: String, _arguments: List[Type]) extends Type
 /** {f1:A1, ..., fn: An} */
 case class record_type(place: String, _fields: List[field_decl]) extends Type
-// ??? formals in record field?
+// field in a record type
 case class field_decl(named: NamedDecl, _type: Type)
-
-/** (p): type, for a predicate p: _type = a => bool; _ */
-case class expr_as_type(place: String, _expr: Expr, _type: Option[Type]) extends Type
 
 /**
  * A domain is a type, possibly binding a variable
@@ -39,13 +41,10 @@ case class expr_as_type(place: String, _expr: Expr, _type: Option[Type]) extends
  */
 sealed trait domain
 
-/** ??? */
-sealed trait typearg
-
 // ****************************************
 // ********** expressions (typed)
 
-sealed trait Expr extends Object with assignment_arg with typearg
+sealed trait Expr extends Object with assignment_arg
 /** reference to a declared name
  *  @param name the user-provided reference
  *  @param _type the type disambiguating overloading (can be computed from resolution)
@@ -53,15 +52,15 @@ sealed trait Expr extends Object with assignment_arg with typearg
  */
 case class name_expr(place: String, name: name, _type: Type, _res: resolution) extends Expr
 /** */
-case class varname_expr(place: String, name: name, _type: Type) extends Expr
+case class varname_expr(place: String, id: String, _type: Type) extends Expr
 /** number literal */
 case class number_expr(place: String, _num: Int) extends Expr
 /** string literal */
 case class string_expr(place: String, _str: String) extends Expr
 /** function application */
-case class application(_fun: Expr, _arg: Expr, infix: Boolean) extends Expr
+case class application(place: String, _fun: Expr, _arg: Expr, infix: Boolean) extends Expr
 /** tuple */
-case class tuple_expr(_arguments: List[Expr]) extends Expr
+case class tuple_expr(place: String, _arguments: List[Expr]) extends Expr
 /** list */
 case class list_expr(place: String, _arguments: List[Expr]) extends Expr
 /** record */
@@ -71,7 +70,7 @@ case class proj_expr(place: String, _index: Int) extends Expr
 /** n-th projection applied to an argument */
 case class proj_appl_expr(place: String, _expr: Expr, index: Int) extends Expr
 /** named projection from a record */
-case class field_appl_expr(place: String, _expr: Expr, id: String) extends Expr
+case class field_appl_expr(place: String, id: String, _expr: Expr) extends Expr
 /** (a :: A), coerce a to A, which must be compatible with the type of a */
 case class coercion_expr(place: String, _of: Expr, _to: Type) extends Expr
 
@@ -82,15 +81,15 @@ case class forall_expr(place: String, bindings: List[binding], _body: Expr) exte
 /** existential quantifier */
 case class exists_expr(place: String, bindings: List[binding], _body: Expr) extends Expr
 /** lambda abstraction */
-case class lambda_expr(place: String, binding_list: List[bindings], _body: Expr) extends Expr
+case class lambda_expr(place: String, bindings: List[binding], _body: Expr) extends Expr
 /** equal to lambda, convenience for using predicates as (expression-level) sets */
 case class set_expr(place: String, bindings: List[binding], _body: Expr) extends Expr
 /** let expression  */
 case class let_expr(place: String, let_bindings: List[let_binding], _body: Expr) extends Expr
 /** list of variable bindings */
-case class bindings(bindings: List[binding])
+case class bindings(_bindings: List[binding])
 /* a single variable binding */
-case class binding(id: String, named: ChainedDecl, _type: Type) extends domain with typearg
+case class binding(id: String, named: ChainedDecl, _type: Type) extends domain
 /* a single variable binding with definiens */
 case class let_binding(named: ChainedDecl, _type: Type, _expr: Expr) // not quite
 
@@ -124,8 +123,11 @@ case class update_expr(place: String, assignments: List[assignment]) extends Exp
 /** table expressions, similar to 2-dimensional arrays */
 case class table_expr(place: String) extends Expr // other fields omitted
 
-/** internal reference to a declared name, corresponds to MMT URI */
-case class resolution(_theory: theory_name, _decl: declref)
+/** internal resolution of an overloaded declaration (including formal parameters) of a theory
+ *  @param theory_name the theory in which the name is declared
+ *  @param index the position in the list of overloaded declarations in that theory, starting from 0
+ */
+case class resolution(_theory: theory_name, index: Int)
 /** attempt to represent pointers a xlinks; changed to integer-index in list of overloaded id in that theory */
 case class declref(href: String)
 
@@ -145,7 +147,7 @@ sealed trait TheoryExpr extends Object
  * @param _actuals instantiations for the formal parameters (positional, full)
  * @param mappings instantiations/renaming for
  */
-case class theory_name(id: String, library_id: String, mappings: List[mapping], target: Option[theory_name], actuals: List[Object]) extends TheoryExpr
+case class theory_name(place: String, id: String, library_id: String, mappings: List[mapping], target: Option[theory_name], actuals: List[Object]) extends TheoryExpr
 
 /**
  * user-provided reference to a symbol
@@ -165,30 +167,3 @@ sealed trait mapping
 case class mapping_subst(mapping_rhs: name, mapping_lhs: Object) extends mapping
 /** c ~> c' */
 case class mapping_rename(mapping_rhs: name, mapping_lhs: Object) extends mapping
-// ??? mapping_def obsolete in rnc
-
-
-// ****************************************
-// ********** commonly used groups of attributes/children
-
-/** common parts of a named declaration in a theory */
-case class NamedDecl(id: String, place: String, formals: List[FormalParameter]) extends Group
-/**
- * formal parameters only allowed if optional id is given
- */
-case class OptNamedDecl(id: Option[String], place: String, formals: List[FormalParameter]) extends Group
-/** like NamedDecl but may be chained */
-case class ChainedDecl(named: NamedDecl, chain_p: Boolean) extends Group
-/** common parts of an unnamed declaration in a theory */
-case class UnnamedDecl(place: String, chain_p: Boolean) extends Group
-
-/** */
-case class DeclaredType(_declared: Type, _internal: Type) extends Group
-/**
- * formula can have free variables
- */
-case class Assertion(kind: String, _formula: Expr) extends Group {
-   assert(List("assumption", "axiom", "challenge", "claim", "conjecture", "corollary", "fact", "formula", "law",
-               "lemma", "obligation", "postulate", "proposition", "sublemma", "theorem") contains kind)
-}
-case class NonEmptiness(nonempty_p: Boolean, contains: Option[Expr]) extends Group
