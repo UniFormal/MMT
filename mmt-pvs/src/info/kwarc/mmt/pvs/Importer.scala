@@ -13,12 +13,12 @@ class PVSImporter extends Importer {
    def inExts = List("xml")
    override def inDim = RedirectableDimension("pvsxml")
    
-   private val parseXML = syntax.parser
+   private val parseXML = syntax.makeParser
    
    private var i = 0
-   private val ignore = 2
-   private val ignoreMsg = List("no class for +")
-   private var startAt = "ctl"
+   private val ignore = 0
+   private val ignoreMsg = Nil //List("no class for +")
+   private var startAt = "finite_sets"
    def importDocument(bf: BuildTask, index: Document => Unit) {
       if (bf.inFile.name < startAt) return
       val e = try {
@@ -26,15 +26,15 @@ class PVSImporter extends Importer {
       } catch {
          case utils.ExtractError(msg) =>
             //ParseError("error in xml: " + msg)
-            if (ignoreMsg.exists(msg.startsWith))
+/*            if (ignoreMsg.exists(msg.startsWith))
                return
             i += 1
-            if (i > ignore) {
+            if (i > ignore) { */
                println(msg)
                sys.exit
                //throw utils.ExtractError(msg)
-            } else
-               return
+//            } else
+  //             return
       }
       println(e)
       val conv = new PVSImportTask(bf, index)
@@ -44,20 +44,5 @@ class PVSImporter extends Importer {
          case m: syntax.Module =>
             conv.doModule(m)
       }
-   }
-}
-
-class PVSImportTask(bf: BuildTask, index: Document => Unit) {
-   
-   def doDocument(d: pvs_file) {
-      val modsM = d._modules map doModule
-      val path = bf.narrationDPath
-      val mrefsM = modsM.map(m => MRef(path, m.path))
-      val doc = new Document(path, mrefsM)
-      index(doc)
-   }
-   
-   def doModule(m: syntax.Module): modules.Module = m match {
-      case t: theory => null
    }
 }

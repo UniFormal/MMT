@@ -17,5 +17,5 @@ package object syntax {
     * 
     * The parser does not have to be changed if the classes in this package are changed.
     */
-   def parser = new info.kwarc.mmt.api.utils.XMLToScala("info.kwarc.mmt.pvs.syntax")
+   def makeParser = new info.kwarc.mmt.api.utils.XMLToScala("info.kwarc.mmt.pvs.syntax")
 }
