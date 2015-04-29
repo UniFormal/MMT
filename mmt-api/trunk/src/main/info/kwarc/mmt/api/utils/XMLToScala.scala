@@ -114,19 +114,26 @@ class XMLToScala(pkg: String) {
       // call the apply method on the values computed above
       val result = try {
          applyMethod(values:_*)
-      } catch {case e: java.lang.IllegalArgumentException =>
-         // the values don't conform to the expected types
-         // this should never happen if apply is implemented correctly
-         val msg = println(s"error creating value of type $tp")
-         val exp = arguments.map(a => a.scalaType.toString)
-         val found = values.map(_.toString)
-         throw ExtractError(s"$msg\nexpected: $exp\nfound$found")
+      } catch {
+         case e: java.lang.IllegalArgumentException =>
+            // the values don't conform to the expected types
+            // this should never happen if apply is implemented correctly
+            val msg = println(s"error creating value of type $tp")
+            val exp = arguments.map(a => a.scalaType.toString)
+            val found = values.map(_.toString)
+            throw ExtractError(s"$msg\nexpected: $exp\nfound$found")
+         case e: java.lang.reflect.InvocationTargetException =>
+            // reflection succeeded, but errors during object initialization
+            throw e.getCause
       }
       result
    }
 
    /** parse a Node of expected Type expType */
    private def apply(node: Node, expType: Type): Any = {
+      if (node.isInstanceOf[Text])
+         // treat text nodes as Strings
+         return node.text
       val c = try {
          Class.forName(pkg + "." + scalaName(node.label))
       } catch {
@@ -256,7 +263,17 @@ class XMLToScala(pkg: String) {
                      apply(childNodes.head, argTp)
             }
       }
-      makeInstance(foundType)(getArgumentValue)
+      val res = makeInstance(foundType)(getArgumentValue)
+      if (!children.isEmpty)
+         throw ExtractError(s"children left after constructing $res: " + children.map{case (c,i) => s"$i:$c"}.mkString(","))
+      res
+   }
+}
+
+object XMLToScala {
+   def checkString(value: String, allowed: String*) {
+     if (! (allowed contains value))
+         throw ExtractError(s"illegal string value: $value; expected: ${allowed.mkString(",")}")
    }
 }
 
