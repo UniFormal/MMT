@@ -183,12 +183,7 @@ tr.tags, tr.metadata {
 
 
 div.constant {
-/* border-top: 0 ;
-border-left: 0 ;
-border-right:0 ;
-border-bottom:0 ;    
-clear: both;
-padding-bottom: 15px; */
+    
 }
 
 
@@ -242,7 +237,7 @@ div.ui-state-disabled.ui-draggable-disabled {opacity: 1;}
 
 .contDiv {
 	height: 100%;
-	overflow:auto;
+	overflow: scroll;
 	margin-top: 10px;
 	clear: both;
 	padding-bottom: 15px;
@@ -257,7 +252,6 @@ div.ui-state-disabled.ui-draggable-disabled {opacity: 1;}
 .btnDiv {
 	width: 100%;
 }
-
 
 .mybox {
 	height: 30px;
@@ -274,4 +268,16 @@ span.name {
 	margin-top:3%;
 	margin-bottom: 2%
 	
+}
+
+.panelVerticalScroll {
+    overflow-y: scroll;
+    overflow-x: hidden;
+    max-height: 400px;
+}
+
+.panelHorizontalScroll {
+    overflow-x: scroll;
+    overflow-y: hidden;
+    max-width: 400px;
 }
