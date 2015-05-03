@@ -1,3 +1,6 @@
+
+<!-- Adding new pages to the existing menus and adding new menus are explained in the separate text file "Adding a new page.txt"-->
+
 <html ng-app="helpApp">
 
 <head>
@@ -25,6 +28,9 @@
         <div class="collapse navbar-collapse" style="margin-right: 1%">
             <ul class="nav navbar-nav navbar-right">
                 <div role="tabpanel">
+
+                    <!-- The dropdown menus containing all pages in package.json -->
+
                     <ul class="nav nav-pills" role="tablist">
                         <li role="presentation" class="dropdown">
                             <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
@@ -66,7 +72,11 @@
 </nav>
 
 <div style="margin-top: 4%; margin-bottom: 4%; margin-left: 2%; margin-right: 2%">
+
+    <!-- For viewing the selected page -->
+
     <b><div ng-view>Loading...</div></b>
+
 </div>
 
 <footer>

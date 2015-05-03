@@ -1,8 +1,9 @@
 'use strict';
 
+// initializing AngularJS
 var helpApp = angular.module('helpApp', ['ngRoute']);
 
-
+// configuration of angular-routing syntax
 helpApp.config(['$routeProvider', '$locationProvider', '$provide', function ($routeProvider, $locationProvider, $provide) {
 
     $routeProvider.
@@ -16,9 +17,11 @@ helpApp.config(['$routeProvider', '$locationProvider', '$provide', function ($ro
     }]);
 
 
+// main angular-controller for any page
 helpApp.controller('viewController',['$scope', '$route', '$routeParams', '$location', '$log', '$window', '$http', '$filter',
     function($scope, $route, $routeParams, $location, $log, $window, $http, $filter) {
 
+        // for loading links inside different pages
         $(document).ready(function() {
             $('a[href*="html"]').click(function(e) {
                 e.preventDefault();
@@ -31,6 +34,9 @@ helpApp.controller('viewController',['$scope', '$route', '$routeParams', '$locat
         });
 }]);
 
+
+// main angular-controller for loading the dropdown menus containing all pages from 'package.json'
+// adding new pages and new menus is explained in the separate text file "Adding a new page.txt"
 helpApp.controller('pagesController',['$scope', '$log', '$http', '$filter', function($scope, $log, $http, $filter) {
 
         $scope.mainPages = '';

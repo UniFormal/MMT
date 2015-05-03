@@ -1,5 +1,8 @@
+For adding a new page to an existing menu:
+
+(*)
 - Edit "package.json".
-- In "package.json", choose the desired 'group of pages' object to add the page to, and add the following:
+- In "package.json", choose the desired 'group of pages' object, that corresponds to the desired menu, to add the page to, and add the following:
 
         {"pageUrl": "X", "pageId": "Y", "name": "Z"}
         
@@ -7,3 +10,46 @@
         -   Y should be any unique ID for the page, preferably use the actual URL X as an ID. 
             NOTE: In case of a long path, Y should not have any slashes '/', remove them or put '-' instead.
         -   Z is the name of the page shown in the dropdown menu. 
+
+
+===================================================================================
+===================================================================================
+
+For adding a new dropdown menu:
+
+(1)
+- Edit "package.json".
+- In "package.json", inside the main "{...}", add the following:
+
+    "X": [{Y},{Z},..]
+
+    - X is the name of the menu that will be used in the javascript to load the menu
+    - Y, Z, ..., are the pages included in this menu (syntax for adding pages is already explained above)
+
+(2)
+- Edit "script.js".
+- In "script.js", inside "pagesController", add:
+
+    $scope.X = '';
+
+    - X is the name of the menu added to "package.json"
+
+- In "function handleSuccess(data)", add:
+
+    $scope.X = data.X;
+
+    - X is the name of the menu added to "package.json"
+
+(3)
+- Edit "index.html".
+- In "index.html", inside the "<ul class="nav nav-pills" role="tablist">...</ul>" tag, add:
+
+    <li role="presentation" class="dropdown">
+        <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"> ABC <span class="caret"></span></a>
+        <ul class="dropdown-menu" role="menu">
+            <li ng-repeat="page in X" role="presentation"><a href="#/{{page.pageUrl}}" data-target="#{{page.pageId}}" aria-controls="api" role="tab" data-toggle="tab">{{page.name}}</a></li>
+        </ul>
+    </li>
+
+    - X is the name of the menu added to "package.json"
+    - ABC is the name of the dropdown menu shown in the browser
