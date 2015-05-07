@@ -86,9 +86,9 @@ class STeXImporter extends Importer {
       src.close 
       translateDocument(node)(bt.narrationDPath, bt.errorCont)
       val doc = controller.getDocument(bt.narrationDPath)
-      if (sTeX.getLanguage(doc.path).isDefined) { //don't index signatures, will call manually after bindings are added
-        cont(doc)
-      }
+      //if (sTeX.getLanguage(doc.path).isDefined) { //don't index signatures, will call manually after bindings are added
+      cont(doc)
+      //}
     } catch {
       case e : Exception => 
         val err = STeXParseError.from(e, Some("Skipping article due to exception"), None, Some(Level.Fatal))
@@ -645,36 +645,25 @@ class STeXImporter extends Importer {
   }
   
   
-  def parseRelDPath(s : String, base : DPath) : DPath = {
+   def parseRelDPath(s : String, base : DPath) : DPath = {
     val baseGroup = base.uri.path(0)
     val baseArchive = base.uri.path(1)
     //makes path absolute
-    def removeRel(frags : List[String], n : Int) : List[String] = frags match {
-      case Nil if n == 0 => Nil
-      case Nil => throw new STeXParseError("Invalid DPath, too many ../" + s, None, None)
-      case ".." :: tl => removeRel(tl, n + 1)
-      case hd :: tl if n == 0 => hd :: removeRel(tl, n)
-      case hd :: tl => removeRel(tl, n - 1)
+    def removeRel(frags : List[String], acc : List[String]) : List[String] = frags match {
+      case Nil => acc.reverse
+      case ".." :: tl if acc.isEmpty =>  removeRel(tl, acc)
+      case ".." :: tl => removeRel(tl, acc.tail)
+      case hd :: tl => removeRel(tl, hd :: acc)
     }
-    
-    //getting group and archive information
-    def getNParent(fragsRev : List[String], n : Int) : Option[String] = fragsRev match {
-      case Nil => None
-      case hd :: tl if n == 0 => Some(hd)
-      case ".." :: tl => getNParent(tl,n+1)
-      case _  :: tl=> getNParent(tl, n-1)
-    }
-    val plainFrags = removeRel(s.split("/").toList, 0)
+    val plainFrags = removeRel(s.split("/").toList, Nil)
     val srcidx = plainFrags.indexOf("source")
-    val preSrcFragsRev = plainFrags.take(srcidx).reverse
-    val defArchive = getNParent(preSrcFragsRev, 0).getOrElse(baseArchive)
-    val defGroup = getNParent(preSrcFragsRev, 1).getOrElse(baseGroup)
-    
-    val (group, archive, fragPath) = plainFrags match {
-      case "source" :: tl => (defGroup,defArchive,tl)
-      case a :: "source" :: tl => (defGroup, a, tl)
-      case g :: a :: "source" :: tl => (g, a, tl)
-      case _ => throw new STeXParseError("Invalid DPath, cannot produce group/project/'source'/path canonical form " + s, None, None)
+    val fragPath = plainFrags.drop(srcidx + 1)
+
+    val (group, archive) = srcidx match {
+      case -1 => throw new STeXParseError("Invalid DPath, cannot produce group/project/'source'/path canonical form -- no 'source' " + s, None, None)
+      case 0 => (baseGroup, baseArchive)
+      case 1 => (baseGroup, plainFrags(0))
+      case _ => (plainFrags(srcidx - 2), plainFrags(srcidx - 1))
     }
     
     fragPath match {
@@ -683,7 +672,6 @@ class STeXImporter extends Importer {
         val base = mhBase / group / archive 
         fragPath.init.foldLeft(base)((dc, x) => dc / x) / (fragPath.last + ".omdoc")
     }
-    
   }
 
 /*  
