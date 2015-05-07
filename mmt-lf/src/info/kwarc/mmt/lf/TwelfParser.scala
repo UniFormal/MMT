@@ -1034,8 +1034,13 @@ class TwelfParser extends Parser(new NotationBasedParser) {
      return endsAt + 1
    }
 
-
-
+   private def resolveAssignmentName(home: Term, name: LocalName) = {
+      libraries.Names.resolve(home, name)(controller.globalLookup) match {
+          case Some(ce: Constant) => Some(ComplexStep(ce.parent) / ce.name)
+          case Some(_) => None
+          case None => None
+      }
+   }
 
   /** Reads a constant assignment.
     * @param start the position of the first character in the constant identifier
@@ -1049,10 +1054,10 @@ class TwelfParser extends Parser(new NotationBasedParser) {
 
     // read constant name
     val (cstName, positionAfter) = crawlIdentifier(i)
-    val constantName = cstName.replaceAll("\\Q.\\E", "/")    // TODO replace . with / in names?
+    val constantName = LocalName.parse(cstName.replaceAll("\\.", "/"))
     i = positionAfter
-    
-    val apath = parent.toTerm % cstName
+    val cstNameRes = resolveAssignmentName(parent.from, constantName).getOrElse(constantName)
+    val apath = parent.toTerm % cstNameRes
 
     i = expectNext(i, ":=")
     i += ":=".length
@@ -1089,10 +1094,10 @@ class TwelfParser extends Parser(new NotationBasedParser) {
 
     // read structure name
     val (strName, positionAfter) = crawlIdentifier(i)
-    val structureName = strName.replaceAll("\\Q.\\E", "/")   // TODO replace . with / in names?
+    val structureName = LocalName.parse(strName.replaceAll("\\.", "/"))
     i = positionAfter
-
-    val apath = parent.toTerm % strName
+    val strNameRes = resolveAssignmentName(parent.from, structureName).getOrElse(structureName)
+    val apath = parent.toTerm % strNameRes
 
     i = expectNext(i, ":=")
     i += ":=".length

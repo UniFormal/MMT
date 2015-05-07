@@ -33,9 +33,13 @@ abstract class View(doc : DPath, name : LocalName)
 }
 
  /**
-  * A DeclaredView represents an MMT view given by a list of assignments.<p>
+  * A DeclaredView represents an MMT view given by a list of assignments.
   * 
-  * @param doc the {@link info.kwarc.mmt.api.names.Path} of the parent document
+  * Assignments are [[Constant]]s, whose name is the qualified name (always starts with [[ComplexStep]])
+  * of a domain Constant
+  * and whose definiens is codomain [[Term]].
+  * 
+  * @param doc the namespace/parent document
   * @param name the name of the view
   * @param from the domain theory
   * @param to the codomain theory
