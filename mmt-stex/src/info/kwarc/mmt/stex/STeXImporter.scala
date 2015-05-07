@@ -459,7 +459,8 @@ class STeXImporter extends Importer {
         <om:OMS base={sym.module.toMPath.parent.toPath} module={sym.module.toMPath.name.last.toPath} name={sym.name.last.toPath}/>
       case "#PCDATA" => new scala.xml.Text(node.toString)
       case "OME" => 
-        new scala.xml.Elem(node.prefix, "OMA", node.attributes, node.scope, false, node.child :_ *)
+        val nchild = node.child.map(rewriteNode)
+        new scala.xml.Elem(node.prefix, "OMA", node.attributes, node.scope, false, nchild :_ *)
       case "OMATTR" if node.child(1).label == "OMV" => //Complex Variable1
         val n = node.child(0).child(1) //TODO
         val nn = <om:OMFOREIGN>{scala.xml.Utility.trim(n).child.map(cleanNamespaces)}</om:OMFOREIGN>
