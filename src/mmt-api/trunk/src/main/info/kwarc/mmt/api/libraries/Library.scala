@@ -237,16 +237,17 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
    private def getInLink(l: Link, name: LocalName, error: String => Nothing) : ContentElement = l match {
       case l: DefinedLink =>
          get(l.df % name, error)
-      case l: DeclaredLink => l.getMostSpecific(name) match {
-         case Some((a, LocalName(Nil))) => a  // perfect match
-         case Some((a, ln)) => a match {
-            case a: Constant => error("local name " + ln + " left after resolving to constant assignment")
-            case a: DefinedLink => get(a.df % ln, error)
+      case l: DeclaredLink =>
+         l.getMostSpecific(name.simplify) match {
+            case Some((a, LocalName(Nil))) => a  // perfect match
+            case Some((a, ln)) => a match {
+               case a: Constant => error("local name " + ln + " left after resolving to constant assignment")
+               case a: DefinedLink => get(a.df % ln, error)
+            }
+            case None =>
+               // TODO multiple ComplexSteps resulting from inclusions in a row must be normalized away somewhere
+               throw PartialLink() 
          }
-         case None =>
-            // TODO multiple ComplexSteps resulting from inclusions in a row must be normalized away somewhere
-            throw PartialLink() 
-      }
    }
 
    /**

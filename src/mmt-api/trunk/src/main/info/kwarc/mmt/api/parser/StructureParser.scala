@@ -264,6 +264,18 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
   }
 
+  private def resolveName(home: Term, name: LocalName)(implicit state: ParserState) = {
+     libraries.Names.resolve(home, name)(controller.globalLookup) match {
+          case Some(ce: Constant) =>
+             ComplexStep(ce.parent) / ce.name
+          case Some(_) =>
+             errorCont(makeError(currentSourceRegion, "not a constant name: " + name))
+             name
+          case None =>
+             errorCont(makeError(currentSourceRegion, "unknown name: " + name))
+             name
+     }
+  }
   /** auxiliary function to read Theories
     * @param parent the containing document/module
     * @param context the context (excluding the theory to be read)
@@ -382,8 +394,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     * @param context the context (excluding the strucutre to be read)
     * @param isImplicit whether the structure is implicit
     */
-  private def readStructure(parent: MPath, context: Context, isImplicit: Boolean)(implicit state: ParserState) {
-    val name = readName
+  private def readStructure(parent: MPath, link: Option[DeclaredLink], context: Context, isImplicit: Boolean)(implicit state: ParserState) {
+    val givenName = readName
+    val name = link.map{l => resolveName(l.from, givenName)}.getOrElse(givenName)
     val spath = parent ? name
     readDelimiter(":")
     val tpC = new TermContainer
@@ -414,12 +427,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     end(s)
   }
 
-  /** reads the components of a [[info.kwarc.mmt.api.symbols.Constant]]
+  /** reads the components of a [[Constant]]
     * @param name the name of the constant
-    * @param parent the containing [[info.kwarc.mmt.api.modules.DeclaredModule]]
+    * @param parent the containing [[DeclaredModule]]
     * @param scope the home theory for term components
     */
-  private def readConstant(name: LocalName, parent: MPath, context: Context)(implicit state: ParserState): Constant = {
+  private def readConstant(givenName: LocalName, parent: MPath, link: Option[DeclaredLink], context: Context)(implicit state: ParserState): Constant = {
+    val name = link.map{l => resolveName(l.from, givenName)}.getOrElse(givenName)
     val cpath = parent ? name
     //initialize all components as omitted
     val tpC = new TermContainer
@@ -636,6 +650,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   private def readInModule(mod: StructuralElement with Body, mpath: MPath, context: Context, patterns: List[(String, GlobalName)])(implicit state: ParserState) {
     //This would make the last RS marker of a module optional, but it's problematic with nested modules.
     //if (state.reader.endOfModule) return
+    val linkOpt = mod match {
+       case l: DeclaredLink => Some(l)
+       case _ => None
+    }
     try {
       val (keyword, reg) = state.reader.readToken
       if (keyword == "kind")
@@ -652,7 +670,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         //Constant
         case "constant" =>
           val name = readName
-          val c = readConstant(name, mpath, context)
+          val c = readConstant(name, mpath, linkOpt, context)
           seCont(c)
         //PlainInclude
         case "include" =>
@@ -666,12 +684,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
               val (fromRef, from) = readMPath(link.path)
               readDelimiter("=")
               val (inclRef, incl) = readMPath(link.path) //readParsedObject(view.to)
-            val as = PlainViewInclude(link.toTerm, from, incl)
+              val as = PlainViewInclude(link.toTerm, from, incl)
               SourceRef.update(as.from, fromRef)
               SourceRef.update(as.df, inclRef)
               seCont(as)
           }
-        case "structure" => readStructure(mpath, context, false)
+        case "structure" => readStructure(mpath, linkOpt, context, false)
         case "theory" => readTheory(mod.path, context)
         case ViewKey(_) => readView(mod.path, context, false)
         //Pattern
@@ -707,7 +725,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           val (keyword2, reg2) = state.reader.readToken
           keyword2 match {
             case ViewKey(_) => readView(mpath, context, true)
-            case "structure" => readStructure(mpath, context, true)
+            case "structure" => readStructure(mpath, linkOpt, context, true)
             case _ => throw makeError(reg2, "only links can be implicit here")
           }
         case k =>
@@ -729,7 +747,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             } else {
               // 3) a constant with name k
               val name = LocalName.parse(k)
-              val c = readConstant(name, mpath, context)
+              val c = readConstant(name, mpath, linkOpt, context)
               seCont(c)
             }
           }

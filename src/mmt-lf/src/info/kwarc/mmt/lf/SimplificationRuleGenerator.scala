@@ -31,7 +31,7 @@ case class OuterInnerNames(outer: GlobalName, inner: GlobalName,
 }
 
 class SimplificationRuleGenerator extends ChangeListener {
-  override val logPrefix = "rule-gen"
+  override val logPrefix = "simp-rule-gen"
   /** the Tag used to spot constants with name N from which to simplification rules with name N/SimplifyTag */ 
   protected val SimplifyTag = "Simplify"
   protected val SolutionTag = "Solve"

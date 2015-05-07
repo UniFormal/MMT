@@ -125,10 +125,14 @@ abstract class Lookup {
       def traverse(t: Term)(implicit con: Context, morph: Term) = t match {
          case OMM(arg, via) => traverse(arg)(con, OMCOMP(via, morph))
          case OMS(theo ?? ln) =>
-           val aOpt = getConstant(morph % (LocalName(theo) / ln)).df
+           val aOpt = getAs(classOf[Constant], morph % (LocalName(theo) / ln)).df
            aOpt match {
-              case None => t
-              case Some(df) => traverse(df)
+              case Some(df) => df
+              case None =>
+                 getAs(classOf[Constant], theo ? ln).df match {
+                    case Some(df) => traverse(df)
+                    case None => t
+                 }
            }
          case t => Traverser(this,t)
       }
