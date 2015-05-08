@@ -70,11 +70,15 @@ object Extractor {
                      f(IsInstanceOf(i.path, i.pattern))
                   case fd : FlexiformalDeclaration => 
                     fd match {
-                      case  p : PlainNarration => //nothing to do
-                      case  d : Definition => 
+                      case  p : PlainNarration =>
+                        f(IsPlainNarration(e.path))
+                      case  d : Definition =>
+                        f(IsDefinition(e.path))
                         d.targets foreach {target => 
                           f(isDefinedBy(target, d.path))
-                        }                    
+                        }
+                      case e : Exercise => 
+                        f(IsExercise(e.path))
                     }
                }
             }}

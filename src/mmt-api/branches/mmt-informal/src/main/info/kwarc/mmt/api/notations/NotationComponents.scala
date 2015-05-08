@@ -331,8 +331,8 @@ object PresentationMarker {
             case Delim("√") =>
               val (arg, rest) = splitOffOne(others)
               if(isRootProcessed){
-	              left = rest
-	              sofar ::= RootMarker(introducePresentationMarkers(List(arg)))
+                left = rest
+                sofar ::= RootMarker(introducePresentationMarkers(List(arg)))
               }
               else{
                 left = rest

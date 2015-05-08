@@ -65,6 +65,16 @@ object FlexiformalDeclaration {
       val d = new Definition(OMMOD(mpath), name, targets.toList, None, content)
       metadata.map(d.metadata = _)
       d
+    case "exercise" => 
+      val metadataXML = n.child.find(_.label == "metadata")
+      val probXML = n.child.find(_.label == "problem").flatMap(_.child.find(_.label != "#PCDATA")).get
+      val solXMLO = n.child.find(_.label == "solution").flatMap(_.child.find(_.label != "#PCDATA"))
+      val metadata = metadataXML.map(MetaData.parse(_, NamespaceMap(base)))
+      val prob = parseObject(probXML)(base)
+      val solO = solXMLO.map(s => parseObject(s)(base))
+      val ex = new Exercise(OMMOD(mpath), name, prob, solO)
+      metadata.map(ex.metadata = _)
+      ex
   }
   
   def cleanNamespaces(node : scala.xml.Node) : Node = node match {
@@ -148,6 +158,25 @@ class Definition(home : Term, name : LocalName, val targets : List[GlobalName], 
       {df.toNode} 
     </flexiformal>  
   def getComponents = tp.map(x => List(TypeComponent -> x)).getOrElse(Nil) ::: (DefComponent -> df) :: Nil 
+}
+
+class Exercise(home : Term, name : LocalName, prob : FlexiformalObject, solution : Option[FlexiformalObject])
+  extends FlexiformalDeclaration(home, name, solution, prob) {
+  def toNode = {
+    val solNode : scala.xml.NodeSeq = solution.toList map {s =>
+          <solution>
+            {s.toNode}
+          </solution>
+        }
+    <flexiformal role="exercise" name={name.toPath}>
+      {getMetaDataNode}
+      <problem> 
+        {prob.toNode}
+      </problem>
+        {solNode}
+    </flexiformal> 
+  }
+  def getComponents = tp.map(x => List(TypeComponent -> x)).getOrElse(Nil) ::: (DefComponent -> df) :: Nil
 }
 
 class Example(home : Term, name : LocalName, val targets : List[GlobalName], tp : Option[FlexiformalObject], df : FlexiformalObject) 

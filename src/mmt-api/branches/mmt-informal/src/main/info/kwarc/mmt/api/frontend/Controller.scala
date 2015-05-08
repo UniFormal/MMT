@@ -64,7 +64,7 @@ class Controller extends ROController with Logger {
    /** elaborator and universal machine for simplification */
    val simplifier: Simplifier = new StepBasedElaborator(new UOM)
 
-   /** the MMT parser (XML syntax) */
+   /** the MMT parser (XML syntax) */ 
    val xmlReader = new XMLReader(report)
    val xmlStreamer = new XMLStreamer(this)
    /** Twelf-specific parser */

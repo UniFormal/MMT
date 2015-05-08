@@ -23,11 +23,15 @@ case object IsInstance extends Unary("instance")
 case object IsConAss extends Unary("conass")
 case object IsStrAss extends Unary("strass")
 case object IsNotation extends Unary("notation")
+case object IsPlainNarration extends Unary("plainnarration")
+case object IsDefinition extends Unary("definition")
+case object IsExercise extends Unary("exercise")
+
 
 /** helper object for unary items */ 
 object Unary {
    private val all = List(IsDocument,IsTheory,IsView,IsStyle,IsConstant,IsStructure,IsConAss,
-                          IsStrAss,IsNotation,IsPattern,IsInstance)
+                          IsStrAss,IsNotation,IsPattern,IsInstance, IsPlainNarration, IsDefinition, IsExercise)
    def parse(s: String) : Unary = s match {
       case s if s.startsWith("constant:") => IsConstant //TODO remove
       case s => all.find(_.toString == s).getOrElse {
