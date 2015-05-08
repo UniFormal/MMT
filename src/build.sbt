@@ -1,3 +1,7 @@
+import com.github.retronym.SbtOneJar
+
+publish := {}
+
 def commonSettings(nameStr: String) = Seq(
   organization := "info.kwarc.mmt",
   version := "1.0.1",
@@ -6,13 +10,19 @@ def commonSettings(nameStr: String) = Seq(
   sourcesInBase := false,
   scalaSource in Compile := baseDirectory.value / "src",
   resourceDirectory in Compile := baseDirectory.value / "resources",
-  mainClass in (Compile, run) := Some("info.kwarc.mmt.api.frontend.Run")
+  unmanagedJars in Compile := Seq.empty,
+  isSnapshot := true,
+  publishTo := Some(Resolver.file("file", new File("../deploy/main"))),
+  mainClass in (Compile, run) := Some("info.kwarc.mmt.api.frontend.Run"),
+  exportJars := true,
+  connectInput in run := true,
+  fork := true
 )
 
 lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*)
 
-lazy val mmtApi = (project in file("mmt-api/trunk")).
+lazy val api = (project in file("mmt-api/trunk")).
   dependsOn(tiscaf).
   settings(commonSettings("mmt-api"): _*).
   settings(
@@ -26,27 +36,72 @@ lazy val mmtApi = (project in file("mmt-api/trunk")).
 
 lazy val lfcatalog = (project in file("lfcatalog/trunk")).
   dependsOn(tiscaf).
-  settings(commonSettings("lfcatalog"): _*).
+  settings(commonSettings("lfcatalog") ++ SbtOneJar.oneJarSettings: _*).
   settings(
     libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.3"
   )
 
-lazy val mmtLf = (project in file("mmt-lf")).
-  dependsOn(mmtApi, lfcatalog).
+lazy val lf = (project in file("mmt-lf")).
+  dependsOn(api, lfcatalog).
   settings(commonSettings("mmt-lf"): _*)
 
-lazy val mmtStex = (project in file("stex-mmt")).
-  dependsOn(mmtApi).
+lazy val stex = (project in file("stex-mmt")).
+  dependsOn(api).
   settings(commonSettings("mmt-stex"): _*)
 
-lazy val mmtTptp = (project in file("mmt-tptp")).
-  dependsOn(mmtApi, mmtLf).
-  settings(commonSettings("mmt-tptp"): _*)
+lazy val tptp = (project in file("mmt-tptp")).
+  dependsOn(api, lf).
+  settings(commonSettings("mmt-tptp"): _*).
+  settings(
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "tptp-parser.jar",
+    libraryDependencies += "antlr" % "antlr" % "2.7.7"
+  )
 
-lazy val mmt = (project in file(".")).
-  dependsOn(mmtTptp, mmtStex).
-  settings(commonSettings("mmt"): _*)
+// just a wrapper project
+lazy val mmt = (project in file("mmt-exts")).
+  dependsOn(tptp, stex).
+  settings(commonSettings("mmt-exts"): _*).
+  settings(
+    exportJars := false,
+    publish := {}
+  )
 
 lazy val jedit = (project in file("jEdit-mmt")).
-  dependsOn(mmtApi).
-  settings(commonSettings("jEdit-mmt"): _*)
+  dependsOn(api).
+  settings(commonSettings("jEdit-mmt"): _*).
+  settings(
+    // artifactName := { (_, _, _) => "MMTPlugin.jar" },
+    unmanagedJars in Compile ++= Seq(
+      "Console.jar",
+      "ErrorList.jar",
+      "Hyperlinks.jar",
+      "jedit.jar",
+      "SideKick.jar") map (baseDirectory.value / "lib" /)
+  )
+
+lazy val owl = (project in file("mmt-owl")).
+  dependsOn(api, lf).
+  settings(commonSettings("mmt-owl"): _*).
+  settings(
+    libraryDependencies += "net.sourceforge.owlapi" % "owlapi-apibinding" % "3.5.2"
+  )
+
+lazy val lfs = (project in file("mmt-lfs")).
+  dependsOn(api, lf).
+  settings(commonSettings("mmt-lfs"): _*)
+
+lazy val mizar = (project in file("mmt-mizar")).
+  dependsOn(api, lf, lfs).
+  settings(commonSettings("mmt-mizar"): _*)
+
+lazy val frameit = (project in file("frameit-mmt")).
+  dependsOn(api, lfcatalog).
+  settings(commonSettings("frameit-mmt"): _*)
+
+lazy val pvs = (project in file("mmt-pvs")).
+  dependsOn(api).
+  settings(commonSettings("mmt-pvs"): _*)
+
+lazy val specware = (project in file("mmt-specware")).
+  dependsOn(api).
+  settings(commonSettings("mmt-specware"): _*)
