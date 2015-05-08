@@ -238,7 +238,20 @@ class STeXImporter extends Importer {
               val dfn = new Definition(OMMOD(mpath), name, targets.toList, None, no)
               sref.map(ref => SourceRef.update(dfn, ref))
               add(dfn)
-            }
+          }
+        case "exercise" => 
+          val name = getName(n, thy)
+          parseNarrativeObject(n)(dpath, thy, thy.path ? name, errorCont) match {
+            case None => //nothing to do  
+            case Some(no) =>
+              val prob = no
+              val sol = n.child.find(_.label == "solution").flatMap(c => parseNarrativeObject(c)(dpath, thy, thy.path ? name, errorCont))
+              
+              val ex = new Exercise(OMMOD(mpath), name, prob, sol)
+              sref.map(ref => SourceRef.update(ex, ref))
+              add(ex)
+          }
+          
         case "omtext" => 
           val name = getName(n, thy)
           parseNarrativeObject(n)(dpath, thy, mpath ? name, errorCont) match {
@@ -289,6 +302,10 @@ class STeXImporter extends Importer {
       case e : Exception => 
         val sref = parseSourceRef(n, doc.path)
         val err = STeXParseError.from(e, Some("Skipping declaration element " + n.label + " due to error"), sref, None)
+        errorCont(err)
+      case e : Throwable => 
+        val sref = parseSourceRef(n, doc.path)
+        val err = new STeXParseError("Skipping declaration element " + n.label + " due to throwable: " + e.getMessage, sref, Some(Level.Error))
         errorCont(err)
     }
   }
