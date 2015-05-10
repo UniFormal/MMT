@@ -235,6 +235,23 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
          //span("keyword"){text("definition" )}
          doNarrativeObject(fd.df)
        }
+     case d : Example => 
+       div(cls = "flexiformal example", 
+           attributes = List(("jobad:example" -> d.targets.head.toPath))) {
+         //span("keyword"){text("definition" )}
+         doNarrativeObject(fd.df)
+       }
+     case ex : Exercise => 
+       div(cls = "flexiformal exercise") {
+         //span("keyword"){text("definition" )}
+         doNarrativeObject(ex.prob)
+         ex.solution.map { sol => 
+           rh("<p>Solution : </p>")
+           div(cls = "flexiformal solution", id = ex.path.toPath) {
+             doNarrativeObject(sol)
+           }
+         }
+       }
      case x => 
        throw ImplementationError("Presentation for " + x.getClass() + " not implemented yet")
    }
