@@ -25,13 +25,13 @@ case object IsStrAss extends Unary("strass")
 case object IsNotation extends Unary("notation")
 case object IsPlainNarration extends Unary("plainnarration")
 case object IsDefinition extends Unary("definition")
+case object IsExample extends Unary("example")
 case object IsExercise extends Unary("exercise")
-
 
 /** helper object for unary items */ 
 object Unary {
    private val all = List(IsDocument,IsTheory,IsView,IsStyle,IsConstant,IsStructure,IsConAss,
-                          IsStrAss,IsNotation,IsPattern,IsInstance, IsPlainNarration, IsDefinition, IsExercise)
+                          IsStrAss,IsNotation,IsPattern,IsInstance, IsPlainNarration, IsDefinition, IsExample, IsExercise)
    def parse(s: String) : Unary = s match {
       case s if s.startsWith("constant:") => IsConstant //TODO remove
       case s => all.find(_.toString == s).getOrElse {
@@ -74,13 +74,14 @@ case object Declares extends Binary("contains declaration of", "is declared in")
 case object IsAliasFor extends Binary("is alias for", "has alias") 
 
 case object isDefinedBy extends Binary("is defined by", "defines")
+case object isExemplifiedBy extends Binary("is exemplified by", "exemplifies")
 case object isDenotedBy extends Binary("is denoted by", "is notation for")
 
 
 /** helper methods for Binary items */
 object Binary {
    val all = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,
-       HasMeta,HasDomain,HasCodomain,Declares, isDefinedBy, isDenotedBy)
+       HasMeta,HasDomain,HasCodomain,Declares, isDefinedBy, isExemplifiedBy, isDenotedBy)
    def parse(s: String) : Binary = all.find(_.toString == s) match {
       case Some(i) => i
       case _ => throw ParseError("binary predicate expected, found: " + s)

@@ -77,6 +77,11 @@ object Extractor {
                         d.targets foreach {target => 
                           f(isDefinedBy(target, d.path))
                         }
+                      case e : Example => 
+                        f(IsExample(e.path))
+                        e.targets foreach {target => 
+                          f(isExemplifiedBy(target, d.path))
+                        }
                       case e : Exercise => 
                         f(IsExercise(e.path))
                     }
