@@ -202,7 +202,7 @@ class STeXImporter extends Importer {
   /** 
    *  translate third level, in-module elements (typically declarations)
    */
-  private def translateDeclaration(n : Node)(implicit doc : Document, thy : DeclaredTheory, errorCont : ErrorHandler) = {
+  private def translateDeclaration(n : Node)(implicit doc : Document, thy : DeclaredTheory, errorCont : ErrorHandler) : Unit = {
     implicit val dpath = doc.path
     implicit val mpath = thy.path
     val sref = parseSourceRef(n, doc.path)
@@ -238,6 +238,20 @@ class STeXImporter extends Importer {
               val dfn = new Definition(OMMOD(mpath), name, targets.toList, None, no)
               sref.map(ref => SourceRef.update(dfn, ref))
               add(dfn)
+          }
+        case "example" => //omdoc example -> immt flexiformal declaration
+          val name = getName(n, thy)
+          val targetsS = (n \ "@for").text.split(" ")
+          val targets = targetsS map {s => 
+            val id = s.substring(1)
+            thy.path ? id //assuming all examples are local
+          }
+          parseNarrativeObject(n)(dpath, thy, targets.head, errorCont) match {
+            case None => //nothing to do  
+            case Some(no) =>
+              val ex = new Example(OMMOD(mpath), name, targets.toList, None, no)
+              sref.map(ref => SourceRef.update(ex, ref))
+              add(ex)
           }
         case "exercise" => 
           val name = getName(n, thy)
@@ -292,6 +306,12 @@ class STeXImporter extends Importer {
           }
         case "metadata" => //TODO
         case "#PCDATA" => //ignore
+        case "ul" =>  //possibly/usually structural list
+          val nextLevel = n.child.filter(_.label == "li").flatMap(li => li.child)
+          println(nextLevel)
+          nextLevel.map(c => translateDeclaration(c))
+        case "omgroup" => //ignoring structure here
+          n.child.map(c => translateDeclaration(c))
         case _  =>
           log("Parsing " + n.label + " as plain narration")
           val name = getName(n, thy)
