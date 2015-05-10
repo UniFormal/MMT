@@ -21,10 +21,12 @@ import info.kwarc.mmt.api.web._
 import scala.util.parsing.json._
 import scala.util._
 import scala.annotation.tailrec
+import scala.io._
+import scala.io.Source
+import java.util.Calendar
 
 
-
-class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logger {
+class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logger with utils.sqlite {
   
   def error(msg : String) : HLet = {
     log("ERROR: " + msg)
@@ -34,6 +36,7 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
   def apply(uriComps: List[String], query: String, body : Body): HLet = {
     try {
       uriComps match {
+        case "getTutorial" :: _ => getTutorial
         case "gethtml" :: _ => getHtmlResponse
         case _ => error("Invalid request: " + uriComps.mkString("/"))
       }
@@ -45,15 +48,42 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
         error("Exception occured : " + e.getStackTrace())
     }
   }
+
+
   
-  private def getImmediateChildren(path: Path) : List[Path] = {
-    controller.depstore.queryList(path, ToObject(Includes))
-  }
+  /*private def repeatEx(topic: Path, user: UserKarmaTemp, example : Example) : List[Example] = {
+    val globalRating = example.getRating(topic) / 20
+    val userRating = user.personalRating(example.getPath, topic)
+    //val repeatPenalty = Calendar.getInstance().getTime() - example.lastUsed
+    val overall = globalRating + userRating
+    
+    List.fill(overall.toInt)(example)
+  }*/
   
-  private def getAllChildren(name: String) : List[Path] = {
-    val path = Path.parseM(name, mmt.mmtbase)
-    controller.depstore.queryList(path, Transitive(ToObject(Includes)))
-  }
+  /*private def uniqueEx(allEx: List[ExampleRating], size: Int) : List[ExampleRating] = {
+    @tailrec
+    def helper(aE: List[ExampleRating], sz: Int, res: List[ExampleRating]) : List[ExampleRating] = {
+      aE match{
+        case Nil => res
+        case head::tail => if(res.contains(head)) {
+          helper(tail, sz, res)
+        }
+        else {
+          if(sz == 0)
+            res
+          else
+            helper(tail, sz - 1, head::res)
+        }
+      }
+    }
+    helper(allEx, size, Nil)
+  }*/
+  
+  /*private def chooseExamples(topic: Path, user: UserKarmaTemp, examples : List[ExampleRating]) : List[ExampleRating] = {
+    val allEx = Random.shuffle(examples.flatMap(x => repeatEx(topic, user, x)))
+    
+    uniqueEx(allEx, 4)
+  }*/
   
   private def check(list1: List[Path], list2: List[Path]) : Path = {
     list1 match{
@@ -69,53 +99,88 @@ class GuidedToursServerPlugin extends ServerExtension("guided-tours") with Logge
         }
     }
   }
-  private def sort(topics: List[Path]) : List[Path] = {
-    
-    @tailrec
-    def sortWithResult(list1: List[Path], acc:List[Path]) : List[Path] = {
-      list1 match{
-        case Nil => acc
-        case head :: tail => 
-          val children = getImmediateChildren(head)
-          val res = check(children, tail)
-          if(res == null)
-          {
-            sortWithResult(tail, acc :+ head )
-          }
-          else
-          {
-            val arr = res :: head :: tail
-            sortWithResult(arr.distinct, acc)
-          }
-        case _ => acc
+  
+    private def getTutorial : HLet = new HLet {
+      def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
+        val topicName = tk.req.param("topic").getOrElse(throw ServerError("No topic name found")).toString
+        val uid = tk.req.param("uid")getOrElse(throw ServerError("No user id found")).toString
+        val length = tk.req.param("length").getOrElse("20").toString
+        val path = Path.parseM(topicName, NamespaceMap.empty)
+        
+        val tutorial = new Tutorial(controller, path, uid.toInt)
+        Server.TextResponse(tutorial.getContent(length.toInt)).aact(tk) 
+      }
+      catch {
+        case e : Error => error(e.getMessage + "\n" + e.extraMessage).aact(tk)
+        case e : Exception => error(e.getMessage).aact(tk)
       }
     }
-    sortWithResult(topics, Nil)
-  }
   
    private def getHtmlResponse : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-      val reqBody = new Body(tk)
-      //val params = reqBody.asJSON.obj
       val topicName = tk.req.param("topic").getOrElse(throw ServerError("No topic name found")).toString
-      //val symbol = params.get("symbol").getOrElse(throw ServerError("No symbol found")).toString
-      //val mpathS = params.get("mpath").getOrElse(throw ServerError("No mpath found")).toString
-      val l = controller.depstore.getInds(ontology.IsTheory)
-      //val children = getAllChildren(topicName)
-      val pathS = "http://mathhub.info/MiKoMH/GenCS/dmath/en/sets-operations.omdoc?sets-operations"
-      val path = Path.parseM(pathS, mmt.mmtbase)
-      //val l2 = getImmediateChildren(path)
-      val l3 = getAllChildren(pathS)
-      val l2 = sort(l3)
+      //val token = tk.req.param("token").getOrElse(throw ServerError("No token was provided. Unauthorized")).toString
       
+      //val userKarma = new UserKarmaTemp(token)
+      //if(userKarma == null) {
+      //  throw ServerError("No user was found")
+      //}
       
-      val response = "potato" + l2.mkString("(",",",")") + "\n\n\n\n\n\n" + l3.mkString("(",",",")") + "\n\n\n\n\n" + l.mkString("(",",",")")
+      val path = Path.parseM(topicName, NamespaceMap.empty)
+      //val sorted = controller.depstore.getInds(ontology.IsTheory).toList;
+      //val sorted = tour(userKarma, getAllChildren(path, 3))
       
-      Server.TextResponse(response).aact(tk)
+      //val response = sorted.length.toString + "\n" + sorted.mkString("(",",",")")// + "\n\n\n\n\n\n\n\n\n" + examples.mkString("(",",",")")
+      
+      println("Before everything")
+      
+      val tut = new Tutorial(controller, path, 0)
+      
+      //
+      /*val sb = new presentation.StringBuilder()
+      val presenter = controller.extman.getPresenter("planetary").getOrElse{
+        println("defaulting to default presenter")
+        controller.presenter
+      }
+      presenter.apply(controller.get(sorted(0)), false)(sb)
+      val out = sb.get*/
+      //
+      
+      //var response = ""
+      println("Somehow here")
+      
+      /*val tmp = utils.Utilities.parseGraph("/home/filipbitola/Downloads/parsed_graph.txt")
+      
+      val matrix  = utils.Utilities.getMatrixFromGraph(tmp._1, tmp._2)
+      println("Before paths")
+      val paths = pathify(tmp._1)
+      println("Paths")
+      println(paths.mkString)
+      val clusters = new utils.MarkovClusterer().cluster(matrix, paths)
+      println(clusters.deep)
+      
+      val response = clusters.deep.mkString("(", ",", ")")*/
+
+      Server.TextResponse(tut.getContent(20)).aact(tk)
     } catch {
-      case e : Error => error(e.getLongMessage).aact(tk)
+      case e : Error => error(e.getMessage + "\n" + e.extraMessage).aact(tk)
       case e : Exception => error(e.getMessage).aact(tk)
     }
   }
+   private def pathify(topics: List[String]) : List[Path] = {
+     topics.map{x => path(x)}
+   }
+   
+   private def path(name: String) : Path = {
+     try{
+      Path.parseM(name, NamespaceMap.empty)
+     }
+     catch {
+       case e : Exception => {
+         println(name)
+         null
+       }
+     }
+    }
 }
 
