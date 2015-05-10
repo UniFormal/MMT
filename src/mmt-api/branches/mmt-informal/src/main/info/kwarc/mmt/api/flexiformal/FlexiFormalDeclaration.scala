@@ -160,7 +160,7 @@ class Definition(home : Term, name : LocalName, val targets : List[GlobalName], 
   def getComponents = tp.map(x => List(TypeComponent -> x)).getOrElse(Nil) ::: (DefComponent -> df) :: Nil 
 }
 
-class Exercise(home : Term, name : LocalName, prob : FlexiformalObject, solution : Option[FlexiformalObject])
+class Exercise(home : Term, name : LocalName, val prob : FlexiformalObject, val solution : Option[FlexiformalObject])
   extends FlexiformalDeclaration(home, name, solution, prob) {
   def toNode = {
     val solNode : scala.xml.NodeSeq = solution.toList map {s =>
