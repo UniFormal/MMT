@@ -18,6 +18,9 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
    val key = "present-text-notations"
    override def outExt = "mmt"
   
+   def beginDecl(e: StructuralElement)(implicit rh: RenderingHandler) {}
+   def endDecl(e: StructuralElement)(implicit rh: RenderingHandler) {}
+   
    def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {apply(e, 0)(rh)}
    
    private def apply(e : StructuralElement, indent: Int)(implicit rh: RenderingHandler) {
@@ -25,8 +28,9 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
          Range(0,indent).foreach {_ => rh("   ")}
       }
       doIndent
+      beginDecl(e)
       e match {
-         //TODO delimiters
+         //TODO delimiters, metadata
          case d: Document =>
             rh("document " + d.path.toPath + "\n")
             d.getItems foreach {i => apply(i, indent+1)}
@@ -94,5 +98,6 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             apply(s.df, Some(s.path $ DefComponent))
       }
       rh("\n")
+      endDecl(e)
    }
 }
