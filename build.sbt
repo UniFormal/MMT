@@ -1,10 +1,20 @@
 import com.github.retronym.SbtOneJar
+import sbtunidoc.Plugin.UnidocKeys.unidoc
 
 publish := {}
 
 scalaVersion := "2.11.6"
 
 unidocSettings
+
+// Required to get relative links in the generated source code documentation.
+scalacOptions in (ScalaUnidoc, unidoc) <<=
+  baseDirectory map {
+    bd => Seq ("-sourcepath", bd.getAbsolutePath)
+  }
+
+scalacOptions in (ScalaUnidoc, unidoc) ++=
+  Opts.doc.sourceUrl("https://svn.kwarc.info/repos/MMT/src€{FILE_PATH}.scala")
 
 def commonSettings(nameStr: String) = Seq(
   organization := "info.kwarc.mmt",
