@@ -2,6 +2,10 @@ import com.github.retronym.SbtOneJar
 
 publish := {}
 
+scalaVersion := "2.11.6"
+
+unidocSettings
+
 def commonSettings(nameStr: String) = Seq(
   organization := "info.kwarc.mmt",
   version := "1.0.1",
@@ -15,6 +19,7 @@ def commonSettings(nameStr: String) = Seq(
   publishTo := Some(Resolver.file("file", new File("../deploy/main"))),
   mainClass in (Compile, run) := Some("info.kwarc.mmt.api.frontend.Run"),
   exportJars := true,
+  autoAPIMappings := true,
   connectInput in run := true,
   fork := true
 )
