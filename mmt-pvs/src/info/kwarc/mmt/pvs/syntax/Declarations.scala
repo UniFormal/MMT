@@ -20,6 +20,7 @@ case class pvs_file(_modules: List[Module])
  * toplevel declarations
  */
 trait Module
+//parameters taken twice
 case class theory(named: NamedDecl, theory_formals: List[FormalParameter],
                   assuming: List[AssumingDecl], exporting_ : Option[exporting], _decls: List[Decl]) extends Module
 
