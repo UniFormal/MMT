@@ -10,11 +10,13 @@ unidocSettings
 // Required to get relative links in the generated source code documentation.
 scalacOptions in (ScalaUnidoc, unidoc) <<=
   baseDirectory map {
-    bd => Seq ("-sourcepath", bd.getAbsolutePath)
+    bd => Seq("-sourcepath", bd.getAbsolutePath)
   }
 
 scalacOptions in (ScalaUnidoc, unidoc) ++=
   Opts.doc.sourceUrl("https://svn.kwarc.info/repos/MMT/src€{FILE_PATH}.scala")
+
+target in (ScalaUnidoc, unidoc) := file("../doc/api")
 
 def commonSettings(nameStr: String) = Seq(
   organization := "info.kwarc.mmt",
