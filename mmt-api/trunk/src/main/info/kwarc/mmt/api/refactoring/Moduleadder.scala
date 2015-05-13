@@ -1,4 +1,4 @@
-package refactoring
+package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.{SimpleStep, LocalName, GlobalName}
 import info.kwarc.mmt.api.frontend.Controller

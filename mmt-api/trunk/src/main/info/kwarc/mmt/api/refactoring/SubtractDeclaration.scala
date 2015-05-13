@@ -1,4 +1,4 @@
-package refactoring
+package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api.{GlobalName, LocalName}

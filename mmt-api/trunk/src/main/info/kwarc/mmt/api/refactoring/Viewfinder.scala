@@ -1,4 +1,4 @@
-package refactoring
+package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}

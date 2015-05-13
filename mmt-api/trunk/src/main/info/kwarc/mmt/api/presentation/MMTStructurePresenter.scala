@@ -22,12 +22,52 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
    def endDecl(e: StructuralElement)(implicit rh: RenderingHandler) {}
    
    def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {apply(e, 0)(rh)}
-   
-   private def apply(e : StructuralElement, indent: Int)(implicit rh: RenderingHandler) {
-      def doIndent {
-         Range(0,indent).foreach {_ => rh("   ")}
+
+   def doConstant(c: Constant,indent:Int)(implicit rh: RenderingHandler) = {
+      rh("constant " + c.name)
+      c.alias foreach {a =>
+         rh(" @ ")
+         rh(a.toPath)
       }
-      doIndent
+      c.tp foreach {t =>
+         rh("\n")
+         doIndent(indent)
+         rh("  : ")
+         apply(t, Some(c.path $ TypeComponent))
+      }
+      c.df foreach {t =>
+         rh("\n")
+         doIndent(indent)
+         rh("  = ")
+         apply(t, Some(c.path $ DefComponent))
+      }
+      c.notC.parsing foreach {n =>
+         rh("\n")
+         doIndent(indent)
+         rh("  # ")
+         rh(n.toText)
+      }
+      c.notC.presentation foreach {n =>
+         rh("\n")
+         doIndent(indent)
+         rh("  ## ")
+         rh(n.toText)
+      }
+   }
+
+   def doDeclaredStructure(s:DeclaredStructure,indent:Int)(implicit rh: RenderingHandler) = {
+      rh("structure " + s.name + " : ")
+      apply(s.from, Some(s.path $ TypeComponent))
+      rh(" =\n")
+      s.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
+   }
+
+   def doIndent(indent:Int)(implicit rh: RenderingHandler) {
+      Range(0,indent).foreach {_ => rh("   ")}
+   }
+   //this used to be private; but had to change that for MMTSyntaxPresenter override of doDeclaredStructure
+   def apply(e : StructuralElement, indent: Int)(implicit rh: RenderingHandler) {
+      doIndent(indent)
       beginDecl(e)
       e match {
          //TODO delimiters, metadata
@@ -38,38 +78,11 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             rh("document " + r.target.toPath)
          case r: MRef =>
             rh("module " + r.target.toPath)
-         case c: Constant =>
-            rh("constant " + c.name)
-            c.alias foreach {a =>
-               rh(" @ ")
-               rh(a.toPath)
-            }
-            c.tp foreach {t =>
-               rh("\n")
-               doIndent
-               rh("  : ")
-               apply(t, Some(c.path $ TypeComponent))
-            }
-            c.df foreach {t =>
-               rh("\n")
-               doIndent
-               rh("  = ")
-               apply(t, Some(c.path $ DefComponent))
-            }
-            c.notC.parsing foreach {n =>
-               rh("\n")
-               doIndent
-               rh("  # ")
-               rh(n.toText)
-            }
-            c.notC.presentation foreach {n =>
-               rh("\n")
-               doIndent
-               rh("  ## ")
-               rh(n.toText)
-            }
+         case c: Constant => doConstant(c,indent)
          case t: DeclaredTheory =>
-            rh("theory " + t.name + " =\n")
+            rh("theory " + t.name)
+            t.meta.foreach(p => rh(":"+p.toString))
+            rh(" =\n")
             t.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
          case v: DeclaredView =>
             rh("view " + v.name + " : ")
@@ -80,11 +93,7 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             v.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
          case nm: NestedModule =>
             apply(nm.module, indent+1)
-         case s: DeclaredStructure =>
-            rh("structure " + s.name + " : ")
-            apply(s.from, Some(s.path $ TypeComponent))
-            rh(" =\n")
-            s.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
+         case s: DeclaredStructure => doDeclaredStructure(s,indent)
          case t: DefinedTheory =>
             rh("theory " + t.name + " abbrev ")
             apply(t.df, Some(t.path $ DefComponent))
@@ -97,7 +106,7 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             rh(" abbrev")
             apply(s.df, Some(s.path $ DefComponent))
       }
-      rh("\n")
       endDecl(e)
+      rh("\n")
    }
 }
