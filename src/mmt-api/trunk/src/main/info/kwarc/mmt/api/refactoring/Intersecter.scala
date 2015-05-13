@@ -1,4 +1,4 @@
-package refactoring
+package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.{MPath, LocalName, DPath, GlobalName}
