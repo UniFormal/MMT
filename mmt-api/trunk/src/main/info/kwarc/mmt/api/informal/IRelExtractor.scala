@@ -8,7 +8,6 @@ import objects._
 
 object IRels {
   val isDefinedBy = CustomBinary("isDefinedBy", "is defined by", "is definition for")
-  
   val allBinary = List(isDefinedBy)
   val allUnary = Nil
 }
