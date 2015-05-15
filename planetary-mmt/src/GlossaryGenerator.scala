@@ -40,7 +40,6 @@ object GlossaryGenerator {
         case e : Exception => None
       }
     }
-    println(modules.map(_.path).length)
     val verbs = modules collect {
       case thy: DeclaredTheory =>
         thy.getDeclarations collect {
@@ -48,7 +47,6 @@ object GlossaryGenerator {
             c.notC.verbalizationDim.notations.values.flatten.map(c.path -> _)
         }
     }
-    println(verbs.flatten.flatten.toList.distinct.length)
     present(verbs.flatten.flatten.toList.distinct)
     rh.get
   }

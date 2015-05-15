@@ -185,4 +185,67 @@ class MathMLPresenter extends NotationBasedPresenter {
        ms foreach {a => a()}
      }
    }
+   override def doSqrt(args : List[Cont])(implicit pc: PresentationContext) {
+     pc.html.msqrt {
+       pc.html.mrow {
+         args foreach{a => a()}
+       }
+     }
+   }
+   
+   override def doRootMarker(base : List[Cont], root : List[Cont])(implicit pc: PresentationContext) {
+     if(root != Nil){
+       pc.html.mroot{
+         pc.html.mrow {
+         base foreach(a => a())        
+         }
+         doSqrt(base) 
+       }
+     }
+     else doSqrt(base)     
+   }
+   
+   override def doNumberMarker(arg : Delim)(implicit pc: PresentationContext) {
+     pc.html.mn {
+       pc.out(arg.s)
+     }
+   }
+      
+   override def doIdenMarker(arg : Delim)(implicit pc: PresentationContext) {
+     pc.html.mi {
+       pc.out(arg.s)
+     }
+   }
+   
+   override def doErrorMarker(args: List[Cont])(implicit pc: PresentationContext){
+     pc.html.merror{
+     args foreach{m => m()}
+     }
+   }
+   
+   override def doPhantomMarker(args: List[Cont])(implicit pc: PresentationContext){
+     pc.html.mphantom{
+     args foreach {a => a()}
+     }
+   }
+   override def doGlyphMarker(arg : Delim, alt : String = "Failed to load")(implicit pc:PresentationContext){
+      pc.html.mglyph(attributes = List("src" -> arg.s, "alt"->alt) ) {}
+   }
+   
+   override def doLabelMarker(args : List[Cont], label : String) (implicit pc:PresentationContext) {
+     pc.html.mlabel{
+       pc.html.mtext{
+         pc.out(label)
+       }
+       pc.html.mrow{
+         args foreach{m => m()} // have to be TdMarkers
+       }
+     }
+   }
+   
+   override def doTextMarker(text : Delim)(implicit pc: PresentationContext){
+     pc.html.mtext{
+       pc.out(text.s)
+     }
+   }
 }
