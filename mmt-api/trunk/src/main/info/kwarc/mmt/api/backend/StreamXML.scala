@@ -70,7 +70,7 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
    }
    
    /** XML parser that streams documents/modules and calls the reader on the other ones */
-   private class ConsParser(dpath: DPath, input: Source) extends ConstructingParser(input, false) {
+   private class ConsParser(dpath: DPath, input: Source) extends ConstructingParser(input, true) {
       /** the stack of currently open tags, innermost first */
       private var openTags : List[StructuralElement] = Nil
       /** holds the root element once parsing has finished */

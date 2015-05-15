@@ -23,18 +23,8 @@ case object IsInstance extends Unary("instance")
 case object IsConAss extends Unary("conass")
 case object IsStrAss extends Unary("strass")
 case object IsNotation extends Unary("notation")
-
-/** helper object for unary items */ 
-object Unary {
-   private val all = List(IsDocument,IsTheory,IsView,IsStyle,IsConstant,IsStructure,IsConAss,
-                          IsStrAss,IsNotation,IsPattern,IsInstance)
-   def parse(s: String) : Unary = s match {
-      case s if s.startsWith("constant:") => IsConstant //TODO remove
-      case s => all.find(_.toString == s).getOrElse {
-         throw ParseError("unary predicate expected, found: " + s)
-      }
-   }
-}
+/** Extractor extensions should use instances of this class to extend the ontology for unary relations */
+case class CustomUnary(name : String) extends Unary(name)
 
 /**
  * An object of type Binary represents a binary predicate between MMT paths in the MMT ontology.
@@ -67,14 +57,9 @@ case object Declares extends Binary("contains declaration of", "is declared in")
 case object IsAliasFor extends Binary("is alias for", "has alias") 
 // symbol - symbol
 case object IsAlignedWith extends Binary("is aligned with", "is aligned with") 
-
-/** helper methods for Binary items */
-object Binary {
-   val all = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,IsAlignedWith)
-   def parse(s: String) : Binary = all.find(_.toString == s) match {
-      case Some(i) => i
-      case _ => throw ParseError("binary predicate expected, found: " + s)
-   }
+/** Extractor extensions should use instances of this class to extend the ontology for binary relations */
+case class CustomBinary(name : String, override val desc : String, override val backwardsDesc : String) extends Binary(desc, backwardsDesc) {
+  override def toString = name
 }
 
 /** A RelationalElement is any element that is used in the relational representation of MMT content.
@@ -90,16 +75,6 @@ abstract class RelationalElement {
    def toNode : scala.xml.Node
    /** text representation */
    def toPath : String
-}
-
-object RelationalElement {
-   def parse(s: String, nsMap: NamespaceMap) : RelationalElement = {
-      s.split(" ").toList match {
-         case List(tp, ind) => Individual(Path.parse(ind, nsMap), Unary.parse(tp))
-         case List(rel, subj, obj) => Relation(Binary.parse(rel), Path.parse(subj, nsMap), Path.parse(obj, nsMap))
-         case _ => throw ParseError("not a valid relational element: " + s)
-      }
-   }
 }
 
 /**

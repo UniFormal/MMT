@@ -9,11 +9,11 @@ import frontend._
 import libraries._
 import objects._
 import utils._
-import flexiformal._
+import informal._
 import archives._
 import notations._
 import scala.xml.{Node }
-import ontology.{ isDefinedBy }
+import ontology._
 import info.kwarc.mmt.stex._
 
 object GlossaryGenerator {
@@ -22,7 +22,7 @@ object GlossaryGenerator {
   private var rh: StringBuilder = null
   def generate(controller: Controller): String = {
     this.controller = controller
-    this.presenter = controller.extman.getPresenter("planetary") match {
+    this.presenter = controller.extman.get(classOf[Presenter], "planetary") match {
       case Some(p: PlanetaryPresenter) => p
       case _ => throw new Exception("Expected planetary presenter to be loaded")
     }
@@ -106,10 +106,10 @@ object GlossaryGenerator {
     
     val notations = (constant.notC.parsingDim.notations.values.flatten ++ constant.notC.presentationDim.notations.values.flatten).map(n => spath -> n).toList.distinct
     
-    val defs = controller.depstore.getObjects(spath, isDefinedBy) collect {
-          case fp: FragPath if fp.isPath =>
-            controller.get(fp.path) match {
-              case fd: Definition =>
+    val defs = controller.depstore.queryList(spath, ToObject(IRels.isDefinedBy)) collect {
+          case p: Path =>
+            controller.get(p) match {
+              case fd: Constant =>
                 val mpath = fd.home.toMPath
                 if (sTeX.getLanguage(mpath) == Some(lang)) {
                   Some(fd)

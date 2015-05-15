@@ -41,7 +41,10 @@ class NotationDimension {
          _maxArity = not.arity.length
        }
      }
-     notations(not.arity.length) ::= not
+     //TODO avoid duplicate notations better, currently equality is checked via their string representation
+     if (!notations(not.arity.length).map(_.toString).contains(not.toString)) {
+       notations(not.arity.length) ::= not
+     }
    }
    
    def update(nd : NotationDimension) = {

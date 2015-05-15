@@ -20,7 +20,7 @@
     <dependencies>
         <dependency>
             <groupId>info.kwarc.mmt</groupId>
-            <artifactId>mmt-informal</artifactId>
+            <artifactId>mmt-api</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

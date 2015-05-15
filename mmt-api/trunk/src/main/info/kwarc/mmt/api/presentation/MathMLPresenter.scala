@@ -31,7 +31,7 @@ class MathMLPresenter extends NotationBasedPresenter {
    }
 
    private val jobadns = namespace("jobad")
-   private def jobadattribs(implicit pc: PresentationContext) = {
+   protected def jobadattribs(implicit pc: PresentationContext) = {
       var ret = List("jobad:mmtref" -> pc.pos.toString)
       pc.source.foreach {r =>
          ret ::= "jobad:mmtsrc" -> r.toString

@@ -293,6 +293,9 @@ class NotationBasedPresenter extends ObjectPresenter {
             }
          }
          1
+      case OMATTR(t,k,v) => 
+         doAttributedTerm(t, k, v)(pc)
+         1
       case OMSemiFormal(parts) => parts.foreach {
             case Formal(t) => recurse(t)
             case objects.Text(format, t) => pc.out(t)
@@ -513,7 +516,16 @@ class NotationBasedPresenter extends ObjectPresenter {
                   }
                   br
             }
-            case _ => default
+            //so that subclasses can override these methods to add special behaviour for supported attribute keys
+            case OMATTR(t, k, v) => doAttributedTerm(t, k, v)(pc) 
+            case t => println(t.toNode); default
          }
    }
+   
+   //to be overriden by subclasses if needed
+   //TODO imlement this better
+   def doAttributedTerm(t : Term, k : OMID, v : Term)(pc : PresentationContext) = doDefault(t)(pc)
+   
+   
+   
 }

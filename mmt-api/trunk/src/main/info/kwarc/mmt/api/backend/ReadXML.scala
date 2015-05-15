@@ -155,6 +155,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
 		         docParent map (dp => add(MRef(dp, npath, true)))
 		         readNotations(npath, from, notations)
 		         */
+           case n if scala.xml.Utility.trimProper(n).isEmpty => //whitespace node => nothing to do
 	         case _ => throw ParseError("module level element expected: " + m)
          }
       }
@@ -214,6 +215,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                   case Some(_) =>
                      throw ParseError("multiple notations in " + symbol)
                }
+               case n if scala.xml.Utility.trimProper(n).isEmpty => //whitespace node => nothing to do
                case c => throw ParseError("illegal child in constant " + c)
             }
             val rl = xml.attr(symbol,"role") match {
@@ -299,6 +301,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
             val inst = new Instance(homeTerm,name,Path.parseS(p,nsMap),args.toList)
             add(inst, md)
          case scala.xml.Comment(_) =>
+         case n if scala.xml.Utility.trimProper(n).isEmpty => //whitespace node => nothing to do
          case _ => throw ParseError("symbol level element expected: " + symbol)
       }
    }

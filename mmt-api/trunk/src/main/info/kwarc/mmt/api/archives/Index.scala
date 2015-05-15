@@ -61,7 +61,7 @@ abstract class Importer extends TraversingBuildTarget {imp =>
        val relFile = file.setExtension("rel")
        log("[  -> relational]     " + relFile.getPath)
        val relFileHandle = File.Writer(relFile)
-       ontology.Extractor(se) {
+       controller.relman.extract(se) {
           r => relFileHandle.write(r.toPath + "\n")
        }
        relFileHandle.close
