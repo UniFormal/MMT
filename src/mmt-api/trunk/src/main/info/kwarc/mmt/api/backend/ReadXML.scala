@@ -99,7 +99,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
            val (m, md) = MetaData.parseMetaDataChild(node, nsMap)
            val namespace = Path.parseD(xml.attr(m,"base"), nsMap)
            val name = LocalName.parse(xml.attr(m,"name"), nsMap(namespace))
-           m match {
+           xml.trimOneLevel(m) match {
 	         case <theory>{seq @ _*}</theory> =>
 		         log("theory " + name + " found")
 		         val tpath = namespace ? name
@@ -155,7 +155,6 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
 		         docParent map (dp => add(MRef(dp, npath, true)))
 		         readNotations(npath, from, notations)
 		         */
-           case n if scala.xml.Utility.trimProper(n).isEmpty => //whitespace node => nothing to do
 	         case _ => throw ParseError("module level element expected: " + m)
          }
       }
@@ -189,13 +188,14 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
       lazy val module = moduleOpt.getOrElse {
          throw ParseError("missing containing module")
       } 
-      symbol match {
+      xml.trimOneLevel(symbol) match {
          case <constant>{comps @_*}</constant> =>
             log("constant " + name.toString + " found")
             var tp: Option[Term] = None
             var df: Option[Term] = None
             var notC: Option[NotationContainer] = None
-            comps foreach {
+            
+            comps.map(xml.trimOneLevel) foreach {
                case <type>{t}</type> => tp match {
                   case None =>
                      tp = Some(Obj.parseTerm(t, nsMap))
@@ -215,7 +215,6 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                   case Some(_) =>
                      throw ParseError("multiple notations in " + symbol)
                }
-               case n if scala.xml.Utility.trimProper(n).isEmpty => //whitespace node => nothing to do
                case c => throw ParseError("illegal child in constant " + c)
             }
             val rl = xml.attr(symbol,"role") match {
@@ -301,7 +300,6 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
             val inst = new Instance(homeTerm,name,Path.parseS(p,nsMap),args.toList)
             add(inst, md)
          case scala.xml.Comment(_) =>
-         case n if scala.xml.Utility.trimProper(n).isEmpty => //whitespace node => nothing to do
          case _ => throw ParseError("symbol level element expected: " + symbol)
       }
    }
