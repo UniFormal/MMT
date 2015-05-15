@@ -516,18 +516,13 @@ object Obj {
       }
    }
    
-   private def trimOnce(n : Node) : Node = n match {
-     case e : Elem => 
-       val nonWSchild = e.child.filter(c => !Utility.trimProper(c).isEmpty)
-       new Elem(e.prefix, e.label, e.attributes, e.scope, e.minimizeEmpty, nonWSchild : _*)
-     case _ => n
-   }
+ 
 
    /**
     * the recursion for parseTermTop
     */
    private def parseTermRec(nd : Node)(implicit nsMap: NamespaceMap) : Term = {
-      val Nmd = trimOnce(nd)
+      val Nmd = xml.trimOneLevel(nd)
       //this function unifies the two cases for binders in the case distinction below
       def doBinder(binder : Node, context : Node, scopes : List[Node]) = {
          val bind = parseTermRec(binder)

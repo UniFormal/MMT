@@ -75,7 +75,15 @@ object xml {
             List((pNonNull,u))
          thisOne ::: namespaces(parent, pNonNull :: seen)
    }
-
+   
+   /**trims away non-empty direct children of a node*/
+   def trimOneLevel(n : Node) : Node = n match {
+     case e : Elem => 
+       val nonWSchild = e.child.filter(c => !Utility.trimProper(c).isEmpty)
+       new Elem(e.prefix, e.label, e.attributes, e.scope, e.minimizeEmpty, nonWSchild : _*)
+     case _ => n
+   }
+   
    // decode all occurrences of %HH
    def decodeURI(s: String) : String = {
       var in = s

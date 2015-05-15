@@ -8,8 +8,13 @@ import objects._
 
 object IRels {
   val isDefinedBy = CustomBinary("isDefinedBy", "is defined by", "is definition for")
-  val allBinary = List(isDefinedBy)
-  val allUnary = Nil
+  val isExemplifiedBy = CustomBinary("isDefinedBy", "is exemplified by", "is example for")
+  val isExercise = CustomUnary("exercise")
+  val isExample = CustomUnary("example")
+  val isDefinition = CustomUnary("definition")
+  
+  val allBinary = List(isDefinedBy, isExemplifiedBy)
+  val allUnary = List(isExercise, isDefinition, isExample)
 }
 
 class IRelExtractor extends RelationalExtractor{
