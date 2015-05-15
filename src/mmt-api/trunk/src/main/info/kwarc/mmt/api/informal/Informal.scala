@@ -10,7 +10,7 @@ object Informal {
    val base = DPath(utils.URI("http", "cds.omdoc.org") / "urtheories")
    
    val path = base ? "Informal"
-   def constant(name : String) = OMS(path ? name)
+   def constant(name : String) = path ? name
 //   lazy val hoas = notations.HOAS(Apply.path, Lambda.path, OfType.path)
 }
 

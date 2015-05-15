@@ -103,7 +103,7 @@ class NotationContainer extends ComponentContainer {
    /** @return an appropriate notation for parsing, if any */
    def getParse  : Option[TextNotation] = parsing
    /** @return an appropriate notation for verbalization, if any */
-   def getVerbal : Option[TextNotation] = verbalization orElse presentation orElse parsing
+   def getVerbal : Option[TextNotation] = verbalization
    def getAllNotations : List[TextNotation] = {
      List(parsingDim.notations.values.flatten, 
           presentationDim.notations.values.flatten,

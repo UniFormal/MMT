@@ -67,7 +67,7 @@ object Quotient {
 /** bundles functions that are typically used when defining literals based on integers */
 trait IntegerLiteral extends SemanticType {
    type univ = BigInt
-   def fromString(s: String) = s.toInt
+   def fromString(s: String) = BigInt(s)
    override def lex = Some(new parser.NumberLiteralLexer(false))
 }
 

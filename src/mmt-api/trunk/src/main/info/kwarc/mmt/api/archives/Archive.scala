@@ -190,7 +190,7 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
 
   def readRelational(in: List[String] = Nil, controller: Controller, kd: String) {
        if ((this/relational).exists) {
-          traverse(relational, in, Archive.extensionIs(kd), true) {case Current(inFile, inPath) =>
+          traverse(relational, in, Archive.extensionIs(kd), false) {case Current(inFile, inPath) =>
              utils.File.ReadLineWise(inFile) {line => 
                val re = controller.relman.parse(line, NamespaceMap(DPath(narrationBase)))
                re match {

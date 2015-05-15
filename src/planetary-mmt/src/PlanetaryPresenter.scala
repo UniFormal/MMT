@@ -42,14 +42,15 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
   }
   
   def doInformal(t : Term)(pc : PresentationContext) : Unit = t match {
-    case OMFOREIGN(n) => doInformal(n)(pc)
+    case OMFOREIGN(n) => 
+      doInformal(n)(pc)
     case _ => recurse(t)(pc)
   }
   
   def doInformal(n : scala.xml.Node)(pc : PresentationContext) : Unit = n match {
     case _ if (n.label == "OMOBJ") => 
       val tm = Obj.parseTerm(n, NamespaceMap.empty)
-      recurse(tm)(pc)
+      apply(tm, None)(pc.rh)
     case s : scala.xml.SpecialNode => pc.out(s.toString)
     case _ => 
       pc.rh.writeStartTag(n.prefix, n.label, n.attributes, n.scope)
@@ -111,8 +112,8 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
          wrapScope(standalone, thy.path)(doTheory(thy))
        case view : DeclaredView =>
          wrapScope(standalone, view.path)(doView(view))
-//       case fd : FlexiformalDeclaration => 
-//         wrapScope(standalone, fd.path)(doFlexiformalDeclaration(fd))
+       case c : Constant =>
+         wrapScope(standalone, c.path)(doConstant(c))
        case _ => rh("TODO: Not implemented yet, presentation function for " + s.getClass().toString())
      }
      //TODO? reset this._rh 
@@ -174,11 +175,14 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      }
    }
    
+   
    def doConstant(c : Constant) {
      div(cls = "constant", attributes = List("jobad:presents" -> c.path.toPath)) {
-       span("keyword"){text("constant")}
-       doName(c.path)
-       doNotations(c.notC.getAllNotations.map(c.path -> _), c.path)
+       if (!c.name.toPath.contains('.')) {//TODO hack to check if informal constant
+         span("keyword"){text("constant")}
+         doName(c.path)
+         doNotations(c.notC.getAllNotations.map(c.path -> _), c.path)
+       }
        c.df foreach {df => 
          doMath(df)
        }
