@@ -8,10 +8,9 @@ import presentation._
 import frontend._
 import objects._
 import utils._
-import flexiformal._
+import informal._
 import archives._
 import notations._
-
 
 class NotationPresenter(contr : Controller, var notations : List[(GlobalName,TextNotation)] = Nil) 
   extends presentation.MathMLPresenter {
@@ -34,11 +33,35 @@ class NotationPresenter(contr : Controller, var notations : List[(GlobalName,Tex
    }
 }
 
+class InformalMathMLPresenter extends presentation.MathMLPresenter {
+  override def doAttributedTerm(t : Term, k : OMID, v : Term)(pc : PresentationContext) = k.path match {
+    case Narration.path => 
+      doInformal(v)(pc : PresentationContext)
+      1
+    case _ => doDefault(t)(pc)
+  }
+  
+  def doInformal(t : Term)(pc : PresentationContext) : Unit = t match {
+    case OMFOREIGN(n) => doInformal(n)(pc)
+    case _ => recurse(t)(pc)
+  }
+  
+  def doInformal(n : scala.xml.Node)(pc : PresentationContext) : Unit = n match {
+    case _ if (n.label == "OMOBJ") => 
+      val tm = Obj.parseTerm(n, NamespaceMap.empty)
+      recurse(tm)(pc)
+    case s : scala.xml.SpecialNode => pc.out(s.toString)
+    case _ => 
+      pc.rh.writeStartTag(n.prefix, n.label, n.attributes, n.scope)
+      n.child.map(c => doInformal(c)(pc))
+      pc.rh.writeEndTag(n.prefix, n.label)
+  }
+}
 
-abstract class PlanetaryAbstractPresenter(name : String) extends Presenter(new presentation.MathMLPresenter) {
+abstract class PlanetaryAbstractPresenter(name : String) extends Presenter(new InformalMathMLPresenter) {
   override val outExt = "html"
   val key = name
-  def isApplicable(format : String) = format == name
+  
   protected lazy val notPres = new NotationPresenter(controller)
   
   // easy-to-use HTML markup
@@ -88,8 +111,8 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
          wrapScope(standalone, thy.path)(doTheory(thy))
        case view : DeclaredView =>
          wrapScope(standalone, view.path)(doView(view))
-       case fd : FlexiformalDeclaration => 
-         wrapScope(standalone, fd.path)(doFlexiformalDeclaration(fd))
+//       case fd : FlexiformalDeclaration => 
+//         wrapScope(standalone, fd.path)(doFlexiformalDeclaration(fd))
        case _ => rh("TODO: Not implemented yet, presentation function for " + s.getClass().toString())
      }
      //TODO? reset this._rh 
@@ -145,8 +168,8 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
            } 
          case c : Constant =>
            doConstant(c)
-         case f : FlexiformalDeclaration =>  
-           doFlexiformalDeclaration(f)
+//         case f : FlexiformalDeclaration =>  
+//           doFlexiformalDeclaration(f)
        }
      }
    }
@@ -156,6 +179,9 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        span("keyword"){text("constant")}
        doName(c.path)
        doNotations(c.notC.getAllNotations.map(c.path -> _), c.path)
+       c.df foreach {df => 
+         doMath(df)
+       }
      }
    }
    
@@ -169,14 +195,14 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
                      "$(document.getElementById(\'not_" + encPath(path) + "_" + instId + "\')).toggle( \'fold\' );\""
        rh(" <small><a style=\"cursor:pointer;\" " + onclick + ">" + "Show Notations" + "</a></small>")
        table(cls = "table table-striped table-condensed", attributes = ("id" -> ("not_" + encPath(path) + "_" + instId)) :: ("style" -> "display:none;") :: Nil) {
-         thead {
+         head {
            tr {
              th { text{"Languages"} } 
              th { text{"Arguments"} }
              th { text{"Rendering"} }
            }
          }
-         tbody {
+         body {
            notations.foreach(p => doNotation(p._1, p._2))
          }
        }
@@ -224,6 +250,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      }
    }
    
+   /*
    def doFlexiformalDeclaration(fd : FlexiformalDeclaration) : Unit = fd match {
      case n : PlainNarration => 
        div("flexiformal plain") {
@@ -275,6 +302,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        n.child.map(doNarrativeObject)
        rh.writeEndTag(n.node.prefix, n.node.label)
    }
+   */
    
    def doView(v: DeclaredView) {}
    override def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
@@ -299,6 +327,12 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
    
    
    def doRef(r : XRef) = r match {
+     case d: DRef if d.target.last == OMV.anonymous => //nested doc 
+       rh("<div class=\"group\">")
+         controller.get(d.target) match {
+           case d : Document => doDocument(d)
+         }
+       rh("</div>")
      case d: DRef => 
        li("dref") {
          rh(<span jobad:href={d.target.toPath} data-relative="true"> {d.target.last} </span>)
@@ -323,10 +357,6 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      div("document") {
        ul("doc-body") { doc.getDeclarations foreach {
          case x : XRef => doRef(x)
-         case rg : XRefGroup => 
-           rh("<div class=\"group\">")
-           rg.refs foreach {x => doRef(x)}
-           rh("</div>")
          case s => throw ImplementationError("Presenting for " + s.getClass() + " not implemented yet ")
        }}
      }

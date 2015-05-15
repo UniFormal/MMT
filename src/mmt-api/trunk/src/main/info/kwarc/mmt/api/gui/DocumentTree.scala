@@ -150,7 +150,7 @@ class TreePane(controller: Controller) extends JPanel {
       ontologyPane.removeAll
       val p = se.path
       ontologyPane.add(Swing.centeredLabel(p.toString + " ..."))
-      ontology.Binary.all.foreach {b =>
+      controller.relman.allBinary.foreach {b =>
          val qs = controller.depstore.queryList(p, -b)
          if (! qs.isEmpty) {
             ontologyPane.add(Swing.centeredLabel("... " + b.backwardsDesc))

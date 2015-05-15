@@ -165,21 +165,21 @@ case class HasType(tp : Unary) extends RelationExp {
 
 /** helper object for relation expressions */
 object RelationExp {
-   def parse(n: Node) : RelationExp = n match {
+   def parse(n: Node)(implicit relManager : RelationalManager) : RelationExp = n match {
       case <sequence>{r @ _*}</sequence> => Sequence(r map parse : _*)
       case <choice>{r @ _*}</choice> => Choice(r map parse : _*)
       case <transitive>{r}</transitive> => Transitive(parse(r))
       case <reflexive/> => Reflexive
       case <inverse>{r}</inverse> => - parse(r)
-      case <toobject/> => + Binary.parse(xml.attr(n, "relation"))
-      case <tosubject/> => - Binary.parse(xml.attr(n, "relation"))
+      case <toobject/> => + relManager.parseBinary(xml.attr(n, "relation"))
+      case <tosubject/> => - relManager.parseBinary(xml.attr(n, "relation"))
       case n => throw ParseError("illegal relation expression: " + n)
    }
     /** S has a structure declaration with domain O, defined as an abbreviation */
    def HasStructureFrom = Sequence(- HasCodomain, HasType(IsStructure), + HasDomain)
    def Imports = Choice(+ Includes, RelationExp.HasStructureFrom)
     /** Disjunction of all binary relations, helpful for dependency closures */
-   def AnyDep = Choice(Binary.all.map(+ _) : _*)
+   def AnyDep(implicit relManager : RelationalManager) = Choice(relManager.allBinary.map(+ _).toSeq : _*)
 }
 
 /** helper object for query expressions */
@@ -294,14 +294,14 @@ object Query {
     *  @param n the query to parse
     *  @param queryFunctions the list of atomic functions to consider
     */
-   def parse(n: Node)(implicit queryFunctions: List[QueryExtension]) : Query = n match {
+   def parse(n: Node)(implicit queryFunctions: List[QueryExtension], relManager : RelationalManager) : Query = n match {
       case <literal/> =>
          Literal(Path.parse(xml.attr(n, "uri")))
       case <literal>{l}</literal> =>
          Literal(StringValue(l.text))
       case <bound/> => Bound(xml.attrInt(n, "index", ParseError(_)))
       case <let>{v}{in}</let> => Let(parse(v), parse(in))
-      case <uris/> => Paths(Unary.parse(xml.attr(n, "concept")))
+      case <uris/> => Paths(relManager.parseUnary(xml.attr(n, "concept")))
       case <component>{o}</component> => Component(parse(o), DeclarationComponent.parse(xml.attr(n, "index")))
       case <subobject>{o}</subobject> => SubObject(parse(o), Position.parse(xml.attr(n, "position")))
       case <related>{to}{by}</related> => Related(parse(to), RelationExp.parse(by))
@@ -369,10 +369,10 @@ object Prop {
    }}
    
    /** parses a proposition; check must be called to ensure well-formedness */
-   def parse(n: Node)(implicit queryFunctions: List[QueryExtension]) : Prop = n match {
+   def parse(n: Node)(implicit queryFunctions: List[QueryExtension], relManager : RelationalManager) : Prop = n match {
       case <equal>{e}{f}</equal> => Equal(Query.parse(e), Query.parse(f))
       case <isin>{e}{f}</isin> => IsIn(Query.parse(e), Query.parse(f))
-      case <isa>{e}</isa> => IsA(Query.parse(e), Unary.parse(xml.attr(n, "concept")))
+      case <isa>{e}</isa> => IsA(Query.parse(e), relManager.parseUnary(xml.attr(n, "concept")))
       case <isempty>{e}</isempty> => IsEmpty(Query.parse(e))
       case <and>{f}{g}</and> => And(parse(f), parse(g))
       case <not>{f}</not> => Not(parse(f))

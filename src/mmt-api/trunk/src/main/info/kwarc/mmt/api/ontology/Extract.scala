@@ -5,10 +5,29 @@ import modules._
 import symbols._
 import patterns._
 import objects._
+import frontend._
+
+
+abstract class RelationalExtractor extends Extension {
+  /** all unary relations that this extractor can generate (extract) */
+  def allUnary : List[Unary]
+  
+  /** all binary relations that this extractor can generate (extract) */
+  def allBinary : List[Binary]
+  
+  /** apply a continuation function to every relational element of a StructuralElement */
+  def apply(e : StructuralElement)(implicit f: RelationalElement => Unit) : Unit
+  
+}
 
 /** The Extractor produces the declaration-level relational representation of a SructuralElement
  */
-object Extractor {
+object MMTExtractor extends RelationalExtractor {
+   val allUnary = List(IsDocument,IsTheory,IsView,IsStyle,IsConstant,IsStructure,IsConAss,
+                          IsStrAss,IsNotation,IsPattern,IsInstance)
+   val allBinary = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,IsAlignedWith)
+   
+  
    /** apply a continuation function to every relational element of a StructuralElement */
    def apply(e: StructuralElement)(implicit f: RelationalElement => Unit) {
       val path = e.path

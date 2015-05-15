@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.flexiformal._
+import info.kwarc.mmt.api.informal._
 import info.kwarc.mmt.stex._
 import symbols.{Constant}
 
@@ -28,7 +28,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
     try {
       uriComps match {
         case "getPresentation" :: _ => getPresentationResponse
-        case "getCompiled" :: _ => getCompiledResponse
+//        case "getCompiled" :: _ => getCompiledResponse
         case "getRelated" :: _ => getRelated
         case "getNotations" :: _ => getNotations
         case "getDefinitions" :: _ => getDefinitions
@@ -47,7 +47,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   def getNotations : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
       val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
+      val params = bodyAsJSON(reqBody).obj
       val spathS = params.get("spath").getOrElse(throw ServerError("No spath found")).toString
       val languageO = params.get("language").map(_.toString)
       val dimensionO = params.get("dimension").map(_.toString)
@@ -87,20 +87,18 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   private def getDefinitions : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
       val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
+      val params = bodyAsJSON(reqBody).obj
       val spathS = params.get("spath").getOrElse(throw ServerError("No spath found")).toString
       val languageO = params.get("language").map(_.toString)
       val spath = Path.parse(spathS)
-      var resultSet = controller.depstore.getObjects(spath, isDefinedBy) collect { 
-        case p if p.isPath => p.path
-      }
+      var resultSet = controller.depstore.queryList(spath, ToObject(IRels.isDefinedBy))
       resultSet = languageO match {
         case None => resultSet
         case Some(_) => resultSet.filter(p => sTeX.getLanguage(p) == languageO)
       }
       
       //presenting
-      val pres = controller.extman.getPresenter("planetary").getOrElse(throw ServerError("No presenter found"))
+      val pres = controller.extman.get(classOf[Presenter]).find(_.isApplicable("planetary")).getOrElse(throw ServerError("No presenter found"))
       val resultNodes = resultSet flatMap {p => 
         controller.get(p) match {
           case s : StructuralElement =>
@@ -118,16 +116,16 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   private def getRelated : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
       val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
+      val params = bodyAsJSON(reqBody).obj
       log("Received immt query request : " + params.toString)
       val subjectS = params.get("subject").getOrElse(throw ServerError("No subject found")).toString
       val relationS = params.get("relation").getOrElse(throw ServerError("No relation found")).toString
       val returnS = params.get("return").getOrElse(throw ServerError("No return type found")).toString
       val subject = Path.parse(subjectS)
-      val relation = Binary.parse(relationS)
+      val relation = controller.relman.parseBinary(relationS)
       log(subjectS + " " +  relationS + " " +returnS)
-      val resultSet = controller.depstore.getObjects(subject, relation)
-      val pres = controller.extman.getPresenter("planetary").getOrElse(throw ServerError("No presenter found"))
+      val resultSet = controller.depstore.queryList(subject, ToObject(relation))
+      val pres = controller.extman.get(classOf[Presenter]).find(_.isApplicable("planetary")).getOrElse(throw ServerError("No presenter found"))
       val rb = new presentation.StringBuilder
       val resultNodes = new collection.mutable.HashMap[String,String]
       resultSet foreach {p =>
@@ -135,7 +133,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
           case s : StructuralElement =>
             val rb = new presentation.StringBuilder
             pres(s)(rb)
-            val lang = sTeX.getLanguage(p.path).getOrElse("all")
+            val lang = sTeX.getLanguage(p).getOrElse("all")
             resultNodes(lang) = rb.get
           case _ => 
         }
@@ -180,10 +178,11 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
     }
   }
   
+  /*
   private def getCompiledResponse : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
       val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
+      val params = bodyAsJSON(reqBody).obj
       log("Received Compilation Request : " + params.toString)
       val bodyS = params.get("body").getOrElse(throw ServerError("No Body Found")).toString
       val dpathS = params.getOrElse("dpath", "/tmp/").toString
@@ -217,6 +216,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
         errorResponse("Exception occured : " + e.getStackTrace().mkString("\n"), List(e)).aact(tk)
     }
   }
+  */
   
   private def generateGlossary : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
@@ -230,16 +230,25 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   }
   
   
+  def bodyAsJSON(b : Body) = {
+    val bodyS = b.asString
+    scala.util.parsing.json.JSON.parseRaw(bodyS) match {
+      case Some(j : scala.util.parsing.json.JSONObject) => j
+      case _ => throw ServerError("Invalid JSON " + bodyS)
+    }
+  }
+  
+  
   private def getPresentationResponse : HLet = new HLet {
     def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
       val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
+      val params = bodyAsJSON(reqBody).obj
       log("Received Presentation Request : " + params.toString)
       val bodyS = params.get("body").getOrElse(throw ServerError("No Body Found")).toString
       val dpathS = params.getOrElse("dpath","/tmp/").toString
       val dpath = DPath(utils.URI(dpathS))
       val styleS = params.get("style").getOrElse("xml").toString
-      val presenter = controller.extman.getPresenter(styleS) getOrElse {
+      val presenter = controller.extman.get(classOf[Presenter]).find(_.isApplicable(styleS)) getOrElse {
         throw ServerError("no presenter found")
       }
       val reader = new XMLReader(controller.report)

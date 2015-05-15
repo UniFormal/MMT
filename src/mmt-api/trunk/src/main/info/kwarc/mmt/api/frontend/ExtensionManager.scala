@@ -120,7 +120,8 @@ class ExtensionManager(controller: Controller) extends Logger {
       val rbc = new RuleBasedChecker
       val msc = new MMTStructureChecker(rbc)
       val mmtint = new TwoStepInterpreter(kwp, msc)
-      List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint).foreach {e => addExtension(e)}
+      val mmtextr = ontology.MMTExtractor
+      List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, mmtextr).foreach {e => addExtension(e)}
       //targets and presenters
       List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter,
            TextPresenter, OMDocPresenter, controller.presenter).foreach {

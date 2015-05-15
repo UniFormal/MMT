@@ -192,7 +192,7 @@ class Archive(val root: File, val properties: Map[String,String], val report: Re
        if ((this/relational).exists) {
           traverse(relational, in, Archive.extensionIs(kd), true) {case Current(inFile, inPath) =>
              utils.File.ReadLineWise(inFile) {line => 
-               val re = RelationalElement.parse(line, NamespaceMap(DPath(narrationBase)))
+               val re = controller.relman.parse(line, NamespaceMap(DPath(narrationBase)))
                re match {
                    case Relation(Includes, to: MPath, from: MPath) =>
                       controller.library.addImplicit(OMMOD(from), OMMOD(to), OMIDENT(OMMOD(to)))

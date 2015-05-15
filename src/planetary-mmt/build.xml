@@ -12,7 +12,7 @@
 	<pathelement location="${deploy}/lib/scala-parser-combinators.jar"/>
         <pathelement location="${deploy}/lfcatalog/lfcatalog.jar"/>
         <pathelement location="${deploy}/lib/tiscaf.jar"/>
-    	<pathelement location="${deploy}/main/branches/informal/immt-api.jar"/>
+    	<pathelement location="${deploy}/main/mmt-api.jar"/>
 	<pathelement location="${deploy}/main/mmt-stex.jar"/>
         <pathelement location="bin"/>
     </path>

@@ -97,6 +97,8 @@ class Controller extends ROController with Logger {
    val refiner = new moc.PragmaticRefiner(Set(moc.pragmaticRename, pragmaticAlphaRename))
    /** moc.propagator - handling change propagation */
    val propagator = new moc.OccursInImpactPropagator(memory)
+   /** relational manager, handles extracting and parsing relational elements*/
+   val relman = new RelationalManager(this)
    
    /** all other mutable fields */
    protected val state = new ControllerState

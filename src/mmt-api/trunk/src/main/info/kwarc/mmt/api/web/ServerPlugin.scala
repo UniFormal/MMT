@@ -104,7 +104,7 @@ class QueryServer extends ServerExtension("query") {
   def apply(path: List[String], httpquery: String, body: Body) = {
     val mmtquery = body.asXML
     log("qmt query: " + mmtquery)
-    val q = Query.parse(mmtquery)(controller.extman.get(classOf[QueryExtension]))
+    val q = Query.parse(mmtquery)(controller.extman.get(classOf[QueryExtension]), controller.relman)
     //log("qmt query: " + q.toString)
     Query.infer(q)(Nil) // type checking
     val res = controller.evaluator.evaluate(q)
@@ -285,7 +285,7 @@ class AlignServer extends ServerExtension("align") {
   def read(f: File) {
     File.ReadLineWise(f) { line =>
       var ns = NamespaceMap.empty
-      var re = RelationalElement.parse(line, ns)
+      var re = controller.relman.parse(line, ns)
       controller.depstore += re
     }
   }

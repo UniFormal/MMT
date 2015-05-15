@@ -76,6 +76,7 @@ abstract class HTML {
    
    val table = new Element("table")
    val tr = new Element("tr")
+   val th = new Element("th")
    val td = new Element("td")
 
    val ul = new Element("ul")

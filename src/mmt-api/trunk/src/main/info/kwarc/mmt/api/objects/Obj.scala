@@ -8,7 +8,7 @@ import metadata._
 import presentation._
 import Conversions._
 
-import scala.xml.{Node}
+import scala.xml.{Node,Elem,Utility}
 import scala.collection.mutable.ListMap
 
 /** a trait to be mixed into Obj 
@@ -477,6 +477,7 @@ object ComplexTerm {
          case Nil => Some(Nil)
          case (OMS(utils.mmt.label ?? l), t) :: rest =>
             unapply(rest) map {case sub => Sub(l,t) ++ sub}  
+         case _ => None
       }
    }
    def apply(p: GlobalName, sub: Substitution, con: Context, args: List[Term]) = {
@@ -514,11 +515,19 @@ object Obj {
          case o => parseTermRec(o)
       }
    }
+   
+   private def trimOnce(n : Node) : Node = n match {
+     case e : Elem => 
+       val nonWSchild = e.child.filter(c => !Utility.trimProper(c).isEmpty)
+       new Elem(e.prefix, e.label, e.attributes, e.scope, e.minimizeEmpty, nonWSchild : _*)
+     case _ => n
+   }
 
    /**
     * the recursion for parseTermTop
     */
-   private def parseTermRec(Nmd : Node)(implicit nsMap: NamespaceMap) : Term = {
+   private def parseTermRec(nd : Node)(implicit nsMap: NamespaceMap) : Term = {
+      val Nmd = trimOnce(nd)
       //this function unifies the two cases for binders in the case distinction below
       def doBinder(binder : Node, context : Node, scopes : List[Node]) = {
          val bind = parseTermRec(binder)
