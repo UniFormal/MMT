@@ -38,8 +38,8 @@ object Main {
     p = p :+ DefPatterns.MizPredMeansPartialDef.toNode
     p = p :+ DefPatterns.MizStructDef(1).toNode
     p = p :+ DefPatterns.MizStructDef(2).toNode
-    p = p :+ DefPatterns.MizStructDef(3).toNode 
-    p = p :+ DefPatterns.MizStructDef(4).toNode          
+    p = p :+ DefPatterns.MizStructDef(3).toNode
+    p = p :+ DefPatterns.MizStructDef(4).toNode
     p = p :+ DefPatterns.MizStructDef(5).toNode
     p = p :+ DefPatterns.MizStructDef(6).toNode
     p = p :+ DefPatterns.MizStructDef(7).toNode
