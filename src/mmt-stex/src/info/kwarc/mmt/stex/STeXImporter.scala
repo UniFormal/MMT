@@ -501,7 +501,6 @@ class STeXImporter extends Importer {
     FlexiformalXML(scala.xml.Text(s))
   }
   
-
   def rewriteCMP(node : scala.xml.Node)(implicit mpath : MPath, errorCont : ErrorHandler) : scala.xml.Node = node.label match {
     case "OMS" if (xml.attr(node, "cd") == "OMPres") =>
       <om:OMS base={Narration.path.doc.toPath} module={Narration.path.module.toMPath.name.toPath} name={Narration.path.name.toPath}/>

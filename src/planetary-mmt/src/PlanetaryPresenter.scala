@@ -42,8 +42,7 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
   }
   
   def doInformal(t : Term)(pc : PresentationContext) : Unit = t match {
-    case OMFOREIGN(n) => 
-      doInformal(n)(pc)
+    case OMFOREIGN(n) => doInformal(n)(pc)
     case _ => recurse(t)(pc)
   }
   
