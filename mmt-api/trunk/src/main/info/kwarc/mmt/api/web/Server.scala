@@ -69,7 +69,7 @@ object Server {
   def errorResponse(msg: String): HLet = errorResponse(ServerError(msg))
   /** a response that sends an HTML error message to the browser */
   def errorResponse(error: Error): HLet = {
-     TextResponse("<errors><error>"+error.toHTML+"</error></errors>", "html")
+     TextResponse(s"""<div xmlns="${xml.namespace("html")}"><div>"""+error.toHTML+"</div></div>", "html")
   }
 }
 
