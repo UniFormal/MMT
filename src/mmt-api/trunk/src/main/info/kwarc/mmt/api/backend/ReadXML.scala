@@ -11,7 +11,7 @@ import utils._
 import ontology._
 import presentation._
 
-import scala.xml.{Node,NodeSeq}
+import scala.xml.{Node,NodeSeq,Utility}
 
 /** A Reader parses XML/MMT and calls controller.add(e) on every found content element e
  *  
@@ -155,6 +155,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
 		         docParent map (dp => add(MRef(dp, npath, true)))
 		         readNotations(npath, from, notations)
 		         */
+           case n if Utility.trimProper(n).isEmpty => //whitespace node => nothing to do 
 	         case _ => throw ParseError("module level element expected: " + m)
          }
       }
@@ -231,7 +232,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                case _ => throw ParseError("domain of include must be atomic")
             }
             val isImplicit = parseImplicit(symbol) 
-            rest.child match {
+            xml.trimOneLevel(rest).child match {
                case <definition>{d}</definition> :: Nil =>
                   val df = Obj.parseTerm(d, nsMap)
                   val s = DefinedStructure(homeTerm, adjustedName, from, df, isImplicit)
@@ -244,7 +245,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
          case <theory>{body @_*}</theory> =>
             val parent = home.parent
             val tname = home.name / name
-            body match {
+            body.map(xml.trimOneLevel) match {
                case <definition>{d}</definition> =>
                   val df = Obj.parseTerm(d, nsMap)
                   val t = DefinedTheory(parent, tname, df)
@@ -281,18 +282,22 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
             //TODO: remove this case when Twelf exports correctly
             logError("warning: ignoring deprecated alias declaration")
          //TODO remove patterns and instances
-         case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations></pattern> =>
-            log("pattern with name " + name + " found")
-            doPat(name, Some(params), decls, Nil, md)
-         case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations><notation>{ns @_*}</notation></pattern> =>
-            log("pattern with name " + name + " found")
-            doPat(name, Some(params), decls, ns, md)
-         case <pattern><declarations>{decls}</declarations></pattern> =>
-            log("pattern with name " + name + " found")
-            doPat(name, None, decls, Nil, md)         
-         case <pattern><declarations>{decls}</declarations><notation>{ns @ _*}</notation></pattern> =>
-            log("pattern with name " + name + " found")
-            doPat(name, None, decls, ns, md)         
+         case <pattern>{ch @_*}</pattern> => 
+           log("pattern with name " + name + " found")
+           <pattern> {ch.map(xml.trimOneLevel)} </pattern> match {
+             case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations></pattern> =>
+                log("pattern with name " + name + " found")
+                doPat(name, Some(params), decls, Nil, md)
+             case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations><notation>{ns @_*}</notation></pattern> =>
+                log("pattern with name " + name + " found")
+                doPat(name, Some(params), decls, ns, md)
+             case <pattern><declarations>{decls}</declarations></pattern> =>
+                log("pattern with name " + name + " found")
+                doPat(name, None, decls, Nil, md)         
+             case <pattern><declarations>{decls}</declarations><notation>{ns @ _*}</notation></pattern> =>
+                log("pattern with name " + name + " found")
+                doPat(name, None, decls, ns, md)
+           }
          case <instance>{ns @ _*}</instance> =>
             val p = xml.attr(symbol,"pattern")
          	log("instance " + name.toString + " of pattern " + p + " found")
@@ -300,6 +305,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
             val inst = new Instance(homeTerm,name,Path.parseS(p,nsMap),args.toList)
             add(inst, md)
          case scala.xml.Comment(_) =>
+         case n if Utility.trimProper(n).isEmpty => //whitespace node => nothing to do 
          case _ => throw ParseError("symbol level element expected: " + symbol)
       }
    }
