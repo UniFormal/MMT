@@ -6,6 +6,8 @@ import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.FinalConstant
 
+import scala.util.Success
+
 /**
  * Helper class that makes matching end evaluation of FinalConstants easier.
  * @param name the GlobalName of c
@@ -43,7 +45,7 @@ object Consthash {
    * @param judg the GlobalName for the [role Judgment] Declaration used to check, whether a is an axiom or not.
    * @return a Consthash for a.
    */
-  def apply(a:FinalConstant,enums:List[GlobalName],judg:GlobalName) : Consthash = {
+  def apply(a:FinalConstant,enums:List[GlobalName],judg:Option[GlobalName]) : Consthash = {
     def simhashit(tp: Term, subs: Set[(OMV, Int)], current: (List[Int],List[GlobalName]),vars: Int)
     : (List[Int], List[GlobalName]) = tp match {
 
@@ -95,7 +97,10 @@ object Consthash {
     a.tp match {
       case Some(t: Term) => {
         val ret = simhashit(t, Set(), (List(), List()), 0)
-        Consthash(a.path, ret._1.hashCode(), ret._2, AxiomHandler.isAxiom(a,judg))
+        Consthash(a.path, ret._1.hashCode(), ret._2,judg match {
+          case Some(j:GlobalName) => AxiomHandler.isAxiom(a,j)
+          case None => false
+        })
       }
       case _ => Consthash(a.path, List(-1).hashCode(), List(),false)
     }
@@ -169,7 +174,7 @@ object AxiomHandler {
    * @return the GlobalName for the Judgment declaration.
    */
 
-  def findJudgment(ctrl:Controller,th:DeclaredTheory):GlobalName = {
+  def findJudgment(ctrl:Controller,th:DeclaredTheory):Option[GlobalName] = {
 
     def findJudgmentIt(th:DeclaredTheory):Option[GlobalName] = {
       val list = for {o <- th.getConstants.filter(p => p.rl match {
@@ -181,21 +186,17 @@ object AxiomHandler {
       }
       if (list.nonEmpty) Some(list.head)
       else {
-        val list2 = for {o <- th.getIncludes if (ctrl.get(o) match {
+        val list2 = for {o <- th.getIncludes if (try {ctrl.get(o) match {
           case t: DeclaredTheory => true
           case _ => false
-        })}
+        }} catch {case _ => false})}
           yield findJudgmentIt(ctrl.get(o) match { case t: DeclaredTheory => t case _ => throw new Exception("FinalConstant Expected!") })
         val list3=list2.collect {case Some(t) => t}
         if (list3.nonEmpty) Some(list3.head) else None
       }
     }
 
-    findJudgmentIt(th) match {
-      case Some(t) => t
-      case None => throw new Exception("No Judgment found!")
-    }
-
+    findJudgmentIt(th)
   }
 
   /**
