@@ -23,7 +23,7 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
    
    def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {apply(e, 0)(rh)}
 
-   def doConstant(c: Constant,indent:Int)(implicit rh: RenderingHandler) = {
+   protected def doConstant(c: Constant,indent:Int)(implicit rh: RenderingHandler) = {
       rh("constant " + c.name)
       c.alias foreach {a =>
          rh(" @ ")
@@ -55,18 +55,18 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
       }
    }
 
-   def doDeclaredStructure(s:DeclaredStructure,indent:Int)(implicit rh: RenderingHandler) = {
+   protected def doDeclaredStructure(s:DeclaredStructure,indent:Int)(implicit rh: RenderingHandler) = {
       rh("structure " + s.name + " : ")
       apply(s.from, Some(s.path $ TypeComponent))
       rh(" =\n")
       s.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
    }
 
-   def doIndent(indent:Int)(implicit rh: RenderingHandler) {
+   protected def doIndent(indent:Int)(implicit rh: RenderingHandler) {
       Range(0,indent).foreach {_ => rh("   ")}
    }
    //this used to be private; but had to change that for MMTSyntaxPresenter override of doDeclaredStructure
-   def apply(e : StructuralElement, indent: Int)(implicit rh: RenderingHandler) {
+   protected def apply(e : StructuralElement, indent: Int)(implicit rh: RenderingHandler) {
       doIndent(indent)
       beginDecl(e)
       e match {

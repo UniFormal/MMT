@@ -56,7 +56,6 @@ object Moduleadder {
 
   def apply(th:DeclaredTheory,list:Set[FinalConstant],substs:List[(GlobalName,GlobalName)]):Boolean = {
     val nsubsts = (for {a <- list} yield (GlobalName(OMID(th.path),a.name),a.path)).toList
-    val newtype =
     for (a <- list) th.add(new FinalConstant(OMID(th.path), a.name, a.alias,
       TermContainer(substitute(a.tp,nsubsts:::substs)), TermContainer(substitute(a.df,nsubsts:::substs)), a.rl,
       NotationContainer(a.not)))

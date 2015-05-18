@@ -79,6 +79,7 @@ object TokenList {
                case _ if isLetter(c) || isNumber(c) =>
                   current += c
                // the special MMT delimiters continue a multi-character Token
+               // TODO does not allow lexing URIs ?name
                case _ if (c == '?' || c == '/') && current != "" =>
                   current += c
                // connectors are remembered
