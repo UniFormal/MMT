@@ -4,13 +4,9 @@ import sbtunidoc.Plugin.UnidocKeys.unidoc
 lazy val postProcessApi =
   taskKey[Unit]("post process generated api documentation wrt to source links.")
 
-publish := {}
+postProcessApi := PostProcessApi.postProcess(streams.value.log)
 
-postProcessApi := {
-  clean.value
-  (unidoc in Compile).value
-  PostProcessApi.postProcess(streams.value.log)
-}
+publish := {}
 
 scalaVersion := "2.11.6"
 
@@ -22,6 +18,18 @@ scalacOptions in (ScalaUnidoc, unidoc) ++=
   Opts.doc.sourceUrl("file:/€{FILE_PATH}.scala")
 
 target in (ScalaUnidoc, unidoc) := file("../doc/api")
+
+lazy val cleandoc =
+  taskKey[Unit]("remove api documentation.")
+
+cleandoc := PostProcessApi.delRecursive(file("../doc/api"))
+
+lazy val apidoc =
+  taskKey[Unit]("generate post processed api documentation.")
+
+apidoc := postProcessApi.value
+
+apidoc <<= apidoc.dependsOn(cleandoc, unidoc in Compile)
 
 def commonSettings(nameStr: String) = Seq(
   organization := "info.kwarc.mmt",
@@ -52,6 +60,7 @@ lazy val api = (project in file("mmt-api/trunk")).
   settings(commonSettings("mmt-api"): _*).
   settings(
     scalaSource in Compile := baseDirectory.value / "src/main",
+    scalaSource in Test := baseDirectory.value / "src/main",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-compiler" % scalaVersion.value,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
