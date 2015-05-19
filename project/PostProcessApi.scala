@@ -8,7 +8,7 @@ object PostProcessApi {
     val oldPrefix = "file:/" + mmtFolder
     def doFolder(path: File, newPrefix: String) {
       path.list foreach { e =>
-        if (!e.startsWith(".")) {
+        if (e.endsWith(".html") && !e.startsWith("index") && !e.startsWith(".")) {
           val f = new File(path + "/" + e)
           if (f.isDirectory)
             doFolder(f, "../" + newPrefix)
@@ -24,7 +24,7 @@ object PostProcessApi {
         }
       }
     }
-    doFolder(new File(mmtFolder + "/doc/api/info"), "../../..")
+    doFolder(new File(mmtFolder + "/doc/api"), "../..")
     state
   }
 }
