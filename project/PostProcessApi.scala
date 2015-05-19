@@ -3,11 +3,19 @@ import java.io._
 import sbt.Logger
 
 object PostProcessApi {
+  def delRecursive(path: File) {
+    path.listFiles foreach { f =>
+      if (f.isDirectory) delRecursive(f)
+      else f.delete()
+    }
+    path.delete()
+  }
+
   def postProcess(log: Logger) = {
     val mmtFolder = new File(System.getProperty("user.dir")).getParent
     val oldPrefix = "file:/" + mmtFolder
     def doFolder(path: File, newPrefix: String) {
-      log.info("processing: " + path)
+      log.debug("processing: " + path)
       path.list foreach { e =>
         if (!e.startsWith(".")) {
           val f = new File(path + "/" + e)
@@ -17,10 +25,10 @@ object PostProcessApi {
             val s = io.Source.fromFile(f).getLines().mkString("", "\n", "\n")
             if (s.indexOf(oldPrefix) >= 0) {
               val w = new BufferedWriter(new FileWriter(f))
-              log.info("rewrote: " + f)
+              log.debug("rewrote: " + f)
               w.write(s.replace(oldPrefix, newPrefix))
             } else
-              log.info("skipping: " + f)
+              log.debug("skipping: " + f)
           }
         }
       }
