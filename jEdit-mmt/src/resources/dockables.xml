@@ -2,4 +2,10 @@
 	<DOCKABLE NAME="mmt-dockable">
 		new info.kwarc.mmt.jedit.MMTDockable(view, position);
 	</DOCKABLE>
+	<DOCKABLE NAME="mmt-treedockable">
+		new info.kwarc.mmt.jedit.MMTTreeDockable(view, position);
+	</DOCKABLE>
+	<DOCKABLE NAME="mmt-refactordockable">
+		new info.kwarc.mmt.jedit.MMTRefactorDockable(view, position);
+	</DOCKABLE>
 </DOCKABLES>
