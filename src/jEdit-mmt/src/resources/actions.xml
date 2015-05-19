@@ -4,6 +4,16 @@
 		   wm.addDockableWindow("mmt-dockable");
 		</CODE>
 	</ACTION>
+	<ACTION NAME="mmt-treedockable-show">
+		<CODE>
+		   wm.addDockableWindow("mmt-treedockable");
+		</CODE>
+	</ACTION>
+	<ACTION NAME="mmt-refactordockable-show">
+		<CODE>
+		   wm.addDockableWindow("mmt-refactordockable");
+		</CODE>
+	</ACTION>
 	<ACTION NAME="mmt-compile">
 		<CODE>
 		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).compileActions().compileCurrent(view);

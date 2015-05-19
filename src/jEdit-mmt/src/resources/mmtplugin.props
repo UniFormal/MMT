@@ -26,11 +26,13 @@ plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.2=plugin sidekick.SideKickPlugin 1.
 plugin.info.kwarc.mmt.jedit.MMTPlugin.depend.3=plugin gatchan.jedit.hyperlinks.HyperlinksPlugin 1.1
 
 # labels for actions defined in actions.xml
+mmt-treedockable-show.label=Show Theory Tree
+mmt-refactordockable-show.label=Refactor theories
 mmt-dockable-show.label=Show Dockable
 mmt-compile.label=Compile current buffer
 mmt-insert-US.label=Insert Object Terminator (US)
 mmt-insert-RS.label=Insert Declaration Terminator (RS)
-mmt-insert-GS.label=Insert Module Terminator (MS)
+mmt-insert-GS.label=Insert Module Terminator (GS)
 mmt-show.label=show hidable parts
 mmt-hide.label=hide hidable parts
 mmt-hideshow.label=toggle hidable parts
@@ -43,7 +45,7 @@ mmt-browser-compile.label=Compile
 # menu items for jEdit views
 plugin.info.kwarc.mmt.jedit.MMTPlugin.menu.label=MMT
 plugin.info.kwarc.mmt.jedit.MMTPlugin.menu=\
-mmt-dockable-show mmt-compile \
+mmt-dockable-show mmt-treedockable-show mmt-refactordockable-show mmt-compile \
 - mmt-insert-US mmt-insert-RS mmt-insert-GS \
 - mmt-show mmt-hide mmt-hideshow mmt-hideCurrent mmt-makeHidable
 
@@ -52,6 +54,8 @@ plugin.info.kwarc.mmt.jedit.MMTPlugin.browser-menu=mmt-browser-compile
 
 # dockable window
 mmt-dockable.title=MMT
+mmt-treedockable.title=Theory Tree
+mmt-refactordockable.title=MMT refactoring
 
 # options pane
 plugin.info.kwarc.mmt.jedit.MMTPlugin.option-pane=info.kwarc.mmt.jedit.MMTPlugin
