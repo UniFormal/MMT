@@ -1,8 +1,16 @@
 import com.github.retronym.SbtOneJar
 import sbtunidoc.Plugin.UnidocKeys.unidoc
-import PostProcessApi._
+
+lazy val postProcessApi =
+  taskKey[Unit]("post process generated api documentation wrt to source links.")
 
 publish := {}
+
+postProcessApi := {
+  clean.value
+  (unidoc in Compile).value
+  PostProcessApi.postProcess(streams.value.log)
+}
 
 scalaVersion := "2.11.6"
 
@@ -12,8 +20,6 @@ scalacOptions in (ScalaUnidoc, unidoc) ++=
   "-diagrams" +:
   Opts.doc.title("MMT") ++:
   Opts.doc.sourceUrl("file:/€{FILE_PATH}.scala")
-
-commands += postProcessApi
 
 target in (ScalaUnidoc, unidoc) := file("../doc/api")
 
