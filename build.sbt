@@ -36,7 +36,10 @@ def commonSettings(nameStr: String) = Seq(
 )
 
 lazy val tiscaf = (project in file("tiscaf")).
-  settings(commonSettings("tiscaf"): _*)
+  settings(commonSettings("tiscaf"): _*).
+  settings(
+    scalaSource in Compile := baseDirectory.value / "src/main/scala"
+  )
 
 lazy val api = (project in file("mmt-api/trunk")).
   dependsOn(tiscaf).
