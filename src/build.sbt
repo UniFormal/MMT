@@ -1,3 +1,6 @@
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption._
+
 import com.github.retronym.SbtOneJar
 import sbtunidoc.Plugin.UnidocKeys.unidoc
 
@@ -12,12 +15,12 @@ scalaVersion := "2.11.6"
 
 unidocSettings
 
-scalacOptions in (ScalaUnidoc, unidoc) ++=
+scalacOptions in(ScalaUnidoc, unidoc) ++=
   "-diagrams" +:
-  Opts.doc.title("MMT") ++:
-  Opts.doc.sourceUrl("file:/€{FILE_PATH}.scala")
+    Opts.doc.title("MMT") ++:
+    Opts.doc.sourceUrl("file:/€{FILE_PATH}.scala")
 
-target in (ScalaUnidoc, unidoc) := file("../doc/api")
+target in(ScalaUnidoc, unidoc) := file("../doc/api")
 
 lazy val cleandoc =
   taskKey[Unit]("remove api documentation.")
@@ -31,6 +34,14 @@ apidoc := postProcessApi.value
 
 apidoc <<= apidoc.dependsOn(cleandoc, unidoc in Compile)
 
+val deploy =
+  TaskKey[Unit]("deploy", "copies MMTPlugin.jar to remote location.")
+
+deploy in jedit <<= packageBin in(jedit, Compile) map { asm =>
+  val remote = file("../deploy/jedit-plugin/plugin/jars/MMTPlugin.jar")
+  Files.copy(asm.toPath, remote.toPath, REPLACE_EXISTING)
+}
+
 def commonSettings(nameStr: String) = Seq(
   organization := "info.kwarc.mmt",
   version := "1.0.1",
@@ -42,7 +53,7 @@ def commonSettings(nameStr: String) = Seq(
   unmanagedJars in Compile := Seq.empty,
   isSnapshot := true,
   publishTo := Some(Resolver.file("file", new File("../deploy/main"))),
-  mainClass in (Compile, run) := Some("info.kwarc.mmt.api.frontend.Run"),
+  mainClass in(Compile, run) := Some("info.kwarc.mmt.api.frontend.Run"),
   exportJars := true,
   autoAPIMappings := true,
   connectInput in run := true,
@@ -104,7 +115,6 @@ lazy val jedit = (project in file("jEdit-mmt")).
   dependsOn(api).
   settings(commonSettings("jEdit-mmt"): _*).
   settings(
-    // artifactName := { (_, _, _) => "MMTPlugin.jar" },
     unmanagedJars in Compile ++= Seq(
       "Console.jar",
       "ErrorList.jar",
