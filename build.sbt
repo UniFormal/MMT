@@ -1,5 +1,6 @@
 import com.github.retronym.SbtOneJar
 import sbtunidoc.Plugin.UnidocKeys.unidoc
+import PostProcessApi._
 
 publish := {}
 
@@ -11,6 +12,8 @@ scalacOptions in (ScalaUnidoc, unidoc) ++=
   "-diagrams" +:
   Opts.doc.title("MMT") ++:
   Opts.doc.sourceUrl("file:/€{FILE_PATH}.scala")
+
+commands += postProcessApi
 
 target in (ScalaUnidoc, unidoc) := file("../doc/api")
 
