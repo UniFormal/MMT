@@ -21,7 +21,7 @@ abstract class STeXError(msg : String, severity : Option[Level.Level]) extends E
   override def level = severity.getOrElse(super.level)
 }
 
-class STeXParseError(val msg : String, val sref : Option[SourceRef], severity : Option[Level.Level]) extends STeXError(msg, severity) {
+class STeXParseError(val msg : String, val sref : Option[SourceRef], val severity : Option[Level.Level]) extends STeXError(msg, severity) {
   private def srefS = sref.map(_.region.toString).getOrElse("")
   override def toNode = <error type={this.getClass().toString} shortMsg={this.shortMsg} level={level.toString} sref={srefS}> {Stacktrace.asNode(this)} </error>
 }
@@ -86,9 +86,9 @@ class STeXImporter extends Importer {
       src.close 
       translateDocument(node)(bt.narrationDPath, bt.errorCont)
       val doc = controller.getDocument(bt.narrationDPath)
-      //if (sTeX.getLanguage(doc.path).isDefined) { //don't index signatures, will call manually after bindings are added
-      cont(doc)
-      //}
+      if (!sTeX.inSmglom(doc.path) || sTeX.getLanguage(doc.path).isDefined) { //don't index smglom signatures, will call manually after bindings are added
+        cont(doc)
+      }
     } catch {
       case e : Exception => 
         val err = STeXParseError.from(e, Some("Skipping article due to exception"), None, Some(Level.Fatal))

@@ -58,6 +58,14 @@ object Definition {
   }
 }
 
+object Assertion {
+  def apply(home : Term, name : LocalName, df : Term) : Constant = {
+    val const = Constant(home, name, None, None, Some(df), None)
+    const.metadata.add(new MetaDatum((new InformalSym("role")).path, (new InformalSym("assertion")).term))
+    const
+  }
+}
+
 object Exercise {
   def apply(home : Term, name : LocalName, prob : Term, sol : Option[Term]) : Constant = {
     val const = Constant(home, name, None, Some(prob), sol, None)
