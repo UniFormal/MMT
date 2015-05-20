@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{DeclaredView, DeclaredTheory}
-import info.kwarc.mmt.api.refactoring.{Intersecter, Moduleadder, Viewfinder}
+import info.kwarc.mmt.api.refactoring._
 import org.gjt.sp.jedit.{jEdit, View}
 
 import scala.tools.nsc.doc.base.comment.Bold
@@ -20,8 +20,8 @@ class MMTRefactorDockable(view: View, position: String) extends JPanel with Acti
   val controller = mmt.controller
   val topPanel = new JPanel
   val resultArea = new JPanel
-  val findViewsHereButton = new JButton("Find Views in current Document")
-  val findViewsGlobalButton = new JButton("Find Views globally")
+  val findViewsHereButton = new JButton("Find Views")
+  val addTheoriesButton = new JButton("Add declared Theories")
   val addViewsButton = new JButton("Add declared Views")
   val textfield1 = new JTextField("Parameter Cutoff:")
   val cutoffField = new JTextField("0")
@@ -39,11 +39,10 @@ class MMTRefactorDockable(view: View, position: String) extends JPanel with Acti
     valueField.setEditable(true)
 
     findViewsHereButton.addActionListener(this)
-    findViewsGlobalButton.addActionListener(this)
+    addTheoriesButton.addActionListener(this)
     addViewsButton.addActionListener(this)
 
     topPanel.add(findViewsHereButton)
-    topPanel.add(findViewsGlobalButton)
     topPanel.add(addViewsButton)
     topPanel.add(Box.createRigidArea(new Dimension(5,0)))
     topPanel.add(textfield1)
@@ -51,6 +50,7 @@ class MMTRefactorDockable(view: View, position: String) extends JPanel with Acti
     topPanel.add(Box.createRigidArea(new Dimension(5,0)))
     topPanel.add(textfield2)
     topPanel.add(valueField)
+    topPanel.add(addTheoriesButton)
     add(topPanel,BorderLayout.PAGE_START)
     add(new JScrollPane(resultArea),BorderLayout.CENTER)
   }
@@ -103,12 +103,13 @@ class MMTRefactorDockable(view: View, position: String) extends JPanel with Acti
 
       }
 
-      if (ae.getSource == findViewsGlobalButton) {
+      if (ae.getSource == addTheoriesButton) {
         resultArea.removeAll()
-        val text = new JTextArea("Click2!")
-        text.setEditable(false)
-        resultArea.add(text)
+        val docths = controller.memory.content.getModules.toList collect {case t: DeclaredTheory => t}
+        for (o <- docths) resultArea.add(new ResultTheoryArea(o,
+          docths.take(docths.indexOf(o))++docths.drop(docths.indexOf(o)+1),this,controller))
         resultArea.revalidate()
+        this.repaint()
       }
 
       if (ae.getSource == addViewsButton) {
@@ -187,7 +188,7 @@ class ResultViewArea(from:DeclaredTheory,to:DeclaredTheory,viewset:Set[(GlobalNa
   private val vName = new JTextField("View Name")
   private val addButton = new JButton("Add View")
   addButton.addActionListener(this)
-  private val intersectButton = new JButton("Refactor")
+  private val intersectButton = new JButton("Intersect")
   intersectButton.addActionListener(this)
 
   vContent.setSize(vContent.getMinimumSize)
@@ -222,7 +223,7 @@ class ResultViewArea(from:DeclaredTheory,to:DeclaredTheory,viewset:Set[(GlobalNa
       target.resultArea.removeAll()
       val fullview = new DeclaredView(from.parent, LocalName(vName.getText), OMID(from.path), OMID(to.path), false)
       Moduleadder(fullview,viewset,controller)
-      target.resultArea.add(new RefactorArea(from,to,fullview,viewset,controller,target))
+      target.resultArea.add(new IntersectArea(from,to,fullview,viewset,controller,target))
       target.resultArea.revalidate()
     }
 
@@ -244,7 +245,7 @@ class ExistingViewArea(v:DeclaredView,from:DeclaredTheory,to:DeclaredTheory,view
     +" -> "+o._2.^!.last+"?"+o._2.name.toString()).toArray)
   private val valuefield = new JTextField("Value: "+value)
   valuefield.setEditable(false)
-  private val intersectButton = new JButton("Refactor")
+  private val intersectButton = new JButton("Intersect")
   intersectButton.addActionListener(this)
 
   add(titlefield)
@@ -256,19 +257,19 @@ class ExistingViewArea(v:DeclaredView,from:DeclaredTheory,to:DeclaredTheory,view
   def actionPerformed(ae:ActionEvent) = {
     if (ae.getSource==intersectButton) {
       target.resultArea.removeAll()
-      target.resultArea.add(new RefactorArea(from,to,v,viewset,controller,target))
+      target.resultArea.add(new IntersectArea(from,to,v,viewset,controller,target))
       target.resultArea.revalidate()
     }
   }
 }
 
-class RefactorArea(from:DeclaredTheory,to:DeclaredTheory,cview:DeclaredView,viewset:Set[(GlobalName,GlobalName)],
+class IntersectArea(from:DeclaredTheory,to:DeclaredTheory,cview:DeclaredView,viewset:Set[(GlobalName,GlobalName)],
                    controller:Controller,target:MMTRefactorDockable)
   extends JPanel with ActionListener {
 
   setLayout(new BoxLayout(this,BoxLayout.Y_AXIS))
 
-  private val titlefield = new JTextArea("Refactoring Theories "+from.name+" and "+to.name+"\nUsing View "+cview.name)
+  private val titlefield = new JTextArea("Intersecting theories "+from.name+" and "+to.name+"\nUsing View "+cview.name)
   titlefield.setEditable(false)
   titlefield.setFont(titlefield.getFont.deriveFont(Font.BOLD))
 
@@ -294,7 +295,7 @@ class RefactorArea(from:DeclaredTheory,to:DeclaredTheory,cview:DeclaredView,view
       val printer = new MMTSyntaxPresenter()
       controller.extman.addExtension(printer)
       for (o <- list) printer(o)
-      
+
       target.dumptoDocument(rh.get)
       SwingUtilities.getWindowAncestor(target).dispose()
     }
@@ -302,3 +303,151 @@ class RefactorArea(from:DeclaredTheory,to:DeclaredTheory,cview:DeclaredView,view
 
 }
 
+class ResultTheoryArea(th:DeclaredTheory,others:List[DeclaredTheory],target:MMTRefactorDockable,controller:Controller)
+  extends JPanel with ActionListener {
+  setLayout(new BoxLayout(this,BoxLayout.X_AXIS))
+
+  private val titlefield = new JTextField(th.path.^!.last+"?"+th.name)
+  titlefield.setEditable(false)
+  private val viewButton = new JButton("Find views to:")
+  viewButton.addActionListener(this)
+  private val thnames = others.map(t => t.path.^!.last+"?"+t.name).toArray
+  private val viewbox = new JComboBox("All"+:thnames)
+  private val consts = th.getConstants collect {case c: FinalConstant => c}
+  private val delButton = new JButton("Delete Declaration:")
+  delButton.addActionListener(this)
+  private val constBox = new JComboBox(consts.map(c => c.name.toString()).toArray)
+  private val pushoutButton = new JButton("Pushout with:")
+  pushoutButton.addActionListener(this)
+  private val thBox = new JComboBox(thnames)
+
+  add(titlefield)
+  add(Box.createRigidArea(new Dimension(5,0)))
+  add(viewButton)
+  add(viewbox)
+  add(Box.createRigidArea(new Dimension(5,0)))
+  add(delButton)
+  add(constBox)
+  add(Box.createRigidArea(new Dimension(5,0)))
+  add(pushoutButton)
+  add(thBox)
+
+  def actionPerformed(ae:ActionEvent) = {
+
+    if (ae.getSource==viewButton) {
+
+      target.resultArea.removeAll()
+      val text = new JTextArea("Looking for views...")
+      text.setEditable(false)
+      target.resultArea.add(text)
+      target.resultArea.revalidate()
+      val pairs = if (viewbox.getSelectedIndex==0) others.map(t => (th,t)) else List((th,others(viewbox.getSelectedIndex-1)))
+      val views = (for {p <- pairs} yield {
+        text.append("\n" + p._1.name + " -> " + p._2.name + "...")
+        target.repaint()
+        val allviews = {
+          val list = Viewfinder.findByAxioms(p._1,p._2,controller,target.cutoffField.getText.toInt,true,true)
+          (for {o <- list} yield (o,target.evaluateViewset(p._1,p._2,o,controller))
+            ).filter(p => p._2>=target.valueField.getText.toDouble && p._2>0)
+        }
+        text.append(allviews.toList.length+" Views found!")
+        target.repaint()
+        (p._1,p._2,allviews)
+      }).filter(p => p._3.nonEmpty)
+      text.append("\nDone.")
+      target.repaint()
+      if (views.nonEmpty) {
+        target.resultArea.remove(text)
+
+        for (o <- views) {
+          val titlefield = new JTextField(o._1.name + " -> " + o._2.name)
+          titlefield.setEditable(false)
+          titlefield.setSize(titlefield.getMinimumSize)
+          titlefield.setFont(titlefield.getFont.deriveFont(Font.BOLD))
+
+          target.resultArea.add(titlefield)
+
+          for (p <- o._3) {
+            target.resultArea.add(new ResultViewArea(o._1, o._2, p._1, p._2, controller, target))
+          }
+        }
+      } else text.append("\nNo Views found!")
+
+      target.resultArea.revalidate()
+      target.repaint()
+
+    } else
+
+    if (ae.getSource==delButton) {
+
+      val newth = SubtractDeclaration(th,consts(constBox.getSelectedIndex),controller,Some(th.name))
+
+      implicit val rh = new api.presentation.StringBuilder
+      val printer = new MMTSyntaxPresenter()
+      controller.extman.addExtension(printer)
+      printer(newth)
+
+      target.dumptoDocument(rh.get)
+      SwingUtilities.getWindowAncestor(target).dispose()
+
+    } else
+
+    if (ae.getSource==pushoutButton) {
+      target.resultArea.removeAll()
+      val th2index = thBox.getSelectedIndex
+      target.resultArea.add(new PushoutArea(th,others(th2index),
+        others.take(th2index)++others.drop(th2index+1),target,controller))
+      target.resultArea.revalidate()
+    }
+
+  }
+}
+
+class PushoutArea(thA:DeclaredTheory,thB:DeclaredTheory,others:List[DeclaredTheory],target:MMTRefactorDockable,controller:Controller)
+  extends JPanel with ActionListener {
+
+  setLayout(new BoxLayout(this,BoxLayout.X_AXIS))
+
+  private val titlefield = new JTextField("Pushout: "+thA.name+" <-> "+thB.name+" using:")
+  titlefield.setEditable(false)
+  titlefield.setFont(titlefield.getFont.deriveFont(Font.BOLD))
+
+  private val thnames = others.map(t => t.path.^!.last+"?"+t.name).toArray
+  private val thCbox = new JComboBox("Find best"+:thnames)
+
+  private val namefield = new JTextField("Pushout Name")
+
+  private val pushoutbutton = new JButton("Create Pushout")
+  pushoutbutton.addActionListener(this)
+
+  private val viewfinderbox = new JCheckBox("Use Viewfinder:",true)
+
+  add(titlefield)
+  add(thCbox)
+  add(Box.createRigidArea(new Dimension(5,0)))
+  add(namefield)
+  add(viewfinderbox)
+  add(pushoutbutton)
+
+  def actionPerformed(ae:ActionEvent) = {
+    if (ae.getSource==pushoutbutton) {
+      if (viewfinderbox.isSelected) {
+        if (thCbox.getSelectedIndex == 0)
+          for (t <- others; v <- Viewfinder(thA,t,controller):::Viewfinder(thB,t,controller)) controller.add(v)
+        else for (v <- Viewfinder(thA,others(thCbox.getSelectedIndex - 1),controller):::Viewfinder(thB,others(thCbox.getSelectedIndex - 1),controller)) controller.add(v)
+      }
+
+      val ret = if (thCbox.getSelectedIndex == 0) Unifier(thA, thB, controller, false, Some(LocalName(namefield.getText)))
+      else Unifier(thA, thB, others(thCbox.getSelectedIndex - 1), controller, false, Some(LocalName(namefield.getText)),
+        Some(others(thCbox.getSelectedIndex - 1).name))
+
+      implicit val rh = new api.presentation.StringBuilder
+      val printer = new MMTSyntaxPresenter()
+      controller.extman.addExtension(printer)
+      for (o <- ret) printer(o)
+
+      target.dumptoDocument(rh.get)
+      SwingUtilities.getWindowAncestor(target).dispose()
+    }
+  }
+}

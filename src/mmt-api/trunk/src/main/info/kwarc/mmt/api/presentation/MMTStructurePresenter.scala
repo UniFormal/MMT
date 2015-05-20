@@ -65,6 +65,16 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
    protected def doIndent(indent:Int)(implicit rh: RenderingHandler) {
       Range(0,indent).foreach {_ => rh("   ")}
    }
+
+   protected def doDeclaredView(v:DeclaredView,indent:Int)(implicit rh: RenderingHandler) = {
+      rh("view " + v.name + " : ")
+      apply(v.from, Some(v.path $ DomComponent))
+      rh(" -> ")
+      apply(v.to, Some(v.path $ CodComponent))
+      rh(" =\n")
+      v.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
+   }
+
    //this used to be private; but had to change that for MMTSyntaxPresenter override of doDeclaredStructure
    protected def apply(e : StructuralElement, indent: Int)(implicit rh: RenderingHandler) {
       doIndent(indent)
@@ -81,16 +91,10 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
          case c: Constant => doConstant(c,indent)
          case t: DeclaredTheory =>
             rh("theory " + t.name)
-            t.meta.foreach(p => rh(":"+p.toString))
+            t.meta.foreach(p => rh(" : "+p.toString))
             rh(" =\n")
             t.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
-         case v: DeclaredView =>
-            rh("view " + v.name + " : ")
-            apply(v.from, Some(v.path $ DomComponent))
-            rh(" -> ")
-            apply(v.to, Some(v.path $ CodComponent))
-            rh(" =\n")
-            v.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
+         case v: DeclaredView => doDeclaredView(v,indent)
          case nm: NestedModule =>
             apply(nm.module, indent+1)
          case s: DeclaredStructure => doDeclaredStructure(s,indent)

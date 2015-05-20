@@ -26,7 +26,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     case x: DefinedStructure    => rh(Reader.RS.toChar.toString) // check?
   }
   override def doConstant(c:Constant,indent:Int)(implicit rh: RenderingHandler) = {
-    rh("constant " + c.name)
+    rh("" + c.name)
     c.alias foreach {a =>
       rh(" @ ")
       rh(a.toPath)
@@ -62,6 +62,25 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     }
     */
   }
+  override def doDeclaredView(v:DeclaredView,indent:Int)(implicit rh: RenderingHandler) = {
+    rh("view " + v.name + " : ")
+    this.apply(v.from, Some(v.path $ DomComponent))
+    rh(" -> ")
+    this.apply(v.to, Some(v.path $ CodComponent))
+    rh(" =\n")
+    v.getPrimitiveDeclarations.foreach {d => d match {
+      case c:Constant => {
+        this.doIndent(indent)
+        rh("" + c.name)
+        c.df foreach {t =>
+          rh("  = ")
+          this.apply(t, Some(c.path $ DefComponent))
+          rh(Reader.RS.toChar.toString+"\n")
+        }
+      }
+      case _ => apply(d, indent+1)
+    }}
+  }
 
   override def doDeclaredStructure(s:DeclaredStructure,indent:Int)(implicit rh: RenderingHandler) = {
     val decs = s.getPrimitiveDeclarations
@@ -71,7 +90,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       rh(Reader.RS.toChar.toString)
     } else {
       rh("structure " + s.name + " : ")
-      apply(s.from, Some(s.path $ TypeComponent))
+      this.apply(s.from, Some(s.path $ TypeComponent))
       rh(" =\n")
       decs.foreach {d => this.apply(d, indent+1)}
       rh(Reader.GS.toChar.toString)
