@@ -8,7 +8,7 @@ import objects._
 
 object IRels {
   val isDefinedBy = CustomBinary("isDefinedBy", "is defined by", "is definition for")
-  val isExemplifiedBy = CustomBinary("isDefinedBy", "is exemplified by", "is example for")
+  val isExemplifiedBy = CustomBinary("isExemplifiedBy", "is exemplified by", "is example for")
   val isExercise = CustomUnary("exercise")
   val isExample = CustomUnary("example")
   val isDefinition = CustomUnary("definition")
@@ -29,11 +29,21 @@ class IRelExtractor extends RelationalExtractor{
     case d : DeclaredModule => d.getDeclarations foreach {
       case c : Constant => 
         c.metadata.getValues(Informal.constant("role")) foreach {
-          case OMA(OMS(p), args) if p == Informal.constant("defines") => args foreach {
-            case OMS(d) => f(Relation(IRels.isDefinedBy, d, c.path))
-            case o => println(o)//nothing to do
-          }
-          case m => println(m)//nothing to do
+          case OMA(OMS(p), args) if p == Informal.constant("defines") => 
+            f(Individual(c.path, IRels.isDefinition))
+            args foreach {
+              case OMS(d) => f(Relation(IRels.isDefinedBy, d, c.path))
+              case o => println(o)//nothing to do
+            }
+          case OMA(OMS(p), args) if p == Informal.constant("example") => 
+            f(Individual(c.path, IRels.isExample))
+            args foreach {
+              case OMS(d) => f(Relation(IRels.isExemplifiedBy, d, c.path))
+              case o => println(o)//nothing to do
+            }
+          case OMS(p) if p == Informal.constant("exercise") => 
+            f(Individual(c.path, IRels.isExercise))
+          case m => //nothing to do
         }
       case _ => //nothing to do  
     }

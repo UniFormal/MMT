@@ -28,6 +28,7 @@ object GlossaryGenerator {
     }
     this.rh = new StringBuilder
     presenter.setRh(rh)
+    
     val mpaths = controller.depstore.getInds(ontology.IsTheory).toList
     val modules = mpaths flatMap { p => 
       try {
@@ -104,7 +105,7 @@ object GlossaryGenerator {
     
     val notations = (constant.notC.parsingDim.notations.values.flatten ++ constant.notC.presentationDim.notations.values.flatten).map(n => spath -> n).toList.distinct
     
-    val defs = controller.depstore.queryList(spath, ToObject(IRels.isDefinedBy)) collect {
+    val defs = controller.depstore.queryList(spath, ToObject(IRels.isDefinedBy)) map {
           case p: Path =>
             controller.get(p) match {
               case fd: Constant =>
@@ -117,8 +118,9 @@ object GlossaryGenerator {
               case _ => None
             }
         }
-    if (defs.isEmpty)
+    if (defs.isEmpty) {
       return;
+    }
     
     li(cls = "entry") {
       div {
@@ -140,7 +142,7 @@ object GlossaryGenerator {
           }
         }
         defs.flatten foreach { fd =>
-          div(attributes = ("id" -> ("def_" + spath.toPath + "_" + fd.path.toPath)) :: Nil) {
+          div(cls = "hidden", attributes = ("id" -> ("def_" + spath.toPath + "_" + fd.path.toPath)) :: Nil) {
             presenter(fd)(rh)
           }
         }
