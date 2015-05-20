@@ -23,7 +23,7 @@ target in(ScalaUnidoc, unidoc) := file("../doc/api")
 lazy val cleandoc =
   taskKey[Unit]("remove api documentation.")
 
-cleandoc := delRecursive(file("../doc/api"))
+cleandoc := delRecursive(streams.value.log, file("../doc/api"))
 
 lazy val apidoc =
   taskKey[Unit]("generate post processed api documentation.")
@@ -35,9 +35,11 @@ apidoc <<= apidoc.dependsOn(cleandoc, unidoc in Compile)
 val deploy =
   TaskKey[Unit]("deploy", "copies MMTPlugin.jar to remote location.")
 
-deploy in jedit <<= packageBin in(jedit, Compile) map deployTo("MMTPlugin.jar")
+deploy in jedit <<= packageBin in(jedit, Compile) map
+  deployTo("MMTPlugin.jar")
 
-deploy in api <<= packageBin in(api, Compile) map deployTo("mmat-api.jar")
+deploy in api <<= packageBin in(api, Compile) map
+  deployTo("mmt-api.jar")
 
 def commonSettings(nameStr: String) = Seq(
   organization := "info.kwarc.mmt",

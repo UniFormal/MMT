@@ -6,17 +6,25 @@ import sbt.Logger
 
 object PostProcessApi {
   def deployTo(name: String)(jar: File): Unit = {
-    Files.copy(jar.toPath,
-      new File("../deploy/jedit-plugin/plugin/jars/" + name).toPath,
-      REPLACE_EXISTING)
+    val tar = new File("../deploy/jedit-plugin/plugin/jars/" + name)
+    Files.copy(jar.toPath, tar.toPath, REPLACE_EXISTING)
+    println("wrote file: " + tar)
   }
 
-  def delRecursive(path: File) {
-    path.listFiles foreach { f =>
-      if (f.isDirectory) delRecursive(f)
-      else f.delete()
+  def delRecursive(log: Logger, path: File) {
+    def delRecursive(path: File) {
+      path.listFiles foreach { f =>
+        if (f.isDirectory) delRecursive(f)
+        else {
+          f.delete()
+          log.debug("deleted file: " + path)
+        }
+      }
+      path.delete()
+      log.debug("deleted directory: " + path)
     }
-    path.delete()
+    if (path.exists && path.isDirectory) delRecursive(path)
+    else log.warn("ignoring missing directory: " + path)
   }
 
   def postProcess(log: Logger) = {
@@ -41,6 +49,8 @@ object PostProcessApi {
         }
       }
     }
-    doFolder(new File(mmtFolder + "/doc/api"), "../..")
+    val apiDir = new File(mmtFolder + "/doc/api")
+    if (apiDir.exists && apiDir.isDirectory) doFolder(apiDir, "../..")
+    else log.error("missing api directory: " + apiDir)
   }
 }
