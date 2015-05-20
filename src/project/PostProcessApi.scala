@@ -1,8 +1,16 @@
 import java.io._
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption._
 
 import sbt.Logger
 
 object PostProcessApi {
+  def deployTo(name: String)(jar: File): Unit = {
+    Files.copy(jar.toPath,
+      new File("../deploy/jedit-plugin/plugin/jars/" + name).toPath,
+      REPLACE_EXISTING)
+  }
+
   def delRecursive(path: File) {
     path.listFiles foreach { f =>
       if (f.isDirectory) delRecursive(f)
