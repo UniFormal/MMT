@@ -1,13 +1,11 @@
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption._
-
+import PostProcessApi._
 import com.github.retronym.SbtOneJar
 import sbtunidoc.Plugin.UnidocKeys.unidoc
 
 lazy val postProcessApi =
   taskKey[Unit]("post process generated api documentation wrt to source links.")
 
-postProcessApi := PostProcessApi.postProcess(streams.value.log)
+postProcessApi := postProcess(streams.value.log)
 
 publish := {}
 
@@ -25,7 +23,7 @@ target in(ScalaUnidoc, unidoc) := file("../doc/api")
 lazy val cleandoc =
   taskKey[Unit]("remove api documentation.")
 
-cleandoc := PostProcessApi.delRecursive(file("../doc/api"))
+cleandoc := delRecursive(file("../doc/api"))
 
 lazy val apidoc =
   taskKey[Unit]("generate post processed api documentation.")
@@ -37,10 +35,9 @@ apidoc <<= apidoc.dependsOn(cleandoc, unidoc in Compile)
 val deploy =
   TaskKey[Unit]("deploy", "copies MMTPlugin.jar to remote location.")
 
-deploy in jedit <<= packageBin in(jedit, Compile) map { asm =>
-  val remote = file("../deploy/jedit-plugin/plugin/jars/MMTPlugin.jar")
-  Files.copy(asm.toPath, remote.toPath, REPLACE_EXISTING)
-}
+deploy in jedit <<= packageBin in(jedit, Compile) map deployTo("MMTPlugin.jar")
+
+deploy in api <<= packageBin in(api, Compile) map deployTo("mmat-api.jar")
 
 def commonSettings(nameStr: String) = Seq(
   organization := "info.kwarc.mmt",
