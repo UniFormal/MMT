@@ -25,7 +25,8 @@ abstract class RelationalExtractor extends Extension {
 object MMTExtractor extends RelationalExtractor {
    val allUnary = List(IsDocument,IsTheory,IsView,IsStyle,IsConstant,IsStructure,IsConAss,
                           IsStrAss,IsNotation,IsPattern,IsInstance)
-   val allBinary = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,IsAlignedWith)
+   val allBinary = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,
+  		 IsAlignedWithSymbol)
    
   
    /** apply a continuation function to every relational element of a StructuralElement */
