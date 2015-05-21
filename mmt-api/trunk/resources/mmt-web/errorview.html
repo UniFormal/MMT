@@ -32,7 +32,8 @@
         <tr ng-repeat="g in groups">
             <td>{{g.count}}</td>
             <td>
-                <a href= "" ng-click="columns[field].search = g.content; search()"
+                <a href=""
+                   ng-click="columns[field].search = g.content; search()"
                    title="select corresponding entries">&#8631;</a>
                 {{g.content}}
             </td>
@@ -60,11 +61,13 @@
     </span>
 
     <p/>
+
     <div>{{buildCount}} pending builds
-    <a href="" ng-click="showBuildResult = !showBuildResult">
-        <span ng-show="showBuildResult" title="hide build results">&mdash;</span>
-        <span ng-show="!showBuildResult" title="show build results">+</span>
-    </a>
+        <a href="" ng-click="showBuildResult = !showBuildResult">
+            <span ng-show="showBuildResult"
+                  title="hide build results">&mdash;</span>
+            <span ng-show="!showBuildResult" title="show build results">+</span>
+        </a>
         <span ng-show="showBuildResult"><p ng-bind-html="htmlText"/></span>
     </div>
     <table>
@@ -72,7 +75,8 @@
         <tr>
             <th/>
             <th ng-repeat="key in colProps" ng-if="columns[key].x">
-                <span style="cursor:pointer" ng-click="sort.col = key; sort.asc = !sort.asc">
+                <span style="cursor:pointer"
+                      ng-click="sort.col = key; sort.asc = !sort.asc">
                     <span ng-show="sort.col == key">
                         <span ng-show="sort.asc">&#9650;</span>
                         <span ng-show="!sort.asc">&#9660;</span>
@@ -86,7 +90,8 @@
         </thead>
         <tbody>
         <tr ng-repeat="res in results | filter : matchFilters() | orderBy : sort.col : sort.asc">
-            <td><a href= "" ng-click="build(res)" title="rebuild file">&#10227;</a></td>
+            <td><a href="" ng-click="build(res)" title="rebuild file">
+                &#10227;</a></td>
             <td ng-repeat="key in colProps" ng-if="columns[key].x">
                 {{res[key]}}
             </td>
