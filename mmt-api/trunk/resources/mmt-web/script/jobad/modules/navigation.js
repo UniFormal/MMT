@@ -23,7 +23,7 @@ var navigation = {
 		mmt.ajaxReplaceIn(bcurl, 'breadcrumbs');
 		if (uri.split("?").length == 2)
 			mmt.setActiveTheory(uri);
-       // setSVGPanRoot($('svg')[0]);
+	    setSVGPanRoot($('svg')[0]);
 	},
 	
 	navigateServer: function(uri) {

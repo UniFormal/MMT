@@ -97,28 +97,19 @@ var mmt = {
 		   this.currentPosition = null;
 		}
 		if (elem.hasAttribute("jobad:href")) {
-			console.log("I am here with jobadhref");
-
 			mmt.currentURI = elem.getAttribute('jobad:href');
 		} else if ($(elem).parent().hasAttribute("xlink:href")) {
-			console.log('I am here with attribute xlink href');
 			var str =  $(elem).parent().attr("xlink:href");
-			console.log(str);
 			mmt.currentURI = str;
 		} else if ($(elem).hasAttribute("href"))
 		{
-			console.log("I am here with href attribute");
 			var y = $(elem).attr("onclick");
 			var z = y.split(",");
 			var len = z[1].length;
 			var s = z[1].substring(2, len-2);
 			mmt.currentURI = s;
-		}
-		
-		else {
-			 console.log("I am here with null");
-
-		   mmt.currentURI = null;
+		} else {
+			mmt.currentURI = null;
 		}
 	},
 	
@@ -183,12 +174,8 @@ var mmt = {
 	    * @param url the URL to load from
 	    * @param targetid the XML id of the element, where it appends
 	    */
-  
-		
-		
-		ajaxAppendBox : function (url, targetnode, async) {
+	ajaxAppendBox : function (url, targetnode, async) {
 			   function cont(data) {
-				   
 				   var serializer = new XMLSerializer();
 				   var xmlString = serializer.serializeToString(data);
 				   $(targetnode).append(xmlString);
@@ -198,7 +185,7 @@ var mmt = {
 					      'url': url,      
 						  'dataType': 'xml',
 						  'async': async,
-						  'success': cont
+						  'success': cont,						  
 					   });
 			},
 			
@@ -381,6 +368,7 @@ var mmt = {
 	    }, speed);
 	    return contentDiv;
 	},
+	
 	
 	getSelectedParent : function (elem){
 		var s = $(elem).parents().andSelf().filterMClass('math-selected');
