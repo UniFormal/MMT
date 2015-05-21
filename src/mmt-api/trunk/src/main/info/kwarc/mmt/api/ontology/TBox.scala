@@ -56,10 +56,24 @@ case object Declares extends Binary("contains declaration of", "is declared in")
 // symbol - symbol, module - module
 case object IsAliasFor extends Binary("is alias for", "has alias") 
 // symbol - symbol
-case object IsAlignedWith extends Binary("is aligned with", "is aligned with") 
+case object IsAlignedWithSymbol extends Binary("is aligned with", "is aligned with") 
+case object IsAlignedWithType extends Binary("is aligned with", "is aligned with") 
+
+
+/** helper methods for Binary items */
+object Binary {
+   val all = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,IsAlignedWithSymbol,
+  		 IsAlignedWithType)
+   def parse(s: String) : Binary = all.find(_.toString == s) match {
+      case Some(i) => i
+      case _ => throw ParseError("binary predicate expected, found: " + s)
+   }
+}
 /** Extractor extensions should use instances of this class to extend the ontology for binary relations */
-case class CustomBinary(name : String, override val desc : String, override val backwardsDesc : String) extends Binary(desc, backwardsDesc) {
+case class CustomBinary(name : String, override val desc : String, override val backwardsDesc : String) 
+extends Binary(desc, backwardsDesc) {
   override def toString = name
+
 }
 
 /** A RelationalElement is any element that is used in the relational representation of MMT content.
