@@ -6,9 +6,6 @@ import utils._
 import tiscaf._
 import java.util.Calendar
 import info.kwarc.mmt.api.metadata
-import info.kwarc.mmt.api.metadata.HasMetaData
-import info.kwarc.mmt.api.metadata.MetaData
-import info.kwarc.mmt.api.metadata.MetaDatum
 import scala.util.parsing.json._
 import scala.io.Source
 import java.io.FileNotFoundException
@@ -212,90 +209,6 @@ class ActionServer extends ServerExtension("action") {
   }
 }
 
-/**
- * Server Plugin to handle the alignments requests
- * @param path 
- * @param query 
- * @param body 
- */
-class AlignServer extends ServerExtension("align") {
-  override def start(args: List[String]) {
-    val root = controller.backend.getArchive("meta/inf").foreach {a =>
-       val f = a.root / "config" / "OAF" / "alignments" / "alignments.rel"
-       val folder = File(f)
-       try {
-    	   read(folder)
-       }
-       catch {
-       	case ex: Exception => {
-       		println(ex)
-       	}
-       }
-    }
-  }
-  def apply(path: List[String], query: String, body: Body) = {
-		val path = Path.parse(query, controller.getNamespaceMap)
-		val list = getAlignments(path)
-    if (list.isEmpty) {
-    	val resp = "<div><p>No alignments for this symbol so far</p></div>"
-      Server.XmlResponse(resp)
-    } else {
-    	var node_hol = ""
-      var node_miz = ""
-      var hol: List[String] = Nil
-      var mizar: List[String] = Nil
-      var open_math: List[String] = Nil
-      for (p <- list) {
-        if (Label(p, "hol-light")) {
-          hol = p.toPath :: hol
-        }
-        if (Label(p, "MML")) {
-          mizar = p.toPath :: mizar
-        }
-        if (Label(p, "openmath")) {
-          open_math = p.toPath :: open_math
-        }
-      }
-      if (hol.length == 0) {
-        node_hol = ""
-      } else {
-      	node_hol = "<div><h3>HOL</h3></div>"
-        for (h <- hol) {
-          var title_hol = h.split('?').last
-          node_hol = node_hol + "<div><span class=\"name\" jobad:href=\"" + h + "\">" + title_hol + "</span></div>"
-        }
-      }
-      if (mizar.length == 0) {
-        node_miz = ""
-      } else {
-        node_miz = "<div><h3>Mizar MML</h3></div>"
-        for (m <- mizar) {
-          var title_mizar = m.split('?').last
-          node_miz = node_miz + "<div><span class=\"name\" jobad:href=\"" + m + "\">" + title_mizar + "</span></div>"
-        }
-      }
-      val response = "<div xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:jobad=\"http://omdoc.org/presentation\">" + node_hol + node_miz + "</div>"
-     println("res is " + response)
-      Server.XmlResponse(response)
-    }
-  }
-  def Label(path: Path, lib: String): Boolean = {
-    path.toPath contains lib
-  }
-  def read(f: File) {
-    File.ReadLineWise(f) { line =>
-      var ns = NamespaceMap.empty
-      var re = controller.relman.parse(line, ns)
-      controller.depstore += re
-    }
-  }
-  def printList(args: List[_]): Unit = {
-    args.foreach(println)
-  }
-  def getAlignments(p: Path): List[Path] = {
-    controller.depstore.queryList(p, Symmetric(Transitive(ToObject(IsAlignedWith))))
-  }
-}
 
 /**
  * Handle the body of the POST request (json format)
@@ -307,9 +220,9 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
     var s = body.asString
     val date = Calendar.getInstance().getTime().toString()
     val end = date.replaceAll("\\s", "")
-    //deprecated but will use this until better altrnatives come along
+    //deprecated but will use this until better alternatives come along
     // one possible solution is Argonaut
-    val result = scala.util.parsing.json.JSON.parseFull(s) 
+    val result = scala.util.parsing.json.JSON.parseFull(s)
     var user = ""
     var comment = ""
     result match {
@@ -335,7 +248,7 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
     val folder = File(f)
     try {
  			 write(folder, resp);
-			} 
+			}
 		catch {
 			case ex: Exception =>{
 				println(ex)
@@ -343,7 +256,7 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
 		}
 		finally {
  			 Server.XmlResponse("<p>not ok</p>")
- 			}   
+ 			}
     Server.XmlResponse("<p>OK</p>")
   }
   def Writer(f: File) = {
@@ -357,4 +270,67 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
   }
 }
 
-
+class AlignServer extends ServerExtension("align") {
+	//override def start(args: List[String]) {}
+    def apply(path: List[String], query: String, body: Body) = {
+      	val root = controller.backend.getArchive("meta/inf").foreach {a =>
+      	   val f = a.root / "alignments.rel"
+        		val folder = File(f)
+       		try {
+    	   		read(folder)
+       		}
+       		catch {
+       			case ex: Exception => {
+       			println(ex)
+       		}
+       	}
+    	}
+		//	val f = "/home/roxana/test.rel"
+		//	val fol = File(f)
+		//	read(fol)
+  		val path = Path.parse(query, controller.getNamespaceMap) 
+  		val concept = getSymbolAlignments(path)._2.split("\\?").last
+  
+		  val symbolAlignments = getSymbolAlignments(path)._1.distinct.map { s => s.toPath }
+			//printList(symbolAlignments)
+			val typeAlignments = getTypeAlignments(path).map { s => s.toPath }
+			if (symbolAlignments.isEmpty) {
+				Server.TextResponse("")
+   	 } else {
+   		 	
+     		val prepJson = symbolAlignments.map{ el =>
+        	 "{\"name\": " + "\"" +  el.split('?').last  + "\", " + "\", parent\": " + "\"" + concept + "\"" + ", " + "\"address\": " +  "\"" + el +  "\""+  markLibrary(el) + "}"
+        	}.mkString(",")
+			  
+     		val rootJson =  "[{\"name\":"  + "\"" + concept + "\"" + ",\"parent\":\"null\"," + "\"children\": [" + prepJson + "]}]"
+     	//	println(rootJson)
+     		Server.TextResponse(rootJson)
+    }
+  }
+  def findHomeLibrary(path:String, lib: String): Boolean = {
+    path contains lib
+  }
+  def markLibrary(s: String): String = {
+  	if(s contains "hol") " ,\"note\": " + "\"hol\""
+  	else if(s contains "MML") " ,\"note\": " + "\"mizar\""
+  	else if(s contains "Mizar") " ,\"note\": " + "\"mizar\""
+  	else "root"
+  }
+  def read(f: File) {
+    File.ReadLineWise(f) { line =>
+      val ns = NamespaceMap.empty
+      val re = controller.relman.parse(line, ns)
+      controller.depstore += re
+    }
+  }
+  def printList(args: List[_]): Unit = {
+    args.foreach(println)
+  }
+  def getSymbolAlignments(p: Path): (List[Path], String) = {
+  	val concept = controller.depstore.queryList(p, Symmetric(Transitive(ToObject(IsAlignedWithSymbol)))).apply(0)
+  	(controller.depstore.queryList(concept, Symmetric(Transitive(ToObject(IsAlignedWithSymbol)))),  concept.toPath)
+  }
+   def getTypeAlignments(p: Path): List[Path] = {
+    controller.depstore.queryList(p, Symmetric(Transitive(ToObject(IsAlignedWithType))))
+  }
+}
