@@ -1,5 +1,5 @@
-angular.module('searchApp', []).controller('SearchController',
-  [ '$scope', '$http', function($scope, $http) {
+angular.module('searchApp', ['ngSanitize']).controller('SearchController',
+  [ '$scope', '$http', '$sce', function($scope, $http, $sce) {
     $scope.columns =
       { errLevel : { x : true, long : 'level', search : '' }
       , errType : { x : false, long : 'error type', search : '' }
@@ -42,9 +42,15 @@ angular.module('searchApp', []).controller('SearchController',
           $scope.groups = data;
         });
     };
+    $scope.buildCount = 0;
+    $scope.htmlText = '';
     $scope.build = function(res) {
+        $scope.buildCount += 1;
         action.exec(action.build(res.archive, res.target, res.fileName), function(data) {
-           alert('What is here: ' + data)
+           $scope.$apply(function () {
+             $scope.htmlText = data;
+             $scope.buildCount -= 1;
+           });
         });
     }
     $scope.search = function() {
