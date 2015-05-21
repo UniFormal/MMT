@@ -130,7 +130,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    
    def doDeclaration(d: Declaration) {
             val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
-            div(" test constant toggleTarget inlineBoxSibling ") {
+            div("containerconstant toggleTarget inlineBoxSibling  panelHorizontalScroll ") {
                div(" constant-header") {
                  span {doName(d.path)}
                  
@@ -147,7 +147,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
                  //if (! d.metadata.getAll.isEmpty)
                     toggle("metadata")
                }
-               table("constant-components") {
+               table("constant-components ") {
                   d.getComponents.foreach {
                      case (comp, tc: AbstractTermContainer) =>
                         tr(comp.toString) {
