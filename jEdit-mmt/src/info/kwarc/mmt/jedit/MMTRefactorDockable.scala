@@ -1,19 +1,18 @@
 package info.kwarc.mmt.jedit
 
 import java.awt.event.{ActionEvent, ActionListener}
-import java.awt.{Font, Dimension, BorderLayout, GridLayout}
+import java.awt.{Font, Dimension, BorderLayout}
 import javax.swing._
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.objects.OMID
-import info.kwarc.mmt.api.presentation.{StringBuilder, MMTSyntaxPresenter}
+import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.{DeclaredView, DeclaredTheory}
+import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredView, DeclaredTheory}
 import info.kwarc.mmt.api.refactoring._
 import org.gjt.sp.jedit.{jEdit, View}
 
-import scala.tools.nsc.doc.base.comment.Bold
+// TODO : Order module content by dependencies
 
 class MMTRefactorDockable(view: View, position: String) extends JPanel with ActionListener {
   val mmt : MMTPlugin = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).asInstanceOf[MMTPlugin]
@@ -28,10 +27,14 @@ class MMTRefactorDockable(view: View, position: String) extends JPanel with Acti
   val textfield2 = new JTextField("View Value cutoff:")
   val valueField = new JTextField("0")
 
+  implicit val rh = new api.presentation.StringBuilder
+  val presenter = new MMTSyntaxPresenter
+
   def init = {
     setLayout(new BorderLayout)
     topPanel.setLayout(new BoxLayout(topPanel,BoxLayout.X_AXIS))
     resultArea.setLayout(new BoxLayout(resultArea,BoxLayout.Y_AXIS))
+    controller.extman.addExtension(presenter)
 
     textfield1.setEditable(false)
     cutoffField.setEditable(true)
@@ -72,7 +75,7 @@ class MMTRefactorDockable(view: View, position: String) extends JPanel with Acti
           this.repaint()
           val allviews = {
             val list = Viewfinder.findByAxioms(p.head,p.tail.head,controller,cutoffField.getText.toInt,true,true)
-            (for {o <- list} yield (o,evaluateViewset(p.head,p.tail.head,o,controller))
+            (for {o <- list} yield (o,evaluateViewset(p.head,p.tail.head,o))
             ).filter(p => p._2>=valueField.getText.toDouble && p._2>0)
           }
           text.append(allviews.toList.length+" Views found!")
@@ -93,7 +96,7 @@ class MMTRefactorDockable(view: View, position: String) extends JPanel with Acti
             resultArea.add(titlefield)
 
             for (p <- o._3) {
-              resultArea.add(new ResultViewArea(o._1, o._2, p._1, p._2, controller, this))
+              resultArea.add(new ResultViewArea(o._1, o._2, p._1, p._2, this))
             }
           }
         } else text.append("\nNo Views found!")
@@ -107,7 +110,7 @@ class MMTRefactorDockable(view: View, position: String) extends JPanel with Acti
         resultArea.removeAll()
         val docths = controller.memory.content.getModules.toList collect {case t: DeclaredTheory => t}
         for (o <- docths) resultArea.add(new ResultTheoryArea(o,
-          docths.take(docths.indexOf(o))++docths.drop(docths.indexOf(o)+1),this,controller))
+          docths.take(docths.indexOf(o))++docths.drop(docths.indexOf(o)+1),this))
         resultArea.revalidate()
         this.repaint()
       }
@@ -125,8 +128,8 @@ class MMTRefactorDockable(view: View, position: String) extends JPanel with Acti
             case _ => throw new Exception("DeclaredTheory expected!")
           }
 
-          val vset = viewtoviewset(o,controller)
-          resultArea.add(new ExistingViewArea(o,dom,cod,vset,evaluateViewset(dom,cod,vset,controller),this,controller))
+          val vset = viewtoviewset(o)
+          resultArea.add(new ExistingViewArea(o,dom,cod,vset,evaluateViewset(dom,cod,vset),this))
         }
         resultArea.revalidate()
         this.repaint()
@@ -138,7 +141,7 @@ class MMTRefactorDockable(view: View, position: String) extends JPanel with Acti
 
   }
 
-  def evaluateViewset(from:DeclaredTheory,to:DeclaredTheory,viewset:Set[(GlobalName,GlobalName)],ctrl:Controller): Double = {
+  def evaluateViewset(from:DeclaredTheory,to:DeclaredTheory,viewset:Set[(GlobalName,GlobalName)]): Double = {
     val domc = from.getConstants collect { case c: FinalConstant => c}
 
     val codc = to.getConstants collect { case c: FinalConstant => c}
@@ -147,7 +150,7 @@ class MMTRefactorDockable(view: View, position: String) extends JPanel with Acti
 
   }
 
-  def viewtoviewset(v:DeclaredView,ctrl:Controller) : Set[(GlobalName,GlobalName)] = {
+  def viewtoviewset(v:DeclaredView) : Set[(GlobalName,GlobalName)] = {
 
     val pairs = v.domain.map(name => {
      val domname = Path.parse(name.head.toString.tail.dropRight(1)).toTriple match {
@@ -157,7 +160,7 @@ class MMTRefactorDockable(view: View, position: String) extends JPanel with Acti
      }
      val codname = v.get(name) match {
        case c:FinalConstant => c.df.get match {
-         case t:OMID => ctrl.get(t.path) match {
+         case t:OMID => controller.get(t.path) match {
            case o:FinalConstant => o.path
            case _ => false
          }
@@ -170,13 +173,15 @@ class MMTRefactorDockable(view: View, position: String) extends JPanel with Acti
     pairs collect {case (a:GlobalName,b:GlobalName) => (a,b)}
   }
 
-  def dumptoDocument(s:String) = {
-    view.getTextArea.setText(view.getTextArea.getText+"\n\n"+s)
+  def dumptoDocument(s:List[DeclaredModule]) = {
+    for (o <- s) presenter(o)
+    view.getTextArea.setText(view.getTextArea.getText+"\n\n"+rh.get)
+    SwingUtilities.getWindowAncestor(this).dispose()
   }
 
 }
 
-class ResultViewArea(from:DeclaredTheory,to:DeclaredTheory,viewset:Set[(GlobalName,GlobalName)],value:Double,controller:Controller,
+class ResultViewArea(from:DeclaredTheory,to:DeclaredTheory,viewset:Set[(GlobalName,GlobalName)],value:Double,
                       target:MMTRefactorDockable)
   extends JPanel with ActionListener {
 
@@ -185,7 +190,7 @@ class ResultViewArea(from:DeclaredTheory,to:DeclaredTheory,viewset:Set[(GlobalNa
     +" -> "+o._2.^!.last+"?"+o._2.name.toString()).toArray)
   private val valuefield = new JTextField("Value: "+value)
   valuefield.setEditable(false)
-  private val vName = new JTextField("View Name")
+  private val vName = new JTextField("ViewName")
   private val addButton = new JButton("Add View")
   addButton.addActionListener(this)
   private val intersectButton = new JButton("Intersect")
@@ -207,23 +212,16 @@ class ResultViewArea(from:DeclaredTheory,to:DeclaredTheory,viewset:Set[(GlobalNa
   def actionPerformed(ae: ActionEvent) = {
     if (ae.getSource==addButton) {
       val v = new DeclaredView(from.parent, LocalName(vName.getText), OMID(from.path), OMID(to.path), false)
-      Moduleadder(v,viewset,controller)
-
-      implicit val rh = new api.presentation.StringBuilder
-      val printer = new MMTSyntaxPresenter()
-      controller.extman.addExtension(printer)
-      printer(v)
-
-      target.dumptoDocument(rh.get)
-      SwingUtilities.getWindowAncestor(target).dispose()
+      Moduleadder(v,viewset,target.controller)
+      target.dumptoDocument(List(v))
 
     }
 
     if (ae.getSource==intersectButton) {
       target.resultArea.removeAll()
       val fullview = new DeclaredView(from.parent, LocalName(vName.getText), OMID(from.path), OMID(to.path), false)
-      Moduleadder(fullview,viewset,controller)
-      target.resultArea.add(new IntersectArea(from,to,fullview,viewset,controller,target))
+      Moduleadder(fullview,viewset,target.controller)
+      target.resultArea.add(new IntersectArea(from,to,fullview,viewset,target))
       target.resultArea.revalidate()
     }
 
@@ -232,7 +230,7 @@ class ResultViewArea(from:DeclaredTheory,to:DeclaredTheory,viewset:Set[(GlobalNa
 }
 
 class ExistingViewArea(v:DeclaredView,from:DeclaredTheory,to:DeclaredTheory,viewset:Set[(GlobalName,GlobalName)],value:Double,
-                        target:MMTRefactorDockable,controller:Controller)
+                        target:MMTRefactorDockable)
   extends JPanel with ActionListener {
 
   setLayout(new BoxLayout(this,BoxLayout.X_AXIS))
@@ -257,14 +255,14 @@ class ExistingViewArea(v:DeclaredView,from:DeclaredTheory,to:DeclaredTheory,view
   def actionPerformed(ae:ActionEvent) = {
     if (ae.getSource==intersectButton) {
       target.resultArea.removeAll()
-      target.resultArea.add(new IntersectArea(from,to,v,viewset,controller,target))
+      target.resultArea.add(new IntersectArea(from,to,v,viewset,target))
       target.resultArea.revalidate()
     }
   }
 }
 
 class IntersectArea(from:DeclaredTheory,to:DeclaredTheory,cview:DeclaredView,viewset:Set[(GlobalName,GlobalName)],
-                   controller:Controller,target:MMTRefactorDockable)
+                   target:MMTRefactorDockable)
   extends JPanel with ActionListener {
 
   setLayout(new BoxLayout(this,BoxLayout.Y_AXIS))
@@ -290,20 +288,13 @@ class IntersectArea(from:DeclaredTheory,to:DeclaredTheory,cview:DeclaredView,vie
     if (ae.getSource==refButton) {
 
       val list = Intersecter(cview,from,to,None,Some(LocalName(intName.getText)),Some(""))
-
-      implicit val rh = new api.presentation.StringBuilder
-      val printer = new MMTSyntaxPresenter()
-      controller.extman.addExtension(printer)
-      for (o <- list) printer(o)
-
-      target.dumptoDocument(rh.get)
-      SwingUtilities.getWindowAncestor(target).dispose()
+      target.dumptoDocument(list)
     }
   }
 
 }
 
-class ResultTheoryArea(th:DeclaredTheory,others:List[DeclaredTheory],target:MMTRefactorDockable,controller:Controller)
+class ResultTheoryArea(th:DeclaredTheory,others:List[DeclaredTheory],target:MMTRefactorDockable)
   extends JPanel with ActionListener {
   setLayout(new BoxLayout(this,BoxLayout.X_AXIS))
 
@@ -346,8 +337,8 @@ class ResultTheoryArea(th:DeclaredTheory,others:List[DeclaredTheory],target:MMTR
         text.append("\n" + p._1.name + " -> " + p._2.name + "...")
         target.repaint()
         val allviews = {
-          val list = Viewfinder.findByAxioms(p._1,p._2,controller,target.cutoffField.getText.toInt,true,true)
-          (for {o <- list} yield (o,target.evaluateViewset(p._1,p._2,o,controller))
+          val list = Viewfinder.findByAxioms(p._1,p._2,target.controller,target.cutoffField.getText.toInt,true,true)
+          (for {o <- list} yield (o,target.evaluateViewset(p._1,p._2,o))
             ).filter(p => p._2>=target.valueField.getText.toDouble && p._2>0)
         }
         text.append(allviews.toList.length+" Views found!")
@@ -368,7 +359,7 @@ class ResultTheoryArea(th:DeclaredTheory,others:List[DeclaredTheory],target:MMTR
           target.resultArea.add(titlefield)
 
           for (p <- o._3) {
-            target.resultArea.add(new ResultViewArea(o._1, o._2, p._1, p._2, controller, target))
+            target.resultArea.add(new ResultViewArea(o._1, o._2, p._1, p._2,target))
           }
         }
       } else text.append("\nNo Views found!")
@@ -380,15 +371,8 @@ class ResultTheoryArea(th:DeclaredTheory,others:List[DeclaredTheory],target:MMTR
 
     if (ae.getSource==delButton) {
 
-      val newth = SubtractDeclaration(th,consts(constBox.getSelectedIndex),controller,Some(th.name))
-
-      implicit val rh = new api.presentation.StringBuilder
-      val printer = new MMTSyntaxPresenter()
-      controller.extman.addExtension(printer)
-      printer(newth)
-
-      target.dumptoDocument(rh.get)
-      SwingUtilities.getWindowAncestor(target).dispose()
+      val newth = SubtractDeclaration(th,consts(constBox.getSelectedIndex),target.controller,Some(th.name))
+      target.dumptoDocument(List(newth))
 
     } else
 
@@ -396,14 +380,14 @@ class ResultTheoryArea(th:DeclaredTheory,others:List[DeclaredTheory],target:MMTR
       target.resultArea.removeAll()
       val th2index = thBox.getSelectedIndex
       target.resultArea.add(new PushoutArea(th,others(th2index),
-        others.take(th2index)++others.drop(th2index+1),target,controller))
+        others.take(th2index)++others.drop(th2index+1),target))
       target.resultArea.revalidate()
     }
 
   }
 }
 
-class PushoutArea(thA:DeclaredTheory,thB:DeclaredTheory,others:List[DeclaredTheory],target:MMTRefactorDockable,controller:Controller)
+class PushoutArea(thA:DeclaredTheory,thB:DeclaredTheory,others:List[DeclaredTheory],target:MMTRefactorDockable)
   extends JPanel with ActionListener {
 
   setLayout(new BoxLayout(this,BoxLayout.X_AXIS))
@@ -415,7 +399,7 @@ class PushoutArea(thA:DeclaredTheory,thB:DeclaredTheory,others:List[DeclaredTheo
   private val thnames = others.map(t => t.path.^!.last+"?"+t.name).toArray
   private val thCbox = new JComboBox("Find best"+:thnames)
 
-  private val namefield = new JTextField("Pushout Name")
+  private val namefield = new JTextField("PushoutName")
 
   private val pushoutbutton = new JButton("Create Pushout")
   pushoutbutton.addActionListener(this)
@@ -432,22 +416,19 @@ class PushoutArea(thA:DeclaredTheory,thB:DeclaredTheory,others:List[DeclaredTheo
   def actionPerformed(ae:ActionEvent) = {
     if (ae.getSource==pushoutbutton) {
       if (viewfinderbox.isSelected) {
-        if (thCbox.getSelectedIndex == 0)
-          for (t <- others; v <- Viewfinder(thA,t,controller):::Viewfinder(thB,t,controller)) controller.add(v)
-        else for (v <- Viewfinder(thA,others(thCbox.getSelectedIndex - 1),controller):::Viewfinder(thB,others(thCbox.getSelectedIndex - 1),controller)) controller.add(v)
+        if (thCbox.getSelectedIndex == 0) {
+          for (t <- others; v <- Viewfinder(thA, t, target.controller) ::: Viewfinder(thB, t, target.controller)) target.controller.add(v)
+        } else {
+          for (v <- Viewfinder(thA,others(thCbox.getSelectedIndex - 1),target.controller)
+            :::Viewfinder(thB,others(thCbox.getSelectedIndex - 1),target.controller)) target.controller.add(v)
+        }
       }
 
-      val ret = if (thCbox.getSelectedIndex == 0) Unifier(thA, thB, controller, false, Some(LocalName(namefield.getText)))
-      else Unifier(thA, thB, others(thCbox.getSelectedIndex - 1), controller, false, Some(LocalName(namefield.getText)),
+      val ret = if (thCbox.getSelectedIndex == 0) Unifier(thA, thB, target.controller, false, Some(LocalName(namefield.getText)),Some(""))
+      else Unifier(thA, thB, others(thCbox.getSelectedIndex - 1), target.controller, false, Some(LocalName(namefield.getText)),
         Some(others(thCbox.getSelectedIndex - 1).name))
 
-      implicit val rh = new api.presentation.StringBuilder
-      val printer = new MMTSyntaxPresenter()
-      controller.extman.addExtension(printer)
-      for (o <- ret) printer(o)
-
-      target.dumptoDocument(rh.get)
-      SwingUtilities.getWindowAncestor(target).dispose()
+      target.dumptoDocument(ret)
     }
   }
 }
