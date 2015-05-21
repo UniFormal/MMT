@@ -92,7 +92,7 @@ object Unifier {
    * @param ctrl to find the best suited theory thC and the corresponding best views.
    */
 
-  def apply(thA:DeclaredTheory,thB:DeclaredTheory,ctrl:Controller,usedepstore:Boolean, name:Option[LocalName])
+  def apply(thA:DeclaredTheory,thB:DeclaredTheory,ctrl:Controller,usedepstore:Boolean, name:Option[LocalName],prefix:Option[String])
     : List[DeclaredModule] = {
 
     val allviews = if (usedepstore)
@@ -113,7 +113,10 @@ object Unifier {
         case _ => throw new Exception("DeclaredTheory expected!")
       }
       if (bestview._3==1) List(thC,bestview._1,bestview._2)
-      else apply(thA,thB,thC,paired.head._1,paired.head._2,name,None)
+      else apply(thA,thB,thC,paired.head._1,paired.head._2,name,prefix match {
+        case None => None
+        case Some(s:String) => Some(LocalName(thC.name+s))
+      })
     }
 
   }

@@ -48,14 +48,14 @@ object Moduleadder {
       NotationContainer(a.not)))
     true
   }
-
+  // TODO Here
   def apply(v:DeclaredView,list:Set[(FinalConstant,FinalConstant)]):Boolean = {
-    for (a <- list) apply(v,a)
+    for (a <- orderp(list.toList)) apply(v,a)
     true
   }
 
   def apply(th:DeclaredTheory,list:Set[FinalConstant],substs:List[(GlobalName,GlobalName)]):Boolean = {
-    val nsubsts = (for {a <- list} yield (GlobalName(OMID(th.path),a.name),a.path)).toList
+    val nsubsts = for {a <- order(list.toList)} yield (GlobalName(OMID(th.path),a.name),a.path)
     for (a <- list) th.add(new FinalConstant(OMID(th.path), a.name, a.alias,
       TermContainer(substitute(a.tp,nsubsts:::substs)), TermContainer(substitute(a.df,nsubsts:::substs)), a.rl,
       NotationContainer(a.not)))
@@ -120,6 +120,23 @@ object Moduleadder {
   def substitute(victim: Option[Term],substs: List[(GlobalName,GlobalName)]): Option[Term] = victim match {
     case Some(t) => Some(substitute(t,substs))
     case None => None
+  }
+
+  def orderp(list:List[(FinalConstant,FinalConstant)]) : List[(FinalConstant,FinalConstant)] = {
+    val newlist = orderh(list.map(b => Consthash(b._2,List(),None))).reverse
+    newlist.map(p => list.collectFirst{case c if c._2.path==p.name => c}.get)
+  }
+
+  def order(list:List[FinalConstant]):List[FinalConstant] = {
+    val newlist = orderh(list.map(b => Consthash(b,List(),None))).reverse
+    newlist.map(p => list.collectFirst{case c if c.path==p.name => c}.get)
+  }
+
+  def orderh(list:List[Consthash]):List[Consthash] = {
+    if(list.isEmpty || list.tail.isEmpty) list
+    else if (!list.tail.exists(hash => SubtractDeclaration.occursIn(list.head.name,hash,list)))
+      list.head::orderh(list.tail)
+    else orderh(list.tail:::List(list.head))
   }
 
 }

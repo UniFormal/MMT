@@ -4,7 +4,6 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents.{MRef, DRef, Document}
 import info.kwarc.mmt.api.modules.{DefinedView, DefinedTheory, DeclaredView, DeclaredTheory}
 import info.kwarc.mmt.api.parser.Reader
-import info.kwarc.mmt.api.presentation.{RenderingHandler, ObjectPresenter, NotationBasedPresenter, MMTStructurePresenter}
 import info.kwarc.mmt.api.symbols.{DefinedStructure, DeclaredStructure, NestedModule, Constant}
 
 /**
@@ -71,7 +70,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     v.getPrimitiveDeclarations.foreach {d => d match {
       case c:Constant => {
         this.doIndent(indent)
-        rh("" + c.name)
+        rh("" + c.name.last)
         c.df foreach {t =>
           rh("  = ")
           this.apply(t, Some(c.path $ DefComponent))

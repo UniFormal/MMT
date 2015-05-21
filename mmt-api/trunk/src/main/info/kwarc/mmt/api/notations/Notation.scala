@@ -114,8 +114,8 @@ class TextNotation(val fixity: Fixity, val precedence: Precedence, val meta: Opt
       val (fixityString, argumentString) = fixity.asString
       val metaStr = meta.map("meta " + _.toPath).getOrElse("")
       val precStr = if (precedence != Precedence.integer(0)) " prec " + precedence.toString else ""
-      val fixStr = if (fixityString == "mixifx") "" else " %%"+fixityString
-      metaStr + precStr + fixStr + " " + argumentString
+      val fixStr = if (fixityString == "mixfix") "" else " %%"+fixityString
+      metaStr + fixStr + " " + argumentString + precStr
    }
    override def toString = toText + " (markers are: " + markers.map(_.toString).mkString(" ") + ")" 
    def toNode = {
