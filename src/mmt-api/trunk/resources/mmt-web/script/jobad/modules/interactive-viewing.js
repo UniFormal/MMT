@@ -1,5 +1,5 @@
 var interactiveViewing = {
-	/* JOBAD Interface  */ 
+	/* JOBAD Interface  */
 	info: {
 		'identifier' : 'kwarc.mmt.intvw',
 		'title' : 'MMT Service for Active Documents',
@@ -9,7 +9,7 @@ var interactiveViewing = {
 		'dependencies' : [],
 		'hasCleanNamespace': false
 	},
-	
+
 
 	contextMenuEntries: function(targetArray, JOBADInstance) {
 		target = targetArray[0];  //for some reason jobad passes [target] instead of target
@@ -34,20 +34,12 @@ var interactiveViewing = {
 				var svgURI = ":svg?" + mmt.currentURI;
 				var title =  mmt.currentURI.split('/');
 				var contentNode = mmt.createInlineBox(target, title.slice(-1)[0], '50%');
-				mmt.ajaxAppendBox(svgURI, contentNode);		
-				};			
-			res["show alignments"] = function() {
-				var  cont =  ":align?" + mmt.currentURI;
-				var title =  mmt.currentURI.split('/')
-				var alignNode = mmt.createInlineBox(target, "Alignments for symbol " + title.slice(-1)[0]);
-				mmt.ajaxAppendBox(cont, alignNode);		
-				};				
+				mmt.ajaxAppendBox(svgURI, contentNode);
+				};
 			res["comment"] = function() {
-			    // query to create the comment box
 			    var query = mmt.currentURI;
 			    var title = mmt.currentURI.split('/')
-			    var commNode = mmt.createInlineBox(target, "New comment: " + title.slice(-
-			        1)[0]);
+			    var commNode = mmt.createInlineBox(target, "New comment: " + title.slice(-1)[0]);
 			    var first = document.createElement('div');
 			    $(first).append("<form id=\"form-id\" method=\"post\">" +
 			        "<input class=\"comm\" id=\"user-id\" type=\"text\" " +
@@ -59,51 +51,71 @@ var interactiveViewing = {
 			    $(commNode).append(first);
 			    mmt.ajaxAppendBox(query, commNode);
 			    $("#btn-id").click(function() {
-			        var data = {
-			            user: $("#user-id").val(),
-			            comment: $("#comm-id").val()
+			    	var data = {
+			        user: $("#user-id").val(),
+			        comment: $("#comm-id").val()
 			        }
 			        var toSend = JSON.stringify(data);
 			        $("#form-id").submit(function() {
-			            var url = ":submit_comment?" + mmt.currentURI
-			            $.ajax({
-			                url: url,
-			                type: 'POST',
-			                data: toSend,
-			                contentType: 'text',
-			                success: function(data) {
-			                    var replace =
-			                        "<div><h3 style=\"color: blue\">" +
-			                        "Thank you for your comment!</h3></div>"
-			                    $(first).replaceWith(
-			                        replace)
-			                }
-			            });
-
-			            return false;
-			        });
-
-			    });
-
-			};		// res["get OMDoc"] = mmt.openCurrentOMDoc();
+			        var url = ":submit_comment?" + mmt.currentURI
+			        $.ajax({
+			        	url: url,
+			            type: 'POST',
+			            data: toSend,
+			            contentType: 'text',
+		                success: function(data) {
+		                	var replace = "<div><h3 style=\"color: blue\">" +
+		                    				"Thank you for your comment!</h3></div>"
+		                    $(first).replaceWith(replace)
+		                		}
+		            		});
+			        return false;
+			        	});
+			    	});
+				};
+			res["show alignments"] = function() {
+				var get =  mmt.currentURI;
+				var  cont =  ":align?" + mmt.currentURI;
+				var title =  mmt.currentURI.split('/')
+				var alignNode = mmt.createInlineBox(target, "Alignments for symbol " + title.slice(-1)[0]);
+				mmt.ajaxAppendBox(get, alignNode);
+				$.ajax({
+					url: cont,
+		            type: 'GET',
+		            contentType: 'text',
+	                success: function(data) {
+	                	if(data.length === 0) {
+	                		var resp = "<div><p>No alignments for this symbol so far!</p></div>"
+		                	$(alignNode).append(resp)
+		                } else {
+		                	var miz = "<div><table><tr><td class=\"miz\"></td><td>Mizar</td></tr></table></div>"
+		                    var hol = "<div><table><tr><td class=\"hol\"></td><td>HOLLight</td></tr></table></div></br>"
+		         			 var json = JSON.parse(data)
+		                	 me.tree(json, alignNode)
+		                	 $(alignNode).append(hol)
+		                	 $(alignNode).append(miz)		                	 
+		                	}   	
+	                	}
+	           		});
+				};	
 		}
 		return res;
 	},
-	
+
 	/* functions for context menu items */
-	
+
 	/* highlights all occurrences of the current URI */
 	showOccurs : function (){
 		$('mo').filter(function(index){
 		    return this.getAttribute('jobad:href') == mmt.currentURI;
 	   }).toggleMClass('math-occurrence');
 	},
-	
+
 	/* showQuery where the query is for the result of applying a wrapper function to the selected expression;
 	 * typical wrappers: qmt.infer, qmt.simplify
 	 */
 	showComputationResult : function (key, title){
-		var q = qmt.subobject(qmt.component(qmt.literalPath(mmt.currentElement), mmt.currentComponent), mmt.currentPosition) 
+		var q = qmt.subobject(qmt.component(qmt.literalPath(mmt.currentElement), mmt.currentComponent), mmt.currentPosition)
 		if (key == "i")
 		  q = qmt.infer(q, uris.lf)
     	else if (key == "s")
@@ -134,7 +146,7 @@ var interactiveViewing = {
    			}
    	  });
 	},
-	
+
 	/* Helper Functions  */
 	setVisib : function(prop, val){
 		var root = mmt.focusIsMath ? mmt.focus : mmt.focus.parentNode;
@@ -143,7 +155,7 @@ var interactiveViewing = {
 		if (!val)
 			$(root).find('.' + prop).addMClass(prop + '-hidden');
 	},
-	
+
 	visibSubmenu : function(prop){
 	   var me = this;
 		return {
@@ -151,12 +163,72 @@ var interactiveViewing = {
 			"hide" : function(){me.setVisib(prop,false)},
 		};
 	},
-	
+
 	visibMenu : function(){
 	    return {
 			"reconstructed types" :  this.visibSubmenu('reconstructed'),
 			"implicit arguments" : this.visibSubmenu('implicit-arg'),
 			"redundant brackets" : this.visibSubmenu('brackets'),
+		}
+	},
+	
+	tree: function(treeData, parentNode) {
+		var margin = {top: 50, right: 120, bottom: 20, left: 120},
+		 width = 600 - margin.right - margin.left,
+		 height = 300 - margin.top - margin.bottom;
+		 
+		var i = 0;
+		var colors =[ ["Mizar", "#0080FF"],
+					   ["HOLLight", "#AED5FC"],
+					   ["MMT", "lightgray"] ];
+		
+		var tree = d3.layout.tree()
+		 .size([height, width]);
+
+		var diagonal = d3.svg.diagonal()
+		 .projection(function(d) { return [d.x, d.y]; });
+
+		var svg = d3.select(parentNode).append("svg")
+		 .attr("width", width + margin.right + margin.left)
+		 .attr("height", height + margin.top + margin.bottom)
+		 .append("g")
+		 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+		root = treeData[0];
+		  
+		update(root);
+
+		function update(source) {
+		  var nodes = tree.nodes(root).reverse(),
+		   links = tree.links(nodes);
+		  nodes.forEach(function(d) { d.y = d.depth * 200; });
+		  var node = svg.selectAll("g.node")
+		   .data(nodes, function(d) { return d.id || (d.id = ++i); });
+		  var nodeEnter = node.enter().append("g")
+		  .append("a").attr("xlink:xlink:href", (function(d) {return d.address}))
+		   .attr("class", "node")		   
+		   .attr("transform", function(d) { 
+			   console.log("dx  = " + d.x +" dy = "+d.y)
+			return "translate(" + d.x + "," + d.y + ")"; });
+
+		  nodeEnter.append("circle")
+		   .attr("r", 25)
+		   .style("fill", function(d) {  if (d.note === "mizar")  var r = '#0080FF' 
+			   								else if(d.note === "hol") r = '#AED5FC'
+			   								else r = 'lightgray';
+		   									return r;});
+
+		  nodeEnter.append("text")
+		   .attr("text-anchor", "middle")
+		   .text(function(d) { return d.name ; })
+		   .style("fill-opacity", 5);
+
+		  var link = svg.selectAll("path.link")
+		   .data(links, function(d) { return d.target.id; });
+
+		  link.enter().insert("path", "g")
+		   .attr("class", "link")
+		   .attr("d", diagonal);
 		}
 	},
 };
