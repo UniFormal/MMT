@@ -44,11 +44,12 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     };
     $scope.buildCount = 0;
     $scope.htmlText = '';
+    $scope.showBuildResult = true;
     $scope.build = function(res) {
         $scope.buildCount += 1;
         action.exec(action.build(res.archive, res.target, res.fileName), function(data) {
+           if (data !== '<div></div>') $scope.htmlText = data;
            $scope.$apply(function () {
-             $scope.htmlText = data;
              $scope.buildCount -= 1;
            });
         });
