@@ -61,11 +61,11 @@
 
     <p/>
     <div>{{buildCount}} pending builds
-    <span style="cursor:pointer" ng-click="showBuildResult = !showBuildResult">
-        <span ng-show="showBuildResult" title="hide build results">-</span>
+    <a href="" ng-click="showBuildResult = !showBuildResult">
+        <span ng-show="showBuildResult" title="hide build results">&mdash;</span>
         <span ng-show="!showBuildResult" title="show build results">+</span>
+    </a>
         <span ng-show="showBuildResult"><p ng-bind-html="htmlText"/></span>
-    </span>
     </div>
     <table>
         <thead>
