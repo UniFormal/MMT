@@ -1,5 +1,5 @@
 angular.module('searchApp', ['ngSanitize']).controller('SearchController',
-  [ '$scope', '$http', '$sce', function($scope, $http, $sce) {
+  [ '$scope', '$http', function($scope, $http) {
     $scope.columns =
       { errLevel : { x : true, long : 'level', search : '' }
       , errType : { x : false, long : 'error type', search : '' }
@@ -47,7 +47,7 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     $scope.showBuildResult = true;
     $scope.build = function(res) {
         $scope.buildCount += 1;
-        action.exec(action.build(res.archive, res.target, res.fileName), function(data) {
+        action.exec(action.build(res.archive, res.target, encodeURIComponent(res.fileName)), function(data) {
            if (data !== '<div></div>') $scope.htmlText = data;
            $scope.$apply(function () {
              $scope.buildCount -= 1;
