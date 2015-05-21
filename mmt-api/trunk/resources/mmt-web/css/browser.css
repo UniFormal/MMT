@@ -237,7 +237,7 @@ div.ui-state-disabled.ui-draggable-disabled {opacity: 1;}
 
 .contDiv {
 	height: 100%;
-	overflow: scroll;
+	//overflow: scroll;
 	margin-top: 10px;
 	clear: both;
 	padding-bottom: 15px;
@@ -268,16 +268,77 @@ span.name {
 	margin-top:3%;
 	margin-bottom: 2%
 	
+
 }
 
-.panelVerticalScroll {
+#mainBubble {
+     background: #fff;
+    // border: solid 1px #ddd;
+     box-shadow: 0 0 4px rgba(0,0,0,0);
+     font: 10px sans-serif;
+     height: 400px;
+     position: relative;
+     width: 80%;
+   }
+            
+#mainBubble svg {
+  left: 0;
+  position: absolute;
+  top: 0;
+}
+                     
+#mainBubble circle.topBubble {
+  fill: #aaa;
+  stroke: #666;
+  stroke-width: 1.5px;
+ }
+}
+/* .panelVerticalScroll {
     overflow-y: scroll;
     overflow-x: hidden;
     max-height: 400px;
-}
+    background-color: red;
+} */
 
 .panelHorizontalScroll {
-    overflow-x: scroll;
-    overflow-y: hidden;
-    max-width: 400px;
+    //overflow-x: scroll;
+    overflow:scroll;
+    //clear: both;
+   // overflow-y: hidden;
+    //max-width: 80px; 
+    //width: 100px;
+ }
+
+.constant-components{
+	//overflow:auto;
 }
+
+
+/* stuffs */
+ .node circle {
+   fill: #fff;
+   //stroke: steelblue;
+   //stroke-width: 3px;
+ }
+
+ .node text { 
+ font: 15px monospace; 
+ color: #fff;
+ background-color: #fff;}
+
+ .link {
+   fill: none;
+   stroke: #2e3436;
+   stroke-width: 2px;
+ }
+ .miz{
+ height: 10px;
+ width: 50px;
+ background-color: #0080FF;
+ }
+ .hol{
+ margin-top: 5px;
+ height: 10px;
+ width: 50px;
+ background-color: #AED5FC;
+ }

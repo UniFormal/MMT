@@ -93,7 +93,13 @@ span.keyword {
 span.keyword:hover {
    background: #d3d3d3;
 }
-
+tr.type{
+	//background-color: red;
+	//overflow: auto;
+	//max-width: 100px;
+	//resize: both;
+	
+}
 span.keyword:active {
   cursor: progress;
 }
