@@ -27,14 +27,10 @@ class MMTRefactorDockable(view: View, position: String) extends JPanel with Acti
   val textfield2 = new JTextField("View Value cutoff:")
   val valueField = new JTextField("0")
 
-  implicit val rh = new api.presentation.StringBuilder
-  val presenter = new MMTSyntaxPresenter
-
   def init = {
     setLayout(new BorderLayout)
     topPanel.setLayout(new BoxLayout(topPanel,BoxLayout.X_AXIS))
     resultArea.setLayout(new BoxLayout(resultArea,BoxLayout.Y_AXIS))
-    controller.extman.addExtension(presenter)
 
     textfield1.setEditable(false)
     cutoffField.setEditable(true)
@@ -174,6 +170,13 @@ class MMTRefactorDockable(view: View, position: String) extends JPanel with Acti
   }
 
   def dumptoDocument(s:List[DeclaredModule]) = {
+    for (o <- s) controller.add(o)
+
+
+    implicit val rh = new api.presentation.StringBuilder
+    val presenter = new MMTSyntaxPresenter
+    controller.extman.addExtension(presenter)
+
     for (o <- s) presenter(o)
     view.getTextArea.setText(view.getTextArea.getText+"\n\n"+rh.get)
     SwingUtilities.getWindowAncestor(this).dispose()

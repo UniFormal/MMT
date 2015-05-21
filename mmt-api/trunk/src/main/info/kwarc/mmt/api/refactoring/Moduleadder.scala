@@ -48,15 +48,16 @@ object Moduleadder {
       NotationContainer(a.not)))
     true
   }
-  // TODO Here
+
   def apply(v:DeclaredView,list:Set[(FinalConstant,FinalConstant)]):Boolean = {
     for (a <- orderp(list.toList)) apply(v,a)
     true
   }
 
-  def apply(th:DeclaredTheory,list:Set[FinalConstant],substs:List[(GlobalName,GlobalName)]):Boolean = {
-    val nsubsts = for {a <- order(list.toList)} yield (GlobalName(OMID(th.path),a.name),a.path)
-    for (a <- list) th.add(new FinalConstant(OMID(th.path), a.name, a.alias,
+  def apply(th:DeclaredTheory,set:Set[FinalConstant],substs:List[(GlobalName,GlobalName)]):Boolean = {
+    val list = set.toList
+    val nsubsts = for {a <- list} yield (GlobalName(OMID(th.path),a.name),a.path)
+    for (a <- order(list)) th.add(new FinalConstant(OMID(th.path), a.name, a.alias,
       TermContainer(substitute(a.tp,nsubsts:::substs)), TermContainer(substitute(a.df,nsubsts:::substs)), a.rl,
       NotationContainer(a.not)))
     true
