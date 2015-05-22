@@ -114,6 +114,7 @@ lazy val jedit = (project in file("jEdit-mmt")).
   dependsOn(api).
   settings(commonSettings("jEdit-mmt"): _*).
   settings(
+    resourceDirectory in Compile := baseDirectory.value / "src/resources",
     unmanagedJars in Compile ++= Seq(
       "Console.jar",
       "ErrorList.jar",
