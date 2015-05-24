@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.FinalConstant
-import info.kwarc.mmt.api.{SimpleStep, GlobalName, LocalName}
+import info.kwarc.mmt.api.{ComplexStep, SimpleStep, GlobalName, LocalName}
 
 /**
  * Finds views between theories and provides several methods related to that
@@ -155,7 +155,7 @@ object Viewfinder {
       case _ => throw new Exception("expected declared theory")
     }).getConstants collect { case c: FinalConstant => c}
 
-    v.domain.filter(p => domc.exists(q => LocalName(SimpleStep("["+q.path.module+"]")::q.name.steps)==p)).toList.length.toDouble / (if (domc.length<codc.length) domc.length else codc.length).toDouble
+    v.domain.filter(p => domc.exists(q => (ComplexStep(q.path.module.toMPath) / q.name)==p)).toList.length.toDouble / (if (domc.length<codc.length) domc.length else codc.length).toDouble
 
   }
 

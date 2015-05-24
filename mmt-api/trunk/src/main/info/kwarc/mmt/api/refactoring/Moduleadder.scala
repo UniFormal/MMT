@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.refactoring
 
-import info.kwarc.mmt.api.{SimpleStep, LocalName, GlobalName}
+import info.kwarc.mmt.api.{ComplexStep, SimpleStep, LocalName, GlobalName}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.notations.NotationContainer
@@ -34,7 +34,7 @@ object Moduleadder {
   def apply(v:DeclaredView,a:(FinalConstant,FinalConstant)):Boolean = {
     v.add(new FinalConstant(
       OMID(v.path),
-      LocalName(SimpleStep("["+a._1.path.module+"]")::a._1.name.steps),
+      ComplexStep(a._1.path.module.toMPath) / a._1.name,
       None,
       TermContainer(a._1.tp),
       TermContainer(OMID(a._2.path)),
