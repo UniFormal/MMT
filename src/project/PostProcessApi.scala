@@ -8,7 +8,8 @@ object PostProcessApi {
   def deployTo(name: String)(jar: File): Unit = {
     val tar = new File("../deploy/jedit-plugin/plugin/jars/" + name)
     Files.copy(jar.toPath, tar.toPath, REPLACE_EXISTING)
-    println("wrote file: " + tar)
+    println("copied file: " + jar)
+    println("to file: " + tar)
   }
 
   def delRecursive(log: Logger, path: File) {
