@@ -54,6 +54,20 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
            });
         });
     }
+    $scope.hide = function() {
+        $http.get(':errors/search2' + $scope.query($scope.maxNumber) + '&hide=true').success(function(data) {
+        });
+      $scope.clear();
+      $scope.group();
+      $scope.search();
+    };
+    $scope.clearhidden = function() {
+        $http.get(':errors/clear').success(function(data) {
+        });
+      $scope.clear();
+      $scope.group();
+      $scope.search();
+    };
     $scope.search = function() {
         $scope.groupMode = false;
         $http.get(':errors/search2' + $scope.query($scope.maxNumber)).success(function(data) {

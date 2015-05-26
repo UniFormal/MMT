@@ -117,6 +117,8 @@ class ErrorManager extends Extension with Logger {
       val be = BuildError(a, target, ArchivePath(path).removeExtension, errType, lvl, srcR, shortMsg, longMsg, trace)
       bes ::= be
     }
+    if (node.child.isEmpty)
+      bes ::= BuildError(a, target, ArchivePath(path).removeExtension, "", 0, None, "no errors", "", Nil)
     val em = apply(a.id)
     em((target, path)) = bes.reverse
   }
@@ -132,7 +134,7 @@ class ErrorManager extends Extension with Logger {
   override def start(args: List[String]) {
     controller.extman.addExtension(cl)
     controller.extman.addExtension(serve)
-    controller.backend.getArchives.foreach { a => loadAllErrors(a)}
+    controller.backend.getArchives.foreach { a => loadAllErrors(a) }
   }
 
   override def destroy {
@@ -151,16 +153,17 @@ class ErrorManager extends Extension with Logger {
 
     /** deletes the [[ErrorMap]] */
     override def onArchiveClose(a: Archive) {
-       errorMaps = errorMaps.filter(_.archive != a)
+      errorMaps = errorMaps.filter(_.archive != a)
     }
-    
-    /** reloads the errors */ 
+
+    /** reloads the errors */
     override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: List[String]) {
-       Future {
-          loadErrors(a, t.key, p)
-       }
+      Future {
+        loadErrors(a, t.key, p)
+      }
     }
   }
+  private var hideQueries: List[List[String]] = Nil
 
   /** serves lists of [[Error]]s */
   private val serve = new ServerExtension("errors") {
@@ -170,10 +173,13 @@ class ErrorManager extends Extension with Logger {
       val wq = WebQuery.parse(query)
       val args = Table.columns map (wq.string(_))
       val limit = wq.int("limit", 100)
+      val hide = wq.boolean("hide")
       val bes = iterator.map(_.toStrList)
-      val result = bes.filter { be =>
+      val result = bes.filter { be2 =>
+        val be = be2 map (_.replace('+', ' ')) // '+' is turned to ' ' in query
         assert(args.length == be.length)
-        args.zip(be).forall { case (a, b) => b.replace('+', ' ').indexOf(a) > -1}
+        args.zip(be).forall { case (a, b) => b.indexOf(a) > -1 } &&
+          hideQueries.forall { hq => hq.zip(be).exists { case (a, b) => b.indexOf(a) == -1 } }
       }
       var json: JSON = JSONNull
       path match {
@@ -186,7 +192,9 @@ class ErrorManager extends Extension with Logger {
           json = JSONArray(g.take(limit).map { case (s, i) =>
             JSONObject("count" -> JSONInt(i), "content" -> JSONString(s))
           }: _*)
+        case List("clear") => hideQueries = Nil
         case _ =>
+          if (hide) hideQueries ::= args
           json = JSONArray(result.toList.take(limit).map(l =>
             JSONObject(Table.columns.zip(l map JSONString): _*)): _*)
       }

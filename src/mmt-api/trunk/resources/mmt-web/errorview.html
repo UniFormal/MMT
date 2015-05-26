@@ -51,7 +51,9 @@
     <p>restrict the number of displayed entries to support fast searches in
         every column. Click "search" to reload choice (revealing undisplayed
         entries or results of finished builds).</p>
-    <button ng-click="clear()">clear filters</button>
+    <button ng-click="clear()">clear search fields</button>
+    <button ng-click="clearhidden()">clear hidden filters</button>
+    <button ng-click="hide()">hide selected entries</button>
     <button ng-click="search()">search</button>
     maximal entries:
     <input type="number" min="0" max="10000" ng-model="maxNumber"/>
