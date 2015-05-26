@@ -133,7 +133,6 @@ lazy val mmt = (project in file("mmt-exts")).
     publish := {}
   )
 
-
 val jeditJars = Seq(
   "Console.jar",
   "ErrorList.jar",
