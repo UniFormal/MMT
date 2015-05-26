@@ -1,5 +1,4 @@
 import PostProcessApi._
-import com.github.retronym.SbtOneJar
 import sbtunidoc.Plugin.UnidocKeys.unidoc
 
 lazy val postProcessApi =
@@ -33,13 +32,10 @@ apidoc := postProcessApi.value
 apidoc <<= apidoc.dependsOn(cleandoc, unidoc in Compile)
 
 val deploy =
-  TaskKey[Unit]("deploy", "copies MMTPlugin.jar to remote location.")
+  TaskKey[Unit]("deploy", "copies fat MMTPlugin.jar to remote location.")
 
-deploy in jedit <<= packageBin in(jedit, Compile) map
+deploy in jedit <<= assembly in(jedit, Compile) map
   deployTo("MMTPlugin.jar")
-
-deploy in api <<= packageBin in(api, Compile) map
-  deployTo("mmt-api.jar")
 
 def commonSettings(nameStr: String) = Seq(
   organization := "info.kwarc.mmt",
@@ -80,7 +76,7 @@ lazy val api = (project in file("mmt-api/trunk")).
 
 lazy val lfcatalog = (project in file("lfcatalog/trunk")).
   dependsOn(tiscaf).
-  settings(commonSettings("lfcatalog") ++ SbtOneJar.oneJarSettings: _*).
+  settings(commonSettings("lfcatalog") ++ oneJarSettings: _*).
   settings(
     libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.3"
   )
@@ -99,28 +95,6 @@ lazy val tptp = (project in file("mmt-tptp")).
   settings(
     unmanagedJars in Compile += baseDirectory.value / "lib" / "tptp-parser.jar",
     libraryDependencies += "antlr" % "antlr" % "2.7.7"
-  )
-
-// just a wrapper project
-lazy val mmt = (project in file("mmt-exts")).
-  dependsOn(tptp, stex).
-  settings(commonSettings("mmt-exts"): _*).
-  settings(
-    exportJars := false,
-    publish := {}
-  )
-
-lazy val jedit = (project in file("jEdit-mmt")).
-  dependsOn(api).
-  settings(commonSettings("jEdit-mmt"): _*).
-  settings(
-    resourceDirectory in Compile := baseDirectory.value / "src/resources",
-    unmanagedJars in Compile ++= Seq(
-      "Console.jar",
-      "ErrorList.jar",
-      "Hyperlinks.jar",
-      "jedit.jar",
-      "SideKick.jar") map (baseDirectory.value / "lib" /)
   )
 
 lazy val owl = (project in file("mmt-owl")).
@@ -149,3 +123,33 @@ lazy val pvs = (project in file("mmt-pvs")).
 lazy val specware = (project in file("mmt-specware")).
   dependsOn(api).
   settings(commonSettings("mmt-specware"): _*)
+
+// just a wrapper project
+lazy val mmt = (project in file("mmt-exts")).
+  dependsOn(tptp, stex, pvs, specware).
+  settings(commonSettings("mmt-exts"): _*).
+  settings(
+    exportJars := false,
+    publish := {}
+  )
+
+val jeditJars = Seq(
+  "Console.jar",
+  "ErrorList.jar",
+  "Hyperlinks.jar",
+  "jedit.jar",
+  "SideKick.jar"
+)
+
+lazy val jedit = (project in file("jEdit-mmt")).
+  dependsOn(mmt).
+  settings(commonSettings("jEdit-mmt"): _*).
+  settings(
+    resourceDirectory in Compile := baseDirectory.value / "src/resources",
+    unmanagedJars in Compile ++= jeditJars map (baseDirectory.value / "lib" /),
+    assemblyExcludedJars in assembly := {
+      val cp = (fullClasspath in assembly).value
+      cp filter { j => jeditJars.contains(j.data.getName) }
+    }
+  )
+
