@@ -24,9 +24,9 @@ object SubtractDeclaration {
       (thx.getConstants collect {case t:FinalConstant => t.path}).toSet++arg
     ).toList
 
-    val judg = AxiomHandler.findJudgment(ctrl,th)
+    val judg = AxiomHandler.findJudgment(ctrl,th,Some(includes+th))
     val hashes = for {o <- consts} yield Consthash(o,inclnames,judg)
-    val filteredindic = {0 to hashes.length-1}.filter(i => !occursIn(a,hashes(i),hashes))
+    val filteredindic = hashes.indices.filter(i => !occursIn(a,hashes(i),hashes))
 
     val newname = name match {
       case Some(x) => x
@@ -56,9 +56,9 @@ object SubtractDeclaration {
   def occursIn(a:GlobalName,b:Consthash,l:List[Consthash]):Boolean = {
     if (b.pars.contains(a) || b.name==a) true
     else if (b.pars.isEmpty) false
-    else b.pars.map(par => l.collectFirst{case hash if hash.name==par => hash} match {
+    else b.pars.exists(par => l.collectFirst{case hash if hash.name==par => hash} match {
       case None => false
-      case Some(x) => occursIn(a,x,l)
-    }).contains(true)
+      case Some(x) => occursIn(a,x,l)}
+    )
   }
 }

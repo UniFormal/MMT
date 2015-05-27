@@ -73,8 +73,9 @@ object Unifier {
 
     val viewsA = allviews.filter(p => p.from.toMPath==thA.path && p.to.toMPath==thC.path)
     val viewsB = allviews.filter(p => p.from.toMPath==thB.path && p.to.toMPath==thC.path)
+    val viewfinder = new Viewfinder(ctrl)
     val paired = (for {a <- viewsA ; b <- viewsB}
-      yield (a,b,Viewfinder.evaluateView(ctrl,a)*Viewfinder.evaluateView(ctrl,b))).toList
+      yield (a,b,viewfinder.evaluateView(a)*viewfinder.evaluateView(b))).toList
 
     if (paired.isEmpty) List()
     else {
@@ -101,8 +102,9 @@ object Unifier {
 
     val viewsA = allviews.filter(p => p.from.toMPath==thA.path)
     val viewsB = allviews.filter(p => p.from.toMPath==thB.path)
+    val viewfinder = new Viewfinder(ctrl)
     val paired = (for {a <- viewsA ; b <- viewsB if a.to==b.to}
-      yield (a,b,Viewfinder.evaluateView(ctrl,a)*Viewfinder.evaluateView(ctrl,b))).toList
+      yield (a,b,viewfinder.evaluateView(a)*viewfinder.evaluateView(b))).toList
 
     if (paired.isEmpty) List()
     else {
