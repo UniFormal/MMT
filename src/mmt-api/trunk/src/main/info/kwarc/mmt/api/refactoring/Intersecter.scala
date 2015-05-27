@@ -39,7 +39,7 @@ object Intersecter {
   def apply(th1:DeclaredTheory,th2:DeclaredTheory,ctrl:Controller, intdoc:Option[DPath],
             intname:Option[LocalName],suffix:Option[String])
   : List[DeclaredModule] = {
-    val view = Viewfinder.findBest(ctrl,th1,th2)
+    val view = new Viewfinder(ctrl).findBest(th1,th2)
     if (view._2<1) apply(view._1,th1,th2,intdoc,intname,suffix) else List()
   }
 

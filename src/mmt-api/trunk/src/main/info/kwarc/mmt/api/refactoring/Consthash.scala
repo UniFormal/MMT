@@ -1,12 +1,12 @@
 package info.kwarc.mmt.api.refactoring
 
-import info.kwarc.mmt.api.GlobalName
+import info.kwarc.mmt.api.{MPath, GlobalName}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.FinalConstant
 
-import scala.util.Success
+import scala.util.{Try, Success}
 
 /**
  * Helper class that makes matching end evaluation of FinalConstants easier.
@@ -91,7 +91,8 @@ object Consthash {
         t.scopes.foldLeft(newlist)((p,s) => simhashit(s,newsubs,p,newvars))
       }
 
-      case _ => throw new Exception("Unclear Term Type for Hashing: " + tp.getClass)
+      case _ => // TODO implement properly !
+        (tp.getClass.hashCode()::current._1,current._2)
     }
 
     a.tp match {
@@ -119,11 +120,11 @@ object Consthash {
   : (Set[Consthash],Set[Consthash]) = {
     // TODO: check for compatible metatheories maybe - the way I do it might subsume that.
 
-    val judg1 = AxiomHandler.findJudgment(ctrl,th1)
-    val judg2 = AxiomHandler.findJudgment(ctrl,th2)
-
     val includes1 = getIncludes(th1,ctrl)
     val includes2 = getIncludes(th2,ctrl)
+
+    val judg1 = AxiomHandler.findJudgment(ctrl,th1,Some(includes1))
+    val judg2 = AxiomHandler.findJudgment(ctrl,th2,Some(includes2))
 
     val consts1 = (includes1 diff includes2).foldLeft(Set().asInstanceOf[Set[FinalConstant]])((arg,th) =>
       (th.getConstants collect {case t:FinalConstant => t}).toSet++arg
@@ -153,11 +154,15 @@ object Consthash {
    */
 
   def getIncludes(th: DeclaredTheory, ctrl:Controller) : Set[DeclaredTheory] = {
-    (for {o <- th.getIncludes} yield ctrl.get(o)).foldLeft(Set(th))(
-      (b,t) => b++(t match {
-        case x:DeclaredTheory => getIncludes(x,ctrl)
-        case _ => Set()
-      }))
+    def getIncludesIt(th2:DeclaredTheory,donep:Set[MPath],donet:Set[DeclaredTheory]): (Set[MPath],Set[DeclaredTheory]) = {
+      th2.getIncludes.foldLeft((donep+th2.path,donet+th2))((sets,path) =>
+        if(sets._1 contains path) sets else Try(ctrl.get(path)) match {
+          case Success(x:DeclaredTheory) => getIncludesIt(x,sets._1,sets._2)
+          case _ => sets
+        }
+      )
+    }
+    getIncludesIt(th,Set(),Set())._2
   }
 
 }
@@ -174,7 +179,7 @@ object AxiomHandler {
    * @return the GlobalName for the Judgment declaration.
    */
 
-  def findJudgment(ctrl:Controller,th:DeclaredTheory):Option[GlobalName] = {
+  def findJudgment(ctrl:Controller,th:DeclaredTheory,includes:Option[Set[DeclaredTheory]]):Option[GlobalName] = {
 
     def findJudgmentIt(th:DeclaredTheory):Option[GlobalName] = {
       val list = for {o <- th.getConstants.filter(p => p.rl match {
@@ -184,19 +189,15 @@ object AxiomHandler {
         case t: FinalConstant => t.path
         case _ => throw new Exception("FinalConstant Expected!")
       }
-      if (list.nonEmpty) Some(list.head)
-      else {
-        val list2 = for {o <- th.getIncludes if (try {ctrl.get(o) match {
-          case t: DeclaredTheory => true
-          case _ => false
-        }} catch {case _ => false})}
-          yield findJudgmentIt(ctrl.get(o) match { case t: DeclaredTheory => t case _ => throw new Exception("FinalConstant Expected!") })
-        val list3=list2.collect {case Some(t) => t}
-        if (list3.nonEmpty) Some(list3.head) else None
-      }
+      list.headOption
     }
 
-    findJudgmentIt(th)
+    val ths = includes match {
+      case Some(set) => set
+      case None => Consthash.getIncludes(th,ctrl)
+    }
+    ((for {o <- ths} yield findJudgmentIt(o)) collect {case Some(x) => x}).headOption
+
   }
 
   /**
