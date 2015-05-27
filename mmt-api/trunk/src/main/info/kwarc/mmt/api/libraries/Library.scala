@@ -66,6 +66,25 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
       modules.get(p).getOrElse {
          throw frontend.NotFound(p)
       }
+   /**
+    * @return the deepest module in mp and the remaining suffix
+    */
+   private def getMostSpecific(mp: MPath): (Module,LocalName) = {
+     val top = mp.doc ? LocalName(mp.name.head)
+     var mod = modulesGetNF(top)
+     var left = mp.name.tail
+     var stop = false
+     while (!left.isEmpty && !stop) {
+        modules.get(mp.doc ? mod.name / left.head) match {
+          case Some(m) =>
+             mod = m
+             left = left.tail
+          case None =>
+             stop = true
+        }
+     }
+     (mod, left)
+   }
    val logPrefix = "library"
    
    /**
@@ -90,14 +109,14 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
     */
    def get(p: Path, error: String => Nothing) : ContentElement = p match {
       case doc : DPath => throw ImplementationError("getting documents from library impossible")
-      case mp: MPath => mp.name.length match {
-        case 1 => modulesGetNF(mp)
-        case _ => get(mp.toGlobalName, error) match {
-          case nm: NestedModule => nm.module
-//          case s: Structure => s
-          case e => error("complex module path did not resolve to a declaration allowed as a module: " + e)
+      case mp: MPath =>
+        val (mod, left) = getMostSpecific(mp)
+        if (left.isEmpty) mod else {
+          get(mod.path ? left, error) match {
+            case s: Structure => s
+            case e => error("complex module path did not resolve to a declaration that is allowed as a module: " + e)
+          }
         }
-      }
       //lookup in atomic modules
       case OMPMOD(p, args) % name => get(p, error) match {
          case t: DefinedTheory =>
