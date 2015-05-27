@@ -140,6 +140,7 @@ case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
    def head = steps.head
    def last = steps.last
    def length = steps.length
+   def isEmpty = steps.isEmpty
    /**
     * @return if this == p / l, then Some(p), else None
     */
