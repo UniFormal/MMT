@@ -37,7 +37,7 @@ case class File(toJava: java.io.File) {
       val name = toJava.getName
       val par = toJava.getParentFile
       if (par == null)
-        if (name == "") List(toString.init) else List(name) // name == "" iff this File is a root
+        if (name == "") Nil else List(name) // name == "" iff this File is a root
       else
         File(par).segments ::: List(name)
    }
