@@ -3,8 +3,8 @@ import java.io._
 
 
 /** File wraps around java.io.File to extend it with convenience methods
- *  
- *  see also [[FileConversion]] for implicit conversions with java.io.File
+ *
+ *  see implicit conversions with java.io.File at the end of this file
  */
 case class File(toJava: java.io.File) {
    /** resolves an absolute or relative path string against this */
@@ -32,13 +32,14 @@ case class File(toJava: java.io.File) {
    def name = toJava.getName
    /** the list of file/directory/volume label names making up this file path
     *  absolute Unix paths begin with an empty segment
-    */ 
+    */
    def segments: List[String] = {
       val name = toJava.getName
       val par = toJava.getParentFile
-      if (par == null)
-        if (name == "") Nil else List(name) // name == "" iff this File is a root
-      else
+     if (par == null)
+       if (name.isEmpty) if (toString.nonEmpty) List(toString.init) else Nil
+       else List(name) // name == "" iff this File is a root
+     else
         File(par).segments ::: List(name)
    }
    def isAbsolute = toJava.isAbsolute
@@ -102,16 +103,16 @@ class StandardPrintWriter(f: File) extends
 
 /** This defines some very useful methods to interact with text files at a high abstraction level. */
 object File {
-   /** constructs a File from a string, using the java.io.File parser */  
+   /** constructs a File from a string, using the java.io.File parser */
    def apply(s: String) : File = File(new java.io.File(s))
-   
+
    def Writer(f: File) = {
       f.up.toJava.mkdirs
       new StandardPrintWriter(f)
    }
    /**
     * convenience method for writing a string into a file
-    * 
+    *
     * overwrites existing files, creates directories if necessary
     * @param f the target file
     * @param strings the content to write
@@ -123,7 +124,7 @@ object File {
    }
    /**
     * convenience method for writing a list of lines into a file
-    * 
+    *
     * overwrites existing files, creates directories if necessary
     * @param f the target file
     * @param lines the lines (without line terminator - will be chosen by Java and appended)
@@ -138,7 +139,7 @@ object File {
 
    /**
     * convenience method for reading a file into a string
-    * 
+    *
     * @param f the source file
     * @return s the file content (line terminators are \n)
     */
