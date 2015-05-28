@@ -85,15 +85,16 @@ var interactiveViewing = {
 		            contentType: 'text',
 	                success: function(data) {
 	                	if(data.length === 0) {
+	                		console.log("here")
 	                		var resp = "<div><p>No alignments for this symbol so far!</p></div>"
 		                	$(alignNode).append(resp)
 		                } else {
 		                	var miz = "<div><table><tr><td class=\"miz\"></td><td>Mizar</td></tr></table></div>"
 		                    var hol = "<div><table><tr><td class=\"hol\"></td><td>HOLLight</td></tr></table></div></br>"
-		         			 var json = JSON.parse(data)
-		                	 me.tree(json, alignNode)
-		                	 $(alignNode).append(hol)
-		                	 $(alignNode).append(miz)		                	 
+		                    var json = JSON.parse(data)
+		                	me.tree(json, alignNode)
+		                	$(alignNode).append(hol)
+		                	$(alignNode).append(miz)		                	 
 		                	}   	
 	                	}
 	           		});
@@ -212,7 +213,7 @@ var interactiveViewing = {
 			return "translate(" + d.x + "," + d.y + ")"; });
 
 		  nodeEnter.append("circle")
-		   .attr("r", 25)
+		   .attr("r", 20)
 		   .style("fill", function(d) {  if (d.note === "mizar")  var r = '#0080FF' 
 			   								else if(d.note === "hol") r = '#AED5FC'
 			   								else r = 'lightgray';
