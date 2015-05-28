@@ -273,11 +273,11 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
 class AlignServer extends ServerExtension("align") {
 	//override def start(args: List[String]) {}
     def apply(path: List[String], query: String, body: Body) = {
-      	val root = controller.backend.getArchive("meta/inf").foreach {a =>
-      	   val f = a.root / "alignments.rel"
-        		val folder = File(f)
+      	val root_hol = controller.backend.getArchive("hollight").foreach {a =>
+      	   val alignments_hol = a.root /"relational" /"alignments"/"alignments.rel"
+        		val fhol = File(alignments_hol)
        		try {
-    	   		read(folder)
+    	   		read(fhol)
        		}
        		catch {
        			case ex: Exception => {
@@ -285,27 +285,33 @@ class AlignServer extends ServerExtension("align") {
        		}
        	}
     	}
-		//	val f = "/home/roxana/test.rel"
-		//	val fol = File(f)
-		//	read(fol)
-  		val path = Path.parse(query, controller.getNamespaceMap) 
-  		val concept = getSymbolAlignments(path)._2.split("\\?").last
-  
-		  val symbolAlignments = getSymbolAlignments(path)._1.distinct.map { s => s.toPath }
-			//printList(symbolAlignments)
-			val typeAlignments = getTypeAlignments(path).map { s => s.toPath }
-			if (symbolAlignments.isEmpty) {
-				Server.TextResponse("")
-   	 } else {
-   		 	
-     		val prepJson = symbolAlignments.map{ el =>
+			val root_miz = controller.backend.getArchive("MML").foreach {a =>
+      	   val alignments_miz = a.root /"relational" /"alignments"/"alignments.rel"
+        		val fmiz = File(alignments_miz)
+       		try {
+    	   		read(fmiz)
+       		}
+       		catch {
+       			case ex: Exception => {
+       			println(ex)
+       		}
+       	}
+    	}
+		  val path = Path.parse(query, controller.getNamespaceMap) 
+  		val list = getSymbolAlignments(path)._1
+  		if(list.isEmpty) {
+  			Server.TextResponse("")
+  		}
+  		else {
+  			val concept = getSymbolAlignments(path)._2.split("\\?").last
+		  	val symbolAlignments = getSymbolAlignments(path)._1.distinct.map { s => s.toPath }
+				val typeAlignments = getTypeAlignments(path).map { s => s.toPath }
+				val prepJson = symbolAlignments.map{ el =>
         	 "{\"name\": " + "\"" +  el.split('?').last  + "\", " + "\", parent\": " + "\"" + concept + "\"" + ", " + "\"address\": " +  "\"" + el +  "\""+  markLibrary(el) + "}"
-        	}.mkString(",")
-			  
+        	}.mkString(",")		  
      		val rootJson =  "[{\"name\":"  + "\"" + concept + "\"" + ",\"parent\":\"null\"," + "\"children\": [" + prepJson + "]}]"
-     	//	println(rootJson)
-     		Server.TextResponse(rootJson)
-    }
+     		Server.TextResponse(rootJson)	
+  		}
   }
   def findHomeLibrary(path:String, lib: String): Boolean = {
     path contains lib
@@ -327,8 +333,16 @@ class AlignServer extends ServerExtension("align") {
     args.foreach(println)
   }
   def getSymbolAlignments(p: Path): (List[Path], String) = {
-  	val concept = controller.depstore.queryList(p, Symmetric(Transitive(ToObject(IsAlignedWithSymbol)))).apply(0)
-  	(controller.depstore.queryList(concept, Symmetric(Transitive(ToObject(IsAlignedWithSymbol)))),  concept.toPath)
+  	val l = controller.depstore.queryList(p, Symmetric(Transitive(ToObject(IsAlignedWithSymbol))))
+  	if (l.isEmpty) {
+				(l, "")
+   	 }
+  	else
+  		// identify the M-MMT URI and store in val concept
+  	{
+  		val concept = l.apply(0)
+  		(controller.depstore.queryList(concept, Symmetric(Transitive(ToObject(IsAlignedWithSymbol)))),  concept.toPath)
+  	}
   }
    def getTypeAlignments(p: Path): List[Path] = {
     controller.depstore.queryList(p, Symmetric(Transitive(ToObject(IsAlignedWithType))))
