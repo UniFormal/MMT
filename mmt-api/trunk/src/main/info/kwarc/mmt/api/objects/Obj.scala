@@ -504,19 +504,17 @@ object ComplexTerm {
  */
 object Obj {
    /** parses a term relative to a base address
-    *  @param Nmd node to parse (may contain metadata) 
-    *  @param base base URI to resolve relative URIs
+    *  @param Nmd node to parse (may not contain metadata) 
+    *  @param nm namespace Map to resolve relative URIs
     *  @return the parsed term
     */
-   def parseTerm(Nmd : Node, nm: NamespaceMap) : Term = {
+   def parseTerm(N : Node, nm: NamespaceMap) : Term = {
       implicit val nsMap = nm
-      Nmd match {
+      xml.trimOneLevel(N) match {
          case <OMOBJ>{o}</OMOBJ> => parseTermRec(o)
          case o => parseTermRec(o)
       }
    }
-   
- 
 
    /**
     * the recursion for parseTermTop

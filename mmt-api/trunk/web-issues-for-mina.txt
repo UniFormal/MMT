@@ -2,6 +2,11 @@ Archives should always be open initially
 
 URI in main should not line-break
 
+the buttons in the main (metadata, tags, used-by, etc.) area do not work
+The content is there, but the javascript does not find the right element to toggle
+
+Some times documents (= inner nodes in the tree in Archives) are shown multiple times in Main
+
 ------------------------
 long-term
 

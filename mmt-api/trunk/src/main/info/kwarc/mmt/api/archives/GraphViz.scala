@@ -47,6 +47,7 @@ class GraphViz extends Exporter {
       result foreach {m => bt.errorCont(LocalError(m))}
       val outString = File.read(bt.outFile)
       val outStringPostProcessed = outString.replace("xlink:title", "class")
+      //TODO remove width/height attributes of svg element to allow for automatic resizing in the browser
       File.write(bt.outFile, outStringPostProcessed)
    }
    

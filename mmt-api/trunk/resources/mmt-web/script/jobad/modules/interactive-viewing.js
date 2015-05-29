@@ -12,7 +12,7 @@ var interactiveViewing = {
 
 
 	contextMenuEntries: function(targetArray, JOBADInstance) {
-		target = targetArray[0];  //for some reason jobad passes [target] instead of target
+		var target = targetArray[0];  //for some reason jobad passes [target] instead of target
 		mmt.setCurrentPosition(target);
 		var res = this.visibMenu();
         if (mmt.focusIsMath) {
@@ -27,78 +27,17 @@ var interactiveViewing = {
 		}
 		if (mmt.currentURI !== null) {
 			var me = this;
-			res["show declaration"] = function(){me.showComp(null);};
-			res["show URI"] = function(){alert(mmt.currentURI);};
 			res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
+			res["show URI"] = function(){alert(mmt.currentURI);};
+			res["show declaration"] = function(){me.showComp(null);};
 			res["show graph"] = function() {
 				var svgURI = ":svg?" + mmt.currentURI;
 				var title =  mmt.currentURI.split('/');
-				var contentNode = mmt.createInlineBox(target, title.slice(-1)[0], '50%');
+				var contentNode = mmt.createInlineBox(mmt.target, title.slice(-1)[0], '50%');
 				mmt.ajaxAppendBox(svgURI, contentNode);
 				};
-			res["comment"] = function() {
-			    var query = mmt.currentURI;
-			    var title = mmt.currentURI.split('/')
-			    var commNode = mmt.createInlineBox(target, "New comment: " + title.slice(-1)[0]);
-			    var first = document.createElement('div');
-			    $(first).append("<form id=\"form-id\" method=\"post\">" +
-			        "<input class=\"comm\" id=\"user-id\" type=\"text\" " +
-			        "placeholder=\"Your name\" name=\"user\" required>" +
-			        "<textarea  id=\"comm-id\" name=\"comment\"" +
-			        " placeholeder=\"say something\" class=\"form-control\" rows=\"3\"></textarea>" +
-			        "<input class=\"btn btn-info comm pull-right\" " +
-			        "id=\"btn-id\"type=\"submit\" value=\"Submit\"></form>")
-			    $(commNode).append(first);
-			    mmt.ajaxAppendBox(query, commNode);
-			    $("#btn-id").click(function() {
-			    	var data = {
-			        user: $("#user-id").val(),
-			        comment: $("#comm-id").val()
-			        }
-			        var toSend = JSON.stringify(data);
-			        $("#form-id").submit(function() {
-			        var url = ":submit_comment?" + mmt.currentURI
-			        $.ajax({
-			        	url: url,
-			            type: 'POST',
-			            data: toSend,
-			            contentType: 'text',
-		                success: function(data) {
-		                	var replace = "<div><h3 style=\"color: blue\">" +
-		                    				"Thank you for your comment!</h3></div>"
-		                    $(first).replaceWith(replace)
-		                		}
-		            		});
-			        return false;
-			        	});
-			    	});
-				};
-			res["show alignments"] = function() {
-				var get =  mmt.currentURI;
-				var  cont =  ":align?" + mmt.currentURI;
-				var title =  mmt.currentURI.split('/')
-				var alignNode = mmt.createInlineBox(target, "Alignments for symbol " + title.slice(-1)[0]);
-				mmt.ajaxAppendBox(get, alignNode);
-				$.ajax({
-					url: cont,
-		            type: 'GET',
-		            contentType: 'text',
-	                success: function(data) {
-	                	if(data.length === 0) {
-	                		console.log("here")
-	                		var resp = "<div><p>No alignments for this symbol so far!</p></div>"
-		                	$(alignNode).append(resp)
-		                } else {
-		                	var miz = "<div><table><tr><td class=\"miz\"></td><td>Mizar</td></tr></table></div>"
-		                    var hol = "<div><table><tr><td class=\"hol\"></td><td>HOLLight</td></tr></table></div></br>"
-		                    var json = JSON.parse(data)
-		                	me.tree(json, alignNode)
-		                	$(alignNode).append(hol)
-		                	$(alignNode).append(miz)		                	 
-		                	}   	
-	                	}
-	           		});
-				};	
+            res["show alignments"] = function() {me.showAlignments()};
+			res["comment"] = function(){me.addComment()};
 		}
 		return res;
 	},
@@ -139,10 +78,10 @@ var interactiveViewing = {
    	     function(result){
    			try {
 			   var pres = result.firstChild.firstChild.firstChild;
-			   var contentNode = mmt.createInlineBox(target, title);
+			   var contentNode = mmt.createInlineBox(mmt.target, title);
 			   $(contentNode).append(pres);
    			} catch (err) {
-			   var errorNode = mmt.createInlineBox(target, "error");
+			   var errorNode = mmt.createInlineBox(mmt.target, "error");
 			   $(errorNode).append(result.firstChild);
    			}
    	  });
@@ -173,7 +112,73 @@ var interactiveViewing = {
 		}
 	},
 	
+	addComment: function() {
+	    var query = mmt.currentURI;
+	    var title = mmt.currentURI.split('/')
+	    var commNode = mmt.createInlineBox(mmt.target, "New comment: " + title.slice(-1)[0]);
+	    var first = document.createElement('div');
+	    $(first).append("<form id=\"form-id\" method=\"post\">" +
+	        "<input class=\"comm\" id=\"user-id\" type=\"text\" " +
+	        "placeholder=\"Your name\" name=\"user\" required>" +
+	        "<textarea  id=\"comm-id\" name=\"comment\"" +
+	        " placeholeder=\"say something\" class=\"form-control\" rows=\"3\"></textarea>" +
+	        "<input class=\"btn btn-info comm pull-right\" " +
+	        "id=\"btn-id\"type=\"submit\" value=\"Submit\"></form>")
+	    $(commNode).append(first);
+	    mmt.ajaxAppendBox(query, commNode);
+	    $(first).find("#btn-id").click(function() {
+	    	var data = {
+	        user: $(first).find("#user-id").val(),
+	        comment: $(first).find("#comm-id").val()
+	        }
+	        var toSend = JSON.stringify(data);
+	    	$(first).find("#form-id").submit(function() {
+	        var url = ":submit_comment?" + mmt.currentURI
+	        $.ajax({
+	        	url: url,
+	            type: 'POST',
+	            data: toSend,
+	            contentType: 'text',
+                success: function(data) {
+                	var replace = "<div><h3 style=\"color: blue\">" +
+                    				"Thank you for your comment!</h3></div>"
+                    $(first).replaceWith(replace)
+                		}
+            		});
+	        return false;
+	        	});
+	    	});
+		},
+
+	showAlignments: function() {
+		var get = mmt.currentURI;
+		var cont = ":align?" + mmt.currentURI;
+		var title = mmt.currentURI.split('/')
+		var alignNode = mmt.createInlineBox(mmt.target, "Alignments for symbol " + title.slice(-1)[0]);
+		mmt.ajaxAppendBox(get, alignNode);
+		$.ajax({
+			url: cont,
+	        type: 'GET',
+	        contentType: 'text',
+	        success: function(data) {
+	        	if(data.length === 0) {
+	        		var resp = "<div><p>No alignments for this symbol so far!</p></div>"
+	            	$(alignNode).append(resp)
+	            } else {
+	            	var miz = "<div><table><tr><td class=\"miz\"></td><td>Mizar</td></tr></table></div>"
+	                var hol = "<div><table><tr><td class=\"hol\"></td><td>HOLLight</td></tr></table></div></br>"
+	                var json = JSON.parse(data)
+	            	me.tree(json, alignNode)
+	            	$(alignNode).append(hol)
+	            	$(alignNode).append(miz)		                	 
+	            	}   	
+	        	}
+	   		});
+		},
+    // auxiliary method called by showAlignments
 	tree: function(treeData, parentNode) {
+		//This uses the D3 library to create SVG dynamically from JSON data retrieved from the server.
+		//It is a proof of concept and hard-codes Mizar and HOL Light. 
 		var margin = {top: 50, right: 120, bottom: 20, left: 120},
 		 width = 600 - margin.right - margin.left,
 		 height = 300 - margin.top - margin.bottom;

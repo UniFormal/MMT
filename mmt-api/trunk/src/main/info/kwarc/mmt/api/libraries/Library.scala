@@ -124,7 +124,6 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
                 case d: Declaration => instantiate(d, t.parameters, args)
                 case d => error("illegal declaration in theory " + d.path)
              }
-             
          case t: DeclaredTheory =>
              val decl = t.getMostSpecific(name) map {case (d,ln) => (instantiate(d, t.parameters, args), ln)}
              decl match {
@@ -157,6 +156,10 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
                   case _ => throw GetError(name + " is not declared in " + t.path)
                }
             }
+         case s: Structure =>
+            if (0 != args.length)
+                throw GetError("number of arguments does not match number of parameters")
+            get(s.toTerm % name, error)
          case v : View =>
             if (0 != args.length)
                 throw GetError("number of arguments does not match number of parameters")
@@ -164,7 +167,7 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
                getInLink(v, name, error)
             } catch {
                case PartialLink() =>
-                 val da = get(v.from % name) match {
+                  val da = get(v.from % name) match {
                   // return default assignment
                   case c:Constant => ConstantAssignment(v.toTerm, name, None, None)
                   case s:Structure => DefLinkAssignment(v.toTerm, name, s.from, Morph.empty)

@@ -263,7 +263,7 @@ object TextNotation {
    
    /** XML parsing methods */
    def parse(n : scala.xml.Node, nsMap : NamespaceMap) : TextNotation = n.label match {
-    case "text-notation" | "notation" =>  // TODO text-notation is deprecated
+    case "notation" =>
       val precedence = utils.xml.attr(n, "precedence") match {
          case "" => Precedence.integer(0)
          case s => Precedence.parse(s)

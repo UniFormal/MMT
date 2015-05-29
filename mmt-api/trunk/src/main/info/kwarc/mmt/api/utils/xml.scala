@@ -76,11 +76,11 @@ object xml {
          thisOne ::: namespaces(parent, pNonNull :: seen)
    }
    
-   /**trims away non-empty direct children of a node*/
+   /** removes empty direct children of a node */
    def trimOneLevel(n : Node) : Node = n match {
      case e : Elem => 
        val nonWSchild = e.child.filter(c => !Utility.trimProper(c).isEmpty)
-       new Elem(e.prefix, e.label, e.attributes, e.scope, e.minimizeEmpty, nonWSchild : _*)
+       Elem(e.prefix, e.label, e.attributes, e.scope, e.minimizeEmpty, nonWSchild : _*)
      case _ => n
    }
    
