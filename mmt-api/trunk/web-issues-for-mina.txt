@@ -1,0 +1,12 @@
+Archives should always be open initially
+
+URI in main should not line-break
+
+------------------------
+long-term
+
+search field in Archives
+
+better handling of comments
+
+integration with JOBAD side bar
