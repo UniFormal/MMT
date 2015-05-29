@@ -71,7 +71,7 @@ object MetaData {
       (newnode, mdxml.map(d => parse(d, nsMap)))
    }
    /** parses a MetaData */
-   def parse(node: Node, nsMap: NamespaceMap) : MetaData = node match {
+   def parse(node: Node, nsMap: NamespaceMap) : MetaData = xml.trimOneLevel(node) match {
       case <metadata>{mdxml @ _*}</metadata> =>
          val mdata = new MetaData
          mdxml foreach {n => mdata.add(MetaDatum.parse(n, nsMap))}

@@ -180,7 +180,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
     	  val p = new Pattern(homeTerm, name, pr, cn, notation)
     	  add(p, md)
       }
-      val name = LocalName.parse(xml.attr(node,"name"))
+      val name = LocalName.parse(xml.attr(node,"name"), nsMap)
       val alias = xml.attr(node, "alias") match {
          case "" => None
          case a => Some(LocalName.parse(a))
@@ -209,12 +209,11 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                   case Some(_) =>
                      throw ParseError("multiple definitions in " + symbol)
                }
-               //TODO deprecate one of them
-               case comp @ (<notation>{_*}</notation> | <notations>{_*}</notations>) => notC match {
+               case comp @ (<notations>{_*}</notations>) => notC match {
                   case None =>
                      notC = Some(NotationContainer.parse(comp.child, home ? name))
                   case Some(_) =>
-                     throw ParseError("multiple notations in " + symbol)
+                     throw ParseError("multiple notation children in " + symbol)
                }
                case c => throw ParseError("illegal child in constant " + c)
             }
@@ -240,7 +239,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                case assignments =>
                   val s = DeclaredStructure(homeTerm, adjustedName, from, isImplicit)
                   add(s,md)
-                  assignments foreach {a => readInModule(home / name, nsMap, Some(s), a)}
+                  assignments foreach {a => readInModule(home / adjustedName, nsMap, Some(s), a)}
             }
          case <theory>{body @_*}</theory> =>
             val parent = home.parent
@@ -278,9 +277,6 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
          case <metadata>{_*}</metadata> =>
             val md = MetaData.parse(node, nsMap)
             module.metadata = md
-         case <alias/> =>
-            //TODO: remove this case when Twelf exports correctly
-            logError("warning: ignoring deprecated alias declaration")
          //TODO remove patterns and instances
          case <pattern>{ch @_*}</pattern> => 
            log("pattern with name " + name + " found")

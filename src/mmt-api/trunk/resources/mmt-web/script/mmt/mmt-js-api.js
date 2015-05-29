@@ -68,7 +68,9 @@ var mmt = {
 	/* these are auxiliary variables used to communicate information about the 
 	 * current focus from the context menu entries to the methods; they are not 
 	 * passed as an argument to avoid encoding problems */
-  	// focus: holds a reference to the object that was clicked by the user
+    // holds a reference to the clicked object
+	target: null,
+  	// focus: holds a reference to the selected object that was clicked by the user
 	focus : null,
 	// focus: true if focus is within a math object
 	focusIsMath : false,    
@@ -83,7 +85,8 @@ var mmt = {
 	
 	/* set focus, focusIsMath, currentURI, currentElement, currentComponent, currentPosition according to elem */
 	setCurrentPosition : function(elem){
-	   var math = $(elem).closest('math')
+		this.target = target;
+	    var math = $(elem).closest('math')
 		this.focusIsMath = (math.length !== 0);
 		if (this.focusIsMath) {
 		   this.focus = this.getSelectedParent(elem);
@@ -267,21 +270,21 @@ var mmt = {
 		dia.dialog('open');
 	},
 	/**
-	 * Insert an inline box to a selected (origin).
-	 * If no inlineBoxSibling is found then origin is #main.
-	 * The created box can be dragged and rescaled.
+	 * Creates and inserts an empty inline box after some ancestror of origin.
+	 * The ancestor is the closest inlineBoxSibling or #main if none.
+	 * The created box can be dragged and resized.
 	 * 
-	 * @param origin the node where the inline box will be appended
+	 * @param origin the node to which the inline box belongs
 	 * @param title the title of the box
 	 * @param width optional string parameter setting the width of the box
-	 * @returns the content node of the inline box
+	 * @returns the body of the inline box, to which further content can/should be added 
 	 */
 	createInlineBox: function(origin, title, width) {
 	    var targetParent = $(origin).closest(".inlineBoxSibling");
 	    var outerDiv = document.createElement('div');
-	    var newDiv = document.createElement('div');
+	    var innerDiv = document.createElement('div');
 	    $(outerDiv).addClass("container-fluid")
-	    $(outerDiv).append(newDiv)
+	    $(outerDiv).append(innerDiv)
 	    
 	    if (targetParent.length === 0) {
 	        var list = $("#main").children();
@@ -297,7 +300,7 @@ var mmt = {
 	    }
 	    
 	    if (typeof width == 'string') {
-	        $(newDiv).width(width)
+	        $(innerDiv).width(width)
 	    }
 	    
 	    var btnDiv = document.createElement('div');
@@ -305,14 +308,14 @@ var mmt = {
 	    var contentDiv = document.createElement('div');
 	    var button_hide = document.createElement('button');
 	    var button_close = document.createElement('button');
-	    $(newDiv).addClass("panel panel-default");
-	    $(newDiv).addClass("bigDiv");
+	    $(innerDiv).addClass("panel panel-default");
+	    $(innerDiv).addClass("bigDiv");
 	    $(titleDiv).addClass("bg-primary")
 	    $(btnDiv).addClass("panel-heading");
 	    $(contentDiv).addClass("contDiv");
 	    $(titleDiv).append(btnDiv);
-	    $(newDiv).append(titleDiv);
-	    $(newDiv).append(contentDiv);
+	    $(innerDiv).append(titleDiv);
+	    $(innerDiv).append(contentDiv);
 	    $(btnDiv).append("<b>" + title + "</b");
 	    $(btnDiv).append(button_close);
 	    $(btnDiv).append(button_hide);
@@ -324,12 +327,13 @@ var mmt = {
 	    $(button_close).append(
 	        "<span class=\"glyphicon glyphicon-remove-sign\" aria-hidden=\"true\"></span>"
 	    )
+	    //TODO use snap options to improve dragging behavior
 	    $(outerDiv).draggable({
-	        handle: newDiv,
+	        handle: titleDiv,
 	        cursor: "move"
 	    });
-	    $(newDiv).resizable({
-	        minHeight: 250,
+	    $(innerDiv).resizable({
+	        minHeight: 50,
 	        minWidth: 250
 	    })
 	    $(button_close).click(function() {
