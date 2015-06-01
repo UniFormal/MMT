@@ -280,25 +280,34 @@ var mmt = {
 	 * @returns the body of the inline box, to which further content can/should be added 
 	 */
 	createInlineBox: function(origin, title, width) {
-	    var targetParent = $(origin).closest(".inlineBoxSibling");
+	    var tmp = $(origin).closest(".inlineBoxSibling");
+	    var container = document.createElement('div');
 	    var outerDiv = document.createElement('div');
 	    var innerDiv = document.createElement('div');
+	    $(container).addClass("container-fluid")
 	    $(outerDiv).addClass("container-fluid")
+	    $(container).append(outerDiv)
 	    $(outerDiv).append(innerDiv)
-	    
-	    if (targetParent.length === 0) {
+	    var heightParent;
+	    var targetParent;
+	    if (tmp.length === 0) {
+	    	
 	        var list = $("#main").children();
 	        if (list.length === 0) {
-	            $(outerDiv).insertAfter("#main");
+	        	targetParent = $("#main");
+	            $(container).insertAfter("#main");
+	            
 	        }
 	        else {
-	            $(outerDiv).insertBefore(list[0]);
+	        	$(container).insertBefore(list[0]);
 	        }
+	        
 	    }
 	    else {
-	        $(targetParent).append(outerDiv);
+	    	targetParent = tmp;
+	        $(targetParent).append(container);
 	    }
-	    
+	    var heightParent = $(targetParent).height();
 	    if (typeof width == 'string') {
 	        $(innerDiv).width(width)
 	    }
@@ -354,6 +363,22 @@ var mmt = {
 	            minus = true
 	        }
 	    });
+	    // detect if element is dragged
+	    var isDragging = false;
+	    $(titleDiv)
+	    .mousedown(function() {
+	        $(window).mousemove(function() {
+	            isDragging = true;
+		    	$(container).height(0);
+	            $(window).unbind("mousemove");
+	        });
+	    })
+	    .mouseup(function() {
+	        var wasDragging = isDragging;
+	        isDragging = false;
+	        $(window).unbind("mousemove");
+	    });
+	    
 	    // scroll to the new inline box
 	    var el = $(contentDiv);
 	    var elOffset = el.offset().top;
