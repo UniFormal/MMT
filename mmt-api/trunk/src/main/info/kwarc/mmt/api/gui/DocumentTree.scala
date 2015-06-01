@@ -55,31 +55,56 @@ class PathNode(path: Path, controller: Controller) extends MMTNode {
 class MMTTreeModel(controller: Controller) extends TreeModel {
 
    private var listeners: List[TreeModelListener] = Nil
-   def addTreeModelListener(l: TreeModelListener) {listeners ::= l}
+
+   def addTreeModelListener(l: TreeModelListener) {
+      listeners ::= l
+   }
+
    def removeTreeModelListener(l: TreeModelListener) {
-     listeners = listeners.filter(_ != l)
+      listeners = listeners.filter(_ != l)
    }
 
    def getChild(parent: Object, index: Int) = parent match {
       case n: MMTNode => n.children(index)
    }
 
-   def getChildCount(parent: Object) = parent match { 
+   def getChildCount(parent: Object) = parent match {
       case n: MMTNode => n.children.length
    }
 
    def getIndexOfChild(parent: Object, child: Object) = parent match {
       case n: MMTNode => n.children.indexOf(child)
    }
-   
+
    def getRoot = new ControllerNode(controller)
-   
+
    def isLeaf(node: Object) = node match {
-      case seNode : StructuralElementNode => seNode.children.isEmpty
+      case seNode: StructuralElementNode => seNode.children.isEmpty
       case _ => false
    }
-   
+
    def valueForPathChanged(path: TreePath, newValue: Object) {}
+}
+
+class MMTTree(controller: Controller) extends JTree(new MMTTreeModel(controller)) {
+   setRootVisible(false)
+
+   val ml = new MouseAdapter() {
+      override def mousePressed(e: MouseEvent) {
+         val jpath = getPathForLocation(e.getX, e.getY)
+         if (jpath == null) return
+         val node = jpath.getLastPathComponent.asInstanceOf[MMTNode]
+         val se = node match {
+            case seNode: StructuralElementNode => seNode.se
+            case pn: PathNode => pn.seNode.se
+            case _ => null
+         }
+         clickOn(se,e)
+      }
+   }
+   addMouseListener(ml)
+
+   def clickOn(se: StructuralElement, e: MouseEvent) {}
 }
 
 
@@ -118,7 +143,7 @@ class TreePane(controller: Controller) extends JPanel {
    toolbar.add(buttons)
    toolbar.add(Swing.Button("back")(back))
    toolbar.add(Swing.Button("forward")(forward))
-   
+
    buttons.add(presenterTextArea)
 
    private val content = new JTextArea // FXPanel 
@@ -127,9 +152,20 @@ class TreePane(controller: Controller) extends JPanel {
    val ontologyPane = new JPanel
    ontologyPane.setLayout(new BoxLayout(ontologyPane, BoxLayout.PAGE_AXIS))
    
-   private val tree = new JTree(new MMTTreeModel(controller))
-   tree.setRootVisible(false)
-   
+   private val tree = new MMTTree(controller) {
+      override def clickOn(se: StructuralElement, e: MouseEvent) {
+         (e.getButton, e.getClickCount) match {
+            case (MouseEvent.BUTTON1, 1) =>
+               if (se != null) setNewElement(se)
+            case (MouseEvent.BUTTON1, 2) =>
+               if (se != null) {
+                  val act = Navigate(se.path)
+                  controller.handle(act)
+               }
+         }
+      }
+   }
+
    private var history: List[StructuralElement] = Nil
    private var current = 0
    private def setNewElement(p: Path) {
@@ -164,28 +200,6 @@ class TreePane(controller: Controller) extends JPanel {
       }
       revalidate
    }
-   val ml = new MouseAdapter() {
-      override def mousePressed(e: MouseEvent) {
-         val jpath = tree.getPathForLocation(e.getX, e.getY)
-         if (jpath == null) return
-         val node = jpath.getLastPathComponent.asInstanceOf[MMTNode]
-         val se = node match {
-            case seNode: StructuralElementNode => seNode.se
-            case pn: PathNode => pn.seNode.se
-            case _ => null
-         }
-         (e.getButton, e.getClickCount) match {
-            case (MouseEvent.BUTTON1, 1) =>
-               if (se != null) setNewElement(se)
-            case (MouseEvent.BUTTON1, 2) =>
-               if (se != null) {
-                  val act = Navigate(se.path)
-                  controller.handle(act)
-               }
-         }
-      }
-   }
-   tree.addMouseListener(ml)
    private val scrollTree = new JScrollPane(tree)
    //scrollTree.setPreferredSize(new java.awt.Dimension(300,300))
    //scrollContent.setPreferredSize(new java.awt.Dimension(700,300))

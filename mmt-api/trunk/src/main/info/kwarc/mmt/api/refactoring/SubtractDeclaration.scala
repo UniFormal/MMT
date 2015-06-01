@@ -9,14 +9,8 @@ import info.kwarc.mmt.api.modules.DeclaredTheory
  * Subtracts a Declaration from a view
  */
 object SubtractDeclaration {
-  /**
-   * Takes a DeclaredTheory
-   * @param th and "deletes" every Declaration that depends on GlobalName/LocalName/FinalConstant
-   * @param a  (must be declared in th). Returns a theory with LocalName
-   * @param name if given, otherwise th.name*.
-   */
-  def apply(th:DeclaredTheory,a:GlobalName,ctrl:Controller,name:Option[LocalName]) : DeclaredTheory = {
 
+  def getConstants(th:DeclaredTheory,a:List[GlobalName],ctrl:Controller) : Set[FinalConstant] = {
     val includes = Consthash.getIncludes(th,ctrl)-th
     val consts = th.getConstants collect {case t:FinalConstant => t}
 
@@ -26,7 +20,19 @@ object SubtractDeclaration {
 
     val judg = AxiomHandler.findJudgment(ctrl,th,Some(includes+th))
     val hashes = for {o <- consts} yield Consthash(o,inclnames,judg)
-    val filteredindic = hashes.indices.filter(i => !occursIn(a,hashes(i),hashes))
+    val filteredindic = hashes.indices.filter(i => !a.exists(b => occursIn(b,hashes(i),hashes)))
+
+    filteredindic.map(consts(_)).toSet
+  }
+
+  /**
+   * Takes a DeclaredTheory
+   * @param th and "deletes" every Declaration that depends on GlobalName/LocalName/FinalConstant
+   * @param a  (must be declared in th). Returns a theory with LocalName
+   * @param name if given, otherwise th.name*.
+   */
+  def apply(th:DeclaredTheory,a:List[GlobalName],ctrl:Controller,name:Option[LocalName]) : DeclaredTheory = {
+
 
     val newname = name match {
       case Some(x) => x
@@ -34,17 +40,17 @@ object SubtractDeclaration {
     }
 
     val newth = new DeclaredTheory(th.path.doc,newname,th.meta)
-    Moduleadder(newth,(for (i <- filteredindic) yield consts(i)).toSet)
+    Moduleadder(newth,getConstants(th,a,ctrl))
 
     newth
   }
 
-  def apply(th:DeclaredTheory,a:LocalName,ctrl:Controller,name:Option[LocalName]) : DeclaredTheory
-    = apply(th,th.get(a) match {case n:FinalConstant => n.path case _ => throw new Exception("Final Constant Expected!")},
+  def applyln(th:DeclaredTheory,a:List[LocalName],ctrl:Controller,name:Option[LocalName]) : DeclaredTheory
+    = apply(th,a.map(b => th.get(b) match {case n:FinalConstant => n.path case _ => throw new Exception("Final Constant Expected!")}),
     ctrl,name)
 
-  def apply(th:DeclaredTheory,a:FinalConstant,ctrl:Controller,name:Option[LocalName]) : DeclaredTheory
-    = apply(th,a.path,ctrl,name)
+  def applyfc(th:DeclaredTheory,a:List[FinalConstant],ctrl:Controller,name:Option[LocalName]) : DeclaredTheory
+    = apply(th,a.map(_.path),ctrl,name)
 
   /**
    * Checks, whether a declaration (as Consthash)
