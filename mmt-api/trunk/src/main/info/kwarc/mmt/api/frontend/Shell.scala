@@ -31,8 +31,12 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
 """
    
    def main(a : Array[String]) : Unit = {
+      // command to process initially
       var args = a.toList
+      // respond with shell after processing initial command
       var shell = true
+      // release all resources and terminate after processing initial command and shell
+      var terminate = true
       args match {
          case "-help" :: _ =>
             println(helptext)
@@ -51,16 +55,15 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
          // execute command line arguments and drop to shell
          case "-shell" :: rest =>
             args = rest
-            shell = true
          // execute command line arguments and terminate
          // if the server is started, we only terminate when the server thread does 
          case "-noshell" :: rest =>
             args = rest
             shell = false
+            terminate = false
          // '-file N' is short for '-shell file N'
          case "-file" :: name :: Nil =>
             args = List("file", name)  
-            shell = true
          // default behavior: execute command line arguments and exit; shell if no arguments
          case _ =>
             shell = args.isEmpty
@@ -83,6 +86,7 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
             val command = Input.readLine()
             controller.handleLine(command)
          }
+         if (terminate) controller.cleanup
       } catch {
          case e: Error =>
            controller.report(e)
