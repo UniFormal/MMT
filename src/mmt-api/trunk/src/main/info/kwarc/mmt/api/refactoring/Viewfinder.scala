@@ -134,9 +134,9 @@ case class Viewfinder(controller: Controller) extends Logger {
         pt match {
           case None => None
           case Some(path) => if (path contains ((current._1.pars(i),current._2.pars(i)))) Some(path)
-          else pairs.collectFirst{case p if p._1.name==current._1.pars(i) && p._2.name==current._2.pars(i) => p} match {
-            case None => None
-            case Some(x) => findByAxiomsIterator(pairs, x, path)
+            else pairs.collectFirst{case p if p._1.name==current._1.pars(i) && p._2.name==current._2.pars(i) => p} match {
+              case None => None
+              case Some(x) => findByAxiomsIterator(pairs, x, path)
           }
         }
       )

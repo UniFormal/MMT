@@ -34,13 +34,13 @@ object Intersecter {
 
   /**
    * Does the same thing as the above one, but takes as input two theories and intersects along the best view
-   * between them (if not total - in that case, what would be the point?).
+   * between them.
    */
   def apply(th1:DeclaredTheory,th2:DeclaredTheory,ctrl:Controller, intdoc:Option[DPath],
             intname:Option[LocalName],suffix:Option[String])
   : List[DeclaredModule] = {
     val view = new Viewfinder(ctrl).findBest(th1,th2)
-    if (view._2<1) apply(view._1,th1,th2,intdoc,intname,suffix) else List()
+    apply(view._1,th1,th2,intdoc,intname,suffix)
   }
 
   /**
