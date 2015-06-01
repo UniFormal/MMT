@@ -134,7 +134,10 @@ class Backend(extman: ExtensionManager, val report : info.kwarc.mmt.api.frontend
    def getStores : List[Storage] = stores
 
    /** releases all resources held by storages */
-   def cleanup {stores.foreach(_.destroy)}
+   def cleanup {
+     stores.foreach(_.destroy)
+     stores = Nil
+   }
    
    /**
     * looks up a path in the first Storage that is applicable and sends the content to the reader
