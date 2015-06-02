@@ -85,10 +85,6 @@ lazy val lf = (project in file("mmt-lf")).
   dependsOn(api, lfcatalog).
   settings(commonSettings("mmt-lf"): _*)
 
-lazy val stex = (project in file("stex-mmt")).
-  dependsOn(api).
-  settings(commonSettings("mmt-stex"): _*)
-
 lazy val tptp = (project in file("mmt-tptp")).
   dependsOn(api, lf).
   settings(commonSettings("mmt-tptp"): _*).
@@ -124,18 +120,18 @@ lazy val specware = (project in file("mmt-specware")).
   dependsOn(api).
   settings(commonSettings("mmt-specware"): _*)
 
-lazy val stexOld = (project in file("mmt-stex")).
+lazy val stex = (project in file("mmt-stex")).
   dependsOn(api).
   settings(commonSettings("mmt-stex"): _*)
 
 /*
 lazy val webEdit = (project in file("mmt-webEdit")).
-  dependsOn(stexOld).
+  dependsOn(stex).
   settings(commonSettings("mmt-webEdit"): _*)
 */
 
 lazy val planetary = (project in file("planetary-mmt")).
-  dependsOn(stexOld).
+  dependsOn(stex).
   settings(commonSettings("planetary-mmt"): _*)
 
 // just a wrapper project

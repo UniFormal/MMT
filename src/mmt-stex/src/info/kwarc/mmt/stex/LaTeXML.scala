@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.utils.{File, FileURI, ShellCommand}
 
 /** importer wrapper for stex
   */
-class STeX extends Importer with frontend.ChangeListener {
+class LaTeXML extends Importer with frontend.ChangeListener {
   override val key = "stex-omdoc"
 
   private var lmlPath: File = File("run-latexml.sh")
