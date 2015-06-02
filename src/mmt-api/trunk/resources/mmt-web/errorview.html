@@ -20,7 +20,7 @@
     as overview with maximal rows:
     <input type="number" min="0" max="10000" ng-click="group()"
            ng-model="maxGroups"/>
-    <table>
+    <table title="grouped entries">
         <thead>
         <tr>
             <th>#</th>
@@ -50,7 +50,7 @@
         {{columns[key].long}}&nbsp;&nbsp;
     </span>
 
-    <table>
+    <table ng-show="hiddenData.length > 0" title="hidden entries">
         <thead>
         <tr>
             <th ng-repeat="key in colProps" ng-if="columns[key].x">
