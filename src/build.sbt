@@ -66,7 +66,7 @@ lazy val api = (project in file("mmt-api/trunk")).
   settings(commonSettings("mmt-api"): _*).
   settings(
     scalaSource in Compile := baseDirectory.value / "src/main",
-    scalaSource in Test := baseDirectory.value / "src/main",
+    scalaSource in Test := baseDirectory.value / "src/notests",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-compiler" % scalaVersion.value,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
@@ -124,9 +124,23 @@ lazy val specware = (project in file("mmt-specware")).
   dependsOn(api).
   settings(commonSettings("mmt-specware"): _*)
 
+lazy val stexOld = (project in file("mmt-stex")).
+  dependsOn(api).
+  settings(commonSettings("mmt-stex"): _*)
+
+/*
+lazy val webEdit = (project in file("mmt-webEdit")).
+  dependsOn(stexOld).
+  settings(commonSettings("mmt-webEdit"): _*)
+*/
+
+lazy val planetary = (project in file("planetary-mmt")).
+  dependsOn(stexOld).
+  settings(commonSettings("planetary-mmt"): _*)
+
 // just a wrapper project
 lazy val mmt = (project in file("mmt-exts")).
-  dependsOn(tptp, stex, pvs, specware).
+  dependsOn(tptp, stex, pvs, specware, planetary).
   settings(commonSettings("mmt-exts"): _*).
   settings(
     exportJars := false,
@@ -158,4 +172,3 @@ lazy val jedit = (project in file("jEdit-mmt")).
         oldStrategy(x)
     }
   )
-
