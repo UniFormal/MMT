@@ -42,11 +42,28 @@
     </table>
 
     <p/>
-    display: 
+    display:
     <span ng-repeat="key in colProps">
         <input type="checkbox" ng-model="columns[key].x"/>
         {{columns[key].long}}&nbsp;&nbsp;
     </span>
+
+    <table>
+        <thead>
+        <tr>
+            <th ng-repeat="key in colProps" ng-if="columns[key].x">
+                {{columns[key].long}}
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="res in hiddenData">
+            <td ng-repeat="key in colProps" ng-if="columns[key].x">
+                {{res[key]}}
+            </td>
+        </tr>
+        </tbody>
+    </table>
 
     <p>restrict the number of displayed entries to support fast searches in
         every column. Click "search" to reload choice (revealing undisplayed

@@ -15,6 +15,7 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     for (k in $scope.columns) { $scope.colProps.push(k) };
     $scope.field = 'shortMsg';
     $scope.results = [];
+    $scope.hiddenData = [];
     $scope.groups = [];
     $scope.number = 0;
     $scope.maxNumber = 100;
@@ -54,19 +55,26 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
            });
         });
     }
+    $scope.hidden = function() {
+        $http.get(':errors/hidden').success(function(data) {
+          $scope.hiddenData = data;
+        });
+    };
     $scope.hide = function() {
         $http.get(':errors/search2' + $scope.query($scope.maxNumber) + '&hide=true').success(function(data) {
+            $scope.clear();
+            $scope.group();
+            $scope.hidden();
+            $scope.search();
         });
-      $scope.clear();
-      $scope.group();
-      $scope.search();
     };
     $scope.clearhidden = function() {
         $http.get(':errors/clear').success(function(data) {
+            $scope.clear();
+            $scope.group();
+            $scope.hidden();
+            $scope.search();
         });
-      $scope.clear();
-      $scope.group();
-      $scope.search();
     };
     $scope.search = function() {
         $scope.groupMode = false;
