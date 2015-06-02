@@ -11,14 +11,13 @@
 </head>
 <body>
 <h3 style="display:inline">Error viewer</h3>
-(see <a href="http://gl.kwarc.info/cmaeder/mmt-errorview/blob/master/README.md">
-    gitlab repository</a> for more information)
+
 <div ng-controller="SearchController">
     <p/>
-    group by
+    group errors by
     <select ng-click="group()" ng-model="field" ng-init="columns[shortMsg].long"
             ng-options="columns[key].long for key in colProps "></select>
-    as overview with clickable maximal rows:
+    as overview with maximal rows:
     <input type="number" min="0" max="10000" ng-click="group()"
            ng-model="maxGroups"/>
     <table>
@@ -35,6 +34,9 @@
                 <a href=""
                    ng-click="columns[field].search = g.content; search()"
                    title="select corresponding entries">&#8631;</a>
+                <a href=""
+                   ng-click="columns[field].search = g.content; hide()"
+                   title="hide corresponding entries">&#8630;</a>
                 {{g.content}}
             </td>
         </tr>
@@ -65,13 +67,9 @@
         </tbody>
     </table>
 
-    <p>restrict the number of displayed entries to support fast searches in
-        every column. Click "search" to reload choice (revealing undisplayed
-        entries or results of finished builds).</p>
-    <button ng-click="clear()">clear search fields</button>
+    <p/>
     <button ng-click="clearhidden()">clear hidden filters</button>
-    <button ng-click="hide()">hide selected entries</button>
-    <button ng-click="search()">search</button>
+    <button ng-click="clear()">clear search fields</button>
     maximal entries:
     <input type="number" min="0" max="10000" ng-model="maxNumber"/>
     <span>
@@ -79,7 +77,11 @@
         <span ng-show="number <= results.length">result: {{results.length}}</span>
     </span>
 
-    <p/>
+    <p>restrict the number of displayed entries to support fast searches in
+        every column. Click <a href="" ng-click="search()"
+                               title="search for selection">&#8631;</a>
+        to reload choice (revealing undisplayed
+        or rebuilt results).</p>
 
     <div>{{buildCount}} pending builds
         <a href="" ng-click="showBuildResult = !showBuildResult">
@@ -92,7 +94,12 @@
     <table>
         <thead>
         <tr>
-            <th/>
+            <th>
+                <a href="" ng-click="search()"
+                   title="search for selection">&#8631;</a>
+                <a href="" ng-click="hide()"
+                   title="hide selection">&#8630;</a>
+            </th>
             <th ng-repeat="key in colProps" ng-if="columns[key].x">
                 <span style="cursor:pointer"
                       ng-click="sort.col = key; sort.asc = !sort.asc">
@@ -103,6 +110,8 @@
                     {{columns[key].long}}
                 </span>
                 <br/>
+                <a href="" ng-click="columns[key].search = ''"
+                   title="clear text">&#10226;</a>
                 <input type="text" ng-model="columns[key].search" size="5"/>
             </th>
         </tr>
