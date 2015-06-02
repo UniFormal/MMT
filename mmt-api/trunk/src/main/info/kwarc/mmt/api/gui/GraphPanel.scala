@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.gui
 
-/* TODO This doesn't actually work yet!
+// TODO This doesn't actually work yet!
 import java.awt.BorderLayout
 import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing._
@@ -87,4 +87,3 @@ class ViewBox(v:DeclaredView) extends JCheckBox(v.name+": "+v.from.toMPath.name 
   val view : DeclaredView = v
   setSelected(true)
 }
-*/
