@@ -3,5 +3,7 @@ scala: 2.11.6
 script: 
  - cd src
  - sbt compile
+ - sbt unidoc
+ - sbt deploy
  - git clone http://gl.mathhub.info/MMT/urtheories.git
  - ./sbt-mmt.sh file `pwd`/urtheories/build.msl build
