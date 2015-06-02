@@ -193,6 +193,9 @@ class ErrorManager extends Extension with Logger {
             JSONObject("count" -> JSONInt(i), "content" -> JSONString(s))
           }: _*)
         case List("clear") => hideQueries = Nil
+        case List("hidden") =>
+          json = JSONArray(hideQueries.map(l =>
+            JSONObject(Table.columns.zip(l map JSONString): _*)): _*)
         case _ =>
           if (hide) hideQueries ::= args
           json = JSONArray(result.toList.take(limit).map(l =>
