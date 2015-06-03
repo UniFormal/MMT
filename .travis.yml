@@ -1,6 +1,9 @@
 language: scala
 scala: 2.11.6
-script: 
+before_install:
+- sudo apt-get update -qq
+- sudo apt-get install -qq graphviz
+script:
  - cd src
  - sbt compile
  - sbt unidoc
