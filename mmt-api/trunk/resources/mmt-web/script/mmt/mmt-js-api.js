@@ -295,13 +295,11 @@ var mmt = {
 	        var list = $("#main").children();
 	        if (list.length === 0) {
 	        	targetParent = $("#main");
-	            $(container).insertAfter("#main");
-	            
+	            $(container).insertAfter("#main");            
 	        }
 	        else {
 	        	$(container).insertBefore(list[0]);
-	        }
-	        
+	        }        
 	    }
 	    else {
 	    	targetParent = tmp;
@@ -345,19 +343,31 @@ var mmt = {
 	        minHeight: 50,
 	        minWidth: 250
 	    })
+	    var h = $(titleDiv).height();
+	    var H = $(innerDiv).height();
+	   
 	    $(button_close).click(function() {
 	        var temp = $(button_close).closest(".panel")[0];
 	        $(temp).remove();
 	    });
+	    
 	    var minus = true
+	    var newH = 0
 	    $(button_hide).click(function() {
-	        $(contentDiv).toggle();
+	    	var H ;
 	        if (minus) {
+	        	H = $(innerDiv).height();
+		    	newH = H
+	        	var h = $(titleDiv).height();
+	    	    $(contentDiv).hide();
+		    	$(innerDiv).height(h)		        
 	            $(".minus").switchClass("glyphicon-minus-sign",
 	                "glyphicon-plus-sign");
 	            minus = false
 	        }
 	        else {
+	        	$(innerDiv).height(newH)
+	        	$(contentDiv).show();	        
 	            $(".minus").switchClass("glyphicon-plus-sign",
 	                "glyphicon-minus-sign");
 	            minus = true
