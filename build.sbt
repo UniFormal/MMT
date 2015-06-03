@@ -32,10 +32,13 @@ apidoc := postProcessApi.value
 apidoc <<= apidoc.dependsOn(cleandoc, unidoc in Compile)
 
 val deploy =
-  TaskKey[Unit]("deploy", "copies fat MMTPlugin.jar to remote location.")
+  TaskKey[Unit]("deploy", "assembles and copies fat jars to deploy location.")
 
 deploy in jedit <<= assembly in(jedit, Compile) map
-  deployTo("MMTPlugin.jar")
+  deployTo("jedit-plugin/plugin/jars/MMTPlugin.jar")
+
+deploy in mmt <<= assembly in (mmt, Compile) map
+  deployTo("mmt")
 
 def commonSettings(nameStr: String) = Seq(
   organization := "info.kwarc.mmt",
@@ -140,7 +143,10 @@ lazy val mmt = (project in file("mmt-exts")).
   settings(commonSettings("mmt-exts"): _*).
   settings(
     exportJars := false,
-    publish := {}
+    publish := {},
+    mainClass in assembly := Some("info.kwarc.mmt.api.frontend.Run"),
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(
+      prependShellScript = Some(Seq("#!/bin/bash", """exec /usr/bin/java -Xmx2048m -jar "$0" "$@"""")))
   )
 
 val jeditJars = Seq(

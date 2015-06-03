@@ -6,7 +6,7 @@ import sbt.Logger
 
 object PostProcessApi {
   def deployTo(name: String)(jar: File): Unit = {
-    val tar = new File("../deploy/jedit-plugin/plugin/jars/" + name)
+    val tar = new File("../deploy/" + name)
     Files.copy(jar.toPath, tar.toPath, REPLACE_EXISTING)
     println("copied file: " + jar)
     println("to file: " + tar)
