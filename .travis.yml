@@ -8,5 +8,6 @@ script:
  - sbt compile
  - sbt unidoc
  - sbt deploy
+ - cd ..
  - git clone http://gl.mathhub.info/MMT/urtheories.git
- - ./sbt-mmt.sh file `pwd`/urtheories/build.msl build
+ - deploy/mmt file urtheories/build.msl build
