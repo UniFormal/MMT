@@ -37,7 +37,7 @@ val deploy =
 deploy in jedit <<= assembly in(jedit, Compile) map
   deployTo("jedit-plugin/plugin/jars/MMTPlugin.jar")
 
-deploy in mmt <<= assembly in (mmt, Compile) map
+deploy in mmt <<= assembly in(mmt, Compile) map
   deployTo("mmt")
 
 def commonSettings(nameStr: String) = Seq(
@@ -55,7 +55,13 @@ def commonSettings(nameStr: String) = Seq(
   exportJars := true,
   autoAPIMappings := true,
   connectInput in run := true,
-  fork := true
+  fork := true,
+  assemblyMergeStrategy in assembly := {
+    case PathList("rootdoc.txt") => MergeStrategy.discard
+    case x =>
+      val oldStrategy = (assemblyMergeStrategy in assembly).value
+      oldStrategy(x)
+  }
 )
 
 lazy val tiscaf = (project in file("tiscaf")).
@@ -166,11 +172,5 @@ lazy val jedit = (project in file("jEdit-mmt")).
     assemblyExcludedJars in assembly := {
       val cp = (fullClasspath in assembly).value
       cp filter { j => jeditJars.contains(j.data.getName) }
-    },
-    assemblyMergeStrategy in assembly := {
-      case PathList("rootdoc.txt") => MergeStrategy.discard
-      case x =>
-        val oldStrategy = (assemblyMergeStrategy in assembly).value
-        oldStrategy(x)
     }
   )
