@@ -11,6 +11,8 @@ import utils._
 import informal._
 import archives._
 import notations._
+import utils.xml._
+
 
 class NotationPresenter(contr : Controller, var notations : List[(GlobalName,TextNotation)] = Nil) 
   extends presentation.MathMLPresenter {
@@ -37,19 +39,44 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
   override def doAttributedTerm(t : Term, k : OMID, v : Term)(pc : PresentationContext) = k.path match {
     case Narration.path => 
       doInformal(v)(pc : PresentationContext)
+      
       1
     case _ => doDefault(t)(pc)
   }
   
-  def doInformal(t : Term)(pc : PresentationContext) : Unit = t match {
+  def doInformal(t : Term)(implicit pc : PresentationContext) : Unit = t match {
     case OMFOREIGN(n) => doInformal(n)(pc)
-    case _ => recurse(t)(pc)
+    case _ => doInfToplevel(t) {
+      recurse(t)(pc)
+    }
   }
   
-  def doInformal(n : scala.xml.Node)(pc : PresentationContext) : Unit = n match {
+  def doInfToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
+    val nsAtts = List("xmlns" -> namespace("mathml"), "xmlns:jobad" -> namespace("jobad"))
+    val mmtAtts = pc.owner match {
+       case None => Nil
+       case Some(cp) => List("jobad:owner" -> cp.parent.toPath, "jobad:component" -> cp.component.toString, "jobad:mmtref" -> "")
+    }
+    val idAtt = ( "id" -> o.hashCode.toString)
+    // <mstyle displaystyle="true">
+    pc.out(openTag("math",  idAtt :: nsAtts ::: mmtAtts))
+    pc.out(openTag("semantics", Nil))
+    pc.out(openTag("mrow", Nil))
+    body
+    pc.out(closeTag("mrow"))
+    pc.out(openTag("annotation-xml", List("encoding" -> "MathML-Content")))
+    pc.out(o.toCML.toString)
+    pc.out(closeTag("annotation-xml"))
+    pc.out(closeTag("semantics"))
+    pc.out(closeTag("math"))
+  }
+   
+  def doInformal(n : scala.xml.Node)(implicit pc : PresentationContext) : Unit = n match {
     case _ if (n.label == "OMOBJ") => 
       val tm = Obj.parseTerm(n, NamespaceMap.empty)
-      apply(tm, None)(pc.rh)
+      doInfToplevel(tm) {
+        recurse(tm)(pc)
+      }
     case s : scala.xml.SpecialNode => pc.out(s.toString)
     case _ => 
       pc.rh.writeStartTag(n.prefix, n.label, n.attributes, n.scope)

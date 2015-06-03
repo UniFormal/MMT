@@ -1,8 +1,6 @@
 package info.kwarc.mmt.api.webedit
 import info.kwarc.mmt.api._
 import frontend._
-import info.kwarc.mmt.api.libraries.LanguageDictionary
-
 
 object Main {
    val controller = new Controller

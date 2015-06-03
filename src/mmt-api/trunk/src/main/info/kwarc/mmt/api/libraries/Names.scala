@@ -13,6 +13,10 @@ case class Completion(parent: MPath, completion: LocalName) {
    def path = parent ? completion
 }
 
+case class IncludeOption(from : MPath, to: MPath, name : LocalName) {
+  def spath = from ? name  
+}
+
 /** Auxiliary methods for name lookup */
 // we assume includes have been flattened
 object Names {
@@ -64,6 +68,32 @@ object Names {
          val incls = lib.visible(home).toList
          val es = incls mapPartial {i => lib.getO(i % name)}
          if (es.length == 1) Some(es(0)) else None  // uniquely resolvable symbol in an included theory
+      }
+   }
+   
+   def resolveIncludes(home : Term, name : String)(implicit lib : Library) : Option[List[IncludeOption]] = {
+      val incls = lib.visible(home).toList
+      val current = incls flatMap {i => 
+        get(i) match {
+         case None => Nil
+         case Some(t) =>
+            val names = t.domain.toList
+            names.filter(_.toString == name)
+        }
+      }
+      current match { 
+        case Nil => 
+          val allPaths = lib.getAllPaths.toList
+          val options = allPaths flatMap {i =>
+            get(OMMOD(i)) match {
+              case None => Nil
+              case Some(t) => 
+                val names = t.domain.toList
+                names.filter(_.toString == name).map(n => IncludeOption(i, home.toMPath, n))
+            }
+          }
+          Some(options)
+        case _ => None
       }
    }
 }

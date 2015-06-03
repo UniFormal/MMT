@@ -21,6 +21,14 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
     Server.errorResponse(msg)
   }
 
+  def bodyAsJSON(b : Body) = {
+    val bodyS = b.asString
+    scala.util.parsing.json.JSON.parseRaw(bodyS) match {
+      case Some(j : scala.util.parsing.json.JSONObject) => j
+      case _ => throw ServerError("Invalid JSON " + bodyS)
+    }
+  }
+    
   def apply(uriComps: List[String], query: String, body: Body): HLet = {
     try {
       uriComps match {
@@ -45,7 +53,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   private def getResolveIncludesResponse: HLet = new HLet {
     def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = {
       val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
+      val params = bodyAsJSON(reqBody).obj
 
       val symbol = params.get("symbol").getOrElse(throw ServerError("No symbol found")).toString
       val mpathS = params.get("mpath").getOrElse(throw ServerError("No mpath found")).toString
@@ -85,7 +93,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   private def getMinIncludes: HLet = new HLet {
     def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = try {
       val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
+      val params = bodyAsJSON(reqBody).obj
 
       val mpathS = params.get("mpath").getOrElse(throw ServerError("No mpath found")).toString
 
@@ -98,7 +106,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   private def getAutocompleteResponse: HLet = new HLet {
     def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = try {
       val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
+      val params = bodyAsJSON(reqBody).obj
 
       val prefix = params.get("prefix").getOrElse(throw ServerError("No prefix found")).toString
       val mpathS = params.get("mpath").getOrElse(throw ServerError("No mpath found")).toString
@@ -112,7 +120,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   private def getSymbolCompletion: HLet = new HLet {
     def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = try {
       val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
+      val params = bodyAsJSON(reqBody).obj
 
       val prefix = params.get("prefix").getOrElse(throw ServerError("No prefix found")).toString
       val mpathS = params.get("mpath").getOrElse(throw ServerError("No mpath found")).toString
@@ -172,7 +180,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   private def getConstantCorrection: HLet = new HLet {
     def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = try {
       val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
+      val params = bodyAsJSON(reqBody).obj
 
       val constant = params.get("constant").getOrElse(throw ServerError("No type found")).toString
       val mpathS = params.get("mpath").getOrElse(throw ServerError("No mpath found")).toString
@@ -186,7 +194,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   private def getIncludeCorrection: HLet = new HLet {
     def aact(tk: HTalk)(implicit ec: ExecutionContext): Future[Unit] = try {
       val reqBody = new Body(tk)
-      val params = reqBody.asJSON.obj
+      val params = bodyAsJSON(reqBody).obj
 
       val k = new LanguageDictionary(controller)
 
