@@ -49,13 +49,16 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A DeclaredView represents an MMT view given by a list of assignments.</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="../../../../../../../src/mmt-api/trunk/src/main/info/kwarc/mmt/api/modules/View.scala" target="_blank">View.scala</a></dd></dl><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A DeclaredView represents an MMT view given by a list of assignments.</p><p>Assignments are <span class="extype" name="Constant">Constant</span>s, whose name is the qualified name (always starts with <a href="../ComplexStep.html" class="extype" name="info.kwarc.mmt.api.ComplexStep">ComplexStep</a>)
+of a domain Constant
+and whose definiens is codomain <span class="extype" name="Term">Term</span>.
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="file://home/maeder/MMT/src/mmt-api/trunk/src/main/info/kwarc/mmt/api/modules/View.scala" target="_blank">View.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="DeclaredLink.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredLink">DeclaredLink</a>, <a href="DeclaredModule.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredModule">DeclaredModule</a>, <a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a>, <a href="View.html" class="extype" name="info.kwarc.mmt.api.modules.View">View</a>, <a href="Link.html" class="extype" name="info.kwarc.mmt.api.modules.Link">Link</a>, <a href="Module.html" class="extype" name="info.kwarc.mmt.api.modules.Module">Module</a>, <a href="../ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a>, <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a>, <a href="../metadata/HasMetaData.html" class="extype" name="info.kwarc.mmt.api.metadata.HasMetaData">HasMetaData</a>, <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="DeclaredLink.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredLink">DeclaredLink</a>, <a href="DeclaredModule.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredModule">DeclaredModule</a>, <a href="Body.html" class="extype" name="info.kwarc.mmt.api.modules.Body">Body</a>, <a href="View.html" class="extype" name="info.kwarc.mmt.api.modules.View">View</a>, <a href="Link.html" class="extype" name="info.kwarc.mmt.api.modules.Link">Link</a>, <a href="Module.html" class="extype" name="info.kwarc.mmt.api.modules.Module">Module</a>, <a href="../ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a>, <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a>, <a href="../metadata/HasMetaData.html" class="extype" name="info.kwarc.mmt.api.metadata.HasMetaData">HasMetaData</a>, <a href="../Content.html" class="extype" name="info.kwarc.mmt.api.Content">Content</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></div>
         </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
                 <span class="toggle diagram-link">Type Hierarchy</span>
                 <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#diagrams" target="_blank" class="diagram-help">Learn more about scaladoc diagrams</a>
-                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph1" viewBox="0.00 0.00 328.00 120.00" height="120pt" width="328pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 116)" class="graph" id="graph1"><polygon points="-4,5 -4,-116 325,-116 325,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph1_0"><a xlink:title="info.kwarc.mmt.api.modules.DeclaredView (this class)" xlink:href="#inheritance-diagram"><polygon points="194.25,-50 89.75,-50 89.75,-24 194.25,-24 194.25,-50" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-45" x="100" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-35" x="122" text-anchor="start">DeclaredView</text></a></g><!-- node1 --><g class="node class" id="graph1_1"><a xlink:title="info.kwarc.mmt.api.modules.View" xlink:href="View.html#inheritance-diagram"><polygon points="66.25,-112 -0.25,-112 -0.25,-86 66.25,-86 66.25,-112" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-107" x="10" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="32" text-anchor="start">View</text></a></g><!-- node1&#45;&gt;node0 --><g class="edge inheritance" id="graph1_1_0"><a xlink:title="DeclaredView is a subtype of View"><path d="M59.6323,-83.34C78.1538,-73.1447 102.55,-59.7155 119.975,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="58.5941,-81.9138 55.0578,-85.8581 60.2819,-84.98 58.5941,-81.9138" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node trait" id="graph1_2"><a xlink:title="info.kwarc.mmt.api.modules.DeclaredModule" xlink:href="DeclaredModule.html#inheritance-diagram"><polygon points="199.25,-112 84.75,-112 84.75,-86 199.25,-86 199.25,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-107" x="95" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="117" text-anchor="start">DeclaredModule</text></a></g><!-- node2&#45;&gt;node0 --><g class="edge inheritance" id="graph1_2_0"><a xlink:title="DeclaredView is a subtype of DeclaredModule"><path d="M142,-80.6826C142,-70.8961 142,-58.9026 142,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="140.25,-80.8581 142,-85.8581 143.75,-80.8581 140.25,-80.8581" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node3 --><g class="node trait" id="graph1_3"><a xlink:title="info.kwarc.mmt.api.modules.DeclaredLink" xlink:href="DeclaredLink.html#inheritance-diagram"><polygon points="320,-112 218,-112 218,-86 320,-86 320,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-107" x="228" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-97" x="250" text-anchor="start">DeclaredLink</text></a></g><!-- node3&#45;&gt;node0 --><g class="edge inheritance" id="graph1_3_0"><a xlink:title="DeclaredView is a subtype of DeclaredLink"><path d="M238.517,-83.5985C216.872,-73.3726 188.137,-59.7968 167.662,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="238.031,-85.3045 243.3,-85.8581 239.526,-82.1399 238.031,-85.3045" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
+                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph1" viewBox="0.00 0.00 327.00 120.00" height="120pt" width="327pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 116)" class="graph" id="graph0"><polygon points="-4,4 -4,-116 323,-116 323,4 -4,4" stroke="none" fill="white"></polygon><g class="cluster" id="clust1"></g><g class="cluster" id="clust2"></g><!-- node0 --><g class="node this class" id="graph1_0"><g id="a_this class|graph1_0"><a xlink:title="info.kwarc.mmt.api.modules.DeclaredView (this class)" xlink:href="#inheritance-diagram"><polygon points="194.25,-50 89.75,-50 89.75,-24 194.25,-24 194.25,-50" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-43" x="102" preserveAspectRatio="xMinYMin meet" height="12px" width="12px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-34.5" x="122" text-anchor="start">DeclaredView</text></a></g></g><!-- node1 --><g class="node class" id="graph1_1"><g id="a_class|graph1_1"><a xlink:title="info.kwarc.mmt.api.modules.View" xlink:href="View.html#inheritance-diagram"><polygon points="66.25,-112 -0.25,-112 -0.25,-86 66.25,-86 66.25,-112" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-105" x="12" preserveAspectRatio="xMinYMin meet" height="12px" width="12px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-96.5" x="32" text-anchor="start">View</text></a></g></g><!-- node1&#45;&gt;node0 --><g class="edge inheritance" id="graph1_1_0"><g id="a_inheritance|graph1_1_0"><a xlink:title="DeclaredView is a subtype of View"><path d="M59.6323,-83.34C78.1538,-73.1447 102.55,-59.7155 119.975,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="58.5941,-81.9138 55.0578,-85.8581 60.2819,-84.98 58.5941,-81.9138" stroke="#d4d4d4" fill="none"></polygon></a></g></g><!-- node2 --><g class="node trait" id="graph1_2"><g id="a_trait|graph1_2"><a xlink:title="info.kwarc.mmt.api.modules.DeclaredModule" xlink:href="DeclaredModule.html#inheritance-diagram"><polygon points="199.25,-112 84.75,-112 84.75,-86 199.25,-86 199.25,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-105" x="97" preserveAspectRatio="xMinYMin meet" height="12px" width="12px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-96.5" x="117" text-anchor="start">DeclaredModule</text></a></g></g><!-- node2&#45;&gt;node0 --><g class="edge inheritance" id="graph1_2_0"><g id="a_inheritance|graph1_2_0"><a xlink:title="DeclaredView is a subtype of DeclaredModule"><path d="M142,-80.6826C142,-70.8961 142,-58.9026 142,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="140.25,-80.8581 142,-85.8581 143.75,-80.8581 140.25,-80.8581" stroke="#d4d4d4" fill="none"></polygon></a></g></g><!-- node3 --><g class="node trait" id="graph1_3"><g id="a_trait|graph1_3"><a xlink:title="info.kwarc.mmt.api.modules.DeclaredLink" xlink:href="DeclaredLink.html#inheritance-diagram"><polygon points="318.5,-112 217.5,-112 217.5,-86 318.5,-86 318.5,-112" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-105" x="229" preserveAspectRatio="xMinYMin meet" height="12px" width="12px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-96.5" x="249" text-anchor="start">DeclaredLink</text></a></g></g><!-- node3&#45;&gt;node0 --><g class="edge inheritance" id="graph1_3_0"><g id="a_inheritance|graph1_3_0"><a xlink:title="DeclaredView is a subtype of DeclaredLink"><path d="M237.757,-83.5985C216.282,-73.3726 187.773,-59.7968 167.46,-50.1238" stroke="#d4d4d4" fill="none"></path><polygon points="237.235,-85.2884 242.502,-85.8581 238.74,-82.1284 237.235,-85.2884" stroke="#d4d4d4" fill="none"></polygon></a></g></g></g></svg></div>
               </div></div>
         
 
@@ -102,14 +105,14 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">DeclaredView</span><span class="params">(<span name="doc">doc: <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a></span>, <span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="from">from: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="to">to: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="isImplicit">isImplicit: <span class="extype" name="scala.Boolean">Boolean</span></span>)</span>
+        <span class="name">DeclaredView</span><span class="params">(<span name="doc">doc: <a href="../DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a></span>, <span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="from">from: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="to">to: <a href="../objects/Term.html" class="extype" name="info.kwarc.mmt.api.objects.Term">Term</a></span>, <span name="isImplicit">isImplicit: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>)</span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@&lt;init&gt;(doc:info.kwarc.mmt.api.DPath,name:info.kwarc.mmt.api.LocalName,from:info.kwarc.mmt.api.objects.Term,to:info.kwarc.mmt.api.objects.Term,isImplicit:Boolean):info.kwarc.mmt.api.modules.DeclaredView" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" />
       </a>
     </span>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">doc</dt><dd class="cmt"><p>the <code><span class="extype" name="info.kwarc.mmt.api.names.Path">info.kwarc.mmt.api.names.Path</span></code> of the parent document</p></dd><dt class="param">name</dt><dd class="cmt"><p>the name of the view</p></dd><dt class="param">from</dt><dd class="cmt"><p>the domain theory</p></dd><dt class="param">to</dt><dd class="cmt"><p>the codomain theory</p></dd><dt class="param">isImplicit</dt><dd class="cmt"><p>true iff the link is implicit
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">doc</dt><dd class="cmt"><p>the namespace/parent document</p></dd><dt class="param">name</dt><dd class="cmt"><p>the name of the view</p></dd><dt class="param">from</dt><dd class="cmt"><p>the domain theory</p></dd><dt class="param">to</dt><dd class="cmt"><p>the codomain theory</p></dd><dt class="param">isImplicit</dt><dd class="cmt"><p>true iff the link is implicit
 </p></dd></dl></div>
     </li></ol>
             </div>
@@ -129,7 +132,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@!=(x$1:Any):Boolean" title="Permalink" target="_top">
@@ -146,7 +149,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Int" class="extype" target="_top">Int</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@##():Int" title="Permalink" target="_top">
@@ -163,7 +166,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@==(x$1:Any):Boolean" title="Permalink" target="_top">
@@ -180,7 +183,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">add</span><span class="params">(<span name="s">s: <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">add</span><span class="params">(<span name="s">s: <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@add(s:info.kwarc.mmt.api.symbols.Declaration):Unit" title="Permalink" target="_top">
@@ -254,7 +257,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">compatible</span><span class="params">(<span name="that">that: <a href="../ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">compatible</span><span class="params">(<span name="that">that: <a href="../ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@compatible(that:info.kwarc.mmt.api.ContentElement):Boolean" title="Permalink" target="_top">
@@ -275,7 +278,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">declares</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">declares</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@declares(name:info.kwarc.mmt.api.LocalName):Boolean" title="Permalink" target="_top">
@@ -292,7 +295,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">delete</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a>]</span>
+        <span class="name">delete</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Option" class="extype" target="_top">Option</a>[<a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a>]</span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@delete(name:info.kwarc.mmt.api.LocalName):Option[info.kwarc.mmt.api.symbols.Declaration]" title="Permalink" target="_top">
@@ -310,7 +313,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">domain</span><span class="result">: <span class="extype" name="scala.collection.Set">Set</span>[<a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a>]</span>
+        <span class="name">domain</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.collection.Set" class="extype" target="_top">Set</a>[<a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a>]</span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@domain:scala.collection.Set[info.kwarc.mmt.api.LocalName]" title="Permalink" target="_top">
@@ -327,7 +330,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
@@ -344,7 +347,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@equals(x$1:Any):Boolean" title="Permalink" target="_top">
@@ -361,7 +364,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@finalize():Unit" title="Permalink" target="_top">
@@ -384,7 +387,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">foreachComponent</span><span class="params">(<span name="f">f: (<a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a>, <a href="../ComponentContainer.html" class="extype" name="info.kwarc.mmt.api.ComponentContainer">ComponentContainer</a>) ⇒ <span class="extype" name="scala.Unit">Unit</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">foreachComponent</span><span class="params">(<span name="f">f: (<a href="../CPath.html" class="extype" name="info.kwarc.mmt.api.CPath">CPath</a>, <a href="../ComponentContainer.html" class="extype" name="info.kwarc.mmt.api.ComponentContainer">ComponentContainer</a>) ⇒ <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@foreachComponent(f:(info.kwarc.mmt.api.CPath,info.kwarc.mmt.api.ComponentContainer)=&gt;Unit):Unit" title="Permalink" target="_top">
@@ -401,7 +404,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">foreachDeclaration</span><span class="params">(<span name="f">f: (<a href="../ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a>) ⇒ <span class="extype" name="scala.Unit">Unit</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">foreachDeclaration</span><span class="params">(<span name="f">f: (<a href="../ContentElement.html" class="extype" name="info.kwarc.mmt.api.ContentElement">ContentElement</a>) ⇒ <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@foreachDeclaration(f:info.kwarc.mmt.api.ContentElement=&gt;Unit):Unit" title="Permalink" target="_top">
@@ -486,7 +489,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getComponent</span><span class="params">(<span name="c">c: <a href="../DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../ComponentContainer.html" class="extype" name="info.kwarc.mmt.api.ComponentContainer">ComponentContainer</a>]</span>
+        <span class="name">getComponent</span><span class="params">(<span name="c">c: <a href="../DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Option" class="extype" target="_top">Option</a>[<a href="../ComponentContainer.html" class="extype" name="info.kwarc.mmt.api.ComponentContainer">ComponentContainer</a>]</span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@getComponent(c:info.kwarc.mmt.api.DeclarationComponent):Option[info.kwarc.mmt.api.ComponentContainer]" title="Permalink" target="_top">
@@ -494,23 +497,23 @@ if they have the same type, same Path, and agree in all parts that are TermConta
       </a>
     </span>
       <p class="shortcomment cmt">returns a specific component if present</p><div class="fullcomment"><div class="comment cmt"><p>returns a specific component if present</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.modules.DeclaredModule#getComponents" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getComponents:scala.collection.immutable.Nil.type"></a>
-      <a id="getComponents:Nil.type"></a>
+    </li><li name="info.kwarc.mmt.api.modules.DeclaredView#getComponents" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getComponents:List[(ProductwithSerializablewithinfo.kwarc.mmt.api.DeclarationComponent,info.kwarc.mmt.api.FinalTermContainer)]"></a>
+      <a id="getComponents:List[(ProductwithSerializablewithDeclarationComponent,FinalTermContainer)]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getComponents</span><span class="result">: <span class="extype" name="scala.collection.immutable.Nil">Nil</span>.type</span>
+        <span class="name">getComponents</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.collection.immutable.List" class="extype" target="_top">List</a>[(<a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Product" class="extype" target="_top">Product</a> with <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Serializable" class="extype" target="_top">Serializable</a> with <a href="../DeclarationComponent.html" class="extype" name="info.kwarc.mmt.api.DeclarationComponent">DeclarationComponent</a>, <a href="../FinalTermContainer.html" class="extype" name="info.kwarc.mmt.api.FinalTermContainer">FinalTermContainer</a>)]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@getComponents:scala.collection.immutable.Nil.type" title="Permalink" target="_top">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@getComponents:List[(ProductwithSerializablewithinfo.kwarc.mmt.api.DeclarationComponent,info.kwarc.mmt.api.FinalTermContainer)]" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" />
       </a>
     </span>
-      <p class="shortcomment cmt">the meta-theory, domain, and codomain are not part of the term components because it is just a Path</p><div class="fullcomment"><div class="comment cmt"><p>the meta-theory, domain, and codomain are not part of the term components because it is just a Path</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="DeclaredModule.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredModule">DeclaredModule</a> → <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></dd></dl></div>
+      <p class="shortcomment cmt">returns all term components of this elements</p><div class="fullcomment"><div class="comment cmt"><p>returns all term components of this elements</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.modules.DeclaredView">DeclaredView</a> → <a href="../StructuralElement.html" class="extype" name="info.kwarc.mmt.api.StructuralElement">StructuralElement</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.modules.Body#getDeclarations" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getDeclarations:List[info.kwarc.mmt.api.symbols.Declaration]"></a>
       <a id="getDeclarations:List[Declaration]"></a>
@@ -537,7 +540,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getDeclarationsElaborated</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a>]</span>
+        <span class="name">getDeclarationsElaborated</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.collection.immutable.List" class="extype" target="_top">List</a>[<a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a>]</span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@getDeclarationsElaborated:List[info.kwarc.mmt.api.symbols.Declaration]" title="Permalink" target="_top">
@@ -578,7 +581,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <img src="../../../../../lib/permalink.png" />
       </a>
     </span>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.modules.DeclaredView">DeclaredView</a> → <a href="DeclaredModule.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredModule">DeclaredModule</a></dd></dl></div>
+      <p class="shortcomment cmt">the meta-theory, domain, and codomain are not part of the term components because it is just a Path</p><div class="fullcomment"><div class="comment cmt"><p>the meta-theory, domain, and codomain are not part of the term components because it is just a Path</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.modules.DeclaredView">DeclaredView</a> → <a href="DeclaredModule.html" class="extype" name="info.kwarc.mmt.api.modules.DeclaredModule">DeclaredModule</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.metadata.HasMetaData#getMetaDataNode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getMetaDataNode:scala.xml.NodeSeq"></a>
       <a id="getMetaDataNode:NodeSeq"></a>
@@ -605,7 +608,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getMostSpecific</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="rest">rest: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a> = <span class="symbol"><span class="name"><a href="../../../../package.html">LocalName(Nil)</a></span></span></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[(<a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a>, <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a>)]</span>
+        <span class="name">getMostSpecific</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="rest">rest: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a> = <span class="symbol"><span class="name"><a href="../../../../package.html">LocalName(Nil)</a></span></span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Option" class="extype" target="_top">Option</a>[(<a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a>, <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a>)]</span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@getMostSpecific(name:info.kwarc.mmt.api.LocalName,rest:info.kwarc.mmt.api.LocalName):Option[(info.kwarc.mmt.api.symbols.Declaration,info.kwarc.mmt.api.LocalName)]" title="Permalink" target="_top">
@@ -623,7 +626,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getO</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a>]</span>
+        <span class="name">getO</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Option" class="extype" target="_top">Option</a>[<a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a>]</span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@getO(name:info.kwarc.mmt.api.LocalName):Option[info.kwarc.mmt.api.symbols.Declaration]" title="Permalink" target="_top">
@@ -657,7 +660,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getPrimitiveDeclarations</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a>]</span>
+        <span class="name">getPrimitiveDeclarations</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.collection.immutable.List" class="extype" target="_top">List</a>[<a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a>]</span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@getPrimitiveDeclarations:List[info.kwarc.mmt.api.symbols.Declaration]" title="Permalink" target="_top">
@@ -674,7 +677,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Int" class="extype" target="_top">Int</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@hashCode():Int" title="Permalink" target="_top">
@@ -691,7 +694,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">inElaborated</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">inElaborated</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@inElaborated:Boolean" title="Permalink" target="_top">
@@ -708,7 +711,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">innerNodes</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<span class="extype" name="scala.xml.Node">Node</span>]</span>
+        <span class="name">innerNodes</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.collection.immutable.List" class="extype" target="_top">List</a>[<span class="extype" name="scala.xml.Node">Node</span>]</span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@innerNodes:List[scala.xml.Node]" title="Permalink" target="_top">
@@ -725,7 +728,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">innerNodesElab</span><span class="result">: <span class="extype" name="scala.collection.immutable.List">List</span>[<span class="extype" name="scala.xml.Node">Node</span>]</span>
+        <span class="name">innerNodesElab</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.collection.immutable.List" class="extype" target="_top">List</a>[<span class="extype" name="scala.xml.Node">Node</span>]</span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@innerNodesElab:List[scala.xml.Node]" title="Permalink" target="_top">
@@ -759,7 +762,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">isEmpty</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">isEmpty</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@isEmpty:Boolean" title="Permalink" target="_top">
@@ -776,7 +779,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">isGenerated</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">isGenerated</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@isGenerated:Boolean" title="Permalink" target="_top">
@@ -793,7 +796,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">isImplicit</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">isImplicit</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@isImplicit:Boolean" title="Permalink" target="_top">
@@ -812,7 +815,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
@@ -829,7 +832,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">iterator</span><span class="result">: <span class="extype" name="scala.collection.Iterator">Iterator</span>[<a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a>]</span>
+        <span class="name">iterator</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.collection.Iterator" class="extype" target="_top">Iterator</a>[<a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a>]</span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@iterator:Iterator[info.kwarc.mmt.api.symbols.Declaration]" title="Permalink" target="_top">
@@ -882,7 +885,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
@@ -899,7 +902,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">notify</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@notify():Unit" title="Permalink" target="_top">
@@ -916,7 +919,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@notifyAll():Unit" title="Permalink" target="_top">
@@ -1001,7 +1004,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">replace</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="decs">decs: <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a>*</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">replace</span><span class="params">(<span name="name">name: <a href="../LocalName.html" class="extype" name="info.kwarc.mmt.api.LocalName">LocalName</a></span>, <span name="decs">decs: <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a>*</span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@replace(name:info.kwarc.mmt.api.LocalName,decs:info.kwarc.mmt.api.symbols.Declaration*):Unit" title="Permalink" target="_top">
@@ -1018,7 +1021,7 @@ if they have the same type, same Path, and agree in all parts that are TermConta
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">setOrigin</span><span class="params">(<span name="o">o: <a href="../Origin.html" class="extype" name="info.kwarc.mmt.api.Origin">Origin</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">setOrigin</span><span class="params">(<span name="o">o: <a href="../Origin.html" class="extype" name="info.kwarc.mmt.api.Origin">Origin</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@setOrigin(o:info.kwarc.mmt.api.Origin):Unit" title="Permalink" target="_top">
@@ -1124,7 +1127,7 @@ if a statement has an alternativeName, it occurs twice in this map
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">toNode</span><span class="params">(<span name="rh">rh: <a href="../presentation/RenderingHandler.html" class="extype" name="info.kwarc.mmt.api.presentation.RenderingHandler">RenderingHandler</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">toNode</span><span class="params">(<span name="rh">rh: <a href="../presentation/RenderingHandler.html" class="extype" name="info.kwarc.mmt.api.presentation.RenderingHandler">RenderingHandler</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@toNode(rh:info.kwarc.mmt.api.presentation.RenderingHandler):Unit" title="Permalink" target="_top">
@@ -1176,7 +1179,7 @@ if a statement has an alternativeName, it occurs twice in this map
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">update</span><span class="params">(<span name="s">s: <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">update</span><span class="params">(<span name="s">s: <a href="../symbols/Declaration.html" class="extype" name="info.kwarc.mmt.api.symbols.Declaration">Declaration</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@update(s:info.kwarc.mmt.api.symbols.Declaration):Unit" title="Permalink" target="_top">
@@ -1193,7 +1196,7 @@ if a statement has an alternativeName, it occurs twice in this map
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@wait():Unit" title="Permalink" target="_top">
@@ -1216,7 +1219,7 @@ if a statement has an alternativeName, it occurs twice in this map
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Long" class="extype" target="_top">Long</a></span>, <span name="arg1">arg1: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Int" class="extype" target="_top">Int</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
@@ -1239,7 +1242,7 @@ if a statement has an alternativeName, it occurs twice in this map
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Long" class="extype" target="_top">Long</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.modules.DeclaredView@wait(x$1:Long):Unit" title="Permalink" target="_top">
@@ -1285,7 +1288,7 @@ if a statement has an alternativeName, it occurs twice in this map
             </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
-              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+              <h3>Inherited from <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></h3>
             </div>
         
         </div>

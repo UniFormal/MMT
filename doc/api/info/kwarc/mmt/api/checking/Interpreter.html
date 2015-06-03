@@ -41,7 +41,7 @@
 
       <h4 id="signature" class="signature">
       <span class="modifier_kind">
-        <span class="modifier"></span>
+        <span class="modifier">abstract </span>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
@@ -49,17 +49,17 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>a combination of a Parser and a Checker
-</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="../../../../../../../src/mmt-api/trunk/src/main/info/kwarc/mmt/api/checking/Interpreter.scala" target="_blank">Interpreter.scala</a></dd></dl><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>parses and returns a checked result
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="file://home/maeder/MMT/src/mmt-api/trunk/src/main/info/kwarc/mmt/api/checking/Interpreter.scala" target="_blank">Interpreter.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="../archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a>, <a href="../archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a>, <a href="../archives/BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a>, <a href="../frontend/FormatBasedExtension.html" class="extype" name="info.kwarc.mmt.api.frontend.FormatBasedExtension">FormatBasedExtension</a>, <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a>, <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="../archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a>, <a href="../archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a>, <a href="../archives/BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a>, <a href="../frontend/FormatBasedExtension.html" class="extype" name="info.kwarc.mmt.api.frontend.FormatBasedExtension">FormatBasedExtension</a>, <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a>, <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></div>
         </div><div class="toggleContainer block">
             <span class="toggle">Known Subclasses</span>
-            <div class="subClasses hiddenContent"><a href="TrustedParser.html" class="extype" name="info.kwarc.mmt.api.checking.TrustedParser">TrustedParser</a></div>
+            <div class="subClasses hiddenContent"><a href="OneStepInterpreter.html" class="extype" name="info.kwarc.mmt.api.checking.OneStepInterpreter">OneStepInterpreter</a>, <a href="TwoStepInterpreter.html" class="extype" name="info.kwarc.mmt.api.checking.TwoStepInterpreter">TwoStepInterpreter</a>, <a href="../archives/Importer$asInterpreter$.html" class="extype" name="info.kwarc.mmt.api.archives.Importer.asInterpreter">asInterpreter</a></div>
           </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
                 <span class="toggle diagram-link">Type Hierarchy</span>
                 <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#diagrams" target="_blank" class="diagram-help">Learn more about scaladoc diagrams</a>
-                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph1" viewBox="0.00 0.00 146.00 158.00" height="158pt" width="146pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 154)" class="graph" id="graph1"><polygon points="-4,5 -4,-154 143,-154 143,5 -4,5" stroke="white" fill="white"></polygon><g class="cluster" id="graph2"></g><g class="cluster" id="graph3"></g><!-- node0 --><g class="node this class" id="graph1_0"><a xlink:title="info.kwarc.mmt.api.checking.Interpreter (this class)" xlink:href="#inheritance-diagram"><polygon points="113.25,-88 24.75,-88 24.75,-62 113.25,-62 113.25,-88" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-83" x="35" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-73" x="57" text-anchor="start">Interpreter</text></a></g><!-- node1 --><g class="node class" id="graph1_1"><a xlink:title="info.kwarc.mmt.api.checking.TrustedParser" xlink:href="TrustedParser.html#inheritance-diagram"><polygon points="122,-26 16,-26 16,-0 122,-0 122,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-21" x="26" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-11" x="48" text-anchor="start">TrustedParser</text></a></g><!-- node0&#45;&gt;node1 --><g class="edge inheritance" id="graph1_0_1"><a xlink:title="TrustedParser is a subtype of Interpreter"><path d="M69,-56.6826C69,-46.8961 69,-34.9026 69,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="67.2501,-56.8581 69,-61.8581 70.7501,-56.8581 67.2501,-56.8581" stroke="#d4d4d4" fill="none"></polygon></a></g><!-- node2 --><g class="node class" id="graph1_2"><a xlink:title="info.kwarc.mmt.api.archives.Importer" xlink:href="../archives/Importer.html#inheritance-diagram"><polygon points="109.25,-150 28.75,-150 28.75,-124 109.25,-124 109.25,-150" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-145" x="39" preserveAspectRatio="xMinYMin meet" height="16px" width="16px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-135" x="61" text-anchor="start">Importer</text></a></g><!-- node2&#45;&gt;node0 --><g class="edge inheritance" id="graph1_2_0"><a xlink:title="Interpreter is a subtype of Importer"><path d="M69,-118.683C69,-108.896 69,-96.9026 69,-88.1238" stroke="#d4d4d4" fill="none"></path><polygon points="67.2501,-118.858 69,-123.858 70.7501,-118.858 67.2501,-118.858" stroke="#d4d4d4" fill="none"></polygon></a></g></g></svg></div>
+                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph1" viewBox="0.00 0.00 252.00 158.00" height="158pt" width="252pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 154)" class="graph" id="graph0"><polygon points="-4,4 -4,-154 248,-154 248,4 -4,4" stroke="none" fill="white"></polygon><g class="cluster" id="clust1"></g><g class="cluster" id="clust2"></g><!-- node0 --><g class="node this class" id="graph1_0"><g id="a_this class|graph1_0"><a xlink:title="info.kwarc.mmt.api.checking.Interpreter (this class)" xlink:href="#inheritance-diagram"><polygon points="172.25,-88 83.75,-88 83.75,-62 172.25,-62 172.25,-88" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-81" x="96" preserveAspectRatio="xMinYMin meet" height="12px" width="12px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-72.5" x="116" text-anchor="start">Interpreter</text></a></g></g><!-- node1 --><g class="node class" id="graph1_1"><g id="a_class|graph1_1"><a xlink:title="info.kwarc.mmt.api.checking.TwoStepInterpreter" xlink:href="TwoStepInterpreter.html#inheritance-diagram"><polygon points="126,-26 0,-26 0,-0 126,-0 126,-26" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-19" x="12" preserveAspectRatio="xMinYMin meet" height="12px" width="12px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-10.5" x="32" text-anchor="start">TwoStepInterpreter</text></a></g></g><!-- node0&#45;&gt;node1 --><g class="edge inheritance" id="graph1_0_1"><g id="a_inheritance|graph1_0_1"><a xlink:title="TwoStepInterpreter is a subtype of Interpreter"><path d="M110.983,-58.2924C100.092,-48.2386 86.1729,-35.3904 76.1342,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="109.985,-59.7526 114.846,-61.8581 112.359,-57.1808 109.985,-59.7526" stroke="#d4d4d4" fill="none"></polygon></a></g></g><!-- node2 --><g class="node object" id="graph1_2"><g id="a_object|graph1_2"><a xlink:title="info.kwarc.mmt.api.archives.Importer.asInterpreter" xlink:href="../archives/Importer$asInterpreter$.html#inheritance-diagram"><polygon points="244,-26 144,-26 144,-0 244,-0 244,-26" stroke="#102966" fill="#3556a7"></polygon><image xlink:href="../../../../../lib/object_diagram.png" y="-19" x="156" preserveAspectRatio="xMinYMin meet" height="12px" width="12px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-10.5" x="176" text-anchor="start">asInterpreter</text></a></g></g><!-- node0&#45;&gt;node2 --><g class="edge inheritance" id="graph1_0_2"><g id="a_inheritance|graph1_0_2"><a xlink:title="asInterpreter is a subtype of Interpreter"><path d="M145.278,-58.2924C156.337,-48.2386 170.471,-35.3904 180.664,-26.1238" stroke="#d4d4d4" fill="none"></path><polygon points="143.879,-57.1998 141.356,-61.8581 146.233,-59.7896 143.879,-57.1998" stroke="#d4d4d4" fill="none"></polygon></a></g></g><!-- node3 --><g class="node class" id="graph1_3"><g id="a_class|graph1_3"><a xlink:title="info.kwarc.mmt.api.archives.Importer" xlink:href="../archives/Importer.html#inheritance-diagram"><polygon points="168.25,-150 87.75,-150 87.75,-124 168.25,-124 168.25,-150" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-143" x="100" preserveAspectRatio="xMinYMin meet" height="12px" width="12px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-134.5" x="120" text-anchor="start">Importer</text></a></g></g><!-- node3&#45;&gt;node0 --><g class="edge inheritance" id="graph1_3_0"><g id="a_inheritance|graph1_3_0"><a xlink:title="Interpreter is a subtype of Importer"><path d="M128,-118.683C128,-108.896 128,-96.9026 128,-88.1238" stroke="#d4d4d4" fill="none"></path><polygon points="126.25,-118.858 128,-123.858 129.75,-118.858 126.25,-118.858" stroke="#d4d4d4" fill="none"></polygon></a></g></g></g></svg></div>
               </div></div>
         
 
@@ -97,8 +97,8 @@
         <div id="allMembers">
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
-              <ol><li name="info.kwarc.mmt.api.checking.Interpreter#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(parser:info.kwarc.mmt.api.parser.Parser,checker:info.kwarc.mmt.api.checking.Checker):info.kwarc.mmt.api.checking.Interpreter"></a>
+              <ol><li name="info.kwarc.mmt.api.checking.Interpreter#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;():info.kwarc.mmt.api.checking.Interpreter"></a>
       <a id="&lt;init&gt;:Interpreter"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -106,14 +106,14 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">Interpreter</span><span class="params">(<span name="parser">parser: <a href="../parser/Parser.html" class="extype" name="info.kwarc.mmt.api.parser.Parser">Parser</a></span>, <span name="checker">checker: <a href="Checker.html" class="extype" name="info.kwarc.mmt.api.checking.Checker">Checker</a></span>)</span>
+        <span class="name">Interpreter</span><span class="params">()</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@&lt;init&gt;(parser:info.kwarc.mmt.api.parser.Parser,checker:info.kwarc.mmt.api.checking.Checker):info.kwarc.mmt.api.checking.Interpreter" title="Permalink" target="_top">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@&lt;init&gt;():info.kwarc.mmt.api.checking.Interpreter" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" />
       </a>
     </span>
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">parser</dt><dd class="cmt"><p>the parser</p></dd><dt class="param">checker</dt><dd class="cmt"><p>the checker</p></dd></dl></div>
+      
     </li></ol>
             </div>
 
@@ -128,7 +128,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="../frontend/Extension$LocalError.html"><span class="name">LocalError</span></a><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="../ExtensionError.html" class="extype" name="info.kwarc.mmt.api.ExtensionError">ExtensionError</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="../frontend/Extension$LocalError.html"><span class="name">LocalError</span></a><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="../ExtensionError.html" class="extype" name="info.kwarc.mmt.api.ExtensionError">ExtensionError</a> with <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Product" class="extype" target="_top">Product</a> with <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Serializable" class="extype" target="_top">Serializable</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.frontend.Extension@LocalErrorextendsExtensionErrorwithProductwithSerializable" title="Permalink" target="_top">
@@ -139,10 +139,47 @@
     </li></ol>
             </div>
 
-        
+        <div id="values" class="values members">
+              <h3>Abstract Value Members</h3>
+              <ol><li name="info.kwarc.mmt.api.checking.Interpreter#apply" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="apply(ps:info.kwarc.mmt.api.parser.ParsingStream)(impliciterrorCont:info.kwarc.mmt.api.ErrorHandler):info.kwarc.mmt.api.documents.Document"></a>
+      <a id="apply(ParsingStream)(ErrorHandler):Document"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">apply</span><span class="params">(<span name="ps">ps: <a href="../parser/ParsingStream.html" class="extype" name="info.kwarc.mmt.api.parser.ParsingStream">ParsingStream</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="errorCont">errorCont: <a href="../ErrorHandler.html" class="extype" name="info.kwarc.mmt.api.ErrorHandler">ErrorHandler</a></span>)</span><span class="result">: <a href="../documents/Document.html" class="extype" name="info.kwarc.mmt.api.documents.Document">Document</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@apply(ps:info.kwarc.mmt.api.parser.ParsingStream)(impliciterrorCont:info.kwarc.mmt.api.ErrorHandler):info.kwarc.mmt.api.documents.Document" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">parses a <span class="extype" name="ParsingStream">ParsingStream</span> and returns a checked result</p>
+    </li><li name="info.kwarc.mmt.api.checking.Interpreter#format" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="format:String"></a>
+      <a id="format:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">format</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@format:String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">the input format (e.g., the file extension) to which this interpreter is applicable</p>
+    </li></ol>
+            </div>
 
         <div id="values" class="values members">
-              <h3>Value Members</h3>
+              <h3>Concrete Value Members</h3>
               <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="!=(x$1:Any):Boolean"></a>
       <a id="!=(Any):Boolean"></a>
@@ -152,7 +189,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@!=(x$1:Any):Boolean" title="Permalink" target="_top">
@@ -169,7 +206,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Int" class="extype" target="_top">Int</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@##():Int" title="Permalink" target="_top">
@@ -186,7 +223,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@==(x$1:Any):Boolean" title="Permalink" target="_top">
@@ -194,23 +231,6 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Interpreter#apply" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="apply(ps:info.kwarc.mmt.api.parser.ParsingStream)(impliciterrorCont:info.kwarc.mmt.api.ErrorHandler):info.kwarc.mmt.api.documents.Document"></a>
-      <a id="apply(ParsingStream)(ErrorHandler):Document"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="ps">ps: <a href="../parser/ParsingStream.html" class="extype" name="info.kwarc.mmt.api.parser.ParsingStream">ParsingStream</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="errorCont">errorCont: <a href="../ErrorHandler.html" class="extype" name="info.kwarc.mmt.api.ErrorHandler">ErrorHandler</a></span>)</span><span class="result">: <a href="../documents/Document.html" class="extype" name="info.kwarc.mmt.api.documents.Document">Document</a></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@apply(ps:info.kwarc.mmt.api.parser.ParsingStream)(impliciterrorCont:info.kwarc.mmt.api.ErrorHandler):info.kwarc.mmt.api.documents.Document" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" />
-      </a>
-    </span>
-      <p class="shortcomment cmt">parses a <span class="extype" name="ParsingStream">ParsingStream</span> and checks the result</p>
     </li><li name="info.kwarc.mmt.api.archives.BuildTarget#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="apply(modifier:info.kwarc.mmt.api.archives.BuildTargetModifier,arch:info.kwarc.mmt.api.archives.Archive,in:List[String],args:List[String]):Unit"></a>
       <a id="apply(BuildTargetModifier,Archive,List[String],List[String]):Unit"></a>
@@ -220,7 +240,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="modifier">modifier: <a href="../archives/BuildTargetModifier.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTargetModifier">BuildTargetModifier</a></span>, <span name="arch">arch: <a href="../archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="in">in: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">apply</span><span class="params">(<span name="modifier">modifier: <a href="../archives/BuildTargetModifier.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTargetModifier">BuildTargetModifier</a></span>, <span name="arch">arch: <a href="../archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="in">in: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@apply(modifier:info.kwarc.mmt.api.archives.BuildTargetModifier,arch:info.kwarc.mmt.api.archives.Archive,in:List[String],args:List[String]):Unit" title="Permalink" target="_top">
@@ -248,6 +268,42 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.Importer.asInterpreter" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asInterpreter"></a>
+      <a id="asInterpreter:asInterpreter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="../archives/Importer$asInterpreter$.html"><span class="name">asInterpreter</span></a><span class="result"> extends <a href="" class="extype" name="info.kwarc.mmt.api.checking.Interpreter">Interpreter</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.Importer@asInterpreter" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">an Interpreter that calls this importer to interpret a parsing stream</p><div class="fullcomment"><div class="comment cmt"><p>an Interpreter that calls this importer to interpret a parsing stream</p><p>This Interpreter is only applicable if it can determine an archive that the parsing stream is created from.
+In that case, it will import the file, i.e., change the state of the archive.
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget#build" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="build(a:info.kwarc.mmt.api.archives.Archive,args:List[String],in:List[String],errorCont:Option[info.kwarc.mmt.api.ErrorHandler]):Unit"></a>
+      <a id="build(Archive,List[String],List[String],Option[ErrorHandler]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">build</span><span class="params">(<span name="a">a: <a href="../archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="in">in: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="errorCont">errorCont: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Option" class="extype" target="_top">Option</a>[<a href="../ErrorHandler.html" class="extype" name="info.kwarc.mmt.api.ErrorHandler">ErrorHandler</a>]</span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@build(a:info.kwarc.mmt.api.archives.Archive,args:List[String],in:List[String],errorCont:Option[info.kwarc.mmt.api.ErrorHandler]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget#build" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="build(a:info.kwarc.mmt.api.archives.Archive,args:List[String],in:List[String]):Unit"></a>
       <a id="build(Archive,List[String],List[String]):Unit"></a>
@@ -257,7 +313,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">build</span><span class="params">(<span name="a">a: <a href="../archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="in">in: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">Nil</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">build</span><span class="params">(<span name="a">a: <a href="../archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="in">in: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">Nil</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@build(a:info.kwarc.mmt.api.archives.Archive,args:List[String],in:List[String]):Unit" title="Permalink" target="_top">
@@ -274,7 +330,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">buildDir</span><span class="params">(<span name="bd">bd: <a href="../archives/BuildTask.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTask">BuildTask</a></span>, <span name="builtChildren">builtChildren: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../archives/BuildTask.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTask">BuildTask</a>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">buildDir</span><span class="params">(<span name="bd">bd: <a href="../archives/BuildTask.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTask">BuildTask</a></span>, <span name="builtChildren">builtChildren: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../archives/BuildTask.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTask">BuildTask</a>]</span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@buildDir(bd:info.kwarc.mmt.api.archives.BuildTask,builtChildren:List[info.kwarc.mmt.api.archives.BuildTask]):Unit" title="Permalink" target="_top">
@@ -293,7 +349,7 @@ This does nothing by default and can be overridden if needed.
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">buildFile</span><span class="params">(<span name="bf">bf: <a href="../archives/BuildTask.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTask">BuildTask</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">buildFile</span><span class="params">(<span name="bf">bf: <a href="../archives/BuildTask.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTask">BuildTask</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@buildFile(bf:info.kwarc.mmt.api.archives.BuildTask):Unit" title="Permalink" target="_top">
@@ -302,23 +358,6 @@ This does nothing by default and can be overridden if needed.
     </span>
       <p class="shortcomment cmt">the main abstract method that implementations must provide: builds one file</p><div class="fullcomment"><div class="comment cmt"><p>the main abstract method that implementations must provide: builds one file</p></div><dl class="paramcmts block"><dt class="param">bf</dt><dd class="cmt"><p>information about input/output file etc
 </p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a> → <a href="../archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Interpreter#checker" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="checker:info.kwarc.mmt.api.checking.Checker"></a>
-      <a id="checker:Checker"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">checker</span><span class="result">: <a href="Checker.html" class="extype" name="info.kwarc.mmt.api.checking.Checker">Checker</a></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@checker:info.kwarc.mmt.api.checking.Checker" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" />
-      </a>
-    </span>
-      <p class="shortcomment cmt">the checker</p>
     </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget#clean" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clean(a:info.kwarc.mmt.api.archives.Archive,args:List[String],in:List[String]):Unit"></a>
       <a id="clean(Archive,List[String],List[String]):Unit"></a>
@@ -328,7 +367,7 @@ This does nothing by default and can be overridden if needed.
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">clean</span><span class="params">(<span name="a">a: <a href="../archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="in">in: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">Nil</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">clean</span><span class="params">(<span name="a">a: <a href="../archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="in">in: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">Nil</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@clean(a:info.kwarc.mmt.api.archives.Archive,args:List[String],in:List[String]):Unit" title="Permalink" target="_top">
@@ -345,7 +384,7 @@ This does nothing by default and can be overridden if needed.
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">cleanDir</span><span class="params">(<span name="a">a: <a href="../archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="curr">curr: <a href="../archives/Current.html" class="extype" name="info.kwarc.mmt.api.archives.Current">Current</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">cleanDir</span><span class="params">(<span name="a">a: <a href="../archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="curr">curr: <a href="../archives/Current.html" class="extype" name="info.kwarc.mmt.api.archives.Current">Current</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@cleanDir(a:info.kwarc.mmt.api.archives.Archive,curr:info.kwarc.mmt.api.archives.Current):Unit" title="Permalink" target="_top">
@@ -364,7 +403,7 @@ does nothing by default
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">cleanFile</span><span class="params">(<span name="a">a: <a href="../archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="curr">curr: <a href="../archives/Current.html" class="extype" name="info.kwarc.mmt.api.archives.Current">Current</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">cleanFile</span><span class="params">(<span name="a">a: <a href="../archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="curr">curr: <a href="../archives/Current.html" class="extype" name="info.kwarc.mmt.api.archives.Current">Current</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@cleanFile(a:info.kwarc.mmt.api.archives.Archive,curr:info.kwarc.mmt.api.archives.Current):Unit" title="Permalink" target="_top">
@@ -440,7 +479,7 @@ deletes the output and error file by default, may be overridden to, e.g., delete
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">delete</span><span class="params">(<span name="f">f: <a href="../utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">delete</span><span class="params">(<span name="f">f: <a href="../utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@delete(f:info.kwarc.mmt.api.utils.File):Unit" title="Permalink" target="_top">
@@ -457,7 +496,7 @@ deletes the output and error file by default, may be overridden to, e.g., delete
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">destroy</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">destroy</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@destroy:Unit" title="Permalink" target="_top">
@@ -476,7 +515,7 @@ but they must clean up after themselves in this method
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
@@ -493,7 +532,7 @@ but they must clean up after themselves in this method
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@equals(x$1:Any):Boolean" title="Permalink" target="_top">
@@ -510,7 +549,7 @@ but they must clean up after themselves in this method
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@finalize():Unit" title="Permalink" target="_top">
@@ -541,23 +580,6 @@ but they must clean up after themselves in this method
       </a>
     </span>
       <p class="shortcomment cmt">the name that is used for the special file representing the containing folder, empty by default</p><div class="fullcomment"><div class="comment cmt"><p>the name that is used for the special file representing the containing folder, empty by default</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Interpreter#format" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="format:String"></a>
-      <a id="format:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">format</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@format:String" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" />
-      </a>
-    </span>
-      
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <a id="getClass():Class[_]"></a>
@@ -669,7 +691,7 @@ but they must clean up after themselves in this method
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Int" class="extype" target="_top">Int</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@hashCode():Int" title="Permalink" target="_top">
@@ -686,14 +708,14 @@ but they must clean up after themselves in this method
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">importDocument</span><span class="params">(<span name="bf">bf: <a href="../archives/BuildTask.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTask">BuildTask</a></span>, <span name="index">index: (<a href="../documents/Document.html" class="extype" name="info.kwarc.mmt.api.documents.Document">Document</a>) ⇒ <span class="extype" name="scala.Unit">Unit</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">importDocument</span><span class="params">(<span name="bf">bf: <a href="../archives/BuildTask.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTask">BuildTask</a></span>, <span name="index">index: (<a href="../documents/Document.html" class="extype" name="info.kwarc.mmt.api.documents.Document">Document</a>) ⇒ <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@importDocument(bf:info.kwarc.mmt.api.archives.BuildTask,index:info.kwarc.mmt.api.documents.Document=&gt;Unit):Unit" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" />
       </a>
     </span>
-      <p class="shortcomment cmt">creates a <span class="extype" name="ParsingStream">ParsingStream</span> for the input file and interprets it</p><div class="fullcomment"><div class="comment cmt"><p>creates a <span class="extype" name="ParsingStream">ParsingStream</span> for the input file and interprets it</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.checking.Interpreter">Interpreter</a> → <a href="../archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a></dd></dl></div>
+      <p class="shortcomment cmt">creates a <span class="extype" name="ParsingStream">ParsingStream</span> for the input file and interprets it</p><div class="fullcomment"><div class="comment cmt"><p>creates a <span class="extype" name="ParsingStream">ParsingStream</span> for the input file and interprets it</p></div><dl class="paramcmts block"><dt class="param">index</dt><dd class="cmt"><p>a continuation function to be called on every generated document</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.checking.Interpreter">Interpreter</a> → <a href="../archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.archives.Importer#inDim" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="inDim:info.kwarc.mmt.api.archives.RedirectableDimension"></a>
       <a id="inDim:RedirectableDimension"></a>
@@ -711,7 +733,45 @@ but they must clean up after themselves in this method
       </a>
     </span>
       <p class="shortcomment cmt">source by default, may be overridden</p><div class="fullcomment"><div class="comment cmt"><p>source by default, may be overridden</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a> → <a href="../archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Interpreter#includeFile" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="info.kwarc.mmt.api.checking.Interpreter#inExts" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="inExts:List[String]"></a>
+      <a id="inExts:List[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">inExts</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.collection.immutable.List" class="extype" target="_top">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@inExts:List[String]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">the file extensions to which this may be applicable</p><div class="fullcomment"><div class="comment cmt"><p>the file extensions to which this may be applicable</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.checking.Interpreter">Interpreter</a> → <a href="../archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget#includeDir" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="includeDir(name:String):Boolean"></a>
+      <a id="includeDir(String):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">includeDir</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@includeDir(name:String):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">true by default; override to skip auxiliary directories
+TODO actually check for this
+</p><div class="fullcomment"><div class="comment cmt"><p>true by default; override to skip auxiliary directories
+TODO actually check for this
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.Importer#includeFile" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="includeFile(s:String):Boolean"></a>
       <a id="includeFile(String):Boolean"></a>
       <h4 class="signature">
@@ -720,7 +780,7 @@ but they must clean up after themselves in this method
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">includeFile</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">includeFile</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@includeFile(s:String):Boolean" title="Permalink" target="_top">
@@ -730,7 +790,7 @@ but they must clean up after themselves in this method
       <p class="shortcomment cmt">there is no inExt, instead we test to check which files should be used;
 this is often a test for the file extension</p><div class="fullcomment"><div class="comment cmt"><p>there is no inExt, instead we test to check which files should be used;
 this is often a test for the file extension</p><p>This must be such that all auxiliary files are skipped.
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.checking.Interpreter">Interpreter</a> → <a href="../archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a> → <a href="../archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.checking.Interpreter#isApplicable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isApplicable(s:String):Boolean"></a>
       <a id="isApplicable(String):Boolean"></a>
@@ -740,7 +800,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">isApplicable</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">isApplicable</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@isApplicable(s:String):Boolean" title="Permalink" target="_top">
@@ -758,7 +818,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
@@ -794,7 +854,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">log</span><span class="params">(<span name="e">e: <a href="../Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">log</span><span class="params">(<span name="e">e: <a href="../Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@log(e:info.kwarc.mmt.api.Error):Unit" title="Permalink" target="_top">
@@ -811,7 +871,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="subgroup">subgroup: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol"><span class="name"><a href="../../../../../scala/package.html">None</a></span></span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="subgroup">subgroup: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Option" class="extype" target="_top">Option</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol"><span class="name"><a href="../../../../../scala/package.html">None</a></span></span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@log(s:=&gt;String,subgroup:Option[String]):Unit" title="Permalink" target="_top">
@@ -828,7 +888,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">logError</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">logError</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@logError(s:=&gt;String):Unit" title="Permalink" target="_top">
@@ -879,7 +939,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
@@ -896,7 +956,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">notify</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@notify():Unit" title="Permalink" target="_top">
@@ -913,7 +973,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@notifyAll():Unit" title="Permalink" target="_top">
@@ -964,7 +1024,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">parallel</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+        <span class="name">parallel</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@parallel:Boolean" title="Permalink" target="_top">
@@ -972,23 +1032,6 @@ this is often a test for the file extension</p><p>This must be such that all aux
       </a>
     </span>
       <p class="shortcomment cmt">if true, multiple files/folders are built in parallel</p><div class="fullcomment"><div class="comment cmt"><p>if true, multiple files/folders are built in parallel</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
-    </li><li name="info.kwarc.mmt.api.checking.Interpreter#parser" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="parser:info.kwarc.mmt.api.parser.Parser"></a>
-      <a id="parser:Parser"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">parser</span><span class="result">: <a href="../parser/Parser.html" class="extype" name="info.kwarc.mmt.api.parser.Parser">Parser</a></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@parser:info.kwarc.mmt.api.parser.Parser" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" />
-      </a>
-    </span>
-      <p class="shortcomment cmt">the parser</p>
     </li><li name="info.kwarc.mmt.api.frontend.Extension#report" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="report:info.kwarc.mmt.api.frontend.Report"></a>
       <a id="report:Report"></a>
@@ -1015,7 +1058,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">requiredArguments</span><span class="params">(<span name="m">m: <a href="../archives/BuildTargetModifier.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTargetModifier">BuildTargetModifier</a></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+        <span class="name">requiredArguments</span><span class="params">(<span name="m">m: <a href="../archives/BuildTargetModifier.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTargetModifier">BuildTargetModifier</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Int" class="extype" target="_top">Int</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@requiredArguments(m:info.kwarc.mmt.api.archives.BuildTargetModifier):Int" title="Permalink" target="_top">
@@ -1032,7 +1075,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">start</span><span class="params">(<span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">start</span><span class="params">(<span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@start(args:List[String]):Unit" title="Permalink" target="_top">
@@ -1083,7 +1126,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">update</span><span class="params">(<span name="a">a: <a href="../archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="up">up: <a href="../archives/Update.html" class="extype" name="info.kwarc.mmt.api.archives.Update">Update</a></span>, <span name="in">in: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">Nil</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">update</span><span class="params">(<span name="a">a: <a href="../archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="up">up: <a href="../archives/Update.html" class="extype" name="info.kwarc.mmt.api.archives.Update">Update</a></span>, <span name="in">in: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">Nil</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@update(a:info.kwarc.mmt.api.archives.Archive,args:List[String],up:info.kwarc.mmt.api.archives.Update,in:List[String]):Unit" title="Permalink" target="_top">
@@ -1101,7 +1144,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@wait():Unit" title="Permalink" target="_top">
@@ -1124,7 +1167,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Long" class="extype" target="_top">Long</a></span>, <span name="arg1">arg1: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Int" class="extype" target="_top">Int</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
@@ -1147,7 +1190,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Long" class="extype" target="_top">Long</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#info.kwarc.mmt.api.checking.Interpreter@wait(x$1:Long):Unit" title="Permalink" target="_top">
@@ -1185,7 +1228,7 @@ this is often a test for the file extension</p><p>This must be such that all aux
             </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
-              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+              <h3>Inherited from <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></h3>
             </div>
         
         </div>
