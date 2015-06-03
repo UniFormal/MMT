@@ -273,9 +273,7 @@ class EditingServicePlugin(val controller: Controller) {
       controller.get(spath) match {
         case c: Constant =>
           val verbs = c.notC.verbalizationDim.notations.values.flatten.toList
-          val defs = controller.depstore.getObjects(spath, ontology.isDefinedBy) collect {
-            case f if f.isPath => f.path
-          }
+          val defs = controller.depstore.queryList(spath, ontology.ToObject(informal.IRels.isDefinedBy))
           defs foreach {
             case p: GlobalName =>
               //getting language

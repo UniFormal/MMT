@@ -134,14 +134,22 @@ object OMDoc {
     case "OMS" if (xml.attr(node, "cd") == "OMPres") =>
       <om:OMS base={Narration.path.doc.toPath} module={Narration.path.module.toMPath.name.toPath} name={Narration.path.name.toPath}/>
     case "OMS" => 
-      val cd =  xml.attr(node, "cd")
+      val cdO =  xml.attr(node, "cd") match {
+        case "" => None
+        case s => Some(s)
+      }
       val name = xml.attr(node, "name")
-      val sym = resolveSPath(Some(cd), name, mpath)
+      val sym = resolveSPath(cdO, name, mpath)
       <om:OMS base={sym.module.toMPath.parent.toPath} module={sym.module.toMPath.name.last.toPath} name={sym.name.last.toPath}/>
+    case "OME" => <om:OMV name="error"/> //TODO temporary hack for OEIS
     case "OME" => //OME(args) -> OMA(Informal.error -> args)
       val pre = OMS(Informal.constant("error")).toNode
       val newChild = node.child.map(rewriteCMP)
       new Elem(node.prefix, "OMA", node.attributes, node.scope, (pre +: newChild) : _*)
+    case "OMR" =>
+      val xref = xml.attr(node, "xref")
+      val sym = resolveSPath(Some(xref), xref, mpath)
+      <om:OMS base={sym.module.toMPath.parent.toPath} module={sym.module.toMPath.name.last.toPath} name={sym.name.last.toPath}/>
     case "#PCDATA" => new scala.xml.Text(node.toString)
     case _ => new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, node.child.map(rewriteCMP) :_*)
   }
