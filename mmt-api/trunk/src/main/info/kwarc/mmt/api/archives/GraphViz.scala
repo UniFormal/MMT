@@ -40,15 +40,23 @@ class GraphViz extends Exporter {
    def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
 
    private def produceGraph(theories: Iterable[Path], views: Iterable[Path], bt: BuildTask) {
-      val dotFile = bt.outFile.setExtension("dot")
-      val gv = new ontology.GraphExporter(theories, views, tg)
-      gv.exportDot(dotFile)
-      val result = ShellCommand.run(graphviz, "-Tsvg", "-o" + bt.outFile, dotFile.toString)
-      result foreach {m => bt.errorCont(LocalError(m))}
-      val outString = File.read(bt.outFile)
-      val outStringPostProcessed = outString.replace("xlink:title", "class")
+      val outStringPostProcessed = getSVG(theories,views,Some(bt.outFile),Some(tg),m => bt.errorCont(LocalError(m)))
       //TODO remove width/height attributes of svg element to allow for automatic resizing in the browser
       File.write(bt.outFile, outStringPostProcessed)
+   }
+
+   def getSVG(theories: Iterable[Path], views:Iterable[Path], file: Option[File],graph:Option[TheoryGraph],
+                    errorcont: String => Unit)
+      :String = {
+      val outFile = file.getOrElse(File(System.getProperty("java.io.tmpdir"))/"MMTGraph.svg")
+      val gv = new ontology.GraphExporter(theories, views, graph match {
+         case Some(g) => g
+         case None => tg
+      })
+      gv.exportDot(outFile.setExtension("dot"))
+      val result = ShellCommand.run(graphviz, "-Tsvg", "-o" + outFile, outFile.setExtension("dot").toString)
+      result foreach {m => errorcont(m)}
+      File.read(outFile).replace("xlink:title", "class")
    }
    
 /*   def buildFile(a: Archive, bf: BuildFile) = {
