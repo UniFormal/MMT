@@ -97,8 +97,10 @@ object Setup {
     }
     if (!install) {
       val d = jedit / plug
-      d.deleteDir
-      println("deleting " + d)
+      if (d.isDirectory) {
+        d.deleteDir
+        println("deleting directory " + d)
+      }
     }
   }
 
