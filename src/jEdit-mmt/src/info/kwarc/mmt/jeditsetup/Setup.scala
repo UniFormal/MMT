@@ -95,6 +95,11 @@ object Setup {
          if (e.endsWith(".mar"))
             copyOrDelete(mars ::: List(e))
       }
+      if (!install) {
+         val d = jedit / plug
+         d.deleteDir
+         println("deleting " + d)
+      }
    }
    private def delete(f: File) {
       f.delete
