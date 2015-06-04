@@ -289,6 +289,7 @@ class NotationBasedParser extends ObjectParser {
             }
             val con = ml.an.rule.name
             // hard-coded special case for a bracketed subterm
+            //TODO add metadata for keeping track of brackets
             if (con == utils.mmt.brackets)
                args(0)._2
             else {
