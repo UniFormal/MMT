@@ -221,21 +221,26 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
       // a MAR archive file
       val folder = root.up
       val name = root.getName
-      val newRoot = folder / (name + "-unpacked")
-      // check if root is younger than manifest in newRoot
-      val newManifest = manifestLocations(root).find(_.isFile).head
-      val mod = Modification(root, newManifest)
-      if (mod == Modified) {
-        newRoot.deleteDir
+      val unpackedRoot = folder / (name + "-unpacked")
+      // check if root is younger than manifest in unpackedRoot
+      val extract = manifestLocations(root).find(_.isFile) match {
+         case Some(unpackedManifest) => 
+            val mod = Modification(root, unpackedManifest)
+            if (mod == Modified) {
+              unpackedRoot.deleteDir
+            }
+            if (mod == Unmodified)
+               log("skipping unpacked, unmodified archive " + unpackedRoot)
+            List(Added, Modified) contains mod
+         case None =>
+            true
       }
-      if (List(Added, Modified) contains mod) {
+      if (extract) {
         // unpack it
-        extractMar(root, newRoot)
+        extractMar(root, unpackedRoot)
       }
-      if (mod == Unmodified)
-        log("skipping unpacked, unmodified archive " + newRoot)
       // open the archive in newRoot
-      openArchive(newRoot)
+      openArchive(unpackedRoot)
     }
     else {
       log(root + " is not an archive or a folder containing archives")
