@@ -16,14 +16,13 @@
 # Do NOT "set -e"
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
-PATH=/sbin:/usr/sbin:/bin:/usr/bin
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
 DESC="MMT web service"
 NAME=mmt
 DAEMON=/usr/bin/screen
 dir=/var/data/localmh/ext/MMT
-ARGS="-D -m /usr/bin/java -Xmx2048m \
- -cp $dir/lib/*:$dir/lfcatalog/*:$dir/main/* info.kwarc.mmt.api.frontend.Run \
- file /var/data/localmh/MathHub/meta/inf/config/OAF/oaf.msl"
+ARGS="-D -m $dir/mmt -noshell file \
+ /var/data/localmh/MathHub/meta/inf/config/OAF/oaf.msl"
 
 
 PIDFILE=/var/run/$NAME.pid
