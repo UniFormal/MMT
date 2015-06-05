@@ -11,4 +11,5 @@ script:
  - cd ..
  - git clone http://gl.mathhub.info/MMT/urtheories.git
  - git clone http://gl.mathhub.info/MMT/examples.git
+ - for i in urtheories examples; do rm -rf $i/{content,narration,relational}; done
  - for i in `seq 1 4`; do deploy/mmt file urtheories/build.msl build; deploy/mmt file examples/build.msl build; done
