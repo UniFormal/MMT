@@ -231,7 +231,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                case _ => throw ParseError("domain of include must be atomic")
             }
             val isImplicit = parseImplicit(symbol) 
-            xml.trimOneLevel(rest).child match {
+            rest.child.map(xml.trimOneLevel) match {
                case <definition>{d}</definition> :: Nil =>
                   val df = Obj.parseTerm(d, nsMap)
                   val s = DefinedStructure(homeTerm, adjustedName, from, df, isImplicit)

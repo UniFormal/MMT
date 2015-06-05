@@ -164,7 +164,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   def load(p: Path)(implicit controller: Controller) = {
     def getInList(l: List[Storage], p: Path) {
       l match {
-        case Nil => throw NotApplicable("no applicable backend available")
+        case Nil => throw NotApplicable("no backend available that is applicable to " + p)
         case hd :: tl =>
           log("trying " + hd)
           try {
