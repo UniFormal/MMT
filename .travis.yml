@@ -10,4 +10,5 @@ script:
  - sbt deploy
  - cd ..
  - git clone http://gl.mathhub.info/MMT/urtheories.git
- - deploy/mmt file urtheories/build.msl build
+ - git clone http://gl.mathhub.info/MMT/examples.git
+ - for i in `seq 1 4`; do deploy/mmt file urtheories/build.msl build; deploy/mmt file examples/build.msl build; done
