@@ -24,7 +24,7 @@ object GenericScalaExporter {
    private def escapeChars(s: String) =
       // TODO: temporary hack, check characters are legal in Scala IDs
       s flatMap {c => if (c == '≃') "" else c.toString}
-      
+
    def nameToScalaQ(p: GlobalName) = (p.module.toMPath.name.toPath + "_" + escapeChars(p.name.toPath)).replace(".", "__")
    def nameToScala(l: LocalName) = escape(l.toPath.replace("/","."))
    /** package URI */
@@ -43,27 +43,27 @@ object GenericScalaExporter {
       DPath(utils.URI("http", auth.mkString(".")) / path)
    }
    /** package URI . modname */
-   def mpathToScala(m: MPath, key: List[String] = Nil) = dpathToScala(m.doc, key) + "." + nameToScala(m.name) 
+   def mpathToScala(m: MPath, key: List[String] = Nil) = dpathToScala(m.doc, key) + "." + nameToScala(m.name)
    val imports = "import info.kwarc.mmt.api._\n" + "import objects._\n" + "import uom._\n" +
     "import ConstantScala._\n"
-   
+
    def scalaVal(name: String, tp: String): String = "  val " + name + " : " + tp
    def scalaVal(name: GlobalName, tp: String): String = scalaVal(nameToScalaQ(name), tp)
-   
+
    def scalaValDef(name: String, tp: Option[String], df: String): String = {
       val tpS = tp.map(": " + _).getOrElse("")
       "  lazy val " + name + tpS + " = " + df
    }
    def scalaValDef(name: GlobalName, tp: Option[String], df: String): String = scalaValDef(nameToScalaQ(name), tp, df)
-   
+
    def scalaDef(name: String, args: List[(String,String)], ret: String): String = {
       val argsB = if (args.isEmpty) "" else args.map({case (x,y) => s"$x: $y"}).mkString("(", ", ", ")")
       "  def " + name + argsB + ": " + ret
    }
    def scalaDef(name: GlobalName, args: List[(String,String)], ret: String): String = scalaDef(nameToScalaQ(name), args, ret)
-   
+
    def scalaType(name: GlobalName): String = "  type " + nameToScalaQ(name)
-   
+
 }
 
 import GenericScalaExporter._
@@ -82,16 +82,23 @@ trait GenericScalaExporter extends Exporter {
    /**
     * generates a trait with abstract members for each constants
     * @param typeToScala yields the input and output type for a constant
-    */ 
+    */
    protected def outputTrait(t: DeclaredTheory)(doCon: Constant => String) {
      val includes = t.getIncludesWithoutMeta.filter {i =>
         controller.globalLookup.getO(i) match {
            // we only take basic theories for now
            case Some(d: DeclaredTheory) => d.name.length == 1
            case _ => false
-        } 
+        }
      }
-     val includesS = includes.map(i => " with " + mpathToScala(i, packageSep)).mkString("")
+     val includesSF = includes.filter {i =>
+       controller.globalLookup.getO(i) match {
+         case Some(r: RealizationInScala) => false //TODO handle includes of models
+         case Some(t: DeclaredTheory) => true
+         case _ => false // should not happen
+       }
+     }
+     val includesS = includesSF.map(i => " with " + mpathToScala(i, packageSep)).mkString("")
      val tpathS = t.path.toString
      val name = nameToScala(t.name)
      rh.writeln(s"/** The type of realizations of the theory $tpathS */")
@@ -110,7 +117,7 @@ trait GenericScalaExporter extends Exporter {
      }
      rh.writeln("}\n")
    }
-   
+
    /**  generates a companion object fieds for the MMT URIs
     *   @param extraFields fields appended to the object
     */
@@ -121,8 +128,8 @@ trait GenericScalaExporter extends Exporter {
                  "    along with apply/unapply methods for them */")
      rh.writeln(s"object $name extends TheoryScala {")
      val baseUri = t.parent.uri
-     rh.writeln("  val _base = DPath(utils.URI(\"" + baseUri.scheme.getOrElse("") + 
-        "\", \""+ baseUri.authority.getOrElse("") +"\")" + 
+     rh.writeln("  val _base = DPath(utils.URI(\"" + baseUri.scheme.getOrElse("") +
+        "\", \""+ baseUri.authority.getOrElse("") +"\")" +
         baseUri.path.foldRight("")((a,b) => " / \""+ a + "\"" + b) +
         ")"
      )
@@ -136,11 +143,11 @@ trait GenericScalaExporter extends Exporter {
             o += extraFields(c)
             o += "  }"
             rh.writeln(o)
-         case _ => 
+         case _ =>
       }
      rh.writeln("\n}")
    }
-   
+
    /** produces code to instantiate [[uom.DocumentScala]] to iterate over all content */
    def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
       var pack = dpathToScala(dpath, packageSep)
@@ -166,11 +173,11 @@ trait GenericScalaExporter extends Exporter {
    /** do nothing by default */
    def exportDocument(doc : Document, bt : BuildTask) {}
 }
-   
+
 class ScalaExporter extends GenericScalaExporter {
    val outDim = Dim("export", "scala")
    val key = "scala"
-      
+
    private def arityToScala(arity: Arity) : List[(String,String)] = arity.components.map {
       case Arg(n,_) => ("x" + n.abs, "Term")
       case ImplicitArg(n,_) => ("x" + n.abs, "Term")
@@ -178,10 +185,10 @@ class ScalaExporter extends GenericScalaExporter {
       case Var(n,_,None,_) => ("v" + n, "VarDecl")
       case Var(n,_,Some(_),_) => ("vs" + n, "Context")
    }
-   
+
    private def lastArgIsSeq(arity: Arity) = ! arity.arguments.isEmpty && arity.arguments.last.isSequence
    private def lastVarIsSeq(arity: Arity) = ! arity.variables.isEmpty && arity.variables.last.isSequence
-   
+
    private def applyMethods(arity: Arity) : String = {
      val scalaArgs = arityToScala(arity)
      // x1 :: ... :: xn :: Nil or x1 :: ... :: xsn
@@ -222,14 +229,14 @@ class ScalaExporter extends GenericScalaExporter {
         ""
      else
          "  // no unapply methods generated for this arity\n"
-     
+
      app + unapp
    }
- 
+
    def exportTheory(t: DeclaredTheory, bf: BuildTask) {
       outputHeader(t.parent.doc)
       //var constants : List[String] = Nil
-      outputTrait(t) {c => 
+      outputTrait(t) {c =>
          val arity = c.not.map(_.arity).getOrElse(Arity.constant)
          val scalaArgs = arityToScala(arity)
          //constants ::= nameToScalaQ(c.path)
@@ -240,6 +247,6 @@ class ScalaExporter extends GenericScalaExporter {
       }
       //constants.reverse.mkString("  declares(", ",", ")\n"))
    }
-   
+
    def exportView(v: DeclaredView, bf: BuildTask) {}
 }
