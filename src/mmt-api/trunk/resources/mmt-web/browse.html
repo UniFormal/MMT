@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:jobad="http://omdoc.org/presentation" ng-app="browserApp">
 <head>
   <meta charset="UTF-8" />
@@ -10,8 +9,8 @@
 
 <script type="text/javascript" src="script/jquery/jquery.js"></script>
 
-<link rel="stylesheet" type="text/css" href="css/bootstrap/css/bootstrap.min.css">
-<link rel="stylesheet" href="css/bootstrap/css/bootstrap-theme.min.css">
+<link rel="stylesheet" type="text/css" href="css/bootstrap/css/bootstrap.min.css"></link>
+<link rel="stylesheet" href="css/bootstrap/css/bootstrap-theme.min.css"></link>
 <script type="text/javascript" src="script/bootstrap/bootstrap.min.js"></script>
 
   <link rel="stylesheet" type="text/css" href="css/mmt.css"/>
@@ -68,7 +67,7 @@
 	<br><br/>
 	<div class="col-md-12">
 		<div class="pull-right">
-			<a tabindex="0" class="text-info" role="button" data-toggle="popover" data-trigger="focus" data-placement="left" data-content="See the documentation <a href='https://svn.kwarc.info/repos/MMT/doc/html/index.html'>here</a> in the MMT repository for an overview of features!"><b>Help</b></a>
+			<a tabindex="0" class="text-info" role="button" data-toggle="popover" data-trigger="focus" data-placement="left" data-content="See the documentation &lt;a href='https://svn.kwarc.info/repos/MMT/doc/html/index.html'&gt;here&lt;/a&gt; in the MMT repository for an overview of features!"><b>Help</b></a>
 		</div>
 	</div>
 	<div class="col-md-12">
@@ -83,7 +82,7 @@
 						<a type="button" class="btn btn-primary" ng-show="parseClicked == 0" ng-click="parseClicked = 1; showParse = 1; showParseKey = 1"><b>Parse</b></a>
 					</div>
 		</div>
-		<br> <br> <br> <br>
+		<br/> <br/> <br/> <br/>
 	</div>
 
 	<div class="col-md-4">
@@ -130,7 +129,7 @@
 									</span>
 					</div>
 				</div>
-				<br><br>
+				<br/><br/>
 				<div id="main" class="col-md-11" >
 					<div class="panel panel-back noti-box">
 	            				<span class="icon-box bg-color-green set-icon">
@@ -157,7 +156,7 @@
 					<span class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
 				</button>
 				<button class="btn btn-info btn-xs pull-right" ng-show="showSearch==1"
-						data-toggle="popover" data-trigger="focus" data-placement="left" data-content="Enter <a href='http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html#sum'>Java regular expressions</a> to filter based on the URI of a declaration">
+						data-toggle="popover" data-trigger="focus" data-placement="left" data-content="Enter &lt;a href='http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html#sum'>Java regular expressions&lt;/a&gt; to filter based on the URI of a declaration">
 					<span class="glyphicon glyphicon-asterisk" aria-hidden="true"></span>
 				</button>
 			</div>
@@ -184,16 +183,16 @@
 					<div class="form-group">
 						<label class="col-md-4 control-label"><div class="pull-right">Roles</div></label>
 						<div class="checkbox col-md-6">
-							<label><input type="checkbox" ng-model="rolesConstant" id="constant"> Primitive </label>
-							<label><input type="checkbox" ng-model="rolesDefined" id="defined"> Defined </label>
-							<label><input type="checkbox" ng-model="rolesAxiom" id="axiom"> Axiom </label>
-							<label><input type="checkbox" ng-model="rolesTheorem" id="theorem"> Theorem </label>
+							<label><input type="checkbox" ng-model="rolesConstant" id="constant"/> Primitive </label>
+							<label><input type="checkbox" ng-model="rolesDefined" id="defined"/> Defined </label>
+							<label><input type="checkbox" ng-model="rolesAxiom" id="axiom"/> Axiom </label>
+							<label><input type="checkbox" ng-model="rolesTheorem" id="theorem"/> Theorem </label>
 						</div>
 					</div>
 					<div class="form-group">
 						<label for="theory" class="col-md-4 control-label"><div class="pull-right">Enter an expression over theory</div></label>
 						<div class="col-md-6">
-							<input type="text" size="30" class="form-control" ng-model="theoryInput" id="theory" class="activetheory">
+							<input type="text" size="30" class="form-control activetheory" ng-model="theoryInput" id="theory"/>
 						</div>
 					</div>
 					<div class="form-group">
@@ -209,7 +208,7 @@
 					<div class="form-group">
 						<div class="col-md-offset-4">
 							<div class="col-md-6">
-								<input type="text" size="30" class="form-control" ng-model="patternInput" id="pattern">
+								<input type="text" size="30" class="form-control" ng-model="patternInput" id="pattern"/>
 							</div>
 
 						</div>

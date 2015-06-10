@@ -107,17 +107,6 @@ browserApp.controller('browserController', function ($scope, $log) {
         })
     });
 
-    $(function(){$('#latin-dialog').dialog({ autoOpen: false})});
-
-    function toggleClick(elem,label){
-        var cls = label != null ? label : 'toggleTarget';
-        $(elem).parent().closest('div').find('.' + cls).toggle();
-    }
-
-    function resultClick(p){
-        navigation.navigate(p);
-    }
-
     $(function () {
         $('[data-toggle="tooltip"]').tooltip()
     });

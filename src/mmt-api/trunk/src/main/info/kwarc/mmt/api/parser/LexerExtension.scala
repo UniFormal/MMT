@@ -151,9 +151,9 @@ class LexParseExtension(lc: LexFunction, pc: ParseFunction) extends LexerExtensi
 /**
  * A LexerExtension that lexes undelimited number literals
  * 
- * always accepts nonLetter digit*
+ * always accepts digit* after nonLetter
  * 
- * @param floatAllowed if true, also accepts nonLetter digit* . digit*
+ * @param floatAllowed if true, accepts digit* [. digit+ [e [-] digit+]] after nonLetter
  */
 class NumberLiteralLexer(floatAllowed: Boolean) extends LexFunction {
   def applicable(s: String, i: Int) = {
@@ -167,15 +167,26 @@ class NumberLiteralLexer(floatAllowed: Boolean) extends LexFunction {
   }
   def apply(s: String, index: Int) = {
      var i = index
-     while (i < s.length && s(i).isDigit) {
-        i += 1
-     }
-     if (floatAllowed && i < s.length && s(i) == '.') {
-        i += 1
-        while (i < s.length && s(i).isDigit) { //continuing
+     def scanDigits {
+        while (i < s.length && s(i).isDigit) {
            i += 1
         }
-        i
+     }
+     def startsWithCharAndDigit (c: Char         ) = i+1 < s.length && s(i) == c                && s(i+1).isDigit
+     def startsWithCharsAndDigit(c: Char, d: Char) = i+2 < s.length && s(i) == c && s(i+1) == d && s(i+2).isDigit
+     scanDigits
+     if (floatAllowed) {
+       if (startsWithCharAndDigit('.')) {
+          i += 2
+          scanDigits
+          if (startsWithCharAndDigit('e')) {
+             i += 2
+             scanDigits
+          } else if (startsWithCharsAndDigit('e', '-')) {
+             i += 2
+             scanDigits
+          }
+       }
      }
      ("", s.substring(index,i), "")
   }

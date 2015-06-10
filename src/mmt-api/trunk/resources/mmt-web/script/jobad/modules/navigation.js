@@ -23,7 +23,7 @@ var navigation = {
 		mmt.ajaxReplaceIn(bcurl, 'breadcrumbs');
 		if (uri.split("?").length == 2)
 			mmt.setActiveTheory(uri);
-	    setSVGPanRoot($('svg')[0]);
+	    // setSVGPanRoot($('svg')[0]);
 	},
 	
 	navigateServer: function(uri) {
@@ -33,8 +33,9 @@ var navigation = {
 
 	leftClick: function(target, JOBADInstance) {
 	   //handling clicks on parts of the document
-      if(target.hasAttribute('mmtlink')) {
-			var uri = target.attr('mmtlink');
+        /* TODO is this code ever used?
+        if(target.hasAttribute('data-mmt-link')) {
+			var uri = target.attr('data-mmt-link');
 			this.navigate(uri);
 		}
 		if(target.hasAttribute('loadable')) {
@@ -43,7 +44,7 @@ var navigation = {
 			$(ref).find('span').attr('foldable', 'true');
 			$(elem).replaceWith(ref);
 		}
-		if(target.hasAttribute('jobad:flattenable')) {
+		if(target.hasAttribute('data-mmt-flattenable')) {
 			var elem = target.parent().get(0);
 			var loaded = mmt.load(elem);
 			var fc = $(elem).children().filterMClass('flat-container');
@@ -57,28 +58,28 @@ var navigation = {
 			var elem = target.get(0); 
 			var ref = mmt.load(elem);
 			$(elem).replaceWith(ref);
-		}
+		}*/
 
-		if (target.hasAttribute('jobad:href')) {
-			var uri = target.attr('jobad:href');
+		if (target.hasAttribute(mmtattr.symref)) {
+			var uri = target.attr(mmtattr.symref);
 			this.navigate(uri);
 		}
 
 		mmt.unsetSelected();	
-		return true;	//we did stuff also
+		return true;
 	},
 
 	contextMenuEntries: function(targetArray, JOBADInstance) {
 	   target = targetArray[0];
 		var res = {};
 		var me = this;
-		if (target.hasAttribute('jobad:href')) {
+		if (target.hasAttribute(mmtattr.symref)) {
 		   res["local navigation"] = function() {
-		         var r = target.getAttribute('jobad:href');
+		         var r = target.getAttribute(mmtattr.symref);
 		         me.navigate(r);
 		   };
 		   res["remote navigation"] = function() {
-		         var r = target.getAttribute('jobad:href');
+		         var r = target.getAttribute(mmtattr.symref);
 		         me.navigateServer(r);
 		   };
          res["open in new window"] = function() {mmt.openCurrent();};
