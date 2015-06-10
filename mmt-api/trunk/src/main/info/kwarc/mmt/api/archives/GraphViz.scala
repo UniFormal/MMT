@@ -41,13 +41,11 @@ class GraphViz extends Exporter {
 
    private def produceGraph(theories: Iterable[Path], views: Iterable[Path], bt: BuildTask) {
       val outStringPostProcessed = getSVG(theories,views,Some(bt.outFile),Some(tg),m => bt.errorCont(LocalError(m)))
-      //TODO remove width/height attributes of svg element to allow for automatic resizing in the browser
       File.write(bt.outFile, outStringPostProcessed)
    }
 
    def getSVG(theories: Iterable[Path], views:Iterable[Path], file: Option[File],graph:Option[TheoryGraph],
-                    errorcont: String => Unit)
-      :String = {
+                    errorcont: String => Unit): String = {
       val outFile = file.getOrElse(File(System.getProperty("java.io.tmpdir"))/"MMTGraph.svg")
       val gv = new ontology.GraphExporter(theories, views, graph match {
          case Some(g) => g
@@ -56,7 +54,8 @@ class GraphViz extends Exporter {
       gv.exportDot(outFile.setExtension("dot"))
       val result = ShellCommand.run(graphviz, "-Tsvg", "-o" + outFile, outFile.setExtension("dot").toString)
       result foreach {m => errorcont(m)}
-      File.read(outFile).replace("xlink:title", "class")
+      //TODO remove width/height attributes of svg element to allow for automatic resizing in the browser
+      File.read(outFile).replace("xlink:title", "class").replace("xlink:href", presentation.HTMLAttributes.symref) 
    }
    
 /*   def buildFile(a: Archive, bf: BuildFile) = {

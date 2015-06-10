@@ -47,7 +47,7 @@ var interactiveViewing = {
 	/* highlights all occurrences of the current URI */
 	showOccurs : function (){
 		$('mo').filter(function(index){
-		    return this.getAttribute('jobad:href') == mmt.currentURI;
+		    return this.getAttribute(mmtattr.symref) == mmt.currentURI;
 	   }).toggleMClass('math-occurrence');
 	},
 

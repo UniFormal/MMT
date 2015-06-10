@@ -11,8 +11,8 @@ var hovering = {
 	},
 
 	selectSource: function(target) {
- 		if (target.hasAttribute('jobad:mmtsrc')) {
-		   var sourceRef = target.getAttribute('jobad:mmtsrc');
+ 		if (target.hasAttribute(mmtattr.source)) {
+		   var sourceRef = target.getAttribute(mmtattr.source);
 		   if (sourceRef[0] == '#') {
             var matches = sourceRef.match(/#(\d+)\.\d+\.\d+:(\d+)\.\d+\.\d+/);
             if (matches.length == 3) {
@@ -29,12 +29,12 @@ var hovering = {
 	hoverText: function(targetObj, JOBADInstance) {
 		//hover on OMS: show jobad:href and select the smallest proper superexpression
 		var target = targetObj[0];
-		if (target.hasAttribute('jobad:href')) {			
-			var mr = targetObj.parents().filter(function(){return this.hasAttribute('jobad:mmtref')});
+		if (target.hasAttribute(mmtattr.symref)) {			
+			var mr = targetObj.parents().filter(function(){return this.hasAttribute(mmtattr.position)});
 			var select = (mr.length == 0) ? target : mr[0];
 			mmt.setSelected(select);
 			this.selectSource(select);
-			return target.getAttribute('jobad:href');
+			return target.getAttribute(mmtattr.symref);
 		}
 		// hover on bracketed expression: select expression
 		if (mmt.getTagName(target) == 'mfenced') {
@@ -43,9 +43,9 @@ var hovering = {
 			return true;
 		}
 		// hover on variable: select declaration
-		if (target.hasAttribute('jobad:varref')) {
+		if (target.hasAttribute(mmtattr.varref)) {
 			var v = $(target).parents('math').find('*').filter(function() {
-                return $(this).attr('jobad:mmtref') == targetObj.attr('jobad:varref');
+                return $(this).attr(mmtattr.position) == targetObj.attr(mmtattr.varref);
 			})
 			mmt.setSelected(v[0]);
 			this.selectSource(v[0]);

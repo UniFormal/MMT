@@ -135,7 +135,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
                  span {doName(d.path)}
                  
                  def toggle(label: String) {
-                    button("compToggle  btn btn-sm btn-default pull-right", onclick = s"toggleClick(this.parentNode,'$label')") {text(label)}
+                    button("compToggle  btn btn-sm btn-default pull-right", onclick = s"interaction.toggleClick(this.parentNode,'$label')") {text(label)}
                  }
                  d.getComponents.foreach {case (comp, tc) => if (tc.isDefined) 
                     toggle(comp.toString)

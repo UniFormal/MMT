@@ -13,7 +13,7 @@ $.fn.hasAttribute = function(name) {
 function getClassArray(elem) {
    var classes = (elem.hasAttribute('class')) ? elem.getAttribute('class') : "";
    return classes.split(/\s+/);
-}
+};
 
 /* add a class cl to all matched elements */
 $.fn.addMClass = function(cl){
@@ -24,7 +24,7 @@ $.fn.addMClass = function(cl){
          this.setAttribute('class', cl);
    });
    return this;
-}
+};
 /* remove a class cl from all matched elements */
 $.fn.removeMClass = function(cl){
    this.each(function(){
@@ -55,14 +55,26 @@ $.fn.filterMClass = function(cl){
       var classes = getClassArray(this);
       return (classes.indexOf(cl) !== -1)
    });
-}
+};
 // end $.fn.f functions
-
 
 /* some common URIs */
 var uris = {
    lf : "http://cds.omdoc.org/urtheories?LF",
 };
+
+/* special attribute names, must be in sync with info.kwarc.mmt.api.presentation.HTMLAttributes */
+var mmtattr = function(){
+   var prefix = "data-mmt-";
+   return {
+	   symref: prefix + "symref",
+	   varref: prefix + "varref",
+	   source: prefix + "source",
+	   owner: prefix + "owner",
+	   component: prefix + "component",
+	   position: prefix + "position"
+   }
+}();
 
 var mmt = {
 	/* these are auxiliary variables used to communicate information about the 
@@ -90,27 +102,20 @@ var mmt = {
 		this.focusIsMath = (math.length !== 0);
 		if (this.focusIsMath) {
 		   this.focus = this.getSelectedParent(elem);
-	   	this.currentElement = math.attr('jobad:owner');
-		   this.currentComponent = math.attr('jobad:component');
-		   this.currentPosition = this.focus.getAttribute('jobad:mmtref');
+	   	this.currentElement = math.attr(mmtattr.owner);
+		   this.currentComponent = math.attr(mmtattr.component);
+		   this.currentPosition = this.focus.getAttribute(mmtattr.position);
 		} else {
 		   this.focus = elem
 	   	this.currentElement = null;
 		   this.currentComponent = null;
 		   this.currentPosition = null;
 		}
-		if (elem.hasAttribute("jobad:href")) {
-			mmt.currentURI = elem.getAttribute('jobad:href');
+		if (elem.hasAttribute(mmtattr.symref)) {
+			mmt.currentURI = elem.getAttribute(mmtattr.symref);
 		} else if ($(elem).parent().hasAttribute("xlink:href")) {
-			var str =  $(elem).parent().attr("xlink:href");
-			mmt.currentURI = str;
-		} else if ($(elem).hasAttribute("href"))
-		{
-			var y = $(elem).attr("onclick");
-			var z = y.split(",");
-			var len = z[1].length;
-			var s = z[1].substring(2, len-2);
-			mmt.currentURI = s;
+			// in SVG graphs, the parent carries the link, attribute currently for legacy SVG
+			mmt.currentURI = $(elem).parent().attr("xlink:href");
 		} else {
 			mmt.currentURI = null;
 		}
@@ -548,3 +553,20 @@ var action = {
 	},
 
  };
+
+$(function(){$('#latin-dialog').dialog({ autoOpen: false})});
+
+/** function called by generated interaction elements */
+var interaction = {
+   /** click on a togglable element */
+   toggleClick: function(elem,label){
+      var cls = label != null ? label : 'toggleTarget';
+      $(elem).parent().closest('div').find('.' + cls).toggle();
+   },
+   /** click on a search result */
+   resultClick: function(p){
+      navigation.navigate(p);
+   },
+}
+
+
