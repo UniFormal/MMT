@@ -115,7 +115,7 @@ trait GenericScalaExporter extends Exporter {
     val domainOver = if (includesS.isEmpty) "" else "override " // override included values
     rh.writeln(s"  ${domainOver}val _domain: TheoryScala = $name\n")
     t.getPrimitiveDeclarations foreach {
-      case c: Constant =>
+      case c: Constant if c.path.name.toPath != "int" =>
         val d = doCon(c)
         rh.writeln(d)
       //TODO exclude declarations with extraneous types that should not be implemented, e.g., m:MOR a b
