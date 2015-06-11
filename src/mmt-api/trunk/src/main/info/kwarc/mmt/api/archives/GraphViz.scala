@@ -10,17 +10,17 @@ import utils._
  */
 class GraphViz extends Exporter {
    val key = "svg"
-   
+
    private var tg : ontology.TheoryGraph = null
    /** path to graphviz (dot) binary */
    private var graphviz: String = null
-   
+
    /** expects one argument: the path to graphviz; alternatively set variable GraphViz */
    override def start(args: List[String]) {
       tg = new ontology.TheoryGraph(controller.depstore)
-      graphviz = getFromFirstArgOrEnvvar(args, "GraphViz") 
+      graphviz = getFromFirstArgOrEnvvar(args, "GraphViz")
    }
-   
+
    /** contains at least all elements of the document */
    def exportDocument(doc : Document, bf: BuildTask) {
       val theories = controller.depstore.querySet(doc.path, Transitive(+Declares) * HasType(IsTheory))
@@ -51,16 +51,18 @@ class GraphViz extends Exporter {
          case Some(g) => g
          case None => tg
       })
-      gv.exportDot(outFile.setExtension("dot"))
-      val result = ShellCommand.run(graphviz, "-Tsvg", "-o" + outFile, outFile.setExtension("dot").toString)
+      val dotFile = outFile.setExtension("dot")
+      gv.exportDot(dotFile)
+      val result = ShellCommand.run(graphviz, "-Tsvg", "-o" + outFile, dotFile.toString)
       result foreach {m => errorcont(m)}
+      dotFile.delete
       //TODO remove width/height attributes of svg element to allow for automatic resizing in the browser
-      File.read(outFile).replace("xlink:title", "class").replace("xlink:href", presentation.HTMLAttributes.symref) 
+      File.read(outFile).replace("xlink:title", "class").replace("xlink:href", presentation.HTMLAttributes.symref)
    }
-   
+
 /*   def buildFile(a: Archive, bf: BuildFile) = {
    }
-   
+
    /** same as buildOne but for the document given by the directory */
    override def buildDir(a: Archive, bd: BuildDir, buildChildren: List[BuildTask]) = {
       val bf = new BuildFile(bd.inFile, bd.inPath, DPath(a.narrationBase / bd.inPath), bd.outFile)
