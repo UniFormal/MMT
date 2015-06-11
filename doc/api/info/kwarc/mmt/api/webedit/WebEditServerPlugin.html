@@ -1,0 +1,794 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>WebEditServerPlugin - MMT - info.kwarc.mmt.api.webedit.WebEditServerPlugin</title>
+          <meta name="description" content="WebEditServerPlugin - MMT - info.kwarc.mmt.api.webedit.WebEditServerPlugin" />
+          <meta name="keywords" content="WebEditServerPlugin MMT info.kwarc.mmt.api.webedit.WebEditServerPlugin" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+      <script type="text/javascript" src="../../../../../lib/modernizr.custom.js"></script><script type="text/javascript" src="../../../../../lib/diagrams.js" id="diagrams-js"></script>
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../index.html';
+            var hash = 'info.kwarc.mmt.api.webedit.WebEditServerPlugin';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="type">
+      <div id="definition">
+        <img src="../../../../../lib/class_big.png" />
+        <p id="owner"><a href="../../../../package.html" class="extype" name="info">info</a>.<a href="../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.api">api</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.api.webedit">webedit</a></p>
+        <h1>WebEditServerPlugin</h1><h3><span class="morelinks"><div>Related Doc:
+            <a href="package.html" class="extype" name="info.kwarc.mmt.api.webedit">package webedit</a>
+          </div></span></h3><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <span class="name">WebEditServerPlugin</span><span class="result"> extends <a href="../web/ServerExtension.html" class="extype" name="info.kwarc.mmt.api.web.ServerExtension">ServerExtension</a> with <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><dl class="attributes block"> <dt>Source</dt><dd><a href="file://home/maeder/MMT/src/mmt-webEdit/src/info/kwarc/mmt/api/webedit/WebEditServerPlugin.scala" target="_blank">WebEditServerPlugin.scala</a></dd></dl><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><a href="../web/ServerExtension.html" class="extype" name="info.kwarc.mmt.api.web.ServerExtension">ServerExtension</a>, <a href="../frontend/FormatBasedExtension.html" class="extype" name="info.kwarc.mmt.api.frontend.FormatBasedExtension">FormatBasedExtension</a>, <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a>, <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></div>
+        </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
+                <span class="toggle diagram-link">Type Hierarchy</span>
+                <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#diagrams" target="_blank" class="diagram-help">Learn more about scaladoc diagrams</a>
+                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph1" viewBox="0.00 0.00 215.50 118.00" height="118pt" width="216pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 114)" class="graph" id="graph0"><polygon points="-4,4 -4,-114 211.5,-114 211.5,4 -4,4" stroke="none" fill="white"></polygon><g class="cluster" id="clust1"></g><g class="cluster" id="clust2"></g><!-- node0 --><g class="node this class" id="graph1_0"><g id="a_this class|graph1_0"><a xlink:title="info.kwarc.mmt.api.webedit.WebEditServerPlugin (this class)" xlink:href="#inheritance-diagram"><polygon points="181.5,-49 45.5,-49 45.5,-24 181.5,-24 181.5,-49" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-43.5" x="55.5" preserveAspectRatio="xMinYMin meet" height="15px" width="15px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-33.5" x="76.5" text-anchor="start">WebEditServerPlugin</text></a></g></g><!-- node1 --><g class="node class" id="graph1_1"><g id="a_class|graph1_1"><a xlink:title="info.kwarc.mmt.api.web.ServerExtension" xlink:href="../web/ServerExtension.html#inheritance-diagram"><polygon points="115,-110 7.10543e-15,-110 7.10543e-15,-85 115,-85 115,-110" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../lib/class_diagram.png" y="-104.5" x="10.5" preserveAspectRatio="xMinYMin meet" height="15px" width="15px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-94.5" x="31.5" text-anchor="start">ServerExtension</text></a></g></g><!-- node1&#45;&gt;node0 --><g class="edge inheritance" id="graph1_1_0"><g id="a_inheritance|graph1_1_0"><a xlink:title="WebEditServerPlugin is a subtype of ServerExtension"><path d="M72.1843,-81.0291C81.664,-71.0415 93.7983,-58.2572 102.459,-49.1323" stroke="#d4d4d4" fill="none"></path><polygon points="70.7367,-80.0122 68.5638,-84.8435 73.2753,-82.4217 70.7367,-80.0122" stroke="#d4d4d4" fill="none"></polygon></a></g></g><!-- node2 --><g class="node trait" id="graph1_2"><g id="a_trait|graph1_2"><a xlink:title="info.kwarc.mmt.api.frontend.Logger" xlink:href="../frontend/Logger.html#inheritance-diagram"><polygon points="207.5,-110 133.5,-110 133.5,-85 207.5,-85 207.5,-110" stroke="#37657d" fill="#498aad"></polygon><image xlink:href="../../../../../lib/trait_diagram.png" y="-104.5" x="143.5" preserveAspectRatio="xMinYMin meet" height="15px" width="15px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-94.5" x="164.5" text-anchor="start">Logger</text></a></g></g><!-- node2&#45;&gt;node0 --><g class="edge inheritance" id="graph1_2_0"><g id="a_inheritance|graph1_2_0"><a xlink:title="WebEditServerPlugin is a subtype of Logger"><path d="M155.554,-81.0291C145.904,-71.0415 133.554,-58.2572 124.738,-49.1323" stroke="#d4d4d4" fill="none"></path><polygon points="154.506,-82.4634 159.239,-84.8435 157.023,-80.0316 154.506,-82.4634" stroke="#d4d4d4" fill="none"></polygon></a></g></g></g></svg></div>
+              </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="info.kwarc.mmt.api.webedit.WebEditServerPlugin"><span>WebEditServerPlugin</span></li><li class="in" name="info.kwarc.mmt.api.web.ServerExtension"><span>ServerExtension</span></li><li class="in" name="info.kwarc.mmt.api.frontend.FormatBasedExtension"><span>FormatBasedExtension</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Extension"><span>Extension</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Logger"><span>Logger</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show all</span></li>
+            </ol>
+            <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#members" target="_blank">Learn more about member selection</a>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        <div id="constructors" class="members">
+              <h3>Instance Constructors</h3>
+              <ol><li name="info.kwarc.mmt.api.webedit.WebEditServerPlugin#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;():info.kwarc.mmt.api.webedit.WebEditServerPlugin"></a>
+      <a id="&lt;init&gt;:WebEditServerPlugin"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">WebEditServerPlugin</span><span class="params">()</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@&lt;init&gt;():info.kwarc.mmt.api.webedit.WebEditServerPlugin" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="info.kwarc.mmt.api.frontend.Extension.LocalError" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="LocalErrorextendsExtensionErrorwithProductwithSerializable"></a>
+      <a id="LocalError:LocalError"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="../frontend/Extension$LocalError.html"><span class="name">LocalError</span></a><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="../ExtensionError.html" class="extype" name="info.kwarc.mmt.api.ExtensionError">ExtensionError</a> with <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Product" class="extype" target="_top">Product</a> with <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Serializable" class="extype" target="_top">Serializable</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.frontend.Extension@LocalErrorextendsExtensionErrorwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">a custom error class for this extension</p><div class="fullcomment"><div class="comment cmt"><p>a custom error class for this extension</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:Any):Boolean"></a>
+      <a id="!=(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="##():Int"></a>
+      <a id="##():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Int" class="extype" target="_top">Int</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@##():Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:Any):Boolean"></a>
+      <a id="==(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@==(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.webedit.WebEditServerPlugin#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="apply(uriComps:List[String],query:String,body:info.kwarc.mmt.api.web.Body):tiscaf.HLet"></a>
+      <a id="apply(List[String],String,Body):HLet"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">apply</span><span class="params">(<span name="uriComps">uriComps: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="query">query: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="body">body: <a href="../web/Body.html" class="extype" name="info.kwarc.mmt.api.web.Body">Body</a></span>)</span><span class="result">: <a href="../../../../../tiscaf/HLet.html" class="extype" name="tiscaf.HLet">HLet</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@apply(uriComps:List[String],query:String,body:info.kwarc.mmt.api.web.Body):tiscaf.HLet" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">handles the HTTP request</p><div class="fullcomment"><div class="comment cmt"><p>handles the HTTP request</p></div><dl class="paramcmts block"><dt class="param">query</dt><dd class="cmt"><p>the QUERY from above</p></dd><dt class="param">body</dt><dd class="cmt"><p>the body of the request</p></dd><dt>returns</dt><dd class="cmt"><p>the HTTP response</p><p>Implementing classes can and should use Server.XmlResponse etc to construct responses conveniently.</p><p>Errors thrown by this method are caught and sent back to the browser.
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.webedit.WebEditServerPlugin">WebEditServerPlugin</a> → <a href="../web/ServerExtension.html" class="extype" name="info.kwarc.mmt.api.web.ServerExtension">ServerExtension</a></dd></dl></div>
+    </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asInstanceOf[T0]:T0"></a>
+      <a id="asInstanceOf[T0]:T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.webedit.WebEditServerPlugin#bodyAsJSON" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="bodyAsJSON(b:info.kwarc.mmt.api.web.Body):scala.util.parsing.json.JSONObject"></a>
+      <a id="bodyAsJSON(Body):JSONObject"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">bodyAsJSON</span><span class="params">(<span name="b">b: <a href="../web/Body.html" class="extype" name="info.kwarc.mmt.api.web.Body">Body</a></span>)</span><span class="result">: <span class="extype" name="scala.util.parsing.json.JSONObject">JSONObject</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@bodyAsJSON(b:info.kwarc.mmt.api.web.Body):scala.util.parsing.json.JSONObject" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clone():Object"></a>
+      <a id="clone():AnyRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@clone():Object" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#controller" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="controller:info.kwarc.mmt.api.frontend.Controller"></a>
+      <a id="controller:Controller"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">controller</span><span class="result">: <a href="../frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@controller:info.kwarc.mmt.api.frontend.Controller" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#defaultPrefix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="defaultPrefix:String"></a>
+      <a id="defaultPrefix:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">defaultPrefix</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@defaultPrefix:String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#destroy" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="destroy:Unit"></a>
+      <a id="destroy:Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">destroy</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@destroy:Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">extension-specific cleanup (override as needed, empty by default)</p><div class="fullcomment"><div class="comment cmt"><p>extension-specific cleanup (override as needed, empty by default)</p><p>Extensions may create persistent data structures and processes,
+but they must clean up after themselves in this method
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
+    </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="eq(x$1:AnyRef):Boolean"></a>
+      <a id="eq(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#equals" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="equals(x$1:Any):Boolean"></a>
+      <a id="equals(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@equals(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.webedit.WebEditServerPlugin#error" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="error(msg:String):tiscaf.HLet"></a>
+      <a id="error(String):HLet"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">error</span><span class="params">(<span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../../../../tiscaf/HLet.html" class="extype" name="tiscaf.HLet">HLet</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@error(msg:String):tiscaf.HLet" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <a id="finalize():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@finalize():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getClass():Class[_]"></a>
+      <a id="getClass():Class[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@getClass():Class[_]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#getFromFirstArgOrEnvvar" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getFromFirstArgOrEnvvar(args:List[String],name:String):String"></a>
+      <a id="getFromFirstArgOrEnvvar(List[String],String):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getFromFirstArgOrEnvvar</span><span class="params">(<span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@getFromFirstArgOrEnvvar(args:List[String],name:String):String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
+    </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="hashCode():Int"></a>
+      <a id="hashCode():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Int" class="extype" target="_top">Int</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@hashCode():Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.web.ServerExtension#isApplicable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isApplicable(cont:String):Boolean"></a>
+      <a id="isApplicable(String):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isApplicable</span><span class="params">(<span name="cont">cont: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@isApplicable(cont:String):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">cont</dt><dd class="cmt"><p>the context of the request</p></dd><dt>returns</dt><dd class="cmt"><p>true if cont is equal to this.context
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../web/ServerExtension.html" class="extype" name="info.kwarc.mmt.api.web.ServerExtension">ServerExtension</a> → <a href="../frontend/FormatBasedExtension.html" class="extype" name="info.kwarc.mmt.api.frontend.FormatBasedExtension">FormatBasedExtension</a></dd></dl></div>
+    </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log(e:info.kwarc.mmt.api.Error):Unit"></a>
+      <a id="log(Error):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="params">(<span name="e">e: <a href="../Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@log(e:info.kwarc.mmt.api.Error):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log(s:=&gt;String,subgroup:Option[String]):Unit"></a>
+      <a id="log(⇒String,Option[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="subgroup">subgroup: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Option" class="extype" target="_top">Option</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol"><span class="name"><a href="../../../../../scala/package.html">None</a></span></span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@log(s:=&gt;String,subgroup:Option[String]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logError(s:=&gt;String):Unit"></a>
+      <a id="logError(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logError</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@logError(s:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logGroup" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logGroup[A](a:=&gt;A):A"></a>
+      <a id="logGroup[A](⇒A):A"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logGroup</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="a">a: ⇒ <span class="extype" name="info.kwarc.mmt.api.frontend.Logger.logGroup.A">A</span></span>)</span><span class="result">: <span class="extype" name="info.kwarc.mmt.api.frontend.Logger.logGroup.A">A</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@logGroup[A](a:=&gt;A):A" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#logPrefix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logPrefix:String"></a>
+      <a id="logPrefix:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logPrefix</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@logPrefix:String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">the prefix used to identify this extension for logging, by default the class name</p><div class="fullcomment"><div class="comment cmt"><p>the prefix used to identify this extension for logging, by default the class name</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ne(x$1:AnyRef):Boolean"></a>
+      <a id="ne(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notify():Unit"></a>
+      <a id="notify():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notify</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@notify():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notifyAll():Unit"></a>
+      <a id="notifyAll():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@notifyAll():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#report" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="report:info.kwarc.mmt.api.frontend.Report"></a>
+      <a id="report:Report"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">report</span><span class="result">: <a href="../frontend/Report.html" class="extype" name="info.kwarc.mmt.api.frontend.Report">Report</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@report:info.kwarc.mmt.api.frontend.Report" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#start" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="start(args:List[String]):Unit"></a>
+      <a id="start(List[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">start</span><span class="params">(<span name="args">args: <a href="../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@start(args:List[String]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">extension-specific initialization (override as needed, empty by default)</p><div class="fullcomment"><div class="comment cmt"><p>extension-specific initialization (override as needed, empty by default)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
+    </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
+      <a id="synchronized[T0](⇒T0):T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toString():String"></a>
+      <a id="toString():String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@toString():String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <a id="wait():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@wait():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long,x$2:Int):Unit"></a>
+      <a id="wait(Long,Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Long" class="extype" target="_top">Long</a></span>, <span name="arg1">arg1: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Int" class="extype" target="_top">Int</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long):Unit"></a>
+      <a id="wait(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Long" class="extype" target="_top">Long</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.webedit.WebEditServerPlugin@wait(x$1:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="info.kwarc.mmt.api.web.ServerExtension">
+              <h3>Inherited from <a href="../web/ServerExtension.html" class="extype" name="info.kwarc.mmt.api.web.ServerExtension">ServerExtension</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.frontend.FormatBasedExtension">
+              <h3>Inherited from <a href="../frontend/FormatBasedExtension.html" class="extype" name="info.kwarc.mmt.api.frontend.FormatBasedExtension">FormatBasedExtension</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.frontend.Extension">
+              <h3>Inherited from <a href="../frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.frontend.Logger">
+              <h3>Inherited from <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></h3>
+            </div><div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>
