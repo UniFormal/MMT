@@ -38,7 +38,7 @@ deploy in jedit <<= assembly in(jedit, Compile) map
   deployTo("jedit-plugin/plugin/jars/MMTPlugin.jar")
 
 deploy in mmt <<= assembly in(mmt, Compile) map
-  deployTo("mmt")
+  deployTo("mmt.jar")
 
 def commonSettings(nameStr: String) = Seq(
   organization := "info.kwarc.mmt",
