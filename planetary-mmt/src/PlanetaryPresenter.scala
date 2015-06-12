@@ -28,7 +28,7 @@ class NotationPresenter(contr : Controller, var notations : List[(GlobalName,Tex
   override def doVariable(n: LocalName)(implicit pc : PresentationContext) {
       val vdAtt = pc.context.find(_.decl.name == n) match {
          case None => Nil
-         case Some(vd) => List("jobad:varref" -> vd.declpos.toString)
+         case Some(vd) => List(HTMLAttributes.varref -> vd.declpos.toString)
       }
       val mi = xml.element("mi", ("style" -> "color:red;") :: vdAtt ::: jobadattribs, n.toString)
       pc.out(mi)
@@ -52,10 +52,10 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
   }
   
   def doInfToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
-    val nsAtts = List("xmlns" -> namespace("mathml"), "xmlns:jobad" -> namespace("jobad"))
+    val nsAtts = List("xmlns" -> namespace("mathml"))
     val mmtAtts = pc.owner match {
        case None => Nil
-       case Some(cp) => List("jobad:owner" -> cp.parent.toPath, "jobad:component" -> cp.component.toString, "jobad:mmtref" -> "")
+       case Some(cp) => List(HTMLAttributes.owner -> cp.parent.toPath, HTMLAttributes.component -> cp.component.toString, HTMLAttributes.position -> "")
     }
     val idAtt = ( "id" -> o.hashCode.toString)
     // <mstyle displaystyle="true">
@@ -154,13 +154,13 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
         case m : MPath => List("id" -> m.name.toPath)
         case _ => Nil
       }
-      attrs ::= ("jobad:href" -> p.toPath)
+      attrs ::= (HTMLAttributes.symref -> p.toPath)
       span(cls="name", attributes=attrs) {text(s)}
    }
    
     def doName(path : Path, loadable : Boolean) : Unit = loadable match {
      case true =>
-       span(cls = "name loadable", attributes = List("jobad:load" -> path.toPath)) {
+       span(cls = "name") {
          text(path.last)
        }
      case false => doName(path)
@@ -189,7 +189,11 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
              table {
                tr {
                  td { span("keyword") {text("includes")} }
-                 td { rh(<span jobad:href={from.toPath}> {from.name.toPath} </span>) }
+                 td {
+                   span(attributes = List(HTMLAttributes.symref -> from.toPath)) {
+                     text(from.name.toPath)
+                   }
+                 }
                }
              }
            } 
@@ -201,9 +205,8 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      }
    }
    
-   
    def doConstant(c : Constant) {
-     div(cls = "constant", attributes = List("jobad:presents" -> c.path.toPath)) {
+     div(cls = "constant") {
        if (!c.name.toPath.contains('.')) {//TODO hack to check if informal constant
          span("keyword"){text("constant")}
          doName(c.path)
@@ -365,7 +368,9 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        rh("</div>")
      case d: DRef => 
        li("dref") {
-         rh(<span jobad:href={d.target.toPath} data-relative="true"> {d.target.last} </span>)
+         span(attributes = List(HTMLAttributes.symref -> d.target.toPath, "data-relative" -> "true")) {
+           text(d.target.last)
+         }
        }
      case m : MRef =>
        controller.get(m.target) match {
