@@ -95,7 +95,11 @@ lazy val lfcatalog = (project in file("lfcatalog/trunk")).
   dependsOn(tiscaf).
   settings(commonSettings("lfcatalog") ++ oneJarSettings: _*).
   settings(
-    libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.3"
+    libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.3",
+    deploy <<= packageBin in Compile map { p =>
+      deployTo("lfcatalog/lfcatalog.jar")(p)
+      p
+    }
   )
 
 lazy val lf = (project in file("mmt-lf")).
