@@ -142,12 +142,24 @@ class NotationBasedParser extends ObjectParser {
      //TODO we can also collect notations attached to variables
      support foreach {p => closer(p)}
      val includes = support.flatMap {p => controller.library.visible(OMMOD(p))}.toList.distinct
-     val decls = includes flatMap {tm =>
+     val decls1 = includes flatMap {tm =>
         controller.localLookup.getO(tm.toMPath) match {
            case Some(d: modules.DeclaredTheory) => d.getDeclarations
            case _ => None
         }
      }
+     val decls = decls1.flatMap(d => d match {
+        case s:DeclaredStructure => if (!s.isImplicit) try {
+           controller.globalLookup.getO(s.from.toMPath).getOrElse(Nil) match {
+              case t: DeclaredTheory =>
+                 closer.flattenInclude(t).map(name => controller.localLookup.get(s.path / name))
+              case _ => Nil
+           }
+         } catch {case e:Exception => Nil}
+        else List(s)
+        case _ => List(d)
+     } ).filter(d => d match {case s:DeclaredStructure => if (s.isImplicit) true else false case _ => true})
+
      val nots = decls.flatMap {
         case nm: NestedModule =>
            val args = nm.module match {
