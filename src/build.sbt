@@ -56,6 +56,10 @@ def commonSettings(nameStr: String) = Seq(
   autoAPIMappings := true,
   connectInput in run := true,
   fork := true,
+  deploy <<= packageBin in Compile map { p =>
+    deployTo("main/" + nameStr + ".jar")(p)
+    p
+  },
   assemblyMergeStrategy in assembly := {
     case PathList("rootdoc.txt") => MergeStrategy.discard
     case x =>
@@ -67,7 +71,11 @@ def commonSettings(nameStr: String) = Seq(
 lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*).
   settings(
-    scalaSource in Compile := baseDirectory.value / "src/main/scala"
+    scalaSource in Compile := baseDirectory.value / "src/main/scala",
+    deploy <<= packageBin in Compile map { p =>
+      deployTo("lib/tiscaf.jar")(p)
+      p
+    }
   )
 
 lazy val api = (project in file("mmt-api/trunk")).
@@ -113,7 +121,7 @@ lazy val lfs = (project in file("mmt-lfs")).
   dependsOn(api, lf).
   settings(commonSettings("mmt-lfs"): _*)
 
-lazy val mizar = (project in file("mmt-mizar")).
+lazy val mizar = (project in file("mmt-mizar/trunk")).
   dependsOn(api, lf, lfs).
   settings(commonSettings("mmt-mizar"): _*)
 
@@ -166,7 +174,7 @@ lazy val jedit = (project in file("jEdit-mmt")).
   settings(commonSettings("jEdit-mmt"): _*).
   settings(
     resourceDirectory in Compile := baseDirectory.value / "src/resources",
-    unmanagedJars in Compile ++= jeditJars map (baseDirectory.value / "lib" /),
+    unmanagedJars in Compile ++= jeditJars map (baseDirectory.value / "lib" / _),
     assemblyExcludedJars in assembly := {
       val cp = (fullClasspath in assembly).value
       cp filter { j => jeditJars.contains(j.data.getName) }
