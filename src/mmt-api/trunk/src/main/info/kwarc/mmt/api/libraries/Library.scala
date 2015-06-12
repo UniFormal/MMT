@@ -108,6 +108,7 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
     * @return the content element
     */
    def get(p: Path, error: String => Nothing) : ContentElement = p match {
+
       case doc : DPath => throw ImplementationError("getting documents from library impossible")
       case mp: MPath =>
         val (mod, left) = getMostSpecific(mp)
@@ -193,6 +194,7 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
          }
       // lookup in complex modules
       case (home @ ComplexTheory(cont)) % name =>
+        println("Here!")
          cont.mapVarDecls {case (before, vd) =>
             val vdDecl = vd.toDeclaration(ComplexTheory(before))
             vd match {
@@ -261,7 +263,7 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
          get(l.df % name, error)
       case l: DeclaredLink =>
          l.getMostSpecific(name.simplify) match {
-            case Some((a, LocalName(Nil))) => a  // perfect match
+            case Some((a, LocalName(Nil))) => a  // perfect match TODO Here should probably happen something
             case Some((a, ln)) => a match {
                case a: Constant => error("local name " + ln + " left after resolving to constant assignment")
                case a: DefinedLink => get(a.df % ln, error)
@@ -303,7 +305,8 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
    }
    
    /** translate a Declaration along a morphism */
-   private def translate(d: Declaration, morph: Term, error: String => Nothing) : Declaration = morph match {
+   private def translate(d: Declaration, morph: Term, error: String => Nothing) : Declaration ={
+     morph match {
       case OMMOD(v) =>
          val link = getView(v)
          translateByLink(d, link, error)
@@ -319,14 +322,14 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
          //TODO better copy e and change home to t?
          translate(d, imp, error)
      //TODO remaining cases
-   }
+   } }
    
    /** auxiliary method of translate to unify translation along structures and views */
    private def translateByLink(decl: Declaration, l: Link, error: String => Nothing) : Declaration =
    l match {
       case l: DefinedLink => translate(decl, l.df, error)
       case l: DeclaredLink =>
-          //compute e such that the home theory of decl is the domain of l by inserting an implicit morphism 
+          //compute e such that the home theory of decl is the domain of l by inserting an implicit morphism
           val imp = implicitGraph(decl.home, l.from) getOrElse {
              throw GetError("no implicit morphism from " + decl.home + " to " + l.from)
           }
@@ -335,14 +338,18 @@ class Library(mem: ROMemory, val report : frontend.Report) extends Lookup with L
           val assigOpt = try {
               Some(getInLink(l, declT.name, error))
           } catch {case PartialLink() =>
-              None
+              //None //TODO Remark for Florian: This seems to be necessary for decls in structures to be merged
+              try {Some(getInLink(l,ComplexStep(declT.parent) / declT.name,error))} catch {
+                case PartialLink() => None
+              }
           }
           // the prefix of the new constant
           val namePrefix = l match {
              case s: Structure => s.name
              case v: View => LocalName(ComplexStep(v.path))
           }
-          val newName = namePrefix / declT.name
+          // see assigOpt definition
+          val newName = namePrefix / (assigOpt match {case None => declT.name case Some(a:Constant) => a.name})
           def mapTerm(t: Term) = t * l.toTerm  
           // translate declT along assigOpt
           val newDecl = declT match {
