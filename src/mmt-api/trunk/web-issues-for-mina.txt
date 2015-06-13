@@ -2,10 +2,10 @@ Archives should always be open initially
 
 URI in main should not line-break
 
-the buttons in the main (metadata, tags, used-by, etc.) area do not work
-The content is there, but the javascript does not find the right element to toggle
-
 Some times the content of Main is shown multiple times.
+
+When using a context menu function such as "show declaration", the method createInlineBox is called.
+It currently inserts the box with the wrong height and scrolls wrongly.
 
 ------------------------
 long-term
