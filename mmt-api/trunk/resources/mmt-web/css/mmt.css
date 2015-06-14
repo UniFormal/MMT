@@ -1,63 +1,66 @@
 span.omdoc-operator {
-    margin-left: 5px;
-    margin-right: 5px;
-    font-weight: bold;
-    color: #ff0000;
+	margin-left: 5px;
+	margin-right: 5px;
+	font-weight: bold;
+	color: #ff0000;
 }
 
 span.omdoc-definiens {
+	
 }
 
 span.omdoc-type {
+	
 }
 
 math {
-    color: blue;
-    font-weight: bold;
+	color: blue;
+	font-weight: bold;
 }
 
 mo {
-    color: black;
-    font-weight: normal;
-    font-size: large;
-    word-break: break-all;
-    
+	color: black;
+	font-weight: normal;
+	font-size: large;
 }
 
 mo.symdecl {
-     color: #000000;
+	color: #000000;
 }
 
 mi {
-    color:green;
-    font-weight: normal;
+	color: green;
+	font-weight: normal;
 }
 
 .math-selected {
-    background: silver;
+	background: silver;
 }
 
 .math-occurrence {
-    background: silver;
+	background: silver;
 }
 
 .math-folded {
-   font-size:10%;
+	font-size: 10%;
 }
 
 .brackets mo {
-   color : gray;
+	color: gray;
 }
+
 .reconstructed {
-   border-top-style : dotted;
-   border-width: thin
+	border-top-style: dotted;
+	border-width: thin
 }
+
 .implicit-arg {
-   border-bottom-style : dotted;
-   border-width: thin
+	border-bottom-style: dotted;
+	border-width: thin
 }
+
 .reconstructed-hidden, .implicit-arg-hidden, .brackets-hidden {
-   display: none;
+	display: none;
 }
 
 /*
@@ -67,43 +70,42 @@ munderover > .reconstructed-hidden, munderover > .implicit-arg-hidden, munderove
    display: inline;
 }
 */
-
-div.omdoc-view
-{
-   border-style: none
+div.omdoc-view {
+	border-style: none
 }
-div.omdoc-theory
-{
-   border-style: none
+
+div.omdoc-theory {
+	border-style: none
 }
 
 span.operator {
-   color: blue;
-   font-weight: bold;
+	color: blue;
+	font-weight: bold;
 }
 
 span.keyword {
-   color: black;
-   font-weight: bold;
-   cursor: pointer;
-   padding-left: 3px;
-   padding-right : 3px;
+	color: black;
+	font-weight: bold;
+	cursor: pointer;
+	padding-left: 3px;
+	padding-right: 3px;
 }
 
 span.keyword:hover {
-   background: #d3d3d3;
+	background: #d3d3d3;
 }
-tr.type{
-	//background-color: red;
-	//overflow: auto;
-	//max-width: 100px;
-	//resize: both;
-	
+
+tr.type { //
+	background-color: red; //
+	overflow: auto; //
+	max-width: 100px; //
+	resize: both;
 }
+
 span.keyword:active {
-  cursor: progress;
+	cursor: progress;
 }
 
 ul.ref {
- list-style: square;
+	list-style: square;
 }

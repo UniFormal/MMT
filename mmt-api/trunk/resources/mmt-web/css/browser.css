@@ -55,12 +55,14 @@ span.pagelink a:hover {
    height: 30px;
    font-size:20px;
    margin-top: 3%;
+   white-space: nowrap;
      
 }
 #breadcrumbs .mmturi {
    margin-left: 10px;
    margin-right: 10px;
    color: blue;
+   white-space: nowrap;
 }
 
 #sidebar {

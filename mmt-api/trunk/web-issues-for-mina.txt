@@ -1,6 +1,11 @@
-Archives should always be open initially
+Archives should always be open initially (done)
 
-URI in main should not line-break
+Use Space on top (done)
+
+URI in main should not line-break (done)
+
+the buttons in the main (metadata, tags, used-by, etc.) area do not work
+The content is there, but the javascript does not find the right element to toggle
 
 Some times the content of Main is shown multiple times.
 
