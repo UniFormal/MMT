@@ -224,8 +224,8 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
    
    def doNotations(notations : List[(GlobalName, TextNotation)], path : GlobalName, instId : String = "") {
      if (!notations.isEmpty) {
-       val onclick = "onclick=\"if ($(this).html() == \'Show Notations\') {$(this).html(\'Hide Notations\')} else {$(this).html(\'Show Notations\')};" +
-                     "$(document.getElementById(\'not_" + encPath(path) + "_" + instId + "\')).toggle( \'fold\' );\""
+       val onclick = "onclick=\"if (jQuery(this).html() == \'Show Notations\') {jQuery(this).html(\'Hide Notations\')} else {jQuery(this).html(\'Show Notations\')};" +
+                     "jQuery(document.getElementById(\'not_" + encPath(path) + "_" + instId + "\')).toggle( \'fold\' );\""
        rh(" <small><a style=\"cursor:pointer;\" " + onclick + ">" + "Show Notations" + "</a></small>")
        table(cls = "table table-striped table-condensed", attributes = ("id" -> ("not_" + encPath(path) + "_" + instId)) :: ("style" -> "display:none;") :: Nil) {
          head {
