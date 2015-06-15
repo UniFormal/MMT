@@ -79,7 +79,7 @@ object GlossaryGenerator {
       ul("nav nav-tabs") {
         items.foreach { p =>
           li(getCls(p._1)) {
-            rh(<a data-target={ "#gtab_" + p._1 } style="cursor: pointer;" onclick={ "$(this).tab('show');" }> { p._1 } </a>)
+            rh(<a data-target={ "#gtab_" + p._1 } style="cursor: pointer;" onclick={ "jQuery(this).tab('show');" }> { p._1 } </a>)
           }
         }
       }

@@ -142,7 +142,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       val sb = new StringBuilder
       sb.write("<ul class=\"nav nav-tabs\" role=\"tablist\">")
       resultNodes.keys.zipWithIndex foreach { p => 
-        sb.write(<li class={if (p._2 == 0) "active" else ""}><a data-target={ "#" + p._1 } style="cursor: pointer;" onclick={ "$(this).tab('show');" }> { p._1 } </a></li>.toString)
+        sb.write(<li class={if (p._2 == 0) "active" else ""}><a data-target={ "#" + p._1 } style="cursor: pointer;" onclick={ "jQuery(this).tab('show');" }> { p._1 } </a></li>.toString)
       }
       sb.write("</ul>")
       
