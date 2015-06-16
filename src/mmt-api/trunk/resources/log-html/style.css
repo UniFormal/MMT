@@ -1,0 +1,35 @@
+div.log {
+    margin: 2pt;
+}
+
+div.user {
+   border:solid;
+   border-width: 1;
+}
+
+span {
+    margin-right: 5pt;
+}
+
+span.caller {
+    color: gray;
+}
+span.group {
+    font-weight: bold;
+}
+span.message {
+}
+
+span.timestamp {
+    font-color: gray;
+}
+
+span.error-short {
+    font-weight: bold;
+    color: red;
+}
+
+div.error-long {
+    display: none;
+    margin-left: 20pt;
+}
