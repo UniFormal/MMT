@@ -88,7 +88,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
 
    /** for Logger */ 
    val report = controller.report
-   /** prefix used when logging (can be changed flexibly to filter the log better) */ 
+   /** prefix used when logging (can be changed flexibly by object-checker to filter the log better) */
    var logPrefix = "solver"
    /** the SubstitutionApplier to be used throughout */
    private implicit val sa = new MemoizedSubstitutionApplier
@@ -590,7 +590,8 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
      history += "inferring type of " + presentObj(tm)
      // return previously inferred type, if any (previously unsolved variables are substituted)
      InferredType.get(tm) match {
-        case s @ Some(_) => return s.map(_ ^^ solution.toPartialSubstitution)
+        case s @ Some(_) =>
+           return s.map(_ ^^ solution.toPartialSubstitution)
         case _ =>
      }
      val res = logGroup {
@@ -622,7 +623,8 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
                    error("not found")
                    None
              }
-          case _ => None
+          case _ =>
+             None
         }
         //foundation-dependent cases if necessary
         //syntax-driven type inference

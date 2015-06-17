@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.refactoring
 
+import info.kwarc.mmt.api.libraries.Closer
 import info.kwarc.mmt.api.{MPath, GlobalName}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.DeclaredTheory
@@ -119,9 +120,9 @@ object Consthash {
   def apply(th1: DeclaredTheory,th2: DeclaredTheory,ctrl:Controller)
   : (Set[Consthash],Set[Consthash]) = {
     // TODO: check for compatible metatheories maybe - the way I do it might subsume that.
-
-    val includes1 = getIncludes(th1,ctrl)
-    val includes2 = getIncludes(th2,ctrl)
+    val closer = new Closer(ctrl)
+    val includes1 = closer.getIncludes(th1,true)
+    val includes2 = closer.getIncludes(th2,true)
 
     val judg1 = AxiomHandler.findJudgment(ctrl,th1,Some(includes1))
     val judg2 = AxiomHandler.findJudgment(ctrl,th2,Some(includes2))
@@ -144,25 +145,6 @@ object Consthash {
 
     (hashes1,hashes2)
 
-  }
-
-  /**
-   * Recursively gets all inclusions of a theory
-   * @param th , including th itself.
-   * @param ctrl
-   * @return All includes as Set of DeclaredTheory
-   */
-
-  def getIncludes(th: DeclaredTheory, ctrl:Controller) : Set[DeclaredTheory] = {
-    def getIncludesIt(th2:DeclaredTheory,donep:Set[MPath],donet:Set[DeclaredTheory]): (Set[MPath],Set[DeclaredTheory]) = {
-      th2.getIncludes.foldLeft((donep+th2.path,donet+th2))((sets,path) =>
-        if(sets._1 contains path) sets else Try(ctrl.get(path)) match {
-          case Success(x:DeclaredTheory) => getIncludesIt(x,sets._1,sets._2)
-          case _ => sets
-        }
-      )
-    }
-    getIncludesIt(th,Set(),Set())._2
   }
 
 }
@@ -194,7 +176,9 @@ object AxiomHandler {
 
     val ths = includes match {
       case Some(set) => set
-      case None => Consthash.getIncludes(th,ctrl)
+      case None =>
+        val closer = new Closer(ctrl)
+        closer.getIncludes(th,true)
     }
     ((for {o <- ths} yield findJudgmentIt(o)) collect {case Some(x) => x}).headOption
 

@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.refactoring
 
-import info.kwarc.mmt.api.frontend.{Logger, Controller}
+import info.kwarc.mmt.api.frontend.{Report, Logger, Controller}
 import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.FinalConstant
@@ -11,7 +11,7 @@ import info.kwarc.mmt.api.{ComplexStep, SimpleStep, GlobalName, LocalName}
  */
 
 case class Viewfinder(controller: Controller) extends Logger {
-  val report = controller.report
+  var report = controller.report
   val logPrefix = "Viewfinder"
   /**
    * Finds all Views (involving only constants occuring in axioms) between
@@ -30,12 +30,13 @@ case class Viewfinder(controller: Controller) extends Logger {
    * @return a Pair consisting of the found view and its value
    */
 
-  def findBest(th1:DeclaredTheory,th2:DeclaredTheory) : (DeclaredView,Double) = {
+  def findBest(th1:DeclaredTheory,th2:DeclaredTheory) : Option[(DeclaredView,Double)] = {
+    log("Looking for best morphism from "+th1.path+" to "+th2.path)
     val allviews = for {o <- settoViews(findByAxioms(th1,th2,0,true,true),th1,th2)} yield (o,evaluateView(o))
-    if (allviews.isEmpty) throw new Exception("No new views found!")
-    else if (allviews.tail.isEmpty) allviews.head
-    else allviews.tail.foldLeft(allviews.head)((x,v) => if (v._2<x._2) x else v)
-  }
+    if (allviews.isEmpty) {log("No new views found!"); None}
+      else if (allviews.tail.isEmpty) Some(allviews.head)
+      else Some(allviews.tail.foldLeft(allviews.head)((x, v) => if (v._2 < x._2) x else v))
+    }
 
   /**
    * Finds all possible Views (involving only constants occuring in specified axioms) between
@@ -50,25 +51,37 @@ case class Viewfinder(controller: Controller) extends Logger {
 
   def findByAxioms(th1:DeclaredTheory,th2:DeclaredTheory,cutoff:Int,makeComp:Boolean,maximize:Boolean)
    : Set[Set[(GlobalName,GlobalName)]] = {
+    log("Finding by axioms...")
+    logGroup {
+      log("Hashing...")
+      val allhashes = Consthash(th1, th2, controller)
+      log("Pairing...")
+      val allpairs = for {a <- allhashes._1; b <- allhashes._2 if a.hash == b.hash} yield (a, b)
+      val pairedbyaxioms = allpairs.filter(p => p._1.isAxiom && p._1.pars.length >= cutoff).toIndexedSeq
+      log("Finding Paths...")
+      val allPaths = pairedbyaxioms.indices.map(i => findByAxiomsIterator(allpairs, pairedbyaxioms(i), List()).getOrElse(List()).distinct)
 
-    val allhashes = Consthash(th1,th2,controller)
-    val allpairs = for {a <- allhashes._1; b <- allhashes._2 if a.hash==b.hash} yield (a,b)
-    val pairedbyaxioms = allpairs.filter(p => p._1.isAxiom && p._1.pars.length>=cutoff).toIndexedSeq
-
-    val allPaths = pairedbyaxioms.indices.map(i => findByAxiomsIterator(allpairs,pairedbyaxioms(i),List()).getOrElse(List()).distinct)
-
-    val max = if(maximize) allPaths.map(o => makeMaximal(o,allpairs,Some(pairedbyaxioms))).distinct
-      else allPaths
-
-    val comp = (for {o <- if (makeComp) makeCompatible(max,List()) else max} yield o.toSet).toList.sortBy(_.size)
-
-    comp.foldRight(comp)((b,s) =>
-      if (!s.contains(b)) s else {
-        val i = s.indexOf(b)
-        s.take(i).filter(p => !p.subsetOf(b)):::s.drop(i)
+      val max = if (maximize) {
+        log("Maximizing found sets...")
+        allPaths.map(o => makeMaximal(o, allpairs, Some(pairedbyaxioms))).distinct
       }
-    ).toSet
+      else allPaths
+      if (makeComp) log("Finding maximally consistent unions...")
 
+      val comp = (for {o <- if (makeComp) {
+        makeCompatible(max, List())
+      } else max} yield o.toSet).toList.sortBy(_.size)
+      log("Filtering out redundant subviews...")
+      val res = comp.foldRight(comp)((b, s) =>
+        if (!s.contains(b)) s
+        else {
+          val i = s.indexOf(b)
+          s.take(i).filter(p => !p.subsetOf(b)) ::: s.drop(i)
+        }
+      ).toSet
+      log("Done. "+res.size+" morphisms found!")
+      res
+    }
   }
 
   /**
@@ -155,6 +168,7 @@ case class Viewfinder(controller: Controller) extends Logger {
   :List[DeclaredView] = {
     val renamings = allrenamings.toList
     renamings.indices.map( i => {
+      // TODO add metamorph?
       val v = new DeclaredView(thA.parent, LocalName(thA.name + "_TO_" + thB.name + "_" + i), OMID(thA.path), OMID(thB.path), false)
       Moduleadder(v, renamings(i), controller)
       v

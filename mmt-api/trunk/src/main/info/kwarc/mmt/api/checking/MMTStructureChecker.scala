@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
 import documents._
+import info.kwarc.mmt.api.libraries.Closer
 import modules._
 import symbols._
 import objects._

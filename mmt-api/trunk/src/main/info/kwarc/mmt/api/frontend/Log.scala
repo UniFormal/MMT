@@ -34,7 +34,7 @@ class Report extends Logger {
         val i = s.indexWhere(e => e.getClassName == getClass.getName && e.getMethodName == "apply")
         s(i+1).toString
       }
-      val prefixList = utils.stringToList(prefix, "/")
+      val prefixList = utils.stringToList(prefix, "#")
 	   if (prefixList.forall(p => groups.contains(p))) handlers.foreach(_.apply(ind, caller, prefix, msg))
    }
    /** logs an error */

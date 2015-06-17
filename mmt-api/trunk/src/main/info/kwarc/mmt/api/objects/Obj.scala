@@ -39,7 +39,8 @@ class TermProperty[A](val property: utils.URI) {
    }
    /** get the client property if defined */
    def get(t: Term): Option[A] = t.clientProperty.get(property) match {
-      case Some(a: A) => Some(a) // :A is unchecked but true if put was used to set the property
+      case Some(a: A) =>
+         Some(a) // :A is unchecked but true if put was used to set the property
       case None => None
       case Some(_) =>
          throw ImplementationError("client property has bad type") // impossible if put was used

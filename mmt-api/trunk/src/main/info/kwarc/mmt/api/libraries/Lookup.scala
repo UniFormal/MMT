@@ -122,19 +122,46 @@ abstract class Lookup {
     * apply(t,m) can be used to apply a morphism to a term.
     */
    object ApplyMorphs extends Traverser[Term] {
-      def traverse(t: Term)(implicit con: Context, morph: Term) = t match {
-         case OMM(arg, via) => traverse(arg)(con, OMCOMP(via, morph))
-         case OMS(theo ?? ln) =>
-           val aOpt = getAs(classOf[Constant], morph % (LocalName(theo) / ln)).df
-           aOpt match {
-              case Some(df) => df
-              case None =>
-                 getAs(classOf[Constant], theo ? ln).df match {
-                    case Some(df) => traverse(df)
-                    case None => t
-                 }
+     def traverse(t: Term)(implicit con: Context, morph: Term) : Term = {
+       def notmeta(theo:MPath,ln:LocalName) : Term = {
+         val aOpt = getAs(classOf[Constant], morph % (LocalName(theo) / ln)).df
+         aOpt match {
+           case Some(df) => df
+           case None => getAs(classOf[Constant], theo ? ln).df match {
+             case Some(df) => traverse(df)
+             case None => t
            }
-         case t => Traverser(this,t)
-      }
+         }
+       }
+       t match {
+        case OMM(arg, via) => traverse(arg)(con, OMCOMP(via, morph))
+        case OMS(theo ?? ln) => {
+          val source = morph match {
+            case OMID(p) => Some(get(p))
+            case _ => None
+          }
+          source match {
+            case Some(l: DeclaredLink) => {
+              val home = get(l.from.toMPath) match {
+                case t: DeclaredTheory => t.meta
+                case _ => None
+              }
+              val visibles = (home match {
+                case Some(x) => visible(OMMOD(x)).toList
+                case None => Nil
+              }).map(tm => tm.toMPath)
+              if (visibles contains theo) {
+                l.metamorph match {
+                  case Some(x) => traverse(t)(con,x)
+                  case None => Traverser(this,t)
+                }
+              } else notmeta(theo, ln)
+            }
+            case _ => notmeta(theo, ln)
+          }
+        }
+       case _ => Traverser(this,t)
+     }
+     }
    }
 }

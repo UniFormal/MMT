@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.symbols._
 /**
  * Intersects theories
  */
-object Intersecter {
+case class Intersecter(controller:Controller) {
   /**
    * Takes a view
    * @param v : th1 -> th2 and yields the corresponding theory intersection with path
@@ -19,13 +19,13 @@ object Intersecter {
    * @param suffix
    * @return a List of Modules; namely the intersection and the new theories th1*,th2*
    */
-  def apply(v:DeclaredView, ctrl:Controller,intdoc:Option[DPath],intname: Option[LocalName],
+  def apply(v:DeclaredView, intdoc:Option[DPath],intname: Option[LocalName],
             suffix:Option[String]) : List[DeclaredModule] = {
-    val dom = ctrl.get(v.from.toMPath) match {
+    val dom = controller.get(v.from.toMPath) match {
       case t: DeclaredTheory => t
       case _ => throw new Exception("expected declared theory")
     }
-    val cod = ctrl.get(v.to.toMPath) match {
+    val cod = controller.get(v.to.toMPath) match {
       case t: DeclaredTheory => t
       case _ => throw new Exception("expected declared theory")
     }
@@ -36,11 +36,14 @@ object Intersecter {
    * Does the same thing as the above one, but takes as input two theories and intersects along the best view
    * between them.
    */
-  def apply(th1:DeclaredTheory,th2:DeclaredTheory,ctrl:Controller, intdoc:Option[DPath],
+  def apply(th1:DeclaredTheory,th2:DeclaredTheory, intdoc:Option[DPath],
             intname:Option[LocalName],suffix:Option[String])
   : List[DeclaredModule] = {
-    val view = new Viewfinder(ctrl).findBest(th1,th2)
-    apply(view._1,th1,th2,intdoc,intname,suffix)
+    val viewOpt = new Viewfinder(controller).findBest(th1,th2)
+    viewOpt match {
+      case Some(view) => apply(view._1,th1,th2,intdoc,intname,suffix)
+      case None => List()
+    }
   }
 
   /**
@@ -49,7 +52,7 @@ object Intersecter {
    */
   def apply(v:DeclaredView,dom:DeclaredTheory,cod:DeclaredTheory, intdoc:Option[DPath],
             intname:Option[LocalName],suffix:Option[String]) : List[DeclaredModule] = {
-    val pairs = getPairs(v,dom,cod)
+    val pairs = Intersecter.getPairs(v,dom,cod)
     val name = intname match {
       case Some(x) => x
       case None => LocalName("INT_"+v.name)
@@ -62,10 +65,14 @@ object Intersecter {
       case Some(x) => x
       case None => "*"
     }
-    val int = makeIntersection(pairs,doc,name,dom.meta)
+    val int = Intersecter.makeIntersection(pairs,doc,name,dom.meta)
 
-    List(int,makeDomain(pairs,dom,newsuffix,int.path),makeCodomain(pairs,cod,newsuffix,int.path))
+    List(int,Intersecter.makeDomain(pairs,dom,newsuffix,int.path),Intersecter.makeCodomain(pairs,cod,newsuffix,int.path))
   }
+
+}
+
+object Intersecter {
 
   /**
    * Splits a view up in Pairs of FinalConstants ; takes only those, that are directly elements
@@ -91,23 +98,6 @@ object Intersecter {
   }
 
   /**
-   * Takes a list of Pairs (as generated above) and returns the intersection-theory
-   * @param pairs
-   * @param doc
-   * @param name
-   * @param meta
-   * @return
-   */
-
-  def makeIntersection(pairs: List[(FinalConstant,FinalConstant)],doc:DPath,name:LocalName,meta:Option[MPath])
-    : DeclaredTheory = {
-    val int = new DeclaredTheory(doc,name,meta)
-    val commons = pairs.map(_._1).toSet
-    Moduleadder(int,commons)
-    int
-  }
-
-  /**
    * Takes a list of pairs and creates the new domain with int as include
    * @param pairs
    * @param dom
@@ -116,7 +106,7 @@ object Intersecter {
    * @return
    */
   def makeDomain(pairs: List[(FinalConstant,FinalConstant)],dom:DeclaredTheory,suffix:String,int:MPath)
-    :DeclaredTheory = {
+  :DeclaredTheory = {
     val newdom = new DeclaredTheory(dom.path.doc,LocalName(dom.name.toString()+suffix),dom.meta)
     newdom.add(PlainInclude(int,newdom.path))
     val consts = (dom.getConstants collect {case c:FinalConstant => c}).filter(p => !pairs.exists(q => q._1==p)).toSet
@@ -134,7 +124,7 @@ object Intersecter {
    * @return
    */
   def makeCodomain(pairs: List[(FinalConstant,FinalConstant)],cod:DeclaredTheory,suffix:String,int:MPath)
-    :DeclaredTheory = {
+  :DeclaredTheory = {
 
     val newcod = new DeclaredTheory(cod.path.doc,LocalName(cod.name.toString()+suffix),cod.meta)
     newcod.add(PlainInclude(int,newcod.path))
@@ -145,6 +135,21 @@ object Intersecter {
     newcod
   }
 
+  /**
+   * Takes a list of Pairs (as generated above) and returns the intersection-theory
+   * @param pairs
+   * @param doc
+   * @param name
+   * @param meta
+   * @return
+   */
 
+  def makeIntersection(pairs: List[(FinalConstant,FinalConstant)],doc:DPath,name:LocalName,meta:Option[MPath])
+  : DeclaredTheory = {
+    val int = new DeclaredTheory(doc,name,meta)
+    val commons = pairs.map(_._1).toSet
+    Moduleadder(int,commons)
+    int
+  }
 
 }

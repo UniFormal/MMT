@@ -34,7 +34,9 @@ trait Link {
   *
   * Declared links are constructed empty. Body is derived to hold a set of name-indexed assignments.
   */
-trait DeclaredLink extends Link with Body
+trait DeclaredLink extends Link with Body {
+   val metamorph: Option[Term] = None
+ }
 
   /**
    * A DeclaredLink represents an MMT link given by an existing morphism.

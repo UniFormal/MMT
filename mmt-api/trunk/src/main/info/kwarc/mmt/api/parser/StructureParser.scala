@@ -380,7 +380,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         val v = DefinedView(ns, name, from, to, df, isImplicit)
         moduleCont(v, parent)
       case "=" =>
-        val v = new DeclaredView(ns, name, from, to, isImplicit)
+        val v = new DeclaredView(ns, name, from, to, isImplicit) // TODO add metamorph?
         moduleCont(v, parent)
         logGroup {
           readInModule(v, v.path, context ++ v.codomainAsContext, Nil)
@@ -401,7 +401,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     readDelimiter(":")
     val tpC = new TermContainer
     doComponent(TypeComponent, tpC, context)
-    val s = new DeclaredStructure(OMMOD(parent), name, tpC, isImplicit)
+    val s = new DeclaredStructure(OMMOD(parent), name, tpC, isImplicit) // TODO add metamorph?
     seCont(s)
     if (state.reader.endOfDeclaration) {
       // s: tp RS
