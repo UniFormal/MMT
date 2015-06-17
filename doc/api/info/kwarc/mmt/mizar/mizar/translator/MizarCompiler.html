@@ -1,0 +1,1399 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>MizarCompiler - MMT - info.kwarc.mmt.mizar.mizar.translator.MizarCompiler</title>
+          <meta name="description" content="MizarCompiler - MMT - info.kwarc.mmt.mizar.mizar.translator.MizarCompiler" />
+          <meta name="keywords" content="MizarCompiler MMT info.kwarc.mmt.mizar.mizar.translator.MizarCompiler" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../../lib/tools.tooltip.js"></script>
+      <script type="text/javascript" src="../../../../../../lib/modernizr.custom.js"></script><script type="text/javascript" src="../../../../../../lib/diagrams.js" id="diagrams-js"></script>
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../../index.html';
+            var hash = 'info.kwarc.mmt.mizar.mizar.translator.MizarCompiler';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="type">
+      <div id="definition">
+        <img src="../../../../../../lib/class_big.png" />
+        <p id="owner"><a href="../../../../../package.html" class="extype" name="info">info</a>.<a href="../../../../package.html" class="extype" name="info.kwarc">kwarc</a>.<a href="../../../package.html" class="extype" name="info.kwarc.mmt">mmt</a>.<a href="../../package.html" class="extype" name="info.kwarc.mmt.mizar">mizar</a>.<a href="../package.html" class="extype" name="info.kwarc.mmt.mizar.mizar">mizar</a>.<a href="package.html" class="extype" name="info.kwarc.mmt.mizar.mizar.translator">translator</a></p>
+        <h1>MizarCompiler</h1><h3><span class="morelinks"><div>Related Doc:
+            <a href="package.html" class="extype" name="info.kwarc.mmt.mizar.mizar.translator">package translator</a>
+          </div></span></h3><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <span class="name">MizarCompiler</span><span class="result"> extends <a href="../../../api/archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a></span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><dl class="attributes block"> <dt>Source</dt><dd><a href="file://home/maeder/MMT/src/mmt-mizar/trunk/src/main/info/kwarc/mmt/mizar/mizar/translator/Translator.scala" target="_blank">Translator.scala</a></dd></dl><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><a href="../../../api/archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a>, <a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a>, <a href="../../../api/archives/BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a>, <a href="../../../api/frontend/FormatBasedExtension.html" class="extype" name="info.kwarc.mmt.api.frontend.FormatBasedExtension">FormatBasedExtension</a>, <a href="../../../api/frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a>, <a href="../../../api/frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="../../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></div>
+        </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
+                <span class="toggle diagram-link">Type Hierarchy</span>
+                <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#diagrams" target="_blank" class="diagram-help">Learn more about scaladoc diagrams</a>
+                <div class="diagram" id="inheritance-diagram"><svg class="class-diagram" id="graph1" viewBox="0.00 0.00 162.00 118.00" height="118pt" width="162pt" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g transform="scale(1 1) rotate(0) translate(4 114)" class="graph" id="graph0"><polygon points="-4,4 -4,-114 158,-114 158,4 -4,4" stroke="none" fill="white"></polygon><g class="cluster" id="clust1"></g><g class="cluster" id="clust2"></g><!-- node0 --><g class="node this class" id="graph1_0"><g id="a_this class|graph1_0"><a xlink:title="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler (this class)" xlink:href="#inheritance-diagram"><polygon points="130.5,-49 23.5,-49 23.5,-24 130.5,-24 130.5,-49" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../../lib/class_diagram.png" y="-43.5" x="34" preserveAspectRatio="xMinYMin meet" height="15px" width="15px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-33.5" x="55" text-anchor="start">MizarCompiler</text></a></g></g><!-- node1 --><g class="node class" id="graph1_1"><g id="a_class|graph1_1"><a xlink:title="info.kwarc.mmt.api.archives.Importer" xlink:href="../../../api/archives/Importer.html#inheritance-diagram"><polygon points="117,-110 37,-110 37,-85 117,-85 117,-110" stroke="#115f3b" fill="#0a955b"></polygon><image xlink:href="../../../../../../lib/class_diagram.png" y="-104.5" x="47" preserveAspectRatio="xMinYMin meet" height="15px" width="15px"></image><text fill="#ffffff" font-size="10.00" font-family="Arial" y="-94.5" x="68" text-anchor="start">Importer</text></a></g></g><!-- node1&#45;&gt;node0 --><g class="edge inheritance" id="graph1_1_0"><g id="a_inheritance|graph1_1_0"><a xlink:title="MizarCompiler is a subtype of Importer"><path d="M77,-79.6874C77,-69.9173 77,-57.8534 77,-49.1323" stroke="#d4d4d4" fill="none"></path><polygon points="75.2501,-79.8435 77,-84.8435 78.7501,-79.8435 75.2501,-79.8435" stroke="#d4d4d4" fill="none"></polygon></a></g></g></g></svg></div>
+              </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler"><span>MizarCompiler</span></li><li class="in" name="info.kwarc.mmt.api.archives.Importer"><span>Importer</span></li><li class="in" name="info.kwarc.mmt.api.archives.TraversingBuildTarget"><span>TraversingBuildTarget</span></li><li class="in" name="info.kwarc.mmt.api.archives.BuildTarget"><span>BuildTarget</span></li><li class="in" name="info.kwarc.mmt.api.frontend.FormatBasedExtension"><span>FormatBasedExtension</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Extension"><span>Extension</span></li><li class="in" name="info.kwarc.mmt.api.frontend.Logger"><span>Logger</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show all</span></li>
+            </ol>
+            <a href="http://docs.scala-lang.org/overviews/scaladoc/usage.html#members" target="_blank">Learn more about member selection</a>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        <div id="constructors" class="members">
+              <h3>Instance Constructors</h3>
+              <ol><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;():info.kwarc.mmt.mizar.mizar.translator.MizarCompiler"></a>
+      <a id="&lt;init&gt;:MizarCompiler"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">MizarCompiler</span><span class="params">()</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@&lt;init&gt;():info.kwarc.mmt.mizar.mizar.translator.MizarCompiler" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="info.kwarc.mmt.api.frontend.Extension.LocalError" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="LocalErrorextendsExtensionErrorwithProductwithSerializable"></a>
+      <a id="LocalError:LocalError"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="../../../api/frontend/Extension$LocalError.html"><span class="name">LocalError</span></a><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="../../../api/ExtensionError.html" class="extype" name="info.kwarc.mmt.api.ExtensionError">ExtensionError</a> with <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Product" class="extype" target="_top">Product</a> with <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Serializable" class="extype" target="_top">Serializable</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.frontend.Extension@LocalErrorextendsExtensionErrorwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">a custom error class for this extension</p><div class="fullcomment"><div class="comment cmt"><p>a custom error class for this extension</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:Any):Boolean"></a>
+      <a id="!=(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="##():Int"></a>
+      <a id="##():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Int" class="extype" target="_top">Int</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@##():Int" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:Any):Boolean"></a>
+      <a id="==(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@==(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#addToLib" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="addToLib(version:String,article:String):Unit"></a>
+      <a id="addToLib(String,String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">addToLib</span><span class="params">(<span name="version">version: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="article">article: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@addToLib(version:String,article:String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="info.kwarc.mmt.api.archives.BuildTarget#apply" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="apply(modifier:info.kwarc.mmt.api.archives.BuildTargetModifier,arch:info.kwarc.mmt.api.archives.Archive,in:List[String],args:List[String]):Unit"></a>
+      <a id="apply(BuildTargetModifier,Archive,List[String],List[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">apply</span><span class="params">(<span name="modifier">modifier: <a href="../../../api/archives/BuildTargetModifier.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTargetModifier">BuildTargetModifier</a></span>, <span name="arch">arch: <a href="../../../api/archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="in">in: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="args">args: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@apply(modifier:info.kwarc.mmt.api.archives.BuildTargetModifier,arch:info.kwarc.mmt.api.archives.Archive,in:List[String],args:List[String]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">the main function to run the build target
+</p><div class="fullcomment"><div class="comment cmt"><p>the main function to run the build target
+</p></div><dl class="paramcmts block"><dt class="param">modifier</dt><dd class="cmt"><p>chooses build, clean, or update</p></dd><dt class="param">arch</dt><dd class="cmt"><p>the archive to build on</p></dd><dt class="param">in</dt><dd class="cmt"><p>the folder inside the archive's inDim folder to which building in restricted (i.e., Nil for whole archive)</p></dd><dt class="param">args</dt><dd class="cmt"><p>arguments for the discretion of the BuildTarget; number must be equal to requiredArguments(modifier)
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a></dd></dl></div>
+    </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asInstanceOf[T0]:T0"></a>
+      <a id="asInstanceOf[T0]:T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.Importer.asInterpreter" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asInterpreter"></a>
+      <a id="asInterpreter:asInterpreter"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="../../../api/archives/Importer$asInterpreter$.html"><span class="name">asInterpreter</span></a><span class="result"> extends <a href="../../../api/checking/Interpreter.html" class="extype" name="info.kwarc.mmt.api.checking.Interpreter">Interpreter</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#info.kwarc.mmt.api.archives.Importer@asInterpreter" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">an Interpreter that calls this importer to interpret a parsing stream</p><div class="fullcomment"><div class="comment cmt"><p>an Interpreter that calls this importer to interpret a parsing stream</p><p>This Interpreter is only applicable if it can determine an archive that the parsing stream is created from.
+In that case, it will import the file, i.e., change the state of the archive.
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget#build" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="build(a:info.kwarc.mmt.api.archives.Archive,args:List[String],in:List[String],errorCont:Option[info.kwarc.mmt.api.ErrorHandler]):Unit"></a>
+      <a id="build(Archive,List[String],List[String],Option[ErrorHandler]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">build</span><span class="params">(<span name="a">a: <a href="../../../api/archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="args">args: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="in">in: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="errorCont">errorCont: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Option" class="extype" target="_top">Option</a>[<a href="../../../api/ErrorHandler.html" class="extype" name="info.kwarc.mmt.api.ErrorHandler">ErrorHandler</a>]</span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@build(a:info.kwarc.mmt.api.archives.Archive,args:List[String],in:List[String],errorCont:Option[info.kwarc.mmt.api.ErrorHandler]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget#build" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="build(a:info.kwarc.mmt.api.archives.Archive,args:List[String],in:List[String]):Unit"></a>
+      <a id="build(Archive,List[String],List[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">build</span><span class="params">(<span name="a">a: <a href="../../../api/archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="args">args: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="in">in: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">Nil</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@build(a:info.kwarc.mmt.api.archives.Archive,args:List[String],in:List[String]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">entry point for recursive building</p><div class="fullcomment"><div class="comment cmt"><p>entry point for recursive building</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a> → <a href="../../../api/archives/BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.Importer#buildDir" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="buildDir(bd:info.kwarc.mmt.api.archives.BuildTask,builtChildren:List[info.kwarc.mmt.api.archives.BuildTask]):Unit"></a>
+      <a id="buildDir(BuildTask,List[BuildTask]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">buildDir</span><span class="params">(<span name="bd">bd: <a href="../../../api/archives/BuildTask.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTask">BuildTask</a></span>, <span name="builtChildren">builtChildren: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../../../api/archives/BuildTask.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTask">BuildTask</a>]</span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@buildDir(bd:info.kwarc.mmt.api.archives.BuildTask,builtChildren:List[info.kwarc.mmt.api.archives.BuildTask]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">similar to buildOne but called on every directory (after all its children have been processed)</p><div class="fullcomment"><div class="comment cmt"><p>similar to buildOne but called on every directory (after all its children have been processed)</p></div><dl class="paramcmts block"><dt class="param">bd</dt><dd class="cmt"><p>information about input/output file etc</p></dd><dt class="param">builtChildren</dt><dd class="cmt"><p>results from building the children
+This does nothing by default and can be overridden if needed.
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a> → <a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.Importer#buildFile" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="buildFile(bf:info.kwarc.mmt.api.archives.BuildTask):Unit"></a>
+      <a id="buildFile(BuildTask):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">buildFile</span><span class="params">(<span name="bf">bf: <a href="../../../api/archives/BuildTask.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTask">BuildTask</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@buildFile(bf:info.kwarc.mmt.api.archives.BuildTask):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">the main abstract method that implementations must provide: builds one file</p><div class="fullcomment"><div class="comment cmt"><p>the main abstract method that implementations must provide: builds one file</p></div><dl class="paramcmts block"><dt class="param">bf</dt><dd class="cmt"><p>information about input/output file etc
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a> → <a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget#clean" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clean(a:info.kwarc.mmt.api.archives.Archive,args:List[String],in:List[String]):Unit"></a>
+      <a id="clean(Archive,List[String],List[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clean</span><span class="params">(<span name="a">a: <a href="../../../api/archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="args">args: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="in">in: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">Nil</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@clean(a:info.kwarc.mmt.api.archives.Archive,args:List[String],in:List[String]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">recursively delete output files</p><div class="fullcomment"><div class="comment cmt"><p>recursively delete output files</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a> → <a href="../../../api/archives/BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.Importer#cleanDir" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="cleanDir(a:info.kwarc.mmt.api.archives.Archive,curr:info.kwarc.mmt.api.archives.Current):Unit"></a>
+      <a id="cleanDir(Archive,Current):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cleanDir</span><span class="params">(<span name="a">a: <a href="../../../api/archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="curr">curr: <a href="../../../api/archives/Current.html" class="extype" name="info.kwarc.mmt.api.archives.Current">Current</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@cleanDir(a:info.kwarc.mmt.api.archives.Archive,curr:info.kwarc.mmt.api.archives.Current):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">additional method that implementations may provide: cleans one directory</p><div class="fullcomment"><div class="comment cmt"><p>additional method that implementations may provide: cleans one directory</p></div><dl class="paramcmts block"><dt class="param">a</dt><dd class="cmt"><p>the containing archive</p></dd><dt class="param">curr</dt><dd class="cmt"><p>the outDim directory to be deleted
+does nothing by default
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a> → <a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.Importer#cleanFile" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="cleanFile(a:info.kwarc.mmt.api.archives.Archive,curr:info.kwarc.mmt.api.archives.Current):Unit"></a>
+      <a id="cleanFile(Archive,Current):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cleanFile</span><span class="params">(<span name="a">a: <a href="../../../api/archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="curr">curr: <a href="../../../api/archives/Current.html" class="extype" name="info.kwarc.mmt.api.archives.Current">Current</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@cleanFile(a:info.kwarc.mmt.api.archives.Archive,curr:info.kwarc.mmt.api.archives.Current):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">additionally deletes content and relational</p><div class="fullcomment"><div class="comment cmt"><p>additionally deletes content and relational</p></div><dl class="paramcmts block"><dt class="param">a</dt><dd class="cmt"><p>the containing archive
+</p></dd><dt class="param">curr</dt><dd class="cmt"><p>the inDim whose output is to be deleted
+deletes the output and error file by default, may be overridden to, e.g., delete auxiliary files</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a> → <a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clone():Object"></a>
+      <a id="clone():AnyRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <a href="../../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@clone():Object" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#controller" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="controller:info.kwarc.mmt.api.frontend.Controller"></a>
+      <a id="controller:Controller"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">controller</span><span class="result">: <a href="../../../api/frontend/Controller.html" class="extype" name="info.kwarc.mmt.api.frontend.Controller">Controller</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@controller:info.kwarc.mmt.api.frontend.Controller" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../api/frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#defaultPrefix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="defaultPrefix:String"></a>
+      <a id="defaultPrefix:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">defaultPrefix</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@defaultPrefix:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.BuildTarget#delete" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="delete(f:info.kwarc.mmt.api.utils.File):Unit"></a>
+      <a id="delete(File):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">delete</span><span class="params">(<span name="f">f: <a href="../../../api/utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@delete(f:info.kwarc.mmt.api.utils.File):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">auxiliary method for deleting a file</p><div class="fullcomment"><div class="comment cmt"><p>auxiliary method for deleting a file</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../api/archives/BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#destroy" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="destroy:Unit"></a>
+      <a id="destroy:Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">destroy</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@destroy:Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">extension-specific cleanup (override as needed, empty by default)</p><div class="fullcomment"><div class="comment cmt"><p>extension-specific cleanup (override as needed, empty by default)</p><p>Extensions may create persistent data structures and processes,
+but they must clean up after themselves in this method
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
+    </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="eq(x$1:AnyRef):Boolean"></a>
+      <a id="eq(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#equals" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="equals(x$1:Any):Boolean"></a>
+      <a id="equals(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@equals(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <a id="finalize():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@finalize():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget#folderName" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="folderName:String"></a>
+      <a id="folderName:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">folderName</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@folderName:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">the name that is used for the special file representing the containing folder, empty by default</p><div class="fullcomment"><div class="comment cmt"><p>the name that is used for the special file representing the containing folder, empty by default</p></div><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#getAid" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getAid(f:info.kwarc.mmt.api.utils.File):String"></a>
+      <a id="getAid(File):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getAid</span><span class="params">(<span name="f">f: <a href="../../../api/utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@getAid(f:info.kwarc.mmt.api.utils.File):String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#getBase" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getBase(f:info.kwarc.mmt.api.utils.File):String"></a>
+      <a id="getBase(File):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getBase</span><span class="params">(<span name="f">f: <a href="../../../api/utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@getBase(f:info.kwarc.mmt.api.utils.File):String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getClass():Class[_]"></a>
+      <a id="getClass():Class[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@getClass():Class[_]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#getDPath" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getDPath(docBase:info.kwarc.mmt.api.DPath,name:String):info.kwarc.mmt.api.DPath"></a>
+      <a id="getDPath(DPath,String):DPath"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getDPath</span><span class="params">(<span name="docBase">docBase: <a href="../../../api/DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a></span>, <span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../../api/DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@getDPath(docBase:info.kwarc.mmt.api.DPath,name:String):info.kwarc.mmt.api.DPath" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget#getErrorFile" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getErrorFile(a:info.kwarc.mmt.api.archives.Archive,inPath:List[String]):info.kwarc.mmt.api.utils.File"></a>
+      <a id="getErrorFile(Archive,List[String]):File"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getErrorFile</span><span class="params">(<span name="a">a: <a href="../../../api/archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="inPath">inPath: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="../../../api/utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@getErrorFile(a:info.kwarc.mmt.api.archives.Archive,inPath:List[String]):info.kwarc.mmt.api.utils.File" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget#getFolderErrorFile" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getFolderErrorFile(a:info.kwarc.mmt.api.archives.Archive,inPath:List[String]):info.kwarc.mmt.api.utils.File"></a>
+      <a id="getFolderErrorFile(Archive,List[String]):File"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getFolderErrorFile</span><span class="params">(<span name="a">a: <a href="../../../api/archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="inPath">inPath: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="../../../api/utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@getFolderErrorFile(a:info.kwarc.mmt.api.archives.Archive,inPath:List[String]):info.kwarc.mmt.api.utils.File" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget#getFolderOutFile" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getFolderOutFile(a:info.kwarc.mmt.api.archives.Archive,inPath:List[String]):info.kwarc.mmt.api.utils.File"></a>
+      <a id="getFolderOutFile(Archive,List[String]):File"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getFolderOutFile</span><span class="params">(<span name="a">a: <a href="../../../api/archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="inPath">inPath: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="../../../api/utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@getFolderOutFile(a:info.kwarc.mmt.api.archives.Archive,inPath:List[String]):info.kwarc.mmt.api.utils.File" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#getFromFirstArgOrEnvvar" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getFromFirstArgOrEnvvar(args:List[String],name:String):String"></a>
+      <a id="getFromFirstArgOrEnvvar(List[String],String):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getFromFirstArgOrEnvvar</span><span class="params">(<span name="args">args: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@getFromFirstArgOrEnvvar(args:List[String],name:String):String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../api/frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#getNode" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getNode(source:String):scala.xml.Node"></a>
+      <a id="getNode(String):Node"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getNode</span><span class="params">(<span name="source">source: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.xml.Node">Node</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@getNode(source:String):scala.xml.Node" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget#getOutFile" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getOutFile(a:info.kwarc.mmt.api.archives.Archive,inPath:List[String]):info.kwarc.mmt.api.utils.File"></a>
+      <a id="getOutFile(Archive,List[String]):File"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getOutFile</span><span class="params">(<span name="a">a: <a href="../../../api/archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="inPath">inPath: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="../../../api/utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@getOutFile(a:info.kwarc.mmt.api.archives.Archive,inPath:List[String]):info.kwarc.mmt.api.utils.File" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#getVersion" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getVersion(f:info.kwarc.mmt.api.utils.File):String"></a>
+      <a id="getVersion(File):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getVersion</span><span class="params">(<span name="f">f: <a href="../../../api/utils/File.html" class="extype" name="info.kwarc.mmt.api.utils.File">File</a></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@getVersion(f:info.kwarc.mmt.api.utils.File):String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="hashCode():Int"></a>
+      <a id="hashCode():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Int" class="extype" target="_top">Int</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@hashCode():Int" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#importDocument" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="importDocument(bf:info.kwarc.mmt.api.archives.BuildTask,seCont:info.kwarc.mmt.api.documents.Document=&gt;Unit):Unit"></a>
+      <a id="importDocument(BuildTask,(Document)⇒Unit):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">importDocument</span><span class="params">(<span name="bf">bf: <a href="../../../api/archives/BuildTask.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTask">BuildTask</a></span>, <span name="seCont">seCont: (<a href="../../../api/documents/Document.html" class="extype" name="info.kwarc.mmt.api.documents.Document">Document</a>) ⇒ <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@importDocument(bf:info.kwarc.mmt.api.archives.BuildTask,seCont:info.kwarc.mmt.api.documents.Document=&gt;Unit):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">the main abstract method to be implemented by importers
+</p><div class="fullcomment"><div class="comment cmt"><p>the main abstract method to be implemented by importers
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler">MizarCompiler</a> → <a href="../../../api/archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.Importer#inDim" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="inDim:info.kwarc.mmt.api.archives.RedirectableDimension"></a>
+      <a id="inDim:RedirectableDimension"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">inDim</span><span class="result">: <a href="../../../api/archives/RedirectableDimension.html" class="extype" name="info.kwarc.mmt.api.archives.RedirectableDimension">RedirectableDimension</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@inDim:info.kwarc.mmt.api.archives.RedirectableDimension" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">source by default, may be overridden</p><div class="fullcomment"><div class="comment cmt"><p>source by default, may be overridden</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a> → <a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#inExts" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="inExts:List[String]"></a>
+      <a id="inExts:List[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">inExts</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.collection.immutable.List" class="extype" target="_top">List</a>[<span class="extype" name="java.lang.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@inExts:List[String]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">the file extensions to which this may be applicable</p><div class="fullcomment"><div class="comment cmt"><p>the file extensions to which this may be applicable</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler">MizarCompiler</a> → <a href="../../../api/archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget#includeDir" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="includeDir(name:String):Boolean"></a>
+      <a id="includeDir(String):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">includeDir</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@includeDir(name:String):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">true by default; override to skip auxiliary directories
+TODO actually check for this
+</p><div class="fullcomment"><div class="comment cmt"><p>true by default; override to skip auxiliary directories
+TODO actually check for this
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.Importer#includeFile" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="includeFile(s:String):Boolean"></a>
+      <a id="includeFile(String):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">includeFile</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@includeFile(s:String):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">there is no inExt, instead we test to check which files should be used;
+this is often a test for the file extension</p><div class="fullcomment"><div class="comment cmt"><p>there is no inExt, instead we test to check which files should be used;
+this is often a test for the file extension</p><p>This must be such that all auxiliary files are skipped.
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a> → <a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.BuildTarget#isApplicable" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isApplicable(format:String):Boolean"></a>
+      <a id="isApplicable(String):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isApplicable</span><span class="params">(<span name="format">format: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@isApplicable(format:String):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">format</dt><dd class="cmt"><p>the format/key/other identifier, for which an extension is needed</p></dd><dt>returns</dt><dd class="cmt"><p>true if this extension is applicable
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a> → <a href="../../../api/frontend/FormatBasedExtension.html" class="extype" name="info.kwarc.mmt.api.frontend.FormatBasedExtension">FormatBasedExtension</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#isInLib" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="isInLib(version:String,article:String):Boolean"></a>
+      <a id="isInLib(String,String):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isInLib</span><span class="params">(<span name="version">version: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="article">article: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@isInLib(version:String,article:String):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#key" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="key:String"></a>
+      <a id="key:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">key</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@key:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">a string identifying this build target, used for parsing commands, logging, error messages
+</p><div class="fullcomment"><div class="comment cmt"><p>a string identifying this build target, used for parsing commands, logging, error messages
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler">MizarCompiler</a> → <a href="../../../api/archives/BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#lib" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="lib:scala.collection.mutable.Map[String,List[String]]"></a>
+      <a id="lib:Map[String,List[String]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">lib</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.collection.mutable.Map" class="extype" target="_top">Map</a>[<span class="extype" name="scala.Predef.String">String</span>, <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@lib:scala.collection.mutable.Map[String,List[String]]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log(e:info.kwarc.mmt.api.Error):Unit"></a>
+      <a id="log(Error):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="params">(<span name="e">e: <a href="../../../api/Error.html" class="extype" name="info.kwarc.mmt.api.Error">Error</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@log(e:info.kwarc.mmt.api.Error):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../api/frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#log" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="log(s:=&gt;String,subgroup:Option[String]):Unit"></a>
+      <a id="log(⇒String,Option[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">log</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>, <span name="subgroup">subgroup: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Option" class="extype" target="_top">Option</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol"><span class="name"><a href="../../../../../../scala/package.html">None</a></span></span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@log(s:=&gt;String,subgroup:Option[String]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../api/frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logError" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logError(s:=&gt;String):Unit"></a>
+      <a id="logError(⇒String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logError</span><span class="params">(<span name="s">s: ⇒ <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@logError(s:=&gt;String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../api/frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.frontend.Logger#logGroup" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logGroup[A](a:=&gt;A):A"></a>
+      <a id="logGroup[A](⇒A):A"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logGroup</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="a">a: ⇒ <span class="extype" name="info.kwarc.mmt.api.frontend.Logger.logGroup.A">A</span></span>)</span><span class="result">: <span class="extype" name="info.kwarc.mmt.api.frontend.Logger.logGroup.A">A</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@logGroup[A](a:=&gt;A):A" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../api/frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.BuildTarget#logPrefix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logPrefix:String"></a>
+      <a id="logPrefix:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logPrefix</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@logPrefix:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">defaults to the key</p><div class="fullcomment"><div class="comment cmt"><p>defaults to the key</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a> → <a href="../../../api/frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a> → <a href="../../../api/frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ne(x$1:AnyRef):Boolean"></a>
+      <a id="ne(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <a href="../../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notify():Unit"></a>
+      <a id="notify():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notify</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@notify():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notifyAll():Unit"></a>
+      <a id="notifyAll():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@notifyAll():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.Importer#outDim" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="outDim:info.kwarc.mmt.api.archives.RedirectableDimension"></a>
+      <a id="outDim:RedirectableDimension"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">outDim</span><span class="result">: <a href="../../../api/archives/RedirectableDimension.html" class="extype" name="info.kwarc.mmt.api.archives.RedirectableDimension">RedirectableDimension</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@outDim:info.kwarc.mmt.api.archives.RedirectableDimension" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">narration, produces also content and relational</p><div class="fullcomment"><div class="comment cmt"><p>narration, produces also content and relational</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a> → <a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.Importer#outExt" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="outExt:String"></a>
+      <a id="outExt:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">outExt</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@outExt:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">omdoc</p><div class="fullcomment"><div class="comment cmt"><p>omdoc</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a> → <a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget#parallel" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="parallel:Boolean"></a>
+      <a id="parallel:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">parallel</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Boolean" class="extype" target="_top">Boolean</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@parallel:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">if true, multiple files/folders are built in parallel</p><div class="fullcomment"><div class="comment cmt"><p>if true, multiple files/folders are built in parallel</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#parseVocabularies" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="parseVocabularies(n:scala.xml.Node):List[String]"></a>
+      <a id="parseVocabularies(Node):List[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">parseVocabularies</span><span class="params">(<span name="n">n: <span class="extype" name="scala.xml.Node">Node</span></span>)</span><span class="result">: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@parseVocabularies(n:scala.xml.Node):List[String]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#parseVocabulary" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="parseVocabulary(n:scala.xml.Node):String"></a>
+      <a id="parseVocabulary(Node):String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">parseVocabulary</span><span class="params">(<span name="n">n: <span class="extype" name="scala.xml.Node">Node</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@parseVocabulary(n:scala.xml.Node):String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="info.kwarc.mmt.api.frontend.Extension#report" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="report:info.kwarc.mmt.api.frontend.Report"></a>
+      <a id="report:Report"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">report</span><span class="result">: <a href="../../../api/frontend/Report.html" class="extype" name="info.kwarc.mmt.api.frontend.Report">Report</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@report:info.kwarc.mmt.api.frontend.Report" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a href="../../../api/frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a> → <a href="../../../api/frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.api.archives.BuildTarget#requiredArguments" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="requiredArguments(m:info.kwarc.mmt.api.archives.BuildTargetModifier):Int"></a>
+      <a id="requiredArguments(BuildTargetModifier):Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">requiredArguments</span><span class="params">(<span name="m">m: <a href="../../../api/archives/BuildTargetModifier.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTargetModifier">BuildTargetModifier</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Int" class="extype" target="_top">Int</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@requiredArguments(m:info.kwarc.mmt.api.archives.BuildTargetModifier):Int" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">number of required arguments, defaults to 0, override as needed</p><div class="fullcomment"><div class="comment cmt"><p>number of required arguments, defaults to 0, override as needed</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a></dd></dl></div>
+    </li><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#start" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="start(args:List[String]):Unit"></a>
+      <a id="start(List[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">start</span><span class="params">(<span name="args">args: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">Nil</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@start(args:List[String]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">extension-specific initialization (override as needed, empty by default)</p><div class="fullcomment"><div class="comment cmt"><p>extension-specific initialization (override as needed, empty by default)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler">MizarCompiler</a> → <a href="../../../api/frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></dd></dl></div>
+    </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
+      <a id="synchronized[T0](⇒T0):T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toString():String"></a>
+      <a id="toString():String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@toString():String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="info.kwarc.mmt.mizar.mizar.translator.MizarCompiler#translateArticle" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="translateArticle(mml:String,version:String,aid:String,docBase:info.kwarc.mmt.api.DPath):Unit"></a>
+      <a id="translateArticle(String,String,String,DPath):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">translateArticle</span><span class="params">(<span name="mml">mml: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="version">version: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="aid">aid: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="docBase">docBase: <a href="../../../api/DPath.html" class="extype" name="info.kwarc.mmt.api.DPath">DPath</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@translateArticle(mml:String,version:String,aid:String,docBase:info.kwarc.mmt.api.DPath):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      
+    </li><li name="info.kwarc.mmt.api.archives.TraversingBuildTarget#update" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="update(a:info.kwarc.mmt.api.archives.Archive,args:List[String],up:info.kwarc.mmt.api.archives.Update,in:List[String]):Unit"></a>
+      <a id="update(Archive,List[String],Update,List[String]):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">update</span><span class="params">(<span name="a">a: <a href="../../../api/archives/Archive.html" class="extype" name="info.kwarc.mmt.api.archives.Archive">Archive</a></span>, <span name="args">args: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="up">up: <a href="../../../api/archives/Update.html" class="extype" name="info.kwarc.mmt.api.archives.Update">Update</a></span>, <span name="in">in: <a href="../../../../../../scala/package.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">Nil</span></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@update(a:info.kwarc.mmt.api.archives.Archive,args:List[String],up:info.kwarc.mmt.api.archives.Update,in:List[String]):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">recursively reruns build if the input file has changed</p><div class="fullcomment"><div class="comment cmt"><p>recursively reruns build if the input file has changed</p><p>the decision is made based on the time stamps and the system's last-modified date
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a> → <a href="../../../api/archives/BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a></dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <a id="wait():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@wait():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long,x$2:Int):Unit"></a>
+      <a id="wait(Long,Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Long" class="extype" target="_top">Long</a></span>, <span name="arg1">arg1: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Int" class="extype" target="_top">Int</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long):Unit"></a>
+      <a id="wait(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Long" class="extype" target="_top">Long</a></span>)</span><span class="result">: <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Unit" class="extype" target="_top">Unit</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#info.kwarc.mmt.mizar.mizar.translator.MizarCompiler@wait(x$1:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="info.kwarc.mmt.api.archives.Importer">
+              <h3>Inherited from <a href="../../../api/archives/Importer.html" class="extype" name="info.kwarc.mmt.api.archives.Importer">Importer</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">
+              <h3>Inherited from <a href="../../../api/archives/TraversingBuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.TraversingBuildTarget">TraversingBuildTarget</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.archives.BuildTarget">
+              <h3>Inherited from <a href="../../../api/archives/BuildTarget.html" class="extype" name="info.kwarc.mmt.api.archives.BuildTarget">BuildTarget</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.frontend.FormatBasedExtension">
+              <h3>Inherited from <a href="../../../api/frontend/FormatBasedExtension.html" class="extype" name="info.kwarc.mmt.api.frontend.FormatBasedExtension">FormatBasedExtension</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.frontend.Extension">
+              <h3>Inherited from <a href="../../../api/frontend/Extension.html" class="extype" name="info.kwarc.mmt.api.frontend.Extension">Extension</a></h3>
+            </div><div class="parent" name="info.kwarc.mmt.api.frontend.Logger">
+              <h3>Inherited from <a href="../../../api/frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></h3>
+            </div><div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <a href="../../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>
