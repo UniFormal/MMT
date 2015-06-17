@@ -17,7 +17,7 @@ import presentation._
  * @param from the domain theory
  */
 abstract class Structure extends Declaration with Link {
-   //var isFlattened = false
+   var isFlattened = false
    /** the domain/type of the structure */
    val tpC: TermContainer
    /** the domain of the structure as a Term, may fail if tpC is undefined */
@@ -82,7 +82,7 @@ class DefinedStructure(val home : Term, val name : LocalName,
 /** apply/unapply functions for [[DeclaredStructure]]s whose domain is an MPath */
 object SimpleDeclaredStructure {
    def apply(home : Term, name : LocalName, tp: MPath, isImplicit : Boolean) =
-      new DeclaredStructure(home, name, TermContainer(OMMOD(tp)), isImplicit)
+      new DeclaredStructure(home, name, TermContainer(OMMOD(tp)), isImplicit) // TODO add metamorph?
    def unapply(ce: ContentElement) = ce match {
       case SimpleStructure(s: DeclaredStructure, p) => Some((s.home, s.name, p, s.isImplicit))
       case _ => None
@@ -92,7 +92,7 @@ object SimpleDeclaredStructure {
 /** auxiliary functions */
 object DeclaredStructure {
    def apply(home : Term, name : LocalName, from : Term, isImplicit : Boolean) =
-      new DeclaredStructure(home, name, TermContainer(from), isImplicit)
+      new DeclaredStructure(home, name, TermContainer(from), isImplicit) // TODO add metamorph?
 }
 
 /** auxiliary functions */

@@ -134,7 +134,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
 		               val v = DefinedView(namespace, name, from, to, df, isImplicit)
 		               addModule(v, md, docOpt)
                   case assignments =>
-	 		            val v = new DeclaredView(namespace, name, from, to, isImplicit)
+	 		            val v = new DeclaredView(namespace, name, from, to, isImplicit) // TODO add metamorph?
                      addModule(v, md, docOpt)
                      logGroup {
                         assignments.foreach {d =>

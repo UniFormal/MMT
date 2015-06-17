@@ -26,6 +26,7 @@ class RefactorPanel(ctrl:Controller,publish: String => Unit) extends JPanel with
   var theorynames = List().asInstanceOf[List[String]]
   var viewnames = List().asInstanceOf[List[String]]
   val viewfinder = new Viewfinder(controller)
+  val intersecter = new Intersecter(controller)
   val mainpanel = new JTabbedPane
   val topPanel = new JPanel
   private val hideButton = new JButton("Hide selected")
@@ -542,12 +543,12 @@ case class NewViewPanel(viewset:Set[(GlobalName,GlobalName)],value:Double,from:D
 
   def actionPerformed(ae: ActionEvent) = {
     if(ae.getSource==intButton) {
-      val view = new DeclaredView(from.parent,LocalName(nametext.getText),OMID(from.path),OMID(to.path),false)
+      val view = new DeclaredView(from.parent,LocalName(nametext.getText),OMID(from.path),OMID(to.path),false) // TODO add metamorph?
       Moduleadder(view,viewset,target.controller)
       intersectthis(view)
     }
     if(ae.getSource==addButton) {
-      val view = new DeclaredView(from.parent,LocalName(nametext.getText),OMID(from.path),OMID(to.path),false)
+      val view = new DeclaredView(from.parent,LocalName(nametext.getText),OMID(from.path),OMID(to.path),false) // TODO add metamorph?
       Moduleadder(view,viewset,target.controller)
       target.dumptoDocument(List(view))
     }
@@ -629,7 +630,7 @@ class IntersectViewArea(view:DeclaredView,viewset:Set[(GlobalName,GlobalName)],f
     if(ae.getSource==cb) if(cb.isSelected) suffixfield.setEditable(false) else suffixfield.setEditable(true)
 
     if(ae.getSource==goButton) {
-      val list = Intersecter(view,from,to,None,Some(LocalName(intname.getText)),
+      val list = target.intersecter(view,from,to,None,Some(LocalName(intname.getText)),
         if (cb.isSelected) Some("") else Some(suffixfield.getText))
       if (cb.isSelected) {
         target.theories = target.dropfromList(from,target.theories)
@@ -854,7 +855,7 @@ class IntersectTheoriesArea(from:DeclaredTheory,
     if(ae.getSource==cb) if(cb.isSelected) suffixfield.setEditable(false) else suffixfield.setEditable(true)
 
     if(ae.getSource==goButton) {
-      val list = Intersecter(from,to,target.controller,None,Some(LocalName(intname.getText)),
+      val list = target.intersecter(from,to,None,Some(LocalName(intname.getText)),
         if (cb.isSelected) Some("") else Some(suffixfield.getText))
       if (cb.isSelected) {
         target.theories = target.dropfromList(from,target.theories)

@@ -149,14 +149,7 @@ class NotationBasedParser extends ObjectParser {
         }
      }
      val decls = decls1.flatMap(d => d match {
-        case s:DeclaredStructure => if (!s.isImplicit) try {
-           controller.globalLookup.getO(s.from.toMPath).getOrElse(Nil) match {
-              case t: DeclaredTheory =>
-                 closer.flattenInclude(t).map(name => controller.localLookup.get(s.path / name))
-              case _ => Nil
-           }
-         } catch {case e:Exception => Nil}
-        else List(s)
+        case s:DeclaredStructure => closer.getStructureDecls(s)
         case _ => List(d)
      } ).filter(d => d match {case s:DeclaredStructure => if (s.isImplicit) true else false case _ => true})
 

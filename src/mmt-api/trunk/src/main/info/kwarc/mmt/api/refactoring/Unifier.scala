@@ -42,7 +42,6 @@ object Unifier {
     val newthC = new DeclaredTheory(thC.path.doc,newthCname,thC.meta)
 
     newthC.add(PlainInclude(union.path,newthC.path))
-
     val constA = Intersecter.getPairs(viewA,thA,thC)
     val constB = Intersecter.getPairs(viewB,thB,thC)
 
