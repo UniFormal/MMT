@@ -6,7 +6,7 @@ before_install:
 script:
  - cd src
  - sbt compile
- - sbt unidoc
+ - sbt apidoc
  - sbt deploy
  - cd ..
  - ./testExamples.sh
