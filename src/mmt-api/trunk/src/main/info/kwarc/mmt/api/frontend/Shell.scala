@@ -19,7 +19,7 @@ usage:
   mmt [-shell | -noshell] [COMMANDS]
     execute COMMANDS and possibly take further commands on the MMT shell.
     (If neither flag is provided, a shell is displayed iff COMMANDS is empty.)
-    Even if there is no shell, mmt only exits when all secondary threads (e.g., GUI, HTTP server) have terminated. 
+    Even if there is no shell, mmt only exits when all secondary threads (e.g., GUI, HTTP server) have terminated.
                          """
 
   private val shelltitle = """
