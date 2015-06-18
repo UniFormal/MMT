@@ -44,6 +44,7 @@ object PostProcessApi {
               val w = new BufferedWriter(new FileWriter(f))
               log.debug("rewrote: " + f)
               w.write(s.replace(oldPrefix, newPrefix))
+              w.close()
             } else
               log.debug("skipping: " + f)
           }
