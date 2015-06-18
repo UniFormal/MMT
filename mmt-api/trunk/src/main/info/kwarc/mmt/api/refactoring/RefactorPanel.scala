@@ -51,8 +51,8 @@ class RefactorPanel(ctrl:Controller,publish: String => Unit) extends JPanel with
   val viewpanel = new ViewfinderPanel(this)
   val theorypanel = new TheoriesPanel(this)
 
-  mainpanel.addTab("Views",viewpanel)
   mainpanel.addTab("Theories",theorypanel)
+  mainpanel.addTab("Views",viewpanel)
 
   add(topPanel,BorderLayout.PAGE_START)
   add(mainpanel,BorderLayout.CENTER)
@@ -74,27 +74,16 @@ class RefactorPanel(ctrl:Controller,publish: String => Unit) extends JPanel with
 
   }
 
-  def viewtoviewset(v:DeclaredView) : Set[(GlobalName,GlobalName)] = {
-
-    val pairs = v.domain.map(name => {
-      val domname = Path.parse(name.head.toString.tail.dropRight(1)).toTriple match {
-        case (Some(d:DPath),Some(m:LocalName),None) =>
-          GlobalName(OMID(MPath(d,m)) ,name.tail)
-        case _ => throw new Exception("Module Path expected!")
-      }
-      val codname = v.get(name) match {
-        case c:FinalConstant => c.df.get match {
-          case t:OMID => controller.get(t.path) match {
-            case o:FinalConstant => o.path
-            case _ => false
-          }
-          case _ => false
-        }
-        case _ => throw new Exception("FinalConstant expected!")
-      }
-      (domname,codname)
-    }).toSet
-    pairs collect {case (a:GlobalName,b:GlobalName) => (a,b)}
+  def viewtoviewset(v:DeclaredView) : List[(FinalConstant,FinalConstant)] = {
+    val from = controller.get(v.from.toMPath) match {
+      case t:DeclaredTheory => t
+      case _ => throw new Exception("DeclaredTheory expected!")
+    }
+    val to = controller.get(v.to.toMPath) match {
+      case t:DeclaredTheory => t
+      case _ => throw new Exception("DeclaredTheory expected!")
+    }
+    Intersecter.getPairs(v,from,to)
   }
 
   def dumptoDocument(s:List[DeclaredModule]) = {
@@ -175,8 +164,8 @@ class RefactorPanel(ctrl:Controller,publish: String => Unit) extends JPanel with
       hideButton.setEnabled(true)
       unhideButton.setEnabled(true)
 
-      mainpanel.addTab("Views",viewpanel)
       mainpanel.addTab("Theories",theorypanel)
+      mainpanel.addTab("Views",viewpanel)
 
       theories = ((controller.depstore.getInds(IsTheory).map(tp => controller.get(tp))
         collect { case t : DeclaredTheory => t}).toList:::theories).distinct
@@ -382,88 +371,7 @@ class ViewfinderPanel(target:RefactorPanel) extends JPanel with ActionListener {
 
   class finderthread(textf: JTextArea) extends javax.swing.SwingWorker[Boolean,Void] {
     def doInBackground:Boolean = {
-
-      // This is basically a copy of Viewfinder.findByAxioms !
-      def findThis(th1:DeclaredTheory,th2:DeclaredTheory,cutoff:Int,makeComp:Boolean,maximize:Boolean)
-      : Set[Set[(GlobalName,GlobalName)]] = {
-
-        textf.append("\n - hashing + pairing...")
-        textf.setCaretPosition(textf.getDocument.getLength)
-        val allhashes = Consthash(th1,th2,target.controller)
-        val allpairs = for {a <- allhashes._1; b <- allhashes._2 if a.hash==b.hash} yield (a,b)
-        val pairedbyaxioms = allpairs.filter(p => p._1.isAxiom && p._1.pars.length>=cutoff).toIndexedSeq
-
-
-        textf.append("\n - finding Views...")
-        textf.setCaretPosition(textf.getDocument.getLength)
-        val allPaths = pairedbyaxioms.indices.map(i =>
-          target.viewfinder.findByAxiomsIterator(allpairs,pairedbyaxioms(i),List()).getOrElse(List()).distinct)
-
-        val max = if(maximize) {
-          textf.append("\n - maximizing...")
-          textf.setCaretPosition(textf.getDocument.getLength)
-          allPaths.map(o => target.viewfinder.makeMaximal(o,allpairs,Some(pairedbyaxioms))).distinct
-        }
-        else allPaths
-
-        val comp = (for {o <- if (makeComp) {
-          textf.append("\n - finding maximally consistent unions...")
-          textf.setCaretPosition(textf.getDocument.getLength)
-          target.viewfinder.makeCompatible(max,List())
-        } else max} yield o.toSet).toList.sortBy(_.size)
-
-
-        textf.append("\n - filtering out redundant subviews...")
-        textf.setCaretPosition(textf.getDocument.getLength)
-        comp.foldRight(comp)((b,s) =>
-          if (!s.contains(b)) s else {
-            val i = s.indexOf(b)
-            s.take(i).filter(p => !p.subsetOf(b)):::s.drop(i)
-          }
-        ).toSet
-
-      }
-
-      val maximize = maxbox.isSelected
-      val makecomp = compbox.isSelected
-
-      val pairs = (for {
-        a <- if (theoryfield1.getSelectedIndex==0) target.theories
-        else List(target.theories(theoryfield1.getSelectedIndex-1));
-        b <- if (theoryfield2.getSelectedIndex==0) target.dropfromList(a,target.theories)
-        else List(target.theories(theoryfield2.getSelectedIndex-1))
-        if a!=b
-      } yield Set(a, b)).toSet
-
-      val views = pairs.map(p => {
-        textf.append("\nLOOKING FOR VIEWS " + p.head.name + " -> " + p.tail.head.name + "...  ")
-        textf.setCaretPosition(textf.getDocument.getLength)
-
-        val allviews = {
-          val list = findThis(p.head,p.tail.head,
-            try {cutoffField.getText.toInt} catch {case e:Exception => 0},maximize,makecomp)
-          (for {o <- list} yield (o,target.evaluateViewset(p.head,p.tail.head,o))
-            ).filter(p => (p._2*100)>=(try {valueField.getText.toDouble}
-          catch {case e:Exception => 0}) && p._2>0)
-        }
-        textf.append("\n - "+allviews.toList.length+" Views found!")
-        textf.setCaretPosition(textf.getDocument.getLength)
-
-        (p.head,p.tail.head,allviews)
-      }).filter(p => p._3.nonEmpty)
-      textf.append("\nDone.")
-      textf.setCaretPosition(textf.getDocument.getLength)
-
-      if (views.nonEmpty) {
-        newviews = List()
-        for (o <- views; v <- o._3) newviews = NewViewPanel(v._1,v._2,o._1,o._2,target)::newviews
-        true
-      } else {
-        textf.append("\nNo Views found!")
-        textf.setCaretPosition(textf.getDocument.getLength)
-        false
-      }
-
+      ???
     }
     override def done { if(get) reinit }
 
@@ -476,7 +384,7 @@ abstract class ViewPanel(target:RefactorPanel) extends ActionListener {
   val combo: JComboBox[String]
   val intButton: JButton
   val value: Double
-  val viewset: Set[(GlobalName,GlobalName)]
+  val viewset: List[(FinalConstant,FinalConstant)]
   val from:DeclaredTheory
   val to:DeclaredTheory
   //val objects:List[JComponent]
@@ -486,10 +394,7 @@ abstract class ViewPanel(target:RefactorPanel) extends ActionListener {
     target.viewpanel.hiddenviews = this::target.viewpanel.hiddenviews
   }
   def intersectthis(view:DeclaredView) = {
-    target.viewpanel.resultArea.removeAll()
-    target.viewpanel.resultArea.setLayout(new BoxLayout(target.viewpanel.resultArea, BoxLayout.Y_AXIS))
-    target.viewpanel.resultArea.add(new IntersectViewArea(view,viewset,from,to,target))
-    target.viewpanel.resultArea.revalidate()
+    ??? // TODO THIS
   }
 }
 
@@ -499,8 +404,8 @@ case class OldViewPanel(v: DeclaredView,target:RefactorPanel) extends ViewPanel(
   val viewset = target.viewtoviewset(view)
   val value = target.viewfinder.evaluateView(view)
   val valuefield = new JTextField("Value: "+(value*100).round+"%")
-  val combo = new JComboBox(viewset.map(o => o._1.^!.last+"?"+o._1.name.toString()
-    +" -> "+o._2.^!.last+"?"+o._2.name.toString()).toArray)
+  val combo = new JComboBox(viewset.map(o => o._1.path.^!.last+"?"+o._1.name.toString()
+    +" -> "+o._2.path.^!.last+"?"+o._2.name.toString()).toArray)
   val intButton = new JButton("Intersect")
   val from = target.controller.get(view.from.toMPath) match {
     case t:DeclaredTheory => t
@@ -524,12 +429,12 @@ case class OldViewPanel(v: DeclaredView,target:RefactorPanel) extends ViewPanel(
 
 }
 
-case class NewViewPanel(viewset:Set[(GlobalName,GlobalName)],value:Double,from:DeclaredTheory,to:DeclaredTheory,
+case class NewViewPanel(viewset:List[(FinalConstant,FinalConstant)],value:Double,from:DeclaredTheory,to:DeclaredTheory,
                         target:RefactorPanel) extends ViewPanel(target) {
   val cb = new JCheckBox()
   val valuefield = new JTextField("Value: "+(value*100).round+"%")
-  val combo = new JComboBox(viewset.map(o => o._1.^!.last+"?"+o._1.name.toString()
-    +" -> "+o._2.^!.last+"?"+o._2.name.toString()).toArray)
+  val combo = new JComboBox(viewset.map(o => o._1.path.^!.last+"?"+o._1.name.toString()
+    +" -> "+o._2.path.^!.last+"?"+o._2.name.toString()).toArray)
   val addButton = new JButton("Add View")
   val intButton = new JButton("Intersect")
   val nametext = new JTextField("ViewName")
@@ -544,102 +449,20 @@ case class NewViewPanel(viewset:Set[(GlobalName,GlobalName)],value:Double,from:D
   def actionPerformed(ae: ActionEvent) = {
     if(ae.getSource==intButton) {
       val view = new DeclaredView(from.parent,LocalName(nametext.getText),OMID(from.path),OMID(to.path),false) // TODO add metamorph?
-      Moduleadder(view,viewset,target.controller)
+      Moduleadder(view,viewset.toSet)
       intersectthis(view)
     }
     if(ae.getSource==addButton) {
       val view = new DeclaredView(from.parent,LocalName(nametext.getText),OMID(from.path),OMID(to.path),false) // TODO add metamorph?
-      Moduleadder(view,viewset,target.controller)
+      Moduleadder(view,viewset.toSet)
       target.dumptoDocument(List(view))
     }
   }
 
 }
 
-class IntersectViewArea(view:DeclaredView,viewset:Set[(GlobalName,GlobalName)],from:DeclaredTheory,
-                    to:DeclaredTheory,target:RefactorPanel) extends JPanel with ActionListener {
-  private val titlefield = new JTextField("Intersecting "+from.name+" and "+to.name+" along View:")
-  private val combo = new JComboBox(viewset.map(o => o._1.^!.last+"?"+o._1.name.toString()
-    +" -> "+o._2.^!.last+"?"+o._2.name.toString()).toArray)
-  private val backButton = new JButton("< Back")
-
-  private val cb = new JCheckBox("Use original Domain-/Codomain names")
-  private val textfield1 = new JTextField("Use suffix instead:")
-  private val suffixfield = new JTextField("suffix")
-  private val textfield2 = new JTextField("Name of theory intersection:")
-  private val intname = new JTextField("IntersectionName")
-  private val goButton = new JButton("Intersect")
-  private val glayout = new GroupLayout(this)
-  private val TopPanel1 = glayout.createParallelGroup(GroupLayout.Alignment.CENTER)
-  private val TopPanel2 = glayout.createSequentialGroup()
-
-  backButton.addActionListener(this)
-  titlefield.setEditable(false)
-  titlefield.setFont(titlefield.getFont.deriveFont(Font.BOLD))
-  titlefield.setHorizontalAlignment(SwingConstants.RIGHT)
-  TopPanel1.addComponent(backButton)
-  TopPanel1.addComponent(titlefield)
-  TopPanel1.addComponent(combo)
-  TopPanel2.addComponent(backButton)
-  TopPanel2.addComponent(titlefield)
-  TopPanel2.addComponent(combo)
-
-  cb.setSelected(true)
-  textfield1.setEditable(false)
-  suffixfield.setEditable(false)
-  cb.addActionListener(this)
-  textfield2.setEditable(false)
-  goButton.addActionListener(this)
-
-  private val vert = glayout.createSequentialGroup()
-  private val hor = glayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-  vert.addGroup(TopPanel1)
-  hor.addGroup(TopPanel2)
-  vert.addComponent(cb)
-  hor.addComponent(cb)
-  private val group1a=glayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-  private val group1b=glayout.createSequentialGroup()
-  group1a.addComponent(textfield1)
-  group1a.addComponent(suffixfield)
-  group1b.addComponent(textfield1)
-  group1b.addComponent(suffixfield)
-  vert.addGroup(group1a)
-  hor.addGroup(group1b)
-  private val group2a=glayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-  private val group2b=glayout.createSequentialGroup()
-  group2a.addComponent(textfield2)
-  group2a.addComponent(intname)
-  group2b.addComponent(textfield2)
-  group2b.addComponent(intname)
-  vert.addGroup(group2a)
-  hor.addGroup(group2b)
-  vert.addComponent(goButton)
-  hor.addComponent(goButton)
-
-  glayout.linkSize(BoxLayout.Y_AXIS,backButton,titlefield,cb,textfield1,suffixfield,textfield2,goButton,combo,intname)
-
-  glayout.setHorizontalGroup(hor)
-  glayout.setVerticalGroup(vert)
-
-  setLayout(glayout)
-  target.viewpanel.resultArea.revalidate()
-  target.repaint()
-
-  def actionPerformed(ae:ActionEvent) = {
-    if(ae.getSource==backButton) target.viewpanel.reinit
-    if(ae.getSource==cb) if(cb.isSelected) suffixfield.setEditable(false) else suffixfield.setEditable(true)
-
-    if(ae.getSource==goButton) {
-      val list = target.intersecter(view,from,to,None,Some(LocalName(intname.getText)),
-        if (cb.isSelected) Some("") else Some(suffixfield.getText))
-      if (cb.isSelected) {
-        target.theories = target.dropfromList(from,target.theories)
-        target.theories = target.dropfromList(to,target.theories)
-      }
-      target.dumptoDocument(list)
-    }
-
-  }
+class IntersectArea() extends JPanel with ActionListener {
+  def actionPerformed(ae:ActionEvent) = {}
 }
 
 class TheoriesPanel(target:RefactorPanel) extends JPanel with ActionListener {
@@ -737,19 +560,10 @@ class TheoriesPanel(target:RefactorPanel) extends JPanel with ActionListener {
     }
     if (ae.getSource==intButton) {
       if(viewCombo.getSelectedIndex== 0) {
-        val selectedtheories = theories.filter(_.cb.isSelected)
-        for (o <- theories) o.cb.setSelected(false)
-        resultArea.removeAll()
-        resultArea.setLayout(new BoxLayout(resultArea, BoxLayout.Y_AXIS))
-        resultArea.add(new IntersectTheoriesArea(selectedtheories.head.theory,selectedtheories.tail.head.theory,target))
-        resultArea.revalidate()
+        ??? // TODO THIS
       }
       else {
-        val v = target.viewpanel.knownviews.collectFirst{
-          case p if p.view==allowedviews(viewCombo.getSelectedIndex-1) => p
-        }.getOrElse(throw new Exception("View missing!"))
-        target.mainpanel.setSelectedIndex(0)
-        v.intersectthis(v.view)
+        ??? // TODO THIS
       }
     }
     if (ae.getSource==pushButton) {
@@ -782,88 +596,6 @@ case class TheoryPanel(th:DeclaredTheory,target:RefactorPanel) extends ActionLis
     target.theorypanel.resultArea.setLayout(new BoxLayout(target.theorypanel.resultArea,BoxLayout.Y_AXIS))
     target.theorypanel.resultArea.add(DeletionArea(th,target))
     target.theorypanel.resultArea.revalidate()
-  }
-}
-
-class IntersectTheoriesArea(from:DeclaredTheory,
-                        to:DeclaredTheory,target:RefactorPanel) extends JPanel with ActionListener {
-  private val titlefield = new JTextField("Intersecting "+from.name+" and "+to.name+" using Viewfinder")
-  private val backButton = new JButton("< Back")
-
-  private val cb = new JCheckBox("Use original Domain-/Codomain names")
-  private val textfield1 = new JTextField("Use suffix instead:")
-  private val suffixfield = new JTextField("suffix")
-  private val textfield2 = new JTextField("Name of theory intersection:")
-  private val intname = new JTextField("IntersectionName")
-  private val goButton = new JButton("Intersect")
-  private val glayout = new GroupLayout(this)
-  private val TopPanel1 = glayout.createParallelGroup(GroupLayout.Alignment.CENTER)
-  private val TopPanel2 = glayout.createSequentialGroup()
-
-  backButton.addActionListener(this)
-  titlefield.setEditable(false)
-  titlefield.setFont(titlefield.getFont.deriveFont(Font.BOLD))
-  titlefield.setHorizontalAlignment(SwingConstants.RIGHT)
-  TopPanel1.addComponent(backButton)
-  TopPanel1.addComponent(titlefield)
-  TopPanel2.addComponent(backButton)
-  TopPanel2.addComponent(titlefield)
-
-  cb.setSelected(true)
-  textfield1.setEditable(false)
-  suffixfield.setEditable(false)
-  cb.addActionListener(this)
-  textfield2.setEditable(false)
-  goButton.addActionListener(this)
-
-  private val vert = glayout.createSequentialGroup()
-  private val hor = glayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-  vert.addGroup(TopPanel1)
-  hor.addGroup(TopPanel2)
-  vert.addComponent(cb)
-  hor.addComponent(cb)
-  private val group1a=glayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-  private val group1b=glayout.createSequentialGroup()
-  group1a.addComponent(textfield1)
-  group1a.addComponent(suffixfield)
-  group1b.addComponent(textfield1)
-  group1b.addComponent(suffixfield)
-  vert.addGroup(group1a)
-  hor.addGroup(group1b)
-  private val group2a=glayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-  private val group2b=glayout.createSequentialGroup()
-  group2a.addComponent(textfield2)
-  group2a.addComponent(intname)
-  group2b.addComponent(textfield2)
-  group2b.addComponent(intname)
-  vert.addGroup(group2a)
-  hor.addGroup(group2b)
-  vert.addComponent(goButton)
-  hor.addComponent(goButton)
-
-  glayout.linkSize(BoxLayout.Y_AXIS,backButton,titlefield,cb,textfield1,suffixfield,textfield2,goButton,intname)
-
-  glayout.setHorizontalGroup(hor)
-  glayout.setVerticalGroup(vert)
-
-  setLayout(glayout)
-  target.viewpanel.resultArea.revalidate()
-  target.repaint()
-
-  def actionPerformed(ae:ActionEvent) = {
-    if(ae.getSource==backButton) target.theorypanel.reinit
-    if(ae.getSource==cb) if(cb.isSelected) suffixfield.setEditable(false) else suffixfield.setEditable(true)
-
-    if(ae.getSource==goButton) {
-      val list = target.intersecter(from,to,None,Some(LocalName(intname.getText)),
-        if (cb.isSelected) Some("") else Some(suffixfield.getText))
-      if (cb.isSelected) {
-        target.theories = target.dropfromList(from,target.theories)
-        target.theories = target.dropfromList(to,target.theories)
-      }
-      target.dumptoDocument(list)
-    }
-
   }
 }
 

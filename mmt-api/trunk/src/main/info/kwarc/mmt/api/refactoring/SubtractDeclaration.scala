@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.refactoring
 
+import info.kwarc.mmt.api.libraries.Closer
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api.{GlobalName, LocalName}
 import info.kwarc.mmt.api.frontend.Controller
@@ -11,7 +12,8 @@ import info.kwarc.mmt.api.modules.DeclaredTheory
 object SubtractDeclaration {
 
   def getConstants(th:DeclaredTheory,a:List[GlobalName],ctrl:Controller) : Set[FinalConstant] = {
-    val includes = Consthash.getIncludes(th,ctrl)-th
+    val closer = new Closer(ctrl)
+    val includes = closer.getIncludes(th,true)-th
     val consts = th.getConstants collect {case t:FinalConstant => t}
 
     val inclnames = includes.foldLeft(Set().asInstanceOf[Set[GlobalName]])((arg,thx) =>
