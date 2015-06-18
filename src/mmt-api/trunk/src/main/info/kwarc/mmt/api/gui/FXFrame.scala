@@ -1,15 +1,18 @@
-
-package info.kwarc.mmt.api.gui
 /*
+package info.kwarc.mmt.api.gui
+
 import javafx.application.Platform
+import javafx.beans.value.{ObservableValue, ChangeListener}
+import javafx.concurrent.Worker
 import javafx.scene.Scene
-import javafx.stage.Stage
 import javafx.scene.web._
 import javafx.event._
 import javafx.scene.input._
 import javafx.embed.swing._
 
 import javax.swing._
+
+import netscape.javascript.JSObject
 
 /** Scala sugar for FX EventHandler */
 //e.g., fxframe.scene.onKeyPressed = (e => println(e.getText()))
@@ -29,7 +32,6 @@ case class MyScene(scene: Scene) {
 object MyScene {
    implicit def sToMyS(s: Scene) = MyScene(s)
 }
-import MyScene._
 
 /** FX helper functionality */
 object FXHelpers {
@@ -53,25 +55,50 @@ class FXPanel extends JFXPanel {
    /** the scene in the FX component */
    def scene = _scene
 
+   private var _objects = List().asInstanceOf[List[(String,AnyRef)]]
+
+   private var _webview : WebView = null
+
    private var _engine: WebEngine = null  // valid only after calling init
    /** the FX web engine */
    def engine = _engine
+
+   def addJSObject(name:String,obj:AnyRef) = wrap {
+      _objects::=(name,obj)
+      _engine.reload()
+   }
+
+   def removeJSObject(name:String) = wrap {
+      val index = _objects.indexWhere(p => p._1==name)
+      _objects = _objects.take(index):::_objects.drop(index+1)
+      _engine.reload()
+   }
 
    /** initializes the FXPanel */
    private def init {
      wrap {
        val wv = new WebView
        setScene(new Scene(wv))
+        _webview = wv
        _engine = wv.getEngine
        _scene = MyScene(getScene)
+        _engine.setJavaScriptEnabled(true)
+        _engine.getLoadWorker.stateProperty().addListener(
+           new ChangeListener[Worker.State]() {
+              def changed(ov: ObservableValue[_<:Worker.State], oldState:Worker.State, newState:Worker.State) = {
+                 if (newState == Worker.State.SUCCEEDED) {
+                    val jsobject = wv.getEngine.executeScript("window").asInstanceOf[JSObject]
+                    for (o <- _objects) jsobject.setMember(o._1,o._2)
+                 }
+              }
+           }
+        )
      }
    }
    
    /** a wrapper around engine.loadContent, runs on the FX application thread */
    def load(html: scala.xml.Node) {
-      wrap {
-         engine.loadContent(html.toString)
-      }
+      loadContent(html.toString())
    }
    def loadBody(html: scala.xml.Node) {
       val page = <html><body>{html}</body></html>
@@ -80,6 +107,17 @@ class FXPanel extends JFXPanel {
    def loadBody(s: String) {
       loadBody(scala.xml.Text(s))
    }
+
+   def loadContent(s:String) {
+      wrap {
+         engine.loadContent(s)
+      }
+   }
+
+   def loadurl(s:String) { wrap {
+      engine.load(s)
+   } }
+
    
    // initialize the instance
    init

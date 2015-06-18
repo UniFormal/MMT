@@ -1343,7 +1343,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     var view : View = null
     if (flat.codePointAt(i) == '{') {
       // It's a DeclaredView
-      view = new DeclaredView(vpath.parent, vpath.name, domain, codomain, isImplicit)
+      view = new DeclaredView(vpath.parent, vpath.name, domain, codomain, isImplicit) //TODO add metamorph?
       add(view)
       i = crawlLinkBody(i, view.asInstanceOf[DeclaredView])
     }
