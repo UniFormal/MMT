@@ -56,7 +56,7 @@ variables may represent any MMT term, i.e., object language terms, types, etc.;
 the solution is a <span class="extype" name="Substitution">Substitution</span> that provides a closed Term for every unknown variable.
 (Higher-order abstract syntax should be used to represent unknown terms with free variables as closed function terms.)</p><p>The Solver decomposes the judgments individually by applying typing rules, collecting (partial) solutions along the way and possibly delaying unsolvable judgments.
 If the unknown variables are untyped and rules require a certain type, the Solver adds the type.</p><p>Unsolvable constraints are delayed and reactivated if later solving of unknowns provides further information.
-</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="file://home/maeder/MMT/src/mmt-api/trunk/src/main/info/kwarc/mmt/api/checking/Solver.scala" target="_blank">Solver.scala</a></dd></dl><div class="toggleContainer block">
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a href="../../../../../../../src/mmt-api/trunk/src/main/info/kwarc/mmt/api/checking/Solver.scala" target="_blank">Solver.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a>, <a href="CheckingCallback.html" class="extype" name="info.kwarc.mmt.api.checking.CheckingCallback">CheckingCallback</a>, <a href="../../../../../scala/package.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <a href="http://www.scala-lang.org/api/2.11.6/index.html#scala.Any" class="extype" target="_top">Any</a></div>
         </div><div class="toggleContainer block diagram-container" id="inheritance-diagram-container">
@@ -789,7 +789,7 @@ It is only public because it serves as a callback for Rule's.</p><p>pre: context
         <img src="../../../../../lib/permalink.png" />
       </a>
     </span>
-      <p class="shortcomment cmt">prefix used when logging (can be changed flexibly to filter the log better)</p><div class="fullcomment"><div class="comment cmt"><p>prefix used when logging (can be changed flexibly to filter the log better)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.checking.Solver">Solver</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
+      <p class="shortcomment cmt">prefix used when logging (can be changed flexibly by object-checker to filter the log better)</p><div class="fullcomment"><div class="comment cmt"><p>prefix used when logging (can be changed flexibly by object-checker to filter the log better)</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="info.kwarc.mmt.api.checking.Solver">Solver</a> → <a href="../frontend/Logger.html" class="extype" name="info.kwarc.mmt.api.frontend.Logger">Logger</a></dd></dl></div>
     </li><li name="info.kwarc.mmt.api.checking.Solver#logState" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="logState(prefix:String):Unit"></a>
       <a id="logState(String):Unit"></a>
