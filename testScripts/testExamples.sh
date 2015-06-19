@@ -1,4 +1,5 @@
 #!/bin/bash
+rm -rf urtheories examples
 git clone http://gl.mathhub.info/MMT/urtheories.git
 git clone http://gl.mathhub.info/MMT/examples.git
 for i in urtheories examples; do rm -rf $i/{export,content,narration,relational}; done

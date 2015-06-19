@@ -9,4 +9,5 @@ script:
  - sbt apidoc
  - sbt deploy
  - cd ..
- - ./testExamples.sh
+ - testScripts/testExamples.sh
+ - testScripts/testLATIN.sh
