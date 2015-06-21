@@ -5,12 +5,12 @@ Use Space on top (done)
 URI in main should not line-break (done)
 
 the buttons in the main (metadata, tags, used-by, etc.) area do not work
-The content is there, but the javascript does not find the right element to toggle
+The content is there, but the javascript does not find the right element to toggle (this is working in my browser?) 
 
-Some times the content of Main is shown multiple times.
+Some times the content of Main is shown multiple times. (also working?)
 
 When using a context menu function such as "show declaration", the method createInlineBox is called.
-It currently inserts the box with the wrong height and scrolls wrongly.
+It currently inserts the box with the wrong height and scrolls wrongly. (done)
 
 ------------------------
 long-term

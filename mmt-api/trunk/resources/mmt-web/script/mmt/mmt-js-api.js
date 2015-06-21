@@ -312,7 +312,7 @@ var mmt = {
 	    }
 	    var heightParent = $(targetParent).height();
 	    if (typeof width == 'string') {
-	        $(innerDiv).width(width)
+	        $(innerDiv).width(width);
 	    }
 	    
 	    var btnDiv = document.createElement('div');
@@ -358,6 +358,8 @@ var mmt = {
 	    
 	    var minus = true
 	    var newH = 0
+	    H = $(innerDiv).height();
+    	newH = H
 	    $(button_hide).click(function() {
 	    	var H ;
 	        if (minus) {
@@ -371,8 +373,10 @@ var mmt = {
 	            minus = false
 	        }
 	        else {
-	        	$(innerDiv).height(newH)
-	        	$(contentDiv).show();	        
+	        	$(innerDiv).height(newH);
+	        	$(contentDiv).height(newH);
+	        	$(contentDiv).show();
+	        	
 	            $(".minus").switchClass("glyphicon-plus-sign",
 	                "glyphicon-minus-sign");
 	            minus = true

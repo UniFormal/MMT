@@ -238,8 +238,7 @@ div.ui-state-disabled.ui-draggable-disabled {opacity: 1;}
 
 
 .contDiv {
-	height: 100%;
-	//overflow: scroll;
+	height: auto;
 	margin-top: 10px;
 	clear: both;
 	padding-bottom: 15px;

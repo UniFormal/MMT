@@ -4,33 +4,26 @@
 <meta charset="UTF-8" />
 <!-- <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/> -->
 <title>MMT Web Server</title>
-
 <!-- D3.javascript library for interactive data-driven-documents-->
 <script type="text/javascript" src="/script/d3/d3.min.js"></script>
-
 <script type="text/javascript" src="script/jquery/jquery.js"></script>
-
-<link rel="stylesheet" type="text/css"
+<link rel="stylesheet" type="text/css" 
 	href="css/bootstrap/css/bootstrap.min.css"></link>
 <link rel="stylesheet" href="css/bootstrap/css/bootstrap-theme.min.css"></link>
 <script type="text/javascript" src="script/bootstrap/bootstrap.min.js"></script>
-
 <link rel="stylesheet" type="text/css" href="css/mmt.css" />
 <link rel="stylesheet" type="text/css" href="css/browser.css" />
 <link rel="stylesheet" type="text/css" href="css/JOBAD.css" />
 <link rel="stylesheet" type="text/css" href="css/jquery/jquery-ui.css" />
 <!-- <link rel="stylesheet" type="text/css" href="/css/jquery/ui.base.css"/> -->
 <link rel="shortcut icon" href="mmt2.png" />
-
 <script src="script/codemirror2/lib/codemirror.js"></script>
 <link rel="stylesheet" href="script/codemirror2/lib/codemirror.css" />
 <script src="script/codemirror2/mode/lf/lf.js"></script>
-
 <script type="text/javascript" src="script/jquery/jquery-ui.js"></script>
 <script type="text/javascript" src="script/tree/jquery.hotkeys.js"></script>
 <script type="text/javascript" src="script/tree/jquery.jstree.js"></script>
 <!--<script type="text/javascript" src="/script/SVGPan/SVGPan.js"></script>-->
-
 <!-- JOBAD Deps -->
 <script type="text/javascript" src="script/jobad/deps/underscore-min.js"></script>
 <!-- JOBAD -->
@@ -43,9 +36,7 @@
 <script type="text/javascript" src="script/jobad/modules/hovering.js"></script>
 <script type="text/javascript"
 	src="script/jobad/modules/interactive-viewing.js"></script>
-
 <!-- JOBAD Init -->
-
 <script type="text/javascript">
 	var JOBAD1;
 	$(function() {
@@ -59,14 +50,9 @@
 </script>
 <script src="script/angularjs/angular-1.3.14/angular.js"></script>
 <script src="script/browseController.js"></script>
-
-
 </head>
-
 <body ng-controller="browserController">
-
 	<div class="wrapper">
-
 		<!-- bar -->
 		<br>
 		<div class="col-md-12">
@@ -77,7 +63,6 @@
 			</div>
 			<div class="col-md-offset-8 col-md-2">
 				<div class="pull-right">
-
 					<div class="btn-group btn-group-sm btn-group-justified"
 						role="group" aria-label="top">
 						<a type="button" class="btn btn-primary"
@@ -94,16 +79,13 @@
 							ng-click="parseClicked = 1; showParse = 1; showParseKey = 1"><b>Parse</b></a>
 						<a type="button" class="btn btn-primary" tabindex="0"
 							class="text-info" data-toggle="popover" role="button"
-							data-trigger="focus" data-placement="bottom" data-container="body"
+							data-trigger="focus" data-placement="bottom"
+							data-container="body"
 							data-content="See the documentation &lt;a href='https://svn.kwarc.info/repos/MMT/doc/html/index.html'&gt;here&lt;/a&gt; in the MMT repository for an overview of features!"><b>Help</b></a>
 					</div>
-
 				</div>
-
-
 			</div>
 		</div>
-
 		<br> <br>
 		<div class="col-md-4">
 			<div class="panel panel-default" id="panelArc">
@@ -127,8 +109,6 @@
 				</div>
 			</div>
 		</div>
-
-
 		<!-- page content -->
 		<div class="col-md-8">
 			<div class="panel panel-default" id="panel0">
@@ -153,7 +133,7 @@
 							</span>
 						</div>
 					</div>
-					<br /> <br />
+					<br> <br>
 					<div id="main" class="col-md-11">
 						<div class="panel panel-back noti-box">
 							<span class="icon-box bg-color-green set-icon"> <i
@@ -164,8 +144,6 @@
 				</div>
 			</div>
 		</div>
-
-
 		<div class="col-md-4">
 			<div class="panel panel-default" id="panel1"
 				ng-show="showSearch == 1">
@@ -258,7 +236,6 @@
 									<input type="text" size="30" class="form-control"
 										ng-model="patternInput" id="pattern" />
 								</div>
-
 							</div>
 						</div>
 						<div class="form-group">
@@ -276,7 +253,6 @@
 			</div>
 		</div>
 		<div class="col-md-4">
-
 			<div class="panel panel-default" id="panel2"
 				ng-show="showSearch==1 && showResultsKey==1">
 				<div class="panel-heading">
@@ -293,8 +269,6 @@
 				</div>
 			</div>
 		</div>
-
-
 		<div class="col-md-8">
 			<div class="panel panel-default" id="panel3" ng-show="showParse==1">
 				<div class="panel-heading">
@@ -343,7 +317,6 @@
 								<textarea class="form-control" id="inputbox" rows="3"></textarea>
 							</div>
 						</div>
-
 						<div class="form-group">
 							<div class="col-md-offset-1">
 								<label class="col-md-3 control-label">
@@ -370,13 +343,8 @@
 				</div>
 			</div>
 		</div>
-
-
-
 	</div>
-
 	<div id="latin-dialog"></div>
-
 	</div>
 	</div>
 </body>
