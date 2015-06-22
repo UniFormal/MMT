@@ -23,14 +23,20 @@ case class VarData(decl : VarDecl, binder : Option[GlobalName], declpos : Positi
 
 case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: List[(String,String)], 
       source: Option[SourceRef], pos : Position, context : List[VarData], style: Option[PresentationContext => String]) {
+   /** the output stream to print into */
    def out(s: String) {rh(s)}
+   /** convenience method to change the position field */
    def child(i: Int) = copy(pos = pos / i)
+   /** convenience method to change the position field */
    def child(p: Position) = copy(pos = pos / p)
+   /** the MMT context of the presented object */
    def getContext: Context = {
       val ownerCon: Context = owner.toList.flatMap(cp => TheoryExp.getSupport(cp.parent.module).map(IncludeVarDecl(_,Nil)))
       ownerCon ++ context.map(_.decl)
    }
+   /** convenience method to append to the context */
    def addCon(con: List[VarData]) = copy(context = context ::: con)
+   /** for convenient HTML output */
    val html = utils.HTML(out _)
 }
 
@@ -514,7 +520,8 @@ class NotationBasedPresenter extends ObjectPresenter {
                   }
                  -1
                } else default
-            case t @ ComplexTerm(_,_,_,_) => controller.pragmatic.makePragmatic(t) match {
+            case t @ ComplexTerm(_,_,_,_) =>
+              controller.pragmatic.makePragmatic(t) match {
                case None =>
                   default
                case Some(objP) =>
@@ -657,8 +664,10 @@ class NotationBasedPresenter extends ObjectPresenter {
                   br
             }
             //so that subclasses can override these methods to add special behaviour for supported attribute keys
-            case OMATTR(t, k, v) => doAttributedTerm(t, k, v)(pc) 
-            case t => default
+            case OMATTR(t, k, v) =>
+              doAttributedTerm(t, k, v)(pc)
+            case t =>
+              default
          }
    }
    

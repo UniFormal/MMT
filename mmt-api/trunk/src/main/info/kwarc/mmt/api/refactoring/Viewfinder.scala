@@ -10,7 +10,8 @@ import info.kwarc.mmt.api.{ComplexStep, SimpleStep, GlobalName, LocalName}
  * Finds views between theories and provides several methods related to that
  */
 
-case class Viewfinder(controller: Controller) extends Logger {
+case class Viewfinder(ctrl: Controller) extends Logger {
+  implicit val controller = ctrl
   var report = controller.report
   val logPrefix = "Viewfinder"
   /**
@@ -21,7 +22,7 @@ case class Viewfinder(controller: Controller) extends Logger {
    */
 
   def apply(th1:DeclaredTheory,th2:DeclaredTheory) : List[DeclaredView]
-    = settoViews(findByAxioms(th1,th2,0,true,true),th1,th2)
+    = Viewfinder.settoViews(findByAxioms(th1,th2,0,true,true),th1,th2)
 
   /**
    * Tries to find the "best" (i.e. with largest evaluateView-Value) view between
@@ -32,7 +33,7 @@ case class Viewfinder(controller: Controller) extends Logger {
 
   def findBest(th1:DeclaredTheory,th2:DeclaredTheory) : Option[(DeclaredView,Double)] = {
     log("Looking for best morphism from "+th1.path+" to "+th2.path)
-    val allviews = for {o <- settoViews(findByAxioms(th1,th2,0,true,true),th1,th2)} yield (o,evaluateView(o))
+    val allviews = for {o <- Viewfinder.settoViews(findByAxioms(th1,th2,0,true,true),th1,th2)} yield (o,Viewfinder.evaluateView(o))
     if (allviews.isEmpty) {log("No new views found!"); None}
       else if (allviews.tail.isEmpty) Some(allviews.head)
       else Some(allviews.tail.foldLeft(allviews.head)((x, v) => if (v._2 < x._2) x else v))
@@ -51,7 +52,7 @@ case class Viewfinder(controller: Controller) extends Logger {
 
   def findByAxioms(th1:DeclaredTheory,th2:DeclaredTheory,cutoff:Int,makeComp:Boolean,maximize:Boolean)
    : Set[Set[(GlobalName,GlobalName)]] = {
-    log("Finding by axioms...")
+    log("Finding by axioms from "+th1.name+" to "+th2.name)
     logGroup {
       log("Hashing...")
       val allhashes = Consthash(th1, th2, controller)
@@ -78,7 +79,7 @@ case class Viewfinder(controller: Controller) extends Logger {
           val i = s.indexOf(b)
           s.take(i).filter(p => !p.subsetOf(b)) ::: s.drop(i)
         }
-      ).toSet
+      ).toSet-Set()
       log("Done. "+res.size+" morphisms found!")
       res
     }
@@ -156,6 +157,12 @@ case class Viewfinder(controller: Controller) extends Logger {
     }
   }
 
+
+
+}
+
+object Viewfinder {
+
   /**
    * Takes a Set of views (as Set of pairs of GlobalName) and converts them to DeclaredViews
    * @param allrenamings input views
@@ -164,7 +171,7 @@ case class Viewfinder(controller: Controller) extends Logger {
    * @return a list of DeclaredView
    */
 
-  def settoViews(allrenamings : Set[Set[(GlobalName,GlobalName)]],thA:DeclaredTheory,thB:DeclaredTheory)
+  def settoViews(allrenamings : Set[Set[(GlobalName,GlobalName)]],thA:DeclaredTheory,thB:DeclaredTheory)(implicit controller:Controller)
   :List[DeclaredView] = {
     val renamings = allrenamings.toList
     renamings.indices.map( i => {
@@ -181,7 +188,7 @@ case class Viewfinder(controller: Controller) extends Logger {
    * @return basically dom(view)/min{A,B}
    */
 
-  def evaluateView(v:DeclaredView): Double = {
+  def evaluateView(v:DeclaredView)(implicit controller: Controller): Double = {
     val domc = (controller.get(v.from.toMPath) match {
       case t: DeclaredTheory => t
       case _ => throw new Exception("expected declared theory")
@@ -193,8 +200,26 @@ case class Viewfinder(controller: Controller) extends Logger {
     }).getConstants collect { case c: FinalConstant => c}
 
     v.domain.filter(p => domc.exists(q => (ComplexStep(q.path.module.toMPath) / q.name)==p)).toList.length.toDouble / (if (domc.length<codc.length) domc.length else codc.length).toDouble
+  }
+
+  def evaluateViewset(from:DeclaredTheory,to:DeclaredTheory,viewset:Set[(GlobalName,GlobalName)]): Double = {
+    val domc = from.getConstants collect { case c: FinalConstant => c}
+
+    val codc = to.getConstants collect { case c: FinalConstant => c}
+
+    viewset.filter(p => domc.exists(q => q.path==p._1)).toList.length.toDouble / (if (domc.length<codc.length) domc.length else codc.length).toDouble
 
   }
 
+  def viewtoviewset(v:DeclaredView)(implicit controller:Controller) : List[(FinalConstant,FinalConstant)] = {
+    val from = controller.get(v.from.toMPath) match {
+      case t:DeclaredTheory => t
+      case _ => throw new Exception("DeclaredTheory expected!")
+    }
+    val to = controller.get(v.to.toMPath) match {
+      case t:DeclaredTheory => t
+      case _ => throw new Exception("DeclaredTheory expected!")
+    }
+    Intersecter.getPairs(v,from,to)
+  }
 }
-

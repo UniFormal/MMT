@@ -25,7 +25,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     case x: DefinedStructure    => rh(Reader.RS.toChar.toString) // check?
   }
   override def doConstant(c:Constant,indent:Int)(implicit rh: RenderingHandler) = {
-    rh("" + c.name)
+    rh("" + c.name.last)
     c.alias foreach {a =>
       rh(" @ ")
       rh(a.toPath)
@@ -88,9 +88,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       this.apply(s.from, Some(s.path $ TypeComponent))
       rh(Reader.RS.toChar.toString)
     } else {
-      rh("structure " + s.name + " : ")
-      this.apply(s.from, Some(s.path $ TypeComponent))
-      rh(" =\n")
+      rh("structure " + s.name + " : "+s.from.toMPath.^^.last+"?"+s.from.toMPath.last)
+      //this.apply(s.from, Some(s.path $ TypeComponent))
+      rh(Reader.US.toChar.toString+ " =\n")
       decs.foreach {d => this.apply(d, indent+1)}
       rh(Reader.GS.toChar.toString)
     }
