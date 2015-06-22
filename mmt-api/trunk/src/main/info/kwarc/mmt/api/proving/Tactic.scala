@@ -44,22 +44,22 @@ trait InvertibleTactic extends Tactic {
     *  @param g the goal
     *  @return a continuation that returns the new goal(s)
     */
-   def apply(prover: Prover, g: Goal): Option[ApplicableTactic]
+   def apply(prover: Searcher, g: Goal): Option[ApplicableTactic]
 }
 
 /**
  * an InvertibleTactic, whose behavior depends only on the conclusion of a goal
  */
 trait BackwardInvertible extends InvertibleTactic {
-   def apply(prover: Prover, g: Goal): Option[ApplicableTactic]
+   def apply(prover: Searcher, g: Goal): Option[ApplicableTactic]
 }
 
 /**
  * an InvertibleTactic, whose behavior depends only on the context of a goal
  */
 trait ForwardInvertible extends InvertibleTactic {
-   def apply(prover: Prover, context: Context): Option[ApplicableTactic]
-   def apply(prover: Prover, g: Goal): Option[ApplicableTactic] = apply(prover, g.context)
+   def apply(prover: Searcher, context: Context): Option[ApplicableTactic]
+   def apply(prover: Searcher, g: Goal): Option[ApplicableTactic] = apply(prover, g.context)
 }
 
 /**
@@ -81,7 +81,7 @@ trait BackwardSearch extends Tactic {
     *  @param g the goal
     *  @return a list of continuations each of which might solve the goal 
     */
-   def apply(prover: Prover, g: Goal): List[ApplicableTactic]
+   def apply(prover: Searcher, g: Goal): List[ApplicableTactic]
 }
 
 /**
@@ -93,7 +93,7 @@ trait ForwardSearch extends Tactic {
    /**
     * enriches a database of facts by one iteration
     */
-   def generate(prover: Prover, interactive: Boolean): Unit
+   def generate(prover: Searcher, interactive: Boolean): Unit
 }
 
 /**

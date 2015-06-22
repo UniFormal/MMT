@@ -95,7 +95,7 @@ case class Atom(tm: Term, tp: Term, rl: Option[String]) {
  * @param parent g.parent.facts
  * @param newContext g.context
  */
-class Facts(prover: Prover, shapeDepth: Int, outerLogPrefix: String) extends frontend.Logger {
+class Facts(prover: Searcher, shapeDepth: Int, outerLogPrefix: String) extends frontend.Logger {
    val report = prover.report
    def logPrefix = outerLogPrefix + "/facts"
    

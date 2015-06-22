@@ -20,7 +20,7 @@ case class Alternative(subgoals: List[Goal], proof: () => Term) {
    /** true if all subgoals are solved */
    def isSolved: Boolean = subgoals.forall(_.isSolved)
    def present(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]) = {
-      val gS = subgoals.map {g => Prover.indent(depth) + g.present(depth+1)}
+      val gS = subgoals.map {g => Searcher.indent(depth) + g.present(depth+1)}
       gS.mkString("\n")
    }
    override def toString = subgoals.mkString("\n")
@@ -157,7 +157,7 @@ class Goal(val context: Context, private var concVar: Term) {
    /** stores the backward search rules that have not been applied yet */
    private var backwardSearch : List[BackwardSearch] = Nil
    /** initializes the invertible backward/forward tactics that can be applied */
-   def setExpansionTactics(prover: Prover, backw: List[BackwardInvertible], forw: List[ForwardInvertible]) {
+   def setExpansionTactics(prover: Searcher, backw: List[BackwardInvertible], forw: List[ForwardInvertible]) {
       backward = parent match {
          case Some(g) if g.conc == conc => g.backward
          // TODO it can be redundant to check the applicability of all tactics
@@ -183,10 +183,10 @@ class Goal(val context: Context, private var concVar: Term) {
       }
    }
 
-   def setSearchTactics(prover: Prover, backw: List[BackwardSearch]) {
+   def setSearchTactics(prover: Searcher, backw: List[BackwardSearch]) {
       backwardSearch = backw
    }
-   def getNextSearch(prover: Prover): List[ApplicableTactic] = {
+   def getNextSearch(prover: Searcher): List[ApplicableTactic] = {
       backwardSearch match {
          case Nil => Nil
          case hd::tl =>
@@ -205,7 +205,7 @@ class Goal(val context: Context, private var concVar: Term) {
       if (isSolved) {
          goalHighlight + "! " + presentObj(context) + " |- " + presentObj(proof) + " : " + presentObj(conc)
       } else {
-         val aS = alternatives.map(a => Prover.indent(depth+1) + altHighlight(a) + a.present(depth+1))
+         val aS = alternatives.map(a => Searcher.indent(depth+1) + altHighlight(a) + a.present(depth+1))
          val lines = goalHighlight + (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
          lines.mkString("\n")
       }
