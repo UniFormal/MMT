@@ -986,23 +986,25 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       else
          delay(j)
    }
-  
+
    private def prove(context: Context, conc: Term)(implicit history: History): Option[Term] = {
       val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
       log(msg)
       history += msg 
-      val g = new Goal(context, conc)
-      val prover = new Prover(controller, g, rules, logPrefix)
-      prover.apply(5)
-      if (g.isSolved) {
-         val p = g.proof
-         history += "proof: " + presentObj(p)
-         log("proof: " + presentObj(p))
-         Some(p)
-      } else {
-         log(g.present(0)(presentObj, None, None))
-         None
+      val pu = ProvingUnit(context, conc, logPrefix)
+      controller.extman.get(classOf[Prover]) foreach {prover =>
+         val (found, proof) = prover.apply(pu, rules, 5)
+         if (found) {
+            val p = proof.get
+            history += "proof: " + presentObj(p)
+            log("proof: " + presentObj(p))
+            return Some(p)
+         } else {
+            log("no proof found with prover " + prover.toString) //goal.present(0)(presentObj, None, None))
+         }
       }
+      log("giving up")
+      None
    }
    
    /** 

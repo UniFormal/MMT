@@ -8,6 +8,7 @@ import archives.BuildTarget
 import ontology.QueryExtension
 import parser._
 import checking._
+import proving._
 import utils._
 import web._
 import utils.MyList._
@@ -121,7 +122,8 @@ class ExtensionManager(controller: Controller) extends Logger {
       val msc = new MMTStructureChecker(rbc)
       val mmtint = new TwoStepInterpreter(kwp, msc)
       val mmtextr = ontology.MMTExtractor
-      List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, mmtextr).foreach {e => addExtension(e)}
+      val rbp = new RuleBasedProver
+      List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, mmtextr, rbp).foreach {e => addExtension(e)}
       //targets and presenters
       List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter,
            TextPresenter, OMDocPresenter, controller.presenter).foreach {
