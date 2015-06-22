@@ -7,6 +7,8 @@ import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.{File, FileURI, ShellCommand}
 
+import scala.util.matching.Regex
+
 /** importer wrapper for stex
   */
 class LaTeXML extends Importer with frontend.ChangeListener {
@@ -45,6 +47,33 @@ class LaTeXML extends Importer with frontend.ChangeListener {
     }
   }
 
+  val SmsKeys: List[String] = List(
+    "guse", "gadopt", "symdef", "abbrdef", "symvariant", "keydef", "listkeydef",
+    "importmodule", "gimport", "adoptmodule", "importmhmodule", "adoptmhmodule"
+  )
+
+  val SmsTopKeys: List[String] = List(
+    "module", "importmodulevia", "importmhmodulevia"
+  )
+
+  val SmsRegs: Regex = (SmsKeys.map("\\\\" + _) ++
+    SmsTopKeys.map("\\\\begin\\{" + _ + "\\}") ++
+    SmsTopKeys.map("\\\\end\\{" + _ + "\\}")
+    ).mkString("|").r
+
+  def createSms(inFile: File, outFile: File) = {
+    val source = scala.io.Source.fromFile(inFile)
+    val w = File.Writer(outFile)
+    source.getLines().foreach { line =>
+      val idx = line.indexOf(`%`)
+      val l = (if (idx > -1) line.substring(0, idx) else line).trim
+      val verbIndex = l.indexOf("\\verb")
+      if (verbIndex <= -1 && SmsRegs.findFirstIn(l).isDefined)
+        w.println(l + "%")
+    }
+    w.close
+  }
+
   /**
    * Compile a .tex file to OMDoc
    */
@@ -60,6 +89,11 @@ class LaTeXML extends Importer with frontend.ChangeListener {
       }
       val lmhOut = bt.inFile.setExtension("omdoc")
       val logFile = bt.inFile.setExtension("ltxlog")
+      val smsFile = bt.inFile.setExtension("sms")
+      try createSms(bt.inFile, smsFile)
+      catch {case e: Throwable =>
+        bt.errorCont(LocalError("sms exception: " + e))
+      }
       if (lmhOut.exists()) Files.move(lmhOut.toPath, bt.outFile.toPath)
       var optLevel: Option[Level.Level] = None
       var msg: List[String] = Nil
