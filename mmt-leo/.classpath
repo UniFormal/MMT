@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/deploy-wrapper"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/mmt-api"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/mmt-lf"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/LeoPARD"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
