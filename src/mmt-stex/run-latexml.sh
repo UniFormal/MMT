@@ -7,12 +7,13 @@ then
   exit 1
 fi
 
-# take latexmlc and PERL5LIB from (possibly external) LATEXML_BASE
-: ${LATEXML_BASE:=/var/data/localmh/ext/LaTeXML}
+# take directory for LaTeXML, LaTeXMLs, sTeX and perl5lib from EXT_BASE
+: ${EXT_BASE:=/var/data/localmh/ext}
 
-# avoid to compute PERL5LIB from "which latexmlc"
-export PERL5LIB=${LATEXML_BASE}/blib/lib
-export STEXSTYDIR=/var/data/localmh/ext/sTeX/sty
+export LATEXML_BASE=${EXT_BASE}/LaTeXML
+export STEXSTYDIR=${EXT_BASE}/sTeX/sty
+export TEXINPUTS=.//:${STEXSTYDIR}//:
+export PERL5LIB=${EXT_BASE}/perl5lib/lib/perl5:${LATEXML_BASE}/blib/lib
 
 inputfile="$(readlink -f $1)"
 
@@ -107,10 +108,20 @@ fi
 
 cd $sourceDir  # source directory
 
-exec ${LATEXML_BASE}/bin/latexmlc --quiet --profile stex-smglom-module \
-  --path=/var/data/localmh/sty "$dir/${theory}.tex" \
+scriptname="$(basename $0 .sh)"
+
+if [ "$scriptname" == "run-latexml" ]
+then
+ export PATH=${EXT_BASE}/perl5lib/bin:$PATH # for latexmls
+
+ exec ${EXT_BASE}/perl5lib/bin/latexmlc --quiet --profile stex-smglom-module \
+  "$dir/${theory}.tex" \
   --destination="$dir/${theory}.omdoc" \
   --log="$dir/${theory}.ltxlog" \
   --preamble="$preamble" \
   --postamble="$postamble" \
   --expire=10
+else
+ cat "$preamble" "$dir/${theory}.tex" "$postamble" \
+  | pdflatex -jobname ${theory} -interaction scrollmode
+fi
