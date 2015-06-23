@@ -155,7 +155,10 @@ lazy val planetary = (project in file("planetary-mmt")).
 
 lazy val leo = (project in file("mmt-leo")).
   dependsOn(api).
-  settings(commonSettings("mmt-leo"): _*)
+  settings(commonSettings("mmt-leo"): _*).
+  settings(
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "leopard-0.3.jar"
+  )
 
 // just a wrapper project
 lazy val mmt = (project in file("mmt-exts")).
