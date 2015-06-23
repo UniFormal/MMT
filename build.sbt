@@ -153,9 +153,13 @@ lazy val planetary = (project in file("planetary-mmt")).
   dependsOn(stex).
   settings(commonSettings("planetary-mmt"): _*)
 
+lazy val leo = (project in file("mmt-leo")).
+  dependsOn(api).
+  settings(commonSettings("mmt-leo"): _*)
+
 // just a wrapper project
 lazy val mmt = (project in file("mmt-exts")).
-  dependsOn(tptp, stex, pvs, specware, webEdit, planetary).
+  dependsOn(tptp, stex, pvs, specware, webEdit, planetary, leo).
   settings(commonSettings("mmt-exts"): _*).
   settings(
     exportJars := false,
