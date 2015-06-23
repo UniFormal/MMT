@@ -12,7 +12,7 @@ import proving._
 object PiIntroduction extends BackwardInvertible {
    val head = Pi.path
    def priority = 5
-   def apply(prover: Prover, goal: Goal) = goal.conc match {
+   def apply(prover: Searcher, goal: Goal) = goal.conc match {
       case Pi(n,a,b) =>
          onApply("Pi introduction") {
             val n2 = if (n == OMV.anonymous) LocalName("p") else n
@@ -58,7 +58,7 @@ object BackwardPiElimination extends BackwardSearch {
     * @param fact closed (function) type
     * @return the argument types of fact such that applying a function of type fact yields a result of type goal 
     */
-   private def makeSubgoals(prover: Prover, context: Context, goal: Term, fact: Term): Option[Context] = { 
+   private def makeSubgoals(prover: Searcher, context: Context, goal: Term, fact: Term): Option[Context] = { 
       // tp must be of the form Pi bindings.scope
       val (bindings, scope) = FunType.unapply(fact).get
       val (paramList, subgoalList) = bindings.span(_._1.isDefined)
@@ -110,7 +110,7 @@ object BackwardPiElimination extends BackwardSearch {
         }
         Alternative(sgs.reverse, () => ApplyGeneral(tm, args.reverseMap(a => a())))
    }
-   def apply(prover: Prover, g: Goal): List[ApplicableTactic] = {
+   def apply(prover: Searcher, g: Goal): List[ApplicableTactic] = {
       (g.fullVarAtoms ::: prover.facts.getConstantAtoms).flatMap {case Atom(tm,tp,_) =>
          // match return type of tp against g.conc
          val sgsOpt = makeSubgoals(prover, g.fullContext, g.conc, tp)
@@ -194,7 +194,7 @@ object BackwardPiElimination extends BackwardSearch {
 
 object ForwardPiElimination extends ForwardSearch {
    val head = Pi.path
-   def generate(prover: Prover, interactive: Boolean) {
+   def generate(prover: Searcher, interactive: Boolean) {
       // apply all symbols
       prover.facts.getConstantAtoms foreach {case a =>
          if (interactive || a.rl == Some("ForwardRule"))
