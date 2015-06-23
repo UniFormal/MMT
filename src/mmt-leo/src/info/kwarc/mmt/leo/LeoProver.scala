@@ -1,4 +1,5 @@
 package info.kwarc.mmt.leo
+package leo
 
 import info.kwarc.mmt.api._
 import checking._
@@ -10,4 +11,6 @@ class LeoProver extends Prover {
    def interactive(pu: ProvingUnit, rules: RuleSet, levels: Int) = Nil
    
    def apply(pu: ProvingUnit, rules: RuleSet, levels: Int) = (false, None)
+
+
 }
