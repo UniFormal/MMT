@@ -11,11 +11,8 @@ import scala.util.matching.Regex
 
 class SmsGenerator extends TraversingBuildTarget {
   val key = "sms"
-
-  def inDim = source
-
-  def outDim = source
-
+  val inDim = source
+  val outDim = source
   override val outExt = "sms"
 
   def includeFile(n: String): Boolean =
@@ -25,11 +22,9 @@ class SmsGenerator extends TraversingBuildTarget {
     "guse", "gadopt", "symdef", "abbrdef", "symvariant", "keydef", "listkeydef",
     "importmodule", "gimport", "adoptmodule", "importmhmodule", "adoptmhmodule"
   )
-
   val SmsTopKeys: List[String] = List(
     "module", "importmodulevia", "importmhmodulevia"
   )
-
   val SmsRegs: Regex = (SmsKeys.map("\\\\" + _) ++
     SmsTopKeys.map("\\\\begin\\{" + _ + "\\}") ++
     SmsTopKeys.map("\\\\end\\{" + _ + "\\}")
@@ -45,7 +40,7 @@ class SmsGenerator extends TraversingBuildTarget {
       if (verbIndex <= -1 && SmsRegs.findFirstIn(l).isDefined)
         w.println(l + "%")
     }
-    w.close
+    w.close()
   }
 
   def buildFile(bt: BuildTask): Unit = {
@@ -153,6 +148,29 @@ class LaTeXML extends SmsGenerator {
         }
         bt.outFile.delete()
         bt.errorCont(LocalError("exception for file: " + bt.inFile + "\n" + msg).setCausedBy(e))
+    }
+  }
+}
+
+class PdfLatex extends SmsGenerator {
+  override val key = "pdflatex"
+  override val outExt = "pdf"
+
+  private var pdflatexPath: File = File("run-pdflatex.sh")
+
+  override def buildFile(bt: BuildTask) {
+    val command: List[String] = List(pdflatexPath, bt.inFile) map (_.toString)
+    log(command.mkString(" "))
+    bt.outFile.delete()
+    try {
+      val result = ShellCommand.run(command: _*)
+      result foreach { s =>
+        bt.errorCont(LocalError(s))
+        return
+      }
+    } catch {
+      case e: Throwable =>
+        bt.errorCont(LocalError("pdf exception: " + e))
     }
   }
 }
