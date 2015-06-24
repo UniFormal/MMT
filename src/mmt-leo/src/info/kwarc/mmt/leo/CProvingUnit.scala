@@ -3,6 +3,7 @@ import _root_.leo.agents.impl._
 import _root_.leo.datastructures.blackboard.Blackboard
 import _root_.leo.datastructures.blackboard.scheduler.Scheduler
 import _root_.leo.datastructures.context.Context
+import _root_.leo.datastructures.impl._
 import _root_.leo.modules._
 import _root_.leo.modules.Utility._
 import _root_.leo.modules.output._
@@ -11,7 +12,6 @@ import _root_.leo.modules.Phase._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.proving._
-
 
 
 /**
@@ -25,5 +25,8 @@ abstract class CProvingUnit(context: objects.Context, tp: Term, logPrefix: Strin
 
   //def clausify: Clause {  }
   val test = new ClausificationAgent()
+  val sig = Signature.empty
 
+  //sig.addBaseType("prop")
+  //sig.add
 }
