@@ -9,43 +9,17 @@ import info.kwarc.mmt.api.utils.{File, FileURI, ShellCommand}
 
 import scala.util.matching.Regex
 
-/** importer wrapper for stex
-  */
-class LaTeXML extends Importer with frontend.ChangeListener {
-  override val key = "latexml"
+class SmsGenerator extends TraversingBuildTarget {
+  val key = "sms"
 
-  private var lmlPath: File = File("run-latexml.sh")
+  def inDim = source
 
-  override def includeFile(n: String): Boolean =
-    super.includeFile(n) && !n.endsWith("localpaths.tex")
+  def outDim = source
 
-  def inExts = List("tex")
+  override val outExt = "sms"
 
-  def str2Level(lev: String): Level.Level = lev match {
-    case "Info" => Level.Info
-    case "Error" => Level.Error
-    case "Fatal" => Level.Fatal
-    case _ => Level.Warning
-  }
-
-  def line2Region(sLine: String, inFile: File): SourceRegion = {
-    val regEx = """#textrange\(from=(\d+);(\d+),to=(\d+);(\d+)\)""".r
-    val range = sLine.stripPrefix(inFile.toString)
-    range match {
-      case regEx(l1, c1, l2, c2) =>
-        SourceRegion(SourcePosition(-1, l1.toInt, c1.toInt),
-          SourcePosition(-1, l2.toInt, c2.toInt))
-      case _ => SourceRegion.none
-    }
-  }
-
-  def line2Level(line: String): (Option[Level.Level], String) = {
-    val msgLine = """(Info|Warning|Error|Fatal):(.*)""".r
-    line match {
-      case msgLine(lev, rest) => (Some(str2Level(lev)), rest)
-      case _ => (None, line)
-    }
-  }
+  def includeFile(n: String): Boolean =
+    n.endsWith(".tex") && !n.endsWith("localpaths.tex")
 
   val SmsKeys: List[String] = List(
     "guse", "gadopt", "symdef", "abbrdef", "symvariant", "keydef", "listkeydef",
@@ -74,10 +48,54 @@ class LaTeXML extends Importer with frontend.ChangeListener {
     w.close
   }
 
+  def buildFile(bt: BuildTask): Unit = {
+    val smsFile = bt.inFile.setExtension("sms")
+    try createSms(bt.inFile, smsFile)
+    catch {
+      case e: Throwable =>
+        bt.errorCont(LocalError("sms exception: " + e))
+    }
+  }
+}
+
+/** importer wrapper for stex
+  */
+class LaTeXML extends SmsGenerator {
+  override val key = "latexml"
+  override val outExt = "omdoc"
+
+  private var lmlPath: File = File("run-latexml.sh")
+
+  def str2Level(lev: String): Level.Level = lev match {
+    case "Info" => Level.Info
+    case "Error" => Level.Error
+    case "Fatal" => Level.Fatal
+    case _ => Level.Warning
+  }
+
+  def line2Region(sLine: String, inFile: File): SourceRegion = {
+    val regEx = """#textrange\(from=(\d+);(\d+),to=(\d+);(\d+)\)""".r
+    val range = sLine.stripPrefix(inFile.toString)
+    range match {
+      case regEx(l1, c1, l2, c2) =>
+        SourceRegion(SourcePosition(-1, l1.toInt, c1.toInt),
+          SourcePosition(-1, l2.toInt, c2.toInt))
+      case _ => SourceRegion.none
+    }
+  }
+
+  def line2Level(line: String): (Option[Level.Level], String) = {
+    val msgLine = """(Info|Warning|Error|Fatal):(.*)""".r
+    line match {
+      case msgLine(lev, rest) => (Some(str2Level(lev)), rest)
+      case _ => (None, line)
+    }
+  }
+
   /**
    * Compile a .tex file to OMDoc
    */
-  def importDocument(bt: BuildTask, seCont: documents.Document => Unit) {
+  override def buildFile(bt: BuildTask) {
     val command: List[String] = List(lmlPath, bt.inFile) map (_.toString)
     log(command.mkString(" "))
     bt.outFile.delete()
@@ -90,11 +108,7 @@ class LaTeXML extends Importer with frontend.ChangeListener {
       val lmhOut = bt.inFile.setExtension("omdoc")
       val logFile = bt.inFile.setExtension("ltxlog")
       val smsFile = bt.inFile.setExtension("sms")
-      try createSms(bt.inFile, smsFile)
-      catch {case e: Throwable =>
-        bt.errorCont(LocalError("sms exception: " + e))
-      }
-      if (lmhOut.exists()) Files.move(lmhOut.toPath, bt.outFile.toPath)
+      if (lmhOut.exists() && lmhOut != bt.outFile) Files.move(lmhOut.toPath, bt.outFile.toPath)
       var optLevel: Option[Level.Level] = None
       var msg: List[String] = Nil
       var newMsg = true
