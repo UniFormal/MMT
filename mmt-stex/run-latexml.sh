@@ -7,14 +7,6 @@ then
   exit 1
 fi
 
-# take directory for LaTeXML, LaTeXMLs, sTeX and perl5lib from EXT_BASE
-: ${EXT_BASE:=/var/data/localmh/ext}
-
-export LATEXML_BASE=${EXT_BASE}/LaTeXML
-export STEXSTYDIR=${EXT_BASE}/sTeX/sty
-export TEXINPUTS=.//:${STEXSTYDIR}//:
-export PERL5LIB=${EXT_BASE}/perl5lib/lib/perl5:${LATEXML_BASE}/blib/lib
-
 inputfile="$(readlink -f $1)"
 
 theory="$(basename $inputfile .tex)"
@@ -49,6 +41,16 @@ repo="$(basename $repoDir)"
 groupDir="$(dirname $repoDir)"
 group="$(basename $groupDir)"
 baseDir="$(dirname $groupDir)"
+mathHubDir="$(dirname $baseDir)"
+
+# take directory for LaTeXML, LaTeXMLs, sTeX and perl5lib
+# from mathHubDir or external EXT_BASE
+: ${EXT_BASE:=${mathHubDir}/ext}
+
+export LATEXML_BASE=${EXT_BASE}/LaTeXML
+export STEXSTYDIR=${EXT_BASE}/sTeX/sty
+export TEXINPUTS=.//:${STEXSTYDIR}//:
+export PERL5LIB=${EXT_BASE}/perl5lib/lib/perl5:${LATEXML_BASE}/blib/lib
 
 # if localpaths.tex exists, we take it as it is
 if [ ! -f "$dir/localpaths.tex" ]
