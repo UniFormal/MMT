@@ -16,7 +16,7 @@ class SmsGenerator extends TraversingBuildTarget {
   override val outExt = "sms"
 
   def includeFile(n: String): Boolean =
-    n.endsWith(".tex") && !n.endsWith("localpaths.tex")
+    n.endsWith(".tex") && !n.endsWith("localpaths.tex") && !n.startsWith("all.")
 
   val SmsKeys: List[String] = List(
     "guse", "gadopt", "symdef", "abbrdef", "symvariant", "keydef", "listkeydef",
