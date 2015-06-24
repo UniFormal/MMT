@@ -1,5 +1,4 @@
 package info.kwarc.mmt.leo
-package leo
 
 import info.kwarc.mmt.api._
 import checking._
