@@ -49,8 +49,7 @@ class SmsGenerator extends TraversingBuildTarget {
   }
 
   def buildFile(bt: BuildTask): Unit = {
-    val smsFile = bt.inFile.setExtension("sms")
-    try createSms(bt.inFile, smsFile)
+    try createSms(bt.inFile, bt.outFile)
     catch {
       case e: Throwable =>
         bt.errorCont(LocalError("sms exception: " + e))
