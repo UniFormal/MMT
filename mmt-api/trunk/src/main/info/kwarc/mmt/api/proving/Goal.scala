@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.proving
 
 import info.kwarc.mmt.api._
 import checking._
+import info.kwarc.mmt.api.utils.HTML
 import objects._
 import objects.Conversions._
 
@@ -23,6 +24,18 @@ case class Alternative(subgoals: List[Goal], proof: () => Term) {
       val gS = subgoals.map {g => Searcher.indent(depth) + g.present(depth+1)}
       gS.mkString("\n")
    }
+
+   def presentHtml(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]) = {
+      val gS = subgoals.map {g => Searcher.indent(depth) + g.presentHtml(depth+1, firstTime=false)}
+      HTML.build { h => import h._
+         gS.foreach { l =>
+            div("prover-alternative") {
+               literal(l)
+            }
+         }
+      }
+   }
+
    override def toString = subgoals.mkString("\n")
 }
 
@@ -210,4 +223,47 @@ class Goal(val context: Context, private var concVar: Term) {
          lines.mkString("\n")
       }
    }
+
+   def presentHtml(depth: Int, firstTime:Boolean = true)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]): String = {
+
+      def addHtmlDiv(s: String, cl: String)() = {
+         HTML.build { h => import h._
+            div(cl) {
+               literal(s)
+            }
+         }
+      }
+
+      val goalHighlight = if (Some(this) == current) {
+         addHtmlDiv("X ", "prover-X")
+      } else {
+         "  "
+      }
+
+      def altHighlight(a: Alternative) = if (Some(a) == newAlt) "+ new\n" else "+ \n"
+      if (isSolved) {
+         addHtmlDiv(goalHighlight + "! " + presentObj(context) + " |- " + presentObj(proof) + " : " + presentObj(conc),"prover-solved")
+      } else {
+         val aS = alternatives.map(a => Searcher.indent(depth + 1) + altHighlight(a) + a.presentHtml(depth + 1))
+         val lines = goalHighlight + (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
+
+         if (firstTime) {
+            HTML.build { h => import h._
+               html {
+                  body {
+                     lines.foreach { l =>
+                        div("prover-goal") {
+                           literal(l)
+                        }
+                     }
+                  }
+               }
+            }
+         } else {
+            lines.map({ l => addHtmlDiv(l, "prover-goal") }).mkString("")
+
+         }
+      }
+   }
+
 }

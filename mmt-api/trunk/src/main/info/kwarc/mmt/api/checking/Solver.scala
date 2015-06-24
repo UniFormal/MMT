@@ -39,7 +39,7 @@ object InferredType extends TermProperty[Term](utils.mmt.baseURI / "clientProper
  *   unknown variables may occur in the types of later unknowns.
  * 
  * See [[CheckingUnit]] for the semantics of the contexts.
- * 
+ *
  * Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.  
  */
 class Solver(val controller: Controller, val constantContext: Context, initUnknowns: Context, val rules: RuleSet)

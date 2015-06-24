@@ -20,7 +20,7 @@ import utils._
  */
 class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, outerLogPrefix: String) extends Logger {
    val report = controller.report
-   def logPrefix = outerLogPrefix + "/prover"
+   def logPrefix = outerLogPrefix + "#prover"
    
    implicit val presentObj: Obj => String = o => controller.presenter.asString(o)
    
@@ -152,7 +152,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, outerLogP
       // add the alternative to the proof tree and expand the subgoals
       g.addAlternative(alt)
       log("************************* " + at.label + " at X **************************")
-      log("\n" + goal.present(0)(presentObj, Some(g), Some(alt)))
+      log("\n" + goal.presentHtml(0)(presentObj, Some(g), Some(alt)))
       if (!g.isSolved) {
          // recursively process subgoals
          alt.subgoals.foreach {sg => expand(sg)}
