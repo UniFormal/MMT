@@ -30,7 +30,7 @@ trait ScalaArchive extends WritableArchive {
 
   /** Integrate scala into a dimension */
   def integrateScala(controller: Controller, in: List[String] = Nil) {
-    traversing(content, in, Archive.traverseIf("omdoc")) { case Current(inFile, inPath) =>
+    traverse(content, in, Archive.traverseIf("omdoc")) { case Current(inFile, inPath) =>
       val mpath = Archive.ContentPathToMMTPath(inPath)
       val mod = controller.globalLookup.getModule(mpath)
       val scalaFile = (root / "scala" / inPath).setExtension("scala")

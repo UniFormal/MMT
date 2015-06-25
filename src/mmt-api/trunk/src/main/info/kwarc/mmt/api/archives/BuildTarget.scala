@@ -192,7 +192,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   private def buildAux(in: List[String] = Nil)(implicit a: Archive, eCOpt: Option[ErrorHandler]) {
     //build every file
     val prefix = "[" + inDim + " -> " + outDim + "] "
-    a.traversing[BuildTask](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
+    a.traverse[BuildTask](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case Current(inFile, inPath) =>
         if (!inFile.isFile)
           throw LocalError("file does not exist: " + inPath)
@@ -250,7 +250,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   /** recursively delete output files in parallel (!) */
   def clean(a: Archive, args: List[String], in: List[String] = Nil) {
-    a.traversing[Unit](outDim, in, TraverseMode(Archive.extensionIs(outExt), includeDir, parallel = true))(
+    a.traverse[Unit](outDim, in, TraverseMode(Archive.extensionIs(outExt), includeDir, parallel = true))(
     { c => cleanFile(a, c) }, { case (c, _) => cleanDir(a, c) })
   }
 
@@ -268,7 +268,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     * the decision is made based on the time stamps and the system's last-modified date
     */
   def update(a: Archive, args: List[String], up: Update, in: List[String] = Nil) {
-    a.traversing[Boolean](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
+    a.traverse[Boolean](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case c@Current(inFile, inPath) =>
         modified(a, inPath) match {
           case (Deleted, _) =>
