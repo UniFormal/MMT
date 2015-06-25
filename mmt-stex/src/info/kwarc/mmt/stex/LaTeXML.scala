@@ -18,6 +18,8 @@ class SmsGenerator extends TraversingBuildTarget {
   def includeFile(n: String): Boolean =
     n.endsWith(".tex") && !n.endsWith("localpaths.tex") && !n.startsWith("all.")
 
+  override def includeDir(n : String): Boolean = !n.endsWith("tikz")
+
   val SmsKeys: List[String] = List(
     "guse", "gadopt", "symdef", "abbrdef", "symvariant", "keydef", "listkeydef",
     "importmodule", "gimport", "adoptmodule", "importmhmodule", "adoptmhmodule"
