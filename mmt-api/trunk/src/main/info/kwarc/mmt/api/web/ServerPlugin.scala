@@ -1,21 +1,19 @@
 package info.kwarc.mmt.api.web
-import info.kwarc.mmt.api._
-import frontend._
-import ontology._
-import utils._
-import tiscaf._
+
 import java.util.Calendar
-import info.kwarc.mmt.api.metadata
-import scala.util.parsing.json._
-import scala.io.Source
-import java.io.FileNotFoundException
+
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.ontology._
+import info.kwarc.mmt.api.utils._
+import tiscaf._
 
 /**
  * An MMT extensions that handles certain requests in MMT's HTTP server.
  *
  * It will be called on URIs of the form http://server:port/:CONTEXT/PATH?QUERY
  *
- * @param cont the CONTEXT
+ * @param context the CONTEXT
  */
 abstract class ServerExtension(context: String) extends FormatBasedExtension {
   /**
@@ -23,6 +21,7 @@ abstract class ServerExtension(context: String) extends FormatBasedExtension {
    * @return true if cont is equal to this.context
    */
   def isApplicable(cont: String): Boolean = cont == context
+
   /**
    * handles the HTTP request
    * @param path the PATH from above (excluding CONTEXT)
@@ -30,9 +29,9 @@ abstract class ServerExtension(context: String) extends FormatBasedExtension {
    * @param body the body of the request
    * @return the HTTP response
    *
-   * Implementing classes can and should use Server.XmlResponse etc to construct responses conveniently.
+   *         Implementing classes can and should use Server.XmlResponse etc to construct responses conveniently.
    *
-   * Errors thrown by this method are caught and sent back to the browser.
+   *         Errors thrown by this method are caught and sent back to the browser.
    */
   def apply(path: List[String], query: String, body: Body): HLet
 }
@@ -41,14 +40,14 @@ abstract class ServerExtension(context: String) extends FormatBasedExtension {
  * interprets the body as MMT content
  */
 class PostServer extends ServerExtension("post") {
-		def apply(path: List[String], query: String, body: Body) = {
+  def apply(path: List[String], query: String, body: Body) = {
     val wq = WebQuery.parse(query)
     val content = wq.string("body", throw ServerError("found no body in post req"))
     val format = wq.string("format", "mmt")
     val dpathS = wq.string("dpath", throw ServerError("expected dpath"))
     val dpath = DPath(URI(dpathS))
     log("Received content : " + content)
-    controller.read(parser.ParsingStream.fromString(content, dpath, format), true)(ErrorThrower)
+    controller.read(parser.ParsingStream.fromString(content, dpath, format), interpret = true)(ErrorThrower)
     Server.TextResponse("Success")
   }
 }
@@ -56,20 +55,20 @@ class PostServer extends ServerExtension("post") {
 /** interprets the query as an MMT document URI and returns the SVG representation of the theory graph */
 class SVGServer extends ServerExtension("svg") {
   /**
-   *  @param path ignored
-   *  @param query the document path
-   *  @param body ignored
+   * @param path ignored
+   * @param query the document path
+   * @param body ignored
    */
 
- 	def apply(path: List[String], query: String, body: Body) = {
+  def apply(path: List[String], query: String, body: Body) = {
     val path = Path.parse(query, controller.getNamespaceMap)
     val (inNarr, newPath) = path match {
       // doc path
-      case dp: DPath      => (true, dp)
+      case dp: DPath => (true, dp)
       // module path
-      case mp: MPath      => (false, mp)
+      case mp: MPath => (false, mp)
       case gp: GlobalName => (false, gp.module.toMPath)
-      case cp: CPath      => (false, cp.parent.module.toMPath)
+      case cp: CPath => (false, cp.parent.module.toMPath)
     }
     val svgFile = if (inNarr) {
       val dp = newPath.asInstanceOf[DPath]
@@ -94,9 +93,9 @@ class SVGServer extends ServerExtension("svg") {
 /** interprets the body as a QMT [[ontology.Query]] and evaluates it */
 class QueryServer extends ServerExtension("query") {
   /**
-   *  @param path ignored
-   *  @param httpquery ignored
-   *  @param body the query as XML
+   * @param path ignored
+   * @param httpquery ignored
+   * @param body the query as XML
    */
   def apply(path: List[String], httpquery: String, body: Body) = {
     val mmtquery = body.asXML
@@ -114,11 +113,15 @@ class QueryServer extends ServerExtension("query") {
 class SearchServer extends ServerExtension("search") {
   private lazy val search = new Search(controller)
   private val mmlpres = new presentation.MathMLPresenter
-  override def start(args: List[String]) { mmlpres.init(controller) }
+
+  override def start(args: List[String]) {
+    mmlpres.init(controller)
+  }
+
   /**
-   *  @param path ignored
-   *  @param httpquery search parameters
-   *  @param body ignored
+   * @param path ignored
+   * @param httpquery search parameters
+   * @param body ignored
    */
   def apply(path: List[String], httpquery: String, body: Body) = {
     val wq = WebQuery.parse(httpquery)
@@ -135,10 +138,10 @@ class SearchServer extends ServerExtension("search") {
     val pp = PathPattern(base, mod, name)
     val tp = (theory, pattern) match {
       case (Some(t), Some(p)) => Some(TermPattern.parse(controller, t, p, format))
-      case (_, _)             => None
+      case (_, _) => None
     }
     val sq = SearchQuery(pp, comps, tp)
-    val res = search(sq, true)
+    val res = search(sq, resolveResults = true)
     val htmlres = HTML.build { h =>
       import h._
       div(attributes = List("xmlns" -> xml.namespace("html"), "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
@@ -146,14 +149,22 @@ class SearchServer extends ServerExtension("search") {
           div("result") {
             val CPath(par, comp) = r.cpath
             div {
-              text { comp.toString + " of " }
-              span("mmturi", attributes = List("jobad:href" -> par.toPath)) { text { par.last } }
+              text {
+                comp.toString + " of "
+              }
+              span("mmturi", attributes = List("jobad:href" -> par.toPath)) {
+                text {
+                  par.last
+                }
+              }
             }
             r match {
               case SearchResult(cp, pos, None) =>
               case SearchResult(cp, pos, Some(term)) =>
                 def style(pc: presentation.PresentationContext) = if (pc.pos == pos) "resultmatch" else ""
-                div { mmlpres(term, Some(cp), style)(new presentation.HTMLRenderingHandler(h)) }
+                div {
+                  mmlpres(term, Some(cp), style)(new presentation.HTMLRenderingHandler(h))
+                }
             }
           }
         }
@@ -170,11 +181,11 @@ class GetActionServer extends ServerExtension("mmt") {
     val resp: String = action match {
       case GetAction(a: ToWindow) =>
         a.make(controller)
-        <done action={ a.toString }/>.toString
+          <done action={a.toString}/>.toString
       case GetAction(a: Respond) =>
         a.get(controller)
       case _ =>
-        <notallowed action={ action.toString }/>.toString
+          <notallowed action={action.toString}/>.toString
     }
     Server.XmlResponse(resp)
   }
@@ -183,18 +194,26 @@ class GetActionServer extends ServerExtension("mmt") {
 /** interprets the query as an MMT [[frontend.Action]] and returns the log output */
 class ActionServer extends ServerExtension("action") {
   private lazy val logCache = new RecordingHandler(logPrefix)
+
   override def start(args: List[String]) {
     report.addHandler(logCache)
   }
+
   override def destroy {
     report.removeHandler(logPrefix)
   }
+
   def apply(path: List[String], query: String, body: Body): HLet = {
     val c = query.replace("%20", " ")
     val act = frontend.Action.parseAct(c, controller.getBase, controller.getHome)
     if (act == Exit) {
       // special case for sending a response when exiting
-      (new Thread { override def run { Thread.sleep(2); sys.exit } }).start
+      new Thread {
+        override def run {
+          Thread.sleep(2)
+          sys.exit
+        }
+      }.start
       return Server.XmlResponse(<exited/>)
     }
     logCache.record
@@ -203,7 +222,14 @@ class ActionServer extends ServerExtension("action") {
     logCache.clear
     val html = utils.HTML.build { h =>
       import h._
-      div { r foreach { l => div { text { l } } } }
+      div {
+        r foreach { l => div {
+          text {
+            l
+          }
+        }
+        }
+      }
     }
     Server.XmlResponse(html)
   }
@@ -218,7 +244,7 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
   def apply(path: List[String], query: String, body: Body) = {
     val path = Path.parse(query, controller.getNamespaceMap)
     var s = body.asString
-    val date = Calendar.getInstance().getTime().toString()
+    val date = Calendar.getInstance().getTime.toString
     val end = date.replaceAll("\\s", "")
     //deprecated but will use this until better alternatives come along
     // one possible solution is Argonaut
@@ -226,12 +252,11 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
     var user = ""
     var comment = ""
     result match {
-      case Some(map: Map[String, String]) =>
-        {
-          user = map.getOrElse("user", null)
-          comment = map.getOrElse("comment", null)
-        }
-      case None  => println("Parsing failed")
+      case Some(m: Map[_, _]) =>
+        val map = m.asInstanceOf[Map[String, String]]
+        user = map.getOrElse("user", null)
+        comment = map.getOrElse("comment", null)
+      case None => println("Parsing failed")
       case other => println("Unknown data structure: " + other)
     }
     val resp = "<comment>" +
@@ -247,22 +272,23 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
     val f = root + archive + user + end + ".xml"
     val folder = File(f)
     try {
- 			 write(folder, resp);
-			}
-		catch {
-			case ex: Exception =>{
-				println(ex)
-				}
-		}
-		finally {
- 			 Server.XmlResponse("<p>not ok</p>")
- 			}
+      write(folder, resp)
+    }
+    catch {
+      case ex: Exception =>
+        println(ex)
+    }
+    finally {
+      Server.XmlResponse("<p>not ok</p>")
+    }
     Server.XmlResponse("<p>OK</p>")
   }
+
   def Writer(f: File) = {
     f.up.toJava.mkdirs
     new StandardPrintWriter(f)
   }
+
   def write(f: File, s: String) {
     val fw = Writer(f)
     fw.write(s)
@@ -271,57 +297,58 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
 }
 
 class AlignServer extends ServerExtension("align") {
-	//override def start(args: List[String]) {}
-    def apply(path: List[String], query: String, body: Body) = {
-      	val root_hol = controller.backend.getArchive("hollight").foreach {a =>
-      	   val alignments_hol = a.root /"relational" /"alignments"/"alignments.rel"
-        		val fhol = File(alignments_hol)
-       		try {
-    	   		read(fhol)
-       		}
-       		catch {
-       			case ex: Exception => {
-       			println(ex)
-       		}
-       	}
-    	}
-			val root_miz = controller.backend.getArchive("MML").foreach {a =>
-      	   val alignments_miz = a.root /"relational" /"alignments"/"alignments.rel"
-        		val fmiz = File(alignments_miz)
-       		try {
-    	   		read(fmiz)
-       		}
-       		catch {
-       			case ex: Exception => {
-       			println(ex)
-       		}
-       	}
-    	}
-		  val path = Path.parse(query, controller.getNamespaceMap) 
-  		val list = getSymbolAlignments(path)._1
-  		if(list.isEmpty) {
-  			Server.TextResponse("")
-  		}
-  		else {
-  			val concept = getSymbolAlignments(path)._2.split("\\?").last
-		  	val symbolAlignments = getSymbolAlignments(path)._1.distinct.map { s => s.toPath }
-				val typeAlignments = getTypeAlignments(path).map { s => s.toPath }
-				val prepJson = symbolAlignments.map{ el =>
-        	 "{\"name\": " + "\"" +  el.split('?').last  + "\", " + "\", parent\": " + "\"" + concept + "\"" + ", " + "\"address\": " +  "\"" + el +  "\""+  markLibrary(el) + "}"
-        	}.mkString(",")		  
-     		val rootJson =  "[{\"name\":"  + "\"" + concept + "\"" + ",\"parent\":\"null\"," + "\"children\": [" + prepJson + "]}]"
-     		Server.TextResponse(rootJson)	
-  		}
+  //override def start(args: List[String]) {}
+  def apply(path: List[String], query: String, body: Body) = {
+    val root_hol = controller.backend.getArchive("hollight").foreach { a =>
+      val alignments_hol = a.root / "relational" / "alignments" / "alignments.rel"
+      val fhol = File(alignments_hol)
+      try {
+        read(fhol)
+      }
+      catch {
+        case ex: Exception =>
+          println(ex)
+      }
+    }
+    val root_miz = controller.backend.getArchive("MML").foreach { a =>
+      val alignments_miz = a.root / "relational" / "alignments" / "alignments.rel"
+      val fmiz = File(alignments_miz)
+      try {
+        read(fmiz)
+      }
+      catch {
+        case ex: Exception =>
+          println(ex)
+      }
+    }
+    val path = Path.parse(query, controller.getNamespaceMap)
+    val list = getSymbolAlignments(path)._1
+    if (list.isEmpty) {
+      Server.TextResponse("")
+    }
+    else {
+      val concept = getSymbolAlignments(path)._2.split("\\?").last
+      val symbolAlignments = getSymbolAlignments(path)._1.distinct.map { s => s.toPath }
+      val typeAlignments = getTypeAlignments(path).map { s => s.toPath }
+      val prepJson = symbolAlignments.map { el =>
+        "{\"name\": " + "\"" + el.split('?').last + "\", " + "\", parent\": " + "\"" + concept + "\"" + ", " + "\"address\": " + "\"" + el + "\"" + markLibrary(el) + "}"
+      }.mkString(",")
+      val rootJson = "[{\"name\":" + "\"" + concept + "\"" + ",\"parent\":\"null\"," + "\"children\": [" + prepJson + "]}]"
+      Server.TextResponse(rootJson)
+    }
   }
-  def findHomeLibrary(path:String, lib: String): Boolean = {
+
+  def findHomeLibrary(path: String, lib: String): Boolean = {
     path contains lib
   }
+
   def markLibrary(s: String): String = {
-  	if(s contains "hol") " ,\"note\": " + "\"hol\""
-  	else if(s contains "MML") " ,\"note\": " + "\"mizar\""
-  	else if(s contains "Mizar") " ,\"note\": " + "\"mizar\""
-  	else "root"
+    if (s contains "hol") " ,\"note\": " + "\"hol\""
+    else if (s contains "MML") " ,\"note\": " + "\"mizar\""
+    else if (s contains "Mizar") " ,\"note\": " + "\"mizar\""
+    else "root"
   }
+
   def read(f: File) {
     File.ReadLineWise(f) { line =>
       val ns = NamespaceMap.empty
@@ -329,22 +356,24 @@ class AlignServer extends ServerExtension("align") {
       controller.depstore += re
     }
   }
+
   def printList(args: List[_]): Unit = {
     args.foreach(println)
   }
+
   def getSymbolAlignments(p: Path): (List[Path], String) = {
-  	val l = controller.depstore.queryList(p, Symmetric(Transitive(ToObject(IsAlignedWithSymbol))))
-  	if (l.isEmpty) {
-				(l, "")
-   	 }
-  	else
-  		// identify the M-MMT URI and store in val concept
-  	{
-  		val concept = l.apply(0)
-  		(controller.depstore.queryList(concept, Symmetric(Transitive(ToObject(IsAlignedWithSymbol)))),  concept.toPath)
-  	}
+    val l = controller.depstore.queryList(p, Symmetric(Transitive(ToObject(IsAlignedWithSymbol))))
+    if (l.isEmpty) {
+      (l, "")
+    }
+    else {
+      // identify the M-MMT URI and store in val concept
+      val concept = l.head
+      (controller.depstore.queryList(concept, Symmetric(Transitive(ToObject(IsAlignedWithSymbol)))), concept.toPath)
+    }
   }
-   def getTypeAlignments(p: Path): List[Path] = {
+
+  def getTypeAlignments(p: Path): List[Path] = {
     controller.depstore.queryList(p, Symmetric(Transitive(ToObject(IsAlignedWithType))))
   }
 }
