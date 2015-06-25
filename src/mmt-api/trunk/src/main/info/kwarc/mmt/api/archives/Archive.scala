@@ -15,6 +15,10 @@ import scala.collection.mutable
 /** convenience class for traversing an Archive */
 case class Current(file: File, path: List[String])
 
+/** grouped argument when traversing */
+case class TraverseMode(includeFile: String => Boolean,
+                        includeDir: String => Boolean, parallel: Boolean)
+
 abstract class ROArchive extends Storage with Logger {
   val rootString: String
 
@@ -90,30 +94,36 @@ abstract class WritableArchive extends ROArchive {
     */
   def MMTPathToContentPath(m: MPath): File = this / content / Archive.MMTPathToContentPath(m)
 
-  /** traverses a dimension calling continuations on files and subdirectories */
+  /** backward compatibility traversal */
   def traverse[A](dim: ArchiveDimension, in: List[String], filter: String => Boolean, parallel: Boolean, sendLog: Boolean = true)
-                 (onFile: Current => A, onDir: (Current, List[A]) => A = (_: Current, _: List[A]) => ()): Option[A] = {
+                 (onFile: Current => A, onDir: (Current, List[A]) => A = (_: Current, _: List[A]) => ()): Option[A] =
+    traversing[A](dim, in, TraverseMode(filter, _ => true, parallel), sendLog)(onFile, onDir)
+
+  /** traverses a dimension calling continuations on files and subdirectories */
+  def traversing[A](dim: ArchiveDimension, in: List[String], mode: TraverseMode, sendLog: Boolean = true)
+                   (onFile: Current => A, onDir: (Current, List[A]) => A = (_: Current, _: List[A]) => ()): Option[A] = {
+    val TraverseMode(filter, filterDir, parallel) = mode
     def recurse(n: String): List[A] =
-      traverse(dim, in ::: List(n), filter, parallel, sendLog)(onFile, onDir).toList
+      traversing(dim, in ::: List(n), mode, sendLog)(onFile, onDir).toList
     val inFile = this / dim / in
+    val inFileName = inFile.getName
     if (inFile.isDirectory) {
-      if (sendLog) log("entering " + inFile)
-      val children = inFile.list.filter(includeDir).sorted.toList
-      val results = if (parallel) children.par flatMap recurse else children flatMap recurse
-      val result = onDir(Current(inFile, in), results.toList)
-      if (sendLog) log("leaving  " + inFile)
-      Some(result)
-    } else {
+      if (includeDir(inFileName) && filterDir(inFileName)) {
+        if (sendLog) log("entering " + inFile)
+        val children = inFile.list.sorted.toList
+        val results = if (parallel) children.par flatMap recurse else children flatMap recurse
+        val result = onDir(Current(inFile, in), results.toList)
+        if (sendLog) log("leaving  " + inFile)
+        Some(result)
+      } else None
+    } else if (filter(inFileName))
       try {
-        if (filter(inFile.getName)) {
-          val r = onFile(Current(inFile, in))
-          Some(r)
-        } else
-          None
+        val r = onFile(Current(inFile, in))
+        Some(r)
       } catch {
         case e: Error => report(e); None
       }
-    }
+    else None
   }
 }
 
@@ -213,7 +223,6 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     }
   }
 }
-
 
 object Archive {
   /** a string containing all characters that are illegal in file names */
