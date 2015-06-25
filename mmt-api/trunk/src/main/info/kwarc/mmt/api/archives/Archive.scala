@@ -95,11 +95,11 @@ abstract class WritableArchive extends ROArchive {
   def MMTPathToContentPath(m: MPath): File = this / content / Archive.MMTPathToContentPath(m)
 
   /** traverses a dimension calling continuations on files and subdirectories */
-  def traversing[A](dim: ArchiveDimension, in: List[String], mode: TraverseMode, sendLog: Boolean = true)
+  def traverse[A](dim: ArchiveDimension, in: List[String], mode: TraverseMode, sendLog: Boolean = true)
                    (onFile: Current => A, onDir: (Current, List[A]) => A = (_: Current, _: List[A]) => ()): Option[A] = {
     val TraverseMode(filter, filterDir, parallel) = mode
     def recurse(n: String): List[A] =
-      traversing(dim, in ::: List(n), mode, sendLog)(onFile, onDir).toList
+      traverse(dim, in ::: List(n), mode, sendLog)(onFile, onDir).toList
     val inFile = this / dim / in
     val inFileName = inFile.getName
     if (inFile.isDirectory) {
@@ -202,7 +202,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
 
   def readRelational(in: List[String] = Nil, controller: Controller, kd: String) {
     if ((this / relational).exists) {
-      traversing(relational, in, Archive.traverseIf(kd)) { case Current(inFile, inPath) =>
+      traverse(relational, in, Archive.traverseIf(kd)) { case Current(inFile, inPath) =>
         utils.File.ReadLineWise(inFile) { line =>
           val re = controller.relman.parse(line, NamespaceMap(DPath(narrationBase)))
           re match {

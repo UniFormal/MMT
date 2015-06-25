@@ -75,7 +75,7 @@ class ErrorManager extends Extension with Logger {
    *          load all errors of this archive
    */
   def loadAllErrors(a: Archive) {
-    a.traversing(errors, Nil, TraverseMode(_ => true, _ => true, parallel = false)) {
+    a.traverse(errors, Nil, TraverseMode(_ => true, _ => true, parallel = false)) {
       case Current(_, target :: path) =>
         loadErrors(a, target, path)
     }
