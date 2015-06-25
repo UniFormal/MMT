@@ -23,7 +23,9 @@ import info.kwarc.mmt.api.proving._
  */
 abstract class CProvingUnit(context: objects.Context, tp: Term, logPrefix: String)  extends ProvingUnit(context, tp, logPrefix) {
 
-  //def clausify: Clause {  }
+  //def clausify: Clause = {
+  // context.getDomain foreach {v -> Clause}
+  //}
   val test = new ClausificationAgent()
   val sig = Signature.empty
 

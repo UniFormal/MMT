@@ -6,7 +6,7 @@ import proving._
 import objects._
 import frontend._
 
-class LeoProver extends Prover {
+class AgentProver extends Prover {
    def interactive(pu: ProvingUnit, rules: RuleSet, levels: Int) = Nil
    
    def apply(pu: ProvingUnit, rules: RuleSet, levels: Int) = (false, None)

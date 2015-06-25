@@ -1,4 +1,5 @@
 import PostProcessApi._
+import sbt.Keys._
 import sbtunidoc.Plugin.UnidocKeys.unidoc
 
 lazy val postProcessApi =
@@ -157,8 +158,11 @@ lazy val leo = (project in file("mmt-leo")).
   dependsOn(api).
   settings(commonSettings("mmt-leo"): _*).
   settings(
-    unmanagedJars in Compile += baseDirectory.value / "lib" / "leopard-0.3.jar"
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "leopard-0.3.jar",
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "scalatest_2.11-2.2.4.jar"
+    //libraryDependencies += "org.scalatest" % "scalatest_2.10" % "2.0" % "test"
   )
+
 
 // just a wrapper project
 lazy val mmt = (project in file("mmt-exts")).
