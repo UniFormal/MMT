@@ -94,11 +94,6 @@ abstract class WritableArchive extends ROArchive {
     */
   def MMTPathToContentPath(m: MPath): File = this / content / Archive.MMTPathToContentPath(m)
 
-  /** backward compatibility traversal */
-  def traverse[A](dim: ArchiveDimension, in: List[String], filter: String => Boolean, parallel: Boolean, sendLog: Boolean = true)
-                 (onFile: Current => A, onDir: (Current, List[A]) => A = (_: Current, _: List[A]) => ()): Option[A] =
-    traversing[A](dim, in, TraverseMode(filter, _ => true, parallel), sendLog)(onFile, onDir)
-
   /** traverses a dimension calling continuations on files and subdirectories */
   def traversing[A](dim: ArchiveDimension, in: List[String], mode: TraverseMode, sendLog: Boolean = true)
                    (onFile: Current => A, onDir: (Current, List[A]) => A = (_: Current, _: List[A]) => ()): Option[A] = {
@@ -207,7 +202,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
 
   def readRelational(in: List[String] = Nil, controller: Controller, kd: String) {
     if ((this / relational).exists) {
-      traverse(relational, in, Archive.extensionIs(kd), parallel = false) { case Current(inFile, inPath) =>
+      traversing(relational, in, Archive.traverseIf(kd)) { case Current(inFile, inPath) =>
         utils.File.ReadLineWise(inFile) { line =>
           val re = controller.relman.parse(line, NamespaceMap(DPath(narrationBase)))
           re match {
@@ -293,4 +288,7 @@ object Archive {
 
   /** returns a functions that filters by file name extension */
   def extensionIs(e: String): String => Boolean = _.endsWith("." + e)
+
+  /** returns a trivial TraverseMode */
+  def traverseIf(e: String): TraverseMode = TraverseMode(extensionIs(e), _ => true, parallel = false)
 }
