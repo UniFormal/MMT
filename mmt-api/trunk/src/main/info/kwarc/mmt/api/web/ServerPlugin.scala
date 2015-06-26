@@ -252,8 +252,7 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
     var user = ""
     var comment = ""
     result match {
-      case Some(m: Map[_, _]) =>
-        val map = m.asInstanceOf[Map[String, String]]
+      case Some(map: Map[String@unchecked, String@unchecked]) =>
         user = map.getOrElse("user", null)
         comment = map.getOrElse("comment", null)
       case None => println("Parsing failed")
