@@ -2,84 +2,135 @@ package datastructures
 
 import scala.collection.immutable.Queue
 
+
 /**
- * The node class represents a n-tree with arbitrary data at the node.
+ * This class represents the key piece of meta information stored in an abstract
+ * proof tree
  *
- * @param dataVar is the data stored at the node
- *
+ * @param conjunctiveVar if true this signifies an and node and all subnodes
+ *                        must be solved for the node to be satisfied. If false
+ *                        it is an or node and only one subnode needs to be satisfied
+ * @param isSatisfiableVar is true if it is solved, is None if it is unknown, is false if it is unsatasfiable
  */
-class Node[A](var dataVar: A) {
-  var root: Option[Node[A]] = None
-  var children: List[Node[A]] = Nil
-  var data = dataVar
-  /** unapply function matches data */
-  def unapply(n:Node[A]):A = n.data
-
-  /** returns the path of nodes to the root of the tree*/
-  def path: List[Node[A]] = this :: root.map(_.path).getOrElse(Nil)
-
-  /** returns the number of nodes above the current node*/
-  def depth: Int = {
-    this.path.length-1
+class ProofData[A](metaVar: A, conjunctiveVar: Boolean, isSatisfiableVar: Option[Boolean] = None ) {
+  var meta=metaVar
+  var conjunctive = conjunctiveVar //TODO figure out why cannot call variable in nested situation
+  var isSatisfiable = isSatisfiableVar
+  def isUnsatisfiable = !(this.isSatisfiable.getOrElse(true))
+  def isAnd = conjunctive
+  def isOr = !conjunctive
+  override def toString:String ={
+    meta.toString
   }
+}
 
-  /** componentwise equivalence*/
-  def isEquivTo(n: Node[A]):Boolean ={
-    (this.children,n.children) match {
-      case (Nil,Nil) => this.data == n.data
-      case (l1,l2) =>
-        if (l1.length != l2.length) {return false}
-        for(x <- 0 to l1.length-1){
-          if (l1(x).isEquivTo(l2(x))== false) {return false}
-        }
-        return true
-      case _ => false
+/**
+ * This class represents an and/or tree.
+ *
+ * @param dataVar Proof data to be stored at the nodes, meta information consisting of and/or status and solved status
+ * @tparam A type of metadata stored in nodes
+ */
+class AndOrNode[A](var dataVar: ProofData[A] ) {
+  var data = dataVar
+  var meta = dataVar.meta
+  var root: Option[AndOrNode[A]] = None
+  var children: List[AndOrNode[A]] = Nil
+
+  def isAnd = dataVar.isAnd
+  def isOr = dataVar.isOr
+  def isSatisfiable = dataVar.isSatisfiable
+  def isUnsatisfiable = dataVar.isUnsatisfiable
+  def isSolved = this.isSatisfiable.getOrElse(false)
+
+  /** returns the siblings of the current node aka the nodes that share its parent*/
+  def siblings: List[AndOrNode[A]] = { this.root match{
+    case None => Nil
+    case Some(p) => p.children diff List(this)
     }
   }
 
+  /** returns the path of nodes to the root of the tree*/
+  def path: List[AndOrNode[A]] = this :: root.map(_.path).getOrElse(Nil)
+
+  /** returns the number of nodes above the current node*/
+  //TODO improve speed
+  def depth: Int = {this.path.length-1}
+
+  /*/** component-wise equivalence*/
+  def isEquivTo(n: AndOrNode[A]):Boolean ={
+    (this.children,n.children) match {
+      case (Nil,Nil) => this.mata == n.data
+      case (l1,l2) =>
+        if (l1.length != l2.length) {return false}
+        for(x <- l1.indices){
+          if (l1(x).isEquivTo(l2(x))== false) {return false}
+        }
+        true
+      case _ => false
+    }
+  }*/
+
   /** checks if a node is equal to or below the current node*/
-  def isBelow(that: Node[A]): Boolean = this == that || root.exists(_ isBelow that)
+  def isBelow(that: AndOrNode[A]): Boolean = this == that || root.exists(_ isBelow that)
   /** checks if a node is equal to or above the current node*/
-  def isAbove(that: Node[A]): Boolean = this == that || children.exists(_ isAbove that)
+  def isAbove(that: AndOrNode[A]): Boolean = this == that || children.exists(_ isAbove that)
   /** checks if a node is the child of another*/
-  def isChildOf(that: Node[A]): Boolean = root.get==that
+  def isChildOf(that: AndOrNode[A]): Boolean = root.get==that
   /** checks if a node is a parent of another*/
-  def isParentOf(that: Node[A]): Boolean = this.children.contains(that)
+  def isParentOf(that: AndOrNode[A]): Boolean = this.children.contains(that)
 
   /** changes the data field in the node*/
-  def setData(newData: A) {
-    this.data = newData
+  def setSatisfiability( bool: Boolean) {
+    this.data.isSatisfiable = Some(bool)
   }
 
+  //var Int=:=Int
   /** Adds a child from the node*/
-  def addChild(child :Node[A]):Unit={
-    child.root match{
-      case Some(c) => child.root.get.removeChild(child)
+  def addChild(child : AndOrNode[A]):Unit={
+    child.root match {
+      case Some(c) => child.root.get.disconnectChild(child)
       case None =>
     }
     child.root = Some(this)
     this.children = this.children ::: List(child)
   }
 
-  /** removes a specific child from the node*/
-  def removeChild(child :Node[A]):Unit={
+  /** disconnects specific child from the node*/
+  def disconnectChild(child : AndOrNode[A]):Unit={
     this.children = this.children.filter( p => p.root.get != child)
     child.root = None
   }
 
-  /** removes all children from the node*/
-  def removeChildren: Unit = {
+  /** disconnects all children from the node*/
+  def disconnectChildren(): Unit = {
     this.children foreach {_.root = None}
     this.children = Nil
   }
 
+  /** deletes current node**/
+  def delete() = {
+    this.postorderDepth(n => n.finalize())
+  }
+
+  /** removes a specific child from the node and deletes object*/
+  def deleteChild(child : AndOrNode[A]):Unit={
+    this.children = this.children.filter( p => p.root.get != child)
+    child.delete()
+  }
+
+  /** removes all children from the node and deletes them as objects*/
+  def deleteChildren(): Unit = {
+    this.children foreach {child=>child.delete()}
+    this.children = Nil
+  }
+
   /** sets the Root of the current node*/
-  def setRoot(that: Node[A]): Unit ={
+  def setRoot(that: AndOrNode[A]): Unit ={
     if (isAbove(that)) {
       throw new IllegalArgumentException("Current node already above the attempted root")
     }
     this.root match{
-      case Some(c) => this.root.get.removeChild(this)
+      case Some(c) => this.root.get.disconnectChild(this)
       case None =>
     }
     this.root = Some(that)
@@ -87,20 +138,25 @@ class Node[A](var dataVar: A) {
   }
 
   /** returns a nice looking printable string **/
+  //TODO improve speed
   override def toString: String = {
     var output = ""
-    this.preorderDepth { subnode :Node[A] =>
-      output = output++ "\n"+"\t"*subnode.depth + subnode.data.toString
+    this.preorderDepth { subnode :AndOrNode[A] =>
+      output = output++ "\n"+"\t"*subnode.depth + subnode.meta.toString
     }
     output+ "\n"
   }
 
-  /** maps a tree of one datatype to a tree of another*/
-  def map[B](f: A => B): Node[B] = {
-    var fthis = new Node[B](f(this.data))
-    def recur(n : Node[A],fn: Node[B]): Unit = {
+  def mkAndOrNode[B](m:B,s:Boolean):AndOrNode[B]={
+    new AndOrNode[B](new ProofData(m,s))
+  }
+
+  /** maps a tree of one data-type to a tree of another*/
+  def map[B](f: A => B): AndOrNode[B] = {
+    val fthis = mkAndOrNode(f(this.meta),this.isAnd)
+    def recur(n : AndOrNode[A],fn: AndOrNode[B]): Unit = {
       for (r <- n.children) {
-        val addition = new Node[B](f(r.data))
+        val addition = mkAndOrNode(f(r.meta),r.isAnd)
         fn.addChild(addition)
         recur(r,addition)
       }
@@ -110,8 +166,8 @@ class Node[A](var dataVar: A) {
   }
 
   /** traverses the tree depth first performs an action as it comes to the node*/
-  def preorderDepth(visit: Node[A] => Unit): Unit = {
-    def recur(n: Node[A]): Unit = {
+  def preorderDepth(visit: AndOrNode[A] => Unit): Unit = {
+    def recur(n: AndOrNode[A] ): Unit = {
       visit(n)
       for (r <- n.children) {
         recur(r)
@@ -121,8 +177,8 @@ class Node[A](var dataVar: A) {
   }
 
   /** traverses the tree depth first and performs an action after it reaches the leaves */
-  def postorderDepth(visit: Node[A] => Unit): Unit = {
-    def recur(n: Node[A]): Unit = {
+  def postorderDepth(visit: AndOrNode[A] => Unit): Unit = {
+    def recur(n: AndOrNode[A] ): Unit = {
       for (r <- n.children) {
         recur(r)
       }
@@ -131,9 +187,12 @@ class Node[A](var dataVar: A) {
     recur(this)
   }
 
-  /** traverses the tree depth first performs an action as it comes to the node*/
-/*  def breadthTraverse(visit: Node[A] => Unit): Unit = {
+/*  /** traverses the tree depth first performs an action as it comes to the node,
+    * set the depth to -1 to search all the way through */
+  def breadthTraverse(visit: Node[A] => Unit, maxDepth:Int = -1): Unit = {
     var q = new Queue[Node[A]]()
+    var labels = this.map(n=>(n,false))
+
 
     this.children foreach {v => visit(v) }
     recur(this)
@@ -148,9 +207,44 @@ class Node[A](var dataVar: A) {
   def size: Int = {
     this.children.foldLeft(0) { (s, c) => s + c.size } + 1
   }
+
+  //override def addChild(n:AndOrNode[A]):Unit = this.addChild(n)
+
+  def pruneBelow():Unit = {
+    if (this.isAnd ) {
+      if (children.exists(_.isUnsatisfiable)){this.deleteChildren()}
+      if (children.forall(_.isSolved)) {this.setSatisfiability(true)}
+    }else{
+      children.filter(_.isUnsatisfiable).foreach(_.delete())
+      if (children.exists(_.isSolved)) {children.filter(!_.isSolved).foreach(_.delete())}
+    }
+    children.foreach(_.pruneBelow())
+  }
+
+  def percolateAndTrim():Unit = {
+    if (this.isSolved) {
+      this.root match {
+        case None => this.pruneBelow()
+        case Some(p) if p.isOr => p.setSatisfiability(true); p.percolateAndTrim()
+        case Some(p) => p.pruneBelow()
+      }
+    }
+    if (this.isUnsatisfiable) {
+      this.root match {
+        case None => this.pruneBelow()
+        case Some(p) if p.isAnd => p.setSatisfiability(false); p.percolateAndTrim()
+        case Some(p) => p.pruneBelow()
+      }
+    }
+  }
+
+
+
 }
 
-//class AndOrNode[A] extends Node(dataVar)
+
+
+
 
 
 
