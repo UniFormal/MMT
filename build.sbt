@@ -57,10 +57,7 @@ def commonSettings(nameStr: String) = Seq(
   autoAPIMappings := true,
   connectInput in run := true,
   fork := true,
-  deploy <<= packageBin in Compile map { p =>
-    deployTo("main/" + nameStr + ".jar")(p)
-    p
-  },
+  deploy <<= deployPackage("main/" + nameStr + ".jar"),
   assemblyMergeStrategy in assembly := {
     case PathList("rootdoc.txt") => MergeStrategy.discard
     case x =>
@@ -73,10 +70,7 @@ lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*).
   settings(
     scalaSource in Compile := baseDirectory.value / "src/main/scala",
-    deploy <<= packageBin in Compile map { p =>
-      deployTo("lib/tiscaf.jar")(p)
-      p
-    }
+    deploy <<= deployPackage("lib/tiscaf.jar")
   )
 
 lazy val api = (project in file("mmt-api/trunk")).
@@ -97,10 +91,7 @@ lazy val lfcatalog = (project in file("lfcatalog/trunk")).
   settings(commonSettings("lfcatalog") ++ oneJarSettings: _*).
   settings(
     libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.3",
-    deploy <<= packageBin in Compile map { p =>
-      deployTo("lfcatalog/lfcatalog.jar")(p)
-      p
-    }
+    deploy <<= deployPackage("lfcatalog/lfcatalog.jar")
   )
 
 lazy val lf = (project in file("mmt-lf")).
@@ -161,7 +152,6 @@ lazy val leo = (project in file("mmt-leo")).
     unmanagedJars in Compile += baseDirectory.value / "lib" / "leopard-0.3.jar",
     libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.4"
   )
-
 
 // just a wrapper project
 lazy val mmt = (project in file("mmt-exts")).
