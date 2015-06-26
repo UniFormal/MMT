@@ -58,6 +58,7 @@ def commonSettings(nameStr: String) = Seq(
   connectInput in run := true,
   fork := true,
   deploy <<= deployPackage("main/" + nameStr + ".jar"),
+  test in assembly := {},
   assemblyMergeStrategy in assembly := {
     case PathList("rootdoc.txt") => MergeStrategy.discard
     case x =>
@@ -70,7 +71,11 @@ lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*).
   settings(
     scalaSource in Compile := baseDirectory.value / "src/main/scala",
-    deploy <<= deployPackage("lib/tiscaf.jar")
+    deploy <<= deployPackage("lib/tiscaf.jar"),
+    libraryDependencies ++= Seq(
+      "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
+      "net.databinder.dispatch" %% "dispatch-core" % "0.11.2" % "test"
+    )
   )
 
 lazy val api = (project in file("mmt-api/trunk")).
