@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.frontend.{Report, Logger, Controller}
+import info.kwarc.mmt.api.libraries.Closer
 import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.FinalConstant
@@ -33,7 +34,7 @@ case class Viewfinder(ctrl: Controller) extends Logger {
 
   def findBest(th1:DeclaredTheory,th2:DeclaredTheory) : Option[(DeclaredView,Double)] = {
     log("Looking for best morphism from "+th1.path+" to "+th2.path)
-    val allviews = for {o <- Viewfinder.settoViews(findByAxioms(th1,th2,0,true,true),th1,th2)} yield (o,Viewfinder.evaluateView(o))
+    val allviews = for {o <- Viewfinder.settoViews(findByAxioms(th1,th2,0,true,true),th1,th2)} yield (o,Viewfinder.evaluateView(o,Some(th1),Some(th2))(controller))
     if (allviews.isEmpty) {log("No new views found!"); None}
       else if (allviews.tail.isEmpty) Some(allviews.head)
       else Some(allviews.tail.foldLeft(allviews.head)((x, v) => if (v._2 < x._2) x else v))
@@ -55,10 +56,14 @@ case class Viewfinder(ctrl: Controller) extends Logger {
     log("Finding by axioms from "+th1.name+" to "+th2.name)
     logGroup {
       log("Hashing...")
-      val allhashes = Consthash(th1, th2, controller)
+      val (allhashes,(judg1,judg2)) = Consthash(th1, th2, controller)
       log("Pairing...")
       val allpairs = for {a <- allhashes._1; b <- allhashes._2 if a.hash == b.hash} yield (a, b)
-      val pairedbyaxioms = allpairs.filter(p => p._1.isAxiom && p._1.pars.length >= cutoff).toIndexedSeq
+      if (judg1.isEmpty) log("No judgment declaration found! Continue with all (this can be slow)...")
+      val pairedbyaxioms = if (judg1.isDefined) allpairs.filter(p => p._1.isAxiom && p._1.pars.length >= cutoff).toList
+        else allpairs.filter(p => p._1.pars.length >= cutoff).toList
+      //TODO just for testing purposes
+
       log("Finding Paths...")
       val allPaths = pairedbyaxioms.indices.map(i => findByAxiomsIterator(allpairs, pairedbyaxioms(i), List()).getOrElse(List()).distinct)
 
@@ -70,7 +75,7 @@ case class Viewfinder(ctrl: Controller) extends Logger {
       if (makeComp) log("Finding maximally consistent unions...")
 
       val comp = (for {o <- if (makeComp) {
-        makeCompatible(max, List())
+        makeCompatible(max.toList, List())
       } else max} yield o.toSet).toList.sortBy(_.size)
       log("Filtering out redundant subviews...")
       val res = comp.foldRight(comp)((b, s) =>
@@ -91,7 +96,7 @@ case class Viewfinder(ctrl: Controller) extends Logger {
    * @param pairs all possible pairings (based on hash equality)
    * @return a new View as Set of Pairs of GlobalName
    */
-  def makeMaximal(view:List[(GlobalName,GlobalName)],pairs:Set[(Consthash,Consthash)],axpairs:Option[IndexedSeq[(Consthash,Consthash)]])
+  def makeMaximal(view:List[(GlobalName,GlobalName)],pairs:Set[(Consthash,Consthash)],axpairs:Option[List[(Consthash,Consthash)]])
   :List[(GlobalName,GlobalName)] = makeMaximalIter(view,
     axpairs match {
       case None => pairs.filter(p => !p._1.isAxiom && !view.exists(q => p._1.name==q._1 || p._2.name==q._2))
@@ -115,14 +120,21 @@ case class Viewfinder(ctrl: Controller) extends Logger {
    * @param currentView All pairs already matched in the current Iteration (Startingvalue: List() )
    * @return A List of new Views (as Lists of GlobalName)
    */
-  def makeCompatible(views:IndexedSeq[List[(GlobalName,GlobalName)]],
+  def makeCompatible(views:List[List[(GlobalName,GlobalName)]],
                      currentView:List[(GlobalName,GlobalName)])
     :List[List[(GlobalName,GlobalName)]] = {
     if (views.isEmpty) List(currentView) else if (views.tail.isEmpty) List(currentView:::views.head)
     else {
+      /*
       val newtail = views.tail.map(v => v diff views.head)
       val newviews = for {v <- newtail
-                          if !v.exists(p => views.head.exists(q => p._1==q._1 || p._2==q._2))} yield v
+                          if !v.exists(p => views.head.exists(q => p._1==q._1 || p._2==q._2))} yield v */
+      val newviews = views.tail.foldRight(Nil.asInstanceOf[List[List[(GlobalName,GlobalName)]]])((v,p) => {
+        val newv = v diff views.head
+        if (!newv.exists(x => views.head.exists(y => y._1==x._1 || y._2==x._2)) && newv.nonEmpty) newv::p
+        else p
+      })
+
       makeCompatible(views.tail,currentView):::makeCompatible(newviews,currentView:::views.head)
     }
   }
@@ -188,24 +200,40 @@ object Viewfinder {
    * @return basically dom(view)/min{A,B}
    */
 
-  def evaluateView(v:DeclaredView)(implicit controller: Controller): Double = {
-    val domc = (controller.get(v.from.toMPath) match {
-      case t: DeclaredTheory => t
-      case _ => throw new Exception("expected declared theory")
-    }).getConstants collect { case c: FinalConstant => c}
+  def evaluateView(v:DeclaredView,from:Option[DeclaredTheory],to:Option[DeclaredTheory])(implicit controller: Controller): Double = {
+    val closer = new Closer(controller)
+    val dom = from match {
+      case None => controller.get(v.from.toMPath) match {
+        case t: DeclaredTheory => t
+        case _ => throw new Exception("expected declared theory")
+      }
+      case Some(t) => t
+    }
 
-    val codc = (controller.get(v.to.toMPath) match {
-      case t: DeclaredTheory => t
-      case _ => throw new Exception("expected declared theory")
-    }).getConstants collect { case c: FinalConstant => c}
+    val cod = to match {
+      case None => controller.get (v.to.toMPath) match {
+        case t: DeclaredTheory => t
+        case _ => throw new Exception("expected declared theory")
+      }
+      case Some(t) => t
+    }
+
+    val dominc = closer.getIncludes(dom,true)
+    val codinc = closer.getIncludes(cod,true)
+
+    val domc = ((dominc diff codinc).flatMap(t => t.getDeclarations) collect {case c:FinalConstant => c}).toList
+    val codc = ((codinc diff dominc).flatMap(t => t.getDeclarations) collect {case c:FinalConstant => c}).toList
 
     v.domain.filter(p => domc.exists(q => (ComplexStep(q.path.module.toMPath) / q.name)==p)).toList.length.toDouble / (if (domc.length<codc.length) domc.length else codc.length).toDouble
   }
 
-  def evaluateViewset(from:DeclaredTheory,to:DeclaredTheory,viewset:Set[(GlobalName,GlobalName)]): Double = {
-    val domc = from.getConstants collect { case c: FinalConstant => c}
+  def evaluateViewset(from:DeclaredTheory,to:DeclaredTheory,viewset:Set[(GlobalName,GlobalName)])(controller:Controller): Double = {
+    val closer = new Closer(controller)
+    val dominc = closer.getIncludes(from,true)
+    val codinc = closer.getIncludes(to,true)
 
-    val codc = to.getConstants collect { case c: FinalConstant => c}
+    val domc = ((dominc diff codinc).flatMap(t => t.getConstants) collect {case c:FinalConstant => c}).toList
+    val codc = ((codinc diff dominc).flatMap(t => t.getConstants) collect {case c:FinalConstant => c}).toList
 
     viewset.filter(p => domc.exists(q => q.path==p._1)).toList.length.toDouble / (if (domc.length<codc.length) domc.length else codc.length).toDouble
 

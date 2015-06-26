@@ -7,6 +7,8 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory, DeclaredView}
 import info.kwarc.mmt.api.symbols._
 
+import scala.util.{Success, Try}
+
 /**
  * Intersects theories
  */
@@ -24,7 +26,7 @@ case class Intersecter(controller:Controller) {
     val namelist = pairs.map(p => (GlobalName(OMID(int.path),p._3),p._1.path))
     val consts = pairs map (c => {
       val tp = Moduleadder.substitute(c._1.tp,namelist)
-      val df = None
+      val df = None //TODO ?
       val rl = c._1.rl
       val notC = NotationContainer(c._4 match {
         case Some(n) => Some(TextNotation.parse(n,NamespaceMap.empty))
@@ -45,7 +47,8 @@ case class Intersecter(controller:Controller) {
         subst1 = pairs.map(c => (s.path / ComplexStep(int.path) / c._3,c._1.path))
       for (o <- pairs if o._1.name!=o._3 || o._1.df.isDefined) {
         val df = Moduleadder.substitute(o._1.df,subst1)
-        s.add(Constant(OMID(s.path), ComplexStep(int.path) / o._3, Some(o._1.name), None, df, o._1.rl, o._1.notC))
+        s.add(Constant(OMID(s.path), ComplexStep(int.path) / o._3,
+          if (o._1.name!=o._3) Some(o._1.name) else None, None, df, o._1.rl, o._1.notC))
       }
       s
     }
@@ -54,7 +57,8 @@ case class Intersecter(controller:Controller) {
       subst2 = pairs.map(c => (s.path / ComplexStep(int.path) / c._3,c._2.path))
       for (o <- pairs if o._2.name!=o._3 || o._2.df.isDefined) {
         val df = Moduleadder.substitute(o._2.df,subst2)
-        s.add(Constant(OMID(s.path), ComplexStep(int.path) / o._3, Some(o._2.name), None, df, o._2.rl, o._2.notC))
+        s.add(Constant(OMID(s.path), ComplexStep(int.path) / o._3,
+          if (o._2.name!=o._3) Some(o._2.name) else None, None, df, o._2.rl, o._2.notC))
       }
       s
     }
@@ -120,26 +124,26 @@ object Intersecter {
 
     val consts1 = ((for {o <- v1.getDeclarations if o.name.head.toString=="["+dom.path+"]"} yield o) collect {
       case c: FinalConstant if c.df.isDefined => c
-    }).map(c => {
+    }).map(c => Try({
       val c1 = dom.get(c.name.tail)
       val c2 = if (c.df.get.head.get.module.toMPath==cod.path) cod.get(c.df.get.head.get.name) match {
         case d:FinalConstant => d
         case _ => c.df.get
       } else c.df.get
       (c1,c2)
-    })
+    })) collect {case Success((a,b)) => (a,b)}
 
     val consts2 = v2 match {
       case Some(v) => ((for {o <- v.getDeclarations if o.name.head.toString == "[" + cod.path + "]"} yield o) collect {
         case c: FinalConstant if c.df.isDefined => c
-      }).map(c => {
+      }).map(c => Try({
         val c1 = cod.get(c.name.tail)
         val c2 = if (c.df.get.head.get.module.toMPath == dom.path) dom.get(c.df.get.head.get.name) match {
           case d: FinalConstant => d
           case _ => c.df.get
         } else c.df.get
         (c2, c1)
-      })
+      })) collect {case Success((a,b)) => (a,b)}
       case None => List()
     }
     val all = (consts1:::consts2).distinct

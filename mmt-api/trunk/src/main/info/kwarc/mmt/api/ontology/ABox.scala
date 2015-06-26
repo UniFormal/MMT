@@ -19,6 +19,10 @@ class RelStore(report : frontend.Report) {
    private val subjects = new HashMapToSet[(Binary,Path), Path]
    private val objects = new HashMapToSet[(Path,Binary), Path]
    private val dependencies = new HashMapToSet[(Path,Path), Binary]
+
+   override def toString = "Individuals: "+individuals.map(i => "\n - "+i.toString)+"\n Theories:"+
+     individuals(IsTheory).map(i => "\n - "+i.toString)
+
    private def log(msg : => String) = report("abox", msg)
    /** retrieves all Individual declarations */
    def getInds : Iterator[Individual] = individuals.pairs map {case (t,p) => Individual(p,t)}
