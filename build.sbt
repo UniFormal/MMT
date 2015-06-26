@@ -159,8 +159,7 @@ lazy val leo = (project in file("mmt-leo")).
   settings(commonSettings("mmt-leo"): _*).
   settings(
     unmanagedJars in Compile += baseDirectory.value / "lib" / "leopard-0.3.jar",
-    unmanagedJars in Compile += baseDirectory.value / "lib" / "scalatest_2.11-2.2.4.jar"
-    //libraryDependencies += "org.scalatest" % "scalatest_2.10" % "2.0" % "test"
+    libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.4"
   )
 
 
