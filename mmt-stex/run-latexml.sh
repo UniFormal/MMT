@@ -42,6 +42,8 @@ groupDir="$(dirname $repoDir)"
 group="$(basename $groupDir)"
 baseDir="$(dirname $groupDir)"
 mathHubDir="$(dirname $baseDir)"
+localMHDir="$(dirname $mathHubDir)"
+moreStyles="${localMHDir}/sty"
 
 # take directory for LaTeXML, LaTeXMLs, sTeX and perl5lib
 # from mathHubDir or external EXT_BASE
@@ -49,7 +51,7 @@ mathHubDir="$(dirname $baseDir)"
 
 export LATEXML_BASE=${EXT_BASE}/LaTeXML
 export STEXSTYDIR=${EXT_BASE}/sTeX/sty
-export TEXINPUTS=.//:${STEXSTYDIR}//:
+export TEXINPUTS=.//:${moreStyles}:${STEXSTYDIR}//:
 export PERL5LIB=${EXT_BASE}/perl5lib/lib/perl5:${LATEXML_BASE}/blib/lib
 
 # if localpaths.tex exists, we take it as it is
@@ -117,7 +119,7 @@ then
  export PATH=${EXT_BASE}/perl5lib/bin:$PATH # for latexmls
 
  exec ${EXT_BASE}/perl5lib/bin/latexmlc --quiet --profile stex-smglom-module \
-  "$dir/${theory}.tex" \
+  --path="${moreStyles}" "$dir/${theory}.tex" \
   --destination="$dir/${theory}.omdoc" \
   --log="$dir/${theory}.ltxlog" \
   --preamble="$preamble" \
