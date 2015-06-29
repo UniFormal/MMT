@@ -9,7 +9,7 @@ postProcessApi := postProcess(streams.value.log)
 
 publish := {}
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 
 unidocSettings
 
@@ -44,7 +44,7 @@ deploy in mmt <<= assembly in(mmt, Compile) map
 def commonSettings(nameStr: String) = Seq(
   organization := "info.kwarc.mmt",
   version := "1.0.1",
-  scalaVersion := "2.11.6",
+  scalaVersion := "2.11.7",
   name := nameStr,
   sourcesInBase := false,
   scalaSource in Compile := baseDirectory.value / "src",
@@ -73,8 +73,8 @@ lazy val tiscaf = (project in file("tiscaf")).
     scalaSource in Compile := baseDirectory.value / "src/main/scala",
     deploy <<= deployPackage("lib/tiscaf.jar"),
     libraryDependencies ++= Seq(
-      "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
-      "net.databinder.dispatch" %% "dispatch-core" % "0.11.2" % "test",
+      "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
+      "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
       "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
     )
   )
@@ -88,15 +88,15 @@ lazy val api = (project in file("mmt-api/trunk")).
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-compiler" % scalaVersion.value,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.3",
-      "org.scala-lang.modules" %% "scala-xml" % "1.0.3")
+      "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
+      "org.scala-lang.modules" %% "scala-xml" % "1.0.4")
   )
 
 lazy val lfcatalog = (project in file("lfcatalog/trunk")).
   dependsOn(tiscaf).
   settings(commonSettings("lfcatalog") ++ oneJarSettings: _*).
   settings(
-    libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.3",
+    libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.4",
     deploy <<= deployPackage("lfcatalog/lfcatalog.jar")
   )
 
@@ -156,7 +156,7 @@ lazy val leo = (project in file("mmt-leo")).
   settings(commonSettings("mmt-leo"): _*).
   settings(
     scalaSource in Test := baseDirectory.value / "test",
-    libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test"
+    libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
   )
 
 // just a wrapper project
