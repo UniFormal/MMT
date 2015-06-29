@@ -74,7 +74,8 @@ lazy val tiscaf = (project in file("tiscaf")).
     deploy <<= deployPackage("lib/tiscaf.jar"),
     libraryDependencies ++= Seq(
       "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
-      "net.databinder.dispatch" %% "dispatch-core" % "0.11.2" % "test"
+      "net.databinder.dispatch" %% "dispatch-core" % "0.11.2" % "test",
+      "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
     )
   )
 
