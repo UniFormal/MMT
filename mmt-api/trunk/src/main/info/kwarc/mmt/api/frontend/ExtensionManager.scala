@@ -16,7 +16,7 @@ import utils.MyList._
 trait Extension extends Logger {
    protected var controller : Controller = null
    protected var report : Report = null
-   
+
    lazy val defaultPrefix = {
       val s = getClass.toString
       val p = s.lastIndexOf(".")
@@ -24,12 +24,12 @@ trait Extension extends Logger {
    }
    /** the prefix used to identify this extension for logging, by default the class name */
    def logPrefix = defaultPrefix
-   
+
    /** a custom error class for this extension */
    case class LocalError(s: String) extends ExtensionError(logPrefix, s)
-   
+
    /** MMT initialization */
-   private[api] def init(controller: Controller) {
+   def init(controller: Controller) {
       this.controller = controller
       report = controller.report
    }
@@ -38,10 +38,10 @@ trait Extension extends Logger {
       args match {
          case Nil => controller.getEnvVar(name).getOrElse(throw LocalError(s"1 argument or environment variable $name needed"))
          case hd::Nil => hd
-         case _ => throw LocalError("too many arguments: " + args.mkString(" ") + "; expected: 1") 
+         case _ => throw LocalError("too many arguments: " + args.mkString(" ") + "; expected: 1")
       }
    }
-   
+
    /** extension-specific initialization (override as needed, empty by default) */
    def start(args: List[String]) {}
    /** extension-specific cleanup (override as needed, empty by default)
@@ -54,7 +54,7 @@ trait Extension extends Logger {
 
 /** extensions classes that can be tested for applicability based on a format string */
 trait FormatBasedExtension extends Extension {
-   /** 
+   /**
     *  @param format the format/key/other identifier, for which an extension is needed
     *  @return true if this extension is applicable
     */
@@ -63,10 +63,10 @@ trait FormatBasedExtension extends Extension {
 
 /**
  * Common super class of all extensions, whose functionality is systematically split between structure and object level
- * 
+ *
  * Implementing classes should have a constructor that takes an Extension providing the object level functionality
- * and add the structure level functionality.  
- */ 
+ * and add the structure level functionality.
+ */
 trait LeveledExtension extends Extension {
    val objectLevel: Extension
    override def init(controller: Controller) {
@@ -84,7 +84,7 @@ trait LeveledExtension extends Extension {
  *  They are provided as plugins and registered via their qualified class name, which is instantiated by reflection.
  */
 class ExtensionManager(controller: Controller) extends Logger {
-   
+
    private[api] var extensions : List[Extension] = Nil
    private val knownExtensionTypes = List(
          classOf[Plugin], classOf[Foundation], classOf[ParserExtension], classOf[QueryTransformer],
@@ -93,7 +93,7 @@ class ExtensionManager(controller: Controller) extends Logger {
          classOf[Parser], classOf[Checker], classOf[Interpreter], classOf[Presenter],
          classOf[BuildTarget]
          )
-         
+
 
    def get[E <: Extension](cls: Class[E]): List[E] = extensions.flatMap {e =>
       if (cls.isInstance(e)) List(e.asInstanceOf[E]) else Nil
@@ -105,7 +105,7 @@ class ExtensionManager(controller: Controller) extends Logger {
          else Nil
       } else Nil
    }.headOption
-   
+
    var lexerExtensions : List[LexerExtension] = Nil
    var notationExtensions: List[notations.NotationExtension] = Nil
 
@@ -134,7 +134,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       //parserExtensions ::= new ControlParser
       //serverPlugins
       List(new web.GetActionServer, new web.SVGServer, new web.QueryServer, new web.SearchServer,
-            new web.TreeView, new web.BreadcrumbsServer, new web.ActionServer, new web.AlignServer, 
+            new web.TreeView, new web.BreadcrumbsServer, new web.ActionServer, new web.AlignServer,
             new web.SubmitCommentServer).foreach(addExtension(_))
       //queryExtensions
       List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
@@ -142,7 +142,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       lexerExtensions ::= GenericEscapeLexer
       lexerExtensions ::= UnicodeReplacer
       lexerExtensions ::= new PrefixedTokenLexer('\\')
-      
+
       notationExtensions ::= notations.MixfixNotation
    }
 
@@ -157,7 +157,7 @@ class ExtensionManager(controller: Controller) extends Logger {
           val Ext = clsJ.asInstanceOf[java.lang.Class[Extension]]
           Ext.newInstance
        } catch {
-          case e : Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e) 
+          case e : Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)
        }
        addExtension(ext, args)
    }
@@ -187,7 +187,7 @@ class ExtensionManager(controller: Controller) extends Logger {
              log("... as " + cls.getName)
        }
    }
-   
+
    /** remove an extension (must have been stopped already) */
    def removeExtension(ext: Extension) {
       extensions = extensions diff List(ext)
@@ -203,14 +203,14 @@ class ExtensionManager(controller: Controller) extends Logger {
    }
    def getFoundation(thy: objects.Term) : Option[Foundation] =
       objects.TheoryExp.metas(thy)(controller.globalLookup) mapFind getFoundation
-   
+
    def stringDescription = {
       knownExtensionTypes.map {cls =>
          val es = get(cls)
          if (es.isEmpty) "" else cls.getName + "\n" + es.map("  " + _.toString + "\n").mkString("") + "\n\n"
       }.mkString("")
    }
-   
+
    def cleanup {
       extensions.foreach(_.destroy)
       extensions = Nil
