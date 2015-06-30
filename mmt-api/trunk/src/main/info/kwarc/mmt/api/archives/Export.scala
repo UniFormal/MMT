@@ -8,7 +8,7 @@ import utils._
 import documents._
 import frontend._
 
-trait Exporter extends BuildTarget { self => 
+trait Exporter extends BuildTarget { self =>
    /** must be set by deriving classes to direct output, not necessary if outputTo is used */
    protected var _rh: RenderingHandler = null
    /**
@@ -17,7 +17,7 @@ trait Exporter extends BuildTarget { self =>
     * @param body any code that produces output
     */
    protected def outputTo(out: File)(body: => Unit) {
-      val fw = new presentation.FileWriter(out) 
+      val fw = new presentation.FileWriter(out)
       _rh = fw
       body
       fw.done
@@ -32,44 +32,44 @@ trait Exporter extends BuildTarget { self =>
      report = controller.report
      contentExporter.init(controller)
      narrationExporter.init(controller)
-   }  
-     
+   }
+
    /** applied to each document (i.e., narration-folders and .omdoc files) */
    def exportDocument(doc : Document, bf: BuildTask)
-   
+
    /** applied to each theory */
    def exportTheory(thy : DeclaredTheory, bf: BuildTask)
-   
+
    /** applied to each view */
    def exportView(view : DeclaredView, bf: BuildTask)
-   
+
    /** applied to every namespace
     *  @param dpath the namespace
     *  @param namespaces the sub-namespace in this namespace
     *  @param modules the modules in this namespace
     */
    def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask])
-  
-   def build (a: Archive, args: List[String], in: List[String]) {
-     contentExporter.build(a, args, in)
-     narrationExporter.build(a, args, in)
+
+   def build(a: Archive, in: List[String]) {
+     contentExporter.build(a, in)
+     narrationExporter.build(a, in)
    }
-   
-   def update(a: Archive, args: List[String], up: Update, in: List[String]) {
-     contentExporter.update(a, args, up, in)
-     narrationExporter.update(a, args, up, in)
+
+   def update(a: Archive, up: Update, in: List[String]) {
+     contentExporter.update(a, up, in)
+     narrationExporter.update(a, up, in)
    }
-   
-   def clean (a: Archive, args: List[String], in: List[String]) {
-     contentExporter.clean(a, args, in)
-     narrationExporter.clean(a, args, in)
+
+   def clean(a: Archive, in: List[String]) {
+     contentExporter.clean(a, in)
+     narrationExporter.clean(a, in)
    }
-   
+
    /** the file name for files representing folders, defaults to "", override as needed */
    protected def folderName = ""
    /** the file extension used for generated files, defaults to key, override as needed */
    protected def outExt = key
-   
+
    /** the common properties of the content and the narration exporter */
    private trait ExportInfo extends TraversingBuildTarget {
       def key = self.key + "_" + inDim.toString
@@ -80,7 +80,7 @@ trait Exporter extends BuildTarget { self =>
       override def parallel = false
 
    }
-   
+
    /**
     * A BuildTarget that traverses the content dimension and applies continuation functions to each module.
     */
@@ -99,7 +99,7 @@ trait Exporter extends BuildTarget { self =>
             }
          }
       }
-      
+
       override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]) = {
         val dp = Archive.ContentPathToDPath(bd.inPath)
         val (nss,mps) = builtChildren.filter(! _.skipped).partition(_.isDir)
@@ -108,7 +108,7 @@ trait Exporter extends BuildTarget { self =>
         }
       }
    }
-   
+
    /**
     * A BuildTarget that traverses the content dimension and applies continuation functions to each module.
     */
@@ -179,7 +179,7 @@ abstract class FoundedExporter(meta: MPath, found: MPath) extends Exporter {
       } else
          bf.skipped = true
    }
-   
+
    /** called on covered theories, i.e., theories with meta-theory meta */
    def exportCoveredTheory(t: DeclaredTheory)
    /** called on views between covered theories */

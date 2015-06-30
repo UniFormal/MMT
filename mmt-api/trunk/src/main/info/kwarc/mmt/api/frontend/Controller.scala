@@ -445,7 +445,7 @@ class Controller extends ROController with Logger {
           throw GeneralError("no importer found")
         }
         log("building " + f)
-        importer.build(a, Nil, p, Some(errorCont))
+        importer.build(a, p, Some(errorCont))
       case None =>
         throw GeneralError(f + " is not in a known archive")
     }

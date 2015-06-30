@@ -35,17 +35,14 @@ abstract class BuildTarget extends FormatBasedExtension {
   /** defaults to the key */
   override def logPrefix = key
 
-  /** number of required arguments, defaults to 0, override as needed */
-  def requiredArguments(m: BuildTargetModifier): Int = 0
-
   /** build this target in a given archive */
-  def build(a: Archive, args: List[String], in: List[String])
+  def build(a: Archive, in: List[String])
 
   /** update this target in a given archive */
-  def update(a: Archive, args: List[String], up: Update, in: List[String])
+  def update(a: Archive, up: Update, in: List[String])
 
   /** clean this target in a given archive */
-  def clean(a: Archive, args: List[String], in: List[String])
+  def clean(a: Archive, in: List[String])
 
   /** the main function to run the build target
     *
@@ -55,13 +52,10 @@ abstract class BuildTarget extends FormatBasedExtension {
     * @param args arguments for the discretion of the BuildTarget; number must be equal to requiredArguments(modifier)
     */
   def apply(modifier: BuildTargetModifier, arch: Archive, in: List[String], args: List[String]) {
-    val reqArgs = requiredArguments(modifier)
-    if (reqArgs != args.length)
-      throw ParseError("wrong number of arguments, required: " + reqArgs)
     modifier match {
-      case up: Update => update(arch, args, up, in)
-      case Clean => clean(arch, args, in)
-      case Build => build(arch, args, in)
+      case up: Update => update(arch, up, in)
+      case Clean => clean(arch, in)
+      case Build => build(arch, in)
     }
   }
 
@@ -176,9 +170,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
   def buildDir(bd: BuildTask, builtChildren: List[BuildTask]) {}
 
   /** entry point for recursive building */
-  def build(a: Archive, args: List[String], in: List[String] = Nil) = build(a, args, in, None)
+  def build(a: Archive, in: List[String] = Nil) = build(a, in, None)
 
-  def build(a: Archive, args: List[String], in: List[String], errorCont: Option[ErrorHandler]) {
+  def build(a: Archive, in: List[String], errorCont: Option[ErrorHandler]) {
     buildAux(in)(a, errorCont)
   }
 
@@ -249,7 +243,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   def cleanDir(a: Archive, curr: Current) {}
 
   /** recursively delete output files in parallel (!) */
-  def clean(a: Archive, args: List[String], in: List[String] = Nil) {
+  def clean(a: Archive, in: List[String] = Nil) {
     a.traverse[Unit](outDim, in, TraverseMode(Archive.extensionIs(outExt), includeDir, parallel = true))(
     { c => cleanFile(a, c) }, { case (c, _) => cleanDir(a, c) })
   }
@@ -267,7 +261,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     *
     * the decision is made based on the time stamps and the system's last-modified date
     */
-  def update(a: Archive, args: List[String], up: Update, in: List[String] = Nil) {
+  def update(a: Archive, up: Update, in: List[String] = Nil) {
     a.traverse[Boolean](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case c@Current(inFile, inPath) =>
         modified(a, inPath) match {
@@ -336,15 +330,15 @@ class MetaBuildTarget extends BuildTarget {
     case _ => Nil
   }
 
-  def build(a: Archive, args: List[String], in: List[String]) {
-    targets.foreach { t => t.build(a, arguments(t.key), path(t, in)) }
+  def build(a: Archive, in: List[String]) {
+    targets.foreach { t => t.build(a, path(t, in)) }
   }
 
-  def update(a: Archive, args: List[String], up: Update, in: List[String]) {
-    targets.foreach { t => t.update(a, arguments(t.key), up, path(t, in)) }
+  def update(a: Archive, up: Update, in: List[String]) {
+    targets.foreach { t => t.update(a, up, path(t, in)) }
   }
 
-  def clean(a: Archive, args: List[String], in: List[String]) {
-    targets.foreach { t => t.clean(a, arguments(t.key), path(t, in)) }
+  def clean(a: Archive, in: List[String]) {
+    targets.foreach { t => t.clean(a, path(t, in)) }
   }
 }
