@@ -4,6 +4,8 @@ import java.nio.file.Files
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.documents.Document
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.{File, FileURI, ShellCommand}
 
@@ -18,7 +20,7 @@ class SmsGenerator extends TraversingBuildTarget {
   def includeFile(n: String): Boolean =
     n.endsWith(".tex") && !n.endsWith("localpaths.tex") && !n.startsWith("all.")
 
-  override def includeDir(n : String): Boolean = !n.endsWith("tikz")
+  override def includeDir(n: String): Boolean = !n.endsWith("tikz")
 
   val SmsKeys: List[String] = List(
     "guse", "gadopt", "symdef", "abbrdef", "symvariant", "keydef", "listkeydef",
@@ -173,6 +175,50 @@ class PdfLatex extends SmsGenerator {
     } catch {
       case e: Throwable =>
         bt.errorCont(LocalError("pdf exception: " + e))
+    }
+  }
+}
+
+class LaTeXMLAndSTeX extends Importer {
+  private val latexmlBuilder = new LaTeXML
+  private val stexImporter = new STeXImporter
+  val key = latexmlBuilder.key + "-" + stexImporter.key
+
+  /** the (unused) file extensions to which this may be applicable */
+  override def inExts: List[String] = List("tex")
+
+  override def includeFile(n: String) = latexmlBuilder.includeFile(n)
+
+  override def includeDir(n: String) = latexmlBuilder.includeDir(n)
+
+  override def init(controller: Controller) {
+    latexmlBuilder.init(controller)
+    stexImporter.init(controller)
+    super.init(controller)
+  }
+
+  /** the main abstract method to be implemented by importers
+    *
+    * @param bt information about the input document and error reporting
+    * @param index a continuation function to be called on every generated document
+    */
+  def importDocument(bt: BuildTask, index: (Document) => Unit): Unit = {
+    // no code is needed here since apply is overridden below
+  }
+
+  override def apply(modifier: BuildTargetModifier, arch: Archive, args: List[String], in: List[String]) {
+    modifier match {
+      case up: Update =>
+        latexmlBuilder.update(arch, up, in)
+        stexImporter.update(arch, up, in)
+      case Clean =>
+        latexmlBuilder.clean(arch, in)
+        stexImporter.clean(arch, in)
+      case Build =>
+        latexmlBuilder.build(arch, in)
+        //running twice, first to load all theories, then to successfully parse objects
+        stexImporter.build(arch, in)
+        stexImporter.build(arch, in)
     }
   }
 }
