@@ -34,7 +34,7 @@ class SmsGenerator extends TraversingBuildTarget {
     SmsTopKeys.map("\\\\end\\{" + _ + "\\}")
     ).mkString("|").r
 
-  def createSms(inFile: File, outFile: File) = {
+  def createSms(inFile: File, outFile: File): Unit = {
     val source = scala.io.Source.fromFile(inFile)
     val w = File.Writer(outFile)
     source.getLines().foreach { line =>
@@ -101,12 +101,11 @@ class LaTeXML extends SmsGenerator {
       val result = ShellCommand.run(command: _*)
       result foreach { s =>
         bt.errorCont(LocalError(s))
-        return
       }
       val lmhOut = bt.inFile.setExtension("omdoc")
       val logFile = bt.inFile.setExtension("ltxlog")
-      val smsFile = bt.inFile.setExtension("sms")
-      if (lmhOut.exists() && lmhOut != bt.outFile) Files.move(lmhOut.toPath, bt.outFile.toPath)
+      if (lmhOut.exists() && lmhOut != bt.outFile)
+        Files.move(lmhOut.toPath, bt.outFile.toPath)
       var optLevel: Option[Level.Level] = None
       var msg: List[String] = Nil
       var newMsg = true
@@ -170,7 +169,6 @@ class PdfLatex extends SmsGenerator {
       val result = ShellCommand.run(command: _*)
       result foreach { s =>
         bt.errorCont(LocalError(s))
-        return
       }
     } catch {
       case e: Throwable =>
@@ -187,9 +185,9 @@ class LaTeXMLAndSTeX extends Importer {
   /** the (unused) file extensions to which this may be applicable */
   override def inExts: List[String] = List("tex")
 
-  override def includeFile(n: String) = latexmlBuilder.includeFile(n)
+  override def includeFile(n: String): Boolean = latexmlBuilder.includeFile(n)
 
-  override def includeDir(n: String) = latexmlBuilder.includeDir(n)
+  override def includeDir(n: String): Boolean = latexmlBuilder.includeDir(n)
 
   override def init(controller: Controller) {
     latexmlBuilder.init(controller)
