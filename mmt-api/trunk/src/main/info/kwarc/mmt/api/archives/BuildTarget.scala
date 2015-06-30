@@ -49,9 +49,8 @@ abstract class BuildTarget extends FormatBasedExtension {
     * @param modifier chooses build, clean, or update
     * @param arch the archive to build on
     * @param in the folder inside the archive's inDim folder to which building in restricted (i.e., Nil for whole archive)
-    * @param args arguments for the discretion of the BuildTarget; number must be equal to requiredArguments(modifier)
     */
-  def apply(modifier: BuildTargetModifier, arch: Archive, in: List[String], args: List[String]) {
+  def apply(modifier: BuildTargetModifier, arch: Archive, in: List[String]) {
     modifier match {
       case up: Update => update(arch, up, in)
       case Clean => clean(arch, in)

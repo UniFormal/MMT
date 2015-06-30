@@ -206,7 +206,7 @@ class LaTeXMLAndSTeX extends Importer {
     // no code is needed here since apply is overridden below
   }
 
-  override def apply(modifier: BuildTargetModifier, arch: Archive, args: List[String], in: List[String]) {
+  override def apply(modifier: BuildTargetModifier, arch: Archive, in: List[String]) {
     modifier match {
       case up: Update =>
         latexmlBuilder.update(arch, up, in)

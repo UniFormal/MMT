@@ -518,7 +518,7 @@ class Controller extends ROController with Logger {
           case d =>
             extman.get(classOf[BuildTarget], d) match {
               case Some(buildTarget) =>
-                buildTarget(mod, arch, in, args)
+                buildTarget(mod, arch, in)
               case None =>
                 logError("unknown dimension " + d + ", ignored")
             }
