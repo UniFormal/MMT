@@ -90,6 +90,26 @@ class LaTeXML extends SmsGenerator {
     }
   }
 
+  object LtxLog {
+    var optLevel: Option[Level.Level] = None
+    var msg: List[String] = Nil
+    var newMsg = true
+    var region = SourceRegion.none
+
+    def reportError(bt: BuildTask): Unit = {
+      optLevel match {
+        case Some(lev) =>
+          val ref = SourceRef(FileURI(bt.inFile), region)
+          bt.errorCont(CompilerError(key, ref, msg.reverse, lev))
+          optLevel = None
+        case None =>
+      }
+      msg = Nil
+      newMsg = true
+      region = SourceRegion.none
+    }
+  }
+
   /**
    * Compile a .tex file to OMDoc
    */
@@ -106,51 +126,33 @@ class LaTeXML extends SmsGenerator {
       val logFile = bt.inFile.setExtension("ltxlog")
       if (lmhOut.exists() && lmhOut != bt.outFile)
         Files.move(lmhOut.toPath, bt.outFile.toPath)
-      var optLevel: Option[Level.Level] = None
-      var msg: List[String] = Nil
-      var newMsg = true
-      var region = SourceRegion.none
-      def reportError() = {
-        optLevel match {
-          case Some(lev) =>
-            val ref = SourceRef(FileURI(bt.inFile), region)
-            bt.errorCont(CompilerError(key, ref, msg.reverse, lev))
-            optLevel = None
-          case None =>
-        }
-        msg = Nil
-        newMsg = true
-        region = SourceRegion.none
-      }
       if (logFile.exists()) {
         val source = scala.io.Source.fromFile(logFile)
         source.getLines().foreach { line =>
           val (newLevel, restLine) = line2Level(line)
           if (newLevel.isDefined) {
-            reportError()
-            optLevel = newLevel
-            msg = List(restLine)
-            newMsg = false
+            LtxLog.reportError(bt)
+            LtxLog.optLevel = newLevel
+            LtxLog.msg = List(restLine)
+            LtxLog.newMsg = false
           }
           else if (line.startsWith("\t")) {
             val sLine = line.substring(1)
             val newRegion = line2Region(sLine, bt.inFile)
-            if (newRegion == SourceRegion.none) msg = sLine :: msg
-            else region = newRegion
+            if (newRegion == SourceRegion.none)
+              LtxLog.msg = sLine :: LtxLog.msg
+            else LtxLog.region = newRegion
           }
-          else reportError()
+          else LtxLog.reportError(bt)
         }
-        reportError()
+        LtxLog.reportError(bt)
       }
     }
     catch {
       case e: Throwable =>
-        val msg = e.getMessage match {
-          case null => "(no message)"
-          case m => m
-        }
         bt.outFile.delete()
-        bt.errorCont(LocalError("exception for file: " + bt.inFile + "\n" + msg).setCausedBy(e))
+        bt.errorCont(LocalError("exception for file: " + bt.inFile + "\n" +
+          Option(e.getMessage).getOrElse("(no message)")).setCausedBy(e))
     }
   }
 }
