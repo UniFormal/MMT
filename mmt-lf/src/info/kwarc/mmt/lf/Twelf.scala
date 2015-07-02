@@ -59,7 +59,7 @@ class Twelf extends Importer with frontend.ChangeListener {
          case Some(s) =>
             utils.stringToList(s, "\\s").map {f => arch / Twelf.dim / f}
       }
-      stringLocs.foreach {l => catalog.addStringLocation(l.getPath)}      
+      stringLocs.foreach {l => catalog.addStringLocation(l.getPath)}
    }
    override def onArchiveClose(arch: Archive) {
       val stringLoc = (arch / Twelf.dim).getPath
@@ -71,9 +71,8 @@ class Twelf extends Importer with frontend.ChangeListener {
 
    /**
      * Compile a Twelf file to OMDoc
-     * @param in the input Twelf file
-     * @param dpath unused (could be passed to Twelf as the default namespace in the future)
-     * @param out the file in which to put the generated OMDoc
+     * @param bf the build task
+     * @param seCont document continuation for indexing
      */
    def importDocument(bf: BuildTask, seCont: documents.Document => Unit) {
       val procBuilder = new java.lang.ProcessBuilder(path.toString)
@@ -82,8 +81,8 @@ class Twelf extends Importer with frontend.ChangeListener {
       val input = new PrintWriter(proc.getOutputStream, true)
       val output = new BufferedReader(new InputStreamReader(proc.getInputStream))
       val inFile = bf.inFile
-      val inFileAsString = inFile.toString
-      val outFile = bf.inFile.setExtension("omdoc")
+      val outFile = bf.archive / RedirectableDimension(key) / ArchivePath(bf.inPath).setExtension(outExt).segments
+      outFile.up.mkdirs()
       if (inFile.length > 100000000) {
          bf.errorCont(LocalError("skipped big elf file: " + inFile))
          return
@@ -95,8 +94,8 @@ class Twelf extends Importer with frontend.ChangeListener {
       toTwelf("set chatter " + chatter)
       toTwelf("set unsafe " + unsafe)
       toTwelf("set catalog " + catalog.queryURI)
-      toTwelf("loadFile " + inFileAsString)
-      toTwelf("Print.OMDoc.printDoc " + inFileAsString + " " + outFile)
+      toTwelf("loadFile " + inFile)
+      toTwelf("Print.OMDoc.printDoc " + inFile + " " + outFile)
       toTwelf("OS.exit")
       var line : String = null
       while ({line = output.readLine; line != null}) {
