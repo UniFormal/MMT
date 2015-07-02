@@ -42,8 +42,7 @@ groupDir="$(dirname $repoDir)"
 group="$(basename $groupDir)"
 baseDir="$(dirname $groupDir)"
 mathHubDir="$(dirname $baseDir)"
-localMHDir="$(dirname $mathHubDir)"
-moreStyles="${localMHDir}/sty"
+moreStyles="${mathHubDir}/sty"
 
 # take directory for LaTeXML, LaTeXMLs, sTeX and perl5lib
 # from mathHubDir or external EXT_BASE
