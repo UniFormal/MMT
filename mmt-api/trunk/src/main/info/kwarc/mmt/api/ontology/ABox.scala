@@ -38,7 +38,7 @@ class RelStore(report : frontend.Report) {
 
    /** adds a RelationalElement */
    def +=(d : RelationalElement) {
-      this.synchronized {
+      synchronized {
          log(d.toString)
          d match {
            case Relation(dep, subj, obj) =>                  
@@ -54,7 +54,7 @@ class RelStore(report : frontend.Report) {
    
    /** deletes all RelationalElements with a given subject */
    def deleteSubject(subj : Path) {
-      this.synchronized {
+      synchronized {
         types -= subj
         individuals.values.foreach {v => v -= subj} 
         subjects.values.foreach {v => v -= subj}

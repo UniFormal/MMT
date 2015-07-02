@@ -20,7 +20,7 @@ object Util {
     *       jar-name.jar/some-path/resource.txt
     * If the resource is a separate file and the code is run from classes, the folder structure must look like
     *       project-folder
-    *        |--bin/main/info/...
+    *        |--XXX/YYY/info/...
     *        |--resources/mmt-web/ 
     * @return stream to the resource, if found, null otherwise. **The caller must close the stream after reading!**
     */
@@ -29,18 +29,8 @@ object Util {
     if (stream != null) {
         stream  
     } else {
-        val filePath : String = try {
-          //the folder containing the class files
-          val binaryFolder : java.io.File = new java.io.File(getClass.getProtectionDomain.getCodeSource.getLocation.toString)  // e.g. .../lfcatalog/trunk/build/main
-          val resourceFolder : String = binaryFolder.getParentFile.toString + "/resources/mmt-web"
-          (if (resourceFolder.startsWith("file:")) resourceFolder.substring("file:".length) else resourceFolder) + "/" + path
-        }
-        catch {
-          case _ : Throwable => return null
-        }
-        //println("trying to get resource from "  + filePath)
-        val file = new java.io.File(filePath)  // the file on disk
-        // Try reading from compiled-folder/some-path/resource.txt
+        // run from classes
+        val file = utils.MMTSystem.rootFolder/"resources"/"mmt-web"/path
         if (file.exists)
            new java.io.FileInputStream(file)
         else

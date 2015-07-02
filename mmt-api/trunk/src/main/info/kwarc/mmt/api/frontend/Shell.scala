@@ -35,42 +35,50 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
     var shell = true
     // release all resources and terminate after processing initial command and shell
     var terminate = true
-    args match {
-      case "-help" :: _ =>
-        println(helptext)
-        sys.exit
-      // send command to existing instance listening at a port, and quit
-      case "-send" :: port :: rest =>
-        val uri = (URI("http", "localhost:" + port) / ":admin") ? rest.mkString("", " ", "")
-        try {
-          println("sending: " + uri.toString)
-          val ret = utils.xml.get(uri.toJava.toURL)
-          println(ret.toString)
-        } catch {
-          case e: Exception =>
-            println("error while connecting to remote MMT: " + e.getMessage)
-        }
-        sys.exit
-      // execute command line arguments and drop to shell
-      case "-shell" :: rest =>
-        args = rest
-      // execute command line arguments and terminate
-      // if the server is started, we only terminate when the server thread does
-      case "-noshell" :: rest =>
-        args = rest
-        shell = false
-        terminate = false
-      // '-file N' is short for '-shell file N'
-      case "-file" :: name :: Nil =>
-        args = List("file", name)
-      // default behavior: execute command line arguments and exit; shell if no arguments
-      case _ =>
-        shell = args.isEmpty
+    def processArgs {
+       args match {
+         case "-help" :: _ =>
+           println(helptext)
+           sys.exit
+         // send command to existing instance listening at a port, and quit
+         case "-send" :: port :: rest =>
+           val uri = (URI("http", "localhost:" + port) / ":admin") ? rest.mkString("", " ", "")
+           try {
+             println("sending: " + uri.toString)
+             val ret = utils.xml.get(uri.toJava.toURL)
+             println(ret.toString)
+           } catch {
+             case e: Exception =>
+               println("error while connecting to remote MMT: " + e.getMessage)
+           }
+           sys.exit
+         // execute command line arguments and drop to shell
+         case "-shell" :: rest =>
+           args = rest
+           processArgs
+         // execute command line arguments and terminate
+         // if the server is started, we only terminate when the server thread does
+         case "-noshell" :: rest =>
+           args = rest
+           shell = false
+           terminate = false
+           processArgs
+         // '-file N' is short for '-shell file N'
+         case "-file" :: name :: Nil =>
+           args = List("file", name)
+         case "-scala" :: name :: Nil =>
+           args = Nil//List("scalafile", name)
+           shell = false
+         // default behavior: execute command line arguments and exit; shell if no arguments
+         case _ =>
+           shell = args.isEmpty
+       }
     }
+    processArgs
     try {
       // execute startup arguments
-      val folder = File(getClass.getProtectionDomain.getCodeSource.getLocation.getPath).up
-      val startup = folder / "startup.msl"
+      val startup = MMTSystem.rootFolder / "startup.msl"
+      //println("trying to run " + startup)
       if (startup.exists) {
         controller.handle(ExecFile(startup, None))
       }
@@ -83,7 +91,8 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
       val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
       while (shell) {
         val command = Input.readLine()
-        controller.handleLine(command)
+        if (command != null)
+           controller.handleLine(command)
       }
       if (terminate) controller.cleanup
     } catch {

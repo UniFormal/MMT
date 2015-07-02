@@ -36,7 +36,7 @@ var interactiveViewing = {
 				var contentNode = mmt.createInlineBox(mmt.target, title.slice(-1)[0], '50%');
 				mmt.ajaxAppendBox(svgURI, contentNode);
 				};
-            res["show alignments"] = function() {me.showAlignments()};
+         //res["show alignments"] = function() {me.showAlignments()};
 			res["comment"] = function(){me.addComment()};
 		}
 		return res;
@@ -148,8 +148,9 @@ var interactiveViewing = {
 	        return false;
 	        	});
 	    	});
-		},
+		}
 
+	/*
 	showAlignments: function() {
 		var get = mmt.currentURI;
 		var cont = ":align?" + mmt.currentURI;
@@ -236,7 +237,7 @@ var interactiveViewing = {
 		   .attr("class", "link")
 		   .attr("d", diagonal);
 		}
-	},
+	},*/
 };
 
 JOBAD.modules.register(interactiveViewing);

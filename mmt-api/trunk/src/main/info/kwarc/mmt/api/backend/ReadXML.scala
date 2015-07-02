@@ -223,9 +223,9 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
             }
             val c = Constant(homeTerm, name, alias, tp, df, rl, notC.getOrElse(NotationContainer()))
             add(c,md)
-         case <import>{seq @ _*}</import> =>
+         case imp @ <import>{seq @ _*}</import> =>
             log("import " + name + " found")
-            val (rest, from) = getTheoryFromAttributeOrChild(symbol, "from", nsMap)
+            val (rest, from) = getTheoryFromAttributeOrChild(imp, "from", nsMap)
             val adjustedName = if (name.length > 0) name else from match {
                case OMMOD(p) => LocalName(p)
                case _ => throw ParseError("domain of include must be atomic")
