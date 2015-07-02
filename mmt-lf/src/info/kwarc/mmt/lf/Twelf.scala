@@ -1,146 +1,143 @@
 package info.kwarc.mmt.lf
-import info.kwarc.mmt.api._
-import archives._
-import backend._
-import parser._
-import utils.{File,FileURI}
-
-import info.kwarc.mmt.twelf.Catalog
 
 import java.io._
-import scala.collection.mutable.HashSet
+
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.parser._
+import info.kwarc.mmt.api.utils.{File, FileURI}
+import info.kwarc.mmt.twelf.Catalog
 
 /** helper methods for Twelf */
 object Twelf {
-   /** parses filename:col.line-col.line */
-   def parseRef(s: String) = {
-      val i = s.lastIndexOf(":")
-      val file = File(s.substring(0,i))
-      val numbers = s.substring(i+1).split("[-\\.]")
-      val reg = SourceRegion(SourcePosition(-1, numbers(0).toInt, numbers(1).toInt),
-                                    SourcePosition(-1, numbers(2).toInt, numbers(3).toInt))
-      SourceRef(utils.FileURI(file), reg)
-   }
-   val dim = RedirectableDimension("twelf", Some(source))
+  /** parses filename:col.line-col.line */
+  def parseRef(s: String): SourceRef = {
+    val i = s.lastIndexOf(":")
+    val file = File(s.substring(0, i))
+    val numbers = s.substring(i + 1).split("[-\\.]")
+    val reg = SourceRegion(SourcePosition(-1, numbers(0).toInt, numbers(1).toInt),
+      SourcePosition(-1, numbers(2).toInt, numbers(3).toInt))
+    SourceRef(utils.FileURI(file), reg)
+  }
 }
 
 /** importer wrapper for Twelf, which starts the catalog */
 class Twelf extends Importer with frontend.ChangeListener {
-   val key = "twelf-omdoc"
-   override def inDim = Twelf.dim
+  val key = "twelf-omdoc"
 
-   def inExts = List("elf","twelf","lf")
+  override def inDim: RedirectableDimension = RedirectableDimension("twelf", Some(source))
 
-   /** path to Twelf executable */
-   private var path : File = null
-   /** Twelf setting "set unsafe ..." */
-   private val unsafe : Boolean = true
-   /** Twelf setting "set chatter ..." */
-   private val chatter : Int = 5
-   /** initial port of lfcatalog */
-   private val port = 8083
-   private var catalog : Catalog = null
+  def inExts: List[String] = List("elf", "twelf", "lf")
 
-   /**
-    * creates and initializes a Catalog
-    * first argument is the location of the twelf-server script; alternatively set variable GraphViz
-    */
-   override def start(args: List[String]) {
-      val p = getFromFirstArgOrEnvvar(args, "Twelf")
-      path = File(p)
-      catalog = new Catalog(HashSet(), HashSet("*.elf"), HashSet(".svn"), port, true, report("lfcatalog", _))
-      catalog.init    //  throws PortUnavailable
-      controller.backend.getArchives foreach onArchiveOpen
-   }
-   override def onArchiveOpen(arch: Archive) {
-      val stringLocs = arch.properties.get("lfcatalog-locations") match {
-         case None =>
-            List(arch / Twelf.dim)
-         case Some(s) =>
-            utils.stringToList(s, "\\s").map {f => arch / Twelf.dim / f}
-      }
-      stringLocs.foreach {l => catalog.addStringLocation(l.getPath)}
-   }
-   override def onArchiveClose(arch: Archive) {
-      val stringLoc = (arch / Twelf.dim).getPath
-      catalog.deleteStringLocation(stringLoc)
-   }
-   override def destroy {
-      catalog.destroy
-   }
+  /** path to Twelf executable, will be overridden in start */
+  private var path: File = File("twelf-server")
+  /** Twelf setting "set unsafe ..." */
+  private val unsafe: Boolean = true
+  /** Twelf setting "set chatter ..." */
+  private val chatter: Int = 5
+  /** initial port of lfcatalog */
+  private val port = 8083
+  /** non-null dummy catalog that will be overridden in start */
+  private var catalog: Catalog = new Catalog(port = port, searchPort = true)
 
-   /**
-     * Compile a Twelf file to OMDoc
-     * @param bf the build task
-     * @param seCont document continuation for indexing
-     */
-   def importDocument(bf: BuildTask, seCont: documents.Document => Unit) {
-      val procBuilder = new java.lang.ProcessBuilder(path.toString)
-      procBuilder.redirectErrorStream
-      val proc = procBuilder.start
-      val input = new PrintWriter(proc.getOutputStream, true)
-      val output = new BufferedReader(new InputStreamReader(proc.getInputStream))
-      val inFile = bf.inFile
-      val outFile = bf.archive / RedirectableDimension(key) / ArchivePath(bf.inPath).setExtension(outExt).segments
-      outFile.up.mkdirs()
-      if (inFile.length > 100000000) {
-         bf.errorCont(LocalError("skipped big elf file: " + inFile))
-         return
+  /**
+   * creates and initializes a Catalog
+   * first argument is the location of the twelf-server script; alternatively set variable GraphViz
+   */
+  override def start(args: List[String]): Unit = {
+    val p = getFromFirstArgOrEnvvar(args, "Twelf")
+    path = File(p)
+    catalog = new Catalog(port = port, searchPort = true, log = report("lfcatalog", _))
+    catalog.init //  throws PortUnavailable
+    controller.backend.getArchives foreach onArchiveOpen
+  }
+
+  override def onArchiveOpen(arch: Archive): Unit = {
+    val stringLocs = arch.properties.get("lfcatalog-locations") match {
+      case None =>
+        List(arch / inDim)
+      case Some(s) =>
+        utils.stringToList(s, "\\s").map { f => arch / inDim / f }
+    }
+    stringLocs.foreach { l => catalog.addStringLocation(l.getPath) }
+  }
+
+  override def onArchiveClose(arch: Archive): Unit = {
+    val stringLoc = (arch / inDim).getPath
+    catalog.deleteStringLocation(stringLoc)
+  }
+
+  override def destroy: Unit = {
+    catalog.destroy
+  }
+
+  def runTwelf(bf: BuildTask, outFile: File): Unit = {
+    val procBuilder = new java.lang.ProcessBuilder(path.toString)
+    procBuilder.redirectErrorStream
+    val proc = procBuilder.start
+    val input = new PrintWriter(proc.getOutputStream, true)
+    val output = new BufferedReader(new InputStreamReader(proc.getInputStream))
+    val inFile = bf.inFile
+    if (inFile.length > 100000000) {
+      bf.errorCont(LocalError("skipped big elf file: " + inFile))
+    } else {
+      def sendToTwelf(s: String): Unit = {
+        log(s)
+        input.println(s)
       }
-      def toTwelf(s: String) {
-         log(s)
-         input.println(s)
+      sendToTwelf("set chatter " + chatter)
+      sendToTwelf("set unsafe " + unsafe)
+      sendToTwelf("set catalog " + catalog.queryURI)
+      sendToTwelf("loadFile " + inFile)
+      sendToTwelf("Print.OMDoc.printDoc " + inFile + " " + outFile)
+      sendToTwelf("OS.exit")
+      var optLine: Option[String] = None
+      while ( {
+        optLine = Option(output.readLine)
+        optLine.isDefined
+      }) {
+        val line = optLine.get.trim
+        val (treat, dropChars) =
+          if (line.endsWith("Warning:")) (true, 9)
+          else if (line.endsWith("Error:")) (true, 7)
+          else (false, 0)
+        if (treat) {
+          val r = Twelf.parseRef(line.substring(0, line.length - dropChars))
+          var msg: List[String] = Nil
+          do {
+            msg ::= Option(output.readLine).getOrElse("")
+          } while (!msg.head.startsWith("%%"))
+          bf.errorCont(CompilerError(key, r, msg.reverse, Level.Warning))
+        }
       }
-      toTwelf("set chatter " + chatter)
-      toTwelf("set unsafe " + unsafe)
-      toTwelf("set catalog " + catalog.queryURI)
-      toTwelf("loadFile " + inFile)
-      toTwelf("Print.OMDoc.printDoc " + inFile + " " + outFile)
-      toTwelf("OS.exit")
-      var line : String = null
-      while ({line = output.readLine; line != null}) {
-         line = line.trim
-         val (treat, dropChars, warning) =
-            if (line.endsWith("Warning:")) (true, 9, true)
-            else if (line.endsWith("Error:")) (true, 7, false)
-            else (false, 0, false)
-         if (treat) {
-            val r = Twelf.parseRef(line.substring(0, line.length - dropChars))
-            var msg : List[String] = Nil
-            do {
-               msg ::= output.readLine
-            } while (! msg.head.startsWith("%%"))
-            bf.errorCont(CompilerError(key, r, msg.reverse, Level.Warning))
-         }
+    }
+  }
+
+  /**
+   * Compile a Twelf file to OMDoc
+   * @param bf the build task
+   * @param seCont document continuation for indexing
+   */
+  def importDocument(bf: BuildTask, seCont: documents.Document => Unit): Unit = {
+    val outFile = bf.archive / RedirectableDimension(key) / ArchivePath(bf.inPath).setExtension(outExt).segments
+    outFile.up.mkdirs()
+    outFile.delete()
+    runTwelf(bf, outFile)
+    def error(msg: String): Unit = {
+      val ref = SourceRef(FileURI(bf.inFile), parser.SourceRegion.none)
+      val e = CompilerError(key, ref, List(msg), Level.Fatal)
+      bf.errorCont(e)
+    }
+    if (!(outFile.exists && outFile.length > 0)) {
+      error("unknown error: Twelf produced no omdoc file")
+    } else
+      try {
+        val dp = bf.narrationDPath
+        val ps = ParsingStream.fromFile(outFile, Some(dp.copy(uri = dp.uri.setExtension("omdoc"))))
+        seCont(controller.read(ps, interpret = false)(bf.errorCont))
+      } catch {
+        case e: scala.xml.parsing.FatalError =>
+          error("XML error in omdoc file (likely too big for Twelf to write)")
       }
-      def error(msg: String) {
-         val ref = SourceRef(FileURI(inFile), parser.SourceRegion.none)
-         val e = CompilerError(key, ref, List(msg), Level.Fatal)
-         bf.errorCont(e)
-      }
-      if (! (outFile.exists && outFile.length > 0)) {
-          error("unknown error: Twelf produced no omdoc file")
-          return
-      }
-      val doc = try {
-         val dp = bf.narrationDPath
-         val ps = ParsingStream.fromFile(outFile, Some(dp.copy(uri = dp.uri.setExtension("omdoc"))))
-         controller.read(ps, false)(bf.errorCont)
-       } catch {
-         case e: scala.xml.parsing.FatalError =>
-            error("XML error in omdoc file (likely too big for Twelf to write)")
-            return
-       }
-       seCont(doc)
-   }
-/*
-   def importString(inText : String, dpath : DPath)(implicit errorCont: ErrorHandler) {
-     val tmp = File(System.getProperty("java.io.tmpdir"))
-     val inFileName = tmp / "in.elf"
-     val outFileName = tmp / "out.omdoc"
-     File.write(inFileName,inText)
-     val bf = new archives.BuildTask(File(inFileName), false, List("string"), dpath.uri, File(outFileName), errorCont)
-     importDocument(bf, doc => ())
-   }
-*/
+  }
 }
