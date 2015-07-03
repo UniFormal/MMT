@@ -5,6 +5,7 @@ import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing._
 
 import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.libraries.Closer
 import info.kwarc.mmt.api.objects.{Term, OMID}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.{ReportHandler, Controller}
@@ -18,7 +19,7 @@ import scala.util.{Success, Try}
  * Created by raupi on 29.05.15.
  */
 
-class RefactorPanel(ctrl:Controller,publish: String => Unit) extends JPanel with ActionListener {
+class RefactorPanel(ctrl:Controller,publish: List[DeclaredModule] => Unit) extends JPanel with ActionListener {
   val controller = ctrl
 
   var theories = (controller.memory.content.getModules collect { case t: DeclaredTheory => t }).toList
@@ -73,20 +74,13 @@ class RefactorPanel(ctrl:Controller,publish: String => Unit) extends JPanel with
     }
     implicit def add = controller.depstore.+=_
     for (o <- s) MMTExtractor(o)
-
-    implicit val rh = new presentation.StringBuilder
-    val presenter = new MMTSyntaxPresenter
-    controller.extman.addExtension(presenter)
-
     for (o <- s) {
-      presenter(o)
       o match {
         case t:DeclaredTheory => theories=t::theories
         case v:DeclaredView => views=v::views
       }
     }
-    publish(rh.get)
-    controller.extman.removeExtension(presenter)
+    publish(s)
     reinit
   }
 

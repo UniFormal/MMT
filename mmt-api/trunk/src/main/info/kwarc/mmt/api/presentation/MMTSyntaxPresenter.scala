@@ -29,6 +29,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     c.alias foreach {a =>
       rh(" @ ")
       rh(a.toPath)
+      rh(Reader.US.toChar.toString)
     }
     c.tp foreach {t =>
       rh("\n")
