@@ -44,11 +44,28 @@ object FlexiformalRef {
 }
 
 object FlexiformalNode {
-  def apply(node : Node, child : List[Term]) : Term = {
-    OMATTR(Opaque.apply(child), Narration.term, OMFOREIGN(node))
+  def apply(node : Node, child : List[(Term, List[Int])]) : Term = {
+    val terms = child.map(_._1)
+    val posBase = Position(0)
+    val refs = child.map(_._2).zipWithIndex.map(p => (p._1, posBase / (p._2 + 1)))
+    val narNode = refs.foldLeft(node)((n,ref) => rewriteNode(n, ref._1, ref._2))
+    OMATTR(Opaque.apply(terms), Narration.term, OMFOREIGN(narNode))
   }
+  
+  def rewriteNode(node : Node, pos : List[Int], ref : Position) : Node = pos match {
+    case Nil => <immtref pos={ref.toString}></immtref>
+    case hd :: tl => 
+      val child = node.child.zipWithIndex map {
+        case (n,i) if i == hd => 
+          rewriteNode(n, tl, ref)
+        case p => p._1
+      }
+      
+      new Elem(node.prefix, node.label, node.attributes, node.scope, false, child : _*)
+  }
+  
+  
 }
-
 
 object Definition {
   def apply(home : Term, name : LocalName, targets : List[GlobalName], df : Term) : Constant = {

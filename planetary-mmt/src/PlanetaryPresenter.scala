@@ -36,51 +36,75 @@ class NotationPresenter(contr : Controller, var notations : List[(GlobalName,Tex
 }
 
 class InformalMathMLPresenter extends presentation.MathMLPresenter {
-  override def doAttributedTerm(t : Term, k : OMID, v : Term)(pc : PresentationContext) = k.path match {
+   override def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
+     implicit val pc = PresentationContext(rh, origin, Nil, None, Position.Init, Nil, None)
+     doInfToplevel(o) {
+        recurse(o)
+     }
+   }  
+   
+   override def doAttributedTerm(t : Term, k : OMID, v : Term)(pc : PresentationContext) = k.path match {
     case Narration.path => 
-      doInformal(v)(pc : PresentationContext)
-      
+      doInformal(v,t)(pc : PresentationContext)
       1
     case _ => doDefault(t)(pc)
   }
   
-  def doInformal(t : Term)(implicit pc : PresentationContext) : Unit = t match {
-    case OMFOREIGN(n) => doInformal(n)(pc)
+  def doInformal(t : Term, tm : Term)(implicit pc : PresentationContext) : Unit = t match {
+    case OMFOREIGN(n) => doInformal(n, tm)(pc)
     case _ => doInfToplevel(t) {
       recurse(t)(pc)
     }
   }
   
-  def doInfToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
-    val nsAtts = List("xmlns" -> namespace("mathml"))
-    val mmtAtts = pc.owner match {
-       case None => Nil
-       case Some(cp) => List(HTMLAttributes.owner -> cp.parent.toPath, HTMLAttributes.component -> cp.component.toString, HTMLAttributes.position -> "")
-    }
-    val idAtt = ( "id" -> o.hashCode.toString)
-    // <mstyle displaystyle="true">
-    pc.out(openTag("math",  idAtt :: nsAtts ::: mmtAtts))
-    pc.out(openTag("semantics", Nil))
-    pc.out(openTag("mrow", Nil))
-    body
-    pc.out(closeTag("mrow"))
-    pc.out(openTag("annotation-xml", List("encoding" -> "MathML-Content")))
-    pc.out(o.toCML.toString)
-    pc.out(closeTag("annotation-xml"))
-    pc.out(closeTag("semantics"))
-    pc.out(closeTag("math"))
+  def doInfToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) = o match {
+    case OMATTR(t, k, v) => //nothing to do
+      
+      val attrs = t.head.map(p => HTMLAttributes.symref -> p.toPath).toList 
+      pc.out(openTag("span", attrs))
+      body
+      pc.out(closeTag("span"))
+    case _ => 
+      val nsAtts = List("xmlns" -> namespace("mathml"))
+      val mmtAtts = pc.owner match {
+         case None => Nil
+         case Some(cp) => List(HTMLAttributes.owner -> cp.parent.toPath, HTMLAttributes.component -> cp.component.toString, HTMLAttributes.position -> "")
+      }
+      val idAtt = ( "id" -> o.hashCode.toString)
+      // <mstyle displaystyle="true">
+      pc.out(openTag("math",  idAtt :: nsAtts ::: mmtAtts))
+      pc.out(openTag("semantics", Nil))
+      pc.out(openTag("mrow", Nil))
+      body
+      pc.out(closeTag("mrow"))
+      pc.out(openTag("annotation-xml", List("encoding" -> "MathML-Content")))
+      pc.out(o.toCML.toString)
+      pc.out(closeTag("annotation-xml"))
+      pc.out(closeTag("semantics"))
+      pc.out(closeTag("math"))
   }
    
-  def doInformal(n : scala.xml.Node)(implicit pc : PresentationContext) : Unit = n match {
-    case _ if (n.label == "OMOBJ") => 
-      val tm = Obj.parseTerm(n, NamespaceMap.empty)
-      doInfToplevel(tm) {
-        recurse(tm)(pc)
+  override def doDelimiter(p: GlobalName, d: Delimiter, implicits: List[Cont])(implicit pc : PresentationContext) = d.text match {
+    case "&#40;" => super.doDelimiter(p, Delim("("), implicits)
+    case "&#41;" => super.doDelimiter(p, Delim(")"), implicits)
+    //unescaping things already escaped by latexml
+    case "&gt;" => super.doDelimiter(p, Delim(">"), implicits)
+    case "&lt;" => super.doDelimiter(p, Delim("<"), implicits)
+    case _ => super.doDelimiter(p, d, implicits)
+  }
+  
+  def doInformal(n : scala.xml.Node, tm : Term)(implicit pc : PresentationContext) : Unit = n match {
+    case _ if (n.label == "immtref") =>
+      val pos = Position.parse(xml.attr(n,"pos"))
+      val inPos = Position(pos.indices.tail)
+      val term = tm.subobject(inPos)._2
+      doInfToplevel(term) {
+        recurse(term)(pc)
       }
     case s : scala.xml.SpecialNode => pc.out(s.toString)
     case _ => 
       pc.rh.writeStartTag(n.prefix, n.label, n.attributes, n.scope)
-      n.child.map(c => doInformal(c)(pc))
+      n.child.map(c => doInformal(c, tm)(pc))
       pc.rh.writeEndTag(n.prefix, n.label)
   }
 }

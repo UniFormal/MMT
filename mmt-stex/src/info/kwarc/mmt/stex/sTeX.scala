@@ -154,11 +154,11 @@ object OMDoc {
     case _ => new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, node.child.map(rewriteCMP) :_*)
   }
   
-  private def getChildren(node : scala.xml.Node)(implicit hasProp : scala.xml.Node => Boolean) : Seq[Node] = {
+  private def getChildren(node : scala.xml.Node, pos : List[Int] = Nil)(implicit hasProp : scala.xml.Node => Boolean) : Seq[(Node, List[Int])] = {
     if (hasProp(node)) {
-     List(node)
+     List((node, pos.reverse))
     } else {
-      node.child.flatMap(getChildren)
+      node.child.zipWithIndex.flatMap(p => getChildren(p._1, p._2 :: pos))
     }
   }
   
@@ -172,7 +172,7 @@ object OMDoc {
       case _ => //informal (narrative) term
         val err = new STeXParseError("Unexpected element label in CMP: " + n.label, sref, Some(Level.Info))
         errorCont(err)
-        val terms = getChildren(n)(n => n.label == "term" || n.label == "OMOBJ").map(translateCMP)
+        val terms = getChildren(n)(n => n.label == "term" || n.label == "OMOBJ").map(p => (translateCMP(p._1), p._2))
         FlexiformalNode(n, terms.toList)
     }
   }

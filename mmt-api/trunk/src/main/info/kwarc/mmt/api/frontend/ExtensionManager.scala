@@ -149,8 +149,9 @@ class ExtensionManager(controller: Controller) extends Logger {
    /** instantiates an extension, initializes it, and adds it
     *  @param cls qualified class name (e.g., org.my.Extension), must be on the class path at run time
     *  @param args arguments that will be passed when initializing the extension
+    *  @return the extension after instantiation, so the caller may use it in some way after
     */
-   def addExtension(cls: String, args: List[String]) {
+   def addExtension(cls: String, args: List[String]) : Extension =  {
        log("trying to create extension " + cls)
        val clsJ = java.lang.Class.forName(cls)
        val ext = try {
@@ -160,6 +161,7 @@ class ExtensionManager(controller: Controller) extends Logger {
           case e : Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)
        }
        addExtension(ext, args)
+       ext 
    }
    /** initializes and adds an extension */
    def addExtension(ext: Extension, args: List[String] = Nil) {
