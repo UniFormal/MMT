@@ -8,21 +8,21 @@ package info.kwarc.mmt.leo.datastructures
  *                        it is an or node and only one subnode needs to be satisfied
  * @param isSatisfiableVar is true if it is solved, is None if it is unknown, is false if it is unsatasfiable
  */
-class ProofData[A](metaVar: A, conjunctiveVar: Boolean, isSatisfiableVar: Option[Boolean] = None ) {
-  var meta=metaVar
+class ProofData[A](dataVar: A, conjunctiveVar: Boolean, isSatisfiableVar: Option[Boolean] = None ) {
+  var data=dataVar
   var conjunctive = conjunctiveVar //TODO figure out why cannot call variable in nested situation
   var isSatisfiable = isSatisfiableVar
-
-  /** read and write locks*/
-  var isReadable = true
-  var isWritable = true
 
   def isUnsatisfiable = !this.isSatisfiable.getOrElse(true)
   def isAnd = conjunctive
   def isOr = !conjunctive
   override def toString:String ={
-    "meta: "+meta.toString+" isAnd: "+isAnd.toString+" isSatisfiable: "+isSatisfiable.toString
+    "meta: "+data.toString+" isAnd: "+isAnd.toString+" isSatisfiable: "+isSatisfiable.toString
   }
+
+  /** read and write locks*/
+  var readLock = false
+  var writeLock = false
 }
 
 
@@ -33,8 +33,8 @@ class ProofData[A](metaVar: A, conjunctiveVar: Boolean, isSatisfiableVar: Option
  * @tparam A type of metadata stored in nodes
  */
 class ProofTree[A](var dataVar: ProofData[A] ) {
-  var data = dataVar
-  var meta = dataVar.meta
+  var proofData = dataVar
+  var data = dataVar.data
   var root: Option[ProofTree[A]] = None
   var children: List[ProofTree[A]] = Nil
 
@@ -56,6 +56,8 @@ class ProofTree[A](var dataVar: ProofData[A] ) {
     }
   }
 
+
+
   /** returns the path of nodes to the root of the tree*/
   def path: List[ProofTree[A]] = this :: root.map(_.path).getOrElse(Nil)
 
@@ -67,7 +69,7 @@ class ProofTree[A](var dataVar: ProofData[A] ) {
     * returns true if the two trees have the same data, conjunctive nodes, and solved status*/
   def isEquivTo(n: ProofTree[A]):Boolean ={
     (this.children,n.children) match {
-      case (Nil,Nil) => this.meta == n.meta && this.isAnd==n.isAnd && this.isSatisfiable==n.isSatisfiable
+      case (Nil,Nil) => this.data == n.data && this.isAnd==n.isAnd && this.isSatisfiable==n.isSatisfiable
       case (l1,l2) =>
         if (l1.length != l2.length) {return false}
         for(x <- l1.indices){
@@ -89,7 +91,7 @@ class ProofTree[A](var dataVar: ProofData[A] ) {
 
   /** changes the data field in the node*/
   def setSatisfiability( bool: Boolean) {
-    data.isSatisfiable = Some(bool)
+    proofData.isSatisfiable = Some(bool)
   }
 
   /** Adds a child from the node*/
@@ -144,17 +146,17 @@ class ProofTree[A](var dataVar: ProofData[A] ) {
   override def toString: String = {
     var output = ""
     preDepthTraverse { subnode :ProofTree[A] =>
-      output = output++ "\n"+"\t"*subnode.depth + subnode.data.toString
+      output = output++ "\n"+"\t"*subnode.depth + subnode.proofData.toString
     }
     output+ "\n"
   }
 
   /** maps a tree of one data-type to a tree of another*/
   def map[B](f: A => B): ProofTree[B] = {
-    val fthis = mkNode(f(meta),isAnd)
+    val fthis = mkNode(f(data),isAnd)
     def recur(n : ProofTree[A],fn: ProofTree[B]): Unit = {
       for (r <- n.children) {
-        val addition = mkNode(f(r.meta),r.isAnd)
+        val addition = mkNode(f(r.data),r.isAnd)
         fn.addChild(addition)
         recur(r,addition)
       }
@@ -186,10 +188,12 @@ class ProofTree[A](var dataVar: ProofData[A] ) {
   }
   
   def preDepthFlatten:List[ProofTree[A]] ={
-    val out:List[ProofTree[A]] = Nil
-    preDepthTraverse({n=>List(n):::out; Unit})
+    var out:List[ProofTree[A]] = Nil
+    preDepthTraverse({n=>out=List(n):::out; Unit})
     out
   }
+
+  def leaves: List[ProofTree[A]] = {preDepthFlatten.filter(_.children==Nil)}
     
 
 /*  /** traverses the tree depth first performs an action as it comes to the node,
@@ -249,6 +253,21 @@ class ProofTree[A](var dataVar: ProofData[A] ) {
     }
   }
 
+  /** places a lock on a node*/
+  def placeLock(readLock: Boolean, writeLock: Boolean): Boolean ={
+    if ((proofData.readLock && readLock)||(proofData.writeLock && writeLock)) {
+      println("ERROR: node "+ this + " already locked"); false
+    }else{
+      proofData.readLock=readLock
+      proofData.writeLock = writeLock; true
+    }
+  }
+
+  /**lifts the locked node*/
+  def liftLock(readLock: Boolean, writeLock: Boolean): Unit ={
+    proofData.readLock=readLock
+    proofData.writeLock = writeLock
+  }
 
 
 }

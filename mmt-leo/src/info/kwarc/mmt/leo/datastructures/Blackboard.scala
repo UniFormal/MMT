@@ -11,31 +11,38 @@ package info.kwarc.mmt.leo.datastructures
  * Taken heavily from the LeoPARD system
  */
 class Blackboard[A](goal: ProofTree[A]) extends ProofTreeBlackboard[A] with EventBlackboard[A] {
-  var agents:List[Agent[A]] = Nil
+  var ruleAgents:List[RuleAgent[A]] = Nil
+  var proofAgents:List[ProofAgent[A]] = Nil
+  var metaAgents:List[MetaAgent[A]] = Nil
+  
   var proofTree= goal
-  var eventSeq = Seq(Event(goal,List("ADD")))
+  var changeSeq = Seq(new Change(goal,List("ADD")))
+  var ruleSeq: Seq[RuleTask[A]] = Nil
+  var proofSeq: Seq[ProofTask[A]] = Nil
+  var metaSeq: Seq[MetaTask[A]] = Nil
   
-  var scheduleAgent: ScheduleAgent[A]= null
-  var auctionAgent: AuctionAgent[A]= null
-  var executionAgent: ExecutionAgent[A]= null
-  def registerScheduleAgent(a : ScheduleAgent[A])={scheduleAgent=a}
-  def registerAuctionAgent(a : AuctionAgent[A])={auctionAgent=a}
-  def registerExecutionAgent(a : ExecutionAgent[A])={executionAgent=a}
-  
-  def registerAgent(a : Agent[A]) : Unit = {agents=List(a):::agents}
-  def registerAgent(l : List[Agent[A]] ) : Unit =  {agents=l:::agents}
-  def unregisterAgent(a : Agent[A]) : Unit = {agents=agents.diff(List(a))}
-  def unregisterAgent(l : List[Agent[A]]) : Unit = {agents=agents.diff(l)}
+  def registerAgent(a : RuleAgent[A]) : Unit = {ruleAgents=List(a):::ruleAgents; a.blackboard = this}
+  def unregisterAgent(a : RuleAgent[A]) : Unit = {ruleAgents=ruleAgents.diff(List(a)); a.blackboard = null}
 
-  def run(): Unit ={
-    scheduleAgent.run()
+
+  def registerAgent(a : ProofAgent[A]) : Unit = {proofAgents=List(a):::proofAgents; a.blackboard = this}
+  def unregisterAgent(a : ProofAgent[A]) : Unit = {proofAgents=proofAgents.diff(List(a)); a.blackboard = null}
+  def registerAgent(a : MetaAgent[A]) : Unit = {metaAgents=List(a):::metaAgents; a.blackboard = this}
+  def unregisterAgent(a : MetaAgent[A]) : Unit = {metaAgents=metaAgents.diff(List(a)); a.blackboard = null}
+
+  /** This function runs the specific agent on the registered Blackboard. */
+  def runCycle():Unit = {
+    ruleAgents.foreach(_.run())
+    proofAgents.foreach(_.run())
+    metaAgents.foreach(_.run())
   }
-  /**
-   *
-   * Returns for debugging and interactive use the agent work
-   *
-   * @return all registered agents and their budget
-   */
+
+  override def toString: String = {
+    "Blackboard: \n Tree: " + proofTree +
+      "\n RuleAgents: " + ruleAgents +
+      "\n ProofAgents: " + proofAgents +
+      "\n MetaAgents: " + metaAgents
+  }
 
 }
 
@@ -66,14 +73,29 @@ trait ProofTreeBlackboard[A] {
    */
   def getNodes : Iterable[ProofTree[A]] = proofTree.preDepthFlatten
 
+  def lockNodes(task: Task[A]):Boolean = {
+    val resultsW = task.writeSet().map(_.placeLock(readLock=true,writeLock=true))
+    val resultsR = task.readSet().map(_.placeLock(readLock=false,writeLock=true))
+    (resultsW++resultsR).forall(b=>b)
+  }
+
+  def unlockNodes(task: Task[A]):Unit = {
+    task.writeSet().foreach(_.liftLock(readLock=false,writeLock=false))
+    task.readSet().foreach(_.liftLock(readLock=false,writeLock=false))
+  }
+
+
 }
 
 /**
  * This trait capsules the message handling for the blackboard
  */
 trait EventBlackboard[A] {
-  var eventSeq : Seq[Event[A]]
+  var changeSeq : Seq[Change[A]]
+  var ruleSeq: Seq[RuleTask[A]]
+  var proofSeq: Seq[ProofTask[A]]
 }
+
 
 
 

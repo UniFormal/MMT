@@ -1,6 +1,10 @@
 package info.kwarc.mmt.leo.datastructures
 
+import scala.collection.mutable
+
 /**
+ * Created by mark on 6/27/15.
+ *
  * Common trait for all Agent Task's. Each agent specifies the
  * work it can do.
  * The specific fields and accessors for the real task will be in
@@ -8,12 +12,9 @@ package info.kwarc.mmt.leo.datastructures
  *
  * Taken heavily from the LeoPARD implementation
  */
-abstract class Task[A] {
+trait Task[A] {
   /** Prints a short name of the task */
-  def name: String
-
-  /** the level of the task: 0 is for a proof based task, 1 is for an agent based task */
-  def level: Int
+  var name: String
 
   /** Returns a set of all nodes that are read for the task. */
   def readSet(): Set[ProofTree[A]]
@@ -37,57 +38,77 @@ abstract class Task[A] {
     }
   }
 
-  /**
-   * Defines the gain of a Task, defined for
-   * a specific agent.
-   *
-   * @return - Possible profit, if the task is executed
-   */
-  def bid(budget: Double): Double
-
-  def byAgent: Agent[A]
-}
-
-
-
-
-trait Result[A] {
-
-
-  /**
-   * A set of new formulas created by the task.
-   * @return New formulas to add. The first coordinate is the intended parent of the second coordinate
-   */
-  def newFormula(): Set[(ProofTree[A], ProofTree[A])]
-
-  /** A mapping of formulas to be changed. */
-  def updateFormula(): Map[ProofTree[A], ProofTree[A]]
-
-  /**
-   * A set of formulas to be removed.
-   * @return Deleted formulas
-   */
-  def removeFormula(): Set[ProofTree[A]]
+  protected def mkNode(data:A, cong:Boolean=false, sat: Option[Boolean]=None):ProofTree[A]={
+    val pd= new ProofData(data,cong,sat)
+    new ProofTree(pd)
+  }
 
 }
 
-/**
- * Simple container for the implementation of result.
- * @param nf - New formulas
- * @param uf - Update formulas
- * @param rf - remove Formulas
- */
-class StdResult[A](nf : Set[(ProofTree[A],ProofTree[A])], uf : Map[ProofTree[A],ProofTree[A]], rf : Set[ProofTree[A]]) extends Result[A]{
-  override def newFormula() : Set[(ProofTree[A],ProofTree[A])] = nf
-  override def updateFormula() : Map[ProofTree[A],ProofTree[A]] = uf
-  override def removeFormula() : Set[ProofTree[A]] = rf
+trait Event[A]{
+  var flags: List[String]
+  def hasFlag(f:String): Boolean = flags.contains(f)
+  def hasFlag(l:List[String]): Boolean = l.exists(flags.contains(_))
 }
 
-class EmptyResult[A] extends Result[A]{
-  override def newFormula() : Set[(ProofTree[A],ProofTree[A])] = Set.empty
-  override def updateFormula() : Map[ProofTree[A],ProofTree[A]] = Map.empty
-  override def removeFormula() : Set[ProofTree[A]] = Set.empty
+class Change[A](nodeVar : ProofTree[A], flagsVar: List[String]) extends Event[A]{
+  var flags =flagsVar
+  var readBy: List[RuleAgent[A]]=Nil
+  def wasReadBy(a: RuleAgent[A]): Boolean = readBy.contains(a)
 }
+
+class RuleTask[A] extends Task[A] with Event[A] {
+  var name = "Not yet named"
+  var byAgent: RuleAgent[A] = null
+  var flags: List[String] = Nil
+  def readSet(): Set[ProofTree[A]] = Set()
+  def writeSet(): Set[ProofTree[A]] = Set()
+  var readBy: List[ProofAgent[A]]=Nil
+  def wasReadBy(a: ProofAgent[A]): Boolean = readBy.contains(a)
+}
+
+class ProofTask[A] extends Task[A] with Event[A] {
+  var name = "Not yet named"
+  var byAgent: ProofAgent[A] = null
+  var flags:List[String] = Nil
+  var readBy: List[MetaAgent[A]]=Nil
+  def wasReadBy(a: MetaAgent[A]): Boolean = readBy.contains(a)
+
+  val ruleSets: mutable.Queue[Set[RuleTask[A]]] = new mutable.Queue[Set[RuleTask[A]]]()
+
+  def readSet(): Set[ProofTree[A]] ={
+    var out:Set[ProofTree[A]] = Set()
+    ruleSets.foreach(s=>out=out.intersect(s.flatMap(_.readSet())))
+    out
+  }
+
+  def writeSet(): Set[ProofTree[A]] ={
+    var out:Set[ProofTree[A]] = Set()
+    ruleSets.foreach(s=>out=out.intersect(s.flatMap(_.writeSet())))
+    out
+  }
+}
+
+class MetaTask[A] extends Task[A] with Event[A] {
+  var name = "Not yet named"
+  var byAgent: MetaAgent[A] = null
+  var flags: List[String] = Nil
+
+  val proofSets: mutable.Queue[Set[ProofTask[A]]] = new mutable.Queue[Set[ProofTask[A]]]()
+
+  def readSet(): Set[ProofTree[A]] ={
+    var out:Set[ProofTree[A]] = Set()
+    proofSets.foreach(s=>out=out.intersect(s.flatMap(_.readSet())))
+    out
+  }
+
+  def writeSet(): Set[ProofTree[A]] ={
+    var out:Set[ProofTree[A]] = Set()
+    proofSets.foreach(s=>out=out.intersect(s.flatMap(_.writeSet())))
+    out
+  }
+}
+
 
 
 

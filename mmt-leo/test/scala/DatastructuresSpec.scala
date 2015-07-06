@@ -1,8 +1,11 @@
 package test.scala
 
 
-import info.kwarc.mmt.leo.datastructures.{ProofData, ProofTree}
+import info.kwarc.mmt.leo.datastructures._
+import info.kwarc.mmt.leo.toyprover.PartitionAgent
 import org.scalatest._
+import sun.management.resources.agent
+
 /**
  * Created by mark on 6/25/15.
  */
@@ -27,7 +30,7 @@ class DatastructuresSpec extends FlatSpec with Matchers {
   //node1.setRoot(node0)
 
   "A Node" should "have a root and children and know its siblings" in {
-    node1.meta should be (1)
+    node1.data should be (1)
     node1.siblings should be (Nil)
     node2.siblings should be (List(node3))
     node1.root should be (Some(node0))
@@ -39,7 +42,7 @@ class DatastructuresSpec extends FlatSpec with Matchers {
     node4.addChild(node5)
     node5.disconnect()
     node4.children should be (Nil)
-
+    node0.leaves should be (List(node3,node4))
   }
 
   val tnode0 = mkNode(0.5,true)
@@ -55,7 +58,7 @@ class DatastructuresSpec extends FlatSpec with Matchers {
   it should "have a mapping function that preserves the structure of the tree" in {
 
     val fnode0 = node0.map(i => i.toDouble + .5)
-    fnode0.meta should be (0.5)
+    fnode0.data should be (0.5)
     fnode0.children.head.isEquivTo(tnode1) should be (true)
   }
 
@@ -72,6 +75,21 @@ class DatastructuresSpec extends FlatSpec with Matchers {
 
     node4.isEquivTo(t2node4) should be (true)
     node0.isEquivTo(t2node0) should be (true)
+  }
+
+  "A BlackBoard" should "solve the partition problem" in {
+    val goal = mkNode(17,true)
+    val blackboard = new Blackboard(goal)
+    val ra = new PartitionAgent
+    val pa = new SingletonProofAgent[Int](ra)
+    val ma = new AuctionAgent[Int]
+
+    blackboard.registerAgent(ra)
+    blackboard.registerAgent(pa)
+    blackboard.registerAgent(ma)
+    println(blackboard)
+    blackboard.runCycle()
+    println(goal.toString)
 
   }
 
