@@ -9,12 +9,14 @@ import scala.collection.mutable
  *
  * Taken Heavily from the LeoPARD project
  */
-abstract class Agent[A, T <: Task[A], E <: Event[A]] {
-  /** @return the name of the agent */
-  def name: String
+abstract class Agent[A, T <: Task[A], E <: Event[A]] extends Debugger {
+  /** the name of the agent */
+  val name: String
+
+  val logPrefix = this.name
 
   override def toString: String= {
-    name + "::numTasks:" + numTasks
+    "AGENT:" + name + "::numTasks:" + numTasks
   }
 
   /** whether the agent is active or not */
@@ -107,7 +109,7 @@ abstract class ProofAgent[A] extends Agent[A, ProofTask[A], RuleTask[A]]{
   }
 
   def executeTask(pt: ProofTask[A]) = {
-    pt.ruleSets.foreach(rs=>rs.foreach(rt=>rt.byAgent.executeTask(rt)))
+    pt.ruleSets.foreach(rs=>rs.filter(_.isApplicable(blackboard)).foreach(rt=>rt.byAgent.executeTask(rt)))
   }
 }
 
@@ -127,24 +129,20 @@ abstract class MetaAgent[A] extends Agent[A, MetaTask[A], ProofTask[A]]{
   }
 
   def executeTask(mt: MetaTask[A]) = {
-    mt.proofSets.foreach(ps=>ps.foreach(pt=>pt.byAgent.executeTask(pt)))
+    mt.proofSets.foreach(ps=>ps.filter(_.isApplicable(blackboard)).foreach(pt=>pt.byAgent.executeTask(pt)))
   }
 
-  def makeMetaTask(q: mutable.Queue[Set[ProofTask[A]]]): MetaTask[A] = {
-    val out = new MetaTask[A]
+  def makeMetaTask(q: mutable.Queue[Set[ProofTask[A]]]): StdMetaTask[A] = {
+    val out = new StdMetaTask[A](this, name+"MetaTask")
     q.foreach(out.proofSets.enqueue(_))
-    out.name = "AuctionMetaTask"
     out.flags = List("ADD")
-    out.byAgent = this
     out
   }
 
   def makeMetaTask(s: Set[ProofTask[A]]): MetaTask[A] = {
-    val out = new MetaTask[A]
+    val out = new StdMetaTask[A](this, name+"MetaTask")
     out.proofSets.enqueue(s)
-    out.name = "AuctionMetaTask"
     out.flags = List("ADD")
-    out.byAgent = this
     out
   }
 
@@ -156,17 +154,17 @@ class SingletonProofAgent[A](ruleAgent: RuleAgent[A]) extends ProofAgent[A] {
   val interests = Nil
 
   def ruleTaskToProofTask(rt: RuleTask[A]): ProofTask[A] = {
-    val out = new ProofTask[A]
+    log("Converting: "+rt,2)
+    val out = new StdProofTask[A](this, "Singleton"+rt.name)
     out.ruleSets.enqueue(Set(rt))
-    out.name = "SingletonProofTask"
     out.flags = List("ADD")
-    out.byAgent = this
     out
   }
 
   def run():Unit = {
+    log("Running")
     ruleAgent.taskQueue.foreach(rt=>this.taskQueue.enqueue(ruleTaskToProofTask(rt)))
-    println(this + " was run")
+    log("Finished Running")
   }
 
 }
@@ -180,18 +178,20 @@ class AuctionAgent[A] extends MetaAgent[A] {
 
   def proofAgents() = blackboard.proofAgents
 
-  def runAgents() = proofAgents().foreach(_.run())
+  //def runAgents() = proofAgents().foreach(_.run())
 
-  def getAuctionedTasks: mutable.Queue[ProofTask[A]] ={
-    val allTasks = new mutable.Queue[ProofTask[A]]()
-    proofAgents().foreach(allTasks++_.taskQueue)
-    println("Proof agents: " +proofAgents) //TODO left off here
+/*  def getAuctionedTasks: mutable.Queue[ProofTask[A]] ={
+    var allTasks = new mutable.Queue[ProofTask[A]]()
+    proofAgents().foreach(pa=>allTasks=allTasks++pa.taskQueue)
+    println("Proof agents: " +proofAgents)
     println("got auctioned tasks" + allTasks)
     allTasks
-  }
+  }*/
 
   def run():Unit ={
+    log("Running")
     executeTask(makeMetaTask(getTaskSet))
+    log("Finished Running")
   }
 
   /**
@@ -202,11 +202,9 @@ class AuctionAgent[A] extends MetaAgent[A] {
    *
    * @return Not yet executed noncolliding set of tasks
    */
-
-
   def getTaskSet : Set[ProofTask[A]] = {
-    val allTasks = new mutable.Queue[ProofTask[A]]()
-    proofAgents().foreach(allTasks++_.taskQueue)
+    var allTasks = new mutable.Queue[ProofTask[A]]()
+    proofAgents().foreach(pa=>allTasks=allTasks++pa.taskQueue)
 /*
     def removeColliding(nExec: Iterable[ProofTask[A]]): Unit = allTasks.synchronized(allTasks.dequeueAll{tbe =>
       nExec.exists{e =>
@@ -220,7 +218,9 @@ class AuctionAgent[A] extends MetaAgent[A] {
     removeColliding(allTasks)
 */ //TODO investigate why this does not work
 
-    println("got auctioned tasks" + allTasks)
+    log("got "+allTasks.length+" auctioned tasks")
+    allTasks.foreach(_.log(this.toString, 2))
+
     allTasks.toSet
   }
   

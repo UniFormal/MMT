@@ -10,7 +10,9 @@ package info.kwarc.mmt.leo.datastructures
  *
  * Taken heavily from the LeoPARD system
  */
-class Blackboard[A](goal: ProofTree[A]) extends ProofTreeBlackboard[A] with EventBlackboard[A] {
+class Blackboard[A](goal: ProofTree[A]) extends ProofTreeBlackboard[A] with EventBlackboard[A] with Debugger {
+  val logPrefix = "Blackboard"
+
   var ruleAgents:List[RuleAgent[A]] = Nil
   var proofAgents:List[ProofAgent[A]] = Nil
   var metaAgents:List[MetaAgent[A]] = Nil
@@ -32,9 +34,13 @@ class Blackboard[A](goal: ProofTree[A]) extends ProofTreeBlackboard[A] with Even
 
   /** This function runs the specific agent on the registered Blackboard. */
   def runCycle():Unit = {
+    log("running rule agents")
     ruleAgents.foreach(_.run())
+    log("running proof agents")
     proofAgents.foreach(_.run())
+    log("running meta agents")
     metaAgents.foreach(_.run())
+    log("finished cycle")
   }
 
   override def toString: String = {

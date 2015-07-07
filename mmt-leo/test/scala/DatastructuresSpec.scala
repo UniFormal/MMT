@@ -18,7 +18,7 @@ class DatastructuresSpec extends FlatSpec with Matchers {
     new ProofTree(pd)
   }
 
-  val node0 = mkNode(0,true)
+  val node0 = mkNode(0,false)
   val node1 = mkNode(1,false)
   val node2 = mkNode(2,false)
   val node3 = mkNode(3,false)
@@ -33,8 +33,8 @@ class DatastructuresSpec extends FlatSpec with Matchers {
     node1.data should be (1)
     node1.siblings should be (Nil)
     node2.siblings should be (List(node3))
-    node1.root should be (Some(node0))
-    node0.root should be (None)
+    node1.parent should be (Some(node0))
+    node0.parent should be (None)
     node1.children should be (List(node2,node3))
     node2.children should be (List(node4))
     node0.depth should be (0)
@@ -43,9 +43,10 @@ class DatastructuresSpec extends FlatSpec with Matchers {
     node5.disconnect()
     node4.children should be (Nil)
     node0.leaves should be (List(node3,node4))
+    node4.root should be (node0)
   }
 
-  val tnode0 = mkNode(0.5,true)
+  val tnode0 = mkNode(0.5,false)
   val tnode1 = mkNode(1.5,false)
   val tnode2 = mkNode(2.5,false)
   val tnode3 = mkNode(3.5,false)
@@ -65,7 +66,7 @@ class DatastructuresSpec extends FlatSpec with Matchers {
   it should "be able to properly trim the proof tree" in {
     node4.setSatisfiability(true)
     node4.percolateAndTrim()
-    val t2node0 = mkNode(0,true,Some(true))
+    val t2node0 = mkNode(0,false,Some(true))
     val t2node1 = mkNode(1,false,Some(true))
     val t2node2 = mkNode(2,false,Some(true))
     val t2node4 = mkNode(4,true,Some(true))
@@ -87,9 +88,12 @@ class DatastructuresSpec extends FlatSpec with Matchers {
     blackboard.registerAgent(ra)
     blackboard.registerAgent(pa)
     blackboard.registerAgent(ma)
-    println(blackboard)
+
     blackboard.runCycle()
-    println(goal.toString)
+    blackboard.runCycle()
+    println(goal)
+
+    OutputLog.display()
 
   }
 

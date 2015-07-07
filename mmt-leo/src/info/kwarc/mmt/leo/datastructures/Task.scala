@@ -12,9 +12,19 @@ import scala.collection.mutable
  *
  * Taken heavily from the LeoPARD implementation
  */
-trait Task[A] {
+trait Task[A] extends Debugger{
   /** Prints a short name of the task */
-  var name: String
+  val name: String
+
+  val logPrefix = name
+
+  def isApplicable(b:Blackboard[A]):Boolean={
+    val out = this.writeSet().exists(!_.isBelowSatisfied) &&
+      b.proofTree.contains(this.writeSet()) &&
+      b.proofTree.contains(this.readSet())
+    if (!out) log(this.toString+ " is not applicable")
+    out
+  }
 
   /** Returns a set of all nodes that are read for the task. */
   def readSet(): Set[ProofTree[A]]
@@ -57,19 +67,21 @@ class Change[A](nodeVar : ProofTree[A], flagsVar: List[String]) extends Event[A]
   def wasReadBy(a: RuleAgent[A]): Boolean = readBy.contains(a)
 }
 
-class RuleTask[A] extends Task[A] with Event[A] {
-  var name = "Not yet named"
-  var byAgent: RuleAgent[A] = null
+abstract class RuleTask[A] extends Task[A] with Event[A] {
+  val byAgent: RuleAgent[A]
   var flags: List[String] = Nil
   def readSet(): Set[ProofTree[A]] = Set()
   def writeSet(): Set[ProofTree[A]] = Set()
   var readBy: List[ProofAgent[A]]=Nil
   def wasReadBy(a: ProofAgent[A]): Boolean = readBy.contains(a)
+
+  override def toString: String = {
+    "RULE TASK:" + name + " \n \t \t  \t readSet: " + readSet()
+  }
 }
 
-class ProofTask[A] extends Task[A] with Event[A] {
-  var name = "Not yet named"
-  var byAgent: ProofAgent[A] = null
+abstract class ProofTask[A] extends Task[A] with Event[A] {
+  val byAgent: ProofAgent[A]
   var flags:List[String] = Nil
   var readBy: List[MetaAgent[A]]=Nil
   def wasReadBy(a: MetaAgent[A]): Boolean = readBy.contains(a)
@@ -87,11 +99,14 @@ class ProofTask[A] extends Task[A] with Event[A] {
     ruleSets.foreach(s=>out=out.intersect(s.flatMap(_.writeSet())))
     out
   }
+
+  override def toString: String = {
+    "PROOF TASK:" + name + " \n \t \t ruleSets:" + ruleSets
+  }
 }
 
-class MetaTask[A] extends Task[A] with Event[A] {
-  var name = "Not yet named"
-  var byAgent: MetaAgent[A] = null
+abstract class MetaTask[A] extends Task[A] with Event[A] {
+  val byAgent: MetaAgent[A]
   var flags: List[String] = Nil
 
   val proofSets: mutable.Queue[Set[ProofTask[A]]] = new mutable.Queue[Set[ProofTask[A]]]()
@@ -107,7 +122,28 @@ class MetaTask[A] extends Task[A] with Event[A] {
     proofSets.foreach(s=>out=out.intersect(s.flatMap(_.writeSet())))
     out
   }
+
+  override def toString: String = {
+    "META TASK:" + name + " \n \t proofSets:" + proofSets
+  }
 }
+
+class StdRuleTask[A](byAgentVar: RuleAgent[A], nameVar: String) extends RuleTask[A]{
+  val name = nameVar
+  val byAgent = byAgentVar
+}
+
+class StdProofTask[A](byAgentVar: ProofAgent[A], nameVar: String) extends ProofTask[A]{
+  val name = nameVar
+  val byAgent = byAgentVar
+}
+
+class StdMetaTask[A](byAgentVar: MetaAgent[A], nameVar: String) extends MetaTask[A]{
+  val name = nameVar
+  val byAgent = byAgentVar
+}
+
+
 
 
 
