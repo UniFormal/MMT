@@ -34,11 +34,17 @@ trait Extension extends Logger {
       report = controller.report
    }
 
-   protected def getFromFirstArgOrEnvvar(args: List[String], name: String): String = {
+   protected def getFromFirstArgOrEnvvar(args: List[String], name: String,
+                                         default: String = ""): String = {
       args match {
-         case Nil => controller.getEnvVar(name).getOrElse(throw LocalError(s"1 argument or environment variable $name needed"))
-         case hd::Nil => hd
-         case _ => throw LocalError("too many arguments: " + args.mkString(" ") + "; expected: 1")
+         case Nil => controller.getEnvVar(name).getOrElse({
+            log("environment variable " + name + " is not set" +
+              (if (default.nonEmpty) " using \"" + default + "\"" else ""))
+            default
+         })
+         case hd :: Nil => hd
+         case _ => throw LocalError("too many arguments: " + args.mkString(" ")
+           + "; expected: 1")
       }
    }
 
