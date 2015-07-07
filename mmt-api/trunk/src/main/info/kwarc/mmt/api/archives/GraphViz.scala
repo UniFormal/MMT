@@ -18,7 +18,7 @@ class GraphViz extends Exporter {
    /** expects one argument: the path to graphviz; alternatively set variable GraphViz */
    override def start(args: List[String]) {
       tg = new ontology.TheoryGraph(controller.depstore)
-      graphviz = getFromFirstArgOrEnvvar(args, "GraphViz")
+      graphviz = getFromFirstArgOrEnvvar(args, "GraphViz", "dot")
    }
 
    /** contains at least all elements of the document */
