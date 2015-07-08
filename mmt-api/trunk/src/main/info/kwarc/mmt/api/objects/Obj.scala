@@ -569,7 +569,7 @@ object Obj {
             OMATTR(t, k.asInstanceOf[OMID], v)
          case <OME>{child @ _*}</OME> =>
             throw ParseError("OME not supported - use OMA: " + N.toString)
-         case <OMFOREIGN>{_*}</OMFOREIGN> => OMFOREIGN(N)
+         case <OMFOREIGN>{n}</OMFOREIGN> => OMFOREIGN(n)
          case <OMSF>{nodes @ _*}</OMSF> =>
             val sf = nodes.toList.map {
                case node @ <text>{scala.xml.PCData(t)}</text> => Text(xml.attr(node, "format"), t)

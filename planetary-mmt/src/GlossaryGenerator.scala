@@ -17,6 +17,12 @@ import ontology._
 import info.kwarc.mmt.stex._
 
 object GlossaryGenerator {
+  
+  private var counter = 0
+  def getNewId : String = {
+    counter += 1
+    "gs_" + counter.toString
+  }
   private var presenter: PlanetaryPresenter = null
   private var controller: Controller = null
   private var rh: StringBuilder = null
@@ -79,7 +85,7 @@ object GlossaryGenerator {
       ul("nav nav-tabs") {
         items.foreach { p =>
           li(getCls(p._1)) {
-            rh(<a data-target={ "#gtab_" + p._1 } style="cursor: pointer;" onclick={ "jQuery(this).tab('show');" }> { p._1 } </a>)
+            rh(<a data-target={ "#gtab_" + p._1 } class="gs_tab"> { p._1 } </a>)
           }
         }
       }
@@ -124,25 +130,37 @@ object GlossaryGenerator {
     
     li(cls = "entry") {
       div {
+        //name 
         span(cls="name keyword", attributes=List("id" -> (presenter.encPath(spath) + "_" + lang))) {
           span {
             presenter.doNotationRendering(spath, not)
           }
         }
-        //addings defs
-        
-        presenter.doNotations(notations, spath, lang)
-        for (lang <- alternatives) {
-          try {
-            val altId = presenter.encPath(spath) + "_" + lang;
-            rh(<a style="cursor: pointer;" onclick={ "$('#glossary a[data-target=\\\'#gtab_" + lang + "\\\']').tab('show'); window.location.href = \'#" + altId + "\';" + "jQuery(\'#" + altId + "\').parent().effect(\'highlight\', {}, 1500);" }> { lang } </a>)
-          } catch {
-            case e: Error => //invalid path, nothing to do
-            //           rh(<a href="#" style="cursor: pointer;" onclick={"$('#glossary a[\\\'data-toggle=#gtab_" + lang + "\\\']').tab('show');"}> {lang} </a>)
+        //Show Definition Trigger -- already returning if no def is found so no need to check
+        val defId = getNewId
+        presenter.doShowHideTrigger("Definition", defId)
+        //Show notations Trigger
+        val notId = getNewId
+        if (!notations.isEmpty) presenter.doShowHideTrigger("Notations", notId)
+        // Other languages
+        span(cls = "pull-right") {
+          for (lang <- alternatives) {
+            try {
+              val altId = presenter.encPath(spath) + "_" + lang;
+              rh(<a class="alt_lang" data-lang={lang} data-id={altId}> { lang } </a>)
+            } catch {
+              case e: Error => //invalid path, nothing to do
+              //           rh(<a href="#" style="cursor: pointer;" onclick={"$('#glossary a[\\\'data-toggle=#gtab_" + lang + "\\\']').tab('show');"}> {lang} </a>)
+            }
           }
         }
-        defs.flatten foreach { fd =>
-          div(cls = "hidden", attributes = ("id" -> ("def_" + spath.toPath + "_" + fd.path.toPath)) :: Nil) {
+        // Notations Table -- hidden by default, activated by notations trigger
+        presenter.doNotationsTable(notations, notId)
+        
+        // adding definition (as hidden for now)
+        //("style" -> "display:none;") 
+        div(attributes = ("id" -> (defId)) :: ("style" -> "display:none;") :: Nil) {
+          defs.flatten foreach { fd =>
             presenter(fd)(rh)
           }
         }

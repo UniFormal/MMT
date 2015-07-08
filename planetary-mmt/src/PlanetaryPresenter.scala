@@ -33,6 +33,15 @@ class NotationPresenter(contr : Controller, var notations : List[(GlobalName,Tex
       val mi = xml.element("mi", ("style" -> "color:red;") :: vdAtt ::: jobadattribs, n.toString)
       pc.out(mi)
    }
+  //TODO duplicate code found also in informal presenter, to fix
+  override def doDelimiter(p: GlobalName, d: Delimiter, implicits: List[Cont])(implicit pc : PresentationContext) = d.text match {
+    case "&#40;" => super.doDelimiter(p, Delim("("), implicits)
+    case "&#41;" => super.doDelimiter(p, Delim(")"), implicits)
+    //unescaping things already escaped by latexml
+    case "&gt;" => super.doDelimiter(p, Delim(">"), implicits)
+    case "&lt;" => super.doDelimiter(p, Delim("<"), implicits)
+    case _ => super.doDelimiter(p, d, implicits)
+  }
 }
 
 class InformalMathMLPresenter extends presentation.MathMLPresenter {
@@ -59,7 +68,6 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
   
   def doInfToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) = o match {
     case OMATTR(t, k, v) => //nothing to do
-      
       val attrs = t.head.map(p => HTMLAttributes.symref -> p.toPath).toList 
       pc.out(openTag("span", attrs))
       body
@@ -93,6 +101,36 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
     case _ => super.doDelimiter(p, d, implicits)
   }
   
+  def cleanAttribs(attrs : scala.xml.MetaData, scope : scala.xml.NamespaceBinding) : scala.xml.MetaData = {
+    var newAttr : scala.xml.MetaData = attrs
+    def traverse(att : scala.xml.MetaData) : Unit = att match {
+      case scala.xml.Null => scala.xml.Null //nothing to do
+      case p : scala.xml.PrefixedAttribute =>
+        if (p.pre == "stex") {
+          newAttr = newAttr.remove(scope.getURI(p.pre), scope, p.key)
+        }
+        traverse(att.next)
+      case u : scala.xml.UnprefixedAttribute => 
+        if (u.key == "about" || u.key == "id")
+          newAttr = newAttr.remove(u.key)
+        traverse(att.next)
+    }
+    traverse(attrs)
+    newAttr
+  }
+  
+  private def cleanScope(scope : scala.xml.NamespaceBinding) : scala.xml.NamespaceBinding = {
+    if (scope == scala.xml.TopScope) {
+      scope
+    } else {
+        if (scope.prefix == "om" || scope.prefix == "dc" || scope.prefix == "omdoc" || scope.prefix == "stex"  || scope.prefix == null) {
+          cleanScope(scope.parent)
+        } else {
+          scala.xml.NamespaceBinding(scope.prefix, scope.uri, cleanScope(scope.parent))
+        }
+    }
+  }
+  
   def doInformal(n : scala.xml.Node, tm : Term)(implicit pc : PresentationContext) : Unit = n match {
     case _ if (n.label == "immtref") =>
       val pos = Position.parse(xml.attr(n,"pos"))
@@ -103,7 +141,9 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
       }
     case s : scala.xml.SpecialNode => pc.out(s.toString)
     case _ => 
-      pc.rh.writeStartTag(n.prefix, n.label, n.attributes, n.scope)
+      val scope = cleanScope(n.scope)
+      val attribs = cleanAttribs(n.attributes, n.scope)
+      pc.rh.writeStartTag(n.prefix, n.label, attribs, scope)
       n.child.map(c => doInformal(c, tm)(pc))
       pc.rh.writeEndTag(n.prefix, n.label)
   }
@@ -246,20 +286,43 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      path.module.toMPath.name.toString + "_" + path.name.toString
    }
    
-   def doNotations(notations : List[(GlobalName, TextNotation)], path : GlobalName, instId : String = "") {
+   
+   def doShowHideTrigger(name : String, id : String) {
+       val onName = "Show " + name
+       rh(" <small><a class='gls_trigger'  data-text=\"" + name + "\" data-target='" + id + "'>" + onName + "</a></small>")
+   }
+   
+   def doNotationsTable(notations : List[(GlobalName, TextNotation)], id : String) {
      if (!notations.isEmpty) {
-       val onclick = "onclick=\"if (jQuery(this).html() == \'Show Notations\') {jQuery(this).html(\'Hide Notations\')} else {jQuery(this).html(\'Show Notations\')};" +
-                     "jQuery(document.getElementById(\'not_" + encPath(path) + "_" + instId + "\')).toggle( \'fold\' );\""
-       rh(" <small><a style=\"cursor:pointer;\" " + onclick + ">" + "Show Notations" + "</a></small>")
-       table(cls = "table table-striped table-condensed", attributes = ("id" -> ("not_" + encPath(path) + "_" + instId)) :: ("style" -> "display:none;") :: Nil) {
-         head {
+       table(cls = "table table-striped table-condensed", attributes = ("id" -> (id)) :: ("style" -> "display:none;") :: Nil) {
+         thead {
            tr {
              th { text{"Languages"} } 
              th { text{"Arguments"} }
              th { text{"Rendering"} }
            }
          }
-         body {
+         tbody {
+           notations.foreach(p => doNotation(p._1, p._2))
+         }
+       }
+     }
+   }
+   
+   def doNotations(notations : List[(GlobalName, TextNotation)], path : GlobalName, instId : String = "") {
+     if (!notations.isEmpty) {
+       val onclick = "onclick=\"if (jQuery(this).html() == \'Show Notations\') {jQuery(this).html(\'Hide Notations\')} else {jQuery(this).html(\'Show Notations\')};" +
+                     "jQuery(document.getElementById(\'not_" + encPath(path) + "_" + instId + "\')).toggle( \'fold\' );\""
+       rh(" <small><a style=\"cursor:pointer;\" " + onclick + ">" + "Show Notations" + "</a></small>")
+       table(cls = "table table-striped table-condensed", attributes = ("id" -> ("not_" + encPath(path) + "_" + instId)) :: ("style" -> "display:none;") :: Nil) {
+         thead {
+           tr {
+             th { text{"Languages"} } 
+             th { text{"Arguments"} }
+             th { text{"Rendering"} }
+           }
+         }
+         tbody {
            notations.foreach(p => doNotation(p._1, p._2))
          }
        }
