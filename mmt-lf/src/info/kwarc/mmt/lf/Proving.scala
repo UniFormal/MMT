@@ -81,7 +81,7 @@ object BackwardPiElimination extends BackwardSearch {
       val matchFound = matcher(goal, scopeFresh)
       if (!matchFound) return None
       val solution = matcher.getSolution
-      // now scope ^ sub ^ solution == goal
+      // now scope ^ rename ^ solution == goal
       var result = Context()
       bindings foreach {b =>
          // named bound variables that are substituted by solution can be filled in
@@ -89,8 +89,8 @@ object BackwardPiElimination extends BackwardSearch {
          val renameResult = rename ^ result.toPartialSubstitution // maps unsolved variables to their renaming
          b match {
             case (Some(x), xtp) =>
-               val xFresh = (x ^ rename).asInstanceOf[OMV].name // sub is a renaming
-               result ++= VarDecl(xFresh, Some(xtp ^? renameResult), solution(xFresh), None) 
+               val xFresh = (x ^ rename).asInstanceOf[OMV].name // rename is a renaming
+               result ++= VarDecl(xFresh, Some(xtp ^? renameResult), solution(xFresh), None)
             case (None, anontp) =>
                result ++= VarDecl(OMV.anonymous, Some(anontp ^? renameResult), None, None)
          }

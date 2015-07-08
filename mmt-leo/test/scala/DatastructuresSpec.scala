@@ -18,11 +18,11 @@ class DatastructuresSpec extends FlatSpec with Matchers {
     new ProofTree(pd)
   }
 
-  val node0 = mkNode(0,false)
-  val node1 = mkNode(1,false)
-  val node2 = mkNode(2,false)
-  val node3 = mkNode(3,false)
-  val node4 = mkNode(4,true)
+  val node0 = mkNode(0,cong = false)
+  val node1 = mkNode(1,cong = false)
+  val node2 = mkNode(2,cong = false)
+  val node3 = mkNode(3,cong = false)
+  val node4 = mkNode(4,cong = true)
   node0.addChild(node1)
   node1.addChild(node2)
   node1.addChild(node3)
@@ -42,7 +42,7 @@ class DatastructuresSpec extends FlatSpec with Matchers {
     node1.children should be (List(node2,node3))
     node2.children should be (List(node4))
     node0.depth should be (0)
-    val node5 = mkNode(5,true)
+    val node5 = mkNode(5,cong = true)
     node4.addChild(node5)
     node5.disconnect()
     node4.children should be (Nil)
@@ -50,11 +50,11 @@ class DatastructuresSpec extends FlatSpec with Matchers {
     node4.root should be (node0)
   }
 
-  val tnode0 = mkNode(0.5,false)
-  val tnode1 = mkNode(1.5,false)
-  val tnode2 = mkNode(2.5,false)
-  val tnode3 = mkNode(3.5,false)
-  val tnode4 = mkNode(4.5,true)
+  val tnode0 = mkNode(0.5,cong = false)
+  val tnode1 = mkNode(1.5,cong = false)
+  val tnode2 = mkNode(2.5,cong = false)
+  val tnode3 = mkNode(3.5,cong = false)
+  val tnode4 = mkNode(4.5,cong = true)
   tnode0.addChild(tnode1)
   tnode1.addChild(tnode2)
   tnode1.addChild(tnode3)
@@ -62,7 +62,7 @@ class DatastructuresSpec extends FlatSpec with Matchers {
   it should "have a mapping function that preserves the structure of the tree" in {
     val fnode0 = node0.map(i => i.toDouble + .5)
     fnode0.data should be (0.5)
-    fnode0.children.head.isEquivTo(tnode1) should be (true)
+    fnode0.children.head.isEquivTo(tnode1) should be (right = true)
   }
 
   it should "be able to properly trim the proof tree" in {
@@ -71,20 +71,20 @@ class DatastructuresSpec extends FlatSpec with Matchers {
 
     node4.setSatisfiability(true)
     node4.percolate()
-    val t2node0 = mkNode(0,false,Some(true))
-    val t2node1 = mkNode(1,false,Some(true))
-    val t2node2 = mkNode(2,false,Some(true))
-    val t2node4 = mkNode(4,true,Some(true))
+    val t2node0 = mkNode(0,cong = false,Some(true))
+    val t2node1 = mkNode(1,cong = false,Some(true))
+    val t2node2 = mkNode(2,cong = false,Some(true))
+    val t2node4 = mkNode(4,cong = true,Some(true))
     t2node0.addChild(t2node1)
     t2node1.addChild(t2node2)
     t2node2.addChild(t2node4)
 
-    node4.isEquivTo(t2node4) should be (true)
-    node0.isEquivTo(t2node0) should be (true)
+    node4.isEquivTo(t2node4) should be (right = true)
+    node0.isEquivTo(t2node0) should be (right = true)
   }
 
   "A BlackBoard" should "solve the partition problem" in {
-    val goal = mkNode(23,true)
+    val goal = mkNode(23,cong = true)
     val blackboard = new Blackboard(goal)
     val usableNumbers=List(3,5,7)
     val ra = new PartitionAgent(usableNumbers)
