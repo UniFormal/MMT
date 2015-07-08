@@ -85,6 +85,8 @@ class DatastructuresSpec extends FlatSpec with Matchers {
     val pa = new SingletonProofAgent[Int](ra)
     val ma = new AuctionAgent[Int]
 
+    println(ra.logPrefix,pa.logPrefix,ma.logPrefix)
+
     blackboard.registerAgent(ra)
     blackboard.registerAgent(pa)
     blackboard.registerAgent(ma)
@@ -93,7 +95,7 @@ class DatastructuresSpec extends FlatSpec with Matchers {
     blackboard.runCycle()
     println(goal)
 
-    OutputLog.display()
+    OutputLog.display(2)
 
   }
 

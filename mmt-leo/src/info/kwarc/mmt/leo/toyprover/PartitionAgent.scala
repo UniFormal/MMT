@@ -14,19 +14,21 @@ class PartitionAgent extends RuleAgent[Int] {
   def run(): Unit ={
 
     blackboard.proofTree.openLeaves.foreach(pt=>taskQueue.enqueue(createTask(pt)))
-    if (taskQueue.isEmpty) log("NO TASKS FOUND") else log("resulting task Queue: "+taskQueue)
+    if (taskQueue.isEmpty) log("NO TASKS FOUND") else log("Found "+taskQueue.length+" task(s)")
   }
 
-  def createTask(pt: ProofTree[Int]): PartitionTask =  {log("creating new task",2); new PartitionTask(pt,this)}
+  def createTask(pt: ProofTree[Int]): PartitionTask =  { new PartitionTask(pt,this)}
 
   def executeTask(rt: RuleTask[Int]) = {
-    log("executing: "+ rt,1)
+    log("executing: "+ rt,3)
+    log("TREE BEFORE:" + blackboard.proofTree,2)
     rt match {
       case ptt:PartitionTask if ptt.isExpansion =>
         ptt.node.proofData.conjunctive=false
         ptt.addBranches()
       case _ => println("Error: Need a PartitionTask")
     }
+    log("TREE AFTER:" + blackboard.proofTree,2)
   }
 
 }
@@ -43,16 +45,17 @@ class PartitionTask(nodeVar: ProofTree[Int], agent: RuleAgent[Int]) extends StdR
   var isExpansion = true
   val allNumbers = List(2,3,5,7)
   def usableNumbers = allNumbers.filter(_ <= node.data)
-  def addBranches() = {
+  def addBranches(): Unit = {
     usableNumbers.foreach(int=>{
-        val add = mkNode(node.data-int)
-        val min = usableNumbers.min
-        node.addChild(add)
-        if (add.data-int==0) {
-          add.setSatisfiability(true)
-          log("TREE BEFORE:" + blackboard.proofTree,2)
-          add.percolateAndTrim()
-          log("TREE AFTER:" + blackboard.proofTree,2)}
+        val add = mkNode(node.data - int)
+        val min: Int = usableNumbers.min
+        if (isApplicable(blackboard)) {
+          node.addChild(add)
+          if (add.data - int == 0) {
+            add.setSatisfiability(true)
+            add.percolateAndTrim()
+          }
+        }
         else if  (add.data < min) {add.setSatisfiability(false); add.percolateAndTrim()}
       }
     )

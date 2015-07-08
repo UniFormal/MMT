@@ -16,13 +16,19 @@ trait Task[A] extends Debugger{
   /** Prints a short name of the task */
   val name: String
 
-  val logPrefix = name
+  def logPrefix = name
 
   def isApplicable(b:Blackboard[A]):Boolean={
-    val out = this.writeSet().exists(!_.isBelowSatisfied) &&
-      b.proofTree.contains(this.writeSet()) &&
-      b.proofTree.contains(this.readSet())
-    if (!out) log(this.toString+ " is not applicable")
+    val wS =  writeSet().exists(!_.isBelowSatisfied)||writeSet().isEmpty
+    val wC =  b.proofTree.contains(this.writeSet())
+    val rC =  b.proofTree.contains(this.readSet())
+    val out = wS&&wC&&rC
+    if (!out) {
+      log(this.toString+ " is not applicable" )
+      if (!wS) {log("All of the write nodes are below a solved goal" )}
+      if (!wC) {log("write nodes not contained in goal")}
+      if (!rC) {log("read nodes not contained in goal")}
+    }
     out
   }
 
@@ -76,7 +82,7 @@ abstract class RuleTask[A] extends Task[A] with Event[A] {
   def wasReadBy(a: ProofAgent[A]): Boolean = readBy.contains(a)
 
   override def toString: String = {
-    "RULE TASK:" + name + " \n \t \t  \t readSet: " + readSet()
+    name + " \n \t \t \t readSet: " + readSet()
   }
 }
 
@@ -101,7 +107,7 @@ abstract class ProofTask[A] extends Task[A] with Event[A] {
   }
 
   override def toString: String = {
-    "PROOF TASK:" + name + " \n \t \t ruleSets:" + ruleSets
+    name + " \n \t \t ruleSets:" + ruleSets
   }
 }
 
@@ -124,7 +130,7 @@ abstract class MetaTask[A] extends Task[A] with Event[A] {
   }
 
   override def toString: String = {
-    "META TASK:" + name + " \n \t proofSets:" + proofSets
+    name + " \n \t proofSets:" + proofSets
   }
 }
 

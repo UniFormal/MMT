@@ -41,7 +41,7 @@ object OutputLog {
 }
 
 trait Debugger {
-  val logPrefix: String
+  def logPrefix: String
 
   def log(message: String, verbosity: Int = 1): Unit ={
     OutputLog.log = OutputLog.log:::List((verbosity,logPrefix,message))

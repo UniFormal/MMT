@@ -32,7 +32,8 @@ class ProofData[A](dataVar: A, conjunctiveVar: Boolean, isSatisfiableVar: Option
  * @param dataVar Proof data to be stored at the nodes, meta information consisting of and/or status and solved status
  * @tparam A type of metadata stored in nodes
  */
-class ProofTree[A](var dataVar: ProofData[A] ) {
+class ProofTree[A](var dataVar: ProofData[A] ) extends Debugger{
+  def logPrefix = "ProofTree"
   var proofData = dataVar
   var data = dataVar.data
   var parent: Option[ProofTree[A]] = None
@@ -242,11 +243,13 @@ class ProofTree[A](var dataVar: ProofData[A] ) {
       if (children.exists(_.isSolved)) {children.filter(!_.isSolved).foreach(_.disconnect())}
     }
     if (isSolved) children.filter(!_.isSolved).foreach(_.disconnect())
+    if (isSolved && parent.exists(_.isOr)) siblings.foreach(_.disconnect())
     children.foreach(_.pruneBelow())
   }
 
   /** propagates the effect of the solved node up the tree, trimming any unnecessary nodes*/
   def percolateAndTrim():Unit = {
+    log("P and T Called on" + this,3)
     if (isSolved) {
       this.parent match {
         case None => pruneBelow()

@@ -11,7 +11,7 @@ package info.kwarc.mmt.leo.datastructures
  * Taken heavily from the LeoPARD system
  */
 class Blackboard[A](goal: ProofTree[A]) extends ProofTreeBlackboard[A] with EventBlackboard[A] with Debugger {
-  val logPrefix = "Blackboard"
+  def logPrefix = "Blackboard"
 
   var ruleAgents:List[RuleAgent[A]] = Nil
   var proofAgents:List[ProofAgent[A]] = Nil
@@ -60,7 +60,7 @@ trait ProofTreeBlackboard[A] {
 
   var proofTree: ProofTree[A]
   /**
-   * Adds a prooftree to the blackboard, if it does not exist. If it exists
+   * Adds a ProofTree to the blackboard, if it does not exist. If it exists
    * the old formula is returned.
    *
    * @param root root node to attach new proof

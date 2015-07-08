@@ -13,11 +13,9 @@ abstract class Agent[A, T <: Task[A], E <: Event[A]] extends Debugger {
   /** the name of the agent */
   val name: String
 
-  val logPrefix = this.name
+  def logPrefix = name
 
-  override def toString: String= {
-    "AGENT:" + name + "::numTasks:" + numTasks
-  }
+  override def toString: String= {name + "::numTasks:" + numTasks}
 
   /** whether the agent is active or not */
   var isActive: Boolean = false
@@ -109,7 +107,11 @@ abstract class ProofAgent[A] extends Agent[A, ProofTask[A], RuleTask[A]]{
   }
 
   def executeTask(pt: ProofTask[A]) = {
-    pt.ruleSets.foreach(rs=>rs.filter(_.isApplicable(blackboard)).foreach(rt=>rt.byAgent.executeTask(rt)))
+    pt.ruleSets.foreach(rs=>rs.filter(_.isApplicable(blackboard)).foreach({rt =>
+      rt.byAgent.executeTask(rt)
+      rt.byAgent.taskQueue.dequeueFirst(_==rt) //to remove completed task from list
+    }))
+    taskQueue.dequeueFirst(_==pt) //to remove completed task from list
   }
 }
 
@@ -150,7 +152,7 @@ abstract class MetaAgent[A] extends Agent[A, MetaTask[A], ProofTask[A]]{
 
 class SingletonProofAgent[A](ruleAgent: RuleAgent[A]) extends ProofAgent[A] {
 
-  val name = "SingletonProofAgent"
+  val name = "Singleton"+ruleAgent.name
   val interests = Nil
 
   def ruleTaskToProofTask(rt: RuleTask[A]): ProofTask[A] = {
@@ -162,9 +164,8 @@ class SingletonProofAgent[A](ruleAgent: RuleAgent[A]) extends ProofAgent[A] {
   }
 
   def run():Unit = {
-    log("Running")
     ruleAgent.taskQueue.foreach(rt=>this.taskQueue.enqueue(ruleTaskToProofTask(rt)))
-    log("Finished Running")
+    log("Found "+ taskQueue.length + " task(s)" )
   }
 
 }
@@ -189,9 +190,7 @@ class AuctionAgent[A] extends MetaAgent[A] {
   }*/
 
   def run():Unit ={
-    log("Running")
     executeTask(makeMetaTask(getTaskSet))
-    log("Finished Running")
   }
 
   /**
@@ -205,21 +204,12 @@ class AuctionAgent[A] extends MetaAgent[A] {
   def getTaskSet : Set[ProofTask[A]] = {
     var allTasks = new mutable.Queue[ProofTask[A]]()
     proofAgents().foreach(pa=>allTasks=allTasks++pa.taskQueue)
-/*
-    def removeColliding(nExec: Iterable[ProofTask[A]]): Unit = allTasks.synchronized(allTasks.dequeueAll{tbe =>
-      nExec.exists{e =>
-        val rem = e.writeSet().intersect(tbe.writeSet()).nonEmpty ||
-          e.writeSet().intersect(tbe.writeSet()).nonEmpty ||
-          e == tbe // Remove only tasks depending on written (changed) data.
-        if(rem && e != tbe) println("The task\n  $tbe\n collided with\n  $e\n and was removed.")
-        rem
-      }
-    })
-    removeColliding(allTasks)
-*/ //TODO investigate why this does not work
 
-    log("got "+allTasks.length+" auctioned tasks")
-    allTasks.foreach(_.log(this.toString, 2))
+    //Eliminate collisions
+    for( t1 <- allTasks ){allTasks=allTasks.filter(t2 => !t1.collide(t2)||t1==t2)}
+
+    log("Selected "+allTasks.length+" task(s) for execution")
+    allTasks.foreach(_.log(this.toString, 3))
 
     allTasks.toSet
   }
