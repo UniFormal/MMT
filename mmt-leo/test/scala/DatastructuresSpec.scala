@@ -29,6 +29,10 @@ class DatastructuresSpec extends FlatSpec with Matchers {
   node2.addChild(node4)
   //node1.setRoot(node0)
 
+  def copyTree[A](t:ProofTree[A]):ProofTree[A] ={
+    t.map(n=>n)
+  }
+
   "A Node" should "have a root and children and know its siblings" in {
     node1.data should be (1)
     node1.siblings should be (Nil)
@@ -55,17 +59,18 @@ class DatastructuresSpec extends FlatSpec with Matchers {
   tnode1.addChild(tnode2)
   tnode1.addChild(tnode3)
   tnode2.addChild(tnode4)
-
   it should "have a mapping function that preserves the structure of the tree" in {
-
     val fnode0 = node0.map(i => i.toDouble + .5)
     fnode0.data should be (0.5)
     fnode0.children.head.isEquivTo(tnode1) should be (true)
   }
 
   it should "be able to properly trim the proof tree" in {
+    node4.setSatisfiability(false)
+    //var node0copy=node0.copy
+
     node4.setSatisfiability(true)
-    node4.percolateAndTrim()
+    node4.percolate()
     val t2node0 = mkNode(0,false,Some(true))
     val t2node1 = mkNode(1,false,Some(true))
     val t2node2 = mkNode(2,false,Some(true))
@@ -79,9 +84,10 @@ class DatastructuresSpec extends FlatSpec with Matchers {
   }
 
   "A BlackBoard" should "solve the partition problem" in {
-    val goal = mkNode(17,true)
+    val goal = mkNode(23,true)
     val blackboard = new Blackboard(goal)
-    val ra = new PartitionAgent
+    val usableNumbers=List(3,5,7)
+    val ra = new PartitionAgent(usableNumbers)
     val pa = new SingletonProofAgent[Int](ra)
     val ma = new AuctionAgent[Int]
 
@@ -89,8 +95,8 @@ class DatastructuresSpec extends FlatSpec with Matchers {
     blackboard.registerAgent(pa)
     blackboard.registerAgent(ma)
 
-    blackboard.run()
-    OutputLog.display(2)
+    blackboard.run(7)
+    OutputLog.display(1)
     PartitionPresenter.present(goal)
 
   }

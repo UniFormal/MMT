@@ -52,6 +52,7 @@ class Blackboard[A](goal: ProofTree[A]) extends ProofTreeBlackboard[A] with Even
       runCycle()
       i=i+1
     }
+    log("Final tree:" + proofTree)
   }
 
   override def toString: String = {
@@ -100,8 +101,6 @@ trait ProofTreeBlackboard[A] {
     task.writeSet().foreach(_.liftLock(readLock=false,writeLock=false))
     task.readSet().foreach(_.liftLock(readLock=false,writeLock=false))
   }
-
-
 }
 
 /**
@@ -112,8 +111,6 @@ trait EventBlackboard[A] {
   var ruleSeq: Seq[RuleTask[A]]
   var proofSeq: Seq[ProofTask[A]]
 }
-
-
 
 abstract class Presenter[A] extends Debugger {
   def logPrefix="Presenter"

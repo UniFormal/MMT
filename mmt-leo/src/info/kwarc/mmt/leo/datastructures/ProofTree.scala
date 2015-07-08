@@ -232,43 +232,43 @@ case class ProofTree[A](var dataVar: ProofData[A] ) extends Debugger{
     children.foldLeft(0) { (s, c) => s + c.size } + 1
   }
 
-  /** checks to see if node is solved and can be closed and propagates
-    * down the tree closing all unnecessary nodes*/
-  def pruneBelow():Unit = {
-    if (isAnd ) {
-      if (children.exists(_.isUnsatisfiable)){disconnectChildren()}
-      if (children.forall(_.isSolved)) {setSatisfiability(true)}
-    }else{
-      children.filter(_.isUnsatisfiable).foreach(_.disconnect())
-      if (children.exists(_.isSolved)) {children.filter(!_.isSolved).foreach(_.disconnect())}
+  /** simplifies the ProofTree for presentation*/
+  def simplify():Unit = {
+    if (this.children==Nil) {return}
+    if ((isAnd && isUnsatisfiable) || (isOr && isSolved)) {
+      val applicableChildren = children.filter(c => c.isSatisfiable==this.isSatisfiable)
+      val smallest = applicableChildren.map(_.depth).min
+      val bestChild = applicableChildren.filter(_.depth==smallest).head
+      (children diff List(bestChild)).foreach(_.disconnect())
     }
-    if (isSolved) children.filter(!_.isSolved).foreach(_.disconnect())
-    if (isSolved && parent.exists(_.isOr)) siblings.foreach(_.disconnect())
-    children.foreach(_.pruneBelow())
+    children.foreach(_.simplify())
   }
-
-  /** propagates the effect of the solved node up the tree, trimming any unnecessary nodes*/
-  def percolateAndTrim():Unit = {
-    log("P and T Called on" + this,3)
+  
+  /** propagates the effect of the solved node up the tree, then simplifies the resulting part of the tree*/
+  def percolate(trim:Boolean=true):Unit = {
+    log("P Called on" + this,3)
     if (isSolved) {
       this.parent match {
-        case None => pruneBelow()
-        case Some(p) if p.isOr =>
+        case Some(p) if p.isOr || p.children.forall(_.isSolved) =>
           p.setSatisfiability(true)
-          siblings.foreach(_.disconnect())
-          p.percolateAndTrim()
-        case Some(p) if p.siblings.forall(_.isSolved) => p.setSatisfiability(true); p.percolateAndTrim()
-        case Some(p) => p.pruneBelow()
+          p.percolate()
+        case _ if trim => simplify()
+        case _ => return
       }
     }
     if (isUnsatisfiable) {
       this.parent match {
-        case None => pruneBelow()
-        case Some(p) if p.isAnd => p.setSatisfiability(false); p.percolateAndTrim()
-        case Some(p) => p.pruneBelow()
+        case Some(p) if p.isAnd || p.children.forall(_.isUnsatisfiable) =>
+          p.setSatisfiability(false)
+          p.percolate()
+        case _ if trim => simplify()
+        case _ => return
       }
     }
   }
+
+
+  def copy:ProofTree[A]={this.map(n=>n)}
 
   /** places a lock on a node*/
   def placeLock(readLock: Boolean, writeLock: Boolean): Boolean ={

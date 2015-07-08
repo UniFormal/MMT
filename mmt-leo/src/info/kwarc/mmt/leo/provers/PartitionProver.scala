@@ -5,7 +5,8 @@ import info.kwarc.mmt.leo.datastructures._
 /**
  * Created by mark on 7/4/15.
  */
-class PartitionAgent extends RuleAgent[Int] {
+class PartitionAgent(numbersVar: List[Int]) extends RuleAgent[Int] {
+  val numbers=numbersVar
   val name = "PartitionAgent"
   val interests = List("ADD")
 
@@ -32,7 +33,7 @@ class PartitionAgent extends RuleAgent[Int] {
 
 
 
-class PartitionTask(nodeVar: ProofTree[Int], agent: RuleAgent[Int]) extends StdRuleTask[Int](agent,"PartitionTask") {
+class PartitionTask(nodeVar: ProofTree[Int], agent: PartitionAgent) extends StdRuleTask[Int](agent,"PartitionTask") {
   lazy val blackboard = byAgent.blackboard
   readSet()
   val node = nodeVar
@@ -40,7 +41,7 @@ class PartitionTask(nodeVar: ProofTree[Int], agent: RuleAgent[Int]) extends StdR
   override def writeSet(): Set[ProofTree[Int]] = Set(node)
 
   var isExpansion = true
-  val allNumbers = List(2,3,5,7)
+  val allNumbers = agent.numbers
 
   def usableNumbers = allNumbers.filter(_ <= node.data)
 
@@ -51,10 +52,10 @@ class PartitionTask(nodeVar: ProofTree[Int], agent: RuleAgent[Int]) extends StdR
           node.addChild(add)
           if (add.data - int == 0) {
             add.setSatisfiability(true)
-            add.percolateAndTrim()
+            add.percolate()
             return
           }
-        else if  (add.data < min) {add.setSatisfiability(false); add.percolateAndTrim()}
+        else if  (add.data < min) {add.setSatisfiability(false); add.percolate()}
       }
     )
   }
@@ -75,7 +76,7 @@ object PartitionPresenter extends Presenter[Int] {
 
     pt.isSatisfiable match {
       case Some(true) => println("Solution: "+getNumbers(pt))
-      case Some(false) => println("Contradiction Derived: No partition is possible")
+      case Some(false) => println("Contradiction Derived, no partition is possible. Outputting tree:" + pt)
       case None => println("Proof not found")
     }
   }

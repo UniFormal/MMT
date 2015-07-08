@@ -130,7 +130,7 @@ abstract class MetaTask[A] extends Task[A] with Event[A] {
   }
 
   override def toString: String = {
-    QueueSetDisplay(proofSets,"MetaTask","ProofTask")
+    name + QueueSetDisplay(proofSets,"MetaTask","ProofTask")
   }
 }
 
