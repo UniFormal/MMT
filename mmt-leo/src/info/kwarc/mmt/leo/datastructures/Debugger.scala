@@ -1,5 +1,8 @@
 package info.kwarc.mmt.leo.datastructures
 
+import scala.collection.mutable
+import scala.reflect.ClassTag
+
 /**
  * Created by Mark on 7/7/2015.
  */
@@ -45,6 +48,27 @@ trait Debugger {
 
   def log(message: String, verbosity: Int = 1): Unit ={
     OutputLog.log = OutputLog.log:::List((verbosity,logPrefix,message))
+  }
+
+  protected def setDisplay[B](s:Set[B], title:String = "Set"):String ={
+    var out = title+":\n"
+    for (e <- s) {out = out+addIndent(e)+"\n"}
+    out
+  }
+
+  protected def QueueSetDisplay[B](q:mutable.Queue[Set[B]], title:String = "Queue",title2:String = "Set"):String ={
+    var out = title+":\n"
+    for (e <- q) {out = out+addIndent(setDisplay(e,title2))+"\n"}
+    out
+  }
+
+  protected def addIndent(obj:Any, indent:Int=1):String ={
+    obj match {
+      case ProofTree(x) =>
+        "\t"*indent+obj.toString.replaceFirst("\n","").replace("\n","\n"+"\t"*indent)
+      case _ =>
+        "\t"*indent+obj.toString.replace("\n","\n"+"\t"*indent)
+    }
   }
 
 }

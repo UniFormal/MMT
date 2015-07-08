@@ -24,7 +24,7 @@ trait Task[A] extends Debugger{
     val rC =  b.proofTree.contains(this.readSet())
     val out = wS&&wC&&rC
     if (!out) {
-      log(this.toString+ " is not applicable" )
+      log(this.toString+ "\n is not applicable because..." )
       if (!wS) {log("All of the write nodes are below a solved goal" )}
       if (!wC) {log("write nodes not contained in goal")}
       if (!rC) {log("read nodes not contained in goal")}
@@ -82,7 +82,7 @@ abstract class RuleTask[A] extends Task[A] with Event[A] {
   def wasReadBy(a: ProofAgent[A]): Boolean = readBy.contains(a)
 
   override def toString: String = {
-    name + " \n \t \t \t readSet: " + readSet()
+    setDisplay(readSet(), "ReadSet")
   }
 }
 
@@ -107,7 +107,7 @@ abstract class ProofTask[A] extends Task[A] with Event[A] {
   }
 
   override def toString: String = {
-    name + " \n \t \t ruleSets:" + ruleSets
+    QueueSetDisplay(ruleSets,"ProofTask","RuleSet")
   }
 }
 
@@ -130,7 +130,7 @@ abstract class MetaTask[A] extends Task[A] with Event[A] {
   }
 
   override def toString: String = {
-    name + " \n \t proofSets:" + proofSets
+    QueueSetDisplay(proofSets,"MetaTask","ProofTask")
   }
 }
 

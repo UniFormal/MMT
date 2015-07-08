@@ -9,10 +9,7 @@ class PartitionAgent extends RuleAgent[Int] {
   val name = "PartitionAgent"
   val interests = List("ADD")
 
-
-
   def run(): Unit ={
-
     blackboard.proofTree.openLeaves.foreach(pt=>taskQueue.enqueue(createTask(pt)))
     if (taskQueue.isEmpty) log("NO TASKS FOUND") else log("Found "+taskQueue.length+" task(s)")
   }
@@ -21,14 +18,14 @@ class PartitionAgent extends RuleAgent[Int] {
 
   def executeTask(rt: RuleTask[Int]) = {
     log("executing: "+ rt,3)
-    log("TREE BEFORE:" + blackboard.proofTree,2)
+    log("TREE BEFORE: " + addIndent(blackboard.proofTree.toString),2)
     rt match {
       case ptt:PartitionTask if ptt.isExpansion =>
         ptt.node.proofData.conjunctive=false
         ptt.addBranches()
       case _ => println("Error: Need a PartitionTask")
     }
-    log("TREE AFTER:" + blackboard.proofTree,2)
+    log("TREE AFTER: " + addIndent(blackboard.proofTree.toString),2)
   }
 
 }
@@ -44,7 +41,9 @@ class PartitionTask(nodeVar: ProofTree[Int], agent: RuleAgent[Int]) extends StdR
 
   var isExpansion = true
   val allNumbers = List(2,3,5,7)
+
   def usableNumbers = allNumbers.filter(_ <= node.data)
+
   def addBranches(): Unit = {
     usableNumbers.foreach(int=>{
         val add = mkNode(node.data - int)
@@ -60,6 +59,5 @@ class PartitionTask(nodeVar: ProofTree[Int], agent: RuleAgent[Int]) extends StdR
       }
     )
   }
-
 
 }
