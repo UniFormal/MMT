@@ -1,5 +1,7 @@
 package info.kwarc.mmt.leo.datastructures
 
+import info.kwarc.mmt.leo.provers.PartitionPresenter
+
 
 /**
  * A blackboard is a central data collection object that supports
@@ -23,13 +25,13 @@ class Blackboard[A](goal: ProofTree[A]) extends ProofTreeBlackboard[A] with Even
   var proofSeq: Seq[ProofTask[A]] = Nil
   var metaSeq: Seq[MetaTask[A]] = Nil
   
-  def registerAgent(a : RuleAgent[A]) : Unit = {ruleAgents=List(a):::ruleAgents; a.blackboard = this}
+  def registerAgent(a : RuleAgent[A]) : Unit = {ruleAgents=a::ruleAgents; a.blackboard = this}
   def unregisterAgent(a : RuleAgent[A]) : Unit = {ruleAgents=ruleAgents.diff(List(a)); a.blackboard = null}
 
 
-  def registerAgent(a : ProofAgent[A]) : Unit = {proofAgents=List(a):::proofAgents; a.blackboard = this}
+  def registerAgent(a : ProofAgent[A]) : Unit = {proofAgents=a::proofAgents; a.blackboard = this}
   def unregisterAgent(a : ProofAgent[A]) : Unit = {proofAgents=proofAgents.diff(List(a)); a.blackboard = null}
-  def registerAgent(a : MetaAgent[A]) : Unit = {metaAgents=List(a):::metaAgents; a.blackboard = this}
+  def registerAgent(a : MetaAgent[A]) : Unit = {metaAgents=a::metaAgents; a.blackboard = this}
   def unregisterAgent(a : MetaAgent[A]) : Unit = {metaAgents=metaAgents.diff(List(a)); a.blackboard = null}
 
   /** This function runs the specific agent on the registered Blackboard. */
@@ -41,6 +43,15 @@ class Blackboard[A](goal: ProofTree[A]) extends ProofTreeBlackboard[A] with Even
     log("running meta agents")
     metaAgents.foreach(_.run())
     log("finished cycle")
+  }
+
+  /** runs the blackboard for a given number of cycles, stopping if a solution is found*/
+  def run(cycles:Int=3):Unit ={
+    var i = 0
+    while (proofTree.isSatisfiable.isEmpty && i<cycles){
+      runCycle()
+      i=i+1
+    }
   }
 
   override def toString: String = {
@@ -104,7 +115,10 @@ trait EventBlackboard[A] {
 
 
 
-
+abstract class Presenter[A] extends Debugger {
+  def logPrefix="Presenter"
+  def present(pt:ProofTree[A])
+}
 
 
 

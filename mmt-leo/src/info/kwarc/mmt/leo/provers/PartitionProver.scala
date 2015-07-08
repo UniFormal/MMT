@@ -1,4 +1,4 @@
-package info.kwarc.mmt.leo.toyprover
+package info.kwarc.mmt.leo.provers
 
 import info.kwarc.mmt.leo.datastructures._
 
@@ -48,16 +48,35 @@ class PartitionTask(nodeVar: ProofTree[Int], agent: RuleAgent[Int]) extends StdR
     usableNumbers.foreach(int=>{
         val add = mkNode(node.data - int)
         val min: Int = usableNumbers.min
-        if (isApplicable(blackboard)) {
           node.addChild(add)
           if (add.data - int == 0) {
             add.setSatisfiability(true)
             add.percolateAndTrim()
+            return
           }
-        }
         else if  (add.data < min) {add.setSatisfiability(false); add.percolateAndTrim()}
       }
     )
   }
 
+}
+
+object PartitionPresenter extends Presenter[Int] {
+  def present(pt: ProofTree[Int]) = {
+    /** @return a list of numbers solving the problem*/
+    def getNumbers(node: ProofTree[Int]): List[Any] ={ //TODO figure out why List[Int] doesn't work
+      if (node.children.isEmpty) {
+        List(node.data)
+      }else {
+        val next = node.children.filter(_.isSolved).head
+        (node.data - next.data)::getNumbers(next)
+      }
+    }
+
+    pt.isSatisfiable match {
+      case Some(true) => println("Solution: "+getNumbers(pt))
+      case Some(false) => println("Contradiction Derived: No partition is possible")
+      case None => println("Proof not found")
+    }
+  }
 }

@@ -2,7 +2,7 @@ package test.scala
 
 
 import info.kwarc.mmt.leo.datastructures._
-import info.kwarc.mmt.leo.toyprover.PartitionAgent
+import info.kwarc.mmt.leo.provers._
 import org.scalatest._
 import sun.management.resources.agent
 
@@ -85,17 +85,13 @@ class DatastructuresSpec extends FlatSpec with Matchers {
     val pa = new SingletonProofAgent[Int](ra)
     val ma = new AuctionAgent[Int]
 
-    println(ra.logPrefix,pa.logPrefix,ma.logPrefix)
-
     blackboard.registerAgent(ra)
     blackboard.registerAgent(pa)
     blackboard.registerAgent(ma)
 
-    blackboard.runCycle()
-    blackboard.runCycle()
-    println(goal)
-
+    blackboard.run()
     OutputLog.display(2)
+    PartitionPresenter.present(goal)
 
   }
 

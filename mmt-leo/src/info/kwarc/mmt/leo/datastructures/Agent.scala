@@ -107,6 +107,7 @@ abstract class ProofAgent[A] extends Agent[A, ProofTask[A], RuleTask[A]]{
   }
 
   def executeTask(pt: ProofTask[A]) = {
+    log("Executing Task",2)
     pt.ruleSets.foreach(rs=>rs.filter(_.isApplicable(blackboard)).foreach({rt =>
       rt.byAgent.executeTask(rt)
       rt.byAgent.taskQueue.dequeueFirst(_==rt) //to remove completed task from list
@@ -131,6 +132,7 @@ abstract class MetaAgent[A] extends Agent[A, MetaTask[A], ProofTask[A]]{
   }
 
   def executeTask(mt: MetaTask[A]) = {
+    log("Executing MetaTask",2)
     mt.proofSets.foreach(ps=>ps.filter(_.isApplicable(blackboard)).foreach(pt=>pt.byAgent.executeTask(pt)))
   }
 
@@ -156,7 +158,7 @@ class SingletonProofAgent[A](ruleAgent: RuleAgent[A]) extends ProofAgent[A] {
   val interests = Nil
 
   def ruleTaskToProofTask(rt: RuleTask[A]): ProofTask[A] = {
-    log("Converting: "+rt,2)
+    log("Converting: "+rt,3)
     val out = new StdProofTask[A](this, "Singleton"+rt.name)
     out.ruleSets.enqueue(Set(rt))
     out.flags = List("ADD")

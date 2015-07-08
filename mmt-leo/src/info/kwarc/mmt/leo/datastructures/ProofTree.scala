@@ -152,7 +152,7 @@ case class ProofTree[A](var dataVar: ProofData[A] ) extends Debugger{
       case None =>
     }
     this.parent = Some(that)
-    List(this):::that.children
+    this::that.children
   }
 
   /** returns a nice looking printable string **/
@@ -203,7 +203,7 @@ case class ProofTree[A](var dataVar: ProofData[A] ) extends Debugger{
   
   def preDepthFlatten:List[ProofTree[A]] ={
     var out:List[ProofTree[A]] = Nil
-    preDepthTraverse({n=>out=List(n):::out; Unit})
+    preDepthTraverse({n=>out=n::out; Unit})
     out
   }
 
@@ -288,12 +288,4 @@ case class ProofTree[A](var dataVar: ProofData[A] ) extends Debugger{
 
 
 }
-
-
-
-
-
-
-
-
 
