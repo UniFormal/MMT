@@ -127,4 +127,5 @@ then
 else
  cat "$preamble" "$dir/${theory}.tex" "$postamble" \
   | pdflatex -jobname ${theory} -interaction scrollmode
+ rm -f $dir/${theory}.{aux,idx,log,out,thm}
 fi
