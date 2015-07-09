@@ -14,7 +14,7 @@ import scala.util.matching.Regex
 class SmsGenerator extends TraversingBuildTarget {
   val key = "sms"
   val inDim = source
-  val outDim = source
+  val outDim: ArchiveDimension = source
   override val outExt = "sms"
 
   def includeFile(n: String): Boolean =
@@ -61,6 +61,7 @@ class SmsGenerator extends TraversingBuildTarget {
 class LaTeXML extends SmsGenerator {
   override val key = "latexml"
   override val outExt = "omdoc"
+  override val outDim = RedirectableDimension("latexml")
 
   private var lmlPath: File = File("run-latexml.sh")
 
@@ -113,17 +114,22 @@ class LaTeXML extends SmsGenerator {
   /**
    * Compile a .tex file to OMDoc
    */
-  override def buildFile(bt: BuildTask) {
+  override def buildFile(bt: BuildTask): Unit = {
     val command: List[String] = List(lmlPath, bt.inFile) map (_.toString)
     log(command.mkString(" "))
+    val lmhOut = bt.inFile.setExtension("omdoc")
+    val logFile = bt.inFile.setExtension("ltxlog")
+    val logOutFile = bt.outFile.setExtension("ltxlog")
+    lmhOut.delete()
+    logFile.delete()
+    logOutFile.delete()
     bt.outFile.delete()
     try {
       val result = ShellCommand.run(command: _*)
       result foreach { s =>
         bt.errorCont(LocalError(s))
+        lmhOut.delete()
       }
-      val lmhOut = bt.inFile.setExtension("omdoc")
-      val logFile = bt.inFile.setExtension("ltxlog")
       if (lmhOut.exists() && lmhOut != bt.outFile)
         Files.move(lmhOut.toPath, bt.outFile.toPath)
       if (logFile.exists()) {
@@ -146,6 +152,7 @@ class LaTeXML extends SmsGenerator {
           else LtxLog.reportError(bt)
         }
         LtxLog.reportError(bt)
+        if (logFile != logOutFile) Files.move(logFile.toPath, logOutFile.toPath)
       }
     }
     catch {
@@ -160,20 +167,31 @@ class LaTeXML extends SmsGenerator {
 class PdfLatex extends SmsGenerator {
   override val key = "pdflatex"
   override val outExt = "pdf"
+  override val outDim = Dim("export", key, inDim.toString)
 
   private var pdflatexPath: File = File("run-pdflatex.sh")
 
-  override def buildFile(bt: BuildTask) {
+  override def buildFile(bt: BuildTask): Unit = {
     val command: List[String] = List(pdflatexPath, bt.inFile) map (_.toString)
     log(command.mkString(" "))
+    val pdfFile = bt.inFile.setExtension("pdf")
+    pdfFile.delete()
     bt.outFile.delete()
     try {
       val result = ShellCommand.run(command: _*)
       result foreach { s =>
         bt.errorCont(LocalError(s))
+        pdfFile.delete()
       }
+      if (pdfFile.length == 0) {
+        bt.errorCont(LocalError("no pdf created"))
+        pdfFile.delete()
+      }
+      if (pdfFile.exists && pdfFile != bt.outFile)
+        Files.move(pdfFile.toPath, bt.outFile.toPath)
     } catch {
       case e: Throwable =>
+        bt.outFile.delete()
         bt.errorCont(LocalError("pdf exception: " + e))
     }
   }
@@ -191,7 +209,7 @@ class LaTeXMLAndSTeX extends Importer {
 
   override def includeDir(n: String): Boolean = latexmlBuilder.includeDir(n)
 
-  override def init(controller: Controller) {
+  override def init(controller: Controller): Unit = {
     latexmlBuilder.init(controller)
     stexImporter.init(controller)
     super.init(controller)
@@ -206,7 +224,7 @@ class LaTeXMLAndSTeX extends Importer {
     // no code is needed here since apply is overridden below
   }
 
-  override def apply(modifier: BuildTargetModifier, arch: Archive, in: List[String]) {
+  override def apply(modifier: BuildTargetModifier, arch: Archive, in: List[String]): Unit = {
     modifier match {
       case up: Update =>
         latexmlBuilder.update(arch, up, in)
