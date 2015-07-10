@@ -109,14 +109,12 @@ then
   exit 0
 fi
 
-cd $sourceDir  # source directory
-
 scriptname="$(basename $0 .sh)"
 
 if [ "$scriptname" == "run-latexml" ]
 then
  export PATH=${EXT_BASE}/perl5lib/bin:$PATH # for latexmls
-
+ cd $sourceDir  # source directory
  exec ${EXT_BASE}/perl5lib/bin/latexmlc --quiet --profile stex-smglom-module \
   --path="${moreStyles}" "$dir/${theory}.tex" \
   --destination="$dir/${theory}.omdoc" \
@@ -125,7 +123,8 @@ then
   --postamble="$postamble" \
   --expire=10
 else
- cat "$preamble" "$dir/${theory}.tex" "$postamble" \
+ cd "$dir"
+ cat "$preamble" "${theory}.tex" "$postamble" \
   | pdflatex -jobname ${theory} -interaction scrollmode
- rm -f $dir/${theory}.{aux,idx,log,out,thm}
+ rm -f ${theory}.{aux,idx,log,out,thm}
 fi
