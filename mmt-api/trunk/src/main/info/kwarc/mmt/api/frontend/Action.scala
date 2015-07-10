@@ -13,14 +13,14 @@ import scala.util.parsing.combinator._
 
 /**
  * parser for Actions
- *  
+ *
  * This object implements a combinator parser for Actions. It is used in particular by the [[Controller]]
  * It is straightforward to understand the grammar from the source code.
  */
 object Action extends RegexParsers {
    private var nsMap : NamespaceMap = null
    private var home : File = null
-   
+
    private def commented = (comment ^^ {c => NoAction}) | (action ~ opt(comment) ^^ {case a ~ _ => a}) | empty ^^ {_ => NoAction}
    private def empty = "\\s*"r
    private def comment = "//.*"r
@@ -34,7 +34,7 @@ object Action extends RegexParsers {
      private def loghtml = "log html" ~> file ^^ {f => AddReportHandler(new HtmlFileHandler(f))}
      private def logon = "log+" ~> str ^^ {s => LoggingOn(s)}
      private def logoff = "log-" ~> str ^^ {s => LoggingOff(s)}
-     
+
    private def mathpath = "mathpath" ~> (mathpathArchive | mathpathLocal | mathpathFS | mathpathJava)
      private def mathpathArchive = "archive" ~> file ^^ {f => AddArchive(f)}
      private def mathpathLocal = "local" ^^ {case _ => Local}
@@ -64,14 +64,14 @@ object Action extends RegexParsers {
      private def dimension = "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
            "relational" | "delete" | "integrate" | "test" | "close"
      private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ {case id ~ trg => ArchiveMar(id, trg)}
-     
+
    private def oaf = "oaf" ~> (oafRoot | oafInit | oafClone | oafPull | oafPush)
      private def oafRoot   = "root" ~> file ~ (uri ?) ^^ {case f ~ u => OAFRoot(f, u)}
      private def oafInit = "init" ~> str ^^ {case s => OAFInit(s)}
      private def oafClone = "clone" ~> str ^^ {case s => OAFClone(s)}
      private def oafPull  = "pull" ^^ {_ => OAFPull}
      private def oafPush  = "push" ^^ {_ => OAFPush}
-     
+
    private def extension = "extension" ~> str ~ (strMaybeQuoted *) ^^ {case c ~ args => AddExtension(c, args)}
    private def mws = "mws" ~> uri ^^ {u => AddMWS(u)}
 
@@ -107,23 +107,23 @@ object Action extends RegexParsers {
       private def present = content ~ ("present" ~> str) ^^ {case c ~ p => Present(c,p)}
       private def deps = path <~ "deps" ^^ {case p => Deps(p)}
       private def defaultPresent = content ^^ {c => Present(c, "text")}
-      
+
    private def content = "get" ~> (closure | elaboration | component | get)
       private def closure = path <~ "closure" ^^ {p => Closure(p)}
-      private def elaboration = path <~ "elaboration" ^^ {p => Elaboration(p)}   
+      private def elaboration = path <~ "elaboration" ^^ {p => Elaboration(p)}
       private def component = (path <~ "component") ~ str ^^ {case p ~ s => Component(p, DeclarationComponent.parse(s))}
       private def get = path ^^ {p => Get(p)}
-   
+
    private def windowaction = windowclose | windowpos | gui
       private def windowclose = "window" ~> str <~ "close" ^^ {s => WindowClose(s)}
       private def windowpos   = ("window" ~> str <~ "position") ~ int ~ int ^^ {case s ~ x ~ y => WindowPosition(s, x, y)}
       private def gui = "gui" ~> ("on" | "off") ^^ {s => BrowserAction(s)}
-   
+
    /* common non-terminals */
    private def path = str ^^ {s => Path.parse(s, nsMap)}
    private def mpath = str ^^ {s => Path.parseM(s, nsMap)}
    private def archiveList = ("\\[.*\\]"r) ^^ {s => stringToList(s.substring(1,s.length-1), ",")} |
-                             str ^^ {s => List(s)} 
+                             str ^^ {s => List(s)}
    private def file = str ^^ {s => File(home.resolve(s))}
    private def uri = str ^^ {s => URI(s)}
    private def int = str ^^ {s => s.toInt}
@@ -149,7 +149,7 @@ object Action extends RegexParsers {
 /** Objects of type Action represent commands that can be executed by a Controller.
  * In particular, these are the commands available in the MMT shell.
  * The semantics of Actions is implemented in Controller.handle, which must contain one case for every Action.
- * 
+ *
  * Each subclass documents its concrete syntax and its semantics (relative to an instance "controller" of Controller).
  * The syntax uses the following basic data types:
  *  FILE a /-separated file name, relative to controller.home
@@ -178,12 +178,12 @@ case class AddReportHandler(h : ReportHandler) extends Action {
 
 /** switch on logging for a certain group
  * concrete syntax: log+ group:STRING
- * Some of the available groups are documented in Report. Generally, plugins may use their own groups. 
+ * Some of the available groups are documented in Report. Generally, plugins may use their own groups.
  */
 case class LoggingOn(group : String) extends Action {override def toString = "log+ " + group}
 /** switch off logging for a certain group
  * concrete syntax: log- group:STRING
- * Some of the available groups are documented in Report. Generally, plugins may use their own groups. 
+ * Some of the available groups are documented in Report. Generally, plugins may use their own groups.
  */
 case class LoggingOff(group : String) extends Action {override def toString = "log- " + group}
 
@@ -194,7 +194,7 @@ case class SetBase(base : Path) extends Action {override def toString = "base " 
 
 /**
  * set an environment variable
- * 
+ *
  * concrete syntax: envvar name "value"
  */
 case class SetEnvVar(name: String, value: String) extends Action {override def toString = s"""envvar $name "$value""""}
@@ -205,7 +205,7 @@ case class SetEnvVar(name: String, value: String) extends Action {override def t
 case class ExecFile(file : File, name: Option[String]) extends Action {override def toString = "file " + file + " " + name.getOrElse("")}
 
 /** bind all following commands to a name without executing them
- *  
+ *
  *  the folder of the containing msl file provides the namespace of this binding
  *  concrete syntax: define name:STRING
  */
@@ -239,7 +239,7 @@ case class Navigate(p : Path) extends Action {override def toString = "navigate 
 
 /** add a catalog entry for the local file system
  * All URIs of the form file:///SUFFIX are mapped to SUFFIX
- * 
+ *
  * concrete syntax: mathpath local
  */
 case object Local extends Action {override def toString = "mathpath local"}
@@ -248,7 +248,7 @@ case object Local extends Action {override def toString = "mathpath local"}
  * @param uri the logical identifier of the directory
  * @param file the physical identifeir of the directory
  * All URIs of the form uri/SUFFIX are mapped to file/SUFFIX
- * 
+ *
  * concrete syntax: mathpath fs uri:URI file:FILE
  */
 case class AddMathPathFS(uri: URI, file : File) extends Action {override def toString = "mathpath fs " + uri + " " + file}
@@ -263,7 +263,7 @@ case class AddMathPathJava(javapath: File) extends Action {override def toString
  * sets the root for a remote OAF
  * @param uri the root URI of the OAF, e.g., http://gl.mathhub.info/
  * @param file the local directory in which to create clones
- * 
+ *
  * concrete syntax: oaf root file:FILE [uri:URI]
  */
 case class OAFRoot(file : File, uri: Option[URI]) extends Action {override def toString = "oaf root " + file + " " + uri.getOrElse("")}
@@ -284,14 +284,14 @@ case class OAFClone(path: String) extends Action {override def toString = "oaf c
 
 /**
  * pulls all repostitories from remote OAF
- * 
+ *
  * concrete syntax: oaf pull
  */
 case object OAFPull extends Action {override def toString = "oaf pull"}
 
 /**
  * pushes all repostitories to remote OAF
- * 
+ *
  * concrete syntax: oaf push
  */
 case object OAFPush extends Action {override def toString = "oaf push"}
@@ -299,7 +299,7 @@ case object OAFPush extends Action {override def toString = "oaf push"}
 /** registers a compiler
  * @param cls the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"
  * @param args a list of arguments that will be passed to the compiler's init method
- * 
+ *
  * concrete syntax: importer cls:CLASS args:STRING*
  */
 case class AddExtension(cls: String, args: List[String]) extends Action {override def toString = "extension " + cls + args.mkString(" ", " ", "")}
@@ -329,7 +329,7 @@ case class Scala(init: Option[String]) extends Action {override def toString = "
 /** start up the HTTP server
  * @param port the port to listen to
  * concrete syntax: server on port:INT
- * 
+ *
  * See info.kwarc.mmt.api.web.Server for the supported HTTP requests.
  * tiscaf.jar must be on the Java classpath before executing this Action.
  */
@@ -358,14 +358,14 @@ case object NoAction extends Action {override def toString = ""}
  * concrete syntax: window window:STRING close
  */
 case class WindowClose(window: String) extends Action {
-  override def toString = "window " + window + " close"  
+  override def toString = "window " + window + " close"
 }
 
 /** position a window with a given ID
  * See ToWindow on how to open windows
  * concrete syntax: window window:STRING position x:INT y:INT */
 case class WindowPosition(window: String, x:Int, y: Int) extends Action {
-  override def toString = "window " + window + " position " + x + " " + y  
+  override def toString = "window " + window + " position " + x + " " + y
 }
 
 /** send a browser command
@@ -380,7 +380,7 @@ case class BrowserAction(command: String) extends Action {
  *  - post-process them to obtain concrete/external syntax
  *  - then output the concrete form in various ways.
  *  @param o the instance of Output that executes all three steps.
- *  
+ *
  *  The concrete syntax is described by the following grammar:
  *  get ABSTRACT [CONCRETE] [OUTPUT]
  *  where
@@ -388,7 +388,7 @@ case class BrowserAction(command: String) extends Action {
  *  CONCRETE ::= present param | deps
  *  OUTPUT   ::= write FILE | window | respond | CONCRETE
  *  The productions for ABSTRACT, CONCRETE, OUTPUT correspond to the instances of MakeAbstract, MakeConcrete, and Output.
- */ 
+ */
 case class GetAction(o: Output) extends Action {
    /** implement the Action using the provided Controller */
    def make(controller : Controller) = o.make(controller)
@@ -398,8 +398,8 @@ case class GetAction(o: Output) extends Action {
 /** represent retrieval operations that return content elements
  *  These objects become Action commands by wrapping them in post-processing steps.
  *  see the children of MakePresentation
- *  
- *  concrete syntax: 
+ *
+ *  concrete syntax:
  */
 abstract class MakeAbstract {
    def make(controller : Controller) : Content
@@ -429,7 +429,7 @@ case class Component(p : Path, comp : DeclarationComponent) extends MakeAbstract
 case class Closure(p : Path) extends MakeAbstract {
    def make(controller : Controller) : Document = p match {
       case doc ? name =>
-         controller.get(doc ? name) // retrieve once to make sure it's in memory 
+         controller.get(doc ? name) // retrieve once to make sure it's in memory
          val cl = controller.depstore.theoryClosure(doc ? name).toList
          val clp = cl.map(MRef(doc, _, true))
          new Document(doc, clp)
@@ -441,7 +441,7 @@ case class Elaboration(p : Path) extends MakeAbstract {
    def make(controller : Controller) : TGroup = {
 	   controller.get(p) match {
 	  	   //case i : Instance => new TGroup(i.parent,p,Instance.elaborate(i)) //TODO
-	  	   case _ => throw ImplementationError("Non-instance element at " + p)  
+	  	   case _ => throw ImplementationError("Non-instance element at " + p)
        }
    }
    override def toString = p + " elaboration"

@@ -29,12 +29,12 @@ object Table {
 }
 
 /** an [[Error]] as reconstructed from an error file */
-case class BuildError(archive: Archive, target: String, path: ArchivePath,
+case class BuildError(archive: Archive, target: String, path: FPath,
                       tp: String, level: Level.Level, sourceRef: Option[parser.SourceRef],
                       shortMsg: String, longMsg: String,
                       stackTrace: List[List[String]]) {
   def toStrList: List[String] = {
-    val f = (archive / errors / target / path.segments).addExtension("err")
+    val f = (archive / errors / target / path).addExtension("err")
     List(level.toString,
       tp,
       archive.id,
@@ -75,20 +75,20 @@ class ErrorManager extends Extension with Logger {
    *          load all errors of this archive
    */
   def loadAllErrors(a: Archive): Unit = {
-    a.traverse(errors, Nil, TraverseMode(_ => true, _ => true, parallel = false)) {
+    a.traverse(errors, EmptyPath, TraverseMode(_ => true, _ => true, parallel = false)) {
       case Current(_, target :: path) =>
-        loadErrors(a, target, path)
+        loadErrors(a, target, FPath(path))
     }
   }
 
   /**
    * @param a the archive
    * @param target the build target
-   * @param path the file
+   * @param fpath the file
    *             load all errors of a build target applied to a file
    */
-  def loadErrors(a: Archive, target: String, path: List[String]): Unit = {
-    val f = a / errors / target / path
+  def loadErrors(a: Archive, target: String, fpath: FPath): Unit = {
+    val f = a / errors / target / fpath
     val node = if (f.toJava.exists) xml.readFile(f) else <errors></errors>
     var bes: List[BuildError] = Nil
     node.child.foreach { x =>
@@ -115,13 +115,13 @@ class ErrorManager extends Extension with Logger {
       val srcR = if (srcRef.isEmpty) None else Some(SourceRef.fromURI(URI(srcRef)))
       if (elems.nonEmpty)
         infoMessage("ignored sub-elements: " + elems)
-      val be = BuildError(a, target, ArchivePath(path).stripExtension, errType, lvl, srcR, shortMsg, longMsg, trace)
+      val be = BuildError(a, target, fpath.toFile.stripExtension.filepath, errType, lvl, srcR, shortMsg, longMsg, trace)
       bes ::= be
     }
     if (node.child.isEmpty)
-      bes ::= BuildError(a, target, ArchivePath(path).stripExtension, "", 0, None, "no errors", "", Nil)
+      bes ::= BuildError(a, target, fpath.toFile.stripExtension.filepath, "", 0, None, "no errors", "", Nil)
     val em = apply(a.id)
-    em((target, path)) = bes.reverse
+    em((target, fpath.segments)) = bes.reverse
   }
 
   /** iterator over all errors given as (archive, target, path, error) */
@@ -160,7 +160,7 @@ class ErrorManager extends Extension with Logger {
     /** reloads the errors */
     override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: List[String]): Unit = {
       Future {
-        loadErrors(a, t.key, p)
+        loadErrors(a, t.key, FPath(p))
       }
     }
   }

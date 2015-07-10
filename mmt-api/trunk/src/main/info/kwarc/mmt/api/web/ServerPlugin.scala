@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.web
 import java.util.Calendar
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
@@ -75,14 +76,14 @@ class SVGServer extends ServerExtension("svg") {
       val (arch, inPath) = controller.backend.resolveLogical(dp.uri).getOrElse {
         throw LocalError("illegal path: " + query)
       }
-      val inPathFile = archives.Archive.narrationSegmentsAsFile(inPath, "omdoc")
+      val inPathFile = Archive.narrationSegmentsAsFile(FPath(inPath), "omdoc")
       arch.root / "export" / "svg" / "narration" / inPathFile
     } else {
       val mp = newPath.asInstanceOf[MPath]
       val arch = controller.backend.findOwningArchive(mp).getOrElse {
         throw LocalError("illegal path: " + query)
       }
-      val inPathFile = archives.Archive.MMTPathToContentPath(mp)
+      val inPathFile = Archive.MMTPathToContentPath(mp)
       arch.root / "export" / "svg" / "content" / inPathFile
     }
     val node = utils.File.read(svgFile.setExtension("svg"))

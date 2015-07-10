@@ -32,7 +32,7 @@ object ParsingStream {
    implicit def stringToReader(s: String) = new java.io.BufferedReader(new java.io.StringReader(s))
    /** to allow passing a file instead of a reader */
    implicit def fileToReader(f: File) = File.Reader(f)
-   
+
    /**
     * creates a ParsingStream from a file, making reasonable default choices
     * @param f the file
@@ -49,7 +49,7 @@ object ParsingStream {
      val stream = streamOpt.getOrElse(fileToReader(f))
      new ParsingStream(FileURI(f), dpath, nsMap, format, stream)
    }
-   
+
    /**
     * creates a ParsingStream from a string
     * @param s the string
@@ -61,36 +61,35 @@ object ParsingStream {
      val nsMap = nsMapOpt.getOrElse(NamespaceMap(dpath))
      new ParsingStream(dpath.uri, dpath, nsMap, format, s)
    }
-   
+
    /**
-    * creates a parsing stream for a source file in an archive 
+    * creates a parsing stream for a source file in an archive
     *
     * @param a an archive
-    * @param inPath path to the source file 
-    * @param strOpt the reader to use (defaults to file reader) 
-    * 
+    * @param inPath path to the source file
+    * @param strOpt the reader to use (defaults to file reader)
+    *
     * @return a parsing stream where
     * source: logical document URI with native file extension
     * dpath: logical document URI with "omdoc" file extension
-    * format: file extension 
+    * format: file extension
     */
-   def fromSourceFile(a: Archive, inPath: List[String], strOpt: Option[java.io.BufferedReader] = None) = {
-      val ap = archives.ArchivePath(inPath)
-      val inPathOMDoc = ap.setExtension("omdoc").segments
+   def fromSourceFile(a: Archive, inPath: FPath, strOpt: Option[java.io.BufferedReader] = None) = {
+     val inPathOMDoc = inPath.toFile.setExtension("omdoc").segments
       val base = a.narrationBase
       val dpath = DPath(base / inPathOMDoc) // bf.narrationDPath except for extension
       val stream = strOpt.getOrElse(File.Reader(a / source / inPath))
-      ParsingStream(base / inPath, dpath, a.namespaceMap(dpath), ap.getExtension.getOrElse(""), stream)
+      ParsingStream(base / inPath.segments, dpath, a.namespaceMap(dpath), inPath.toFile.getExtension.getOrElse(""), stream)
    }
 }
 
 /**
  * an ObjectParser handles ParsingUnits
- *  
+ *
  * Instances are maintained by the ExtensionManager and retrieved and called by the structural parser.
- * 
+ *
  * see also [[Parser]]
- * 
+ *
  */
 trait ObjectParser extends FormatBasedExtension {
    def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): Term
@@ -121,12 +120,12 @@ object DefaultObjectParser extends ObjectParser {
 
 /**
  * the type of structural parsers
- * 
+ *
  * see also [[Parser]]
  */
 trait StructureParser extends FormatBasedExtension {
  /** the main interface function: parses a stream and registers all elements (usually a single document) in it
-    * 
+    *
     * @param r a Reader holding the input stream
     * @param dpath the MMT URI of the stream
     * @return the document into which the stream was parsed

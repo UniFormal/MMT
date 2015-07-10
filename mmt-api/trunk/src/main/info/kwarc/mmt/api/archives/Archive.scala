@@ -56,7 +56,7 @@ abstract class WritableArchive extends ROArchive {
       case Some(p) => root / p
       case None => this / r.default
     }
-    case Dim(path@_*) => root / path.toList
+    case Dim(path@_*) => root / FPath(path.toList)
   }
 
   def includeDir(n: String): Boolean = n != ".svn" && n != ".mmt"
@@ -70,7 +70,7 @@ abstract class WritableArchive extends ROArchive {
         val p = MMTPathToContentPath(mod)
         if (!p.exists) throw NotApplicable("file not found")
         // dpath is a dummy URI to be used when creating the Document that contains the module mod
-        val dpath = DPath(narrationBase / Archive.MMTPathToContentPath(mod))
+        val dpath = DPath(narrationBase / Archive.MMTPathToContentPath(mod).segments)
         loadXML(mod.doc.uri, dpath, File.Reader(p))
       case OMMOD(m) % _ => load(m)
     }
@@ -95,11 +95,11 @@ abstract class WritableArchive extends ROArchive {
   def MMTPathToContentPath(m: MPath): File = this / content / Archive.MMTPathToContentPath(m)
 
   /** traverses a dimension calling continuations on files and subdirectories */
-  def traverse[A](dim: ArchiveDimension, in: List[String], mode: TraverseMode, sendLog: Boolean = true)
-                   (onFile: Current => A, onDir: (Current, List[A]) => A = (_: Current, _: List[A]) => ()): Option[A] = {
+  def traverse[A](dim: ArchiveDimension, in: FPath, mode: TraverseMode, sendLog: Boolean = true)
+                 (onFile: Current => A, onDir: (Current, List[A]) => A = (_: Current, _: List[A]) => ()): Option[A] = {
     val TraverseMode(filter, filterDir, parallel) = mode
     def recurse(n: String): List[A] =
-      traverse(dim, in ::: List(n), mode, sendLog)(onFile, onDir).toList
+      traverse(dim, FPath(in.segments ::: List(n)), mode, sendLog)(onFile, onDir).toList
     val inFile = this / dim / in
     val inFileName = inFile.getName
     if (inFile.isDirectory) {
@@ -107,13 +107,13 @@ abstract class WritableArchive extends ROArchive {
         if (sendLog) log("entering " + inFile)
         val children = inFile.list.sorted.toList
         val results = if (parallel) children.par flatMap recurse else children flatMap recurse
-        val result = onDir(Current(inFile, in), results.toList)
+        val result = onDir(Current(inFile, in.segments), results.toList)
         if (sendLog) log("leaving  " + inFile)
         Some(result)
       } else None
     } else if (filter(inFileName))
       try {
-        val r = onFile(Current(inFile, in))
+        val r = onFile(Current(inFile, in.segments))
         Some(r)
       } catch {
         case e: Error => report(e); None
@@ -139,12 +139,12 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
    * @param in input path
    * @param controller the controller
    */
-  def produceFlat(in: List[String], controller: Controller) {
+  def produceFlat(in: FPath, controller: Controller) {
     val inFile = this / content / in
     log("to do: [CONT -> FLAT]        -> " + inFile)
     if (inFile.isDirectory) {
       inFile.list foreach { n =>
-        if (includeDir(n)) produceFlat(in ::: List(n), controller)
+        if (includeDir(n)) produceFlat(FPath(in.segments ::: List(n)), controller)
       }
     } else if (inFile.getExtension.contains("omdoc")) {
       val mpath = Archive.ContentPathToMMTPath(in)
@@ -172,14 +172,14 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
    * @param in input path
    * @param controller the controller
    */
-  def produceEnriched(in: List[String], modElab: ModuleElaborator, controller: Controller) {
+  def produceEnriched(in: FPath, modElab: ModuleElaborator, controller: Controller) {
     val inFile = this / content / in
     //val modElab = new ModuleElaborator(controller)
     val enrichedDir = root / "enriched"
     log("to do: [CONT -> FLAT]       -> " + inFile)
     if (inFile.isDirectory) {
       inFile.list foreach { n =>
-        if (includeDir(n)) produceEnriched(in ::: List(n), modElab, controller)
+        if (includeDir(n)) produceEnriched(FPath(in.segments ::: List(n)), modElab, controller)
       }
     } else if (inFile.getExtension.contains("omdoc")) {
       try {
@@ -200,7 +200,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     log("done:  [CONT -> FLAT]       -> " + inFile)
   }
 
-  def readRelational(in: List[String] = Nil, controller: Controller, kd: String) {
+  def readRelational(in: FPath = EmptyPath, controller: Controller, kd: String) {
     if ((this / relational).exists) {
       traverse(relational, in, Archive.traverseIf(kd)) { case Current(inFile, inPath) =>
         utils.File.ReadLineWise(inFile) { line =>
@@ -229,7 +229,7 @@ object Archive {
   def unescape(s: String): String = s.replace("(apos)", "'")
 
   // scheme..authority / seg / ments / name.omdoc ----> scheme :// authority / seg / ments ? name
-  def ContentPathToMMTPath(segs: List[String]): MPath = segs match {
+  def ContentPathToMMTPath(segs: FPath): MPath = segs.segments match {
     case Nil => throw ImplementationError("")
     case hd :: tl =>
       val p = hd.indexOf("..")
@@ -244,7 +244,7 @@ object Archive {
   }
 
   // scheme..authority / seg / ments  ----> scheme :// authority / seg / ments
-  def ContentPathToDPath(segs: List[String]): DPath = segs match {
+  def ContentPathToDPath(segs: FPath): DPath = segs.segments match {
     case Nil => DPath(URI.empty)
     case hd :: tl =>
       val p = hd.indexOf("..")
@@ -255,11 +255,13 @@ object Archive {
     * @param m the MPath of the module
     * @return the File descriptor of the destination  file in the content folder
     */
-  def MMTPathToContentPath(m: MPath): List[String] = {
+  def MMTPathToContentPath(m: MPath): FPath = {
     // TODO: Use narrationBase instead of "NONE"?
     val uri = m.parent.uri
     val schemeString = uri.scheme.map(_ + "..").getOrElse("")
-    (schemeString + uri.authority.getOrElse("NONE")) :: uri.path ::: List(escape(m.name.toPath) + ".omdoc")
+    FPath(
+      (schemeString + uri.authority.getOrElse("NONE")) :: uri.path :::
+        List(escape(m.name.toPath) + ".omdoc"))
   }
 
   /**
@@ -268,9 +270,9 @@ object Archive {
    * @param extension a file extension
    * @return segs with an appended segment ".extension" if there is no such segment yet
    */
-  def narrationSegmentsAsFile(segs: List[String], extension: String): List[String] = {
-    if (segs.nonEmpty && segs.last.endsWith("." + extension)) segs
-    else segs ::: List("." + extension)
+  def narrationSegmentsAsFile(segs: FPath, extension: String): FPath = {
+    if (segs.segments.nonEmpty && segs.segments.last.endsWith("." + extension)) segs
+    else FPath(segs.segments ::: List("." + extension))
   }
 
   /**
@@ -281,8 +283,8 @@ object Archive {
    *
    *         This is inverse to narrationSegmentsAsFile if all files and no folders in the respective dimension end in ".extension"
    */
-  def narrationSegmentsAsFolder(segs: List[String], extension: String): List[String] = {
-    if (segs.nonEmpty && segs.last == "." + extension) segs.init
+  def narrationSegmentsAsFolder(segs: FPath, extension: String): FPath = {
+    if (segs.segments.nonEmpty && segs.segments.last == "." + extension) segs.dirPath
     else segs
   }
 

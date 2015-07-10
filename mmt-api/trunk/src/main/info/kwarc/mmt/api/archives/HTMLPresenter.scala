@@ -12,29 +12,29 @@ import utils._
 
 abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
    override val outExt = "html"
-     
+
    def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) = {
      this._rh = rh
-     s match { 
-       case doc : Document => 
+     s match {
+       case doc : Document =>
          doHTMLOrNot(doc.path, standalone) {doDocument(doc)}
-       case thy : DeclaredTheory => 
+       case thy : DeclaredTheory =>
          doHTMLOrNot(thy.path.doc, standalone) {doTheory(thy)}
        case view : DeclaredView =>
          doHTMLOrNot(view.path.doc, standalone) {doView(view)}
        case d: Declaration => doHTMLOrNot(d.path.doc, standalone) {doDeclaration(d)}
      }
-     this._rh = null 
+     this._rh = null
    }
-   
+
    // easy-to-use HTML markup
    protected val htmlRh = utils.HTML(s => rh(s))
    import htmlRh._
-   
+
    private def doName(p: ContentPath) {
       val (name, path) = p.name match {
          case LocalName(ComplexStep(t)::Nil) => (t.name.toString, t) // hardcoding the import case of includes
-         case n => (n.toString, p) 
+         case n => (n.toString, p)
       }
       span("name", attributes=List(("jobad:href",path.toPath))) {text(name)}
    }
@@ -82,7 +82,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
                   List("x", "y", "z")(varNum)
                else
                   "x" + varNum.toString
-               val typedString = if (typed) ":_" else ""  
+               val typedString = if (typed) ":_" else ""
                sepOpt match {
                   case None => varname + typedString
                   case Some(sep) => varname + typedString + sep.text + "..." + sep.text + varname + typedString
@@ -127,17 +127,17 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
         }
       }
    }
-   
+
    def doDeclaration(d: Declaration) {
             val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
             div("containerconstant toggleTarget inlineBoxSibling  panelHorizontalScroll ") {
                div(" constant-header") {
                  span {doName(d.path)}
-                 
+
                  def toggle(label: String) {
                     button("compToggle  btn btn-sm btn-default pull-right", onclick = s"interaction.toggleClick(this.parentNode,'$label')") {text(label)}
                  }
-                 d.getComponents.foreach {case (comp, tc) => if (tc.isDefined) 
+                 d.getComponents.foreach {case (comp, tc) => if (tc.isDefined)
                     toggle(comp.toString)
                  }
                  //if (! usedby.isEmpty)
@@ -189,9 +189,9 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
                      }
                   }
                }
-            }      
+            }
    }
-   
+
    def doTheory(t: DeclaredTheory) {
       div("theory container-fluid") {
          div("theory-header", onclick="toggleClick(this)") {doName(t.path)}
@@ -218,15 +218,15 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
          }
       }}
    }
-   
+
    def doDocument(doc: Document) {
      val locOpt = controller.backend.resolveLogical(doc.path.uri)
-     val svgOpt = locOpt flatMap { 
+     val svgOpt = locOpt flatMap {
        case (arch, path) =>
-         val fpath = Archive.narrationSegmentsAsFile(path, "omdoc")
+         val fpath = Archive.narrationSegmentsAsFile(FPath(path), "omdoc")
          val f = (arch.root / "export" / "svg" / "narration" / fpath).setExtension("svg")
          if (f.toJava.exists())
-            Some("/:svg?"+doc.path.uri.toString)           
+            Some("/:svg?"+doc.path.uri.toString)
          else
            None
      }
@@ -235,7 +235,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
          text(doc.path.last)
        }
        ul("ref") { doc.getItems foreach {
-         case d: DRef => 
+         case d: DRef =>
            li("dref") {
              span(cls = "name loadable", attributes=List("jobad:load" -> d.target.toPath)) {
                text(d.target.last)
@@ -287,5 +287,5 @@ class MMTDocExporter extends HTMLPresenter(new MathMLPresenter) {
       }
    }
 }
- 
+
 

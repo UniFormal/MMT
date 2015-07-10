@@ -11,7 +11,7 @@ import scala.collection.mutable._
 /** This trait adds validation operations to Archive's */
 trait ValidatedArchive extends WritableArchive {
   /** checks modules in content structurally and generates term-level dependency relation in .occ files */
-  def check(in: List[String] = Nil, controller: Controller) {
+  def check(in: FPath = EmptyPath, controller: Controller) {
     val rels = new HashSet[RelationalElement]
     val relHandler = new RelationHandler {
       def apply(r: RelationalElement) {
@@ -23,9 +23,9 @@ trait ValidatedArchive extends WritableArchive {
     checker.init(controller)
     traverse(content, in, Archive.traverseIf("omdoc")) { case Current(_, inPath) =>
       rels.clear
-      val mpath = Archive.ContentPathToMMTPath(inPath)
+      val mpath = Archive.ContentPathToMMTPath(FPath(inPath))
       checker(mpath)(new CheckingEnvironment(new ErrorLogger(report), relHandler))
-      val relFile = (this / relational / inPath).setExtension("occ")
+      val relFile = (this / relational / FPath(inPath)).setExtension("occ")
       val relFileHandle = File.Writer(relFile)
       rels foreach { r => relFileHandle.write(r.toPath + "\n") }
       relFileHandle.close
@@ -33,9 +33,9 @@ trait ValidatedArchive extends WritableArchive {
   }
 
   /** checks modules in content structurally and then validates all objects */
-  def validate(in: List[String] = Nil, controller: Controller) {
+  def validate(in: FPath = EmptyPath, controller: Controller) {
     traverse(content, in, Archive.traverseIf("omdoc")) { case Current(_, inPath) =>
-      val mpath = Archive.ContentPathToMMTPath(inPath)
+      val mpath = Archive.ContentPathToMMTPath(FPath(inPath))
       controller.handle(Check(mpath, "mmt"))
     }
   }

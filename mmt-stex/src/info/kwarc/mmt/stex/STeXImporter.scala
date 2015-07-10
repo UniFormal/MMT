@@ -63,7 +63,7 @@ class STeXImporter extends Importer {
 
   var docCont : Map[DPath,Document => Unit] = Nil.toMap
 
-  override def apply(modifier: BuildTargetModifier, arch: Archive, in: List[String]) {
+  override def apply(modifier: BuildTargetModifier, arch: Archive, in: FPath) {
       modifier match {
          case up : Update => update(arch, up, in)
          case Clean  => clean(arch, in)

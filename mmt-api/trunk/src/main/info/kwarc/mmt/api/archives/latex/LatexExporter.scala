@@ -8,6 +8,7 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.utils.FPath
 
 /** an unfinished exporter that generates latex presentations of modules */
 class LatexExporter extends Exporter {

@@ -28,7 +28,7 @@ class PythonExporter extends Exporter with IndentedExporter {
       indent(body)
       nl
    }
-   
+
    def exportTheory(t: DeclaredTheory, bf: BuildTask) {
       cls(t.name.toPath) {
          var fields: List[String] = Nil
@@ -36,7 +36,7 @@ class PythonExporter extends Exporter with IndentedExporter {
             case c: Constant =>
                c.not match {
                   case Some(n) =>
-                     
+
                   case None => 0
                }
                df(c.name.toPath, Nil){
@@ -48,9 +48,9 @@ class PythonExporter extends Exporter with IndentedExporter {
          fields
       }
    }
-   
+
    def exportView(v: DeclaredView, bf: BuildTask) {}
-   
+
    def exportNamespace(dpath: DPath, nsbt: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
          namespaces.foreach {case bd =>
             comment {rh("package " + bd.dirName)}
@@ -59,9 +59,9 @@ class PythonExporter extends Exporter with IndentedExporter {
             comment {rh("module " + bf.outFile.segments.last)}
          }
    }
-   
+
    def exportDocument(doc: Document, bt: BuildTask) {
-     
+
    }
-   
+
 }

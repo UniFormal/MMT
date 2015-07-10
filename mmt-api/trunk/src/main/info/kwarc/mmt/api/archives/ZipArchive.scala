@@ -10,7 +10,7 @@ import java.util.zip._
 import java.util.jar._
 
 trait ZipArchive extends WritableArchive {
-    /** 
+    /**
      * add a file to a MAR file
      */
     private def addFileToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte]) {
@@ -25,9 +25,9 @@ trait ZipArchive extends WritableArchive {
         }
         in.close
     }
-      
-    
-    /** 
+
+
+    /**
      * recursively add all files in a folder to a mar file
      */
     private def addFolderToMar(f: File, base: File, out: ZipOutputStream, buffer: Array[Byte]) {
@@ -38,8 +38,8 @@ trait ZipArchive extends WritableArchive {
                 addFileToMar(child, base, out, buffer)
         }
     }
-    
-    /** 
+
+    /**
      * pack everything in a mar zip archive.
      * @param target the target mar file. Default is <name>.mar in the root folder, where <name> is the name of the root
      */

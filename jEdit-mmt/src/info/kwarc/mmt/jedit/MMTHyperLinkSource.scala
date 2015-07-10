@@ -26,7 +26,7 @@ object MMTHyperlink {
           else {
              //resolve logical document id in an archive
              controller.backend.resolveLogical(c) map {
-               case (archive, path) => r.copy(container = FileURI(archive/source / path)) 
+               case (archive, path) => r.copy(container = FileURI(archive/source / FPath(path)))
              }
           }
        }
@@ -74,7 +74,7 @@ class MMTHyperlinkSource extends HyperlinkSource {
                case _ => None
                   //asset.getScope flatMap {home => libraries.Names.resolve(home, id)(controller.localLookup)}
             }
-            val linkOpt = elemOpt map {elem => 
+            val linkOpt = elemOpt map {elem =>
                val ref = MMTHyperlink.elemToSourceRef(controller,elem)
                log(ref.map(_.toString).getOrElse("no file reference"))
                new MMTHyperlink(begin, end, line, elem.path, ref)

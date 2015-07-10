@@ -66,7 +66,7 @@ case class LocalCopy(scheme: String, authority: String, prefix: String, base: Fi
 
   def load(path: Path)(implicit controller: Controller) {
     val uri = path.doc.uri
-    val target = base / getSuffix(localBase, uri)
+    val target = base / FPath(getSuffix(localBase, uri))
     val reader = if (target.isFile) File.Reader(target)
     else if (target.isDirectory) {
       val entries = target.list.toList.sorted.diff(List(".svn"))
@@ -78,7 +78,7 @@ case class LocalCopy(scheme: String, authority: String, prefix: String, base: Fi
 }
 
 /**
- * loads a realization from a Java Class Loader and dynamically creates a [[modules.Realization]] for it
+ * loads a realization from a Java Class Loader and dynamically creates a [[uom.RealizationInScala]] for it
  */
 class RealizationArchive(file: File, val loader: java.net.URLClassLoader) extends Storage {
   override def toString = "RealizationArchive for " + file
@@ -224,7 +224,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
       val unpackedRoot = folder / (name + "-unpacked")
       // check if root is younger than manifest in unpackedRoot
       val extract = manifestLocations(root).find(_.isFile) match {
-         case Some(unpackedManifest) => 
+         case Some(unpackedManifest) =>
             val mod = Modification(root, unpackedManifest)
             if (mod == Modified) {
               unpackedRoot.deleteDir

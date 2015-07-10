@@ -18,7 +18,7 @@ import patterns._
 import objects._
 import symbols._
 import documents._
-import utils.File
+import info.kwarc.mmt.api.utils.{FPath, File}
 import utils.MyList.fromList
 
 import javax.swing.tree.DefaultMutableTreeNode
@@ -30,7 +30,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    val controller = mmt.controller
    val logPrefix = "jedit-sidekick"
    val report = controller.report
-      
+
    // override def stop()
    // override def getParseTriggers : String = ""
 
@@ -54,7 +54,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
                   return comp
                case _ =>
             }
-         case _ => 
+         case _ =>
       }
       asset.getScope match {
         case Some(a) =>
@@ -77,11 +77,11 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
               }
            }
            return new IDCompletion(view, controller, symbols, partialName, displayed)
-        case None => 
+        case None =>
       }
       new IDCompletion(view, controller, Nil, "", Nil)
    }
-   
+
    def parse(buffer: Buffer, errorSource: DefaultErrorSource) : SideKickParsedData = {
       val path = File(buffer.getPath)
       val uri = utils.FileURI(path)
@@ -90,7 +90,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case None =>
             ParsingStream.fromString(text, DPath(uri), path.getExtension.getOrElse(""))
          case Some((a,p)) =>
-            ParsingStream.fromSourceFile(a, p, Some(ParsingStream.stringToReader(text)))
+            ParsingStream.fromSourceFile(a, FPath(p), Some(ParsingStream.stringToReader(text)))
       }
       log("parsing " + path)
       val tree = new SideKickParsedData(path.toJava.getName)
@@ -98,7 +98,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       implicit val errorCont = new ErrorListForwarder(mmt.errorSource, controller, path)
       errorCont.reset
       try {
-         val doc = controller.read(ps, true, true) 
+         val doc = controller.read(ps, true, true)
          // add narrative structure of doc to outline tree
          buildTreeDoc(root, doc)
          // register errors with ErrorList plugin
@@ -110,13 +110,13 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       }
       tree
    }
-   
+
    override def stop {
-      // this should interrupt parsing, but it's tricky because we don't even know which extension it is 
+      // this should interrupt parsing, but it's tricky because we don't even know which extension it is
    }
 
    private def getRegion(e: metadata.HasMetaData) : Option[SourceRegion] = SourceRef.get(e).map(_.region)
-   
+
    /* build the sidekick outline tree: document node */
    private def buildTreeDoc(node: DefaultMutableTreeNode, doc: Document) {
       val reg = getRegion(doc) getOrElse SourceRegion(SourcePosition(0,0,0),SourcePosition(0,0,0))
@@ -136,12 +136,12 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
            }
       }
    }
-   
+
    private def moduleLabel(m: Module) = m match {
       case _ : Theory => "theory"
       case _: modules.View => "view"
    }
-   
+
    /* build the sidekick outline tree: module node */
    private def buildTreeMod(node: DefaultMutableTreeNode, mod: Module, context: Context, defaultReg: SourceRegion) {
       val reg = getRegion(mod) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
@@ -174,7 +174,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       node.add(child)
       buildTreeComps(child, dec, context, reg)
    }
-   
+
    /** add child nodes for all components of an element */
    private def buildTreeComps(node: DefaultMutableTreeNode, ce: ContentElement, context: Context, defaultReg: SourceRegion) {
       ce.getComponents foreach {
@@ -185,7 +185,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case _ =>
       }
    }
-   
+
    /** build the sidekick outline tree: component of a (module or symbol level) declaration */
    private def buildTreeComp(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, defaultReg: SourceRegion) {
       val reg = getRegion(t) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
@@ -193,7 +193,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       node.add(child)
       buildTreeTerm(child, parent, t, context, reg)
    }
-   
+
    /** build the sidekick outline tree: notations */
    private def buildTreeNot(node: DefaultMutableTreeNode, owner: ContentPath, cont: NotationContainer, comp: NotationComponent, defaultReg: SourceRegion) {
       val tn = cont(comp).get // always defined here
@@ -219,7 +219,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          }
       }
    }
-   
+
    /** build the sidekick outline tree: (sub)term node */
    private def buildTreeTerm(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, defaultReg: SourceRegion) {
       val reg = getRegion(t) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
@@ -227,7 +227,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val label = tP match {
          case OMV(n) => n.toString
          case OMID(p) => p.name.toString
-         case l: OMLITTrait => l.toString 
+         case l: OMLITTrait => l.toString
          case OMSemiFormal(_) => "unparsed: " + tP.toString
          case ComplexTerm(op, _,_,_) => op.last.toString
          case _ => ""
@@ -245,7 +245,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case OMA(fun, args) =>
             if (! fun.isInstanceOf[OMID])
                buildTreeTerm(child, parent, fun, context, reg)
-            args.foreach(buildTreeTerm(child, parent, _, context, reg))            
+            args.foreach(buildTreeTerm(child, parent, _, context, reg))
          case _ => t.subobjects foreach {
             case (_, o: Term) => buildTreeTerm(child, parent, o, context, reg)
             case _ =>

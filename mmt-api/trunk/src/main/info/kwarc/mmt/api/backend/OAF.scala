@@ -21,10 +21,10 @@ object UnixGit extends Git {
 
 /**
  * git behaves rather weirdly under windows, especially if authentication is needed
- * 
+ *
  * this runs the [[UnixGit]] commands in the bash shell that comes with windows git
- * 
- * @param sh the path to git's bash (may contain spaces), defaults to "sh" 
+ *
+ * @param sh the path to git's bash (may contain spaces), defaults to "sh"
  */
 class WindowsGit(sh: String = "sh") extends Git {
    def apply(args: String*) = List(sh, "--login", "-c", UnixGit(args:_*).mkString("\"", " ", "\""))
@@ -32,12 +32,12 @@ class WindowsGit(sh: String = "sh") extends Git {
 
 /**
  * wraps around a git shell client to repositories holdings MMT archives
- * 
+ *
  * git is called as follows
- *  - on Windows: sh --login -c "git"  
+ *  - on Windows: sh --login -c "git"
  *  - on other OS's: git
  * Users must make sure their shell interprets these commands properly.
- * 
+ *
  * @param root the directory in which clones are created
  * @param report for logging
  */
@@ -61,7 +61,7 @@ class OAF(val uri: URI, val root: File, val report: Report) extends Logger {
    def ssh = "git@" + uri.authority.getOrElse("") + ":"
    /** initializes a repository */
    def init(pathS: String) {
-      val path = utils.stringToList(pathS, "/")
+      val path = FPath(utils.stringToList(pathS, "/"))
       val repos = root / path
       val readme = "README.txt"
       val mf = "MANIFEST.MF"

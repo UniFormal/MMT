@@ -13,6 +13,7 @@ import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredView, DeclaredTheory}
 import info.kwarc.mmt.api.ontology.{MMTExtractor, IsView, IsTheory}
 import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
 import info.kwarc.mmt.api.symbols.{Constant, FinalConstant}
+import info.kwarc.mmt.api.utils.EmptyPath
 import scala.util.{Success, Try}
 
 /**
@@ -132,7 +133,7 @@ class RefactorPanel(ctrl:Controller,publish: List[DeclaredModule] => Unit) exten
       for (o <- archives) {
         texter.append("\n - Reading "+o+"...")
         texter.setCaretPosition(texter.getDocument.getLength)
-        o.readRelational(Nil,controller,"rel")
+        o.readRelational(EmptyPath,controller,"rel")
       }
       texter.append("\nDone.\n - Loading Theories...")
       texter.setCaretPosition(texter.getDocument.getLength)

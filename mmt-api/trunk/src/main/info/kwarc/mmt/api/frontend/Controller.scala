@@ -445,7 +445,7 @@ class Controller extends ROController with Logger {
           throw GeneralError("no importer found")
         }
         log("building " + f)
-        importer.build(a, p, Some(errorCont))
+        importer.build(a, FPath(p), Some(errorCont))
       case None =>
         throw GeneralError(f + " is not in a known archive")
     }
@@ -492,8 +492,9 @@ class Controller extends ROController with Logger {
           }
           notifyListeners.onArchiveOpen(a)
         }
-      case ArchiveBuild(ids, key, mod, in, args) => ids.foreach { id =>
+      case ArchiveBuild(ids, key, mod, inArgs, args) => ids.foreach { id =>
         val arch = backend.getArchive(id) getOrElse (throw GetError("archive not found: " + id))
+        val in = FPath(inArgs)
         key match {
           case "check" => arch.check(in, this)
           case "validate" => arch.validate(in, this)
@@ -507,10 +508,10 @@ class Controller extends ROController with Logger {
             log("done reading relational index")
           case "integrate" => arch.integrateScala(this, in)
           case "test" =>
-            if (in.length != 1)
-              logError("exactly 1 parameter required, found " + in.mkString(""))
+            if (inArgs.length != 1)
+              logError("exactly 1 parameter required, found " + in)
             else
-              arch.loadJava(this, in.head)
+              arch.loadJava(this, inArgs.head)
           case "close" =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
             backend.closeArchive(id)
@@ -622,7 +623,7 @@ class Controller extends ROController with Logger {
       case NoAction => ()
       case Read(f) =>
         val ps = backend.resolvePhysical(f) match {
-          case Some((arch, p)) => ParsingStream.fromSourceFile(arch, p)
+          case Some((arch, p)) => ParsingStream.fromSourceFile(arch, FPath(p))
           case None => ParsingStream.fromFile(f)
         }
         read(ps, interpret = false, mayImport = true)(new ErrorLogger(report))

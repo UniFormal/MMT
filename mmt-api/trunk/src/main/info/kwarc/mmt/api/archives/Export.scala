@@ -50,17 +50,17 @@ trait Exporter extends BuildTarget { self =>
     */
    def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask])
 
-   def build(a: Archive, in: List[String]) {
+   def build(a: Archive, in: FPath) {
      contentExporter.build(a, in)
      narrationExporter.build(a, in)
    }
 
-   def update(a: Archive, up: Update, in: List[String]) {
+   def update(a: Archive, up: Update, in: FPath) {
      contentExporter.update(a, up, in)
      narrationExporter.update(a, up, in)
    }
 
-   def clean(a: Archive, in: List[String]) {
+   def clean(a: Archive, in: FPath) {
      contentExporter.clean(a, in)
      narrationExporter.clean(a, in)
    }

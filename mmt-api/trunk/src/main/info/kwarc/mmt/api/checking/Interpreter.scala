@@ -15,29 +15,29 @@ abstract class Interpreter extends Importer {
    def key = format + "-omdoc"
    override def isApplicable(s: String) = s == format || super.isApplicable(s)
    def inExts = List(format)
-   
+
    /** parses a [[ParsingStream]] and returns a checked result */
    def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): Document
 
    /** creates a [[ParsingStream]] for the input file and interprets it */
    def importDocument(bf: BuildTask, index: Document => Unit) {
-      val inPathOMDoc = archives.ArchivePath(bf.inPath).setExtension("omdoc").segments
-      val dpath = DPath(bf.base / inPathOMDoc) // bf.narrationDPath except for extension
-      val ps = new ParsingStream(bf.base / bf.inPath, dpath, bf.archive.namespaceMap, format, File.Reader(bf.inFile))
+      val inPathOMDoc = bf.inPath.toFile.setExtension("omdoc").filepath
+      val dpath = DPath(bf.base / inPathOMDoc.segments) // bf.narrationDPath except for extension
+      val ps = new ParsingStream(bf.base / bf.inPath.segments, dpath, bf.archive.namespaceMap, format, File.Reader(bf.inFile))
       val doc = apply(ps)(bf.errorCont)
       index(doc)
    }
 }
 /**
  * a combination of a Parser and a Checker
- * 
+ *
  * @param parser the parser
  * @param checker the checker
- * 
+ *
  */
 class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Interpreter {
    def format = parser.format
-   
+
    /** parses a [[ParsingStream]] and checks the result */
    def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): Document = {
       try {
