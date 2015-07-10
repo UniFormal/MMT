@@ -75,7 +75,7 @@ class TPTPImporter extends TraversingBuildTarget {
       if (outFile.exists) {
         outFile.renameTo(tempFile)
         val outWriter = File.Writer(outFile)
-        val problemName = bt.inFile.removeExtension.name.replace(".", "_")
+        val problemName = bt.inFile.stripExtension.name.replace(".", "_")
         val prefix =
           s"""%namespace "${bt.archive.narrationBase}".
 %namespace tptp = "http://latin.omdoc.org/logics/tptp".

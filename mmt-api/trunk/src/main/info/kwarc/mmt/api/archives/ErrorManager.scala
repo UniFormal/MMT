@@ -41,7 +41,7 @@ case class BuildError(archive: Archive, target: String, path: ArchivePath,
       path.toString,
       new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(f.toJava.lastModified)),
       target,
-      sourceRef.map(_.toString).getOrElse(""),
+      sourceRef.fold("")(_.toString),
       shortMsg,
       longMsg,
       stackTrace.flatten.mkString("\n")
@@ -74,7 +74,7 @@ class ErrorManager extends Extension with Logger {
    * @param a the archive
    *          load all errors of this archive
    */
-  def loadAllErrors(a: Archive) {
+  def loadAllErrors(a: Archive): Unit = {
     a.traverse(errors, Nil, TraverseMode(_ => true, _ => true, parallel = false)) {
       case Current(_, target :: path) =>
         loadErrors(a, target, path)
@@ -87,7 +87,7 @@ class ErrorManager extends Extension with Logger {
    * @param path the file
    *             load all errors of a build target applied to a file
    */
-  def loadErrors(a: Archive, target: String, path: List[String]) {
+  def loadErrors(a: Archive, target: String, path: List[String]): Unit = {
     val f = a / errors / target / path
     val node = if (f.toJava.exists) xml.readFile(f) else <errors></errors>
     var bes: List[BuildError] = Nil
@@ -115,11 +115,11 @@ class ErrorManager extends Extension with Logger {
       val srcR = if (srcRef.isEmpty) None else Some(SourceRef.fromURI(URI(srcRef)))
       if (elems.nonEmpty)
         infoMessage("ignored sub-elements: " + elems)
-      val be = BuildError(a, target, ArchivePath(path).removeExtension, errType, lvl, srcR, shortMsg, longMsg, trace)
+      val be = BuildError(a, target, ArchivePath(path).stripExtension, errType, lvl, srcR, shortMsg, longMsg, trace)
       bes ::= be
     }
     if (node.child.isEmpty)
-      bes ::= BuildError(a, target, ArchivePath(path).removeExtension, "", 0, None, "no errors", "", Nil)
+      bes ::= BuildError(a, target, ArchivePath(path).stripExtension, "", 0, None, "no errors", "", Nil)
     val em = apply(a.id)
     em((target, path)) = bes.reverse
   }
@@ -132,20 +132,20 @@ class ErrorManager extends Extension with Logger {
   }
 
   /** registers a [[ChangeListener]] and a [[ServerExtension]] */
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     controller.extman.addExtension(cl)
     controller.extman.addExtension(serve)
     controller.backend.getArchives.foreach { a => loadAllErrors(a) }
   }
 
-  override def destroy {
+  override def destroy(): Unit = {
     //TODO remove cl and serve
   }
 
   /** adds/deletes [[ErrorMap]]s for each opened/closed [[Archive]] */
   private val cl = new ChangeListener {
     /** creates an [[ErrorMap]] for the archive and asynchronously loads its errors */
-    override def onArchiveOpen(a: Archive) {
+    override def onArchiveOpen(a: Archive): Unit = {
       errorMaps ::= new ErrorMap(a)
       Future {
         loadAllErrors(a)
@@ -153,12 +153,12 @@ class ErrorManager extends Extension with Logger {
     }
 
     /** deletes the [[ErrorMap]] */
-    override def onArchiveClose(a: Archive) {
+    override def onArchiveClose(a: Archive): Unit = {
       errorMaps = errorMaps.filter(_.archive != a)
     }
 
     /** reloads the errors */
-    override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: List[String]) {
+    override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: List[String]): Unit = {
       Future {
         loadErrors(a, t.key, p)
       }
@@ -166,43 +166,50 @@ class ErrorManager extends Extension with Logger {
   }
   private var hideQueries: List[List[String]] = Nil
 
+  private val defaultLimit: Int = 100
+
+  def serveJson(path: List[String], query: String): JSON = {
+    val wq = WebQuery.parse(query)
+    val args = Table.columns map (wq.string(_))
+    val limit = wq.int("limit", defaultLimit)
+    val hide = wq.boolean("hide")
+    val bes = iterator.map(_.toStrList)
+    val result = bes.filter { be2 =>
+      val be = be2 map (_.replace('+', ' ')) // '+' is turned to ' ' in query
+      //noinspection SideEffectsInMonadicTransformation
+      assert(args.length == be.length)
+      args.zip(be).forall { case (a, b) => b.indexOf(a) > -1 } &&
+        hideQueries.forall { hq => hq.zip(be).exists { case (a, b) => b.indexOf(a) == -1 } }
+    }
+    path match {
+      case List("count2") => JSONArray(JSONObject("count" -> JSONInt(result.length)))
+      case List("group", field) =>
+        val idx = Table.columns.indexOf(field)
+        assert(idx >= 0)
+        val l: List[String] = result.map(be => be(idx)).toList.sorted
+        val g = l.groupBy(identity).mapValues(_.length).toList.sortBy(_._2).reverse
+        JSONArray(g.take(limit).map { case (s, i) =>
+          JSONObject("count" -> JSONInt(i), "content" -> JSONString(s))
+        }: _*)
+      case List("clear") =>
+        hideQueries = Nil
+        JSONNull
+      case List("hidden") =>
+        JSONArray(hideQueries.map(l =>
+          JSONObject(Table.columns.zip(l map JSONString): _*)): _*)
+      case _ =>
+        if (hide) hideQueries ::= args
+        JSONArray(result.toList.take(limit).map(l =>
+          JSONObject(Table.columns.zip(l map JSONString): _*)): _*)
+    }
+  }
+
   /** serves lists of [[Error]]s */
   private val serve = new ServerExtension("errors") {
     override def logPrefix = self.logPrefix
 
     def apply(path: List[String], query: String, body: Body) = {
-      val wq = WebQuery.parse(query)
-      val args = Table.columns map (wq.string(_))
-      val limit = wq.int("limit", 100)
-      val hide = wq.boolean("hide")
-      val bes = iterator.map(_.toStrList)
-      val result = bes.filter { be2 =>
-        val be = be2 map (_.replace('+', ' ')) // '+' is turned to ' ' in query
-        assert(args.length == be.length)
-        args.zip(be).forall { case (a, b) => b.indexOf(a) > -1 } &&
-          hideQueries.forall { hq => hq.zip(be).exists { case (a, b) => b.indexOf(a) == -1 } }
-      }
-      var json: JSON = JSONNull
-      path match {
-        case List("count2") => json = JSONArray(JSONObject("count" -> JSONInt(result.length)))
-        case List("group", field) =>
-          val idx = Table.columns.indexOf(field)
-          assert(idx >= 0)
-          val l: List[String] = result.map(be => be(idx)).toList.sorted
-          val g = l.groupBy(identity).mapValues(_.length).toList.sortBy(_._2).reverse
-          json = JSONArray(g.take(limit).map { case (s, i) =>
-            JSONObject("count" -> JSONInt(i), "content" -> JSONString(s))
-          }: _*)
-        case List("clear") => hideQueries = Nil
-        case List("hidden") =>
-          json = JSONArray(hideQueries.map(l =>
-            JSONObject(Table.columns.zip(l map JSONString): _*)): _*)
-        case _ =>
-          if (hide) hideQueries ::= args
-          json = JSONArray(result.toList.take(limit).map(l =>
-            JSONObject(Table.columns.zip(l map JSONString): _*)): _*)
-      }
-      Server.JsonResponse(json)
+      Server.JsonResponse(serveJson(path, query))
     }
   }
 }

@@ -9,17 +9,17 @@ sealed abstract class BuildTargetModifier {
 }
 
 case object Clean extends BuildTargetModifier {
-  def toString(dim: String) = "-" + dim
+  def toString(dim: String): String = "-" + dim
 }
 
 case class Update(ifChanged: Boolean, ifHadErrors: Boolean) extends BuildTargetModifier {
-  def key = (if (ifChanged) "*" else "") + (if (ifHadErrors) "!" else "")
+  def key: String = (if (ifChanged) "*" else "") + (if (ifHadErrors) "!" else "")
 
-  def toString(dim: String) = dim + key
+  def toString(dim: String): String = dim + key
 }
 
 case object Build extends BuildTargetModifier {
-  def toString(dim: String) = dim
+  def toString(dim: String): String = dim
 }
 
 /** A BuildTarget provides build/update/clean methods that generate one or more dimensions in an [[Archive]]
@@ -30,19 +30,19 @@ abstract class BuildTarget extends FormatBasedExtension {
     */
   def key: String
 
-  def isApplicable(format: String) = format == key
+  def isApplicable(format: String): Boolean = format == key
 
   /** defaults to the key */
-  override def logPrefix = key
+  override def logPrefix: String = key
 
   /** build this target in a given archive */
-  def build(a: Archive, in: List[String])
+  def build(a: Archive, in: List[String]): Unit
 
   /** update this target in a given archive */
-  def update(a: Archive, up: Update, in: List[String])
+  def update(a: Archive, up: Update, in: List[String]): Unit
 
   /** clean this target in a given archive */
-  def clean(a: Archive, in: List[String])
+  def clean(a: Archive, in: List[String]): Unit
 
   /** the main function to run the build target
     *
@@ -50,7 +50,7 @@ abstract class BuildTarget extends FormatBasedExtension {
     * @param arch the archive to build on
     * @param in the folder inside the archive's inDim folder to which building in restricted (i.e., Nil for whole archive)
     */
-  def apply(modifier: BuildTargetModifier, arch: Archive, in: List[String]) {
+  def apply(modifier: BuildTargetModifier, arch: Archive, in: List[String]): Unit = {
     modifier match {
       case up: Update => update(arch, up, in)
       case Clean => clean(arch, in)
@@ -59,7 +59,7 @@ abstract class BuildTarget extends FormatBasedExtension {
   }
 
   /** auxiliary method for deleting a file */
-  protected def delete(f: File) {
+  protected def delete(f: File): Unit = {
     if (f.exists) {
       log("deleting " + f)
       f.delete
@@ -83,13 +83,13 @@ class BuildTask(val archive: Archive, val inFile: File, val isDir: Boolean, val 
   val base = archive.narrationBase
 
   /** the MPath corresponding to the inFile if inFile is a file in a content-structured dimension */
-  def contentMPath = Archive.ContentPathToMMTPath(inPath)
+  def contentMPath: MPath = Archive.ContentPathToMMTPath(inPath)
 
   /** the DPath corresponding to the inFile if inFile is a folder in a content-structured dimension */
-  def contentDPath = Archive.ContentPathToDPath(inPath)
+  def contentDPath: DPath = Archive.ContentPathToDPath(inPath)
 
   /** the DPath corresponding to the inFile if inFile is in a narration-structured dimension */
-  def narrationDPath = DPath(base / inPath)
+  def narrationDPath: DPath = DPath(base / inPath)
 
   /** the name of the folder if inFile is a folder */
   def dirName: String = outFile.segments.init.last
@@ -99,15 +99,15 @@ class BuildTask(val archive: Archive, val inFile: File, val isDir: Boolean, val 
  * a path in an [[Archive]], relative to an [[ArchiveDimension]], used when traversing
  */
 case class ArchivePath(segments: List[String]) {
-  def toFile = File(toString)
+  def toFile: File = File(toString)
 
-  def getExtension = toFile.getExtension
+  def getExtension: Option[String] = toFile.getExtension
 
-  def setExtension(e: String) = ArchivePath(toFile.setExtension(e).segments)
+  def setExtension(e: String): ArchivePath = ArchivePath(toFile.setExtension(e).segments)
 
-  def removeExtension = ArchivePath(toFile.removeExtension.segments)
+  def stripExtension: ArchivePath = ArchivePath(toFile.stripExtension.segments)
 
-  override def toString = segments.mkString("/")
+  override def toString: String = segments.mkString("/")
 }
 
 /**
@@ -159,21 +159,20 @@ abstract class TraversingBuildTarget extends BuildTarget {
   /** the main abstract method that implementations must provide: builds one file
     * @param bf information about input/output file etc
     */
-  def buildFile(bf: BuildTask)
+  def buildFile(bf: BuildTask): Unit
 
   /** similar to buildOne but called on every directory (after all its children have been processed)
     * @param bd information about input/output file etc
     * @param builtChildren results from building the children
     *                      This does nothing by default and can be overridden if needed.
     */
-  def buildDir(bd: BuildTask, builtChildren: List[BuildTask]) {}
+  def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): Unit = {}
 
   /** entry point for recursive building */
-  def build(a: Archive, in: List[String] = Nil) = build(a, in, None)
+  def build(a: Archive, in: List[String] = Nil): Unit = build(a, in, None)
 
-  def build(a: Archive, in: List[String], errorCont: Option[ErrorHandler]) {
+  def build(a: Archive, in: List[String], errorCont: Option[ErrorHandler]): Unit =
     buildAux(in)(a, errorCont)
-  }
 
   private def makeHandler(a: Archive, inPath: List[String], isDir: Boolean = false) = {
     val errFileName = if (isDir) getFolderErrorFile(a, inPath)
@@ -182,7 +181,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   /** recursive building */
-  private def buildAux(in: List[String] = Nil)(implicit a: Archive, eCOpt: Option[ErrorHandler]) {
+  private def buildAux(in: List[String] = Nil)(implicit a: Archive, eCOpt: Option[ErrorHandler]): Unit = {
     //build every file
     val prefix = "[" + inDim + " -> " + outDim + "] "
     a.traverse[BuildTask](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
@@ -227,7 +226,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     * @param curr the inDim whose output is to be deleted
     *             deletes the output and error file by default, may be overridden to, e.g., delete auxiliary files
     */
-  def cleanFile(a: Archive, curr: Current) {
+  def cleanFile(a: Archive, curr: Current): Unit = {
     val outFile = getOutFile(a, curr.path)
     delete(outFile)
     delete(getErrorFile(a, curr.path))
@@ -239,10 +238,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
     * @param curr the outDim directory to be deleted
     *             does nothing by default
     */
-  def cleanDir(a: Archive, curr: Current) {}
+  def cleanDir(a: Archive, curr: Current): Unit = {}
 
   /** recursively delete output files in parallel (!) */
-  def clean(a: Archive, in: List[String] = Nil) {
+  def clean(a: Archive, in: List[String] = Nil): Unit = {
     a.traverse[Unit](outDim, in, TraverseMode(Archive.extensionIs(outExt), includeDir, parallel = true))(
     { c => cleanFile(a, c) }, { case (c, _) => cleanDir(a, c) })
   }
@@ -260,29 +259,16 @@ abstract class TraversingBuildTarget extends BuildTarget {
     *
     * the decision is made based on the time stamps and the system's last-modified date
     */
-  def update(a: Archive, up: Update, in: List[String] = Nil) {
+  def update(a: Archive, up: Update, in: List[String] = Nil): Unit = {
     a.traverse[Boolean](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case c@Current(inFile, inPath) =>
-        modified(a, inPath) match {
-          case (Deleted, _) =>
-            cleanFile(a, c)
-            true
-          case (Added, _) =>
-            buildAux(inPath)(a, None)
-            true
-          case (Modified, hadErrors) =>
-            if (up.ifChanged || (hadErrors && up.ifHadErrors)) {
-              cleanFile(a, c)
-              buildAux(inPath)(a, None)
-            }
-            false
-          case (Unmodified, hadErrors) =>
-            if (hadErrors && up.ifHadErrors) {
-              cleanFile(a, c)
-              buildAux(inPath)(a, None)
-            }
-            false
-        }
+        val (mod, hadErrors) = modified(a, inPath)
+        val del = mod == Deleted
+        val add = mod == Added
+        val both = up.ifChanged && mod == Modified || hadErrors && up.ifHadErrors
+        if (del || both) cleanFile(a, c)
+        if (add || both) buildAux(inPath)(a, None)
+        del || add
     }, { case (c@Current(inDir, inPath), childChanged) =>
       if (childChanged.contains(true)) {
         val outFile = getFolderOutFile(a, inPath)
@@ -290,9 +276,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
         val bd = new BuildTask(a, inDir, true, inPath, outFile, errorCont)
         errorCont.close
         buildDir(bd, Nil) // TODO pass proper builtChildren
-        false
-      } else
-        false
+      }
+      false
     })
   }
 }
@@ -304,13 +289,13 @@ class MetaBuildTarget extends BuildTarget {
   private var _key = ""
   private var targets: List[BuildTarget] = Nil
 
-  def key = _key
+  def key: String = _key
 
   /**
    * first argument: the key of this build target
    * remaining arguments: the build targets to chain
    */
-  override def start(args: List[String]) {
+  override def start(args: List[String]): Unit = {
     _key = args.headOption.getOrElse {
       throw LocalError("at least one argument required")
     }
@@ -324,20 +309,20 @@ class MetaBuildTarget extends BuildTarget {
   def arguments(k: String): List[String] = Nil
 
   /** @return the path to pass to the target t, override as needed */
-  def path(t: BuildTarget, in: List[String]) = t match {
+  def path(t: BuildTarget, in: List[String]): List[String] = t match {
     case t: TraversingBuildTarget if t.inDim != content => in
     case _ => Nil
   }
 
-  def build(a: Archive, in: List[String]) {
+  def build(a: Archive, in: List[String]): Unit = {
     targets.foreach { t => t.build(a, path(t, in)) }
   }
 
-  def update(a: Archive, up: Update, in: List[String]) {
+  def update(a: Archive, up: Update, in: List[String]): Unit = {
     targets.foreach { t => t.update(a, up, path(t, in)) }
   }
 
-  def clean(a: Archive, in: List[String]) {
+  def clean(a: Archive, in: List[String]): Unit = {
     targets.foreach { t => t.clean(a, path(t, in)) }
   }
 }
