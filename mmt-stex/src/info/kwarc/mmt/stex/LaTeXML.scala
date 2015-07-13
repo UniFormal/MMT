@@ -9,6 +9,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils._
 
+import scala.sys.process.Process
 import scala.util.matching.Regex
 
 class SmsGenerator extends TraversingBuildTarget {
@@ -76,6 +77,20 @@ class SmsGenerator extends TraversingBuildTarget {
       File.WriteLineWise(fileName, text)
       log("created file " + fileName)
     }
+  }
+
+  def getAmbleFile(preOrPost: String, bt: BuildTask): File = {
+    val repoDir = bt.archive.root
+    val lang: Option[String] = bt.inFile.stripExtension.getExtension
+    val filePrefix = repoDir / "lib" / preOrPost
+    val defaultFile = filePrefix.setExtension("tex")
+    if (lang.isDefined) {
+      val langFile = filePrefix.setExtension(lang.get + ".tex")
+      if (langFile.exists)
+        langFile
+      else defaultFile
+    }
+    else defaultFile
   }
 }
 
@@ -192,21 +207,25 @@ class PdfLatex extends SmsGenerator {
   override val key = "pdflatex"
   override val outExt = "pdf"
   override val outDim = Dim("export", key, inDim.toString)
-
-  private var pdflatexPath: File = File("run-pdflatex.sh")
+  private var pdflatexPath: String = "pdflatex"
 
   override def buildFile(bt: BuildTask): Unit = {
-    val command: List[String] = List(pdflatexPath, bt.inFile) map (_.toString)
-    log(command.mkString(" "))
     val pdfFile = bt.inFile.setExtension("pdf")
     pdfFile.delete()
     bt.outFile.delete()
+    val mathHubDir = bt.archive.root.up.up.up
+    val styDir = mathHubDir / "ext" / "sTeX" / "sty"
+    val moreStyles = mathHubDir / "sty"
+    createLocalPaths(bt)
     try {
-      val result = ShellCommand.run(command: _*)
-      result foreach { s =>
-        bt.errorCont(LocalError(s))
-        pdfFile.delete()
-      }
+      val pbCat = Process.cat(Seq(getAmbleFile("pre", bt), bt.inFile,
+        getAmbleFile("post", bt)).map(_.toJava))
+      val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
+        bt.inFile.stripExtension.getName, "-interaction", "scrollmode"),
+        bt.inFile.up, "STEXSTYDIR" -> styDir.toString,
+        "TEXINPUTS" -> (".//:" + moreStyles + ":" + styDir + "//:"))
+      val result = pb.!!
+      log(result)
       if (pdfFile.length == 0) {
         bt.errorCont(LocalError("no pdf created"))
         pdfFile.delete()
@@ -218,6 +237,8 @@ class PdfLatex extends SmsGenerator {
         bt.outFile.delete()
         bt.errorCont(LocalError("pdf exception: " + e))
     }
+    List("aux", "idx", "log", "out", "thm").
+      foreach(bt.inFile.setExtension(_).delete())
   }
 }
 
