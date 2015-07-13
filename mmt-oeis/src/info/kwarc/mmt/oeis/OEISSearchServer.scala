@@ -2,9 +2,17 @@ package info.kwarc.mmt.oeis
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.web._
+import info.kwarc.mmt.planetary.{InformalMathMLPresenter}
 import parser.{QueryParser}
 
 class OEISSearchServer extends TEMASearchServer("oeis") {
+  lazy val presenter = {
+    controller.extman.get(classOf[presentation.Presenter]).find(_.key == "planetary").map(_.objectLevel) match {
+      case Some(p : presentation.MathMLPresenter) => p
+      case _ =>  throw new Exception("Presenter not loaded")
+    }
+  }
+  
   val qp = new QueryParser
   lazy val imp = controller.extman.get(classOf[OEISImporter]) match {
     case hd :: Nil => hd
@@ -13,15 +21,18 @@ class OEISSearchServer extends TEMASearchServer("oeis") {
   
   def getSettings(path : List[String], query : String, body : Body) = Nil.toMap
   def process(query : String, settings : Map[String, String]) : objects.Term = {
-    println("got here")
     qp.parse(query) flatMap {exp => 
+      println("got here")
       val elem = exp.toNode("A00") //TODO theory name shouldn't matter
+      println(elem)
+      val narrObj = <div><CMP><OMOBJ>{elem}</OMOBJ></CMP> </div>
       val dpath = Path.parseD("http://mathhub.info/smglom/mv/defeq.omdoc", NamespaceMap.empty)
       val mpath = dpath ? "defeq"
       val errorCont = new ErrorLogger(controller.report)
-      imp.parseNarrativeObject(elem)(dpath, mpath, errorCont)
+      imp.parseNarrativeObject(narrObj)(dpath, mpath, errorCont)
     } match {
-      case _ => throw new Exception("Parsing Failed")
+      case Some(tm) => println(tm.toNode); tm
+      case None => throw new Exception("Parsing Failed")
     }
   }
 }

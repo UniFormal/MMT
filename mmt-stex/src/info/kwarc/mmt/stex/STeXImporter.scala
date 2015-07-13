@@ -438,13 +438,19 @@ class STeXImporter extends Importer {
             var markers : Seq[Marker] = Nil
             var tmpS : String = ""
             n.child.toList map {
-              case <OMOBJ>{s}</OMOBJ> =>
+              case <OMOBJ>{s}</OMOBJ> => s.label match {
+                case "OMV" => 
+                  val name = xml.attr(s, "name")
+                  val delim = makeDelim("#id_" + name)
+                  markers = markers :+ delim
+                case _ => //default should never happen
                 if (tmpS != "") {
                   markers ++= tmpS.split(" ").map(Delim(_)).toList
                   tmpS = ""
                 }
                 i += 1
                 markers = markers :+ Arg(i)
+              }
               case n => tmpS += n.text
             }
             if (tmpS != "") {

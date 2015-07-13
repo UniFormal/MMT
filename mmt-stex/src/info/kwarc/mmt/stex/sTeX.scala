@@ -112,18 +112,18 @@ object OMDoc {
   }
   
    def parseNarrativeObject(n : scala.xml.Node)(implicit dpath : DPath, 
-                                                         thy : DeclaredTheory, 
+                                                         mpath : MPath, 
                                                          errorCont : ErrorHandler,
                                                          resolveSPath : (Option[String], String, MPath) => GlobalName) : Option[Term]= {
     val sref = parseSourceRef(n, dpath) 
-    implicit val mpath = thy.path
     n.child.find(_.label == "CMP").map(_.child) match {
       case Some(nodes) => 
         val narrNode = <div class="CMP"> {nodes} </div> //effectively treating CMP as a narrative div
-        val cmp =  translateCMP(rewriteCMP(narrNode))(dpath, thy, errorCont : ErrorHandler)
+        val cmp =  translateCMP(rewriteCMP(narrNode))(dpath, mpath, errorCont : ErrorHandler)
         Some(cmp)
       case None => 
         val err = new STeXParseError("No CMP in narrative object " + n.label, sref, Some(Level.Warning))
+        errorCont(err)
         None
     }
   }
@@ -162,7 +162,7 @@ object OMDoc {
     }
   }
   
-  def translateCMP(n : scala.xml.Node)(implicit dpath : DPath, thy : DeclaredTheory, errorCont : ErrorHandler) : Term = {
+  def translateCMP(n : scala.xml.Node)(implicit dpath : DPath, mpath : MPath, errorCont : ErrorHandler) : Term = {
     val sref = parseSourceRef(n, dpath)
     n.label match {
       case "#PCDATA" =>

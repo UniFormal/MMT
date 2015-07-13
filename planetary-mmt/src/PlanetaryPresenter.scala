@@ -288,8 +288,8 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
 
 
    def doShowHideTrigger(name : String, id : String) {
-       val onName = "Show " + name
-       rh(" <small><a class='gls_trigger'  data-text=\"" + name + "\" data-target='" + id + "'>" + onName + "</a></small>")
+       val onName = name
+       rh(" <small><a class='gls_trigger' data-target='" + id + "'>" + onName + "</a></small>")
    }
 
    def doNotationsTable(notations : List[(GlobalName, TextNotation)], id : String) {

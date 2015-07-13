@@ -175,6 +175,29 @@ class SearchServer extends ServerExtension("search") {
   }
 }
 
+abstract class TEMASearchServer(format : String) extends ServerExtension("tema-" + format) {
+  val presenter : presentation.ObjectPresenter
+  def process(query : String, settings : Map[String,String]) : objects.Term
+  
+  def toHTML(tm : objects.Term) : String = {
+    val rh = new presentation.StringBuilder()
+    presenter.apply(tm, None)(rh)
+    rh.get
+  }
+  
+  def getSettings(path : List[String], query : String, body : Body) : Map[String, String]
+  
+  def apply(path : List[String], query : String, body: Body) = {
+    println(query)
+    println(path)
+    val searchS = body.asString
+    println(searchS)
+    val settings = getSettings(path, query, body)
+    val resp = toHTML(process(searchS, settings))
+    Server.TextResponse(resp, "html")
+  }
+}
+
 /** interprets the query as an MMT [[frontend.GetAction]] and returns the result */
 class GetActionServer extends ServerExtension("mmt") {
   def apply(path: List[String], query: String, body: Body) = {

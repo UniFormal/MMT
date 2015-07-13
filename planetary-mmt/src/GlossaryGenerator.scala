@@ -141,7 +141,13 @@ object GlossaryGenerator {
         presenter.doShowHideTrigger("Definition", defId)
         //Show notations Trigger
         val notId = getNewId
-        if (!notations.isEmpty) presenter.doShowHideTrigger("Notations", notId)
+        if (!notations.isEmpty) {
+          rh(",")
+          presenter.doShowHideTrigger("Notations", notId)
+        }
+        //SVG
+        rh(", <small><a target=\"_blank\" href=\"" + spath.doc.toPath + "!svg\"> Concept Graph </a></small>")
+
         // Other languages
         span(cls = "pull-right") {
           for (lang <- alternatives) {

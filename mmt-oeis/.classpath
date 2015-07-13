@@ -7,5 +7,6 @@
 	<classpathentry kind="lib" path="/deploy-wrapper/lib/tiscaf.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mmt-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mmt-stex"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/planetary-mmt"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
