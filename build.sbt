@@ -151,6 +151,10 @@ lazy val planetary = (project in file("planetary-mmt")).
   dependsOn(stex).
   settings(commonSettings("planetary-mmt"): _*)
 
+lazy val oeis = (project in file("mmt-oeis")).
+  dependsOn(planetary).
+  settings(commonSettings("mmt-oeis"): _*)
+
 lazy val leo = (project in file("mmt-leo")).
   dependsOn(api).
   settings(commonSettings("mmt-leo"): _*).
