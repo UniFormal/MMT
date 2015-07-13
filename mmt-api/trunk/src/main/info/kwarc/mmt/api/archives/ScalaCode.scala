@@ -4,11 +4,11 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.utils._
 
-trait ScalaArchive extends WritableArchive {
+trait ScalaCode extends WritableArchive {
 
   private var loader: java.net.URLClassLoader = null
 
-  def loadJava(controller: Controller, cls: String) {
+  def loadJava(controller: Controller, cls: String): Unit = {
     if (loader == null) {
       val jar = File(root / (id + ".jar"))
       try {
@@ -29,11 +29,11 @@ trait ScalaArchive extends WritableArchive {
   }
 
   /** Integrate scala into a dimension */
-  def integrateScala(controller: Controller, in: FilePath = EmptyPath) {
+  def integrateScala(controller: Controller, in: FilePath = EmptyPath): Unit = {
     traverse(content, in, Archive.traverseIf("omdoc")) { case Current(inFile, inPath) =>
-      val mpath = Archive.ContentPathToMMTPath(FilePath(inPath))
+      val mpath = Archive.ContentPathToMMTPath(inPath)
       val mod = controller.globalLookup.getModule(mpath)
-      val scalaFile = (root / "scala" / FilePath(inPath)).setExtension("scala")
+      val scalaFile = (root / "scala" / inPath).setExtension("scala")
       uom.Integrator.doModule(controller, mod, scalaFile)
       val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">
         {mod.toNode}

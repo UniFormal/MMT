@@ -34,13 +34,13 @@ abstract class Importer extends TraversingBuildTarget {
     * @param bt information about the input document and error reporting
     * @param index a continuation function to be called on every generated document
     */
-  def importDocument(bt: BuildTask, index: Document => Unit)
+  def importDocument(bt: BuildTask, index: Document => Unit): Unit
 
-  def buildFile(bf: BuildTask) {
+  def buildFile(bf: BuildTask): Unit = {
     importDocument(bf, doc => indexDocument(bf.archive, doc, bf.inPath))
   }
 
-  override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]) {
+  override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): Unit = {
     bd.outFile.up.mkdirs
     val doc = controller.get(DPath(bd.archive.narrationBase / bd.inPath.segments)).asInstanceOf[Document]
     val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
@@ -48,7 +48,7 @@ abstract class Importer extends TraversingBuildTarget {
   }
 
   /** Write a module to content folder */
-  private def writeToContent(a: Archive, mod: Module) {
+  private def writeToContent(a: Archive, mod: Module): Unit = {
     val contFile = a.MMTPathToContentPath(mod.path)
     log("[  -> content   ]     " + contFile.getPath)
     val w = new presentation.FileWriter(contFile)
@@ -59,18 +59,18 @@ abstract class Importer extends TraversingBuildTarget {
   }
 
   /** extract and write the relational information about a knowledge item */
-  private def writeToRel(se: StructuralElement, file: File) {
+  private def writeToRel(se: StructuralElement, file: File): Unit = {
     val relFile = file.setExtension("rel")
     log("[  -> relational]     " + relFile.getPath)
     val relFileHandle = File.Writer(relFile)
     controller.relman.extract(se) {
       r => relFileHandle.write(r.toPath + "\n")
     }
-    relFileHandle.close
+    relFileHandle.close()
   }
 
   /** index a document */
-  private def indexDocument(a: Archive, doc: Document, inPath: FilePath) {
+  private def indexDocument(a: Archive, doc: Document, inPath: FilePath): Unit = {
     // write narration file
     val narrFile = getOutFile(a, inPath)
     log("[  -> narration ]     " + narrFile)
@@ -82,7 +82,7 @@ abstract class Importer extends TraversingBuildTarget {
   }
 
   /** index a module */
-  private def indexModule(a: Archive, mod: Module) {
+  private def indexModule(a: Archive, mod: Module): Unit = {
     // write content file
     writeToContent(a, mod)
     // write relational file
@@ -90,16 +90,16 @@ abstract class Importer extends TraversingBuildTarget {
   }
 
   /** additionally deletes content and relational */
-  override def cleanFile(a: Archive, curr: Current) {
+  override def cleanFile(a: Archive, curr: Current): Unit = {
     val controller = new Controller(report)
     val Current(inFile, narrPath) = curr
-    val narrFile = getOutFile(a, FilePath(narrPath))
+    val narrFile = getOutFile(a, narrPath)
     if (!narrFile.exists) {
       super.cleanFile(a, curr)
       return
     }
     val doc = try {
-      controller.read(ParsingStream.fromFile(narrFile, Some(DPath(a.narrationBase / narrPath)), Some(a.namespaceMap)), false)(new ErrorLogger(report))
+      controller.read(ParsingStream.fromFile(narrFile, Some(DPath(a.narrationBase / narrPath.segments)), Some(a.namespaceMap)), interpret = false)(new ErrorLogger(report))
     } catch {
       case e: java.io.IOException =>
         report(LocalError("io error, could not clean content of " + narrFile).setCausedBy(e))
@@ -113,12 +113,12 @@ abstract class Importer extends TraversingBuildTarget {
         delete((a / relational / cPath).setExtension("rel"))
       case r: documents.DRef => //TODO recursively delete subdocuments
     }
-    delete((a / relational / FilePath(narrPath)).setExtension("rel"))
+    delete((a / relational / narrPath).setExtension("rel"))
     super.cleanFile(a, curr)
   }
 
-  override def cleanDir(a: Archive, curr: Current) {
-    val inPathFile = Archive.narrationSegmentsAsFile(FilePath(curr.path), "omdoc")
+  override def cleanDir(a: Archive, curr: Current): Unit = {
+    val inPathFile = Archive.narrationSegmentsAsFile(curr.path, "omdoc")
     delete((a / relational / inPathFile).setExtension("rel"))
   }
 
@@ -159,7 +159,7 @@ class OMDocImporter extends Importer {
 
   def importDocument(bf: BuildTask, seCont: Document => Unit) = {
     val ps = ParsingStream.fromFile(bf.inFile, Some(bf.narrationDPath), Some(bf.archive.namespaceMap))
-    val doc = controller.read(ps, false)(bf.errorCont)
+    val doc = controller.read(ps, interpret = false)(bf.errorCont)
     seCont(doc)
   }
 }

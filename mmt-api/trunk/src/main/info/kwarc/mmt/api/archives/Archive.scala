@@ -13,7 +13,7 @@ import info.kwarc.mmt.api.utils._
 import scala.collection.mutable
 
 /** convenience class for traversing an Archive */
-case class Current(file: File, path: List[String])
+case class Current(file: File, path: FilePath)
 
 /** grouped argument when traversing */
 case class TraverseMode(includeFile: String => Boolean,
@@ -63,7 +63,7 @@ abstract class WritableArchive extends ROArchive {
 
   val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, this / narration)
 
-  def load(p: Path)(implicit controller: Controller) {
+  def load(p: Path)(implicit controller: Controller): Unit = {
     p match {
       case doc: DPath => narrationBackend.load(doc)
       case mod: MPath =>
@@ -83,7 +83,7 @@ abstract class WritableArchive extends ROArchive {
     }
   }
 
-  protected def deleteFile(f: File) {
+  protected def deleteFile(f: File): Unit = {
     log("deleting " + f)
     f.delete
   }
@@ -107,13 +107,13 @@ abstract class WritableArchive extends ROArchive {
         if (sendLog) log("entering " + inFile)
         val children = inFile.list.sorted.toList
         val results = if (parallel) children.par flatMap recurse else children flatMap recurse
-        val result = onDir(Current(inFile, in.segments), results.toList)
+        val result = onDir(Current(inFile, in), results.toList)
         if (sendLog) log("leaving  " + inFile)
         Some(result)
       } else None
     } else if (filter(inFileName))
       try {
-        val r = onFile(Current(inFile, in.segments))
+        val r = onFile(Current(inFile, in))
         Some(r)
       } catch {
         case e: Error => report(e); None
@@ -130,7 +130,7 @@ abstract class WritableArchive extends ROArchive {
   *               Archive is a very big class, so most of its functionality is outsourced to various traits that are mixed in here
   */
 class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report)
-  extends WritableArchive with ValidatedArchive with ScalaArchive with ZipArchive {
+  extends WritableArchive with Validate with ScalaCode with ZipArchive {
 
   val rootString = root.toString
 
@@ -139,7 +139,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
    * @param in input path
    * @param controller the controller
    */
-  def produceFlat(in: FilePath, controller: Controller) {
+  def produceFlat(in: FilePath, controller: Controller): Unit = {
     val inFile = this / content / in
     log("to do: [CONT -> FLAT]        -> " + inFile)
     if (inFile.isDirectory) {
@@ -172,7 +172,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
    * @param in input path
    * @param controller the controller
    */
-  def produceEnriched(in: FilePath, modElab: ModuleElaborator, controller: Controller) {
+  def produceEnriched(in: FilePath, modElab: ModuleElaborator, controller: Controller): Unit = {
     val inFile = this / content / in
     //val modElab = new ModuleElaborator(controller)
     val enrichedDir = root / "enriched"
@@ -200,7 +200,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     log("done:  [CONT -> FLAT]       -> " + inFile)
   }
 
-  def readRelational(in: FilePath = EmptyPath, controller: Controller, kd: String) {
+  def readRelational(in: FilePath = EmptyPath, controller: Controller, kd: String): Unit = {
     if ((this / relational).exists) {
       traverse(relational, in, Archive.traverseIf(kd)) { case Current(inFile, inPath) =>
         utils.File.ReadLineWise(inFile) { line =>
@@ -258,7 +258,7 @@ object Archive {
   def MMTPathToContentPath(m: MPath): FilePath = {
     // TODO: Use narrationBase instead of "NONE"?
     val uri = m.parent.uri
-    val schemeString = uri.scheme.map(_ + "..").getOrElse("")
+    val schemeString = uri.scheme.fold("")(_ + "..")
     FilePath(
       (schemeString + uri.authority.getOrElse("NONE")) :: uri.path :::
         List(escape(m.name.toPath) + ".omdoc"))

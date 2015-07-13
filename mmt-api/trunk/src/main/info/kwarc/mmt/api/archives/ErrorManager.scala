@@ -76,7 +76,7 @@ class ErrorManager extends Extension with Logger {
    */
   def loadAllErrors(a: Archive): Unit = {
     a.traverse(errors, EmptyPath, TraverseMode(_ => true, _ => true, parallel = false)) {
-      case Current(_, target :: path) =>
+      case Current(_, FilePath(target :: path)) =>
         loadErrors(a, target, FilePath(path))
     }
   }
@@ -158,9 +158,9 @@ class ErrorManager extends Extension with Logger {
     }
 
     /** reloads the errors */
-    override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: List[String]): Unit = {
+    override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath): Unit = {
       Future {
-        loadErrors(a, t.key, FilePath(p))
+        loadErrors(a, t.key, p)
       }
     }
   }

@@ -170,8 +170,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     //build every file
     val prefix = "[" + inDim + " -> " + outDim + "] "
     a.traverse[BuildTask](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
-      case Current(inFile, inPathSegs) =>
-        val inPath = FilePath(inPathSegs)
+      case Current(inFile, inPath) =>
         if (!inFile.isFile)
           throw LocalError("file does not exist: " + inPath)
         val outFile = getOutFile(a, inPath)
@@ -193,12 +192,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
         } finally {
           errorWriter.close
         }
-        controller.notifyListeners.onFileBuilt(a, this, inPathSegs)
+        controller.notifyListeners.onFileBuilt(a, this, inPath)
         // a.timestamps(this).set(inPath) not needed anymore
         bf
     }, {
-      case (Current(inDir, inPathSegs), builtChildren) =>
-        val inPath = FilePath(inPathSegs)
+      case (Current(inDir, inPath), builtChildren) =>
         val outFile = getFolderOutFile(a, inPath)
         val errorCont = makeHandler(a, inPath, isDir = true)
         val bd = new BuildTask(a, inDir, true, inPath, outFile, errorCont)
@@ -214,11 +212,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
     *             deletes the output and error file by default, may be overridden to, e.g., delete auxiliary files
     */
   def cleanFile(a: Archive, curr: Current): Unit = {
-    val inPath = FilePath(curr.path)
+    val inPath = curr.path
     val outFile = getOutFile(a, inPath)
     delete(outFile)
     delete(getErrorFile(a, inPath))
-    controller.notifyListeners.onFileBuilt(a, this, curr.path)
+    controller.notifyListeners.onFileBuilt(a, this, inPath)
   }
 
   /** additional method that implementations may provide: cleans one directory
@@ -249,8 +247,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     */
   def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = {
     a.traverse[Boolean](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
-      case c@Current(inFile, inPathSegs) =>
-        val inPath = FilePath(inPathSegs)
+      case c@Current(inFile, inPath) =>
         val (mod, hadErrors) = modified(a, inPath)
         val del = mod == Deleted
         val add = mod == Added
@@ -258,9 +255,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
         if (del || both) cleanFile(a, c)
         if (add || both) buildAux(inPath)(a, None)
         del || add
-    }, { case (c@Current(inDir, inPathSegs), childChanged) =>
+    }, { case (c@Current(inDir, inPath), childChanged) =>
       if (childChanged.contains(true)) {
-        val inPath = FilePath(inPathSegs)
         val outFile = getFolderOutFile(a, inPath)
         val errorCont = makeHandler(a, inPath, isDir = true)
         val bd = new BuildTask(a, inDir, true, inPath, outFile, errorCont)
