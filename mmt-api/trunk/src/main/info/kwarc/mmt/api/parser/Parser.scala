@@ -1,12 +1,11 @@
 package info.kwarc.mmt.api.parser
 
 import info.kwarc.mmt.api._
-import objects._
-import symbols._
-import documents._
-import frontend._
-import archives._
-import utils._
+import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.documents._
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.utils._
 
 /**
  * ParsingUnit encapsulates the input of an [[ObjectParser]]
@@ -74,7 +73,7 @@ object ParsingStream {
     * dpath: logical document URI with "omdoc" file extension
     * format: file extension
     */
-   def fromSourceFile(a: Archive, inPath: FPath, strOpt: Option[java.io.BufferedReader] = None) = {
+   def fromSourceFile(a: Archive, inPath: FilePath, strOpt: Option[java.io.BufferedReader] = None) = {
      val inPathOMDoc = inPath.toFile.setExtension("omdoc").segments
       val base = a.narrationBase
       val dpath = DPath(base / inPathOMDoc) // bf.narrationDPath except for extension

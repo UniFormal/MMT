@@ -8,17 +8,17 @@ import scala.language.implicitConversions
 /**
  * a file path
  */
-case class FPath(segments: List[String]) {
+case class FilePath(segments: List[String]) {
   def toFile: File = File(toString)
 
   def baseName: String = if (segments.nonEmpty) segments.last else ""
 
-  def dirPath: FPath = FPath(if (segments.nonEmpty) segments.init else Nil)
+  def dirPath: FilePath = FilePath(if (segments.nonEmpty) segments.init else Nil)
 
   override def toString: String = segments.mkString("/")
 }
 
-object EmptyPath extends FPath(Nil)
+object EmptyPath extends FilePath(Nil)
 
 /** File wraps around java.io.File to extend it with convenience methods
   *
@@ -46,7 +46,7 @@ case class File(toJava: java.io.File) {
   def /(s: String): File = File(new java.io.File(toJava, s))
 
   /** appends a list of path segments */
-  def /(ss: FPath): File = ss.segments.foldLeft(this) { case (sofar, next) => sofar / next }
+  def /(ss: FilePath): File = ss.segments.foldLeft(this) { case (sofar, next) => sofar / next }
 
   /** parent directory */
   def up: File = File(toJava.getParentFile)
@@ -57,7 +57,7 @@ case class File(toJava: java.io.File) {
   /** the list of file/directory/volume label names making up this file path
     * absolute Unix paths begin with an empty segment
     */
-  def filepath: FPath = FPath(segments)
+  def filepath: FilePath = FilePath(segments)
 
   def segments: List[String] = {
     val name = toJava.getName

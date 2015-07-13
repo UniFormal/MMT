@@ -1,8 +1,8 @@
 package info.kwarc.mmt.api.backend
 
 import info.kwarc.mmt.api._
-import frontend._
-import utils._
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.utils._
 
 /** builds git commands */
 abstract class Git {
@@ -61,7 +61,7 @@ class OAF(val uri: URI, val root: File, val report: Report) extends Logger {
    def ssh = "git@" + uri.authority.getOrElse("") + ":"
    /** initializes a repository */
    def init(pathS: String) {
-      val path = FPath(utils.stringToList(pathS, "/"))
+      val path = FilePath(utils.stringToList(pathS, "/"))
       val repos = root / path
       val readme = "README.txt"
       val mf = "MANIFEST.MF"

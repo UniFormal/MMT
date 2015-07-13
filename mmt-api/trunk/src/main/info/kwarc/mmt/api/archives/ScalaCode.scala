@@ -29,11 +29,11 @@ trait ScalaArchive extends WritableArchive {
   }
 
   /** Integrate scala into a dimension */
-  def integrateScala(controller: Controller, in: FPath = EmptyPath) {
+  def integrateScala(controller: Controller, in: FilePath = EmptyPath) {
     traverse(content, in, Archive.traverseIf("omdoc")) { case Current(inFile, inPath) =>
-      val mpath = Archive.ContentPathToMMTPath(FPath(inPath))
+      val mpath = Archive.ContentPathToMMTPath(FilePath(inPath))
       val mod = controller.globalLookup.getModule(mpath)
-      val scalaFile = (root / "scala" / FPath(inPath)).setExtension("scala")
+      val scalaFile = (root / "scala" / FilePath(inPath)).setExtension("scala")
       uom.Integrator.doModule(controller, mod, scalaFile)
       val omdocNode = <omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">
         {mod.toNode}

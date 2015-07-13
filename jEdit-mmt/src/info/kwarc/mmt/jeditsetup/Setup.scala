@@ -28,7 +28,7 @@ object Setup {
 
     /** copies or delete a file depending on install/uninstall */
     def copyOrDelete(l: List[String]) {
-      val f = FPath(l)
+      val f = FilePath(l)
       if (install) {
         copy(setup / f, jedit / f)
       } else {
@@ -92,12 +92,12 @@ object Setup {
     val plug = List("plugins", "info.kwarc.mmt.jedit.MMTPlugin")
     copyOrDelete(plug ::: List("startup.msl"))
     val mars = plug ::: List("mars")
-    (setup / FPath(mars)).list.foreach { e =>
+    (setup / FilePath(mars)).list.foreach { e =>
       if (e.endsWith(".mar"))
         copyOrDelete(mars ::: List(e))
     }
     if (!install) {
-      val d = jedit / FPath(plug)
+      val d = jedit / FilePath(plug)
       if (d.isDirectory) {
         d.deleteDir
         println("deleting directory " + d)

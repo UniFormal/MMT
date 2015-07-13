@@ -1,14 +1,13 @@
 package info.kwarc.mmt.jedit
 
 import errorlist._
-
 import info.kwarc.mmt.api._
-import frontend._
-import objects._
-import archives.source
-import parser._
-import utils._
-import utils.MyList._
+import info.kwarc.mmt.api.archives.source
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.parser._
+import info.kwarc.mmt.api.utils.MyList._
+import info.kwarc.mmt.api.utils._
 
 /**
  * sends MMT errors directly to jEdit ErrorList
@@ -26,7 +25,7 @@ class ErrorListForwarder(errorSource: DefaultErrorSource, controller: Controller
          val pos = reg.start
          // We permit the case that errors are found in other files than the current one. So we compute the file path
          val file = controller.backend.resolveLogical(s.ref.container) match {
-            case Some((a,p)) => (a/source / FPath(p)).toString
+            case Some((a, p)) => (a / source / FilePath(p)).toString
             case None => s.ref.container match {
                case utils.FileURI(f) => f.toString
                case u => u.toString

@@ -29,7 +29,7 @@ object Table {
 }
 
 /** an [[Error]] as reconstructed from an error file */
-case class BuildError(archive: Archive, target: String, path: FPath,
+case class BuildError(archive: Archive, target: String, path: FilePath,
                       tp: String, level: Level.Level, sourceRef: Option[parser.SourceRef],
                       shortMsg: String, longMsg: String,
                       stackTrace: List[List[String]]) {
@@ -77,7 +77,7 @@ class ErrorManager extends Extension with Logger {
   def loadAllErrors(a: Archive): Unit = {
     a.traverse(errors, EmptyPath, TraverseMode(_ => true, _ => true, parallel = false)) {
       case Current(_, target :: path) =>
-        loadErrors(a, target, FPath(path))
+        loadErrors(a, target, FilePath(path))
     }
   }
 
@@ -87,7 +87,7 @@ class ErrorManager extends Extension with Logger {
    * @param fpath the file
    *             load all errors of a build target applied to a file
    */
-  def loadErrors(a: Archive, target: String, fpath: FPath): Unit = {
+  def loadErrors(a: Archive, target: String, fpath: FilePath): Unit = {
     val f = a / errors / target / fpath
     val node = if (f.toJava.exists) xml.readFile(f) else <errors></errors>
     var bes: List[BuildError] = Nil
@@ -160,7 +160,7 @@ class ErrorManager extends Extension with Logger {
     /** reloads the errors */
     override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: List[String]): Unit = {
       Future {
-        loadErrors(a, t.key, FPath(p))
+        loadErrors(a, t.key, FilePath(p))
       }
     }
   }

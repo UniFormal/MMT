@@ -1,14 +1,11 @@
 package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
-import frontend._
-import backend._
-import documents._
-import modules._
-import objects._
-import parser._
-import ontology._
-import utils._
+import info.kwarc.mmt.api.documents._
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.parser._
+import info.kwarc.mmt.api.utils._
 
 /**
  * a build target for importing an archive in some source syntax
@@ -73,7 +70,7 @@ abstract class Importer extends TraversingBuildTarget {
   }
 
   /** index a document */
-  private def indexDocument(a: Archive, doc: Document, inPath: FPath) {
+  private def indexDocument(a: Archive, doc: Document, inPath: FilePath) {
     // write narration file
     val narrFile = getOutFile(a, inPath)
     log("[  -> narration ]     " + narrFile)
@@ -96,7 +93,7 @@ abstract class Importer extends TraversingBuildTarget {
   override def cleanFile(a: Archive, curr: Current) {
     val controller = new Controller(report)
     val Current(inFile, narrPath) = curr
-    val narrFile = getOutFile(a, FPath(narrPath))
+    val narrFile = getOutFile(a, FilePath(narrPath))
     if (!narrFile.exists) {
       super.cleanFile(a, curr)
       return
@@ -116,12 +113,12 @@ abstract class Importer extends TraversingBuildTarget {
         delete((a / relational / cPath).setExtension("rel"))
       case r: documents.DRef => //TODO recursively delete subdocuments
     }
-    delete((a / relational / FPath(narrPath)).setExtension("rel"))
+    delete((a / relational / FilePath(narrPath)).setExtension("rel"))
     super.cleanFile(a, curr)
   }
 
   override def cleanDir(a: Archive, curr: Current) {
-    val inPathFile = Archive.narrationSegmentsAsFile(FPath(curr.path), "omdoc")
+    val inPathFile = Archive.narrationSegmentsAsFile(FilePath(curr.path), "omdoc")
     delete((a / relational / inPathFile).setExtension("rel"))
   }
 
@@ -141,7 +138,7 @@ abstract class Importer extends TraversingBuildTarget {
       val (arch, path) = controller.backend.resolveLogical(ps.source).getOrElse {
         throw LocalError("cannot find source file for URI: " + ps.source)
       }
-      imp.build(arch, FPath(path), Some(errorCont))
+      imp.build(arch, FilePath(path), Some(errorCont))
       try {
         controller.get(ps.dpath).asInstanceOf[Document]
       } catch {

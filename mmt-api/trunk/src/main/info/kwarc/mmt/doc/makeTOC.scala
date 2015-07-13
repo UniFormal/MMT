@@ -14,11 +14,11 @@ object MakeTOC {
     out.write("<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\"/>")
     def doFolder(l: List[String]) {
       out.write("<ul class=\"sidebargroup\" >\n")
-      (folder / FPath(l)).list foreach { e =>
+      (folder / FilePath(l)).list foreach { e =>
         val le = l ::: List(e)
         if (e.endsWith(".html") && !(l.isEmpty && skip.contains(e)))
           out.write("<li class=\"sidebarelement\" onclick=\"parent.goto('" + le.mkString("/") + "')\">" + e + "</li>\n")
-        else if ((folder / FPath(le)).isDirectory && !skip.contains(e)) {
+        else if ((folder / FilePath(le)).isDirectory && !skip.contains(e)) {
           out.write("<li>" + e)
           doFolder(le)
           out.write("</li>")

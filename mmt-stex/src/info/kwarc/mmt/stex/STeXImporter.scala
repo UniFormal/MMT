@@ -1,21 +1,18 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.backend._
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.web._
-import info.kwarc.mmt.api.parser._
-import info.kwarc.mmt.api.notations._
+import info.kwarc.mmt.api.documents._
+import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.informal._
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.notations._
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.parser._
+import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.utils._
 
-import scala.xml.{Node,Elem,NamespaceBinding}
+import scala.xml.{Elem, NamespaceBinding, Node}
 
 abstract class STeXError(msg : String, severity : Option[Level.Level]) extends Error(msg) {
   override def level = severity.getOrElse(super.level)
@@ -63,7 +60,7 @@ class STeXImporter extends Importer {
 
   var docCont : Map[DPath,Document => Unit] = Nil.toMap
 
-  override def apply(modifier: BuildTargetModifier, arch: Archive, in: FPath) {
+  override def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath) {
       modifier match {
          case up : Update => update(arch, up, in)
          case Clean  => clean(arch, in)

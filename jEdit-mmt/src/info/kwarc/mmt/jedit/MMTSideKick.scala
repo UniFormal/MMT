@@ -1,28 +1,21 @@
 package info.kwarc.mmt.jedit
 
-import org.gjt.sp.jedit._
-import textarea._
+import javax.swing.tree.DefaultMutableTreeNode
 
 import errorlist._
-import sidekick._
-
 import info.kwarc.mmt.api._
-import parser._
-import checking._
-import notations._
-import archives.source
-import frontend._
-import libraries._
-import modules._
-import patterns._
-import objects._
-import symbols._
-import documents._
-import info.kwarc.mmt.api.utils.{FPath, File}
-import utils.MyList.fromList
-
-import javax.swing.tree.DefaultMutableTreeNode
-import scala.collection.JavaConversions.seqAsJavaList
+import info.kwarc.mmt.api.checking._
+import info.kwarc.mmt.api.documents._
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.libraries._
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.notations._
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.parser._
+import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.utils.{File, FilePath}
+import org.gjt.sp.jedit._
+import sidekick._
 
 class MMTSideKick extends SideKickParser("mmt") with Logger {
    // gets jEdit's instance of MMTPlugin, jEdit will load the plugin if it is not loaded yet
@@ -90,7 +83,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case None =>
             ParsingStream.fromString(text, DPath(uri), path.getExtension.getOrElse(""))
          case Some((a,p)) =>
-            ParsingStream.fromSourceFile(a, FPath(p), Some(ParsingStream.stringToReader(text)))
+            ParsingStream.fromSourceFile(a, FilePath(p), Some(ParsingStream.stringToReader(text)))
       }
       log("parsing " + path)
       val tree = new SideKickParsedData(path.toJava.getName)

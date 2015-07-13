@@ -1,14 +1,13 @@
 package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
-import modules._
-import symbols._
-import documents._
-import presentation._
-import notations._
-import frontend._
-import objects._
-import utils._
+import info.kwarc.mmt.api.documents._
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.notations._
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.presentation._
+import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.utils._
 
 abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
    override val outExt = "html"
@@ -223,7 +222,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
      val locOpt = controller.backend.resolveLogical(doc.path.uri)
      val svgOpt = locOpt flatMap {
        case (arch, path) =>
-         val fpath = Archive.narrationSegmentsAsFile(FPath(path), "omdoc")
+         val fpath = Archive.narrationSegmentsAsFile(FilePath(path), "omdoc")
          val f = (arch.root / "export" / "svg" / "narration" / fpath).setExtension("svg")
          if (f.toJava.exists())
             Some("/:svg?"+doc.path.uri.toString)

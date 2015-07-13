@@ -36,13 +36,13 @@ abstract class BuildTarget extends FormatBasedExtension {
   override def logPrefix: String = key
 
   /** build this target in a given archive */
-  def build(a: Archive, in: FPath): Unit
+  def build(a: Archive, in: FilePath): Unit
 
   /** update this target in a given archive */
-  def update(a: Archive, up: Update, in: FPath): Unit
+  def update(a: Archive, up: Update, in: FilePath): Unit
 
   /** clean this target in a given archive */
-  def clean(a: Archive, in: FPath): Unit
+  def clean(a: Archive, in: FilePath): Unit
 
   /** the main function to run the build target
     *
@@ -50,7 +50,7 @@ abstract class BuildTarget extends FormatBasedExtension {
     * @param arch the archive to build on
     * @param in the folder inside the archive's inDim folder to which building in restricted (i.e., Nil for whole archive)
     */
-  def apply(modifier: BuildTargetModifier, arch: Archive, in: FPath): Unit = {
+  def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath): Unit = {
     modifier match {
       case up: Update => update(arch, up, in)
       case Clean => clean(arch, in)
@@ -75,7 +75,7 @@ abstract class BuildTarget extends FormatBasedExtension {
  * @param outFile the intended output file
  * @param errorCont BuildTargets should report errors here
  */
-class BuildTask(val archive: Archive, val inFile: File, val isDir: Boolean, val inPath: FPath,
+class BuildTask(val archive: Archive, val inFile: File, val isDir: Boolean, val inPath: FilePath,
                 val outFile: File, val errorCont: ErrorHandler) {
   /** build targets should set this to true if they skipped the file so that it is not passed on to the parent directory */
   var skipped = false
@@ -119,13 +119,13 @@ abstract class TraversingBuildTarget extends BuildTarget {
   /** the name that is used for the special file representing the containing folder, empty by default */
   protected val folderName = ""
 
-  protected def getOutFile(a: Archive, inPath: FPath) = (a / outDim / inPath).setExtension(outExt)
+  protected def getOutFile(a: Archive, inPath: FilePath) = (a / outDim / inPath).setExtension(outExt)
 
-  protected def getFolderOutFile(a: Archive, inPath: FPath) = a / outDim / inPath / (folderName + "." + outExt)
+  protected def getFolderOutFile(a: Archive, inPath: FilePath) = a / outDim / inPath / (folderName + "." + outExt)
 
-  protected def getErrorFile(a: Archive, inPath: FPath) = (a / errors / key / inPath).addExtension("err")
+  protected def getErrorFile(a: Archive, inPath: FilePath) = (a / errors / key / inPath).addExtension("err")
 
-  protected def getFolderErrorFile(a: Archive, inPath: FPath) = a / errors / key / inPath / (folderName + ".err")
+  protected def getFolderErrorFile(a: Archive, inPath: FilePath) = a / errors / key / inPath / (folderName + ".err")
 
   /**
    * there is no inExt, instead we test to check which files should be used;
@@ -154,24 +154,24 @@ abstract class TraversingBuildTarget extends BuildTarget {
   def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): Unit = {}
 
   /** entry point for recursive building */
-  def build(a: Archive, in: FPath = EmptyPath): Unit = build(a, in, None)
+  def build(a: Archive, in: FilePath = EmptyPath): Unit = build(a, in, None)
 
-  def build(a: Archive, in: FPath, errorCont: Option[ErrorHandler]): Unit =
+  def build(a: Archive, in: FilePath, errorCont: Option[ErrorHandler]): Unit =
     buildAux(in)(a, errorCont)
 
-  private def makeHandler(a: Archive, inPath: FPath, isDir: Boolean = false) = {
+  private def makeHandler(a: Archive, inPath: FilePath, isDir: Boolean = false) = {
     val errFileName = if (isDir) getFolderErrorFile(a, inPath)
     else getErrorFile(a, inPath)
     new ErrorWriter(errFileName, Some(report))
   }
 
   /** recursive building */
-  private def buildAux(in: FPath = EmptyPath)(implicit a: Archive, eCOpt: Option[ErrorHandler]): Unit = {
+  private def buildAux(in: FilePath = EmptyPath)(implicit a: Archive, eCOpt: Option[ErrorHandler]): Unit = {
     //build every file
     val prefix = "[" + inDim + " -> " + outDim + "] "
     a.traverse[BuildTask](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case Current(inFile, inPathSegs) =>
-        val inPath = FPath(inPathSegs)
+        val inPath = FilePath(inPathSegs)
         if (!inFile.isFile)
           throw LocalError("file does not exist: " + inPath)
         val outFile = getOutFile(a, inPath)
@@ -198,7 +198,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
         bf
     }, {
       case (Current(inDir, inPathSegs), builtChildren) =>
-        val inPath = FPath(inPathSegs)
+        val inPath = FilePath(inPathSegs)
         val outFile = getFolderOutFile(a, inPath)
         val errorCont = makeHandler(a, inPath, isDir = true)
         val bd = new BuildTask(a, inDir, true, inPath, outFile, errorCont)
@@ -214,7 +214,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     *             deletes the output and error file by default, may be overridden to, e.g., delete auxiliary files
     */
   def cleanFile(a: Archive, curr: Current): Unit = {
-    val inPath = FPath(curr.path)
+    val inPath = FilePath(curr.path)
     val outFile = getOutFile(a, inPath)
     delete(outFile)
     delete(getErrorFile(a, inPath))
@@ -229,13 +229,13 @@ abstract class TraversingBuildTarget extends BuildTarget {
   def cleanDir(a: Archive, curr: Current): Unit = {}
 
   /** recursively delete output files in parallel (!) */
-  def clean(a: Archive, in: FPath = EmptyPath): Unit = {
+  def clean(a: Archive, in: FilePath = EmptyPath): Unit = {
     a.traverse[Unit](outDim, in, TraverseMode(Archive.extensionIs(outExt), includeDir, parallel = true))(
     { c => cleanFile(a, c) }, { case (c, _) => cleanDir(a, c) })
   }
 
   /** @return status of input file, obtained by comparing to error file */
-  private def modified(a: Archive, path: FPath): (Modification, Boolean) = {
+  private def modified(a: Archive, path: FilePath): (Modification, Boolean) = {
     val errorFile = getErrorFile(a, path)
     val inFile = a / inDim / path
     val mod = Modification(inFile, errorFile)
@@ -247,10 +247,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
     *
     * the decision is made based on the time stamps and the system's last-modified date
     */
-  def update(a: Archive, up: Update, in: FPath = EmptyPath): Unit = {
+  def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = {
     a.traverse[Boolean](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case c@Current(inFile, inPathSegs) =>
-        val inPath = FPath(inPathSegs)
+        val inPath = FilePath(inPathSegs)
         val (mod, hadErrors) = modified(a, inPath)
         val del = mod == Deleted
         val add = mod == Added
@@ -260,7 +260,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
         del || add
     }, { case (c@Current(inDir, inPathSegs), childChanged) =>
       if (childChanged.contains(true)) {
-        val inPath = FPath(inPathSegs)
+        val inPath = FilePath(inPathSegs)
         val outFile = getFolderOutFile(a, inPath)
         val errorCont = makeHandler(a, inPath, isDir = true)
         val bd = new BuildTask(a, inDir, true, inPath, outFile, errorCont)
@@ -296,20 +296,20 @@ class MetaBuildTarget extends BuildTarget {
   }
 
   /** @return the path to pass to the target t, override as needed */
-  def path(t: BuildTarget, in: FPath): FPath = t match {
+  def path(t: BuildTarget, in: FilePath): FilePath = t match {
     case t: TraversingBuildTarget if t.inDim != content => in
     case _ => EmptyPath
   }
 
-  def build(a: Archive, in: FPath): Unit = {
+  def build(a: Archive, in: FilePath): Unit = {
     targets.foreach { t => t.build(a, path(t, in)) }
   }
 
-  def update(a: Archive, up: Update, in: FPath): Unit = {
+  def update(a: Archive, up: Update, in: FilePath): Unit = {
     targets.foreach { t => t.update(a, up, path(t, in)) }
   }
 
-  def clean(a: Archive, in: FPath): Unit = {
+  def clean(a: Archive, in: FilePath): Unit = {
     targets.foreach { t => t.clean(a, path(t, in)) }
   }
 }

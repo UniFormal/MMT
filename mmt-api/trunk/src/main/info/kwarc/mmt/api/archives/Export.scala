@@ -1,12 +1,12 @@
 package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
-import modules._
-import objects._
-import presentation._
-import utils._
-import documents._
-import frontend._
+import info.kwarc.mmt.api.documents._
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.presentation._
+import info.kwarc.mmt.api.utils._
 
 trait Exporter extends BuildTarget { self =>
    /** must be set by deriving classes to direct output, not necessary if outputTo is used */
@@ -50,17 +50,17 @@ trait Exporter extends BuildTarget { self =>
     */
    def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask])
 
-   def build(a: Archive, in: FPath) {
+   def build(a: Archive, in: FilePath) {
      contentExporter.build(a, in)
      narrationExporter.build(a, in)
    }
 
-   def update(a: Archive, up: Update, in: FPath) {
+   def update(a: Archive, up: Update, in: FilePath) {
      contentExporter.update(a, up, in)
      narrationExporter.update(a, up, in)
    }
 
-   def clean(a: Archive, in: FPath) {
+   def clean(a: Archive, in: FilePath) {
      contentExporter.clean(a, in)
      narrationExporter.clean(a, in)
    }

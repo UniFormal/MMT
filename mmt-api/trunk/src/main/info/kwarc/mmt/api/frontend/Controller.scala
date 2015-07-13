@@ -445,7 +445,7 @@ class Controller extends ROController with Logger {
           throw GeneralError("no importer found")
         }
         log("building " + f)
-        importer.build(a, FPath(p), Some(errorCont))
+        importer.build(a, FilePath(p), Some(errorCont))
       case None =>
         throw GeneralError(f + " is not in a known archive")
     }
@@ -494,7 +494,7 @@ class Controller extends ROController with Logger {
         }
       case ArchiveBuild(ids, key, mod, inArgs, args) => ids.foreach { id =>
         val arch = backend.getArchive(id) getOrElse (throw GetError("archive not found: " + id))
-        val in = FPath(inArgs)
+        val in = FilePath(inArgs)
         key match {
           case "check" => arch.check(in, this)
           case "validate" => arch.validate(in, this)
@@ -623,7 +623,7 @@ class Controller extends ROController with Logger {
       case NoAction => ()
       case Read(f) =>
         val ps = backend.resolvePhysical(f) match {
-          case Some((arch, p)) => ParsingStream.fromSourceFile(arch, FPath(p))
+          case Some((arch, p)) => ParsingStream.fromSourceFile(arch, FilePath(p))
           case None => ParsingStream.fromFile(f)
         }
         read(ps, interpret = false, mayImport = true)(new ErrorLogger(report))

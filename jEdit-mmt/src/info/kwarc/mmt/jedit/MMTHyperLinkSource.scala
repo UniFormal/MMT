@@ -1,13 +1,12 @@
 package info.kwarc.mmt.jedit
 
+import gatchan.jedit.hyperlinks._
 import info.kwarc.mmt.api._
-import parser._
-import archives.source
-import utils._
-
+import info.kwarc.mmt.api.archives.source
+import info.kwarc.mmt.api.parser._
+import info.kwarc.mmt.api.utils._
 import org.gjt.sp.jedit._
 import sidekick._
-import gatchan.jedit.hyperlinks._
 
 class MMTHyperlink(start: Int, end: Int, startLine: Int, path: Path, ref: Option[SourceRef])
    extends AbstractHyperlink(start, end, startLine, path.toPath) {
@@ -26,7 +25,7 @@ object MMTHyperlink {
           else {
              //resolve logical document id in an archive
              controller.backend.resolveLogical(c) map {
-               case (archive, path) => r.copy(container = FileURI(archive/source / FPath(path)))
+               case (archive, path) => r.copy(container = FileURI(archive / source / FilePath(path)))
              }
           }
        }

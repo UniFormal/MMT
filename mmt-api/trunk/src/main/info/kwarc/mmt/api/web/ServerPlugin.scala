@@ -76,7 +76,7 @@ class SVGServer extends ServerExtension("svg") {
       val (arch, inPath) = controller.backend.resolveLogical(dp.uri).getOrElse {
         throw LocalError("illegal path: " + query)
       }
-      val inPathFile = Archive.narrationSegmentsAsFile(FPath(inPath), "omdoc")
+      val inPathFile = Archive.narrationSegmentsAsFile(FilePath(inPath), "omdoc")
       arch.root / "export" / "svg" / "narration" / inPathFile
     } else {
       val mp = newPath.asInstanceOf[MPath]
