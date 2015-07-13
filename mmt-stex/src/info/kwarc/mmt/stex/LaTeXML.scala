@@ -12,13 +12,14 @@ import info.kwarc.mmt.api.utils._
 import scala.util.matching.Regex
 
 class SmsGenerator extends TraversingBuildTarget {
+  val localpathsFile = "localpaths.tex"
   val key = "sms"
   val inDim = source
   val outDim: ArchiveDimension = source
   override val outExt = "sms"
 
   def includeFile(n: String): Boolean =
-    n.endsWith(".tex") && !n.endsWith("localpaths.tex") && !n.startsWith("all.")
+    n.endsWith(".tex") && !n.endsWith(localpathsFile) && !n.startsWith("all.")
 
   override def includeDir(n: String): Boolean = !n.endsWith("tikz")
 
@@ -52,6 +53,28 @@ class SmsGenerator extends TraversingBuildTarget {
     catch {
       case e: Throwable =>
         bt.errorCont(LocalError("sms exception: " + e))
+    }
+  }
+
+  def createLocalPaths(bt: BuildTask): Unit = {
+    val dir = bt.inFile.up
+    val fileName = dir / localpathsFile
+    val repoDir = bt.archive.root
+    val groupDir = repoDir.up
+    val baseDir = groupDir.up
+    // val mathHubDir = baseDir.up
+    val groupRepo = groupDir.getName + "/" + repoDir.getName + "}"
+    val text: List[String] = List(
+      "% this file defines root path local repository",
+      "\\defpath{MathHub}{" + baseDir.getPath + "}",
+      "\\mhcurrentrepos{" + groupRepo,
+      "\\input{" + repoDir.getPath + "/lib/WApersons}",
+      "% we also set the base URI for the LaTeXML transformation",
+      "\\baseURI[\\MathHub{}]{https://mathhub.info/" + groupRepo
+    )
+    if (!fileName.exists()) {
+      File.WriteLineWise(fileName, text)
+      log("created file " + fileName)
     }
   }
 }
@@ -124,6 +147,7 @@ class LaTeXML extends SmsGenerator {
     logFile.delete()
     logOutFile.delete()
     bt.outFile.delete()
+    createLocalPaths(bt)
     try {
       val result = ShellCommand.run(command: _*)
       result foreach { s =>
