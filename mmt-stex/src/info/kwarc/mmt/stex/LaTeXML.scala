@@ -57,13 +57,22 @@ class SmsGenerator extends TraversingBuildTarget {
     }
   }
 
+  def mathHubDir(bt: BuildTask): File = bt.archive.root.up.up.up
+
+  def stexStyDir(bt: BuildTask): File = mathHubDir(bt) / "ext" / "sTeX" / "sty"
+
+  def styPath(bt: BuildTask): File = mathHubDir(bt) / "sty"
+
+  def env(bt: BuildTask): List[(String, String)] = List(
+    "STEXSTYDIR" -> stexStyDir(bt).toString(),
+    "TEXINPUTS" -> (".//:" + styPath(bt) + ":" + stexStyDir(bt) + "//:"))
+
   def createLocalPaths(bt: BuildTask): Unit = {
     val dir = bt.inFile.up
     val fileName = dir / localpathsFile
     val repoDir = bt.archive.root
     val groupDir = repoDir.up
     val baseDir = groupDir.up
-    // val mathHubDir = baseDir.up
     val groupRepo = groupDir.getName + "/" + repoDir.getName + "}"
     val text: List[String] = List(
       "% this file defines root path local repository",
@@ -213,17 +222,14 @@ class PdfLatex extends SmsGenerator {
     val pdfFile = bt.inFile.setExtension("pdf")
     pdfFile.delete()
     bt.outFile.delete()
-    val mathHubDir = bt.archive.root.up.up.up
-    val styDir = mathHubDir / "ext" / "sTeX" / "sty"
-    val moreStyles = mathHubDir / "sty"
     createLocalPaths(bt)
+    val styDir = stexStyDir(bt)
     try {
       val pbCat = Process.cat(Seq(getAmbleFile("pre", bt), bt.inFile,
         getAmbleFile("post", bt)).map(_.toJava))
       val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
         bt.inFile.stripExtension.getName, "-interaction", "scrollmode"),
-        bt.inFile.up, "STEXSTYDIR" -> styDir.toString,
-        "TEXINPUTS" -> (".//:" + moreStyles + ":" + styDir + "//:"))
+        bt.inFile.up, env(bt): _*)
       val result = pb.!!
       log(result)
       if (pdfFile.length == 0) {
