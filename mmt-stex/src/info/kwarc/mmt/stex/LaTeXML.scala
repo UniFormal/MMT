@@ -1,5 +1,6 @@
 package info.kwarc.mmt.stex
 
+import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 
 import info.kwarc.mmt.api._
@@ -224,14 +225,14 @@ class PdfLatex extends SmsGenerator {
     bt.outFile.delete()
     createLocalPaths(bt)
     val styDir = stexStyDir(bt)
+    val output = new ByteArrayOutputStream()
     try {
       val pbCat = Process.cat(Seq(getAmbleFile("pre", bt), bt.inFile,
         getAmbleFile("post", bt)).map(_.toJava))
       val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
         bt.inFile.stripExtension.getName, "-interaction", "scrollmode"),
-        bt.inFile.up, env(bt): _*)
-      val result = pb.!!
-      log(result)
+        bt.inFile.up, env(bt): _*) #> output
+      pb.!!
       if (pdfFile.length == 0) {
         bt.errorCont(LocalError("no pdf created"))
         pdfFile.delete()
@@ -241,7 +242,7 @@ class PdfLatex extends SmsGenerator {
     } catch {
       case e: Throwable =>
         bt.outFile.delete()
-        bt.errorCont(LocalError("pdf exception: " + e))
+        bt.errorCont(LocalError("pdf exception: " + e + "\n" + output.toString))
     }
     List("aux", "idx", "log", "out", "thm").
       foreach(bt.inFile.setExtension(_).delete())
