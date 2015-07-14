@@ -3,7 +3,9 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     $scope.columns =
       { errLevel : { x : true, long : 'level', search : '' }
       , errType : { x : false, long : 'error type', search : '' }
-      , archive : { x : true, long : 'archive', search : '' }
+      , archive : { x : false, long : 'archive', search : '' }
+      , group : { x : true, long : 'group', search : '' }
+      , repo : { x : true, long : 'repo', search : '' }
       , fileName : { x : true, long : 'file name', search : '' }
       , fileDate : { x : false, long : 'modified', search : '' }
       , target : { x : true, long : 'target', search : '' }
