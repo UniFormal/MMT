@@ -9,7 +9,6 @@ object PostProcessApi {
   def deployPackage(name: String): Def.Initialize[Task[Unit]] =
     packageBin in Compile map { p =>
       deployTo(name)(p)
-      p
     }
 
   def deployTo(name: String)(jar: File): Unit = {
@@ -19,8 +18,8 @@ object PostProcessApi {
     println("to file: " + tar)
   }
 
-  def delRecursive(log: Logger, path: File) {
-    def delRecursive(path: File) {
+  def delRecursive(log: Logger, path: File): Unit = {
+    def delRecursive(path: File): Unit = {
       path.listFiles foreach { f =>
         if (f.isDirectory) delRecursive(f)
         else {
@@ -38,7 +37,7 @@ object PostProcessApi {
   def postProcess(log: Logger) = {
     val mmtFolder = new File(System.getProperty("user.dir")).getParent
     val oldPrefix = "file:/" + mmtFolder
-    def doFolder(path: File, newPrefix: String) {
+    def doFolder(path: File, newPrefix: String): Unit = {
       log.debug("processing: " + path)
       path.list foreach { e =>
         if (!e.startsWith(".")) {
