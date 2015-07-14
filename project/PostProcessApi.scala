@@ -7,9 +7,7 @@ import sbt._
 
 object PostProcessApi {
   def deployPackage(name: String): Def.Initialize[Task[Unit]] =
-    packageBin in Compile map { p =>
-      deployTo(name)(p)
-    }
+    packageBin in Compile map deployTo(name)
 
   def deployTo(name: String)(jar: File): Unit = {
     val tar = new File("../deploy/" + name)
