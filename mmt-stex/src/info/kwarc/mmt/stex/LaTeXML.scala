@@ -1,6 +1,5 @@
 package info.kwarc.mmt.stex
 
-import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 
 import info.kwarc.mmt.api._
@@ -10,7 +9,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils._
 
-import scala.sys.process.{ProcessLogger, Process}
+import scala.sys.process.{Process, ProcessLogger}
 import scala.util.matching.Regex
 
 class SmsGenerator extends TraversingBuildTarget {
@@ -19,6 +18,10 @@ class SmsGenerator extends TraversingBuildTarget {
   val inDim = source
   val outDim: ArchiveDimension = source
   override val outExt = "sms"
+
+  case class LatexError(s: String, l: String) extends ExtensionError(key, s) {
+    override val extraMessage = l
+  }
 
   def includeFile(n: String): Boolean =
     n.endsWith(".tex") && !n.endsWith(localpathsFile) && !n.startsWith("all.")
@@ -218,10 +221,6 @@ class PdfLatex extends SmsGenerator {
   override val outExt = "pdf"
   override val outDim = Dim("export", key, inDim.toString)
   private var pdflatexPath: String = "xelatex"
-
-  case class LatexError(s: String, l: String) extends ExtensionError(key, s) {
-    override val extraMessage = l
-  }
 
   override def start(args: List[String]): Unit = {
     val p = getFromFirstArgOrEnvvar(args, "PDFLATEX", pdflatexPath)
