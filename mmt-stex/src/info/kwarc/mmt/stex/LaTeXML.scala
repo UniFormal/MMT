@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils._
 
-import scala.sys.process.Process
+import scala.sys.process.{ProcessLogger, Process}
 import scala.util.matching.Regex
 
 class SmsGenerator extends TraversingBuildTarget {
@@ -217,7 +217,16 @@ class PdfLatex extends SmsGenerator {
   override val key = "pdflatex"
   override val outExt = "pdf"
   override val outDim = Dim("export", key, inDim.toString)
-  private var pdflatexPath: String = "pdflatex"
+  private var pdflatexPath: String = "xelatex"
+
+  case class LatexError(s: String, l: String) extends ExtensionError(key, s) {
+    override val extraMessage = l
+  }
+
+  override def start(args: List[String]): Unit = {
+    val p = getFromFirstArgOrEnvvar(args, "PDFLATEX", pdflatexPath)
+    pdflatexPath = p
+  }
 
   override def buildFile(bt: BuildTask): Unit = {
     val pdfFile = bt.inFile.setExtension("pdf")
@@ -225,16 +234,17 @@ class PdfLatex extends SmsGenerator {
     bt.outFile.delete()
     createLocalPaths(bt)
     val styDir = stexStyDir(bt)
-    val output = new ByteArrayOutputStream()
+    val output = new StringBuffer()
     try {
       val pbCat = Process.cat(Seq(getAmbleFile("pre", bt), bt.inFile,
         getAmbleFile("post", bt)).map(_.toJava))
       val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
         bt.inFile.stripExtension.getName, "-interaction", "scrollmode"),
-        bt.inFile.up, env(bt): _*) #> output
-      pb.!!
-      if (pdfFile.length == 0) {
-        bt.errorCont(LocalError("no pdf created"))
+        bt.inFile.up, env(bt): _*)
+      val exitCode = pb.!(ProcessLogger(line => output.append(line + "\n"),
+        line => output.append(line + "\n")))
+      if (exitCode != 0 || pdfFile.length == 0) {
+        bt.errorCont(LatexError("no pdf created", output.toString))
         pdfFile.delete()
       }
       if (pdfFile.exists && pdfFile != bt.outFile)
@@ -242,7 +252,7 @@ class PdfLatex extends SmsGenerator {
     } catch {
       case e: Throwable =>
         bt.outFile.delete()
-        bt.errorCont(LocalError("pdf exception: " + e + "\n" + output.toString))
+        bt.errorCont(LatexError(e.toString, output.toString))
     }
     List("aux", "idx", "log", "out", "thm").
       foreach(bt.inFile.setExtension(_).delete())
