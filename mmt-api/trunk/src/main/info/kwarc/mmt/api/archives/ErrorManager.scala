@@ -170,12 +170,17 @@ class ErrorManager extends Extension with Logger {
       }
     }
   }
-  private var hideQueries: List[List[String]] = Nil
-
   private val defaultLimit: Int = 100
 
   def serveJson(path: List[String], query: String): JSON = {
     val wq = WebQuery.parse(query)
+    val ps = wq.pairs map (_._1) map (_.filter(_.isDigit)) filter (_.nonEmpty) map (_.toInt)
+    val mx = if (ps.isEmpty) -1 else ps.max
+    var hideQueries: List[List[String]] = Nil
+    for (i <- 0 to mx) {
+      var as = Table.columns map (c => wq.string(c + i))
+      hideQueries ::= as
+    }
     val args = Table.columns map (wq.string(_))
     val limit = wq.int("limit", defaultLimit)
     val hide = wq.boolean("hide")
@@ -197,15 +202,9 @@ class ErrorManager extends Extension with Logger {
         JSONArray(g.take(limit).map { case (s, i) =>
           JSONObject("count" -> JSONInt(i), "content" -> JSONString(s))
         }: _*)
-      case List("clear") =>
-        hideQueries = Nil
-        JSONNull
-      case List("hidden") =>
-        JSONArray(hideQueries.map(l =>
-          JSONObject(Table.columns.zip(l map JSONString): _*)): _*)
       case _ =>
-        if (hide) hideQueries ::= args
-        JSONArray(result.toList.take(limit).map(l =>
+        if (hide) JSONObject(Table.columns.zip(args map JSONString): _*)
+        else JSONArray(result.toList.take(limit).map(l =>
           JSONObject(Table.columns.zip(l map JSONString): _*)): _*)
     }
   }

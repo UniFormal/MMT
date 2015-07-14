@@ -28,7 +28,13 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
          var res = '';
          for (k in $scope.columns) {
                 var str = escape($scope.columns[k].search);
-                res = res + '&' + k + "=" + str;
+                if (str != '') res = res + '&' + k + "=" + str;
+            };
+         for (var i = 0; i < $scope.hiddenData.length; i++) {
+            for (k in $scope.columns) {
+               var str = escape($scope.hiddenData[i][k]);
+               if (str != '') res = res + '&' + k + i + "=" + str;
+               };
             };
          return '?limit=' + limit + res;
         };
@@ -57,26 +63,17 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
            });
         });
     }
-    $scope.hidden = function() {
-        $http.get(':errors/hidden').success(function(data) {
-          $scope.hiddenData = data;
-        });
-    };
     $scope.hide = function() {
         $http.get(':errors/search2' + $scope.query($scope.maxNumber) + '&hide=true').success(function(data) {
-            $scope.clear();
+            $scope.hiddenData.push(data);
             $scope.group();
-            $scope.hidden();
             $scope.search();
         });
     };
     $scope.clearhidden = function() {
-        $http.get(':errors/clear').success(function(data) {
-            $scope.clear();
-            $scope.group();
-            $scope.hidden();
-            $scope.search();
-        });
+        $scope.hiddenData = [];
+        $scope.group();
+        $scope.search();
     };
     $scope.search = function() {
         $scope.groupMode = false;
