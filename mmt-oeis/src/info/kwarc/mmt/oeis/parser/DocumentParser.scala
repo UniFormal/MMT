@@ -1,18 +1,16 @@
 package info.kwarc.mmt.oeis.parser
 
-import info.kwarc.mmt.oeis.processor.{TextParserIns, TextParser}
+import info.kwarc.mmt.oeis.processor.{TextParser}
 
 import scala.io.{BufferedSource, Source}
 import scala.util.matching.Regex
 import scala.util.matching.Regex.Match
 import scala.xml._
 
-object DocumentParser {
-  //base is mmt-api/trunk
-  val dictionary = Source.fromFile("../../mmt-oeis/resources/dictionary").getLines().toSet
-
+class DocumentParser(val dictionary : Set[String]) {
   private val IDregex = "A\\d+".r
-
+  val textParser = new TextParser(dictionary)
+  
   private def assertion(xclass : String, cmpval : String) : Elem ={
     <assertion class={xclass}>
       {CMP(cmpval)}
@@ -241,7 +239,7 @@ object DocumentParser {
 
   def formulaWrap(line : String, theory : String ) : Elem = {
     <omdoc:p class="formula">
-        {TextParserIns.parseLine(line, theory) match {
+        {textParser.parseLine(line, theory) match {
           case Some(a) => a.toNode(theory)
           case None => <CMP>{line}</CMP>
           }

@@ -46,11 +46,19 @@ class OEISImporter extends Importer {
   val key : String = "oeis-omdoc"
   override val logPrefix = "oeisimporter"
   def inExts = List("txt") //stex/latexml generated omdoc
+  var docParser : parser.DocumentParser = null
   
   override def init(controller: Controller) {
     this.controller = controller
     report = controller.report
    }
+  
+  override def start(args : List[String]) = args match {
+    case hd :: Nil => 
+      val dict = scala.io.Source.fromFile(hd).getLines().map(_.trim).toSet
+      docParser = new parser.DocumentParser(dict)
+    case _ => throw new Exception("Cannot initialize OEISImporter expected one argument (path to the dictionary file), found: " + args.toString)
+  }
   
   def parseSourceRef(n : scala.xml.Node,dpath : DPath)(implicit errorCont : ErrorHandler) : Option[SourceRef] = {
     OMDoc.parseSourceRef(n, dpath)
@@ -59,7 +67,7 @@ class OEISImporter extends Importer {
   def importDocument(bt : BuildTask, cont : Document => Unit) {
     try {
       val src = scala.io.Source.fromFile(bt.inFile.toString)
-      val node = parser.DocumentParser.fromReaderToXML(src)
+      val node = docParser.fromReaderToXML(src)
       print(node)
       //val cp = scala.xml.parsing.ConstructingParser.fromSource(src, true)
       //val node : Node = cp.document()(0)

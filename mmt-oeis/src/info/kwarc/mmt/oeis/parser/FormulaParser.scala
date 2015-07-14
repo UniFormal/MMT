@@ -9,14 +9,41 @@ import scala.io.Source
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.{PackratParsers, JavaTokenParsers}
 
-class FormulaParser extends JavaTokenParsers with PackratParsers {
+abstract class OeisParserLogger {
+  def logSuccess(s : String) : Unit
+  def logFail(s : String) : Unit
+  def logException(s : String) : Unit
+}
+
+class FileLogger extends OeisParserLogger {
+  val successFile = new PrintWriter(new File("../../mmt-oeis/suc.txt"))
+  val failFile = new PrintWriter( new File("../../mmt-oeis/fail.txt"))
+  val exceptionFile = new PrintWriter( new File("../../mmt-oeis/exception.txt"))
+  
+  def logSuccess(s : String) = successFile.write(s)
+  def logFail(s : String) = failFile.write(s)
+  def logException(s : String) = exceptionFile.write(s)
+}
+
+class ConsoleLogger extends OeisParserLogger {
+  def logSuccess(s : String) = println("Success: " + s)
+  def logFail(s : String) = println("Fail: " + s)
+  def logException(s : String) = println("Exception: " + s)  
+}
+
+class SilentLogger extends OeisParserLogger {
+  def logSuccess(s : String) = {}
+  def logFail(s : String) = {}
+  def logException(s : String) = {}  
+}
+
+class FormulaParser(val dictionary : Set[String]) extends JavaTokenParsers with PackratParsers {
   var calls : BigInt = 0
   var succeded : BigInt = 0
   var exceptions : BigInt = 0
   //base is mmt-api/trunk
-  val successFile = new PrintWriter(new File("../../mmt-oeis/suc.txt"))
-  val failFile = new PrintWriter( new File("../../mmt-oeis/fail.txt"))
-  val exceptionFile = new PrintWriter( new File("../../mmt-oeis/exception.txt"))
+  
+  def logger = new SilentLogger() //switch to the other loggers when debugging
 
   def printToFile(f: java.io.File)(op: java.io.PrintWriter => Unit) {
     val print = new java.io.PrintWriter(f)
@@ -115,7 +142,6 @@ class FormulaParser extends JavaTokenParsers with PackratParsers {
     }
   }
 
-  val dictionary = Source.fromFile("../../mmt-oeis/resources/dictionary").getLines().map(_.trim).toSet
   val exceptionCases: Regex = List("G.f", "[A-Za-z]\\-th").mkString("|").r
 
   lazy val word: Regex = "[A-Za-z\\']+(?![\\(\\[\\{\\<\\=\\>])\\b".r
@@ -529,8 +555,8 @@ class FormulaParser extends JavaTokenParsers with PackratParsers {
     try {
       val parsed = parseAll(expression, line)
       parsed.successful match {
-        case false => failFile.write(theory + "\t" + line+"\n"); None
-        case true => succeded +=1; successFile.write(theory + "\t" + line+"\n"); Some(postProcess(parsed.get))
+        case false => logger.logFail(theory + "\t" + line+"\n"); None
+        case true => succeded +=1; logger.logSuccess(theory + "\t" + line+"\n"); Some(postProcess(parsed.get))
       }
     }catch{
       case ex : Throwable => exceptions += 1; None
@@ -540,7 +566,7 @@ class FormulaParser extends JavaTokenParsers with PackratParsers {
 }
 
 
-object FormulaParserInst extends FormulaParser{
+object FormulaParserTest extends FormulaParser(Nil.toSet) {
   def main(args : Array[String]): Unit = {
     val test = "T(x)(x+3)"
     println("input : "+ test)

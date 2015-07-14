@@ -3,7 +3,6 @@ package info.kwarc.mmt.oeis
 import java.io.File
 import java.net.URL
 import java.util.Calendar
-import processor.{TextParserIns}
 
 import scala.io.Source
 import scala.util.Random
@@ -13,7 +12,10 @@ import parser.{DocumentParser}
 
 object Library {
   //store everything, check before crawling
-
+  //hardcoded for now
+  val dictionary = Source.fromFile("../../mmt-oeis/resources/dictionary").getLines().map(_.trim).toSet  
+  val docParser = new DocumentParser(dictionary)
+  
   private def getURL(entryID : String) : URL = new URL("""http://oeis.org/search?q=id:"""+entryID+"""&fmt=text""")
 
   //will just give id of number-th OEIS entry
@@ -49,7 +51,7 @@ object Library {
       val theory = createID(i.toString)
       val file = Source.fromURL(getURL(theory))
 
-      val xml = DocumentParser.fromReaderToXML(file)
+      val xml = docParser.fromReaderToXML(file)
 
       if(i % 10 == 0){
         println("Fetching entry "+ theory)
@@ -71,7 +73,7 @@ object Library {
       val ioFile = new java.io.File(fileLoc)
       if(ioFile.exists) {
         val file = Source.fromFile(ioFile)
-        val xml = DocumentParser.fromReaderToXML(file)
+        val xml = docParser.fromReaderToXML(file)
 
         if (i % 1000 == 0) {
           println("Fetching entry " + theory)
@@ -92,7 +94,7 @@ object Library {
 
     from to to foreach(i =>{
       val theory = createID(i.toString)
-      val doc: List[String] = DocumentParser.getFormulas(Source.fromURL(getURL(theory)))
+      val doc: List[String] = docParser.getFormulas(Source.fromURL(getURL(theory)))
 
       if(i % 10 == 0){
         println("Fetching entry "+ theory)
@@ -104,7 +106,7 @@ object Library {
   def getXML(entry : Int) : Elem = {
     val id = createID(entry.toString)
 //    if(storage.get(id).isEmpty){
-      DocumentParser.fromReaderToXML(Source.fromURL(getURL(id)))
+      docParser.fromReaderToXML(Source.fromURL(getURL(id)))
 //    }else{
 //      storage.get(id).get.toNode
 //    }
@@ -144,9 +146,9 @@ object Library {
       crawlXMLLocal(n,n)
     }
 
-    println(TextParserIns.succeded)
-    println(TextParserIns.calls)
-    println(TextParserIns.exceptions)
+    println(docParser.textParser.succeded)
+    println(docParser.textParser.calls)
+    println(docParser.textParser.exceptions)
     println(Calendar.getInstance().getTime())
   }
 }

@@ -89,7 +89,7 @@ case class Email(email : String) extends Line{
   override def toNode(implicit theory: String): Elem = <text>{email}</text>
 }
 
-class TextParser extends FormulaParser {
+class TextParser(dict : Set[String]) extends FormulaParser(dict) {
 
   def parseLine(line : String, theory : String = "") : Option[Line] = {
     if(line.isEmpty){
@@ -102,13 +102,13 @@ class TextParser extends FormulaParser {
       val parsed = parseAll(sentence, line)
       parsed.successful match {
         case false =>
-          failFile.println("----------------")
-          failFile.write(theory + "\t" + parsed +"\n")
-          failFile.println("----------------")
+          logger.logFail("----------------\n")
+          logger.logFail(theory + "\t" + parsed +"\n")
+          logger.logFail("----------------\n")
           None
         case true =>
           succeded +=1
-          successFile.write(theory + "\t" + line+"\n")
+          logger.logSuccess(theory + "\t" + line+"\n")
 //           val processed = parsed.get.parts.map({
 //            case x : Line => x
 //            case x : Expression => postProcess(x)
@@ -121,13 +121,13 @@ class TextParser extends FormulaParser {
         println("line: " + line)
         println("theory: "+ theory)
         exceptions+=1
-        exceptionFile.write(theory + "\t" + line + "\n")
+        logger.logException(theory + "\t" + line + "\n")
         None
     }
   }
 }
 
-object TextParserIns extends TextParser{
+object TextParserTest extends TextParser(Nil.toSet){
 
   def main(args : Array[String]): Unit = {
     val test = "sin(2x)"
