@@ -63,7 +63,9 @@ class SmsGenerator extends TraversingBuildTarget {
 
   def mathHubDir(bt: BuildTask): File = bt.archive.root.up.up.up
 
-  def stexStyDir(bt: BuildTask): File = mathHubDir(bt) / "ext" / "sTeX" / "sty"
+  def extBase(bt: BuildTask): File = mathHubDir(bt) / "ext"
+
+  def stexStyDir(bt: BuildTask): File = extBase(bt) / "sTeX" / "sty"
 
   def styPath(bt: BuildTask): File = mathHubDir(bt) / "sty"
 
@@ -114,8 +116,6 @@ class LaTeXML extends SmsGenerator {
   override val outExt = "omdoc"
   override val outDim = RedirectableDimension("latexml")
 
-  private var lmlPath: File = File("run-latexml.sh")
-
   def str2Level(lev: String): Level.Level = lev match {
     case "Info" => Level.Info
     case "Error" => Level.Error
@@ -162,12 +162,20 @@ class LaTeXML extends SmsGenerator {
     }
   }
 
+  def extEnv(bt: BuildTask): List[(String, String)] = {
+    val perl5 = extBase(bt) / "perl5lib"
+    val perl5lib = perl5 / "lib" / "perl5"
+    val latexmlBlib = extBase(bt) / "LaTeXML" / "blib" / "lib"
+    val c = java.io.File.pathSeparator
+    val path = if (c == ":") "PATH" else "Path"
+    (path -> (perl5 / "bin" + c + sys.env(path))) ::
+      ("PERL5LIB" -> (perl5lib + c + latexmlBlib)) :: env(bt)
+  }
+
   /**
    * Compile a .tex file to OMDoc
    */
   override def buildFile(bt: BuildTask): Unit = {
-    val command: List[String] = List(lmlPath, bt.inFile) map (_.toString)
-    log(command.mkString(" "))
     val lmhOut = bt.inFile.setExtension("omdoc")
     val logFile = bt.inFile.setExtension("ltxlog")
     val logOutFile = bt.outFile.setExtension("ltxlog")
@@ -176,42 +184,43 @@ class LaTeXML extends SmsGenerator {
     logOutFile.delete()
     bt.outFile.delete()
     createLocalPaths(bt)
-    try {
-      val result = ShellCommand.run(command: _*)
-      result foreach { s =>
-        bt.errorCont(LocalError(s))
-        lmhOut.delete()
-      }
-      if (lmhOut.exists() && lmhOut != bt.outFile)
-        Files.move(lmhOut.toPath, bt.outFile.toPath)
-      if (logFile.exists()) {
-        val source = scala.io.Source.fromFile(logFile)
-        source.getLines().foreach { line =>
-          val (newLevel, restLine) = line2Level(line)
-          if (newLevel.isDefined) {
-            LtxLog.reportError(bt)
-            LtxLog.optLevel = newLevel
-            LtxLog.msg = List(restLine)
-            LtxLog.newMsg = false
-          }
-          else if (line.startsWith("\t")) {
-            val sLine = line.substring(1)
-            val newRegion = line2Region(sLine, bt.inFile)
-            if (newRegion == SourceRegion.none)
-              LtxLog.msg = sLine :: LtxLog.msg
-            else LtxLog.region = newRegion
-          }
-          else LtxLog.reportError(bt)
-        }
-        LtxLog.reportError(bt)
-        if (logFile != logOutFile) Files.move(logFile.toPath, logOutFile.toPath)
-      }
+    val styDir = stexStyDir(bt)
+    val output = new StringBuffer()
+    val pb = Process(Seq((extBase(bt) / "perl5lib" / "bin" / "latexmlc").toString,
+      "--quiet", "--profile", "stex-smglom-module", "--path=" + styPath(bt),
+      bt.inFile.toString, "--destination=" + lmhOut, "--log=" + logFile,
+      "--preamble=" + getAmbleFile("pre", bt),
+      "--postamble=" + getAmbleFile("post", bt),
+      "--expire=10"), bt.archive / inDim, extEnv(bt): _*)
+    val exitCode = pb.!(ProcessLogger(line => output.append(line + "\n"),
+      line => output.append(line + "\n")))
+    if (exitCode != 0 || lmhOut.length == 0) {
+      bt.errorCont(LatexError("no omdoc created", output.toString))
+      lmhOut.delete()
     }
-    catch {
-      case e: Throwable =>
-        bt.outFile.delete()
-        bt.errorCont(LocalError("exception for file: " + bt.inFile + "\n" +
-          Option(e.getMessage).getOrElse("(no message)")).setCausedBy(e))
+    if (lmhOut.exists() && lmhOut != bt.outFile)
+      Files.move(lmhOut.toPath, bt.outFile.toPath)
+    if (logFile.exists()) {
+      val source = scala.io.Source.fromFile(logFile)
+      source.getLines().foreach { line =>
+        val (newLevel, restLine) = line2Level(line)
+        if (newLevel.isDefined) {
+          LtxLog.reportError(bt)
+          LtxLog.optLevel = newLevel
+          LtxLog.msg = List(restLine)
+          LtxLog.newMsg = false
+        }
+        else if (line.startsWith("\t")) {
+          val sLine = line.substring(1)
+          val newRegion = line2Region(sLine, bt.inFile)
+          if (newRegion == SourceRegion.none)
+            LtxLog.msg = sLine :: LtxLog.msg
+          else LtxLog.region = newRegion
+        }
+        else LtxLog.reportError(bt)
+      }
+      LtxLog.reportError(bt)
+      if (logFile != logOutFile) Files.move(logFile.toPath, logOutFile.toPath)
     }
   }
 }
@@ -253,7 +262,7 @@ class PdfLatex extends SmsGenerator {
         bt.outFile.delete()
         bt.errorCont(LatexError(e.toString, output.toString))
     }
-    List("aux", "idx", "log", "out", "thm").
+    List("aux", "idx", "log", "out", "thm", "pdf").
       foreach(bt.inFile.setExtension(_).delete())
   }
 }
