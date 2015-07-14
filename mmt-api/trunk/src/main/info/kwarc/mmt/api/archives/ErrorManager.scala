@@ -19,6 +19,8 @@ object Table {
     "errLevel",
     "errType",
     "archive",
+    "group",
+    "repo",
     "fileName",
     "fileDate",
     "target",
@@ -38,6 +40,8 @@ case class BuildError(archive: Archive, target: String, path: FilePath,
     List(level.toString,
       tp,
       archive.id,
+      archive.root.up.getName,
+      archive.root.getName,
       path.toString,
       new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(f.toJava.lastModified)),
       target,
@@ -89,7 +93,8 @@ class ErrorManager extends Extension with Logger {
    */
   def loadErrors(a: Archive, target: String, fpath: FilePath): Unit = {
     val f = a / errors / target / fpath
-    val node = if (f.toJava.exists) xml.readFile(f) else <errors></errors>
+    val emptyErr = f.length == 0
+    val node = if (emptyErr) <errors></errors> else xml.readFile(f)
     var bes: List[BuildError] = Nil
     node.child.foreach { x =>
       val (stacks, others) = x.child partition (_.label == "stacktrace")
@@ -119,7 +124,8 @@ class ErrorManager extends Extension with Logger {
       bes ::= be
     }
     if (node.child.isEmpty)
-      bes ::= BuildError(a, target, fpath.toFile.stripExtension.filepath, "", 0, None, "no errors", "", Nil)
+      bes ::= BuildError(a, target, fpath.toFile.stripExtension.filepath, "", 0, None,
+        if (emptyErr) "corrupt error file" else "no errors", "", Nil)
     val em = apply(a.id)
     em((target, fpath.segments)) = bes.reverse
   }
