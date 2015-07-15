@@ -17,11 +17,14 @@ class SmsGenerator extends TraversingBuildTarget {
   val key = "sms"
   val inDim = source
   val outDim: ArchiveDimension = source
+  val c = java.io.File.pathSeparator
   override val outExt = "sms"
 
   case class LatexError(s: String, l: String) extends ExtensionError(key, s) {
     override val extraMessage = l
   }
+
+  def sysEnv(v: String): String = sys.env.getOrElse(v, "")
 
   def includeFile(n: String): Boolean =
     n.endsWith(".tex") && !n.endsWith(localpathsFile) && !n.startsWith("all.")
@@ -69,9 +72,14 @@ class SmsGenerator extends TraversingBuildTarget {
 
   def styPath(bt: BuildTask): File = mathHubDir(bt) / "sty"
 
-  def env(bt: BuildTask): List[(String, String)] = List(
-    "STEXSTYDIR" -> stexStyDir(bt).toString(),
-    "TEXINPUTS" -> (".//:" + styPath(bt) + ":" + stexStyDir(bt) + "//:"))
+  def env(bt: BuildTask): List[(String, String)] = {
+    val sty = "STEXSTYDIR"
+    val tex = "TEXINPUTS"
+    List(
+      sty -> (stexStyDir(bt).toString() + c + sysEnv(sty)),
+      tex -> (".//" + c + styPath(bt) + c + stexStyDir(bt) + "//"
+        + c + sysEnv(tex)))
+  }
 
   def createLocalPaths(bt: BuildTask): Unit = {
     val dir = bt.inFile.up
@@ -114,6 +122,13 @@ class LaTeXML extends SmsGenerator {
   override val key = "latexml"
   override val outExt = "omdoc"
   override val outDim = RedirectableDimension("latexml")
+  // the latexml client
+  private var latexmlc = "latexmlc"
+  private var perl5lib = "perl5lib"
+
+  override def start(args: List[String]): Unit = {
+    latexmlc = getFromFirstArgOrEnvvar(args, "LATEXMLC", latexmlc)
+  }
 
   def str2Level(lev: String): Level.Level = lev match {
     case "Info" => Level.Info
@@ -162,13 +177,13 @@ class LaTeXML extends SmsGenerator {
   }
 
   def extEnv(bt: BuildTask): List[(String, String)] = {
-    val perl5 = extBase(bt) / "perl5lib"
-    val perl5lib = perl5 / "lib" / "perl5"
+    val perl5 = extBase(bt) / perl5lib
+    val p5 = "PERL5LIB"
+    val perl5path = perl5 / "lib" / "perl5"
     val latexmlBlib = extBase(bt) / "LaTeXML" / "blib" / "lib"
-    val c = java.io.File.pathSeparator
     val path = if (c == ":") "PATH" else "Path"
-    (path -> (perl5 / "bin" + c + sys.env(path))) ::
-      ("PERL5LIB" -> (perl5lib + c + latexmlBlib)) :: env(bt)
+    (path -> (perl5 / "bin" + c + sysEnv(path))) ::
+      (p5 -> (perl5path + c + latexmlBlib + c + sysEnv(p5))) :: env(bt)
   }
 
   /**
@@ -185,7 +200,11 @@ class LaTeXML extends SmsGenerator {
     createLocalPaths(bt)
     val styDir = stexStyDir(bt)
     val output = new StringBuffer()
-    val pb = Process(Seq((extBase(bt) / "perl5lib" / "bin" / "latexmlc").toString,
+    if (!File(latexmlc).isAbsolute) {
+      latexmlc = (extBase(bt) / perl5lib / "bin" / latexmlc).toString
+      log("executing " + latexmlc)
+    }
+    val pb = Process(Seq(latexmlc,
       "--quiet", "--profile", "stex-smglom-module", "--path=" + styPath(bt),
       bt.inFile.toString, "--destination=" + lmhOut, "--log=" + logFile,
       "--preamble=" + getAmbleFile("pre", bt),
@@ -231,8 +250,7 @@ class PdfLatex extends SmsGenerator {
   private var pdflatexPath: String = "xelatex"
 
   override def start(args: List[String]): Unit = {
-    val p = getFromFirstArgOrEnvvar(args, "PDFLATEX", pdflatexPath)
-    pdflatexPath = p
+    pdflatexPath = getFromFirstArgOrEnvvar(args, "PDFLATEX", pdflatexPath)
   }
 
   override def buildFile(bt: BuildTask): Unit = {
