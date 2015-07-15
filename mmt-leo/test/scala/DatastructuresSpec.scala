@@ -12,7 +12,6 @@ import sun.management.resources.agent
 
 class DatastructuresSpec extends FlatSpec with Matchers {
 
-
   def mkNode[A](data:A, cong:Boolean, sat: Option[Boolean]=None):ProofTree[A]={
     val pd= new ProofData(data,cong,sat)
     new ProofTree(pd)
@@ -84,21 +83,16 @@ class DatastructuresSpec extends FlatSpec with Matchers {
   }
 
   "A BlackBoard" should "solve the partition problem" in {
-    val goal = mkNode(23,cong = true)
-    val blackboard = new Blackboard(goal)
-    val usableNumbers=List(3,5,7)
-    val ra = new PartitionAgent(usableNumbers)
-    val pa = new SingletonProofAgent[Int](ra)
-    val ma = new AuctionAgent[Int]
+    val prover1 = new PartitionProver( 23,List(2,3,5,7) )
+    prover1.run() should be ("Solution: List(2, 7, 7, 7)")
 
-    blackboard.registerAgent(ra)
-    blackboard.registerAgent(pa)
-    blackboard.registerAgent(ma)
+    val prover2 = new PartitionProver( 23,List(15,17) )
+    prover2.run() should be ("Contradiction Derived, no partition is possible. Outputting tree:" +
+      "\nmeta: 23 isAnd: false isSatisfiable: Some(false)" +
+      "\n\tmeta: 8 isAnd: false isSatisfiable: Some(false)" +
+      "\n\tmeta: 6 isAnd: false isSatisfiable: Some(false)")
 
-    blackboard.run(7)
-    OutputLog.display(1)
-    PartitionPresenter.present(goal)
-
+    //OutputLog.display(1)
   }
 
 /*  it should "have breadth and depth first search capabilities" in {

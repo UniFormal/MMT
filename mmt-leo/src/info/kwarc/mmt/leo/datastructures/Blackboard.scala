@@ -114,7 +114,7 @@ trait EventBlackboard[A] {
 
 abstract class Presenter[A] extends Debugger {
   def logPrefix="Presenter"
-  def present(pt:ProofTree[A])
+  def present(pt:ProofTree[A]): String
 }
 
 

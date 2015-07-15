@@ -1,4 +1,4 @@
-package info.kwarc.mmt.leo.provers
+package info.kwarc.mmt.leo.provers.lfprover
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.proving._

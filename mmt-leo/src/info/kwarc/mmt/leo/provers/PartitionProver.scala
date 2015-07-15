@@ -63,7 +63,7 @@ class PartitionTask(nodeVar: ProofTree[Int], agent: PartitionAgent) extends StdR
 }
 
 object PartitionPresenter extends Presenter[Int] {
-  def present(pt: ProofTree[Int]) = {
+  def present(pt: ProofTree[Int]): String = {
     /** @return a list of numbers solving the problem*/
     def getNumbers(node: ProofTree[Int]): List[Any] ={ //TODO figure out why List[Int] doesn't work
       if (node.children.isEmpty) {
@@ -75,9 +75,33 @@ object PartitionPresenter extends Presenter[Int] {
     }
 
     pt.isSatisfiable match {
-      case Some(true) => println("Solution: "+getNumbers(pt))
-      case Some(false) => println("Contradiction Derived, no partition is possible. Outputting tree:" + pt)
-      case None => println("Proof not found")
+      case Some(true) => "Solution: "+getNumbers(pt)
+      case Some(false) => "Contradiction Derived, no partition is possible. Outputting tree:" + pt
+      case None => "Proof not found"
     }
   }
+}
+
+class PartitionProver(target: Int , usableNumbers: List[Int], cycles: Int = 5) {
+
+  def mkNode[A](data:A, cong:Boolean, sat: Option[Boolean]=None):ProofTree[A]={
+    val pd= new ProofData(data,cong,sat)
+    new ProofTree(pd)
+  }
+
+  val goal = mkNode(target,cong = true)
+  val blackboard = new Blackboard(goal)
+  val ra = new PartitionAgent(usableNumbers)
+  val pa = new SingletonProofAgent[Int](ra)
+  val ma = new AuctionAgent[Int]
+
+  blackboard.registerAgent(ra)
+  blackboard.registerAgent(pa)
+  blackboard.registerAgent(ma)
+
+  def run():String = {
+    blackboard.run(cycles)
+    PartitionPresenter.present(goal)
+  }
+
 }
