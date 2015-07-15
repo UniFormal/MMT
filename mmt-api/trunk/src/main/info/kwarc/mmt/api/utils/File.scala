@@ -49,7 +49,10 @@ case class File(toJava: java.io.File) {
   def /(ss: FilePath): File = ss.segments.foldLeft(this) { case (sofar, next) => sofar / next }
 
   /** parent directory */
-  def up: File = File(toJava.getParentFile)
+  def up: File = {
+    val par = Option(toJava.getParentFile)
+    if (par.isEmpty) this else File(par.get)
+  }
 
   /** file name */
   def name: String = toJava.getName
