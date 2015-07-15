@@ -133,6 +133,8 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   extends WritableArchive with Validate with ScalaCode with ZipArchive {
 
   val rootString = root.toString
+  val groupDir = root.up
+  val baseDir = groupDir.up
 
   /**
    * computes the flattened theories by elaborating the patterns

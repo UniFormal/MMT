@@ -61,7 +61,7 @@ class SmsGenerator extends TraversingBuildTarget {
     }
   }
 
-  def mathHubDir(bt: BuildTask): File = bt.archive.root.up.up.up
+  def mathHubDir(bt: BuildTask): File = bt.archive.baseDir.up
 
   def extBase(bt: BuildTask): File = mathHubDir(bt) / "ext"
 
@@ -76,13 +76,12 @@ class SmsGenerator extends TraversingBuildTarget {
   def createLocalPaths(bt: BuildTask): Unit = {
     val dir = bt.inFile.up
     val fileName = dir / localpathsFile
-    val repoDir = bt.archive.root
-    val groupDir = repoDir.up
-    val baseDir = groupDir.up
-    val groupRepo = groupDir.getName + "/" + repoDir.getName + "}"
+    val a = bt.archive
+    val repoDir = a.root
+    val groupRepo = a.groupDir.getName + "/" + repoDir.getName + "}"
     val text: List[String] = List(
       "% this file defines root path local repository",
-      "\\defpath{MathHub}{" + baseDir.getPath + "}",
+      "\\defpath{MathHub}{" + a.baseDir.getPath + "}",
       "\\mhcurrentrepos{" + groupRepo,
       "\\input{" + repoDir.getPath + "/lib/WApersons}",
       "% we also set the base URI for the LaTeXML transformation",
