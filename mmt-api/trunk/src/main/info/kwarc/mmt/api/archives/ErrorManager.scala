@@ -89,7 +89,7 @@ class ErrorManager extends Extension with Logger {
    * @param a the archive
    * @param target the build target
    * @param fpath the file
-   *             load all errors of a build target applied to a file
+   *              load all errors of a build target applied to a file
    */
   def loadErrors(a: Archive, target: String, fpath: FilePath): Unit = {
     val f = a / errors / target / fpath
@@ -127,7 +127,7 @@ class ErrorManager extends Extension with Logger {
       bes ::= BuildError(a, target, fpath.toFile.stripExtension.filepath, "", 0, None,
         if (emptyErr) "corrupt error file" else "no errors", "", Nil)
     val em = apply(a.id)
-    em((target, fpath.segments)) = bes.reverse
+    em.put((target, fpath.segments), bes.reverse)
   }
 
   /** iterator over all errors given as (archive, target, path, error) */
@@ -166,7 +166,7 @@ class ErrorManager extends Extension with Logger {
     /** reloads the errors */
     override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath): Unit = {
       Future {
-        loadErrors(a, t.key, p)
+        loadErrors(a, t.key, p.toFile.addExtension("err").filepath)
       }
     }
   }
