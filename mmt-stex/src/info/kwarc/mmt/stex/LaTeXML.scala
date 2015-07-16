@@ -75,8 +75,10 @@ class SmsGenerator extends TraversingBuildTarget {
   def env(bt: BuildTask): List[(String, String)] = {
     val sty = "STEXSTYDIR"
     val tex = "TEXINPUTS"
+    val styEnv = sysEnv(sty)
+    val styRest = if (styEnv.isEmpty) "" else c + styEnv
     List(
-      sty -> (stexStyDir(bt).toString() + c + sysEnv(sty)),
+      sty -> (stexStyDir(bt).toString() + styRest),
       tex -> (".//" + c + styPath(bt) + c + stexStyDir(bt) + "//"
         + c + sysEnv(tex)))
   }
@@ -124,10 +126,12 @@ class LaTeXML extends SmsGenerator {
   override val outDim = RedirectableDimension("latexml")
   // the latexml client
   private var latexmlc = "latexmlc"
+  private var expire = "10"
   private var perl5lib = "perl5lib"
 
   override def start(args: List[String]): Unit = {
     latexmlc = getFromFirstArgOrEnvvar(args, "LATEXMLC", latexmlc)
+    expire = controller.getEnvVar("LATEXMLEXPIRE").getOrElse(expire)
   }
 
   def str2Level(lev: String): Level.Level = lev match {
@@ -186,6 +190,15 @@ class LaTeXML extends SmsGenerator {
       (p5 -> (perl5path + c + latexmlBlib + c + sysEnv(p5))) :: env(bt)
   }
 
+  def setLatexmlc(bt: BuildTask): Unit =
+    if (!File(latexmlc).isAbsolute) {
+      val latexmlcpath = extBase(bt) / perl5lib / "bin" / latexmlc
+      if (latexmlcpath.exists) {
+        latexmlc = latexmlcpath.toString
+        log("executing " + latexmlc)
+      }
+    }
+
   /**
    * Compile a .tex file to OMDoc
    */
@@ -198,18 +211,14 @@ class LaTeXML extends SmsGenerator {
     logOutFile.delete()
     bt.outFile.delete()
     createLocalPaths(bt)
-    val styDir = stexStyDir(bt)
+    setLatexmlc(bt)
     val output = new StringBuffer()
-    if (!File(latexmlc).isAbsolute) {
-      latexmlc = (extBase(bt) / perl5lib / "bin" / latexmlc).toString
-      log("executing " + latexmlc)
-    }
     val pb = Process(Seq(latexmlc,
       "--quiet", "--profile", "stex-smglom-module", "--path=" + styPath(bt),
       bt.inFile.toString, "--destination=" + lmhOut, "--log=" + logFile,
       "--preamble=" + getAmbleFile("pre", bt),
       "--postamble=" + getAmbleFile("post", bt),
-      "--expire=10"), bt.archive / inDim, extEnv(bt): _*)
+      "--expire=" + expire), bt.archive / inDim, extEnv(bt): _*)
     val exitCode = pb.!(ProcessLogger(line => output.append(line + "\n"),
       line => output.append(line + "\n")))
     if (exitCode != 0 || lmhOut.length == 0) {
@@ -300,6 +309,12 @@ class LaTeXMLAndSTeX extends Importer {
     latexmlBuilder.init(controller)
     stexImporter.init(controller)
     super.init(controller)
+  }
+
+  override def start(args: List[String]): Unit = {
+    latexmlBuilder.start(args)
+    stexImporter.start(args)
+    super.start(args)
   }
 
   /** the main abstract method to be implemented by importers
