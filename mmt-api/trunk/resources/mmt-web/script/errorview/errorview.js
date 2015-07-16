@@ -23,7 +23,6 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     $scope.maxNumber = 100;
     $scope.maxGroups = 6;
     $scope.searchText = '';
-    $scope.groupMode = false;
     $scope.query = function (limit) {
          var res = '';
          for (k in $scope.columns) {
@@ -44,8 +43,6 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
         };
     };
     $scope.group = function() {
-        $scope.groupMode = true;
-        $scope.clear();
         $scope.columns[$scope.field].x = true;
         $http.get(':errors/group/' + $scope.field + $scope.query($scope.maxGroups)).success(function(data) {
           $scope.groups = data;
@@ -66,21 +63,20 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     $scope.hide = function() {
         $http.get(':errors/search2' + $scope.query($scope.maxNumber) + '&hide=true').success(function(data) {
             $scope.hiddenData.push(data);
-            $scope.group();
+            $scope.clear();
             $scope.search();
         });
     };
     $scope.clearhidden = function() {
         $scope.hiddenData = [];
-        $scope.group();
         $scope.search();
     };
     $scope.search = function() {
-        $scope.groupMode = false;
+        $scope.count();
+        $scope.group();
         $http.get(':errors/search2' + $scope.query($scope.maxNumber)).success(function(data) {
           $scope.results = data;
         });
-      $scope.count();
     };
     $scope.count = function() {
         $http.get(':errors/count2' + $scope.query($scope.maxNumber)).success(function(data) {
@@ -88,7 +84,6 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
         });
     };
     $scope.search();
-    $scope.group();
     $scope.sort = {
         col: 'id',
         asc: false
