@@ -14,7 +14,7 @@ import info.kwarc.mmt.api.web._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.informal._
-import info.kwarc.mmt.stex.OMDoc
+import info.kwarc.mmt.stex.{OMDoc, FilteringErrorHandler}
 
 import scala.xml.{Node,Elem,NamespaceBinding}
 
@@ -68,11 +68,12 @@ class OEISImporter extends Importer {
     try {
       val src = scala.io.Source.fromFile(bt.inFile.toString)
       val node = docParser.fromReaderToXML(src)
-      print(node)
       //val cp = scala.xml.parsing.ConstructingParser.fromSource(src, true)
       //val node : Node = cp.document()(0)
       src.close 
-      translateDocument(node)(bt.narrationDPath, bt.errorCont)
+      val errHandler = new FilteringErrorHandler(bt.errorCont, e => e.level == Level.Error && e.level == Level.Fatal)
+      
+      translateDocument(node)(bt.narrationDPath, errHandler)
       val doc = controller.getDocument(bt.narrationDPath)
       cont(doc)
     } catch {
@@ -164,10 +165,10 @@ class OEISImporter extends Importer {
     OMDoc.parseNarrativeObject(n)(dpath, mpath, errorCont, resolveSPath)
   }
   
-  def resolveSPath(tnameSO : Option[String], snameS : String, container : MPath)(implicit errorCont : ErrorHandler) : GlobalName = {
+  def resolveSPath(baseO : Option[String], tnameSO : Option[String], snameS : String, container : MPath)(implicit errorCont : ErrorHandler) : GlobalName = {
     val tNameDef = tnameSO.map(LocalName(_)).getOrElse(container.name)
     val sNameDef = LocalName(snameS)
-    val docDef = container.doc
+    val docDef = baseO.map(b => Path.parseD(b, NamespaceMap.empty)).getOrElse(container.doc)
     val defaultPath = docDef ? tNameDef ? sNameDef
     val tpaths = controller.globalLookup.visible(OMMOD(container)) //includes container
     //filter those that match tname

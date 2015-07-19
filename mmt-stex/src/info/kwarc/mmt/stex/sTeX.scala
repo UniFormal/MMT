@@ -9,6 +9,17 @@ import objects._
 import informal._
 import utils._
 
+
+/** Filters errors before passing them to the another error handler */
+class FilteringErrorHandler(handler : ErrorHandler, filter : Error => Boolean) extends ErrorHandler {
+  override def mark = handler.mark
+  override def hasNewErrors = handler.hasNewErrors
+  override def catchIn(a: => Unit) = handler.catchIn(a)
+  override def apply(e: Error) =if (filter(e)) handler.apply(e) //otherwise ignore
+  def addError(e : Error) = {} //nothing to do here, not caalled
+}
+
+
 object sTeX {
   def inSmglom(p : Path) : Boolean = {
     //group is smglom
@@ -114,7 +125,7 @@ object OMDoc {
    def parseNarrativeObject(n : scala.xml.Node)(implicit dpath : DPath, 
                                                          mpath : MPath, 
                                                          errorCont : ErrorHandler,
-                                                         resolveSPath : (Option[String], String, MPath) => GlobalName) : Option[Term]= {
+                                                         resolveSPath : (Option[String], Option[String], String, MPath) => GlobalName) : Option[Term]= {
     val sref = parseSourceRef(n, dpath) 
     n.child.find(_.label == "CMP").map(_.child) match {
       case Some(nodes) => 
@@ -130,16 +141,22 @@ object OMDoc {
   
   def rewriteCMP(node : scala.xml.Node)(implicit mpath : MPath, 
                                                  errorCont : ErrorHandler, 
-                                                 resolveSPath : (Option[String], String, MPath) => GlobalName) : scala.xml.Node = node.label match {
+                                                 resolveSPath : (Option[String], Option[String], String, MPath) => GlobalName) : scala.xml.Node = node.label match {
     case "OMS" if (xml.attr(node, "cd") == "OMPres") =>
       <om:OMS base={Narration.path.doc.toPath} module={Narration.path.module.toMPath.name.toPath} name={Narration.path.name.toPath}/>
     case "OMS" => 
+      
+      val baseO =  xml.attr(node, "base") match {
+        case "" => None
+        case s => Some(s)
+      }
+      
       val cdO =  xml.attr(node, "cd") match {
         case "" => None
         case s => Some(s)
       }
       val name = xml.attr(node, "name")
-      val sym = resolveSPath(cdO, name, mpath)
+      val sym = resolveSPath(baseO, cdO, name, mpath)
       <om:OMS base={sym.module.toMPath.parent.toPath} module={sym.module.toMPath.name.last.toPath} name={sym.name.last.toPath}/>
     case "OME" => <om:OMV name="error"/> //TODO temporary hack for OEIS
     case "OME" => //OME(args) -> OMA(Informal.error -> args)
@@ -147,8 +164,12 @@ object OMDoc {
       val newChild = node.child.map(rewriteCMP)
       new Elem(node.prefix, "OMA", node.attributes, node.scope, (pre +: newChild) : _*)
     case "OMR" =>
+      val baseO =  xml.attr(node, "base") match {
+        case "" => None
+        case s => Some(s)
+      }
       val xref = xml.attr(node, "xref")
-      val sym = resolveSPath(Some(xref), xref, mpath)
+      val sym = resolveSPath(baseO, Some(xref), xref, mpath)
       <om:OMS base={sym.module.toMPath.parent.toPath} module={sym.module.toMPath.name.last.toPath} name={sym.name.last.toPath}/>
     case "#PCDATA" => new scala.xml.Text(node.toString)
     case _ => new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, node.child.map(rewriteCMP) :_*)

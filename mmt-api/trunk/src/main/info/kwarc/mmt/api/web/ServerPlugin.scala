@@ -188,13 +188,34 @@ abstract class TEMASearchServer(format : String) extends ServerExtension("tema-"
   def getSettings(path : List[String], query : String, body : Body) : Map[String, String]
   
   def apply(path : List[String], query : String, body: Body) = {
-    println(query)
-    println(path)
     val searchS = body.asString
-    println(searchS)
     val settings = getSettings(path, query, body)
-    val resp = toHTML(process(searchS, settings))
-    Server.TextResponse(resp, "html")
+    val mathmlS = toHTML(process(searchS, settings))
+    val mathml = scala.xml.XML.loadString(mathmlS)
+    val resp = postProcessQVars(mathml) 
+    Server.TextResponse(resp.toString, "html")
+  }
+   
+  def preProcessQVars(n : scala.xml.Node) : scala.xml.Node = n match {
+    case <QVAR>{c}</QVAR> => 
+      val name = xml.attr(c, "name")
+      <OMV name={"qvar_" + name} />
+    case n : scala.xml.Elem => 
+      val child = n.child.map(preProcessQVars)
+      new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, false, child : _*)
+    case _ => n
+    
+  }
+  
+  def postProcessQVars(n : scala.xml.Node) : scala.xml.Node = n match {
+    case n if n.label == "mi" && n.text.startsWith("qvar_") => 
+      <mi class="math-highlight-qvar"> {n.text.substring(5)} </mi>
+    case n if n.label == "ci" && n.text.startsWith("qvar_") => 
+      <mws:qvar>{n.text.substring(5)}</mws:qvar>
+    case n : scala.xml.Elem => 
+      val child = n.child.map(postProcessQVars)
+      new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, false, child : _*)
+    case _ => n
   }
 }
 

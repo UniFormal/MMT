@@ -12,6 +12,11 @@ trait Expression{
   def clear : Expression
 }
 
+object URIDefaults {
+  val cd = "arithmetics"
+  val base = "http://mathhub.info/MMT/LATIN/foundations/oeis.omdoc"
+}
+
 case class Var(name : String) extends Expression{
   def present : String = name
   def toNode(implicit theory : String) : Elem = <OMV name={name}/>
@@ -39,7 +44,7 @@ case class Divisible(num : Expression, by : Expression) extends Expression{
   def present : String = num + "|" + by
   def toNode(implicit theory : String) : Elem =
     <OMA>
-      <OMS name="divisible" cd="arithemtics">
+      <OMS name="divisible" cd={URIDefaults.cd} base={URIDefaults.base}>
         {num.toNode}
         {by.toNode}
       </OMS>
@@ -51,7 +56,7 @@ case class Power(base : Expression, exp : Expression) extends Expression{
   def present : String = base.toString +"^"+ exp.toString
   def toNode(implicit theory : String) : Elem =
     <OMA>
-      <OMS name="power" cd="arithmetics"/>
+      <OMS name="power" cd={URIDefaults.cd} base={URIDefaults.base}/>
       {base.toNode}
       {exp.toNode}
     </OMA>
@@ -61,7 +66,7 @@ case class Add(expr : List[Expression]) extends Expression{
   def present : String = expr.mkString(" + ")
   def toNode(implicit theory : String) : Elem =
     <OMA>
-      <OMS name="plus" cd="arithmetics"/>
+      <OMS name="plus" cd={URIDefaults.cd} base={URIDefaults.base}/>
       {expr.map(_.toNode)}
     </OMA>
   def clear = this
@@ -71,7 +76,7 @@ case class Sub(expr : List[Expression]) extends Expression{
   def present : String = expr.mkString(" - ")
   def toNode(implicit theory : String) : Elem =
     <OMA>
-      <OMS name="minus" cd="arithmetics"/>
+      <OMS name="minus" cd={URIDefaults.cd} base={URIDefaults.base}/>
       {expr.map(_.toNode)}
     </OMA>
   def clear = this
@@ -79,7 +84,7 @@ case class Sub(expr : List[Expression]) extends Expression{
 
 case class Mul(expr : List[Expression]) extends Expression{
   def present : String = expr.mkString("*")
-  def toNode(implicit theory : String) : Elem = <OMA><OMS name="times"/>{expr.map(_.toNode)}</OMA>
+  def toNode(implicit theory : String) : Elem = <OMA><OMS name="times" cd={URIDefaults.cd} base={URIDefaults.base}/>{expr.map(_.toNode)}</OMA>
   def clear : Expression = this
 }
 
@@ -87,7 +92,7 @@ case class Div(expr : List[Expression]) extends Expression{
   def present : String = expr.mkString("/")
   def toNode(implicit theory : String) : Elem =
     <OMA>
-      <OMS name="divide" cd="arithmetics"/>
+      <OMS name="divide" cd={URIDefaults.cd} base={URIDefaults.base}/>
       {expr.map(_.toNode)}
     </OMA>
   def clear : Expression = this
@@ -97,7 +102,7 @@ case class Neg(expr : Expression) extends Expression{
   def present : String = ("-"+expr.toString)
   def toNode(implicit theory : String) : Elem =
     <OMA>
-      <OMS name="unary_minus"/>
+      <OMS name="unary_minus" cd={URIDefaults.cd} base={URIDefaults.base}/>
       {expr.toNode}
     </OMA>
   def clear : Expression = this
@@ -106,7 +111,7 @@ case class Func(name : String, args : ArgList) extends Expression{
   def present : String = name + args.toString
   def toNode(implicit theory : String) : Elem =
     <OMA>
-      <OMS name={name} cd={theory}/>
+      <OMS name={name} cd={URIDefaults.cd} base={URIDefaults.base}/>
       {args.args.map(_.toNode)}
     </OMA>
   def clear : Expression = this
@@ -123,14 +128,14 @@ case class FuncR(seq : SeqReference, args : ArgList) extends Expression{
 
 case class ExtraSymbol(symbol : String) extends Expression{
   def present : String = symbol
-  def toNode(implicit theory : String) : Elem = <OMS name={symbol} cd="arithmetics"></OMS>
+  def toNode(implicit theory : String) : Elem = <OMS name={symbol} cd={URIDefaults.cd} base={URIDefaults.base}></OMS>
   def clear : Expression = this
 }
 case class ArgList(args : List[Expression]) extends Expression{
   def present : String = "("+args.mkString(",")+")"
   def toNode(implicit theory : String) : Elem =
     <OMA>
-      <OMS cd="set1" name="set">
+      <OMS cd="set1" name="set" base={URIDefaults.base}>
         {args.map(_.toNode)}
       </OMS>
     </OMA>
@@ -148,9 +153,9 @@ case class Iters(name : String, from : Option[Expression], to : Option[Expressio
   def toNode(implicit theory : String) : Elem =
       <OMBIND>
           <OMA>
-            <OMS name={name} cd="arithmetics"/>
+            <OMS name={name} cd={URIDefaults.cd} base={URIDefaults.base}/>
               <OMA>
-                <OMS name="interval" cd="arithmetics"/>
+                <OMS name="interval" cd={URIDefaults.cd} base={URIDefaults.base}/>
                   {if(from.nonEmpty) {
                       from.get.toNode
                     }
@@ -179,7 +184,7 @@ case class Factorial(expr : Expression) extends Expression{
   def present : String = expr.toString + "!"
   def toNode(implicit theory : String) : Elem =
     <OMA>
-      <OMS name="factorial" cd="arithmetics"/>
+      <OMS name="factorial" cd={URIDefaults.cd} base={URIDefaults.base}/>
       {expr.toNode}
     </OMA>
   def clear : Expression = this
@@ -189,7 +194,7 @@ case class Equation(comparison : String, left : Expression, right : Expression) 
   def present : String = left.toString + " = " + right.toString
   def toNode(implicit theory : String) =
     <OMA>
-      <OMS name={comparison} cd="arithmetic"/>
+      <OMS name={comparison} cd={URIDefaults.cd} base={URIDefaults.base}/>
       {left.toNode}
       {right.toNode}
     </OMA>
