@@ -52,9 +52,11 @@ class OEISPresenter extends InformalMathMLPresenter {
   override def getNotation(p: GlobalName): Option[TextNotation] = {
       super.getNotation(p) match {
         case Some(not) => Some(not)
-        case None if p.last == "power" => Some(TextNotation.parse("1 ^ 2", NamespaceMap.empty))
-        case None if p.last == "sqrt" => Some(TextNotation.parse("√ 1", NamespaceMap.empty))
-        case None if p.last == "plus" => Some(TextNotation.parse("1 + 2", NamespaceMap.empty))
+        case None if p.last == "power" => Some(TextNotation.parse("1 ^ 2 prec 100", NamespaceMap.empty))
+        case None if p.last == "sqrt" => Some(TextNotation.parse("√ 1 prec 1000", NamespaceMap.empty))
+        case None if p.last == "plus" => Some(TextNotation.parse("1 + 2 prec 10", NamespaceMap.empty))
+        case None if p.last == "minus" => Some(TextNotation.parse("1 - 2 prec 10", NamespaceMap.empty))
+        case None if p.last == "divide" => Some(TextNotation.parse("1 / 2 prec 2", NamespaceMap.empty))
         case _ => None
       }
    }
