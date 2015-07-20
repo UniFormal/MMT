@@ -1,0 +1,21 @@
+<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath"><theory name="Sequences" base="http://cds.omdoc.org/urtheories"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/sequences.mmt#44.2.0:62.2.18"/><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/sequences.mmt#44.2.0:178.8.1"/></metadata><import from="http://cds.omdoc.org/urtheories?Typed"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/sequences.mmt#66.3.3:81.3.18"/></metadata></import><constant name="empty">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/sequences.mmt#85.4.3:99.4.17"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="⋅"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="concat">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/sequences.mmt#103.5.3:119.5.19"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1,…"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="ellipsis">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/sequences.mmt#123.6.3:154.6.34"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="[ 4 ] V3T = 1 ^ 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="index">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/sequences.mmt#158.7.3:176.7.21"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1 . 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant></theory></omdoc>

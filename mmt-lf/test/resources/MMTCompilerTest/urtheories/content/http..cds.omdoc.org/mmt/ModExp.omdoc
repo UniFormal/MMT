@@ -1,0 +1,21 @@
+<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath"><theory name="ModExp" base="http://cds.omdoc.org/mmt"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/module-expressions.mmt#37.2.0:52.2.15"/><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/module-expressions.mmt#37.2.0:243.7.1"/></metadata><constant name="composition">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/module-expressions.mmt#56.3.3:94.3.41"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="-1" fixity="mixfix" arguments="1;…"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="theory-union">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/module-expressions.mmt#98.4.3:145.4.50"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="-1" fixity="mixfix" arguments="1∪…"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="identity">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/module-expressions.mmt#149.5.3:190.5.44"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="-1" fixity="mixfix" arguments="mmtid 1"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="rel-mor-composition">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/module-expressions.mmt#194.6.3:241.6.50"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="-2" fixity="mixfix" arguments="1;…"> <scope languages="" priority="0"/> </notation></notations>
+     </constant></theory></omdoc>

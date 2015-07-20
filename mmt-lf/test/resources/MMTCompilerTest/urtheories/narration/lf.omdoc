@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<omdoc base="http://docs.omdoc.org/urtheories/lf.omdoc">
+  <mref target="http://cds.omdoc.org/urtheories?Typed"/>
+  <mref target="http://cds.omdoc.org/urtheories?LF"/>
+</omdoc>

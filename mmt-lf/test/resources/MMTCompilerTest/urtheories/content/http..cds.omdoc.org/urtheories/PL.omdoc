@@ -1,0 +1,131 @@
+<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath"><theory name="PL" base="http://cds.omdoc.org/urtheories"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#44.2.0:55.2.11"/><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#44.2.0:698.38.1"/></metadata><constant name="oftype">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#59.3.3:74.3.18"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments=": 1"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="List">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#79.5.3:97.5.21"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="List 1"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="list">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#101.6.3:120.6.22"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="[ 1,… ]"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="Option">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#128.8.3:148.8.23"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="Option 1"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="some">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#152.9.3:170.9.21"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="some 1"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="none">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#174.10.3:190.10.19"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="none"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="Tuple">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#198.12.3:213.12.18"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1×…"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="tuple">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#218.13.3:238.13.23"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="⟨ 1,… ⟩"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="proj">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#242.14.3:259.14.20"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1 . 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="Function">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#267.16.3:286.16.22"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1×… → 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="lambda">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#290.17.3:322.17.35"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="20" fixity="mixfix" arguments="λ V1T,… . 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="apply">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#326.18.3:341.18.18"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1@…"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="Nat">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#349.20.3:359.20.13"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="ℕ"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="plus">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#363.21.3:375.21.15"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1+…"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="times">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#379.22.3:391.22.15"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1*…"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="minus">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#395.23.3:409.23.17"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1 - 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="div">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#413.24.3:427.24.17"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1 / 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="less">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#431.25.3:449.25.21"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1 &lt; 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="lesseq">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#453.26.3:471.26.21"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1 ≤ 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="greater">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#475.27.3:493.27.21"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1 &gt; 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="greatereq">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#497.28.3:515.28.21"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1 ≥ 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="Boolean">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#523.30.3:552.31.17"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="ℬ and # 1∧…"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="or">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#556.32.3:570.32.17"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1∨…"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="equal">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#574.33.3:590.33.19"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="0" fixity="mixfix" arguments="1 = 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="ifte">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#594.34.3:622.34.31"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="-1000001" fixity="mixfix" arguments="if ( 1 ) 2 else 3"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="match">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/mini-pl.mmt#627.36.3:657.36.33"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="50" fixity="mixfix" arguments="1 match 2|…"> <scope languages="" priority="0"/> </notation></notations>
+     </constant></theory></omdoc>

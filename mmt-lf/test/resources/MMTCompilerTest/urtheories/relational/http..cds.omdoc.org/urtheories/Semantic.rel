@@ -1,0 +1,13 @@
+HasDomain http://cds.omdoc.org/urtheories?Semantic http://www.openmath.org/cd?OpenMath
+HasCodomain http://cds.omdoc.org/urtheories?Semantic http://cds.omdoc.org/urtheories?ScalaOM
+view http://cds.omdoc.org/urtheories?Semantic
+Declares http://cds.omdoc.org/urtheories?Semantic http://cds.omdoc.org/urtheories?Semantic?[http://www.openmath.org/cd?OpenMath]/Object
+constant http://cds.omdoc.org/urtheories?Semantic?[http://www.openmath.org/cd?OpenMath]/Object
+Declares http://cds.omdoc.org/urtheories?Semantic http://cds.omdoc.org/urtheories?Semantic?[http://www.openmath.org/cd?OpenMath]/mapsto
+constant http://cds.omdoc.org/urtheories?Semantic?[http://www.openmath.org/cd?OpenMath]/mapsto
+Declares http://cds.omdoc.org/urtheories?Semantic http://cds.omdoc.org/urtheories?Semantic?[http://www.openmath.org/cd?OpenMath]/naryObject
+constant http://cds.omdoc.org/urtheories?Semantic?[http://www.openmath.org/cd?OpenMath]/naryObject
+Declares http://cds.omdoc.org/urtheories?Semantic http://cds.omdoc.org/urtheories?Semantic?[http://www.openmath.org/cd?OpenMath]/binder
+constant http://cds.omdoc.org/urtheories?Semantic?[http://www.openmath.org/cd?OpenMath]/binder
+Declares http://cds.omdoc.org/urtheories?Semantic http://cds.omdoc.org/urtheories?Semantic?[http://www.openmath.org/cd?OpenMath]/FMP
+constant http://cds.omdoc.org/urtheories?Semantic?[http://www.openmath.org/cd?OpenMath]/FMP

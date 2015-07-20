@@ -1,0 +1,21 @@
+<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath"><theory name="Terms" base="http://cds.omdoc.org/urtheories/reflection"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/term-reflection.mmt#55.2.0:69.2.14"/><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/term-reflection.mmt#55.2.0:257.9.1"/></metadata><import from="http://cds.omdoc.org/urtheories?Typed"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/term-reflection.mmt#73.3.3:99.3.29"/></metadata></import><constant name="formation">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/term-reflection.mmt#107.5.3:141.5.37"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="-10000" fixity="mixfix" arguments="{| 1 |} 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="reflect">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/term-reflection.mmt#145.6.3:179.6.37"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="-10000" fixity="mixfix" arguments="⌜ 1 : 2 ⌝"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="eval">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/term-reflection.mmt#183.7.3:217.7.37"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="-10000" fixity="mixfix" arguments="⌞ 1 ⌟ 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant><constant name="elim">
+       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/term-reflection.mmt#221.8.3:255.8.37"/></metadata>
+       
+       
+       <notations><notation dimension="1" precedence="-10000" fixity="mixfix" arguments="1 ^ 2"> <scope languages="" priority="0"/> </notation></notations>
+     </constant></theory></omdoc>

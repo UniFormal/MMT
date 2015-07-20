@@ -102,7 +102,11 @@ lazy val lfcatalog = (project in file("lfcatalog/trunk")).
 
 lazy val lf = (project in file("mmt-lf")).
   dependsOn(api, lfcatalog).
-  settings(commonSettings("mmt-lf"): _*)
+  settings(commonSettings("mmt-lf"): _*).
+  settings(
+    scalaSource in Test := baseDirectory.value / "test",
+    libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
+  )
 
 lazy val tptp = (project in file("mmt-tptp")).
   dependsOn(api, lf).
