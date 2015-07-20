@@ -2,12 +2,13 @@ package info.kwarc.mmt.leo.provers.lfprover
 
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.proving.{Atom, Facts}
-import info.kwarc.mmt.leo.datastructures.{ProofData, ProofTree}
+import info.kwarc.mmt.leo.datastructures._
 
 /**
  * Created by Mark on 7/15/2015.
  */
 
+/*
 class LFProofData(val contextVar: Context, var concVar: Term, conjunctiveVar: Boolean, isSatisfiableVar: Option[Boolean] = None )
   extends ProofData((contextVar,concVar),conjunctiveVar,isSatisfiableVar) {
   var context = contextVar
@@ -17,7 +18,7 @@ class LFProofData(val contextVar: Context, var concVar: Term, conjunctiveVar: Bo
 
 }
 
-class LFProofTree(dataVar: LFProofData) extends ProofTree(dataVar) {
+class LFAndOrTreeTree(dataVar: LFProofData) extends AndOr(dataVar) {
 
   var context = dataVar.context
   var conc = dataVar.conc
@@ -41,3 +42,4 @@ class LFProofTree(dataVar: LFProofData) extends ProofTree(dataVar) {
 
 
 }
+*/

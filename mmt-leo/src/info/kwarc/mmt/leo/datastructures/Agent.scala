@@ -2,14 +2,21 @@ package info.kwarc.mmt.leo.datastructures
 
 import scala.collection.mutable
 
-
 /**
  * <p>
  * Interface for all Agent Implementations.
  *
  * Taken Heavily from the LeoPARD project
+ *
+ *
  */
-abstract class Agent[A, T <: Task[A], E <: Event[A]] extends Debugger {
+//
+trait Agent extends Debugger {
+
+  type TaskType <: Task
+  type EventType <: Event
+  type BlackboardType <: Blackboard
+
   /** the name of the agent */
   val name: String
 
@@ -21,7 +28,7 @@ abstract class Agent[A, T <: Task[A], E <: Event[A]] extends Debugger {
   var isActive: Boolean = false
 
   /** main blackboard that the agent has access to */
-  var blackboard: Blackboard[A] = null
+  var blackboard: Option[BlackboardType] = None
 
   /** Specifies what an agents interests are: "ADD", "CHANGE", "REMOVE", "CLOSE", "DELETE"*/
   val interests: List[String]
@@ -47,68 +54,63 @@ abstract class Agent[A, T <: Task[A], E <: Event[A]] extends Debugger {
   def clearTasks(): Unit = taskQueue.synchronized(taskQueue.clear())
 
   /** Queue holding the interesting Events*/
-  val eventQueue: mutable.Queue[E] = new mutable.Queue[E]()
+  val eventQueue: mutable.Queue[EventType] = new mutable.Queue[EventType]()
 
   /** Queue holding the tasks to be bid on */
-  val taskQueue: mutable.Queue[T] = new mutable.Queue[T]()
+  val taskQueue: mutable.Queue[TaskType] = new mutable.Queue[TaskType]()
 
   /** Code for the sending a task down the hierarchy to changing the proof tree*/
-  def executeTask(t:T): Unit
+  def executeTask(t:TaskType): Unit
 
   /**
    * As getTasks with an infinite budget
    * @return - All Tasks that the current agent wants to execute.
    */
-  def getAllTasks: Iterable[T] = taskQueue.synchronized(taskQueue.iterator.toIterable)
+  def getAllTasks: Iterable[TaskType] = taskQueue.synchronized(taskQueue.iterator.toIterable)
 
   /**
    * Given a set of (newly) executing tasks, remove all colliding tasks.
    *
    * @param nExec - The newly executing tasks
    */
-  def removeColliding(nExec: Iterable[T]): Unit = taskQueue.synchronized(taskQueue.dequeueAll{tbe =>
+  def removeColliding(nExec: Iterable[TaskType]): Unit = taskQueue.synchronized(taskQueue.dequeueAll{tbe =>
     nExec.exists{e =>
-      val rem = e.writeSet().intersect(tbe.writeSet()).nonEmpty ||
-        e.writeSet().intersect(tbe.writeSet()).nonEmpty ||
-        e == tbe // Remove only tasks depending on written (changed) data.
-      if(rem && e != tbe) println("The task\n  $tbe\n collided with\n  $e\n and was removed.")
-      rem
+      blackboard.get.sections.forall({ s =>
+        val rem = e.writeList(s).intersect(tbe.writeList(s)).nonEmpty ||
+          e.writeList(s).intersect(tbe.writeList(s)).nonEmpty ||
+          e == tbe // Remove only tasks depending on written (changed) data.
+        if (rem && e != tbe) println("The task\n  $tbe\n collided with\n  $e\n and was removed.")
+        rem
+      })
     }
   })
+
+  /**Register agent to blackboard,    */
+  def register(blackboard: Blackboard) {
+    blackboard.registerAgent(this)
+  }
+
+  def unregister(blackboard: Blackboard): Unit = {
+    blackboard.unregisterAgent(this)
+    taskQueue.synchronized(taskQueue.clear())
+  }
   
 }
 
-abstract class RuleAgent[A] extends Agent[A, RuleTask[A], Event[A]]{
-  /**Register agent to blackboard,    */
-  def register(blackboard: Blackboard[A]) {
-    blackboard.registerAgent(this)
-  }
-
-  def unregister(blackboard: Blackboard[A]): Unit = {
-    blackboard.unregisterAgent(this)
-    taskQueue.synchronized(taskQueue.clear())
-  }
+abstract class RuleAgent extends Agent{
+  type TaskType = RuleTask
+  type EventType = Event
 
 }
 
-abstract class ProofAgent[A] extends Agent[A, ProofTask[A], RuleTask[A]]{
+abstract class ProofAgent extends Agent{
+  type TaskType = ProofTask
+  type EventType = Event
 
-  /**
-   * In this method the Agent gets the Blackboard it will work on.
-   * Registration for Triggers should be done in here.
-   */
-  def register(blackboard: Blackboard[A]) {
-    blackboard.registerAgent(this)
-  }
 
-  def unregister(blackboard: Blackboard[A]): Unit = {
-    blackboard.unregisterAgent(this)
-    taskQueue.synchronized(taskQueue.clear())
-  }
-
-  def executeTask(pt: ProofTask[A]) = {
+  def executeTask(pt: ProofTask) = {
     log("Executing Task",2)
-    pt.ruleSets.foreach(rs=>rs.filter(_.isApplicable(blackboard)).foreach({rt =>
+    pt.ruleLists.foreach(rs=>rs.filter(_.isApplicable(blackboard.get)).foreach({rt =>
       rt.byAgent.executeTask(rt)
       rt.byAgent.taskQueue.dequeueFirst(_==rt) //to remove completed task from list
     }))
@@ -116,52 +118,42 @@ abstract class ProofAgent[A] extends Agent[A, ProofTask[A], RuleTask[A]]{
   }
 }
 
-abstract class MetaAgent[A] extends Agent[A, MetaTask[A], ProofTask[A]]{
+abstract class MetaAgent extends Agent{
 
-  /**
-   * In this method the Agent gets the Blackboard it will work on.
-   * Registration for Triggers should be done in here.
-   */
-  def register(blackboard: Blackboard[A]) {
-    blackboard.registerAgent(this)
-  }
+  type TaskType = MetaTask
+  type EventType = Event
 
-  def unregister(blackboard: Blackboard[A]): Unit = {
-    blackboard.unregisterAgent(this)
-    taskQueue.synchronized(taskQueue.clear())
-  }
-
-  def executeTask(mt: MetaTask[A]) = {
+  def executeTask(mt: MetaTask) = {
     log("Executing MetaTask",2)
-    mt.proofSets.foreach(ps=>ps.filter(_.isApplicable(blackboard)).foreach(pt=>pt.byAgent.executeTask(pt)))
+    mt.proofLists.foreach(ps=>ps.filter(_.isApplicable(blackboard.get)).foreach(pt=>pt.byAgent.executeTask(pt)))
   }
 
-  def makeMetaTask(q: mutable.Queue[Set[ProofTask[A]]]): StdMetaTask[A] = {
-    val out = new StdMetaTask[A](this, name+"MetaTask")
-    q.foreach(out.proofSets.enqueue(_))
-    out.flags = List("ADD")
+  def makeMetaTask(q: mutable.Queue[List[ProofTask]]): PTMetaTask = {
+    val out = new PTMetaTask(this, name+"MetaTask")
+    q.foreach(out.proofLists.enqueue(_))
+    //out.flags = List("ADD")
     out
   }
 
-  def makeMetaTask(s: Set[ProofTask[A]]): MetaTask[A] = {
-    val out = new StdMetaTask[A](this, name+"MetaTask")
-    out.proofSets.enqueue(s)
-    out.flags = List("ADD")
+  def makeMetaTask(s: List[ProofTask]): MetaTask = {
+    val out = new PTMetaTask(this, name+"MetaTask")
+    out.proofLists.enqueue(s)
+    //out.flags = List("ADD")
     out
   }
 
 }
 
-class SingletonProofAgent[A](ruleAgent: RuleAgent[A]) extends ProofAgent[A] {
+class SingletonProofAgent(ruleAgent: RuleAgent)  extends ProofAgent {
 
   val name = "Singleton"+ruleAgent.name
   val interests = Nil
 
-  def ruleTaskToProofTask(rt: RuleTask[A]): ProofTask[A] = {
+  def ruleTaskToProofTask(rt: RuleTask): ProofTask = {
     log("Converting: "+rt,3)
-    val out = new StdProofTask[A](this, "Singleton"+rt.name)
-    out.ruleSets.enqueue(Set(rt))
-    out.flags = List("ADD")
+    val out = new PTProofTask(this, "Singleton"+rt.name)
+    out.ruleLists.enqueue(List(rt))
+    //out.flags = List("ADD")
     out
   }
 
@@ -172,19 +164,18 @@ class SingletonProofAgent[A](ruleAgent: RuleAgent[A]) extends ProofAgent[A] {
 
 }
 
-
-class AuctionAgent[A] extends MetaAgent[A] {
+class AuctionAgent extends MetaAgent {
 
   val name = "AuctionAgent"
 
   val interests = Nil
 
-  def proofAgents() = blackboard.proofAgents
+  def proofAgents() = blackboard.get.proofAgents
 
   //def runAgents() = proofAgents().foreach(_.run())
 
-/*  def getAuctionedTasks: mutable.Queue[ProofTask[A]] ={
-    var allTasks = new mutable.Queue[ProofTask[A]]()
+/*  def getAuctionedTasks: mutable.Queue[ProofTask] ={
+    var allTasks = new mutable.Queue[ProofTask]()
     proofAgents().foreach(pa=>allTasks=allTasks++pa.taskQueue)
     println("Proof agents: " +proofAgents)
     println("got auctioned tasks" + allTasks)
@@ -192,7 +183,9 @@ class AuctionAgent[A] extends MetaAgent[A] {
   }*/
 
   def run():Unit ={
-    executeTask(makeMetaTask(getTaskSet))
+    val taskSet = getTaskSet
+    if (taskSet.isEmpty){blackboard.get.finished=true}
+    else{executeTask(makeMetaTask(getTaskSet))}
   }
 
   /**
@@ -203,8 +196,8 @@ class AuctionAgent[A] extends MetaAgent[A] {
    *
    * @return Not yet executed noncolliding set of tasks
    */
-  def getTaskSet : Set[ProofTask[A]] = {
-    var allTasks = new mutable.Queue[ProofTask[A]]()
+  def getTaskSet : List[ProofTask] = {
+    var allTasks = new mutable.Queue[ProofTask]()
     proofAgents().foreach(pa=>allTasks=allTasks++pa.taskQueue)
 
     //Eliminate collisions
@@ -213,7 +206,7 @@ class AuctionAgent[A] extends MetaAgent[A] {
     log("Selected "+allTasks.length+" task(s) for execution")
     allTasks.foreach(_.log(this.toString, 3))
 
-    allTasks.toSet
+    allTasks.toList
   }
   
 }

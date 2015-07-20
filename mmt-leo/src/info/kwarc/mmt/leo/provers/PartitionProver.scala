@@ -5,40 +5,65 @@ import info.kwarc.mmt.leo.datastructures._
 /**
  * Created by mark on 7/4/15.
  */
-class PartitionAgent(numbersVar: List[Int]) extends RuleAgent[Int] {
+
+class Def[C](implicit desired : Manifest[C]) {
+  def unapply[X](c : X)(implicit m : Manifest[X]) : Option[C] = {
+     def sameArgs = desired.typeArguments.zip(m.typeArguments).forall {case (desired,actual) => desired >:> actual}
+     if (desired >:> m && sameArgs) Some(c.asInstanceOf[C])
+     else None
+  }
+}
+
+
+class IntBlackboard(g:DataTree[Int]) extends AndOrBlackboard[DataTree[Int]](g) {
+  override val proofSection = new DataTreeSection[Int](g)
+  log("Added Goal of type: " + g.getClass + g)
+  log(proofSection.toString)
+}
+
+class PartitionAgent(numbersVar: List[Int]) extends RuleAgent {
+  type BlackboardType = IntBlackboard
   val numbers=numbersVar
   val name = "PartitionAgent"
   val interests = List("ADD")
 
   def run(): Unit ={
-    blackboard.proofTree.openLeaves.foreach(pt=>taskQueue.enqueue(createTask(pt)))
+    blackboard.get.proofTree.openLeaves.foreach(pt=>taskQueue.enqueue(createTask(pt)))
     if (taskQueue.isEmpty) log("NO TASKS FOUND") else log("Found "+taskQueue.length+" task(s)")
   }
 
-  def createTask(pt: ProofTree[Int]): PartitionTask =  { new PartitionTask(pt,this)}
+  def createTask(pt: DataTree[Int]): PartitionTask =  { new PartitionTask(pt,this)}
 
-  def executeTask(rt: RuleTask[Int]) = {
+  def executeTask(rt: RuleTask) = {
     log("executing: "+ rt,3)
-    log("TREE BEFORE: " + addIndent(blackboard.proofTree.toString),2)
+    log("TREE BEFORE: " + addIndent(blackboard.get.proofTree.toString),2)
     rt match {
       case ptt:PartitionTask if ptt.isExpansion =>
-        ptt.node.proofData.conjunctive=false
+        ptt.node.conj=false
         ptt.addBranches()
       case _ => println("Error: Need a PartitionTask")
     }
-    log("TREE AFTER: " + addIndent(blackboard.proofTree.toString),2)
+    log("TREE AFTER: " + addIndent(blackboard.get.proofTree.toString),2)
   }
 
 }
 
 
 
-class PartitionTask(nodeVar: ProofTree[Int], agent: PartitionAgent) extends StdRuleTask[Int](agent,"PartitionTask") {
-  lazy val blackboard = byAgent.blackboard
-  readSet()
+class PartitionTask(nodeVar: DataTree[Int], agent: PartitionAgent) extends PTRuleTask(agent,"PartitionTask") {
+
   val node = nodeVar
-  override def readSet(): Set[ProofTree[Int]] = Set(node)
-  override def writeSet(): Set[ProofTree[Int]] = Set(node)
+
+  val IntTree = new Def[DataTreeSection[Int]]
+  override def readList(s: Section): List[s.ObjectType] = {s match {
+    case IntTree(t) => List(node.asInstanceOf[s.ObjectType])
+    case _ => Nil.asInstanceOf[List[s.ObjectType]]}
+  }
+
+  override def writeList(s: Section):List[s.ObjectType] = {s match {
+    case IntTree(t) => List(node.asInstanceOf[s.ObjectType])
+    case _ => Nil.asInstanceOf[List[s.ObjectType]]}
+  }
 
   var isExpansion = true
   val allNumbers = agent.numbers
@@ -47,25 +72,27 @@ class PartitionTask(nodeVar: ProofTree[Int], agent: PartitionAgent) extends StdR
 
   def addBranches(): Unit = {
     usableNumbers.foreach(int=>{
-        val add = mkNode(node.data - int)
+        val add = new DataTree(node.data - int,conjVar=false,None)
         val min: Int = usableNumbers.min
           node.addChild(add)
           if (add.data - int == 0) {
-            add.setSatisfiability(true)
+            add.setSat(true)
             add.percolate()
             return
           }
-        else if  (add.data < min) {add.setSatisfiability(false); add.percolate()}
+        else if  (add.data < min) {add.setSat(false); add.percolate()}
       }
     )
   }
 
 }
 
-object PartitionPresenter extends Presenter[Int] {
-  def present(pt: ProofTree[Int]): String = {
+object PartitionPresenter extends Presenter {
+  type ObjectType= DataTree[Int]
+
+  def present(pt: DataTree[Int]): String = {
     /** @return a list of numbers solving the problem*/
-    def getNumbers(node: ProofTree[Int]): List[Any] ={ //TODO figure out why List[Int] doesn't work
+    def getNumbers(node: DataTree[Int]): List[Any] ={ //TODO figure out why List[Int] doesn't work
       if (node.children.isEmpty) {
         List(node.data)
       }else {
@@ -74,7 +101,7 @@ object PartitionPresenter extends Presenter[Int] {
       }
     }
 
-    pt.isSatisfiable match {
+    pt.isSat match {
       case Some(true) => "Solution: "+getNumbers(pt)
       case Some(false) => "Contradiction Derived, no partition is possible. Outputting tree:" + pt
       case None => "Proof not found"
@@ -82,18 +109,15 @@ object PartitionPresenter extends Presenter[Int] {
   }
 }
 
+
 class PartitionProver(target: Int , usableNumbers: List[Int], cycles: Int = 5) {
 
-  def mkNode[A](data:A, cong:Boolean, sat: Option[Boolean]=None):ProofTree[A]={
-    val pd= new ProofData(data,cong,sat)
-    new ProofTree(pd)
-  }
 
-  val goal = mkNode(target,cong = true)
-  val blackboard = new Blackboard(goal)
+  val goal = new DataTree(target,conjVar = true,None)
+  val blackboard = new IntBlackboard(goal)
   val ra = new PartitionAgent(usableNumbers)
-  val pa = new SingletonProofAgent[Int](ra)
-  val ma = new AuctionAgent[Int]
+  val pa = new SingletonProofAgent(ra)
+  val ma = new AuctionAgent
 
   blackboard.registerAgent(ra)
   blackboard.registerAgent(pa)
