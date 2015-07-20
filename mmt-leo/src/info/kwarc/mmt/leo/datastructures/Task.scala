@@ -16,7 +16,6 @@ trait Task extends Debugger{
 
   /** Prints a short name of the task */
   val name: String
-
   def logPrefix = name
 
   /**Determines if a given task is applicable given the current blackboard*/
@@ -57,7 +56,7 @@ trait Task extends Debugger{
 
 }
 
-/** Trait which encapsulates an event occuring on the blackboard*/
+/** Trait which encapsulates an event occurring on the blackboard*/
 trait Event{
   var flags: List[String] = Nil
   def hasFlag(f:String): Boolean = flags.contains(f)
@@ -78,9 +77,8 @@ abstract class RuleTask extends Task  {
   /** The nodes which the task is operating on
     * the definitions should be overridden in specific implementations
     */
-  //TODO remove Nil implementation to force the developmer to define these
-  def readList(s: Section):List[s.ObjectType] = Nil
-  def writeList(s: Section):List[s.ObjectType] = Nil
+  def readList(s: Section):List[s.ObjectType]
+  def writeList(s: Section):List[s.ObjectType]
 
   override val byAgent:RuleAgent
 
@@ -132,13 +130,13 @@ abstract class MetaTask extends Task  {
   def readList(s: Section):List[s.ObjectType] ={
     var out:List[s.ObjectType] = Nil
     proofLists.foreach(ps=>out=out.union(ps.flatMap(_.readList(s)).asInstanceOf[List[s.ObjectType]]))
-    out
+    out.distinct
   }
 
   def writeList(s: Section):List[s.ObjectType] ={
     var out:List[s.ObjectType] = Nil
     proofLists.foreach(ps=>out=out.union(ps.flatMap(_.writeList(s)).asInstanceOf[List[s.ObjectType]]))
-    out
+    out.distinct
   }
 
   override def toString: String = {
@@ -150,7 +148,7 @@ abstract class MetaTask extends Task  {
   }
 }
 
-class PTRuleTask(byAgentVar: RuleAgent, nameVar: String) extends RuleTask{
+abstract class PTRuleTask(byAgentVar: RuleAgent, nameVar: String) extends RuleTask{
   val name = nameVar
   val byAgent = byAgentVar
 
@@ -160,7 +158,6 @@ class PTRuleTask(byAgentVar: RuleAgent, nameVar: String) extends RuleTask{
         b.proofSection.isApplicable(this)
       case _ => throw new IllegalArgumentException("Not a valid blackboard type")
     }
-
   }
 
 }
