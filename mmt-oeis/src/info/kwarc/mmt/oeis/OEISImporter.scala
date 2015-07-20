@@ -75,6 +75,7 @@ class OEISImporter extends Importer {
       
       translateDocument(node)(bt.narrationDPath, errHandler)
       val doc = controller.getDocument(bt.narrationDPath)
+      controller.clear //to save memory from getting too high
       cont(doc)
     } catch {
       case e : Throwable => 

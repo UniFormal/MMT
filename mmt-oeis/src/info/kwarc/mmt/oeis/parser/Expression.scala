@@ -135,7 +135,7 @@ case class ArgList(args : List[Expression]) extends Expression{
   def present : String = "("+args.mkString(",")+")"
   def toNode(implicit theory : String) : Elem =
     <OMA>
-      <OMS cd="set1" name="set" base={URIDefaults.base}>
+      <OMS cd={URIDefaults.cd} name="set" base={URIDefaults.base}>
         {args.map(_.toNode)}
       </OMS>
     </OMA>

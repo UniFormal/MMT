@@ -211,7 +211,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
 
    import htmlRh._
 
-   private def doName(p: Path) {
+   protected def doName(p: Path) {
       val s = p.last
       var attrs = p match {
         case g : GlobalName => List("id" -> (g.module.toMPath.name.toPath + "?" + g.name.toPath))
@@ -230,7 +230,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      case false => doName(path)
    }
 
-   private def doMath(t: Obj) {
+   protected def doMath(t: Obj) {
         apply(t, None)(rh)
    }
    private def doComponent(comp: DeclarationComponent, t: Obj) {
