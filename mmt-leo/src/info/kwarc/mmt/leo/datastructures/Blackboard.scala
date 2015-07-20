@@ -3,36 +3,42 @@ package info.kwarc.mmt.leo.datastructures
 /**
  * A blackboard is a central data collection object that supports
  * synchronized access between multiple processes.
+ * The blackboard acts as the data storage unit which the agents can access.
+ * this class is the most abstract incarnation of the blackboard with only the
+ * key features. Further extensions support different sections aka data containers
+ * with change management. This allows for uniform access and eliminates code reuse.
  *
- * The implementation decides over the fairness and order of execution of the
- * processes.
  */
 abstract class Blackboard extends Debugger {
   def logPrefix = "Blackboard"
 
+  /**Boolean representing the status of the prof goal*/
   var finished: Boolean = false
 
-
+  /**Lists of agents currently registered to the blackboard*/
   var ruleAgents: List[RuleAgent] = Nil
   var proofAgents: List[ProofAgent] = Nil
   var metaAgents: List[MetaAgent] = Nil
 
-  var ruleSeq: Seq[RuleTask] = Nil
-  var proofSeq: Seq[ProofTask] = Nil
-  var metaSeq: Seq[MetaTask] = Nil
-
+  /**Function that registers agents to the blackboard*/
   def registerAgent(a: Agent): Unit = {
-    a.blackboard = Some(this.asInstanceOf[a.BlackboardType])
-    a match {
-      case a: RuleAgent => ruleAgents = a :: ruleAgents
-      case a: ProofAgent => proofAgents = a :: proofAgents
-      case a: MetaAgent => metaAgents = a :: metaAgents
-      case _ => a.blackboard = null
-        throw new IllegalArgumentException("Cannot register: Unknown agent type")
+    try {
+      a.blackboard = Some(this.asInstanceOf[a.BlackboardType])
+      a match {
+        case a: RuleAgent => ruleAgents = a :: ruleAgents
+        case a: ProofAgent => proofAgents = a :: proofAgents
+        case a: MetaAgent => metaAgents = a :: metaAgents
+        case _ => a.blackboard = null
+          throw new IllegalArgumentException("Cannot register: Unknown agent type")
+      }
+      log("Registered Agent: " + a)
+    }catch{
+      case _:Throwable =>
+        throw new IllegalArgumentException("Agent Blackboard type does not correspond to current BB")
     }
-    log("Registered Agent: " + a)
   }
 
+  /** Function that unregisters agents from the blackboard*/
   def unregisterAgent(a: Agent): Unit = {
     a.blackboard = None
     a match {
@@ -71,16 +77,7 @@ abstract class Blackboard extends Debugger {
       "\n MetaAgents: " + metaAgents
   }
 
-  var sections: List[Section]
-}
-
-
-class AndOrBlackboard[T>:Null <:AndOr[T]](g:T) extends Blackboard {
-
-  val proofSection = new AndOrSection{type ObjectType = T; var data=g}
-
-  def proofTree = proofSection.data
-
+  /**These are the basic sections which correspond to the various types of tasks*/
   val ruleTaskSection = new RuleTaskSection
   def ruleTasks = ruleTaskSection.data
   val proofTaskSection = new ProofTaskSection
@@ -88,22 +85,44 @@ class AndOrBlackboard[T>:Null <:AndOr[T]](g:T) extends Blackboard {
   val metaTaskSection =  new MetaTaskSection
   def metaTasks = metaTaskSection.data
 
-  var sections :List[Section] = List(proofSection,ruleTaskSection,proofTaskSection,metaTaskSection)
+  /** the list which contains all of the sections(data areas) of the blackboard*/
+  var sections :List[Section] = List(ruleTaskSection,proofTaskSection,metaTaskSection)
 
 }
 
 
+/**
+ * This class represents a blackboard specialized for proofTrees of any type
+ *
+ * @param g goal for the blackboard to solve
+ * @tparam T type of proof tree that the goal represents
+ */
+class AndOrBlackboard[T>:Null <:AndOr[T]](g:T) extends Blackboard {
+
+  /** this is the proof section which houses the proof treee
+    * beginning with the goal node
+    */
+  val proofSection = new AndOrSection{type ObjectType = T; var data=g}
+  def proofTree = proofSection.data
+  sections =proofSection::sections
+}
 
 /** the abstract type of a section of the Blackboard,
-  * intended to hold and monitor changes in the stored*/
+  * intended to hold and monitor changes in the stored data
+  */
 trait Section extends Debugger {
   val logPrefix = "Section"
+
+  /** the type of data that the section holds*/
   type ObjectType
   var data : ObjectType
+
+  /**the list of changes which mark operations on the stored data */
   var changes : List[Change[_]]
-  //def interestedAgents: List[Agent]
+
   override def toString: String = {data.getClass.toString + " Section"}
 
+  /** function that updates the stored data and adds a change to the changes list*/
   def update(newData:ObjectType, flags:List[String] = List("CHANGE")) = {
     changes = new Change((data,newData),flags) :: changes
     data = newData
@@ -119,12 +138,15 @@ trait Section extends Debugger {
  */
 abstract class AndOrSection extends Section {
   override val logPrefix ="AndOrSection"
+
+  /** this type of section only stores data which is a subtype of the AndOr tree type*/
   type ObjectType>: Null <:AndOr[ObjectType]
 
-  type PTType=ObjectType //Convenient alias
+  type PTType=ObjectType //Meaningful alias for object type
   var data:PTType
   var changes: List[Change[_]] = Nil
 
+  /** function that updates a node of the proof tree and adds a change to the changelist*/
   def update(oldNode:PTType,newNode:PTType) = {
     oldNode.parent match {
       case Some(p) => oldNode.disconnect(); p.addChild(newNode)
@@ -133,6 +155,7 @@ abstract class AndOrSection extends Section {
     changes = new Change((oldNode,newNode),List("CHANGE")) :: changes
   }
 
+
   def apply(goal: PTType) = {
     data = goal
     changes = List(new Change(goal,List("ADD")))
@@ -140,35 +163,46 @@ abstract class AndOrSection extends Section {
 
 
   /**
-   * Adds a ProofTree to the blackboard, if it does not exist. If it exists
-   * the old formula is returned.
-   *
+   * Appends a tree to the specified root
    * @param root root node to attach new proof
    * @param tree tree to attach to root
    */
-  def addTree(root: PTType, tree : PTType) : Unit = root.addChild(tree)
+  def addTree(root: PTType, tree : PTType) : Unit = {
+    root.addChild(tree)
+    changes = new Change(tree,List("ADD")) :: changes
+  }
 
   /**
-   * Removes a formula from the Set fo formulas of the Blackboard.
+   * Removes the target node from the proof tree
    */
-  def removeTree(tree : PTType) : Unit = tree.disconnect()
+  def removeTree(tree : PTType) : Unit = {
+    tree.disconnect()
+    changes = new Change(tree,List("DEL")) :: changes
+  }
 
-  /** Returns a List of all nodes of the Blackboard's proof tree 
-   * @return All formulas of the blackboard.
+  /** Returns a List of all nodes of the sections's proof tree
+   * @return All nodes in the sections data.
    */
   def getNodes : List[PTType] = data.preDepthFlatten
 
+  /**Function that locks nodes affected by a given task*/
   def lockNodes[T<:Task](task: T):Boolean = {
     val resultsW = task.writeList(this).map(_.placeLock(readLockVar=true,writeLockVar=true))
     val resultsR = task.readList(this).map(_.placeLock(readLockVar=false,writeLockVar=true))
     (resultsW++resultsR).forall(b=>b)
   }
 
+  /**Function that unlocks nodes affected by a given task*/
   def unlockNodes[T<:Task](task: T):Unit = {
     task.writeList(this).foreach(_.liftLock(readLockVar=false,writeLockVar=false))
     task.readList(this).foreach(_.liftLock(readLockVar=false,writeLockVar=false))
   }
 
+  /** function that determines if a task is still applicable to the given tree
+    * if it is not applicable it logs why
+    * @param t a rule task which may or may not be applicable to the given tree
+    * @return boolean representing applicability
+    */
   def isApplicable(t: PTRuleTask):Boolean = {
     val wS = t.writeList(this).exists(!_.isBelowSatisfied) || t.writeList(this).isEmpty
     val wC = data.isAbove(t.writeList(this))
@@ -192,17 +226,20 @@ abstract class AndOrSection extends Section {
 
 }
 
+/** Class for the section specific to the AndOrTree class*/
 class ProofTreeSection(g:AndOrTree) extends AndOrSection {
   type ObjectType = AndOrTree
   var data = g
 }
 
+/** Class for the section specific to the DataTree[D] class*/
 class DataTreeSection[D](g:DataTree[D]) extends AndOrSection {
   type ObjectType = DataTree[D]
   var data = g
 }
+
 /**
- * This trait capsules the message handling for the blackboard
+ * This section handles the lists of various tasks
  */
 class TaskSection extends Section {
 
@@ -218,10 +255,12 @@ class TaskSection extends Section {
   }
 }
 
+/** these classes are the specific Sections representing the various tasks*/
 class RuleTaskSection extends TaskSection { type TaskType = RuleTask}
 class ProofTaskSection extends TaskSection { type TaskType = ProofTask}
 class MetaTaskSection extends TaskSection { type TaskType = MetaTask}
 
+/** this class presents the final solution of a specific section of the blackboard*/
 abstract class Presenter extends Debugger {
   type ObjectType
   def logPrefix="Presenter"

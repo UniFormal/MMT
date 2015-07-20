@@ -19,6 +19,7 @@ trait Task extends Debugger{
 
   def logPrefix = name
 
+  /**Determines if a given task is applicable given the current blackboard*/
   def isApplicable[BB<:Blackboard](b: BB):Boolean
 
   /** Returns a set of all nodes that are read for the task. */
@@ -46,16 +47,17 @@ trait Task extends Debugger{
     }else{false}
   }
 
+  /** The agent which created the task*/
   val byAgent: Agent
-  lazy val blackboard = byAgent.blackboard.get
 
-/*  protected def mkNode(data:A, cong:Boolean=false, sat: Option[Boolean]=None):AndOrTree={
-    val pd= new ProofData(data,cong,sat)
-    new AndOrTree(pd)
-  }*/
+  /** The blackboard to which the agent is registered,
+    * lazy to avoid null pointer errors
+    */
+  lazy val blackboard = byAgent.blackboard.get
 
 }
 
+/** Trait which encapsulates an event occuring on the blackboard*/
 trait Event{
   var flags: List[String] = Nil
   def hasFlag(f:String): Boolean = flags.contains(f)
@@ -64,64 +66,78 @@ trait Event{
   def wasReadBy(a: Agent): Boolean = readBy.contains(a)
 }
 
+/** Trait which encapsulates a change in data*/
 class Change[T](dataVar:T, flagsVar: List[String]) extends Event{
   val data = dataVar
   flags =flagsVar
 }
 
+/** Class which represents a rule task which changes the data on the blackboard*/
 abstract class RuleTask extends Task  {
 
+  /** The nodes which the task is operating on
+    * the definitions should be overridden in specific implementations
+    */
+  //TODO remove Nil implementation to force the developmer to define these
   def readList(s: Section):List[s.ObjectType] = Nil
   def writeList(s: Section):List[s.ObjectType] = Nil
 
   override val byAgent:RuleAgent
 
-  override def toString: String = {//TODO make more intuitice toString function
+  override def toString: String = {//TODO make more intuitive toString function
     listDisplay(blackboard.sections.flatMap({s=>try{s.data.toString}catch{case _: Throwable =>""}}),"ReadSets")
   }
 }
 
+/** Class which represents a Proof task which calls on rule tasks*/
 abstract class ProofTask extends Task {
   override val byAgent: ProofAgent
 
+  /** Queue of lists of rule tasks. Lists of rule taks are parallelizable*/
   val ruleLists: mutable.Queue[List[RuleTask]] = new mutable.Queue[List[RuleTask]]()
 
+  /** @return union of the constituent rule task readLists*/
+  //TODO change back to sets it is more natural
   def readList(s: Section):List[s.ObjectType] ={
     var out:List[s.ObjectType] = Nil
-    ruleLists.foreach(rs=>out=out.intersect(rs.flatMap(_.readList(s))))
-    out
+    ruleLists.foreach(rs=>out=out.union(rs.flatMap(_.readList(s)).asInstanceOf[List[s.ObjectType]]))
+    out.distinct
   }
 
+  /** @return the union of constituent writeLists*/
   def writeList(s: Section):List[s.ObjectType] ={
     var out:List[s.ObjectType] = Nil
-    ruleLists.foreach(rs=>out=out.intersect(rs.flatMap(_.writeList(s))))
-    out
+    ruleLists.foreach(rs=>out=out.union(rs.flatMap(_.writeList(s)).asInstanceOf[List[s.ObjectType]]))
+    out.distinct
   }
 
   override def toString: String = {
     QueueListDisplay(ruleLists,"ProofTask","RuleSet")
   }
 
+  /** checks if a given task is applicable on the blackboard*/
   def isApplicable[BB<:Blackboard](b:BB) = {
     ruleLists.forall(rl=>rl.forall(_.isApplicable(b)))
   }
 
 }
 
+/** Class which represents a Meta task which calls on proof tasks*/
 abstract class MetaTask extends Task  {
   override val byAgent: MetaAgent
 
+  /** List of constituent proof tasks*/
   val proofLists: mutable.Queue[List[ProofTask]] = new mutable.Queue[List[ProofTask]]()
 
   def readList(s: Section):List[s.ObjectType] ={
     var out:List[s.ObjectType] = Nil
-    proofLists.foreach(ps=>out=out.intersect(ps.flatMap(_.readList(s))))
+    proofLists.foreach(ps=>out=out.union(ps.flatMap(_.readList(s)).asInstanceOf[List[s.ObjectType]]))
     out
   }
 
   def writeList(s: Section):List[s.ObjectType] ={
     var out:List[s.ObjectType] = Nil
-    proofLists.foreach(ps=>out=out.intersect(ps.flatMap(_.writeList(s))))
+    proofLists.foreach(ps=>out=out.union(ps.flatMap(_.writeList(s)).asInstanceOf[List[s.ObjectType]]))
     out
   }
 

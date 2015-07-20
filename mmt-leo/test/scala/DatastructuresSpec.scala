@@ -8,6 +8,10 @@ import sun.management.resources.agent
 
 /**
  * Created by mark on 6/25/15.
+ *
+ * this class represents the series of unit tests the prover
+ * architecture and tree architecture must pass
+ *
  */
 
 class DatastructuresSpec extends FlatSpec with Matchers {

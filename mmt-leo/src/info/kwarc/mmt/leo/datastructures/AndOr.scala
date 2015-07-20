@@ -1,5 +1,4 @@
 package info.kwarc.mmt.leo.datastructures
-import reflect.runtime._, universe._
 
 
 /**
