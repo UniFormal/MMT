@@ -275,9 +275,9 @@ class PdfLatex extends SmsGenerator {
       val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
         bt.inFile.stripExtension.getName, "-interaction", "scrollmode"),
         bt.inFile.up, env(bt): _*)
-      val exitCode = pb.!(ProcessLogger(line => output.append(line + "\n"),
+      pb.!(ProcessLogger(line => output.append(line + "\n"),
         line => output.append(line + "\n")))
-      if (exitCode != 0 || pdfFile.length == 0) {
+      if (pdfFile.length == 0) {
         bt.errorCont(LatexError("no pdf created", output.toString))
         pdfFile.delete()
       }
