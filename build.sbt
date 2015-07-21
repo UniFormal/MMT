@@ -35,12 +35,6 @@ apidoc <<= apidoc.dependsOn(cleandoc, unidoc in Compile)
 val deploy =
   TaskKey[Unit]("deploy", "assembles and copies fat jars to deploy location.")
 
-deploy in jedit <<= assembly in(jedit, Compile) map
-  deployTo("jedit-plugin/plugin/jars/MMTPlugin.jar")
-
-deploy in mmt <<= assembly in(mmt, Compile) map
-  deployTo("mmt.jar")
-
 def commonSettings(nameStr: String) = Seq(
   organization := "info.kwarc.mmt",
   version := "1.0.1",
@@ -52,7 +46,6 @@ def commonSettings(nameStr: String) = Seq(
   unmanagedBase := baseDirectory.value / "jars",
   isSnapshot := true,
   publishTo := Some(Resolver.file("file", new File("../deploy/main"))),
-  mainClass in(Compile, run) := Some("info.kwarc.mmt.api.frontend.Run"),
   exportJars := true,
   autoAPIMappings := true,
   connectInput in run := true,
@@ -169,11 +162,12 @@ lazy val leo = (project in file("mmt-leo")).
 
 // just a wrapper project
 lazy val mmt = (project in file("mmt-exts")).
-  dependsOn(tptp, stex, pvs, specware, webEdit, planetary, leo).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, leo).
   settings(commonSettings("mmt-exts"): _*).
   settings(
     exportJars := false,
     publish := {},
+    deploy <<= assembly in Compile map deployTo("mmt.jar"),
     mainClass in assembly := Some("info.kwarc.mmt.api.frontend.Run"),
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(
       prependShellScript = Some(Seq("#!/bin/bash", """exec /usr/bin/java -Xmx2048m -jar "$0" "$@"""")))
@@ -193,6 +187,8 @@ lazy val jedit = (project in file("jEdit-mmt")).
   settings(
     resourceDirectory in Compile := baseDirectory.value / "src/resources",
     unmanagedJars in Compile ++= jeditJars map (baseDirectory.value / "lib" / _),
+    deploy <<= assembly in Compile map
+      deployTo("jedit-plugin/plugin/jars/MMTPlugin.jar"),
     assemblyExcludedJars in assembly := {
       val cp = (fullClasspath in assembly).value
       cp filter { j => jeditJars.contains(j.data.getName) }
