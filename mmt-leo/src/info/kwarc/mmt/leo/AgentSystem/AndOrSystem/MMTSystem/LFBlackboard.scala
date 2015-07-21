@@ -18,5 +18,8 @@ class LFBlackboard(val controller: Controller, val rules:RuleSet,g: LFProofTree)
 
   implicit val presentObj: Obj => String = o => controller.presenter.asString(o)
 
-
+  val shapeDepth = 2
+  val factSection = new FactSection(this, shapeDepth)
+  def facts = factSection.data
+  def factsChanges = factSection.changes
 }

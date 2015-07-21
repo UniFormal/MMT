@@ -202,32 +202,33 @@ trait AndOr[T<:AndOr[T]] extends Tree[T] with Lockable { Self: T =>
   var conj: Boolean
   def isAnd = conj
   def isOr = !conj
-  /** isSat = None -> unknown, isSat= True/False -> Solved or Proven Unsolvable*/
-  var isSat: Option[Boolean]
-  def isUnsat = !this.isSat.getOrElse(true)
-  def isSolved = isSat.getOrElse(false)
+  /** sat = None -> unknown, isSat= True/False -> Solved or Proven Unsolvable*/
+  var sat: Option[Boolean]
+
+  def isUnsat = !this.sat.getOrElse(true)
+  def isSolved = sat.getOrElse(false)
 
 
   def update(conjVar: Boolean, isSatVar: Option[Boolean]) ={
     this.conj = conjVar
-    this.isSat = isSatVar
+    this.sat = isSatVar
   }
 
   /** Returns true if two nodes are equivalent with respect to their values*/
   override def nodeEquivalence(that: T): Boolean = {
     super.nodeEquivalence(that) &&
     that.conj == this.conj &&
-    that.isSat == this.isSat
+    that.sat == this.sat
   }
 
   /** changes the data field in the node*/
   def setSat( bool: Boolean) {
-    isSat = Some(bool)
+    sat = Some(bool)
   }
 
   /** converts only a single node to a string */
   def present: String ={
-    "\t"*depth + "isAnd: "+isAnd.toString+" isSatisfiable: "+isSat.toString
+    "\t"*depth + "isAnd: "+isAnd.toString+" isSatisfiable: "+sat.toString
   }
 
   /** returns a nice looking printable string **/
@@ -238,16 +239,16 @@ trait AndOr[T<:AndOr[T]] extends Tree[T] with Lockable { Self: T =>
   }
 
   /** returns leaves that are not satisfied or proven unsatisfiable*/
-  def openLeaves: List[T] = leaves.filter(_.isSat.isEmpty)
+  def openLeaves: List[T] = leaves.filter(_.sat.isEmpty)
 
   /** determines if this node is below a satisfied node*/
-  def isBelowSatisfied:Boolean = path.exists(_.isSat.isDefined)
+  def isBelowSatisfied:Boolean = path.exists(_.sat.isDefined)
 
   /** simplifies the ProofTree for presentation*/
   def simplify():Unit = {
     if (this.children==Nil) {return}
     if ((isAnd && isUnsat) || (isOr && isSolved)) {
-      val applicableChildren = children.filter(c => c.isSat==this.isSat)
+      val applicableChildren = children.filter(c => c.sat==this.sat)
       val smallest = applicableChildren.map(_.depth).min
       val bestChild = applicableChildren.filter(_.depth==smallest).head
       (children diff List(bestChild)).foreach(_.disconnect())
@@ -290,15 +291,15 @@ trait AndOr[T<:AndOr[T]] extends Tree[T] with Lockable { Self: T =>
  */
 class AndOrTree(conjVar:Boolean, isSatVar: Option[Boolean]=None) extends AndOr[AndOrTree] {
   var conj=conjVar
-  var isSat=isSatVar
+  var sat=isSatVar
 
   def apply(conjVar: Boolean, isSatVar: Option[Boolean]) ={
     this.conj = conjVar
-    this.isSat = isSatVar
+    this.sat = isSatVar
   }
 
   def unapply(t:AndOrTree):Option[(Boolean,Option[Boolean])] = {
-    Some((t.conj, t.isSat))
+    Some((t.conj, t.sat))
   }
 
 }

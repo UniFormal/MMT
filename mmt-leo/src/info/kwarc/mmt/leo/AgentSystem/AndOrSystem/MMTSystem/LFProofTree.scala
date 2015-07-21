@@ -9,13 +9,14 @@ import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.AndOr
  *
  * This class represents the proof tree for the LF prover
  */
-
+//TODO Ask Florian: Should I further specialize to ensure that And nodes always follow or nodes and vice versa
 class LFProofTree(val contextVar: Context, var concVar: Term, conjVar: Boolean, isSatVar: Option[Boolean] = None )
   extends AndOr[LFProofTree] {
 
   var conj = conjVar
-  var isSat = isSatVar
+  var sat = isSatVar
 
+  var finished = false
   /**The context held by the node*/
   var context = contextVar
   /** the complete context/antecedent (i.e., including the parent's context) of this sequent */
@@ -43,36 +44,52 @@ class LFProofTree(val contextVar: Context, var concVar: Term, conjVar: Boolean, 
   def proof = proofVar
 
 
-  /*/**
+
+  /** caches the result of isSolved */
+  private var solved: Option[Boolean] = None
+
+  /**
    * checks if the goal can be closed by closing all subgoals of some alternative
    * the result is cached so that the method can be called arbitrarily often without performance penalty
    */
-  def isSolved: Boolean = {
+  override def isSolved: Boolean = {
     if (solved.isDefined) return solved.get
     solved = Some(false)
-    alternatives.find(_.isSolved) foreach {a =>
-      setSolved(a.proof())
+    if (this.isOr) {
+      children.find(_.isSolved) foreach {a=>setSolved(a.proof())}
+      //TODO Ask Florian if i need to set solved for the current node
+    }else if (children.forall(_.isSolved)){
+      children foreach {a=>setSolved(a.proof())}
     }
     solved.getOrElse(false)
   }
 
+  /**
+   * recursively abandons all alternatives
+   * (all goals are marked so that existing pointers to them (e.g., in facts) can be abandoned)
+   */
+  private def closeSubgoals() {
+    finished = true
+    children.foreach {_.closeSubgoals()}
+  }
 
   /** sets the proof of this goal and removes alternatives */
   private def setSolved(p: Term) {
     proofVar = p
     solved = Some(true)
-    removeAlternatives
+    closeSubgoals()
   }
 
   /** checks whether this can be closed using the axiom rule, i.e., whether the goal is in the database of facts */
   private def checkAxiomRule(implicit facts: Facts) {
-    if (solved != Some(true)) {
+    if (!solved.contains(true)) {
       solved = None
       facts.has(this, conc) foreach {p =>
         setSolved(p)
       }
     }
   }
+
   /**
    * recursively checks if the goal can be closed by using the axiom rule
    *
@@ -80,9 +97,7 @@ class LFProofTree(val contextVar: Context, var concVar: Term, conjVar: Boolean, 
    */
   def newFacts(implicit facts: Facts) {
     checkAxiomRule
-    alternatives.foreach {a =>
-      a.subgoals.foreach {sg => sg.newFacts}
-    }
+    children.foreach {_.newFacts}
   }
 
   /** stores the invertible backward rules that have not been applied yet */
@@ -92,18 +107,18 @@ class LFProofTree(val contextVar: Context, var concVar: Term, conjVar: Boolean, 
   /** stores the backward search rules that have not been applied yet */
   private var backwardSearch : List[BackwardSearch] = Nil
   /** initializes the invertible backward/forward tactics that can be applied */
-  def setExpansionTactics(prover: Searcher, backw: List[BackwardInvertible], forw: List[ForwardInvertible]) {
+  def setExpansionTactics(blackboard: LFBlackboard, backw: List[BackwardInvertible], forw: List[ForwardInvertible]) {
     backward = parent match {
       case Some(g) if g.conc == conc => g.backward
       // TODO it can be redundant to check the applicability of all tactics
-      case _ => backw.flatMap {t => t.apply(prover, this)}
+      case _ => backw.flatMap {t => t.apply(blackboard, this)}
     }
-    val applForw = forw.flatMap {t => t.apply(prover, context)}
+    val applForw = forw.flatMap {t => t.apply(blackboard, context)}
     forward = applForw ::: parent.map(_.forward).getOrElse(Nil)
   }
   /**
    *  the invertible backward/forward tactics that have not been applied yet are stored here,
-   *  but set and read by the [[Prover]]
+   *  but set and read by the [[LFBlackboard]]
    *  this method retrieves the next tactic to apply
    */
   def getNextExpansion: Option[ApplicableTactic] = {
@@ -118,35 +133,37 @@ class LFProofTree(val contextVar: Context, var concVar: Term, conjVar: Boolean, 
     }
   }
 
-  def setSearchTactics(prover: Searcher, backw: List[BackwardSearch]) {
+  def setSearchTactics(blackboard: LFBlackboard, backw: List[BackwardSearch]) {
     backwardSearch = backw
   }
-  def getNextSearch(prover: Searcher): List[ApplicableTactic] = {
+  def getNextSearch(blackboard: LFBlackboard): List[ApplicableTactic] = {
     backwardSearch match {
       case Nil => Nil
       case hd::tl =>
         backwardSearch = tl
-        hd.apply(prover, this) match {
-          case Nil => getNextSearch(prover)
+        hd.apply(blackboard, this) match {
+          case Nil => getNextSearch(blackboard)
           case l => l
         }
     }
   }
 
   override def toString = conc.toString
-  def present(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]): String = {
-    val goalHighlight = if (Some(this) == current) "X " else "  "
-    def altHighlight(a: Alternative) = if (Some(a) == newAlt) "+ new\n" else "+ \n"
+
+  private def indent(depth: Int) = (0 to depth).map(_ => "  ").mkString("")
+
+  def present(depth: Int, newAlt: Option[LFProofTree])(implicit presentObj: Obj => String, current: Option[LFProofTree]): String = {
+    val goalHighlight = if (current.contains(this)) "X " else "  "
+    def altHighlight(a: LFProofTree) = if (newAlt.contains(a)) "+ new\n" else "+ \n"
     if (isSolved) {
       goalHighlight + "! " + presentObj(context) + " |- " + presentObj(proof) + " : " + presentObj(conc)
     } else {
-      val aS = alternatives.map(a => Searcher.indent(depth+1) + altHighlight(a) + a.present(depth+1))
+      val aS = this.children.map(a => a.indent(depth+1) + altHighlight(a) + a.present(depth+1,newAlt))
       val lines = goalHighlight + (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
       lines.mkString("\n")
     }
   }
 
-*/
 
 }
 

@@ -17,7 +17,7 @@ trait Data[D,T<:Data[D,T]] extends AndOr[T] { self: T =>
   def update(dataVar:D,conjVar: Boolean, isSatVar: Option[Boolean]) ={
     this.data = dataVar
     this.conj = conjVar
-    this.isSat = isSatVar
+    this.sat = isSatVar
   }
 
   /*  def mkData[B,U<:Data[B,U]](dataVar:B, conjVar:Boolean, isSatVar:Option[Boolean]): U ={
@@ -48,20 +48,20 @@ class DataTree[D](dataVar: D,conjVar:Boolean, isSatVar: Option[Boolean]=None)
 
      var data = dataVar
      var conj = conjVar
-     var isSat = isSatVar
+     var sat = isSatVar
 
      def apply(dataVar:D,conjVar: Boolean, isSatVar: Option[Boolean]) ={
        this.data = dataVar
        this.conj = conjVar
-       this.isSat = isSatVar
+       this.sat = isSatVar
      }
 
      def unapply[B](t:DataTree[B]) = {
-       Some((t.data,t.conj, t.isSat))
+       Some((t.data,t.conj, t.sat))
      }
 
      override def present: String ={
-       "\t"*depth +"data: "+data + " isAnd: "+isAnd.toString+" isSatisfiable: "+isSat.toString
+       "\t"*depth +"data: "+data + " isAnd: "+isAnd.toString+" isSatisfiable: "+sat.toString
      }
 
    }

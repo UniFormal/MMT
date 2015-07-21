@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.objects.Conversions._
 import info.kwarc.mmt.api.utils.HashMapToSet
-import info.kwarc.mmt.leo.AgentSystem.Debugger
+import info.kwarc.mmt.leo.AgentSystem.{Change, Section, Debugger}
 
 
 object Shape {
@@ -34,7 +34,7 @@ object Shape {
         case None => AtomicShape(t)
         case Some(i) => BoundShape(i)
       }
-    case t => AtomicShape(t) //TODO ask florian about shadowing
+    case t => AtomicShape(t) //TODO ask florian about shadowing and lack of use
   }
 
   def matches(s: Shape, t: Shape): Boolean = (s, t) match {
@@ -171,7 +171,7 @@ class Facts(blackboard:LFBlackboard,shapeDepth: Int) extends Debugger {
     facts.keys foreach {sh =>
        if (Shape.matches(querySh, sh)) {
           facts(sh) foreach {f =>
-             if (f.goal.isSat.isDefined)
+             if (f.goal.sat.isDefined)
                 facts(sh) -= f // forget facts about finished goals
              else
                 fun(f)
@@ -271,4 +271,10 @@ class Facts(blackboard:LFBlackboard,shapeDepth: Int) extends Debugger {
   override def toString = {
     facts.toString
   }
+}
+
+class FactSection(blackboard:LFBlackboard,shapeDepth: Int) extends Section {
+  type ObjectType = Facts
+  var data = new Facts(blackboard:LFBlackboard,shapeDepth: Int)
+  var changes: List[Change[_]] = Nil
 }
