@@ -1,79 +1,68 @@
-package info.kwarc.mmt.leo.provers.lfprover
+package info.kwarc.mmt.leo.AgentSystem.AndOrSystem.MMTSystem
 
-import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.leo.datastructures.Debugger
-import objects._
-import objects.Conversions._
-import utils._
+import info.kwarc.mmt.api.GlobalName
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.api.utils.HashMapToSet
+import info.kwarc.mmt.leo.AgentSystem.Debugger
 
-/** an approximation of the syntax tree of a [[Term]] that replaces subtrees beyond a certain depth with special leaves
- *  
- *  Shapes can be used as keys when indexing sets of terms, as in [[Facts]] 
- */
+
+object Shape {
+  /**
+   * @param queryVars variables which yield shape [[Wildcard]]
+   * @param context variables which yield [[BoundShape]]
+   * @param t the term whose shape to compute
+   * @param level the height of the shape's syntax tree
+   * @return the approximation of the term that cuts all branches of the syntax tree at a certain depth
+   */
+  def apply(queryVars: Context, context: Context, t: Term, level: Int): Shape = t match {
+    case ComplexTerm(op, subs, cont, args) =>
+      if (level == 0) return Wildcard
+      var children: List[Shape] = Nil
+      val subsSh = subs.foreach {s => children ::= Shape(queryVars, context, s.target, level-1)}
+      val contSh = cont.mapVarDecls {case (sofar,vd) =>
+        val t = vd.tp.getOrElse(OMV(vd.name))
+        children ::= Shape(queryVars, context++sofar, t, level-1)
+      }
+      val argSh = args foreach {a =>
+        children ::= Shape(queryVars, context++cont, a, level-1)
+      }
+      ComplexShape(op, children.reverse)
+    case OMV(n) =>
+      if (queryVars.isDeclared(n)) Wildcard
+      else context.index(n) match {
+        case None => AtomicShape(t)
+        case Some(i) => BoundShape(i)
+      }
+    case t => AtomicShape(t) //TODO ask florian about shadowing
+  }
+
+  def matches(s: Shape, t: Shape): Boolean = (s, t) match {
+    case (ComplexShape(op1, ch1), ComplexShape(op2, ch2)) =>
+      op1 == op2 && (ch1 zip ch2).forall { case (x, y) => matches(x, y) }
+    case (Wildcard, _) => true
+    case (_, Wildcard) => true
+    case _ => s == t
+  }
+}
+
+/** an approximation of the syntax tree of a [[Term]]
+  *  that replaces subtrees beyond a certain depth with special leaves
+  *
+  *  Shapes can be used as keys when indexing sets of terms, as in [[Facts]]
+  */
 abstract class Shape
 /** a non-replaced node in the syntax/shape tree,
- *  variable bindings are approximated by the shape of the type
- */
+  *  variable bindings are approximated by the shape of the type
+  */
 case class ComplexShape(op: GlobalName, children: List[Shape]) extends Shape
-/** a leaf representing an atomic subterm (constant, variable, literal) */
-case class AtomicShape(term: Term) extends Shape
 /** a leaf representing a variable bound by a governing [[ComplexShape]] */
 case class BoundShape(index: Int) extends Shape
+/** a leaf representing an atomic subterm (constant, variable, literal) */
+case class AtomicShape(term: Term) extends Shape
 /** a leaf representing a wild card used when matching terms against a certain shape */
 case object Wildcard extends Shape
 
-object Shape {
-   /**
-    * @param queryVars variables which yield shape [[Wildcard]]
-    * @param context variables which yield [[BoundShape]]
-    * @param t the term whose shape to compute
-    * @param level the height of the shape's syntax tree
-    * @return the approximation of the term that cuts all branches of the syntax tree at a certain depth 
-    */
-   def apply(queryVars: Context, context: Context, t: Term, level: Int): Shape = t match {
-      case ComplexTerm(op, subs, cont, args) =>
-        if (level == 0) return Wildcard
-        var children: List[Shape] = Nil
-        val subsSh = subs.foreach {s => children ::= Shape(queryVars, context, s.target, level-1)}
-        val contSh = cont.mapVarDecls {case (sofar,vd) =>
-           val t = vd.tp.getOrElse(OMV(vd.name))
-           children ::= Shape(queryVars, context++sofar, t, level-1)
-        }
-        val argSh = args foreach {a =>
-           children ::= Shape(queryVars, context++cont, a, level-1)
-        }
-        ComplexShape(op, children.reverse)
-      case OMV(n) =>
-         if (queryVars.isDeclared(n)) Wildcard
-         else context.index(n) match {
-            case None => AtomicShape(t)
-            case Some(i) => BoundShape(i)
-         } 
-      case t => AtomicShape(t) //TODO ask florian about shadowing
-   }
-   
-   def matches(s: Shape, t: Shape): Boolean = (s, t) match {
-      case (ComplexShape(op1, ch1), ComplexShape(op2, ch2)) =>
-         op1 == op2 && (ch1 zip ch2).forall { case (x, y) => matches(x, y) }
-      case (Wildcard, _) => true
-      case (_, Wildcard) => true
-      case _ => s == t
-   }
-}
-
-/**
- * a fact is a sequent derived during forward search
- * @param goal antecedent of the fact (conclusion of the goal is irrelevant)
- * @param tm the proof term
- * @param tp the proved type
- */
-case class Fact(goal: LFProofTree, tm: Term, tp: Term) {
-   override def toString = tp.toString + "\n     " + tm.toString
-   def present(presentObj: Obj => String) = { 
-      presentObj(tp) + " by " + presentObj(tm)
-   }
-}
 
 /**
  * an atomic fact: a constant or a variable
@@ -82,17 +71,32 @@ case class Fact(goal: LFProofTree, tm: Term, tp: Term) {
  * @param rl the of the constant/variable
  */
 case class Atom(tm: Term, tp: Term, rl: Option[String]) {
-   def isConstant = tm.isInstanceOf[OMID]
-   def isVariable = tm.isInstanceOf[OMV]
+  def isConstant = tm.isInstanceOf[OMID]
+  def isVariable = tm.isInstanceOf[OMV]
 }
+
+
+/**
+ * a fact is a sequent derived during forward search
+ * @param goal antecedent of the fact (conclusion of the goal is irrelevant)
+ * @param tm the proof term
+ * @param tp the proved type
+ */
+case class Fact(goal: LFProofTree, tm: Term, tp: Term) {
+  override def toString = tp.toString + "\n     " + tm.toString
+  def present(presentObj: Obj => String) = {
+    presentObj(tp) + " by " + presentObj(tm)
+  }
+}
+
 
 /**
  * A database of facts obtained through forward proof search
- * 
+ *
  * For efficiency, each instance only searches for terms that are added when the context is enriched.
  * Therefore, each [[LFProofTree]] g maintains one instance of Facts, which links to the instance of the g.parent.
  * Each instance knows the local context of its goal, and maintains only terms that use a local variable.
- * 
+ *
  * @param blackboard blackboard which holds the section of facts
  * @param shapeDepth the depth of the shape storage
  */
@@ -109,7 +113,7 @@ class Facts(blackboard:LFBlackboard,shapeDepth: Int) extends Debugger {
     constantAtoms ::= a
   }
   def getConstantAtoms = constantAtoms
-   
+
   /**
   * the database of (non-atomic) facts, indexed by the shape of the type
   */
@@ -180,24 +184,25 @@ class Facts(blackboard:LFBlackboard,shapeDepth: Int) extends Debugger {
   def makeMatcher(context: Context, queryVars: Context) = new Matcher(controller, rules, context, queryVars)
 
   /**
-  * matches a facts against a query
-  * @param queryVars those free variables of query to instantiate when matching
-  * @param query the term to match against the fact
-  * @param f the fact to match against
-  * @return the pair (s: queryVars -> f.goal.fullContext, t) such that query ^ s = fact.tp, if possible
-  *
-  * s is partial if queryVars contains variables that do not occur in query
-  */
+   * matches a facts against a query
+   * @param queryVars those free variables of query to instantiate when matching
+   * @param query the term to match against the fact
+   * @param f the fact to match against
+   * @return the pair (s: queryVars -> f.goal.fullContext, t) such that query ^ s = fact.tp, if possible
+   *
+   * s is partial if queryVars contains variables that do not occur in query
+   */
   private def matchFact(queryVars: Context, query: Term, f: Fact): Option[(Substitution,Term)] = {
     val (queryFresh, freshSub) = Context.makeFresh(queryVars, f.goal.fullContext.map(_.name))
     val matcher = makeMatcher(f.goal.fullContext, queryFresh)
     val matches = matcher(f.tp, query)
     if (matches) {
-       val solution = matcher.getSolution
-       // we need freshSub ^ solution but restricted to those variables that were solved
-       val freshSubRestrict = freshSub.filter {case Sub(_, OMV(qF)) => solution.maps(qF)}
-       Some((freshSubRestrict ^ solution, f.tm))
-    }else None
+      val solution = matcher.getSolution
+      // we need freshSub ^ solution but restricted to those variables that were solved
+      val freshSubRestrict = freshSub.filter {case Sub(_, OMV(qF)) => solution.maps(qF)}
+      Some((freshSubRestrict ^ solution, f.tm))
+    } else
+      None
   }
 
   /**

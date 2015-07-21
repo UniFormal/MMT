@@ -1,10 +1,10 @@
 package test.scala
 
 
-import info.kwarc.mmt.leo.datastructures._
+import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.DataTree
+import info.kwarc.mmt.leo.AgentSystem.OutputLog
 import info.kwarc.mmt.leo.provers._
 import org.scalatest._
-import sun.management.resources.agent
 
 /**
  * Created by mark on 6/25/15.

@@ -1,9 +1,8 @@
-package info.kwarc.mmt.leo.provers.lfprover
+package info.kwarc.mmt.leo.AgentSystem.AndOrSystem.MMTSystem
 
 import info.kwarc.mmt.api.checking.Hole
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.proving.{ForwardInvertible, BackwardInvertible, BackwardSearch, ApplicableTactic}
-import info.kwarc.mmt.leo.datastructures._
+import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.AndOr
 
 /**
  * Created by Mark on 7/15/2015.

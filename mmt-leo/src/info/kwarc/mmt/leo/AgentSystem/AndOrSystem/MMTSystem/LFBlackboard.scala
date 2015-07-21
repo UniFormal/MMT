@@ -1,9 +1,9 @@
-package info.kwarc.mmt.leo.provers.lfprover
+package info.kwarc.mmt.leo.AgentSystem.AndOrSystem.MMTSystem
 
 import info.kwarc.mmt.api.RuleSet
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.Obj
-import info.kwarc.mmt.leo.datastructures.{AndOrSection, AndOrBlackboard}
+import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.{AndOrBlackboard, AndOrSection}
 
 /**
  * Created by Mark on 7/21/2015.

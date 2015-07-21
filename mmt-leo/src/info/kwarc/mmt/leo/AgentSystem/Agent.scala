@@ -1,4 +1,5 @@
-package info.kwarc.mmt.leo.datastructures
+package info.kwarc.mmt.leo.AgentSystem
+
 
 import scala.collection.mutable
 
@@ -87,6 +88,7 @@ trait Agent extends Debugger {
 
 }
 
+
 /**Class for Rule agents*/
 abstract class RuleAgent extends Agent{
   type TaskType = RuleTask
@@ -94,7 +96,6 @@ abstract class RuleAgent extends Agent{
 }
 
 /**Class for Proof agents*/
-//TODO make this into trait
 abstract class ProofAgent extends Agent{
   type TaskType = ProofTask
   type EventType = Event
@@ -109,6 +110,7 @@ abstract class ProofAgent extends Agent{
     taskQueue.dequeueFirst(_==pt) //remove completed ProofTask from this agent's taskQueue
   }
 }
+
 
 /**Class for Meta agents*/
 abstract class MetaAgent extends Agent{
@@ -129,8 +131,8 @@ abstract class MetaAgent extends Agent{
   /** Makes a meta task out of a Queue of Lists of proof tasks
     * the list of ProofTasks should be parallelizable and noncolliding
     */
-  def makeMetaTask(q: mutable.Queue[List[ProofTask]]): PTMetaTask = {
-    val out = new PTMetaTask(this, name+"MetaTask")
+  def makeMetaTask(q: mutable.Queue[List[ProofTask]]): MetaTask = {
+    val out = new MetaTask(this, name+"MetaTask")
     q.foreach(out.proofLists.enqueue(_))
     //out.flags = List("ADD")
     out
@@ -140,7 +142,7 @@ abstract class MetaAgent extends Agent{
     * the list of ProofTasks should be parallelizable and noncolliding
     */
   def makeMetaTask(s: List[ProofTask]): MetaTask = {
-    val out = new PTMetaTask(this, name+"MetaTask")
+    val out = new MetaTask(this, name+"MetaTask")
     out.proofLists.enqueue(s)
     //out.flags = List("ADD")
     out
@@ -158,7 +160,7 @@ class SingletonProofAgent(ruleAgent: RuleAgent)  extends ProofAgent {
   /** Converts a rule task to a proof task*/
   def ruleTaskToProofTask(rt: RuleTask): ProofTask = {
     log("Converting: "+rt,3)
-    val out = new PTProofTask(this, "Singleton"+rt.name)
+    val out = new ProofTask(this, "Singleton"+rt.name)
     out.ruleLists.enqueue(List(rt))
     //out.flags = List("ADD")
     out
@@ -170,6 +172,7 @@ class SingletonProofAgent(ruleAgent: RuleAgent)  extends ProofAgent {
   }
 
 }
+
 
 /** Class of the auction agent which is responsible for
   * getting all of the available proof tasks and choosing
@@ -210,6 +213,5 @@ class AuctionAgent extends MetaAgent {
 
     allTasks.toList
   }
-  
-}
 
+}
