@@ -29,7 +29,7 @@ trait Lockable {
 
 trait Tree[T<:Tree[T]] extends Debugger with Lockable {self: T =>
   def logPrefix = "Tree"
-  
+
   var parent: Option[T] = None
   var children: List[T] = Nil
 
@@ -197,7 +197,7 @@ trait Tree[T<:Tree[T]] extends Debugger with Lockable {self: T =>
 trait AndOr[T<:AndOr[T]] extends Tree[T] with Lockable { Self: T =>
   override def logPrefix = "AndOrTree"
 
-  /** conj=true -> an AND node*/ 
+  /** conj=true -> an AND node*/
   var conj: Boolean
   def isAnd = conj
   def isOr = !conj
@@ -218,7 +218,7 @@ trait AndOr[T<:AndOr[T]] extends Tree[T] with Lockable { Self: T =>
     that.conj == this.conj &&
     that.isSat == this.isSat
   }
-  
+
   /** changes the data field in the node*/
   def setSat( bool: Boolean) {
     isSat = Some(bool)
@@ -241,7 +241,7 @@ trait AndOr[T<:AndOr[T]] extends Tree[T] with Lockable { Self: T =>
 
   /** determines if this node is below a satisfied node*/
   def isBelowSatisfied:Boolean = path.exists(_.isSat.isDefined)
-  
+
   /** simplifies the ProofTree for presentation*/
   def simplify():Unit = {
     if (this.children==Nil) {return}
@@ -253,7 +253,7 @@ trait AndOr[T<:AndOr[T]] extends Tree[T] with Lockable { Self: T =>
     }
     children.foreach(_.simplify())
   }
-  
+
   /** propagates the effect of the solved node up the tree, then simplifies the resulting part of the tree*/
   def percolate(trim:Boolean=true):Unit = {
     log("P Called on" + this,3)

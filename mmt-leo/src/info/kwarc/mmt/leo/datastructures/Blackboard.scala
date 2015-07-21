@@ -103,6 +103,7 @@ class AndOrBlackboard[T>:Null <:AndOr[T]](g:T) extends Blackboard {
     * beginning with the goal node
     */
   val proofSection = new AndOrSection{type ObjectType = T; var data=g}
+  //TODO figure out why cannot log from here
   def proofTree = proofSection.data
   sections =proofSection::sections
 }

@@ -84,7 +84,7 @@ trait Agent extends Debugger {
     blackboard.unregisterAgent(this)
     taskQueue.synchronized(taskQueue.clear())
   }
-  
+
 }
 
 /**Class for Rule agents*/
