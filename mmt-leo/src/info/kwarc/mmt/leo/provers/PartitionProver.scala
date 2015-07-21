@@ -1,5 +1,6 @@
 package info.kwarc.mmt.leo.provers
 
+import info.kwarc.mmt.api.utils.A
 import info.kwarc.mmt.leo.datastructures._
 
 /**
@@ -50,7 +51,6 @@ class PartitionAgent(numbersVar: List[Int]) extends RuleAgent {
 }
 
 
-
 class PartitionTask(nodeVar: DataTree[Int], agent: PartitionAgent) extends PTRuleTask(agent,"PartitionTask") {
 
   val node = nodeVar
@@ -93,7 +93,7 @@ object PartitionPresenter extends Presenter {
 
   def present(pt: DataTree[Int]): String = {
     /** @return a list of numbers solving the problem*/
-    def getNumbers(node: DataTree[Int]): List[Any] ={ //TODO figure out why List[Int] doesn't work
+    def getNumbers(node: DataTree[Int]): List[Int] ={
       if (node.children.isEmpty) {
         List(node.data)
       }else {
@@ -112,7 +112,6 @@ object PartitionPresenter extends Presenter {
 
 
 class PartitionProver(target: Int , usableNumbers: List[Int], cycles: Int = 5) {
-
 
   val goal = new DataTree(target,conjVar = true,None)
   val blackboard = new IntBlackboard(goal)

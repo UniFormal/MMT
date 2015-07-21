@@ -6,29 +6,23 @@ import info.kwarc.mmt.leo.datastructures._
 
 /**
  * Created by Mark on 7/15/2015.
+ *
+ * This class represents the proof tree for the LF prover
  */
 
-/*
-class LFProofData(val contextVar: Context, var concVar: Term, conjunctiveVar: Boolean, isSatisfiableVar: Option[Boolean] = None )
-  extends ProofData((contextVar,concVar),conjunctiveVar,isSatisfiableVar) {
+class LFProofTree(val contextVar: Context, var concVar: Term, conjVar: Boolean, isSatVar: Option[Boolean] = None )
+  extends AndOr[LFProofTree] {
+
+  var conj = conjVar
+  var isSat = isSatVar
   var context = contextVar
   var conc = concVar
   /** sets a new goal, can be used by the prover to simplify goals in place */
   def setConc(newConc: Term)= {concVar = newConc}
 
-}
-
-class LFAndOrTreeTree(dataVar: LFProofData) extends AndOr(dataVar) {
-
-  var context = dataVar.context
-  var conc = dataVar.conc
-
-  def setConc(newConc: Term) = {
-    dataVar.concVar = newConc
-  }
 
   /** the complete context/antecedent (i.e., including the parent's context) of this sequent */
- // lazy val fullContext: Context = parent.map(_.fullContext).getOrElse(Context()) ++ context
+  lazy val fullContext: Context = parent.map(_.fullContext).getOrElse(Context()) ++ context
 
   /** the local context of this goal seen as a list of atomic facts that rules can make use of */
   lazy val varAtoms: List[Atom] = context.flatMap {
@@ -38,8 +32,8 @@ class LFAndOrTreeTree(dataVar: LFProofData) extends AndOr(dataVar) {
     case VarDecl(_, None,_,_) => Nil
   }
   /** the complete context of this goal seen as a list of atomic facts that rules can make use of */
-  //lazy val fullVarAtoms: List[Atom] = parent.map(_.fullVarAtoms).getOrElse(Nil) ::: varAtoms
+  lazy val fullVarAtoms: List[Atom] = parent.map(_.fullVarAtoms).getOrElse(Nil) ::: varAtoms
 
 
 }
-*/
+

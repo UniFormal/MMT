@@ -237,6 +237,11 @@ class DataTreeSection[D](g:DataTree[D]) extends AndOrSection {
   type ObjectType = DataTree[D]
   var data = g
 }
+/*object DataTreeSection{
+  def unapply[B](t:DataTreeSection[B]) = {
+    Some(t.data)
+  }
+}*/
 
 /**
  * This section handles the lists of various tasks
