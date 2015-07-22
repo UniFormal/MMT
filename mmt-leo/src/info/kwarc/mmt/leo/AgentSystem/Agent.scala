@@ -3,6 +3,7 @@ package info.kwarc.mmt.leo.AgentSystem
 
 import scala.collection.mutable
 
+//TODO Make everything work on change handling
 /**
  * Trait representing Agents which houses most of their general functionality
  */
@@ -10,7 +11,6 @@ trait Agent extends Debugger {
 
   /** These types represent the types various objects that they interact with*/
   type TaskType <: Task
-  type EventType <: Event
   type BlackboardType <: Blackboard
 
   /** the name of the agent */
@@ -44,7 +44,7 @@ trait Agent extends Debugger {
   def clearTasks(): Unit = taskQueue.synchronized(taskQueue.clear())
 
   /** Queue holding the interesting Events*/
-  val eventQueue: mutable.Queue[EventType] = new mutable.Queue[EventType]()
+  val changeQueue: mutable.Queue[Change[_]] = new mutable.Queue[Change[_]]()
 
   /** Queue holding the tasks to be bid on */
   val taskQueue: mutable.Queue[TaskType] = new mutable.Queue[TaskType]()
@@ -92,13 +92,11 @@ trait Agent extends Debugger {
 /**Class for Rule agents*/
 abstract class RuleAgent extends Agent{
   type TaskType = RuleTask
-  type EventType = Event
 }
 
 /**Class for Proof agents*/
 abstract class ProofAgent extends Agent{
   type TaskType = ProofTask
-  type EventType = Event
 
   /** executes a proof task by delegating responsibility to rule agents*/
   def executeTask(pt: ProofTask) = {
@@ -115,7 +113,6 @@ abstract class ProofAgent extends Agent{
 /**Class for Meta agents*/
 abstract class MetaAgent extends Agent{
   type TaskType = MetaTask
-  type EventType = Event //TODO generalize event handling to change handling
 
   /** executes a meta task by checking applicability and
     * delegating proof tasks to corresponding proof agents*/

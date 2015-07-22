@@ -71,7 +71,7 @@ trait ContentElement extends StructuralElement {
     * 
     * invariant: API client code may assume that this flag is never set   
     */
-   private[api] var status: ElementStatus = Active
+   var status: ElementStatus = Active
    
    def path : ContentPath
    /** returns all children of this elements */

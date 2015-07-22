@@ -10,10 +10,10 @@ import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.{AndOrBlackboard, AndOrSection
  *
  * This represents the class of the LF blackboard which handles proofs in the LF prover
  */
-class LFBlackboard(val controller: Controller, val rules:RuleSet,g: LFProofTree) extends AndOrBlackboard[LFProofTree](g) {
+class LFBlackboard(val controller: Controller, val rules:RuleSet,goal: LFProofTree) extends AndOrBlackboard[LFProofTree](goal) {
   override val proofSection = new AndOrSection {override type ObjectType = LFProofTree
-    override var data: PTType = g }
-  log("Added Goal of type: " + g.getClass + g)
+    override var data: PTType = goal }
+  log("Added Goal of type: " + goal.getClass + goal)
   log(proofSection.toString)
 
   implicit val presentObj: Obj => String = o => controller.presenter.asString(o)
