@@ -11,13 +11,13 @@ import frontend._
 abstract class RelationalExtractor extends Extension {
   /** all unary relations that this extractor can generate (extract) */
   def allUnary : List[Unary]
-  
+
   /** all binary relations that this extractor can generate (extract) */
   def allBinary : List[Binary]
-  
+
   /** apply a continuation function to every relational element of a StructuralElement */
   def apply(e : StructuralElement)(implicit f: RelationalElement => Unit) : Unit
-  
+
 }
 
 /** The Extractor produces the declaration-level relational representation of a SructuralElement
@@ -26,9 +26,9 @@ object MMTExtractor extends RelationalExtractor {
    val allUnary = List(IsDocument,IsTheory,IsView,IsStyle,IsConstant,IsStructure,IsConAss,
                           IsStrAss,IsNotation,IsPattern,IsInstance)
    val allBinary = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,
-  		 IsAlignedWithSymbol)
-   
-  
+  		 IsAlignedWith)
+
+
    /** apply a continuation function to every relational element of a StructuralElement */
    def apply(e: StructuralElement)(implicit f: RelationalElement => Unit) {
       val path = e.path
@@ -44,13 +44,13 @@ object MMTExtractor extends RelationalExtractor {
             t match {
                case t: DeclaredTheory =>
                   t.meta foreach {p => f(HasMeta(path, p))}
-               case _ => 
+               case _ =>
             }
          case v: View =>
             f(HasDomain(path, v.from.toMPath))
             f(HasCodomain(path, v.to.toMPath))
             f(IsView(path))
-         case _ => 
+         case _ =>
       }
       e match {
          case t: DeclaredModule =>
@@ -83,7 +83,7 @@ object MMTExtractor extends RelationalExtractor {
                   case p: Pattern =>
                      f(dec)
                      f(IsPattern(p.path))
-                  case i: Instance => 
+                  case i: Instance =>
                      f(dec)
                      f(IsInstance(i.path))
                      f(IsInstanceOf(i.path, i.pattern))

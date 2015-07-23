@@ -9,8 +9,8 @@ import info.kwarc.mmt.api.moc._
  * The semantics of these objects is given by their name
  */
 sealed abstract class Unary(override val toString : String) {
-   /** yields the corresponding relational item that classifies p */ 
-   def apply(p : Path) = Individual(p, this) 
+   /** yields the corresponding relational item that classifies p */
+   def apply(p : Path) = Individual(p, this)
 }
 case object IsDocument extends Unary("document")
 case object IsTheory extends Unary("theory")
@@ -31,7 +31,7 @@ case class CustomUnary(name : String) extends Unary(name)
  * The semantics of these objects is given by their name
  */
 sealed abstract class Binary(val desc : String, val backwardsDesc: String) {
-   /** yields the corresponding relational item that classifies p */ 
+   /** yields the corresponding relational item that classifies p */
    def apply(subj : Path, obj : Path) = Relation(this, subj, obj)
    /** syntactic sugar for queries: ToSubject(this) */
    def unary_- = ToSubject(this)
@@ -54,31 +54,18 @@ case object RefersTo extends Binary("refers to", "is refered to by")
 //parent - child (many-many relation because a declaration may be referenced in other documents)
 case object Declares extends Binary("contains declaration of", "is declared in")
 // symbol - symbol, module - module
-case object IsAliasFor extends Binary("is alias for", "has alias") 
+case object IsAliasFor extends Binary("is alias for", "has alias")
 // symbol - symbol
-case object IsAlignedWithSymbol extends Binary("is aligned with", "is aligned with") 
-case object IsAlignedWithType extends Binary("is aligned with", "is aligned with") 
+case object IsAlignedWith extends Binary("is aligned with", "is aligned with")
 
-
-/** helper methods for Binary items */
-object Binary {
-   val all = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,IsAlignedWithSymbol,
-  		 IsAlignedWithType)
-   def parse(s: String) : Binary = all.find(_.toString == s) match {
-      case Some(i) => i
-      case _ => throw ParseError("binary predicate expected, found: " + s)
-   }
-}
 /** Extractor extensions should use instances of this class to extend the ontology for binary relations */
-case class CustomBinary(name : String, override val desc : String, override val backwardsDesc : String) 
-extends Binary(desc, backwardsDesc) {
+case class CustomBinary(name : String, override val desc : String, override val backwardsDesc : String) extends Binary(desc, backwardsDesc) {
   override def toString = name
-
 }
 
 /** A RelationalElement is any element that is used in the relational representation of MMT content.
  * These include the unary and binary predicates occurring in an MMT ABox.
- * They do not correspond to XML elements in an OMDoc element and thus do not extend StructuralElement. 
+ * They do not correspond to XML elements in an OMDoc element and thus do not extend StructuralElement.
  */
 abstract class RelationalElement {
    /** the URL from which this item originated, currently not implemented */

@@ -178,41 +178,41 @@ class SearchServer extends ServerExtension("search") {
 abstract class TEMASearchServer(format : String) extends ServerExtension("tema-" + format) {
   val presenter : presentation.ObjectPresenter
   def process(query : String, settings : Map[String,String]) : objects.Term
-  
+
   def toHTML(tm : objects.Term) : String = {
     val rh = new presentation.StringBuilder()
     presenter.apply(tm, None)(rh)
     rh.get
   }
-  
+
   def getSettings(path : List[String], query : String, body : Body) : Map[String, String]
-  
+
   def apply(path : List[String], query : String, body: Body) = {
     val searchS = body.asString
     val settings = getSettings(path, query, body)
     val mathmlS = toHTML(process(searchS, settings))
     val mathml = scala.xml.XML.loadString(mathmlS)
-    val resp = postProcessQVars(mathml) 
+    val resp = postProcessQVars(mathml)
     Server.TextResponse(resp.toString, "html")
   }
-   
+
   def preProcessQVars(n : scala.xml.Node) : scala.xml.Node = n match {
-    case <QVAR>{c}</QVAR> => 
+    case <QVAR>{c}</QVAR> =>
       val name = xml.attr(c, "name")
       <OMV name={"qvar_" + name} />
-    case n : scala.xml.Elem => 
+    case n : scala.xml.Elem =>
       val child = n.child.map(preProcessQVars)
       new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, false, child : _*)
     case _ => n
-    
+
   }
-  
+
   def postProcessQVars(n : scala.xml.Node) : scala.xml.Node = n match {
-    case n if n.label == "mi" && n.text.startsWith("qvar_") => 
+    case n if n.label == "mi" && n.text.startsWith("qvar_") =>
       <mi class="math-highlight-qvar"> {n.text.substring(5)} </mi>
-    case n if n.label == "ci" && n.text.startsWith("qvar_") => 
+    case n if n.label == "ci" && n.text.startsWith("qvar_") =>
       <mws:qvar>{n.text.substring(5)}</mws:qvar>
-    case n : scala.xml.Elem => 
+    case n : scala.xml.Elem =>
       val child = n.child.map(postProcessQVars)
       new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, false, child : _*)
     case _ => n
@@ -373,7 +373,6 @@ class AlignServer extends ServerExtension("align") {
     else {
       val concept = getSymbolAlignments(path)._2.split("\\?").last
       val symbolAlignments = getSymbolAlignments(path)._1.distinct.map { s => s.toPath }
-      val typeAlignments = getTypeAlignments(path).map { s => s.toPath }
       val prepJson = symbolAlignments.map { el =>
         "{\"name\": " + "\"" + el.split('?').last + "\", " + "\", parent\": " + "\"" + concept + "\"" + ", " + "\"address\": " + "\"" + el + "\"" + markLibrary(el) + "}"
       }.mkString(",")
@@ -406,18 +405,14 @@ class AlignServer extends ServerExtension("align") {
   }
 
   def getSymbolAlignments(p: Path): (List[Path], String) = {
-    val l = controller.depstore.queryList(p, Symmetric(Transitive(ToObject(IsAlignedWithSymbol))))
+    val l = controller.depstore.queryList(p, Symmetric(Transitive(ToObject(IsAlignedWith))))
     if (l.isEmpty) {
       (l, "")
     }
     else {
       // identify the M-MMT URI and store in val concept
       val concept = l.head
-      (controller.depstore.queryList(concept, Symmetric(Transitive(ToObject(IsAlignedWithSymbol)))), concept.toPath)
+      (controller.depstore.queryList(concept, Symmetric(Transitive(ToObject(IsAlignedWith)))), concept.toPath)
     }
-  }
-
-  def getTypeAlignments(p: Path): List[Path] = {
-    controller.depstore.queryList(p, Symmetric(Transitive(ToObject(IsAlignedWithType))))
   }
 }
