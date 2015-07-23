@@ -1,6 +1,6 @@
 package info.kwarc.mmt.leo.AgentSystem.AndOrSystem
 
-import info.kwarc.mmt.leo.AgentSystem.Blackboard
+import info.kwarc.mmt.leo.AgentSystem.{Section, Blackboard}
 
 /**
  * This class represents a blackboard specialized for proofTrees of any type
@@ -10,11 +10,18 @@ import info.kwarc.mmt.leo.AgentSystem.Blackboard
  */
 class AndOrBlackboard[T>:Null <:AndOr[T]](g:T) extends Blackboard {
 
+
   /** this is the proof section which houses the proof treee
     * beginning with the goal node
     */
-  val proofSection = new AndOrSection{type ObjectType = T; var data=g}
+  val proofTreeSection = new AndOrSection(this,g)
   //TODO figure out why cannot log from here
-  def proofTree = proofSection.data
-  sections =proofSection::sections
+  def proofTree = proofTreeSection.data
+
+  def finished = proofTree.sat.isDefined
+
+  addSection(proofTreeSection)
+  log("Added Goal of type: " + g.getClass + g)
+  log(this.toString)
+
 }

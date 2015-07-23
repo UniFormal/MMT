@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.{Matcher, Context, Obj}
 import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.{AndOrBlackboard, AndOrSection}
 import info.kwarc.mmt.leo.AgentSystem.{Section, Blackboard}
+/*
 
 /**
  * Created by Mark on 7/21/2015.
@@ -41,3 +42,4 @@ class GoalBlackboard(val controller: Controller, val rules:RuleSet,goal: Goal) e
 object Indenter {
   def indent(depth: Int) = (0 to depth).map(_ => "  ").mkString("")
 }
+*/

@@ -7,29 +7,27 @@ import info.kwarc.mmt.leo.AgentSystem.{Section, Task, Change}
  * blackboard.
  *
  */
-abstract class AndOrSection extends Section {
+class AndOrSection[G>: Null <:AndOr[G]](blackboard: AndOrBlackboard[_],g:G) extends Section(blackboard) {
+
   override val logPrefix ="AndOrSection"
 
   /** this type of section only stores data which is a subtype of the AndOr tree type*/
-  type ObjectType>: Null <:AndOr[ObjectType]
-
+  type ObjectType = G
   type PTType=ObjectType //Meaningful alias for object type
-  var data:PTType
-  var changes: List[Change[_]] = Nil
+  var data:PTType = g
+  var changes: List[Change[_]] = List(new Change(this,g,List("ADD")))
 
   /** function that updates a node of the proof tree and adds a change to the changelist*/
-  def update(oldNode:PTType,newNode:PTType) = {
+  def update(oldNode:PTType,newNode:PTType): Unit = {
     oldNode.parent match {
       case Some(p) => oldNode.disconnect(); p.addChild(newNode)
       case None => data=newNode
     }
-    changes = new Change((oldNode,newNode),List("CHANGE")) :: changes
+    handleChange(new Change(this,(oldNode,newNode),List("CHANGE")))
   }
 
-
-  def apply(goal: PTType) = {
-    data = goal
-    changes = List(new Change(goal,List("ADD")))
+  def update(node:PTType,f:PTType=>PTType):Unit = {
+    update(node,f(node))
   }
 
 
@@ -40,7 +38,7 @@ abstract class AndOrSection extends Section {
    */
   def addTree(root: PTType, tree : PTType) : Unit = {
     root.addChild(tree)
-    changes = new Change(tree,List("ADD")) :: changes
+    handleChange(new Change(this,tree,List("ADD")))
   }
 
   /**
@@ -48,7 +46,7 @@ abstract class AndOrSection extends Section {
    */
   def removeTree(tree : PTType) : Unit = {
     tree.disconnect()
-    changes = new Change(tree,List("DEL")) :: changes
+    handleChange(new Change(this,tree,List("DEL")))
   }
 
   /** Returns a List of all nodes of the sections's proof tree
@@ -58,15 +56,15 @@ abstract class AndOrSection extends Section {
 
   /**Function that locks nodes affected by a given task*/
   def lockNodes[T<:Task](task: T):Boolean = {
-    val resultsW = task.writeList(this).map(_.placeLock(readLockVar=true,writeLockVar=true))
-    val resultsR = task.readList(this).map(_.placeLock(readLockVar=false,writeLockVar=true))
+    val resultsW = task.writeSet(this).map(_.placeLock(readLockVar=true,writeLockVar=true))
+    val resultsR = task.readSet(this).map(_.placeLock(readLockVar=false,writeLockVar=true))
     (resultsW++resultsR).forall(b=>b)
   }
 
   /**Function that unlocks nodes affected by a given task*/
   def unlockNodes[T<:Task](task: T):Unit = {
-    task.writeList(this).foreach(_.liftLock(readLockVar=false,writeLockVar=false))
-    task.readList(this).foreach(_.liftLock(readLockVar=false,writeLockVar=false))
+    task.writeSet(this).foreach(_.liftLock(readLockVar=false,writeLockVar=false))
+    task.readSet(this).foreach(_.liftLock(readLockVar=false,writeLockVar=false))
   }
 
   /** function that determines if a task is still applicable to the given tree
@@ -75,29 +73,27 @@ abstract class AndOrSection extends Section {
     * @return boolean representing applicability
     */
   def isApplicable[T<:PTApplicability](t: T):Boolean = {
-    val wS = t.writeList(this).exists(!_.isBelowSatisfied) || t.writeList(this).isEmpty
-    val wC = data.isAbove(t.writeList(this))
-    val rC = data.isAbove(t.readList(this))
-    val out = wS && wC && rC
-    if (!out) {
-      log(this.toString + "\n is not applicable because...")
+    val wS = t.writeSet(this).exists(!_.isBelowSatisfied) || t.writeSet(this).isEmpty
+    val wC = data.isAbove(t.writeSet(this))
+    val rC = data.isAbove(t.readSet(this))
+    val d = t.writeSet(this).forall(!_.isDeleted) || t.readSet(this).forall(!_.isDeleted)
+    val applicable = wS && wC && rC && d
+    if (!applicable) {
+      log(t.toString + "\n is not applicable.")
       if (!wS) {
-        log("All of the write nodes are below a solved goal")
+        log("all of the write nodes are below a solved goal",2)
       }
       if (!wC) {
-        log("write nodes not contained in goal")
+        log("write nodes not contained in goal",2)
       }
       if (!rC) {
-        log("read nodes not contained in goal")
+        log("read nodes not contained in goal",2)
+      }
+      if (!d) {
+        log("some nodes have been deleted",2)
       }
     }
-    out
+    applicable
   }
-}
-
-/** Class for the section specific to the AndOrTree class*/
-class AndOrTreeSection(g:AndOrTree) extends AndOrSection {
-  type ObjectType = AndOrTree
-  var data = g
 }
 

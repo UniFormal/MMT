@@ -3,6 +3,7 @@ package info.kwarc.mmt.leo.AgentSystem.AndOrSystem.MMTSystem
 import info.kwarc.mmt.api.checking.Hole
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.AndOr
+/*
 
 /**
  * Created by Mark on 7/15/2015.
@@ -167,3 +168,4 @@ class LFProofTree(val contextVar: Context, var concVar: Term, conjVar: Boolean, 
 
 }
 
+*/

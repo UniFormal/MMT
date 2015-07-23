@@ -84,16 +84,19 @@ class DatastructuresSpec extends FlatSpec with Matchers {
   }
 
   "A BlackBoard" should "solve the partition problem" in {
+
     val prover1 = new PartitionProver( 23,List(2,3,5,7) )
     prover1.run() should be ("Solution: List(2, 7, 7, 7)")
 
     val prover2 = new PartitionProver( 23,List(15,17) )
+
     prover2.run() should be ("Contradiction Derived, no partition is possible. Outputting tree:" +
       "\ndata: 23 isAnd: false isSatisfiable: Some(false)" +
       "\n\tdata: 6 isAnd: false isSatisfiable: Some(false)" +
       "\n\tdata: 8 isAnd: false isSatisfiable: Some(false)")
 
-    OutputLog.display(1)
+
+    OutputLog.display(1) //TODO figure out why AndOrSection does not log
   }
 
 /*  it should "have breadth and depth first search capabilities" in {

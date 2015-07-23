@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils.HTML
+/*
 
 /**
  * Each [[Goal]] stores a list of alternatives each of which stores a list of subgoals
@@ -102,7 +103,7 @@ class Goal(val context: Context, private var concVar: Term) {
 
    /** stores the finishedness status */
    private var finished = false
-   /** 
+   /**
     *  true if no further proving should be performed at this goal
     *  pointers to it should be abandoned as soon as the proof term is collected
     */
@@ -181,7 +182,7 @@ class Goal(val context: Context, private var concVar: Term) {
       val applForw = forw.flatMap {t => t.apply(blackboard, context)}
       forward = applForw ::: parent.map(_.forward).getOrElse(Nil)
    }
-   /** 
+   /**
     *  the invertible backward/forward tactics that have not been applied yet are stored here,
     *  but set and read by the [[Prover]]
     *  this method retrieves the next tactic to apply
@@ -269,3 +270,4 @@ class Goal(val context: Context, private var concVar: Term) {
    }
 
 }
+*/

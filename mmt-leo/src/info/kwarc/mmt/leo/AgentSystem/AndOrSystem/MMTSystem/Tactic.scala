@@ -2,6 +2,7 @@ package info.kwarc.mmt.leo.AgentSystem.AndOrSystem.MMTSystem
 
 import info.kwarc.mmt.api._
 import objects._
+/*
 
 /**
  * A rule used for forward or backward proof search
@@ -71,7 +72,7 @@ trait BackwardSearch extends Tactic {
     * backward rules change the goal so that usually only one rule can be applied if multiple are applicable
     * 
     * higher-prioritiy is used to decide which rule to apply  
-    */ 
+    */
    def priority: Int
 
    /** applies the tactic to a goal
@@ -115,3 +116,4 @@ object ApplicableTactic {
       val label = l
    }
 }
+*/

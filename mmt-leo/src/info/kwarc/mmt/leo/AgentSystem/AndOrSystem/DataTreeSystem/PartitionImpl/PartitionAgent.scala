@@ -1,34 +1,37 @@
 package info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.PartitionImpl
 
-import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.DataTree
-import info.kwarc.mmt.leo.AgentSystem.{RuleAgent, RuleTask}
+import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.{DataTree, DataTreeSection}
+import info.kwarc.mmt.leo.AgentSystem.{Listener, Change, Agent}
 
 /**
  * Created by Mark on 7/21/2015.
  */
-class PartitionAgent(numbersVar: List[Int]) extends RuleAgent {
-  type BlackboardType = IntBlackboard
+class PartitionAgent(numbersVar: List[Int]) extends Agent {
+  type BBType = IntBlackboard
+
+  var subscribers:List[Listener] = Nil
   val numbers=numbersVar
   val name = "PartitionAgent"
-  val interests = List("ADD")
+  override val interests = List("ADD")
 
-  def run(): Unit ={
-    blackboard.get.proofTree.openLeaves.foreach(pt=>taskQueue.enqueue(createTask(pt)))
-    if (taskQueue.isEmpty) log("NO TASKS FOUND") else log("Found "+taskQueue.length+" task(s)")
+
+  def respond() = {
+    log("responding to: " + mailbox,4)
+    mailbox.dequeueAll(m=>true).foreach {
+    case Change(section,data,flags) =>
+      data match {
+        case node:DataTree[_] if node.isDeleted => //TODO fix with reflection?
+        case node:DataTree[_] if node.isBelowSatisfied =>
+        case node:DataTree[_] =>
+          node.openLeaves.foreach (pt => taskSet += createTask (pt.asInstanceOf[DataTree[Int]] ) )
+        }
+        case _ => throw new IllegalArgumentException("unknown change type")
+    case _ => throw new IllegalArgumentException("unknown message type")
+    }
+    if (taskSet.isEmpty) log("NO TASKS FOUND") else log("Found "+taskSet.size+" task(s)")
   }
 
   def createTask(pt: DataTree[Int]): PartitionTask =  { new PartitionTask(pt,this)}
 
-  def executeTask(rt: RuleTask) = {
-    log("executing: "+ rt,3)
-    log("TREE BEFORE: " + addIndent(blackboard.get.proofTree.toString),2)
-    rt match {
-      case ptt:PartitionTask if ptt.isExpansion =>
-        ptt.node.conj=false
-        ptt.addBranches()
-      case _ => println("Error: Need a PartitionTask")
-    }
-    log("TREE AFTER: " + addIndent(blackboard.get.proofTree.toString),2)
-  }
 
 }

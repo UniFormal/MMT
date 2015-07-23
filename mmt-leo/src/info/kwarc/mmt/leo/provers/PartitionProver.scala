@@ -8,13 +8,12 @@ class PartitionProver(target: Int , usableNumbers: List[Int], cycles: Int = 5) {
 
   val goal = new DataTree(target,conjVar = true,None)
   val blackboard = new IntBlackboard(goal)
-  val ra = new PartitionAgent(usableNumbers)
-  val pa = new SingletonProofAgent(ra)
-  val ma = new AuctionAgent
-
-  blackboard.registerAgent(ra)
-  blackboard.registerAgent(pa)
-  blackboard.registerAgent(ma)
+  val pa = new PartitionAgent(usableNumbers)
+  val aa = new AuctionAgent()
+  val ea = new ExecutionAgent()
+  pa.register(blackboard)
+  aa.register(blackboard.asInstanceOf[aa.BBType])
+  ea.register(blackboard.asInstanceOf[ea.BBType])
 
   def run():String = {
     blackboard.run(cycles)

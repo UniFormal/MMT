@@ -34,6 +34,9 @@ trait Tree[T<:Tree[T]] extends Debugger with Lockable {self: T =>
   var parent: Option[T] = None
   var children: List[T] = Nil
 
+  var isDeleted = false
+  def setDeleted() = isDeleted=true; children.foreach(_.setDeleted())
+
   /** @return the root node of the tree, aka the node with no parents*/
   def root:T = {
     parent match {
@@ -63,7 +66,7 @@ trait Tree[T<:Tree[T]] extends Debugger with Lockable {self: T =>
   /** checks if current node is equal to or above target node*/
   def isAbove(that: T): Boolean = this == that || children.exists(_ isAbove that)
   /** checks if current node is equal to or above a set of nodes  */
-  def isAbove(s:List[T]):Boolean = {s.forall(this.isAbove)}
+  def isAbove(s:Set[T]):Boolean = {s.forall(n => this isAbove n)}
   /** checks if current node is the child of another*/
   def isChildOf(that: T): Boolean = parent.get==that
   /** checks if current node is a parent of another*/
@@ -93,6 +96,7 @@ trait Tree[T<:Tree[T]] extends Debugger with Lockable {self: T =>
       throw new IllegalArgumentException("target child not found")
     }
     children = newChildren
+    child.setDeleted()
     child.parent = None
   }
 
@@ -106,6 +110,7 @@ trait Tree[T<:Tree[T]] extends Debugger with Lockable {self: T =>
       case _ =>
     }
     parent = None
+    this.setDeleted()
   }
 
   /** sets the Root of the current node*/

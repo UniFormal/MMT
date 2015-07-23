@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.objects.Conversions._
 import info.kwarc.mmt.api.utils.HashMapToSet
 import info.kwarc.mmt.leo.AgentSystem.{Change, Section, Debugger}
 
+/*
 
 object Shape {
   /**
@@ -273,8 +274,9 @@ class Facts(blackboard:LFBlackboard,shapeDepth: Int) extends Debugger {
   }
 }
 
-class FactSection(blackboard:LFBlackboard,shapeDepth: Int) extends Section {
+class FactSection(blackboard:LFBlackboard,shapeDepth: Int) extends Section(blackboard) {
   type ObjectType = Facts
   var data = new Facts(blackboard:LFBlackboard,shapeDepth: Int)
   var changes: List[Change[_]] = Nil
 }
+*/

@@ -21,7 +21,7 @@ object PartitionPresenter extends Presenter {
     }
 
     pt.sat match {
-      case Some(true) => "Solution: "+getNumbers(pt)
+      case Some(true) => "Solution: "+getNumbers(pt).sorted
       case Some(false) => "Contradiction Derived, no partition is possible. Outputting tree:" + pt
       case None => "Proof not found"
     }
