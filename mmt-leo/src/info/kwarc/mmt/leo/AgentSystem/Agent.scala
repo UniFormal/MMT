@@ -59,6 +59,8 @@ abstract class Agent extends Debugger with Communicator {
 
   override def toString: String= {name + "::numTasks:" + numTasks}
 
+  protected def readMail:Seq[Message] = mailbox.dequeueAll(m=>true)
+
   def respond(): Unit
   
   /** @return number of tasks, the agent can currently work on */
@@ -127,8 +129,7 @@ class AuctionAgent extends Agent {
   def subAgents() = blackboard.get.agents.diff(List(this))
   
   def respond() ={
-    updateSubscribers()
-    mailbox.foreach {
+    readMail.foreach {
       case t: Task => taskSet+=t
       case _ => throw new IllegalArgumentException("Unknown type of message")
     }
@@ -142,6 +143,7 @@ class AuctionAgent extends Agent {
    */
   //TODO add auctioning
   def runAuction() : Unit = {
+    updateSubscribers()
     var tasks = new mutable.Queue[Task]()
     subAgents().foreach(a=>tasks++=a.taskSet)
     val allTasks = tasks
@@ -169,7 +171,7 @@ class ExecutionAgent extends Agent {
 
   val metaTaskQueue = new mutable.Queue[Task]()
 
-  def respond() = { mailbox.dequeueAll(m=>true).foreach {
+  def respond() = { readMail.foreach {
     case t: Task => log("Executing Task: "+t,2);parallelExecute(t)
     case _ => throw new IllegalArgumentException("Unknown type of message")}
   }

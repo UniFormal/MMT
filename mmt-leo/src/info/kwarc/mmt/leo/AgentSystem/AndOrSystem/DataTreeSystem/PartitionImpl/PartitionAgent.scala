@@ -17,7 +17,7 @@ class PartitionAgent(numbersVar: List[Int]) extends Agent {
 
   def respond() = {
     log("responding to: " + mailbox,4)
-    mailbox.dequeueAll(m=>true).foreach {
+    readMail.foreach {
     case Change(section,data,flags) =>
       data match {
         case node:DataTree[_] if node.isDeleted => //TODO fix with reflection?
