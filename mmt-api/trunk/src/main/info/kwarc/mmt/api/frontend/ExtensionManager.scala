@@ -131,6 +131,8 @@ class ExtensionManager(controller: Controller) extends Logger {
     val rbc = new RuleBasedChecker
     val msc = new MMTStructureChecker(rbc)
     val mmtint = new TwoStepInterpreter(kwp, msc)
+    //use this for identifying structure and thus dependencies
+    //val mmtStructureOnly = new OneStepInterpreter(new KeywordBasedParser(DefaultObjectParser))
     val mmtextr = ontology.MMTExtractor
     val rbp = new RuleBasedProver
     List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, mmtextr, rbp).foreach { e => addExtension(e) }
