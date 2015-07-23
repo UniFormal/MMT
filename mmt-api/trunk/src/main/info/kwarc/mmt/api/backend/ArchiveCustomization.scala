@@ -33,9 +33,9 @@ class MML extends ArchiveCustomization {
   }
 
   private def removeLFApp(n : scala.xml.Node) : scala.xml.Node = n match {
-    case <m:apply><csymbol>{x}</csymbol>{s @ _*}</m:apply> => 
+    case <apply><csymbol>{x}</csymbol>{s @ _*}</apply> => 
       if (x.toString == "http://cds.omdoc.org/foundational?LF?@")
-        <m:apply>{s.map(removeLFApp)}</m:apply>
+        <apply>{s.map(removeLFApp)}</apply>
       else {        
         new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(removeLFApp) : _*)
       }
@@ -47,12 +47,12 @@ class MML extends ArchiveCustomization {
   }
   
   private def makeHVars(n : scala.xml.Node, uvars : List[String], evars : List[String], negFlag : Boolean) : scala.xml.Node = n match {
-    case <m:apply><csymbol>{s}</csymbol><m:bvar><m:apply>{zz}<m:ci>{v}</m:ci>{a}{b}</m:apply>{rest @ _*}</m:bvar>{body}</m:apply> =>
+    case <apply><csymbol>{s}</csymbol><bvar><apply>{zz}<ci>{v}</ci>{a}{b}</apply>{rest @ _*}</bvar>{body}</apply> =>
       if (s.toString == "http://cds.omdoc.org/foundational?LF?Pi") {//"http://cds.omdoc.org/foundations/lf/lf.omdoc?lf?Pi") {
 
         var bd = body
         if (rest.length > 0)
-          bd = <m:apply><csymbol>{s}</csymbol><m:bvar>{rest}</m:bvar>{body}</m:apply>
+          bd = <apply><csymbol>{s}</csymbol><bvar>{rest}</bvar>{body}</apply>
             
         makeHVars(bd, v.toString :: uvars, evars, negFlag)
       }
@@ -60,7 +60,7 @@ class MML extends ArchiveCustomization {
         new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(makeHVars(_,uvars, evars, negFlag)) : _*)
       }
         
-    case <m:apply><m:apply><csymbol>{s}</csymbol>{a1}</m:apply><m:bvar><m:apply>{zz}<m:ci>{v}</m:ci>{a}{b}</m:apply></m:bvar>{body}</m:apply> => 
+    case <apply><apply><csymbol>{s}</csymbol>{a1}</apply><bvar><apply>{zz}<ci>{v}</ci>{a}{b}</apply></bvar>{body}</apply> => 
     	if (s.toString == "http://latin.omdoc.org/foundations/mizar?mizar-curry?for") {
         var uv = uvars
         var ev = evars
@@ -72,18 +72,18 @@ class MML extends ArchiveCustomization {
       } else {
     	  new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(makeHVars(_,uvars, evars, negFlag)) : _*)
       }
-    case <m:apply><csymbol>{s}</csymbol>{a}</m:apply> =>
+    case <apply><csymbol>{s}</csymbol>{a}</apply> =>
       if (s.toString == "http://latin.omdoc.org/foundations/mizar?mizar-curry?not") {
         val firstq = s.toString.indexOf('?')
-        <m:apply><csymbol>{s.toString.substring(firstq + 1)}</csymbol>{makeHVars(a, uvars, evars, !negFlag)}</m:apply>
+        <apply><csymbol>{s.toString.substring(firstq + 1)}</csymbol>{makeHVars(a, uvars, evars, !negFlag)}</apply>
       } else
         new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(makeHVars(_,uvars, evars, negFlag)) : _*)
 
-    case <m:ci>{v}</m:ci> => 
+    case <ci>{v}</ci> => 
       if (uvars.contains(v.toString))
-        <mws:uvar><m:ci>{v}</m:ci></mws:uvar>
+        <mws:uvar><ci>{v}</ci></mws:uvar>
       else if (evars.contains(v.toString))
-        <mws:evar><m:ci>{v}</m:ci></mws:evar>
+        <mws:evar><ci>{v}</ci></mws:evar>
       else
         n
     case <csymbol>{p}</csymbol> => 

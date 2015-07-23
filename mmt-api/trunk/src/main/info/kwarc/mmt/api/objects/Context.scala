@@ -50,7 +50,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
      symbols.Constant(home, name, None, tp map(_^? sub), df map(_^? sub), None)
    }
    def toNode = <om:OMV name={name.toPath}>{mdNode}{tpN}{dfN}</om:OMV> 
-   def toCMLQVars(implicit qvars: Context) = <m:bvar><m:ci>{name.toPath}</m:ci>{(tp.toList:::df.toList).map(_.toCMLQVars)}</m:bvar>
+   def toCMLQVars(implicit qvars: Context) = <bvar><ci>{name.toPath}</ci>{(tp.toList:::df.toList).map(_.toCMLQVars)}</bvar>
    def head = tp.flatMap(_.head)
    override def toString = this match {
       case IncludeVarDecl(p, args) => p.toString + args.mkString(" ")
@@ -262,7 +262,7 @@ case class Context(variables : VarDecl*) extends Obj {
    def toNode =
      <om:OMBVAR>{mdNode}{this.zipWithIndex.map({case (v,i) => v.toNode})}</om:OMBVAR>
    def toCMLQVars(implicit qvars: Context) = 
-     <m:apply>{this.map(v => v.toCMLQVars)}</m:apply>
+     <apply>{this.map(v => v.toCMLQVars)}</apply>
    def head = None
 }
 
@@ -277,7 +277,7 @@ case class Sub(name : LocalName, target : Term) extends Obj {
    private[objects] def freeVars_ = target.freeVars_
    def subobjects = subobjectsNoContext(List(target))
    def toNode: Node = <om:OMV name={name.toString}>{mdNode}{target.toNode}</om:OMV>
-   def toCMLQVars(implicit qvars: Context) : Node = <m:mi name={name.toPath}>{target.toCMLQVars}</m:mi>
+   def toCMLQVars(implicit qvars: Context) : Node = <mi name={name.toPath}>{target.toCMLQVars}</mi>
    override def toString = name + ":=" + target.toString
    def head = None
 }

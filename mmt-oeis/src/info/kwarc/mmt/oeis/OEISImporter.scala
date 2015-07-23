@@ -75,8 +75,8 @@ class OEISImporter extends Importer {
       
       translateDocument(node)(bt.narrationDPath, errHandler)
       val doc = controller.getDocument(bt.narrationDPath)
-      controller.clear //to save memory from getting too high
       cont(doc)
+      controller.clear //to save memory from getting too high
     } catch {
       case e : Throwable => 
         log("WARNING: Skipping article due to error: " + e.toString() + " \n" + e.getStackTrace.mkString("\n")) //skipping declaration

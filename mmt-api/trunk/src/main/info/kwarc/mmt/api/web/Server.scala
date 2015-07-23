@@ -267,7 +267,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
 
              def genQVars(n : Node) : Node = n match {
                case a : scala.xml.Atom[_] => a
-               case  <m:ci>{q}</m:ci> =>
+               case  <ci>{q}</ci> =>
                  if (q.toString.startsWith("?") || q.toString.startsWith("%3F")) {
                    <mws:qvar>{q}</mws:qvar>
                  } else {
