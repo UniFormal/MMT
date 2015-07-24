@@ -59,7 +59,7 @@ abstract class WritableArchive extends ROArchive {
     case Dim(path@_*) => root / FilePath(path.toList)
   }
 
-  def includeDir(n: String): Boolean = n != ".svn" && n != ".mmt"
+  def includeDir(n: String): Boolean = !List(".svn", ".mmt", ".git").contains(n)
 
   val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, this / narration)
 
