@@ -127,11 +127,13 @@ class LaTeXML extends SmsGenerator {
   // the latexml client
   private var latexmlc = "latexmlc"
   private var expire = "10"
+  private var profile = "stex-smglom-module"
   private var perl5lib = "perl5lib"
 
   override def start(args: List[String]): Unit = {
     latexmlc = getFromFirstArgOrEnvvar(args, "LATEXMLC", latexmlc)
     expire = controller.getEnvVar("LATEXMLEXPIRE").getOrElse(expire)
+    profile = controller.getEnvVar("LATEXMLPROFILE").getOrElse(profile)
   }
 
   def str2Level(lev: String): Level.Level = lev match {
@@ -214,7 +216,7 @@ class LaTeXML extends SmsGenerator {
     setLatexmlc(bt)
     val output = new StringBuffer()
     val pb = Process(Seq(latexmlc,
-      "--quiet", "--profile", "stex-smglom-module", "--path=" + styPath(bt),
+      "--quiet", "--profile", profile, "--path=" + styPath(bt),
       bt.inFile.toString, "--destination=" + lmhOut, "--log=" + logFile,
       "--preamble=" + getAmbleFile("pre", bt),
       "--postamble=" + getAmbleFile("post", bt),
