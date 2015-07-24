@@ -117,7 +117,13 @@ class ErrorManager extends Extension with Logger {
       val trace: List[List[String]] = stacks.toList map (e => e.child.toList map (_.text))
       val longMsg: String = (others map (_.text)).mkString
       val elems = others filter (_.isInstanceOf[Elem])
-      val srcR = if (srcRef.isEmpty) None else Some(SourceRef.fromURI(URI(srcRef)))
+      var srcR: Option[SourceRef] = None
+      try {
+        srcR = if (srcRef.isEmpty) None else Some(SourceRef.fromURI(URI(srcRef)))
+      }
+      catch {
+        case e: ParseError => infoMessage(e.getMessage)
+      }
       if (elems.nonEmpty)
         infoMessage("ignored sub-elements: " + elems)
       val be = BuildError(a, target, fpath.toFile.stripExtension.filepath, errType, lvl, srcR, shortMsg, longMsg, trace)
