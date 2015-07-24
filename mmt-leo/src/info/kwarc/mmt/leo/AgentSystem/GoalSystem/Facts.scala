@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects.Conversions._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
-/*
+
 
 /** an approximation of the syntax tree of a [[Term]] that replaces subtrees beyond a certain depth with special leaves
  *  
@@ -260,4 +260,4 @@ class Facts(blackboard: GoalBlackboard, shapeDepth: Int) extends frontend.Logger
 }
 
 
-*/
+

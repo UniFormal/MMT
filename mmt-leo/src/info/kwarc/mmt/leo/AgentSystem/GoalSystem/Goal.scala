@@ -4,16 +4,16 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils.HTML
-/*
+
 
 /**
  * Each [[Goal]] stores a list of alternatives each of which stores a list of subgoals
- * 
+ *
  * A goal can be closed if all subgoals of one alternative can be closed
- * 
- * @param subgoals the conjuncts of this alternative 
+ *
+ * @param subgoals the conjuncts of this alternative
  * @param proof the proof term
- * 
+ *
  * Owners may call `proof()` only if `isSolved == true`.
  * When creating instances, it is safe to call [[Goal#proof]] to compute the proof term.
  */
@@ -21,12 +21,12 @@ case class Alternative(subgoals: List[Goal], proof: () => Term) {
    /** true if all subgoals are solved */
    def isSolved: Boolean = subgoals.forall(_.isSolved)
    def present(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]) = {
-      val gS = subgoals.map {g => Indenter.indent(depth) + g.present(depth+1)}
+      val gS = subgoals.map {g => Indent.indent(depth) + g.present(depth+1)}
       gS.mkString("\n")
    }
 
    def presentHtml(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]) = {
-      val gS = subgoals.map {g => Indenter.indent(depth) + g.presentHtml(depth+1, firstTime=false)}
+      val gS = subgoals.map {g => Indent.indent(depth) + g.presentHtml(depth+1, firstTime=false)}
       HTML.build { h => import h._
          gS.foreach { l =>
             div("prover-alternative") {
@@ -41,22 +41,22 @@ case class Alternative(subgoals: List[Goal], proof: () => Term) {
 
 /**
  * a single-conclusion sequent - the basic node in a proof tree
- * 
- * The root goal is stored and the whole proof tree is acted on by the [[Prover]].  
- * 
+ *
+ * The root goal is stored and the whole proof tree is acted on by the [[Prover]].
+ *
  * A goal nodes knows its parent (except for the root goal) and children (the subgoals).
  * In fact, a goal is also a node in the backwards proof search: A goal stores not simply a list of subgoals,
  * but a list of [[Alternative]] ways to prove it each of which stores a list of subgoals.
- * 
+ *
  * Moreover, a goal stores the explored part of a the forward proof search space:
  * a set of facts implied by the goals premises, updated externally.
- * 
+ *
  * The prover expands new goals greedily by applying invertible rules,
  * and each goal stores those invertible rules that have not been applied yet.
- * 
+ *
  * @param context the premises added to the sequent by this goal;
  *                the full antecedent arises by prepending the one of the parent goal
- * @param tp the conclusion of the sequent     
+ * @param tp the conclusion of the sequent
  */
 
 class Goal(val context: Context, private var concVar: Term) {
@@ -65,13 +65,15 @@ class Goal(val context: Context, private var concVar: Term) {
 
    def path: List[Goal] = this :: parent.map(_.path).getOrElse(Nil)
    def below(that: Goal): Boolean = this == that || parent.exists(_ below that)
+   def isLeaf:Boolean = alternatives.isEmpty
+
 
    /** getter for the conclusion (may have been simplified since Goal creation) */
    def conc = concVar
    /** sets a new goal, can be used by the prover to simplify goals in place */
-   private[leo] def setConc(newConc: Term)(implicit facts: Facts) {
+   private[leo] def setConc(newConc: Term, facts: Facts) {
       concVar = newConc
-      checkAxiomRule
+      checkAxiomRule(facts)
    }
    /** the complete context/antecedent (i.e., including the parent's context) of this sequent */
    lazy val fullContext: Context = parent.map(_.fullContext).getOrElse(Context()) ++ context
@@ -84,7 +86,7 @@ class Goal(val context: Context, private var concVar: Term) {
    }
    /** the complete context of this goal seen as a list of atomic facts that rules can make use of */
    lazy val fullVarAtoms: List[Atom] = parent.map(_.fullVarAtoms).getOrElse(Nil) ::: varAtoms
-   
+
    /** stores the list of alternatives */
    private var alternatives: List[Alternative] = Nil
    /** adds a new alternative in the backward search space */
@@ -118,7 +120,7 @@ class Goal(val context: Context, private var concVar: Term) {
       alternatives.foreach {a => a.subgoals.foreach {sg => sg.removeAlternatives()}}
       alternatives = Nil
    }
-   
+
    /** caches the result of isSolved */
    private var solved: Option[Boolean] = None
    /** stores the proof */
@@ -143,7 +145,7 @@ class Goal(val context: Context, private var concVar: Term) {
       solved = Some(true)
       removeAlternatives()
    }
-   
+
    /** checks whether this can be closed using the axiom rule, i.e., whether the goal is in the database of facts */
    private def checkAxiomRule(implicit facts: Facts) {
       if (!solved.contains(true)) {
@@ -156,22 +158,33 @@ class Goal(val context: Context, private var concVar: Term) {
 
    /**
     * recursively checks if the goal can be closed by using the axiom rule
-    * 
-    * should be called iff there are new facts available (result is cached by isSolved) 
+    *
+    * should be called iff there are new facts available (result is cached by isSolved)
     */
+   //TODO does this actually only check for the new facts or treis for all the facts
    def newFacts(implicit facts: Facts) {
       checkAxiomRule
       alternatives.foreach {a =>
          a.subgoals.foreach {sg => sg.newFacts}
       }
    }
-   
+
    /** stores the invertible backward rules that have not been applied yet */
    private var backward : List[ApplicableTactic] = Nil
    /** stores the invertible forward rules that have not been applied yet */
    private var forward  : List[ApplicableTactic]  = Nil
    /** stores the backward search rules that have not been applied yet */
    private var backwardSearch : List[BackwardSearch] = Nil
+
+   var isBackwardExpanded = false
+   var isForwardExpanded = false
+   var isBackwardSearched = false
+   var isForwardSearched = false
+   def isFullyExpanded = isBackwardExpanded && isForwardExpanded
+
+   //TODO should I add functionality that stores whether tactics have tried and failed
+   //TODO should I store a applicability set boolean to avoid recomputation
+
    /** initializes the invertible backward/forward tactics that can be applied */
    def setExpansionTactics(blackboard: GoalBlackboard, backw: List[BackwardInvertible], forw: List[ForwardInvertible]) {
       backward = parent match {
@@ -213,7 +226,7 @@ class Goal(val context: Context, private var concVar: Term) {
             }
       }
    }
-   
+
    override def toString = conc.toString
    def present(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]): String = {
       val goalHighlight = if (current.contains(this)) "X " else "  "
@@ -221,7 +234,7 @@ class Goal(val context: Context, private var concVar: Term) {
       if (isSolved) {
          goalHighlight + "! " + presentObj(context) + " |- " + presentObj(proof) + " : " + presentObj(conc)
       } else {
-         val aS = alternatives.map(a => Indenter.indent(depth+1) + altHighlight(a) + a.present(depth+1))
+         val aS = alternatives.map(a => Indent.indent(depth+1) + altHighlight(a) + a.present(depth+1))
          val lines = goalHighlight + (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
          lines.mkString("\n")
       }
@@ -229,10 +242,10 @@ class Goal(val context: Context, private var concVar: Term) {
 
    def presentHtml(depth: Int, firstTime:Boolean = true)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]): String = {
 
-      def addHtmlDiv(s: String, cl: String)() = {
+      def addHtmlDiv(literals: String, divName: String)() = {
          HTML.build { h => import h._
-            div(cl) {
-               literal(s)
+            div(divName) {
+               literal(literals)
             }
          }
       }
@@ -247,7 +260,7 @@ class Goal(val context: Context, private var concVar: Term) {
       if (isSolved) {
          addHtmlDiv(goalHighlight + "! " + presentObj(context) + " |- " + presentObj(proof) + " : " + presentObj(conc),"prover-solved")
       } else {
-         val aS = alternatives.map(a => Indenter.indent(depth + 1) + altHighlight(a) + a.presentHtml(depth + 1))
+         val aS = alternatives.map(a => Indent.indent(depth + 1) + altHighlight(a) + a.presentHtml(depth + 1))
          val lines = goalHighlight + (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
 
          if (firstTime) {
@@ -270,4 +283,4 @@ class Goal(val context: Context, private var concVar: Term) {
    }
 
 }
-*/
+

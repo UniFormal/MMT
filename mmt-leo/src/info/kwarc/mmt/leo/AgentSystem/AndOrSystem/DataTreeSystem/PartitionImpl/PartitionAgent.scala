@@ -26,7 +26,7 @@ class PartitionAgent(numbersVar: List[Int]) extends Agent {
           node.openLeaves.foreach (pt => taskSet += createTask (pt.asInstanceOf[DataTree[Int]] ) )
         }
         case _ => throw new IllegalArgumentException("unknown change type")
-    case _ => throw new IllegalArgumentException("unknown message type")
+    case _ => throw new IllegalArgumentException("unknown message type") //TODO investigate unreachable pattern
     }
     if (taskSet.isEmpty) log("NO TASKS FOUND") else log("Found "+taskSet.size+" task(s)")
   }

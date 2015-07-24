@@ -2,7 +2,7 @@ package info.kwarc.mmt.leo.AgentSystem.GoalSystem
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
-/*
+
 
 /**
  * A rule used for forward or backward proof search
@@ -107,7 +107,7 @@ abstract class ApplicableTactic {
    /** runs the continuation
     *  @return the new goals, None if application was not possible
     */
-   def apply() : Option[Alternative] //TODO what is a continuation
+   def apply() : Option[Alternative]
 }
 
 object ApplicableTactic {
@@ -116,4 +116,4 @@ object ApplicableTactic {
       val label = l
    }
 }
-*/
+
