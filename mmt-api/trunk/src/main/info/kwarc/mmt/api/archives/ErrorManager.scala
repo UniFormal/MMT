@@ -22,6 +22,7 @@ object Table {
     "group",
     "repo",
     "fileName",
+    "fileLink",
     "fileDate",
     "target",
     "sourceRef",
@@ -43,6 +44,7 @@ case class BuildError(archive: Archive, target: String, path: FilePath,
       archive.groupDir.getName,
       archive.root.getName,
       path.toString,
+      f.toString,
       new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(f.toJava.lastModified)),
       target,
       sourceRef.fold("")(_.toString),
@@ -219,8 +221,12 @@ class ErrorManager extends Extension with Logger {
   private val serve = new ServerExtension("errors") {
     override def logPrefix = self.logPrefix
 
-    def apply(path: List[String], query: String, body: Body) = {
-      Server.JsonResponse(serveJson(path, query))
+    def apply(path: List[String], query: String, body: Body) = path match {
+      case List("file") =>
+        val source = scala.io.Source.fromFile(query)
+        val lines = try source.mkString finally source.close()
+        Server.XmlResponse(lines)
+      case _ => Server.JsonResponse(serveJson(path, query))
     }
   }
 }

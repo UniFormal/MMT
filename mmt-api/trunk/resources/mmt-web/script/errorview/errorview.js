@@ -1,5 +1,5 @@
 angular.module('searchApp', ['ngSanitize']).controller('SearchController',
-  [ '$scope', '$http', function($scope, $http) {
+  [ '$scope', '$http', '$window', function($scope, $http, $window) {
     $scope.columns =
       { errLevel : { x : true, long : 'level', search : '' }
       , errType : { x : false, long : 'error type', search : '' }
@@ -7,6 +7,7 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
       , group : { x : true, long : 'group', search : '' }
       , repo : { x : true, long : 'repo', search : '' }
       , fileName : { x : true, long : 'file name', search : '' }
+      , fileLink : { x : false, long : 'content', search : '' }
       , fileDate : { x : false, long : 'modified', search : '' }
       , target : { x : true, long : 'target', search : '' }
       , sourceRef : { x : true, long : 'source', search : '' }
@@ -82,6 +83,9 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
         $http.get(':errors/count2' + $scope.query($scope.maxNumber)).success(function(data) {
           $scope.number = data[0].count;
         });
+    };
+    $scope.serve = function(file) {
+        $window.open(':errors/file?' + file, '_blank');
     };
     $scope.search();
     $scope.sort = {

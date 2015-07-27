@@ -121,7 +121,10 @@
             <td><a href="" ng-click="build(res)" title="rebuild file">
                 &#10227;</a></td>
             <td ng-repeat="key in colProps" ng-if="columns[key].x">
-                {{res[key]}}
+                <span ng-show="key != 'fileLink'">{{res[key]}}</span>
+                <span ng-show="key == 'fileLink'">
+                    <a href="" ng-click="serve(res[key])">{{res[key]}}</a>
+                </span>
             </td>
         </tr>
         </tbody>
