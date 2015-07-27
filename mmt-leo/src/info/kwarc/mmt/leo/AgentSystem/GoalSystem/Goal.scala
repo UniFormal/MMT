@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils.HTML
+import info.kwarc.mmt.leo.AgentSystem.Section
 
 
 /**
@@ -90,12 +91,16 @@ class Goal(val context: Context, private var concVar: Term) {
    /** stores the list of alternatives */
    private var alternatives: List[Alternative] = Nil
    /** adds a new alternative in the backward search space */
-   private[leo] def addAlternative(alt: Alternative) {
+   private[leo] def addAlternative(alt: Alternative,section:Option[GoalSection]) {
       alt.subgoals.foreach {sg =>
          sg.parent = Some(this)
       }
       alternatives ::= alt
       solved = None
+      section match {
+         case Some(s) => s.passiveAdd(alt)
+         case None =>
+      }
    }
 
    /**

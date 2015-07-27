@@ -26,6 +26,10 @@ abstract class Section(blackboard: Blackboard) extends Debugger with Speaker{
     data = newData
   }
 
+
+
+
+
   override def addSubscriber(l:Listener) = {
     subscribers::=l
     sendAllInfo(l)

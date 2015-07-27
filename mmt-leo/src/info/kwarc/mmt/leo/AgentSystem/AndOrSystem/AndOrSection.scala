@@ -54,7 +54,7 @@ class AndOrSection[G>: Null <:AndOr[G]](blackboard: AndOrBlackboard[_],g:G) exte
    */
   def getNodes : List[PTType] = data.preDepthFlatten
 
-  /**Function that locks nodes affected by a given task*/
+/*  /**Function that locks nodes affected by a given task*/
   def lockNodes[T<:Task](task: T):Boolean = {
     val resultsW = task.writeSet(this).map(_.placeLock(readLockVar=true,writeLockVar=true))
     val resultsR = task.readSet(this).map(_.placeLock(readLockVar=false,writeLockVar=true))
@@ -65,7 +65,7 @@ class AndOrSection[G>: Null <:AndOr[G]](blackboard: AndOrBlackboard[_],g:G) exte
   def unlockNodes[T<:Task](task: T):Unit = {
     task.writeSet(this).foreach(_.liftLock(readLockVar=false,writeLockVar=false))
     task.readSet(this).foreach(_.liftLock(readLockVar=false,writeLockVar=false))
-  }
+  }*/
 
   /** function that determines if a task is still applicable to the given tree
     * if it is not applicable it logs why

@@ -6,8 +6,14 @@ import info.kwarc.mmt.leo.AgentSystem.Debugger
  * This trait represents thread safe capabilities.
  * //TODO functions still need to be modified in tree to utilize thread safety
  */
+trait Lockable {
+  /** read and write permissions*/
+  var R = true
+  var W = true
 
-trait Tree[T<:Tree[T]] extends Debugger with Lockable {self: T =>
+}
+
+trait LockableTree[T<:LockableTree[T]] extends Debugger with Lockable {self: T =>
   def logPrefix = "Tree"
 
   var parent: Option[T] = None
@@ -15,33 +21,41 @@ trait Tree[T<:Tree[T]] extends Debugger with Lockable {self: T =>
 
   var isDeleted = false
 
-  def getParent = parent
 
-  /**sets the parent, safety = true involves a check if the parentVar is above current node*/
-  def setParent(parentVar:Option[T], safety:Boolean=true):Unit = {
-    (parent,parentVar) match {
-      case (Some(p1),Some(p2)) =>
-        if (safety && this.isAbove(p2)){throw new IllegalArgumentException("New Parent below current")}
-        parent=parentVar; p1.children.diff(List(this))
-      case (Some(p1),None) => parent=parentVar; p1.children=p1.children.diff(List(this))
-      case (None,Some(p2)) =>
-        if (safety && isAbove(p2)){throw new IllegalArgumentException("New Parent below current")}
-        parent=parentVar
-      case (None,None) =>
-    }
+  /**parallelization safe getParent*/
+  def getParent:Option[T] = {
+    if (R && parent.getOrElse(this).R) {return parent}
+    throw new IllegalArgumentException("Node Locked")
   }
 
-  /**set parent for parent node instead of option*/
-  private def setParent(parentVar:T):Unit = setParent(Option(parentVar))
+  /**parallelization safe setParent, safety = true involves a check if the parentVar is above current node*/
+  def setParent(parentVar:Option[T]):Unit = {
+    if (W) {
+      (parent,parentVar) match {
+        case (Some(p1),Some(p2)) if p1.W && p2.W =>
+          if (isAbove(p2)){throw new IllegalArgumentException("New Parent below current")}
+          parent=parentVar; p1.children.diff(List(this))
+        case (Some(p1),None) => parent=parentVar; p1.children=p1.children.diff(List(this))
+        case (None,Some(p2)) if p2.W=>
+          if (isAbove(p2)){throw new IllegalArgumentException("New Parent below current")}
+          parent=parentVar
+        case (None,None) =>
+        case _ => throw new IllegalArgumentException("Parent Node locked")}
+    }else {throw new IllegalArgumentException("Node locked")}
+  }
 
-  def getChildren = children
-  def setChildren(c:List[T]) = c.foreach{_.setParent(this)}
+  /**parallelization safe set parent for parent node instead of option*/
+  def setParent(parentVar:T): Unit = setParent(Option(parentVar))
 
+
+
+  def getChildren = if (R && children.forall(_.R)) children
+  def setChildren(c:List[T]) = if (W && children.forall(_.W)) {children.foreach( c=>c.setParent(this))}
+
+  //TODO left off here
   def setDeleted() = isDeleted=true; children.foreach(_.setDeleted())
 
-  /** @return the root node of the tree, aka the node with no parents
-    * Does not use getters and setters because may be called inside
-    * of a locked subtree*/
+  /** @return the root node of the tree, aka the node with no parents*/
   def root:T = {
     parent match {
       case Some(p) => p.root
@@ -52,7 +66,7 @@ trait Tree[T<:Tree[T]] extends Debugger with Lockable {self: T =>
   /** @return the siblings of the current node aka the nodes that share its parent*/
   def siblings: List[T] = {parent match{
       case None => Nil
-      case Some(p) => p.getChildren diff List(this)}
+      case Some(p) => p.children diff List(this)}
   }
 
   /** @return the path of nodes to the root of the tree*/
@@ -68,13 +82,13 @@ trait Tree[T<:Tree[T]] extends Debugger with Lockable {self: T =>
   /** checks if current node is equal to or below target node*/
   def isBelow(that: T): Boolean = this == that || parent.exists(_ isBelow that)
   /** checks if current node is equal to or above target node*/
-  def isAbove(that: T): Boolean = this == that || that.isBelow(this)
+  def isAbove(that: T): Boolean = this == that || children.exists(_ isAbove that)
   /** checks if current node is equal to or above a set of nodes  */
   def isAbove(s:Set[T]):Boolean = {s.forall(n => this isAbove n)}
   /** checks if current node is the child of another*/
   def isChildOf(that: T): Boolean = parent.get==that
   /** checks if current node is a parent of another*/
-  def isParentOf(that: T): Boolean = that.isChildOf(this)
+  def isParentOf(that: T): Boolean = children.contains(that)
 
 
   /** Adds a child to the node*/
@@ -176,13 +190,13 @@ trait Tree[T<:Tree[T]] extends Debugger with Lockable {self: T =>
   }
 
   /** @return a tree with the given root and given children*/
-  def mkTree[B<:Tree[B]](root: B, lChild: List[B]): B ={
+  def mkTree[B<:LockableTree[B]](root: B, lChild: List[B]): B ={
     root.addChildren(lChild)
     root
   }
 
   /** @return a tree with mapping applied to each node*/
-  def map[B<:Tree[B]](f: T => B): B =
+  def map[B<:LockableTree[B]](f: T => B): B =
     f(this).mkTree(f(this), children map (_ map f))
 
   /** @return a copy of the current tree*/
@@ -192,7 +206,7 @@ trait Tree[T<:Tree[T]] extends Debugger with Lockable {self: T =>
 /**
  * This trait represents and/or capabilities.
  */
-trait AndOr[T<:AndOr[T]] extends Tree[T] with Lockable { Self: T =>
+trait LockableAndOr[T<:LockableAndOr[T]] extends LockableTree[T] with Lockable { Self: T =>
   override def logPrefix = "AndOrTree"
 
   /** conj=true -> an AND node*/
@@ -289,7 +303,7 @@ trait AndOr[T<:AndOr[T]] extends Tree[T] with Lockable { Self: T =>
  *                        it is an or node and only one subnode needs to be satisfied
  * @param isSatVar is true if it is solved, is None if it is unknown, is false if it is unsatasfiable
  */
-class AndOrTree(conjVar:Boolean, isSatVar: Option[Boolean]=None) extends AndOr[AndOrTree] {
+class LockableAndOrTree(conjVar:Boolean, isSatVar: Option[Boolean]=None) extends LockableAndOr[LockableAndOrTree] {
   var conj=conjVar
   var sat=isSatVar
 

@@ -73,7 +73,7 @@ abstract class GoalTask(agent:GoalAgent,g:Goal) extends Task {
       return None
 
     // add the alternative to the proof tree and expand the subgoals
-    g.addAlternative(alt)
+    g.addAlternative(alt,Some(proofSection))
     log("************************* " + at.label + " at X **************************")
     log("\n" + g.presentHtml(0)(presentObj, Some(g), Some(alt)))
     Some(alt)

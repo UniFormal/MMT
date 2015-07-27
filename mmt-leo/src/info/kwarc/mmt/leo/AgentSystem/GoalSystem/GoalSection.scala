@@ -18,6 +18,14 @@ class GoalSection(blackboard:GoalBlackboard, goal:Goal) extends Section(blackboa
   var data:PTType = goal
   var changes: List[Change[_]] = List(new Change(this,goal,List("ADD")))
 
+  def passiveAdd(newData:Alternative) ={
+    handleChange(new Change(this,newData,List("ADD")))
+  }
+
+  def passiveDel(delData : ObjectType) : Unit = {
+    handleChange(new Change(this,delData,List("DEL")))
+  }
+
 
 }
 
