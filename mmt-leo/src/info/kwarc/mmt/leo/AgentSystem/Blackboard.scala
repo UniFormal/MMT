@@ -1,5 +1,7 @@
 package info.kwarc.mmt.leo.AgentSystem
 
+import info.kwarc.mmt.api.frontend.{Controller, Report, Logger}
+
 /**
  * A blackboard is a central data collection object that supports
  * synchronized access between multiple processes.
@@ -9,7 +11,8 @@ package info.kwarc.mmt.leo.AgentSystem
  * with change management. This allows for uniform access and eliminates code reuse.
  *
  */
-abstract class Blackboard extends Debugger with Communicator{
+abstract class Blackboard(implicit controller: Controller) extends Logger with Communicator{
+  val report = controller.report
   def logPrefix = "Blackboard"
 
   var subscribers:List[Listener] = Nil
@@ -81,8 +84,11 @@ abstract class Blackboard extends Debugger with Communicator{
 }
 
 /** this class presents the final solution of a specific section of the blackboard*/
-abstract class Presenter extends Debugger {
+abstract class Presenter(implicit controller: Controller) extends Logger{
   type ObjectType
-  def logPrefix="Presenter"
   def present(pt:ObjectType): String
+
+  val report = controller.report
+  def logPrefix = "Presenter"
+
 }

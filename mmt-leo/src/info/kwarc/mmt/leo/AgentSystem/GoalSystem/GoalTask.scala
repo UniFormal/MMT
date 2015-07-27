@@ -1,5 +1,6 @@
 package info.kwarc.mmt.leo.AgentSystem.GoalSystem
 
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.leo.AgentSystem.{Blackboard, Section, Task}
 
 /**
@@ -7,7 +8,7 @@ import info.kwarc.mmt.leo.AgentSystem.{Blackboard, Section, Task}
  *
  * Classes for the Expansion and Search tasks
  */
-abstract class GoalTask(agent:GoalAgent,g:Goal) extends Task {
+abstract class GoalTask(agent:GoalAgent,g:Goal)(implicit controller: Controller) extends Task {
   override val name: String = "GoalTask"
 
   override val sentBy:GoalAgent = agent
@@ -17,9 +18,8 @@ abstract class GoalTask(agent:GoalAgent,g:Goal) extends Task {
 
   def presentObj = sentBy.presentObj
 
-  def report = sentBy.report
+  //def report = sentBy.report
 
-  def controller = sentBy.controller
 
   def rules = sentBy.rules
 
@@ -81,7 +81,7 @@ abstract class GoalTask(agent:GoalAgent,g:Goal) extends Task {
 
 }
 
-class ExpansionTask(agent:InvertibleAgent,g:Goal) extends GoalTask(agent,g) {
+class ExpansionTask(agent:InvertibleAgent,g:Goal)(implicit controller: Controller) extends GoalTask(agent,g) {
   override val name="ExpansionTask"
 
   /** applies invertible tactics to a goal and returns an alternative if an application was successful*/
@@ -124,7 +124,7 @@ class ExpansionTask(agent:InvertibleAgent,g:Goal) extends GoalTask(agent,g) {
 }
 
 /**Expands Goal by applying invertible backwards rules to it then applying them again to all newly generated leaves*/
-class InvertibleBackwardTask(agent:InvertibleBackwardAgent,g:Goal) extends ExpansionTask(agent,g) {
+class InvertibleBackwardTask(agent:InvertibleBackwardAgent,g:Goal)(implicit controller: Controller) extends ExpansionTask(agent,g) {
   override val name="InvertibleBackwardTask"
   override def execute() ={
     fullExpand(g,agent.invertibleBackward,Nil)
@@ -135,7 +135,7 @@ class InvertibleBackwardTask(agent:InvertibleBackwardAgent,g:Goal) extends Expan
 }
 
 /**Expands Goal by applying invertible backwards rules to it then applying them again to all newly generated leaves*/
-class InvertibleForwardTask(agent:InvertibleForwardAgent,g:Goal) extends ExpansionTask(agent,g) {
+class InvertibleForwardTask(agent:InvertibleForwardAgent,g:Goal)(implicit controller: Controller) extends ExpansionTask(agent,g) {
   override val name="InvertibleForwardTask"
   override def execute() ={
     fullExpand(g,Nil,agent.invertibleForward)
@@ -145,7 +145,7 @@ class InvertibleForwardTask(agent:InvertibleForwardAgent,g:Goal) extends Expansi
   override def isApplicable[BB <: Blackboard](b: BB): Boolean = !g.isForwardExpanded //TODO expand this
 }
 
-class SearchBackwardTask(agent:SearchBackwardAgent,g:Goal) extends GoalTask(agent,g) {
+class SearchBackwardTask(agent:SearchBackwardAgent,g:Goal)(implicit controller: Controller) extends GoalTask(agent,g) {
   override val name="SearchBackwardTask"
   /** Determines if a given task is applicable given the current blackboard */
 
@@ -175,7 +175,7 @@ class SearchBackwardTask(agent:SearchBackwardAgent,g:Goal) extends GoalTask(agen
   }
 }
 
-class SearchForwardTask(agent:SearchForwardAgent,g:Goal) extends GoalTask(agent,g) {
+class SearchForwardTask(agent:SearchForwardAgent,g:Goal)(implicit controller: Controller) extends GoalTask(agent,g) {
   override def isApplicable[BB <: Blackboard](b: BB): Boolean = g.isFullyExpanded && !g.isForwardSearched
 
   def forwardSearch() {

@@ -1,5 +1,6 @@
 package info.kwarc.mmt.leo.AgentSystem.GoalSystem
 
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.leo.AgentSystem.{Change, Section}
 
 
@@ -8,8 +9,8 @@ import info.kwarc.mmt.leo.AgentSystem.{Change, Section}
  * blackboard.
  *
  */
-class GoalSection(blackboard:GoalBlackboard, goal:Goal) extends Section(blackboard) {
-  override val logPrefix ="AndOrSection"
+class GoalSection(blackboard:GoalBlackboard, goal:Goal)(implicit controller: Controller) extends Section(blackboard) {
+  override def logPrefix ="AndOrSection"
 
   /** this type of section only stores data which is a subtype of the AndOr tree type*/
   type ObjectType=Goal
@@ -30,7 +31,7 @@ class GoalSection(blackboard:GoalBlackboard, goal:Goal) extends Section(blackboa
 }
 
 
-class FactSection(blackboard:GoalBlackboard,shapeDepth: Int) extends Section(blackboard) {
+class FactSection(blackboard:GoalBlackboard,shapeDepth: Int)(implicit controller: Controller) extends Section(blackboard) {
   type ObjectType = Facts
   var data = new Facts(blackboard:GoalBlackboard,shapeDepth: Int)
   var changes: List[Change[_]] = Nil

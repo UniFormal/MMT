@@ -1,12 +1,13 @@
 package info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.PartitionImpl
 
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.{DataTree, DataTreeSection}
 import info.kwarc.mmt.leo.AgentSystem.{Listener, Change, Agent}
 
 /**
  * Created by Mark on 7/21/2015.
  */
-class PartitionAgent(numbersVar: List[Int]) extends Agent {
+class PartitionAgent(numbersVar: List[Int])(implicit controller: Controller) extends Agent {
   type BBType = IntBlackboard
 
   var subscribers:List[Listener] = Nil
@@ -16,7 +17,7 @@ class PartitionAgent(numbersVar: List[Int]) extends Agent {
 
 
   def respond() = {
-    log("responding to: " + mailbox,4)
+    log("responding to: " + mailbox,Some("4"))
     readMail.foreach {
     case Change(section,data,flags) =>
       data match {

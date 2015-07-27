@@ -1,6 +1,7 @@
 package info.kwarc.mmt.leo.AgentSystem.GoalSystem
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.{Logger, Controller}
 import info.kwarc.mmt.api.objects.Conversions._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
@@ -95,8 +96,8 @@ case class Atom(tm: Term, tp: Term, rl: Option[String]) {
  * @param parent g.parent.facts
  * @param newContext g.context
  */
-class Facts(blackboard: GoalBlackboard, shapeDepth: Int) extends frontend.Logger {
-   val report =  blackboard.report
+class Facts(blackboard: GoalBlackboard, shapeDepth: Int)(implicit controller: Controller) extends Logger {
+   val report =  controller.report
    def logPrefix = "Facts"
    
    private var constantAtoms : List[Atom] = Nil
@@ -129,7 +130,7 @@ class Facts(blackboard: GoalBlackboard, shapeDepth: Int) extends frontend.Logger
 
   /** simplify a fact */
   private[leo] def simplifyFact(f: Fact): Fact = {
-    val tpS = blackboard.controller.simplifier(f.tp, f.goal.fullContext, blackboard.rules)
+    val tpS = controller.simplifier(f.tp, f.goal.fullContext, blackboard.rules)
     f.copy(tp = tpS)
   }
 

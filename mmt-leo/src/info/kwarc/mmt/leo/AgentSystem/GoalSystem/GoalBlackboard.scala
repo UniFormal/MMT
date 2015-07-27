@@ -12,7 +12,7 @@ import info.kwarc.mmt.leo.AgentSystem.{Section, Blackboard}
  *
  * This represents the class of the LF blackboard which handles proofs in the LF prover
  */
-class GoalBlackboard(val controller: Controller, val rules:RuleSet,goal: Goal) extends Blackboard {
+class GoalBlackboard(val rules:RuleSet,goal: Goal)(implicit controller: Controller) extends Blackboard {
   override def logPrefix = "Goal Blackboard"
 
   val proofSection = new GoalSection(this,goal)
@@ -34,7 +34,7 @@ class GoalBlackboard(val controller: Controller, val rules:RuleSet,goal: Goal) e
   val searchForward      = rules.get(classOf[ForwardSearch]).toList
 
   implicit val presentObj: Obj => String = o => controller.presenter.asString(o)
-  val report = controller.report
+  override val report = controller.report
 
   /** convenience function to create a matcher in the current situation */
   def makeMatcher(context: Context, queryVars: Context) = new Matcher(controller, rules, context, queryVars)

@@ -1,5 +1,6 @@
 package info.kwarc.mmt.leo.AgentSystem
 
+import info.kwarc.mmt.api.frontend.{Controller, Report}
 import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.AndOrTree
 import scala.collection.mutable
 
@@ -47,6 +48,34 @@ trait Debugger {
  * this ensures that all objects have logging capabilities
  *
  */
+
+object Display {
+  def report(implicit controller:Controller) = controller.report
+
+  /** displays a list with nice indentation*/
+  def setDisplay[B](s:Set[B], title:String = "Set"):String ={
+    var out = title+":\n"
+    for (e <- s) {out = out+addIndent(e)+"\n"}
+    out
+  }
+
+  /** Displays a queue of lists with nice indentation*/
+  def QueueSetDisplay[B](q:mutable.Queue[Set[B]], title:String = "Queue",title2:String = "Set"):String ={
+    var out = title+":\n"
+    for (e <- q) {out = out+addIndent(setDisplay(e,title2))+"\n"}
+    out
+  }
+
+  /** Special indentation function which handles the andOrTree case*/
+  def addIndent(obj:Any, indent:Int=1):String ={
+    obj match {
+      case s:AndOrTree =>"\t"*indent+obj.toString.replaceFirst("\n","").replace("\n","\n"+"\t"*indent)
+      case _ =>
+        "\t"*indent+obj.toString.replace("\n","\n"+"\t"*indent)
+    }
+  }
+
+}
 
 object OutputLog {
   var log: List[(Int,String,String)] = Nil

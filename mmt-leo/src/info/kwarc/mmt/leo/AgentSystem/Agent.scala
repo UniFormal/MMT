@@ -1,6 +1,8 @@
 package info.kwarc.mmt.leo.AgentSystem
 
 
+import info.kwarc.mmt.api.frontend.{Controller, Logger}
+
 import scala.collection.mutable
 //TODO Make everything work on change handling
 //TODO reimplement partition prover and andOr infastructure
@@ -44,7 +46,7 @@ trait Listener {
 
 trait Communicator extends Listener with Speaker
 
-abstract class Agent extends Debugger with Communicator {
+abstract class Agent(implicit controller: Controller) extends Logger with Communicator {
   type BBType <:Blackboard
 
   var blackboard:Option[BBType]=None
@@ -55,6 +57,7 @@ abstract class Agent extends Debugger with Communicator {
   /** the name of the agent */
   val name: String
 
+  val report = controller.report
   def logPrefix = name
 
   override def toString: String= {name + "::numTasks:" + numTasks}
@@ -114,7 +117,7 @@ abstract class Agent extends Debugger with Communicator {
   * a proper non-colliding subset which hopefully maximizes
   * utility in the proof
   */
-class AuctionAgent extends Agent {
+class AuctionAgent(implicit controller: Controller) extends Agent {
   var subscribers:List[Listener] = Nil
 
   lazy val executionAgent = blackboard.get.executionAgent.get
@@ -165,14 +168,14 @@ class AuctionAgent extends Agent {
 }
 
 
-class ExecutionAgent extends Agent {
+class ExecutionAgent(implicit controller: Controller) extends Agent {
   val name = "Execution Agent"
   var subscribers:List[Listener] = Nil
 
   val metaTaskQueue = new mutable.Queue[Task]()
 
   def respond() = { readMail.foreach {
-    case t: Task => log("Executing Task: "+t,2);parallelExecute(t)
+    case t: Task => log("Executing Task: "+t,Some("2"));parallelExecute(t)
     case _ => throw new IllegalArgumentException("Unknown type of message")}
   }
 

@@ -1,11 +1,15 @@
 package info.kwarc.mmt.leo.AgentSystem
 
+import info.kwarc.mmt.api.frontend.{Controller, Logger}
+
 /** the abstract type of a section of the Blackboard,
   * intended to hold and monitor changes in the stored data
   */
-abstract class Section(blackboard: Blackboard) extends Debugger with Speaker{
+abstract class Section(blackboard: Blackboard)(implicit controller: Controller) extends Logger with Speaker{
   var subscribers:List[Listener] = blackboard.agents
-  val logPrefix = "Section"
+
+  val report = controller.report
+  override def logPrefix = "Section"
 
   /** the type of data that the section holds*/
   type ObjectType

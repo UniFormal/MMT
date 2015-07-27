@@ -1,5 +1,6 @@
 package info.kwarc.mmt.leo.AgentSystem.GoalSystem
 
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
@@ -10,7 +11,7 @@ import info.kwarc.mmt.leo.AgentSystem.{Change, Listener, Agent}
  */
 
 
-abstract class GoalAgent extends Agent {
+abstract class GoalAgent(implicit controller: Controller) extends Agent {
   override type BBType = GoalBlackboard
 
   //override def respond(): Unit = ???
@@ -21,13 +22,12 @@ abstract class GoalAgent extends Agent {
   override var subscribers: List[Listener] = Nil
 
   lazy val presentObj = blackboard.get.presentObj
-  lazy val report = blackboard.get.report
-  lazy val controller = blackboard.get.controller
+  //lazy val report = blackboard.get.report
   lazy val rules = blackboard.get.rules
 
 }
 
-abstract class InvertibleAgent extends GoalAgent {
+abstract class InvertibleAgent(implicit controller: Controller) extends GoalAgent {
   lazy val invertibleBackward = blackboard.get.rules.get(classOf[BackwardInvertible]).toList
   lazy val invertibleForward = blackboard.get.rules.get(classOf[ForwardInvertible]).toList
 
@@ -38,18 +38,18 @@ abstract class InvertibleAgent extends GoalAgent {
   }*/
 
 }
-abstract class InvertibleBackwardAgent extends InvertibleAgent {}
-abstract class InvertibleForwardAgent extends InvertibleAgent {}
+abstract class InvertibleBackwardAgent(implicit controller: Controller) extends InvertibleAgent {}
+abstract class InvertibleForwardAgent(implicit controller: Controller) extends InvertibleAgent {}
 
-abstract class SearchBackwardAgent extends GoalAgent {
+abstract class SearchBackwardAgent(implicit controller: Controller) extends GoalAgent {
   lazy val searchBackward = blackboard.get.rules.get(classOf[BackwardSearch]).toList.sortBy(_.priority).reverse
 }
 
-abstract class SearchForwardAgent extends GoalAgent {
+abstract class SearchForwardAgent(implicit controller: Controller) extends GoalAgent {
   lazy val searchForward = blackboard.get.rules.get(classOf[ForwardSearch]).toList
 }
 
-abstract class SimplifyingAgent extends GoalAgent {
+abstract class SimplifyingAgent(implicit controller: Controller) extends GoalAgent {
 }
 
 

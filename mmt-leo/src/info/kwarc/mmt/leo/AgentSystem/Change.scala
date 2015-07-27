@@ -1,25 +1,29 @@
 package info.kwarc.mmt.leo.AgentSystem
 
+import info.kwarc.mmt.api.frontend.{Controller, Logger}
+
 import scala.collection.mutable
 
 
-abstract class Message extends Debugger{
+abstract class Message(implicit controller: Controller) extends Logger{
   val flags: List[String]
+  val report = controller.report
   def logPrefix = "Message"
+
   def hasFlag(f:String): Boolean = flags.contains(f)
   def hasFlag(l:List[String]): Boolean = l.exists(flags.contains(_))
   val sentBy: Any
 }
 
 /** Sent to agents whose bid failed in the auction*/
-case class AuctionFailure(sentByVar:AuctionAgent, task:Task, flagsVar: List[String]=Nil) extends Message {
+case class AuctionFailure(sentByVar:AuctionAgent, task:Task, flagsVar: List[String]=Nil)(implicit controller: Controller) extends Message {
   override def logPrefix = "Auction Failure"
   val flags: List[String] = flagsVar
   override val sentBy = sentByVar
 }
 
 /** Trait which encapsulates a change in data*/
-case class Change[T](s: Section, dataVar:T, flagsVar: List[String]) extends Message {
+case class Change[T](s: Section, dataVar:T, flagsVar: List[String])(implicit controller: Controller) extends Message {
   override def logPrefix = "Change"
 
   val flags: List[String] = flagsVar
@@ -37,7 +41,7 @@ case class Change[T](s: Section, dataVar:T, flagsVar: List[String]) extends Mess
  * the implementation.
  *
  */
-abstract class Task extends Message{
+abstract class Task(implicit controller: Controller) extends Message{
 
   val flags = Nil
 
@@ -86,7 +90,7 @@ abstract class Task extends Message{
 }
 
 /** Class which represents a Meta task which calls on proof tasks*/
-case class MetaTask(taskSet:Set[Task], byAgentVar: Agent, nameVar: String) extends Task  {
+case class MetaTask(taskSet:Set[Task], byAgentVar: Agent, nameVar: String)(implicit controller: Controller) extends Task  {
   override def logPrefix = "MetaTask"
   
   val name = nameVar
@@ -108,7 +112,7 @@ case class MetaTask(taskSet:Set[Task], byAgentVar: Agent, nameVar: String) exten
   }
 
   override def toString: String = {
-    name + setDisplay(taskSet,"Tasks")
+    name + Display.setDisplay(taskSet,"Tasks")
   }
 
   def isApplicable[BB<:Blackboard](b:BB) = {

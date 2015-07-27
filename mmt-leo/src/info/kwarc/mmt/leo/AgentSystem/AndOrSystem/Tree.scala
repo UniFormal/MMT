@@ -1,13 +1,15 @@
 package info.kwarc.mmt.leo.AgentSystem.AndOrSystem
 
-import info.kwarc.mmt.leo.AgentSystem.Debugger
+import info.kwarc.mmt.api.frontend.{Controller, Logger}
+import info.kwarc.mmt.leo.AgentSystem.{Display, Debugger}
 
 /**
  * This trait represents thread safe capabilities.
  * //TODO functions still need to be modified in tree to utilize thread safety
  */
 
-trait Tree[T<:Tree[T]] extends Debugger with Lockable {self: T =>
+abstract class Tree[T<:Tree[T]](implicit controller: Controller) extends Logger with Lockable {self: T =>
+  val report = controller.report
   def logPrefix = "Tree"
 
   var parent: Option[T] = None
@@ -258,7 +260,7 @@ trait AndOr[T<:AndOr[T]] extends Tree[T] with Lockable { Self: T =>
 
   /** propagates the effect of the solved node up the tree, then simplifies the resulting part of the tree*/
   def percolate(trim:Boolean=true):Unit = {
-    log("P Called on" + this,3)
+    log("P Called on" + this,Some("3"))
     if (isSolved) {
       this.parent match {
         case Some(p) if p.isOr || p.children.forall(_.isSolved) =>
@@ -289,7 +291,7 @@ trait AndOr[T<:AndOr[T]] extends Tree[T] with Lockable { Self: T =>
  *                        it is an or node and only one subnode needs to be satisfied
  * @param isSatVar is true if it is solved, is None if it is unknown, is false if it is unsatasfiable
  */
-class AndOrTree(conjVar:Boolean, isSatVar: Option[Boolean]=None) extends AndOr[AndOrTree] {
+class AndOrTree(conjVar:Boolean, isSatVar: Option[Boolean]=None)(implicit controller: Controller) extends AndOr[AndOrTree] {
   var conj=conjVar
   var sat=isSatVar
 

@@ -1,5 +1,6 @@
 package info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem
 
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.AndOr
 
 
@@ -43,7 +44,7 @@ trait Data[D,T<:Data[D,T]] extends AndOr[T] { self: T =>
 
 }
 
-class DataTree[D](dataVar: D,conjVar:Boolean, isSatVar: Option[Boolean]=None)
+class DataTree[D](dataVar: D,conjVar:Boolean, isSatVar: Option[Boolean]=None)(implicit controller: Controller)
   extends Data[D,DataTree[D]] {
 
      var data = dataVar

@@ -1,12 +1,13 @@
 package info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.PartitionImpl
 
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.DataTree
 import info.kwarc.mmt.leo.AgentSystem.Presenter
 
 /**
  * Created by Mark on 7/21/2015.
  */
-object PartitionPresenter extends Presenter {
+class PartitionPresenter(implicit controller: Controller) extends Presenter {
   type ObjectType= DataTree[Int]
 
   def present(pt: DataTree[Int]): String = {

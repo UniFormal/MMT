@@ -1,10 +1,11 @@
 package info.kwarc.mmt.leo.provers
 
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.PartitionImpl.{PartitionAgent, PartitionPresenter, IntBlackboard}
 import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.DataTree
 import info.kwarc.mmt.leo.AgentSystem._
 
-class PartitionProver(target: Int , usableNumbers: List[Int], cycles: Int = 5) {
+class PartitionProver(target: Int , usableNumbers: List[Int], cycles: Int = 5)(implicit controller: Controller) {
 
   val goal = new DataTree(target,conjVar = true,None)
   val blackboard = new IntBlackboard(goal)
@@ -17,7 +18,7 @@ class PartitionProver(target: Int , usableNumbers: List[Int], cycles: Int = 5) {
 
   def run():String = {
     blackboard.run(cycles)
-    PartitionPresenter.present(goal)
+    (new PartitionPresenter).present(goal)
   }
 
 }

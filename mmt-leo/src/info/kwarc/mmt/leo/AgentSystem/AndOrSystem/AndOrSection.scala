@@ -1,5 +1,6 @@
 package info.kwarc.mmt.leo.AgentSystem.AndOrSystem
 
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.leo.AgentSystem.{Section, Task, Change}
 
 /**
@@ -7,9 +8,9 @@ import info.kwarc.mmt.leo.AgentSystem.{Section, Task, Change}
  * blackboard.
  *
  */
-class AndOrSection[G>: Null <:AndOr[G]](blackboard: AndOrBlackboard[_],g:G) extends Section(blackboard) {
+class AndOrSection[G>: Null <:AndOr[G]](blackboard: AndOrBlackboard[_],g:G)(implicit controller: Controller) extends Section(blackboard) {
 
-  override val logPrefix ="AndOrSection"
+  override def logPrefix ="AndOrSection"
 
   /** this type of section only stores data which is a subtype of the AndOr tree type*/
   type ObjectType = G
@@ -81,16 +82,16 @@ class AndOrSection[G>: Null <:AndOr[G]](blackboard: AndOrBlackboard[_],g:G) exte
     if (!applicable) {
       log(t.toString + "\n is not applicable.")
       if (!wS) {
-        log("all of the write nodes are below a solved goal",2)
+        log("all of the write nodes are below a solved goal",Some("2"))
       }
       if (!wC) {
-        log("write nodes not contained in goal",2)
+        log("write nodes not contained in goal",Some("2"))
       }
       if (!rC) {
-        log("read nodes not contained in goal",2)
+        log("read nodes not contained in goal",Some("2"))
       }
       if (!d) {
-        log("some nodes have been deleted",2)
+        log("some nodes have been deleted",Some("2"))
       }
     }
     applicable

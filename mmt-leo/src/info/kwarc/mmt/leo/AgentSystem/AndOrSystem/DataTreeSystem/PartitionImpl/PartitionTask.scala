@@ -1,29 +1,30 @@
 package info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.PartitionImpl
 
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.{DataTree, DataTreeSection}
 import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.PTApplicability
-import info.kwarc.mmt.leo.AgentSystem.{Task, Section}
+import info.kwarc.mmt.leo.AgentSystem.{Display, Task, Section}
 
 /**
  * Created by Mark on 7/21/2015.
  */
-class PartitionTask(nodeVar: DataTree[Int], agent: PartitionAgent) extends Task with PTApplicability {
+class PartitionTask(nodeVar: DataTree[Int], agent: PartitionAgent)(implicit controller: Controller) extends Task with PTApplicability {
   val name = "Partition Task"
   val sentBy = agent
   val node = nodeVar
   val section = agent.blackboard.get.proofTreeSection
 
   override def toString:String ={
-    "Task writeSet:" + setDisplay(writeSet(section)) 
+    "Task writeSet:" + Display.setDisplay(writeSet(section))
   }
 
   def execute():Boolean = {
     if (!this.isApplicable(agent.blackboard.get)) {return false}
-    log("executing: "+ this,3)
-    log("TREE BEFORE: " + addIndent(agent.blackboard.get.proofTree.toString),2)
+    log("executing: "+ this,Some("3"))
+    log("TREE BEFORE: " + Display.addIndent(agent.blackboard.get.proofTree.toString),Some("2"))
     section.update(node,{n=>n.conj=false;n})
     addBranches()
-    log("TREE AFTER: " + addIndent(agent.blackboard.get.proofTree.toString),2)
+    log("TREE AFTER: " + Display.addIndent(agent.blackboard.get.proofTree.toString),Some("2"))
     true
   }
 

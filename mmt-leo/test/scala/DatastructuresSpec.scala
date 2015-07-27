@@ -1,8 +1,9 @@
 package test.scala
 
 
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.DataTree
-import info.kwarc.mmt.leo.AgentSystem.OutputLog
+import info.kwarc.mmt.leo.AgentSystem.{Display, OutputLog}
 import info.kwarc.mmt.leo.provers._
 import org.scalatest._
 
@@ -15,6 +16,10 @@ import org.scalatest._
  */
 
 class DatastructuresSpec extends FlatSpec with Matchers {
+  implicit val controller = new Controller
+  controller.handleLine("log console")
+  controller.handleLine("log+ Blackboard")
+
 
   val node0 = new DataTree(0,conjVar = false,None)
   val node1 = new DataTree(1,conjVar = false,None)
@@ -96,7 +101,6 @@ class DatastructuresSpec extends FlatSpec with Matchers {
       "\n\tdata: 8 isAnd: false isSatisfiable: Some(false)")
 
 
-    OutputLog.display(1) //TODO figure out why AndOrSection does not log
   }
 
 /*  it should "have breadth and depth first search capabilities" in {
