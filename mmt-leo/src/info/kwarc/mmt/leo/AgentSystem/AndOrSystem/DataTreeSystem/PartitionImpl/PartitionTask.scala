@@ -9,7 +9,7 @@ import info.kwarc.mmt.leo.AgentSystem.{Display, Task, Section}
  * Created by Mark on 7/21/2015.
  */
 class PartitionTask(nodeVar: DataTree[Int], agent: PartitionAgent)(implicit controller: Controller) extends Task with PTApplicability {
-  val name = "Partition Task"
+  val name = "PartitionTask"
   val sentBy = agent
   val node = nodeVar
   val section = agent.blackboard.get.proofTreeSection
@@ -20,11 +20,11 @@ class PartitionTask(nodeVar: DataTree[Int], agent: PartitionAgent)(implicit cont
 
   def execute():Boolean = {
     if (!this.isApplicable(agent.blackboard.get)) {return false}
-    log("executing: "+ this,Some("3"))
-    log("TREE BEFORE: " + Display.addIndent(agent.blackboard.get.proofTree.toString),Some("2"))
+    log("executing: "+ this,Some("debug"))
+    log("TREE BEFORE: " + Display.addIndent(agent.blackboard.get.proofTree.toString))
     section.update(node,{n=>n.conj=false;n})
     addBranches()
-    log("TREE AFTER: " + Display.addIndent(agent.blackboard.get.proofTree.toString),Some("2"))
+    log("TREE AFTER: " + Display.addIndent(agent.blackboard.get.proofTree.toString))
     true
   }
 

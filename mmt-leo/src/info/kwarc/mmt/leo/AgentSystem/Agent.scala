@@ -51,9 +51,6 @@ abstract class Agent(implicit controller: Controller) extends Logger with Commun
 
   var blackboard:Option[BBType]=None
 
-//  println(blackboard)
-//  blackboard.registerAgent(this) TODO figure out why this throws an error
-
   /** the name of the agent */
   val name: String
 
@@ -169,13 +166,13 @@ class AuctionAgent(implicit controller: Controller) extends Agent {
 
 
 class ExecutionAgent(implicit controller: Controller) extends Agent {
-  val name = "Execution Agent"
+  val name = "ExecutionAgent"
   var subscribers:List[Listener] = Nil
 
   val metaTaskQueue = new mutable.Queue[Task]()
 
   def respond() = { readMail.foreach {
-    case t: Task => log("Executing Task: "+t,Some("2"));parallelExecute(t)
+    case t: Task => log("Executing Task: "+t,Some("debug"));parallelExecute(t)
     case _ => throw new IllegalArgumentException("Unknown type of message")}
   }
 

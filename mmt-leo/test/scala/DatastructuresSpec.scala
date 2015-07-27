@@ -19,6 +19,12 @@ class DatastructuresSpec extends FlatSpec with Matchers {
   implicit val controller = new Controller
   controller.handleLine("log console")
   controller.handleLine("log+ Blackboard")
+  controller.handleLine("log+ AuctionAgent")
+  controller.handleLine("log+ ExecutionAgent")
+  controller.handleLine("log+ PartitionAgent")
+  controller.handleLine("log+ PartitionTask")
+  controller.handleLine("log+ AndOrSection")
+
 
 
   val node0 = new DataTree(0,conjVar = false,None)

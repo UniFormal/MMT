@@ -80,18 +80,18 @@ class AndOrSection[G>: Null <:AndOr[G]](blackboard: AndOrBlackboard[_],g:G)(impl
     val d = t.writeSet(this).forall(!_.isDeleted) || t.readSet(this).forall(!_.isDeleted)
     val applicable = wS && wC && rC && d
     if (!applicable) {
-      log(t.toString + "\n is not applicable.")
+      log(t.toString + " is not applicable.")
       if (!wS) {
-        log("all of the write nodes are below a solved goal",Some("2"))
+        log("all of the write nodes are below a solved goal")
       }
       if (!wC) {
-        log("write nodes not contained in goal",Some("2"))
+        log("write nodes not contained in goal")
       }
       if (!rC) {
-        log("read nodes not contained in goal",Some("2"))
+        log("read nodes not contained in goal")
       }
       if (!d) {
-        log("some nodes have been deleted",Some("2"))
+        log("some nodes have been deleted")
       }
     }
     applicable

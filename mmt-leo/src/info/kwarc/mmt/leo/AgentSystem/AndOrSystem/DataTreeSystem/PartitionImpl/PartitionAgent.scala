@@ -15,14 +15,18 @@ class PartitionAgent(numbersVar: List[Int])(implicit controller: Controller) ext
   val name = "PartitionAgent"
   override val interests = List("ADD")
 
+  def ignoreNode(node: DataTree[_]):Boolean ={
+    if (node.isDeleted){return true}
+    if (node.isBelowSatisfied){return true}
+    false
+  }
 
   def respond() = {
-    log("responding to: " + mailbox,Some("4"))
+    log("responding to: " + mailbox,Some("debug"))
     readMail.foreach {
     case Change(section,data,flags) =>
       data match {
-        case node:DataTree[_] if node.isDeleted => //TODO fix with reflection?
-        case node:DataTree[_] if node.isBelowSatisfied =>
+        case node:DataTree[_]  if ignoreNode(node)=> //TODO fix with reflection?
         case node:DataTree[_] =>
           node.openLeaves.foreach (pt => taskSet += createTask (pt.asInstanceOf[DataTree[Int]] ) )
         }

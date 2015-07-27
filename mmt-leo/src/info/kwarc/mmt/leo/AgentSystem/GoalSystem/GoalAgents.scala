@@ -12,6 +12,7 @@ import info.kwarc.mmt.leo.AgentSystem.{Change, Listener, Agent}
 
 
 abstract class GoalAgent(implicit controller: Controller) extends Agent {
+  override val interests = List("ADD","CHANGE")
   override type BBType = GoalBlackboard
 
   //override def respond(): Unit = ???
@@ -25,28 +26,57 @@ abstract class GoalAgent(implicit controller: Controller) extends Agent {
   //lazy val report = blackboard.get.report
   lazy val rules = blackboard.get.rules
 
-}
 
-abstract class InvertibleAgent(implicit controller: Controller) extends GoalAgent {
+  def ignoreGoal(node: Goal):Boolean ={
+    if (node.isFinished){return true}
+    if (!node.isLeaf){return true}
+    false
+  }
+
+  def addTask(node:Goal):Unit
+
+  def respond() = {
+    log("responding to: " + mailbox,Some("debug"))
+    readMail.foreach {
+      case Change(section,data,flags) =>
+        data match {
+          case g:Goal if ignoreGoal(g) => addTask(g)
+          case a:Alternative => a.subgoals.filter(!ignoreGoal(_)).foreach(addTask)
+        }
+      case _ => throw new IllegalArgumentException("unknown change type")
+    }
+    if (taskSet.isEmpty) log("NO TASKS FOUND") else log("Found "+taskSet.size+" task(s)")
+  }
+
   lazy val invertibleBackward = blackboard.get.rules.get(classOf[BackwardInvertible]).toList
   lazy val invertibleForward = blackboard.get.rules.get(classOf[ForwardInvertible]).toList
-
-/*  def respond() = readMail.foreach {
-    case Change(s,data,flags) if flags.contains("ADD") =>
-
-
-  }*/
-
-}
-abstract class InvertibleBackwardAgent(implicit controller: Controller) extends InvertibleAgent {}
-abstract class InvertibleForwardAgent(implicit controller: Controller) extends InvertibleAgent {}
-
-abstract class SearchBackwardAgent(implicit controller: Controller) extends GoalAgent {
   lazy val searchBackward = blackboard.get.rules.get(classOf[BackwardSearch]).toList.sortBy(_.priority).reverse
+  lazy val searchForward = blackboard.get.rules.get(classOf[ForwardSearch]).toList
 }
 
-abstract class SearchForwardAgent(implicit controller: Controller) extends GoalAgent {
-  lazy val searchForward = blackboard.get.rules.get(classOf[ForwardSearch]).toList
+class ExpansionAgent(implicit controller: Controller) extends GoalAgent {
+  override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || g.isFullyExpanded
+  def addTask(g:Goal) = taskSet+=new ExpansionTask(this,g)
+}
+
+class InvertibleBackwardAgent(implicit controller: Controller) extends GoalAgent {
+  override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || g.isBackwardExpanded
+  override def addTask(g:Goal) = taskSet+=new InvertibleBackwardTask(this,g)
+}
+
+class InvertibleForwardAgent(implicit controller: Controller) extends GoalAgent {
+  override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || g.isForwardExpanded
+  override def addTask(g:Goal) = taskSet+=new InvertibleForwardTask(this,g)
+}
+
+class SearchBackwardAgent(implicit controller: Controller) extends GoalAgent {
+  override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || !g.isFullyExpanded
+  override def addTask(g:Goal) = taskSet+=new SearchBackwardTask(this,g)
+}
+
+class SearchForwardAgent(implicit controller: Controller) extends GoalAgent {
+  override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || !g.isFullyExpanded
+  override def addTask(g:Goal) = taskSet+=new SearchForwardTask(this,g)
 }
 
 abstract class SimplifyingAgent(implicit controller: Controller) extends GoalAgent {

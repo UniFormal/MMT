@@ -17,7 +17,7 @@ abstract class Message(implicit controller: Controller) extends Logger{
 
 /** Sent to agents whose bid failed in the auction*/
 case class AuctionFailure(sentByVar:AuctionAgent, task:Task, flagsVar: List[String]=Nil)(implicit controller: Controller) extends Message {
-  override def logPrefix = "Auction Failure"
+  override def logPrefix = "AuctionFailure"
   val flags: List[String] = flagsVar
   override val sentBy = sentByVar
 }

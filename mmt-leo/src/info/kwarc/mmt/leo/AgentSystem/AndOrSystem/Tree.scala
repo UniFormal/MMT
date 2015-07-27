@@ -194,7 +194,7 @@ abstract class Tree[T<:Tree[T]](implicit controller: Controller) extends Logger 
 /**
  * This trait represents and/or capabilities.
  */
-trait AndOr[T<:AndOr[T]] extends Tree[T] with Lockable { Self: T =>
+abstract class AndOr[T<:AndOr[T]](implicit controller:Controller) extends Tree[T] with Lockable { Self: T =>
   override def logPrefix = "AndOrTree"
 
   /** conj=true -> an AND node*/
@@ -260,7 +260,7 @@ trait AndOr[T<:AndOr[T]] extends Tree[T] with Lockable { Self: T =>
 
   /** propagates the effect of the solved node up the tree, then simplifies the resulting part of the tree*/
   def percolate(trim:Boolean=true):Unit = {
-    log("P Called on" + this,Some("3"))
+    log("P Called on" + this,Some("debug"))
     if (isSolved) {
       this.parent match {
         case Some(p) if p.isOr || p.children.forall(_.isSolved) =>
