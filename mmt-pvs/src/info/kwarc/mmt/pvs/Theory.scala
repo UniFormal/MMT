@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import utils._
 
 object PVSTheory {
-   val dpath = DPath((URI.http colon "pvs.csl.sri.com") / "PVS")
+   val dpath = DPath(URI.http colon "pvs.csl.sri.com")
    val name = "PVS"
    val path = dpath ? name
    def sym(s: String) = path ? s

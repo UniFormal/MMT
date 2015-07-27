@@ -20,7 +20,9 @@ case class type_application(place: String, _type: type_name, _arguments: List[Ex
 /** A -> B or (x:A) -> B */
 case class function_type(place: String, _from: domain, _to: Type) extends Type
 /** predicate subtype -- {x:A|F} */
-case class setsubtype(place: String, bindings: List[binding], _by: Expr) extends Type
+//case class setsubtype(place: String, bindings: List[binding], _by: Expr) extends Type
+/** predicate subtype -- A|F, e.g., A | lambda x:A|F */
+case class setsubtype(place:String, _type: Type, _by:Expr) extends Type
 /** (p): type, for a predicate p: _type = a => bool; _ */
 case class expr_as_type(place: String, _expr: Expr, _type: Option[Type]) extends Type
 /** flexary, possibly dependent product -- e.g., A1 * (x2:A2) * ... * An */
@@ -116,7 +118,7 @@ case class field_assign(place: String, id: String) extends assignment_arg
 case class proj_assign(place: String, _index: Int) extends assignment_arg
 
 /** change value in a tuple, record, or function */
-case class update_expr(place: String, assignments: List[assignment]) extends Expr
+case class update_expr(place: String, _var: varname_expr, assignments: List[assignment]) extends Expr
 
 // ********** tables
 

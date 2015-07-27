@@ -11,14 +11,14 @@ import archives._
 class PVSImporter extends Importer {
    val key = "pvs-omdoc"
    def inExts = List("xml")
-   override def inDim = RedirectableDimension("pvsxml")
+   override def inDim = RedirectableDimension("pvsxml", Some(Dim("src","pvsxml")))
    
    private val parseXML = syntax.makeParser
    
-   private var i = 0
-   private val ignore = 0
-   private val ignoreMsg = Nil //List("no class for +")
-   private var startAt = "finite_sets"
+ //  private var i = 0
+ //  private val ignore = 0
+ //  private val ignoreMsg = Nil //List("no class for +")
+   private var startAt = "xor_def"
    def importDocument(bf: BuildTask, index: Document => Unit) {
       if (bf.inFile.name < startAt) return
       val e = try {
@@ -31,7 +31,7 @@ class PVSImporter extends Importer {
             i += 1
             if (i > ignore) { */
                println(msg)
-               sys.exit
+               //sys.exit
                //throw utils.ExtractError(msg)
 //            } else
   //             return

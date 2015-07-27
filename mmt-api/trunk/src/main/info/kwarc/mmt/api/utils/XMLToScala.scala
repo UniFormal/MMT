@@ -142,7 +142,7 @@ class XMLToScala(pkg: String) {
       val foundType = m.classSymbol(c).toType
       if (! (foundType <:< expType))
          throw ExtractError(s"expected $expType\nfound $node")
-      // the remaining children of node (removed once processed) 
+      // the remaining children of node (removed once processed)
       var children = cleanNodes(node.child.toList).zipWithIndex
       // the used attributes of node (added once processed)
       var attributesTaken: List[String] = Nil
@@ -152,6 +152,8 @@ class XMLToScala(pkg: String) {
          if (scalaKey.startsWith("_")) {
             children.map(_._1) match {
                case nodes if nodes.forall(_.isInstanceOf[SpecialNode]) =>
+                  // TODO sure about that?
+                  children = Nil
                   return nodes.text
                case nodes => throw ExtractError(s"text node expected in child $scalaKey: $nodes")
             }
@@ -265,7 +267,7 @@ class XMLToScala(pkg: String) {
       }
       val res = makeInstance(foundType)(getArgumentValue)
       if (!children.isEmpty)
-         throw ExtractError(s"children left after constructing $res: " + children.map{case (c,i) => s"$i:$c"}.mkString(","))
+         throw ExtractError(s"children left after constructing $res: " + children.map{case (c,i) => s"\n$i:$c"}.mkString(","))
       res
    }
 }

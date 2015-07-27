@@ -53,8 +53,8 @@ class PVSImportTask(bt: BuildTask, index: Document => Unit) {
             ???
          case tuple_type(place, doms) =>
             ???
-         case setsubtype(place, bindings, by) =>
-            ???//predsub(doType(of), doExpr(by))
+         case setsubtype(place, of, by) =>
+            ??? // predsub(doType(of), doExpr(by))
          case cotuple_type(place, args) =>
             union(args map doType)
          case record_type(place, _fields) => ???

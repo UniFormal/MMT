@@ -39,6 +39,7 @@ case class TopDatatypeBody(named: NamedDecl, formals: List[FormalParameter], imp
                             _constructors: List[constructor]) extends Group
 /** a top-level datatype with least fixed point semantics */
 case class datatype(_body: TopDatatypeBody) extends Module
+
 /** a top-level datatype with greatest fixed point semantics */
 case class codatatype(_body: TopDatatypeBody) extends Module
 
@@ -149,7 +150,7 @@ case class application_judgement(named: OptNamedDecl, _name: name_expr, arg_form
 /** x: A (declares type of future variables) */
 case class var_decl(id: String, unnamed: UnnamedDecl, tp: DeclaredType) extends Decl
 
-/** conversion f (makes f an implicit conversion */
+/** conversion f (makes f an implicit conversion) */
 case class conversion_decl(unnamed: UnnamedDecl, kind: String, _expr: Expr) extends Decl {
    checkString(kind, "add", "remove")
 }
