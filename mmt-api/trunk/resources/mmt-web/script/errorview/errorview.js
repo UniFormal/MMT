@@ -85,7 +85,7 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
         });
     };
     $scope.serve = function(file) {
-        $window.open(':errors/file?' + file, '_blank');
+        $window.open(':errors/file?' + encodeURIComponent(file), '_blank');
     };
     $scope.search();
     $scope.sort = {
