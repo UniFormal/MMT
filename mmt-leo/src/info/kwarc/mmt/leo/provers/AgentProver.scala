@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.proving.{Prover,ProvingUnit}
 import info.kwarc.mmt.leo.AgentSystem.GoalSystem._
 import info.kwarc.mmt.leo.AgentSystem._
 
-class TheoremProver extends Prover {
+class AgentProver extends Prover {
    def interactive(pu: ProvingUnit, rules: RuleSet, levels: Int) = Nil
 
 

@@ -25,8 +25,6 @@ class DatastructuresSpec extends FlatSpec with Matchers {
   controller.handleLine("log+ PartitionTask")
   controller.handleLine("log+ AndOrSection")
 
-
-
   val node0 = new DataTree(0,conjVar = false,None)
   val node1 = new DataTree(1,conjVar = false,None)
   val node2 = new DataTree(2,conjVar = false,None)
