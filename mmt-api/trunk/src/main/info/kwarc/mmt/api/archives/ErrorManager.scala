@@ -192,9 +192,8 @@ class ErrorManager extends Extension with Logger {
     val args = Table.columns map (wq.string(_))
     val limit = wq.int("limit", defaultLimit)
     val hide = wq.boolean("hide")
-    val bes = iterator.map(_.toStrList)
-    val result = bes.filter { be2 =>
-      val be = be2 map (_.replace('+', ' ')) // '+' is turned to ' ' in query
+    val result: Iterator[BuildError] = iterator.filter { be2 =>
+      val be = be2.toStrList map (_.replace('+', ' ')) // '+' is turned to ' ' in query
       //noinspection SideEffectsInMonadicTransformation
       assert(args.length == be.length)
       args.zip(be).forall { case (a, b) => b.indexOf(a) > -1 } &&
@@ -205,7 +204,7 @@ class ErrorManager extends Extension with Logger {
       case List("group", field) =>
         val idx = Table.columns.indexOf(field)
         assert(idx >= 0)
-        val l: List[String] = result.map(be => be(idx)).toList.sorted
+        val l: List[String] = result.map(be => be.toStrList(idx)).toList.sorted
         val g = l.groupBy(identity).mapValues(_.length).toList.sortBy(_._2).reverse
         JSONArray(g.take(limit).map { case (s, i) =>
           JSONObject("count" -> JSONInt(i), "content" -> JSONString(s))
@@ -213,7 +212,7 @@ class ErrorManager extends Extension with Logger {
       case _ =>
         if (hide) JSONObject(Table.columns.zip(args map JSONString): _*)
         else JSONArray(result.toList.take(limit).map(l =>
-          JSONObject(Table.columns.zip(l map JSONString): _*)): _*)
+          JSONObject(Table.columns.zip(l.toStrList map JSONString): _*)): _*)
     }
   }
 
