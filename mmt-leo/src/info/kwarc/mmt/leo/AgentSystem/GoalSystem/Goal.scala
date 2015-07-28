@@ -1,10 +1,8 @@
 package info.kwarc.mmt.leo.AgentSystem.GoalSystem
 
-import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils.HTML
-import info.kwarc.mmt.leo.AgentSystem.Section
 
 
 /**
@@ -43,7 +41,7 @@ case class Alternative(subgoals: List[Goal], proof: () => Term) {
 /**
  * a single-conclusion sequent - the basic node in a proof tree
  *
- * The root goal is stored and the whole proof tree is acted on by the [[Prover]].
+ * The root goal is stored and the whole proof tree is acted on by the [[GoalAgent]].
  *
  * A goal nodes knows its parent (except for the root goal) and children (the subgoals).
  * In fact, a goal is also a node in the backwards proof search: A goal stores not simply a list of subgoals,
@@ -57,7 +55,7 @@ case class Alternative(subgoals: List[Goal], proof: () => Term) {
  *
  * @param context the premises added to the sequent by this goal;
  *                the full antecedent arises by prepending the one of the parent goal
- * @param tp the conclusion of the sequent
+ * @param concVar the conclusion of the sequent
  */
 
 class Goal(val context: Context, private var concVar: Term) {
@@ -202,7 +200,7 @@ class Goal(val context: Context, private var concVar: Term) {
    }
    /**
     *  the invertible backward/forward tactics that have not been applied yet are stored here,
-    *  but set and read by the [[Prover]]
+    *  but set and read by the [[GoalAgent]]
     *  this method retrieves the next tactic to apply
     */
    def getNextExpansion: Option[ApplicableTactic] = {

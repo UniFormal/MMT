@@ -3,6 +3,7 @@ package info.kwarc.mmt.leo.AgentSystem.GoalSystem
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.leo.AgentSystem.{Blackboard, Section, Task}
 
+
 /**
  * Created by Mark on 7/24/2015.
  *
@@ -30,6 +31,7 @@ abstract class GoalTask(agent:GoalAgent,g:Goal)(implicit controller: Controller)
   /** statefully changes g to a simpler goal */
   protected def simplifyGoal(g: Goal) {
     g.setConc(controller.simplifier(g.conc, g.fullContext, rules),factSection.data)
+    proofSection.passiveChange(g)
   }
 
   /** simplify a fact */
@@ -111,15 +113,18 @@ class ExpansionTask(agent:GoalAgent,g:Goal)(implicit controller: Controller) ext
     progress match {
       case Some(p) => p.subgoals.exists(fullExpand(_,backw,forw))
       case None =>
-        if (backw.nonEmpty) {g.isBackwardExpanded=true}  //TODO be aware of this when rules are not full rules
-        if (forw.nonEmpty) {g.isForwardExpanded=true}
+        if (backw.nonEmpty) {g.isBackwardExpanded=true; proofSection.passiveChange(g)}//TODO be aware of this when rules are not full rules
+        if (forw.nonEmpty) {g.isForwardExpanded=true; proofSection.passiveChange(g)}
         false
     }
   }
 
 
   def execute() ={
-    fullExpand(g,agent.invertibleBackward,agent.invertibleForward)
+    //log("TREE BEFORE: "+g.present(1))
+    val result=fullExpand(g,agent.invertibleBackward,agent.invertibleForward)
+    //log("TREE AFTER: "+g.present(1))
+    result
   }
 
 }
@@ -162,6 +167,7 @@ class SearchBackwardTask(agent:SearchBackwardAgent,g:Goal)(implicit controller: 
       applyApplicableTactic(at, g)
       if (g.isSolved) return true
     }
+    proofSection.passiveChange(g)
     true
   }
 
@@ -179,6 +185,7 @@ class SearchForwardTask(agent:SearchForwardAgent,g:Goal)(implicit controller: Co
     }
     blackboard.get.facts.integrateFutureFacts()
     //TODO make sure integration of future facts works with agent system
+    proofSection.passiveChange(g)
   }
 
   def execute()={

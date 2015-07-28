@@ -4,37 +4,50 @@ import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{Active, modules, RuleSet}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.{AndOrBlackboard, AndOrSection}
-import info.kwarc.mmt.leo.AgentSystem.{Section, Blackboard}
+import info.kwarc.mmt.leo.AgentSystem.Blackboard
 
 /**
  * Created by Mark on 7/21/2015.
  *
  * This represents the class of the LF blackboard which handles proofs in the LF prover
  */
-class GoalBlackboard(val rules:RuleSet,goal: Goal)(implicit controller: Controller) extends Blackboard {
-  override def logPrefix = "Goal Blackboard"
+class GoalBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Controller) extends Blackboard {
+  override def logPrefix = "GoalBlackboard"
 
   val proofSection = new GoalSection(this,goal)
   addSection(proofSection)
   log("Added Goal of type: " + goal.getClass + goal)
   log(proofSection.toString)
 
+
+  /*val invertibleBackward = rules.get(classOf[BackwardInvertible]).toList
+  val invertibleForward  = rules.get(classOf[ForwardInvertible]).toList
+  val searchBackward     = rules.get(classOf[BackwardSearch]).toList.sortBy(_.priority).reverse
+  val searchForward      = rules.get(classOf[ForwardSearch]).toList*/
+
+  val invertibleBackward = List(PiIntroduction)
+  val invertibleForward  = Nil
+  val searchBackward     = List(BackwardPiElimination)
+  val searchForward      = List(ForwardPiElimination)
+
+  log("Rules: " + rules)
+  log("Invertible Backwards rules:" + invertibleBackward)
+
   val shapeDepth = 2
   val factSection = new FactSection(this, shapeDepth)
   addSection(factSection)
+  implicit val facts = factSection.data
+  //val facts2 = facts.asInstanceOf[Facts]
+
   initFacts()//TODO work facts into changes/section interface
   //def facts = factSection.data
-  implicit val facts =factSection.data
+
   def factsChanges = factSection.changes
 
-  val invertibleBackward = rules.get(classOf[BackwardInvertible]).toList
-  val invertibleForward  = rules.get(classOf[ForwardInvertible]).toList
-  val searchBackward     = rules.get(classOf[BackwardSearch]).toList.sortBy(_.priority).reverse
-  val searchForward      = rules.get(classOf[ForwardSearch]).toList
+
 
   implicit val presentObj: Obj => String = o => controller.presenter.asString(o)
-  override val report = controller.report
+  override lazy val report = controller.report
 
   /** convenience function to create a matcher in the current situation */
   def makeMatcher(context: Context, queryVars: Context) = new Matcher(controller, rules, context, queryVars)

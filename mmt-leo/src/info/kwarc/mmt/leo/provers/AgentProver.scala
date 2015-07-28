@@ -17,7 +17,6 @@ class AgentProver extends Prover {
       val exa = new ExpansionAgent
       val sba = new SearchBackwardAgent
       val sfa = new SearchForwardAgent
-
       val aa = new AuctionAgent()
       val ea = new ExecutionAgent()
       exa.register(blackboard)
@@ -26,7 +25,7 @@ class AgentProver extends Prover {
       aa.register(blackboard.asInstanceOf[aa.BBType])
       ea.register(blackboard.asInstanceOf[ea.BBType])
 
-      blackboard.run(levels)
+      blackboard.run(levels*2)
       val found = blackboard.finished
       val proof = if (found) Some(gl.proof) else None
       (found, proof)

@@ -12,7 +12,7 @@ import info.kwarc.mmt.api.frontend.{Controller, Report, Logger}
  *
  */
 abstract class Blackboard(implicit controller: Controller) extends Logger with Communicator{
-  val report = controller.report
+  lazy val report = controller.report
   def logPrefix = "Blackboard"
 
   var subscribers:List[Listener] = Nil

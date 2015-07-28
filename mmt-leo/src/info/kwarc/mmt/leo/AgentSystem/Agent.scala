@@ -4,7 +4,6 @@ package info.kwarc.mmt.leo.AgentSystem
 import info.kwarc.mmt.api.frontend.{Controller, Logger}
 
 import scala.collection.mutable
-//TODO Make everything work on change handling
 //TODO reimplement partition prover and andOr infastructure
 /**
  * Trait representing Agents which houses most of their general functionality
@@ -165,6 +164,9 @@ class AuctionAgent(implicit controller: Controller) extends Agent {
 }
 
 
+
+
+
 class ExecutionAgent(implicit controller: Controller) extends Agent {
   val name = "ExecutionAgent"
   var subscribers:List[Listener] = Nil
@@ -172,7 +174,7 @@ class ExecutionAgent(implicit controller: Controller) extends Agent {
   val metaTaskQueue = new mutable.Queue[Task]()
 
   def respond() = { readMail.foreach {
-    case t: Task => log("Executing Task: "+t,Some("debug"));parallelExecute(t)
+    case t: Task => log("Executing Task: "+t);parallelExecute(t)
     case _ => throw new IllegalArgumentException("Unknown type of message")}
   }
 

@@ -19,13 +19,19 @@ class GoalSection(blackboard:GoalBlackboard, goal:Goal)(implicit controller: Con
   var data:PTType = goal
   var changes: List[Change[_]] = List(new Change(this,goal,List("ADD")))
 
-  def passiveAdd(newData:Alternative) ={
-    handleChange(new Change(this,newData,List("ADD")))
-  }
 
-  def passiveDel(delData : ObjectType) : Unit = {
-    handleChange(new Change(this,delData,List("DEL")))
+  def passiveOp(newData:Alternative,flag:String) ={
+    handleChange(new Change(this,newData,List(flag)))
   }
+  def passiveOp(newData:Goal,flag:String) ={
+    handleChange(new Change(this,newData,List(flag)))
+  }
+  def passiveAdd(newData:Alternative) = passiveOp(newData,"ADD")
+  def passiveAdd(newData:Goal) = passiveOp(newData,"ADD")
+  def passiveDel(newData:Alternative) = passiveOp(newData,"DEL")
+  def passiveDel(newData:Goal) = passiveOp(newData,"DEL")
+  def passiveChange(newData:Alternative) = passiveOp(newData,"CHANGE")
+  def passiveChange(newData:Goal) = passiveOp(newData,"CHANGE")
 
 
 }

@@ -31,6 +31,9 @@ trait Tactic extends Rule {
    }
 }
 
+
+
+
 /**
  * invertible tactics can be applied greedily without leading a proof into a dead end
  * 
