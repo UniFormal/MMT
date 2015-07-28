@@ -225,7 +225,7 @@ class LaTeXML extends SmsGenerator {
       "--preamble=" + getAmbleFile("pre", bt),
       "--postamble=" + getAmbleFile("post", bt),
       "--expire=" + expire) ++ preloads.map("--preload=" + _) ++
-      paths.map ("--path=" + _), bt.archive / inDim, extEnv(bt): _*)
+      paths.map("--path=" + _), bt.archive / inDim, extEnv(bt): _*)
     val exitCode = pb.!(ProcessLogger(line => output.append(line + "\n"),
       line => output.append(line + "\n")))
     if (exitCode != 0 || lmhOut.length == 0) {
