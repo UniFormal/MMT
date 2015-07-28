@@ -129,11 +129,15 @@ class LaTeXML extends SmsGenerator {
   private var expire = "10"
   private var profile = "stex-smglom-module"
   private var perl5lib = "perl5lib"
+  private var preloads: Seq[String] = Nil
+  private var paths: Seq[String] = Nil
 
   override def start(args: List[String]): Unit = {
     latexmlc = getFromFirstArgOrEnvvar(args, "LATEXMLC", latexmlc)
     expire = controller.getEnvVar("LATEXMLEXPIRE").getOrElse(expire)
     profile = controller.getEnvVar("LATEXMLPROFILE").getOrElse(profile)
+    preloads = controller.getEnvVar("LATEXMLPRELOADS").getOrElse("").split(" ").filter(_.nonEmpty)
+    paths = controller.getEnvVar("LATEXMLPATHS").getOrElse("").split(" ").filter(_.nonEmpty)
   }
 
   def str2Level(lev: String): Level.Level = lev match {
@@ -220,7 +224,8 @@ class LaTeXML extends SmsGenerator {
       bt.inFile.toString, "--destination=" + lmhOut, "--log=" + logFile,
       "--preamble=" + getAmbleFile("pre", bt),
       "--postamble=" + getAmbleFile("post", bt),
-      "--expire=" + expire), bt.archive / inDim, extEnv(bt): _*)
+      "--expire=" + expire) ++ preloads.map("--preload=" + _) ++
+      paths.map ("--path=" + _), bt.archive / inDim, extEnv(bt): _*)
     val exitCode = pb.!(ProcessLogger(line => output.append(line + "\n"),
       line => output.append(line + "\n")))
     if (exitCode != 0 || lmhOut.length == 0) {
