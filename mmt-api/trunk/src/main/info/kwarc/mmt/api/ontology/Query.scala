@@ -145,8 +145,17 @@ case class Forall(domain: Query, scope: Prop) extends Prop
 
 
 /**
- * binary relations between paths, i.e., relation in the MMT ontology
- */
+* binary relations between paths, i.e., relation in the MMT ontology
+*
+* The semantics of a [[RelationExp]] is a binary relation on [[Path]]s with the usual operations for the calculus of binary endorelations.
+* For example,
+* {{{
+* val relstore:RelStore
+* val doc: DPath
+* val deps = relstore.querySet(doc, +Declares * HasType(IsTheory) * (Imports | Reflexive) * -Declares)
+* }}}
+* could be used as a dependency relation between documents.
+*/
 sealed abstract class RelationExp {
   /** syntactic sugar for queries: Choice(this, q) */
   def |(q: RelationExp) = Choice(this, q)
