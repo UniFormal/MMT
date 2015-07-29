@@ -1,5 +1,7 @@
 package info.kwarc.mmt.leo.AgentSystem
 
+import util.control.Breaks._
+
 
 import info.kwarc.mmt.api.frontend.{Controller, Logger}
 
@@ -134,6 +136,18 @@ class AuctionAgent(implicit controller: Controller) extends Agent {
     }
   }
 
+
+  def concistencyCheck(tasks:mutable.Queue[Task]): Boolean ={
+    val sections = blackboard.get.sections
+    sections.forall({ s =>
+      val wsList = tasks.flatMap(t => t.writeSet(s).toList)
+      if (!(wsList.length==wsList.distinct.length)) {return false}
+      true
+    })
+  }
+
+
+
   /**
    * Starts a new auction for agents to buy computation time
    * for their tasks. The result is a set of tasks,
@@ -146,13 +160,31 @@ class AuctionAgent(implicit controller: Controller) extends Agent {
     var tasks = new mutable.Queue[Task]()
     subAgents().foreach(a=>tasks++=a.taskSet)
     val allTasks = tasks
-    
+
+    log("Found "+allTasks.length+" task(s)")
+
     //Eliminate collisions
-    for( t1 <- tasks ){tasks=tasks.filter(t2 => !t1.collide(t2)||t1==t2)}
+    def filterTasks(tasks:mutable.Queue[Task], t1:Task):mutable.Queue[Task] = {
+      tasks.filter(t2 => (!t1.collide(t2)) || (t1==t2) )
+    }
+    breakable { //TODO find a more elegant way to do this
+      for (i <- allTasks.indices) {
+        if (i >= tasks.length) break()
+        tasks = filterTasks(tasks, tasks(i))
+      }
+    }
+
+
 
     //remove task from agent's queue if successful
     //TODO improve this interface
     tasks.foreach(t=>t.sentBy.removeTask(t))
+
+    if (!concistencyCheck(tasks)){
+      println("TASKS: "+tasks)
+      throw new IllegalArgumentException("Selected tasks are colliding")
+    }
+
 
     //Alert agents of tasks being dropped
     //allTasks.diff(tasks).foreach(t=>sendMessage(new AuctionFailure(this,t),t.sentBy))

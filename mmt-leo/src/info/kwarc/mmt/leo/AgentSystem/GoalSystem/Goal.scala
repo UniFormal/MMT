@@ -36,6 +36,12 @@ case class Alternative(subgoals: List[Goal], proof: () => Term) {
    }
 
    override def toString = subgoals.mkString("\n")
+
+  def present2 = {
+    "\t"*(subgoals.head.depth-1)+"Alternative:"
+  }
+
+
 }
 
 /**
@@ -63,8 +69,10 @@ class Goal(val context: Context, private var concVar: Term) {
    private[leo] var parent: Option[Goal] = None
 
    def path: List[Goal] = this :: parent.map(_.path).getOrElse(Nil)
+   def depth = path.length
    def below(that: Goal): Boolean = this == that || parent.exists(_ below that)
    def isLeaf:Boolean = alternatives.isEmpty
+   def root:Goal = if (parent.isDefined){parent.get.root}else this
 
 
    /** getter for the conclusion (may have been simplified since Goal creation) */
@@ -230,7 +238,35 @@ class Goal(val context: Context, private var concVar: Term) {
       }
    }
 
-   override def toString = conc.toString
+
+
+  /** converts only a single node to a string */
+  def present2: String ={
+    "\t"*depth + context+" |- " + conc
+  }
+
+  /** traverses the tree depth first performs an action as it comes to the node*/
+  def preDepthTraverse(visitG: Goal => Unit, visitA: Alternative => Unit): Unit = {
+    def recur(n: Goal ): Unit = {
+      visitG(n)
+      for (a <- n.alternatives) {
+        visitA(a)
+        for (sg<-a.subgoals) {
+          recur(sg)
+        }
+      }
+    }
+    recur(this)
+  }
+
+  /** returns a nice looking printable string **/
+  def toString2: String = {
+    var out = ""
+    preDepthTraverse({sn=>out = out+"\n"+ sn.present2},{a=> out = out+ "\n" + a.present2 })
+    out
+  }
+
+
    def present(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]): String = {
       val goalHighlight = if (current.contains(this)) "X " else "  "
       def altHighlight(a: Alternative) = if (newAlt.contains(a)) "+ new\n" else "+ \n"

@@ -44,13 +44,13 @@ abstract class GoalTask(agent:GoalAgent,g:Goal)(implicit controller: Controller)
   /** Returns a set of all nodes, that will be written by the task. */
   //TODO get write and read sets working with florian's data structures
   override def writeSet(s: Section): Set[s.ObjectType] = {
-    if (s==proofSection) Set(g.asInstanceOf[s.ObjectType])
+    if (s==proofSection) return Set(g.asInstanceOf[s.ObjectType])
     Set.empty[s.ObjectType]
   }
 
   /** Returns a set of all nodes that are read for the task. */
   override def readSet(s: Section): Set[s.ObjectType] = {
-    if (s == proofSection) Set(g.asInstanceOf[s.ObjectType])
+    if (s == proofSection) return Set(g.asInstanceOf[s.ObjectType])
     Set.empty[s.ObjectType]
   }
 
@@ -80,14 +80,10 @@ abstract class GoalTask(agent:GoalAgent,g:Goal)(implicit controller: Controller)
     // add the alternative to the proof tree and expand the subgoals
     g.addAlternative(alt,Some(proofSection))
     log("************************* " + at.label + " at X **************************")
-    log("\n" + g.presentHtml(0)(presentObj, Some(g), Some(alt)))
+    //log("\n" + g.present(0)(presentObj, Some(g), Some(alt)))
+    log("\n" + g.root.toString2)
     Some(alt)
   }
-
-}
-
-class ExpansionTask(agent:GoalAgent,g:Goal)(implicit controller: Controller) extends GoalTask(agent,g) {
-  override val name="ExpansionTask"
 
   /** applies invertible tactics to a goal and returns an alternative if an application was successful*/
   protected def expand(g: Goal,backw: List[BackwardInvertible], forw: List[ForwardInvertible]):Option[Alternative]= {
@@ -113,24 +109,27 @@ class ExpansionTask(agent:GoalAgent,g:Goal)(implicit controller: Controller) ext
     progress match {
       case Some(p) => p.subgoals.exists(fullExpand(_,backw,forw))
       case None =>
-        if (backw.nonEmpty) {g.isBackwardExpanded=true; proofSection.passiveChange(g)}//TODO be aware of this when rules are not full rules
-        if (forw.nonEmpty) {g.isForwardExpanded=true; proofSection.passiveChange(g)}
+        if (backw==sentBy.invertibleBackward) {g.isBackwardExpanded=true; proofSection.passiveChange(g)}//TODO be aware of this when rules are not full rules
+        if (forw==sentBy.invertibleForward) {g.isForwardExpanded=true; proofSection.passiveChange(g)}
         false
     }
   }
 
 
+}
+
+case class ExpansionTask(agent:GoalAgent,g:Goal)(implicit controller: Controller) extends GoalTask(agent,g) {
+
+  override val name="ExpansionTask"
   def execute() ={
-    //log("TREE BEFORE: "+g.present(1))
     val result=fullExpand(g,agent.invertibleBackward,agent.invertibleForward)
-    //log("TREE AFTER: "+g.present(1))
     result
   }
 
 }
 
 /**Expands Goal by applying invertible backwards rules to it then applying them again to all newly generated leaves*/
-class InvertibleBackwardTask(agent:InvertibleBackwardAgent,g:Goal)(implicit controller: Controller) extends ExpansionTask(agent,g) {
+case class InvertibleBackwardTask(agent:InvertibleBackwardAgent,g:Goal)(implicit controller: Controller) extends GoalTask(agent,g) {
   override val name="InvertibleBackwardTask"
   override def execute() ={
     fullExpand(g,agent.invertibleBackward,Nil) //TODO fix inheritance
@@ -139,7 +138,7 @@ class InvertibleBackwardTask(agent:InvertibleBackwardAgent,g:Goal)(implicit cont
 }
 
 /**Expands Goal by applying invertible backwards rules to it then applying them again to all newly generated leaves*/
-class InvertibleForwardTask(agent:InvertibleForwardAgent,g:Goal)(implicit controller: Controller) extends ExpansionTask(agent,g) {
+case class InvertibleForwardTask(agent:InvertibleForwardAgent,g:Goal)(implicit controller: Controller) extends GoalTask(agent,g) {
   override val name="InvertibleForwardTask"
   override def execute() ={
     fullExpand(g,Nil,agent.invertibleForward)
@@ -147,7 +146,7 @@ class InvertibleForwardTask(agent:InvertibleForwardAgent,g:Goal)(implicit contro
 
 }
 
-class SearchBackwardTask(agent:SearchBackwardAgent,g:Goal)(implicit controller: Controller) extends GoalTask(agent,g) {
+case class SearchBackwardTask(agent:SearchBackwardAgent,g:Goal)(implicit controller: Controller) extends GoalTask(agent,g) {
   override val name="SearchBackwardTask"
   /** Determines if a given task is applicable given the current blackboard */
 
@@ -176,7 +175,7 @@ class SearchBackwardTask(agent:SearchBackwardAgent,g:Goal)(implicit controller: 
   }
 }
 
-class SearchForwardTask(agent:SearchForwardAgent,g:Goal)(implicit controller: Controller) extends GoalTask(agent,g) {
+case class SearchForwardTask(agent:SearchForwardAgent,g:Goal)(implicit controller: Controller) extends GoalTask(agent,g) {
 
   def forwardSearch() {
     g.isForwardSearched = true

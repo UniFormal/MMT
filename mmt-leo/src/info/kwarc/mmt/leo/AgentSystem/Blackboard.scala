@@ -32,7 +32,7 @@ abstract class Blackboard(implicit controller: Controller) extends Logger with C
         case ea:ExecutionAgent => executionAgent = Some(ea)
         case _ =>
           agents=a::agents
-          log(sections.flatMap(_.changes).toString())
+          //log(sections.flatMap(_.changes).toString())
           sections.foreach(s=>s.addSubscriber(a))
       }
       addSubscriber(a)

@@ -68,12 +68,17 @@ abstract class Task(implicit controller: Controller) extends Message{
    */
   def collide(that: Task): Boolean = {
     if (that.blackboard == this.blackboard) {
-      this.blackboard.get.sections.forall(s=>
+      this.blackboard.get.sections.exists(s=>
         if (this equals that) true
         else {
+          val thisRS=this.readSet(s)
+          val thisWS=this.writeSet(s)
+          val thatRS=that.readSet(s)
+          val thatWS=that.readSet(s)
+
           this.readSet(s).intersect(that.writeSet(s)).nonEmpty ||
-            that.readSet(s).intersect(this.writeSet(s)).nonEmpty ||
-            that.writeSet(s).intersect(this.writeSet(s)).nonEmpty
+           that.readSet(s).intersect(this.writeSet(s)).nonEmpty ||
+           that.writeSet(s).intersect(this.writeSet(s)).nonEmpty
         }
       )
     }else{false}

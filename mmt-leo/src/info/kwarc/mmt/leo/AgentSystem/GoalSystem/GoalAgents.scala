@@ -17,7 +17,7 @@ abstract class GoalAgent(implicit controller: Controller) extends Agent {
 
   //override def respond(): Unit = ???
 
-  override def logPrefix = "GoalAgent"
+  override def logPrefix = name
 
   override val name: String = "GoalAgent"
   override var subscribers: List[Listener] = Nil
@@ -39,16 +39,25 @@ abstract class GoalAgent(implicit controller: Controller) extends Agent {
     false
   }
 
+  def ignoreJustification(node: Goal):List[String] ={
+    var out:List[String] = Nil
+    if (node.isFinished){out::="isFinished"}
+    if (!node.isLeaf){out::="notLeaf"}
+    if (node.isFullyExpanded){out::="fullyExpanded"}
+    if (!node.isFullyExpanded){out::="notFullyExpanded"}
+    if (!node.isBackwardSearched){out ::= "notBackwardSearched"}
+    out
+  }
+
   def addTask(node:Goal):Unit
 
   def respond() = {
-    log("invertible Backwards rule at responetime:" + invertibleBackward)
-    log("responding to: " + mailbox)
+    log("responding to: " + mailbox.length + " message(s)")
     readMail.foreach {
       case Change(section,data,flags) =>
         data match {
           case g:Goal if !ignoreGoal(g) => addTask(g)
-          case g:Goal => log("ignoring new goal")
+          case g:Goal => log("ignoring new goal: " + ignoreJustification(g))
           case a:Alternative => a.subgoals.filter(!ignoreGoal(_)).foreach(addTask)
           case _ => throw new IllegalArgumentException("unknown data type")
         }
@@ -60,32 +69,32 @@ abstract class GoalAgent(implicit controller: Controller) extends Agent {
 }
 
 class ExpansionAgent(implicit controller: Controller) extends GoalAgent {
-  override def logPrefix = "ExpansionAgent"
+  override val name = "ExpansionAgent"
   override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || g.isFullyExpanded
   def addTask(g:Goal) = taskSet+=new ExpansionTask(this,g)
 }
 
 class InvertibleBackwardAgent(implicit controller: Controller) extends GoalAgent {
-  override def logPrefix = "InvertibleBackwardAgent"
+  override val name =  "InvertibleBackwardAgent"
   override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || g.isBackwardExpanded
   override def addTask(g:Goal) = taskSet+=new InvertibleBackwardTask(this,g)
 }
 
 class InvertibleForwardAgent(implicit controller: Controller) extends GoalAgent {
-  override def logPrefix = "InvertibleForwardAgent"
+  override val name =  "InvertibleForwardAgent"
   override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || g.isForwardExpanded
   override def addTask(g:Goal) = taskSet+=new InvertibleForwardTask(this,g)
 }
 
 class SearchBackwardAgent(implicit controller: Controller) extends GoalAgent {
-  override def logPrefix = "SearchBackwardAgent"
+  override val name =  "SearchBackwardAgent"
   override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || !g.isFullyExpanded
   override def addTask(g:Goal) = taskSet+=new SearchBackwardTask(this,g)
 }
 
 class SearchForwardAgent(implicit controller: Controller) extends GoalAgent {
-  override def logPrefix = "SearchForwardAgent"
-  override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || !g.isFullyExpanded
+  override val name =  "SearchForwardAgent"
+  override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || !g.isFullyExpanded || !g.isBackwardSearched
   override def addTask(g:Goal) = taskSet+=new SearchForwardTask(this,g)
 }
 

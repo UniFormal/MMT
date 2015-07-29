@@ -25,7 +25,7 @@ class AgentProver extends Prover {
       aa.register(blackboard.asInstanceOf[aa.BBType])
       ea.register(blackboard.asInstanceOf[ea.BBType])
 
-      blackboard.run(levels*2)
+      blackboard.run(3)
       val found = blackboard.finished
       val proof = if (found) Some(gl.proof) else None
       (found, proof)
