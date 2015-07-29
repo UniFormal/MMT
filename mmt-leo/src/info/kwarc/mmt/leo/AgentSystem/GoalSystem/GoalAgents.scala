@@ -31,11 +31,17 @@ abstract class GoalAgent(implicit controller: Controller) extends Agent {
   lazy val searchBackward = blackboard.get.searchBackward
   lazy val searchForward = blackboard.get.searchForward
 
+  def ignoreGoal(node:Goal):Boolean
 
+}
+
+class ExpansionAgent(implicit controller: Controller) extends GoalAgent {
+  override val name = "ExpansionAgent"
 
   def ignoreGoal(node: Goal):Boolean ={
     if (node.isFinished){return true}
     if (!node.isLeaf){return true}
+    if (node.isFullyExpanded){return true}
     false
   }
 
@@ -49,7 +55,7 @@ abstract class GoalAgent(implicit controller: Controller) extends Agent {
     out
   }
 
-  def addTask(node:Goal):Unit
+  def addTask(g:Goal) = taskSet+=new ExpansionTask(this,g)
 
   def respond() = {
     log("responding to: " + mailbox.length + " message(s)")
@@ -68,34 +74,47 @@ abstract class GoalAgent(implicit controller: Controller) extends Agent {
 
 }
 
-class ExpansionAgent(implicit controller: Controller) extends GoalAgent {
-  override val name = "ExpansionAgent"
-  override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || g.isFullyExpanded
-  def addTask(g:Goal) = taskSet+=new ExpansionTask(this,g)
-}
-
-class InvertibleBackwardAgent(implicit controller: Controller) extends GoalAgent {
+/*class InvertibleBackwardAgent(implicit controller: Controller) extends GoalAgent {
   override val name =  "InvertibleBackwardAgent"
   override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || g.isBackwardExpanded
   override def addTask(g:Goal) = taskSet+=new InvertibleBackwardTask(this,g)
-}
 
-class InvertibleForwardAgent(implicit controller: Controller) extends GoalAgent {
+
+}*/
+
+/*class InvertibleForwardAgent(implicit controller: Controller) extends GoalAgent {
   override val name =  "InvertibleForwardAgent"
   override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || g.isForwardExpanded
   override def addTask(g:Goal) = taskSet+=new InvertibleForwardTask(this,g)
-}
+}*/
 
 class SearchBackwardAgent(implicit controller: Controller) extends GoalAgent {
   override val name =  "SearchBackwardAgent"
-  override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || !g.isFullyExpanded
-  override def addTask(g:Goal) = taskSet+=new SearchBackwardTask(this,g)
+  override val interests = Nil
+
+  def ignoreGoal(g:Goal) = false
+  def addTask(g:Goal) = taskSet+=new SearchBackwardTask(this,g)
+
+  override def respond() = {
+    log("responding to: " + mailbox.length + " message(s)")
+    if (readMail.nonEmpty) {addTask(blackboard.get.proofSection.data)}
+    if (taskSet.isEmpty) log("NO TASKS FOUND") else log("Found "+taskSet.size+" task(s)")
+  }
 }
 
 class SearchForwardAgent(implicit controller: Controller) extends GoalAgent {
   override val name =  "SearchForwardAgent"
-  override def ignoreGoal(g:Goal) = super.ignoreGoal(g) || !g.isFullyExpanded || !g.isBackwardSearched
-  override def addTask(g:Goal) = taskSet+=new SearchForwardTask(this,g)
+  override val interests = Nil
+
+  def ignoreGoal(g:Goal) = false
+  def addTask(g:Goal) = taskSet+=new SearchForwardTask(this,g)
+
+  override def respond() = {
+    log("responding to: " + mailbox.length + " message(s)")
+    if (readMail.nonEmpty) {addTask(blackboard.get.proofSection.data)}
+    if (taskSet.isEmpty) log("NO TASKS FOUND") else log("Found "+taskSet.size+" task(s)")
+  }
+
 }
 
 abstract class SimplifyingAgent(implicit controller: Controller) extends GoalAgent {

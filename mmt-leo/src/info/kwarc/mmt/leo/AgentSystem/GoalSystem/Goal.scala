@@ -259,6 +259,8 @@ class Goal(val context: Context, private var concVar: Term) {
     recur(this)
   }
 
+  override def toString = conc.toString
+
   /** returns a nice looking printable string **/
   def toString2: String = {
     var out = ""

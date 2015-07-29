@@ -68,7 +68,7 @@ abstract class GoalTask(agent:GoalAgent,g:Goal)(implicit controller: Controller)
 
     //TODO can work this into an isApplicable
     // avoid cycles/redundancy: skip alternatives with subgoals that we already try to solve
-    val path = g.path
+    val path = g::g.path
     val alreadyOnPath = alt.subgoals.exists { sg =>
       // TODO stronger equality
       path.exists { ag => (ag.context hasheq sg.context) && (ag.conc hasheq sg.conc) }
@@ -80,8 +80,8 @@ abstract class GoalTask(agent:GoalAgent,g:Goal)(implicit controller: Controller)
     // add the alternative to the proof tree and expand the subgoals
     g.addAlternative(alt,Some(proofSection))
     log("************************* " + at.label + " at X **************************")
-    //log("\n" + g.present(0)(presentObj, Some(g), Some(alt)))
-    log("\n" + g.root.toString2)
+    log("\n" + proofSection.data.presentHtml(0)(presentObj, Some(g), Some(alt)))
+    //log("\n" + g.root.toString2)
     Some(alt)
   }
 
@@ -127,7 +127,7 @@ case class ExpansionTask(agent:GoalAgent,g:Goal)(implicit controller: Controller
   }
 
 }
-
+/*
 /**Expands Goal by applying invertible backwards rules to it then applying them again to all newly generated leaves*/
 case class InvertibleBackwardTask(agent:InvertibleBackwardAgent,g:Goal)(implicit controller: Controller) extends GoalTask(agent,g) {
   override val name="InvertibleBackwardTask"
@@ -144,7 +144,7 @@ case class InvertibleForwardTask(agent:InvertibleForwardAgent,g:Goal)(implicit c
     fullExpand(g,Nil,agent.invertibleForward)
   }
 
-}
+}*/
 
 case class SearchBackwardTask(agent:SearchBackwardAgent,g:Goal)(implicit controller: Controller) extends GoalTask(agent,g) {
   override val name="SearchBackwardTask"
@@ -156,12 +156,22 @@ case class SearchBackwardTask(agent:SearchBackwardAgent,g:Goal)(implicit control
    * @param g the goal to apply tactics to
    */
   private def backwardSearch(g: Goal):Boolean= {
+    log("recursing at:" + g)
+    // recurse into subgoals first so that we do not recurse into freshly-added goals
+    g.getAlternatives.foreach {case Alternative(sgs,_) =>
+      sgs.foreach {sg => backwardSearch(sg)}
+      if (g.isSolved) return true
+    }
+
     g.setSearchTactics(blackboard.get, agent.searchBackward)
     g.isBackwardSearched = true
     // backward search at g
     // new goals are expanded immediately and are subject to forward/backward search in the next iteration
+    log("Backward Search at:" + g)
+    log("Facts are:" + factSection.data)
     val tactics=g.getNextSearch(blackboard.get)
     if (tactics.isEmpty){return false}
+    log("Backward tacics Are:" + tactics)
     tactics.foreach {at =>
       applyApplicableTactic(at, g)
       if (g.isSolved) return true
@@ -171,24 +181,35 @@ case class SearchBackwardTask(agent:SearchBackwardAgent,g:Goal)(implicit control
   }
 
   def execute()={
-    backwardSearch(g)
+    val out=backwardSearch(g)
+    g.newFacts(blackboard.get.facts)
+    out
   }
 }
 
 case class SearchForwardTask(agent:SearchForwardAgent,g:Goal)(implicit controller: Controller) extends GoalTask(agent,g) {
 
   def forwardSearch() {
-    g.isForwardSearched = true
     agent.searchForward.foreach {e =>
       e.generate(blackboard.get,interactive = false)
     }
     blackboard.get.facts.integrateFutureFacts()
     //TODO make sure integration of future facts works with agent system
-    proofSection.passiveChange(g)
+    //proofSection.passiveChange(g)
+  }
+
+  override def writeSet(s: Section): Set[s.ObjectType] = {
+    Set.empty[s.ObjectType]
+  }
+
+  /** Returns a set of all nodes that are read for the task. */
+  override def readSet(s: Section): Set[s.ObjectType] = {
+    Set.empty[s.ObjectType]
   }
 
   def execute()={
     forwardSearch()
+    proofSection.data.newFacts(blackboard.get.facts)
     true
   }
 

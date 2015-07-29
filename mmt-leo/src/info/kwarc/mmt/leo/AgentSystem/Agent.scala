@@ -211,6 +211,6 @@ class ExecutionAgent(implicit controller: Controller) extends Agent {
   }
 
   //TODO add parallelization
-  def parallelExecute(t:Task) = {if (t.isApplicable(this.blackboard.get)){t.execute()}}
+  def parallelExecute(t:Task) = if (t.isApplicable(this.blackboard.get)){t.execute()}else{log("Task inapplicable")}
 
 }

@@ -36,8 +36,7 @@ class GoalBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Cont
   val shapeDepth = 2
   val factSection = new FactSection(this, shapeDepth)
   addSection(factSection)
-  implicit val facts = factSection.data
-  //val facts2 = facts.asInstanceOf[Facts]
+  implicit val facts:Facts = factSection.data
 
   initFacts()//TODO work facts into changes/section interface
   //def facts = factSection.data
