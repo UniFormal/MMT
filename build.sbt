@@ -153,7 +153,7 @@ lazy val oeis = (project in file("mmt-oeis")).
   settings(commonSettings("mmt-oeis"): _*)
 
 lazy val leo = (project in file("mmt-leo")).
-  dependsOn(api).
+  dependsOn(lf, api).
   settings(commonSettings("mmt-leo"): _*).
   settings(
     scalaSource in Test := baseDirectory.value / "test",
