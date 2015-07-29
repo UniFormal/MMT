@@ -170,6 +170,15 @@ class HTMLBuilder extends HTML {
    def reset {_result = ""}
 }
 
+/** collects HTML in a file */
+class HTMLFileWriter(f: File) extends HTML {
+   private val fw = File.Writer(f) 
+   def out(s: String) {fw.write(s)}
+   def close {
+      fw.close
+   }
+}
+
 object HTML {
    def apply(f: String => Unit) = new HTML {
       def out(s: String) {f(s)}
