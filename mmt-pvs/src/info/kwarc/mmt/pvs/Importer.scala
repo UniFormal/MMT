@@ -18,9 +18,9 @@ class PVSImporter extends Importer {
  //  private var i = 0
  //  private val ignore = 0
  //  private val ignoreMsg = Nil //List("no class for +")
-   private var startAt = "xor_def"
+   private var startAt = "relations"
    def importDocument(bf: BuildTask, index: Document => Unit) {
-      if (bf.inFile.name < startAt) return
+ //     if (bf.inFile.name < startAt) return
       val e = try {
          parseXML(bf.inFile)
       } catch {
@@ -31,7 +31,7 @@ class PVSImporter extends Importer {
             i += 1
             if (i > ignore) { */
                println(msg)
-               //sys.exit
+               sys.exit
                //throw utils.ExtractError(msg)
 //            } else
   //             return

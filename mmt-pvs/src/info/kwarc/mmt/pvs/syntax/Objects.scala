@@ -66,7 +66,7 @@ case class tuple_expr(place: String, _arguments: List[Expr]) extends Expr
 /** list */
 case class list_expr(place: String, _arguments: List[Expr]) extends Expr
 /** record */
-case class record_expr(place: String, assignments: List[assignment]) extends Expr
+case class record_expr(place: String, _assignments: List[assignment]) extends Expr
 /** n-th projection (as a polymorphic function, turned into lambda with fresh type variable by type checker) */
 case class proj_expr(place: String, _index: Int) extends Expr
 /** n-th projection applied to an argument */
@@ -105,9 +105,9 @@ case class cond_expr(place: String, conditions: List[cond]) extends Expr
 case class cond(_if: Expr, _then: Expr)
 
 /** one-level pattern matching of an expression against a list of cases */
-case class cases_expr(place: String, _expr: Expr, selections: List[selection]) extends Expr
-/** case in a case expression -- id(bindings) : _expr */
-case class selection(place: String, id: String, bindings: List[binding], _expr: Expr)
+case class cases_expr(place: String, _expr: Expr, _selections: List[selection]) extends Expr
+/** case in a case expression -- cons(bindings) : _expr */
+case class selection(place: String, _cons: name_expr, bindings: List[binding], _expr: Expr)
 
 // ********** updates
 
@@ -155,7 +155,7 @@ case class theory_name(place: String, id: String, library_id: String, mappings: 
  * user-provided reference to a symbol
  * @param id theory name
  * @param library_id library (in particular, as declared by lib_decl)
- * @param _actuals instantiations for the formal parameters (positional, full)
+ * @param actuals instantiations for the formal parameters (positional, full)
  * @param mappings instantiations/renaming for
  * @param target abbreviation for substituting a set of names at once by the declarations of the same local name in a different theory
  */

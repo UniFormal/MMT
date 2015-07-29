@@ -29,6 +29,7 @@ class PVSImportTask(bt: BuildTask, index: Document => Unit) {
    
    def doModule(m: syntax.Module): modules.Module = m match {
       case t: theory => null
+      case _ => null
    }
    
    def doDecl(d: Decl) {}

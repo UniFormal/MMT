@@ -35,13 +35,13 @@ case class exporting(place: String, exporting_kind: String,
  *
  * for historical reasons, imports can occur separately in addition to within formals although that is redundant  
  */
-case class TopDatatypeBody(named: NamedDecl, formals: List[FormalParameter], importings: List[importing],
+case class TopDatatypeBody(named: NamedDecl, theory_formals: List[FormalParameter], importings: List[importing],
                             _constructors: List[constructor]) extends Group
 /** a top-level datatype with least fixed point semantics */
-case class datatype(_body: TopDatatypeBody) extends Module
+case class datatype(body: TopDatatypeBody) extends Module
 
 /** a top-level datatype with greatest fixed point semantics */
-case class codatatype(_body: TopDatatypeBody) extends Module
+case class codatatype(body: TopDatatypeBody) extends Module
 
 /** constructor of an inductive data type
  *  @param ordnum constructors are numbered consecutively for convenience
@@ -58,11 +58,11 @@ case class accessor(named: NamedDecl, _type: Type)
  */
 sealed trait FormalParameter
 
-/** type -- a TYPE [= A] */
+/** type -- a TYPE */
 // not in rnc
 case class formal_type_decl(named: ChainedDecl, ne: NonEmptiness) extends FormalParameter
 /** type with given supertype -- a TYPE FROM A for a type A */
-case class formal_subtype_decl(named: ChainedDecl, ne: NonEmptiness, _sup: Type) extends FormalParameter
+case class formal_subtype_decl(named: ChainedDecl, ne: NonEmptiness, sup: DeclaredType) extends FormalParameter
 /** typed constant -- c:A for a type A */
 case class formal_const_decl(named: ChainedDecl, tp: DeclaredType) extends FormalParameter
 /** model of a theory -- m: T for a theory T */
@@ -89,7 +89,7 @@ sealed trait Decl extends AssumingDecl
 /** a TYPE (may be asserted to be non-empty */
 case class type_decl(named: ChainedDecl, nonempty_p: Boolean) extends Decl
 /** a TYPE FROM A (a is subtype of A) */
-case class type_from_decl(named: ChainedDecl, nonempty_p: Boolean, _type: DeclaredType) extends Decl
+case class type_from_decl(named: ChainedDecl, nonempty_p: Boolean, tp: DeclaredType) extends Decl
 /** a(arg_formals) TYPE = A (defined types may be dependent) */
 case class type_def_decl(named: NamedDecl, ne: NonEmptiness, arg_formals: List[bindings], df: DeclaredType) extends Decl
 /**
@@ -104,14 +104,14 @@ case class macro_decl(decl: const_decl) extends Decl
 case class theory_decl(named: ChainedDecl, domain: theory_name) extends Decl
 /** c(G) : A [= t] where c is a recursive function */
 case class def_decl(named: ChainedDecl, arg_formals: List[bindings], tp: DeclaredType, _def: Expr,
-                    _measure: Expr, _order: Option[Expr]) extends Decl
+                    _measure: Option[Expr], _order: Option[Expr]) extends Decl
 
 // ********** complex declarations
 
 /** inductive definition */
-case class ind_decl(named: NamedDecl, tp: DeclaredType, _body: Expr) extends Decl
+case class ind_decl(named: NamedDecl, arg_formals: List[bindings], tp: DeclaredType, _body: Expr) extends Decl
 /** coinductive definition */
-case class coind_decl(named: NamedDecl, tp: DeclaredType, _body: Expr) extends Decl
+case class coind_decl(named: NamedDecl, arg_formals: List[bindings], tp: DeclaredType, _body: Expr) extends Decl
 
 /** an ADT-like datatype declared inside a theory, see also [[TopDatatypeBody]] */
 case class InlineDatatypeBody(named: NamedDecl, arg_formals: List[bindings], _constructors: List[constructor]) extends Group
@@ -119,6 +119,10 @@ case class InlineDatatypeBody(named: NamedDecl, arg_formals: List[bindings], _co
 case class inline_datatype(body: InlineDatatypeBody) extends Decl
 /** an inline ADT with greatest fixed point semantics */
 case class inline_codatatype(body: InlineDatatypeBody) extends Decl
+
+// ********** enum stuff
+case class enumtype_decl(named:NamedDecl, enum_elts :List[id]) extends Decl
+case class id(_id: String) //extends Group
 
 // ********** assertions
 
@@ -134,7 +138,7 @@ case class tcc_decl(named: ChainedDecl, assertion: Assertion) extends Decl
 /** named theorem-flavor statement in the meta-logic */
 trait Judgement extends Decl
 /** p: |- A <: B */
-case class subtype_judgement(named: OptNamedDecl, _sub: DeclaredType, _sup: DeclaredType) extends Judgement
+case class subtype_judgement(named: OptNamedDecl, sub: DeclaredType, sup: DeclaredType) extends Judgement
 /** p: |- t: A (some limitations on t) */
 case class expr_judgement(named: OptNamedDecl, _expr: Expr, tp: DeclaredType) extends Judgement
 /** p: |- name: A (special case of expr_judgement) */
@@ -156,13 +160,13 @@ case class conversion_decl(unnamed: UnnamedDecl, kind: String, _expr: Expr) exte
 }
 
 /** name of a formula that is loaded as a conditional rewrite rule */
-case class auto_rewrite(unnamed: UnnamedDecl, kind: String, rewrite_name: List[rewrite_name]) extends Decl {
-   checkString(kind, "plus", "minus")
+case class auto_rewrite(unnamed: UnnamedDecl, key: String, kind: String, rewrite_name_ : List[rewrite_name]) extends Decl {
+   checkString(kind, "add", "remove")
 }
 
 /** reference to a formula that is to be used in rewriting */
-case class rewrite_name(place: String, kind: String, _name: name, _res: resolution, _spec: rewrite_name_spec) {
-   checkString(kind, "lazy", "eager", "macro")
+case class rewrite_name(place: String, kind: Option[String], name: name, _res: Option[resolution], _spec: Option[rewrite_name_spec]) {
+   if (kind.isDefined) checkString(kind.get, "lazy", "eager", "macro")
 }
 /** user-provided information for disambiguation in a rewrite_name */
 case class rewrite_name_spec() // element rewrite-name-spec {type-expr | formula_name}
@@ -177,7 +181,7 @@ case class importing(unnamed: UnnamedDecl, name: theory_name) extends Decl with 
 // ********** commonly used groups of attributes/children
 
 /** common parts of a named declaration in a theory */
-case class NamedDecl(id: String, place: String, formals: List[FormalParameter]) extends Group
+case class NamedDecl(id: String, place: String, decl_formals: List[FormalParameter]) extends Group
 /**
  * formal parameters only allowed if optional id is given
  */
@@ -186,6 +190,8 @@ case class OptNamedDecl(id: Option[String], place: String, formals: List[FormalP
 case class ChainedDecl(named: NamedDecl, chain_p: Boolean, semi_colon_p: Boolean) extends Group
 /** common parts of an unnamed declaration in a theory */
 case class UnnamedDecl(place: String, chain_p: Boolean, semi_colon_p: Boolean) extends Group
+
+//case class DeclParameters(decl_formals: List[FormalParameter], arg_formals: List[bindings]) extends Group
 
 /** */
 case class DeclaredType(_declared: Type, _internal: Type) extends Group
