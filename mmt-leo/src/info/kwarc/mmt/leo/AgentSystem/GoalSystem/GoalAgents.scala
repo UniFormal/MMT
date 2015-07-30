@@ -11,19 +11,16 @@ import info.kwarc.mmt.leo.AgentSystem.{Change, Listener, Agent}
  */
 
 
-abstract class GoalAgent(implicit controller: Controller) extends Agent {
+abstract class GoalAgent(implicit controller: Controller,oLP:String) extends Agent {
+
   override val interests = List("ADD","CHANGE")
   override type BBType = GoalBlackboard
 
-  //override def respond(): Unit = ???
-
-  override def logPrefix = name
 
   override val name: String = "GoalAgent"
   override var subscribers: List[Listener] = Nil
 
   lazy val presentObj = blackboard.get.presentObj
-  //lazy val report = blackboard.get.report
   lazy val rules = blackboard.get.rules
 
   lazy val invertibleBackward = blackboard.get.invertibleBackward
@@ -40,8 +37,7 @@ abstract class GoalAgent(implicit controller: Controller) extends Agent {
 
 }
 
-
-class SearchBackwardAgent(implicit controller: Controller) extends GoalAgent {
+class SearchBackwardAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
   override val name =  "SearchBackwardAgent"
   override val interests = List("ADD")
 
@@ -58,7 +54,7 @@ class SearchBackwardAgent(implicit controller: Controller) extends GoalAgent {
   }
 }
 
-class SearchForwardAgent(implicit controller: Controller) extends GoalAgent {
+class SearchForwardAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
   override val name =  "SearchForwardAgent"
   override val interests = Nil
 
@@ -73,7 +69,7 @@ class SearchForwardAgent(implicit controller: Controller) extends GoalAgent {
 
 }
 
-abstract class SimplifyingAgent(implicit controller: Controller) extends GoalAgent {
+abstract class SimplifyingAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
 }
 
 

@@ -12,6 +12,7 @@ class AgentProver extends Prover {
 
    def apply(pu: ProvingUnit, rules: RuleSet, levels: Int) = {
       implicit val c=controller
+      implicit val oLP=pu.logPrefix
       val gl = new Goal(pu.context, pu.tp)
       val blackboard = new GoalBlackboard(rules, gl)
       //val exa = new ExpansionAgent

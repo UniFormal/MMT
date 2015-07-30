@@ -11,8 +11,9 @@ import info.kwarc.mmt.leo.AgentSystem.Blackboard
  *
  * This represents the class of the LF blackboard which handles proofs in the LF prover
  */
-class GoalBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Controller) extends Blackboard {
-  override def logPrefix = "GoalBlackboard"
+class GoalBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Controller,oLP:String) extends Blackboard {
+
+  override def logPrefix = oLP + "#GoalBlackboard"
 
   val proofSection = new GoalSection(this,goal)
   addSection(proofSection)

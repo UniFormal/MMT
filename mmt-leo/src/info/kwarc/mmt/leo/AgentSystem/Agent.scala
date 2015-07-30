@@ -49,7 +49,7 @@ trait Listener {
 
 trait Communicator extends Listener with Speaker
 
-abstract class Agent(implicit controller: Controller) extends Logger with Communicator {
+abstract class Agent(implicit controller: Controller,oLP:String) extends Logger with Communicator {
   type BBType <:Blackboard
 
   var blackboard:Option[BBType]=None
@@ -58,7 +58,7 @@ abstract class Agent(implicit controller: Controller) extends Logger with Commun
   val name: String
 
   val report = controller.report
-  def logPrefix = name
+  def logPrefix = oLP +"#"+name
 
   override def toString: String= {name + "::numTasks:" + numTasks}
 
@@ -117,7 +117,7 @@ abstract class Agent(implicit controller: Controller) extends Logger with Commun
   * a proper non-colliding subset which hopefully maximizes
   * utility in the proof
   */
-class AuctionAgent(implicit controller: Controller) extends Agent {
+class AuctionAgent(implicit controller: Controller,oLP:String) extends Agent {
   var subscribers:List[Listener] = Nil
 
   lazy val executionAgent = blackboard.get.executionAgent.get
@@ -201,7 +201,7 @@ class AuctionAgent(implicit controller: Controller) extends Agent {
 
 
 
-class ExecutionAgent(implicit controller: Controller) extends Agent {
+class ExecutionAgent(implicit controller: Controller,oLP:String) extends Agent {
   val name = "ExecutionAgent"
   var subscribers:List[Listener] = Nil
 

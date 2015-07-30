@@ -9,9 +9,10 @@ import info.kwarc.mmt.leo.AgentSystem.{Blackboard, Section, Task}
  *
  * Classes for the Expansion and Search tasks
  */
-abstract class MMTTask(agent:GoalAgent)(implicit controller: Controller) extends Task {
+abstract class MMTTask(agent:GoalAgent)(implicit controller: Controller,oLP:String) extends Task {
   override val name: String = "GoalTask"
 
+  override def logPrefix = oLP + "#"+name
   override val sentBy: GoalAgent = agent
 
   val proofSection = sentBy.blackboard.get.proofSection
@@ -28,7 +29,7 @@ abstract class MMTTask(agent:GoalAgent)(implicit controller: Controller) extends
 
 }
 
-abstract class GoalTask(agent:GoalAgent,g:Goal)(implicit controller: Controller) extends MMTTask(agent) {
+abstract class GoalTask(agent:GoalAgent,g:Goal)(implicit controller: Controller,oLP:String) extends MMTTask(agent) {
 
   /** Determines if a given task is applicable given the current blackboard */
   override def isApplicable[BB <: Blackboard](b: BB): Boolean = !sentBy.ignoreGoal(g) //TODO expand this
@@ -140,7 +141,7 @@ abstract class GoalTask(agent:GoalAgent,g:Goal)(implicit controller: Controller)
 
 
 
-case class SearchBackwardTask(agent:SearchBackwardAgent,g:Goal)(implicit controller: Controller) extends GoalTask(agent,g) {
+case class SearchBackwardTask(agent:SearchBackwardAgent,g:Goal)(implicit controller: Controller,oLP:String) extends GoalTask(agent,g) {
   override val name="SearchBackwardTask"
   /** Determines if a given task is applicable given the current blackboard */
 
@@ -172,8 +173,8 @@ case class SearchBackwardTask(agent:SearchBackwardAgent,g:Goal)(implicit control
   }
 }
 
-case class SearchForwardTask(agent:SearchForwardAgent)(implicit controller: Controller) extends MMTTask(agent) {
-  override def logPrefix="SearchForwardTask"
+case class SearchForwardTask(agent:SearchForwardAgent)(implicit controller: Controller,oLP:String) extends MMTTask(agent) {
+  override def logPrefix=oLP+"#SearchForwardTask"
 
   /** Determines if a given task is applicable given the current blackboard */
   override def isApplicable[BB <: Blackboard](b: BB): Boolean = !goal.isSolved
