@@ -62,13 +62,14 @@ abstract class Blackboard(implicit controller: Controller) extends Logger with C
     log("finished cycle")
   }
 
+  var cycle = 0
   /** runs the blackboard for a given number of cycles, stopping if a solution is found */
-  def run(cycles: Int = 3): Unit = {
-    var i = 0
-    while (!finished && i < cycles) {
+  def run(numCycles: Int = 3): Unit = {
+    while (!finished && cycle < numCycles) {
       runCycle()
-      i = i + 1
+      cycle = cycle + 1
     }
+    if (finished) {log("PROOF COMPLETED!")}else{log("GIVING UP")}
   }
 
   override def toString: String = {

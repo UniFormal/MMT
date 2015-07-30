@@ -1,6 +1,7 @@
 package info.kwarc.mmt.leo.AgentSystem.GoalSystem
 
 import info.kwarc.mmt.api.checking._
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils.HTML
 
@@ -37,9 +38,6 @@ case class Alternative(subgoals: List[Goal], proof: () => Term) {
 
    override def toString = subgoals.mkString("\n")
 
-  def present2 = {
-    "\t"*(subgoals.head.depth-1)+"Alternative:"
-  }
 
 
 }
@@ -240,11 +238,6 @@ class Goal(val context: Context, private var concVar: Term) {
 
 
 
-  /** converts only a single node to a string */
-  def present2: String ={
-    "\t"*depth + context+" |- " + conc
-  }
-
   /** traverses the tree depth first performs an action as it comes to the node*/
   def preDepthTraverse(visitG: Goal => Unit, visitA: Alternative => Unit): Unit = {
     def recur(n: Goal ): Unit = {
@@ -261,13 +254,6 @@ class Goal(val context: Context, private var concVar: Term) {
 
   override def toString = conc.toString
 
-  /** returns a nice looking printable string **/
-  def toString2: String = {
-    var out = ""
-    preDepthTraverse({sn=>out = out+"\n"+ sn.present2},{a=> out = out+ "\n" + a.present2 })
-    out
-  }
-
 
    def present(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]): String = {
       val goalHighlight = if (current.contains(this)) "X " else "  "
@@ -279,6 +265,11 @@ class Goal(val context: Context, private var concVar: Term) {
          val lines = goalHighlight + (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
          lines.mkString("\n")
       }
+   }
+
+   def toHtml(implicit controller:Controller):String = {
+      val presentObj: Obj => String = o => controller.presenter.asString(o)
+      this.presentHtml(0)(presentObj, None, None)
    }
 
    def presentHtml(depth: Int, firstTime:Boolean = true)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]): String = {

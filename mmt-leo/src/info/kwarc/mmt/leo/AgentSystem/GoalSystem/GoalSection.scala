@@ -41,5 +41,8 @@ class FactSection(blackboard:GoalBlackboard,shapeDepth: Int)(implicit controller
   type ObjectType = Facts
   var data = new Facts(blackboard:GoalBlackboard,shapeDepth: Int)
   var changes: List[Change[_]] = Nil
+
+  def passiveOp(flag:String) = handleChange(new Change(this, true, List(flag)))//TODO add specific fact pointers
+  def passiveAdd() = passiveOp("ADD")
 }
 

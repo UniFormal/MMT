@@ -138,15 +138,17 @@ class Facts(blackboard: GoalBlackboard, shapeDepth: Int)(implicit controller: Co
   /**
     * adds all queued facts to the database 
     */
-   private[leo] def integrateFutureFacts() {
-      futureFacts foreach {f =>
-         val fS = simplifyFact(f)
-         log("new fact: " + fS.present(blackboard.presentObj))
-         val sh = Shape(Nil, Nil, fS.tp, shapeDepth)
-         facts(sh) += fS
-      }
-      futureFacts = Nil
-   }
+  private[leo] def integrateFutureFacts(section:Option[FactSection]) ={
+    val out = futureFacts.nonEmpty
+    futureFacts foreach {f =>
+       val fS = simplifyFact(f)
+       log("new fact: " + fS.present(blackboard.presentObj))
+       val sh = Shape(Nil, Nil, fS.tp, shapeDepth)
+       facts(sh) += fS
+    }
+    futureFacts = Nil
+    if (out && section.isDefined) {section.get.passiveAdd()}
+  }
    
    /**
     * applies a function to (at least) all facts that match a query

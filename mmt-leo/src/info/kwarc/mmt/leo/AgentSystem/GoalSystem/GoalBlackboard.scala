@@ -70,10 +70,8 @@ class GoalBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Cont
     }
   }
 
-
-
   /** Boolean representing the status of the prof goal */
-  override def finished: Boolean = goal.isFinished
+  override def finished: Boolean = goal.isSolved
 }
 
 object Indent {
