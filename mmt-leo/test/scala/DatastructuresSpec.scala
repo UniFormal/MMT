@@ -17,6 +17,8 @@ import org.scalatest._
 
 class DatastructuresSpec extends FlatSpec with Matchers {
   implicit val controller = new Controller
+  implicit val oLP = ""
+
   controller.handleLine("log console")
   controller.handleLine("log+ Blackboard")
   controller.handleLine("log+ AuctionAgent")

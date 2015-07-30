@@ -5,7 +5,7 @@ import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.PartitionImpl.{
 import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.DataTree
 import info.kwarc.mmt.leo.AgentSystem._
 
-class PartitionProver(target: Int , usableNumbers: List[Int], cycles: Int = 5)(implicit controller: Controller) {
+class PartitionProver(target: Int , usableNumbers: List[Int], cycles: Int = 5)(implicit c: Controller,oLP:String) {
 
   val goal = new DataTree(target,conjVar = true,None)
   val blackboard = new IntBlackboard(goal)

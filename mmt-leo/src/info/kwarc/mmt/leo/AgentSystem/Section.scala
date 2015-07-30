@@ -5,11 +5,11 @@ import info.kwarc.mmt.api.frontend.{Controller, Logger}
 /** the abstract type of a section of the Blackboard,
   * intended to hold and monitor changes in the stored data
   */
-abstract class Section(blackboard: Blackboard)(implicit controller: Controller) extends Logger with Speaker{
+abstract class Section(blackboard: Blackboard)(implicit c: Controller,oLP:String) extends Logger with Speaker{
   var subscribers:List[Listener] = blackboard.agents
 
-  val report = controller.report
-  override def logPrefix = "Section"
+  val report = c.report
+  override def logPrefix = oLP+"#Section"
 
   /** the type of data that the section holds*/
   type ObjectType

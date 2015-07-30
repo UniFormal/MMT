@@ -9,7 +9,7 @@ import info.kwarc.mmt.leo.AgentSystem.{Section, Blackboard}
  * @param g goal for the blackboard to solve
  * @tparam T type of proof tree that the goal represents
  */
-class AndOrBlackboard[T>:Null <:AndOr[T]](g:T)(implicit controller: Controller) extends Blackboard {
+class AndOrBlackboard[T>:Null <:AndOr[T]](g:T)(implicit c: Controller,oLP:String) extends Blackboard {
 
 
   /** this is the proof section which houses the proof treee

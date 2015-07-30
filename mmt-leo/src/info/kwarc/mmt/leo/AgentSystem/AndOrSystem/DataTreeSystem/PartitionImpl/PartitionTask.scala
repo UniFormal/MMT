@@ -8,7 +8,7 @@ import info.kwarc.mmt.leo.AgentSystem.{Display, Task, Section}
 /**
  * Created by Mark on 7/21/2015.
  */
-class PartitionTask(nodeVar: DataTree[Int], agent: PartitionAgent)(implicit controller: Controller) extends Task with PTApplicability {
+class PartitionTask(nodeVar: DataTree[Int], agent: PartitionAgent)(implicit c: Controller,oLP:String) extends Task with PTApplicability {
   val name = "PartitionTask"
   val sentBy = agent
   val node = nodeVar

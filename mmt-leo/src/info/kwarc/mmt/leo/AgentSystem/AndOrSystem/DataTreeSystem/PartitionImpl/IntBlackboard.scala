@@ -7,4 +7,4 @@ import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.{DataTree}
 /**
  * Created by Mark on 7/21/2015.
  */
-class IntBlackboard(g:DataTree[Int])(implicit controller: Controller) extends AndOrBlackboard[DataTree[Int]](g) {}
+class IntBlackboard(g:DataTree[Int])(implicit c: Controller,oLP:String) extends AndOrBlackboard[DataTree[Int]](g) {}

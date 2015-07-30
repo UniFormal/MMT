@@ -8,9 +8,9 @@ import info.kwarc.mmt.leo.AgentSystem.{Section, Task, Change}
  * blackboard.
  *
  */
-class AndOrSection[G>: Null <:AndOr[G]](blackboard: AndOrBlackboard[_],g:G)(implicit controller: Controller) extends Section(blackboard) {
+class AndOrSection[G>: Null <:AndOr[G]](blackboard: AndOrBlackboard[_],g:G)(implicit c: Controller,oLP:String) extends Section(blackboard) {
 
-  override def logPrefix ="AndOrSection"
+  override def logPrefix =oLP+"#AndOrSection"
 
   /** this type of section only stores data which is a subtype of the AndOr tree type*/
   type ObjectType = G

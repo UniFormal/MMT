@@ -7,7 +7,7 @@ import info.kwarc.mmt.leo.AgentSystem.{Listener, Change, Agent}
 /**
  * Created by Mark on 7/21/2015.
  */
-class PartitionAgent(numbersVar: List[Int])(implicit controller: Controller) extends Agent {
+class PartitionAgent(numbersVar: List[Int])(implicit c: Controller,oLP:String) extends Agent {
   type BBType = IntBlackboard
 
   var subscribers:List[Listener] = Nil
