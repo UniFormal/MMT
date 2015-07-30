@@ -102,7 +102,15 @@ case class MetaTask(taskSet:Set[Task], byAgentVar: Agent, nameVar: String)(impli
   override val sentBy:Agent = byAgentVar
 
   //TODO implement parallelization
-  def execute():Boolean = taskSet.map(_.execute()).forall(b=>b)
+  def execute():Boolean = taskSet.map({t=>
+    if (t.isApplicable(this.blackboard.get)){
+      log("Executing Task: " +t)
+      t.execute()
+    }else{
+      log("Task inapplicable")
+      false
+    }
+  }).forall(b=>b)
 
   def readSet(s: Section):Set[s.ObjectType] ={
     var out:Set[s.ObjectType] = Set.empty[s.ObjectType]

@@ -16,6 +16,8 @@ trait Speaker {
   var subscribers : List[Listener]
 
   def addSubscriber(l:Listener)=subscribers::=l
+
+  def removeSubscriber(l:Listener)=subscribers=subscribers.diff(List(l))
   /** sends a message to a listener*/
   def sendMessage(m:Message,a:Listener) = a.mailbox.enqueue(m)
   
@@ -206,11 +208,15 @@ class ExecutionAgent(implicit controller: Controller) extends Agent {
   val metaTaskQueue = new mutable.Queue[Task]()
 
   def respond() = { readMail.foreach {
-    case t: Task => log("Executing Task: "+t);parallelExecute(t)
+    case t: Task => log("Executing MetaTask: "+t);parallelExecute(t)
     case _ => throw new IllegalArgumentException("Unknown type of message")}
   }
 
   //TODO add parallelization
-  def parallelExecute(t:Task) = if (t.isApplicable(this.blackboard.get)){t.execute()}else{log("Task inapplicable")}
+  def parallelExecute(t:Task) = if (t.isApplicable(this.blackboard.get)){
+    t.execute()
+  }else{
+    log("MetaTask inapplicable")
+  }
 
 }
