@@ -289,7 +289,7 @@ case class SetEnvVar(name: String, value: String) extends Action {
   * concrete syntax: file file:FILE
   */
 case class ExecFile(file: File, name: Option[String]) extends Action {
-  override def toString: String = "file " + file + " " + name.getOrElse("")
+  override def toString: String = "file " + file + name.map(" " + _).getOrElse("")
 }
 
 /** bind all following commands to a name without executing them
@@ -423,7 +423,7 @@ case object OAFPush extends Action {
   *             concrete syntax: importer cls:CLASS args:STRING*
   */
 case class AddExtension(cls: String, args: List[String]) extends Action {
-  override def toString: String = "extension " + cls + args.mkString(" ", " ", "")
+  override def toString: String = "extension " + cls + args.map(" " + _).mkString
 }
 
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
@@ -433,7 +433,7 @@ case class AddArchive(folder: java.io.File) extends Action {
 
 /** builds a dimension in a previously opened archive */
 case class ArchiveBuild(ids: List[String], dim: String, modifier: archives.BuildTargetModifier, in: List[String], params: List[String] = Nil) extends Action {
-  override def toString: String = "build " + ids.mkString("[", ",", "]") + " " + modifier.toString(dim) + in.mkString(" ", "/", "")
+  override def toString: String = "build " + ids.mkString("[", ",", "]") + " " + modifier.toString(dim) + (if (in.isEmpty) "" else in.mkString(" ", "/", ""))
 }
 
 /** builds a dimension in a previously opened archive */
