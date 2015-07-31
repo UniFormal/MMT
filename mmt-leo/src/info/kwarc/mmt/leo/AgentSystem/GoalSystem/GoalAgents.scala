@@ -38,6 +38,7 @@ abstract class GoalAgent(implicit controller: Controller,oLP:String) extends Age
 }
 
 class SearchBackwardAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
+  override val priority=1
   override val name =  "SearchBackwardAgent"
   override val interests = List("ADD")
 

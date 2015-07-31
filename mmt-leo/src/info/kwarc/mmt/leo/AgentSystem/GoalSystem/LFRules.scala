@@ -3,7 +3,6 @@ package info.kwarc.mmt.leo.AgentSystem.GoalSystem
 
 import info.kwarc.mmt.api.{LocalName, objects}
 import info.kwarc.mmt.lf._
-//import info.kwarc.mmt.api.uom.Scala.Lambda
 import objects._
 import objects.Conversions._
 
@@ -166,7 +165,7 @@ object BackwardPiElimination extends BackwardSearch {
                           }.toList
                        }
                  }
-                 if (!appTacs.isEmpty)
+                 if (appTacs.nonEmpty)
                     appTacs
                  else {
                     // if no progress, we try enumerating values for the missing parameters
@@ -197,53 +196,58 @@ object BackwardPiElimination extends BackwardSearch {
 
 object ForwardPiElimination extends ForwardSearch {
    val head = Pi.path
+
    def generate(blackboard: GoalBlackboard, interactive: Boolean) {
       // apply all symbols
-      blackboard.facts.getConstantAtoms foreach {case a =>
-         if (interactive || a.rl == Some("ForwardRule"))
+      blackboard.facts.getConstantAtoms foreach { case a =>
+         if (interactive || a.rl.contains("ForwardRule"))
             applyAtom(blackboard.goal, a, blackboard.facts)
       }
       // apply all variables of each goal
       applyVarAtoms(blackboard.goal, blackboard.facts)
    }
+
    /** recursively applies all variables to create new facts */
    private def applyVarAtoms(g: Goal, facts: Facts) {
-      g.varAtoms.foreach {case a => applyAtom(g, a, facts)}
-      g.getAlternatives.foreach {_.subgoals.foreach {sg => applyVarAtoms(sg, facts)}}
+      g.varAtoms.foreach { case a => applyAtom(g, a, facts) }
+      g.getAlternatives.foreach {
+         _.subgoals.foreach { sg => applyVarAtoms(sg, facts) }
+      }
    }
+
    /** applies one atom (symbol or variable) to all known facts */
    private def applyAtom(g: Goal, atom: Atom, facts: Facts) {
       val (bindings, scope) = FunType.unapply(atom.tp).get
       // params: leading named arguments
       val (paramlist, neededArgs) = bindings.span(_._1.isDefined) //If paramlist and needed arglist are empty its atomic type
-      val parameters = FunType.argsAsContext(paramlist) 
+      val parameters = FunType.argsAsContext(paramlist)
       // all the actual logic is implemented separately
       new ArgumentFinder(facts, atom.tm, scope).apply(g, parameters, Nil, neededArgs)
    }
-   
+
    /**
     * @param facts the facts to draw arguments from
     * @param fun the function to apply (once arguments are found)
     * @param scope the return type of fun
-    * 
-    * the parameter types (leading named arguments) and the remaining input types of fun are supplied in the apply method
+    *
+    *              the parameter types (leading named arguments) and the remaining input types of fun are supplied in the apply method
     */
    private class ArgumentFinder(facts: Facts, fun: Term, scope: Term) {
       /**
        * looks for unnamed arguments and solves parameters along the way
-       * 
+       *
        * each iteration handles the next unnamed argument type and
        * recurses for each found argument term
-       * 
+       *
        * @param g the goal closest to the root at which the new fact will be in scope
        * @param parameters the parameters, definitions are added during recursion
        * @param foundArgs the arguments already found (initially empty)
        * @param neededArgs the arguments still needed (initially all arguments other than parameters)
        */
-      def apply(g: Goal, parameters: Context, foundArgs: List[(Option[LocalName],Term)],
-                                             neededArgs: List[(Option[LocalName],Term)]) {
+      def apply(g: Goal, parameters: Context, foundArgs: List[(Option[LocalName], Term)],
+                neededArgs: List[(Option[LocalName], Term)]) {
          // the values of the found named arguments as a substitution
-         val foundSubs = foundArgs.collect {case (Some(x),a) => x/a}
+         val foundSubs = foundArgs.collect { case (Some(x), a) => x / a }
          neededArgs match {
             case Nil =>
                parameters.toSubstitution match {
@@ -254,7 +258,7 @@ object ForwardPiElimination extends ForwardSearch {
                      val f = Fact(g, ApplyGeneral(fun, sub.map(_.target) ::: foundArgs.map(_._2)), scope ^? (sub ++ foundSubs))
                      facts.add(f)
                   case None =>
-                     // otherwise, we cannot create a new fact
+                  // otherwise, we cannot create a new fact
                }
             case (nOpt, tp) :: rest =>
                // substitute solved parameters and found named arguments in tp
@@ -262,10 +266,10 @@ object ForwardPiElimination extends ForwardSearch {
                val tpS = tp ^? (parameters.toPartialSubstitution ++ foundSubs)
                // get all possible arguments for tpS
                val args = facts.termsOfTypeBelowGoal(g, parameters, tpS)
-               args foreach {case (sub, arg, hOpt) =>
+               args foreach { case (sub, arg, hOpt) =>
                   // sub instantiates additional parameters that still occurred in tpS
                   // we add these solutions to parameters
-                  val newParameters = parameters map {vd =>
+                  val newParameters = parameters map { vd =>
                      sub(vd.name) match {
                         case None => vd
                         case Some(s) => vd.copy(df = Some(s))
@@ -273,7 +277,7 @@ object ForwardPiElimination extends ForwardSearch {
                   }
                   // arg is the next argument of type tpS
                   // we append it to foundArgs
-                  val newFoundArgs = foundArgs ::: List((nOpt,arg))
+                  val newFoundArgs = foundArgs ::: List((nOpt, arg))
                   // hOpt may be a goal below g
                   // in that case, we replace g with h
                   val newGoal = hOpt.getOrElse(g)
@@ -281,6 +285,45 @@ object ForwardPiElimination extends ForwardSearch {
                   apply(newGoal, newParameters, newFoundArgs, rest)
                }
          }
+      }
+   }
+
+}
+
+class TermArgumentFinder(terms:Terms,fun: Term, returnType: Term) {
+   /** applies one atom (symbol or variable) to all known facts */
+   private def applyFunctionalFact(g: Goal, f: Fact, facts: Facts) {
+      val (bindings, scope) = FunType.unapply(f.tp).get
+      // params: leading named arguments
+      val (paramList, otherArgs) = bindings.span(_._1.isDefined) //TODO ask about this step
+      val parameters = FunType.argsAsContext(paramList)
+
+      new TermArgumentFinder(terms, f.tm, scope).findNextParamArg(g, parameters, otherArgs.map(_._2), Nil)
+   }
+
+   def findNextParamArg(g:Goal,paramArgs: Context, otherArgs: List[Term], foundParams: Substitution):Unit = {
+      if (paramArgs.nonEmpty) {
+         val newParam = paramArgs.variables.head
+         val newTerms = terms.getTermsOfType(newParam.tp.get ^? foundParams, g)
+         //foreach term t of type newParam ^? foundParams above g
+         newTerms.foreach { t =>
+            val newParamArgs = Context(paramArgs.variables.tail: _*)
+            val newFoundParams = foundParams ++ (newParam / List(t)).get //TODO ask florian about option
+            findNextParamArg(g, newParamArgs , otherArgs, newFoundParams )
+         }
+      }else {findNextOtherArg(g,otherArgs, foundParams, Nil)}
+   }
+
+   def findNextOtherArg(g:Goal,otherArgs: List[Term], foundParams: Substitution, foundOtherArgs: List[Term]):Unit = {
+      if (otherArgs.nonEmpty) {
+         //foreach term t of type otherArgs (0) ^? foundParams above g
+         val newTerms = terms.getTermsOfType(otherArgs.head ^? foundParams, g)
+         newTerms.foreach(t =>
+            findNextOtherArg(g,otherArgs.tail, foundParams, foundOtherArgs ::: List(t))
+         )
+      }else{
+         val args = foundParams.map(_.target) ::: foundOtherArgs
+         terms += TermEntry(g, ApplySpine(fun, args:_*), returnType ^? foundParams)
       }
    }
 }

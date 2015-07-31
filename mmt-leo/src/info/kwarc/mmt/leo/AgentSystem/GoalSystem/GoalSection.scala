@@ -33,11 +33,11 @@ class GoalSection(blackboard:GoalBlackboard, goal:Goal)(implicit c: Controller,o
   def passiveChange(newData:Alternative) = passiveOp(newData,"CHANGE")
   def passiveChange(newData:Goal) = passiveOp(newData,"CHANGE")
 
-
 }
 
 
 class FactSection(blackboard:GoalBlackboard,shapeDepth: Int)(implicit c: Controller,oLP:String) extends Section(blackboard) {
+  override def logPrefix =oLP+"#FactSection"
   type ObjectType = Facts
   var data = new Facts(blackboard:GoalBlackboard,shapeDepth: Int)
   var changes: List[Change[_]] = Nil
@@ -46,3 +46,12 @@ class FactSection(blackboard:GoalBlackboard,shapeDepth: Int)(implicit c: Control
   def passiveAdd() = passiveOp("ADD")
 }
 
+class TermSection(blackboard:GoalBlackboard)(implicit c: Controller,oLP:String) extends Section(blackboard) {
+  override def logPrefix =oLP+"#TermSection"
+  type ObjectType = Terms
+  var data = new Terms(blackboard:GoalBlackboard)
+  var changes: List[Change[_]] = Nil
+
+  def passiveOp(flag:String) = handleChange(new Change(this, true, List(flag)))//TODO add specific Term pointers
+  def passiveAdd() = passiveOp("ADD")
+}

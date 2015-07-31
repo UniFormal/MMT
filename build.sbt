@@ -157,7 +157,8 @@ lazy val leo = (project in file("mmt-leo")).
   settings(commonSettings("mmt-leo"): _*).
   settings(
     scalaSource in Test := baseDirectory.value / "test",
-    libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
+    libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
+    libraryDependencies += "com.assembla.scala-incubator" %% "graph-core" % "1.9.4"
   )
 
 // just a wrapper project

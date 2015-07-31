@@ -68,7 +68,8 @@ class Goal(val context: Context, private var concVar: Term) {
 
    def path: List[Goal] = this :: parent.map(_.path).getOrElse(Nil)
    def depth = path.length
-   def below(that: Goal): Boolean = this == that || parent.exists(_ below that)
+   def isBelow(that: Goal): Boolean = this == that || parent.exists(_ isBelow that)
+   def isAbove(that:Goal): Boolean = that.isBelow(this)
    def isLeaf:Boolean = alternatives.isEmpty
    def root:Goal = if (parent.isDefined){parent.get.root}else this
 

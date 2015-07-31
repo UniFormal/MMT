@@ -50,6 +50,8 @@ trait Listener {
 trait Communicator extends Listener with Speaker
 
 abstract class Agent(implicit controller: Controller,oLP:String) extends Logger with Communicator {
+  val priority = 0
+
   type BBType <:Blackboard
 
   var blackboard:Option[BBType]=None
@@ -129,7 +131,7 @@ class AuctionAgent(implicit controller: Controller,oLP:String) extends Agent {
   val metaTaskQueue = new mutable.Queue[Task]()
   
   /** @return A list of all of the registered proof agents*/
-  def subAgents() = blackboard.get.agents.diff(List(this))
+  def subAgents() = blackboard.get.agents.diff(List(this)).sortBy(-_.priority)
   
   def respond() ={
     readMail.foreach {

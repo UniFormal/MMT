@@ -15,12 +15,6 @@ class GoalBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Cont
 
   override def logPrefix = oLP + "#GoalBlackboard"
 
-  val proofSection = new GoalSection(this,goal)
-  addSection(proofSection)
-  log("Added Goal of type: " + goal.getClass + goal)
-  log(proofSection.toString)
-
-
   /*val invertibleBackward = rules.get(classOf[BackwardInvertible]).toList
   val invertibleForward  = rules.get(classOf[ForwardInvertible]).toList
   val searchBackward     = rules.get(classOf[BackwardSearch]).toList.sortBy(_.priority).reverse
@@ -34,15 +28,20 @@ class GoalBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Cont
   log("Rules: " + rules)
   log("Invertible Backwards rules:" + invertibleBackward)
 
+  val proofSection = new GoalSection(this,goal)
+  addSection(proofSection)
+  log("Added Goal of type: " + goal.getClass + goal)
+
   val shapeDepth = 2
   val factSection = new FactSection(this, shapeDepth)
   addSection(factSection)
   implicit val facts:Facts = factSection.data
-
   initFacts()//TODO work facts into changes/section interface
-  //def facts = factSection.data
 
-  def factsChanges = factSection.changes
+
+  val termSection = new TermSection(this)
+  addSection(termSection)
+  implicit val terms:Terms = termSection.data
 
 
 
@@ -69,6 +68,11 @@ class GoalBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Cont
         }
       case _ =>
     }
+  }
+
+  private def initDBs() ={
+    initFacts()
+    terms.initializeTerms(facts)
   }
 
   /** Boolean representing the status of the prof goal */
