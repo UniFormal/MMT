@@ -27,8 +27,6 @@ abstract class ROArchive extends Storage with Logger {
   val properties: mutable.Map[String, String]
   val report: Report
   val logPrefix = "archive"
-
-  val narrationBackend: Storage
 }
 
 abstract class WritableArchive extends ROArchive {
