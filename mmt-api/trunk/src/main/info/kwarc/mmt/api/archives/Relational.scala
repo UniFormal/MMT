@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.modules.Module
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.utils._
+import info.kwarc.mmt.api.documents._
 
 /**
  * a build target for computing structure dependencies
@@ -36,11 +37,34 @@ class Relational extends TraversingBuildTarget {
     val doc = parser(ps)(bf.errorCont)
     writeToRel(doc, bf.archive / relational / bf.inPath)
     doc.getModulesResolved(controller.globalLookup) foreach { mod => indexModule(bf.archive, mod) }
-    val rs: RelStore = controller.depstore
-    val deps = rs.querySet(doc.path, +Declares * HasType(IsView) * +HasCodomain)
-    println(deps)
-
   }
+
+  override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): Unit = {
+    bd.outFile.up.mkdirs
+    val doc = controller.get(DPath(bd.archive.narrationBase / bd.inPath.segments)).asInstanceOf[Document]
+    val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
+    writeToRel(doc, bd.archive / relational / inPathFile)
+    val rs: RelStore = controller.depstore
+    val docs = rs.querySet(doc.path, +Declares * HasType(IsDocument))
+    docs.foreach { d =>
+      val s = rs.querySet(d, +Declares * RelationExp.Deps * -Declares * HasType(IsDocument))
+      println(d, (s - d).flatMap(docPathToFilePath))
+    }
+  }
+
+  def docPathToFilePath(p: Path): List[File] = p match {
+    case DPath(uri) =>
+      controller.backend.getStores.filter(_.isInstanceOf[Archive]).
+        flatMap { s =>
+          val a = s.asInstanceOf[Archive]
+          if (a.narrationBase <= uri) Some(a) else None
+        }.map { a =>
+        val b = a.narrationBase.toString
+        File(a.rootString + "/source" + uri.toString.stripPrefix(b)).setExtension("mmt")
+      }
+    case _ => Nil
+  }
+
 
   /** extract and write the relational information about a knowledge item */
   private def writeToRel(se: StructuralElement, file: File): Unit = {
