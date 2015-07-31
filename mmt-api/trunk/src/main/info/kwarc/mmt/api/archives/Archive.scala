@@ -202,7 +202,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     log("done:  [CONT -> FLAT]       -> " + inFile)
   }
 
-  def readRelational(in: FilePath = EmptyPath, controller: Controller, kd: String): Unit = {
+  def readRelational(in: FilePath, controller: Controller, kd: String): Unit = {
     if ((this / relational).exists) {
       traverse(relational, in, Archive.traverseIf(kd)) { case Current(inFile, inPath) =>
         utils.File.ReadLineWise(inFile) { line =>
