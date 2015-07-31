@@ -166,7 +166,7 @@ sealed abstract class Action
 case class Compare(p : Path, r : Int) extends Action{override def toString = "diff " + p.toPath + ":" + r.toString}
 
 /** add a log handler
- * @param the log handler
+ * @param h log handler
  * concrete syntax:
  *  log file FILE
  *  or
@@ -309,7 +309,7 @@ case class AddArchive(folder : java.io.File) extends Action {override def toStri
 
 /** builds a dimension in a previously opened archive */
 case class ArchiveBuild(ids: List[String], dim: String, modifier: archives.BuildTargetModifier, in : List[String], params: List[String] = Nil) extends Action {
-   override def toString = "build " + ids.mkString("[",",","]") + " " + modifier.toString(dim) + " " + in.mkString(" ","/","")
+   override def toString = "build " + ids.mkString("[",",","]") + " " + modifier.toString(dim) + in.mkString(" ","/","")
 }
 
 /** builds a dimension in a previously opened archive */
