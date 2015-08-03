@@ -8,16 +8,16 @@ object MakeTOC {
    private def skip(le: List[String]) =
       (List("index.html", "toc.html", "img").map(List(_)) contains le) || le.last.startsWith("_") || le.last.startsWith(".")
    def main(args: Array[String]) {
-      val folder = File("""C:\frabe\MMT\doc\html""")//shortcut for Florian's office PC
+      val folder = File(System.getProperty("user.dir"))
       //val folder = File(args(0))
       val out = new HTMLFileWriter(folder / "toc.html")
       import out._
-      
+
       css("style.css")
       javascript("https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/script/jquery/jquery.js")
       def doFolder(l: List[String]) {
          ul("sidebargroup") {
-             (folder / l).list foreach {e =>
+             (folder / l).list.sorted foreach {e =>
                val le = l ::: List(e)
                val label = File(e).stripExtension.toString.replace("_"," ")
                if (e.endsWith(".html") && !skip(le)) {
@@ -35,7 +35,7 @@ object MakeTOC {
              }
          }
       }
-      
+
       doFolder(Nil)
       out.close
    }
