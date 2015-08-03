@@ -26,12 +26,12 @@ class PartitionAgent(numbersVar: List[Int])(implicit c: Controller,oLP:String) e
     readMail.foreach {
     case Change(section,data,flags) =>
       data match {
-        case node:DataTree[_]  if ignoreNode(node)=> //TODO fix with reflection?
-        case node:DataTree[_] =>
-          node.openLeaves.foreach (pt => taskSet += createTask (pt.asInstanceOf[DataTree[Int]] ) )
-        }
+        case node: DataTree[_] if ignoreNode(node) => //TODO fix with reflection?
+        case node: DataTree[_] =>
+          node.openLeaves.foreach(pt => taskSet += createTask(pt.asInstanceOf[DataTree[Int]]))
         case _ => throw new IllegalArgumentException("unknown change type")
-    case _ => throw new IllegalArgumentException("unknown message type") //TODO investigate unreachable pattern
+      }
+    case _ => throw new IllegalArgumentException("unknown message type")
     }
     if (taskSet.isEmpty) log("NO TASKS FOUND") else log("Found "+taskSet.size+" task(s)")
   }
