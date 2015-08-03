@@ -43,6 +43,8 @@ class GoalBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Cont
   addSection(termSection)
   implicit val terms:Terms = termSection.data
 
+  val transitivitySection = new TransitivitySection(this)
+  addSection(transitivitySection)
 
 
   implicit val presentObj: Obj => String = o => controller.presenter.asString(o)

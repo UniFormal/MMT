@@ -84,32 +84,6 @@ abstract class GoalTask(agent:GoalAgent,g:Goal)(implicit controller: Controller,
     if (alreadyOnPath )
       return false
 
-/*
-    def altEquality(a1:Alternative,a2:Alternative):Boolean = {
-      val a1sg = a1.subgoals
-      var a2sg = a2.subgoals
-      a1.subgoals.foreach(sg1=>a2sg=a2sg.filter(goalEquality(_,sg1)))
-      if (a2sg.isEmpty) {return true}
-      false
-    }
-
-    def goalEquality(ag:Goal,sg:Goal):Boolean = {(ag.context hasheq sg.context) && (ag.conc hasheq sg.conc)}
-
-    val newAltSubgoals=alt.subgoals
-    val subgoalsOnPath = path.flatMap({pg=>pg.getAlternatives.flatMap({a=>a.subgoals})})
-    log ("New Alt Subgoals:" + newAltSubgoals)
-    log("Subgoals on Path: " +  subgoalsOnPath)
-    if  (newAltSubgoals.nonEmpty && subgoalsOnPath.nonEmpty)
-      if (goalEquality(newAltSubgoals.head,subgoalsOnPath.head))
-        log("HERE IS AN ERROR")
-
-    log("Truth:"+ alt.subgoals.map { sg =>
-      path.map { ag =>
-        (ag.context hasheq sg.context) && (ag.conc hasheq sg.conc) }
-    })
-    */
-
-
     // add the alternative to the proof tree and expand the subgoals
     g.addAlternative(alt, Some(proofSection))
     log("************************* " + at.label + " at X **************************")
@@ -205,3 +179,6 @@ case class SearchForwardTask(agent:SearchForwardAgent)(implicit controller: Cont
   }
 
 }
+
+abstract class TermGenerationTask(agent:TermGenerationAgent)(implicit controller: Controller,oLP:String) extends MMTTask(agent) {}
+abstract class TransitivityTask(agent:TransitivityAgent)(implicit controller: Controller,oLP:String) extends MMTTask(agent) {}

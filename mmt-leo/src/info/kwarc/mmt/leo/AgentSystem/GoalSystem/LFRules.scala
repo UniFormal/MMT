@@ -1,7 +1,9 @@
 package info.kwarc.mmt.leo.AgentSystem.GoalSystem
 
 
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.{LocalName, objects}
+import info.kwarc.mmt.leo.AgentSystem.{Blackboard, Section}
 import info.kwarc.mmt.lf._
 import objects._
 import objects.Conversions._
@@ -290,40 +292,102 @@ object ForwardPiElimination extends ForwardSearch {
 
 }
 
-class TermArgumentFinder(terms:Terms,fun: Term, returnType: Term) {
-   /** applies one atom (symbol or variable) to all known facts */
-   private def applyFunctionalFact(g: Goal, f: Fact, facts: Facts) {
+class LFTermGenerationTask(agent:TermGenerationAgent,terms:Terms,facts:Facts)(implicit controller: Controller,oLP:String) extends TermGenerationTask(agent) {
+
+
+   /** applies one atom (symbol or variable) to all known terms and adds the result to the term database*/
+   private def applyFunctionalFact(f: Fact) {
       val (bindings, scope) = FunType.unapply(f.tp).get
       // params: leading named arguments
       val (paramList, otherArgs) = bindings.span(_._1.isDefined) //TODO ask about this step
       val parameters = FunType.argsAsContext(paramList)
 
-      new TermArgumentFinder(terms, f.tm, scope).findNextParamArg(g, parameters, otherArgs.map(_._2), Nil)
-   }
+      val currentReturnType = scope
+      val currentFact = f
+      //TODO make sure the goal is the correct goal
+      findNextParamArg(f.goal, parameters, otherArgs.map(_._2), Nil)
 
-   def findNextParamArg(g:Goal,paramArgs: Context, otherArgs: List[Term], foundParams: Substitution):Unit = {
-      if (paramArgs.nonEmpty) {
-         val newParam = paramArgs.variables.head
-         val newTerms = terms.getTermsOfType(newParam.tp.get ^? foundParams, g)
-         //foreach term t of type newParam ^? foundParams above g
-         newTerms.foreach { t =>
-            val newParamArgs = Context(paramArgs.variables.tail: _*)
-            val newFoundParams = foundParams ++ (newParam / List(t)).get //TODO ask florian about option
-            findNextParamArg(g, newParamArgs , otherArgs, newFoundParams )
+
+      def findNextParamArg(g: Goal, paramArgs: Context, otherArgs: List[Term], foundParams: Substitution): Unit = {
+         if (paramArgs.nonEmpty) {
+            val newParam = paramArgs.variables.head
+            val newTerms = terms.getTermsOfType(newParam.tp.get ^? foundParams, g)
+            //foreach term t of type newParam ^? foundParams above g
+            newTerms.foreach { t =>
+               val newParamArgs = Context(paramArgs.variables.tail: _*)
+               val newFoundParams = foundParams ++ (newParam / List(t)).get //TODO ask florian about option
+               findNextParamArg(g, newParamArgs, otherArgs, newFoundParams)
+            }
+         } else {
+            findNextOtherArg(g, otherArgs, foundParams, Nil)
          }
-      }else {findNextOtherArg(g,otherArgs, foundParams, Nil)}
-   }
+      }
 
-   def findNextOtherArg(g:Goal,otherArgs: List[Term], foundParams: Substitution, foundOtherArgs: List[Term]):Unit = {
-      if (otherArgs.nonEmpty) {
-         //foreach term t of type otherArgs (0) ^? foundParams above g
-         val newTerms = terms.getTermsOfType(otherArgs.head ^? foundParams, g)
-         newTerms.foreach(t =>
-            findNextOtherArg(g,otherArgs.tail, foundParams, foundOtherArgs ::: List(t))
-         )
-      }else{
-         val args = foundParams.map(_.target) ::: foundOtherArgs
-         terms += TermEntry(g, ApplySpine(fun, args:_*), returnType ^? foundParams)
+      def findNextOtherArg(g: Goal, otherArgs: List[Term], foundParams: Substitution, foundOtherArgs: List[Term]): Unit = {
+         if (otherArgs.nonEmpty) {
+            //foreach term t of type otherArgs (0) ^? foundParams above g
+            val newTerms = terms.getTermsOfType(otherArgs.head ^? foundParams, g)
+            newTerms.foreach(t =>
+               findNextOtherArg(g, otherArgs.tail, foundParams, foundOtherArgs ::: List(t))
+            )
+         } else {
+            val args = foundParams.map(_.target) ::: foundOtherArgs
+            terms += TermEntry(g, ApplySpine(currentFact.tm, args: _*), currentReturnType ^? foundParams)
+         }
       }
    }
+
+   /** Determines if a given task is applicable given the current blackboard */
+   override def isApplicable[BB <: Blackboard](b: BB): Boolean = !b.finished
+
+   override def execute(): Boolean = {
+      facts.getFunctionalFacts.foreach(f=>applyFunctionalFact(f))
+      true //TODO add progress result
+   }
+
+   /** Returns a set of all nodes, that will be written by the task. */
+   override def writeSet(s: Section): Set[s.ObjectType] = {
+      if (s==blackboard.get.termSection) {
+         Set(terms.asInstanceOf[s.ObjectType])
+      }else{
+         Set.empty[s.ObjectType]
+      }
+   }
+   /** Returns a set of all nodes that are read for the task. */
+   override def readSet(s: Section): Set[s.ObjectType] = writeSet(s).asInstanceOf[Set[s.ObjectType]]
+}
+
+class LFTransitivityTask(agent:TransitivityAgent,tdb:TransitivityDB)(implicit controller: Controller,oLP:String) extends TransitivityTask(agent) {
+
+   def getTransitiveFacts:List[Fact] = ???
+
+   def addFact(f:Fact): Unit ={
+      f.tp match { //TODO should i match term or type
+         case ApplySpine(fun,termList) => //TODO ask florian about the possibility of more than two arguments and fact
+            val termElement1 = TermEntry(f.goal,termList.head,termList.head) //TODO how to find tm and tp of MMT terms
+            val termElement2 = TermEntry(f.goal,termList.tail.head,termList.tail.head)
+            tdb.add(termElement1,termElement2)
+         case _ => throw new IllegalArgumentException("Not a valid type of fact need an equality fact")
+      }
+   }
+
+   /** Determines if a given task is applicable given the current blackboard */
+   override def isApplicable[BB <: Blackboard](b: BB): Boolean = !b.finished //TODO expand this
+
+   override def execute(): Boolean = {
+      getTransitiveFacts.foreach(addFact)
+      true //TODO expand this
+   }
+
+   /** Returns a set of all nodes, that will be written by the task. */
+   override def writeSet(s: Section): Set[s.ObjectType] = {
+      if (s==blackboard.get.transitivitySection) {
+         Set(tdb.asInstanceOf[s.ObjectType])
+      }else{
+         Set.empty[s.ObjectType]
+      }
+   }
+
+   /** Returns a set of all nodes that are read for the task. */
+   override def readSet(s: Section): Set[s.ObjectType] = writeSet(s).asInstanceOf[Set[s.ObjectType]]
 }

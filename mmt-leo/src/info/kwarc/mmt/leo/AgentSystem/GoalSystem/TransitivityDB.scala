@@ -53,7 +53,6 @@ class TransitivityDB {
   }
 
 
-
   type NT = graph.NodeT
   type ET = graph.EdgeT
 

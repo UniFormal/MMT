@@ -169,7 +169,9 @@ class Terms(blackboard: GoalBlackboard)(implicit controller: Controller,oLP:Stri
 class Facts(blackboard: GoalBlackboard, shapeDepth: Int)(implicit c: Controller,oLP:String) extends Logger {
    val report =  c.report
    def logPrefix = oLP+"#Facts"
-   
+
+    def getFunctionalFacts:List[Fact] = Nil //TODO implement this
+
    private var constantAtoms : List[Atom] = Nil
    private[leo] def addConstantAtom(a: Atom) {
       constantAtoms ::= a

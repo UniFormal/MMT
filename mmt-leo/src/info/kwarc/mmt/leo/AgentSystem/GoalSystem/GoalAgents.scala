@@ -70,6 +70,41 @@ class SearchForwardAgent(implicit controller: Controller,oLP:String) extends Goa
 
 }
 
+
+class TermGenerationAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
+  override val name =  "TermGeneratingAgent"
+  override val interests = List("ADD") //TODO make it interested in the addition of functional facts
+
+  def ignoreGoal(g:Goal) = false
+  //def addTask() = taskSet+=new LFTermGenerationTask(this) //TODO add Term generation to agent system
+  def addTask() = ???
+
+  override def respond() = {
+    log("responding to: " + mailbox.length + " message(s)")
+    if (!goal.isFinished) {addTask()}
+    if (taskSet.isEmpty) log("NO TASKS FOUND") else log("Found "+taskSet.size+" task(s)")
+  }
+
+}
+
+class TransitivityAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
+  override val name =  "TermGeneratingAgent"
+  override val interests = List("ADD") //TODO make it interested in the addition of relation shaped facts
+
+  def ignoreGoal(g:Goal) = false
+  //def addTask() = taskSet+=new TransitivityTask(this) //TODO add transitivity to agent system
+  def addTask() = ???
+
+  override def respond() = {
+    log("responding to: " + mailbox.length + " message(s)")
+    if (!goal.isFinished) {addTask()}
+    if (taskSet.isEmpty) log("NO TASKS FOUND") else log("Found "+taskSet.size+" task(s)")
+  }
+
+}
+
+
+
 abstract class SimplifyingAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
 }
 

@@ -1,6 +1,7 @@
 package info.kwarc.mmt.leo.AgentSystem.GoalSystem
 
 import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.leo.AgentSystem.{Change, Section}
 
 
@@ -51,6 +52,17 @@ class TermSection(blackboard:GoalBlackboard)(implicit c: Controller,oLP:String) 
   type ObjectType = Terms
   var data = new Terms(blackboard:GoalBlackboard)
   var changes: List[Change[_]] = Nil
+
+  def passiveOp(flag:String) = handleChange(new Change(this, true, List(flag)))//TODO add specific Term pointers
+  def passiveAdd() = passiveOp("ADD")
+}
+
+class TransitivitySection(blackboard:GoalBlackboard)(implicit c: Controller,oLP:String) extends Section(blackboard) {
+  override def logPrefix =oLP+"#TransitivitySection"
+  type ObjectType = List[TransitivityDB]
+  var data:ObjectType= Nil
+  var changes: List[Change[_]] = Nil
+
 
   def passiveOp(flag:String) = handleChange(new Change(this, true, List(flag)))//TODO add specific Term pointers
   def passiveAdd() = passiveOp("ADD")
