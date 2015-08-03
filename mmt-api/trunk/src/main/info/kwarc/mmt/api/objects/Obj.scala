@@ -351,7 +351,7 @@ sealed trait OMLITTrait extends Term {
    def head = None
    def path = synType / toString
    def toNode = <om:OMLIT value={toString} type={synType.toPath}/>
-   def toCMLQVars(implicit qvars: Context) = <lit value={toString} type={synType.toPath}/>
+   def toCMLQVars(implicit qvars: Context) = <cn encoding="mmt-literal" definitionURL={synType.toPath}>{toString}</cn>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
    def subobjects = Nil

@@ -48,6 +48,9 @@ class OEISSearchServer extends TEMASearchServer("oeis") {
 
 
 class OEISObjectPresenter extends InformalMathMLPresenter {
+  override def doOptionallyBracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
+      wrapBrackets(None, body)
+   }
   override def getNotation(p: GlobalName): Option[TextNotation] = {
       super.getNotation(p) match {
         case Some(not) => Some(not)

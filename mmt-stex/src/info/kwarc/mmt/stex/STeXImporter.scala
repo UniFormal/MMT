@@ -54,7 +54,7 @@ object STeXLookupError {
 class STeXImporter extends Importer {
   val key: String = "stex-omdoc"
   override val logPrefix = "steximporter"
-  override val inDim = RedirectableDimension("latexml")
+  //override val inDim = RedirectableDimension("latexml")
 
   def inExts = List("omdoc") //stex/latexml generated omdoc
 
@@ -299,10 +299,16 @@ class STeXImporter extends Importer {
           //getting mathml rendering info
           val prototype = n.child.find(_.label == "prototype").get
           val renderings = n.child.filter(_.label == "rendering")
-          renderings foreach { rendering =>
-            val notation = makeNotation(prototype, rendering)(doc.path)
-            if (notation.markers.nonEmpty)
-              c.notC.presentationDim.set(notation)
+          try {
+            renderings foreach { rendering =>
+              val notation = makeNotation(prototype, rendering)(doc.path)
+              if (notation.markers.nonEmpty)
+                c.notC.presentationDim.set(notation)
+            }
+          } catch {
+            case e : Exception => 
+              val err = STeXParseError.from(e, Some("Bad notation rendering for symbol " + name), sref, None)
+              errorCont(err)
           }
         case "metadata" => //TODO
         case "#PCDATA" => //ignore
@@ -373,12 +379,13 @@ class STeXImporter extends Importer {
                   argMap(name) = if (inBinder) ProtoSub(nextArgNumber) else ProtoArg(nextArgNumber)
                   nextArgNumber += 1
                 case "OMBVAR" =>
-                  val name = (p.child.head \ "@name").text
-                  argMap(name) = ProtoVar(nextArgNumber)
-                  nextArgNumber += 1
+                  p.child map {ch => 
+                    val name = (ch \ "@name").text
+                    argMap(name) = ProtoVar(nextArgNumber)
+                    nextArgNumber += 1
+                  }
                 case _ => throw ParseError("invalid prototype" + protoBody)
-              }
-              }
+              }}
               spath
             case _ => throw ParseError("invalid prototype" + protoBody)
           }

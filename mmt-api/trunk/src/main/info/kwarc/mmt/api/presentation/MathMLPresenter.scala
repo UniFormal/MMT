@@ -107,7 +107,7 @@ class MathMLPresenter extends NotationBasedPresenter {
     * wraps brackets around argument
     * @param brackets None/Some(true)/Some(false) for no/hidden/shown brackets
     */
-   private def wrapBrackets(brackets: Option[Boolean], body: => Unit)(implicit pc: PresentationContext) {
+   protected def wrapBrackets(brackets: Option[Boolean], body: => Unit)(implicit pc: PresentationContext) {
       pc.out(openTag("mrow", jobadattribs))
       brackets foreach {b => pc.out(bracket(b, true))}
       body
