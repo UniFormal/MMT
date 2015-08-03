@@ -302,7 +302,9 @@ class PdfLatex extends SmsGenerator {
 
 class LaTeXMLAndSTeX extends Importer {
   private val latexmlBuilder = new LaTeXML
-  private val stexImporter = new STeXImporter
+  private val stexImporter = new STeXImporter {
+    override val inDim = RedirectableDimension("latexml")
+  }
   val key = latexmlBuilder.key + "-" + stexImporter.key
 
   /** the (unused) file extensions to which this may be applicable */
