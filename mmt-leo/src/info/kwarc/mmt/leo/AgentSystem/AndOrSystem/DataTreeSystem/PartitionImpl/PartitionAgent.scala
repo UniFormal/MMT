@@ -2,7 +2,7 @@ package info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.PartitionImpl
 
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.{DataTree, DataTreeSection}
-import info.kwarc.mmt.leo.AgentSystem.{Listener, Change, Agent}
+import info.kwarc.mmt.leo.AgentSystem.{Speaker, Listener, Change, Agent}
 
 /**
  * Created by Mark on 7/21/2015.
@@ -10,10 +10,12 @@ import info.kwarc.mmt.leo.AgentSystem.{Listener, Change, Agent}
 class PartitionAgent(numbersVar: List[Int])(implicit c: Controller,oLP:String) extends Agent {
   type BBType = IntBlackboard
 
-  var subscribers:List[Listener] = Nil
   val numbers=numbersVar
   val name = "PartitionAgent"
+  /** list of speakers that the object would like to subscribe to */
+  override def wantToSubscribeTo: List[Speaker] = List(blackboard.get.auctionAgent.get)
   override val interests = List("ADD")
+
 
   def ignoreNode(node: DataTree[_]):Boolean ={
     if (node.isDeleted){return true}
@@ -37,6 +39,5 @@ class PartitionAgent(numbersVar: List[Int])(implicit c: Controller,oLP:String) e
   }
 
   def createTask(pt: DataTree[Int]): PartitionTask =  { new PartitionTask(pt,this)}
-
 
 }

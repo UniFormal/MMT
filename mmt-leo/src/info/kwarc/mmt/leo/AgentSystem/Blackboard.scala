@@ -15,7 +15,9 @@ abstract class Blackboard(implicit controller: Controller) extends Logger with C
   lazy val report = controller.report
   def logPrefix = "Blackboard"
 
-  var subscribers:List[Listener] = Nil
+  def wantToSubscribeTo:List[Speaker] = Nil
+  val interests = Nil
+
   /**Boolean representing the status of the prof goal*/
   def finished: Boolean
 
@@ -65,6 +67,9 @@ abstract class Blackboard(implicit controller: Controller) extends Logger with C
   var cycle = 0
   /** runs the blackboard for a given number of cycles, stopping if a solution is found */
   def run(numCycles: Int = 3): Unit = {
+    agents.foreach(_.initConnection())
+    auctionAgent.get.initConnection()
+    executionAgent.get.initConnection()
     while (!finished && cycle < numCycles) {
       runCycle()
       cycle = cycle + 1

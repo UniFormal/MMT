@@ -13,12 +13,10 @@ import info.kwarc.mmt.leo.AgentSystem.{Change, Listener, Agent}
 
 abstract class GoalAgent(implicit controller: Controller,oLP:String) extends Agent {
 
-  override val interests = List("ADD","CHANGE")
+
   override type BBType = GoalBlackboard
 
-
   override val name: String = "GoalAgent"
-  override var subscribers: List[Listener] = Nil
 
   lazy val presentObj = blackboard.get.presentObj
   lazy val rules = blackboard.get.rules
@@ -39,7 +37,9 @@ abstract class GoalAgent(implicit controller: Controller,oLP:String) extends Age
 
 class SearchBackwardAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
   override val priority=1
+
   override val name =  "SearchBackwardAgent"
+  def wantToSubscribeTo = List(blackboard.get.factSection)
   override val interests = List("ADD")
 
   def ignoreGoal(g:Goal) = false
@@ -48,7 +48,8 @@ class SearchBackwardAgent(implicit controller: Controller,oLP:String) extends Go
   override def respond() = {
     log("responding to: " + mailbox.length + " message(s)")
     readMail.foreach{
-      case Change(s,data,flag) if blackboard.get.cycle==0 || s==factSection=> addTask(blackboard.get.proofSection.data)
+      case Change(s,data,flag) => addTask(blackboard.get.proofSection.data)
+      case _ if blackboard.get.cycle==0  => addTask(blackboard.get.proofSection.data)
       case _ =>
     }
     if (taskSet.isEmpty) log("NO TASKS FOUND") else log("Found "+taskSet.size+" task(s)")
@@ -56,11 +57,13 @@ class SearchBackwardAgent(implicit controller: Controller,oLP:String) extends Go
 }
 
 class SearchForwardAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
+
   override val name =  "SearchForwardAgent"
+  def wantToSubscribeTo = List(blackboard.get.factSection)
   override val interests = Nil
 
   def ignoreGoal(g:Goal) = false
-  def addTask() = taskSet+=new SearchForwardTask(this)
+  def addTask() = taskSet += new SearchForwardTask(this)
 
   override def respond() = {
     log("responding to: " + mailbox.length + " message(s)")
@@ -72,7 +75,9 @@ class SearchForwardAgent(implicit controller: Controller,oLP:String) extends Goa
 
 
 class TermGenerationAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
+
   override val name =  "TermGeneratingAgent"
+  def wantToSubscribeTo = List(blackboard.get.factSection)
   override val interests = List("ADD") //TODO make it interested in the addition of functional facts
 
   def ignoreGoal(g:Goal) = false
@@ -88,7 +93,9 @@ class TermGenerationAgent(implicit controller: Controller,oLP:String) extends Go
 }
 
 class TransitivityAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
+
   override val name =  "TermGeneratingAgent"
+  def wantToSubscribeTo = List(blackboard.get.factSection)
   override val interests = List("ADD") //TODO make it interested in the addition of relation shaped facts
 
   def ignoreGoal(g:Goal) = false

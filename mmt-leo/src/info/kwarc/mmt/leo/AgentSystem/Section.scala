@@ -6,7 +6,6 @@ import info.kwarc.mmt.api.frontend.{Controller, Logger}
   * intended to hold and monitor changes in the stored data
   */
 abstract class Section(blackboard: Blackboard)(implicit c: Controller,oLP:String) extends Logger with Speaker{
-  var subscribers:List[Listener] = blackboard.agents
 
   val report = c.report
   override def logPrefix = oLP+"#Section"
@@ -30,12 +29,8 @@ abstract class Section(blackboard: Blackboard)(implicit c: Controller,oLP:String
     data = newData
   }
 
-
-
-
-
   override def addSubscriber(l:Listener) = {
-    subscribers::=l
+    super.addSubscriber(l)
     sendAllInfo(l)
   }
 

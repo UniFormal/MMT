@@ -12,12 +12,26 @@ import scala.collection.mutable
  */
 
 trait Speaker {
+
   /** a list of subscribers*/
-  var subscribers : List[Listener]
+  var subscribers : List[Listener] = Nil
 
-  def addSubscriber(l:Listener)=subscribers::=l
+  /** adds a listener to  this.subscribers and updates the listener's subscribedTo list*/
+  def addSubscriber(l:Listener)= {
+    if (!subscribers.contains(l)){
+      subscribers ::= l
+    }
+    if (!l.subscribedTo.contains(this)) {
+      l.subscribedTo ::= this
+    }
+  }
 
-  def removeSubscriber(l:Listener)=subscribers=subscribers.diff(List(l))
+  /** removes a listener from this.subscribers and updates the listener's subscribedTo list*/
+  def removeSubscriber(l:Listener)={
+    subscribers=subscribers.diff(List(l))
+    l.subscribedTo=l.subscribedTo.diff(List(this))
+  }
+
   /** sends a message to a listener*/
   def sendMessage(m:Message,a:Listener) = a.mailbox.enqueue(m)
   
@@ -36,11 +50,24 @@ trait Listener {
   /** Queue holding the interesting Events*/
   val mailbox: mutable.Queue[Message] = new mutable.Queue[Message]()
 
+  /** Specifies what an agents interests are for the blackboard: "ADD", "DEL", "CHANGE", "CLOSE", */
+  val interests: List[String]
+
+  /**list of speakers that the object is subscribed to*/
+  var subscribedTo: List[Speaker] = Nil
+
+  /**list of speakers that the object would like to subscribe to*/
+  def wantToSubscribeTo: List[Speaker]
+
+  /** creates a connection between the speaker and the listener*/
   def subscribeTo(s:Speaker) = s.addSubscriber(this)
+
+  /**establishes a connection between listeners and speakers*/
+  def initConnection() = wantToSubscribeTo.foreach(subscribeTo)
+
   /** @return number of messages, the agent can currently work on */
   def numMessages: Int = mailbox.size
-  /** Specifies what an agents interests are for the blackboard: "ADD", "DEL", "CHANGE", "CLOSE", */
-  val interests: List[String] = Nil
+
   /**Function for determining whether the agent has a particular interest*/
   def hasInterest(i: String): Boolean = {interests.contains(i)}
   /**Function for determining whether the agent has interest in any of the input interests*/
@@ -120,13 +147,15 @@ abstract class Agent(implicit controller: Controller,oLP:String) extends Logger 
   * utility in the proof
   */
 class AuctionAgent(implicit controller: Controller,oLP:String) extends Agent {
-  var subscribers:List[Listener] = Nil
-
-  lazy val executionAgent = blackboard.get.executionAgent.get
-
   val name = "AuctionAgent"
 
-  def updateSubscribers() = subscribers:::=blackboard.get.agents
+  override val interests: List[String] = List("BID") //TODO implement agent sending bids
+  
+  def wantToSubscribeTo:List[Speaker] = blackboard.get.agents
+
+  //def updateSubscribers() = subscribers:::=blackboard.get.agents
+
+  lazy val executionAgent = blackboard.get.executionAgent.get
 
   val metaTaskQueue = new mutable.Queue[Task]()
   
@@ -139,9 +168,8 @@ class AuctionAgent(implicit controller: Controller,oLP:String) extends Agent {
       case _ => throw new IllegalArgumentException("Unknown type of message")
     }
   }
-
-
-  def concistencyCheck(tasks:mutable.Queue[Task]): Boolean ={
+  
+  def consistencyCheck(tasks:mutable.Queue[Task]): Boolean ={
     val sections = blackboard.get.sections
     sections.forall({ s =>
       val wsList = tasks.flatMap(t => t.writeSet(s).toList)
@@ -160,7 +188,6 @@ class AuctionAgent(implicit controller: Controller,oLP:String) extends Agent {
    */
   //TODO add auctioning
   def runAuction() : Unit = {
-    updateSubscribers()
     var tasks = new mutable.Queue[Task]()
     subAgents().foreach(a=>tasks++=a.taskSet)
     val allTasks = tasks
@@ -178,13 +205,11 @@ class AuctionAgent(implicit controller: Controller,oLP:String) extends Agent {
       }
     }
 
-
-
     //remove task from agent's queue if successful
     //TODO improve this interface
     tasks.foreach(t=>t.sentBy.removeTask(t))
 
-    if (!concistencyCheck(tasks)){
+    if (!consistencyCheck(tasks)){
       println("TASKS: "+tasks)
       throw new IllegalArgumentException("Selected tasks are colliding")
     }
@@ -197,15 +222,15 @@ class AuctionAgent(implicit controller: Controller,oLP:String) extends Agent {
 
     sendMessage(new MetaTask(tasks.toSet,this,"Parallelizable MetaTask"),executionAgent)
   }
+  
 }
-
-
-
 
 
 class ExecutionAgent(implicit controller: Controller,oLP:String) extends Agent {
   val name = "ExecutionAgent"
-  var subscribers:List[Listener] = Nil
+  val interests = Nil
+
+  def wantToSubscribeTo:List[Speaker] = List(blackboard.get.auctionAgent.get)
 
   val metaTaskQueue = new mutable.Queue[Task]()
 
