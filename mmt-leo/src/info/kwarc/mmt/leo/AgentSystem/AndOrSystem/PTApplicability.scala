@@ -10,7 +10,7 @@ trait PTApplicability extends Task{
   override def isApplicable[BB<:Blackboard](bb:BB):Boolean ={
     bb match {
       case b:AndOrBlackboard[_] =>
-        b.proofTreeSection.isApplicable(this)
+        super.isApplicable(b) && b.proofTreeSection.isApplicable(this)
       case _ => throw new IllegalArgumentException("Not a valid blackboard type")
     }
   }

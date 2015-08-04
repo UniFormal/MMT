@@ -30,9 +30,6 @@ abstract class MMTTask(agent:MMTAgent)(implicit controller: Controller,oLP:Strin
 
 abstract class GoalTask(agent:MMTAgent,g:Goal)(implicit controller: Controller,oLP:String) extends MMTTask(agent) {
 
-  /** Determines if a given task is applicable given the current blackboard */
-  override def isApplicable[BB <: Blackboard](b: BB): Boolean = true //TODO expand this
-
   //For now give all tasks simplification abilities
   /** statefully changes g to a simpler goal */
   protected def simplifyGoal(g: Goal) {
@@ -152,7 +149,7 @@ case class SearchForwardTask(agent:SearchForwardAgent)(implicit controller: Cont
   override def logPrefix=oLP+"#SearchForwardTask"
 
   /** Determines if a given task is applicable given the current blackboard */
-  override def isApplicable[BB <: Blackboard](b: BB): Boolean = !goal.isSolved
+  override def isApplicable[BB <: Blackboard](b: BB): Boolean = super.isApplicable(b) && !goal.isSolved
 
   def forwardSearch() {
     log("Performing forward search")

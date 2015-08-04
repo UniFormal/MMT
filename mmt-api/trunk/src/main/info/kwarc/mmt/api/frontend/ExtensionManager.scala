@@ -135,10 +135,17 @@ class ExtensionManager(controller: Controller) extends Logger {
     //use this for identifying structure and thus dependencies
     //val mmtStructureOnly = new OneStepInterpreter(new KeywordBasedParser(DefaultObjectParser))
     val mmtextr = ontology.MMTExtractor
+
     val rbp = new RuleBasedProver
-    val foo = "info.kwarc.mmt.leo.provers.AgentProver"
-    val ap = Class.forName(foo).newInstance().asInstanceOf[Extension]
-    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, mmtextr, ap).foreach { e => addExtension(e) }
+    var prover:Extension = rbp
+    val className = "info.kwarc.mmt.leo.provers.AgentProver"
+    try {
+      prover = Class.forName(className).newInstance().asInstanceOf[Extension]
+    }catch{
+      case _:Throwable=>
+    }
+
+    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, mmtextr, prover).foreach { e => addExtension(e) }
     //targets and presenters
     List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter,
       TextPresenter, OMDocPresenter, controller.presenter).foreach {

@@ -48,7 +48,7 @@ abstract class Task(implicit c: Controller,oLP:String) extends Message{
   override def logPrefix = oLP+"#"+name
 
   /**Determines if a given task is applicable given the current blackboard*/
-  def isApplicable[BB<:Blackboard](b: BB):Boolean
+  def isApplicable[BB<:Blackboard](b: BB):Boolean = !b.isTerminated
 
   /** Returns a set of all nodes that are read for the task. */
   def readSet(s:Section): Set[s.ObjectType]
@@ -121,7 +121,7 @@ case class MetaTask(taskSet:Set[Task], byAgentVar: Agent, nameVar: String)(impli
     name + Display.setDisplay(taskSet,"Tasks")
   }
 
-  def isApplicable[BB<:Blackboard](b:BB) = {
-    taskSet.forall(_.isApplicable(b))
+  override def isApplicable[BB<:Blackboard](b:BB) = {
+    super.isApplicable(b) &&  taskSet.forall(_.isApplicable(b))
   }
 }

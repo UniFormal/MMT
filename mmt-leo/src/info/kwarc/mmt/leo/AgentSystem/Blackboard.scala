@@ -26,6 +26,9 @@ abstract class Blackboard(implicit controller: Controller) extends Logger with C
   var auctionAgent: Option[AuctionAgent] = None
   var executionAgent: Option[ExecutionAgent] = None
 
+  /**flag which prohibits the running of additional taks*/
+  def isTerminated=false
+
   /**Function that registers agents to the blackboard*/
   def registerAgent(a: Agent): Boolean = {
     try {
@@ -70,7 +73,7 @@ abstract class Blackboard(implicit controller: Controller) extends Logger with C
     agents.foreach(_.initConnection())
     auctionAgent.get.initConnection()
     executionAgent.get.initConnection()
-    while (!finished && cycle < numCycles) {
+    while (!isTerminated && !finished && cycle < numCycles) {
       runCycle()
       cycle = cycle + 1
     }
