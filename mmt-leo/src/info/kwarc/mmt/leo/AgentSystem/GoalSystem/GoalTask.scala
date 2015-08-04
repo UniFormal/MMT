@@ -32,7 +32,7 @@ abstract class MMTTask(agent:GoalAgent)(implicit controller: Controller,oLP:Stri
 abstract class GoalTask(agent:GoalAgent,g:Goal)(implicit controller: Controller,oLP:String) extends MMTTask(agent) {
 
   /** Determines if a given task is applicable given the current blackboard */
-  override def isApplicable[BB <: Blackboard](b: BB): Boolean = !sentBy.ignoreGoal(g) //TODO expand this
+  override def isApplicable[BB <: Blackboard](b: BB): Boolean = true //TODO expand this
 
   //For now give all tasks simplification abilities
   /** statefully changes g to a simpler goal */

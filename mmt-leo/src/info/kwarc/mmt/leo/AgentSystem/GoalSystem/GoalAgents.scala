@@ -31,7 +31,6 @@ abstract class GoalAgent(implicit controller: Controller,oLP:String) extends Age
   lazy val factSection = blackboard.get.factSection
   def facts = factSection.data
 
-  def ignoreGoal(node:Goal):Boolean
 
 }
 
@@ -42,7 +41,6 @@ class SearchBackwardAgent(implicit controller: Controller,oLP:String) extends Go
   def wantToSubscribeTo = List(blackboard.get.factSection)
   override val interests = List("ADD")
 
-  def ignoreGoal(g:Goal) = false
   def addTask(g:Goal) = taskSet+=new SearchBackwardTask(this,g)
 
   override def respond() = {
@@ -62,7 +60,6 @@ class SearchForwardAgent(implicit controller: Controller,oLP:String) extends Goa
   def wantToSubscribeTo = List(blackboard.get.factSection)
   override val interests = Nil
 
-  def ignoreGoal(g:Goal) = false
   def addTask() = taskSet += new SearchForwardTask(this)
 
   override def respond() = {
@@ -78,9 +75,8 @@ class TermGenerationAgent(implicit controller: Controller,oLP:String) extends Go
 
   override val name =  "TermGeneratingAgent"
   def wantToSubscribeTo = List(blackboard.get.factSection)
-  override val interests = List("ADD") //TODO make it interested in the addition of functional facts
+  override val interests = List("ADD")
 
-  def ignoreGoal(g:Goal) = false
   //def addTask() = taskSet+=new LFTermGenerationTask(this) //TODO add Term generation to agent system
   def addTask() = ???
 
@@ -98,7 +94,6 @@ class TransitivityAgent(implicit controller: Controller,oLP:String) extends Goal
   def wantToSubscribeTo = List(blackboard.get.factSection)
   override val interests = List("ADD") //TODO make it interested in the addition of relation shaped facts
 
-  def ignoreGoal(g:Goal) = false
   //def addTask() = taskSet+=new TransitivityTask(this) //TODO add transitivity to agent system
   def addTask() = ???
 
