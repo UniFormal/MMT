@@ -11,7 +11,7 @@ import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.proving._
 import info.kwarc.mmt.api.utils.MyList._
 import info.kwarc.mmt.api.web._
-import info.kwarc.mmt.leo.provers.AgentProver
+//import info.kwarc.mmt.leo.provers.AgentProver
 
 trait Extension extends Logger {
   protected var controller: Controller = null
@@ -136,7 +136,8 @@ class ExtensionManager(controller: Controller) extends Logger {
     //val mmtStructureOnly = new OneStepInterpreter(new KeywordBasedParser(DefaultObjectParser))
     val mmtextr = ontology.MMTExtractor
     val rbp = new RuleBasedProver
-    val ap = new AgentProver
+    val foo = "info.kwarc.mmt.leo.provers.AgentProver"
+    val ap = Class.forName(foo).newInstance().asInstanceOf[Extension]
     List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, mmtextr, ap).foreach { e => addExtension(e) }
     //targets and presenters
     List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter,

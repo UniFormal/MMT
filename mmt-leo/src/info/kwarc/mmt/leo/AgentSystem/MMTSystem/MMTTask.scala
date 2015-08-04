@@ -15,13 +15,12 @@ abstract class MMTTask(agent:MMTAgent)(implicit controller: Controller,oLP:Strin
   override def logPrefix = oLP + "#"+name
   override val sentBy: MMTAgent = agent
 
-  val proofSection = sentBy.blackboard.get.proofSection
-
+  val proofSection = sentBy.blackboard.get.goalSection
   def goal = proofSection.data
-
   val factSection = sentBy.blackboard.get.factSection
-
   def facts = factSection.data
+  val termSection = sentBy.blackboard.get.termSection
+  def terms = termSection.data
 
   def presentObj = sentBy.presentObj
 
@@ -86,6 +85,8 @@ abstract class GoalTask(agent:MMTAgent,g:Goal)(implicit controller: Controller,o
 
     // add the alternative to the proof tree and expand the subgoals
     g.addAlternative(alt, Some(proofSection))
+    alt.subgoals.foreach(terms.addVarAtoms) //TODO work into goal addition
+
     log("************************* " + at.label + " at X **************************")
     log("\n" + goal.presentHtml(0)(presentObj, Some(g), Some(alt)))
     if (!g.isSolved) {
@@ -177,6 +178,10 @@ case class SearchForwardTask(agent:SearchForwardAgent)(implicit controller: Cont
     goal.newFacts(facts)
     true
   }
+
+}
+
+abstract class NormalizingTask(agent:NormalizingAgent,g:Goal)(implicit controller: Controller,oLP:String) extends GoalTask(agent,g){
 
 }
 

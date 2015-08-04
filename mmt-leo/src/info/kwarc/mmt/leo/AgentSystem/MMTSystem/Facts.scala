@@ -7,11 +7,6 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.lf.{ApplyGeneral, FunType}
 
-import scalax.collection.Graph
-import scalax.collection.edge.LDiEdge
-
-// or scalax.collection.mutable.Graph
-import scalax.collection.GraphPredef._, scalax.collection.GraphEdge._
 
 import scala.collection.mutable
 
@@ -141,8 +136,13 @@ class Terms(blackboard: MMTBlackboard)(implicit controller: Controller,oLP:Strin
     * */
   private val terms = new HashMapToSet[Term,TermEntry]
 
-  def initializeTerms(facts:Facts) = {facts.getConstantAtoms.foreach(addTerm(_,blackboard.goal))}
+  def initializeTerms(facts:Facts) = {
+    facts.getConstantAtoms.foreach(addTerm(_,blackboard.goal))
+    addVarAtoms(blackboard.goal)
+  }
   //TODO add variable atoms as well
+
+  def addVarAtoms(g:Goal) = g.varAtoms.foreach(addTerm(_,blackboard.goal))
 
   def addTerm(termEntry:TermEntry):Unit = {terms(termEntry.tp) += termEntry; log("Added Term:"+ termEntry) }
   def addTerm(a: Atom,g:Goal):Unit  = this addTerm TermEntry(g,a.tm,a.tp)

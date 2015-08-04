@@ -28,8 +28,8 @@ class MMTBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Contr
   log("Rules: " + rules)
   log("Invertible Backwards rules:" + invertibleBackward)
 
-  val proofSection = new GoalSection(this,goal)
-  addSection(proofSection)
+  val goalSection = new GoalSection(this,goal)
+  addSection(goalSection)
   log("Added Goal of type: " + goal.getClass + goal)
 
   val shapeDepth = 2
