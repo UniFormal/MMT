@@ -1,4 +1,4 @@
-package info.kwarc.mmt.leo.AgentSystem.GoalSystem
+package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.Term
@@ -10,7 +10,7 @@ import info.kwarc.mmt.leo.AgentSystem.{Change, Section}
  * blackboard.
  *
  */
-class GoalSection(blackboard:GoalBlackboard, goal:Goal)(implicit c: Controller,oLP:String) extends Section(blackboard) {
+class GoalSection(blackboard:MMTBlackboard, goal:Goal)(implicit c: Controller,oLP:String) extends Section(blackboard) {
   override def logPrefix =oLP+"#AndOrSection"
 
   /** this type of section only stores data which is a subtype of the AndOr tree type*/
@@ -37,27 +37,27 @@ class GoalSection(blackboard:GoalBlackboard, goal:Goal)(implicit c: Controller,o
 }
 
 
-class FactSection(blackboard:GoalBlackboard,shapeDepth: Int)(implicit c: Controller,oLP:String) extends Section(blackboard) {
+class FactSection(blackboard:MMTBlackboard,shapeDepth: Int)(implicit c: Controller,oLP:String) extends Section(blackboard) {
   override def logPrefix =oLP+"#FactSection"
   type ObjectType = Facts
-  var data = new Facts(blackboard:GoalBlackboard,shapeDepth: Int)
+  var data = new Facts(blackboard:MMTBlackboard,shapeDepth: Int)
   var changes: List[Change[_]] = Nil
 
   def passiveOp(flag:String) = handleChange(new Change(this, true, List(flag)))//TODO add specific fact pointers
   def passiveAdd() = passiveOp("ADD")
 }
 
-class TermSection(blackboard:GoalBlackboard)(implicit c: Controller,oLP:String) extends Section(blackboard) {
+class TermSection(blackboard:MMTBlackboard)(implicit c: Controller,oLP:String) extends Section(blackboard) {
   override def logPrefix =oLP+"#TermSection"
   type ObjectType = Terms
-  var data = new Terms(blackboard:GoalBlackboard)
+  var data = new Terms(blackboard:MMTBlackboard)
   var changes: List[Change[_]] = Nil
 
   def passiveOp(flag:String) = handleChange(new Change(this, true, List(flag)))//TODO add specific Term pointers
   def passiveAdd() = passiveOp("ADD")
 }
 
-class TransitivitySection(blackboard:GoalBlackboard)(implicit c: Controller,oLP:String) extends Section(blackboard) {
+class TransitivitySection(blackboard:MMTBlackboard)(implicit c: Controller,oLP:String) extends Section(blackboard) {
   override def logPrefix =oLP+"#TransitivitySection"
   type ObjectType = List[TransitivityDB]
   var data:ObjectType= Nil

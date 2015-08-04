@@ -1,4 +1,4 @@
-package info.kwarc.mmt.leo.AgentSystem.GoalSystem
+package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.leo.AgentSystem.{Blackboard, Section, Task}
@@ -9,11 +9,11 @@ import info.kwarc.mmt.leo.AgentSystem.{Blackboard, Section, Task}
  *
  * Classes for the Expansion and Search tasks
  */
-abstract class MMTTask(agent:GoalAgent)(implicit controller: Controller,oLP:String) extends Task {
+abstract class MMTTask(agent:MMTAgent)(implicit controller: Controller,oLP:String) extends Task {
   override val name: String = "GoalTask"
 
   override def logPrefix = oLP + "#"+name
-  override val sentBy: GoalAgent = agent
+  override val sentBy: MMTAgent = agent
 
   val proofSection = sentBy.blackboard.get.proofSection
 
@@ -29,7 +29,7 @@ abstract class MMTTask(agent:GoalAgent)(implicit controller: Controller,oLP:Stri
 
 }
 
-abstract class GoalTask(agent:GoalAgent,g:Goal)(implicit controller: Controller,oLP:String) extends MMTTask(agent) {
+abstract class GoalTask(agent:MMTAgent,g:Goal)(implicit controller: Controller,oLP:String) extends MMTTask(agent) {
 
   /** Determines if a given task is applicable given the current blackboard */
   override def isApplicable[BB <: Blackboard](b: BB): Boolean = true //TODO expand this

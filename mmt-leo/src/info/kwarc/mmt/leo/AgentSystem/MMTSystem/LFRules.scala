@@ -1,4 +1,4 @@
-package info.kwarc.mmt.leo.AgentSystem.GoalSystem
+package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
 
 import info.kwarc.mmt.api.frontend.Controller
@@ -16,7 +16,7 @@ import objects.Conversions._
 object PiIntroduction extends BackwardInvertible {
    val head = Pi.path
    def priority = 5
-   def apply(blackboard: GoalBlackboard, goal: Goal) = goal.conc match {
+   def apply(blackboard: MMTBlackboard, goal: Goal) = goal.conc match {
       case Pi(n,a,b) =>
          onApply("Pi introduction") {
             val n2 = if (n == OMV.anonymous) LocalName("p") else n
@@ -62,7 +62,7 @@ object BackwardPiElimination extends BackwardSearch {
     * @param fact closed (function) type
     * @return the argument types of fact such that applying a function of type fact yields a result of type goal 
     */
-   private def makeSubgoals(blackboard: GoalBlackboard, context: Context, goal: Term, fact: Term): Option[Context] = {
+   private def makeSubgoals(blackboard: MMTBlackboard, context: Context, goal: Term, fact: Term): Option[Context] = {
       // tp must be of the form Pi bindings.scope
       val (bindings, scope) = FunType.unapply(fact).get
       val (paramList, subgoalList) = bindings.span(_._1.isDefined)
@@ -114,7 +114,7 @@ object BackwardPiElimination extends BackwardSearch {
         }
         Alternative(sgs.reverse, () => ApplyGeneral(tm, args.reverseMap(a => a())))
    }
-   def apply(blackboard: GoalBlackboard, g: Goal): List[ApplicableTactic] = {
+   def apply(blackboard: MMTBlackboard, g: Goal): List[ApplicableTactic] = {
       (g.fullVarAtoms ::: blackboard.facts.getConstantAtoms).flatMap {case Atom(tm,tp,_) =>
          // match return type of tp against g.conc
          val sgsOpt = makeSubgoals(blackboard, g.fullContext, g.conc, tp)
@@ -199,7 +199,7 @@ object BackwardPiElimination extends BackwardSearch {
 object ForwardPiElimination extends ForwardSearch {
    val head = Pi.path
 
-   def generate(blackboard: GoalBlackboard, interactive: Boolean) {
+   def generate(blackboard: MMTBlackboard, interactive: Boolean) {
       // apply all symbols
       blackboard.facts.getConstantAtoms foreach { case a =>
          if (interactive || a.rl.contains("ForwardRule"))

@@ -1,4 +1,4 @@
-package info.kwarc.mmt.leo.AgentSystem.GoalSystem
+package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{Active, modules, RuleSet}
@@ -11,7 +11,7 @@ import info.kwarc.mmt.leo.AgentSystem.Blackboard
  *
  * This represents the class of the LF blackboard which handles proofs in the LF prover
  */
-class GoalBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Controller,oLP:String) extends Blackboard {
+class MMTBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Controller,oLP:String) extends Blackboard {
 
   override def logPrefix = oLP + "#GoalBlackboard"
 

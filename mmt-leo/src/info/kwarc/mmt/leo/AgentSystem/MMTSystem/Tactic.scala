@@ -1,4 +1,4 @@
-package info.kwarc.mmt.leo.AgentSystem.GoalSystem
+package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
@@ -47,22 +47,22 @@ trait InvertibleTactic extends Tactic {
     *  @param g the goal
     *  @return a continuation that returns the new goal(s)
     */
-   def apply(blackboard: GoalBlackboard, g: Goal): Option[ApplicableTactic]
+   def apply(blackboard: MMTBlackboard, g: Goal): Option[ApplicableTactic]
 }
 
 /**
  * an InvertibleTactic, whose behavior depends only on the conclusion of a goal
  */
 trait BackwardInvertible extends InvertibleTactic {
-   def apply(blackboard: GoalBlackboard, g: Goal): Option[ApplicableTactic]
+   def apply(blackboard: MMTBlackboard, g: Goal): Option[ApplicableTactic]
 }
 
 /**
  * an InvertibleTactic, whose behavior depends only on the context of a goal
  */
 trait ForwardInvertible extends InvertibleTactic {
-   def apply(blackboard: GoalBlackboard, context: Context): Option[ApplicableTactic]
-   def apply(blackboard: GoalBlackboard, g: Goal): Option[ApplicableTactic] = apply(blackboard, g.context)
+   def apply(blackboard: MMTBlackboard, context: Context): Option[ApplicableTactic]
+   def apply(blackboard: MMTBlackboard, g: Goal): Option[ApplicableTactic] = apply(blackboard, g.context)
 }
 
 /**
@@ -84,7 +84,7 @@ trait BackwardSearch extends Tactic {
     *  @param g the goal
     *  @return a list of continuations each of which might solve the goal 
     */
-   def apply(blackboard: GoalBlackboard, g: Goal): List[ApplicableTactic]
+   def apply(blackboard: MMTBlackboard, g: Goal): List[ApplicableTactic]
 }
 
 /**
@@ -96,7 +96,7 @@ trait ForwardSearch extends Tactic {
    /**
     * enriches a database of facts by one iteration
     */
-   def generate(blackboard: GoalBlackboard, interactive: Boolean): Unit
+   def generate(blackboard: MMTBlackboard, interactive: Boolean): Unit
 }
 
 /**

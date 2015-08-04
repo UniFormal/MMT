@@ -3,7 +3,7 @@ package info.kwarc.mmt.leo.provers
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.proving.{Prover,ProvingUnit}
-import info.kwarc.mmt.leo.AgentSystem.GoalSystem._
+import info.kwarc.mmt.leo.AgentSystem.MMTSystem._
 import info.kwarc.mmt.leo.AgentSystem._
 
 class AgentProver extends Prover {
@@ -14,7 +14,7 @@ class AgentProver extends Prover {
       implicit val c=controller
       implicit val oLP=pu.logPrefix
       val gl = new Goal(pu.context, pu.tp)
-      val blackboard = new GoalBlackboard(rules, gl)
+      val blackboard = new MMTBlackboard(rules, gl)
       //val exa = new ExpansionAgent
       val sba = new SearchBackwardAgent
       val sfa = new SearchForwardAgent

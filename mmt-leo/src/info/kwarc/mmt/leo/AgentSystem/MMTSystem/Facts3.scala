@@ -1,22 +1,12 @@
-package info.kwarc.mmt.leo.AgentSystem.GoalSystem
+package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.{Logger, Controller}
 import info.kwarc.mmt.api.objects.Conversions._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.lf.{ApplyGeneral, FunType}
 
-import scalax.collection.Graph
-import scalax.collection.edge.LDiEdge
-
-// or scalax.collection.mutable.Graph
-import scalax.collection.GraphPredef._, scalax.collection.GraphEdge._
-
-import scala.collection.mutable
-
-
-
+/*
 
 /** an approximation of the syntax tree of a [[Term]] that replaces subtrees beyond a certain depth with special leaves
  *  
@@ -61,7 +51,7 @@ object Shape {
             case None => AtomicShape(t)
             case Some(i) => BoundShape(i)
          } 
-      case f => AtomicShape(f) //TODO Ask about shadowing warning
+      case t => AtomicShape(t) //TODO Ask about shadowing warning
    }
    
    def matches(s: Shape, t: Shape): Boolean = (s, t) match {
@@ -97,66 +87,6 @@ case class Atom(tm: Term, tp: Term, rl: Option[String]) {
    def isVariable = tm.isInstanceOf[OMV]
 }
 
-/*
-
-class TransitiveClosureSet{
-  type Operation = Int
-
-  var g = Graph[Term,LDiEdge[Operation]]()
-
-  def compare(a:Term,b:Term,order:Boolean=false):Option[Boolean] = {
-    if (transClosureOf(a).contains(b)) return Some(true)
-    if (order && transClosureOf(b).contains(a)) return Some(false)
-    None
-  }
-
-  def transClosureOf(t1:Term):Set[Term] = getOtherTerms(t1)+t1
-
-  def getOtherTerms(t1:Term):Set[Term] = {
-    g find t1 match {
-      case Some(g1) => g1.diSuccessors.asInstanceOf[Set[Term]]
-        //.LDiSuccessors.asInstanceOf[Set[Term]]
-      case None => Set.empty[Term]
-    }
-  }
-
-  def add(t1:Term,t2:Term,op:Operation) = {g += LDiEdge(t1,t2)(op)}
-}
-*/
-
-case class TermEntry(goal: Goal, tm: Term, tp: Term) {
-  override def toString = tp.toString + "\n     " + tm.toString
-  def present(presentObj: Obj => String) = {
-    presentObj(tp) + " by " + presentObj(tm)
-  }
-}
-
-class Terms(blackboard: GoalBlackboard)(implicit controller: Controller,oLP:String) extends Logger {
-
-  val report =  controller.report
-  def logPrefix = oLP + "#Terms"
-
-  /** create a lookup for constant atom terms based on their type
-    * Fisrt MMT[[Term]]=>LF type, Second MMT[[TermEntry]]=> LF term marked with goal
-    * */
-  private val terms = new HashMapToSet[Term,TermEntry]
-
-  def initializeTerms(facts:Facts) = {facts.getConstantAtoms.foreach(addTerm(_,blackboard.goal))}
-  //TODO add variable atoms as well
-
-  def addTerm(termEntry:TermEntry):Unit = {terms(termEntry.tp) += termEntry; log("Added Term:"+ termEntry) }
-  def addTerm(a: Atom,g:Goal):Unit  = this addTerm TermEntry(g,a.tm,a.tp)
-  def +=(termEntry:TermEntry):Unit  = addTerm(termEntry)
-  def ++=(termEntries:List[TermEntry]):Unit  = termEntries.foreach(addTerm)
-  def +=(a: Atom,g:Goal):Unit  = addTerm(a: Atom,g:Goal)
-
-  /**Get all terms of a type */
-  def getTermsOfType(tp:Term): mutable.HashSet[Term] = terms(tp).map(_.tm)
-  /**Get all terms of a type above a specified goal*/
-  def getTermsOfType(tp:Term,g:Goal): mutable.HashSet[Term] = terms(tp).filter(_.goal.isAbove(g)).map(_.tm)
-
-}
-
 /**
  * A database of facts obtained through forward proof search
  * 
@@ -164,20 +94,19 @@ class Terms(blackboard: GoalBlackboard)(implicit controller: Controller,oLP:Stri
  * Therefore, each [[Goal]] g maintains one instance of Facts, which links to the instance of the g.parent.
  * Each instance knows the local context of its goal, and maintains only terms that use a local variable.
  * 
- * @param shapeDepth is the depth of the shape representation used to apprximate facts
+ * @param parent g.parent.facts
+ * @param newContext g.context
  */
-class Facts(blackboard: GoalBlackboard, shapeDepth: Int)(implicit c: Controller,oLP:String) extends Logger {
-   val report =  c.report
-   def logPrefix = oLP+"#Facts"
-
-    def getFunctionalFacts:List[Fact] = Nil //TODO implement this
-
+class Facts(blackboard: GoalBlackboard, shapeDepth: Int)(implicit controller: Controller) extends Logger {
+   val report =  controller.report
+   def logPrefix = "Facts"
+   
    private var constantAtoms : List[Atom] = Nil
    private[leo] def addConstantAtom(a: Atom) {
       constantAtoms ::= a
    }
    def getConstantAtoms = constantAtoms
-
+   
    /**
     * the database of (non-atomic) facts, indexed by the shape of the type
     */
@@ -186,8 +115,11 @@ class Facts(blackboard: GoalBlackboard, shapeDepth: Int)(implicit c: Controller,
    private var futureFacts : List[Fact] = Nil
    
    /**
-    *  adds a fact to the database. The facts are not actually
-    *  added immediately but queued for addition
+    *  adds a fact to the database
+    *  @param tm a term that is valid over the full context of this goal
+    *  @param tp its type
+    *  
+    *  the facts are not actually added immediately but queued for addition
     *  see integrateFutureFacts 
     *  
     *  facts are ignored if their proof does not use a free variable
@@ -199,7 +131,7 @@ class Facts(blackboard: GoalBlackboard, shapeDepth: Int)(implicit c: Controller,
 
   /** simplify a fact */
   private[leo] def simplifyFact(f: Fact): Fact = {
-    val tpS = c.simplifier(f.tp, f.goal.fullContext, blackboard.rules)
+    val tpS = controller.simplifier(f.tp, f.goal.fullContext, blackboard.rules)
     f.copy(tp = tpS)
   }
 
@@ -333,5 +265,4 @@ class Facts(blackboard: GoalBlackboard, shapeDepth: Int)(implicit c: Controller,
 
 
 
-
-
+*/

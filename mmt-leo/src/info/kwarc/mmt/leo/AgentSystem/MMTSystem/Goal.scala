@@ -1,4 +1,4 @@
-package info.kwarc.mmt.leo.AgentSystem.GoalSystem
+package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.frontend.Controller
@@ -45,7 +45,7 @@ case class Alternative(subgoals: List[Goal], proof: () => Term) {
 /**
  * a single-conclusion sequent - the basic node in a proof tree
  *
- * The root goal is stored and the whole proof tree is acted on by the [[GoalAgent]].
+ * The root goal is stored and the whole proof tree is acted on by the [[MMTAgent]].
  *
  * A goal nodes knows its parent (except for the root goal) and children (the subgoals).
  * In fact, a goal is also a node in the backwards proof search: A goal stores not simply a list of subgoals,
@@ -196,7 +196,7 @@ class Goal(val context: Context, private var concVar: Term) {
    //TODO should I store a applicability set boolean to avoid recomputation
 
    /** initializes the invertible backward/forward tactics that can be applied */
-   def setExpansionTactics(blackboard: GoalBlackboard, backw: List[BackwardInvertible], forw: List[ForwardInvertible]) {
+   def setExpansionTactics(blackboard: MMTBlackboard, backw: List[BackwardInvertible], forw: List[ForwardInvertible]) {
       backward = parent match {
          case Some(g) if g.conc == conc => g.backward
          // TODO it can be redundant to check the applicability of all tactics
@@ -207,7 +207,7 @@ class Goal(val context: Context, private var concVar: Term) {
    }
    /**
     *  the invertible backward/forward tactics that have not been applied yet are stored here,
-    *  but set and read by the [[GoalAgent]]
+    *  but set and read by the [[MMTAgent]]
     *  this method retrieves the next tactic to apply
     */
    def getNextExpansion: Option[ApplicableTactic] = {
@@ -222,10 +222,10 @@ class Goal(val context: Context, private var concVar: Term) {
       }
    }
 
-   def setSearchTactics(blackboard: GoalBlackboard, backw: List[BackwardSearch]) {
+   def setSearchTactics(blackboard: MMTBlackboard, backw: List[BackwardSearch]) {
       backwardSearch = backw
    }
-   def getNextSearch(blackboard: GoalBlackboard): List[ApplicableTactic] = {
+   def getNextSearch(blackboard: MMTBlackboard): List[ApplicableTactic] = {
       backwardSearch match {
          case Nil => Nil
          case hd::tl =>

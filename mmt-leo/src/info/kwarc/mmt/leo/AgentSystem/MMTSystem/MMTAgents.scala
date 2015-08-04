@@ -1,4 +1,4 @@
-package info.kwarc.mmt.leo.AgentSystem.GoalSystem
+package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules
@@ -11,10 +11,10 @@ import info.kwarc.mmt.leo.AgentSystem.{Change, Listener, Agent}
  */
 
 
-abstract class GoalAgent(implicit controller: Controller,oLP:String) extends Agent {
+abstract class MMTAgent(implicit controller: Controller,oLP:String) extends Agent {
 
 
-  override type BBType = GoalBlackboard
+  override type BBType = MMTBlackboard
 
   override val name: String = "GoalAgent"
 
@@ -34,7 +34,7 @@ abstract class GoalAgent(implicit controller: Controller,oLP:String) extends Age
 
 }
 
-class SearchBackwardAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
+class SearchBackwardAgent(implicit controller: Controller,oLP:String) extends MMTAgent {
   override val priority=1
 
   override val name =  "SearchBackwardAgent"
@@ -54,7 +54,7 @@ class SearchBackwardAgent(implicit controller: Controller,oLP:String) extends Go
   }
 }
 
-class SearchForwardAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
+class SearchForwardAgent(implicit controller: Controller,oLP:String) extends MMTAgent {
 
   override val name =  "SearchForwardAgent"
   def wantToSubscribeTo = List(blackboard.get.factSection)
@@ -71,7 +71,7 @@ class SearchForwardAgent(implicit controller: Controller,oLP:String) extends Goa
 }
 
 
-class TermGenerationAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
+class TermGenerationAgent(implicit controller: Controller,oLP:String) extends MMTAgent {
 
   override val name =  "TermGeneratingAgent"
   def wantToSubscribeTo = List(blackboard.get.factSection)
@@ -88,7 +88,7 @@ class TermGenerationAgent(implicit controller: Controller,oLP:String) extends Go
 
 }
 
-class TransitivityAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
+class TransitivityAgent(implicit controller: Controller,oLP:String) extends MMTAgent {
 
   override val name =  "TermGeneratingAgent"
   def wantToSubscribeTo = List(blackboard.get.factSection)
@@ -107,7 +107,7 @@ class TransitivityAgent(implicit controller: Controller,oLP:String) extends Goal
 
 
 
-abstract class SimplifyingAgent(implicit controller: Controller,oLP:String) extends GoalAgent {
+abstract class SimplifyingAgent(implicit controller: Controller,oLP:String) extends MMTAgent {
 }
 
 
