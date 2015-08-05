@@ -1,15 +1,12 @@
 package info.kwarc.mmt.api.parser
 
 import info.kwarc.mmt.api._
-import documents._
-import modules._
-import notations._
-import objects._
-import patterns._
-import symbols._
-import utils._
-
-import scala.collection.mutable.ListMap
+import info.kwarc.mmt.api.documents._
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.notations._
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.patterns._
+import info.kwarc.mmt.api.symbols._
 
 /**
  * This class bundles all state that is maintained by a [[StructureParser]]
@@ -32,7 +29,7 @@ class ParserState(val reader: Reader, val ps: ParsingStream, val errorCont: Erro
   /** the position at which the current StructuralElement started */
   var startPosition = reader.getSourcePosition
 
-  def copy(reader: Reader = reader) = {
+  def copy(reader: Reader = reader): ParserState = {
     val s = new ParserState(reader, ps, errorCont)
     s.namespaces = namespaces
     s
@@ -41,7 +38,7 @@ class ParserState(val reader: Reader, val ps: ParsingStream, val errorCont: Erro
 
 /** matches the keyword for a view */
 object ViewKey {
-  def unapply(s: String) = s match {
+  def unapply(s: String): Option[String] = s match {
     case "view" | "morphism" => Some(s)
     case _ => None
   }
@@ -61,7 +58,7 @@ object ViewKey {
  * 2) It is stateless and maintains the parse state via an implicit argument of type
  * [[ParserState]] in most functions.
  *
- * 3) It leaves processing of MMT entities application-independently via high-level continuation functions. 
+ * 3) It leaves processing of MMT entities application-independently via high-level continuation functions.
  */
 class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser) {
   override val logPrefix = "structure-parser"
@@ -232,7 +229,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    * reads until the object delimiter and parses the found string
    * @return the raw string, the region, and the parsed term
    */
-  def readParsedObject(context: Context)(implicit state: ParserState) = {
+  def readParsedObject(context: Context)(implicit state: ParserState): (String, SourceRegion, Term) = {
     val (obj, reg) = state.reader.readObject
     val pu = ParsingUnit(SourceRef(state.ps.source, reg), context, obj, state.namespaces)
     val parsed = puCont(pu)
@@ -265,17 +262,18 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   private def resolveName(home: Term, name: LocalName)(implicit state: ParserState) = {
-     libraries.Names.resolve(home, name)(controller.globalLookup) match {
-          case Some(ce: Constant) =>
-             ComplexStep(ce.parent) / ce.name
-          case Some(_) =>
-             errorCont(makeError(currentSourceRegion, "not a constant name: " + name))
-             name
-          case None =>
-             errorCont(makeError(currentSourceRegion, "unknown name: " + name))
-             name
-     }
+    libraries.Names.resolve(home, name)(controller.globalLookup) match {
+      case Some(ce: Constant) =>
+        ComplexStep(ce.parent) / ce.name
+      case Some(_) =>
+        errorCont(makeError(currentSourceRegion, "not a constant name: " + name))
+        name
+      case None =>
+        errorCont(makeError(currentSourceRegion, "unknown name: " + name))
+        name
+    }
   }
+
   /** auxiliary function to read Theories
     * @param parent the containing document/module
     * @param context the context (excluding the theory to be read)
@@ -285,7 +283,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val (ns, name) = parent match {
       case doc: DPath =>
         val ns = DPath(state.namespaces.default)
-        val mref = MRef(doc, ns ? rname, true)
+        val mref = MRef(doc, ns ? rname, generated = true)
         seCont(mref)
         (ns, rname)
       case mp: MPath =>
@@ -358,7 +356,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val (ns, name) = parent match {
       case doc: DPath =>
         val ns = DPath(state.namespaces.default)
-        val mref = MRef(doc, ns ? rname, true)
+        val mref = MRef(doc, ns ? rname, generated = true)
         seCont(mref)
         (ns, rname)
       case mp: MPath =>
@@ -394,9 +392,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     * @param context the context (excluding the strucutre to be read)
     * @param isImplicit whether the structure is implicit
     */
-  private def readStructure(parent: MPath, link: Option[DeclaredLink], context: Context, isImplicit: Boolean)(implicit state: ParserState) {
+  private def readStructure(parent: MPath, link: Option[DeclaredLink], context: Context,
+                            isImplicit: Boolean)(implicit state: ParserState) {
     val givenName = readName
-    val name = link.map{l => resolveName(l.from, givenName)}.getOrElse(givenName)
+    val name = link.map { l => resolveName(l.from, givenName) }.getOrElse(givenName)
     val spath = parent ? name
     readDelimiter(":")
     val tpC = new TermContainer
@@ -428,12 +427,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   /** reads the components of a [[Constant]]
-    * @param name the name of the constant
+    * @param givenName the name of the constant
     * @param parent the containing [[DeclaredModule]]
-    * @param scope the home theory for term components
+    * @param link the home theory for term components
     */
-  private def readConstant(givenName: LocalName, parent: MPath, link: Option[DeclaredLink], context: Context)(implicit state: ParserState): Constant = {
-    val name = link.map{l => resolveName(l.from, givenName)}.getOrElse(givenName)
+  private def readConstant(givenName: LocalName, parent: MPath, link: Option[DeclaredLink],
+                           context: Context)(implicit state: ParserState): Constant = {
+    val name = link.map { l => resolveName(l.from, givenName) }.getOrElse(givenName)
     val cpath = parent ? name
     //initialize all components as omitted
     val tpC = new TermContainer
@@ -550,7 +550,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             case OMBINDC(_, cont, Nil) =>
               pr = pr ++ cont
             case _ =>
-              errorCont(makeError(reg, "parameters of this constant are not a context, ignored (note that implicit parts are not allowed in parameters)"))
+              errorCont(makeError(reg, "parameters of this constant are not a context, ignored " +
+                "(note that implicit parts are not allowed in parameters)"))
           }
         case ">>" =>
           val (obj, reg) = state.reader.readObject
@@ -561,7 +562,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             case OMBINDC(_, cont, Nil) =>
               bd = bd ++ cont
             case _ =>
-              errorCont(makeError(reg, "parameters of this constant are not a context, ignored (note that implicit parts are not allowed in parameters)"))
+              errorCont(makeError(reg,
+                "parameters of this constant are not a context, ignored " +
+                  "(note that implicit parts are not allowed in parameters)"))
           }
         case "#" =>
           doNotation(ParsingNotationComponent, nt, treg, ppath)
@@ -608,11 +611,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           state.namespaces = state.namespaces.add(n, ns.uri)
         case "theory" =>
           readTheory(doc.path, Context.empty)
-        case ViewKey(_) => readView(doc.path, Context.empty, false)
+        case ViewKey(_) => readView(doc.path, Context.empty, isImplicit = false)
         case "implicit" =>
           val (keyword2, reg2) = state.reader.readToken
           keyword2 match {
-            case ViewKey(_) => readView(doc.path, Context.empty, true)
+            case ViewKey(_) => readView(doc.path, Context.empty, isImplicit = true)
             case _ => throw makeError(reg2, "only views can be implicit here")
           }
         case k =>
@@ -647,17 +650,16 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     *
     *                 this function handles one declaration if possible, then calls itself recursively
     */
-  private def readInModule(mod: StructuralElement with Body, mpath: MPath, context: Context, patterns: List[(String, GlobalName)])(implicit state: ParserState) {
+  private def readInModule(mod: StructuralElement with Body, mpath: MPath, context: Context,
+                           patterns: List[(String, GlobalName)])(implicit state: ParserState) {
     //This would make the last RS marker of a module optional, but it's problematic with nested modules.
     //if (state.reader.endOfModule) return
     val linkOpt = mod match {
-       case l: DeclaredLink => Some(l)
-       case _ => None
+      case l: DeclaredLink => Some(l)
+      case _ => None
     }
     try {
       val (keyword, reg) = state.reader.readToken
-      if (keyword == "kind")
-        true
       state.startPosition = reg.start
       def fail(s: String) = throw makeError(reg, s)
       keyword match {
@@ -683,15 +685,16 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             case link: DeclaredLink =>
               val (fromRef, from) = readMPath(link.path)
               readDelimiter("=")
-              val (inclRef, incl) = readMPath(link.path) //readParsedObject(view.to)
+              val (inclRef, incl) = readMPath(link.path)
+              //readParsedObject(view.to)
               val as = PlainViewInclude(link.toTerm, from, incl)
               SourceRef.update(as.from, fromRef)
               SourceRef.update(as.df, inclRef)
               seCont(as)
           }
-        case "structure" => readStructure(mpath, linkOpt, context, false)
+        case "structure" => readStructure(mpath, linkOpt, context, isImplicit = false)
         case "theory" => readTheory(mod.path, context)
-        case ViewKey(_) => readView(mod.path, context, false)
+        case ViewKey(_) => readView(mod.path, context, isImplicit = false)
         //Pattern
         case "pattern" =>
           mod match {
@@ -724,8 +727,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case "implicit" =>
           val (keyword2, reg2) = state.reader.readToken
           keyword2 match {
-            case ViewKey(_) => readView(mpath, context, true)
-            case "structure" => readStructure(mpath, linkOpt, context, true)
+            case ViewKey(_) => readView(mpath, context, isImplicit = true)
+            case "structure" => readStructure(mpath, linkOpt, context, isImplicit = true)
             case _ => throw makeError(reg2, "only links can be implicit here")
           }
         case k =>
@@ -762,7 +765,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         // wrap in source error if not source error already
         val se: SourceError = e match {
           case se: SourceError => se
-          case e => makeError(currentSourceRegion, "error while parsing: " + e.getMessage).setCausedBy(e)
+          case _ => makeError(currentSourceRegion, "error while parsing: " + e.getMessage).setCausedBy(e)
         }
         errorCont(se)
         if (!state.reader.endOfDeclaration)
@@ -773,60 +776,60 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   /** API Functions for parsing fragments, TODO refactor **/
 
-/*  /**
-   * reads a module from a string
-   * @param dpath the uri of the parent document
-   * @param modS the module string
-   * @param docBaseO optionally the base uri of the containing document
-   * @param namespace the namespace declarations found so far
-   */
-  def readModule(dpath: DPath, modS: String, docBaseO: Option[DPath] = None,
-                 prefixes: List[(String, URI)] = Nil, errorCont: ErrorHandler) {
-    //building parsing state
-    val br = new java.io.BufferedReader(new java.io.StringReader(modS))
-    val r = new Reader(br)
-    val nsMap = NamespaceMap(docBaseO.getOrElse(dpath), prefixes)
-    val ps = new ParsingStream(dpath.uri, nsMap, br)
-    val state = new ParserState(r, ps, errorCont)
-    val doc = controller.getDocument(dpath)
-    //calling parse function
-    readInDocument(doc)(state)
-    r.close
-  }
-
-  /**
-   * reads a constant from a string
-   * @param mpath the uri of the parent module
-   * @param modS the constant string
-   * @param docBaseO optionally the base uri of the containing document
-   * @param namespace the namespace declarations found so far
-   */
-  def readConstant(mpath: MPath, conS: String, docBaseO: Option[DPath] = None,
-                   prefixes: List[(String, URI)] = Nil, errorCont: ErrorHandler) = {
-    //building parsing state
-    val br = new java.io.BufferedReader(new java.io.StringReader(conS))
-    val r = new Reader(br)
-    val nsMap = NamespaceMap(docBaseO.getOrElse(mpath.doc), prefixes)
-    val ps = new ParsingStream(mpath.doc.uri, nsMap, br)
-    val state = new ParserState(r, ps, errorCont)
-
-    val thy = controller.globalLookup.getTheory(mpath) match {
-      case d: DeclaredTheory => d
-      case _ => throw ImplementationError("Expected declared theory at path" + mpath)
+  /*  /**
+     * reads a module from a string
+     * @param dpath the uri of the parent document
+     * @param modS the module string
+     * @param docBaseO optionally the base uri of the containing document
+     * @param namespace the namespace declarations found so far
+     */
+    def readModule(dpath: DPath, modS: String, docBaseO: Option[DPath] = None,
+                   prefixes: List[(String, URI)] = Nil, errorCont: ErrorHandler) {
+      //building parsing state
+      val br = new java.io.BufferedReader(new java.io.StringReader(modS))
+      val r = new Reader(br)
+      val nsMap = NamespaceMap(docBaseO.getOrElse(dpath), prefixes)
+      val ps = new ParsingStream(dpath.uri, nsMap, br)
+      val state = new ParserState(r, ps, errorCont)
+      val doc = controller.getDocument(dpath)
+      //calling parse function
+      readInDocument(doc)(state)
+      r.close
     }
-    val patterns = Nil //TODO
-    //calling parse function
-    readInModule(thy, mpath, thy.getInnerContext, patterns)(state)
-  }
-  */
+
+    /**
+     * reads a constant from a string
+     * @param mpath the uri of the parent module
+     * @param modS the constant string
+     * @param docBaseO optionally the base uri of the containing document
+     * @param namespace the namespace declarations found so far
+     */
+    def readConstant(mpath: MPath, conS: String, docBaseO: Option[DPath] = None,
+                     prefixes: List[(String, URI)] = Nil, errorCont: ErrorHandler) = {
+      //building parsing state
+      val br = new java.io.BufferedReader(new java.io.StringReader(conS))
+      val r = new Reader(br)
+      val nsMap = NamespaceMap(docBaseO.getOrElse(mpath.doc), prefixes)
+      val ps = new ParsingStream(mpath.doc.uri, nsMap, br)
+      val state = new ParserState(r, ps, errorCont)
+
+      val thy = controller.globalLookup.getTheory(mpath) match {
+        case d: DeclaredTheory => d
+        case _ => throw ImplementationError("Expected declared theory at path" + mpath)
+      }
+      val patterns = Nil //TODO
+      //calling parse function
+      readInModule(thy, mpath, thy.getInnerContext, patterns)(state)
+    }
+    */
 }
 
 class SequentialReader extends java.io.Reader {
   var text: List[Char] = Nil
 
-  def appendLine(line: String) = {
+  def appendLine(line: String): Unit = {
     text ++= "\n".toCharArray.toList
-    text ++= line.toCharArray().toList
+    text ++= line.toCharArray.toList
   }
 
 
@@ -842,20 +845,17 @@ class SequentialReader extends java.io.Reader {
     i
   }
 
-  def close() = {
+  def close(): Unit = {
     //nothing to do
   }
 
-  def isDone = text.isEmpty
+  def isDone: Boolean = text.isEmpty
 
-  override def ready() = !text.isEmpty
+  override def ready: Boolean = !isDone
 }
 
 class SeqBufReader(in: SequentialReader = new SequentialReader) extends java.io.BufferedReader(in) {
-  def appendLine(line: String) = in.appendLine(line)
+  def appendLine(line: String): Unit = in.appendLine(line)
 
-  def isDone = in.isDone
+  def isDone: Boolean = in.isDone
 }
-
-
-
