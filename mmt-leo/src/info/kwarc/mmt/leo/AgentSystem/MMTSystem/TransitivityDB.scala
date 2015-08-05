@@ -32,6 +32,7 @@ class TransitivityDB {
       graph += LUnDiEdge(t1,t2)(g)
     }
   }
+  //TODO add a proof getter aka get a list of facts that result in the proof when applied
 
   def add(l: List[(TermEntry,TermEntry)]):Unit = l.foreach(e=>add(e._1,e._2))
   def add(l: (TermEntry,TermEntry)*):Unit = l.foreach(e=>add(e._1,e._2))
@@ -66,15 +67,6 @@ class TransitivityDB {
   }
 
 
-  /*  /** Determines if the goal of an edge is above the goal of a node*/
-  private def isEdgeAboveNode[T<:LUnDiEdge[_]](e:T,n:TermEntry)= {
-    e.label match {
-      case goal: Goal =>
-        goal.isAbove(n.goal)
-      case _ => true
-    }
-  }
-  */
   def transClosureOf(t1:TermEntry) = {
     val subGraph = getSubGraph(t1)
     (subGraph get t1).outerNodeTraverser.toSet

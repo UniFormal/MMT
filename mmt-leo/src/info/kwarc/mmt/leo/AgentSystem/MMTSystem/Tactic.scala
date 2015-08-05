@@ -99,6 +99,12 @@ trait ForwardSearch extends Tactic {
    def generate(blackboard: MMTBlackboard, interactive: Boolean): Unit
 }
 
+
+trait TermSearch extends ForwardSearch{}
+
+
+
+
 /**
  * a continuation function returned by a [[Tactic]] to be run if the tactic is to be applied
  * 

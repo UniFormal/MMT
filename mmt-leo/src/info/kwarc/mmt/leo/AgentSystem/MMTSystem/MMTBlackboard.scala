@@ -24,6 +24,8 @@ class MMTBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Contr
   val invertibleForward  = Nil
   val searchBackward     = List(BackwardPiElimination)
   val searchForward      = List(ForwardPiElimination)
+  val searchTerms        = List(TermGeneration)
+  val transitivityRules  = List(TransitivityGeneration)
 
   log("Rules: " + rules)
   log("Invertible Backwards rules:" + invertibleBackward)

@@ -292,11 +292,18 @@ object ForwardPiElimination extends ForwardSearch {
 
 }
 
-class LFTermGenerationTask(agent:TermGenerationAgent,terms:Terms,facts:Facts)(implicit controller: Controller,oLP:String) extends TermGenerationTask(agent) {
+object TermGeneration extends ForwardSearch {
+   val head = Pi.path
+   def getFunctionalFacts(b:MMTBlackboard):List[Fact] = ??? //TODO fill in this step
+
+   def generate(blackboard: MMTBlackboard, interactive: Boolean) {
+      getFunctionalFacts(blackboard).foreach(applyFunctionalFact(blackboard,_))
+   }
 
 
    /** applies one atom (symbol or variable) to all known terms and adds the result to the term database*/
-   private def applyFunctionalFact(f: Fact) {
+   private def applyFunctionalFact(blackboard:MMTBlackboard,f: Fact) {
+      val terms = blackboard.terms
       val (bindings, scope) = FunType.unapply(f.tp).get
       // params: leading named arguments
       val (paramList, otherArgs) = bindings.span(_._1.isDefined) //TODO ask about this step
@@ -337,57 +344,31 @@ class LFTermGenerationTask(agent:TermGenerationAgent,terms:Terms,facts:Facts)(im
       }
    }
 
-   /** Determines if a given task is applicable given the current blackboard */
-   override def isApplicable[BB <: Blackboard](b: BB): Boolean = !b.finished
 
-   override def execute(): Boolean = {
-      facts.getFunctionalFacts.foreach(f=>applyFunctionalFact(f))
-      true //TODO add progress result
-   }
 
-   /** Returns a set of all nodes, that will be written by the task. */
-   override def writeSet(s: Section): Set[s.ObjectType] = {
-      if (s==blackboard.get.termSection) {
-         Set(terms.asInstanceOf[s.ObjectType])
-      }else{
-         Set.empty[s.ObjectType]
-      }
-   }
-   /** Returns a set of all nodes that are read for the task. */
-   override def readSet(s: Section): Set[s.ObjectType] = writeSet(s).asInstanceOf[Set[s.ObjectType]]
+
+
 }
 
-class LFTransitivityTask(agent:TransitivityAgent,tdb:TransitivityDB)(implicit controller: Controller,oLP:String) extends TransitivityTask(agent) {
 
-   def getTransitiveFacts:List[Fact] = ???
+object TransitivityGeneration extends  {
 
-   def addFact(f:Fact): Unit ={
+   val head = Pi.path
+   def getTransitiveFacts(blackboard: MMTBlackboard):List[(Fact,TransitivityDB)] = ???
+
+   def generate(blackboard: MMTBlackboard, interactive: Boolean) {
+      getTransitiveFacts(blackboard).foreach(p=>addFact(p._1,p._2))
+   }
+
+   def addFact(f:Fact,tdb:TransitivityDB): Unit ={
       f.tp match { //TODO should i match term or type
          case ApplySpine(fun,termList) => //TODO ask florian about the possibility of more than two arguments and fact
             val termElement1 = TermEntry(f.goal,termList.head,termList.head) //TODO how to find tm and tp of MMT terms
-            val termElement2 = TermEntry(f.goal,termList.tail.head,termList.tail.head)
+         val termElement2 = TermEntry(f.goal,termList.tail.head,termList.tail.head)
             tdb.add(termElement1,termElement2)
          case _ => throw new IllegalArgumentException("Not a valid type of fact need an equality fact")
       }
    }
 
-   /** Determines if a given task is applicable given the current blackboard */
-   override def isApplicable[BB <: Blackboard](b: BB): Boolean = !b.finished //TODO expand this
 
-   override def execute(): Boolean = {
-      getTransitiveFacts.foreach(addFact)
-      true //TODO expand this
-   }
-
-   /** Returns a set of all nodes, that will be written by the task. */
-   override def writeSet(s: Section): Set[s.ObjectType] = {
-      if (s==blackboard.get.transitivitySection) {
-         Set(tdb.asInstanceOf[s.ObjectType])
-      }else{
-         Set.empty[s.ObjectType]
-      }
-   }
-
-   /** Returns a set of all nodes that are read for the task. */
-   override def readSet(s: Section): Set[s.ObjectType] = writeSet(s).asInstanceOf[Set[s.ObjectType]]
 }

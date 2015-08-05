@@ -9,7 +9,6 @@ import info.kwarc.mmt.leo.AgentSystem._
 class AgentProver extends Prover {
    def interactive(pu: ProvingUnit, rules: RuleSet, levels: Int) = Nil
 
-
    def apply(pu: ProvingUnit, rules: RuleSet, levels: Int) = {
       implicit val c=controller
       implicit val oLP=pu.logPrefix
@@ -25,7 +24,6 @@ class AgentProver extends Prover {
       //exa.register(blackboard)
       aa.register(blackboard.asInstanceOf[aa.BBType])
       ea.register(blackboard.asInstanceOf[ea.BBType])
-
 
       blackboard.run(levels)
       val found = blackboard.finished

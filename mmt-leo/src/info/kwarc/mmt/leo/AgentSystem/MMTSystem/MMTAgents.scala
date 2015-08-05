@@ -26,6 +26,8 @@ abstract class MMTAgent(implicit controller: Controller,oLP:String) extends Agen
   lazy val invertibleForward = blackboard.get.invertibleForward
   lazy val searchBackward = blackboard.get.searchBackward
   lazy val searchForward = blackboard.get.searchForward
+  lazy val searchTerms = blackboard.get.searchTerms
+  lazy val transitivityRules = blackboard.get.transitivityRules
 
   lazy val goalSection = blackboard.get.goalSection
   def goal = goalSection.data
@@ -78,8 +80,8 @@ class TermGenerationAgent(implicit controller: Controller,oLP:String) extends MM
   def wantToSubscribeTo = List(blackboard.get.factSection)
   override val interests = List("ADD")
 
-  //def addTask() = taskSet+=new LFTermGenerationTask(this) //TODO add Term generation to agent system
-  def addTask() = ???
+  def addTask() = taskSet+=new TermGenerationTask(this) //TODO add Term generation to agent system
+  //def addTask() = ???
 
   override def respond() = {
     log("responding to: " + mailbox.length + " message(s)")
@@ -95,8 +97,8 @@ class TransitivityAgent(implicit controller: Controller,oLP:String) extends MMTA
   def wantToSubscribeTo = List(blackboard.get.factSection)
   override val interests = List("ADD") //TODO make it interested in the addition of relation shaped facts
 
-  //def addTask() = taskSet+=new TransitivityTask(this) //TODO add transitivity to agent system
-  def addTask() = ???
+  def addTask() = taskSet+=new TransitivityTask(this) //TODO add transitivity to agent system
+  //def addTask() = ???
 
   override def respond() = {
     log("responding to: " + mailbox.length + " message(s)")
@@ -114,7 +116,10 @@ abstract class NormalizingAgent(implicit controller: Controller,oLP:String) exte
 
   def wantToSubscribeTo = List(blackboard.get.goalSection)
 
+  //TODO possibly class of beta and eta
   lazy val normalizingRules = blackboard.get.rules.get(classOf[NormalizingRule])
+
+  def allRulesPresent: Boolean = ??? //TODO add way to determine if there are rules for all of the symbols
 
   override val interests = List("ADD") //TODO make it interested in the addition of relation shaped facts
 

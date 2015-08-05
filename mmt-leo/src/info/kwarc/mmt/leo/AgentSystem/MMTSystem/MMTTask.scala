@@ -151,13 +151,6 @@ case class SearchForwardTask(agent:SearchForwardAgent)(implicit controller: Cont
   /** Determines if a given task is applicable given the current blackboard */
   override def isApplicable[BB <: Blackboard](b: BB): Boolean = super.isApplicable(b) && !goal.isSolved
 
-  def forwardSearch() {
-    log("Performing forward search")
-    agent.searchForward.foreach {e =>
-      e.generate(blackboard.get,interactive = false)
-    }
-    facts.integrateFutureFacts(Some(factSection))
-  }
 
   override def writeSet(s: Section): Set[s.ObjectType] = {
     Set.empty[s.ObjectType]
@@ -166,6 +159,14 @@ case class SearchForwardTask(agent:SearchForwardAgent)(implicit controller: Cont
   /** Returns a set of all nodes that are read for the task. */
   override def readSet(s: Section): Set[s.ObjectType] = {
     Set.empty[s.ObjectType]
+  }
+
+  def forwardSearch() {
+    log("Performing forward search")
+    agent.searchForward.foreach {e =>
+      e.generate(blackboard.get,interactive = false)
+    }
+    facts.integrateFutureFacts(Some(factSection))
   }
 
   def execute()={
@@ -182,5 +183,70 @@ abstract class NormalizingTask(agent:NormalizingAgent,g:Goal)(implicit controlle
 
 }
 
-abstract class TermGenerationTask(agent:TermGenerationAgent)(implicit controller: Controller,oLP:String) extends MMTTask(agent) {}
-abstract class TransitivityTask(agent:TransitivityAgent)(implicit controller: Controller,oLP:String) extends MMTTask(agent) {}
+
+class TermGenerationTask(agent:TermGenerationAgent)(implicit controller: Controller,oLP:String) extends MMTTask(agent) {
+
+  /** Determines if a given task is applicable given the current blackboard */
+  override def isApplicable[BB <: Blackboard](b: BB): Boolean = !b.finished
+
+  def termSearch() {
+    agent.searchTerms.foreach { e =>
+      e.generate(blackboard.get, interactive = false)
+    }
+  }
+
+  def execute() = {
+    log("Term Search Executing")
+    termSearch()
+    true
+  }
+
+  /** Returns a set of all nodes, that will be written by the task. */
+  override def writeSet(s: Section): Set[s.ObjectType] = {
+    if (s == blackboard.get.termSection) {
+      Set(terms.asInstanceOf[s.ObjectType])
+    } else {
+      Set.empty[s.ObjectType]
+    }
+  }
+
+  /** Returns a set of all nodes that are read for the task. */
+  override def readSet(s: Section): Set[s.ObjectType] ={
+    if (s == factSection) {
+      Set(terms.asInstanceOf[s.ObjectType])
+    } else {
+      writeSet(s).asInstanceOf[Set[s.ObjectType]]
+    }
+  }
+
+}
+
+class TransitivityTask(agent:TransitivityAgent)(implicit controller: Controller,oLP:String) extends MMTTask(agent) {
+
+  /** Determines if a given task is applicable given the current blackboard */
+  override def isApplicable[BB <: Blackboard](b: BB): Boolean = !b.finished //TODO expand this
+
+  def transitivitySearch() {
+    agent.transitivityRules.foreach { e =>
+      e.generate(blackboard.get, interactive = false)
+    }
+  }
+
+  def execute() = {
+    log("Term Search Executing")
+    transitivitySearch()
+    true
+  }
+
+  /** Returns a set of all nodes, that will be written by the task. */
+  override def writeSet(s: Section): Set[s.ObjectType] = {
+    if (s==blackboard.get.transitivitySection) {
+      Set(blackboard.get.transitivitySection.data.asInstanceOf[s.ObjectType])
+    }else{
+      Set.empty[s.ObjectType]
+    }
+  }
+
+  /** Returns a set of all nodes that are read for the task. */
+  override def readSet(s: Section): Set[s.ObjectType] = writeSet(s).asInstanceOf[Set[s.ObjectType]]
+}
