@@ -19,7 +19,6 @@ class FilteringErrorHandler(handler : ErrorHandler, filter : Error => Boolean) e
   def addError(e : Error) = {} //nothing to do here, not caalled
 }
 
-
 object sTeX {
   def inSmglom(p : Path) : Boolean = {
     //group is smglom
@@ -86,7 +85,7 @@ object OMDoc {
                val l = lS.toInt 
                val r = rS.toInt
                (l,r)
-             case _ => throw new STeXParseError("Invalid 'from' value in STeX source reference" + srcrefS, None, None)
+             case _ => throw new STeXParseError("Invalid 'from' value in STeX source reference" , Some(s"srcref value is `$srcrefS`"), None, None)
            }
            val trangeS = toS.substring("to=".length, toS.length - 1) //removing "to=" and ending bracket
            val tvalsS = trangeS.split(";").toList
@@ -95,27 +94,27 @@ object OMDoc {
                val l = lS.toInt 
                val r = rS.toInt
                (l,r)
-             case _ => throw new STeXParseError("Invalid 'to' value in STeX source reference " + srcrefS, None, None)
+             case _ => throw new STeXParseError("Invalid 'to' value in STeX source reference " , Some(s"srcref value is `$srcrefS`"), None, None)
            }
            
            val from = SourcePosition(-1, fl, fr)
           val to = SourcePosition(-1, tl, tr)
           val sreg = SourceRegion(from,to)
           Some(SourceRef(dpath.uri, sreg))
-          case _ => throw new STeXParseError("Invalid STeX source reference " + srcrefS, None, None)
+          case _ => throw new STeXParseError("Invalid STeX source reference " , Some(s"srcref value is `$srcrefS`"), None, None)
         }
       } catch {
         case e : STeXParseError => //reporting and returning none
           errorCont(e)
           None
         case e : Exception => //producing parse error and returning none
-          val err = STeXParseError.from(e, Some("Failed to parse SourceRef for <" + n.label + " " + n.attributes.toString + ">"), None, Some(Level.Warning))
+          val err = STeXParseError.from(e, "Failed to parse SourceRef for <" + n.label + " " + n.attributes.toString + ">", None, None, Some(Level.Warning))
           errorCont(err)
           None
       }
     } else { //no srcref attr so returning none and producing an Info type error if actual node elem
       if (n.isInstanceOf[Elem]) {
-        val err = new STeXParseError("No stex:srcref attribute for <" + n.label + " " + n.attributes.toString + ">", None, Some(Level.Info))
+        val err = new STeXParseError("No stex:srcref attribute for <" + n.label + " " + n.attributes.toString + ">", None, None, Some(Level.Info))
         errorCont(err)
       }
       None
@@ -133,7 +132,7 @@ object OMDoc {
         val cmp =  translateCMP(rewriteCMP(narrNode))(dpath, mpath, errorCont : ErrorHandler)
         Some(cmp)
       case None => 
-        val err = new STeXParseError("No CMP in narrative object " + n.label, sref, Some(Level.Warning))
+        val err = new STeXParseError("No CMP in narrative object " + n.label, None, sref, Some(Level.Warning))
         errorCont(err)
         None
     }
@@ -191,10 +190,8 @@ object OMDoc {
       case "OMOBJ" => 
         FlexiformalTerm(Obj.parseTerm(n, NamespaceMap(dpath)))
       case _ => //informal (narrative) term
-        val err = new STeXParseError("Unexpected element label in CMP: " + n.label, sref, Some(Level.Info))
-        errorCont(err)
         val terms = getChildren(n)(n => n.label == "term" || n.label == "OMOBJ").map(p => (translateCMP(p._1), p._2))
         FlexiformalNode(n, terms.toList)
     }
   }
- }
+}

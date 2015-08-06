@@ -14,38 +14,40 @@ import info.kwarc.mmt.api.utils._
 
 import scala.xml.{Elem, NamespaceBinding, Node}
 
-abstract class STeXError(msg: String, severity: Option[Level.Level]) extends Error(msg) {
+abstract class STeXError(msg: String, extraMsg: Option[String], severity: Option[Level.Level]) extends Error(msg) {
+  
+  override val extraMessage = extraMsg.getOrElse("")
   override def level = severity.getOrElse(super.level)
 }
 
-class STeXParseError(val msg: String, val sref: Option[SourceRef], val severity: Option[Level.Level]) extends STeXError(msg, severity) {
+class STeXParseError(val msg: String, extraMsg: Option[String],  val sref: Option[SourceRef], val severity: Option[Level.Level]) 
+    extends STeXError(msg, extraMsg, severity) {
   private def srefS = sref.fold("")(_.region.toString)
 
   override def toNode = <error type={this.getClass.toString} shortMsg={this.shortMsg} level={level.toString} sref={srefS}>
+    {if (extraMessage.isEmpty) Nil else extraMessage}
     {Stacktrace.asNode(this)}
   </error>
 }
 
 object STeXParseError {
-  def from(e: Exception, preMsg: Option[String] = None, sref: Option[SourceRef] = None, severity: Option[Level.Level] = None): STeXParseError = {
-    val pre = preMsg.fold("")(_ + ": ")
-    val errMsg = pre + {
-      e match {
-        case er: Error => er.shortMsg
-        case ex: Exception => ex.getMessage
-      }
-    }
-    val err = new STeXParseError(errMsg, sref, severity)
+  def from(e: Exception, msg : String, preMsg : Option[String], sref: Option[SourceRef] = None, severity: Option[Level.Level] = None): STeXParseError = {
+    val pre = preMsg.map(_ + ": \n").getOrElse("")
+    val extraMsg = pre + {e match {
+      case er: Error => er.shortMsg
+      case ex: Exception => ex.getMessage
+    }}
+    val err = new STeXParseError(msg, Some(extraMsg), sref, severity)
     err.setStackTrace(e.getStackTrace)
     err
   }
 }
 
-class STeXLookupError(val msg: String, severity: Option[Level.Level]) extends STeXError(msg, severity)
+class STeXLookupError(val msg: String, extraMsg : Option[String], severity: Option[Level.Level]) extends STeXError(msg, extraMsg, severity)
 
 object STeXLookupError {
-  def from(e: Error, severity: Option[Level.Level]): STeXLookupError = {
-    val err = new STeXLookupError(e.shortMsg, severity)
+  def from(e: Error, msg : String, severity: Option[Level.Level]): STeXLookupError = {
+    val err = new STeXLookupError(msg, Some(e.shortMsg), severity)
     err.setStackTrace(e.getStackTrace)
     err
   }
@@ -91,7 +93,7 @@ class STeXImporter extends Importer {
       }
     } catch {
       case e: Exception =>
-        val err = STeXParseError.from(e, Some("Skipping article due to exception"), None, Some(Level.Fatal))
+        val err = STeXParseError.from(e, "Skipping article due to unexpected error", None, None, Some(Level.Fatal))
         bt.errorCont(err)
     }
   }
@@ -195,7 +197,7 @@ class STeXImporter extends Importer {
     } catch {
       case e: STeXError => errorCont(e)
       case e: Exception =>
-        val err = STeXParseError.from(e, Some("Skipping module-level element " + n.label + " due to error"), sref, None)
+        val err = STeXParseError.from(e, "Skipping module-level element `" + n.label + "` due to unexpected error", None, sref, None)
     }
   }
 
@@ -229,8 +231,14 @@ class STeXImporter extends Importer {
           val name = getName(n, thy)
           val targetsS = (n \ "@for").text.split(" ").filter(_ != "")
           val targets = targetsS map { s =>
-            val comps = s.split("\\?").toList
-            resolveSPath(Some(comps.head), comps.tail.head, thy.path)
+            s.split("\\?").toList match {
+              case tname :: sname :: Nil  => resolveSPath(Some(tname), sname, thy.path)
+              case l =>
+                val error = new STeXParseError(s"Definition has invalid target attribute", 
+                    Some(s"expected `thyName?symName` found `$s`. Defaulting to current theory and using `${l.last}` as symName"), sref, Some(Level.Error))
+                errorCont(error)
+                resolveSPath(None, l.last, thy.path)
+            }
           }
           val spath = targets.headOption.getOrElse(thy.path ? name)
           parseNarrativeObject(n)(dpath, thy, errorCont) match {
@@ -293,7 +301,7 @@ class STeXImporter extends Importer {
             c.notC.parsingDim.set(texNotation)
           } catch {
             case e: Exception =>
-              val err = STeXParseError.from(e, Some("Notation is missing latex macro information"), sref, Some(Level.Warning))
+              val err = STeXParseError.from(e, "Notation is missing latex macro information", Some(s"for symbol ${cd}?${name}") ,sref, Some(Level.Warning))
               errorCont(err)
           }
           //getting mathml rendering info
@@ -307,7 +315,7 @@ class STeXImporter extends Importer {
             }
           } catch {
             case e : Exception => 
-              val err = STeXParseError.from(e, Some("Bad notation rendering for symbol " + name), sref, None)
+              val err = STeXParseError.from(e, "Invalid notation rendering", Some(s"for symbol ${cd}?${name}"), sref, None)
               errorCont(err)
           }
         case "metadata" => //TODO
@@ -327,11 +335,7 @@ class STeXImporter extends Importer {
     } catch {
       case e: Exception =>
         val sref = parseSourceRef(n, doc.path)
-        val err = STeXParseError.from(e, Some("Skipping declaration element " + n.label + " due to error"), sref, None)
-        errorCont(err)
-      case e: Throwable =>
-        val sref = parseSourceRef(n, doc.path)
-        val err = new STeXParseError("Skipping declaration element " + n.label + " due to throwable: " + e.getMessage, sref, Some(Level.Error))
+        val err = STeXParseError.from(e, "Skipping declaration-level element `" + n.label + "` due to unexpected error", None, sref, None)
         errorCont(err)
     }
   }
@@ -344,10 +348,10 @@ class STeXImporter extends Importer {
         val narrNode = <div class="CMP">
           {nodes}
         </div> //effectively treating CMP as a narrative div
-      val cmp = translateCMP(rewriteCMP(narrNode))(dpath, thy, errorCont: ErrorHandler)
+        val cmp = translateCMP(rewriteCMP(narrNode))(dpath, thy, errorCont: ErrorHandler)
         Some(cmp)
       case None =>
-        val err = new STeXParseError("No CMP in narrative object " + n.label, sref, Some(Level.Warning))
+        val err = new STeXParseError("No CMP in narrative object `" + n.label + "`", None, sref, Some(Level.Warning))
         None
     }
   }
@@ -491,7 +495,11 @@ class STeXImporter extends Importer {
             docCont(doc.path)(doc) //reindexing that document
           } catch {
             case e: NotFound =>
-              val err = new STeXParseError("Cannot add verbalization notation, symbol not found: " + refName, sref, Some(Level.Warning))
+              val err = new STeXParseError("Cannot add verbalization notation, symbol not found", Some(s"was looking for symbol $refName"), sref, Some(Level.Warning))
+              errorCont(err)
+            case e: GetError => 
+              val err = new STeXParseError("Cannot add verbalization notation, symbol not found", Some(s"was looking for symbol $refName"), sref, Some(Level.Warning))
+              errorCont(err)
           }
           ref
         } else {
@@ -505,8 +513,6 @@ class STeXImporter extends Importer {
       case "OMOBJ" =>
         FlexiformalTerm(Obj.parseTerm(n, NamespaceMap(dpath)))
       case _ => //informal (narrative) term
-        val err = new STeXParseError("Unexpected element label in CMP: " + n.label, sref, Some(Level.Info))
-        errorCont(err)
         val terms = getChildren(n)(n => n.label == "term" || n.label == "OMOBJ").map(p => (translateCMP(p._1), p._2))
         FlexiformalNode(n, terms.toList)
     }
@@ -636,11 +642,10 @@ class STeXImporter extends Importer {
               makeDelim(dm)
           }
       }
-
       argMap(argName) match {
         case ProtoArg(nr) => SeqArg(nr, delim, precO) :: Nil
         case ProtoVar(nr) => Var(nr, typed = false, Some(delim), precO) :: Nil
-        case ProtoSub(nr) => throw new STeXParseError("cannot have sequence sub as arg", None, None)
+        case ProtoSub(nr) => throw new STeXParseError("Cannot have sequence sub as argument in notation rendering", None, None, None)
       }
     case "mstyle" => n.child.toList.flatMap(parseRenderingMarkers(_, argMap))
     case "merror" => Nil
@@ -679,7 +684,7 @@ class STeXImporter extends Importer {
                 val l = lS.toInt
                 val r = rS.toInt
                 (l, r)
-              case _ => throw new STeXParseError("Invalid 'from' value in STeX source reference" + srcrefS, None, None)
+              case _ => throw new STeXParseError("Invalid 'from' value in STeX source reference", Some(s"srcref value is `$srcrefS`"), None, None)
             }
             val trangeS = toS.substring("to=".length, toS.length - 1) //removing "to=" and ending bracket
           val tvalsS = trangeS.split(";").toList
@@ -688,28 +693,28 @@ class STeXImporter extends Importer {
                 val l = lS.toInt
                 val r = rS.toInt
                 (l, r)
-              case _ => throw new STeXParseError("Invalid 'to' value in STeX source reference " + srcrefS, None, None)
+              case _ => throw new STeXParseError("Invalid 'to' value in STeX source reference ", Some(s"srcref value is `$srcrefS`"), None, None)
             }
 
             val from = SourcePosition(-1, fl, fr)
             val to = SourcePosition(-1, tl, tr)
             val sreg = SourceRegion(from, to)
             Some(SourceRef(dpath.uri, sreg))
-          case _ => throw new STeXParseError("Invalid STeX source reference " + srcrefS, None, None)
+          case _ => throw new STeXParseError("Invalid STeX source reference", Some(s"srcref value is `$srcrefS`"), None, None)
         }
       } catch {
         case e: STeXParseError => //reporting and returning none
           errorCont(e)
           None
         case e: Exception => //producing parse error and returning none
-          val err = STeXParseError.from(e, Some("Failed to parse SourceRef for <" + n.label + " " + n.attributes.toString + ">"), None, Some(Level.Warning))
+          val err = STeXParseError.from(e, "Failed to parse SourceRef", Some("for <" + n.label + " " + n.attributes.toString + ">"), None, Some(Level.Warning))
           errorCont(err)
           None
       }
     } else {
       //no srcref attr so returning none and producing an Info type error if actual node elem
       if (n.isInstanceOf[Elem]) {
-        val err = new STeXParseError("No stex:srcref attribute for <" + n.label + " " + n.attributes.toString + ">", None, Some(Level.Info))
+        val err = new STeXParseError("No stex:srcref attribute for element `" + n.label + "`", Some("while processing <" + n.label + " " + n.attributes.toString + ">\n"), None, Some(Level.Info))
         errorCont(err)
       }
       None
@@ -741,14 +746,14 @@ class STeXImporter extends Importer {
     val fragPath = plainFrags.drop(srcidx + 1)
 
     val (group, archive) = srcidx match {
-      case -1 => throw new STeXParseError("Invalid DPath, cannot produce group/project/'source'/path canonical form -- no 'source' " + s, None, None)
+      case -1 => throw new STeXParseError("Invalid DPath, cannot produce group/project/'source'/path canonical form", Some("did not find 'source' folder in: " + s), None, None)
       case 0 => (baseGroup, baseArchive)
       case 1 => (baseGroup, plainFrags(0))
       case _ => (plainFrags(srcidx - 2), plainFrags(srcidx - 1))
     }
 
     fragPath match {
-      case Nil => throw new STeXParseError("Invalid DPath. Got: " + s + " (empty document name)", None, None)
+      case Nil => throw new STeXParseError("Invalid DPath, empty document name", Some(s"Got `$s` as document path"), None, None)
       case _ =>
         val base = mhBase / group / archive
         fragPath.init.foldLeft(base)((dc, x) => dc / x) / (fragPath.last + ".omdoc")
@@ -761,7 +766,7 @@ class STeXImporter extends Importer {
       case fpathS :: tnameS :: Nil =>
         val dpath = parseRelDPath(fpathS, base)
         dpath ? LocalName(tnameS)
-      case _ => throw new STeXParseError("Expected 2 # separated parts for module path in: " + s, None, None)
+      case _ => throw new STeXParseError("Expected 2 `#` separated parts for module path", Some(" in: " + s), None, None)
     }
   }
 
@@ -774,8 +779,8 @@ class STeXImporter extends Importer {
     val thyOptions = tpaths.map(_.toMPath).filter(t => tnameSO.fold(true)(t.name.last.toPath == _))
     val spath = thyOptions.toList match {
       case Nil => // taking dpath from container
-        val err = new STeXLookupError("Cannot resolve module for " + tnameSO.getOrElse("*") + "?" + snameS +
-          " from theory " + container.toPath, Some(Level.Warning)) //perhaps not included
+        val err = new STeXLookupError("Cannot resolve module for symbol path, using default values", Some("looking for " + tnameSO.getOrElse("*") + "?" + snameS +
+          " from theory " + container.toPath), Some(Level.Warning)) //perhaps not included
         errorCont(err)
         defaultDoc ? defaultThy ? defaultSym
       case hd :: Nil => // found one matching thy, will use as default
@@ -796,14 +801,15 @@ class STeXImporter extends Importer {
         }
         symOptions match {
           case Nil => //adding error and defaulting
-            val err = new STeXLookupError("Cannot resolve symbol for module=" + tnameSO.getOrElse("*") +
-              " and symbol=" + snameS + ". No matching modules " + l + " , contain symbol " + snameS, Some(Level.Warning))
+            val err = new STeXLookupError("Cannot resolve symbol path, symbol does not exist. Using default values", Some(" looking for module=" + tnameSO.getOrElse("*") +
+              " and symbol=" + snameS + ". No matching modules " + l + " , contain symbol " + snameS), Some(Level.Warning))
             errorCont(err)
             defaultDoc ? defaultThy ? defaultSym
           case hd :: Nil => hd.path
           case _ => //adding error and defaulting
-            val err = new STeXLookupError("Cannot resolve symbol for module=" + tnameSO.getOrElse("*") +
-              " and symbol=" + snameS + ". Several matching symbols: " + symOptions.map(_.path), Some(Level.Warning))
+            val err = new STeXLookupError("Cannot resolve symbol path, several matching symbols. Using default values", 
+                Some(" looking for module=" + tnameSO.getOrElse("*") +" and symbol=" + snameS + ". Several matching symbols: " + symOptions.map(_.path)),
+                Some(Level.Warning))
             errorCont(err)
             defaultDoc ? defaultThy ? defaultSym
         }
