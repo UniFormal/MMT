@@ -177,8 +177,6 @@ class AuctionAgent(implicit controller: Controller,oLP:String) extends Agent {
     })
   }
 
-
-
   /**
    * Starts a new auction for agents to buy computation time
    * for their tasks. The result is a set of tasks,
@@ -217,7 +215,7 @@ class AuctionAgent(implicit controller: Controller,oLP:String) extends Agent {
 
     log("Selected "+tasks.length+" task(s) for execution")
 
-    sendMessage(new MetaTask(tasks.toSet,this,"Parallelizable MetaTask"),executionAgent)
+    sendMessage(new MetaTask(tasks,this,"Parallelizable MetaTask"),executionAgent)
   }
   
 }

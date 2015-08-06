@@ -90,14 +90,14 @@ abstract class Task(implicit c: Controller,oLP:String) extends Message{
 }
 
 /** Class which represents a Meta task which calls on proof tasks*/
-case class MetaTask(taskSet:Set[Task], byAgentVar: Agent, nameVar: String)(implicit c: Controller,oLP:String) extends Task  {
+case class MetaTask(taskList:List[Task], byAgentVar: Agent, nameVar: String)(implicit c: Controller,oLP:String) extends Task  {
   override def logPrefix = oLP+"#MetaTask"
   
   val name = nameVar
   override val sentBy:Agent = byAgentVar
 
   //TODO implement parallelization
-  def execute():Boolean = taskSet.toList.sortBy(-_.priority).map({t=> //TODO ordering is a hack so fix this
+  def execute():Boolean = taskList.map({t=>
     if (t.isApplicable(this.blackboard.get)){
       log("Executing Task: " +t)
       t.execute()
@@ -109,21 +109,21 @@ case class MetaTask(taskSet:Set[Task], byAgentVar: Agent, nameVar: String)(impli
 
   def readSet(s: Section):Set[s.ObjectType] ={
     var out:Set[s.ObjectType] = Set.empty[s.ObjectType]
-    taskSet.foreach(t=>out=out.union(t.readSet(s).asInstanceOf[Set[s.ObjectType]]))
+    taskList.foreach(t=>out=out.union(t.readSet(s).asInstanceOf[Set[s.ObjectType]]))
     out
   }
 
   def writeSet(s: Section):Set[s.ObjectType] ={
     var out:Set[s.ObjectType] = Set.empty[s.ObjectType]
-    taskSet.foreach(t=>out=out.union(t.writeSet(s).asInstanceOf[Set[s.ObjectType]]))
+    taskList.foreach(t=>out=out.union(t.writeSet(s).asInstanceOf[Set[s.ObjectType]]))
     out
   }
 
   override def toString: String = {
-    name + Display.setDisplay(taskSet,"Tasks")
+    name + Display.listDisplay(taskList,"Tasks")
   }
 
   override def isApplicable[BB<:Blackboard](b:BB) = {
-    super.isApplicable(b) &&  taskSet.forall(_.isApplicable(b))
+    super.isApplicable(b) &&  taskList.forall(_.isApplicable(b))
   }
 }

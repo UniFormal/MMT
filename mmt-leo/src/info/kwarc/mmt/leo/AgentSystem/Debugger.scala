@@ -59,6 +59,13 @@ object Display {
     out
   }
 
+  /** displays a list with nice indentation*/
+  def listDisplay[B](s:List[B], title:String = "Set"):String ={
+    var out = title+":\n"
+    for (e <- s) {out = out+addIndent(e)+"\n"}
+    out
+  }
+
   /** Displays a queue of lists with nice indentation*/
   def QueueSetDisplay[B](q:mutable.Queue[Set[B]], title:String = "Queue",title2:String = "Set"):String ={
     var out = title+":\n"
