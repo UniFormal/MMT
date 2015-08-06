@@ -140,7 +140,7 @@ case class SearchBackwardTask(agent:SearchBackwardAgent,g:Goal)(implicit control
 
   def execute()={
     if (blackboard.get.cycle==0){expand(g); g.isSolved}
-    val out=backwardSearch(g)
+    backwardSearch(g)
     true
   }
 }

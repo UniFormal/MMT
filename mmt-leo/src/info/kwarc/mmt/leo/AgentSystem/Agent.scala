@@ -1,12 +1,10 @@
 package info.kwarc.mmt.leo.AgentSystem
 
 import util.control.Breaks._
-
-
 import info.kwarc.mmt.api.frontend.{Controller, Logger}
-
 import scala.collection.mutable
-//TODO reimplement partition prover and andOr infastructure
+
+
 /**
  * Trait representing Agents which houses most of their general functionality
  */

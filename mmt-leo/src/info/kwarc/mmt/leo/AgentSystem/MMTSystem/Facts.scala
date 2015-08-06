@@ -1,15 +1,12 @@
 package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.{Logger, Controller}
+import info.kwarc.mmt.api.frontend.{Controller, Logger}
 import info.kwarc.mmt.api.objects.Conversions._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.lf.{ApplyGeneral, FunType}
-
 
 import scala.collection.mutable
-
 
 
 
@@ -56,7 +53,7 @@ object Shape {
             case None => AtomicShape(t)
             case Some(i) => BoundShape(i)
          } 
-      case f => AtomicShape(f) //TODO Ask about shadowing warning
+      case f => AtomicShape(f)
    }
    
    def matches(s: Shape, t: Shape): Boolean = (s, t) match {
@@ -92,33 +89,6 @@ case class Atom(tm: Term, tp: Term, rl: Option[String]) {
    def isVariable = tm.isInstanceOf[OMV]
 }
 
-/*
-
-class TransitiveClosureSet{
-  type Operation = Int
-
-  var g = Graph[Term,LDiEdge[Operation]]()
-
-  def compare(a:Term,b:Term,order:Boolean=false):Option[Boolean] = {
-    if (transClosureOf(a).contains(b)) return Some(true)
-    if (order && transClosureOf(b).contains(a)) return Some(false)
-    None
-  }
-
-  def transClosureOf(t1:Term):Set[Term] = getOtherTerms(t1)+t1
-
-  def getOtherTerms(t1:Term):Set[Term] = {
-    g find t1 match {
-      case Some(g1) => g1.diSuccessors.asInstanceOf[Set[Term]]
-        //.LDiSuccessors.asInstanceOf[Set[Term]]
-      case None => Set.empty[Term]
-    }
-  }
-
-  def add(t1:Term,t2:Term,op:Operation) = {g += LDiEdge(t1,t2)(op)}
-}
-*/
-
 case class TermEntry(goal: Goal, tm: Term, tp: Term) {
   override def toString = tp.toString + "\n     " + tm.toString
   def present(presentObj: Obj => String) = {
@@ -140,9 +110,8 @@ class Terms(blackboard: MMTBlackboard)(implicit controller: Controller,oLP:Strin
     facts.getConstantAtoms.foreach(addTerm(_,blackboard.goal))
     addVarAtoms(blackboard.goal)
   }
-  //TODO add variable atoms as well
 
-  def addVarAtoms(g:Goal) = g.varAtoms.foreach(addTerm(_,blackboard.goal))
+  def addVarAtoms(g:Goal) = g.varAtoms.foreach(addTerm(_,g))
 
   def addTerm(termEntry:TermEntry):Unit = {terms(termEntry.tp) += termEntry; log("Added Term:"+ termEntry) }
   def addTerm(a: Atom,g:Goal):Unit  = this addTerm TermEntry(g,a.tm,a.tp)
@@ -167,16 +136,16 @@ class Terms(blackboard: MMTBlackboard)(implicit controller: Controller,oLP:Strin
  * @param shapeDepth is the depth of the shape representation used to apprximate facts
  */
 class Facts(blackboard: MMTBlackboard, shapeDepth: Int)(implicit c: Controller,oLP:String) extends Logger {
-   val report =  c.report
-   def logPrefix = oLP+"#Facts"
+  val report =  c.report
+  def logPrefix = oLP+"#Facts"
 
-    def getFunctionalFacts:List[Fact] = Nil //TODO implement this
+  def getFunctionalFacts:List[Fact] = Nil //TODO implement this
 
-   private var constantAtoms : List[Atom] = Nil
-   private[leo] def addConstantAtom(a: Atom) {
-      constantAtoms ::= a
-   }
-   def getConstantAtoms = constantAtoms
+  private var constantAtoms : List[Atom] = Nil
+  private[leo] def addConstantAtom(a: Atom) {
+     constantAtoms ::= a
+  }
+  def getConstantAtoms = constantAtoms
 
    /**
     * the database of (non-atomic) facts, indexed by the shape of the type
@@ -192,9 +161,13 @@ class Facts(blackboard: MMTBlackboard, shapeDepth: Int)(implicit c: Controller,o
     *  
     *  facts are ignored if their proof does not use a free variable
     */
-   def add(f: Fact) {
-      if (f.tm.freeVars.nonEmpty)
-         futureFacts ::= f
+   def add(f: Fact,section:Option[FactSection] ) = {
+      if (f.tm.freeVars.nonEmpty){futureFacts ::= f}
+
+      section match {
+        case Some(s) => s.passiveAdd(f)
+        case None =>
+      }
    }
 
   /** simplify a fact */
@@ -216,7 +189,7 @@ class Facts(blackboard: MMTBlackboard, shapeDepth: Int)(implicit c: Controller,o
        facts(sh) += fS
     }
     futureFacts = Nil
-    if (out && section.isDefined) {section.get.passiveAdd()}
+    //if (out && section.isDefined) {section.get.passiveAdd()}
   }
    
    /**

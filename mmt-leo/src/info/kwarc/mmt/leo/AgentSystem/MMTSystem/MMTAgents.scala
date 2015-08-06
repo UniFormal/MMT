@@ -1,14 +1,13 @@
 package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
+import info.kwarc.mmt.api.Rule
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.{Rule, modules}
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.leo.AgentSystem.{Change, Listener, Agent}
-import info.kwarc.mmt.api.uom.Lambda
+import info.kwarc.mmt.leo.AgentSystem.{Agent, Change}
 
 /**
  * Created by Mark on 7/23/2015.
+ *
+ * this class represents the structure for an Agent of the MMT system
  */
 
 
@@ -49,8 +48,8 @@ class SearchBackwardAgent(implicit controller: Controller,oLP:String) extends MM
   override def respond() = {
     log("responding to: " + mailbox.length + " message(s)")
     readMail.foreach{
-      case Change(s,data,flag) => addTask(blackboard.get.goalSection.data)
-      case _ if blackboard.get.cycle==0  => addTask(blackboard.get.goalSection.data)
+      case Change(s,data,flag) if taskSet.isEmpty => addTask(blackboard.get.goalSection.data)
+      case _ if blackboard.get.cycle==0 && taskSet.isEmpty => addTask(blackboard.get.goalSection.data)
       case _ =>
     }
     if (taskSet.isEmpty) log("NO TASKS FOUND") else log("Found "+taskSet.size+" task(s)")
@@ -80,8 +79,7 @@ class TermGenerationAgent(implicit controller: Controller,oLP:String) extends MM
   def wantToSubscribeTo = List(blackboard.get.factSection)
   override val interests = List("ADD")
 
-  def addTask() = taskSet+=new TermGenerationTask(this) //TODO add Term generation to agent system
-  //def addTask() = ???
+  def addTask() = taskSet+=new TermGenerationTask(this)
 
   override def respond() = {
     log("responding to: " + mailbox.length + " message(s)")
@@ -97,8 +95,7 @@ class TransitivityAgent(implicit controller: Controller,oLP:String) extends MMTA
   def wantToSubscribeTo = List(blackboard.get.factSection)
   override val interests = List("ADD") //TODO make it interested in the addition of relation shaped facts
 
-  def addTask() = taskSet+=new TransitivityTask(this) //TODO add transitivity to agent system
-  //def addTask() = ???
+  def addTask() = taskSet+=new TransitivityTask(this)
 
   override def respond() = {
     log("responding to: " + mailbox.length + " message(s)")
@@ -114,14 +111,15 @@ abstract class NormalizingAgent(implicit controller: Controller,oLP:String) exte
 
   override val name = "NormalizingAgent"
 
-  def wantToSubscribeTo = List(blackboard.get.goalSection)
+  def wantToSubscribeTo = List(blackboard.get.goalSection,blackboard.get.factSection)
+  override val interests = List("ADD")
 
   //TODO possibly class of beta and eta
   lazy val normalizingRules = blackboard.get.rules.get(classOf[NormalizingRule])
 
   def allRulesPresent: Boolean = ??? //TODO add way to determine if there are rules for all of the symbols
 
-  override val interests = List("ADD") //TODO make it interested in the addition of relation shaped facts
+
 
 }
 

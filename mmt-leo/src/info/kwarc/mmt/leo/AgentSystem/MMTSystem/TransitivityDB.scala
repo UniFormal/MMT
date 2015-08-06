@@ -1,14 +1,16 @@
 package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
-import info.kwarc.mmt.lf.ApplySpine
-
-import scalax.collection.GraphEdge.{DiEdge, UnDiEdge}
 import scalax.collection.GraphTraversal.Predecessors
-import scalax.collection.edge.{LUnDiEdge, LDiEdge}
+import scalax.collection.edge.{LDiEdge, LUnDiEdge}
 import scalax.collection.mutable.Graph
 
 /**
  * Created by Mark on 8/3/2015.
+ *
+ * this class holds the transitivity database which
+ * stores a graph of MMTTerms related by a
+ * transitive relation. All terms are labeled
+ * with their respective goals to ensure soundness
  */
 
 class TransitivityDB {

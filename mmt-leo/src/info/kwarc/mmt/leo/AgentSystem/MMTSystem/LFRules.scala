@@ -1,12 +1,10 @@
 package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
 
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.{LocalName, objects}
-import info.kwarc.mmt.leo.AgentSystem.{Blackboard, Section}
+import info.kwarc.mmt.api.LocalName
+import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf._
-import objects._
-import objects.Conversions._
 
 
 /** the proof step ?:Pi x:A.B ----> lambda x:A.(?:B)
@@ -198,8 +196,10 @@ object BackwardPiElimination extends BackwardSearch {
 
 object ForwardPiElimination extends ForwardSearch {
    val head = Pi.path
+   private var factSection:FactSection= null
 
    def generate(blackboard: MMTBlackboard, interactive: Boolean) {
+      this.factSection=blackboard.factSection
       // apply all symbols
       blackboard.facts.getConstantAtoms foreach { case a =>
          if (interactive || a.rl.contains("ForwardRule"))
@@ -258,7 +258,7 @@ object ForwardPiElimination extends ForwardSearch {
                      // we apply fun to all parameters and found arguments
                      // and add the new fact, whose type is obtained by substituting all parameters and named arguments in scope 
                      val f = Fact(g, ApplyGeneral(fun, sub.map(_.target) ::: foundArgs.map(_._2)), scope ^? (sub ++ foundSubs))
-                     facts.add(f)
+                     facts.add(f,Some(factSection))
                   case None =>
                   // otherwise, we cannot create a new fact
                }
@@ -343,10 +343,6 @@ object TermGeneration extends ForwardSearch {
          }
       }
    }
-
-
-
-
 
 }
 

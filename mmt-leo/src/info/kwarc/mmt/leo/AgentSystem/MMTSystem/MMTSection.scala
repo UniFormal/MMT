@@ -43,8 +43,8 @@ class FactSection(blackboard:MMTBlackboard,shapeDepth: Int)(implicit c: Controll
   var data = new Facts(blackboard:MMTBlackboard,shapeDepth: Int)
   var changes: List[Change[_]] = Nil
 
-  def passiveOp(flag:String) = handleChange(new Change(this, true, List(flag)))//TODO add specific fact pointers
-  def passiveAdd() = passiveOp("ADD")
+  def passiveOp(fact:Fact,flag:String) = handleChange(new Change(this, fact, List(flag)))//TODO add specific fact pointers
+  def passiveAdd(fact:Fact) = passiveOp(fact,"ADD")
 }
 
 class TermSection(blackboard:MMTBlackboard)(implicit c: Controller,oLP:String) extends Section(blackboard) {
