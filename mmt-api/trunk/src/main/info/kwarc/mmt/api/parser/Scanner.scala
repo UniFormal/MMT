@@ -329,14 +329,14 @@ sealed abstract class Found {
   def fromTo: Option[(Int, Int)]
 }
 
-/** represents a [[Delimiter]] that was found */
+/** represents a [[notations.Delimiter]] that was found */
 case class FoundDelim(pos: Int, delim: Delimiter) extends Found {
   override def toString: String = delim.toString
 
   def fromTo: Some[(Int, Int)] = Some((pos, pos + 1))
 }
 
-/** represents a [[Arg]] that was found
+/** represents a [[notations.Arg]] that was found
   * @param slice the TokenSlice where it was found
   *              (as TokenList's are mutable, slice is not necessarily valid in the future)
   * @param n the number of the Arg
@@ -347,7 +347,7 @@ case class FoundArg(slice: TokenSlice, n: Int) extends Found {
   def fromTo: Some[(Int, Int)] = Some((slice.start, slice.next))
 }
 
-/** represents an [[SeqArg]] that was found
+/** represents an [[notations.SeqArg]] that was found
   * @param n the number of the SeqArg
   * @param args the arguments that were found
   */
@@ -369,7 +369,7 @@ case class SingleFoundVar(pos: Int, name: Token, tp: Option[FoundArg]) {
   }
 }
 
-/** represents a [[Var]] that was found
+/** represents a [[notations.Var]] that was found
   *
   * the sequence variable parser is a state machine
   * {{{
