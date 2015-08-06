@@ -1,8 +1,10 @@
 package scala
 
 
+
 import org.scalatest._
 
+import scala.collection.mutable
 import scalax.collection.GraphEdge.{UnDiEdge, DiEdge}
 import scalax.collection.GraphTraversal.Predecessors
 import scalax.collection.mutable.Graph
@@ -86,6 +88,28 @@ class GraphSpec extends FlatSpec with Matchers {
     println(tg1)
   }
 
+  it should "preserve qeue orderings" in {
+    val foo1 = new mutable.Queue[Int]()
+    val foo2 = new mutable.Queue[Int]()
+    val foo3 = new mutable.Queue[Int]()
+    foo1.enqueue(1)
+    foo1.enqueue(2)
+    foo1.enqueue(3)
+    foo2.enqueue(4)
+    foo2.enqueue(5)
+    foo2.enqueue(6)
+    foo3.enqueue(7)
+    foo3.enqueue(8)
+    foo3.enqueue(9)
+
+    val l = List(foo1,foo2,foo3)
+    val bar = new mutable.Queue[Int]()
+    l.foreach(a=> a.dequeueAll(t=>true).foreach(bar.enqueue(_)))
+
+    bar.dequeue()
+    println(bar)
+
+  }
 
 
 }

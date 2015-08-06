@@ -94,28 +94,28 @@ abstract class Agent(implicit controller: Controller,oLP:String) extends Logger 
   def respond(): Unit
   
   /** @return number of tasks, the agent can currently work on */
-  def numTasks: Int = taskSet.size
+  def numTasks: Int = taskQueue.size
 
   /** Removes all Tasks from the task queue */
-  def clearTasks(): Unit = {taskSet=taskSet.empty}
+  def clearTasks(): Unit = taskQueue.clear()
   
   /** Queue holding the tasks to be bid on */
-  var taskSet: Set[Task] = Set.empty[Task]
+  var taskQueue: mutable.Queue[Task] = new mutable.Queue[Task]()
 
-  def removeTask(t:Task)= taskSet-=t
+  def removeTask(t:Task):Unit = taskQueue.dequeueFirst(_==t)
 
   /**
    * As getTasks with an infinite budget
    * @return - All Tasks that the current agent wants to execute.
    */
-  def getAllTasks: Iterable[Task] = taskSet.synchronized(taskSet.iterator.toIterable)
+  def getAllTasks: Iterable[Task] = taskQueue.synchronized(taskQueue.iterator.toIterable)
 
   /**
    * Given a set of (newly) executing tasks, remove all colliding tasks.
    *
    * @param nExec - The newly executing tasks
    */
-  def removeColliding(nExec: Iterable[Task]): Unit = taskSet.synchronized(taskSet.forall{tbe =>
+  def removeColliding(nExec: Iterable[Task]): Unit = taskQueue.synchronized(taskQueue.forall{tbe =>
     nExec.exists{e =>
       blackboard.get.sections.forall({ s =>
         val rem = e.writeSet(s).intersect(tbe.writeSet(s)).nonEmpty ||
@@ -158,16 +158,17 @@ class AuctionAgent(implicit controller: Controller,oLP:String) extends Agent {
   val metaTaskQueue = new mutable.Queue[Task]()
   
   /** @return A list of all of the registered proof agents*/
-  def subAgents() = blackboard.get.agents.diff(List(this)).sortBy(-_.priority)
-  
+  def subAgents() = blackboard.get.agents.sortBy(-_.priority)
+
+
   def respond() ={
     readMail.foreach {
-      case t: Task => taskSet+=t
+      case t: Task => taskQueue+=t
       case _ => throw new IllegalArgumentException("Unknown type of message")
     }
   }
   
-  def consistencyCheck(tasks:mutable.Queue[Task]): Boolean ={
+  def consistencyCheck(tasks:List[Task]): Boolean ={
     val sections = blackboard.get.sections
     sections.forall({ s =>
       val wsList = tasks.flatMap(t => t.writeSet(s).toList)
@@ -186,14 +187,17 @@ class AuctionAgent(implicit controller: Controller,oLP:String) extends Agent {
    */
   //TODO add auctioning
   def runAuction() : Unit = {
-    var tasks = new mutable.Queue[Task]()
-    subAgents().foreach(a=>tasks++=a.taskSet)
+    var tasks: List[Task]=Nil
+    subAgents().foreach({a=> tasks :::= a.taskQueue.dequeueAll(t=>true).toList} )
+
+    tasks = tasks.sortBy(-_.priority)
     val allTasks = tasks
 
     log("Found "+allTasks.length+" task(s)")
 
+
     //Eliminate collisions
-    def filterTasks(tasks:mutable.Queue[Task], t1:Task):mutable.Queue[Task] = {
+    def filterTasks(tasks:List[Task], t1:Task):List[Task] = {
       tasks.filter(t2 => (!t1.collide(t2)) || (t1==t2) )
     }
     breakable { //TODO find a more elegant way to do this
@@ -203,19 +207,14 @@ class AuctionAgent(implicit controller: Controller,oLP:String) extends Agent {
       }
     }
 
-    //remove task from agent's queue if successful
-    //TODO improve this interface
-    tasks.foreach(t=>t.sentBy.removeTask(t))
+    //Alert the agent if task was unsuccessful
+    allTasks.diff(tasks).foreach( t=>sendMessage(AuctionFailure(this,t),t.sentBy)   )
 
     if (!consistencyCheck(tasks)){
       println("TASKS: "+tasks)
       throw new IllegalArgumentException("Selected tasks are colliding")
     }
 
-
-    //Alert agents of tasks being dropped
-    //allTasks.diff(tasks).foreach(t=>sendMessage(new AuctionFailure(this,t),t.sentBy))
-    
     log("Selected "+tasks.length+" task(s) for execution")
 
     sendMessage(new MetaTask(tasks.toSet,this,"Parallelizable MetaTask"),executionAgent)

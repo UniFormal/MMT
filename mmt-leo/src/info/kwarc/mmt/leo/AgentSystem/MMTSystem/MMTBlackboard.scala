@@ -13,7 +13,8 @@ import info.kwarc.mmt.leo.AgentSystem.Blackboard
  */
 class MMTBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Controller,oLP:String) extends Blackboard {
 
-  override def logPrefix = oLP + "#GoalBlackboard"
+  val c = controller
+  override def logPrefix = oLP + "#MMTBlackboard"
 
   /*val invertibleBackward = rules.get(classOf[BackwardInvertible]).toList
   val invertibleForward  = rules.get(classOf[ForwardInvertible]).toList
@@ -38,7 +39,6 @@ class MMTBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Contr
   val factSection = new FactSection(this, shapeDepth)
   addSection(factSection)
   implicit val facts:Facts = factSection.data
-  initFacts()//TODO work facts into changes/section interface
 
 
   val termSection = new TermSection(this)
@@ -55,29 +55,6 @@ class MMTBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Contr
   /** convenience function to create a matcher in the current situation */
   def makeMatcher(context: Context, queryVars: Context) = new Matcher(controller, rules, context, queryVars)
 
-  private def initFacts() {
-    val imports = controller.library.visibleDirect(ComplexTheory(goal.context))
-    imports.foreach {
-      case OMPMOD(p,_) =>
-        controller.globalLookup.getO(p) match {
-          case Some(t:modules.DeclaredTheory) =>
-            t.getDeclarations.foreach {
-              case c: Constant if c.status == Active => c.tp.foreach {tp =>
-                val a = Atom(c.toTerm, tp, c.rl)
-                facts.addConstantAtom(a)
-              }
-              case _ =>
-            }
-          case _ =>
-        }
-      case _ =>
-    }
-  }
-
-  private def initDBs() ={
-    initFacts()
-    terms.initializeTerms(facts)
-  }
 
   /** Boolean representing the status of the prof goal */
   override def finished: Boolean = goal.isSolved

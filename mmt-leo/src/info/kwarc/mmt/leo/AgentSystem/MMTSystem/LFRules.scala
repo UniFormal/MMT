@@ -113,7 +113,7 @@ object BackwardPiElimination extends BackwardSearch {
         Alternative(sgs.reverse, () => ApplyGeneral(tm, args.reverseMap(a => a())))
    }
    def apply(blackboard: MMTBlackboard, g: Goal): List[ApplicableTactic] = {
-      (g.fullVarAtoms ::: blackboard.facts.getConstantAtoms).flatMap {case Atom(tm,tp,_) =>
+      val out = (g.fullVarAtoms ::: blackboard.facts.getConstantAtoms).flatMap {case Atom(tm,tp,_) =>
          // match return type of tp against g.conc
          val sgsOpt = makeSubgoals(blackboard, g.fullContext, g.conc, tp)
          sgsOpt match {
@@ -191,7 +191,9 @@ object BackwardPiElimination extends BackwardSearch {
               }
          }
       }
+     out
    }
+
 }
 
 object ForwardPiElimination extends ForwardSearch {

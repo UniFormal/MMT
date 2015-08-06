@@ -38,6 +38,8 @@ abstract class Section(blackboard: Blackboard)(implicit c: Controller,oLP:String
     * should be overwritten in later extensions for efficiency*/
   def sendAllInfo(l:Listener)={changes.foreach(sendMessage(_,l))}
 
+  def initialize():Unit
+
   override def toString: String = {data.getClass.toString + " Section"}
 }
 

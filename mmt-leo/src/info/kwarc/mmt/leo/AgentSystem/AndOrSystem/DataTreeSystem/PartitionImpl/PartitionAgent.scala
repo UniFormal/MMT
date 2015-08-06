@@ -30,12 +30,12 @@ class PartitionAgent(numbersVar: List[Int])(implicit c: Controller,oLP:String) e
       data match {
         case node: DataTree[_] if ignoreNode(node) => //TODO fix with reflection?
         case node: DataTree[_] =>
-          node.openLeaves.foreach(pt => taskSet += createTask(pt.asInstanceOf[DataTree[Int]]))
+          node.openLeaves.foreach(pt => taskQueue += createTask(pt.asInstanceOf[DataTree[Int]]))
         case _ => throw new IllegalArgumentException("unknown change type")
       }
     case _ => throw new IllegalArgumentException("unknown message type")
     }
-    if (taskSet.isEmpty) log("NO TASKS FOUND") else log("Found "+taskSet.size+" task(s)")
+    if (taskQueue.isEmpty) log("NO TASKS FOUND") else log("Found "+taskQueue.size+" task(s)")
   }
 
   def createTask(pt: DataTree[Int]): PartitionTask =  { new PartitionTask(pt,this)}

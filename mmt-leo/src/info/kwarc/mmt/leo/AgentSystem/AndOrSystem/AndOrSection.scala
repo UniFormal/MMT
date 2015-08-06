@@ -31,6 +31,7 @@ class AndOrSection[G>: Null <:AndOr[G]](blackboard: AndOrBlackboard[_],g:G)(impl
     update(node,f(node))
   }
 
+  def initialize():Unit = {}
 
   /**
    * Appends a tree to the specified root

@@ -37,37 +37,53 @@ abstract class MMTAgent(implicit controller: Controller,oLP:String) extends Agen
 }
 
 class SearchBackwardAgent(implicit controller: Controller,oLP:String) extends MMTAgent {
-  override val priority=1
+  override val priority = 1
 
-  override val name =  "SearchBackwardAgent"
+  override val name = "SearchBackwardAgent"
+
   def wantToSubscribeTo = List(blackboard.get.factSection)
+
   override val interests = List("ADD")
 
-  def addTask(g:Goal) = taskSet+=new SearchBackwardTask(this,g)
+
+  def goal_recurse(g: Goal):Unit ={
+
+    log("recursing at:" + g)
+    // recurse into subgoals first so that we do not recurse into freshly-added goals
+    g.getAlternatives.foreach { case Alternative(sgs, _) =>
+      sgs.foreach { sg => goal_recurse(sg) }
+      if (g.isSolved) return
+    }
+
+    addTask(g)
+  }
+
+  def addTask(g:Goal) = taskQueue.enqueue(new SearchBackwardTask(this,g))
 
   override def respond() = {
     log("responding to: " + mailbox.length + " message(s)")
     readMail.foreach{
-      case Change(s,data,flag) if taskSet.isEmpty => addTask(blackboard.get.goalSection.data)
-      case _ if blackboard.get.cycle==0 && taskSet.isEmpty => addTask(blackboard.get.goalSection.data)
+      case Change(s,data,flag) if taskQueue.isEmpty => goal_recurse(blackboard.get.goalSection.data)
+      case _ if blackboard.get.cycle==0 && taskQueue.isEmpty => goal_recurse(blackboard.get.goalSection.data)
       case _ =>
     }
-    if (taskSet.isEmpty) log("NO TASKS FOUND") else log("Found "+taskSet.size+" task(s)")
+    if (taskQueue.isEmpty) log("NO TASKS FOUND") else log("Found "+taskQueue.size+" task(s)")
   }
 }
 
 class SearchForwardAgent(implicit controller: Controller,oLP:String) extends MMTAgent {
+  override val priority = 0
 
   override val name =  "SearchForwardAgent"
   def wantToSubscribeTo = List(blackboard.get.factSection)
   override val interests = Nil
 
-  def addTask() = taskSet += new SearchForwardTask(this)
+  def addTask() = taskQueue += new SearchForwardTask(this)
 
   override def respond() = {
     log("responding to: " + mailbox.length + " message(s)")
     if (!goal.isFinished) {addTask()}
-    if (taskSet.isEmpty) log("NO TASKS FOUND") else log("Found "+taskSet.size+" task(s)")
+    if (taskQueue.isEmpty) log("NO TASKS FOUND") else log("Found "+taskQueue.size+" task(s)")
   }
 
 }
@@ -79,12 +95,12 @@ class TermGenerationAgent(implicit controller: Controller,oLP:String) extends MM
   def wantToSubscribeTo = List(blackboard.get.factSection)
   override val interests = List("ADD")
 
-  def addTask() = taskSet+=new TermGenerationTask(this)
+  def addTask() = taskQueue+=new TermGenerationTask(this)
 
   override def respond() = {
     log("responding to: " + mailbox.length + " message(s)")
     if (!goal.isFinished) {addTask()}
-    if (taskSet.isEmpty) log("NO TASKS FOUND") else log("Found "+taskSet.size+" task(s)")
+    if (taskQueue.isEmpty) log("NO TASKS FOUND") else log("Found "+taskQueue.size+" task(s)")
   }
 
 }
@@ -95,12 +111,12 @@ class TransitivityAgent(implicit controller: Controller,oLP:String) extends MMTA
   def wantToSubscribeTo = List(blackboard.get.factSection)
   override val interests = List("ADD") //TODO make it interested in the addition of relation shaped facts
 
-  def addTask() = taskSet+=new TransitivityTask(this)
+  def addTask() = taskQueue+=new TransitivityTask(this)
 
   override def respond() = {
     log("responding to: " + mailbox.length + " message(s)")
     if (!goal.isFinished) {addTask()}
-    if (taskSet.isEmpty) log("NO TASKS FOUND") else log("Found "+taskSet.size+" task(s)")
+    if (taskQueue.isEmpty) log("NO TASKS FOUND") else log("Found "+taskQueue.size+" task(s)")
   }
 
 }

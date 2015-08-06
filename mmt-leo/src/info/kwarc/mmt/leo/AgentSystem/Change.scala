@@ -80,6 +80,8 @@ abstract class Task(implicit c: Controller,oLP:String) extends Message{
   /** The agent which created the task*/
   override val sentBy: Agent
 
+  lazy val priority = sentBy.priority
+
   /** The blackboard to which the agent is registered,
     * lazy to avoid null pointer errors
     */
@@ -95,7 +97,7 @@ case class MetaTask(taskSet:Set[Task], byAgentVar: Agent, nameVar: String)(impli
   override val sentBy:Agent = byAgentVar
 
   //TODO implement parallelization
-  def execute():Boolean = taskSet.map({t=>
+  def execute():Boolean = taskSet.toList.sortBy(-_.priority).map({t=> //TODO ordering is a hack so fix this
     if (t.isApplicable(this.blackboard.get)){
       log("Executing Task: " +t)
       t.execute()

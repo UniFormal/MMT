@@ -144,6 +144,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     }catch{
       case _:Throwable=>
     }
+    //prover=rbp
 
     List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, mmtextr, prover).foreach { e => addExtension(e) }
     //targets and presenters

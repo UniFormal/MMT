@@ -64,7 +64,7 @@ abstract class Blackboard(implicit controller: Controller) extends Logger with C
     auctionAgent.get.runAuction()
     log("running execution agent")
     executionAgent.get.respond()
-    log("finished cycle")
+    log("finished cycle: "+cycle)
   }
 
   var cycle = 0
@@ -73,6 +73,8 @@ abstract class Blackboard(implicit controller: Controller) extends Logger with C
     agents.foreach(_.initConnection())
     auctionAgent.get.initConnection()
     executionAgent.get.initConnection()
+    log("Initializing sections, Current Blackboard: " + this)
+    sections.foreach(_.initialize())
     while (!isTerminated && !finished && cycle < numCycles) {
       runCycle()
       cycle = cycle + 1

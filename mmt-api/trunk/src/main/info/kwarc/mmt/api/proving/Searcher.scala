@@ -47,6 +47,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, outerLogP
             }
          case _ =>
       }
+      log("Initialized facts are:  \n"+facts)
    }
 
    /** convenience function to create a matcher in the current situation */
@@ -96,10 +97,12 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, outerLogP
    }
    
    private def forwardSearch(interactive: Boolean) {
+      log("Performing forward search")
       searchForward.foreach {e =>
          e.generate(this, interactive)
       }
       facts.integrateFutureFacts
+      log("Finished Search, facts are:  \n"+facts)
    }
    
    /**
