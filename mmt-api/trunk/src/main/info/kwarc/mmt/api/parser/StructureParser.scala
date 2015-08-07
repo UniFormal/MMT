@@ -49,6 +49,8 @@ object ViewKey {
  */
 class RelKeywordBasedParser extends KeywordBasedParser(DefaultObjectParser) {
   override def resolveName(home: Term, name: LocalName)(implicit state: ParserState) = name
+
+  override def getPatternsFromMeta(_o: Option[MPath]): List[(String, GlobalName)] = Nil
 }
 
 /**
@@ -330,20 +332,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       val t = new DeclaredTheory(ns, name, meta, parameters)
       moduleCont(t, parent)
       if (delim._1 == "=") {
-        val patterns: List[(String, GlobalName)] = meta match {
-          case None => Nil
-          case Some(mt) =>
-            try {
-              //TODO this does not cover imported patterns
-              controller.globalLookup.getDeclaredTheory(mt).getPatterns.map {
-                p => (p.name.toPath, p.path)
-              }
-            } catch {
-              case e: Error =>
-                //errorCont(makeError(delim._2, "error while retrieving patterns, continuing without patterns"))
-                Nil
-            }
-        }
+        val patterns: List[(String, GlobalName)] = getPatternsFromMeta(meta)
         logGroup {
           readInModule(t, t.path, context ++ t.getInnerContext, patterns)
         }
@@ -353,6 +342,22 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       }
     }
   }
+
+  protected def getPatternsFromMeta(meta: Option[MPath]): List[(String, GlobalName)] =
+    meta match {
+      case None => Nil
+      case Some(mt) =>
+        try {
+          //TODO this does not cover imported patterns
+          controller.globalLookup.getDeclaredTheory(mt).getPatterns.map {
+            p => (p.name.toPath, p.path)
+          }
+        } catch {
+          case e: Error =>
+            //errorCont(makeError(delim._2, "error while retrieving patterns, continuing without patterns"))
+            Nil
+        }
+    }
 
   /** auxiliary function to read views
     * @param parent the containing document/module
