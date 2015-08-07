@@ -314,6 +314,14 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
   }
 
+  def readParameters(context: Context)(implicit state: ParserState): Context = {
+    val (name,srg) = state.reader.readToken
+    readDelimiter(":")
+    val (obj,reg,parsed) = readParsedObject(context)
+    val vdc = VarDecl(LocalName(name),Some(parsed),None,None)
+    if (!state.reader.endOfDeclaration) readParameters(context++vdc)++vdc
+      else vdc
+  }
   /** auxiliary function to read Theories
     * @param parent the containing document/module
     * @param context the context (excluding the theory to be read)
@@ -348,6 +356,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case _ => context
       }
       val parameters = if (delim._1 == ">") {
+        /*
         val (_, reg, p) = readParsedObject(contextMeta)
         val params = p match {
           case ComplexTheory(cont) => cont
@@ -357,6 +366,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         }
         delim = state.reader.readToken
         params
+        */
+        val ct = readParameters(contextMeta)
+        delim = state.reader.readToken
+        ct
       } else
         Context()
       val t = new DeclaredTheory(ns, name, meta, parameters)

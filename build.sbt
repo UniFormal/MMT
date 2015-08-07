@@ -129,7 +129,7 @@ lazy val frameit = (project in file("frameit-mmt")).
   settings(commonSettings("frameit-mmt"): _*)
 
 lazy val pvs = (project in file("mmt-pvs")).
-  dependsOn(api).
+  dependsOn(api,lf).
   settings(commonSettings("mmt-pvs"): _*)
 
 lazy val specware = (project in file("mmt-specware")).
