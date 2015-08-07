@@ -68,6 +68,14 @@ class RelKeywordBasedParser extends KeywordBasedParser(DefaultObjectParser) {
           case e: Error => log("error after parsing: " + e.getMessage)
         }
     }
+
+  override def getParseExt(se: StructuralElement, key: String): Option[ParserExtension] =
+    key match {
+      case "rule" => Some(RelRuleParser)
+      case _ =>
+        super.getParseExt(se, key)
+    }
+
 }
 
 object RelRuleParser extends RuleConstantParser {
@@ -466,11 +474,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    * i.e. those with side effects like [[RuleConstantParser]]
    */
   protected def getParseExt(se: StructuralElement, key: String): Option[ParserExtension] =
-    key match {
-      case "rule" => Some(RelRuleParser)
-      case _ =>
-        controller.extman.getParserExtension(se, key)
-    }
+    controller.extman.getParserExtension(se, key)
 
   /** reads the components of a [[Constant]]
     * @param givenName the name of the constant
