@@ -1,11 +1,10 @@
 package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.Module
+import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.documents._
 
 /**
  * a build target for computing structure dependencies
@@ -36,24 +35,20 @@ class Relational extends TraversingBuildTarget {
     val ps = new ParsingStream(bf.base / bf.inPath.segments, dpath, bf.archive.namespaceMap, "mmt", File.Reader(bf.inFile))
     val doc = parser(ps)(bf.errorCont)
     val narrFile = getOutFile(bf.archive, bf.inPath)
-    log("[  -> narration ]     " + narrFile)
-    val node = doc.toNode
-    xml.writeFile(node, narrFile)
-    // write relational file
-    writeToRel(doc, bf.archive / relational / bf.inPath)
-    doc.getModulesResolved(controller.globalLookup) foreach { mod => indexModule(bf.archive, mod) }
+    if (!narrFile.exists) narrFile.createNewFile() // these files are needed
+    storeRel(doc)
+    doc.getModulesResolved(controller.localLookup) foreach indexModule
   }
 
   override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): Unit = {
     bd.outFile.up.mkdirs
     val doc = controller.get(DPath(bd.archive.narrationBase / bd.inPath.segments)).asInstanceOf[Document]
-    val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
-    writeToRel(doc, bd.archive / relational / inPathFile)
+    storeRel(doc)
     val rs: RelStore = controller.depstore
     val docs = rs.querySet(doc.path, +Declares * HasType(IsDocument))
     docs.foreach { d =>
       val s = rs.querySet(d, +Declares * RelationExp.Deps * -Declares * HasType(IsDocument))
-      println(d, (s - d).flatMap(docPathToFilePath))
+      println(docPathToFilePath(d).mkString(" ") + ": " + (s - d).flatMap(docPathToFilePath).mkString(" "))
     }
   }
 
@@ -72,16 +67,15 @@ class Relational extends TraversingBuildTarget {
     case _ => Nil
   }
 
-  /** extract and write the relational information about a knowledge item */
-  private def writeToRel(se: StructuralElement, file: File): Unit = {
+  /** extract and store the relational information about a knowledge item */
+  private def storeRel(se: StructuralElement): Unit = {
     controller.relman.extract(se) { r =>
       controller.depstore += r
     }
   }
 
   /** index a module */
-  private def indexModule(a: Archive, mod: Module): Unit = {
-    // write relational file
-    writeToRel(mod, a / relational / Archive.MMTPathToContentPath(mod.path))
+  private def indexModule(mod: StructuralElement): Unit = {
+    storeRel(mod)
   }
 }
