@@ -70,6 +70,11 @@ class RelKeywordBasedParser extends KeywordBasedParser(DefaultObjectParser) {
     }
 }
 
+object RelRuleParser extends RuleConstantParser {
+  override def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, keyword: String) =
+    s.reader.readDeclaration
+}
+
 /**
  * A StructureParser reads MMT declarations (but not objects) and
  * defers to continuation functions for the found StructuralElement, ParsingUnits, and SourceErrors.
@@ -456,6 +461,17 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     end(s)
   }
 
+  /**
+   * allow to control certain parser extensions
+   * i.e. those with side effects like [[RuleConstantParser]]
+   */
+  protected def getParseExt(se: StructuralElement, key: String): Option[ParserExtension] =
+    key match {
+      case "rule" => Some(RelRuleParser)
+      case _ =>
+        controller.extman.getParserExtension(se, key)
+    }
+
   /** reads the components of a [[Constant]]
     * @param givenName the name of the constant
     * @param parent the containing [[DeclaredModule]]
@@ -507,7 +523,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case "role" =>
           val (str, _) = state.reader.readObject
           rl = Some(str)
-        case k => controller.extman.getParserExtension(cons, k) match {
+        case k => getParseExt(cons, k) match {
           case Some(parser) =>
             val (obj, reg) = state.reader.readObject
             val reader = Reader(obj)
@@ -648,7 +664,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           }
         case k =>
           // other keywords are treated as parser plugins
-          val extParser = controller.extman.getParserExtension(doc, k).getOrElse {
+          val extParser = getParseExt(doc, k).getOrElse {
             throw makeError(reg, "unknown keyword: " + k)
           }
           val (mod, mreg) = state.reader.readModule
@@ -768,7 +784,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             val name = readName
             readInstance(name, mpath, Some(pattern))
           } else {
-            val parsOpt = controller.extman.getParserExtension(mod, k)
+            val parsOpt = getParseExt(mod, k)
             if (parsOpt.isDefined) {
               // 2) a parser plugin identified by k
               val (decl, reg) = state.reader.readDeclaration
