@@ -45,6 +45,13 @@ object ViewKey {
 }
 
 /**
+ * only adjusted resolveName to avoid reading content
+ */
+class RelKeywordBasedParser extends KeywordBasedParser(DefaultObjectParser) {
+  override def resolveName(home: Term, name: LocalName)(implicit state: ParserState) = name
+}
+
+/**
  * A StructureParser reads MMT declarations (but not objects) and
  * defers to continuation functions for the found StructuralElement, ParsingUnits, and SourceErrors.
  *
@@ -261,7 +268,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
   }
 
-  private def resolveName(home: Term, name: LocalName)(implicit state: ParserState) = {
+  protected def resolveName(home: Term, name: LocalName)(implicit state: ParserState) = {
     libraries.Names.resolve(home, name)(controller.globalLookup) match {
       case Some(ce: Constant) =>
         ComplexStep(ce.parent) / ce.name

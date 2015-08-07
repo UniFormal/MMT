@@ -1,7 +1,6 @@
 package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.utils._
@@ -19,7 +18,7 @@ class Relational extends TraversingBuildTarget {
   /** relational */
   val outDim = narration
 
-  val parser = new KeywordBasedParser(DefaultObjectParser)
+  val parser = new RelKeywordBasedParser
 
   override val outExt = "omdoc"
 
