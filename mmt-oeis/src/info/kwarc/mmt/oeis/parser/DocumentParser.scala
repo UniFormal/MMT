@@ -31,7 +31,7 @@ class DocumentParser(val dictionary : Set[String]) {
     (IDregex findAllIn  line).toList
   }
 
-  def fromReaderToXML(source : BufferedSource) : Elem = {
+  def fromReaderToXML(source : Source) : Elem = {
 
     def addHeaders(xml : List[Elem], theory : String) : Elem = {
       <omdoc xmlns="http://omdoc.org/ns" xmlns:omdoc="http://omdoc.org/ns" xmlns:html="http://www.w3.org/1999/xhtml" xml:id={theory+".omdoc"}>
