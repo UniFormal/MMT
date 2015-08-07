@@ -59,7 +59,11 @@ class RelKeywordBasedParser extends KeywordBasedParser(DefaultObjectParser) {
         val reg = currentSourceRegion
         SourceRef.update(se, SourceRef(state.ps.source, reg))
         try {
-          controller.add(se)
+          se match {
+            case ce: ContentElement => controller.memory.content.add(ce)
+            case ne: NarrativeElement => controller.docstore.add(ne)
+            case _ =>
+          }
         } catch {
           case e: Error => log("error after parsing: " + e.getMessage)
         }
