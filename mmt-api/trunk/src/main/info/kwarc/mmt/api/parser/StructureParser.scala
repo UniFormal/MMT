@@ -51,6 +51,19 @@ class RelKeywordBasedParser extends KeywordBasedParser(DefaultObjectParser) {
   override def resolveName(home: Term, name: LocalName)(implicit state: ParserState) = name
 
   override def getPatternsFromMeta(_o: Option[MPath]): List[(String, GlobalName)] = Nil
+
+  override def seCont(se: StructuralElement)(implicit state: ParserState) =
+    se match {
+      case _: Constant =>
+      case _ =>
+        val reg = currentSourceRegion
+        SourceRef.update(se, SourceRef(state.ps.source, reg))
+        try {
+          controller.add(se)
+        } catch {
+          case e: Error => log("error after parsing: " + e.getMessage)
+        }
+    }
 }
 
 /**
