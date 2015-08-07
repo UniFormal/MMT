@@ -18,11 +18,11 @@ class Relational extends TraversingBuildTarget {
   def key = "mmt-deps"
 
   /** relational */
-  val outDim = relational
+  val outDim = narration
 
   val parser = new KeywordBasedParser(DefaultObjectParser)
 
-  override val outExt = "rel"
+  override val outExt = "omdoc"
 
   override def start(_args: List[String]) {
     controller.extman.addExtension(parser)
@@ -35,6 +35,11 @@ class Relational extends TraversingBuildTarget {
     val dpath = DPath(bf.base / inPathOMDoc.segments) // bf.narrationDPath except for extension
     val ps = new ParsingStream(bf.base / bf.inPath.segments, dpath, bf.archive.namespaceMap, "mmt", File.Reader(bf.inFile))
     val doc = parser(ps)(bf.errorCont)
+    val narrFile = getOutFile(bf.archive, bf.inPath)
+    log("[  -> narration ]     " + narrFile)
+    val node = doc.toNode
+    xml.writeFile(node, narrFile)
+    // write relational file
     writeToRel(doc, bf.archive / relational / bf.inPath)
     doc.getModulesResolved(controller.globalLookup) foreach { mod => indexModule(bf.archive, mod) }
   }
@@ -60,22 +65,18 @@ class Relational extends TraversingBuildTarget {
           if (a.narrationBase <= uri) Some(a) else None
         }.map { a =>
         val b = a.narrationBase.toString
-        File(a.rootString + "/source" + uri.toString.stripPrefix(b)).setExtension("mmt")
+        val f = File(a.rootString + "/source" + uri.toString.stripPrefix(b)).setExtension("mmt")
+        if (f.length() == 0) log("missing file: " + f)
+        f
       }
     case _ => Nil
   }
 
-
   /** extract and write the relational information about a knowledge item */
   private def writeToRel(se: StructuralElement, file: File): Unit = {
-    val relFile = file.setExtension("rel")
-    log("[  -> relational]     " + relFile.getPath)
-    val relFileHandle = File.Writer(relFile)
     controller.relman.extract(se) { r =>
-      relFileHandle.write(r.toPath + "\n")
       controller.depstore += r
     }
-    relFileHandle.close()
   }
 
   /** index a module */
