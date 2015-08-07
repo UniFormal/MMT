@@ -42,12 +42,14 @@ class Relational extends TraversingBuildTarget {
 
   override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): Unit = {
     bd.outFile.up.mkdirs
-    val doc = controller.get(DPath(bd.archive.narrationBase / bd.inPath.segments)).asInstanceOf[Document]
+    val dpath = DPath(bd.archive.narrationBase / bd.inPath.segments)
+    bd.archive.load(dpath)(controller)
+    val doc = controller.docstore.get(dpath)
     storeRel(doc)
     val rs: RelStore = controller.depstore
     val docs = rs.querySet(doc.path, +Declares * HasType(IsDocument))
     docs.foreach { d =>
-      val s = rs.querySet(d, +Declares * RelationExp.Deps * -Declares * HasType(IsDocument))
+      val s = rs.querySet(d, -Transitive(+Declares * RelationExp.Deps * -Declares * HasType(IsDocument)))
       println(docPathToFilePath(d).mkString(" ") + ": " + (s - d).flatMap(docPathToFilePath).mkString(" "))
     }
   }
