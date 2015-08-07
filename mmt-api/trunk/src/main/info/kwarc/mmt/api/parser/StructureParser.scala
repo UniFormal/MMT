@@ -249,8 +249,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     tc.parsed = tm
   }
 
-  private def doNotation(c: NotationComponent, nc: NotationContainer, treg: SourceRegion, cpath: GlobalName)(implicit state: ParserState) {
-    val (notString, reg) = state.reader.readObject
+  private def doNotation(c: NotationComponent, nc: NotationContainer, treg: SourceRegion,
+                         cpath: GlobalName)(implicit state: ParserState) {
+    val notString = state.reader.readObject._1
     if (nc(c).isDefined)
       errorCont(makeError(treg, "notation of this constant already given, ignored"))
     else {
@@ -446,7 +447,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val tpC = new TermContainer
     val dfC = new TermContainer
     var al: Option[LocalName] = None
-    var nt = new NotationContainer
+    val nt = new NotationContainer
     var rl: Option[String] = None
     val cons = Constant(OMMOD(parent), name, None, tpC, dfC, None, nt)
     // every iteration reads one delimiter and one object
@@ -515,7 +516,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case None => throw makeError(state.reader.getSourcePosition.toRegion, "instance declaration expected")
       }
     } else {
-      val (obj, reg, tm) = readParsedObject(Context(tpath))
+      val (_, reg, tm) = readParsedObject(Context(tpath))
       controller.pragmatic.mostPragmatic(tm) match {
         case OMA(OMS(pat), args) =>
           pattern = pat
@@ -540,9 +541,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   private def readPattern(name: LocalName, tpath: MPath)(implicit state: ParserState) {
     val ppath = tpath ? name
-    val tpC = new TermContainer
-    val dfC = new TermContainer
-    var nt = new NotationContainer
+    val nt = new NotationContainer
     var pr: Context = Context() // params
     var bd: Context = Context() // body
     while (!state.reader.endOfDeclaration) {
