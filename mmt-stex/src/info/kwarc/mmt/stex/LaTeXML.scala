@@ -1,5 +1,6 @@
 package info.kwarc.mmt.stex
 
+import java.nio.charset.{Charset, MalformedInputException}
 import java.nio.file.Files
 
 import info.kwarc.mmt.api._
@@ -44,7 +45,24 @@ class SmsGenerator extends TraversingBuildTarget {
     ).mkString("|").r
 
   def createSms(inFile: File, outFile: File): Unit = {
-    val source = scala.io.Source.fromFile(inFile)
+    var encodings = List(Charset.defaultCharset.toString, "UTF-8", "UTF-16", "ISO-8859-1")
+    var success = false
+    while (!success && encodings.nonEmpty)
+      try {
+        creatingSms(inFile, outFile, encodings.head)
+        success = true
+      }
+      catch {
+        case _: MalformedInputException => {
+          log("reading " + inFile + " failed")
+          encodings = encodings.tail
+        }
+      }
+  }
+
+  def creatingSms(inFile: File, outFile: File, enc: String): Unit = {
+    log("reading " + inFile + " using encoding " + enc)
+    val source = scala.io.Source.fromFile(inFile, enc)
     val w = File.Writer(outFile)
     source.getLines().foreach { line =>
       val idx = line.indexOf(`%`)
