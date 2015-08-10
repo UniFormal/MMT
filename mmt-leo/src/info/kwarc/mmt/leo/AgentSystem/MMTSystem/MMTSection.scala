@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.{Active, modules}
 import info.kwarc.mmt.api.objects.{OMPMOD, ComplexTheory, Term}
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.leo.AgentSystem.{Change, Section}
+import info.kwarc.mmt.leo.AgentSystem.{Display, Change, Section}
 
 
 /**
@@ -69,7 +69,8 @@ class GoalSection(blackboard:MMTBlackboard, goal:Goal)(implicit c: Controller,oL
     alt.subgoals.foreach(blackboard.terms.addVarAtoms) //TODO work into goal addition
 
     log("************************* " + at.label + " at X **************************")
-    log("\n" + data.presentHtml(0)(blackboard.presentObj, Some(g), Some(alt)))
+    //log("\n" + data.presentHtml(0)(blackboard.presentObj, Some(g), Some(alt)))
+    log( Display.HTMLwrap("\n"+data.prettyDeep(blackboard.presentObj),"prover-goal") )
     if (!g.isSolved) {
       // recursively process subgoals
       alt.subgoals.foreach { sg => expand(sg) }

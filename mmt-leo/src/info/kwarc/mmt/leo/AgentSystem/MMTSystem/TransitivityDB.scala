@@ -1,5 +1,11 @@
 package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
+import java.lang.IllegalArgumentException
+
+import info.kwarc.mmt.api.GlobalName
+import info.kwarc.mmt.api.objects.{Obj, Term}
+
+import scala.collection.mutable
 import scalax.collection.GraphTraversal.Predecessors
 import scalax.collection.edge.{LDiEdge, LUnDiEdge}
 import scalax.collection.mutable.Graph
@@ -15,44 +21,108 @@ import scalax.collection.mutable.Graph
 
 class TransitivityDB {
   
-  protected val graph:Graph[TermEntry,LUnDiEdge] = Graph().asInstanceOf[Graph[TermEntry,LUnDiEdge]]
+  protected var graphs: List[RelationGraph] = Nil
 
-  def getGraph = graph
-  val directed = true
-  
-  def add(t1:TermEntry,t2:TermEntry):Unit = {
-    if (t1==t2) return
-    var g:Goal = t1.goal
-
-    if (t1.goal.isAbove(t2.goal)){
-      g=t2.goal
+  def getGraph(globalName: GlobalName) = {
+    val found = graphs.find {
+      case TransitiveGraph(name) if name == globalName => true
+      case EqualityGraph(name) if name == globalName => true
+      case _ => false
     }
+    if (found.isEmpty) {
+      throw new IllegalArgumentException("No graph found")
+    }
+    found.get
+  }
 
-    if (directed) {
-      graph += LDiEdge(t1, t2)(g)
-    }else{
-      graph += LUnDiEdge(t1,t2)(g)
+
+  def hasRelation(globalName: GlobalName) = {
+    try {
+      getGraph(globalName); true
+    } catch {case e:IllegalArgumentException => false}
+  }
+
+  def addRelation(globalName: GlobalName,equality:Boolean=false) = {
+    if (!hasRelation(globalName)) {
+      if (equality)
+        graphs ::= new EqualityGraph(globalName)
+      else
+        graphs ::= new TransitiveGraph(globalName)
     }
   }
-  //TODO add a proof getter aka get a list of facts that result in the proof when applied
 
-  def add(l: List[(TermEntry,TermEntry)]):Unit = l.foreach(e=>add(e._1,e._2))
-  def add(l: (TermEntry,TermEntry)*):Unit = l.foreach(e=>add(e._1,e._2))
+}
 
-  def n(outer: TermEntry) = graph get outer
 
-  def compare(a:TermEntry,b:TermEntry):Option[Boolean] = {
-    if (n(a).withSubgraph(nodes = _.goal.isAbove(a.goal),edges = isEdgeAboveNode(_,a)).pathTo(n(b)).isDefined){
+case class TransitivityEntry(goal: Goal, tp: Term) {
+
+  override def toString = tp.toString + "\n     " + tp.toString
+
+  def present(presentObj: Obj => String) = {
+    presentObj(tp) + " by " + presentObj(tp)
+  }
+}
+
+
+abstract class RelationGraph(globalName: GlobalName) {
+
+  protected val graph:Graph[TransitivityEntry,LUnDiEdge] = Graph().asInstanceOf[Graph[TransitivityEntry,LUnDiEdge]]
+
+  def getGraph = graph
+  val directed:Boolean
+
+
+  def add(x:Term,y:Term, f:Fact): Unit ={
+    val tx = TransitivityEntry(f.goal,x)
+    val ty = TransitivityEntry(f.goal,y)
+    add(tx,ty,f)
+  }
+  
+  def add(t1:TransitivityEntry,t2:TransitivityEntry,f:Fact):Unit = {
+    if (t1==t2) return
+    
+    if (directed) {
+      graph += LDiEdge(t1, t2)(f)
+    }else{
+      graph += LUnDiEdge(t1,t2)(f)
+    }
+  }
+
+  def add(l: List[(TransitivityEntry,TransitivityEntry,Fact)]):Unit = l.foreach(e=>add(e._1,e._2,e._3))
+  def add(l: (TransitivityEntry,TransitivityEntry,Fact)*):Unit = l.foreach(e=>add(e._1,e._2,e._3))
+
+  def n(entry: TransitivityEntry,g:Option[Goal]=None) = {
+    if (g.isDefined && entry.goal.isBelow(g.get))
+      throw new IllegalArgumentException("entry is not above goal ")
+    graph get entry
+  }
+
+  def getTermEntry(term:Term): TransitivityEntry = {
+    graph.nodes.find(n=> n.tp==term).asInstanceOf[TransitivityEntry] //TODO check that this handles the case of terms at different goals
+  }
+
+  def compareAtGoal(a:TransitivityEntry,b:TransitivityEntry,g:Goal):Option[Boolean] = {
+    if (n(a,Some(g)).withSubgraph(nodes = _.goal.isAbove(g),edges = isEdgeAboveGoal(_,g)).pathTo(n(b,Some(g))).isDefined){
       return Some(true)
     }
     None
   }
 
+  def getProofAtGoal(x:Term,y:Term,g:Goal):Option[List[Fact]]={
+    getProofAtGoal(getTermEntry(x),getTermEntry(y),g) //TODO check that this gets the right terms
+  }
+
+  def getProofAtGoal(x:TransitivityEntry,y:TransitivityEntry,g:Goal):Option[List[Fact]]={
+    val path = n(x,Some(g)).withSubgraph(nodes = _.goal.isAbove(g),edges = isEdgeAboveGoal(_,g)).pathTo(n(y,Some(g)))
+    if (path.isDefined) Some(path.map(_.edges).get.map(_.label).toList.asInstanceOf[List[Fact]])
+    else None
+  }
+
+
   override def toString:String = graph.toString()
 
-
-  def getSubGraph(n:TermEntry):Graph[TermEntry,LUnDiEdge] = {
-    graph filter graph.having(node = _.goal.isAbove(n.goal),edge = isEdgeAboveNode(_,n))
+  def getSubGraph(g:Goal):Graph[TransitivityEntry,LUnDiEdge] = {
+    graph filter graph.having(node = _.goal.isAbove(g),edge = isEdgeAboveGoal(_,g))
   }
 
 
@@ -60,29 +130,33 @@ class TransitivityDB {
   type ET = graph.EdgeT
 
   /** Determines if the goal of an edge is above the goal of a node*/
-  private def isEdgeAboveNode(e:ET,n:TermEntry)= {
+  private def isEdgeAboveGoal(e:ET,g:Goal)= {
     e.label match {
       case goal: Goal =>
-        goal.isAbove(n.goal)
+        goal.isAbove(g)
       case _ => true
     }
   }
 
 
-  def transClosureOf(t1:TermEntry) = {
-    val subGraph = getSubGraph(t1)
+  def transClosureAtGoal(t1:TransitivityEntry,g:Goal) = {
+    val subGraph = getSubGraph(g)
     (subGraph get t1).outerNodeTraverser.toSet
   }
 
-  def dualTransClosureOf(t1:TermEntry)= {
-    val subGraph = getSubGraph(t1)
+  def dualTransClosureAtGoal(t1:TransitivityEntry,g:Goal)= {
+    val subGraph = getSubGraph(g)
     (subGraph get t1).outerNodeTraverser.withDirection(Predecessors).toSet
   }
 
 
 }
 
-class EqualityDB extends TransitivityDB {
+case class TransitiveGraph(globalName: GlobalName) extends RelationGraph(globalName) {
+  override val directed=true
+}
+
+case class EqualityGraph(globalName: GlobalName) extends RelationGraph(globalName) {
   override val directed=false
 }
 

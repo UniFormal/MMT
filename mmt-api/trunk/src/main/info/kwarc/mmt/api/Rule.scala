@@ -40,6 +40,7 @@ class RuleSet {
    def getFirst[R<:Rule](cls: Class[R], head: ContentPath): Option[R] = getByHead(cls, head).headOption
    
    override def toString = rules.toList.map(_.toString).mkString(", ")
+
 }
 
 object RuleSet {

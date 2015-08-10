@@ -109,6 +109,7 @@ class GraphSpec extends FlatSpec with Matchers {
     bar.dequeue()
     println(bar)
 
+
   }
 
 

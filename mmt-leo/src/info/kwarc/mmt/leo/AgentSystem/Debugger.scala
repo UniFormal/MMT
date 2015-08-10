@@ -1,6 +1,7 @@
 package info.kwarc.mmt.leo.AgentSystem
 
 import info.kwarc.mmt.api.frontend.{Controller, Report}
+import info.kwarc.mmt.api.utils.HTML
 import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.AndOrTree
 import scala.collection.mutable
 
@@ -21,6 +22,15 @@ trait Debugger {
     for (e <- s) {out = out+addIndent(e)+"\n"}
     out
   }
+
+
+  /** displays a list with nice indentation*/
+  protected def listDisplay[B](s:List[B], title:String = "Set"):String ={
+    var out = title+":\n"
+    for (e <- s) {out = out+addIndent(e)+"\n"}
+    out
+  }
+
 
   /** Displays a queue of lists with nice indentation*/
   protected def QueueSetDisplay[B](q:mutable.Queue[Set[B]], title:String = "Queue",title2:String = "Set"):String ={
@@ -51,6 +61,44 @@ trait Debugger {
 
 object Display {
   def report(implicit controller:Controller) = controller.report
+
+
+  def addHtmlDiv(literals: String, divName: String)() = {
+    HTML.build { h => import h._
+      div(divName) {
+        literal(literals)
+      }
+    }
+  }
+
+  def indent(depth: Int):String = (0 to depth).map(_ => "  ").mkString("")
+
+  def HTMLwrap(l:String,divname:String)={
+    HTML.build { h => import h._
+      html {
+        body {
+          div(divname) {
+            literal(l)
+          }
+        }
+      }
+    }
+  }
+
+  def HTMLstarter(lines:List[String],divname:String)={
+    HTML.build { h => import h._
+      html {
+        body {
+          lines.foreach { l =>
+            div(divname) {
+              literal(l)
+            }
+          }
+        }
+      }
+    }
+  }
+
 
   /** displays a list with nice indentation*/
   def setDisplay[B](s:Set[B], title:String = "Set"):String ={

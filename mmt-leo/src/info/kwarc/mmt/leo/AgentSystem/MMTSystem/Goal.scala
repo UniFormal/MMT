@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils.HTML
+import info.kwarc.mmt.leo.AgentSystem.Display
 
 
 /**
@@ -21,12 +22,31 @@ case class Alternative(subgoals: List[Goal], proof: () => Term) {
    /** true if all subgoals are solved */
    def isSolved: Boolean = subgoals.forall(_.isSolved)
    def present(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]) = {
-      val gS = subgoals.map {g => Indent.indent(depth) + g.present(depth+1)}
+      val gS = subgoals.map {g => Display.indent(depth) + g.present(depth+1)}
       gS.mkString("\n")
    }
 
+   def pretty(current:Boolean=false)(implicit presentObj: Obj => String): String ={
+      val gS = subgoals.map {g=>g.pretty()}
+      val divName =  if (current) "prover-alternative" else "prover-alternative-new"
+
+      HTML.build { h => import h._
+         gS.foreach { l =>
+            div(divName) {
+               literal(l)
+            }
+         }
+      }
+   }
+
+   def prettyDeep(implicit presentObj: Obj => String):String={
+      var out =  pretty()
+      subgoals.foreach(sg=>out+=sg.prettyDeep(presentObj))
+      out
+   }
+
    def presentHtml(depth: Int)(implicit presentObj: Obj => String, current: Option[Goal], newAlt: Option[Alternative]) = {
-      val gS = subgoals.map {g => Indent.indent(depth) + g.presentHtml(depth+1, firstTime=false)}
+      val gS = subgoals.map {g => Display.indent(depth) + g.presentHtml(depth+1, firstTime=false)}
       HTML.build { h => import h._
          gS.foreach { l =>
             div("prover-alternative") {
@@ -262,7 +282,7 @@ class Goal(val context: Context, private var concVar: Term) {
       if (isSolved) {
          goalHighlight + "! " + presentObj(context) + " |- " + presentObj(proof) + " : " + presentObj(conc)
       } else {
-         val aS = alternatives.map(a => Indent.indent(depth+1) + altHighlight(a) + a.present(depth+1))
+         val aS = alternatives.map(a => Display.indent(depth+1) + altHighlight(a) + a.present(depth+1))
          val lines = goalHighlight + (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
          lines.mkString("\n")
       }
@@ -293,7 +313,7 @@ class Goal(val context: Context, private var concVar: Term) {
       if (isSolved) {
          addHtmlDiv(goalHighlight + "! " + presentObj(context) + " |- " + presentObj(proof) + " : " + presentObj(conc),"prover-solved")
       } else {
-         val aS = alternatives.map(a => Indent.indent(depth + 1) + altHighlight(a) + a.presentHtml(depth + 1))
+         val aS = alternatives.map(a => Display.indent(depth + 1) + altHighlight(a) + a.presentHtml(depth + 1))
          val lines = goalHighlight + (presentObj(context) + " |- _  : " + presentObj(conc)) :: aS
 
          if (firstTime) {
@@ -314,6 +334,33 @@ class Goal(val context: Context, private var concVar: Term) {
          }
       }
    }
+
+
+   def prettyDeep(implicit presentObj: Obj => String):String={
+      var out =  pretty()
+      alternatives.foreach(a=>out+=a.prettyDeep(presentObj))
+      out
+   }
+
+   def pretty(current:Boolean=false)(implicit presentObj: Obj => String): String ={
+      val goalHighlight = if (current){Display.addHtmlDiv("X ", "prover-X")}else {"  "}
+
+      var s = "&nbsp"*this.depth+goalHighlight
+      var divName = "prover-goal"
+      if (isSolved) {
+         s += "! " + presentObj(context) + " |- " + presentObj(proof) + " : " + presentObj(conc)
+         divName = "prover-solved"
+      } else {
+         s += presentObj(context) + " |- _  : " + presentObj(conc)
+      }
+
+      Display.addHtmlDiv(s,divName)
+   }
+
+
+
+
+
 
 }
 

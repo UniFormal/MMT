@@ -122,7 +122,20 @@ class Terms(blackboard: MMTBlackboard)(implicit controller: Controller,oLP:Strin
   /**Get all terms of a type */
   def getTermsOfType(tp:Term): mutable.HashSet[Term] = terms(tp).map(_.tm)
   /**Get all terms of a type above a specified goal*/
-  def getTermsOfType(tp:Term,g:Goal): mutable.HashSet[Term] = terms(tp).filter(_.goal.isAbove(g)).map(_.tm)
+  def getTermsOfTypeAtGoal(tp:Term,g:Goal): mutable.HashSet[Term] = terms(tp).filter(_.goal.isAbove(g)).map(_.tm)
+
+  def getTermsOfTypeBelowGoal(tp:Term,goal:Goal): List[(Term,Option[Goal])] = {
+    var res : List[(Term,Option[Goal])] = Nil
+    terms(tp).foreach(te =>
+      if (goal isBelow te.goal){
+        res::=(te.tm,None)
+      }else if (te.goal isBelow goal){
+        res::=(te.tm,Some(te.goal))
+      }
+    )
+    res
+  }
+
 
 }
 

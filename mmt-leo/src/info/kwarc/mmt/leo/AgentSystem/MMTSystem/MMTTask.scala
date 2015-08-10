@@ -113,10 +113,6 @@ case class SearchForwardTask(agent:SearchForwardAgent)(implicit controller: Cont
 
 }
 
-abstract class NormalizingTask(agent:NormalizingAgent,g:Goal)(implicit controller: Controller,oLP:String) extends GoalTask(agent,g){
-
-}
-
 
 class TermGenerationTask(agent:TermGenerationAgent)(implicit controller: Controller,oLP:String) extends MMTTask(agent) {
 
@@ -160,15 +156,15 @@ class TransitivityTask(agent:TransitivityAgent)(implicit controller: Controller,
   /** Determines if a given task is applicable given the current blackboard */
   override def isApplicable[BB <: Blackboard](b: BB): Boolean = !b.finished //TODO expand this
 
-  def transitivitySearch() {
+/*  def transitivitySearch() {
     agent.transitivityRules.foreach { e =>
       e.generate(blackboard.get, interactive = false)
     }
-  }
+  }*/
 
   def execute() = {
     log("Term Search Executing")
-    transitivitySearch()
+    //transitivitySearch()
     true
   }
 

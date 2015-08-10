@@ -1,7 +1,8 @@
 package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
 
-import info.kwarc.mmt.api.LocalName
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.{GlobalName, LocalName}
 import info.kwarc.mmt.api.objects.Conversions._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf._
@@ -309,6 +310,7 @@ object TermGeneration extends ForwardSearch {
       val (bindings, scope) = FunType.unapply(f.tp).get
       // params: leading named arguments
       val (paramList, otherArgs) = bindings.span(_._1.isDefined) //TODO ask about this step
+      //TODO check that everything in other args has an undefined first component
       val parameters = FunType.argsAsContext(paramList)
 
       val currentReturnType = scope
@@ -320,12 +322,12 @@ object TermGeneration extends ForwardSearch {
       def findNextParamArg(g: Goal, paramArgs: Context, otherArgs: List[Term], foundParams: Substitution): Unit = {
          if (paramArgs.nonEmpty) {
             val newParam = paramArgs.variables.head
-            val newTerms = terms.getTermsOfType(newParam.tp.get ^? foundParams, g)
+            val newTerms = terms.getTermsOfTypeBelowGoal(newParam.tp.getOrElse{return} ^? foundParams, g)
             //foreach term t of type newParam ^? foundParams above g
-            newTerms.foreach { t =>
-               val newParamArgs = Context(paramArgs.variables.tail: _*)
-               val newFoundParams = foundParams ++ (newParam / List(t)).get //TODO ask florian about option
-               findNextParamArg(g, newParamArgs, otherArgs, newFoundParams)
+            newTerms.foreach {case (t,hOpt) =>
+               val newParamArgs = paramArgs.tail
+               val newFoundParams = foundParams ++ (newParam.name / t)
+               findNextParamArg(hOpt.getOrElse(g), newParamArgs, otherArgs, newFoundParams)
             }
          } else {
             findNextOtherArg(g, otherArgs, foundParams, Nil)
@@ -335,10 +337,10 @@ object TermGeneration extends ForwardSearch {
       def findNextOtherArg(g: Goal, otherArgs: List[Term], foundParams: Substitution, foundOtherArgs: List[Term]): Unit = {
          if (otherArgs.nonEmpty) {
             //foreach term t of type otherArgs (0) ^? foundParams above g
-            val newTerms = terms.getTermsOfType(otherArgs.head ^? foundParams, g)
-            newTerms.foreach(t =>
-               findNextOtherArg(g, otherArgs.tail, foundParams, foundOtherArgs ::: List(t))
-            )
+            val newTerms = terms.getTermsOfTypeBelowGoal(otherArgs.head ^? foundParams, g)
+            newTerms.foreach { case (t, hOpt) =>
+               findNextOtherArg(hOpt.getOrElse(g), otherArgs.tail, foundParams, foundOtherArgs ::: List(t))
+            }
          } else {
             val args = foundParams.map(_.target) ::: foundOtherArgs
             terms += TermEntry(g, ApplySpine(currentFact.tm, args: _*), currentReturnType ^? foundParams)
@@ -349,22 +351,22 @@ object TermGeneration extends ForwardSearch {
 }
 
 
-object TransitivityGeneration extends  {
-
+class TransitivityGeneration(rel: GlobalName, ded: GlobalName)(implicit controller: Controller,oLP:String) extends TransitivityAgent{
+   val Ded = new UnaryLFConstantScala(ded.module.toMPath, ded.name.toString)
+   val Rel = new BinaryLFConstantScala(rel.module.toMPath, rel.name.toString)
    val head = Pi.path
-   def getTransitiveFacts(blackboard: MMTBlackboard):List[(Fact,TransitivityDB)] = ???
 
-   def generate(blackboard: MMTBlackboard, interactive: Boolean) {
-      getTransitiveFacts(blackboard).foreach(p=>addFact(p._1,p._2))
-   }
+   def generate(blackboard: MMTBlackboard, interactive: Boolean) = ???
+
+   def addTask()= taskQueue+=new TransitivityTask(this)
 
    def addFact(f:Fact,tdb:TransitivityDB): Unit ={
-      f.tp match { //TODO should i match term or type
-         case ApplySpine(fun,termList) => //TODO ask florian about the possibility of more than two arguments and fact
-            val termElement1 = TermEntry(f.goal,termList.head,termList.head) //TODO how to find tm and tp of MMT terms
-         val termElement2 = TermEntry(f.goal,termList.tail.head,termList.tail.head)
-            tdb.add(termElement1,termElement2)
-         case _ => throw new IllegalArgumentException("Not a valid type of fact need an equality fact")
+      f.tp match {
+         case Ded(Rel(x,y)) =>
+            tdb.getGraph(rel).add(x,y,f)
+         case Rel(x,y) =>
+            tdb.getGraph(rel).add(x,y,f)
+         case _ => throw new IllegalArgumentException("Not a valid type of fact: need a transitive fact")
       }
    }
 

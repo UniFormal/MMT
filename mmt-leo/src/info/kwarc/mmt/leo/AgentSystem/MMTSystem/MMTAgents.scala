@@ -10,6 +10,18 @@ import info.kwarc.mmt.leo.AgentSystem.{Agent, Change}
  * this class represents the structure for an Agent of the MMT system
  */
 
+/*
+class InductionAgent(tp: GlobalName, constructors: List[(GlobalName,Term)]) {
+  x:tp in Context of goal g
+  //split g on x
+  val cases = constructors.map {case (c, FunType(args,_)) =>
+      val newCon = FunType.argsAsContext(args)  makeFresh..., make sure all args named
+      replace x:tp in context with newCon
+      new subgoal built from g by substitute x with ApplySpine(OMS(c), newCon.map(OMS(_.name))) in context and goal
+  }
+  add cases as conjunctive subgoals to g
+}
+*/
 
 abstract class MMTAgent(implicit controller: Controller,oLP:String) extends Agent {
 
@@ -105,13 +117,13 @@ class TermGenerationAgent(implicit controller: Controller,oLP:String) extends MM
 
 }
 
-class TransitivityAgent(implicit controller: Controller,oLP:String) extends MMTAgent {
+abstract class TransitivityAgent(implicit controller: Controller,oLP:String) extends MMTAgent {
 
   override val name =  "TermGeneratingAgent"
   def wantToSubscribeTo = List(blackboard.get.factSection)
   override val interests = List("ADD") //TODO make it interested in the addition of relation shaped facts
 
-  def addTask() = taskQueue+=new TransitivityTask(this)
+  def addTask():Unit
 
   override def respond() = {
     log("responding to: " + mailbox.length + " message(s)")
@@ -120,26 +132,6 @@ class TransitivityAgent(implicit controller: Controller,oLP:String) extends MMTA
   }
 
 }
-
-abstract class NormalizingRule extends Rule{}
-
-abstract class NormalizingAgent(implicit controller: Controller,oLP:String) extends MMTAgent {
-
-  override val name = "NormalizingAgent"
-
-  def wantToSubscribeTo = List(blackboard.get.goalSection,blackboard.get.factSection)
-  override val interests = List("ADD")
-
-  //TODO possibly class of beta and eta
-  lazy val normalizingRules = blackboard.get.rules.get(classOf[NormalizingRule])
-
-  def allRulesPresent: Boolean = ??? //TODO add way to determine if there are rules for all of the symbols
-
-
-
-}
-
-abstract class SimplifyingAgent(implicit controller: Controller,oLP:String) extends MMTAgent {}
 
 
 
