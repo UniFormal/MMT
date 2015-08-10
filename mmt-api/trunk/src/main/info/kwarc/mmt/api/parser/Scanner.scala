@@ -15,7 +15,7 @@ import info.kwarc.mmt.api.parser.ActiveNotation._
   * @param tl the TokenList to scan
   *           matched notations are applied to tl, i.e., tl always holds the current TokenList
   */
-class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.Logger {
+class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: frontend.Report) extends frontend.Logger {
   /** logging */
   val logPrefix = "scanner"
 
@@ -57,7 +57,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
     * @param length the number of Token's to pick
     * @return the TokenSlice representing the picked Token's
     */
-  def pick(length: Int): TokenSlice = {
+  private[parser] def pick(length: Int): TokenSlice = {
     val sl = TokenSlice(tl, currentIndex - picked - length, currentIndex - picked)
     picked += length
     log("picking " + length + " tokens (" + picked + " in total so far): " + sl)
@@ -84,8 +84,8 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
     delim
   }
 
-  /** the currently open notations, inner-most first */
-  private var active: List[ActiveNotation] = Nil
+  /** the currently open notations, inner-most first; initialized with the topRule or empty list */
+  private var active: List[ActiveNotation] = topRule.map(r => new ActiveNotation(this, r, 0)).toList
 
   /**
    * precondition: ans.length + closable == active.length
@@ -189,13 +189,13 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
     }
   }
 
-  def scanRecursively(t: TokenListElem) {
+  private def scanRecursively(t: TokenListElem) {
     t match {
       case ml: MatchedList =>
         ml.tokens foreach scanRecursively
         ml.flatten()
       case ul: UnmatchedList =>
-        if (ul.scanner == null) ul.scanner = new Scanner(ul.tl, report) //initialize scanner if necessary
+        if (ul.scanner == null) ul.scanner = new Scanner(ul.tl, None, report) //initialize scanner if necessary
         ul.scanner.scan(notations)
       case e: ExternalToken =>
       case t: Token =>
@@ -317,6 +317,7 @@ class Scanner(val tl: TokenList, val report: frontend.Report) extends frontend.L
     currentIndex = 0
     numCurrentTokens = 0
     next()
+    if (active != Nil) throw ImplementationError("active notation left after scanning")
   }
 }
 

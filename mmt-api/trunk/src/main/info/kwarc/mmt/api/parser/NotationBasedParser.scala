@@ -106,9 +106,9 @@ class NotationBasedParser extends ObjectParser {
     }
     else {
       //scanning
-      val sc = new Scanner(tl, controller.report)
+      val sc = new Scanner(tl, pu.top, controller.report)
       // scan once with the top notation and make sure it matches the whole input
-      val wrongTop = pu.top match {
+      /*val wrongTop = pu.top match {
         case Some(n) =>
           log("scanning top notation: " + n)
           sc.scan(List(n))
@@ -122,7 +122,7 @@ class NotationBasedParser extends ObjectParser {
       }
       if (wrongTop)
         DefaultObjectParser(pu)
-      else {
+      else {*/
         // now scan with all notations in increasing order of precedence
         notations foreach {
           case (priority, nots) => sc.scan(nots)
@@ -141,7 +141,7 @@ class NotationBasedParser extends ObjectParser {
           tm
         else
           OMBIND(OMID(ObjectParser.unknown), Context(vardecls: _*), tm)
-      }
+      //}
     }
   }
 

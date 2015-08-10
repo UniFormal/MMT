@@ -15,6 +15,7 @@ import info.kwarc.mmt.api.utils._
  * @param top an optional notation that the whole input must match; this can be used to parse a term that is known/required to have a certain form
  */
 case class ParsingUnit(source: SourceRef, context: Context, term: String, val nsMap: NamespaceMap, top: Option[ParsingRule] = None)
+// TODO top should be Option[GlobalName]
 
 /**
  * ParsingStream encapsulates the input of a [[StructureParser]]

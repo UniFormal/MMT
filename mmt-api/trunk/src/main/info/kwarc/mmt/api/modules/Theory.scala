@@ -57,7 +57,8 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
       case p: patterns.Instance => List(p)
       case _ => Nil
    }
-   override def toString = "theory " + path + meta.map(" : " + _.toPath).getOrElse("") + innerString
+   override def toString = "theory " + path + meta.map(" : " + _.toPath).getOrElse("") +
+     (if(parameters.nonEmpty) " > " + parameters else "") + innerString
    def toNode =
       <theory name={name.last.toPath} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
         {getMetaDataNode}
@@ -73,7 +74,7 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
       val metaS = if (meta.isDefined) s""" meta="${meta.get.toPath}"""" else ""
       rh(s"""<theory name="${name.last.toPath}" base="${doc.toPath}"$metaS>""")
       rh(getMetaDataNode)
-      if (!parameters.isEmpty) rh(<parameters>{parameters.toNode}</parameters>)
+      if (parameters.nonEmpty) rh(<parameters>{parameters.toNode}</parameters>)
       getPrimitiveDeclarations.foreach {i =>
          i.toNode(rh)
       }

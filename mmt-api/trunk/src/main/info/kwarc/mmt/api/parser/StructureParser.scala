@@ -185,7 +185,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     SourceRegion(state.startPosition, state.reader.getSourcePosition)
 
   /** read a LocalName from the stream
-    * @throws SourceError iff ill-formed or empty
+    * throws SourceError iff ill-formed or empty
     */
   def readName(implicit state: ParserState): LocalName = {
     val (s, reg) = state.reader.readToSpace
@@ -201,7 +201,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   /** read a DPath from the stream
-    * @throws SourceError iff ill-formed or empty
+    * throws SourceError iff ill-formed or empty
     */
   def readDPath(newBase: Path)(implicit state: ParserState): DPath = {
     val (s, reg) = state.reader.readToSpace
@@ -217,7 +217,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   /** read a MPath from the stream
-    * @throws SourceError iff ill-formed or empty
+    * throws SourceError iff ill-formed or empty
     */
   def readMPath(newBase: Path)(implicit state: ParserState): (SourceRef, MPath) = {
     val (s, reg) = state.reader.readToSpace
@@ -235,7 +235,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   /** read a GlobalName from the stream
-    * @throws SourceError iff ill-formed or empty
+    * throws SourceError iff ill-formed or empty
     */
   def readSPath(newBase: Path)(implicit state: ParserState): GlobalName = {
     val (s, reg) = state.reader.readToSpace
@@ -254,7 +254,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    * reads one out of a list of permitted delimiters
    * @param delims the permitted delimiter
    * @return the read delimiter
-   * @throws SourceError iff anything else found
+   * throws SourceError iff anything else found
    */
   def readDelimiter(delims: String*)(implicit state: ParserState): String = {
     val delim = state.reader.readToken
@@ -268,9 +268,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    * reads until the object delimiter and parses the found string
    * @return the raw string, the region, and the parsed term
    */
-  def readParsedObject(context: Context)(implicit state: ParserState): (String, SourceRegion, Term) = {
+  def readParsedObject(context: Context, topRule: Option[ParsingRule] = None)(implicit state: ParserState): (String, SourceRegion, Term) = {
     val (obj, reg) = state.reader.readObject
-    val pu = ParsingUnit(SourceRef(state.ps.source, reg), context, obj, state.namespaces)
+    val pu = ParsingUnit(SourceRef(state.ps.source, reg), context, obj, state.namespaces, topRule)
     val parsed = puCont(pu)
     (obj, reg, parsed)
   }
@@ -355,21 +355,24 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case Some(p) => context ++ p
         case _ => context
       }
+
+      val contextRule = ParsingRule(utils.mmt.context, TextNotation(Precedence.integer(0), None)(Var(1, true, Some(Delim(",")))))
       val parameters = if (delim._1 == ">") {
-        /*
-        val (_, reg, p) = readParsedObject(contextMeta)
-        val params = p match {
-          case ComplexTheory(cont) => cont
+        val (_, reg, p) = readParsedObject(contextMeta, Some(contextRule))
+        val params = ObjectParser.splitOffUnknowns(p) match {
+          case (unk, OMBINDC(OMS(utils.mmt.context), cont, Nil)) => unk ++ cont
           case _ =>
-            makeError(reg, "parameters of theory must be context")
+            errorCont(makeError(reg, "parameters of theory must be context: " + controller.presenter.asString(p)))
             Context()
         }
         delim = state.reader.readToken
         params
-        */
+
+        /*
         val ct = readParameters(contextMeta)
         delim = state.reader.readToken
         ct
+        */
       } else
         Context()
       val t = new DeclaredTheory(ns, name, meta, parameters)
