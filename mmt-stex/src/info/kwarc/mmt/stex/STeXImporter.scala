@@ -714,7 +714,7 @@ class STeXImporter extends Importer {
     } else {
       //no srcref attr so returning none and producing an Info type error if actual node elem
       if (n.isInstanceOf[Elem]) {
-        val err = new STeXParseError("No stex:srcref attribute for element `" + n.label + "`", Some("while processing <" + n.label + " " + n.attributes.toString + ">\n"), None, Some(Level.Info))
+        val err = new STeXParseError("No stex:srcref attribute for element `" + n.label + "`", Some("while processing <" + n.label + " " + n.attributes.toString + ">"), None, Some(Level.Info))
         errorCont(err)
       }
       None
