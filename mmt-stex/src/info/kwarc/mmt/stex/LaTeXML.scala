@@ -44,20 +44,23 @@ class SmsGenerator extends TraversingBuildTarget {
     SmsTopKeys.map("\\\\end\\{" + _ + "\\}")
     ).mkString("|").r
 
-  def createSms(inFile: File, outFile: File): Unit = {
-    var encodings = List(Charset.defaultCharset.toString, "UTF-8", "UTF-16", "ISO-8859-1")
-    var success = false
-    while (!success && encodings.nonEmpty)
-      try {
-        creatingSms(inFile, outFile, encodings.head)
-        success = true
-      }
-      catch {
-        case _: MalformedInputException => {
-          log("reading " + inFile + " failed")
-          encodings = encodings.tail
+  val encodings = List(Charset.defaultCharset.toString, "UTF-8",
+    "UTF-16", "ISO-8859-1").distinct
+
+  def createSms(inFile: File, outFile: File, encs: List[String]): Unit = {
+    encs match {
+      case hd :: tl =>
+        try {
+          creatingSms(inFile, outFile, hd)
         }
-      }
+        catch {
+          case _: MalformedInputException => {
+            log("reading " + inFile + " failed")
+            createSms(inFile, outFile, tl)
+          }
+        }
+      case Nil =>
+    }
   }
 
   def creatingSms(inFile: File, outFile: File, enc: String): Unit = {
@@ -75,7 +78,7 @@ class SmsGenerator extends TraversingBuildTarget {
   }
 
   def buildFile(bt: BuildTask): Unit = {
-    try createSms(bt.inFile, bt.outFile)
+    try createSms(bt.inFile, bt.outFile, encodings)
     catch {
       case e: Throwable =>
         bt.errorCont(LocalError("sms exception: " + e))
