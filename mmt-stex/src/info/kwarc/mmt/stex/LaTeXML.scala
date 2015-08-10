@@ -127,6 +127,7 @@ class LaTeXML extends SmsGenerator {
   // the latexml client
   private var latexmlc = "latexmlc"
   private var expire = "10"
+  private var port: Option[String] = None
   private var profile = "stex-smglom-module"
   private var perl5lib = "perl5lib"
   private var preloads: Seq[String] = Nil
@@ -135,6 +136,7 @@ class LaTeXML extends SmsGenerator {
   override def start(args: List[String]): Unit = {
     latexmlc = getFromFirstArgOrEnvvar(args, "LATEXMLC", latexmlc)
     expire = controller.getEnvVar("LATEXMLEXPIRE").getOrElse(expire)
+    port = controller.getEnvVar("LATEXMLPORT")
     profile = controller.getEnvVar("LATEXMLPROFILE").getOrElse(profile)
     preloads = controller.getEnvVar("LATEXMLPRELOADS").getOrElse("").split(" ").filter(_.nonEmpty)
     paths = controller.getEnvVar("LATEXMLPATHS").getOrElse("").split(" ").filter(_.nonEmpty)
@@ -224,7 +226,7 @@ class LaTeXML extends SmsGenerator {
       bt.inFile.toString, "--destination=" + lmhOut, "--log=" + logFile,
       "--preamble=" + getAmbleFile("pre", bt),
       "--postamble=" + getAmbleFile("post", bt),
-      "--expire=" + expire) ++ preloads.map("--preload=" + _) ++
+      "--expire=" + expire) ++ port.map("--port=" + _) ++ preloads.map("--preload=" + _) ++
       paths.map("--path=" + _), bt.archive / inDim, extEnv(bt): _*)
     val exitCode = pb.!(ProcessLogger(line => output.append(line + "\n"),
       line => output.append(line + "\n")))
