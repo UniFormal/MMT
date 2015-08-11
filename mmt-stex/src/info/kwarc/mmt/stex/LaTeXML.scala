@@ -25,6 +25,12 @@ class SmsGenerator extends TraversingBuildTarget {
     override val extraMessage = l
   }
 
+  def logResult(s: String) = log(s, Some("result"))
+
+  def logSuccess(f: File) = logResult("success " + f)
+
+  def logFailure(f: File) = logResult("failure " + f)
+
   def sysEnv(v: String): String = sys.env.getOrElse(v, "")
 
   def includeFile(n: String): Boolean =
@@ -54,6 +60,7 @@ class SmsGenerator extends TraversingBuildTarget {
         try {
           log(readMsg + " using encoding " + hd)
           creatingSms(bt.inFile, bt.outFile, hd)
+          logSuccess(bt.outFile)
         }
         catch {
           case _: MalformedInputException => {
@@ -63,6 +70,7 @@ class SmsGenerator extends TraversingBuildTarget {
         }
       case Nil =>
         bt.errorCont(LocalError("no suitable encoding found for " + bt.inPath))
+        logFailure(bt.outFile)
     }
   }
 
@@ -84,6 +92,7 @@ class SmsGenerator extends TraversingBuildTarget {
     catch {
       case e: Throwable =>
         bt.errorCont(LocalError("sms exception: " + e))
+        logFailure(bt.outFile)
     }
   }
 
@@ -256,9 +265,11 @@ class LaTeXML extends SmsGenerator {
     if (exitCode != 0 || lmhOut.length == 0) {
       bt.errorCont(LatexError("no omdoc created", output.toString))
       lmhOut.delete()
+      logFailure(bt.outFile)
     }
     if (lmhOut.exists() && lmhOut != bt.outFile)
       Files.move(lmhOut.toPath, bt.outFile.toPath)
+    if (bt.outFile.exists()) logSuccess(bt.outFile)
     if (logFile.exists()) {
       val source = scala.io.Source.fromFile(logFile)
       source.getLines().foreach { line =>
@@ -312,15 +323,19 @@ class PdfLatex extends SmsGenerator {
       if (pdfFile.length == 0) {
         bt.errorCont(LatexError("no pdf created", output.toString))
         pdfFile.delete()
+        logFailure(bt.outFile)
       }
       if (pdfFile.exists && pdfFile != bt.outFile)
         Files.move(pdfFile.toPath, bt.outFile.toPath)
+      if (bt.outFile.exists) logSuccess(bt.outFile)
     } catch {
       case e: Throwable =>
         bt.outFile.delete()
         bt.errorCont(LatexError(e.toString, output.toString))
+        logFailure(bt.outFile)
     }
-    List("aux", "idx", "log", "out", "thm", "pdf").
+    if (pdfFile != bt.outFile) pdfFile.delete()
+    List("aux", "idx", "log", "out", "thm").
       foreach(bt.inFile.setExtension(_).delete())
   }
 }
