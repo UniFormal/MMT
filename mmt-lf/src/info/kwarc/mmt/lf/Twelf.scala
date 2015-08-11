@@ -37,8 +37,8 @@ class Twelf extends Importer with frontend.ChangeListener {
   private val chatter: Int = 5
   /** initial port of lfcatalog */
   private val port = 8083
-  /** non-null dummy catalog that will be overridden in start */
-  private var catalog: Catalog = new Catalog(port = port, searchPort = true)
+  /** will be overridden in start */
+  private var catalog: Catalog = null
 
   /**
    * creates and initializes a Catalog
@@ -67,7 +67,7 @@ class Twelf extends Importer with frontend.ChangeListener {
     catalog.deleteStringLocation(stringLoc)
   }
 
-  override def destroy: Unit = {
+  override def destroy {
     catalog.destroy
   }
 
@@ -82,7 +82,7 @@ class Twelf extends Importer with frontend.ChangeListener {
       bf.errorCont(LocalError("skipped big elf file: " + inFile))
     } else {
       def sendToTwelf(s: String): Unit = {
-        log(s)
+        //log(s)
         input.println(s)
       }
       sendToTwelf("set chatter " + chatter)

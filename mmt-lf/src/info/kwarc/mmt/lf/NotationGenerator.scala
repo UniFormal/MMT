@@ -29,6 +29,7 @@ class NotationGenerator extends ChangeListener {
     */
    protected def isJudgment(tp: Term): Boolean = tp match {
       case FunType(_, ApplySpine(OMS(s),_)) =>
+         //this can throw errors if the implicit graph is not fully loaded
          controller.globalLookup.getConstant(s).rl == Some("Judgment")
       case _ => false
    }
