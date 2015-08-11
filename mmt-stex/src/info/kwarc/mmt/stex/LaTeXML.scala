@@ -47,19 +47,20 @@ class SmsGenerator extends TraversingBuildTarget {
   val encodings = List(Charset.defaultCharset.toString, "UTF-8",
     "UTF-16", "ISO-8859-1").distinct
 
-  def createSms(inFile: File, outFile: File, encs: List[String]): Unit = {
+  def createSms(bt: BuildTask, encs: List[String]): Unit = {
     encs match {
       case hd :: tl =>
         try {
-          creatingSms(inFile, outFile, hd)
+          creatingSms(bt.inFile, bt.outFile, hd)
         }
         catch {
           case _: MalformedInputException => {
-            log("reading " + inFile + " failed")
-            createSms(inFile, outFile, tl)
+            log("reading " + bt.inPath + " failed")
+            createSms(bt, tl)
           }
         }
       case Nil =>
+        bt.errorCont(LocalError("no suitable encoding found for " + bt.inPath))
     }
   }
 
@@ -78,7 +79,7 @@ class SmsGenerator extends TraversingBuildTarget {
   }
 
   def buildFile(bt: BuildTask): Unit = {
-    try createSms(bt.inFile, bt.outFile, encodings)
+    try createSms(bt, encodings)
     catch {
       case e: Throwable =>
         bt.errorCont(LocalError("sms exception: " + e))
