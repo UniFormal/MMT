@@ -68,7 +68,7 @@ object Quotient {
 trait IntegerLiteral extends SemanticType {
    type univ = BigInt
    def fromString(s: String) = BigInt(s)
-   override def lex = Some(new parser.NumberLiteralLexer(false))
+   override def lex = Some(new parser.NumberLiteralLexer(false,false))
 }
 
 /** standard natural numbers
@@ -97,15 +97,41 @@ class IntModulo(modulus: Int) extends IntegerLiteral {
  *  
  *  synType must still be set as desired after creating an instance
  */
-class StandardRat extends Product(new StandardNat, new StandardNat) {
+class StandardRatViaProduct extends Product(new StandardInt, new StandardNat) {
    type univS = (BigInt,BigInt) // equal to this.univ but Scala does not know that
    override def valid(u: univ) = u._2 != 0
    override def normalform(u: univ) = {
-      val uS = u.asInstanceOf[univS] 
+      val uS = u.asInstanceOf[univS]
       val gcd = uS._1 gcd uS._2
       (uS._1 / gcd, uS._2 / gcd).asInstanceOf[univ]
    }
+   // to/fromString methods awkard due to Scala's type problems
 }
+
+/** standard rational numbers
+ *  
+ *  synType must still be set as desired after creating an instance
+ */
+class StandardRat extends SemanticType {
+   type univ = (BigInt,BigInt)
+   override def valid(u: univ) = u._2 != 0
+   override def normalform(u: univ) = {
+      val gcd = u._1 gcd u._2
+      (u._1 / gcd, u._2 / gcd)
+   }
+   override def toString(u: univ) = {
+      val (e,d) = u
+      if (d == 1) e.toString
+      else (e.toString + "/" + d.toString)
+   }
+   private val matcher = new utils.StringMatcher2("","/","")
+   override def fromString(s: String) = s match {
+      case this.matcher(e,d) => (BigInt(e.trim),BigInt(d.trim))
+      case s => (BigInt(s.trim),1)
+   }
+   override def lex = Some(new parser.NumberLiteralLexer(false,true))
+}
+
 
 /** rational complex numbers
  *  

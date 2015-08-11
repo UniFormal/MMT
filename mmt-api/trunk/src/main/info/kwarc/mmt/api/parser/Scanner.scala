@@ -258,6 +258,7 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
               else
                 Nil
             }
+	    // TODO add notations without firstDelimString
             log("openable: " + openable.map(_._1).mkString(", "))
             //the longest firstDelim of an openable notation
             val longestDelim = if (openable.isEmpty) -1 else openable.maxBy(_._2)._2

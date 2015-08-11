@@ -16,7 +16,7 @@ object OMF extends RealizedType {
    init(OpenMath._path ? "OMF")
    type univ = Double
    def fromString(s: String) = s.toDouble
-   override def lex = Some(new parser.NumberLiteralLexer(true))
+   override def lex = Some(new parser.NumberLiteralLexer(true, false))
 }
 
 /** OpenMath OMSTR - strings */ 

@@ -154,8 +154,11 @@ class LexParseExtension(lc: LexFunction, pc: ParseFunction) extends LexerExtensi
  * always accepts digit* after nonLetter
  * 
  * @param floatAllowed if true, accepts digit* [. digit+ [e [-] digit+]] after nonLetter
+ * @param fractionAllowed if true, accepts digit* / digit* after nonLetter
+ * 
+ * It's not allowed that both parameters are true.
  */
-class NumberLiteralLexer(floatAllowed: Boolean) extends LexFunction {
+class NumberLiteralLexer(floatAllowed: Boolean, fractionAllowed: Boolean) extends LexFunction {
   def applicable(s: String, i: Int) = {
      val previousOK = if (i == 0)
         true
@@ -187,6 +190,11 @@ class NumberLiteralLexer(floatAllowed: Boolean) extends LexFunction {
              scanDigits
           }
        }
+     } else if (fractionAllowed) {
+        if (startsWithCharAndDigit('/')) {
+           i+=2
+           scanDigits
+        }
      }
      ("", s.substring(index,i), "")
   }
