@@ -48,14 +48,16 @@ class SmsGenerator extends TraversingBuildTarget {
     "UTF-16", "ISO-8859-1").distinct
 
   def createSms(bt: BuildTask, encs: List[String]): Unit = {
+    val readMsg = "reading " + bt.inPath
     encs match {
       case hd :: tl =>
         try {
+          log(readMsg + " using encoding " + hd)
           creatingSms(bt.inFile, bt.outFile, hd)
         }
         catch {
           case _: MalformedInputException => {
-            log("reading " + bt.inPath + " failed")
+            log(readMsg + bt.inPath + " failed")
             createSms(bt, tl)
           }
         }
@@ -65,7 +67,6 @@ class SmsGenerator extends TraversingBuildTarget {
   }
 
   def creatingSms(inFile: File, outFile: File, enc: String): Unit = {
-    log("reading " + inFile + " using encoding " + enc)
     val source = scala.io.Source.fromFile(inFile, enc)
     val w = File.Writer(outFile)
     source.getLines().foreach { line =>
