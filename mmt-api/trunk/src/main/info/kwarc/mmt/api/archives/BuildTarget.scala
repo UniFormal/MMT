@@ -73,10 +73,11 @@ abstract class BuildTarget extends FormatBasedExtension {
  * @param inFile the input file
  * @param inPath the path of the input file inside the archive, relative to the input dimension
  * @param outFile the intended output file
+ * @param outPath the output file inside the archive, relative to the archive root.
  * @param errorCont BuildTargets should report errors here
  */
 class BuildTask(val archive: Archive, val inFile: File, val isDir: Boolean, val inPath: FilePath,
-                val outFile: File, val errorCont: ErrorHandler) {
+                val outFile: File, val outPath: FilePath, val errorCont: ErrorHandler) {
   /** build targets should set this to true if they skipped the file so that it is not passed on to the parent directory */
   var skipped = false
   /** the narration-base of the containing archive */
@@ -93,6 +94,7 @@ class BuildTask(val archive: Archive, val inFile: File, val isDir: Boolean, val 
 
   /** the name of the folder if inFile is a folder */
   def dirName: String = outFile.filepath.dirPath.baseName
+
 }
 
 /**
@@ -122,6 +124,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
   protected def getOutFile(a: Archive, inPath: FilePath) = (a / outDim / inPath).setExtension(outExt)
 
   protected def getFolderOutFile(a: Archive, inPath: FilePath) = a / outDim / inPath / (folderName + "." + outExt)
+
+  protected def getOutPath(a: Archive, outFile: File) = {new FilePath(a.root.relativize(outFile).segments)}
 
   protected def getErrorFile(a: Archive, inPath: FilePath) = (a / errors / key / inPath).addExtension("err")
 
@@ -174,13 +178,14 @@ abstract class TraversingBuildTarget extends BuildTarget {
         if (!inFile.isFile)
           throw LocalError("file does not exist: " + inPath)
         val outFile = getOutFile(a, inPath)
+        val outPath = getOutPath(a, outFile)
         report("archive", prefix + inFile + " -> " + outFile)
         var errorWriter = makeHandler(a, inPath)
         val errorCont = eCOpt match {
           case None => errorWriter
           case Some(eC) => new MultipleErrorHandler(List(eC, errorWriter))
         }
-        val bf = new BuildTask(a, inFile, false, inPath, outFile, errorCont)
+        val bf = new BuildTask(a, inFile, false, inPath, outFile, outPath, errorCont)
         outFile.up.mkdirs
         try {
           buildFile(bf)
@@ -199,7 +204,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
       case (Current(inDir, inPath), builtChildren) =>
         val outFile = getFolderOutFile(a, inPath)
         val errorCont = makeHandler(a, inPath, isDir = true)
-        val bd = new BuildTask(a, inDir, true, inPath, outFile, errorCont)
+        val outPath = getOutPath(a, outFile)
+        val bd = new BuildTask(a, inDir, true, inPath, outFile, outPath, errorCont)
         buildDir(bd, builtChildren)
         errorCont.close
         bd
@@ -258,8 +264,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
     }, { case (c@Current(inDir, inPath), childChanged) =>
       if (childChanged.contains(true)) {
         val outFile = getFolderOutFile(a, inPath)
+        val outPath = getOutPath(a, outFile)
         val errorCont = makeHandler(a, inPath, isDir = true)
-        val bd = new BuildTask(a, inDir, true, inPath, outFile, errorCont)
+        val bd = new BuildTask(a, inDir, true, inPath, outFile, outPath, errorCont)
         errorCont.close
         buildDir(bd, Nil) // TODO pass proper builtChildren
       }

@@ -13,6 +13,7 @@ import info.kwarc.mmt.api.utils._
 import scala.sys.process.{Process, ProcessLogger}
 import scala.util.matching.Regex
 
+
 class SmsGenerator extends TraversingBuildTarget {
   val localpathsFile = "localpaths.tex"
   val key = "sms"
@@ -27,9 +28,9 @@ class SmsGenerator extends TraversingBuildTarget {
 
   protected def logResult(s: String) = log(s, Some("result"))
 
-  protected def logSuccess(f: File) = logResult("success " + f)
+  protected def logSuccess(f: FilePath) = logResult("success " + f)
 
-  protected def logFailure(f: File) = logResult("failure " + f)
+  protected def logFailure(f: FilePath) = logResult("failure " + f)
 
   protected def sysEnv(v: String): String = sys.env.getOrElse(v, "")
 
@@ -60,7 +61,7 @@ class SmsGenerator extends TraversingBuildTarget {
         try {
           log(readMsg + " using encoding " + hd)
           creatingSms(bt.inFile, bt.outFile, hd)
-          logSuccess(bt.outFile)
+          logSuccess(bt.outPath)
         }
         catch {
           case _: MalformedInputException =>
@@ -69,7 +70,7 @@ class SmsGenerator extends TraversingBuildTarget {
         }
       case Nil =>
         bt.errorCont(LocalError("no suitable encoding found for " + bt.inPath))
-        logFailure(bt.outFile)
+        logFailure(bt.outPath)
     }
   }
 
@@ -91,7 +92,7 @@ class SmsGenerator extends TraversingBuildTarget {
     catch {
       case e: Throwable =>
         bt.errorCont(LocalError("sms exception: " + e))
-        logFailure(bt.outFile)
+        logFailure(bt.outPath)
     }
   }
 
@@ -286,11 +287,11 @@ class LaTeXML extends SmsGenerator {
     if (exitCode != 0 || lmhOut.length == 0) {
       bt.errorCont(LatexError("no omdoc created", output.toString))
       lmhOut.delete()
-      logFailure(bt.outFile)
+      logFailure(bt.outPath)
     }
     if (lmhOut.exists() && lmhOut != bt.outFile)
       Files.move(lmhOut.toPath, bt.outFile.toPath)
-    if (bt.outFile.exists()) logSuccess(bt.outFile)
+    if (bt.outFile.exists()) logSuccess(bt.outPath)
     if (logFile.exists()) {
       readLogFile(bt, logFile)
       if (logFile != logOutFile) Files.move(logFile.toPath, logOutFile.toPath)
@@ -326,17 +327,17 @@ class PdfLatex extends SmsGenerator {
       if (pdfFile.length == 0) {
         bt.errorCont(LatexError("no pdf created", output.toString))
         pdfFile.delete()
-        logFailure(bt.outFile)
+        logFailure(bt.outPath)
       }
       if (pdfFile.exists && pdfFile != bt.outFile)
         Files.move(pdfFile.toPath, bt.outFile.toPath)
       if (bt.outFile.exists)
-        logSuccess(bt.outFile)
+        logSuccess(bt.outPath)
     } catch {
       case e: Throwable =>
         bt.outFile.delete()
         bt.errorCont(LatexError(e.toString, output.toString))
-        logFailure(bt.outFile)
+        logFailure(bt.outPath)
     }
     if (pdfFile != bt.outFile) pdfFile.delete()
     List("aux", "idx", "log", "out", "thm").
