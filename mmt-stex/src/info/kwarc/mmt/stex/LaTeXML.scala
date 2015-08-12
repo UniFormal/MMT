@@ -219,6 +219,28 @@ class LaTeXML extends SmsGenerator {
     }
   }
 
+  private def readLogFile(bt: BuildTask, logFile: File) {
+    val source = scala.io.Source.fromFile(logFile)
+    source.getLines().foreach { line =>
+      val (newLevel, restLine) = line2Level(line)
+      if (newLevel.isDefined) {
+        LtxLog.reportError(bt)
+        LtxLog.optLevel = newLevel
+        LtxLog.msg = List(restLine)
+        LtxLog.newMsg = false
+      }
+      else if (line.startsWith("\t")) {
+        val sLine = line.substring(1)
+        val newRegion = line2Region(sLine, bt.inFile)
+        if (newRegion == SourceRegion.none)
+          LtxLog.msg = sLine :: LtxLog.msg
+        else LtxLog.region = newRegion
+      }
+      else LtxLog.reportError(bt)
+    }
+    LtxLog.reportError(bt)
+  }
+
   private def extEnv(bt: BuildTask): List[(String, String)] = {
     val perl5 = extBase(bt) / perl5lib
     val p5 = "PERL5LIB"
@@ -270,25 +292,7 @@ class LaTeXML extends SmsGenerator {
       Files.move(lmhOut.toPath, bt.outFile.toPath)
     if (bt.outFile.exists()) logSuccess(bt.outFile)
     if (logFile.exists()) {
-      val source = scala.io.Source.fromFile(logFile)
-      source.getLines().foreach { line =>
-        val (newLevel, restLine) = line2Level(line)
-        if (newLevel.isDefined) {
-          LtxLog.reportError(bt)
-          LtxLog.optLevel = newLevel
-          LtxLog.msg = List(restLine)
-          LtxLog.newMsg = false
-        }
-        else if (line.startsWith("\t")) {
-          val sLine = line.substring(1)
-          val newRegion = line2Region(sLine, bt.inFile)
-          if (newRegion == SourceRegion.none)
-            LtxLog.msg = sLine :: LtxLog.msg
-          else LtxLog.region = newRegion
-        }
-        else LtxLog.reportError(bt)
-      }
-      LtxLog.reportError(bt)
+      readLogFile(bt, logFile)
       if (logFile != logOutFile) Files.move(logFile.toPath, logOutFile.toPath)
     }
   }
