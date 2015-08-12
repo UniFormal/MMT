@@ -6,9 +6,15 @@ import sbt.Keys.packageBin
 import sbt._
 
 object PostProcessApi {
+  /**
+   * pacakges the compiled binaries and copies to deploy 
+   */
   def deployPackage(name: String): Def.Initialize[Task[Unit]] =
-    packageBin in Compile map deployTo(name)
+    packageBin in Compile map {jar => deployTo(name)(jar)}
 
+  /*
+   * copies files to deploy folder
+   */
   def deployTo(name: String)(jar: File): Unit = {
     val tar = new File("../deploy/" + name)
     Files.copy(jar.toPath, tar.toPath, REPLACE_EXISTING)
