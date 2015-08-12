@@ -9,7 +9,7 @@ import modules._
 import parser._
 import objects._
 import utils._
-import archives._ 
+import archives._
 
 import info.kwarc.mmt.lf._
 
@@ -24,7 +24,7 @@ class PVSImportTask(bt: BuildTask, index: Document => Unit) {
       SourceRef.update(oM, SourceRef(FileURI(bt.inFile), reg))
       */
    }
-   
+
    def doDocument(d: pvs_file) {
       val path = bt.narrationDPath.^!
       println("Document:" +path)
@@ -33,7 +33,7 @@ class PVSImportTask(bt: BuildTask, index: Document => Unit) {
 //      val doc = new Document(path, mrefsM)
 //      index(doc)
    }
-   
+
    def doModule(d:DPath)(m: syntax.Module): modules.Module = m match {
       case t: theory =>
          implicit val th = new DeclaredTheory(d,doName(t.named.id),Some(PVSTheory.path))
@@ -63,7 +63,7 @@ class PVSImportTask(bt: BuildTask, index: Document => Unit) {
          th add PVSTheory.ofTypeDecl(th,named.named.id,doType(tp2._internal))
       case formal_theory_decl(named, _name) => println("TODO: formal_theory_decl")
    }
-   
+
    def doDecl(d: Decl)(implicit th:DeclaredTheory) : Option[Declaration] = {
       d match {
          case var_decl(id,unnamed,tp2) => None /*
@@ -84,10 +84,10 @@ class PVSImportTask(bt: BuildTask, index: Document => Unit) {
          case _ => println("TODO: "+d.getClass); None
       }
    }
-   
+
    def doTheoryExpr(t: TheoryExpr): Term = {
       t match {
-         case theory_name(place, id, library_id, mappings, targetOpt, actuals) =>
+         case theory_name(place, id, library_id, mappings, targetOpt, actuals, Nil) =>
             val p = DPath(URI.empty / library_id) ? id
             val tM = OMMOD(p)
             doSourceRef(t, tM)
