@@ -18,42 +18,42 @@ class SmsGenerator extends TraversingBuildTarget {
   val key = "sms"
   val inDim = source
   val outDim: ArchiveDimension = source
-  val c = java.io.File.pathSeparator
+  protected val c = java.io.File.pathSeparator
   override val outExt = "sms"
 
-  case class LatexError(s: String, l: String) extends ExtensionError(key, s) {
+  protected case class LatexError(s: String, l: String) extends ExtensionError(key, s) {
     override val extraMessage = l
   }
 
-  def logResult(s: String) = log(s, Some("result"))
+  protected def logResult(s: String) = log(s, Some("result"))
 
-  def logSuccess(f: File) = logResult("success " + f)
+  protected def logSuccess(f: File) = logResult("success " + f)
 
-  def logFailure(f: File) = logResult("failure " + f)
+  protected def logFailure(f: File) = logResult("failure " + f)
 
-  def sysEnv(v: String): String = sys.env.getOrElse(v, "")
+  protected def sysEnv(v: String): String = sys.env.getOrElse(v, "")
 
   def includeFile(n: String): Boolean =
     n.endsWith(".tex") && !n.endsWith(localpathsFile) && !n.startsWith("all.")
 
   override def includeDir(n: String): Boolean = !n.endsWith("tikz")
 
-  val SmsKeys: List[String] = List(
+  private val SmsKeys: List[String] = List(
     "guse", "gadopt", "symdef", "abbrdef", "symvariant", "keydef", "listkeydef",
     "importmodule", "gimport", "adoptmodule", "importmhmodule", "adoptmhmodule"
   )
-  val SmsTopKeys: List[String] = List(
+  private val SmsTopKeys: List[String] = List(
     "module", "importmodulevia", "importmhmodulevia"
   )
-  val SmsRegs: Regex = (SmsKeys.map("\\\\" + _) ++
+  private val SmsRegs: Regex = (SmsKeys.map("\\\\" + _) ++
     SmsTopKeys.map("\\\\begin\\{" + _ + "\\}") ++
     SmsTopKeys.map("\\\\end\\{" + _ + "\\}")
     ).mkString("|").r
 
-  val encodings = List(Charset.defaultCharset.toString, "UTF-8",
+  private val encodings = List(Charset.defaultCharset.toString, "UTF-8",
     "UTF-16", "ISO-8859-1").distinct
 
-  def createSms(bt: BuildTask, encs: List[String]): Unit = {
+  private def createSms(bt: BuildTask, encs: List[String]): Unit = {
     val readMsg = "reading " + bt.inPath
     encs match {
       case hd :: tl =>
@@ -63,10 +63,9 @@ class SmsGenerator extends TraversingBuildTarget {
           logSuccess(bt.outFile)
         }
         catch {
-          case _: MalformedInputException => {
+          case _: MalformedInputException =>
             log(readMsg + bt.inPath + " failed")
             createSms(bt, tl)
-          }
         }
       case Nil =>
         bt.errorCont(LocalError("no suitable encoding found for " + bt.inPath))
@@ -74,7 +73,7 @@ class SmsGenerator extends TraversingBuildTarget {
     }
   }
 
-  def creatingSms(inFile: File, outFile: File, enc: String): Unit = {
+  private def creatingSms(inFile: File, outFile: File, enc: String): Unit = {
     val source = scala.io.Source.fromFile(inFile, enc)
     val w = File.Writer(outFile)
     source.getLines().foreach { line =>
@@ -96,15 +95,15 @@ class SmsGenerator extends TraversingBuildTarget {
     }
   }
 
-  def mathHubDir(bt: BuildTask): File = bt.archive.baseDir.up
+  protected def mathHubDir(bt: BuildTask): File = bt.archive.baseDir.up
 
-  def extBase(bt: BuildTask): File = mathHubDir(bt) / "ext"
+  protected def extBase(bt: BuildTask): File = mathHubDir(bt) / "ext"
 
-  def stexStyDir(bt: BuildTask): File = extBase(bt) / "sTeX" / "sty"
+  protected def stexStyDir(bt: BuildTask): File = extBase(bt) / "sTeX" / "sty"
 
-  def styPath(bt: BuildTask): File = mathHubDir(bt) / "sty"
+  protected def styPath(bt: BuildTask): File = mathHubDir(bt) / "sty"
 
-  def env(bt: BuildTask): List[(String, String)] = {
+  protected def env(bt: BuildTask): List[(String, String)] = {
     val sty = "STEXSTYDIR"
     val tex = "TEXINPUTS"
     val styEnv = sysEnv(sty)
@@ -115,7 +114,7 @@ class SmsGenerator extends TraversingBuildTarget {
         + c + sysEnv(tex)))
   }
 
-  def createLocalPaths(bt: BuildTask): Unit = {
+  protected def createLocalPaths(bt: BuildTask): Unit = {
     val dir = bt.inFile.up
     val fileName = dir / localpathsFile
     val a = bt.archive
@@ -135,7 +134,7 @@ class SmsGenerator extends TraversingBuildTarget {
     }
   }
 
-  def getAmbleFile(preOrPost: String, bt: BuildTask): File = {
+  protected def getAmbleFile(preOrPost: String, bt: BuildTask): File = {
     val repoDir = bt.archive.root
     val lang: Option[String] = bt.inFile.stripExtension.getExtension
     val filePrefix = repoDir / "lib" / preOrPost
@@ -174,14 +173,14 @@ class LaTeXML extends SmsGenerator {
     paths = controller.getEnvVar("LATEXMLPATHS").getOrElse("").split(" ").filter(_.nonEmpty)
   }
 
-  def str2Level(lev: String): Level.Level = lev match {
+  private def str2Level(lev: String): Level.Level = lev match {
     case "Info" => Level.Info
     case "Error" => Level.Error
     case "Fatal" => Level.Fatal
     case _ => Level.Warning
   }
 
-  def line2Region(sLine: String, inFile: File): SourceRegion = {
+  private def line2Region(sLine: String, inFile: File): SourceRegion = {
     val regEx = """#textrange\(from=(\d+);(\d+),to=(\d+);(\d+)\)""".r
     val range = sLine.stripPrefix(inFile.toString)
     range match {
@@ -192,7 +191,7 @@ class LaTeXML extends SmsGenerator {
     }
   }
 
-  def line2Level(line: String): (Option[Level.Level], String) = {
+  private def line2Level(line: String): (Option[Level.Level], String) = {
     val msgLine = """(Info|Warning|Error|Fatal):(.*)""".r
     line match {
       case msgLine(lev, rest) => (Some(str2Level(lev)), rest)
@@ -200,7 +199,7 @@ class LaTeXML extends SmsGenerator {
     }
   }
 
-  object LtxLog {
+  private object LtxLog {
     var optLevel: Option[Level.Level] = None
     var msg: List[String] = Nil
     var newMsg = true
@@ -220,7 +219,7 @@ class LaTeXML extends SmsGenerator {
     }
   }
 
-  def extEnv(bt: BuildTask): List[(String, String)] = {
+  private def extEnv(bt: BuildTask): List[(String, String)] = {
     val perl5 = extBase(bt) / perl5lib
     val p5 = "PERL5LIB"
     val perl5path = perl5 / "lib" / "perl5"
@@ -230,7 +229,7 @@ class LaTeXML extends SmsGenerator {
       (p5 -> (perl5path + c + latexmlBlib + c + sysEnv(p5))) :: env(bt)
   }
 
-  def setLatexmlc(bt: BuildTask): Unit =
+  private def setLatexmlc(bt: BuildTask): Unit =
     if (!File(latexmlc).isAbsolute) {
       val latexmlcpath = extBase(bt) / perl5lib / "bin" / latexmlc
       if (latexmlcpath.exists) {
