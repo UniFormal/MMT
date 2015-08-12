@@ -48,7 +48,7 @@ object TokenList {
   def apply(s: String, em: EscapeManager, first: SourcePosition = SourcePosition(0, 0, 0)): TokenList = {
     val l = first.offset + s.length
     // lexing state
-    var i = first // position of net Char in s
+    var i = first // position of next Char in s
     var current = "" // previously read prefix of the current Token
     var connect = false // current.last.getType == CONNECTOR_PUNCTUATION
     var skipEscaped = 0 //number of characters to skip, normally 0
@@ -62,6 +62,8 @@ object TokenList {
         whitespace = false
       }
     }
+    // returns the character after the current one; caller must check for existence first
+    def nextChar: Char = s(i.offset - first.offset + 1)
     // the lexing loop
     while (i.offset < l) {
       val c = s(i.offset - first.offset) // current Char
@@ -87,9 +89,9 @@ object TokenList {
             // letters, marks, and numbers continue the Token
             case _ if isLetter(c) || isNumber(c) =>
               current += c
-            // the special MMT delimiters continue a multi-character Token
+            // the special MMT delimiters continue a multi-character Token if other characters follow
             // TODO does not allow lexing URIs ?name
-            case _ if "?/".contains(c) && current != "" =>
+            case _ if "?/".contains(c) && current != "" && i.offset < l - 1 && !isWhitespace(nextChar) =>
               current += c
             // connectors are remembered
             case _ if isConnector(c) =>
@@ -101,7 +103,7 @@ object TokenList {
               endToken()
               // look ahead: if a connector follows, start a multi-character Token
               // otherwise, create a single-character Token
-              if (i.offset < l - 1 && isConnector(s(i.offset - first.offset + 1))) {
+              if (i.offset < l - 1 && isConnector(nextChar)) {
                 current += c
               } else {
                 tokens ::= Token(c.toString, i, whitespace)
@@ -250,15 +252,15 @@ case class CFExternalToken(text: String, firstPosition: SourcePosition, term: Te
 }
 
 /** A MatchedList is a TokenListElem resulting by reducing a sublist using a notation
- *
- * invariant: every FoundArg (including nested ones) found when traversing an.getFound
- * corresponds to one TokenListElem in tokens
- *
- * TokenSlice's in an.getFound are invalid.
- *
- * @param tokens the TokenListElem's that were reduced, excluding delimiters
- * @param an the notation used for reduction (which stores the information about how the notation matched the tokens)
- */
+  *
+  * invariant: every FoundArg (including nested ones) found when traversing an.getFound
+  * corresponds to one TokenListElem in tokens
+  *
+  * TokenSlice's in an.getFound are invalid.
+  *
+  * @param tokens the TokenListElem's that were reduced, excluding delimiters
+  * @param an the notation used for reduction (which stores the information about how the notation matched the tokens)
+  */
 class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation,
                   val firstPosition: SourcePosition, val lastPosition: SourcePosition) extends TokenListElem {
   override def toString: String = if (tokens.isEmpty)
