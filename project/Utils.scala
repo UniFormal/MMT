@@ -4,7 +4,7 @@ import java.nio.file.StandardCopyOption._
 
 object Utils {
    /** These methods are used by the target jedit/install to copy files to the local jEdit installation */
-   val jEditJars = List("mmt-api.jar", "mmt-lf", "MMTPlugin.jar")
+   val jEditJars = List("mmt-api.jar", "mmt-lf.jar", "MMTPlugin.jar")
    def installJEditJars {
       val f = new File("jedit-settings-folder")
       if (f.exists) {

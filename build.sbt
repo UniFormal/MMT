@@ -2,14 +2,13 @@ import PostProcessApi._
 import sbt.Keys._
 import sbtunidoc.Plugin.UnidocKeys.unidoc
 
-lazy val postProcessApi =
-  taskKey[Unit]("post process generated api documentation wrt to source links.")
-
-postProcessApi := postProcess(streams.value.log)
-
 publish := {}
 
 scalaVersion := "2.11.7"
+
+// = genration of API documentation
+
+// configuration of unidoc, used by our apidoc target
 
 unidocSettings
 
@@ -20,20 +19,31 @@ scalacOptions in(ScalaUnidoc, unidoc) ++=
 
 target in(ScalaUnidoc, unidoc) := file("../doc/api")
 
+// our targets
+
+lazy val postProcessApi =
+  taskKey[Unit]("post process generated api documentation wrt to source links.")
+  
+postProcessApi := postProcess(streams.value.log)
+
 lazy val cleandoc =
   taskKey[Unit]("remove api documentation.")
-
+  
 cleandoc := delRecursive(streams.value.log, file("../doc/api"))
 
 lazy val apidoc =
   taskKey[Unit]("generate post processed api documentation.")
-
+  
 apidoc := postProcessApi.value
 
 apidoc <<= apidoc.dependsOn(cleandoc, unidoc in Compile)
 
+// definition of our custom, project-specific targets 
+
 val deploy =
-  TaskKey[Unit]("deploy", "assembles and copies fat jars to deploy location.")
+  TaskKey[Unit]("deploy", "copies packaged jars to deploy location.")
+
+// settings to be reused by all projects
 
 def commonSettings(nameStr: String) = Seq(
   organization := "info.kwarc.mmt",
@@ -59,6 +69,8 @@ def commonSettings(nameStr: String) = Seq(
       oldStrategy(x)
   }
 )
+
+// individual projects
 
 lazy val tiscaf = (project in file("tiscaf")).
   settings(commonSettings("tiscaf"): _*).
@@ -161,7 +173,8 @@ lazy val leo = (project in file("mmt-leo")).
     libraryDependencies += "com.assembla.scala-incubator" %% "graph-core" % "1.9.4"
   )
 
-// just a wrapper project
+// wrapper project that depends on most other projects
+// the deployed jar is stand-alone and can be used as a unix shell script
 lazy val mmt = (project in file("mmt-exts")).
   dependsOn(tptp, stex, pvs, specware, webEdit, oeis, leo).
   settings(commonSettings("mmt-exts"): _*).
@@ -174,6 +187,7 @@ lazy val mmt = (project in file("mmt-exts")).
       prependShellScript = Some(Seq("#!/bin/bash", """exec /usr/bin/java -Xmx2048m -jar "$0" "$@"""")))
   )
 
+// jars to be used in Compile but excluded in assembly for jedit jar
 val jeditJars = Seq(
   "Console.jar",
   "ErrorList.jar",
@@ -182,16 +196,23 @@ val jeditJars = Seq(
   "SideKick.jar"
 )
 
+val release =
+  TaskKey[Unit]("release", "assembles jedit jar in deploy/jedit-plugin.")
+
+val install =
+  TaskKey[Unit]("install", "copies jedit jars to local jedit installation folder.")
+
 lazy val jedit = (project in file("jEdit-mmt")).
   dependsOn(mmt).
   settings(commonSettings("jEdit-mmt"): _*).
   settings(
     resourceDirectory in Compile := baseDirectory.value / "src/resources",
     unmanagedJars in Compile ++= jeditJars map (baseDirectory.value / "lib" / _),
-    deploy <<= assembly in Compile map
-      deployTo("jedit-plugin/plugin/jars/MMTPlugin.jar"),
+    deploy <<= deployPackage("main/MMTPlugin.jar"),
+    release <<= (assembly in Compile) map {jar => deployTo("jedit-plugin/plugin/jars/MMTPlugin.jar")(jar)},
     assemblyExcludedJars in assembly := {
       val cp = (fullClasspath in assembly).value
       cp filter { j => jeditJars.contains(j.data.getName) }
-    }
+    },
+    install := Utils.installJEditJars
   )

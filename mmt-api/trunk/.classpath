@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/main">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/scala-compiler.jar" sourcepath="/deploy-wrapper/lib/scala-compiler.source.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/tiscaf.jar"/>
+	<classpathentry exported="true" kind="lib" path="/deploy-wrapper/lib/scala-xml.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/scala-parser-combinators.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

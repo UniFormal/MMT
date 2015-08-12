@@ -8,6 +8,11 @@ import java.net._
 
 import scala.xml._
 
+/*
+ * TODO known issue: if resources are scarce on windows,
+ * the catalog may respond correctly but Twelf only receives a socket error (win32 error code 10055)
+ * it's unclear how to increase available buffer space to avoid this problem
+ */
 
 /** An HTTP RESTful server.
   * @param catalog the main controller and storage
