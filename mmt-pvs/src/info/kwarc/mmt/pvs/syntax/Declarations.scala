@@ -25,9 +25,10 @@ case class theory(named: NamedDecl, theory_formals: List[FormalParameter],
                   assuming: List[AssumingDecl], exporting_ : Option[exporting], _decls: List[Decl]) extends Module
 
 case class exporting(place: String, exporting_kind: String,
-           exporting_names: List[name], exporting_but_names: List[name], exporting_theory_names: List[theory_name]) {
+           exporting_names_ : exporting_names, exporting_but_names_ : exporting_names, exporting_theory_names: List[theory_name]) {
    checkString(exporting_kind, "nil", "all", "closure", "default")
 }
+case class exporting_names(name:List[name]) extends Group
 
 // ********** datatypes
 /**
@@ -101,7 +102,7 @@ case class macro_decl(decl: const_decl) extends Decl
 
 /* can all have formals */
 /** named import (parameters, instantiations, and renamings are part of the name); rnc to be revisited */
-case class theory_decl(named: ChainedDecl, domain: theory_name) extends Decl
+case class theory_decl(named: ChainedDecl, _domain: theory_name) extends Decl
 /** c(G) : A [= t] where c is a recursive function */
 case class def_decl(named: ChainedDecl, arg_formals: List[bindings], tp: DeclaredType, _def: Expr,
                     _measure: Option[Expr], _order: Option[Expr]) extends Decl
@@ -160,7 +161,7 @@ case class conversion_decl(unnamed: UnnamedDecl, kind: String, _expr: Expr) exte
 }
 
 /** name of a formula that is loaded as a conditional rewrite rule */
-case class auto_rewrite(unnamed: UnnamedDecl, key: String, kind: String, rewrite_name_ : List[rewrite_name]) extends Decl {
+case class auto_rewrite(unnamed: UnnamedDecl, key: String, kind: String, _rewrite_name : List[rewrite_name]) extends Decl {
    checkString(kind, "add", "remove")
 }
 
@@ -175,7 +176,7 @@ case class rewrite_name_spec() // element rewrite-name-spec {type-expr | formula
 case class lib_decl(id: String, unnamed: UnnamedDecl, library: String) extends Decl
 
 /** include T, can occur in formal parameters without semantic change in case parameters already need included declarations */
-case class importing(unnamed: UnnamedDecl, name: theory_name) extends Decl with FormalParameter
+case class importing(unnamed: UnnamedDecl, _name: theory_name) extends Decl with FormalParameter
 
 // ****************************************
 // ********** commonly used groups of attributes/children

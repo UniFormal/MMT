@@ -31,6 +31,8 @@ case class tuple_type(place: String, _domains: List[domain]) extends Type
 case class cotuple_type(place: String, _arguments: List[Type]) extends Type
 /** {f1:A1, ..., fn: An} */
 case class record_type(place: String, _fields: List[field_decl]) extends Type
+
+case class type_extension(place:String,_type:Type, _by:Type) extends Type
 // field in a record type
 case class field_decl(named: NamedDecl, _type: Type)
 
@@ -52,11 +54,16 @@ sealed trait Expr extends Object with assignment_arg
  *  @param _type the type disambiguating overloading (can be computed from resolution)
  *  @param _res internal, disambiguated reference (internally maintained as a pointer)
  */
-case class name_expr(place: String, name: name, _type: Type, _res: resolution) extends Expr
+case class name_expr(place: String, name: name, _type: Option[Type], _resolution: resolution) extends Expr
 /** */
 case class varname_expr(place: String, id: String, _type: Type) extends Expr
 /** number literal */
-case class number_expr(place: String, _num: Int) extends Expr
+case class number_expr(place: String, _num: BigInt) extends Expr
+/** rational literal */
+case class rational_expr(place: String, _s:String) extends Expr {
+  val enum = BigInt(_s.take(_s.indexOf(" ")))
+  val denom = BigInt(_s.drop(_s.indexOf(" ")+1))
+}
 /** string literal */
 case class string_expr(place: String, _str: String) extends Expr
 /** function application */
@@ -95,6 +102,7 @@ case class binding(id: String, named: ChainedDecl, _type: Type) extends domain
 /* a single variable binding with definiens */
 case class let_binding(named: ChainedDecl, _type: Type, _expr: Expr) // not quite
 
+
 // ********** case distinctions
 
 /** if-then-else expression */
@@ -111,14 +119,15 @@ case class selection(place: String, _cons: name_expr, bindings: List[binding], _
 
 // ********** updates
 
-case class assignment(plase: String, assignment_args: List[assignment_arg], _expr: Expr)
+sealed trait update_assignment
+case class assignment(place: String, assignment_args: List[assignment_arg], _expr: Expr) extends update_assignment
+case class maplet(place:String, assignment_args:List[assignment_arg],_expr:Expr) extends update_assignment
 /** */
 sealed trait assignment_arg
 case class field_assign(place: String, id: String) extends assignment_arg
 case class proj_assign(place: String, _index: Int) extends assignment_arg
-
 /** change value in a tuple, record, or function */
-case class update_expr(place: String, _var: varname_expr, assignments: List[assignment]) extends Expr
+case class update_expr(place: String, _exp: Expr, assignments: List[update_assignment]) extends Expr
 
 // ********** tables
 
@@ -149,7 +158,7 @@ sealed trait TheoryExpr extends Object
  * @param _actuals instantiations for the formal parameters (positional, full)
  * @param mappings instantiations/renaming for
  */
-case class theory_name(place: String, id: String, library_id: String, mappings: List[mapping], target: Option[theory_name], actuals: List[Object]) extends TheoryExpr
+case class theory_name(place: String, id: String, library_id: String, mappings: List[mapping], target: Option[theory_name], actuals: List[Object],dactuals:List[Object]) extends TheoryExpr
 
 /**
  * user-provided reference to a symbol
@@ -160,7 +169,7 @@ case class theory_name(place: String, id: String, library_id: String, mappings: 
  * @param target abbreviation for substituting a set of names at once by the declarations of the same local name in a different theory
  */
 case class name(id: String, theory_id: String, library_id: String,
-                mappings: List[mapping], target: Option[theory_name], actuals: List[Object]) extends Group
+                mappings: List[mapping], target: Option[theory_name], actuals: List[Object],dactuals:List[Object]) extends Group
 
 
 /** superclass of instantiations and renaming when forming theories */

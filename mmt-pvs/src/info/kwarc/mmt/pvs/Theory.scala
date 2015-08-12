@@ -1,10 +1,11 @@
 package info.kwarc.mmt.pvs
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.DeclaredTheory
-import info.kwarc.mmt.api.objects.{Term, OMID, OMA}
+import info.kwarc.mmt.api.objects.{OMS, Term, OMID, OMA}
 import info.kwarc.mmt.api.symbols.{Constant, DeclaredStructure}
+import info.kwarc.mmt.lf.{ApplySpine, Apply}
+import info.kwarc.mmt.pvs.syntax.Expr
 import utils._
 
 object PVSTheory {
@@ -21,6 +22,7 @@ object PVSTheory {
    val asType = sym("asType")
    val expr = sym("expr")
    val tp = sym("tp")
+   val app = sym("app")
    //val variable = sym("var")
    val formula = sym("formula")
    // val LFapply = DPath((URI.http colon "cds.omdoc.org") / "urtheories") ? "LF" ? "apply"

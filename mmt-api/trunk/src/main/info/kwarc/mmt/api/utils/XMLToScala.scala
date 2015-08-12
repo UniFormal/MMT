@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.utils
 
+import scala.util.Success
 import scala.xml._
 import scala.reflect.runtime.universe._
 
@@ -36,7 +37,7 @@ class XMLToScala(pkg: String) {
    private val m = runtimeMirror(getClass.getClassLoader)
 
    /** It's non-trivial to construct Type programmatically. So we take them by reflecting Dummy */
-   private case class Dummy(a: Int, b: Boolean, c: List[Int], d: Option[Int], e: Group, f: String)
+   private case class Dummy(a: Int, b: Boolean, c: List[Int], d: Option[Int], e: Group, f: String,g:BigInt)
    /** the argument types of Dummy */
    private val dummyTypes = typeOf[Dummy].companion.member(TermName("apply")).asMethod.paramLists.flatten.toList.map(_.asTerm.info)
    /** the Type of Int (strangely != typeOf[Int]) */
@@ -45,6 +46,7 @@ class XMLToScala(pkg: String) {
    private val BoolType = dummyTypes(1)
    /** the Type of String */
    private val StringType = dummyTypes(5)
+   private val BigIntType = dummyTypes(6)
    /** matches the Type of a unary type operator */
    private class TypeRefMatcher(sym: Symbol) {
       def unapply(tp: Type): Option[Type] = {
@@ -131,6 +133,7 @@ class XMLToScala(pkg: String) {
 
    /** parse a Node of expected Type expType */
    private def apply(node: Node, expType: Type): Any = {
+    //  println(node.toString)
       if (node.isInstanceOf[Text])
          // treat text nodes as Strings
          return node.text
@@ -144,7 +147,7 @@ class XMLToScala(pkg: String) {
          throw ExtractError(s"expected $expType\nfound $node")
       // the remaining children of node (removed once processed)
       var children = cleanNodes(node.child.toList).zipWithIndex
-      // the used attributes of node (added once processed)
+         // the used attributes of node (added once processed)
       var attributesTaken: List[String] = Nil
       /** finds the string V by looking at (i) key="V" (ii) <key>V</key> (iii) "" */
       def getAttributeOrChild(scalaKey: String): String = {
@@ -197,6 +200,11 @@ class XMLToScala(pkg: String) {
             if (s == "") 0 else
                try {s.toInt}
                catch {case _: Exception => throw ExtractError(s"integer expected at key $nS: $s")}
+         case Argument(n, nS, BigIntType) =>
+            val s = getAttributeOrChild(nS)
+            if (s == "") 0 else
+               try {BigInt(s)}
+               catch {case _: Exception => throw ExtractError(s"BigInt expected at key $nS: $s")}
          case Argument(n, nS, BoolType) =>
             val s = getAttributeOrChild(nS)
             s.toLowerCase match {
@@ -215,8 +223,13 @@ class XMLToScala(pkg: String) {
                   if (children.isEmpty) None
                   else {
                      val (child,_) = children.head
-                     children = children.tail
-                     Some(apply(child, elemType))
+                     // Some(apply(child, elemType))
+                     scala.util.Try(apply(child,elemType)) match {
+                        case Success(s) =>
+                           children = children.tail
+                           Some(s)
+                        case _ => None
+                     }
                   }
                case _ =>
                   if (children == Nil) {
@@ -242,8 +255,7 @@ class XMLToScala(pkg: String) {
                case ListType(elemType) =>
                   if (omitted)
                      Nil
-                  else
-                     childNodes.map(apply(_, elemType))
+                  else childNodes.map(apply(_, elemType))
                // Option[A]
                case OptionType(elemType) =>
                   if (omitted)
@@ -266,7 +278,7 @@ class XMLToScala(pkg: String) {
             }
       }
       val res = makeInstance(foundType)(getArgumentValue)
-      if (!children.isEmpty)
+      if (children.nonEmpty)
          throw ExtractError(s"children left after constructing $res: " + children.map{case (c,i) => s"\n$i:$c"}.mkString(","))
       res
    }

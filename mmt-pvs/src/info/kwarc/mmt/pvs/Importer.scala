@@ -11,13 +11,13 @@ import archives._
 class PVSImporter extends Importer {
    val key = "pvs-omdoc"
    def inExts = List("xml")
-   override def inDim = RedirectableDimension("pvsxml", Some(Dim("src","pvsxml")))
+   //override def inDim = RedirectableDimension("pvsxml", Some(Dim("src","pvsxml")))
    
    private val parseXML = syntax.makeParser
 
-   private var startAt = "Fairctlops"
+   private var startAt = "/home/raupi/lmh/MathHub/PVS/NASA/source/vectors/pvsxml/vectors_3D_def"
    def importDocument(bf: BuildTask, index: Document => Unit) {
-      if (bf.inFile.name < startAt) return
+ //     if (bf.inFile.filepath.toString < startAt) return
       val d = bf.inFile.name
       val e = try {
          parseXML(bf.inFile)
@@ -34,7 +34,8 @@ class PVSImporter extends Importer {
 //            } else
   //             return
       }
-      // println(e)
+ //    println(e)
+
       val conv = new PVSImportTask(bf, index)
       e match {
          //case d: pvs_file =>
@@ -43,5 +44,6 @@ class PVSImporter extends Importer {
             conv.doDocument(pvs_file(List(m)))
             //conv.doModule(m)
       }
+
    }
 }

@@ -137,14 +137,15 @@ class PVSImportTask(bt: BuildTask, index: Document => Unit) {
             doExpr(body)
          ) // TODO - is it smart to use Pi for Forall?
          case application(place,funct,arg,infix) => arg match {
-            case tuple_expr(place,args) => ApplySpine(doExpr(funct),args map doExpr :_*)
-            case _ => Apply(doExpr(funct),doExpr(arg))
+            case tuple_expr(place,args) => ApplySpine(OMS(PVSTheory.app),(funct::args) map doExpr :_*)
+            case _ => ApplySpine(OMS(PVSTheory.app),doExpr(funct),doExpr(arg))
          }
          case name_expr(place, name, tp, res) =>
             val libraryname = if (res._theory.library_id!="")
                PVSTheory.dpath / res._theory.library_id
             else th.parent
-            val theoryname = libraryname ? doName(res._theory.id)
+            val theoryname = libraryname ? (if (res._theory.id!="") doName(res._theory.id) else
+               th.name)
             if(!(th.getIncludes.contains(theoryname) || theoryname==th.path)) th add PlainInclude(theoryname,th.path)
             OMS(theoryname ? doName(name.id))
          case tuple_expr(place,args) =>
@@ -167,5 +168,5 @@ class PVSImportTask(bt: BuildTask, index: Document => Unit) {
 
    }
 
-   def doName(s:String) : LocalName = if (s contains '?') doName(s.take(s.indexOf('?')) concat s.drop(s.indexOf('?')+1)) else LocalName(s)
+   def doName(s:String) : LocalName = LocalName(s)
 }
