@@ -285,6 +285,9 @@ class Controller extends ROController with Logger {
       e match {
         case nw: ContentElement =>
           localLookup.getO(e.path) match {
+              //TODO localLookup yields a generated Constant when retrieving assignments in a view, which old.compatible(nw) false due to having different origin
+              //probably introduced when changing the representation of paths in views
+              //might also be because old is read from .omdoc due to dependency from checking earlier item and nw is read from .mmt when checking nw
             case Some(old) =>
               /* optimization for change management
                * if e.path is already loaded but inactive, and the new e is compatible with it,

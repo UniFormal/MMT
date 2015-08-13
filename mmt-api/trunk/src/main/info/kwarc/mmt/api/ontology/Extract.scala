@@ -76,7 +76,9 @@ object MMTExtractor extends RelationalExtractor {
                         f(HasCodomain(s.path, TheoryExp.simplify(s.to).toMPath))
                         f(IsStructure(s.path))
                      }
-                  case nm: NestedModule => apply(nm.module)
+                  case nm: NestedModule =>
+                     f(dec)
+                     apply(nm.module)
                   case rc: RuleConstant =>
                      f(dec)
                      f(IsConstant(rc.path))
