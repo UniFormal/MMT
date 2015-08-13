@@ -47,21 +47,25 @@ class Relational extends TraversingBuildTarget {
         val d = getDocDPath(bt)
         println(docPathToFilePath(d).mkString)
         val usedTheories = rs.querySet(d, +Declares * RelationExp.Deps)
-        usedTheories.foreach { t =>
+        usedTheories.foreach { theo =>
+          val t = theo match {
+            case MPath(p, LocalName(hd :: _ :: _)) => MPath(p, LocalName(List(hd)))
+            case _ => theo
+          }
           val provider = rs.querySet(t, -Declares)
           if (provider.isEmpty)
-            println("  nothing provides: " + t)
+            println("  nothing provides: " + theo)
           else {
             val ds = provider.flatMap(docPathToFilePath).toList
             ds match {
-              case Nil => println("  no document found for: " + t)
+              case Nil => println("  no document found for: " + theo)
               case hd :: Nil =>
                 if (ds == docPathToFilePath(d))
-                  println("  theory provided in same document: " + t)
+                  println("  theory provided in same document: " + theo)
                 else
                   println("  " + hd)
               case _ =>
-                println("  several documents found for: " + t)
+                println("  several documents found for: " + theo)
                 println("    " + ds.mkString(" "))
             }
           }
