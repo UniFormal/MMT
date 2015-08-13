@@ -75,11 +75,14 @@ class Relational extends TraversingBuildTarget {
       controller.backend.getStores.filter(_.isInstanceOf[Archive]).
         flatMap { s =>
           val a = s.asInstanceOf[Archive]
-          if (a.narrationBase <= uri) Some(a) else None
-        }.map { a =>
-        val b = a.narrationBase.toString
-        val f = File(a.rootString + "/source" + uri.toString.stripPrefix(b)).setExtension("mmt")
-        if (f.length() == 0) log("missing file: " + f)
+          if (a.narrationBase <= uri) {
+            val b = a.narrationBase.toString
+            val c = uri.toString.stripPrefix(b)
+            if (c.startsWith("/http..")) None // filter out content documents
+            else Some(File(a.rootString + "/source" + c).setExtension("mmt"))
+          } else None
+        }.map { f =>
+        if (f.length() == 0) log("missing file: " + f + " for path " + p)
         f
       }
     case _ => Nil
