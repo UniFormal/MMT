@@ -578,6 +578,8 @@ class Controller extends ROController with Logger {
           case Scala(fOpt) =>
             val interp = new MMTILoop(this)
             interp.run(fOpt)
+          case MBT(file) =>
+            new MMTScriptEngine(this).apply(file)
           case Clear => clear()
           case ExecFile(f, nameOpt) =>
             val folder = f.getParentFile

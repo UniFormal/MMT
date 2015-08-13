@@ -29,7 +29,7 @@ object Action extends RegexParsers {
   private def comment = "//.*" r
 
   private def action = log | mathpath | archive | oaf | extension | mws | server |
-    windowaction | execfile | defactions | scala |
+    windowaction | execfile | defactions | scala | mbt |
     setbase | envvar | read | graph | check | navigate |
     printall | printallxml | diff | clear | exit | getaction // getaction must be at end for default get
 
@@ -120,6 +120,7 @@ object Action extends RegexParsers {
   private def dodefined = "do " ~> str ~ (file ?) ^^ { case s ~ f => Do(f, s) }
 
   private def scala = "scala" ~> ("[^\\n]*" r) ^^ { s => val t = s.trim; Scala(if (t == "") None else Some(t)) }
+  private def mbt = "mbt" ~> file ^^ { f => MBT(f) }
 
   private def setbase = "base" ~> path ^^ { p => SetBase(p) }
 
@@ -458,8 +459,14 @@ case object PrintAll extends Action
 /** print all loaded knowledge items to STDOUT in XML syntax */
 case object PrintAllXML extends Action
 
+/** run a Scala interpreter or evaluate a Scala expression */
 case class Scala(init: Option[String]) extends Action {
   override def toString: String = "scala"
+}
+
+/** run an .mbt file */
+case class MBT(file: File) extends Action {
+  override def toString: String = "mbt "+file
 }
 
 /** start up the HTTP server

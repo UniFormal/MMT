@@ -8,7 +8,6 @@ import archives._
 import scala.tools.nsc._
 import scala.tools.nsc.Settings
 
-
 /**
  * add 
  * import (per archive)
@@ -100,10 +99,8 @@ class MMTREPL(controller: Controller) extends interpreter.ILoop {
     //super.closeInterpreter()
     println("NOW")
   }
-  
 }
-
-object MMTShell { 
+object MMTShell {
   val controller = new Controller()
   val interp = new MMTREPL(controller)
   val settings = new Settings()

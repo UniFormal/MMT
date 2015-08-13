@@ -66,8 +66,8 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
          // '-file N' is short for '-shell file N'
          case "-file" :: name :: Nil =>
            args = List("file", name)
-         case "-scala" :: name :: Nil =>
-           args = Nil//List("scalafile", name)
+         case "-mbt" :: name :: Nil =>
+           args = List("mbt", name)
            shell = false
          // default behavior: execute command line arguments and exit; shell if no arguments
          case _ =>
