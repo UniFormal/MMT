@@ -19,7 +19,8 @@ import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.web._
 
-/** An exception that is throw when a needed knowledge item is not available.
+/** An exception that is thrown when a needed knowledge item is not available
+  *
   * A Controller catches it and retrieves the item dynamically.
   */
 case class NotFound(path: Path) extends java.lang.Throwable
@@ -58,7 +59,8 @@ abstract class ROController {
   }
 }
 
-/** A Controller is the central class maintaining all MMT knowledge items.
+/** A Controller is the central class maintaining all MMT knowledge items
+  *
   * It stores all stateful entities and executes Action commands.
   */
 class Controller extends ROController with Logger {
@@ -121,23 +123,22 @@ class Controller extends ROController with Logger {
   /** @return the value of an environment variable */
   def getEnvVar(name: String) = state.environmentVariables.get(name) orElse Option(System.getenv.get(name))
 
-  /**
-   * @param h sets the current home directory relative to which path names in commands are executed
-   *
-   *          initially the current working directory
-   */
+  /** initially the current working directory
+    *
+    * @param h sets the current home directory relative to which path names in commands are executed
+    */
   def setHome(h: File) {
     state.home = h
   }
 
-  private def init {
-    extman.addDefaultExtensions
+  private def init() {
+    extman.addDefaultExtensions()
     List(presenter, simplifier).foreach {
       _.init(this)
     }
   }
 
-  init
+  init()
 
   /** @return a notifier for all currently registered [[ChangeListener]]s */
   private[api] def notifyListeners = new Notify(extman.get(classOf[ChangeListener]), report)
@@ -238,16 +239,17 @@ class Controller extends ROController with Logger {
     log("retrieved " + path)
   }
 
-  /**
-   * wrapping an expression in this method, evaluates the expression dynamically loading missing content
-   * dependency cycles are detected
-   * @param a this is evaluated until evaluation does not throw NotFound
-   * @return the evaluation
-   *         be aware that the argument may be evaluated repeatedly
-   */
+  /** wrapping an expression in this method, evaluates the expression dynamically loading missing content
+    *
+    * dependency cycles are detected
+    * be aware that the argument may be evaluated repeatedly
+    * @param a this is evaluated until evaluation does not throw NotFound
+    * @return the evaluation
+    */
   def iterate[A](a: => A): A = iterate(a, Nil)
 
-  /** repeatedly tries to evaluate a while missing resources (NotFound(p)) are retrieved
+  /** repeatedly tries to evaluate its argument while missing resources (NotFound(p)) are retrieved
+    *
     * stops if cyclic retrieval of resources
     */
   private def iterate[A](a: => A, previous: List[Path]): A = {
@@ -324,11 +326,11 @@ class Controller extends ROController with Logger {
     }
   }
 
-  /**
-   * deletes a document or module from Memory
-   * no change management except that the deletions of scoped declarations are recursive
-   * in particular, the deletion of a document also deletes its subdocuments and modules
-   */
+  /** deletes a document or module from Memory
+    *
+    * no change management except that the deletions of scoped declarations are recursive
+    * in particular, the deletion of a document also deletes its subdocuments and modules
+    */
   def delete(p: Path) {
     val seOpt = localLookup.getO(p)
     p match {
@@ -344,20 +346,20 @@ class Controller extends ROController with Logger {
   }
 
   /** clears the state */
-  def clear {
+  def clear() {
     memory.clear
-    notifyListeners.onClear
+    notifyListeners.onClear()
   }
 
-  /** releases all buffers
-      report.cleanup
-      // stop serversources that are not handled by the garbage collection */
-  def cleanup {
+  /** releases all buffers */
+  def cleanup() {
     // notify all extensions
-    extman.cleanup
+    extman.cleanup()
     //close all open storages in backend
-    backend.cleanup
+    backend.cleanup()
     // close logging
+    // report.cleanup
+    // stop serversources that are not handled by the garbage collection
     server foreach {
       _.stop
     }
@@ -392,8 +394,7 @@ class Controller extends ROController with Logger {
     }
   }
 
-  /**
-   * parses a ParsingStream with an appropriate parser and optionally checks it
+  /** parses a ParsingStream with an appropriate parser and optionally checks it
    *
    * @param ps the input
    * @param interpret if true, try to use an interpreter, not a parser
@@ -461,7 +462,7 @@ class Controller extends ROController with Logger {
         log(e)
         return
     }
-    report.flush
+    report.flush()
   }
 
   /** executes an Action */
@@ -576,7 +577,7 @@ class Controller extends ROController with Logger {
       case Scala(fOpt) =>
         val interp = new MMTILoop(this)
         interp.run(fOpt)
-      case Clear => clear
+      case Clear => clear()
       case ExecFile(f, nameOpt) =>
         val folder = f.getParentFile
         // store old state, and initialize fresh state
@@ -649,8 +650,8 @@ class Controller extends ROController with Logger {
         case "off" => winman.closeBrowser
       }
       case Exit =>
-        cleanup
-        sys.exit
+        cleanup()
+        sys.exit()
     }
     if (act != NoAction) report("user", act.toString + " finished")
   }
