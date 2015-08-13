@@ -40,7 +40,7 @@ class ControllerState {
   /** interface to a remote OAF */
   var oaf: Option[OAF] = None
 
-  def getOAF = oaf.getOrElse {
+  def getOAF: OAF = oaf.getOrElse {
     throw GeneralError("no oaf defined, use 'oaf root'")
   }
 }
@@ -87,7 +87,7 @@ class Controller extends ROController with Logger {
   val simplifier: Simplifier = new StepBasedElaborator(new UOM)
 
   /** convenience for getting the default object parser */
-  def objectParser = extman.get(classOf[ObjectParser], "mmt").get
+  def objectParser: ObjectParser = extman.get(classOf[ObjectParser], "mmt").get
 
   /** converts between strict and pragmatic syntax using [[NotationExtension]]s */
   val pragmatic = new Pragmatics(this)
@@ -112,16 +112,17 @@ class Controller extends ROController with Logger {
   protected val state = new ControllerState
 
   /** @return the current namespace map */
-  def getNamespaceMap = state.nsMap
+  def getNamespaceMap: NamespaceMap = state.nsMap
 
   /** @return the current base URI */
-  def getBase = state.nsMap.base
+  def getBase: Path = state.nsMap.base
 
   /** @return the current home directory */
-  def getHome = state.home
+  def getHome: File = state.home
 
   /** @return the value of an environment variable */
-  def getEnvVar(name: String) = state.environmentVariables.get(name) orElse Option(System.getenv.get(name))
+  def getEnvVar(name: String): Option[String] =
+    state.environmentVariables.get(name) orElse Option(System.getenv.get(name))
 
   /** initially the current working directory
     *
@@ -395,13 +396,13 @@ class Controller extends ROController with Logger {
   }
 
   /** parses a ParsingStream with an appropriate parser and optionally checks it
-   *
-   * @param ps the input
-   * @param interpret if true, try to use an interpreter, not a parser
-   * @param mayImport if true, use an importer as a fallback
-   * @param errorCont continuation to be called on all encountered errors
-   * @return the read Document
-   */
+    *
+    * @param ps the input
+    * @param interpret if true, try to use an interpreter, not a parser
+    * @param mayImport if true, use an importer as a fallback
+    * @param errorCont continuation to be called on all encountered errors
+    * @return the read Document
+    */
   def read(ps: ParsingStream, interpret: Boolean, mayImport: Boolean = false)(implicit errorCont: ErrorHandler): Document = {
     val modules = deactivateDocument(ps.dpath)
     log((if (interpret) "interpreting " else "parsing ") + ps.source + " with format " + ps.format +
@@ -460,199 +461,196 @@ class Controller extends ROController with Logger {
     } catch {
       case e: Error =>
         log(e)
-        return
     }
     report.flush()
   }
 
   /** executes an Action */
-  def handle(act: Action): Unit = {
-    state.currentActionDefinition foreach { case Defined(file, name, acts) =>
-      if (act != EndDefine) {
+  def handle(act: Action): Unit =
+    state.currentActionDefinition match {
+      case Some(Defined(file, name, acts)) if act != EndDefine =>
         state.currentActionDefinition = Some(Defined(file, name, acts ::: List(act)))
         report("user", "  " + name + ":  " + act.toString)
-        return
-      }
-    }
-    if (act != NoAction) report("user", act.toString)
-    act match {
-      case AddMathPathFS(uri, file) =>
-        val lc = LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, file)
-        backend.addStore(lc)
-      case AddMathPathJava(file) =>
-        backend.openRealizationArchive(file)
-      case Local =>
-        val currentDir = new java.io.File(".").getCanonicalFile
-        val b = URI.fromJava(currentDir.toURI)
-        backend.addStore(LocalSystem(b))
-      case AddArchive(f) =>
-        val archs = backend.openArchive(f)
-        archs.foreach { a =>
-          a.properties.get("classpath").foreach { cp =>
-            handle(AddMathPathJava(a.root / cp))
+      case _ =>
+        if (act != NoAction) report("user", act.toString)
+        act match {
+          case AddMathPathFS(uri, file) =>
+            val lc = LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, file)
+            backend.addStore(lc)
+          case AddMathPathJava(file) =>
+            backend.openRealizationArchive(file)
+          case Local =>
+            val currentDir = new java.io.File(".").getCanonicalFile
+            val b = URI.fromJava(currentDir.toURI)
+            backend.addStore(LocalSystem(b))
+          case AddArchive(f) =>
+            val archs = backend.openArchive(f)
+            archs.foreach { a =>
+              a.properties.get("classpath").foreach { cp =>
+                handle(AddMathPathJava(a.root / cp))
+              }
+              notifyListeners.onArchiveOpen(a)
+            }
+          case ArchiveBuild(ids, key, mod, inArgs, args) => ids.foreach { id =>
+            val arch = backend.getArchive(id) getOrElse (throw GetError("archive not found: " + id))
+            val in = FilePath(inArgs)
+            key match {
+              case "check" => arch.check(in, this)
+              case "validate" => arch.validate(in, this)
+              case "flat" => arch.produceFlat(in, this)
+              case "enrich" =>
+                val me = new ModuleElaborator(this)
+                arch.produceEnriched(in, me, this)
+              case "relational" =>
+                arch.readRelational(in, this, "rel")
+                arch.readRelational(in, this, "occ")
+                log("done reading relational index")
+              case "integrate" => arch.integrateScala(this, in)
+              case "test" =>
+                if (inArgs.length != 1)
+                  logError("exactly 1 parameter required, found " + in)
+                else
+                  arch.loadJava(this, inArgs.head)
+              case "close" =>
+                val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
+                backend.closeArchive(id)
+                notifyListeners.onArchiveClose(arch)
+              case d =>
+                extman.get(classOf[BuildTarget], d) match {
+                  case Some(buildTarget) =>
+                    buildTarget(mod, arch, in)
+                  case None =>
+                    logError("unknown dimension " + d + ", ignored")
+                }
+            }
           }
-          notifyListeners.onArchiveOpen(a)
-        }
-      case ArchiveBuild(ids, key, mod, inArgs, args) => ids.foreach { id =>
-        val arch = backend.getArchive(id) getOrElse (throw GetError("archive not found: " + id))
-        val in = FilePath(inArgs)
-        key match {
-          case "check" => arch.check(in, this)
-          case "validate" => arch.validate(in, this)
-          case "flat" => arch.produceFlat(in, this)
-          case "enrich" =>
-            val me = new ModuleElaborator(this)
-            arch.produceEnriched(in, me, this)
-          case "relational" =>
-            arch.readRelational(in, this, "rel")
-            arch.readRelational(in, this, "occ")
-            log("done reading relational index")
-          case "integrate" => arch.integrateScala(this, in)
-          case "test" =>
-            if (inArgs.length != 1)
-              logError("exactly 1 parameter required, found " + in)
-            else
-              arch.loadJava(this, inArgs.head)
-          case "close" =>
+          case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
-            backend.closeArchive(id)
-            notifyListeners.onArchiveClose(arch)
-          case d =>
-            extman.get(classOf[BuildTarget], d) match {
-              case Some(buildTarget) =>
-                buildTarget(mod, arch, in)
-              case None =>
-                logError("unknown dimension " + d + ", ignored")
+            arch.toMar(file)
+          case AddExtension(c, args) =>
+            extman.addExtension(c, args)
+          case AddMWS(uri) =>
+            extman.mws = Some(new MathWebSearch(uri.toURL))
+          case OAFRoot(dir, uriOpt) =>
+            if (!dir.isDirectory)
+              throw GeneralError(dir + " is not a directory")
+            state.oaf = Some(new OAF(uriOpt.getOrElse(OAF.defaultURL), dir, report))
+          case OAFInit(path) =>
+            state.getOAF.init(path)
+          case OAFClone(path) =>
+            def cloneRecursively(p: String) {
+              val lcOpt = state.getOAF.clone(p)
+              lcOpt foreach { lc =>
+                val archs = backend.openArchive(lc)
+                archs foreach { a =>
+                  val deps = stringToList(a.properties.getOrElse("dependencies", ""))
+                  deps foreach { d => cloneRecursively(URI(d).pathAsString) }
+                }
+              }
             }
-        }
-      }
-      case ArchiveMar(id, file) =>
-        val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
-        arch.toMar(file)
-      case AddExtension(c, args) =>
-        extman.addExtension(c, args)
-      case AddMWS(uri) =>
-        extman.mws = Some(new MathWebSearch(uri.toURL))
-      case OAFRoot(dir, uriOpt) =>
-        if (!dir.isDirectory)
-          throw GeneralError(dir + " is not a directory")
-        state.oaf = Some(new OAF(uriOpt.getOrElse(OAF.defaultURL), dir, report))
-      case OAFInit(path) =>
-        state.getOAF.init(path)
-      case OAFClone(path) =>
-        def cloneRecursively(p: String) {
-          val lcOpt = state.getOAF.clone(p)
-          lcOpt foreach { lc =>
-            val archs = backend.openArchive(lc)
-            archs foreach { a =>
-              val deps = stringToList(a.properties.getOrElse("dependencies", ""))
-              deps foreach { d => cloneRecursively(URI(d).pathAsString) }
-            }
+            cloneRecursively(path)
+          case OAFPull => state.getOAF.pull
+          case OAFPush => state.getOAF.push
+          case SetBase(b) =>
+            state.nsMap = state.nsMap(b)
+            report("response", "base: " + getBase)
+          case SetEnvVar(n, v) =>
+            state.environmentVariables(n) = v
+          case ServerOn(port) => server match {
+            case Some(serv) => logError("server already started on port " + serv.port)
+            case None if Util.isTaken(port) => logError("port " + port + " is taken, server not started.")
+            case _ =>
+              val serv = new Server(port, this)
+              serv.start
+              log("Server started at http://localhost:" + port)
+              server = Some(serv)
           }
-        }
-        cloneRecursively(path)
-      case OAFPull => state.getOAF.pull
-      case OAFPush => state.getOAF.push
-      case SetBase(b) =>
-        state.nsMap = state.nsMap(b)
-        report("response", "base: " + getBase)
-      case SetEnvVar(n, v) =>
-        state.environmentVariables(n) = v
-      case ServerOn(port) => server match {
-        case Some(serv) => logError("server already started on port " + serv.port)
-        case None if Util.isTaken(port) => logError("port " + port + " is taken, server not started.")
-        case _ =>
-          val serv = new Server(port, this)
-          serv.start
-          log("Server started at http://localhost:" + port)
-          server = Some(serv)
-      }
-      case ServerOff => server match {
-        case Some(serv) =>
-          serv.stop
-          log("Server stopped")
-          server = None
-        case None => log("server not running")
-      }
-      case Scala(fOpt) =>
-        val interp = new MMTILoop(this)
-        interp.run(fOpt)
-      case Clear => clear()
-      case ExecFile(f, nameOpt) =>
-        val folder = f.getParentFile
-        // store old state, and initialize fresh state
-        val oldHome = state.home
-        val oldCAD = state.currentActionDefinition
-        state.home = folder
-        state.currentActionDefinition = None
-        // excecute the file
-        File.read(f).split("\\n").foreach(handleLine)
-        if (state.currentActionDefinition.isDefined)
-          throw ParseError("end of definition expected")
-        // restore old state
-        state.home = oldHome
-        state.currentActionDefinition = oldCAD
-        // run the actionDefinition, if given
-        nameOpt foreach { name =>
-          handle(Do(Some(folder), name))
-        }
-      case Define(name) =>
-        state.currentActionDefinition match {
-          case None =>
-            state.currentActionDefinition = Some(Defined(state.home, name, Nil))
-          case Some(_) =>
-            throw ParseError("end of definition expected")
-        }
-      case EndDefine =>
-        state.currentActionDefinition match {
-          case Some(a) =>
-            state.actionDefinitions ::= a
+          case ServerOff => server match {
+            case Some(serv) =>
+              serv.stop
+              log("Server stopped")
+              server = None
+            case None => log("server not running")
+          }
+          case Scala(fOpt) =>
+            val interp = new MMTILoop(this)
+            interp.run(fOpt)
+          case Clear => clear()
+          case ExecFile(f, nameOpt) =>
+            val folder = f.getParentFile
+            // store old state, and initialize fresh state
+            val oldHome = state.home
+            val oldCAD = state.currentActionDefinition
+            state.home = folder
             state.currentActionDefinition = None
-          case None =>
-            throw ParseError("no definition to end")
+            // excecute the file
+            File.read(f).split("\\n").foreach(handleLine)
+            if (state.currentActionDefinition.isDefined)
+              throw ParseError("end of definition expected")
+            // restore old state
+            state.home = oldHome
+            state.currentActionDefinition = oldCAD
+            // run the actionDefinition, if given
+            nameOpt foreach { name =>
+              handle(Do(Some(folder), name))
+            }
+          case Define(name) =>
+            state.currentActionDefinition match {
+              case None =>
+                state.currentActionDefinition = Some(Defined(state.home, name, Nil))
+              case Some(_) =>
+                throw ParseError("end of definition expected")
+            }
+          case EndDefine =>
+            state.currentActionDefinition match {
+              case Some(a) =>
+                state.actionDefinitions ::= a
+                state.currentActionDefinition = None
+              case None =>
+                throw ParseError("no definition to end")
+            }
+          case Do(file, name) =>
+            state.actionDefinitions.find { a => (file.isEmpty || a.file == file.get) && a.name == name } match {
+              case Some(Defined(_, _, actions)) =>
+                actions foreach handle
+              case None =>
+                logError("not defined")
+            }
+          case AddReportHandler(h) => report.addHandler(h)
+          case LoggingOn(g) => report.groups += g
+          case LoggingOff(g) => report.groups -= g
+          case NoAction => ()
+          case Read(f) =>
+            val ps = backend.resolvePhysical(f) match {
+              case Some((arch, p)) => ParsingStream.fromSourceFile(arch, FilePath(p))
+              case None => ParsingStream.fromFile(f)
+            }
+            read(ps, interpret = false, mayImport = true)(new ErrorLogger(report))
+          case Check(p, id) =>
+            val checker = extman.get(classOf[Checker], id).getOrElse {
+              throw GeneralError(s"no checker $id found")
+            }
+            checker(p)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore))
+          case Graph(f) =>
+            val tg = new TheoryGraph(depstore)
+            val gv = new GraphExporter(tg.nodes.toIterable, Nil, tg)
+            gv.exportDot(f)
+          case Navigate(p) =>
+            notifyListeners.onNavigate(p)
+          case a: GetAction => a.make(this)
+          case PrintAllXML => report("response", "\n" + library.toNode.toString)
+          case PrintAll => report("response", "\n" + library.toString)
+          case Compare(p, r) => //TODO
+          case WindowClose(w) => winman.deleteWindow(w)
+          case WindowPosition(w, x, y) => winman.getWindow(w).setLocation(x, y)
+          case BrowserAction(c) => c match {
+            case "on" => winman.openBrowser
+            case "off" => winman.closeBrowser
+          }
+          case Exit =>
+            cleanup()
+            sys.exit()
         }
-      case Do(file, name) =>
-        state.actionDefinitions.find { a => (file.isEmpty || a.file == file.get) && a.name == name } match {
-          case Some(Defined(_, _, actions)) =>
-            actions foreach handle
-          case None =>
-            logError("not defined")
-        }
-      case AddReportHandler(h) => report.addHandler(h)
-      case LoggingOn(g) => report.groups += g
-      case LoggingOff(g) => report.groups -= g
-      case NoAction => ()
-      case Read(f) =>
-        val ps = backend.resolvePhysical(f) match {
-          case Some((arch, p)) => ParsingStream.fromSourceFile(arch, FilePath(p))
-          case None => ParsingStream.fromFile(f)
-        }
-        read(ps, interpret = false, mayImport = true)(new ErrorLogger(report))
-      case Check(p, id) =>
-        val checker = extman.get(classOf[Checker], id).getOrElse {
-          throw GeneralError(s"no checker $id found")
-        }
-        checker(p)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore))
-      case Graph(f) =>
-        val tg = new TheoryGraph(depstore)
-        val gv = new GraphExporter(tg.nodes.toIterable, Nil, tg)
-        gv.exportDot(f)
-      case Navigate(p) =>
-        notifyListeners.onNavigate(p)
-      case a: GetAction => a.make(this)
-      case PrintAllXML => report("response", "\n" + library.toNode.toString)
-      case PrintAll => report("response", "\n" + library.toString)
-      case Compare(p, r) => //TODO
-      case WindowClose(w) => winman.deleteWindow(w)
-      case WindowPosition(w, x, y) => winman.getWindow(w).setLocation(x, y)
-      case BrowserAction(c) => c match {
-        case "on" => winman.openBrowser
-        case "off" => winman.closeBrowser
-      }
-      case Exit =>
-        cleanup()
-        sys.exit()
+        if (act != NoAction) report("user", act.toString + " finished")
     }
-    if (act != NoAction) report("user", act.toString + " finished")
-  }
 }
