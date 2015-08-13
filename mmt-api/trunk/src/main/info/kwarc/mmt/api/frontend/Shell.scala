@@ -9,18 +9,28 @@ import info.kwarc.mmt.api.utils._
   */
 class Shell extends {
   lazy val controller = new Controller
+  private val usagetext = """usage:
+    mmt [--help|--about] [--send PORT | --shell | --noshell] [--file FILENAME] [--mbt FILENAME] [COMMANDS]
+"""
+  private val helptext = usagetext+"""
+the MMT shell script
 
-  private val helptext = """
-usage:
-  mmt -help
-    display this help
-  mmt -send PORT COMMANDS
-    execute COMMANDS by mmt instance listening at PORT
-  mmt [-shell | -noshell] [COMMANDS]
-    execute COMMANDS and possibly take further commands on the MMT shell.
-    (If neither flag is provided, a shell is displayed iff COMMANDS is empty.)
-    Even if there is no shell, mmt only exits when all secondary threads (e.g., GUI, HTTP server) have terminated.
-                         """
+general arguments:
+  -h, --help                show this help message and exit.
+  -a, --about               print some information about MMT.
+
+what to do:
+  -i, --shell               execute COMMANDS and take further commands on the MMT shell. Default if no
+                            arguments are provided.
+  -ni, --noshell            execute COMMANDS and exit.
+  -r, --send PORT COMMANDS  send COMMANDS to mmt instance listening at PORT
+
+commands and files to process:
+  -f, --file FILENAME       In addition to using COMMANDS, load mmt-style commands from FILE. May be used multiple times.
+  -m, --mbt FILENAME        In addition to using COMMANDS, load scala-style commands from FILE. May be used multiple times.
+
+note: any arguments listed here can be given in the form -argument, --argument or /argument syntax.
+"""
 
   private val shelltitle = """
 This is the MMT shell.
@@ -29,72 +39,90 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
                            """
 
   def main(a: Array[String]): Unit = {
-    // command to process initially
-    var args = a.toList
-    // respond with shell after processing initial command
-    var shell = true
-    // release all resources and terminate after processing initial command and shell
-    var terminate = true
-    def processArgs {
-       args match {
-         case "-help" :: _ =>
-           println(helptext)
-           sys.exit
-         // send command to existing instance listening at a port, and quit
-         case "-send" :: port :: rest =>
-           val uri = (URI("http", "localhost:" + port) / ":admin") ? rest.mkString("", " ", "")
-           try {
-             println("sending: " + uri.toString)
-             val ret = utils.xml.get(uri.toJava.toURL)
-             println(ret.toString)
-           } catch {
-             case e: Exception =>
-               println("error while connecting to remote MMT: " + e.getMessage)
-           }
-           sys.exit
-         // execute command line arguments and drop to shell
-         case "-shell" :: rest =>
-           args = rest
-           processArgs
-         // execute command line arguments and terminate
-         // if the server is started, we only terminate when the server thread does
-         case "-noshell" :: rest =>
-           args = rest
-           shell = false
-           terminate = false
-           processArgs
-         // '-file N' is short for '-shell file N'
-         case "-file" :: name :: Nil =>
-           args = List("file", name)
-         case "-mbt" :: name :: Nil =>
-           args = List("mbt", name)
-           shell = false
-         // default behavior: execute command line arguments and exit; shell if no arguments
-         case _ =>
-           shell = args.isEmpty
-       }
+
+    // parse command line arguments
+    val args = ShellArguments.parse(a.toList).getOrElse{
+        println(usagetext)
+        sys.exit(1)
+      }
+
+    /**
+    println("Help", args.help)
+    println("About", args.about)
+    println("useMMTSyntax", args.useMMTSyntax)
+    println("send", args.send)
+    println("mmtfiles", args.mmtfiles)
+    println("scalafiles", args.scalafiles)
+    println("commands", args.commands)
+    println("interactive", args.interactive)
+    */
+
+    // display some help text
+    if(args.help){
+      println(helptext)
+      sys.exit
     }
-    processArgs
+
+    // display some about text
+    if(args.about){
+      println("See documentation in https://svn.kwarc.info/repos/MMT/doc/html/index.html")
+      sys.exit
+    }
+
+
+    // for the remaining cases we want to execute commands.
+    // so we will join them with semicolons
+
+    val mmtCommands = (if(args.mmtfiles.length>0){"file" :: args.mmtfiles} else {Nil:List[String]})
+    val sbtCommands = (if(args.scalafiles.length>0){"mbt" :: args.scalafiles} else {Nil:List[String]})
+
+    val commands = mmtCommands ++ sbtCommands ++ args.commands
+
+    // maybe we want to send something to the remote
+    if(args.send != None){
+      val uri = (URI("http", "localhost:" + args.send.get) / ":admin") ? commands.mkString(" ")
+      try {
+        println("sending: " + uri.toString)
+        val ret = utils.xml.get(uri.toJava.toURL)
+        println(ret.toString)
+      } catch {
+        case e: Exception =>
+          println("error while connecting to remote MMT: " + e.getMessage)
+      }
+      sys.exit
+    }
+
     try {
       // execute startup arguments
       val startup = MMTSystem.rootFolder / "startup.msl"
+
       //println("trying to run " + startup)
       if (startup.exists) {
         controller.handle(ExecFile(startup, None))
       }
-      // execute command line arguments
-      val commands = args.mkString(" ").split(" ; ")
-      commands foreach controller.handleLine
+
+      //run the commands for each line.
+      commands.mkString(" ").split(" ; ") foreach controller.handleLine
+
       // wait for interactive commands
-      if (shell)
+      if (args.interactive){
         println(shelltitle)
+      }
+
+      // create a new shell.
       val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
-      while (shell) {
+
+      // wait for commands as long as we are interactive.
+      while (args.interactive) {
         val command = Input.readLine()
         if (command != null)
            controller.handleLine(command)
       }
-      if (terminate) controller.cleanup
+
+      // cleanup when we are interactive
+      if (args.interactive){
+        controller.cleanup
+      }
     } catch {
       case e: Error =>
         controller.report(e)
