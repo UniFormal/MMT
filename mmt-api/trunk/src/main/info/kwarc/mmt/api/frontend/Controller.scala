@@ -89,7 +89,7 @@ class Controller extends ROController with Logger {
   /** convenience for getting the default object parser */
   def objectParser: ObjectParser = extman.get(classOf[ObjectParser], "mmt").get
 
-  /** converts between strict and pragmatic syntax using [[NotationExtension]]s */
+  /** converts between strict and pragmatic syntax using [[notations.NotationExtension]]s */
   val pragmatic = new Pragmatics(this)
   /** maintains all customizations for specific languages */
   val extman = new ExtensionManager(this)
