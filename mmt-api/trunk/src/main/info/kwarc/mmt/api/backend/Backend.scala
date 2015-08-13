@@ -31,9 +31,7 @@ abstract class Storage {
   }
 
   protected def virtDoc(entries: List[String], prefix: String) = {
-    val s = <omdoc>
-      {entries.map(n => <dref target={prefix + n}/>)}
-    </omdoc>.toString
+    val s = <omdoc>{entries.map(n => <dref target={prefix + n}/>)}</omdoc>.toString()
     new BufferedReader(new java.io.StringReader(s))
   }
 
@@ -45,7 +43,7 @@ abstract class Storage {
   def load(path: Path)(implicit controller: Controller)
 
   /** called to release all held resources, override as needed */
-  def destroy {}
+  def destroy() {}
 }
 
 /** a Storage that retrieves file URIs from the local system */
@@ -132,7 +130,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   private var stores: List[Storage] = Nil
   val logPrefix = "backend"
 
-  /** adds a Storgage */
+  /** adds a storage */
   def addStore(s: Storage*) {
     stores = stores ::: s.toList
     s.foreach { d =>
@@ -150,8 +148,8 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   def getStores: List[Storage] = stores
 
   /** releases all resources held by storages */
-  def cleanup {
-    stores.foreach(_.destroy)
+  def cleanup() {
+    stores.foreach(_.destroy())
     stores = Nil
   }
 
@@ -162,7 +160,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
    * throws [[NotApplicable]] if the resource is not known/available, [[BackendError]] if it is but something goes wrong
    */
   def load(p: Path)(implicit controller: Controller) = {
-    def getInList(l: List[Storage], p: Path) {
+    def loadStores(l: List[Storage], p: Path) {
       l match {
         case Nil => throw NotApplicable("no backend available that is applicable to " + p)
         case hd :: tl =>
@@ -173,11 +171,11 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
           catch {
             case NotApplicable(msg) =>
               log(hd.toString + " not applicable to " + p + (if (msg != "") s" ($msg)" else ""))
-              getInList(tl, p)
+              loadStores(tl, p)
           }
       }
     }
-    getInList(stores, p)
+    loadStores(stores, p)
   }
 
   private def manifestLocations(root: File) = List(root / "META-INF", root).map(_ / "MANIFEST.MF")
@@ -195,12 +193,16 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
         case Some(manifest) =>
           val properties = new scala.collection.mutable.ListMap[String, String]
           File.ReadLineWise(manifest) { case line =>
+            // usually continuation lines start with a space but we ignore those
             val tline = line.trim
-            if (!tline.startsWith("//") && tline != "") {
+            if (!tline.startsWith("//")) {
               val p = tline.indexOf(":")
-              val key = tline.substring(0, p).trim
-              val value = tline.substring(p + 1).trim
-              properties(key) = value
+              if (p > 0) {
+                // make sure line contains colon and the key is non-empty
+                val key = tline.substring(0, p).trim
+                val value = tline.substring(p + 1).trim
+                properties(key) = value
+              }
             }
           }
           if (properties.isDefinedAt("id")) {
@@ -215,7 +217,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
         case None =>
           log(root + " is not an archive - recursing")
           // folders beginning with . are skipped
-          root.list.toList flatMap (n => if (n.startsWith(".")) Nil else openArchive(root / n))
+          root.list.toList.sorted flatMap (n => if (n.startsWith(".")) Nil else openArchive(root / n))
       }
     } else if (root.isFile && root.getPath.endsWith(".mar")) {
       // a MAR archive file
@@ -224,16 +226,16 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
       val unpackedRoot = folder / (name + "-unpacked")
       // check if root is younger than manifest in unpackedRoot
       val extract = manifestLocations(root).find(_.isFile) match {
-         case Some(unpackedManifest) =>
-            val mod = Modification(root, unpackedManifest)
-            if (mod == Modified) {
-              unpackedRoot.deleteDir
-            }
-            if (mod == Unmodified)
-               log("skipping unpacked, unmodified archive " + unpackedRoot)
-            List(Added, Modified) contains mod
-         case None =>
-            true
+        case Some(unpackedManifest) =>
+          val mod = Modification(root, unpackedManifest)
+          if (mod == Modified) {
+            unpackedRoot.deleteDir()
+          }
+          if (mod == Unmodified)
+            log("skipping unpacked, unmodified archive " + unpackedRoot)
+          List(Added, Modified) contains mod
+        case None =>
+          true
       }
       if (extract) {
         // unpack it
@@ -285,7 +287,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     } map { a => (a, uri.path.drop(a.narrationBase.pathNoTrailingSlash.length)) }
   }
 
-  /** splits a physcial document URI into the Archive holding it and the relative path in that archive leading to it */
+  /** splits a physical document URI into the Archive holding it and the relative path in that archive leading to it */
   def resolvePhysical(file: File): Option[(Archive, List[String])] = {
     val segments = file.segments
     getArchives find { a => segments.startsWith(a.root.segments) } map {
@@ -333,11 +335,12 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
         val istream = mar.getInputStream(entry)
         val ostream = new java.io.FileOutputStream(outFile)
         while ( {
-          len = istream.read(bytes, 0, bytes.length); len != -1
+          len = istream.read(bytes, 0, bytes.length)
+          len != -1
         })
           ostream.write(bytes, 0, len)
-        ostream.close
-        istream.close
+        ostream.close()
+        istream.close()
       }
     }
   }
