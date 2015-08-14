@@ -1,14 +1,12 @@
 package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.utils._
 
-/**
- * a build target for computing structure dependencies
- *
- */
+/** a build target for computing structure dependencies */
 class Relational extends TraversingBuildTarget {
   /** source by default, may be overridden */
   def inDim = source
@@ -102,5 +100,30 @@ class Relational extends TraversingBuildTarget {
   /** index a module */
   private def indexModule(mod: StructuralElement): Unit = {
     storeRel(mod)
+  }
+}
+
+class ArchiveDeps extends Extension {
+
+  def getArchives: List[Archive] =
+    controller.backend.getStores.collect { case a: Archive => a }
+
+  // maybe sort archives in dependency order via "dependencies" property
+
+  def buildAllDeps(): Unit = {
+    val builder = new Relational
+    builder.init(controller)
+    builder.start(Nil)
+    // val saveStore = controller.depstore
+    // controller.depstore = new RelStore(controller.report)
+    // TODO save and restore depstore
+    getArchives.foreach { a =>
+      builder(Build, a, EmptyPath)
+    }
+    // extract deps and return them
+  }
+
+  override def start(args: List[String]) {
+    buildAllDeps()
   }
 }
