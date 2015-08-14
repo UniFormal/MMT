@@ -238,7 +238,7 @@ object ShellArguments{
     }
 
     // build the shell arguments object and return it
-    Some(new ShellArguments(help, about, send, mmtFiles, scalaFiles, commands, interactive))
+    Some(new ShellArguments(help, about, send, mmtFiles.reverse, scalaFiles.reverse, commands.reverse, interactive))
   }
 
 }

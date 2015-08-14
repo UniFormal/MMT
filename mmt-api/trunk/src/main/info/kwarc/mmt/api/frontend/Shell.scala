@@ -46,15 +46,15 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
         sys.exit(1)
       }
 
-    /**
-    println("Help", args.help)
-    println("About", args.about)
-    println("useMMTSyntax", args.useMMTSyntax)
-    println("send", args.send)
-    println("mmtfiles", args.mmtfiles)
-    println("scalafiles", args.scalafiles)
-    println("commands", args.commands)
-    println("interactive", args.interactive)
+    /*
+      println("help", args.help)
+      println("about", args.about)
+      println("interactive", args.interactive)
+      println("send", args.send)
+      println("mmtfiles", args.mmtfiles)
+      println("scalafiles", args.scalafiles)
+      println("commands", args.commands)
+      println("interactive", args.interactive)
     */
 
     // display some help text
