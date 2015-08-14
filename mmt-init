@@ -21,7 +21,7 @@ DESC="MMT web service"
 NAME=mmt
 DAEMON=/usr/bin/screen
 dir=/var/data/localmh/ext/MMT
-ARGS="-D -m $dir/mmt.jar -noshell file \
+ARGS="-D -m $dir/mmt.jar --noshell --file \
  /var/data/localmh/MathHub/meta/inf/config/OAF/oaf.msl"
 
 
