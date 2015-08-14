@@ -20,6 +20,8 @@ general arguments:
   -a, --about               print some information about MMT.
 
 commands and files to process:
+  COMMANDS                  Semicolon (;) separated commands to be interpreted by MMT. Type "help" inside the shell to
+                            a list of commands or look at the documentation for a list of available commands.
   -r, --send PORT           instead of executing COMMANDS in a new MMT instance, send them to another MMT Instance
                             listening at PORT and exit immediately (even if a different termination behaviour is
                             specified. )
@@ -29,14 +31,18 @@ commands and files to process:
                             times.
 
 termination behaviour:
-The default exit behaviour is determined based on the other arguments given to MMT. The following arguments can be used
-to force MMT to adapt a certain behaviour.
 
-  -i, --shell               execute COMMANDS and take further commands on the MMT shell. Default if no arguments are
-                            provided or a file is loaded without additional commands.
-  -w, --keepalive           execute COMMANDS and terminate after all threads have finished. Default if a file is loaded
-                            and additional commands are specified.
-  -e, --noshell             execute COMMANDS and exit immediately. Default if only COMMANDS are passed to MMT.
+The default exit behaviour is determined based on the other arguments given to MMT. If MMT is told to load a file, it
+will execute that file and wait for all threads to finish working. If only a list of commands is given to MMT it will
+run the provided commands and exit immediatly (even if some threads are still running). If no arguments are given to
+MMT, it will start an interactive shell for the user to enter commands in. The default behaviour of MMT can be overriden
+with the following arguments.
+
+  -i, --shell               execute COMMANDS and take further commands on the MMT shell. Default if no commands are
+                            provided.
+  -w, --keepalive           execute COMMANDS and terminate after all threads have finished. Default if a file is
+                            loaded.
+  -e, --noshell             execute COMMANDS and exit immediately. Default if only commands are passed to MMT.
 
 note: any arguments listed here can be given in the form -argument, --argument or /argument syntax.
 """

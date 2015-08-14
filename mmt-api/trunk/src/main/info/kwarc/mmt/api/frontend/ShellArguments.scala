@@ -1,10 +1,17 @@
 package info.kwarc.mmt.api.frontend
 
-import java.nio.file.{Paths, Files}
+import java.nio.file.{Files, Paths}
 
 /**
  * Represents arguments parsed to MMT on the command line.
- * @param help
+ * @param help Should we print an help text
+ * @param about Should we print an about text
+ * @param send Should we send commands to a remote port instead of running them locally?
+ * @param mmtFiles List of MMT files to load
+ * @param scalaFiles List of SCALA files to load
+ * @param commands List of commands to run
+ * @param prompt Should we start a prompt?
+ * @param runCleanup Should we run some cleanup
  */
 class ShellArguments(
     val help: Boolean,
@@ -21,7 +28,6 @@ class ShellArguments(
 )
 
 object ShellArguments{
-
 
   // a mapping with long_name -> short_name
   private val LongToShortArguments = Map[String, String](
@@ -48,14 +54,12 @@ object ShellArguments{
    * @return None (in case of a string argument), Some("") in case of an unknown argument or "" in case of a name
    */
   private def getCanonicalArgumentName(arg: String): Option[String] = {
-    var shortName = ""
-
+    val shortName =
     // strip the prefixes
     if(arg.startsWith("--")){
-      shortName = arg.substring(2)
+      arg.substring(2)
     } else if(arg.startsWith("-") || arg.startsWith("/")){
-      shortName = arg.substring(1)
-
+      arg.substring(1)
     } else {
       // or if there is no prefix, we have nothing to return.
       return None
@@ -70,6 +74,11 @@ object ShellArguments{
     Some(ShortToLongArguments.getOrElse(shortName, ""))
   }
 
+  /**
+   * Parses arguments from the commands line
+   * @param arguments arguments to parse
+   * @return
+   */
   def parse(arguments: List[String]): Option[ShellArguments] = {
 
     //help && about
@@ -269,10 +278,15 @@ object ShellArguments{
     if(!setTerminationBehaviour){
 
       if(commands.isEmpty){
-        // no commands && no files => --shell
-        // no commands && some files => --shell
-        prompt = true
-        runCleanup = false
+        if(mmtFiles.isEmpty && scalaFiles.isEmpty) {
+          // no commands && no files => --shell
+          prompt = true
+          runCleanup = false
+        } else {
+          // no commands && some files => --keepalive
+          prompt = false
+          runCleanup = false
+        }
       } else {
         if(mmtFiles.isEmpty && scalaFiles.isEmpty){
           // some commands && no files => --noshell
