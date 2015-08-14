@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.utils._
 class Shell extends {
   lazy val controller = new Controller
   private val usagetext = """usage:
-    mmt [--help|--about] [--send PORT | --shell | --noshell] [--file FILENAME] [--mbt FILENAME] [COMMANDS]
+    mmt [--help|--about] [--shell|--keepalive|--noshell] [--file FILENAME] [--mbt FILENAME] [--send PORT] [COMMANDS]
 """
   private val helptext = usagetext+"""
 the MMT shell script
@@ -19,15 +19,24 @@ general arguments:
   -h, --help                show this help message and exit.
   -a, --about               print some information about MMT.
 
-what to do:
-  -i, --shell               execute COMMANDS and take further commands on the MMT shell. Default if no
-                            arguments are provided.
-  -ni, --noshell            execute COMMANDS and exit.
-  -r, --send PORT COMMANDS  send COMMANDS to mmt instance listening at PORT
-
 commands and files to process:
-  -f, --file FILENAME       In addition to using COMMANDS, load mmt-style commands from FILE. May be used multiple times.
-  -m, --mbt FILENAME        In addition to using COMMANDS, load scala-style commands from FILE. May be used multiple times.
+  -r, --send PORT           instead of executing COMMANDS in a new MMT instance, send them to another MMT Instance
+                            listening at PORT and exit immediately (even if a different termination behaviour is
+                            specified. )
+  -f, --file FILENAME       In addition to running COMMANDS, load mmt-style commands from FILE. May be used multiple
+                            times.
+  -m, --mbt FILENAME        In addition to running COMMANDS, load scala-style commands from FILE. May be used multiple
+                            times.
+
+termination behaviour:
+The default exit behaviour is determined based on the other arguments given to MMT. The following arguments can be used
+to force MMT to adapt a certain behaviour.
+
+  -i, --shell               execute COMMANDS and take further commands on the MMT shell. Default if no arguments are
+                            provided or a file is loaded without additional commands.
+  -w, --keepalive           execute COMMANDS and terminate after all threads have finished. Default if a file is loaded
+                            and additional commands are specified.
+  -e, --noshell             execute COMMANDS and exit immediately. Default if only COMMANDS are passed to MMT.
 
 note: any arguments listed here can be given in the form -argument, --argument or /argument syntax.
 """
@@ -46,50 +55,51 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
         sys.exit(1)
       }
 
+    // FOR DEBUG PURPOSES
     /*
       println("help", args.help)
       println("about", args.about)
-      println("interactive", args.interactive)
+      println("interactive", args.prompt)
+      println("cleanup", args.runCleanup)
       println("send", args.send)
-      println("mmtfiles", args.mmtfiles)
-      println("scalafiles", args.scalafiles)
+      println("mmtfiles", args.mmtFiles)
+      println("scalafiles", args.scalaFiles)
       println("commands", args.commands)
-      println("interactive", args.interactive)
+      sys.exit
     */
 
     // display some help text
     if(args.help){
       println(helptext)
-      sys.exit
+      sys.exit(0)
     }
 
     // display some about text
     if(args.about){
       println("See documentation in https://svn.kwarc.info/repos/MMT/doc/html/index.html")
-      sys.exit
+      sys.exit(0)
     }
-
 
     // for the remaining cases we want to execute commands.
     // so we will join them with semicolons
 
-    val mmtCommands = (if(args.mmtfiles.length>0){"file" :: args.mmtfiles} else {Nil:List[String]})
-    val sbtCommands = (if(args.scalafiles.length>0){"mbt" :: args.scalafiles} else {Nil:List[String]})
+    val mmtCommands = if(args.mmtFiles.nonEmpty){"file" :: args.mmtFiles} else {Nil:List[String]}
+    val sbtCommands = if(args.scalaFiles.nonEmpty){"mbt" :: args.scalaFiles} else {Nil:List[String]}
 
     val commands = mmtCommands ++ sbtCommands ++ args.commands
 
     // maybe we want to send something to the remote
-    if(args.send != None){
+    if(args.send.isDefined){
       val uri = (URI("http", "localhost:" + args.send.get) / ":admin") ? commands.mkString(" ")
       try {
         println("sending: " + uri.toString)
         val ret = utils.xml.get(uri.toJava.toURL)
-        println(ret.toString)
+        println(ret.toString())
       } catch {
         case e: Exception =>
           println("error while connecting to remote MMT: " + e.getMessage)
       }
-      sys.exit
+      sys.exit(0)
     }
 
     try {
@@ -104,32 +114,32 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
       //run the commands for each line.
       commands.mkString(" ").split(" ; ") foreach controller.handleLine
 
-      // wait for interactive commands
-      if (args.interactive){
+      // if we want a prompt, use a prompt
+      if (args.prompt){
         println(shelltitle)
       }
 
       // create a new shell.
       val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
 
-      // wait for commands as long as we are interactive.
-      while (args.interactive) {
+      // wait for commands as long as we have a prompt.
+      while (args.prompt) {
         val command = Input.readLine()
         if (command != null)
            controller.handleLine(command)
       }
 
-      // cleanup when we are interactive
-      if (args.interactive){
-        controller.cleanup
+      // cleanup if we want to exit.
+      if (args.runCleanup){
+        controller.cleanup()
       }
     } catch {
       case e: Error =>
         controller.report(e)
-        controller.cleanup
+        controller.cleanup()
         throw e
       case e: Exception =>
-        controller.cleanup
+        controller.cleanup()
         throw e
     }
   }

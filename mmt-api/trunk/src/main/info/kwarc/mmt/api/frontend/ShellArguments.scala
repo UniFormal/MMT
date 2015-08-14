@@ -7,30 +7,36 @@ import java.nio.file.{Paths, Files}
  * @param help
  */
 class ShellArguments(
-    val help: Boolean = false,
-    val about: Boolean = false,
+    val help: Boolean,
+    val about: Boolean,
     
-    val send:Option[Int] = None,
+    val send:Option[Int],
 
-    val mmtfiles: List[String] = Nil,
-    val scalafiles: List[String] = Nil,
-    val commands: List[String] = Nil,
+    val mmtFiles: List[String],
+    val scalaFiles: List[String],
+    val commands: List[String],
 
-    val interactive: Boolean = true
-){}
+    val prompt: Boolean,
+    val runCleanup: Boolean
+)
 
 object ShellArguments{
 
 
   // a mapping with long_name -> short_name
   private val LongToShortArguments = Map[String, String](
-    "help"    ->  "h" , // h for help
-    "about"   ->  "a" , // a for about
-    "shell"   ->  "i" , // i as in interactive
-    "noshell" ->  "ni", // ni as in non-interactive
-    "send"    ->  "r" , // r as in remote or relay
-    "mbt"     ->  "m" , // m as in mbt
-    "file"    ->  "f"   // f as in file
+    "help"      ->  "h", // h for help
+    "about"     ->  "a", // a for about
+
+    "shell"     ->  "i", // i as in interactive
+    "keepalive" ->  "w", // w as in wait
+    "noshell"   ->  "e", // e as in exit
+
+
+    "send"      ->  "r", // r as in remote or relay
+
+    "mbt"       ->  "m", // m as in mbt
+    "file"      ->  "f"  // f as in file
   )
 
   // and one which goes the other way.
@@ -66,18 +72,24 @@ object ShellArguments{
 
   def parse(arguments: List[String]): Option[ShellArguments] = {
 
-    // setup all the defaults
+    //help && about
     var help = false
     var about = false
     var setHelpAbout = false
 
-    var interactive = true
-    var send:Option[Int] = None
-    var setInteractive = false
+    // termination behaviour
+    var prompt = false
+    var runCleanup = false
+    var setTerminationBehaviour = false
 
+    // files and commands to process
+    // we do not care if we set these or not.
     var mmtFiles: List[String] = Nil
     var scalaFiles: List[String] = Nil
     var commands: List[String] = Nil
+
+    // a port for senmd
+    var send:Option[Int] = None
 
     // iterate through the arguments
     // the old fashioned way
@@ -94,12 +106,9 @@ object ShellArguments{
         // so just add it as a comma nd
         case None => {
           commands = arguments(i) :: commands
-
-          if(!setInteractive){
-            interactive = false
-          }
         }
 
+        // <editor-fold desc="Help && About">
         // the help and about flags
         // are mutually exclusive
 
@@ -109,7 +118,6 @@ object ShellArguments{
             println("Argument " + cArg + " cannot be used here: Atmost one of --help and --about arguments can be used. ")
             return None
           }
-
           setHelpAbout = true
           help = true
         }
@@ -125,35 +133,53 @@ object ShellArguments{
           about = true
         }
 
-        // the shell, noshell and send flags
-        // are mutually exclusive
+        // </editor-fold>
 
-        // the mmt flag
+        // <editor-fold desc="Termination behaviour">
+        // the shell, noshell and keepalive args
+
+        // the shell flag
         case Some("shell") => {
-          if (setInteractive && (!interactive || send != None)) {
-            println("Argument " + cArg + " cannot be used here: Atmost one of --shell, --noshell and --send arguments can be used. ")
+          if (setTerminationBehaviour) {
+            println("Argument " + cArg + " cannot be used here: Atmost one of --shell, --noshell and --keepalive arguments can be used. ")
             return None
           }
 
-          setInteractive = true
-          interactive = true
+          setTerminationBehaviour = true
+          prompt = true
+          runCleanup = false
         }
 
-        // the scala flag
+        // the noshell flag
         case Some("noshell") => {
-          if (setInteractive && (interactive || send != None)) {
-            println("Argument " + cArg + " cannot be used here: Atmost one of --shell, --noshell and --send arguments can be used. ")
+          if (setTerminationBehaviour) {
+            println("Argument " + cArg + " cannot be used here: Atmost one of --shell, --noshell and --keepalive arguments can be used. ")
             return None
           }
 
-          setInteractive = true
-          interactive = false
+          setTerminationBehaviour = true
+          prompt = false
+          runCleanup = true
         }
 
+        case Some("keepalive") => {
+          if (setTerminationBehaviour) {
+            println("Argument " + cArg + " cannot be used here: Atmost one of --shell, --noshell and --keepalive arguments can be used. ")
+            return None
+          }
+
+          setTerminationBehaviour = true
+          prompt = false
+          runCleanup = false
+        }
+
+        // </editor-fold>
+
+        // <editor-fold desc="Send Command">
         // the send flag
         case Some("send") => {
-          if (setInteractive) {
-            println("Argument " + cArg + " cannot be used here: Atmost one of --shell, --noshell and --send arguments can be used. ")
+          if (send.isDefined) {
+            println("Argument " + cArg + " cannot be used here: --send can only be used once. ")
             return None
           }
 
@@ -164,8 +190,6 @@ object ShellArguments{
             println("Argument " + cArg + " cannot be used here: Missing PORT argument. ")
             return None
           }
-
-          setInteractive = true
 
           // by something that can be turned into an integer.
           send = {
@@ -179,7 +203,9 @@ object ShellArguments{
             }
           }
         }
+        // </editor-fold>
 
+        // <editor-fold desc="Load files">
         // the file flag
         case Some("file") => {
           i = i + 1
@@ -226,6 +252,8 @@ object ShellArguments{
           scalaFiles = path.toAbsolutePath().toString() :: scalaFiles
         }
 
+        // </editor-fold>
+
         case Some(_) => {
           println("Unknown Argument " + cArg)
           return None
@@ -237,8 +265,32 @@ object ShellArguments{
       i = i+1
     }
 
+    // if we did not yet set the termination bahaviour we need to do it here.
+    if(!setTerminationBehaviour){
+
+      if(commands.isEmpty){
+        // no commands && no files => --shell
+        // no commands && some files => --shell
+        prompt = true
+        runCleanup = false
+      } else {
+        if(mmtFiles.isEmpty && scalaFiles.isEmpty){
+          // some commands && no files => --noshell
+          prompt = false
+          runCleanup = true
+        } else {
+          // some commands && files => --keepalive
+          prompt = false
+          runCleanup = false
+        }
+      }
+
+
+    }
+
+
     // build the shell arguments object and return it
-    Some(new ShellArguments(help, about, send, mmtFiles.reverse, scalaFiles.reverse, commands.reverse, interactive))
+    Some(new ShellArguments(help, about, send, mmtFiles.reverse, scalaFiles.reverse, commands.reverse, prompt, runCleanup))
   }
 
 }
