@@ -105,7 +105,14 @@ object ApplyTerm extends InferenceRule(Apply.path, OfType.path) {
                     if (!covered) solver.check(Typing(stack, t, a))(history + "argument must have domain type")
                     Some(b ^? (x / t))
                  case _ =>
-                    // definition expansion must also consider unknown variables whose definitions are not known yet
+                    val unks = solver.getUnsolvedVariables
+                    if (fTPi.freeVars.exists(unks.isDeclared(_))) {
+                       // this might be convertible into a function type once the unknown variable is solved
+                       history += "does not look like a function type at this point"
+                       solver.error("this is not a function type (type level rewriting is not supported)")
+                    } else {
+                       solver.error("this is not a function type")
+                    }
                     None
               }
         }
@@ -272,6 +279,18 @@ object ExpandArrow extends ComputationRule(Arrow.path) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
       case Arrow(a,b) => Some(Pi(OMV.anonymous, a, b))
       case _ => None
+   }
+}
+
+class Injectivity(val head: GlobalName) extends TermBasedEqualityRule {
+   def applicable(tm1: Term, tm2: Term) = (tm1,tm2) match {
+      case (ApplySpine(OMS(this.head),args1),ApplySpine(OMS(this.head),args2)) => args1.length == args2.length
+      case _ => false
+   }
+   def apply(check: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
+      val (ApplySpine(_,args1),ApplySpine(_,args2)) = (tm1,tm2)
+      //if check.getDef(head) == None && check.getTp(head) returns type
+      None
    }
 }
 
