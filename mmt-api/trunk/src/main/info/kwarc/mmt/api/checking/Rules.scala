@@ -18,9 +18,16 @@ object Continue {
  * passed to [[Rule]]s to permit callbacks to the Solver
  */
 trait CheckingCallback {
+   //def getType(p: GlobalName): Option[Term]
+   //def getDef(p: GlobalName): Option[Term]
+   /** checking */
    def check(j: Judgement)(implicit history: History): Boolean
-   /** unsafe simplification */
+   /** possibly unsafe simplification */
    def simplify(t : Term)(implicit stack: Stack, history: History): Term
+   /** type inference, fails by default */
+   def inferType(t : Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = None
+   /** @return MightFail by default */
+   def dryRun[A](code: => A): DryRunResult = MightFail
 }
 
 /** super class of all rules primarily used by the [[Solver]] */
@@ -140,16 +147,20 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
  */
 abstract class TermBasedEqualityRule extends CheckingRule {
    /** 
-    *  @return true if the rule is applicable to tm1 == tm2 
+    *  @return true if the rule is applicable to tm1 == tm2
+    *  
+    *  This method should fail quickly if possible; the apply method may still fail even it this returned true. 
     */
    def applicable(tm1: Term, tm2: Term): Boolean
-   /** 
-    *  @param solver provides callbacks to the currently solved system of judgments
+   /**
+    *  @param check provides callbacks to the currently solved system of judgments
     *  @param tm1 the first term
     *  @param tm2 the second term
-    *  @param tp their type
+    *  @param tp their type if known
     *  @param stack their context
-    *  @return true iff the judgment holds
+    *  @param history the history so far
+    *  @return Some(cont) continuation function to apply the rule
+    *          None if this rule is not applicable
     */
    def apply(check: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History): Option[Continue[Boolean]]
 }

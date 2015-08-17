@@ -271,27 +271,14 @@ class UOM extends ObjectSimplifier {
    private def applyCompRules(tm: Term)(implicit context: Context, state: UOMState): Change = {
       val cb = callback(state)
       state.compRules.foreach {rule =>
-         rule(cb)(tm, true)(Stack(context), NoHistory).foreach {tmS =>
-            return GlobalChange(tmS)
+         if (tm.head == rule.head) {
+            rule(cb)(tm, true)(Stack(context), NoHistory).foreach {tmS =>
+               return GlobalChange(tmS)
+            }
          }
       }
       NoChange
    }
-}
-
-/**
- * apply/unapply methods that encapsulate functionality for attaching a Boolean clientProperty to a Term
- */
-class BooleanTermProperty(property: utils.URI) extends TermProperty[Boolean](property){
-   def apply(t: Term) : Term = {
-     put(t, true)
-     t
-   }
-   def unapply(t: Term): Option[Term] =
-      get(t) match {
-          case Some(true) => Some(t)
-          case _ => None
-      }
 }
 
 /**

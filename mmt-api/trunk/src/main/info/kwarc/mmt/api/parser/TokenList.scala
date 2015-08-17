@@ -264,9 +264,9 @@ case class CFExternalToken(text: String, firstPosition: SourcePosition, term: Te
 class MatchedList(var tokens: List[TokenListElem], val an: ActiveNotation,
                   val firstPosition: SourcePosition, val lastPosition: SourcePosition) extends TokenListElem {
   override def toString: String = if (tokens.isEmpty)
-    "{" + an.rule.name.last + "}"
+    "{" + an.toShortString + "}"
   else
-    tokens.map(_.toString).mkString("{" + an.rule.name.last + " ", " ", " " + an.rule.name.last + "}")
+    tokens.map(_.toString).mkString("{" + an.toShortString + " ", " ", " " + an.toShortString + "}")
 
   /** removes the redundant UnmatchedList wrapper around a single MatchedList in this list */
   def flatten() {

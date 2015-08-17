@@ -355,11 +355,15 @@ object PresentationMarker {
                   left = end
               }
                
+            /*FR: I'm removing this case because ' is too important as a delimiter.
+             In general, special markers must not clash with reasonable delimiters.
+             The weirder ones should all start with some escape character.
             case Delim("'") => // root will be '(root)√(base)
               val (arg,rest) = splitOffOne(others)
               left = rest
               sofar ::= makeOne(introducePresentationMarkers(List(arg)))
               isRootProcessed = false
+              */
               
             case Delim(w) if w.startsWith("#num_") => //mathml number
               left = others

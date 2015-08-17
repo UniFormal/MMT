@@ -34,7 +34,7 @@ class RuleBasedChecker extends ObjectChecker {
       val remUnknowns = solver.getUnsolvedVariables 
       val subs = psol.toPartialSubstitution
       val tI = cu.judgement.wfo ^? subs //fill in inferred values
-      val tIS = SimplifyInferred(tI, rules, cu.context ++ remUnknowns) //substitution may have created redexes
+      val tIS = SimplifyInferred(tI, rules, cu.context ++ remUnknowns) //substitution may have created simplifiable terms
       TermProperty.eraseAll(tIS) // reset term properties (whether a term is, e.g., simplified, depends on where it is used)
       val result = if (remUnknowns.variables.isEmpty) tIS else OMBIND(OMID(parser.ObjectParser.unknown), remUnknowns, tIS)
       //now report results, dependencies, errors
@@ -76,14 +76,18 @@ class RuleBasedChecker extends ObjectChecker {
       }
    }
    /**
-    * A Traverser that simplifies all subterms that are the result of inference (recognized by the lack of a SourceRef)
+    * A Traverser that reduces all redexes introduced by solving unknowns.
     */
-   object SimplifyInferred extends Traverser[RuleSet] {
+   private object SimplifyInferred extends Traverser[RuleSet] {
       def traverse(t: Term)(implicit con : Context, rules: RuleSet) : Term = {
-         if (parser.SourceRef.get(t).isEmpty)
-            controller.simplifier(t, con, rules)
-         else
-            Traverser(this, t)
+         t match {
+            case OMA(OMS(parser.ObjectParser.oneOf), OMI(i) :: args) =>
+               Traverser(this, args(i.toInt))
+            case _ if parser.SourceRef.get(t).isEmpty =>
+               controller.simplifier(t, con, rules)
+            case _ =>
+               Traverser(this, t)
+         }
       }
    }
 }

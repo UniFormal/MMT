@@ -379,7 +379,8 @@ class ViewfinderPanel(target:RefactorPanel) extends JPanel with ActionListener {
 
   class finderthread(textf: JTextArea,progress:JProgressBar,result:JPanel) extends javax.swing.SwingWorker[Boolean,Void] {
     object textfhandler extends ReportHandler("textfield") {
-      def apply(ind: Int, caller: String, group: String, msg: String) = {
+      def apply(ind: Int, caller: => String, group: String, msgParts: List[String]) = {
+        val msg = msgParts.mkString("\n")
         val m = indentString(ind) + group + ": " + msg+"\n"
         textf.append(m)
         textf.setCaretPosition(textf.getText.length)

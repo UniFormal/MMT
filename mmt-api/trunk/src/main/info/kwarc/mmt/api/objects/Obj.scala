@@ -38,7 +38,7 @@ class TermProperty[A](val property: utils.URI) {
       t.clientProperty(property) = a
    }
    /** get the client property if defined */
-   def get(t: Term): Option[A] = t.clientProperty.get(property) match {
+   def get(t: Obj): Option[A] = t.clientProperty.get(property) match {
       case Some(a: A) =>
          Some(a) // :A is unchecked but true if put was used to set the property
       case None => None
@@ -65,6 +65,22 @@ object TermProperty {
          case _ =>
       }
    }
+}
+
+/**
+ * apply/unapply methods that encapsulate functionality for attaching a Boolean clientProperty to a Term
+ */
+class BooleanTermProperty(property: utils.URI) extends TermProperty[Boolean](property){
+   def apply(t: Term) : Term = {
+     put(t, true)
+     t
+   }
+   def unapply(t: Term): Option[Term] =
+      get(t) match {
+          case Some(true) => Some(t)
+          case _ => None
+      }
+   def is(t: Term) = unapply(t) == Some(true)
 }
 
 /**

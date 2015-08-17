@@ -48,7 +48,7 @@ case class Comment(text: () => String) extends HistoryEntry {
  * 
  * @param the nodes of the branch, from leaf to root
  */
-class History(private var steps: List[HistoryEntry]) {
+class History(var steps: List[HistoryEntry]) {
    /** creates and returns a new branch with a child appended to the leaf */
    def +(e: HistoryEntry) : History = new History(e::steps)
    /** shortcut for adding a Comment leaf */

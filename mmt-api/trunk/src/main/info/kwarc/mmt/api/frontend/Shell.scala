@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.utils._
   * The command syntax is given by the Action class and the parser in its companion object.
 
   */
-class Shell extends {
+class Shell {
   lazy val controller = new Controller
   private val usagetext = """usage:
     mmt [--help|--about] [--shell|--keepalive|--noshell] [--file FILENAME] [--mbt FILENAME] [--send PORT] [COMMANDS]

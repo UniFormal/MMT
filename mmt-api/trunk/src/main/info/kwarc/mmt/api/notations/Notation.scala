@@ -142,96 +142,6 @@ class TextNotation(val fixity: Fixity, val precedence: Precedence, val meta: Opt
    }
    def isLeftOpen = openArgs(false) > 0
    def isRightOpen = openArgs(true) > 0
-
-   /*
-   val key = NotationKey(Some(name), Role_application(None))
-   val nset = name.module.toMPath
-   /**
-    * flattens and transforms markers into Presentation
-    * @param args number of arguments
-    * @param vars number of variables
-    * @param scopes number of scopes
-    * @return Presentation that can be rendered using the [[presentation.StyleBasedPresenter]]  
-    */
-   def presentation(vars: Int, args: Int, attrib: Boolean) = {
-     val flatMarkers = arity.flatten(presentationMarkers, vars, args, attrib)
-     val implicitsP = arity.flatImplicitArguments(args) flatMap {
-        case i @ ImplicitArg(n,_) =>
-           if (markers contains i)
-              Nil // skip arguments that are explicitly placed by the notation
-           else
-              List(ArgSep(), Component(NumberedIndex(n), BracketInfo()))
-     }
-     var implicitsToDo = ! implicitsP.isEmpty
-     /** translates a list of Markers into old-style presentation that can be handed off */
-     def translateMarkers(ms: List[Marker], suppressBrackets: Boolean = false): List[Presentation] = {
-        val numDelims = ms.count(_.isInstanceOf[Delimiter])
-        var numDelimsSeen = 0
-        ms.zipWithIndex map {case (m,i) => m match {
-          case d : Delimiter =>
-             numDelimsSeen += 1
-             var delim : Presentation = Fragment("constant", PText(name.toPath), PText(d.text))
-             if (implicitsToDo && numDelimsSeen == 1) {
-                implicitsToDo = false
-                // add all implicit arguments after the first delimiter
-                delim = NoBrackets(delim + Fragment("implicit", PList(implicitsP)))
-             }
-             if (i+1<ms.length)
-                delim += ArgSep()
-             delim
-          case Arg(p,_) =>
-             val bi = if (suppressBrackets) BracketInfo(Some(Precedence.neginfinite))
-                else { 
-                   val delimitation = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
-                   BracketInfo(Some(precedence), Some(delimitation))
-                }
-             Component(NumberedIndex(p), bi)
-          case ImplicitArg(n,_) =>
-             val bi = if (suppressBrackets) BracketInfo(Some(Precedence.neginfinite))
-                else { 
-                   val delimitation = if (numDelimsSeen == 0) -1 else if (numDelimsSeen == numDelims) 1 else 0
-                   BracketInfo(Some(precedence), Some(delimitation))
-                }
-             Fragment("implicit", Component(NumberedIndex(n), bi))
-          case Var(n, _, None,_) => Component(NumberedIndex(n), BracketInfo())
-          case AttributedObject =>
-                Component(NumberedIndex(0), BracketInfo(Some(Precedence.neginfinite)))
-          case SeqArg(n,sep,_) => throw ImplementationError("non-flat marker")
-          case Var(n,_,Some(sep),_) => throw ImplementationError("non-flat marker")
-          case GroupMarker(ms) => aux(ms)
-          case ScriptMarker(main, sup, sub, over, under) =>
-             Fragment("scripted", aux(List(main)),
-                                  aux(under.toList), aux(over.toList), aux(sub.toList), aux(sup.toList))
-          case FractionMarker(a,b,_) =>
-             Fragment("fraction", aux(a, true), aux(b, true))
-          case TdMarker(a) => 
-             Fragment("mtd", aux(a))
-          case TrMarker(a) => 
-             Fragment("mtr", aux(a))
-          case TableMarker(a) => 
-             Fragment("table", aux(a))
-          case InferenceMarker => Compute(None, "infer")
-        }}
-     }
-     /**
-      * @param ms markers to translate
-      * @param separated if true, inserts separator in between all translated markers
-      * @param translated markers, separator if empty
-      */
-     def aux(ms: List[Marker], separated: Boolean = false) : Presentation = {
-        val msT = translateMarkers(ms, true)
-        msT match {
-           case Nil => ArgSep()
-           case hd::Nil => hd
-           case l =>
-              val msTS = if (separated) msT.head :: msT.tail.flatMap(p => List(ArgSep(), p)) else msT
-              NoBrackets(PList(msTS))
-        }
-     }
-     val tokens = translateMarkers(flatMarkers)
-     PList(tokens)
-   }
-   */
 }
 
 object TextNotation {
@@ -330,6 +240,14 @@ object TextNotation {
        }
        val fixity = FixityParser.parse(fixityString, arguments)
        new TextNotation(fixity, prec, meta)
+  }
+   
+  /** true if both notations expect the exact same markers */
+  def agree(left: TextNotation, right: TextNotation) = {
+     left.parsingMarkers == right.parsingMarkers && left.parsingMarkers.forall {
+        case _ : PlaceholderDelimiter => false
+        case _ => true
+     }
   }
 }
 

@@ -46,7 +46,10 @@ class Report extends Logger {
       s(i + 1).toString
     }
     val prefixList = utils.stringToList(prefix, "#")
-    if (prefixList.forall(p => groups.contains(p))) handlers.foreach(_.apply(ind, caller, prefix, msg))
+    if (prefixList.forall(p => groups.contains(p))) {
+       val msgParts = utils.stringToList(msg, "\\n") 
+       handlers.foreach(_.apply(ind, caller, prefix, msgParts))
+    }
   }
 
   /** logs an error */
@@ -111,9 +114,9 @@ abstract class ReportHandler(val id: String) {
    * logs a message
    * @param ind indentation level
    * @param group generating component
-   * @param msg the message
+   * @param msgParts the multi-line message
    */
-  def apply(ind: Int, caller: String, group: String, msg: String)
+  def apply(ind: Int, caller: => String, group: String, msgParts: List[String])
 
   /** logs as an error (categories "error" and "debug" for short and long message, respectively) */
   def apply(ind: Int, e: Error, debug: Boolean) {
@@ -122,9 +125,9 @@ abstract class ReportHandler(val id: String) {
       case _: Invalid | _: ParseError => contentErrorHighlight(e.shortMsg)
       case _ => systemErrorHighlight(e.shortMsg)
     }
-    apply(ind, caller, "error", msg)
+    apply(ind, caller, "error", List(msg))
     if (debug)
-      apply(ind, caller, "debug", e.toStringLong)
+      apply(ind, caller, "debug", utils.stringToList(e.toStringLong, "\\n"))
   }
 
   def systemErrorHighlight(s: String): String = s
@@ -152,9 +155,11 @@ abstract class ReportHandler(val id: String) {
 
 /** outputs to standard output */
 object ConsoleHandler extends ReportHandler("console") {
-  def apply(ind: Int, caller: String, group: String, msg: String): Unit = {
-    val m = indentString(ind) + group + ": " + msg
-    println(m)
+  def apply(ind: Int, caller: => String, group: String, msgParts: List[String]): Unit = {
+    msgParts.foreach{ msg => 
+       val m = indentString(ind) + group + ": " + msg
+       println(m)
+    }
   }
 
   /* see http://mihai-nita.net/2013/06/03/eclipse-plugin-ansi-in-console/ for ANSI escape codes
@@ -180,10 +185,12 @@ abstract class FileHandler(val filename: File) extends ReportHandler(filename.to
 
 /** outputs to a file */
 class TextFileHandler(filename: File, timestamps: Boolean) extends FileHandler(filename) {
-  def apply(ind: Int, caller: String, group: String, msg: String) {
+  def apply(ind: Int, caller: => String, group: String, msgParts: List[String]) {
     val t = if (timestamps) time + "\t" else ""
-    val m = t + indentString(ind) + group + ": " + msg
-    file.println(m)
+    msgParts.foreach {msg =>
+       val m = t + indentString(ind) + group + ": " + msg
+       file.println(m)
+    }
     flush()
   }
 
@@ -202,9 +209,10 @@ class HtmlFileHandler(filename: File) extends FileHandler(filename) {
     file.println(s"$pref\n<html>\n$jquery$script$css<body>\n")
   }
 
-  def apply(ind: Int, caller: String, group: String, msg: String) {
+  def apply(ind: Int, caller: => String, group: String, msgParts: List[String]) {
     file.println( s"""<div class="log $group" style="margin-left: $ind%">""")
     file.println( s"""<div><span class="timestamp">$time</span><span class="caller">$caller</span></div>""")
+    val msg = msgParts.mkString("<br/>")
     file.println( s"""<div><span class="group">$group:</span><span class="message">$msg</span></div>""")
     file.println("</div>")
     flush()
@@ -247,8 +255,11 @@ class RecordingHandler(id: String) extends ReportHandler(id) {
     memory = Nil
   }
 
-  def apply(ind: Int, caller: String, group: String, msg: String) {
-    if (recording)
-      memory ::= indentString(ind) + group + ": " + msg
+  def apply(ind: Int, caller: => String, group: String, msgParts: List[String]) {
+    if (recording) {
+       msgParts.foreach {msg =>
+          memory ::= indentString(ind) + group + ": " + msg
+       }
+    }
   }
 }

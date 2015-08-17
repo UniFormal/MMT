@@ -9,6 +9,7 @@ object mmt {
    val mmttype = mmtsymbol("type")
    val mmtdef = mmtsymbol("definiens")
    val brackets = mmtsymbol("brackets")
+   val andrewsDot = mmtsymbol("andrewsDot")
    val context = mmtsymbol("context")
    val unknowns = mmtsymbol("unknowns")
    val label = mmtbase ? "label"

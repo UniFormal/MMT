@@ -1,11 +1,11 @@
 package info.kwarc.mmt.api.parser
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.utils._
+import archives._
+import documents._
+import frontend._
+import objects._
+import utils._
 
 /**
  * ParsingUnit encapsulates the input of an [[ObjectParser]]
@@ -98,6 +98,7 @@ trait ObjectParser extends FormatBasedExtension {
 /** helper object */
 object ObjectParser {
   val unknown = utils.mmt.mmtcd ? "unknown"
+  val oneOf = utils.mmt.mmtcd ? "oneOf"
   def splitOffUnknowns(t: Term) = t match {
      case OMBIND(OMID(ObjectParser.unknown), us, s) => (us, s)
      case _ => (Context(), t)

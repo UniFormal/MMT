@@ -20,6 +20,19 @@ import scala.collection.mutable.{HashSet,HashMap}
 
 object InferredType extends TermProperty[Term](utils.mmt.baseURI / "clientProperties" / "solver" / "inferred")
 
+/** returned by [[Solver.dryRun]] as the result of a side-effect-free check */ 
+sealed trait DryRunResult
+case object MightFail extends java.lang.Throwable with DryRunResult {
+   override def toString = "might fail"
+}
+object WouldFail extends java.lang.Throwable with DryRunResult {
+   override def toString = "will fail"
+}
+case class Success[A](result: A) extends DryRunResult {
+   override def toString = "will succeed"
+}
+
+
 /**
  * A Solver is used to solve a system of constraints about Term's given as judgments.
  * 
@@ -44,16 +57,96 @@ object InferredType extends TermProperty[Term](utils.mmt.baseURI / "clientProper
  */
 class Solver(val controller: Controller, val constantContext: Context, initUnknowns: Context, val rules: RuleSet)
       extends CheckingCallback with Logger {
-   /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */ 
-   private var solution : Context = initUnknowns
-   /** the unknowns that were solved since the last call of activate (used to determine which constraints are activatable) */
-   private var newsolutions : List[LocalName] = Nil
-   /** tracks the delayed constraints, in any order */ 
-   private var delayed : List[DelayedConstraint] = Nil
-   /** tracks the errors in reverse order of encountering */
-   private var errors: List[History] = Nil
-   /** tracks the dependencies in reverse order of encountering */
-   private var dependencies : List[CPath] = Nil
+   
+   /**
+    * to have better control over state changes, all stateful variables are encapsulated a second time 
+    */
+   private object state {
+      // stateful fields
+      
+      /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */ 
+      private var _solution : Context = initUnknowns
+      /** the unknowns that were solved since the last call of activate (used to determine which constraints are activatable) */
+      private var _newsolutions : List[LocalName] = Nil
+      /** tracks the delayed constraints, in any order */ 
+      private var _delayed : List[DelayedConstraint] = Nil
+      /** tracks the errors in reverse order of encountering */
+      private var _errors: List[History] = Nil
+      /** tracks the dependencies in reverse order of encountering */
+      private var _dependencies : List[CPath] = Nil
+
+      // accessor methods for the above
+      def solution = _solution
+      def newsolutions = _newsolutions
+      def delayed = _delayed
+      def errors = _errors
+      def dependencies = _dependencies
+
+      // adder methods for the stateful lists
+      
+      /** registers a constraint */
+      def addNewSolution(n: LocalName) {
+         if (mutable) _newsolutions ::= n
+      }
+      /** registers a constraint */
+      def addConstraint(d: DelayedConstraint) {
+         if (mutable) _delayed ::= d
+         else {
+            throw MightFail
+         }
+      }
+      /** registers an error */
+      def addError(e: History) {
+         if (mutable) _errors ::= e
+         else throw WouldFail
+      }
+      /** registers a dependency */
+      def addDependency(p: CPath) {
+         if (mutable) _dependencies ::= p
+      }
+      
+      // setter methods for the above
+      
+      def removeConstraint(dc: DelayedConstraint) {
+         if (mutable) _delayed = _delayed filterNot (_ == dc)
+         else throw MightFail
+      }
+      def clearNewSolutions {
+         if (mutable) _newsolutions = Nil
+         else throw MightFail
+      }
+      def solution_=(newSol: Context) {
+         _solution = newSol
+      }
+      
+      // instead of full backtracking, we allow exploratory runs that do not have side effects 
+      
+      /** if false, all mutator methods have no effect on the state
+       *  they may throw a [[DryRunResult]]
+       */
+      private def mutable = pushedStates.isEmpty
+      /** the state that is stored here for backtracking */ 
+      private type StateData = Context
+      /** a stack of states for backtracking */ 
+      private var pushedStates: List[StateData] = Nil
+
+      /** evaluates its arguments without applying its side effects on the state
+       *  @return if Some(v), then normal evaluation is guaranteed to return v without errors
+       */
+      def immutably[A](a: => A): DryRunResult = {
+         pushedStates ::= solution
+         try {Success(a)}
+         catch {
+            case e: DryRunResult => e
+         }
+         finally {
+            _solution = pushedStates.head
+            pushedStates = pushedStates.tail
+         }
+      }
+   }
+   import state._
+
    /** true if unresolved constraints are left */
    def hasUnresolvedConstraints : Boolean = ! delayed.isEmpty
    /** true if unsolved variables are left */
@@ -73,17 +166,12 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     * @return the context containing only the unsolved variables
     */   
    def getUnsolvedVariables : Context = solution.filter(_.df.isEmpty)
-   /**
-    * @return the current list of unresolved constraints
-    */
+   
+   /** @return the current list of unresolved constraints */
    def getConstraints : List[DelayedConstraint] = delayed
-   /**
-    * @return the current list of errors and their history
-    */
+   /** @return the current list of errors and their history */
    def getErrors : List[History] = errors
-   /**
-    * @return the current list of dependencies
-    */
+   /** @return the current list of dependencies */
    def getDependencies : List[CPath] = dependencies
 
    /** for Logger */ 
@@ -96,6 +184,9 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    private val defExp = new uom.DefinitionExpander(controller)
    /** used for rendering objects, should be used by rules if they want to log */
    implicit val presentObj : Obj => String = o => controller.presenter.asString(o)
+   
+   /** the context that is not part of judgements */
+   private def outerContext = constantContext ++ solution
    
    /**
     * logs a string representation of the current state
@@ -158,7 +249,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     */
    def getType(p: GlobalName): Option[Term] = {
       val c = controller.globalLookup.getConstant(p)
-      if (c.tpC.analyzed.isDefined) dependencies ::= p $ TypeComponent
+      if (c.tpC.analyzed.isDefined) addDependency(p $ TypeComponent)
       c.tpC.analyzed
    }
    /** retrieves the definiens of a constant and registers the dependency
@@ -167,7 +258,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     */
    def getDef(p: GlobalName) : Option[Term] = {
       val c = controller.globalLookup.getConstant(p)
-      if (c.dfC.analyzed.isDefined) dependencies ::= p $ DefComponent
+      if (c.dfC.analyzed.isDefined) addDependency(p $ DefComponent)
       c.dfC.analyzed
    }
    def getModule(p: MPath) : Option[Module] = {
@@ -203,7 +294,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
          val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of later variables that have been found already
          val vd = solved.copy(df = Some(valueS))
          solution = left ::: vd :: rightS
-         newsolutions ::= name
+         addNewSolution(name)
          typeCheckSolution(vd)
       }
    }
@@ -252,7 +343,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     */
    def error(message: => String)(implicit history: History): Boolean = {
       log("error: " + message)
-      errors ::= history + message
+      addError(history + message)
       // maybe return true so that more errors are found
       false
    }
@@ -268,7 +359,8 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     */
    
    def apply(j: Judgement): Boolean = {
-      delayed ::= new DelayedJudgement(j, new History(Nil), true)
+      val h = new History(Nil)
+      addConstraint(new DelayedJudgement(j, h, true))
       activate
    }
    
@@ -288,7 +380,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
          log("delaying: " + j.present)
          history += "(delayed)"
          val dc = new DelayedJudgement(j, history, incomplete)
-         delayed ::= dc
+         addConstraint(dc)
       }
       true
    }
@@ -308,7 +400,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
         Stack(controller.simplifier(s.context ^^ subs, constantContext ++ solution, rules))
      // look for an activatable constraint
      delayed foreach {_.solved(newsolutions)}
-     newsolutions = Nil
+     clearNewSolutions
      val dcOpt = delayed.find {d => d.isActivatable && !d.incomplete} orElse {
          log("first invocation or no activatable constraint left, trying other constraint")
          delayed.find {_.incomplete}
@@ -322,7 +414,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
               false
         case Some(dc) =>
            // activate a constraint
-           delayed = delayed filterNot (_ == dc)
+           removeConstraint(dc)
            // mayhold is the result of checking the activated constraint
            val mayhold = dc match {
               case dj: DelayedJudgement =>
@@ -377,6 +469,12 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
             true
       }
    }
+   
+   /**
+    * tries to evaluate an expression without any effect on the state
+    * @return Some(v) if evaluation successful
+    */
+   override def dryRun[A](a: => A): DryRunResult = immutably(a)
 
    /**
     * performs a type inference and calls a continuation function on the inferred type
@@ -389,7 +487,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
          case Some(tp) =>
             cont(tp)
          case None =>
-            delayed ::= new DelayedInference(stack, history + "(inference delayed)", tm, cont)
+            addConstraint(new DelayedInference(stack, history + "(inference delayed)", tm, cont))
             true
       }
    }
@@ -436,7 +534,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
             }
          }
          // no applicable rule, expand a definition
-         val tmE = defExp(tm,stack.context)
+         val tmE = defExp(tm,outerContext++stack.context)
          tmE
       case None => tm
    }
@@ -585,7 +683,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     *
     * post: if result, typing judgment is covered
     */
-   def inferType(tm: Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = {
+   override def inferType(tm: Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = {
      log("inference: " + presentObj(tm) + " : ?")
      history += "inferring type of " + presentObj(tm)
      // return previously inferred type, if any (previously unsolved variables are substituted)
@@ -642,7 +740,8 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
      }
      log("inferred: " + res.getOrElse("failed"))
      // remember inferred type
-     if (res.isDefined) InferredType.put(tm, res.get)
+     //TODO commented out for now because it clashes with forgetting solutions during a dryRun
+     //if (res.isDefined) InferredType.put(tm, res.get)
      res
    }
 
@@ -805,7 +904,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
        log("equality (trying rewriting): " + terms1.head + " = " + terms2.head)
        val t1 = terms1.head
        // see if we can expand a definition in t1
-       val t1E = defExp(t1, stack.context) //TODO whole context to look up other definitions?
+       val t1E = defExp(t1, outerContext++stack.context)
        val t1EL = safeSimplifyOne(t1E)
        val t1ES = simplify(t1EL)
        val changed = t1ES hashneq t1
@@ -881,14 +980,15 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       }
    }
    
-   private def allowedInSolution(m: LocalName, tm: Term)(implicit stack: Stack, history: History): Option[List[LocalName]] = {
-      val mIndex = solution.index(m).getOrElse {
-         // if m is not declared in unknowns, i.e., is a bound variable, nothing to do 
-         return None
-      }
+   /**
+    * @param m an unknown variable
+    * @return if m is an unknown, the list of free variables of tm that preclude solving m
+    *   namely the bound variables and the unknowns declared after m
+    */
+   private def notAllowedInSolution(m: LocalName, tm: Term)(implicit stack: Stack, history: History): List[LocalName] = {
+      val mIndex = solution.index(m).get
       val fvs = tm.freeVars
-      // all variables whose occurrence precludes solving
-      val remainingFreeVars = fvs.filter {v =>
+      fvs.filter {v =>
          if (stack.context.isDeclared(v))
             true // v declared in variable context
          else solution.index(v) match {
@@ -900,7 +1000,6 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
                else true // v == m || solution(v).df.isDefined // after m but not solved yet 
          }
       }
-      Some(remainingFreeVars)
   }
    
    /** tries to solve an unknown occurring in tm1 in terms of tm2. */
@@ -908,21 +1007,20 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       j.tm1 match {
          //foundation-independent case: direct solution of an unknown variable
          case OMV(m) =>
-            allowedInSolution(m, j.tm2) match {
-               case None => return false
-               case Some(remainingFreeVars) =>
-                  if (remainingFreeVars.isEmpty) {
-                     // we can solve m already, the remaining unknowns in tm2 can be filled in later
-                     val res = solve(m, j.tm2)
-                     j.tpOpt foreach {case tp => solveType(m, tp)}
-                     res
-                  } else {
-                     history += ("free variables remain: " + remainingFreeVars.mkString(", "))
-                     delay(j)
-                     // meta-variable solution has free variable --> type error unless free variable disappears later
-                     // better: we can rearrange the unknown variables (which ultimately may not depend on each other anyway)
-                     // note: tm2 should be simplified - that may make a free variable disappear
-                  }
+            if (!solution.isDeclared(m))
+               return false
+            val remainingFreeVars = notAllowedInSolution(m, j.tm2)
+            if (remainingFreeVars.isEmpty) {
+               // we can solve m already, the remaining unknowns in tm2 can be filled in later
+               val res = solve(m, j.tm2)
+               j.tpOpt foreach {case tp => solveType(m, tp)}
+               res
+            } else {
+               history += ("free variables remain: " + remainingFreeVars.mkString(", "))
+               delay(j)
+               // meta-variable solution has free variable --> type error unless free variable disappears later
+               // better: we can rearrange the unknown variables (which ultimately may not depend on each other anyway)
+               // note: tm2 should be simplified - that may make a free variable disappear
             }
          //apply a foundation-dependent solving rule selected by the head of tm1
          case _ =>
@@ -947,20 +1045,19 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       tm match {
          //foundation-independent case: direct solution of an unknown variable
          case OMV(m) =>
-            allowedInSolution(m, tp) match {
-               case None => return false
-               case Some(remainingFreeVars) =>
-                  if (remainingFreeVars.isEmpty) {
-                     // we can solve m already, the remaining unknowns in tm2 can be filled in later
-                     val res = solveType(m, tp)
-                     res
-                  } else {
-                     history += ("free variables remain: " + remainingFreeVars.mkString(", "))
-                     delay(Typing(stack,tm,tp))
-                     // meta-variable solution has free variable --> type error unless free variable disappears later
-                     // better: we can rearrange the unknown variables (which ultimately may not depend on each other anyway)
-                     // note: tm2 should be simplified - that may make a free variable disappear
-                  }
+            if (!solution.isDeclared(m))
+               return false
+            val remainingFreeVars = notAllowedInSolution(m, tp)
+            if (remainingFreeVars.isEmpty) {
+               // we can solve m already, the remaining unknowns in tm2 can be filled in later
+               val res = solveType(m, tp)
+               res
+            } else {
+               history += ("free variables remain: " + remainingFreeVars.mkString(", "))
+               delay(Typing(stack,tm,tp))
+               // meta-variable solution has free variable --> type error unless free variable disappears later
+               // better: we can rearrange the unknown variables (which ultimately may not depend on each other anyway)
+               // note: tm2 should be simplified - that may make a free variable disappear
             }
          //apply a foundation-dependent solving rule selected by the head of tm1
          case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tp.freeVars.contains(m) => //TODO what about occurrences of m in tm1?

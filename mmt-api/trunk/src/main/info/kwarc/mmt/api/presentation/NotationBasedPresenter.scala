@@ -573,6 +573,8 @@ class NotationBasedPresenter extends ObjectPresenter {
                      while (markersLeft != Nil) {
                         val current = markersLeft.head
                         markersLeft = markersLeft.tail
+                        if (op.name.toString.contains("make"))
+                           true
                         val compFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[ArgumentMarker]
                         //val delimFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.Delimiter]
                         current match {

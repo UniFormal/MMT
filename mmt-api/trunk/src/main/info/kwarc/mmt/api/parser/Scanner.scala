@@ -16,14 +16,13 @@ import info.kwarc.mmt.api.parser.ActiveNotation._
   *           matched notations are applied to tl, i.e., tl always holds the current TokenList
   */
 class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: frontend.Report) extends frontend.Logger {
-  /** logging */
   val logPrefix = "scanner"
 
   private def logState() {
     log("token list: " + tl)
     log("shifted " + numCurrentTokens)
     active.reverseMap { an =>
-      log(an.rule.name + ": " + an.getFound.mkString("", " ", "") + ", shifted: " + an.numCurrentTokens)
+      log(an.toString + ", shifted: " + an.numCurrentTokens)
     }
   }
 
@@ -85,7 +84,7 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
   }
 
   /** the currently open notations, inner-most first; initialized with the topRule or empty list */
-  private var active: List[ActiveNotation] = topRule.map(r => new ActiveNotation(this, r, 0)).toList
+  private var active: List[ActiveNotation] = topRule.map(r => new ActiveNotation(this, List(r), 0)).toList
 
   /**
    * precondition: ans.length + closable == active.length
@@ -258,12 +257,16 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
               else
                 Nil
             }
-	    // TODO add notations without firstDelimString
+	         // TODO add notations without firstDelimString
             log("openable: " + openable.map(_._1).mkString(", "))
             //the longest firstDelim of an openable notation
             val longestDelim = if (openable.isEmpty) -1 else openable.maxBy(_._2)._2
-            openable.filter(_._2 == longestDelim) match {
-              case (hd, _) :: Nil =>
+            openable.collect {case o if o._2 == longestDelim => o._1} match {
+              case hd :: others =>
+                // we allow for syntax overloading: if all alternatives have the same markers, we proceed  
+                if (!others.forall(pr => TextNotation.agree(pr.notation, hd.notation))) {
+                   throw Ambiguous(hd::others) //better ambiguity-handling could go here (maybe look for next delimiter)
+                }
                 //open the notation and apply it
                 log("opening notation at " + currentToken)
                 if (hd.notation.isLeftOpen) {
@@ -276,13 +279,12 @@ class Scanner(val tl: TokenList, topRule: Option[ParsingRule], val report: front
                    */
                   Range(0, closable) foreach { _ => closeFirst(true) }
                 }
-                val an = new ActiveNotation(this, hd, currentIndex)
+                val an = new ActiveNotation(this, hd::others, currentIndex)
                 active ::= an
                 applyFirst(true)
               case Nil =>
                 //move one token forward
                 advance()
-              case l => throw Ambiguous(l.map(_._1)) //some kind of ambiguity-handling here (maybe look for next delimiter)
             }
         }
     }

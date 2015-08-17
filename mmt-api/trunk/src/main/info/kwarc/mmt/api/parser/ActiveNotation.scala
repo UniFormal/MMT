@@ -7,11 +7,17 @@ import ActiveNotation._
 
 /** An ActiveNotation is a notation whose firstDelimToken has been scanned
  *  An ActiveNotation maintains state about the found and still-expected markers
+ *  
+ *  @param scanner back-pointer to the owning scanner
+ *  @param rules the parsing rules 
+ *    must be non-empty;
+ *    if not a singleton, all [[TextNotation]]s must TextNotation.agree 
  */
-class ActiveNotation(scanner: Scanner, val rule: ParsingRule, val firstToken: Int) {
+class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val firstToken: Int) {
    // invariant: found.reverse (qua List[Marker]) ::: left == markers
 
-   override def toString = rule.name.toPath + " " + found.reverse.mkString("", " ", "")
+   override def toString = toShortString + " " + found.reverse.mkString("", " ", "")
+   def toShortString = rules.map(_.name.last).mkString("/")
 
    /** the markers that have been found in the token list */
    private var found : List[Found] = Nil
@@ -26,8 +32,8 @@ class ActiveNotation(scanner: Scanner, val rule: ParsingRule, val firstToken: In
       (from,to)
    }
    /** the markers that are still expected */
-   private var left : List[Marker] = rule.notation.parsingMarkers.map {
-      case d: Delimiter => d.expand(rule.name)
+   private var left : List[Marker] = rules.head.notation.parsingMarkers.map {
+      case d: Delimiter => d.expand(rules.head.name) //only possible if rules.length == 1
       case m => m
    }
    /** the number of tokens that are part of the current argument(s),
