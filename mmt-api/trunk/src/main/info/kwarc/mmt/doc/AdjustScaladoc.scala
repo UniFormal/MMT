@@ -14,10 +14,10 @@ object AdjustScaladoc {
     val newPrefix = "../../.."
     println(s"topfolder: $apifolder, old: $oldPrefix, new: $newPrefix")
     def doFolder(l: List[String]) {
-      (apifolder / FilePath(l)).list foreach { e =>
+      (apifolder / l).list foreach { e =>
         if (e != ".svn") {
           val le = l ::: List(e)
-          val f = apifolder / FilePath(le)
+          val f = apifolder / le
           if (f.isDirectory) {
             println("folder: " + f)
             doFolder(le)

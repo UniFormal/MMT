@@ -44,7 +44,7 @@ class WindowsGit(sh: String = "sh") extends Git {
 class OAF(val uri: URI, val root: File, val report: Report) extends Logger {
    val logPrefix = "oaf"
    /** choose UnixGit or WindowsGit depending on OS */
-   private val gitCommand = if (System.getProperty("os.name").startsWith("Windows")) new WindowsGit() else UnixGit
+   private val gitCommand = OS.detect match {case Windows => new WindowsGit() case _ => UnixGit}
    private def git(dir: File, args: String*): Boolean = {
       val command = gitCommand(args:_*)
       log(command.mkString(" ") + " in " + dir.toString)
@@ -61,7 +61,7 @@ class OAF(val uri: URI, val root: File, val report: Report) extends Logger {
    def ssh = "git@" + uri.authority.getOrElse("") + ":"
    /** initializes a repository */
    def init(pathS: String) {
-      val path = FilePath(utils.stringToList(pathS, "/"))
+      val path = utils.stringToList(pathS, "/")
       val repos = root / path
       val readme = "README.txt"
       val mf = "MANIFEST.MF"

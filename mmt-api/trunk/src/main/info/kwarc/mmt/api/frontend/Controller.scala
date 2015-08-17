@@ -124,6 +124,9 @@ class Controller extends ROController with Logger {
   def getEnvVar(name: String): Option[String] =
     state.environmentVariables.get(name) orElse Option(System.getenv.get(name))
 
+  /** @return the current OAF root */
+  def getOAF = state.oaf
+  
   /** initially the current working directory
     *
     * @param h sets the current home directory relative to which path names in commands are executed
@@ -184,14 +187,10 @@ class Controller extends ROController with Logger {
     } catch {
       case NotFound(p) => throw GetError(p.toPath + " not known")
     }
-
     //def imports(from: Term, to: Term) = library.imports(from, to)
     def visible(to: Term) = library.visible(to)
-
     def getImplicit(from: Term, to: Term) = library.getImplicit(from, to)
-
     def preImage(p: GlobalName) = library.preImage(p)
-
     def getDeclarationsInScope(mod: Term) = library.getDeclarationsInScope(mod)
   }
   private val self = this

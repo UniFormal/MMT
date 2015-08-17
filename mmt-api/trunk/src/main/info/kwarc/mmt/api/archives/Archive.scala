@@ -54,7 +54,7 @@ abstract class WritableArchive extends ROArchive {
       case Some(p) => root / p
       case None => this / r.default
     }
-    case Dim(path@_*) => root / FilePath(path.toList)
+    case Dim(path@_*) => root / path.toList
   }
 
   def includeDir(n: String): Boolean = !List(".svn", ".mmt", ".git").contains(n)

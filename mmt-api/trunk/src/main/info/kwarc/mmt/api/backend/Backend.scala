@@ -64,7 +64,7 @@ case class LocalCopy(scheme: String, authority: String, prefix: String, base: Fi
 
   def load(path: Path)(implicit controller: Controller) {
     val uri = path.doc.uri
-    val target = base / FilePath(getSuffix(localBase, uri))
+    val target = base / getSuffix(localBase, uri)
     val reader = if (target.isFile) File.Reader(target)
     else if (target.isDirectory) {
       val entries = target.list.toList.sorted.diff(List(".svn"))
