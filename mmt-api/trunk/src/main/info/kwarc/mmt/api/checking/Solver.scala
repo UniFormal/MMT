@@ -522,21 +522,29 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    }
    
    /** simplifies one step overall */
-   private def safeSimplifyOne(tm: Term)(implicit stack: Stack, history: History): Term = tm.head match {
-      case Some(h) =>
-         val rOpt = rules.getByHead(classOf[ComputationRule], h)
-         rOpt foreach {rule =>
-            rule(this)(tm, false) match {
-               case Some(tmS) =>
-                  log("simplified: " + tm + " ~~> " + tmS)
-                  return tmS
-               case None =>
-            }
-         }
-         // no applicable rule, expand a definition
+   private def safeSimplifyOne(tm: Term)(implicit stack: Stack, history: History): Term = {
+      def expandDefinition: Term = {
          val tmE = defExp(tm,outerContext++stack.context)
+         if (tmE hashneq tm)
+            history += ("definition expansion yields: " + presentObj(tm) + " ~~> " + presentObj(tmE))
          tmE
-      case None => tm
+      }
+      tm.head match {
+         case Some(h) =>
+            val rOpt = rules.getByHead(classOf[ComputationRule], h)
+            // use first applicable rule
+            rOpt foreach {rule =>
+               rule(this)(tm, false) match {
+                  case Some(tmS) =>
+                     history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
+                     return tmS
+                  case None =>
+               }
+            }
+            // no applicable rule, expand a definition
+            expandDefinition
+         case None => expandDefinition
+      }
    }
    
    /** special case of the version below where we simplify until an applicable rule is found
