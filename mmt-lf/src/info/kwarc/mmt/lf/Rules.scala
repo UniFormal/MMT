@@ -22,8 +22,9 @@ object Common {
          case Pi(x,a,b) => tpS
          case ApplyGeneral(OMV(m), args) =>
            // check that tp is unknown applied to variables 
-           if (! solver.getUnsolvedVariables.isDeclared(m))
+           if (! solver.getUnsolvedVariables.isDeclared(m)) {
               return tpS
+           }
            args foreach {
               case OMV(u) => 
               case _ => return tpS
@@ -37,8 +38,9 @@ object Common {
               val newVars = Context(VarDecl(mD.name, None, None, None), VarDecl(mC.name, None, None, None))
               solver.addUnknowns(newVars, m)
            }
+           history += ("trying to solve "+m+" as "+solver.presentObj(mSol))
            // solve m in terms of newVars
-           val success = solver.check(Equality(stack, tpS, mSol, Some(OMS(Typed.ktype))))
+           val success = solver.check(Equality(stack, tpS, mSol, Some(OMS(Typed.ktype)))) //TODO does this work for polymorphism?
            if (success) mSol else tpS
          case _ => tpS 
       }
@@ -104,6 +106,9 @@ object ApplyTerm extends InferenceRule(Apply.path, OfType.path) {
                  case Pi(x,a,b) =>
                     if (!covered) solver.check(Typing(stack, t, a))(history + "argument must have domain type")
                     Some(b ^? (x / t))
+                 /*case ApplyGeneral(OMV(u), _) =>
+                    history += "does not look like a function type at this point"
+                    None*/
                  case _ =>
                     val unks = solver.getUnsolvedVariables
                     if (fTPi.freeVars.exists(unks.isDeclared(_))) {
