@@ -25,7 +25,7 @@ class ErrorListForwarder(errorSource: DefaultErrorSource, controller: Controller
          val pos = reg.start
          // We permit the case that errors are found in other files than the current one. So we compute the file path
          val file = controller.backend.resolveLogical(s.ref.container) match {
-            case Some((a, p)) => (a / source / FilePath(p)).toString
+            case Some((a, p)) => (a / source / p).toString
             case None => s.ref.container match {
                case utils.FileURI(f) => f.toString
                case u => u.toString

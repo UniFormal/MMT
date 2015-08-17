@@ -3,7 +3,16 @@ package info.kwarc.mmt.jeditsetup
 import info.kwarc.mmt.api.utils.File._
 import info.kwarc.mmt.api.utils._
 
+/**
+ * install script for jEdit
+ * 
+ * copies jars, modes, abbreviations etc. to jEdit settings directory 
+ */
 object Setup {
+  /**
+   * This code works if run from setup script in the deploy/jedit-plugin folder
+   * @param args the location of the jedit settings folder
+   */
   def main(args: Array[String]) {
     val l = args.length
     val installOpt = if (l >= 1) args(0) match {
@@ -11,13 +20,14 @@ object Setup {
       case "uninstall" => Some(false)
       case _ => None
     } else None
-    if (l != 2 || installOpt.isEmpty) {
-      println("usage: setup (install | uninstall) /JEDIT/SETTINGS/FOLDER")
+    if (l > 3 || installOpt.isEmpty) {
+      println("usage: setup (install | uninstall) /JEDIT/SETTINGS/FOLDER [/DEFAULT/CONTENT/FOLDER]")
       sys.exit
     }
+    val jedit = File(args(1))
+    val contentOpt = if (l == 3) Some(File(args(2))) else None
     val programLocation = File(getClass.getProtectionDomain.getCodeSource.getLocation.getPath).getParentFile
     val setup = programLocation.getParentFile
-    val jedit = File(args(1))
     val install = installOpt.get
 
     println("trying to (un)install from " + setup + " to " + jedit)
@@ -25,10 +35,18 @@ object Setup {
       println("error: not valid directories")
       sys.exit
     }
-
-    /** copies or delete a file depending on install/uninstall */
-    def copyOrDelete(l: List[String]) {
-      val f = FilePath(l)
+    doIt(setup, jedit, install, contentOpt)
+  }
+  
+  /**
+   * @param setup the deploy/jedit-plugin/plugin folder
+   * @param jedit the jEdit settings folder
+   * @param true/false for install/uninstall
+   * @param the folder in which to look for archives
+   */
+  def doIt(setup:File, jedit: File, install: Boolean, contentOpt: Option[File]) {
+    /** copies or deletes a file depending on install/uninstall */
+    def copyOrDelete(f: List[String]) {
       if (install) {
         copy(setup / f, jedit / f)
       } else {
@@ -92,16 +110,26 @@ object Setup {
     val plug = List("plugins", "info.kwarc.mmt.jedit.MMTPlugin")
     copyOrDelete(plug ::: List("startup.msl"))
     val mars = plug ::: List("mars")
-    (setup / FilePath(mars)).list.foreach { e =>
+    (setup / mars).list.foreach { e =>
       if (e.endsWith(".mar"))
         copyOrDelete(mars ::: List(e))
     }
     if (!install) {
-      val d = jedit / FilePath(plug)
+      val d = jedit / plug
       if (d.isDirectory) {
         d.deleteDir
         println("deleting directory " + d)
       }
+    }
+    
+    if (install && contentOpt.isDefined) {
+       println("adding property for content folder")
+       val propsFile = jedit / "properties"
+       val propsOld = File.read(propsFile)
+       val encoded = contentOpt.get.toString.replace("\\","\\\\").replace(":","\\:").replace("=","\\=")
+       val newValues = "info.kwarc.mmt.jedit.MMTPlugin.archives="+encoded
+       val propsNew = propsOld+"\n"+newValues
+       File.write(propsFile, propsNew)
     }
   }
 

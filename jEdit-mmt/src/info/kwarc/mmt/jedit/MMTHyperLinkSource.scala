@@ -25,7 +25,7 @@ object MMTHyperlink {
           else {
              //resolve logical document id in an archive
              controller.backend.resolveLogical(c) map {
-               case (archive, path) => r.copy(container = FileURI(archive / source / FilePath(path)))
+               case (archive, path) => r.copy(container = FileURI(archive / source / path))
              }
           }
        }

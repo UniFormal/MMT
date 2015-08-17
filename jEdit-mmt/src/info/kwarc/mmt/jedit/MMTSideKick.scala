@@ -13,7 +13,7 @@ import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.utils.{File, FilePath}
+import info.kwarc.mmt.api.utils._
 import org.gjt.sp.jedit._
 import sidekick._
 

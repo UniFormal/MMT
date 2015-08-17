@@ -46,7 +46,8 @@ class MMTPlugin extends EBPlugin with Logger {
       val file = home resolve startup
       controller.handle(ExecFile(file, None))
       errorlist.ErrorSource.registerErrorSource(errorSource)
-      val archives = MMTOptions.archives.get.getOrElse("mars")
+      val archives = MMTOptions.archives.get orElse
+        controller.getOAF.map(_.root.toString) getOrElse "mars"
       controller.handle(AddArchive(home resolve archives))
       // add this only after executing the startup file because the status bar is not available yet
       // this command itself may also not be logged
