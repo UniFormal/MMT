@@ -56,7 +56,8 @@ object Utils {
       } else if (!to.exists || from.lastModified > to.lastModified) {
          Files.copy(from.toPath, to.toPath, REPLACE_EXISTING)
       } else {
-         println("skipped (up-to-date)\n")
+         println("skipped (up-to-date)")
       }
+      println("\n")
    }
 }
