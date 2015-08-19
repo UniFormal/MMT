@@ -11,12 +11,19 @@ object File {
 
 
 object Utils {
+   /** MMT root directory */
    val root = File("..")
+   /** MMT deploy directory */
    val deploy = root/"deploy"
+   /** MMT jEditPlugin release jars directory */
+   val jEditPluginRelease = deploy/"jedit-plugin"/"plugin"/"jars"
    /** These methods are used by the target jedit/install to copy files to the local jEdit installation */
+   /** jars in deploy/main */
    val jEditJars = List("mmt-api.jar", "mmt-lf.jar", "MMTPlugin.jar", "mmt-specware.jar", "mmt-pvs.jar")
+   /** jars in deploy/lib */
    val jEditDeps = List("scala-library.jar","scala-parser-combinators.jar","scala-reflect.jar","scala-xml.jar",
          "tiscaf.jar","lfcatalog.jar")
+   /** copy all jars to jEdit settings directory */
    def installJEditJars {
       val f = File("jedit-settings-folder")
       if (f.exists) {
@@ -25,19 +32,19 @@ object Utils {
          source.close
          val line = lines.find(l => !l.startsWith("//")).get
          val jsf = File(line)/"jars"
-         (jEditJars:::jEditDeps) foreach {n => installJEditJar(jsf, n)}
+         copyJEditJars(jsf)
       } else {
          println("not installed: create a file "+f.toString+" containing the path to jEdit's settings directory")
       }
    }
-   def installJEditJar(jsf: File, name: String) {
-      val f = deploy/"main"/name
-      copy(f, jsf/name)
-   }
+   /** copy all jars to jEditPluginRelease */
    def releaseJEditJars {
-      val pluginRelease = deploy/"jedit-plugin"/"plugin"/"jars"
-      jEditJars.foreach {f => copy(deploy/"main"/f, pluginRelease/f)}
-      jEditDeps.foreach {f => copy(deploy/"lib"/f, pluginRelease/f)}
+      copyJEditJars(jEditPluginRelease)
+   }
+   /** copy all jEdit jars to a directory */
+   def copyJEditJars(to: File) {
+      jEditJars.foreach {f => copy(deploy/"main"/f, to/f)}
+      jEditDeps.foreach {f => copy(deploy/"lib"/f, to/f)}
    }
    /** copy a file */
    def copy(from: File, to: File) {
