@@ -52,7 +52,7 @@ object Utils {
    def copy(from: File, to: File) {
       println(s"copying $from to $to")
       if (!from.exists) {
-         println("error: file to copy not found)
+         println("error: file to copy not found")
       } else if (!to.exists || from.lastModified > to.lastModified) {
          Files.copy(from.toPath, to.toPath, REPLACE_EXISTING)
       } else {
