@@ -22,7 +22,7 @@ object Utils {
    val jEditJars = List("mmt-api.jar", "mmt-lf.jar", "MMTPlugin.jar", "mmt-specware.jar", "mmt-pvs.jar")
    /** jars in deploy/lib */
    val jEditDeps = List("scala-library.jar","scala-parser-combinators.jar","scala-reflect.jar","scala-xml.jar",
-         "tiscaf.jar","lfcatalog.jar")
+         "tiscaf.jar")
    /** copy all jars to jEdit settings directory */
    def installJEditJars {
       val f = File("jedit-settings-folder")
@@ -45,6 +45,7 @@ object Utils {
    def copyJEditJars(to: File) {
       jEditJars.foreach {f => copy(deploy/"main"/f, to/f)}
       jEditDeps.foreach {f => copy(deploy/"lib"/f, to/f)}
+      copy(deploy/"lfcatalog"/"lfcatalog.jar", to/"lfcatalog.jar")
    }
    /** copy a file */
    def copy(from: File, to: File) {
