@@ -51,7 +51,7 @@ object Utils {
       if (!from.exists) {
          println("file to copy not found "+from)
       }
-      if (from.lastModified > to.lastModified) {
+      if (!to.exists || from.lastModified > to.lastModified) {
          Files.copy(from.toPath, to.toPath, REPLACE_EXISTING)
          println(s"copying $from to $to")
       } else {
