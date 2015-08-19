@@ -55,7 +55,7 @@ def commonSettings(nameStr: String) = Seq(
   resourceDirectory in Compile := baseDirectory.value / "resources",
   unmanagedBase := baseDirectory.value / "jars",
   isSnapshot := true,
-  publishTo := Some(Resolver.file("file", new File("../deploy/main"))),
+  publishTo := Some(Resolver.file("file", Utils.deploy/"main")),
   exportJars := true,
   autoAPIMappings := true,
   connectInput in run := true,
@@ -209,10 +209,11 @@ lazy val jedit = (project in file("jEdit-mmt")).
     resourceDirectory in Compile := baseDirectory.value / "src/resources",
     unmanagedJars in Compile ++= jeditJars map (baseDirectory.value / "lib" / _),
     deploy <<= deployPackage("main/MMTPlugin.jar"),
-    release <<= (assembly in Compile) map {jar => deployTo("jedit-plugin/plugin/jars/MMTPlugin.jar")(jar)},
-    assemblyExcludedJars in assembly := {
-      val cp = (fullClasspath in assembly).value
-      cp filter { j => jeditJars.contains(j.data.getName) }
-    },
+    release := Utils.releaseJEditJars,
+//    release <<= (assembly in Compile) map {jar => deployTo("jedit-plugin/plugin/jars/MMTPlugin.jar")(jar)},
+//    assemblyExcludedJars in assembly := {
+//      val cp = (fullClasspath in assembly).value
+//      cp filter { j => jeditJars.contains(j.data.getName) }
+//    },
     install := Utils.installJEditJars
   )
