@@ -6,7 +6,8 @@ import info.kwarc.mmt.api.utils._
 /**
  * install script for jEdit
  * 
- * copies jars, modes, abbreviations etc. to jEdit settings directory 
+ * copies jars, modes, abbreviations etc. to jEdit settings directory
+ * installation is idempotent 
  */
 object Setup {
   /**
@@ -68,17 +69,19 @@ object Setup {
     val jcat = jedit / "modes" / "catalog"
     var newCatalog: List[String] = Nil
     val modeEntries = modeFiles.map(e => "FILE=\"" + e + "\"")
+    def isMMTEntry(line:String) = modeEntries.exists(e => line.contains(e))
+    // read current catalog without MMT entries
     File.ReadLineWise(jcat) { line =>
       if (install) {
         if (line.contains("</MODES>")) {
+          // append MMT modes if installing
           File.ReadLineWise(scat) { l => newCatalog ::= l }
         }
-        newCatalog ::= line
-      } else {
-        if (!modeEntries.exists(e => line.contains(e)))
-          newCatalog ::= line
       }
+      if (!isMMTEntry(line))
+          newCatalog ::= line
     }
+    // write new catalog
     if (!jcat.exists) {
       newCatalog = "</MODES>" :: newCatalog ::: List("<MODES>")
     }
@@ -89,6 +92,7 @@ object Setup {
     val jabb = jedit / "abbrevs"
     var newAbbrevs: List[String] = Nil
     var remove = false
+    // read current abbrevs without MMT abbrevs
     if (jabb.exists) File.ReadLineWise(jabb) { line =>
       if (install)
         newAbbrevs ::= line
@@ -101,9 +105,11 @@ object Setup {
           newAbbrevs ::= line
       }
     }
+    // append MMT abbrevs if installing
     if (install) {
       File.ReadLineWise(sabb) { l => newAbbrevs ::= l }
     }
+    // write new abbrevs
     println("updating " + jabb)
     File.WriteLineWise(jabb, newAbbrevs.reverse)
     // copy/delete pluginFolder
