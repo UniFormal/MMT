@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.utils
 import java.io._
 
 object ShellCommand {
-  private def runInOpt(dir: Option[File], silent: Boolean, command: String*) = {
+  private def runInOpt(dir: Option[File], command: String*)(out: String => Unit) = {
     val pb = new java.lang.ProcessBuilder(command: _*) // use .inheritIO() for debugging
     pb.redirectErrorStream(true)
     dir.foreach { d => pb.directory(d.toJava) }
@@ -18,8 +18,7 @@ object ShellCommand {
       line.isDefined
     }) {
       output.append(line.get)
-      if (!silent)
-         println(line)
+      out(line.get)
     }
 
     proc.waitFor
@@ -36,20 +35,20 @@ object ShellCommand {
    * @param command the command to run
    * @return output+error stream if not successful
    */
-  def run(command: String*): Option[String] = runInOpt(None, false, command: _*)
+  def run(command: String*): Option[String] = runInOpt(None, command: _*){_ => ()}
 
   /**
    * like run
    * @param dir the directory in which to run the command
    */
-  def runIn(dir: File, command: String*): Option[String] = runInOpt(Some(dir), false, command: _*)
+  def runIn(dir: File, command: String*): Option[String] = runInOpt(Some(dir), command: _*){_=>()}
 
   /**
    * like runIn but prints output
    */
-  def runAndPrint(dir: File, command: String*): Option[String] = {
-     println("running in "+dir)
+  def runAndPrint(dir: Option[File], command: String*): Option[String] = {
+     dir.foreach {d => println("running in "+d)}
      println(command.mkString(" "))
-     runInOpt(Some(dir), true, command: _*)
+     runInOpt(dir, command: _*){s => println(s)}
   }
 }

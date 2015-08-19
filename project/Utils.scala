@@ -8,7 +8,9 @@ object Utils {
    def installJEditJars {
       val f = new File("jedit-settings-folder")
       if (f.exists) {
-         val lines = scala.io.Source.fromFile(f).getLines
+         val source = scala.io.Source.fromFile(f)
+         val lines = source.getLines.toList
+         source.close
          val line = lines.find(l => !l.startsWith("//")).get
          val jsf = new File(line + "/jars")
          jEditJars foreach {n => installJEditJar(jsf, n)}

@@ -203,7 +203,7 @@ val install =
   TaskKey[Unit]("install", "copies jedit jars to local jedit installation folder.")
 
 lazy val jedit = (project in file("jEdit-mmt")).
-  dependsOn(mmt).
+  dependsOn(api,lf).
   settings(commonSettings("jEdit-mmt"): _*).
   settings(
     resourceDirectory in Compile := baseDirectory.value / "src/resources",

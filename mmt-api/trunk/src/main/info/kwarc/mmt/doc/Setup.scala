@@ -29,13 +29,13 @@ object Setup {
     println("jEdit settings folder: " + (if (dojEdit) jEditSettingsFolder else "not found"))
     println("")
     
-    println("generating startup.msl file")
+    val startupFile = systemFolder/"deploy"/"main"/"startup.msl"
+    println("generating "+startupFile)
     val startup = s"""// generated startup file
 log console
 log+ oaf
 oaf root $contentFolder
 """
-    val startupFile = systemFolder/"deploy"/"main"/"startup.msl"
     File.write(startupFile, startup)
     println("done\n")
    
@@ -49,7 +49,7 @@ oaf root $contentFolder
     if (dojEdit) {
        val ext = OS.detect match {case Windows => "bat" case _ => "sh"}
        println("installing jEdit plugin")
-       val res = ShellCommand.runAndPrint(systemFolder/"deploy"/"jedit-plugin", "setup."+ext, "install", jEditSettingsFolder.toString, contentFolder.toString)
+       val res = ShellCommand.runAndPrint(None, (systemFolder/"deploy"/"jedit-plugin"/("setup."+ext)).toString, "install", jEditSettingsFolder.toString, contentFolder.toString)
        res.foreach{e => println(e)}
        println("done\n")
        

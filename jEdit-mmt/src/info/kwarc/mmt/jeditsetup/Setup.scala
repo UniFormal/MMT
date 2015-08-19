@@ -110,10 +110,11 @@ object Setup {
     val plug = List("plugins", "info.kwarc.mmt.jedit.MMTPlugin")
     copyOrDelete(plug ::: List("startup.msl"))
     val mars = plug ::: List("mars")
-    (setup / mars).list.foreach { e =>
+    val setupmars = setup / mars 
+    if (setupmars.exists) {setupmars.list.foreach { e =>
       if (e.endsWith(".mar"))
         copyOrDelete(mars ::: List(e))
-    }
+    }}
     if (!install) {
       val d = jedit / plug
       if (d.isDirectory) {
