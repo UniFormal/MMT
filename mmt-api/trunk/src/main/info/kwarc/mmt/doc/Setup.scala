@@ -50,7 +50,6 @@ oaf root $contentFolder
        val ext = OS.detect match {case Windows => "bat" case _ => "sh"}
        println("installing jEdit plugin")
        val res = ShellCommand.runAndPrint(None, (systemFolder/"deploy"/"jedit-plugin"/("setup."+ext)).toString, "install", jEditSettingsFolder.toString, contentFolder.toString)
-       res.foreach{e => println(e)}
        println("done\n")
        
        println("configuring sbt target for rebuilding and reinstalling the jEdit plugin from sources")
