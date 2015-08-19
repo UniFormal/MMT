@@ -3,10 +3,11 @@ import java.nio.file.StandardCopyOption._
 
 case class File(toJava: java.io.File) {
    def /(s: String) = File(new java.io.File(toJava, s))
+   override def toString = toJava.toString
 }
 object File {
    def apply(s: String):File = File(new java.io.File(s))
-   implicit def toJava(f: File) = f.toJava 
+   implicit def toJava(f: File) = f.toJava
 }
 
 
@@ -49,14 +50,13 @@ object Utils {
    }
    /** copy a file */
    def copy(from: File, to: File) {
+      println(s"copying $from to $to")
       if (!from.exists) {
-         println("file to copy not found "+from)
-      }
-      if (!to.exists || from.lastModified > to.lastModified) {
+         println("error: file to copy not found)
+      } else if (!to.exists || from.lastModified > to.lastModified) {
          Files.copy(from.toPath, to.toPath, REPLACE_EXISTING)
-         println(s"copying $from to $to")
       } else {
-         println(s"not copying uptodate file $from to $to")
+         println("skipped (up-to-date)\n")
       }
    }
 }
