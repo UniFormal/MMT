@@ -25,7 +25,7 @@ object Utils {
          source.close
          val line = lines.find(l => !l.startsWith("//")).get
          val jsf = File(line)/"jars"
-         jEditJars foreach {n => installJEditJar(jsf, n)}
+         (jEditJars:::jEditDeps) foreach {n => installJEditJar(jsf, n)}
       } else {
          println("not installed: create a file "+f.toString+" containing the path to jEdit's settings directory")
       }
