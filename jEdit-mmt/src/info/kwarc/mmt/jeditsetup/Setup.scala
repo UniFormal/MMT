@@ -133,7 +133,7 @@ object Setup {
     if (install && contentOpt.isDefined) {
        println("adding property for content folder")
        val propsFile = jedit / "properties"
-       val propsOld = File.read(propsFile)
+       val propsOld = if (propsFile.exists) File.read(propsFile) else ""
        val encoded = contentOpt.get.toString.replace("\\","\\\\").replace(":","\\:").replace("=","\\=")
        val newValues = "info.kwarc.mmt.jedit.MMTPlugin.archives="+encoded
        val propsNew = propsOld+"\n"+newValues
