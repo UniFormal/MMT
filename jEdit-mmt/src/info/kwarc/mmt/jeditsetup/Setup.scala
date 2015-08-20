@@ -71,19 +71,20 @@ object Setup {
     val modeEntries = modeFiles.map(e => "FILE=\"" + e + "\"")
     def isMMTEntry(line:String) = modeEntries.exists(e => line.contains(e))
     // read current catalog without MMT entries
-    File.ReadLineWise(jcat) { line =>
-      if (install) {
-        if (line.contains("</MODES>")) {
-          // append MMT modes if installing
-          File.ReadLineWise(scat) { l => newCatalog ::= l }
-        }
-      }
-      if (!isMMTEntry(line))
-          newCatalog ::= line
-    }
     // write new catalog
     if (!jcat.exists) {
       newCatalog = "</MODES>" :: newCatalog ::: List("<MODES>")
+    } else {
+        File.ReadLineWise(jcat) { line =>
+            if (install) {
+                if (line.contains("</MODES>")) {
+                    // append MMT modes if installing
+                    File.ReadLineWise(scat) { l => newCatalog ::= l }
+                }
+            }
+            if (!isMMTEntry(line))
+            newCatalog ::= line
+        }
     }
     println("updating " + jcat)
     File.WriteLineWise(jcat, newCatalog.reverse)
