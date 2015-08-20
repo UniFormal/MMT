@@ -1,4 +1,4 @@
-import java.io.{File, _}
+import java.io.{BufferedWriter,FileWriter}
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption._
 
@@ -15,8 +15,8 @@ object PostProcessApi {
   /*
    * copies files to deploy folder
    */
-  def deployTo(name: String)(jar: File): Unit = {
-    val tar = new File("../deploy/" + name)
+  def deployTo(name: String)(jar: sbt.File): Unit = {
+    val tar = Utils.deploy / name
     Files.copy(jar.toPath, tar.toPath, REPLACE_EXISTING)
     println("copied file: " + jar)
     println("to file: " + tar)
@@ -39,13 +39,13 @@ object PostProcessApi {
   }
 
   def postProcess(log: Logger) = {
-    val mmtFolder = new File(System.getProperty("user.dir")).getParent
-    val oldPrefix = "file:/" + mmtFolder
+    val mmtFolder = File(System.getProperty("user.dir")).getParentFile
+    val oldPrefix = "file:/" + mmtFolder.toString
     def doFolder(path: File, newPrefix: String): Unit = {
       log.debug("processing: " + path)
       path.list foreach { e =>
         if (!e.startsWith(".")) {
-          val f = new File(path + "/" + e)
+          val f = path / e
           if (f.isDirectory)
             doFolder(f, "../" + newPrefix)
           else if (e.endsWith(".html") && !e.startsWith("index")) {
@@ -61,7 +61,7 @@ object PostProcessApi {
         }
       }
     }
-    val apiDir = new File(mmtFolder + "/doc/api")
+    val apiDir = mmtFolder / "doc" / "api"
     if (apiDir.exists && apiDir.isDirectory) doFolder(apiDir, "../..")
     else log.error("missing api directory: " + apiDir)
   }

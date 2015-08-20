@@ -8,6 +8,7 @@ case class File(toJava: java.io.File) {
 object File {
    def apply(s: String):File = File(new java.io.File(s))
    implicit def toJava(f: File) = f.toJava
+   implicit def fromJava(f: java.io.File) = File(f)
 }
 
 
