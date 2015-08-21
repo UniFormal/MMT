@@ -140,39 +140,16 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       }
       
       val sb = new StringBuilder
-      sb.write("<ul class=\"nav nav-tabs\" role=\"tablist\">")
-      resultNodes.keys.zipWithIndex foreach { p => 
-        sb.write(<li class={if (p._2 == 0) "active" else ""}><a data-target={ "#" + p._1 } style="cursor: pointer;" onclick={ "jQuery(this).tab('show');" }> { p._1 } </a></li>.toString)
-      }
-      sb.write("</ul>")
-      
-            
-      sb.write("<div class=\"tab-content\">")
+      sb.write("<results data-subject=\"" + subject.last + "\">")
       resultNodes.zipWithIndex foreach { p => 
-        sb.write("<div class=\"tab-pane ")
-        sb.write((if (p._2 == 0) "active" else ""))
-        sb.write("\"")
-        sb.write(" id=\"" + p._1._1 + "\">")
+        sb.write("<result data-lang=\"" + p._1._1 + "\">")
         sb.write(p._1._2)
-        sb.write("</div>")
+        sb.write("</result>")
       }
-      sb.write("</div>")
+      sb.write("</results>")
+         
+      val response = sb.get
       
-      
-      val html = if (resultSet.isEmpty) {
-        "<div class=\"error\"> No Results Found </div>" 
-      } else {
-         "<div>" + sb.get + "</div>"
-      }
-      
-      
-      
-      val response_header = <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h4 class="modal-title" id="myModalLabel">{subject.last}</h4>
-        </div>
-      val response = response_header.toString + 
-        "<div class=\"modal-body\" style=\"overflow:auto\"> " + html + " </div>"
       log("Sending Response: " + response)
       Server.XmlResponse(response).aact(tk)
     }
