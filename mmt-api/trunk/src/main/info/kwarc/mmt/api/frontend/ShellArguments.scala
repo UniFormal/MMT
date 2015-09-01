@@ -11,20 +11,20 @@ import java.nio.file.{Files, Paths}
  * @param scalaFiles List of SCALA files to load
  * @param commands List of commands to run
  * @param prompt Should we start a prompt?
- * @param runCleanup Should we run some cleanup
+ * @param runCleanup Should we cleanup running threads and exit after commands have been processed
  */
-class ShellArguments(
-    val help: Boolean,
-    val about: Boolean,
-    
-    val send:Option[Int],
+case class ShellArguments(
+    help: Boolean,
+    about: Boolean,
 
-    val mmtFiles: List[String],
-    val scalaFiles: List[String],
-    val commands: List[String],
+    send:Option[Int],
 
-    val prompt: Boolean,
-    val runCleanup: Boolean
+    mmtFiles: List[String],
+    scalaFiles: List[String],
+    commands: List[String],
+
+    prompt: Boolean,
+    runCleanup: Boolean
 )
 
 object ShellArguments{
@@ -50,8 +50,8 @@ object ShellArguments{
 
   /**
    * Tries to understand an argument from the command line.
-   * @param arg
-   * @return None (in case of a string argument), Some("") in case of an unknown argument or "" in case of a name
+   * @param arg one command line argument
+   * @return None (in case of a string argument), Some("..") in case of a known argument
    */
   private def getCanonicalArgumentName(arg: String): Option[String] = {
     val shortName =
@@ -71,7 +71,7 @@ object ShellArguments{
     }
 
     // otherwise try to lookup a short name.
-    Some(ShortToLongArguments.getOrElse(shortName, ""))
+    ShortToLongArguments.get(shortName)
   }
 
   /**
@@ -87,8 +87,8 @@ object ShellArguments{
     var setHelpAbout = false
 
     // termination behaviour
-    var prompt = false
-    var runCleanup = false
+    var prompt = arguments.isEmpty
+    var runCleanup = true
     var setTerminationBehaviour = false
 
     // files and commands to process
@@ -97,7 +97,7 @@ object ShellArguments{
     var scalaFiles: List[String] = Nil
     var commands: List[String] = Nil
 
-    // a port for senmd
+    // a port for send
     var send:Option[Int] = None
 
     // iterate through the arguments
@@ -113,26 +113,24 @@ object ShellArguments{
 
         // it is not a flag of any kind
         // so just add it as a comma nd
-        case None => {
-          commands = arguments(i) :: commands
-        }
+        case None =>
+          commands = cArg :: commands
 
         // <editor-fold desc="Help && About">
         // the help and about flags
         // are mutually exclusive
 
         // the help flag
-        case Some("help") => {
+        case Some("help") =>
           if (setHelpAbout && about) {
             println("Argument " + cArg + " cannot be used here: Atmost one of --help and --about arguments can be used. ")
             return None
           }
           setHelpAbout = true
           help = true
-        }
 
         // the about flag
-        case Some("about") => {
+        case Some("about") =>
           if (setHelpAbout && help) {
             println("Argument " + cArg + " cannot be used here: Atmost one of --help and --about arguments can be used. ")
             return None
@@ -140,7 +138,6 @@ object ShellArguments{
 
           setHelpAbout = true
           about = true
-        }
 
         // </editor-fold>
 
@@ -148,7 +145,7 @@ object ShellArguments{
         // the shell, noshell and keepalive args
 
         // the shell flag
-        case Some("shell") => {
+        case Some("shell") =>
           if (setTerminationBehaviour) {
             println("Argument " + cArg + " cannot be used here: Atmost one of --shell, --noshell and --keepalive arguments can be used. ")
             return None
@@ -156,22 +153,9 @@ object ShellArguments{
 
           setTerminationBehaviour = true
           prompt = true
-          runCleanup = false
-        }
 
         // the noshell flag
-        case Some("noshell") => {
-          if (setTerminationBehaviour) {
-            println("Argument " + cArg + " cannot be used here: Atmost one of --shell, --noshell and --keepalive arguments can be used. ")
-            return None
-          }
-
-          setTerminationBehaviour = true
-          prompt = false
-          runCleanup = true
-        }
-
-        case Some("keepalive") => {
+        case Some("noshell") =>
           if (setTerminationBehaviour) {
             println("Argument " + cArg + " cannot be used here: Atmost one of --shell, --noshell and --keepalive arguments can be used. ")
             return None
@@ -180,13 +164,22 @@ object ShellArguments{
           setTerminationBehaviour = true
           prompt = false
           runCleanup = false
-        }
+
+        case Some("keepalive") =>
+          if (setTerminationBehaviour) {
+            println("Argument " + cArg + " cannot be used here: Atmost one of --shell, --noshell and --keepalive arguments can be used. ")
+            return None
+          }
+
+          setTerminationBehaviour = true
+          prompt = false
+          runCleanup = false
 
         // </editor-fold>
 
         // <editor-fold desc="Send Command">
         // the send flag
-        case Some("send") => {
+        case Some("send") =>
           if (send.isDefined) {
             println("Argument " + cArg + " cannot be used here: --send can only be used once. ")
             return None
@@ -205,18 +198,16 @@ object ShellArguments{
             try {
               Some(arguments(i).toInt)
             } catch {
-              case e: Exception => {
+              case e: Exception =>
                 println("Argument " + cArg + " cannot be used here: Expected an integer, but found " + arguments(i) + " instead. ")
                 return None
-              }
             }
           }
-        }
         // </editor-fold>
 
         // <editor-fold desc="Load files">
         // the file flag
-        case Some("file") => {
+        case Some("file") =>
           i = i + 1
 
           // must be followed
@@ -230,16 +221,15 @@ object ShellArguments{
 
           // check that it is indeed a file.
           if (!Files.isRegularFile(path)) {
-            println("Argument " + cArg + " cannot be used here: "+ path.toString() + " is not a file. ")
+            println("Argument " + cArg + " cannot be used here: "+ path.toString + " is not a file. ")
             return None
           }
 
           // add it as a string.
-          mmtFiles = path.toAbsolutePath().toString() :: mmtFiles
-        }
+          mmtFiles = path.toAbsolutePath.toString :: mmtFiles
 
         // the mbt flag
-        case Some("mbt") => {
+        case Some("mbt") =>
           i = i + 1
 
           // must be followed
@@ -253,20 +243,18 @@ object ShellArguments{
 
           // check that it is indeed a file.
           if (!Files.isRegularFile(path)) {
-            println("Argument " + cArg + " cannot be used here: "+ path.toString() + " is not a file. ")
+            println("Argument " + cArg + " cannot be used here: "+ path.toString + " is not a file. ")
             return None
           }
 
           // add it as a string.
-          scalaFiles = path.toAbsolutePath().toString() :: scalaFiles
-        }
+          scalaFiles = path.toAbsolutePath.toString :: scalaFiles
 
         // </editor-fold>
 
-        case Some(_) => {
+        case Some(_) =>
           println("Unknown Argument " + cArg)
           return None
-        }
 
       }
 
@@ -274,37 +262,8 @@ object ShellArguments{
       i = i+1
     }
 
-    // if we did not yet set the termination bahaviour we need to do it here.
-    if(!setTerminationBehaviour){
-
-      if(commands.isEmpty){
-        if(mmtFiles.isEmpty && scalaFiles.isEmpty) {
-          // no commands && no files => --shell
-          prompt = true
-          runCleanup = false
-        } else {
-          // no commands && some files => --keepalive
-          prompt = false
-          runCleanup = false
-        }
-      } else {
-        if(mmtFiles.isEmpty && scalaFiles.isEmpty){
-          // some commands && no files => --noshell
-          prompt = false
-          runCleanup = true
-        } else {
-          // some commands && files => --keepalive
-          prompt = false
-          runCleanup = false
-        }
-      }
-
-
-    }
-
-
     // build the shell arguments object and return it
-    Some(new ShellArguments(help, about, send, mmtFiles.reverse, scalaFiles.reverse, commands.reverse, prompt, runCleanup))
+    Some(ShellArguments(help, about, send, mmtFiles.reverse, scalaFiles.reverse, commands.reverse, prompt, runCleanup))
   }
 
 }

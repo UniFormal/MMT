@@ -32,17 +32,14 @@ commands and files to process:
 
 termination behaviour:
 
-The default exit behaviour is determined based on the other arguments given to MMT. If MMT is told to load a file, it
-will execute that file and wait for all threads to finish working. If only a list of commands is given to MMT it will
-run the provided commands and exit immediatly (even if some threads are still running). If no arguments are given to
-MMT, it will start an interactive shell for the user to enter commands in. The default behaviour of MMT can be overriden
+The default exit behaviour is to terminate immediately after COMMANDS have been executed. If no arguments are given to
+MMT, it will start an interactive shell for the user to enter commands. The default behaviour of MMT can be overwritten
 with the following arguments.
 
-  -i, --shell               execute COMMANDS and take further commands on the MMT shell. Default if no commands are
+  -i, --shell               execute COMMANDS and take further commands on the MMT shell. Default if no arguments are
                             provided.
-  -w, --keepalive           execute COMMANDS and terminate after all threads have finished. Default if a file is
-                            loaded.
-  -e, --noshell             execute COMMANDS and exit immediately. Default if only commands are passed to MMT.
+  -w, --keepalive           execute COMMANDS and terminate only after all threads have finished.
+  -e, --noshell             same as --keepalive (for backwards compatibility)
 
 note: any arguments listed here can be given in the form -argument, --argument or /argument syntax.
 """
