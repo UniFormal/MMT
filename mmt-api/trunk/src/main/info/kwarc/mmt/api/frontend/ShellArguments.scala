@@ -14,20 +14,20 @@ import java.nio.file.{Files, Paths}
  * @param runCleanup Should we cleanup running threads and exit after commands have been processed
  */
 case class ShellArguments(
-    help: Boolean,
-    about: Boolean,
+                           help: Boolean,
+                           about: Boolean,
 
-    send:Option[Int],
+                           send: Option[Int],
 
-    mmtFiles: List[String],
-    scalaFiles: List[String],
-    commands: List[String],
+                           mmtFiles: List[String],
+                           scalaFiles: List[String],
+                           commands: List[String],
 
-    prompt: Boolean,
-    runCleanup: Boolean
-)
+                           prompt: Boolean,
+                           runCleanup: Boolean
+                           )
 
-object ShellArguments{
+object ShellArguments {
 
   // a mapping with long_name -> short_name
   private val LongToShortArguments = Map[String, String](
@@ -66,7 +66,7 @@ object ShellArguments{
     }
 
     // if it is a long name, we can return it.
-    if(LongToShortArguments.contains(shortName)){
+    if (LongToShortArguments.contains(shortName)) {
       return Some(shortName)
     }
 
@@ -98,13 +98,13 @@ object ShellArguments{
     var commands: List[String] = Nil
 
     // a port for send
-    var send:Option[Int] = None
+    var send: Option[Int] = None
 
     // iterate through the arguments
     // the old fashioned way
     var i = 0
-    var cArg : String = ""
-    while ( i < arguments.length){
+    var cArg: String = ""
+    while (i < arguments.length) {
       // get the current argument
       cArg = arguments(i)
 
@@ -221,7 +221,7 @@ object ShellArguments{
 
           // check that it is indeed a file.
           if (!Files.isRegularFile(path)) {
-            println("Argument " + cArg + " cannot be used here: "+ path.toString + " is not a file. ")
+            println("Argument " + cArg + " cannot be used here: " + path.toString + " is not a file. ")
             return None
           }
 
@@ -243,7 +243,7 @@ object ShellArguments{
 
           // check that it is indeed a file.
           if (!Files.isRegularFile(path)) {
-            println("Argument " + cArg + " cannot be used here: "+ path.toString + " is not a file. ")
+            println("Argument " + cArg + " cannot be used here: " + path.toString + " is not a file. ")
             return None
           }
 
@@ -259,7 +259,7 @@ object ShellArguments{
       }
 
       // and the next argument
-      i = i+1
+      i = i + 1
     }
 
     // build the shell arguments object and return it
