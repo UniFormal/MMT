@@ -330,7 +330,7 @@ class PdfLatex extends SmsGenerator {
         logFailure(bt.outPath)
       }
       if (pdfFile.exists && pdfFile != bt.outFile)
-        Files.move(pdfFile.toPath, bt.outFile.toPath)
+        Files.copy(pdfFile.toPath, bt.outFile.toPath)
       if (bt.outFile.exists)
         logSuccess(bt.outPath)
     } catch {
