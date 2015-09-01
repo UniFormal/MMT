@@ -324,6 +324,8 @@ class PdfLatex extends SmsGenerator {
         bt.inFile.up, env(bt): _*)
       pb.!(ProcessLogger(line => output.append(line + "\n"),
         line => output.append(line + "\n")))
+      val pdlogFile = bt.inFile.setExtension("pdflog")
+      File.write(pdlogFile, output.toString)
       if (pdfFile.length == 0) {
         bt.errorCont(LatexError("no pdf created", output.toString))
         pdfFile.delete()
