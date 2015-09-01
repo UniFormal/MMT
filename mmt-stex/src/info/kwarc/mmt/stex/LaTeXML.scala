@@ -339,9 +339,9 @@ class PdfLatex extends SmsGenerator {
         bt.errorCont(LatexError(e.toString, output.toString))
         logFailure(bt.outPath)
     }
-    if (pdfFile != bt.outFile) pdfFile.delete()
+    /* if (pdfFile != bt.outFile) pdfFile.delete()
     List("aux", "idx", "log", "out", "thm", "nav", "snm", "toc").
-      foreach(bt.inFile.setExtension(_).delete())
+      foreach(bt.inFile.setExtension(_).delete()) */
   }
 }
 
