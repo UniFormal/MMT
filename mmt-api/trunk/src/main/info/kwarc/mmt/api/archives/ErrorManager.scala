@@ -131,7 +131,7 @@ class ErrorManager extends Extension with Logger {
       val be = BuildError(a, target, fpath.toFile.stripExtension.filepath, errType, lvl, srcR, shortMsg, longMsg, trace)
       bes ::= be
     }
-    if (node.child.isEmpty)
+    if (node.child.isEmpty && emptyErr)
       bes ::= BuildError(a, target, fpath.toFile.stripExtension.filepath, "", 0, None,
         if (emptyErr) "corrupt error file" else "no errors", "", Nil)
     val em = apply(a.id)
