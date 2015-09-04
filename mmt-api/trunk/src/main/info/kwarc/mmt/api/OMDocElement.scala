@@ -113,7 +113,8 @@ trait ContentElement extends StructuralElement {
       ((this, that) match {
         case (a: DeclaredTheory, b: DeclaredTheory) =>
           a.path == b.path && a.meta == b.meta && a.parameters == b.parameters &&
-            a.getDeclarations.length == b.getDeclarations.length
+            a.getDeclarations.length == b.getDeclarations.length &&
+            a.metadata.getAll.length == b.metadata.getAll.length
         case (a: DefinedTheory, b: DefinedTheory) =>
           a.path == b.path && a.parameters == b.parameters
         case (a: View, b: View) =>
