@@ -71,6 +71,8 @@ object Action extends RegexParsers {
         (keymod.substring(0, keymod.length - 1), archives.Update(ifChanged = true, ifHadErrors = false))
       else if (keymod.endsWith("!"))
         (keymod.substring(0, keymod.length - 1), archives.Update(ifChanged = true, ifHadErrors = true))
+      else if (keymod.endsWith("&"))
+        (keymod.substring(0, keymod.length - 1), archives.BuildDepsFirst)
       else
         (keymod, archives.Build)
       ArchiveBuild(ids, key, mod, segs, args)

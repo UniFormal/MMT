@@ -22,6 +22,10 @@ case object Build extends BuildTargetModifier {
   def toString(dim: String): String = dim
 }
 
+case object BuildDepsFirst extends BuildTargetModifier {
+  def toString(dim: String): String = dim + "&"
+}
+
 /** A BuildTarget provides build/update/clean methods that generate one or more dimensions in an [[Archive]]
   * from an input dimension.
   */
@@ -44,6 +48,9 @@ abstract class BuildTarget extends FormatBasedExtension {
   /** clean this target in a given archive */
   def clean(a: Archive, in: FilePath): Unit
 
+  /** build this target in a given archive but build dependencies first */
+  def buildDepsFirst(arch: Archive, in: FilePath): Unit = {}
+
   /** the main function to run the build target
     *
     * @param modifier chooses build, clean, or update
@@ -55,6 +62,7 @@ abstract class BuildTarget extends FormatBasedExtension {
       case up: Update => update(arch, up, in)
       case Clean => clean(arch, in)
       case Build => build(arch, in)
+      case BuildDepsFirst => buildDepsFirst(arch, in)
     }
   }
 
@@ -125,7 +133,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   protected def getFolderOutFile(a: Archive, inPath: FilePath) = a / outDim / inPath / (folderName + "." + outExt)
 
-  protected def getOutPath(a: Archive, outFile: File) = {new FilePath(a.root.relativize(outFile).segments)}
+  protected def getOutPath(a: Archive, outFile: File) = a.root.relativize(outFile).filepath
 
   protected def getErrorFile(a: Archive, inPath: FilePath) = (a / errors / key / inPath).addExtension("err")
 
@@ -306,6 +314,10 @@ class MetaBuildTarget extends BuildTarget {
 
   def build(a: Archive, in: FilePath): Unit = {
     targets.foreach { t => t.build(a, path(t, in)) }
+  }
+
+  override def buildDepsFirst(a: Archive, in: FilePath): Unit = {
+    targets.foreach { t => t.buildDepsFirst(a, path(t, in)) }
   }
 
   def update(a: Archive, up: Update, in: FilePath): Unit = {

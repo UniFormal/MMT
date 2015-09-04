@@ -36,6 +36,20 @@ abstract class Importer extends TraversingBuildTarget {
     */
   def importDocument(bt: BuildTask, index: Document => Unit): Unit
 
+  override def buildDepsFirst(a: Archive, in: FilePath = EmptyPath): Unit = {
+    def getFilesRec(in: FilePath): Set[(Archive, FilePath)] = {
+      val inFile = a / inDim / in
+      if (inFile.isDirectory && includeDir(inFile.getName))
+        inFile.list.flatMap(n => getFilesRec(FilePath(in.segments ::: List(n)))).toSet
+      else if (inFile.isFile && includeFile(inFile.getName))
+        Set((a, in))
+      else Set.empty
+    }
+    // includeFile will be checked by build again (as was already checked during dependency analysis)
+    val ts = Relational.getDeps(controller, getFilesRec(in))
+    ts foreach (_.toList.sortBy(_.toString()).foreach(p => build(p._1, p._2)))
+  }
+
   def buildFile(bf: BuildTask): Unit = {
     importDocument(bf, doc => indexDocument(bf.archive, doc, bf.inPath))
   }
