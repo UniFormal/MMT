@@ -108,9 +108,8 @@ class SmsGenerator extends TraversingBuildTarget {
     val sty = "STEXSTYDIR"
     val tex = "TEXINPUTS"
     val styEnv = sysEnv(sty)
-    val styRest = if (styEnv.isEmpty) "" else c + styEnv
     List(
-      sty -> (stexStyDir(bt).toString() + styRest),
+      sty -> (if (styEnv.isEmpty) stexStyDir(bt).toString else styEnv),
       tex -> (".//" + c + styPath(bt) + c + stexStyDir(bt) + "//"
         + c + sysEnv(tex)))
   }
