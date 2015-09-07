@@ -56,7 +56,7 @@ object STeXLookupError {
 class STeXImporter extends Importer {
   val key: String = "stex-omdoc"
   override val logPrefix = "steximporter"
-  //override val inDim = RedirectableDimension("latexml")
+  override val inDim = RedirectableDimension("latexml")
 
   def inExts = List("omdoc") //stex/latexml generated omdoc
 
@@ -66,6 +66,7 @@ class STeXImporter extends Importer {
   }
 
   var docCont: Map[DPath, Document => Unit] = Nil.toMap
+  var firstRun = true
 
   override def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath): Unit = {
     modifier match {
@@ -74,7 +75,9 @@ class STeXImporter extends Importer {
       case Build =>
         //running twice, first to load all theories, then to successfully parse objects
         build(arch, in)
+        firstRun = false
         build(arch, in)
+        firstRun = true
     }
   }
 
@@ -87,7 +90,7 @@ class STeXImporter extends Importer {
       src.close()
       translateDocument(node)(bt.narrationDPath, bt.errorCont)
       val doc = controller.getDocument(bt.narrationDPath)
-      if (!sTeX.inSmglom(doc.path) || sTeX.getLanguage(doc.path).isDefined) {
+      if (firstRun || !sTeX.inSmglom(doc.path) || sTeX.getLanguage(doc.path).isDefined) {
         //don't index smglom signatures, will call manually after bindings are added
         cont(doc)
       }
