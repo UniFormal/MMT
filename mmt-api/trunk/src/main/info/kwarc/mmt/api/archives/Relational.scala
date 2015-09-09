@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.{Controller, Extension}
+import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.utils._
@@ -61,8 +61,15 @@ class ArchiveDeps extends Extension {
     builder.start(Nil)
     // maybe sort archives in dependency order via "dependencies" property
     Relational.getArchives(controller).foreach { a =>
+      // read relational for stex
+      a.readRelational(EmptyPath, controller, "rel")
       builder(Build, a, EmptyPath)
     }
+    /* here we clean memory to avoid conflicts with subsequent builds.
+     * without it nat.mmt results in several "error: invalid unit:" */
+    controller.memory.content.clear
+    controller.memory.narration.clear
+    // TODO: avoid memory usage and add dependencies (to be computed) directly in StructureParser
   }
 
   /** simple collect dependencies when starting this extension */
