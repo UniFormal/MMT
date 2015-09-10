@@ -125,8 +125,8 @@ class Controller extends ROController with Logger {
     state.environmentVariables.get(name) orElse Option(System.getenv.get(name))
 
   /** @return the current OAF root */
-  def getOAF = state.oaf
-  
+  def getOAF: Option[OAF] = state.oaf
+
   /** initially the current working directory
     *
     * @param h sets the current home directory relative to which path names in commands are executed
@@ -187,10 +187,14 @@ class Controller extends ROController with Logger {
     } catch {
       case NotFound(p) => throw GetError(p.toPath + " not known")
     }
+
     //def imports(from: Term, to: Term) = library.imports(from, to)
     def visible(to: Term) = library.visible(to)
+
     def getImplicit(from: Term, to: Term) = library.getImplicit(from, to)
+
     def preImage(p: GlobalName) = library.preImage(p)
+
     def getDeclarationsInScope(mod: Term) = library.getDeclarationsInScope(mod)
   }
   private val self = this
@@ -284,9 +288,9 @@ class Controller extends ROController with Logger {
       e match {
         case nw: ContentElement =>
           localLookup.getO(e.path) match {
-              //TODO localLookup yields a generated Constant when retrieving assignments in a view, which old.compatible(nw) false due to having different origin
-              //probably introduced when changing the representation of paths in views
-              //might also be because old is read from .omdoc due to dependency from checking earlier item and nw is read from .mmt when checking nw
+            //TODO localLookup yields a generated Constant when retrieving assignments in a view, which old.compatible(nw) false due to having different origin
+            //probably introduced when changing the representation of paths in views
+            //might also be because old is read from .omdoc due to dependency from checking earlier item and nw is read from .mmt when checking nw
             case Some(old) =>
               /* optimization for change management
                * if e.path is already loaded but inactive, and the new e is compatible with it,
@@ -331,26 +335,23 @@ class Controller extends ROController with Logger {
 
   /** deletes a document or module from Memory
     *
-    * no change management except that the deletions of scoped declarations are recursive
-    * in particular, the deletion of a document also deletes its subdocuments and modules
+    * no change management, deletions are non-recursive
     */
   def delete(p: Path) {
     val seOpt = localLookup.getO(p)
     p match {
       case d: DPath => docstore.delete(d)
-      case m: MPath => library.delete(m)
-      case s: GlobalName => library.delete(s)
-      case cp: CPath => library.delete(cp)
+      case _ =>
+        library.delete(p)
+        localLookup.getO(p) foreach { se =>
+          notifyListeners.onDelete(se)
+        }
     }
-    seOpt foreach { se =>
-      notifyListeners.onDelete(se)
-    }
-    //depstore.deleteSubject(p)
   }
 
   /** clears the state */
   def clear() {
-    memory.clear
+    memory.clear()
     notifyListeners.onClear()
   }
 
