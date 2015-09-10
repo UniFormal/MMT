@@ -51,8 +51,8 @@ class SmsGenerator extends TraversingBuildTarget {
     SmsTopKeys.map("\\\\end\\{" + _ + "\\}")
     ).mkString("|").r
 
-  private val encodings = List(Charset.defaultCharset.toString, "UTF-8",
-    "UTF-16", "ISO-8859-1").distinct
+  private val encodings = List("ISO-8859-1", Charset.defaultCharset.toString, "UTF-8",
+    "UTF-16").distinct
 
   private def createSms(bt: BuildTask, encs: List[String]): Unit = {
     val readMsg = "reading " + bt.inPath
