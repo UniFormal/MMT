@@ -494,9 +494,8 @@ class Controller extends ROController with Logger {
               }
               notifyListeners.onArchiveOpen(a)
             }
-          case ArchiveBuild(ids, key, mod, inArgs, args) => ids.foreach { id =>
+          case ArchiveBuild(ids, key, mod, in) => ids.foreach { id =>
             val arch = backend.getArchive(id) getOrElse (throw GetError("archive not found: " + id))
-            val in = FilePath(inArgs)
             key match {
               case "check" => arch.check(in, this)
               case "validate" => arch.validate(in, this)
@@ -509,11 +508,11 @@ class Controller extends ROController with Logger {
                 arch.readRelational(in, this, "occ")
                 log("done reading relational index")
               case "integrate" => arch.integrateScala(this, in)
-              case "test" =>
-                if (inArgs.length != 1)
+              case "test" => // misuse of filepath parameter
+                if (in.segments.length != 1)
                   logError("exactly 1 parameter required, found " + in)
                 else
-                  arch.loadJava(this, inArgs.head)
+                  arch.loadJava(this, in.segments.head)
               case "close" =>
                 val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
                 backend.closeArchive(id)

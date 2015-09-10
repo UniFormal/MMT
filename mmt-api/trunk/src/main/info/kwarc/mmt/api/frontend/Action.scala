@@ -61,10 +61,10 @@ object Action extends RegexParsers {
 
   private def archopen = "archive" ~> "add" ~> file ^^ { f => AddArchive(f) }
 
-  //deprecated, use mathpath archive
-  private def archbuild = "build" ~> archiveList ~ str ~ (str ?) ~ (str *) ^^ {
-    case ids ~ keymod ~ in ~ args =>
-      val segs = stringToList(in.getOrElse(""), "/")
+  private def optFilePath = (str ?) ^^ { case in => FilePath(stringToList(in.getOrElse(""), "/")) }
+
+  private def archbuild = "build" ~> archiveList ~ str ~ optFilePath ^^ {
+    case ids ~ keymod ~ in =>
       val (key, mod) = if (keymod.startsWith("-"))
         (keymod.substring(1), archives.Clean)
       else if (keymod.endsWith("*"))
@@ -75,13 +75,12 @@ object Action extends RegexParsers {
         (keymod.substring(0, keymod.length - 1), archives.BuildDepsFirst)
       else
         (keymod, archives.Build)
-      ArchiveBuild(ids, key, mod, segs, args)
+      ArchiveBuild(ids, key, mod, in)
   }
 
-  private def archdim = "archive" ~> archiveList ~ dimension ~ (str ?) ^^ {
+  private def archdim = "archive" ~> archiveList ~ dimension ~ optFilePath ^^ {
     case id ~ dim ~ s =>
-      val segs = stringToList(s.getOrElse(""), "/")
-      ArchiveBuild(id, dim, archives.Build, segs)
+      ArchiveBuild(id, dim, archives.Build, s)
   }
 
   private def dimension = "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
@@ -441,8 +440,9 @@ case class AddArchive(folder: java.io.File) extends Action {
 }
 
 /** builds a dimension in a previously opened archive */
-case class ArchiveBuild(ids: List[String], dim: String, modifier: archives.BuildTargetModifier, in: List[String], params: List[String] = Nil) extends Action {
-  override def toString: String = "build " + ids.mkString("[", ",", "]") + " " + modifier.toString(dim) + (if (in.isEmpty) "" else in.mkString(" ", "/", ""))
+case class ArchiveBuild(ids: List[String], dim: String, modifier: archives.BuildTargetModifier, in: FilePath = EmptyPath) extends Action {
+  override def toString: String = "build " + ids.mkString("[", ",", "]") + " " + modifier.toString(dim) +
+    (if (in.segments.isEmpty) "" else " " + in)
 }
 
 /** builds a dimension in a previously opened archive */
