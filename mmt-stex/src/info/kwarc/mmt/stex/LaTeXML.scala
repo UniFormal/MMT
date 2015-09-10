@@ -13,14 +13,11 @@ import info.kwarc.mmt.api.utils._
 import scala.sys.process.{Process, ProcessLogger}
 import scala.util.matching.Regex
 
-
-class SmsGenerator extends TraversingBuildTarget {
+/** common code for sms, latexml und pdf generation */
+abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   val localpathsFile = "localpaths.tex"
-  val key = "sms"
   val inDim = source
-  val outDim: ArchiveDimension = source
   protected val c = java.io.File.pathSeparator
-  override val outExt = "sms"
 
   protected case class LatexError(s: String, l: String) extends ExtensionError(key, s) {
     override val extraMessage = l
@@ -38,6 +35,65 @@ class SmsGenerator extends TraversingBuildTarget {
     n.endsWith(".tex") && !n.endsWith(localpathsFile) && !n.startsWith("all.")
 
   override def includeDir(n: String): Boolean = !n.endsWith("tikz")
+
+  protected def mathHubDir(bt: BuildTask): File = bt.archive.baseDir.up
+
+  protected def extBase(bt: BuildTask): File = mathHubDir(bt) / "ext"
+
+  protected def stexStyDir(bt: BuildTask): File = extBase(bt) / "sTeX" / "sty"
+
+  protected def styPath(bt: BuildTask): File = mathHubDir(bt) / "sty"
+
+  protected def env(bt: BuildTask): List[(String, String)] = {
+    val sty = "STEXSTYDIR"
+    val tex = "TEXINPUTS"
+    val styEnv = sysEnv(sty)
+    List(
+      sty -> (if (styEnv.isEmpty) stexStyDir(bt).toString else styEnv),
+      tex -> (".//" + c + styPath(bt) + c + stexStyDir(bt) + "//"
+        + c + sysEnv(tex)))
+  }
+
+  protected def createLocalPaths(bt: BuildTask): Unit = {
+    val dir = bt.inFile.up
+    val fileName = dir / localpathsFile
+    val a = bt.archive
+    val repoDir = a.root
+    val groupRepo = a.groupDir.getName + "/" + repoDir.getName + "}"
+    val text: List[String] = List(
+      "% this file defines root path local repository",
+      "\\defpath{MathHub}{" + a.baseDir.getPath + "}",
+      "\\mhcurrentrepos{" + groupRepo,
+      "\\input{" + repoDir.getPath + "/lib/WApersons}",
+      "% we also set the base URI for the LaTeXML transformation",
+      "\\baseURI[\\MathHub{}]{https://mathhub.info/" + groupRepo
+    )
+    if (!fileName.exists()) {
+      File.WriteLineWise(fileName, text)
+      log("created file " + fileName)
+    }
+  }
+
+  protected def getAmbleFile(preOrPost: String, bt: BuildTask): File = {
+    val repoDir = bt.archive.root
+    val lang: Option[String] = bt.inFile.stripExtension.getExtension
+    val filePrefix = repoDir / "lib" / preOrPost
+    val defaultFile = filePrefix.setExtension("tex")
+    if (lang.isDefined) {
+      val langFile = filePrefix.setExtension(lang.get + ".tex")
+      if (langFile.exists)
+        langFile
+      else defaultFile
+    }
+    else defaultFile
+  }
+}
+
+/** sms generation */
+class SmsGenerator extends LaTeXBuildTarget {
+  val key = "sms"
+  val outDim: ArchiveDimension = source
+  override val outExt = "sms"
 
   private val SmsKeys: List[String] = List(
     "guse", "gadopt", "symdef", "abbrdef", "symvariant", "keydef", "listkeydef",
@@ -95,66 +151,13 @@ class SmsGenerator extends TraversingBuildTarget {
         logFailure(bt.outPath)
     }
   }
-
-  protected def mathHubDir(bt: BuildTask): File = bt.archive.baseDir.up
-
-  protected def extBase(bt: BuildTask): File = mathHubDir(bt) / "ext"
-
-  protected def stexStyDir(bt: BuildTask): File = extBase(bt) / "sTeX" / "sty"
-
-  protected def styPath(bt: BuildTask): File = mathHubDir(bt) / "sty"
-
-  protected def env(bt: BuildTask): List[(String, String)] = {
-    val sty = "STEXSTYDIR"
-    val tex = "TEXINPUTS"
-    val styEnv = sysEnv(sty)
-    List(
-      sty -> (if (styEnv.isEmpty) stexStyDir(bt).toString else styEnv),
-      tex -> (".//" + c + styPath(bt) + c + stexStyDir(bt) + "//"
-        + c + sysEnv(tex)))
-  }
-
-  protected def createLocalPaths(bt: BuildTask): Unit = {
-    val dir = bt.inFile.up
-    val fileName = dir / localpathsFile
-    val a = bt.archive
-    val repoDir = a.root
-    val groupRepo = a.groupDir.getName + "/" + repoDir.getName + "}"
-    val text: List[String] = List(
-      "% this file defines root path local repository",
-      "\\defpath{MathHub}{" + a.baseDir.getPath + "}",
-      "\\mhcurrentrepos{" + groupRepo,
-      "\\input{" + repoDir.getPath + "/lib/WApersons}",
-      "% we also set the base URI for the LaTeXML transformation",
-      "\\baseURI[\\MathHub{}]{https://mathhub.info/" + groupRepo
-    )
-    if (!fileName.exists()) {
-      File.WriteLineWise(fileName, text)
-      log("created file " + fileName)
-    }
-  }
-
-  protected def getAmbleFile(preOrPost: String, bt: BuildTask): File = {
-    val repoDir = bt.archive.root
-    val lang: Option[String] = bt.inFile.stripExtension.getExtension
-    val filePrefix = repoDir / "lib" / preOrPost
-    val defaultFile = filePrefix.setExtension("tex")
-    if (lang.isDefined) {
-      val langFile = filePrefix.setExtension(lang.get + ".tex")
-      if (langFile.exists)
-        langFile
-      else defaultFile
-    }
-    else defaultFile
-  }
 }
 
-/** importer wrapper for stex
-  */
-class LaTeXML extends SmsGenerator {
-  override val key = "latexml"
+/** importer wrapper for stex */
+class LaTeXML extends LaTeXBuildTarget {
+  val key = "latexml"
   override val outExt = "omdoc"
-  override val outDim = RedirectableDimension("latexml")
+  val outDim = RedirectableDimension("latexml")
   // the latexml client
   private var latexmlc = "latexmlc"
   private var expire = "10"
@@ -260,10 +263,8 @@ class LaTeXML extends SmsGenerator {
       }
     }
 
-  /**
-   * Compile a .tex file to OMDoc
-   */
-  override def buildFile(bt: BuildTask): Unit = {
+  /** Compile a .tex file to OMDoc */
+  def buildFile(bt: BuildTask): Unit = {
     val lmhOut = bt.inFile.setExtension("omdoc")
     val logFile = bt.inFile.setExtension("ltxlog")
     val logOutFile = bt.outFile.setExtension("ltxlog")
@@ -298,17 +299,18 @@ class LaTeXML extends SmsGenerator {
   }
 }
 
-class PdfLatex extends SmsGenerator {
-  override val key = "pdflatex"
+/** pdf generation */
+class PdfLatex extends LaTeXBuildTarget {
+  val key = "pdflatex"
   override val outExt = "pdf"
-  override val outDim = Dim("export", key, inDim.toString)
+  val outDim = Dim("export", key, inDim.toString)
   private var pdflatexPath: String = "xelatex"
 
   override def start(args: List[String]): Unit = {
     pdflatexPath = getFromFirstArgOrEnvvar(args, "PDFLATEX", pdflatexPath)
   }
 
-  override def buildFile(bt: BuildTask): Unit = {
+  def buildFile(bt: BuildTask): Unit = {
     val pdfFile = bt.inFile.setExtension("pdf")
     pdfFile.delete()
     bt.outFile.delete()
@@ -343,6 +345,7 @@ class PdfLatex extends SmsGenerator {
     /* if (pdfFile != bt.outFile) pdfFile.delete()
     List("aux", "idx", "log", "out", "thm", "nav", "snm", "toc").
       foreach(bt.inFile.setExtension(_).delete()) */
+    // TODO: override clean
   }
 }
 
@@ -389,7 +392,7 @@ class LaTeXMLAndSTeX extends Importer {
       case Clean =>
         latexmlBuilder.clean(arch, in)
         stexImporter.clean(arch, in)
-      case Build =>
+      case _ =>
         latexmlBuilder.build(arch, in)
         //running twice, first to load all theories, then to successfully parse objects
         stexImporter.build(arch, in)
