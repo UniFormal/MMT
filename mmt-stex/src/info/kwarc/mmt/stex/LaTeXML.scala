@@ -297,6 +297,16 @@ class LaTeXML extends LaTeXBuildTarget {
       if (logFile != logOutFile) Files.move(logFile.toPath, logOutFile.toPath)
     }
   }
+
+  override def clean(a: Archive, in: FilePath = EmptyPath): Unit = {
+    a.traverse[Unit](outDim, in, TraverseMode(Archive.extensionIs("ltxlog"), includeDir, parallel = true))(
+    { c => cleanLogFile(a, c) }, { case _ => })
+    super.clean(a, in)
+  }
+
+  def cleanLogFile(arch: Archive, curr: Current): Unit = {
+    curr.file.delete()
+  }
 }
 
 /** pdf generation */
@@ -325,8 +335,8 @@ class PdfLatex extends LaTeXBuildTarget {
         bt.inFile.up, env(bt): _*)
       pb.!(ProcessLogger(line => output.append(line + "\n"),
         line => output.append(line + "\n")))
-      val pdlogFile = bt.inFile.setExtension("pdflog")
-      File.write(pdlogFile, output.toString)
+      val pdflogFile = bt.inFile.setExtension("pdflog")
+      File.write(pdflogFile, output.toString)
       if (pdfFile.length == 0) {
         bt.errorCont(LatexError("no pdf created", output.toString))
         pdfFile.delete()
@@ -342,10 +352,18 @@ class PdfLatex extends LaTeXBuildTarget {
         bt.errorCont(LatexError(e.toString, output.toString))
         logFailure(bt.outPath)
     }
-    /* if (pdfFile != bt.outFile) pdfFile.delete()
-    List("aux", "idx", "log", "out", "thm", "nav", "snm", "toc").
-      foreach(bt.inFile.setExtension(_).delete()) */
-    // TODO: override clean
+  }
+
+  override def clean(a: Archive, in: FilePath = EmptyPath): Unit = {
+    a.traverse[Unit](inDim, in, TraverseMode(Archive.extensionIs("tex"), includeDir, parallel = true))(
+    { c => cleanFileInSource(a, c) }, { case _ => })
+    super.clean(a, in)
+  }
+
+  def cleanFileInSource(arch: Archive, curr: Current): Unit = {
+    val f = arch / inDim / curr.path
+    List("aux", "idx", "log", "out", "pdf", "pdflog", "thm", "nav", "snm", "toc").
+      foreach(f.setExtension(_).delete())
   }
 }
 
