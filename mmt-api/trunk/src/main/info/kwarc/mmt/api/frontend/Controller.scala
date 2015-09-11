@@ -509,10 +509,17 @@ class Controller extends ROController with Logger {
               }
               notifyListeners.onArchiveOpen(a)
             }
-          case FileBuild(key, mod, files) => getBuildTarget(key) foreach (buildTarget =>
-            files.flatMap(f => backend.splitFile(f.getCanonicalFile)) foreach { case (root, in) =>
-              getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
-            })
+          case FileBuild(key, mod, files) =>
+            extman.targetToClassWithArgs.get(key) match {
+              case None => logError("unknown dimension " + key + ", ignored")
+              case Some((cls, args)) =>
+                if (args.length > 1) args.tail.foreach(s => extman.addExtension(s, Nil))
+                extman.addExtension(cls, args)
+                getBuildTarget(key) foreach (buildTarget =>
+                  files.flatMap(f => backend.splitFile(f.getCanonicalFile)) foreach { case (root, in) =>
+                    getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
+                  })
+            }
           case ArchiveBuild(ids, key, mod, in) => ids.foreach { id =>
             val arch = backend.getArchive(id) getOrElse (throw GetError("archive not found: " + id))
             key match {

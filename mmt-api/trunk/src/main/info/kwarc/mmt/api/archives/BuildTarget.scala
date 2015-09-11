@@ -300,7 +300,8 @@ class MetaBuildTarget extends BuildTarget {
     _key = args.headOption.getOrElse {
       throw LocalError("at least one argument required")
     }
-    targets = args.tail.map { k => controller.extman.get(classOf[BuildTarget], k).getOrElse {
+    targets = args.tail.map { k =>
+      controller.extman.get(classOf[BuildTarget]).find(_.getClass.getName == k).getOrElse {
       throw LocalError("unknown target: " + k)
     }
     }
