@@ -225,7 +225,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
       val name = root.getName
       val unpackedRoot = folder / (name + "-unpacked")
       // check if root is younger than manifest in unpackedRoot
-      val extract = manifestLocations(root).find(_.isFile) match {
+      val extract = manifestLocations(unpackedRoot).find(_.isFile) match {
         case Some(unpackedManifest) =>
           val mod = Modification(root, unpackedManifest)
           if (mod == Modified) {
