@@ -468,6 +468,21 @@ class Controller extends ROController with Logger {
     report.flush()
   }
 
+  /** get build target */
+  private def getBuildTarget(key: String): Option[BuildTarget] =
+    extman.get(classOf[BuildTarget], key).map(Some(_)).getOrElse {
+      logError("unknown dimension " + key + ", ignored")
+      None
+    }
+
+  /** retrieve or add an Archive by its root file */
+  def getOrAddArchive(root: File): Option[Archive] =
+    backend.getArchiveByRoot(root).map(Some(_)).
+      getOrElse(backend.openArchive(root).map { a =>
+        notifyListeners.onArchiveOpen(a)
+        a
+      }.headOption)
+
   /** executes an Action */
   def handle(act: Action): Unit =
     state.currentActionDefinition match {
@@ -494,6 +509,10 @@ class Controller extends ROController with Logger {
               }
               notifyListeners.onArchiveOpen(a)
             }
+          case FileBuild(key, mod, files) => getBuildTarget(key) foreach (buildTarget =>
+            files.flatMap(f => backend.splitFile(f.getCanonicalFile)) foreach { case (root, in) =>
+              getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
+            })
           case ArchiveBuild(ids, key, mod, in) => ids.foreach { id =>
             val arch = backend.getArchive(id) getOrElse (throw GetError("archive not found: " + id))
             key match {
@@ -517,13 +536,7 @@ class Controller extends ROController with Logger {
                 val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
                 backend.closeArchive(id)
                 notifyListeners.onArchiveClose(arch)
-              case d =>
-                extman.get(classOf[BuildTarget], d) match {
-                  case Some(buildTarget) =>
-                    buildTarget(mod, arch, in)
-                  case None =>
-                    logError("unknown dimension " + d + ", ignored")
-                }
+              case _ => getBuildTarget(key).foreach(_ (mod, arch, in))
             }
           }
           case ArchiveMar(id, file) =>

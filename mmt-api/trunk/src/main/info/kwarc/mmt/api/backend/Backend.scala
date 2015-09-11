@@ -222,7 +222,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     } else if (root.isFile && root.getPath.endsWith(".mar")) {
       // a MAR archive file
       val folder = root.up
-      val name = root.getName
+      val name = root.name
       val unpackedRoot = folder / (name + "-unpacked")
       // check if root is younger than manifest in unpackedRoot
       val extract = manifestLocations(unpackedRoot).find(_.isFile) match {
@@ -258,16 +258,28 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     }
   }
 
+  /** retrieve an Archive by its root file */
+  def getArchiveByRoot(root: File): Option[Archive] = stores collectFirst {
+    case a: Archive if a.root == root => a
+  }
+
   /** retrieve an Archive by its id */
   def getArchive(id: String): Option[Archive] = stores collectFirst {
     case a: Archive if a.properties.get("id").contains(id) => a
   }
 
   /** retrieves all Archives */
-  def getArchives: List[Archive] = stores flatMap {
-    case a: Archive => List(a)
-    case _ => Nil
-  }
+  def getArchives: List[Archive] = stores collect { case a: Archive => a }
+
+  /** split a file name into an archive root and the remaining FilePath */
+  def splitFile(f: File): Option[(File, FilePath)] =
+    if (f.isDirectory && manifestLocations(f).exists(_.isFile))
+      Some((f, EmptyPath))
+    else {
+      Option(f.getParentFile).flatMap(parent =>
+        splitFile(parent) map { case (root, fp) => (root, fp / f.name) })
+    }
+
 
   /**
    * @param p a module URI

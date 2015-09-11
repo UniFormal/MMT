@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.archives.BuildTargetModifier
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation._
@@ -57,25 +58,32 @@ object Action extends RegexParsers {
 
   private def mathpathJava = "java" ~> file ^^ { f => AddMathPathJava(f) }
 
-  private def archive = archopen | archdim | archmar | archbuild
+  private def archive = archopen | archdim | archmar | archbuild | filebuild
 
   private def archopen = "archive" ~> "add" ~> file ^^ { f => AddArchive(f) }
 
   private def optFilePath = (str ?) ^^ { case in => FilePath(stringToList(in.getOrElse(""), "/")) }
 
-  private def archbuild = "build" ~> archiveList ~ str ~ optFilePath ^^ {
-    case ids ~ keymod ~ in =>
-      val (key, mod) = if (keymod.startsWith("-"))
-        (keymod.substring(1), archives.Clean)
-      else if (keymod.endsWith("*"))
-        (keymod.substring(0, keymod.length - 1), archives.Update(ifChanged = true, ifHadErrors = false))
-      else if (keymod.endsWith("!"))
-        (keymod.substring(0, keymod.length - 1), archives.Update(ifChanged = true, ifHadErrors = true))
-      else if (keymod.endsWith("&"))
-        (keymod.substring(0, keymod.length - 1), archives.BuildDepsFirst)
-      else
-        (keymod, archives.Build)
-      ArchiveBuild(ids, key, mod, in)
+  private def keyMod: Parser[(String, BuildTargetModifier)] = str ^^ { case km =>
+    if (km.startsWith("-"))
+      (km.tail, archives.Clean)
+    else if ("*!&".contains(km.last))
+      (km.init, km.last match {
+        case '!' => archives.Update(ifChanged = true, ifHadErrors = true)
+        case '&' => archives.BuildDepsFirst
+        case _ => archives.Update(ifChanged = true, ifHadErrors = false)
+      })
+    else (km, archives.Build)
+  }
+
+  private def archbuild = "build" ~> archiveList ~ keyMod ~ optFilePath ^^ {
+    case ids ~ km ~ in =>
+      ArchiveBuild(ids, km._1, km._2, in)
+  }
+
+  private def filebuild = "rbuild" ~> keyMod ~ (str +) ^^ {
+    case km ~ ins =>
+      FileBuild(km._1, km._2, ins.map(File(_)))
   }
 
   private def archdim = "archive" ~> archiveList ~ dimension ~ optFilePath ^^ {
@@ -121,6 +129,7 @@ object Action extends RegexParsers {
   private def dodefined = "do " ~> str ~ (file ?) ^^ { case s ~ f => Do(f, s) }
 
   private def scala = "scala" ~> ("[^\\n]*" r) ^^ { s => val t = s.trim; Scala(if (t == "") None else Some(t)) }
+
   private def mbt = "mbt" ~> file ^^ { f => MBT(f) }
 
   private def setbase = "base" ~> path ^^ { p => SetBase(p) }
@@ -445,6 +454,11 @@ case class ArchiveBuild(ids: List[String], dim: String, modifier: archives.Build
     (if (in.segments.isEmpty) "" else " " + in)
 }
 
+/** builds a dimension for the given files by opening the archive for each file before building */
+case class FileBuild(dim: String, modifier: archives.BuildTargetModifier, files: List[File]) extends Action {
+  override def toString: String = "rbuild " + modifier.toString(dim) + files.mkString(" ", " ", "")
+}
+
 /** builds a dimension in a previously opened archive */
 case class ArchiveMar(id: String, file: File) extends Action {
   override def toString: String = s"archive $id mar $file"
@@ -468,7 +482,7 @@ case class Scala(init: Option[String]) extends Action {
 
 /** run an .mbt file */
 case class MBT(file: File) extends Action {
-  override def toString: String = "mbt "+file
+  override def toString: String = "mbt " + file
 }
 
 /** start up the HTTP server

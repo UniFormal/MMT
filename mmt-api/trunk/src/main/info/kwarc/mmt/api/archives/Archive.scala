@@ -97,7 +97,7 @@ abstract class WritableArchive extends ROArchive {
                  (onFile: Current => A, onDir: (Current, List[A]) => A = (_: Current, _: List[A]) => ()): Option[A] = {
     val TraverseMode(filter, filterDir, parallel) = mode
     def recurse(n: String): List[A] =
-      traverse(dim, FilePath(in.segments ::: List(n)), mode, sendLog)(onFile, onDir).toList
+      traverse(dim, in / n, mode, sendLog)(onFile, onDir).toList
     val inFile = this / dim / in
     val inFileName = inFile.getName
     if (inFile.isDirectory) {
@@ -144,7 +144,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     log("to do: [CONT -> FLAT]        -> " + inFile)
     if (inFile.isDirectory) {
       inFile.list foreach { n =>
-        if (includeDir(n)) produceFlat(FilePath(in.segments ::: List(n)), controller)
+        if (includeDir(n)) produceFlat(in / n, controller)
       }
     } else if (inFile.getExtension.contains("omdoc")) {
       val mpath = Archive.ContentPathToMMTPath(in)

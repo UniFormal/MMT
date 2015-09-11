@@ -10,10 +10,20 @@ import scala.language.implicitConversions
  */
 case class FilePath(segments: List[String]) {
   def toFile: File = File(toString)
+
   def baseName: String = if (segments.nonEmpty) segments.last else ""
+
   def dirPath: FilePath = FilePath(if (segments.nonEmpty) segments.init else Nil)
+
+  /** append a segment */
+  def /(s: String): FilePath = FilePath(segments ::: List(s))
+
+  /** strip off a leading segment */
+  def down: FilePath = FilePath(if (segments.nonEmpty) segments.tail else Nil)
+
   override def toString: String = segments.mkString("/")
 }
+
 object EmptyPath extends FilePath(Nil)
 
 /** File wraps around java.io.File to extend it with convenience methods
@@ -43,6 +53,7 @@ case class File(toJava: java.io.File) {
 
   /** appends a list of path segments */
   def /(ss: List[String]): File = ss.foldLeft(this) { case (sofar, next) => sofar / next }
+
   /** appends a relative path */
   def /(ss: FilePath): File = this / ss.segments
 
