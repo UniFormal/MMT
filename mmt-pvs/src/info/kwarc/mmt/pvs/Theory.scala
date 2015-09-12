@@ -2,34 +2,77 @@ package info.kwarc.mmt.pvs
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.DeclaredTheory
-import info.kwarc.mmt.api.objects.{OMS, Term, OMID, OMA}
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, DeclaredStructure}
-import info.kwarc.mmt.lf.{ApplySpine, Apply}
-import info.kwarc.mmt.pvs.syntax.Expr
+import info.kwarc.mmt.lf.{Lambda, ApplySpine}
 import utils._
 
 object PVSTheory {
-   val dpath = DPath(URI.http colon "pvs.csl.sri.com")
-   val name = "PVS"
-   val path = dpath ? name
+   val rootdpath = DPath(URI.http colon "pvs.csl.sri.com")
+   val thname = "PVS"
+   val path = rootdpath ? thname
    def sym(s: String) = path ? s
-   val fun = sym("fun")
-   val tm = sym("tm")
-   val prod = sym("prod")
-   val tuple = sym("tuple")
+
+   def makecases(e:Term,sel:List[Term]) = ApplySpine(OMS(sym("makecases")),e,sel.tail.foldRight(sel.head)((t,c) =>
+      ApplySpine(OMS(sym("casetuple")),t,c)))
+   def casematch(head:Term,exp:Term) = ApplySpine(OMS(sym("casematch")),head,exp)
+
+   val tp = sym("tp")
+   val expr = sym("expr")
+   def ofType(t1:Term,tp:Term) = ApplySpine(OMS(sym("ofType")),t1,tp)
+   def constdecl(name:LocalName,home:MPath) =
+      DeclaredStructure(OMID(home),name,OMID(path / LocalName("constdecl")),false)
+
+   def PVSLambda(con:Context,t:Term) = con.foldRight(t)((v,b) => sym("lambda").apply(
+      v.tp.get,Lambda(VarDecl(v.name,Some(OMS(expr)),None,None),b)))
+
+   def forall(con:Context,t:Term) = con.foldRight(t)((v,b) => sym("forall").apply(
+      v.tp.get,Lambda(VarDecl(v.name,Some(OMS(expr)),None,None),b)))
+
+   def casebind(con:Context,t:Term) = con.foldRight(t)((v,b) => sym("casebind").apply(
+      v.tp.get,Lambda(VarDecl(v.name,Some(OMS(expr)),None,None),b)))
+
+   val app = sym("app")
+   val formula = sym("formula")
+
+   def functype(from:Term,to:Term) = ApplySpine(OMS(sym("functype")),from,to)
+   def tptuple(pars:List[Term]) = pars.dropRight(1).foldRight(pars.last)((p,c) => sym("tptuple").apply(p,c))
+   def exprtuple(pars:List[Term]) = pars.dropRight(1).foldRight(pars.last)((p,c) => sym("exprtuple").apply(p,c))
+
+   def recdef(name:LocalName,home:MPath) =
+      DeclaredStructure(OMID(home),name,OMID(path / LocalName("defdecl")),false)
+   //def tpapp(tp:Term,args:List[Term]) = sym("tpapp").apply(tp,exprtuple(args))
+
+   //def tm(t:Term) = sym("tm").apply(t)
+   /*
+   val functype = sym("functype")
+   val tptuple = sym("tptuple")
+   val exprtuple = sym("exprtuple")
    val predsub = sym("predsub")
    val union = sym("union")
    val asType = sym("asType")
    val expr = sym("expr")
    val tp = sym("tp")
    val app = sym("app")
-   //val variable = sym("var")
+   val tpapp = sym("tpapp")
+
+   val fieldapp = sym("fieldapp")
+
+   val ofType = sym("ofType")
+   val cases = sym("cases")
+   def pvscase(name:Term,expr:Term) = ApplySpine(OMS(sym("case")),name,expr)
    val formula = sym("formula")
-   // val LFapply = DPath((URI.http colon "cds.omdoc.org") / "urtheories") ? "LF" ? "apply"
-   val LFarrow = DPath((URI.http colon "cds.omdoc.org") / "urtheories") ? "LF" ? "arrow"
-   // TODO: think about names
    def subtp(th:DeclaredTheory,name:String,of:Term) =
       DeclaredStructure(OMID(th.path), LocalName(name), sym("SubtypeDecl").apply(of), false)
    def ofTypeDecl(th:DeclaredTheory,name:String,of:Term) =
-      DeclaredStructure(OMID(th.path),LocalName(name),sym("ofTypeDecl").apply(of),false)
+      DeclaredStructure(OMID(th.path), LocalName(name), sym("ofTypeDecl").apply(of), false)
+   def defdecl(th:DeclaredTheory, name:String, oftype: Term) =
+      DeclaredStructure(OMID(th.path),LocalName(name),sym("defDecl").apply(oftype),false)
+   def exprtocase(con:Context,name:Term,expr:Term) = PVSLambda(con,sym("exprtocase").apply(name,expr))
+   def casedist(exp:Term, cases:List[Term]) = sym("casedist").apply(exp,cases.tail.foldLeft(cases.head)((c,t) =>
+      ApplySpine(OMS(sym("casetuple")),c,t)))
+
+   def forall(con:Context,t:Term) = con.foldRight(t)((v,b) => sym("forall").apply(
+      v.tp.get,Lambda(VarDecl(v.name,Some(OMS(expr)),None,None),b)))
+      */
 }
