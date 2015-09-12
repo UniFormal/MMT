@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, DeclaredStructure}
-import info.kwarc.mmt.lf.{Lambda, ApplySpine}
+import info.kwarc.mmt.lf.{Arrow, Lambda, ApplySpine}
 import utils._
 
 object PVSTheory {
@@ -12,6 +12,13 @@ object PVSTheory {
    val thname = "PVS"
    val path = rootdpath ? thname
    def sym(s: String) = path ? s
+
+   def pitp(tp1:Term,v:VarDecl,tp2:Term) = sym("pitp").apply(tp1,Lambda(v,tp2))
+
+   val exprastype = sym("exprastype")
+   val predsub = sym("predsub")
+
+   def numberexpr(i:BigInt) = OML(VarDecl(LocalName(i.toString),Some(OMS(sym("number"))),None,None))
 
    def makecases(e:Term,sel:List[Term]) = ApplySpine(OMS(sym("makecases")),e,sel.tail.foldRight(sel.head)((t,c) =>
       ApplySpine(OMS(sym("casetuple")),t,c)))
@@ -29,15 +36,29 @@ object PVSTheory {
    def forall(con:Context,t:Term) = con.foldRight(t)((v,b) => sym("forall").apply(
       v.tp.get,Lambda(VarDecl(v.name,Some(OMS(expr)),None,None),b)))
 
+   def exists(con:Context,t:Term) = con.foldRight(t)((v,b) => sym("exists").apply(
+      v.tp.get,Lambda(VarDecl(v.name,Some(OMS(expr)),None,None),b)))
+
    def casebind(con:Context,t:Term) = con.foldRight(t)((v,b) => sym("casebind").apply(
       v.tp.get,Lambda(VarDecl(v.name,Some(OMS(expr)),None,None),b)))
 
    val app = sym("app")
+   val tpapp = sym("tpapp")
    val formula = sym("formula")
+   val axiom = sym("axiom")
 
    def functype(from:Term,to:Term) = ApplySpine(OMS(sym("functype")),from,to)
    def tptuple(pars:List[Term]) = pars.dropRight(1).foldRight(pars.last)((p,c) => sym("tptuple").apply(p,c))
    def exprtuple(pars:List[Term]) = pars.dropRight(1).foldRight(pars.last)((p,c) => sym("exprtuple").apply(p,c))
+   def recordtype(pars:List[Term]) = sym("recordtype").apply(pars.dropRight(1).foldRight(pars.last)((p,c) => sym("recordfieldtuple").apply(p,c)))
+
+   def makerecordfield(name:LocalName,tp:Term) = ApplySpine(OMS(sym("makerecordfield")),
+      OML(VarDecl(name,Some(Arrow(OMS(PVSTheory.expr),OMS(PVSTheory.expr))),None,None)),tp)
+
+   def recordexpr(fields: List[(OML,Term)]) : Term = {
+      val recflist = fields.map(f => ApplySpine(OMS(sym("definerecordfield")),f._1,f._2))
+      sym("recordexpr").apply(recflist.dropRight(1).foldRight(recflist.last.asInstanceOf[Term])((p,c) => sym("recordfieldtuple").apply(p,c)))
+   }
 
    def recdef(name:LocalName,home:MPath) =
       DeclaredStructure(OMID(home),name,OMID(path / LocalName("defdecl")),false)

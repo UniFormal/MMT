@@ -220,6 +220,23 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             Arrow(contp map (p => PVSTheory.ofType(OMV(p._1),p._2)),PVSTheory.ofType(appl,doType(tp1._internal))))
             th add Constant(th.toTerm,NewName(truename),None,Some(parameters.universalizetp(judg)),None,None)
 
+         case type_def_decl(named,ne,arg_formals,df) =>
+            val truename = NewName(named.id)
+            th add Constant(th.toTerm,truename,None,Some(parameters.universalizetp(OMS(PVSTheory.tp))),
+               Some(parameters.universalizeexpr(doType(df._declared))),None)
+               // TODO: Also declared, because export wrong?
+
+         case type_decl(named,ne) =>
+            th add Constant(th.toTerm,NewName(named.named.id),None,Some(parameters.universalizetp(OMS(PVSTheory.tp))),None,None)
+
+         case axiom_decl(named,assertion) =>
+            val form = doExpr(assertion._formula)
+            val c = Constant(OMID(th.path),NewName(named.named.id),None,Some(parameters.universalizetp(Apply(OMID(PVSTheory.axiom),
+               if (tempcont.nonEmpty) forall(tempcont.distinct,form) else form
+            ))),None,None)
+            tempcont = Context()
+            th add c
+
          case _ => println("TODO Decl: "+d.getClass); sys.exit
       }
    }
@@ -294,9 +311,26 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
                if (ass.isDefined) parameters.apply(ass.get,rettp) else rettp
             }
 
-         case function_type(place, _from, _to) => PVSTheory.functype(doDomain(_from), doType(_to))
+         case function_type(place, _from, _to) => _from match {
+            case tp1:Type => PVSTheory.functype(doDomain(_from), doType(_to))
+            case binding(id,named,tp1) => PVSTheory.pitp(doType(tp1),VarDecl(doName(id),Some(OMS(PVSTheory.expr)),None,None),doType(_to))
+         }
 
          case tuple_type(place, doms) => PVSTheory.tptuple(doms map doDomain)
+
+         case record_type(place,fields) => PVSTheory.recordtype(fields map (field => {
+            val (named,tp1) = (doName(field.named.id),doType(field._type))
+            PVSTheory.makerecordfield(named,tp1)
+         }))
+
+         case expr_as_type(_,expr1,tp1) => ApplySpine(OMS(PVSTheory.exprastype),doExpr(expr1),
+            if (tp1.isDefined) doType(tp1.get) else OMS(sym("notype")))
+
+         case setsubtype(_,_type,_expr) => ApplySpine(OMS(PVSTheory.predsub),doType(_type),doExpr(_expr))
+
+         case type_application(_,tp1,args) => ApplySpine(OMS(PVSTheory.tpapp),doType(tp1),
+            if(args.length==1) doExpr(args.head) else doExpr(tuple_expr("",args))
+         )
 
          case _ => println("TODO: Type "+t.getClass); sys.exit
       }
@@ -345,12 +379,16 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             bindings map(b => VarDecl(doName(b.id),Some(doType(b._type)),None,None)
               ),doExpr(body))
 
+         case exists_expr(place,bindings,body) => PVSTheory.exists(
+            bindings map(b => VarDecl(doName(b.id),Some(doType(b._type)),None,None)
+              ),doExpr(body))
+
          case application(place,funct,arg,infix) => ApplySpine(OMS(PVSTheory.app),doExpr(funct),doExpr(arg))
 
          case name_expr(place, name1, tp1, res) =>
             val (thpath,ass) = doTheoryExpr(res._theory)
             if (thpath == th.path) {
-               if (parameters.pars.contains((doName(name1.id),doType(tp1.get))))
+               if (parameters.pars.contains((doName(name1.id),doType(tp1.get),false)))
                   OMV(doName(name1.id))
                else parameters.apply(OMS(th.path ? doName(name1.id)))
             } else {
@@ -372,10 +410,25 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             else casematch(doExpr(cons),doExpr(_expr))
          }))
 
-         case field_appl_expr(place,id,_expr) =>
+         case field_appl_expr(_,id,_expr) =>
             Apply(OML(VarDecl(doName(id),Some(Arrow(OMS(PVSTheory.expr),OMS(PVSTheory.expr))),None,None)),doExpr(_expr))
 
-         case record_expr(place,ass) => OMS(PVSTheory.sym("INSERTRECORDEXPRHERE")) // TODO, obviously
+         case record_expr(_,_ass) =>
+            val assignments = _ass.map(ass => {
+               val (assignment_args, _expr) = (ass.assignment_args, ass._expr)
+               if (assignment_args.length>1) {println("record_expr: more than one assignment_arg!"); sys.exit}
+               val field = assignment_args.head match {
+                  case field_assign(_,id) => OML(VarDecl(doName(id),Some(Arrow(OMS(PVSTheory.expr),OMS(PVSTheory.expr))),None,None))
+                  case _ => println("record_expr: assignment_arg is not field_assign"); sys.exit
+               }
+               (field,doExpr(_expr))
+            })
+            PVSTheory.recordexpr(assignments)
+
+         case proj_appl_expr(_,_expr,index) =>
+            Apply(OML(VarDecl(doName("PROJ_"+index),Some(Arrow(OMS(PVSTheory.expr),OMS(PVSTheory.expr))),None,None)),doExpr(_expr))
+
+         case number_expr(_,i) => PVSTheory.numberexpr(i)
 
          case _ => println("TODO Expr: "+e.getClass); sys.exit
       }
@@ -392,7 +445,7 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
 
    def doDomain(d:domain)(implicit th:DeclaredTheory) : Term = d match {
       case tp: Type => doType(tp)
-      case b: binding => println("TODO: Binding"); null
+      case binding(id,named,tp1) => println("Binding in Domain!"); sys.exit//doType(tp1)
 
    }
 

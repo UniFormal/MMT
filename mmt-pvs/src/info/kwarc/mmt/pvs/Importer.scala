@@ -17,7 +17,7 @@ class PVSImporter extends Importer {
 
    private var startAt = "/home/raupi/lmh/MathHub/PVS/Prelude/src/pvsxml/K_props"
    def importDocument(bf: BuildTask, index: Document => Unit) {
-      if (bf.inFile.filepath.toString < startAt) return
+ //     if (bf.inFile.filepath.toString < startAt) return
       val d = bf.inFile.name
       val e = try {
          parseXML(bf.inFile)
