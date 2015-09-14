@@ -299,13 +299,13 @@ class LaTeXML extends LaTeXBuildTarget {
   }
 
   override def clean(a: Archive, in: FilePath = EmptyPath): Unit = {
-    a.traverse[Unit](outDim, in, TraverseMode(Archive.extensionIs("ltxlog"), includeDir, parallel = true))(
+    a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel = true))(
     { c => cleanLogFile(a, c) }, { case _ => })
     super.clean(a, in)
   }
 
   def cleanLogFile(arch: Archive, curr: Current): Unit = {
-    curr.file.delete()
+    getOutFile(arch, curr.path).setExtension("ltxlog").delete()
   }
 }
 
@@ -355,7 +355,7 @@ class PdfLatex extends LaTeXBuildTarget {
   }
 
   override def clean(a: Archive, in: FilePath = EmptyPath): Unit = {
-    a.traverse[Unit](inDim, in, TraverseMode(Archive.extensionIs("tex"), includeDir, parallel = true))(
+    a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel = true))(
     { c => cleanFileInSource(a, c) }, { case _ => })
     super.clean(a, in)
   }
