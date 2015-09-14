@@ -485,6 +485,7 @@ class Controller extends ROController with Logger {
 
   private def fileBuildAction(key: String, mod: BuildTargetModifier, files: List[File]): Unit = {
     val ts = key.split("_").toList
+    report.addHandler(ConsoleHandler)
     ts.foreach(subKey =>
     extman.targetToClass.get(subKey) match {
       case None => logError("unknown target " + subKey + " for extension, ignored")
@@ -494,10 +495,9 @@ class Controller extends ROController with Logger {
     })
     if (ts.length > 1) {
       extman.addExtension(
-        "info.kwarc.mmt.api.archives.MetaBuildTarget", key :: ts.map(extman.targetToClass))
+        "info.kwarc.mmt.api.archives.MetaBuildTarget", key :: ts.flatMap(extman.targetToClass.get))
       report.groups += key
     }
-    report.addHandler(ConsoleHandler)
     getBuildTarget(key) foreach (buildTarget =>
           files.flatMap(f => backend.splitFile(f.getCanonicalFile)) foreach { case (root, in) =>
             getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
