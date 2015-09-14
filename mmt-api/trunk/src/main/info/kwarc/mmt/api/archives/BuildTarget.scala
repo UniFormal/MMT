@@ -244,11 +244,13 @@ abstract class TraversingBuildTarget extends BuildTarget {
     * @param curr the outDim directory to be deleted
     *             does nothing by default
     */
-  def cleanDir(a: Archive, curr: Current): Unit = {}
+  def cleanDir(a: Archive, curr: Current): Unit = {
+    delete(getFolderErrorFile(a, curr.path))
+  }
 
   /** recursively delete output files in parallel (!) */
   def clean(a: Archive, in: FilePath = EmptyPath): Unit = {
-    a.traverse[Unit](outDim, in, TraverseMode(Archive.extensionIs(outExt), includeDir, parallel = true))(
+    a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel = true))(
     { c => cleanFile(a, c) }, { case (c, _) => cleanDir(a, c) })
   }
 
