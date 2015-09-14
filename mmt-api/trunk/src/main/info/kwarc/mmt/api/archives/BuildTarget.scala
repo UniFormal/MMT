@@ -34,6 +34,12 @@ abstract class BuildTarget extends FormatBasedExtension {
     */
   def key: String
 
+  /** default file extension to be used by meta targets
+    *
+    * needs to be overwritten by build targets for sources
+    * */
+  def defaultFileExtension: String = "omdoc"
+
   def isApplicable(format: String): Boolean = format == key
 
   /** defaults to the key */
@@ -288,29 +294,41 @@ abstract class TraversingBuildTarget extends BuildTarget {
  */
 class MetaBuildTarget extends BuildTarget {
   private var _key = ""
+  private var _inExt = ""
   private var targets: List[BuildTarget] = Nil
 
   def key: String = _key
+
+  override def defaultFileExtension: String = _inExt
 
   /**
    * first argument: the key of this build target
    * remaining arguments: the build targets to chain
    */
   override def start(args: List[String]): Unit = {
-    _key = args.headOption.getOrElse {
+    _key = args.headOption.getOrElse(
       throw LocalError("at least one argument required")
-    }
-    targets = args.tail.map { k =>
+    )
+    targets = args.tail.map(k =>
       controller.extman.get(classOf[BuildTarget]).find(_.getClass.getName == k).getOrElse {
-      throw LocalError("unknown target: " + k)
-    }
-    }
+        throw LocalError("unknown target: " + k)
+      })
+    _inExt = targets.map(_.defaultFileExtension).headOption.getOrElse(
+      throw LocalError("at least one target required")
+    )
   }
 
   /** @return the path to pass to the target t, override as needed */
-  def path(t: BuildTarget, in: FilePath): FilePath = t match {
-    case t: TraversingBuildTarget if t.inDim != content => in
-    case _ => EmptyPath
+  def path(t: BuildTarget, inPath: FilePath): FilePath = {
+    val in = inPath.toFile.setExtension(t.defaultFileExtension).filepath
+    t match {
+      case t: TraversingBuildTarget if t.inDim != content =>
+        log("trying " + t.key + " with " + in)
+        in
+      case _ =>
+        log("ignoring " + t.key + " for " + in)
+        EmptyPath
+    }
   }
 
   def build(a: Archive, in: FilePath): Unit = {

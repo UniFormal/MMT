@@ -1,7 +1,5 @@
 package info.kwarc.mmt.api.frontend
 
-import java.io.Serializable
-
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.BuildTarget
 import info.kwarc.mmt.api.backend._
@@ -13,8 +11,6 @@ import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.proving._
 import info.kwarc.mmt.api.utils.MyList._
 import info.kwarc.mmt.api.web._
-
-//import info.kwarc.mmt.leo.provers.AgentProver
 
 trait Extension extends Logger {
   protected var controller: Controller = null
@@ -253,23 +249,10 @@ class ExtensionManager(controller: Controller) extends Logger {
   }
 
   /** association between targets/keys and extension class names */
-  private def targetToClass: Map[String, String] = Map(
+  def targetToClass: Map[String, String] = Map(
     "sms" -> "SmsGenerator",
     "latexml" -> "LaTeXML",
     "pdflatex" -> "PdfLatex",
     "stex-omdoc" -> "STeXImporter"
   ).map { case (a, b) => (a, "info.kwarc.mmt.stex." + b) }
-
-  /** combined targets */
-  private def metaTargets: List[List[String]] = List(
-    List("latexml", "stex-omdoc"),
-    List("sms", "latexml", "stex-omdoc")
-  )
-
-  def targetToClassWithArgs: Map[String, (String, List[String])] =
-    targetToClass.map { case (a, b) => (a, (b, Nil)) } ++
-      metaTargets.map { l =>
-        val key = l.mkString("-")
-        (key, ("info.kwarc.mmt.api.archives.MetaBuildTarget", key :: l.map(targetToClass)))
-      }
 }

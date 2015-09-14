@@ -5,8 +5,6 @@ import java.nio.file.Files
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.documents.Document
-import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils._
 
@@ -30,6 +28,8 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   protected def logFailure(f: FilePath) = logResult("failure " + f)
 
   protected def sysEnv(v: String): String = sys.env.getOrElse(v, "")
+
+  override def defaultFileExtension: String = "tex"
 
   def includeFile(n: String): Boolean =
     n.endsWith(".tex") && !n.endsWith(localpathsFile) && !n.startsWith("all.")
@@ -364,57 +364,5 @@ class PdfLatex extends LaTeXBuildTarget {
     val f = arch / inDim / curr.path
     List("aux", "idx", "log", "out", "pdf", "pdflog", "thm", "nav", "snm", "toc").
       foreach(f.setExtension(_).delete())
-  }
-}
-
-class LaTeXMLAndSTeX extends Importer {
-  private val latexmlBuilder = new LaTeXML
-  private val stexImporter = new STeXImporter {
-    override val inDim = RedirectableDimension("latexml")
-  }
-  val key = latexmlBuilder.key + "-" + stexImporter.key
-
-  /** the (unused) file extensions to which this may be applicable */
-  override def inExts: List[String] = List("tex")
-
-  override def includeFile(n: String): Boolean = latexmlBuilder.includeFile(n)
-
-  override def includeDir(n: String): Boolean = latexmlBuilder.includeDir(n)
-
-  override def init(controller: Controller): Unit = {
-    latexmlBuilder.init(controller)
-    stexImporter.init(controller)
-    super.init(controller)
-  }
-
-  override def start(args: List[String]): Unit = {
-    latexmlBuilder.start(args)
-    stexImporter.start(args)
-    super.start(args)
-  }
-
-  /** the main abstract method to be implemented by importers
-    *
-    * @param bt information about the input document and error reporting
-    * @param index a continuation function to be called on every generated document
-    */
-  def importDocument(bt: BuildTask, index: (Document) => Unit): Unit = {
-    // no code is needed here since apply is overridden below
-  }
-
-  override def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath): Unit = {
-    modifier match {
-      case up: Update =>
-        latexmlBuilder.update(arch, up, in)
-        stexImporter.update(arch, up, in)
-      case Clean =>
-        latexmlBuilder.clean(arch, in)
-        stexImporter.clean(arch, in)
-      case _ =>
-        latexmlBuilder.build(arch, in)
-        //running twice, first to load all theories, then to successfully parse objects
-        stexImporter.build(arch, in)
-        stexImporter.build(arch, in)
-    }
   }
 }

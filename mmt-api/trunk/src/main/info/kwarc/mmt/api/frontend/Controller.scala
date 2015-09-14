@@ -471,7 +471,7 @@ class Controller extends ROController with Logger {
   /** get build target */
   private def getBuildTarget(key: String): Option[BuildTarget] =
     extman.get(classOf[BuildTarget], key).map(Some(_)).getOrElse {
-      logError("unknown dimension " + key + ", ignored")
+      logError("unknown target " + key + " for building, ignored")
       None
     }
 
@@ -484,16 +484,24 @@ class Controller extends ROController with Logger {
       }.headOption)
 
   private def fileBuildAction(key: String, mod: BuildTargetModifier, files: List[File]): Unit = {
-    extman.targetToClassWithArgs.get(key) match {
-      case None => logError("unknown dimension " + key + ", ignored")
-      case Some((cls, args)) =>
-        if (args.length > 1) args.tail.foreach(s => extman.addExtension(s, Nil))
-        extman.addExtension(cls, args)
-        getBuildTarget(key) foreach (buildTarget =>
+    val ts = key.split("_").toList
+    ts.foreach(subKey =>
+    extman.targetToClass.get(subKey) match {
+      case None => logError("unknown target " + subKey + " for extension, ignored")
+      case Some(cls) =>
+        extman.addExtension(cls, Nil)
+        report.groups += subKey + "-result"
+    })
+    if (ts.length > 1) {
+      extman.addExtension(
+        "info.kwarc.mmt.api.archives.MetaBuildTarget", key :: ts.map(extman.targetToClass))
+      report.groups += key
+    }
+    report.addHandler(ConsoleHandler)
+    getBuildTarget(key) foreach (buildTarget =>
           files.flatMap(f => backend.splitFile(f.getCanonicalFile)) foreach { case (root, in) =>
             getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
           })
-    }
   }
 
   private def archiveBuildAction(ids: List[String], key: String, mod: BuildTargetModifier, in: FilePath): Unit = {
