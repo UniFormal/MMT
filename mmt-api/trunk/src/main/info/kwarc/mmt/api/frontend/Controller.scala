@@ -476,12 +476,85 @@ class Controller extends ROController with Logger {
     }
 
   /** retrieve or add an Archive by its root file */
-  def getOrAddArchive(root: File): Option[Archive] =
+  private def getOrAddArchive(root: File): Option[Archive] =
     backend.getArchiveByRoot(root).map(Some(_)).
       getOrElse(backend.openArchive(root).map { a =>
         notifyListeners.onArchiveOpen(a)
         a
       }.headOption)
+
+  private def fileBuildAction(key: String, mod: BuildTargetModifier, files: List[File]): Unit = {
+    extman.targetToClassWithArgs.get(key) match {
+      case None => logError("unknown dimension " + key + ", ignored")
+      case Some((cls, args)) =>
+        if (args.length > 1) args.tail.foreach(s => extman.addExtension(s, Nil))
+        extman.addExtension(cls, args)
+        getBuildTarget(key) foreach (buildTarget =>
+          files.flatMap(f => backend.splitFile(f.getCanonicalFile)) foreach { case (root, in) =>
+            getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
+          })
+    }
+  }
+
+  private def archiveBuildAction(ids: List[String], key: String, mod: BuildTargetModifier, in: FilePath): Unit = {
+    ids.foreach { id =>
+      val arch = backend.getArchive(id) getOrElse (throw GetError("archive not found: " + id))
+      key match {
+        case "check" => arch.check(in, this)
+        case "validate" => arch.validate(in, this)
+        case "flat" => arch.produceFlat(in, this)
+        case "enrich" =>
+          val me = new ModuleElaborator(this)
+          arch.produceEnriched(in, me, this)
+        case "relational" =>
+          arch.readRelational(in, this, "rel")
+          arch.readRelational(in, this, "occ")
+          log("done reading relational index")
+        case "integrate" => arch.integrateScala(this, in)
+        case "test" => // misuse of filepath parameter
+          if (in.segments.length != 1)
+            logError("exactly 1 parameter required, found " + in)
+          else
+            arch.loadJava(this, in.segments.head)
+        case "close" =>
+          val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
+          backend.closeArchive(id)
+          notifyListeners.onArchiveClose(arch)
+        case _ => getBuildTarget(key).foreach(_ (mod, arch, in))
+      }
+    }
+  }
+
+  private def cloneRecursively(p: String): Unit = {
+    val lcOpt = state.getOAF.clone(p)
+    lcOpt foreach { lc =>
+      val archs = backend.openArchive(lc)
+      archs foreach { a =>
+        val deps = stringToList(a.properties.getOrElse("dependencies", ""))
+        deps foreach { d => cloneRecursively(URI(d).pathAsString) }
+      }
+    }
+  }
+
+  private def execFileAction(f: File, nameOpt: Option[String]): Unit = {
+    val folder = f.getParentFile
+    // store old state, and initialize fresh state
+    val oldHome = state.home
+    val oldCAD = state.currentActionDefinition
+    state.home = folder
+    state.currentActionDefinition = None
+    // excecute the file
+    File.read(f).split("\\n").foreach(handleLine)
+    if (state.currentActionDefinition.isDefined)
+      throw ParseError("end of definition expected")
+    // restore old state
+    state.home = oldHome
+    state.currentActionDefinition = oldCAD
+    // run the actionDefinition, if given
+    nameOpt foreach { name =>
+      handle(Do(Some(folder), name))
+    }
+  }
 
   /** executes an Action */
   def handle(act: Action): Unit =
@@ -510,42 +583,9 @@ class Controller extends ROController with Logger {
               notifyListeners.onArchiveOpen(a)
             }
           case FileBuild(key, mod, files) =>
-            extman.targetToClassWithArgs.get(key) match {
-              case None => logError("unknown dimension " + key + ", ignored")
-              case Some((cls, args)) =>
-                if (args.length > 1) args.tail.foreach(s => extman.addExtension(s, Nil))
-                extman.addExtension(cls, args)
-                getBuildTarget(key) foreach (buildTarget =>
-                  files.flatMap(f => backend.splitFile(f.getCanonicalFile)) foreach { case (root, in) =>
-                    getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
-                  })
-            }
-          case ArchiveBuild(ids, key, mod, in) => ids.foreach { id =>
-            val arch = backend.getArchive(id) getOrElse (throw GetError("archive not found: " + id))
-            key match {
-              case "check" => arch.check(in, this)
-              case "validate" => arch.validate(in, this)
-              case "flat" => arch.produceFlat(in, this)
-              case "enrich" =>
-                val me = new ModuleElaborator(this)
-                arch.produceEnriched(in, me, this)
-              case "relational" =>
-                arch.readRelational(in, this, "rel")
-                arch.readRelational(in, this, "occ")
-                log("done reading relational index")
-              case "integrate" => arch.integrateScala(this, in)
-              case "test" => // misuse of filepath parameter
-                if (in.segments.length != 1)
-                  logError("exactly 1 parameter required, found " + in)
-                else
-                  arch.loadJava(this, in.segments.head)
-              case "close" =>
-                val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
-                backend.closeArchive(id)
-                notifyListeners.onArchiveClose(arch)
-              case _ => getBuildTarget(key).foreach(_ (mod, arch, in))
-            }
-          }
+            fileBuildAction(key, mod, files)
+          case ArchiveBuild(ids, key, mod, in) =>
+            archiveBuildAction(ids, key, mod, in)
           case ArchiveMar(id, file) =>
             val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
             arch.toMar(file)
@@ -560,16 +600,6 @@ class Controller extends ROController with Logger {
           case OAFInit(path) =>
             state.getOAF.init(path)
           case OAFClone(path) =>
-            def cloneRecursively(p: String) {
-              val lcOpt = state.getOAF.clone(p)
-              lcOpt foreach { lc =>
-                val archs = backend.openArchive(lc)
-                archs foreach { a =>
-                  val deps = stringToList(a.properties.getOrElse("dependencies", ""))
-                  deps foreach { d => cloneRecursively(URI(d).pathAsString) }
-                }
-              }
-            }
             cloneRecursively(path)
           case OAFPull => state.getOAF.pull
           case OAFPush => state.getOAF.push
@@ -600,24 +630,7 @@ class Controller extends ROController with Logger {
           case MBT(file) =>
             new MMTScriptEngine(this).apply(file)
           case Clear => clear()
-          case ExecFile(f, nameOpt) =>
-            val folder = f.getParentFile
-            // store old state, and initialize fresh state
-            val oldHome = state.home
-            val oldCAD = state.currentActionDefinition
-            state.home = folder
-            state.currentActionDefinition = None
-            // excecute the file
-            File.read(f).split("\\n").foreach(handleLine)
-            if (state.currentActionDefinition.isDefined)
-              throw ParseError("end of definition expected")
-            // restore old state
-            state.home = oldHome
-            state.currentActionDefinition = oldCAD
-            // run the actionDefinition, if given
-            nameOpt foreach { name =>
-              handle(Do(Some(folder), name))
-            }
+          case ExecFile(f, nameOpt) => execFileAction(f, nameOpt)
           case Define(name) =>
             state.currentActionDefinition match {
               case None =>
