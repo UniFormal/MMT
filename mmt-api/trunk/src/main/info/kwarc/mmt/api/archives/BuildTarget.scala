@@ -325,7 +325,7 @@ class MetaBuildTarget extends BuildTarget {
     t match {
       case t: TraversingBuildTarget if t.inDim != content =>
         val file = a / t.inDim / inPath
-        val in = if (file.isDirectory) inPath
+        val in = if (file.isDirectory || t.includeFile(inPath.baseName)) inPath
         else
           inPath.toFile.setExtension(t.defaultFileExtension).filepath
         log("trying " + t.key + " in " + a.id + " with " + (t.inDim :: in.segments).mkString("/"))

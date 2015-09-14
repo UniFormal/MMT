@@ -27,6 +27,8 @@ class Twelf extends Importer with frontend.ChangeListener {
 
   override def inDim: RedirectableDimension = RedirectableDimension("twelf", Some(source))
 
+  override def defaultFileExtension: String = "elf"
+
   def inExts: List[String] = List("elf", "twelf", "lf")
 
   /** path to Twelf executable, will be overridden in start */
