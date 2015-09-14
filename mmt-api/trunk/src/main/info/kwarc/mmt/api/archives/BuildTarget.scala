@@ -319,31 +319,35 @@ class MetaBuildTarget extends BuildTarget {
   }
 
   /** @return the path to pass to the target t, override as needed */
-  def path(t: BuildTarget, inPath: FilePath): FilePath = {
-    val in = inPath.toFile.setExtension(t.defaultFileExtension).filepath
+  def path(a: Archive, t: BuildTarget, inPath: FilePath): FilePath = {
     t match {
       case t: TraversingBuildTarget if t.inDim != content =>
-        log("trying " + t.key + " with " + in)
+        val file = a / t.inDim / inPath
+        val in = if (file.isDirectory) inPath
+        else
+          inPath.toFile.setExtension(t.defaultFileExtension).filepath
+        log("trying " + t.key + " in " + a.id + " with " + (t.inDim :: in.segments).mkString("/"))
         in
       case _ =>
-        log("ignoring " + t.key + " for " + in)
+        log("ignoring " + t.key + " in " + a.id +
+          (if (inPath.segments.isEmpty) "" else " for " + inPath))
         EmptyPath
     }
   }
 
   def build(a: Archive, in: FilePath): Unit = {
-    targets.foreach { t => t.build(a, path(t, in)) }
+    targets.foreach { t => t.build(a, path(a, t, in)) }
   }
 
   override def buildDepsFirst(a: Archive, in: FilePath): Unit = {
-    targets.foreach { t => t.buildDepsFirst(a, path(t, in)) }
+    targets.foreach { t => t.buildDepsFirst(a, path(a, t, in)) }
   }
 
   def update(a: Archive, up: Update, in: FilePath): Unit = {
-    targets.foreach { t => t.update(a, up, path(t, in)) }
+    targets.foreach { t => t.update(a, up, path(a, t, in)) }
   }
 
   def clean(a: Archive, in: FilePath): Unit = {
-    targets.foreach { t => t.clean(a, path(t, in)) }
+    targets.foreach { t => t.clean(a, path(a, t, in)) }
   }
 }
