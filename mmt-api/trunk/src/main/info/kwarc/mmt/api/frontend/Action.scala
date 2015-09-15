@@ -83,9 +83,17 @@ object Action extends RegexParsers {
 
   private def pluginArg = "--\\S+" r
 
-  private def filebuild = "rbuild" ~> keyMod ~ (pluginArg *) ~ (str +) ^^ {
-    case km ~ args ~ ins =>
-      FileBuild(km._1, km._2, args, ins.map(File(_)))
+  private def buildModifier: Parser[BuildTargetModifier] =
+    ("--force" | "--onChange" | "--onError" | "--clean") ^^ {
+      case "--force" => archives.Build
+      case "--clean" => archives.Clean
+      case "--onError" => archives.Update(ifHadErrors = true)
+      case _ => archives.Update(ifHadErrors = false)
+    }
+
+  private def filebuild = "rbuild" ~> (buildModifier ?) ~ str ~ (pluginArg *) ~ (str +) ^^ {
+    case mod ~ km ~ args ~ ins =>
+      FileBuild(km, mod.getOrElse(archives.Update(ifHadErrors = false)), args, ins.map(File(_)))
   }
 
   private def archdim = "archive" ~> archiveList ~ dimension ~ optFilePath ^^ {
