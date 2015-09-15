@@ -139,11 +139,14 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   protected def getFolderOutFile(a: Archive, inPath: FilePath) = a / outDim / inPath / (folderName + "." + outExt)
 
-  protected def getOutPath(a: Archive, outFile: File) = a.root.relativize(outFile).filepath
+  protected def getOutPath(a: Archive, outFile: File) = a.root.up.relativize(outFile).filepath.down
 
   protected def getErrorFile(a: Archive, inPath: FilePath) = (a / errors / key / inPath).addExtension("err")
 
   protected def getFolderErrorFile(a: Archive, inPath: FilePath) = a / errors / key / inPath / (folderName + ".err")
+
+  /** some logging for lmh */
+  protected def logResult(s: String) = log(s, Some("result"))
 
   /**
    * there is no inExt, instead we test to check which files should be used;
@@ -236,6 +239,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     val outFile = getOutFile(a, inPath)
     delete(outFile)
     delete(getErrorFile(a, inPath))
+    logResult("deleted " + getOutPath(a, outFile))
     controller.notifyListeners.onFileBuilt(a, this, inPath)
   }
 
@@ -276,7 +280,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
         val both = mod == Modified || hadErrors && up.ifHadErrors
         if (del) cleanFile(a, c)
         if (add || both) buildAux(inPath)(a, None)
-        del || add || both
+        val res = del || add || both
+        if (!res) logResult("up-to-date" + (if (hadErrors) "? " else " ") +
+         getOutPath(a, getOutFile(a, inPath)))
+        res
     }, { case (c@Current(inDir, inPath), childChanged) =>
       if (childChanged.contains(true)) {
         val outFile = getFolderOutFile(a, inPath)

@@ -23,8 +23,6 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
     override val extraMessage = l
   }
 
-  protected def logResult(s: String) = log(s, Some("result"))
-
   protected def logSuccess(f: FilePath) = logResult("success " + f)
 
   protected def logFailure(f: FilePath) = logResult("failure " + f)
@@ -322,7 +320,7 @@ class LaTeXML extends LaTeXBuildTarget {
     if (logFile.exists())
       readLogFile(bt, logFile)
   }
-  
+
   override def cleanFile(arch: Archive, curr: Current): Unit = {
     getOutFile(arch, curr.path).setExtension("ltxlog").delete()
     super.cleanFile(arch, curr)
