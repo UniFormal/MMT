@@ -102,6 +102,19 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
     }
     else defaultFile
   }
+
+  protected def skip(bt: BuildTask): Boolean = {
+    val optExcludes: Option[String] = bt.archive.properties.get("no-" + outExt)
+    val excludes: List[String] = optExcludes.map(_.split(" ").toList).getOrElse(Nil)
+    val exclude = excludes.exists(bt.inFile.getName.matches)
+    if (exclude) logResult("skipping " + getOutPath(bt.archive, bt.inFile))
+    exclude
+  }
+
+  def reallyBuildFile(bt: BuildTask)
+
+  def buildFile(bt: BuildTask): Unit = if (!skip(bt)) reallyBuildFile(bt)
+
 }
 
 /** sms generation */
@@ -158,7 +171,7 @@ class SmsGenerator extends LaTeXBuildTarget {
     w.close()
   }
 
-  def buildFile(bt: BuildTask): Unit = {
+  def reallyBuildFile(bt: BuildTask): Unit = {
     try createSms(bt, encodings)
     catch {
       case e: Throwable =>
@@ -292,7 +305,7 @@ class LaTeXML extends LaTeXBuildTarget {
     }
 
   /** Compile a .tex file to OMDoc */
-  def buildFile(bt: BuildTask): Unit = {
+  def reallyBuildFile(bt: BuildTask): Unit = {
     val lmhOut = bt.outFile
     val logFile = bt.outFile.setExtension("ltxlog")
     lmhOut.delete()
@@ -345,7 +358,7 @@ class PdfLatex extends LaTeXBuildTarget {
     if (opts.nonEmpty) logResult("unknown options: " + opts.mkString(" "))
   }
 
-  def buildFile(bt: BuildTask): Unit = {
+  def reallyBuildFile(bt: BuildTask): Unit = {
     val pdfFile = bt.inFile.setExtension("pdf")
     pdfFile.delete()
     bt.outFile.delete()
