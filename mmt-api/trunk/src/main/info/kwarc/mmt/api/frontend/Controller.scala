@@ -483,14 +483,15 @@ class Controller extends ROController with Logger {
         a
       }.headOption)
 
-  private def fileBuildAction(key: String, mod: BuildTargetModifier, files: List[File]): Unit = {
+  private def fileBuildAction(key: String, mod: BuildTargetModifier, args: List[String], files: List[File]): Unit = {
     val ts = key.split("_").toList
+    report.groups -= "user"
     report.addHandler(ConsoleHandler)
     ts.foreach(subKey =>
     extman.targetToClass.get(subKey) match {
       case None => logError("unknown target " + subKey + " for extension, ignored")
       case Some(cls) =>
-        extman.addExtension(cls, Nil)
+        extman.addExtension(cls, args)
         report.groups += subKey + "-result"
     })
     if (ts.length > 1) {
@@ -590,8 +591,8 @@ class Controller extends ROController with Logger {
               }
               notifyListeners.onArchiveOpen(a)
             }
-          case FileBuild(key, mod, files) =>
-            fileBuildAction(key, mod, files)
+          case FileBuild(key, mod, args, files) =>
+            fileBuildAction(key, mod, args, files)
           case ArchiveBuild(ids, key, mod, in) =>
             archiveBuildAction(ids, key, mod, in)
           case ArchiveMar(id, file) =>

@@ -15,6 +15,7 @@ import scala.util.matching.Regex
 abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   val localpathsFile = "localpaths.tex"
   val inDim = source
+  protected var pipeOutput: Boolean = false
   protected val c = java.io.File.pathSeparator
 
   protected case class LatexError(s: String, l: String) extends ExtensionError(key, s) {
@@ -30,6 +31,18 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   protected def sysEnv(v: String): String = sys.env.getOrElse(v, "")
 
   override def defaultFileExtension: String = "tex"
+
+  override def start(args: List[String]): Unit = {
+    if (args.contains("--pipe-worker-output")) pipeOutput = true
+  }
+
+  protected def procLogger(output: StringBuffer): ProcessLogger = {
+    def handleLine(line: String): Unit = {
+      if (pipeOutput) println(line)
+      output.append(line + "\n")
+    }
+    ProcessLogger(handleLine, handleLine)
+  }
 
   def includeFile(n: String): Boolean =
     n.endsWith(".tex") && !n.endsWith(localpathsFile) && !n.startsWith("all.")
@@ -168,7 +181,9 @@ class LaTeXML extends LaTeXBuildTarget {
   private var paths: Seq[String] = Nil
 
   override def start(args: List[String]): Unit = {
-    latexmlc = getFromFirstArgOrEnvvar(args, "LATEXMLC", latexmlc)
+    super.start(args)
+    val nonOptArgs = args.filter(!_.startsWith("--"))
+    latexmlc = getFromFirstArgOrEnvvar(nonOptArgs, "LATEXMLC", latexmlc)
     expire = controller.getEnvVar("LATEXMLEXPIRE").getOrElse(expire)
     port = controller.getEnvVar("LATEXMLPORT")
     profile = controller.getEnvVar("LATEXMLPROFILE").getOrElse(profile)
@@ -282,8 +297,7 @@ class LaTeXML extends LaTeXBuildTarget {
       "--postamble=" + getAmbleFile("post", bt),
       "--expire=" + expire) ++ port.map("--port=" + _) ++ preloads.map("--preload=" + _) ++
       paths.map("--path=" + _), bt.archive / inDim, extEnv(bt): _*)
-    val exitCode = pb.!(ProcessLogger(line => output.append(line + "\n"),
-      line => output.append(line + "\n")))
+    val exitCode = pb.!(procLogger(output))
     if (exitCode != 0 || lmhOut.length == 0) {
       bt.errorCont(LatexError("no omdoc created", output.toString))
       lmhOut.delete()
@@ -317,7 +331,9 @@ class PdfLatex extends LaTeXBuildTarget {
   private var pdflatexPath: String = "xelatex"
 
   override def start(args: List[String]): Unit = {
-    pdflatexPath = getFromFirstArgOrEnvvar(args, "PDFLATEX", pdflatexPath)
+    super.start(args)
+    val nonOptArgs = args.filter(!_.startsWith("--"))
+    pdflatexPath = getFromFirstArgOrEnvvar(nonOptArgs, "PDFLATEX", pdflatexPath)
   }
 
   def buildFile(bt: BuildTask): Unit = {
@@ -333,10 +349,9 @@ class PdfLatex extends LaTeXBuildTarget {
       val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
         bt.inFile.stripExtension.getName, "-interaction", "scrollmode"),
         bt.inFile.up, env(bt): _*)
-      pb.!(ProcessLogger(line => output.append(line + "\n"),
-        line => output.append(line + "\n")))
+      pb.!(procLogger(output))
       val pdflogFile = bt.inFile.setExtension("pdflog")
-      File.write(pdflogFile, output.toString)
+      if (!pipeOutput) File.write(pdflogFile, output.toString)
       if (pdfFile.length == 0) {
         bt.errorCont(LatexError("no pdf created", output.toString))
         pdfFile.delete()

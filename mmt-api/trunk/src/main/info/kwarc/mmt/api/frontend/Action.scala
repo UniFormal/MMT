@@ -81,9 +81,11 @@ object Action extends RegexParsers {
       ArchiveBuild(ids, km._1, km._2, in)
   }
 
-  private def filebuild = "rbuild" ~> keyMod ~ (str +) ^^ {
-    case km ~ ins =>
-      FileBuild(km._1, km._2, ins.map(File(_)))
+  private def pluginArg = "--\\S+" r
+
+  private def filebuild = "rbuild" ~> keyMod ~ (pluginArg *) ~ (str +) ^^ {
+    case km ~ args ~ ins =>
+      FileBuild(km._1, km._2, args, ins.map(File(_)))
   }
 
   private def archdim = "archive" ~> archiveList ~ dimension ~ optFilePath ^^ {
@@ -455,8 +457,10 @@ case class ArchiveBuild(ids: List[String], dim: String, modifier: archives.Build
 }
 
 /** builds a dimension for the given files by opening the archive for each file before building */
-case class FileBuild(dim: String, modifier: archives.BuildTargetModifier, files: List[File]) extends Action {
-  override def toString: String = "rbuild " + modifier.toString(dim) + files.mkString(" ", " ", "")
+case class FileBuild(dim: String, modifier: archives.BuildTargetModifier,
+                     args: List[String], files: List[File]) extends Action {
+  override def toString: String = "rbuild " + modifier.toString(dim) +
+    (if (args.isEmpty) " " else args.mkString(" ", " ", " ")) + files.mkString(" ")
 }
 
 /** builds a dimension in a previously opened archive */
