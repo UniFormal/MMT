@@ -194,7 +194,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
         val outFile = getOutFile(a, inPath)
         val outPath = getOutPath(a, outFile)
         report("archive", prefix + inFile + " -> " + outFile)
-        var errorWriter = makeHandler(a, inPath)
+        val errorWriter = makeHandler(a, inPath)
         val errorCont = eCOpt match {
           case None => errorWriter
           case Some(eC) => new MultipleErrorHandler(List(eC, errorWriter))
