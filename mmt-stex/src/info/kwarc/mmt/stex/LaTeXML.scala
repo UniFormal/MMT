@@ -322,15 +322,10 @@ class LaTeXML extends LaTeXBuildTarget {
     if (logFile.exists())
       readLogFile(bt, logFile)
   }
-
-  override def clean(a: Archive, in: FilePath = EmptyPath): Unit = {
-    a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel = true))(
-    { c => cleanLogFile(a, c) }, { case _ => })
-    super.clean(a, in)
-  }
-
-  def cleanLogFile(arch: Archive, curr: Current): Unit = {
+  
+  override def cleanFile(arch: Archive, curr: Current): Unit = {
     getOutFile(arch, curr.path).setExtension("ltxlog").delete()
+    super.cleanFile(arch, curr)
   }
 }
 
@@ -385,15 +380,10 @@ class PdfLatex extends LaTeXBuildTarget {
     }
   }
 
-  override def clean(a: Archive, in: FilePath = EmptyPath): Unit = {
-    a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel = true))(
-    { c => cleanFileInSource(a, c) }, { case _ => })
-    super.clean(a, in)
-  }
-
-  def cleanFileInSource(arch: Archive, curr: Current): Unit = {
+  override def cleanFile(arch: Archive, curr: Current): Unit = {
     val f = arch / inDim / curr.path
     List("aux", "idx", "log", "out", "pdf", "pdflog", "thm", "nav", "snm", "toc").
       foreach(f.setExtension(_).delete())
+    super.cleanFile(arch, curr)
   }
 }
