@@ -69,9 +69,9 @@ object Action extends RegexParsers {
       (km.tail, archives.Clean)
     else if ("*!&".contains(km.last))
       (km.init, km.last match {
-        case '!' => archives.Update(ifChanged = true, ifHadErrors = true)
+        case '!' => archives.Update(ifHadErrors = true)
         case '&' => archives.BuildDepsFirst
-        case _ => archives.Update(ifChanged = true, ifHadErrors = false)
+        case _ => archives.Update(ifHadErrors = false)
       })
     else (km, archives.Build)
   }

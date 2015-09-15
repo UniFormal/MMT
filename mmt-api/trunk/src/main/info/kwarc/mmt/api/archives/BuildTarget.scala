@@ -12,8 +12,8 @@ case object Clean extends BuildTargetModifier {
   def toString(dim: String): String = "-" + dim
 }
 
-case class Update(ifChanged: Boolean, ifHadErrors: Boolean) extends BuildTargetModifier {
-  def key: String = (if (ifChanged) "*" else "") + (if (ifHadErrors) "!" else "")
+case class Update(ifHadErrors: Boolean) extends BuildTargetModifier {
+  def key: String = if (ifHadErrors) "!" else "*"
 
   def toString(dim: String): String = dim + key
 }
@@ -273,10 +273,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
         val (mod, hadErrors) = modified(a, inPath)
         val del = mod == Deleted
         val add = mod == Added
-        val both = up.ifChanged && mod == Modified || hadErrors && up.ifHadErrors
-        if (del || both) cleanFile(a, c)
+        val both = mod == Modified || hadErrors && up.ifHadErrors
+        if (del) cleanFile(a, c)
         if (add || both) buildAux(inPath)(a, None)
-        del || add
+        del || add || both
     }, { case (c@Current(inDir, inPath), childChanged) =>
       if (childChanged.contains(true)) {
         val outFile = getFolderOutFile(a, inPath)

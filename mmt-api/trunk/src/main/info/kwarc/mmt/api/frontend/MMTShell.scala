@@ -61,7 +61,7 @@ class MBTBuildTarget(key : String, controller : Controller) {
   }
 
   def build(s : String) : Unit = build(parseArchIds(s), Build)
-  def update(s : String) : Unit = build(parseArchIds(s), new Update(true,true))
+  def update(s : String) : Unit = build(parseArchIds(s), new Update(true))
   def clean(s : String) : Unit = build(parseArchIds(s), Clean)
 
 
