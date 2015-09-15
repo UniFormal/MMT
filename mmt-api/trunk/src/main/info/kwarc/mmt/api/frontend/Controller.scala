@@ -488,21 +488,21 @@ class Controller extends ROController with Logger {
     report.groups -= "user"
     report.addHandler(ConsoleHandler)
     ts.foreach(subKey =>
-    extman.targetToClass.get(subKey) match {
-      case None => logError("unknown target " + subKey + " for extension, ignored")
-      case Some(cls) =>
-        extman.addExtension(cls, args)
-        report.groups += subKey + "-result"
-    })
+      extman.targetToClass.get(subKey) match {
+        case None => logError("unknown target " + subKey + " for extension, ignored")
+        case Some(cls) =>
+          report.groups += subKey + "-result"
+          extman.addExtension(cls, args)
+      })
     if (ts.length > 1) {
       extman.addExtension(
         "info.kwarc.mmt.api.archives.MetaBuildTarget", key :: ts.flatMap(extman.targetToClass.get))
       report.groups += key
     }
     getBuildTarget(key) foreach (buildTarget =>
-          files.flatMap(f => backend.splitFile(f.getCanonicalFile)) foreach { case (root, in) =>
-            getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
-          })
+      files.flatMap(f => backend.splitFile(f.getCanonicalFile)) foreach { case (root, in) =>
+        getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
+      })
   }
 
   private def archiveBuildAction(ids: List[String], key: String, mod: BuildTargetModifier, in: FilePath): Unit = {
