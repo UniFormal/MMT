@@ -38,7 +38,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   }
 
   protected def execArgs(args: List[String]): List[String] =
-    args.map(a => if (a.startsWith("--exec=")) a.substring(7) else a)
+    args.map(a => if (a.startsWith("--" + key + "=")) a.substring(key.length + 3) else a)
 
   protected def procLogger(output: StringBuffer): ProcessLogger = {
     def handleLine(line: String): Unit = {
@@ -184,15 +184,27 @@ class LaTeXML extends LaTeXBuildTarget {
   private var preloads: Seq[String] = Nil
   private var paths: Seq[String] = Nil
 
+  private def filterArg(arg: String, args: List[String]): List[String] =
+    args.filter(_.startsWith("--" + arg + "=")).map(_.substring(arg.length + 3))
+
+  private def getArg(arg: String, args: List[String]): Option[String] =
+    filterArg(arg, args).headOption.map(Some(_)).
+      getOrElse(controller.getEnvVar("LATEXML" + arg.toUpperCase))
+
   override def start(args: List[String]): Unit = {
     super.start(args)
-    val nonOptArgs = execArgs(args).filter(!_.startsWith("--"))
+    val (opts, nonOptArgs) = execArgs(args).partition(_.startsWith("--"))
     latexmlc = getFromFirstArgOrEnvvar(nonOptArgs, "LATEXMLC", latexmlc)
-    expire = controller.getEnvVar("LATEXMLEXPIRE").getOrElse(expire)
-    port = controller.getEnvVar("LATEXMLPORT")
-    profile = controller.getEnvVar("LATEXMLPROFILE").getOrElse(profile)
-    preloads = controller.getEnvVar("LATEXMLPRELOADS").getOrElse("").split(" ").filter(_.nonEmpty)
-    paths = controller.getEnvVar("LATEXMLPATHS").getOrElse("").split(" ").filter(_.nonEmpty)
+    expire = getArg("expire", opts).getOrElse(expire)
+    port = getArg("port", opts)
+    profile = getArg("profile", opts).getOrElse(profile)
+    preloads = filterArg("preload", opts) ++
+      controller.getEnvVar("LATEXMLPRELOADS").getOrElse("").split(" ").filter(_.nonEmpty)
+    paths = filterArg("path", opts) ++
+      controller.getEnvVar("LATEXMLPATHS").getOrElse("").split(" ").filter(_.nonEmpty)
+    val restOpts = opts.diff(List(pipeOutputOption, "--expire=" + expire, "--port=" + port, "--profile=" + profile)).
+      filter(a => !(a.startsWith("--path=") || a.startsWith("--preload=")))
+    if (restOpts.nonEmpty) log("unknown options: " + restOpts.mkString(" "))
   }
 
   private def str2Level(lev: String): Level.Level = lev match {
@@ -278,42 +290,37 @@ class LaTeXML extends LaTeXBuildTarget {
       val latexmlcpath = extBase(bt) / perl5lib / "bin" / latexmlc
       if (latexmlcpath.exists) {
         latexmlc = latexmlcpath.toString
-        log("executing " + latexmlc)
       }
     }
 
   /** Compile a .tex file to OMDoc */
   def buildFile(bt: BuildTask): Unit = {
-    val lmhOut = bt.inFile.setExtension("omdoc")
-    val logFile = bt.inFile.setExtension("ltxlog")
-    val logOutFile = bt.outFile.setExtension("ltxlog")
+    val lmhOut = bt.outFile
+    val logFile = bt.outFile.setExtension("ltxlog")
     lmhOut.delete()
     logFile.delete()
-    logOutFile.delete()
     bt.outFile.delete()
     createLocalPaths(bt)
     setLatexmlc(bt)
     val output = new StringBuffer()
-    val pb = Process(Seq(latexmlc,
-      "--quiet", "--profile", profile, "--path=" + styPath(bt),
-      bt.inFile.toString, "--destination=" + lmhOut, "--log=" + logFile,
+    val argSeq = Seq(latexmlc, bt.inFile.toString,
+      "--quiet", "--profile=" + profile, "--path=" + styPath(bt),
+      "--destination=" + lmhOut, "--log=" + logFile,
       "--preamble=" + getAmbleFile("pre", bt),
       "--postamble=" + getAmbleFile("post", bt),
       "--expire=" + expire) ++ port.map("--port=" + _) ++ preloads.map("--preload=" + _) ++
-      paths.map("--path=" + _), bt.archive / inDim, extEnv(bt): _*)
+      paths.map("--path=" + _)
+    log(argSeq.mkString(" ").replace(" --", "\n --"))
+    val pb = Process(argSeq, bt.archive / inDim, extEnv(bt): _*)
     val exitCode = pb.!(procLogger(output))
     if (exitCode != 0 || lmhOut.length == 0) {
       bt.errorCont(LatexError("no omdoc created", output.toString))
       lmhOut.delete()
       logFailure(bt.outPath)
     }
-    if (lmhOut.exists() && lmhOut != bt.outFile)
-      Files.move(lmhOut.toPath, bt.outFile.toPath)
     if (bt.outFile.exists()) logSuccess(bt.outPath)
-    if (logFile.exists()) {
+    if (logFile.exists())
       readLogFile(bt, logFile)
-      if (logFile != logOutFile) Files.move(logFile.toPath, logOutFile.toPath)
-    }
   }
 
   override def clean(a: Archive, in: FilePath = EmptyPath): Unit = {
