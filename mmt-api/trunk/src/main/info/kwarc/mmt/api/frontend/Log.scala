@@ -47,8 +47,8 @@ class Report extends Logger {
     }
     val prefixList = utils.stringToList(prefix, "#")
     if (prefixList.forall(p => groups.contains(p))) {
-       val msgParts = utils.stringToList(msg, "\\n") 
-       handlers.foreach(_.apply(ind, caller, prefix, msgParts))
+      val msgParts = utils.stringToList(msg, "\\n")
+      handlers.foreach(_.apply(ind, caller, prefix, msgParts))
     }
   }
 
@@ -125,7 +125,8 @@ abstract class ReportHandler(val id: String) {
       case _: Invalid | _: ParseError => contentErrorHighlight(e.shortMsg)
       case _ => systemErrorHighlight(e.shortMsg)
     }
-    apply(ind, caller, "error", List(msg))
+    // only report real errors
+    if (e.level >= Level.Error) apply(ind, caller, "error", List(msg))
     if (debug)
       apply(ind, caller, "debug", utils.stringToList(e.toStringLong, "\\n"))
   }
@@ -156,9 +157,9 @@ abstract class ReportHandler(val id: String) {
 /** outputs to standard output */
 object ConsoleHandler extends ReportHandler("console") {
   def apply(ind: Int, caller: => String, group: String, msgParts: List[String]): Unit = {
-    msgParts.foreach{ msg => 
-       val m = indentString(ind) + group + ": " + msg
-       println(m)
+    msgParts.foreach { msg =>
+      val m = indentString(ind) + group + ": " + msg
+      println(m)
     }
   }
 
@@ -187,9 +188,9 @@ abstract class FileHandler(val filename: File) extends ReportHandler(filename.to
 class TextFileHandler(filename: File, timestamps: Boolean) extends FileHandler(filename) {
   def apply(ind: Int, caller: => String, group: String, msgParts: List[String]) {
     val t = if (timestamps) time + "\t" else ""
-    msgParts.foreach {msg =>
-       val m = t + indentString(ind) + group + ": " + msg
-       file.println(m)
+    msgParts.foreach { msg =>
+      val m = t + indentString(ind) + group + ": " + msg
+      file.println(m)
     }
     flush()
   }
@@ -257,9 +258,9 @@ class RecordingHandler(id: String) extends ReportHandler(id) {
 
   def apply(ind: Int, caller: => String, group: String, msgParts: List[String]) {
     if (recording) {
-       msgParts.foreach {msg =>
-          memory ::= indentString(ind) + group + ": " + msg
-       }
+      msgParts.foreach { msg =>
+        memory ::= indentString(ind) + group + ": " + msg
+      }
     }
   }
 }
