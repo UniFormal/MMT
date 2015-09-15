@@ -16,6 +16,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   val localpathsFile = "localpaths.tex"
   val inDim = source
   protected var pipeOutput: Boolean = false
+  protected val pipeOutputOption: String = "--pipe-worker-output"
   protected val c = java.io.File.pathSeparator
 
   protected case class LatexError(s: String, l: String) extends ExtensionError(key, s) {
@@ -33,8 +34,11 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   override def defaultFileExtension: String = "tex"
 
   override def start(args: List[String]): Unit = {
-    if (args.contains("--pipe-worker-output")) pipeOutput = true
+    if (args.contains(pipeOutputOption)) pipeOutput = true
   }
+
+  protected def execArgs(args: List[String]): List[String] =
+    args.map(a => if (a.startsWith("--exec=")) a.substring(7) else a)
 
   protected def procLogger(output: StringBuffer): ProcessLogger = {
     def handleLine(line: String): Unit = {
@@ -182,7 +186,7 @@ class LaTeXML extends LaTeXBuildTarget {
 
   override def start(args: List[String]): Unit = {
     super.start(args)
-    val nonOptArgs = args.filter(!_.startsWith("--"))
+    val nonOptArgs = execArgs(args).filter(!_.startsWith("--"))
     latexmlc = getFromFirstArgOrEnvvar(nonOptArgs, "LATEXMLC", latexmlc)
     expire = controller.getEnvVar("LATEXMLEXPIRE").getOrElse(expire)
     port = controller.getEnvVar("LATEXMLPORT")
@@ -332,8 +336,13 @@ class PdfLatex extends LaTeXBuildTarget {
 
   override def start(args: List[String]): Unit = {
     super.start(args)
-    val nonOptArgs = args.filter(!_.startsWith("--"))
-    pdflatexPath = getFromFirstArgOrEnvvar(nonOptArgs, "PDFLATEX", pdflatexPath)
+    val (opts, nonOptArgs) = execArgs(args).diff(List(pipeOutputOption)).partition(_.startsWith("--"))
+    val newPath = getFromFirstArgOrEnvvar(nonOptArgs, "PDFLATEX", pdflatexPath)
+    if (newPath != pdflatexPath) {
+      pdflatexPath = newPath
+      log("using executable \"" + pdflatexPath + "\"")
+    }
+    if (opts.nonEmpty) logResult("unknown options: " + opts.mkString(" "))
   }
 
   def buildFile(bt: BuildTask): Unit = {
