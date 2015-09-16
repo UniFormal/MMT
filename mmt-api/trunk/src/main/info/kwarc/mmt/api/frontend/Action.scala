@@ -84,12 +84,20 @@ object Action extends RegexParsers {
   private def pluginArg = "--\\S+" r
 
   private def buildModifier: Parser[BuildTargetModifier] =
-    ("--force" | "--onChange" | "--onError" | "--clean") ^^ {
+    ("--force" | "--onChange" | "--onError" | "--clean" | "--depsFirst") ^^ {
       case "--force" => archives.Build
       case "--clean" => archives.Clean
       case "--onError" => archives.Update(ifHadErrors = true)
+      case "--depsFirst" => archives.BuildDepsFirst
       case _ => archives.Update(ifHadErrors = false)
     }
+
+  def modifierToString(m: BuildTargetModifier): String = "--" + (m match {
+    case archives.Build => "force"
+    case archives.Clean => "clean"
+    case archives.BuildDepsFirst => "depsFirst"
+    case archives.Update(hadErrs) => if (hadErrs) "onError" else "onChange"
+  })
 
   private def filebuild = "rbuild" ~> (buildModifier ?) ~ str ~ (pluginArg *) ~ (str +) ^^ {
     case mod ~ km ~ args ~ ins =>
@@ -314,7 +322,7 @@ case class SetEnvVar(name: String, value: String) extends Action {
   * concrete syntax: file file:FILE
   */
 case class ExecFile(file: File, name: Option[String]) extends Action {
-  override def toString: String = "file " + file + name.map(" " + _).getOrElse("")
+  override def toString: String = "file " + file + name.map(" " +).getOrElse("")
 }
 
 /** bind all following commands to a name without executing them
@@ -450,7 +458,7 @@ case object OAFPush extends Action {
   * @param args a list of arguments that will be passed to the compiler's init method
   */
 case class AddExtension(cls: String, args: List[String]) extends Action {
-  override def toString: String = "extension " + cls + args.map(" " + _).mkString
+  override def toString: String = "extension " + cls + args.map(" " +).mkString
 }
 
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
@@ -467,8 +475,8 @@ case class ArchiveBuild(ids: List[String], dim: String, modifier: archives.Build
 /** builds a dimension for the given files by opening the archive for each file before building */
 case class FileBuild(dim: String, modifier: archives.BuildTargetModifier,
                      args: List[String], files: List[File]) extends Action {
-  override def toString: String = "rbuild " + modifier.toString(dim) +
-    (if (args.isEmpty) " " else args.mkString(" ", " ", " ")) + files.mkString(" ")
+  override def toString: String = "rbuild " + Action.modifierToString(modifier) + " " + dim +
+    (args ++ files.map(_.toString)).map(" " +).mkString
 }
 
 /** builds a dimension in a previously opened archive */
