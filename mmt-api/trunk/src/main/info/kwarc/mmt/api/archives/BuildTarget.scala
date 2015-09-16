@@ -116,7 +116,7 @@ class BuildTask(val archive: Archive, val inFile: File, val isDir: Boolean, val 
  *
  * It implements BuildTarget in terms of a single abstract method called to build a path in the archive.
  */
-abstract class TraversingBuildTarget extends BuildTarget {
+abstract class TraversingBuildTarget extends BuildTarget with Dependencies {
   /** the input dimension/archive folder */
   def inDim: ArchiveDimension
 
@@ -296,6 +296,21 @@ abstract class TraversingBuildTarget extends BuildTarget {
       false
     })
   }
+
+  override def buildDepsFirst(a: Archive, in: FilePath = EmptyPath): Unit = {
+    def getFilesRec(in: FilePath): Set[(Archive, FilePath)] = {
+      val inFile = a / inDim / in
+      if (inFile.isDirectory && includeDir(inFile.getName))
+        inFile.list.flatMap(n => getFilesRec(FilePath(in.segments ::: List(n)))).toSet
+      else if (inFile.isFile && includeFile(inFile.getName))
+        Set((a, in))
+      else Set.empty
+    }
+    // includeFile will be checked by build again (as was already checked during dependency analysis)
+    val ts = getDeps(controller, getFilesRec(in))
+    ts foreach (_.toList.sortBy(_.toString()).foreach(p => build(p._1, p._2)))
+  }
+
 }
 
 /**

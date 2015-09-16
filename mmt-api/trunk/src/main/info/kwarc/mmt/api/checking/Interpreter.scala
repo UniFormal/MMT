@@ -3,6 +3,8 @@ package info.kwarc.mmt.api.checking
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents._
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.ontology.{Declares, RelationExp}
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.utils._
 
@@ -22,11 +24,71 @@ abstract class Interpreter extends Importer {
 
   /** creates a [[ParsingStream]] for the input file and interprets it */
   def importDocument(bf: BuildTask, index: Document => Unit) {
-    val inPathOMDoc = bf.inPath.toFile.setExtension("omdoc").filepath
-    val dPath = DPath(bf.base / inPathOMDoc.segments) // bf.narrationDPath except for extension
+    val dPath = getDPath(bf.archive, bf.inPath) // bf.narrationDPath except for extension
     val ps = new ParsingStream(bf.base / bf.inPath.segments, dPath, bf.archive.namespaceMap, format, File.Reader(bf.inFile))
     val doc = apply(ps)(bf.errorCont)
     index(doc)
+  }
+
+  /** bf.narrationDPath except for extension */
+  def getDPath(a: Archive, fp: FilePath): DPath = {
+    val inPathOMDoc = fp.toFile.setExtension("omdoc").filepath
+    DPath(a.narrationBase / inPathOMDoc.segments)
+  }
+
+  /** reconstruct source file form DPATH */
+  def dPathToFile(controller: Controller)(p: Path): List[(Archive, FilePath)] =
+    p match {
+      case DPath(uri) =>
+        Relational.getArchives(controller).
+          flatMap { a =>
+            if (a.narrationBase <= uri) {
+              val b = a.narrationBase.toString
+              val c = uri.toString.stripPrefix(b)
+              if (c.startsWith("/http..")) None // filter out content documents
+              else Some((a, File(a.rootString + "/" + inDim + c).setExtension(format)))
+            } else None
+          }.map { afp =>
+          if (afp._2.length() == 0) log("missing file: " + afp._2 + " for path " + p)
+          (afp._1, FilePath((afp._1.root / inDim.toString).relativize(afp._2).segments.tail))
+        }
+      case _ => Nil
+    }
+
+  /** method from trait Dependencies */
+  override def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[(Archive, FilePath)] = {
+    val rs = controller.depstore
+    val d = getDPath(a, fp)
+    log(d.toString)
+    val usedTheories = rs.querySet(d, +Declares * RelationExp.Deps)
+    val reducedTheories = usedTheories.map {
+      case MPath(p, LocalName(hd :: _ :: _)) => MPath(p, LocalName(List(hd)))
+      case t => t
+    }.toList.sortBy(_.toString)
+    var result: Set[(Archive, FilePath)] = Set.empty
+    reducedTheories.foreach { theo =>
+      val provider = rs.querySet(theo, -Declares).toList.sortBy(_.toString)
+      if (provider.isEmpty)
+        log("  nothing provides: " + theo + " for " + d)
+      else {
+        val ds = provider.flatMap(dPathToFile(controller))
+        result ++= ds
+        ds match {
+          case Nil => log("  no document found for: " + theo)
+          case hd :: Nil =>
+            if (ds == dPathToFile(controller)(d))
+              log("  theory provided in same document: " + theo)
+            else
+              log("  " + hd + " for " + theo)
+          case _ =>
+            log("  several documents found for: " + theo)
+            log("    " + ds.mkString(" "))
+        }
+      }
+    }
+    result -= ((a, fp))
+    log(result.toString())
+    result
   }
 }
 

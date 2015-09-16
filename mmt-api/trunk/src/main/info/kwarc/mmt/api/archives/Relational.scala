@@ -2,7 +2,6 @@ package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.utils._
 
@@ -50,6 +49,9 @@ class Relational extends TraversingBuildTarget {
   private def indexModule(mod: StructuralElement): Unit = {
     storeRel(mod)
   }
+
+  // no history can be checked therefore simply rebuild on update
+  override def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = build(a, in)
 }
 
 /** collect mmt dependencies from all archives */
@@ -78,86 +80,10 @@ class ArchiveDeps extends Extension {
   }
 }
 
-/** an object to extract dependencies from a controller */
-object Relational {
-  // see getDocDPath
-  def getDPath(a: Archive, fp: FilePath): DPath = {
-    val inPathOMDoc = fp.toFile.setExtension("omdoc").filepath
-    DPath(a.narrationBase / inPathOMDoc.segments)
-  }
-
-  /** get all archives */
-  def getArchives(controller: Controller): List[Archive] =
-    controller.backend.getStores.collect { case a: Archive => a }
-
-  /** report via the controller using the apply method */
-  def report(controller: Controller, s: String): Unit =
-    controller.report("deps", s)
-
-  // old docPathToFilePath
-  def dPathToFile(controller: Controller)(p: Path): List[(Archive, FilePath)] =
-    p match {
-      case DPath(uri) =>
-        getArchives(controller).
-          flatMap { a =>
-            if (a.narrationBase <= uri) {
-              val b = a.narrationBase.toString
-              val c = uri.toString.stripPrefix(b)
-              if (c.startsWith("/http..")) None // filter out content documents
-              else Some((a, File(a.rootString + "/source" + c).setExtension("mmt")))
-            } else None
-          }.map { afp =>
-          if (afp._2.length() == 0) report(controller, "missing file: " + afp._2 + " for path " + p)
-          (afp._1, FilePath((afp._1.root / "source").relativize(afp._2).segments.tail))
-        }
-      case _ => Nil
-    }
-
+trait Dependencies {
   def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[(Archive, FilePath)] = {
-    val rs = controller.depstore
-    val d = getDPath(a, fp)
-    report(controller, d.toString)
-    val usedTheories = rs.querySet(d, +Declares * RelationExp.Deps)
-    val reducedTheories = usedTheories.map {
-      case MPath(p, LocalName(hd :: _ :: _)) => MPath(p, LocalName(List(hd)))
-      case t => t
-    }.toList.sortBy(_.toString)
-    var result: Set[(Archive, FilePath)] = Set.empty
-    reducedTheories.foreach { theo =>
-      val provider = rs.querySet(theo, -Declares).toList.sortBy(_.toString)
-      if (provider.isEmpty)
-        report(controller, "  nothing provides: " + theo + " for " + d)
-      else {
-        val ds = provider.flatMap(dPathToFile(controller))
-        result ++= ds
-        ds match {
-          case Nil => report(controller, "  no document found for: " + theo)
-          case hd :: Nil =>
-            if (ds == dPathToFile(controller)(d))
-              report(controller, "  theory provided in same document: " + theo)
-            else
-              report(controller, "  " + hd + " for " + theo)
-          case _ =>
-            report(controller, "  several documents found for: " + theo)
-            report(controller, "    " + ds.mkString(" "))
-        }
-      }
-    }
-    result -= ((a, fp))
-    report(controller, result.toString())
-    result
-  }
-
-  def topsort[A](m: Map[A, Set[A]]): List[Set[A]] = {
-    if (m.isEmpty) Nil
-    else {
-      val (noDeps, rest) = m.partition(_._2.isEmpty)
-      if (noDeps.isEmpty) List(Set.empty, m.keySet) // oops cycles !!!
-      else {
-        val fst = noDeps.keySet
-        fst :: topsort(rest.map(p => (p._1, p._2.diff(fst))))
-      }
-    }
+    controller.report("mmt-omdoc", "HH")
+    Set.empty
   }
 
   def getDeps(controller: Controller, args: Set[(Archive, FilePath)]): List[Set[(Archive, FilePath)]] = {
@@ -172,6 +98,25 @@ object Relational {
       unknown -= p
       unknown ++= ds.diff(visited)
     }
-    topsort(deps)
+    Relational.topsort(deps)
+  }
+}
+
+/** an object to extract dependencies from a controller */
+object Relational {
+  /** get all archives */
+  def getArchives(controller: Controller): List[Archive] =
+    controller.backend.getStores.collect { case a: Archive => a }
+
+  def topsort[A](m: Map[A, Set[A]]): List[Set[A]] = {
+    if (m.isEmpty) Nil
+    else {
+      val (noDeps, rest) = m.partition(_._2.isEmpty)
+      if (noDeps.isEmpty) List(Set.empty, m.keySet) // oops cycles !!!
+      else {
+        val fst = noDeps.keySet
+        fst :: topsort(rest.map(p => (p._1, p._2.diff(fst))))
+      }
+    }
   }
 }
