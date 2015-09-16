@@ -257,5 +257,6 @@ class ExtensionManager(controller: Controller) extends Logger {
   ).map { case (a, b) => (a, "info.kwarc.mmt.stex." + b) } ++
     Map("twelf-omdoc" -> "info.kwarc.mmt.lf.Twelf",
       "tptp-twelf" -> "info.kwarc.mmt.tptp.TPTPImporter",
-      "mmt-omdoc" -> "info.kwarc.mmt.lf.Plugin")
+      "mmt-omdoc" -> "info.kwarc.mmt.lf.Plugin",
+      "mmt-deps" -> "info.kwarc.mmt.api.archives.Relational")
 }
