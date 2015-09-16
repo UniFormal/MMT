@@ -2,6 +2,7 @@ package info.kwarc.mmt.stex
 
 import java.nio.charset.{Charset, MalformedInputException}
 import java.nio.file.Files
+import java.util.regex.PatternSyntaxException
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
@@ -106,7 +107,16 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   protected def skip(bt: BuildTask): Boolean = {
     val optExcludes: Option[String] = bt.archive.properties.get("no-" + outExt)
     val excludes: List[String] = optExcludes.map(_.split(" ").toList).getOrElse(Nil)
-    val exclude = excludes.exists(bt.inFile.getName.matches)
+    def patternMatch(pat: String): Boolean =
+      try {
+        bt.inFile.getName.matches(pat)
+      } catch {
+        case e: PatternSyntaxException =>
+          logResult(e.getMessage)
+          logResult("correct no-" + outExt + " property in META-INF/MANIFEST.MF")
+          true // skip everything until corrected
+      }
+    val exclude = excludes.exists(patternMatch)
     if (exclude) logResult("skipping " + getOutPath(bt.archive, bt.inFile))
     exclude
   }
