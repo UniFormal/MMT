@@ -105,11 +105,11 @@ class ExtensionManager(controller: Controller) extends Logger {
 
 
   def get[E <: Extension](cls: Class[E]): List[E] = extensions.collect {
-    case e: E if cls.isInstance(e) => e
+    case e: E @unchecked if cls.isInstance(e) => e
   }
 
   def get[E <: FormatBasedExtension](cls: Class[E], format: String): Option[E] = extensions.collect {
-    case e: E if cls.isInstance(e) && e.isApplicable(format) => e
+    case e: E @unchecked if cls.isInstance(e) && e.isApplicable(format) => e
   }.headOption
 
   var lexerExtensions: List[LexerExtension] = Nil
@@ -249,7 +249,8 @@ class ExtensionManager(controller: Controller) extends Logger {
     "sms" -> "SmsGenerator",
     "latexml" -> "LaTeXML",
     "pdflatex" -> "PdfLatex",
-    "stex-omdoc" -> "STeXImporter"
+    "stex-omdoc" -> "STeXImporter",
+    "latex-deps" -> "LatexDeps"
   ).map { case (a, b) => (a, "info.kwarc.mmt.stex." + b) } ++
     Map("twelf-omdoc" -> "info.kwarc.mmt.lf.Twelf",
       "tptp-twelf" -> "info.kwarc.mmt.tptp.TPTPImporter",
