@@ -104,16 +104,12 @@ class ExtensionManager(controller: Controller) extends Logger {
   )
 
 
-  def get[E <: Extension](cls: Class[E]): List[E] = extensions.flatMap { e =>
-    if (cls.isInstance(e)) List(e.asInstanceOf[E]) else Nil
+  def get[E <: Extension](cls: Class[E]): List[E] = extensions.collect {
+    case e: E if cls.isInstance(e) => e
   }
 
-  def get[E <: FormatBasedExtension](cls: Class[E], format: String): Option[E] = extensions.flatMap { e =>
-    if (cls.isInstance(e)) {
-      val fbe = e.asInstanceOf[E]
-      if (fbe.isApplicable(format)) List(fbe)
-      else Nil
-    } else Nil
+  def get[E <: FormatBasedExtension](cls: Class[E], format: String): Option[E] = extensions.collect {
+    case e: E if cls.isInstance(e) && e.isApplicable(format) => e
   }.headOption
 
   var lexerExtensions: List[LexerExtension] = Nil
