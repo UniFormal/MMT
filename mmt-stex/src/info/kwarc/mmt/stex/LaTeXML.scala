@@ -172,7 +172,7 @@ class SmsGenerator extends LaTeXBuildTarget {
     val source = scala.io.Source.fromFile(inFile, enc)
     val w = File.Writer(outFile)
     source.getLines().foreach { line =>
-      val idx = line.indexOf(`%`)
+      val idx = line.indexOf('%')
       val l = (if (idx > -1) line.substring(0, idx) else line).trim
       val verbIndex = l.indexOf("\\verb")
       if (verbIndex <= -1 && SmsRegs.findFirstIn(l).isDefined)
