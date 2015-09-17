@@ -38,6 +38,14 @@ class Relational extends TraversingBuildTarget {
     doc.getModulesResolved(controller.localLookup) foreach indexModule
   }
 
+  override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): Unit = {
+    /* here we clean memory to avoid conflicts with subsequent builds.
+     * without it nat.mmt results in several "error: invalid unit:" */
+    controller.memory.content.clear
+    controller.memory.narration.clear
+    // TODO: avoid memory usage and add dependencies (to be computed) directly in StructureParser
+  }
+
   /** extract and store the relational information about a knowledge item */
   private def storeRel(se: StructuralElement): Unit = {
     controller.relman.extract(se) { r =>
@@ -52,32 +60,6 @@ class Relational extends TraversingBuildTarget {
 
   // no history can be checked therefore simply rebuild on update
   override def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = build(a, in)
-}
-
-/** collect mmt dependencies from all archives */
-class ArchiveDeps extends Extension {
-  def buildAllDeps(): Unit = {
-    // maybe use separate controller
-    val builder = new Relational
-    builder.init(controller)
-    builder.start(Nil)
-    // maybe sort archives in dependency order via "dependencies" property
-    Relational.getArchives(controller).foreach { a =>
-      // read relational for stex
-      a.readRelational(EmptyPath, controller, "rel")
-      builder(Build, a, EmptyPath)
-    }
-    /* here we clean memory to avoid conflicts with subsequent builds.
-     * without it nat.mmt results in several "error: invalid unit:" */
-    controller.memory.content.clear
-    controller.memory.narration.clear
-    // TODO: avoid memory usage and add dependencies (to be computed) directly in StructureParser
-  }
-
-  /** simple collect dependencies when starting this extension */
-  override def start(args: List[String]) {
-    buildAllDeps()
-  }
 }
 
 trait Dependencies {
