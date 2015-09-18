@@ -211,7 +211,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
             }
           case StructureVarDecl(s, OMPMOD(p, args), dfOpt) =>
             name.head match {
-              case SimpleStep(s2) if s == s2 =>
+              case s2@SimpleStep(_) if s == LocalName(s2) =>
                 val sym = getSymbol(p ? name.tail)
                 val struc = vdDecl.asInstanceOf[Structure]
                 val symT = translateByLink(sym, struc, error)
@@ -220,7 +220,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
             }
           case VarDecl(n, _, _, _) =>
             name.head match {
-              case SimpleStep(n2) if n == n2 =>
+              case n2@SimpleStep(_) if n == LocalName(n2) =>
                 val c = vdDecl.asInstanceOf[Constant]
                 return c
               case _ =>
