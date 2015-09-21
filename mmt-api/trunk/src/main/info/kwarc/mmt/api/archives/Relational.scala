@@ -64,7 +64,6 @@ class Relational extends TraversingBuildTarget {
 
 trait Dependencies {
   def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[(Archive, FilePath)] = {
-    controller.report("mmt-omdoc", "HH")
     Set.empty
   }
 
