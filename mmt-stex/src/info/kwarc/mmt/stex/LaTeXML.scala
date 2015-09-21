@@ -125,6 +125,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
 
   def buildFile(bt: BuildTask): Unit = if (!skip(bt)) reallyBuildFile(bt)
 
+  def mkRegGroup(l: List[String]): String = l.mkString("(", "|", ")")
 }
 
 /** sms generation */
@@ -132,19 +133,17 @@ class SmsGenerator extends LaTeXBuildTarget {
   val key = "sms"
   val outDim: ArchiveDimension = source
   override val outExt = "sms"
-
-  private val SmsKeys: List[String] = List(
+  private val smsKeys: List[String] = List(
     "guse", "gadopt", "symdef", "abbrdef", "symvariant", "keydef", "listkeydef",
     "importmodule", "gimport", "adoptmodule", "importmhmodule", "adoptmhmodule"
   )
-  private val SmsTopKeys: List[String] = List(
+  private val smsTopKeys: List[String] = List(
     "module", "importmodulevia", "importmhmodulevia"
   )
-  private val SmsRegs: Regex = (SmsKeys.map("\\\\" + _) ++
-    SmsTopKeys.map("\\\\begin\\{" + _ + "\\}") ++
-    SmsTopKeys.map("\\\\end\\{" + _ + "\\}")
-    ).mkString("|").r
-
+  private val smsRegs: Regex = {
+    val alt: String = smsTopKeys.mkString("\\{(", "|", ")\\}")
+    ("^\\\\(" + mkRegGroup(smsKeys) + "|begin" + alt + "|end" + alt + ")").r
+  }
   private val encodings = List("ISO-8859-1", Charset.defaultCharset.toString, "UTF-8",
     "UTF-16").distinct
 
@@ -175,7 +174,7 @@ class SmsGenerator extends LaTeXBuildTarget {
       val idx = line.indexOf('%')
       val l = (if (idx > -1) line.substring(0, idx) else line).trim
       val verbIndex = l.indexOf("\\verb")
-      if (verbIndex <= -1 && SmsRegs.findFirstIn(l).isDefined)
+      if (verbIndex <= -1 && smsRegs.findFirstIn(l).isDefined)
         w.println(l + "%")
     }
     w.close()
