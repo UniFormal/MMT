@@ -63,6 +63,7 @@ class Relational extends TraversingBuildTarget {
 }
 
 trait Dependencies {
+  // override this method
   def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[(Archive, FilePath)] = {
     Set.empty
   }
@@ -79,7 +80,7 @@ trait Dependencies {
       unknown -= p
       unknown ++= ds.diff(visited)
     }
-    Relational.topsort(deps)
+    Relational.topsort(controller, deps)
   }
 }
 
@@ -89,14 +90,17 @@ object Relational {
   def getArchives(controller: Controller): List[Archive] =
     controller.backend.getStores.collect { case a: Archive => a }
 
-  def topsort[A](m: Map[A, Set[A]]): List[Set[A]] = {
+  def topsort[A](controller: Controller, m: Map[A, Set[A]]): List[Set[A]] = {
     if (m.isEmpty) Nil
     else {
       val (noDeps, rest) = m.partition(_._2.isEmpty)
-      if (noDeps.isEmpty) List(Set.empty, m.keySet) // oops cycles !!!
+      if (noDeps.isEmpty) {
+        controller.report(new Error("cyclic deps: " + m) {})
+        List(Set.empty, m.keySet)
+      }
       else {
         val fst = noDeps.keySet
-        fst :: topsort(rest.map(p => (p._1, p._2.diff(fst))))
+        fst :: topsort(controller, rest.map(p => (p._1, p._2.diff(fst))))
       }
     }
   }
