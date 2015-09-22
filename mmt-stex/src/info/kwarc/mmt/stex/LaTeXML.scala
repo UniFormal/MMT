@@ -91,9 +91,11 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
     }
   }
 
+  protected def getLang(f: File): Option[String] = f.stripExtension.getExtension
+
   protected def getAmbleFile(preOrPost: String, bt: BuildTask): File = {
     val repoDir = bt.archive.root
-    val lang: Option[String] = bt.inFile.stripExtension.getExtension
+    val lang: Option[String] = getLang(bt.inFile)
     val filePrefix = repoDir / "lib" / preOrPost
     val defaultFile = filePrefix.setExtension("tex")
     if (lang.isDefined) {
@@ -135,7 +137,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   private val importRegs: Regex = ("^\\\\" + mkRegGroup(importKeys)).r
   private val groups: Regex = "\\\\\\w*\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
 
-  def matchPathAndRep(aStr: String, line: String): Option[(String, FilePath)] =
+  private def matchPathAndRep(aStr: String, line: String): Option[(String, FilePath)] =
     line match {
       case groups(_, a, b) =>
         val fp = File(b).setExtension("tex").filepath
@@ -154,11 +156,13 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
         }
       case _ => None
     }
+  private def archString(a: Archive): String = a.groupDir.getName + "/" + a.root.getName
 
-  def readingSource(a: Archive, in: File): Seq[(String, FilePath)] = {
-    val aStr: String = a.groupDir.getName + "/" + a.root.getName
+  protected def readingSource(a: Archive, in: File, init: List[(String, FilePath)] = Nil):
+  Seq[(String, FilePath)] = {
+    val aStr: String = archString(a)
+    var res = init
     val source = scala.io.Source.fromFile(in, "ISO-8859-1")
-    var res: List[(String, FilePath)] = Nil
     source.getLines().foreach { line =>
       val idx = line.indexOf('%')
       val l = (if (idx > -1) line.substring(0, idx) else line).trim
@@ -175,9 +179,12 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
     val safe = res.filter { case ((ar, fp)) =>
       val ap = File(ar) / inDim.toString / fp.toString
       val f: File = a.baseDir / ap.toString
-      if (f.exists()) true
+      if (f == in) {
+        log(LocalError(getOutPath(a, in) + " imports itself"))
+        false
+      } else if (f.exists()) true
       else {
-        log(LocalError(getOutPath(a, in) + " missing: " + ap ))
+        log(LocalError(getOutPath(a, in) + " missing: " + ap))
         false
       }
     }
@@ -187,7 +194,13 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   override def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[(Archive, FilePath)] = {
     val in = a / inDim / fp
     if (in.exists()) {
-      val fs = readingSource(a, in)
+      val optLang = getLang(in)
+      val init = optLang match {
+        case None => Nil
+        case Some(lang) =>
+          List((archString(a), fp.toFile.stripExtension.stripExtension.setExtension("tex").filepath))
+      }
+      val fs = readingSource(a, in, init)
       var res: Set[(Archive, FilePath)] = Set.empty
       fs foreach { case (aStr, p) =>
         controller.getOrAddArchive(a.baseDir / aStr) match {
