@@ -20,6 +20,7 @@ class MMTPlugin extends EBPlugin with Logger {
    val report = controller.report
    val logPrefix = "jedit"
    val errorSource = new DefaultErrorSource("MMT")
+   //val symToolBar = new MMTToolBar(this)
 
    val compileActions = new CompileActions(this)
 
