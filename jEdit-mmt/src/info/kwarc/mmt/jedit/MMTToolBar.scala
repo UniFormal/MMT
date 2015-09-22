@@ -1,3 +1,4 @@
+/*
 package info.kwarc.mmt.jedit
 
 import javax.swing.JToolBar
@@ -26,3 +27,4 @@ public class MMTToolBar extends JPanel {
 
   }
 }
+ */
