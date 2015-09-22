@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.BuildTargetModifier
+import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation._
@@ -66,14 +66,14 @@ object Action extends RegexParsers {
 
   private def keyMod: Parser[(String, BuildTargetModifier)] = str ^^ { case km =>
     if (km.startsWith("-"))
-      (km.tail, archives.Clean)
+      (km.tail, Clean)
     else if ("*!&".contains(km.last))
       (km.init, km.last match {
-        case '!' => archives.Update(ifHadErrors = true)
-        case '&' => archives.BuildDepsFirst
-        case _ => archives.Update(ifHadErrors = false)
+        case '!' => Update(ifHadErrors = true)
+        case '&' => BuildDepsFirst
+        case _ => Update(ifHadErrors = false)
       })
-    else (km, archives.Build)
+    else (km, Build)
   }
 
   private def archbuild = "build" ~> archiveList ~ keyMod ~ optFilePath ^^ {
@@ -85,28 +85,28 @@ object Action extends RegexParsers {
 
   private def buildModifier: Parser[BuildTargetModifier] =
     ("--force" | "--onChange" | "--onError" | "--clean" | "--depsFirst") ^^ {
-      case "--force" => archives.Build
-      case "--clean" => archives.Clean
-      case "--onError" => archives.Update(ifHadErrors = true)
-      case "--depsFirst" => archives.BuildDepsFirst
-      case _ => archives.Update(ifHadErrors = false)
+      case "--force" => Build
+      case "--clean" => Clean
+      case "--onError" => Update(ifHadErrors = true)
+      case "--depsFirst" => BuildDepsFirst
+      case _ => Update(ifHadErrors = false)
     }
 
   def modifierToString(m: BuildTargetModifier): String = "--" + (m match {
-    case archives.Build => "force"
-    case archives.Clean => "clean"
-    case archives.BuildDepsFirst => "depsFirst"
-    case archives.Update(hadErrs) => if (hadErrs) "onError" else "onChange"
+    case Build => "force"
+    case Clean => "clean"
+    case BuildDepsFirst => "depsFirst"
+    case Update(hadErrs) => if (hadErrs) "onError" else "onChange"
   })
 
   private def filebuild = "rbuild" ~> (buildModifier ?) ~ str ~ (pluginArg *) ~ (str +) ^^ {
     case mod ~ km ~ args ~ ins =>
-      FileBuild(km, mod.getOrElse(archives.Update(ifHadErrors = false)), args, ins.map(File(_)))
+      FileBuild(km, mod.getOrElse(Update(ifHadErrors = false)), args, ins.map(File(_)))
   }
 
   private def archdim = "archive" ~> archiveList ~ dimension ~ optFilePath ^^ {
     case id ~ dim ~ s =>
-      ArchiveBuild(id, dim, archives.Build, s)
+      ArchiveBuild(id, dim, Build, s)
   }
 
   private def dimension = "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
@@ -467,13 +467,13 @@ case class AddArchive(folder: java.io.File) extends Action {
 }
 
 /** builds a dimension in a previously opened archive */
-case class ArchiveBuild(ids: List[String], dim: String, modifier: archives.BuildTargetModifier, in: FilePath = EmptyPath) extends Action {
+case class ArchiveBuild(ids: List[String], dim: String, modifier: BuildTargetModifier, in: FilePath = EmptyPath) extends Action {
   override def toString: String = "build " + ids.mkString("[", ",", "]") + " " + modifier.toString(dim) +
     (if (in.segments.isEmpty) "" else " " + in)
 }
 
 /** builds a dimension for the given files by opening the archive for each file before building */
-case class FileBuild(dim: String, modifier: archives.BuildTargetModifier,
+case class FileBuild(dim: String, modifier: BuildTargetModifier,
                      args: List[String], files: List[File]) extends Action {
   override def toString: String = "rbuild " + Action.modifierToString(modifier) + " " + dim +
     (args ++ files.map(_.toString)).map(" " +).mkString
