@@ -1,7 +1,7 @@
 package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.{Controller, Logger}
+import info.kwarc.mmt.api.frontend.Logger
 import info.kwarc.mmt.api.objects.Conversions._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
@@ -96,10 +96,10 @@ case class TermEntry(goal: Goal, tm: Term, tp: Term) {
   }
 }
 
-class Terms(blackboard: MMTBlackboard)(implicit controller: Controller,oLP:String) extends Logger {
+class Terms(blackboard: MMTBlackboard) extends Logger {
 
-  val report =  controller.report
-  def logPrefix = oLP + "#Terms"
+  def report =  blackboard.report
+  def logPrefix = blackboard.OLP+"#Terms"
 
   /** create a lookup for constant atom terms based on their type
     * Fisrt MMT[[Term]]=>LF type, Second MMT[[TermEntry]]=> LF term marked with goal
@@ -148,9 +148,9 @@ class Terms(blackboard: MMTBlackboard)(implicit controller: Controller,oLP:Strin
  * 
  * @param shapeDepth is the depth of the shape representation used to apprximate facts
  */
-class Facts(blackboard: MMTBlackboard, shapeDepth: Int)(implicit c: Controller,oLP:String) extends Logger {
-  val report =  c.report
-  def logPrefix = oLP+"#Facts"
+class Facts(blackboard: MMTBlackboard, shapeDepth: Int) extends Logger {
+  def report =  blackboard.report
+  def logPrefix = blackboard.OLP+"#Facts"
 
   def getFunctionalFacts:List[Fact] = Nil //TODO implement this
 
@@ -185,7 +185,7 @@ class Facts(blackboard: MMTBlackboard, shapeDepth: Int)(implicit c: Controller,o
 
   /** simplify a fact */
   private[leo] def simplifyFact(f: Fact): Fact = {
-    val tpS = c.simplifier(f.tp, f.goal.fullContext, blackboard.rules)
+    val tpS = blackboard.controller.simplifier(f.tp, f.goal.fullContext, blackboard.rules)
     f.copy(tp = tpS)
   }
 
@@ -194,7 +194,7 @@ class Facts(blackboard: MMTBlackboard, shapeDepth: Int)(implicit c: Controller,o
     * adds all queued facts to the database 
     */
   private[leo] def integrateFutureFacts(section:Option[FactSection]) ={
-    val out = futureFacts.nonEmpty
+    //val out = futureFacts.nonEmpty
     futureFacts foreach {f =>
        val fS = simplifyFact(f)
        log("new fact: " + fS.present(blackboard.presentObj))

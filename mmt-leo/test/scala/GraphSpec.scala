@@ -5,10 +5,9 @@ package scala
 import org.scalatest._
 
 import scala.collection.mutable
-import scalax.collection.GraphEdge.{UnDiEdge, DiEdge}
+import scalax.collection.GraphEdge.{DiEdge, UnDiEdge}
 import scalax.collection.GraphTraversal.Predecessors
 import scalax.collection.mutable.Graph
-import scalax.collection.edge.Implicits._
 
 class GraphSpec extends FlatSpec with Matchers {
 

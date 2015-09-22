@@ -1,8 +1,9 @@
 package info.kwarc.mmt.leo.AgentSystem
 
-import util.control.Breaks._
-import info.kwarc.mmt.api.frontend.{Controller, Logger}
+import info.kwarc.mmt.api.frontend.Logger
+
 import scala.collection.mutable
+import scala.util.control.Breaks._
 
 
 /**
@@ -74,18 +75,17 @@ trait Listener {
 
 trait Communicator extends Listener with Speaker
 
-abstract class Agent(implicit controller: Controller,oLP:String) extends Logger with Communicator {
-  val priority = 0
+abstract class Agent(blackboardParam: Blackboard) extends Communicator with Logger {
 
-  type BBType <:Blackboard
 
-  var blackboard:Option[BBType]=None
+  def report = blackboard.report
+  def logPrefix = blackboard.OLP +"#"+name
+
+  val priority: Int
+
 
   /** the name of the agent */
   val name: String
-
-  val report = controller.report
-  def logPrefix = oLP +"#"+name
 
   override def toString: String= {name + "::numTasks:" + numTasks}
 
@@ -117,7 +117,7 @@ abstract class Agent(implicit controller: Controller,oLP:String) extends Logger 
    */
   def removeColliding(nExec: Iterable[Task]): Unit = taskQueue.synchronized(taskQueue.forall{tbe =>
     nExec.exists{e =>
-      blackboard.get.sections.forall({ s =>
+      blackboard.sections.forall({ s =>
         val rem = e.writeSet(s).intersect(tbe.writeSet(s)).nonEmpty ||
           e.writeSet(s).intersect(tbe.writeSet(s)).nonEmpty ||
           e == tbe // Remove only tasks depending on written (changed) data.
@@ -127,38 +127,41 @@ abstract class Agent(implicit controller: Controller,oLP:String) extends Logger 
     }
   })
 
-  /**Register agent to blackboard,    */
-  def register(blackboard: BBType) {
-    blackboard.registerAgent(this)
-    this.blackboard=Some(blackboard)
-  }
-
-  def unregister(blackboard: Blackboard): Unit = {
+  def unregister(): Unit = {
     blackboard.unregisterAgent(this)
     clearTasks()
   }
+
+
+  val blackboard = blackboardParam
+  if (blackboard!=null) blackboard.registerAgent(this)
+
 }
+
+
 
 /** Class of the auction agent which is responsible for
   * getting all of the available proof tasks and choosing
   * a proper non-colliding subset which hopefully maximizes
   * utility in the proof
   */
-class AuctionAgent(implicit controller: Controller,oLP:String) extends Agent {
+class AuctionAgent(blackboard: Blackboard) extends Agent(blackboard) {
+  val priority = 0
+
   val name = "AuctionAgent"
 
   override val interests: List[String] = List("BID") //TODO implement agent sending bids
   
-  def wantToSubscribeTo:List[Speaker] = blackboard.get.agents
+  def wantToSubscribeTo:List[Speaker] = blackboard.agents
 
   //def updateSubscribers() = subscribers:::=blackboard.get.agents
 
-  lazy val executionAgent = blackboard.get.executionAgent.get
+  lazy val executionAgent = blackboard.executionAgent.get
 
   val metaTaskQueue = new mutable.Queue[Task]()
   
   /** @return A list of all of the registered proof agents*/
-  def subAgents() = blackboard.get.agents.sortBy(-_.priority)
+  def subAgents() = blackboard.agents.sortBy(-_.priority)
 
 
   def respond() ={
@@ -169,7 +172,7 @@ class AuctionAgent(implicit controller: Controller,oLP:String) extends Agent {
   }
   
   def consistencyCheck(tasks:List[Task]): Boolean ={
-    val sections = blackboard.get.sections
+    val sections = blackboard.sections
     sections.forall({ s =>
       val wsList = tasks.flatMap(t => t.writeSet(s).toList)
       if (!(wsList.length==wsList.distinct.length)) {return false}
@@ -215,17 +218,19 @@ class AuctionAgent(implicit controller: Controller,oLP:String) extends Agent {
 
     log("Selected "+tasks.length+" task(s) for execution")
 
-    sendMessage(new MetaTask(tasks,this,"Parallelizable MetaTask"),executionAgent)
+    sendMessage(new MetaTask(tasks,this),executionAgent)
   }
   
 }
 
 
-class ExecutionAgent(implicit controller: Controller,oLP:String) extends Agent {
+class ExecutionAgent(blackboard: Blackboard) extends Agent(blackboard) {
+  val priority = 0
+
   val name = "ExecutionAgent"
   val interests = Nil
 
-  def wantToSubscribeTo:List[Speaker] = List(blackboard.get.auctionAgent.get)
+  def wantToSubscribeTo:List[Speaker] = List(blackboard.auctionAgent.get)
 
   val metaTaskQueue = new mutable.Queue[Task]()
 
@@ -235,7 +240,7 @@ class ExecutionAgent(implicit controller: Controller,oLP:String) extends Agent {
   }
 
   //TODO add parallelization
-  def parallelExecute(t:Task) = if (t.isApplicable(this.blackboard.get)){
+  def parallelExecute(t:Task) = if (t.isApplicable(this.blackboard)){
     t.execute()
   }else{
     log("MetaTask inapplicable")

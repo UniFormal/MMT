@@ -1,4 +1,5 @@
 package info.kwarc.mmt.leo.provers
+/*
 
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.DataTreeSystem.PartitionImpl.{PartitionAgent, PartitionPresenter, IntBlackboard}
@@ -21,4 +22,4 @@ class PartitionProver(target: Int , usableNumbers: List[Int], cycles: Int = 5)(i
     (new PartitionPresenter).present(goal)
   }
 
-}
+}*/

@@ -1,10 +1,9 @@
 package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.{Active, modules}
-import info.kwarc.mmt.api.objects.{OMPMOD, ComplexTheory, Term}
+import info.kwarc.mmt.api.objects.{ComplexTheory, OMPMOD}
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.leo.AgentSystem.{Display, Change, Section}
+import info.kwarc.mmt.api.{Active, modules}
+import info.kwarc.mmt.leo.AgentSystem.{Change, Section}
 
 
 /**
@@ -12,8 +11,8 @@ import info.kwarc.mmt.leo.AgentSystem.{Display, Change, Section}
  * blackboard.
  *
  */
-class GoalSection(blackboard:MMTBlackboard, goal:Goal)(implicit c: Controller,oLP:String) extends Section(blackboard) {
-  override def logPrefix =oLP+"#GoalSection"
+class GoalSection(blackboard:MMTBlackboard, goal:Goal) extends Section(blackboard) {
+  val name ="GoalSection"
 
   /** this type of section only stores data which is a subtype of the AndOr tree type*/
   type ObjectType=Goal
@@ -39,7 +38,7 @@ class GoalSection(blackboard:MMTBlackboard, goal:Goal)(implicit c: Controller,oL
 
   /** statefully changes g to a simpler goal */
   def simplifyGoal(g: Goal) {
-    g.setConc(blackboard.c.simplifier(g.conc, g.fullContext, blackboard.rules), blackboard.facts)
+    g.setConc(blackboard.controller.simplifier(g.conc, g.fullContext, blackboard.rules), blackboard.facts)
     blackboard.goalSection.passiveChange(g)
   }
 
@@ -69,8 +68,8 @@ class GoalSection(blackboard:MMTBlackboard, goal:Goal)(implicit c: Controller,oL
     alt.subgoals.foreach(blackboard.terms.addVarAtoms) //TODO work into goal addition
 
     log("************************* " + at.label + " at X **************************")
-    //log("\n" + data.presentHtml(0)(blackboard.presentObj, Some(g), Some(alt)))
-    log( Display.HTMLwrap("\n"+data.prettyDeep(blackboard.presentObj),"prover-goal") )
+    log("\n" + data.presentHtml(0)(blackboard.presentObj, Some(g), Some(alt)))
+    //log( Display.HTMLwrap("\n"+data.prettyDeep(blackboard.presentObj),"prover-goal") )
     if (!g.isSolved) {
       // recursively process subgoals
       alt.subgoals.foreach { sg => expand(sg) }
@@ -103,8 +102,8 @@ class GoalSection(blackboard:MMTBlackboard, goal:Goal)(implicit c: Controller,oL
 }
 
 
-class FactSection(blackboard:MMTBlackboard,shapeDepth: Int)(implicit c: Controller,oLP:String) extends Section(blackboard) {
-  override def logPrefix =oLP+"#FactSection"
+class FactSection(blackboard:MMTBlackboard,shapeDepth: Int) extends Section(blackboard) {
+  val name ="FactSection"
 
   type ObjectType = Facts
   var data = new Facts(blackboard:MMTBlackboard,shapeDepth: Int)
@@ -114,10 +113,10 @@ class FactSection(blackboard:MMTBlackboard,shapeDepth: Int)(implicit c: Controll
 
   def initialize():Unit = {
     if (!isInitialized){
-      val imports = c.library.visibleDirect(ComplexTheory(blackboard.goal.context))
+      val imports = blackboard.controller.library.visibleDirect(ComplexTheory(blackboard.goal.context))
       imports.foreach {
         case OMPMOD(p, _) =>
-          c.globalLookup.getO(p) match {
+          blackboard.controller.globalLookup.getO(p) match {
             case Some(t: modules.DeclaredTheory) =>
               t.getDeclarations.foreach {
                 case c: Constant if c.status == Active => c.tp.foreach { tp =>
@@ -139,8 +138,8 @@ class FactSection(blackboard:MMTBlackboard,shapeDepth: Int)(implicit c: Controll
   def passiveAdd(fact:Fact) = passiveOp(fact,"ADD")
 }
 
-class TermSection(blackboard:MMTBlackboard)(implicit c: Controller,oLP:String) extends Section(blackboard) {
-  override def logPrefix =oLP+"#TermSection"
+class TermSection(blackboard:MMTBlackboard) extends Section(blackboard) {
+  val name ="TermSection"
   type ObjectType = Terms
   var data = new Terms(blackboard:MMTBlackboard)
   var changes: List[Change[_]] = Nil
@@ -155,14 +154,15 @@ class TermSection(blackboard:MMTBlackboard)(implicit c: Controller,oLP:String) e
   def passiveAdd() = passiveOp("ADD")
 }
 
-class TransitivitySection(blackboard:MMTBlackboard)(implicit c: Controller,oLP:String) extends Section(blackboard) {
-  override def logPrefix =oLP+"#TransitivitySection"
+class TransitivitySection(blackboard:MMTBlackboard) extends Section(blackboard) {
+  val name ="TransitivitySection"
+
   type ObjectType = List[TransitivityDB]
   var data:ObjectType= Nil
   var changes: List[Change[_]] = Nil
 
 
-  def passiveOp(flag:String) = handleChange(new Change(this, true, List(flag)))//TODO add specific Term pointers
+  def passiveOp(flag:String) = handleChange(new Change(this, true, List(flag)))//TODO add specific fact pointers
   def passiveAdd() = passiveOp("ADD")
 
   def initialize():Unit = {}//TODO ADD INITIALIZATION

@@ -1,23 +1,20 @@
 package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
-import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.api.{Active, modules, RuleSet}
+import info.kwarc.mmt.api.RuleSet
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.leo.AgentSystem.{Display, Blackboard}
+import info.kwarc.mmt.leo.AgentSystem.{Blackboard, Display}
 
 /**
  * Created by Mark on 7/21/2015.
  *
  * This represents the class of the LF blackboard which handles proofs in the LF prover
  */
-class MMTBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Controller,oLP:String) extends Blackboard {
+class MMTBlackboard(val rules:RuleSet,val goal: Goal)(implicit c: Controller,olp:String) extends Blackboard {
 
-  val c = controller
-  override def logPrefix = oLP + "#MMTBlackboard"
+  override def logPrefix = OLP + "#MMTBlackboard"
 
   implicit val presentObj: Obj => String = o => controller.presenter.asString(o)
-  override lazy val report = controller.report
 
   /** convenience function to create a matcher in the current situation */
   def makeMatcher(context: Context, queryVars: Context) = new Matcher(controller, rules, context, queryVars)
@@ -35,8 +32,7 @@ class MMTBlackboard(val rules:RuleSet,val goal: Goal)(implicit controller: Contr
   val searchBackward     = List(BackwardPiElimination)
   val searchForward      = List(ForwardPiElimination)
   val searchTerms        = List(TermGeneration)
-  val transitivityRules  = Nil
-    //List(TransitivityGeneration)
+  val transitivityRules  = Nil //List(TransitivityGeneration)
 
 
   log("Rules: " + Display.listDisplay(rules.getAll.toList ))

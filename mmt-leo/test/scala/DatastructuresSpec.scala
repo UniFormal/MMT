@@ -1,4 +1,5 @@
 package test.scala
+/*
 
 
 import info.kwarc.mmt.api.frontend.Controller
@@ -127,4 +128,5 @@ class DatastructuresSpec extends FlatSpec with Matchers {
 }
 
 
+*/
 

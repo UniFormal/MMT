@@ -1,6 +1,6 @@
 package info.kwarc.mmt.leo.AgentSystem
 
-import info.kwarc.mmt.api.frontend.{Controller, Report, Logger}
+import info.kwarc.mmt.api.frontend.{Controller, Logger}
 
 /**
  * A blackboard is a central data collection object that supports
@@ -11,9 +11,11 @@ import info.kwarc.mmt.api.frontend.{Controller, Report, Logger}
  * with change management. This allows for uniform access and eliminates code reuse.
  *
  */
-abstract class Blackboard(implicit controller: Controller) extends Logger with Communicator{
-  lazy val report = controller.report
-  def logPrefix = "Blackboard"
+abstract class Blackboard(implicit c: Controller, olp:String) extends Logger with Communicator{
+  val OLP = olp
+  val controller = c
+  def report = controller.report
+  def logPrefix = OLP+"#Blackboard"
 
   def wantToSubscribeTo:List[Speaker] = Nil
   val interests = Nil
@@ -23,15 +25,23 @@ abstract class Blackboard(implicit controller: Controller) extends Logger with C
 
   /**Lists of agents currently registered to the blackboard*/
   var agents: List[Agent] = Nil
+
+  def getAgentsOfClass[A<:Agent](cls: Class[A]): List[A] = agents flatMap {a =>
+    if (cls.isInstance(a))
+      List(a.asInstanceOf[A])
+    else
+      Nil
+  }
+
   var auctionAgent: Option[AuctionAgent] = None
   var executionAgent: Option[ExecutionAgent] = None
 
-  /**flag which prohibits the running of additional taks*/
+  /**flag which prohibits the running of additional tasks*/
   def isTerminated=false
 
   /**Function that registers agents to the blackboard*/
   def registerAgent(a: Agent): Boolean = {
-    try {
+    //try {
       a match {
         case aa:AuctionAgent => auctionAgent = Some(aa)
         case ea:ExecutionAgent => executionAgent = Some(ea)
@@ -42,9 +52,9 @@ abstract class Blackboard(implicit controller: Controller) extends Logger with C
       }
       addSubscriber(a)
       log("Registered Agent: " + a);true
-    }catch{
-      case _:Throwable =>throw new IllegalArgumentException("Agent-BB type mis-match")
-    }
+    //}catch{
+    //  case _:Throwable =>throw new IllegalArgumentException("Agent-BB type mis-match")
+   // }
   }
 
   /** Function that unregisters agents from the blackboard*/
@@ -70,6 +80,7 @@ abstract class Blackboard(implicit controller: Controller) extends Logger with C
   var cycle = 0
   /** runs the blackboard for a given number of cycles, stopping if a solution is found */
   def run(numCycles: Int = 3): Unit = {
+    //Initialize the connections between the communicators
     agents.foreach(_.initConnection())
     auctionAgent.get.initConnection()
     executionAgent.get.initConnection()

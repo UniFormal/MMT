@@ -1,8 +1,7 @@
 package info.kwarc.mmt.leo.provers
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.proving.{Prover,ProvingUnit}
+import info.kwarc.mmt.api.proving.{Prover, ProvingUnit}
 import info.kwarc.mmt.leo.AgentSystem.MMTSystem._
 import info.kwarc.mmt.leo.AgentSystem._
 
@@ -15,15 +14,10 @@ class AgentProver extends Prover {
       val gl = new Goal(pu.context, pu.tp)
       val blackboard = new MMTBlackboard(rules, gl)
       //val exa = new ExpansionAgent
-      val sba = new SearchBackwardAgent
-      val sfa = new SearchForwardAgent
-      val aa = new AuctionAgent()
-      val ea = new ExecutionAgent()
-      sfa.register(blackboard)
-      sba.register(blackboard)
-      //exa.register(blackboard)
-      aa.register(blackboard.asInstanceOf[aa.BBType])
-      ea.register(blackboard.asInstanceOf[ea.BBType])
+      val sba = new SearchBackwardAgent(blackboard)
+      val sfa = new SearchForwardAgent(blackboard)
+      val aa = new AuctionAgent(blackboard)
+      val ea = new ExecutionAgent(blackboard)
 
       blackboard.run(levels)
       val found = blackboard.finished

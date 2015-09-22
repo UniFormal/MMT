@@ -1,28 +1,29 @@
 package info.kwarc.mmt.leo.AgentSystem
 
-import info.kwarc.mmt.api.frontend.{Controller, Logger}
+import info.kwarc.mmt.api.frontend.Logger
 
 
-abstract class Message(implicit c: Controller,oLP:String) extends Logger{
+abstract class Message extends Logger{
   val flags: List[String]
-  val report = c.report
-  def logPrefix = oLP+"#Message"
 
   def hasFlag(f:String): Boolean = flags.contains(f)
   def hasFlag(l:List[String]): Boolean = l.exists(flags.contains(_))
-  val sentBy: Any
+  val sentBy: Speaker
 }
 
 /** Sent to agents whose bid failed in the auction*/
-case class AuctionFailure(sentByVar:AuctionAgent, task:Task, flagsVar: List[String]=Nil)(implicit c: Controller,oLP:String) extends Message {
-  override def logPrefix = oLP+"#AuctionFailure"
+case class AuctionFailure(sentByVar:AuctionAgent, task:Task, flagsVar: List[String]=Nil) extends Message {
+  def report = sentByVar.blackboard.report
+  def logPrefix = sentByVar.blackboard.OLP+"#AuctionFailure"
+
   val flags: List[String] = flagsVar
   override val sentBy = sentByVar
 }
 
 /** Trait which encapsulates a change in data*/
-case class Change[T](s: Section, dataVar:T, flagsVar: List[String])(implicit c: Controller,oLP:String) extends Message {
-  override def logPrefix = oLP+"#Change"
+case class Change[T](s: Section, dataVar:T, flagsVar: List[String]) extends Message {
+  def report = s.report
+  def logPrefix = s.OLP+"#Change"
 
   val flags: List[String] = flagsVar
   val data = dataVar
@@ -39,13 +40,13 @@ case class Change[T](s: Section, dataVar:T, flagsVar: List[String])(implicit c: 
  * the implementation.
  *
  */
-abstract class Task(implicit c: Controller,oLP:String) extends Message{
+abstract class Task extends Message{
 
+  val name: String
   val flags = Nil
 
-  /** Prints a short name of the task */
-  val name: String
-  override def logPrefix = oLP+"#"+name
+  def report = blackboard.report
+  def logPrefix = blackboard.OLP+"#"+name
 
   /**Determines if a given task is applicable given the current blackboard*/
   def isApplicable[BB<:Blackboard](b: BB):Boolean = !b.isTerminated
@@ -66,7 +67,7 @@ abstract class Task(implicit c: Controller,oLP:String) extends Message{
    */
   def collide(that: Task): Boolean = {
     if (that.blackboard == this.blackboard) {
-      this.blackboard.get.sections.exists(s=>
+      this.blackboard.sections.exists(s=>
         if (this equals that) true
         else {
           this.readSet(s).intersect(that.writeSet(s)).nonEmpty ||
@@ -78,27 +79,26 @@ abstract class Task(implicit c: Controller,oLP:String) extends Message{
   }
 
   /** The agent which created the task*/
-  override val sentBy: Agent
+  val sentBy: Agent
 
-  lazy val priority = sentBy.priority
+  def priority = sentBy.priority
 
   /** The blackboard to which the agent is registered,
     * lazy to avoid null pointer errors
     */
-  lazy val blackboard = sentBy.blackboard
+  def blackboard = sentBy.blackboard
 
 }
 
 /** Class which represents a Meta task which calls on proof tasks*/
-case class MetaTask(taskList:List[Task], byAgentVar: Agent, nameVar: String)(implicit c: Controller,oLP:String) extends Task  {
-  override def logPrefix = oLP+"#MetaTask"
-  
-  val name = nameVar
+case class MetaTask(taskList:List[Task], byAgentVar: Agent) extends Task  {
+
+  val name = "MetaTask"
   override val sentBy:Agent = byAgentVar
 
   //TODO implement parallelization
   def execute():Boolean = taskList.map({t=>
-    if (t.isApplicable(this.blackboard.get)){
+    if (t.isApplicable(this.blackboard)){
       log("Executing Task: " +t)
       t.execute()
     }else{

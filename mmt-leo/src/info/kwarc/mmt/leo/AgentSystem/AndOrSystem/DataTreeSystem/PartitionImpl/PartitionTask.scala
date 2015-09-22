@@ -12,19 +12,19 @@ class PartitionTask(nodeVar: DataTree[Int], agent: PartitionAgent)(implicit c: C
   val name = "PartitionTask"
   val sentBy = agent
   val node = nodeVar
-  val section = agent.blackboard.get.proofTreeSection
+  val section = agent.blackboard.proofTreeSection
 
   override def toString:String ={
     "Task writeSet:" + Display.setDisplay(writeSet(section))
   }
 
   def execute():Boolean = {
-    if (!this.isApplicable(agent.blackboard.get)) {return false}
+    if (!this.isApplicable(agent.blackboard)) {return false}
     log("executing: "+ this,Some("debug"))
-    log("TREE BEFORE: " + Display.addIndent(agent.blackboard.get.proofTree.toString))
+    log("TREE BEFORE: " + Display.addIndent(agent.blackboard.proofTree.toString))
     section.update(node,{n=>n.conj=false;n})
     addBranches()
-    log("TREE AFTER: " + Display.addIndent(agent.blackboard.get.proofTree.toString))
+    log("TREE AFTER: " + Display.addIndent(agent.blackboard.proofTree.toString))
     true
   }
 

@@ -7,13 +7,12 @@ import info.kwarc.mmt.leo.AgentSystem.{Speaker, Listener, Change, Agent}
 /**
  * Created by Mark on 7/21/2015.
  */
-class PartitionAgent(numbersVar: List[Int])(implicit c: Controller,oLP:String) extends Agent {
-  type BBType = IntBlackboard
+class PartitionAgent(blackboard:IntBlackboard,numbersVar: List[Int]) extends Agent(blackboard) {
 
   val numbers=numbersVar
   val name = "PartitionAgent"
   /** list of speakers that the object would like to subscribe to */
-  override def wantToSubscribeTo: List[Speaker] = List(blackboard.get.auctionAgent.get)
+  override def wantToSubscribeTo: List[Speaker] = List(blackboard.auctionAgent.get)
   override val interests = List("ADD")
 
 

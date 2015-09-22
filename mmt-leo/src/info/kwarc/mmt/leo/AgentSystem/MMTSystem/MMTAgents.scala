@@ -1,7 +1,6 @@
 package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
-import info.kwarc.mmt.api.Rule
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.leo.AgentSystem.{Agent, Change}
 
 /**
@@ -23,37 +22,40 @@ class InductionAgent(tp: GlobalName, constructors: List[(GlobalName,Term)]) {
 }
 */
 
-abstract class MMTAgent(implicit controller: Controller,oLP:String) extends Agent {
+abstract class MMTAgent(blackboardParam: MMTBlackboard) extends Agent(blackboardParam) {
 
 
-  override type BBType = MMTBlackboard
+
+  def head: GlobalName = null //TODO Talk to florian about global name
+
 
   override val name: String = "GoalAgent"
 
-  lazy val presentObj = blackboard.get.presentObj
-  lazy val rules = blackboard.get.rules
+  lazy val presentObj = blackboard.presentObj
+  lazy val rules = blackboard.rules
 
-  lazy val invertibleBackward = blackboard.get.invertibleBackward
-  lazy val invertibleForward = blackboard.get.invertibleForward
-  lazy val searchBackward = blackboard.get.searchBackward
-  lazy val searchForward = blackboard.get.searchForward
-  lazy val searchTerms = blackboard.get.searchTerms
-  lazy val transitivityRules = blackboard.get.transitivityRules
+  lazy val invertibleBackward = blackboard.invertibleBackward
+  lazy val invertibleForward = blackboard.invertibleForward
+  lazy val searchBackward = blackboard.searchBackward
+  lazy val searchForward = blackboard.searchForward
+  lazy val searchTerms = blackboard.searchTerms
+  lazy val transitivityRules = blackboard.transitivityRules
 
-  lazy val goalSection = blackboard.get.goalSection
+  lazy val goalSection = blackboard.goalSection
   def goal = goalSection.data
-  lazy val factSection = blackboard.get.factSection
+  lazy val factSection = blackboard.factSection
   def facts = factSection.data
 
-
+  override val blackboard:MMTBlackboard = blackboardParam
+  if (blackboard!=null) {blackboard.registerAgent(this)}else{ print("WARNING NO Blackboard in MMTagent class")}
 }
 
-class SearchBackwardAgent(implicit controller: Controller,oLP:String) extends MMTAgent {
-  override val priority = 1
+class SearchBackwardAgent(blackboard: MMTBlackboard) extends MMTAgent(blackboard) {
+  val priority = 1
 
   override val name = "SearchBackwardAgent"
 
-  def wantToSubscribeTo = List(blackboard.get.factSection)
+  def wantToSubscribeTo = List(blackboard.factSection)
 
   override val interests = List("ADD")
 
@@ -75,19 +77,23 @@ class SearchBackwardAgent(implicit controller: Controller,oLP:String) extends MM
   override def respond() = {
     log("responding to: " + mailbox.length + " message(s)")
     readMail.foreach{
-      case Change(s,data,flag) if taskQueue.isEmpty => goal_recurse(blackboard.get.goalSection.data)
-      case _ if blackboard.get.cycle==0 && taskQueue.isEmpty => goal_recurse(blackboard.get.goalSection.data)
+      case Change(s,data,flag) if taskQueue.isEmpty => goal_recurse(blackboard.goalSection.data)
+      case _ if blackboard.cycle==0 && taskQueue.isEmpty => goal_recurse(blackboard.goalSection.data)
       case _ =>
     }
     if (taskQueue.isEmpty) log("NO TASKS FOUND") else log("Found "+taskQueue.size+" task(s)")
   }
+
+
+
+
 }
 
-class SearchForwardAgent(implicit controller: Controller,oLP:String) extends MMTAgent {
-  override val priority = 0
+class SearchForwardAgent(blackboard: MMTBlackboard) extends MMTAgent(blackboard) {
+  val priority = 0
 
   override val name =  "SearchForwardAgent"
-  def wantToSubscribeTo = List(blackboard.get.factSection)
+  def wantToSubscribeTo = List(blackboard.factSection)
   override val interests = Nil
 
   def addTask() = taskQueue += new SearchForwardTask(this)
@@ -101,10 +107,12 @@ class SearchForwardAgent(implicit controller: Controller,oLP:String) extends MMT
 }
 
 
-class TermGenerationAgent(implicit controller: Controller,oLP:String) extends MMTAgent {
+class TermGenerationAgent(blackboard: MMTBlackboard) extends MMTAgent(blackboard) {
+
+  val priority = 0
 
   override val name =  "TermGeneratingAgent"
-  def wantToSubscribeTo = List(blackboard.get.factSection)
+  def wantToSubscribeTo = List(blackboard.factSection)
   override val interests = List("ADD")
 
   def addTask() = taskQueue+=new TermGenerationTask(this)
@@ -117,10 +125,11 @@ class TermGenerationAgent(implicit controller: Controller,oLP:String) extends MM
 
 }
 
-abstract class TransitivityAgent(implicit controller: Controller,oLP:String) extends MMTAgent {
+abstract class TransitivityAgent(blackboard: MMTBlackboard) extends MMTAgent(blackboard) {
 
+  val priority = 0
   override val name =  "TermGeneratingAgent"
-  def wantToSubscribeTo = List(blackboard.get.factSection)
+  def wantToSubscribeTo = List(blackboard.factSection)
   override val interests = List("ADD") //TODO make it interested in the addition of relation shaped facts
 
   def addTask():Unit

@@ -1,8 +1,8 @@
 package info.kwarc.mmt.leo.AgentSystem
 
-import info.kwarc.mmt.api.frontend.{Controller, Report}
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.utils.HTML
-import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.AndOrTree
+//import info.kwarc.mmt.leo.AgentSystem.AndOrSystem.AndOrTree
 import scala.collection.mutable
 
 /** This trait encapsulates debugging ability and allows classes
@@ -42,7 +42,7 @@ trait Debugger {
   /** Special indentation function which handles the andOrTree case*/
   protected def addIndent(obj:Any, indent:Int=1):String ={
     obj match {
-      case s:AndOrTree =>"\t"*indent+obj.toString.replaceFirst("\n","").replace("\n","\n"+"\t"*indent)
+      //case s:AndOrTree =>"\t"*indent+obj.toString.replaceFirst("\n","").replace("\n","\n"+"\t"*indent)
       case _ =>
         "\t"*indent+obj.toString.replace("\n","\n"+"\t"*indent)
     }
@@ -124,7 +124,7 @@ object Display {
   /** Special indentation function which handles the andOrTree case*/
   def addIndent(obj:Any, indent:Int=1):String ={
     obj match {
-      case s:AndOrTree =>"\t"*indent+obj.toString.replaceFirst("\n","").replace("\n","\n"+"\t"*indent)
+      //case s:AndOrTree =>"\t"*indent+obj.toString.replaceFirst("\n","").replace("\n","\n"+"\t"*indent)
       case _ =>
         "\t"*indent+obj.toString.replace("\n","\n"+"\t"*indent)
     }

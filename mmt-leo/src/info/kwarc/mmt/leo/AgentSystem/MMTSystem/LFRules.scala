@@ -2,9 +2,9 @@ package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
 
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.{GlobalName, LocalName}
 import info.kwarc.mmt.api.objects.Conversions._
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.{GlobalName, LocalName}
 import info.kwarc.mmt.lf._
 
 
@@ -13,8 +13,8 @@ import info.kwarc.mmt.lf._
  * This rule works for any universe U
  */
 object PiIntroduction extends BackwardInvertible {
-   val head = Pi.path
-   def priority = 5
+   override val head = Pi.path
+   val priority = 5
    def apply(blackboard: MMTBlackboard, goal: Goal) = goal.conc match {
       case Pi(n,a,b) =>
          onApply("Pi introduction") {
@@ -25,6 +25,8 @@ object PiIntroduction extends BackwardInvertible {
          }
       case _ => None
    }
+
+
 }
 
 /** the proof step ?:A ----> e(?,...?)  for e:Pi x1:A1,...,xn:An.A' where A' ^ s = A for some substitution s
@@ -33,7 +35,7 @@ object PiIntroduction extends BackwardInvertible {
  * This rule replace ?'s in the result with their terms if they can be inferred through unification.
  */
 object BackwardPiElimination extends BackwardSearch {
-   val head = Pi.path
+   override val head = Pi.path
    val priority = 3
 
    private object UnnamedArgument {
@@ -198,8 +200,12 @@ object BackwardPiElimination extends BackwardSearch {
 }
 
 object ForwardPiElimination extends ForwardSearch {
-   val head = Pi.path
+   override val head = Pi.path
+   val priority = 0
+
    private var factSection:FactSection= null
+
+
 
    def generate(blackboard: MMTBlackboard, interactive: Boolean) {
       this.factSection=blackboard.factSection
@@ -296,7 +302,11 @@ object ForwardPiElimination extends ForwardSearch {
 }
 
 object TermGeneration extends ForwardSearch {
-   val head = Pi.path
+   override val head = Pi.path
+   val priority = 0
+
+   //def respond()
+
    def getFunctionalFacts(b:MMTBlackboard):List[Fact] = ??? //TODO fill in this step
 
    def generate(blackboard: MMTBlackboard, interactive: Boolean) {
@@ -351,10 +361,13 @@ object TermGeneration extends ForwardSearch {
 }
 
 
-class TransitivityGeneration(rel: GlobalName, ded: GlobalName)(implicit controller: Controller,oLP:String) extends TransitivityAgent{
+class TransitivityGeneration(blackboard:MMTBlackboard,rel: GlobalName, ded: GlobalName)
+                            (implicit controller: Controller,oLP:String) extends TransitivityAgent(blackboard){
+
    val Ded = new UnaryLFConstantScala(ded.module.toMPath, ded.name.toString)
    val Rel = new BinaryLFConstantScala(rel.module.toMPath, rel.name.toString)
-   val head = Pi.path
+   override val head = Pi.path
+   override val priority = 0
 
    def generate(blackboard: MMTBlackboard, interactive: Boolean) = ???
 

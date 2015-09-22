@@ -1,35 +1,109 @@
+
 package info.kwarc.mmt.leo.AgentSystem.MMTSystem
+
+/*
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.leo.AgentSystem._
 
 
 /**
  * A rule used for forward or backward proof search
  */
-trait Tactic extends Rule {
+trait Tactic extends MMTAgent {
    /**
     * convenience function to create an ApplicableTactic
-    * 
+    *
     * to be used as in
-    * 
+    *
     * {{{
     * def apply(...) = {
-    *    // code for checking applicability 
+    *    // code for checking applicability
     *    onApply {
     *       // code to run when applying the rule
     *    }
     * }
     * }}}
     */
-   protected def onApply(l: => String)(cont: => Alternative) = {
-      val at = new ApplicableTactic {
+   protected def onApply(g:Goal,l: => String)(cont: => Alternative) = {
+      val agent = this
+      val at = new ApplicableTactic(g) {
          def apply() = Some(cont)
-         def label = l
+         def name = l
+         def sentBy() = agent
+
       }
       Some(at)
    }
 }
+
+
+
+/**
+ * a continuation function returned by a [[Tactic]] to be run if the tactic is to be applied
+ *
+ * A tactic may return multiple continuations if it is applicable in multiple different ways.
+ * Low-priority tactics may move expensive computations into the continuation to avoid unnecessary work
+ */
+abstract class ApplicableTactic(g:Goal) extends MMTTask{
+
+   /** runs the continuation
+     *  @return the new goals, None if application was not possible
+     */
+
+   override val sentBy: MMTAgent
+
+   def writeSet(s: Section): Set[s.ObjectType] = {
+      if (s == blackboard.goalSection) return Set(g.asInstanceOf[s.ObjectType])
+      Set.empty[s.ObjectType]
+   }
+
+   /** Returns a set of all nodes that are read for the task. */
+   def readSet(s: Section): Set[s.ObjectType] = {
+      if (s == blackboard.goalSection) return Set(g.asInstanceOf[s.ObjectType])
+      Set.empty[s.ObjectType]
+   }
+
+   def execute():Boolean = {
+      val blackboard = sentBy.blackboard.asInstanceOf[MMTBlackboard]
+      val alt = this.apply().getOrElse(return false)
+      // simplify the new goal
+      alt.subgoals.foreach { sg =>
+         sg.parent = Some(g) // need to set this before working with the goal
+         blackboard.goalSection.simplifyGoal(sg)
+      }
+
+      // avoid cycles/redundancy: skip alternatives with subgoals that we already try to solve
+      val path = g.path
+      val alreadyOnPath = alt.subgoals.exists { sg =>
+         // TODO stronger equality
+         path.exists { ag => (ag.context hasheq sg.context) && (ag.conc hasheq sg.conc) }
+      }
+      if (alreadyOnPath )
+         return false
+
+      // add the alternative to the proof tree and expand the subgoals
+      g.addAlternative(alt, Some(blackboard.goalSection))
+      alt.subgoals.foreach(blackboard.terms.addVarAtoms) //TODO work into goal addition
+
+      log("************************* " + this.name + " at X **************************")
+      log("\n" + blackboard.goalSection.data.presentHtml(0)(blackboard.presentObj, Some(g), Some(alt)))
+      //log( Display.HTMLwrap("\n"+data.prettyDeep(blackboard.presentObj),"prover-goal") )
+      true
+   }
+
+   def apply() : Option[Alternative]
+}
+
+/*
+object ApplicableTactic {
+   def apply(g:Goal,a: Alternative, l: String) = new ApplicableTactic(g) {
+      def apply() = Some(a)
+      def name = l
+   }
+}*/
+
 
 
 
@@ -103,26 +177,4 @@ trait ForwardSearch extends Tactic {
 trait TermSearch extends ForwardSearch{}
 
 
-
-
-/**
- * a continuation function returned by a [[Tactic]] to be run if the tactic is to be applied
- * 
- * A tactic may return multiple continuations if it is applicable in multiple different ways.
- * Low-priority tactics may move expensive computations into the continuation to avoid unnecessary work
- */
-abstract class ApplicableTactic {
-   def label : String
-   /** runs the continuation
-    *  @return the new goals, None if application was not possible
-    */
-   def apply() : Option[Alternative]
-}
-
-object ApplicableTactic {
-   def apply(a: Alternative, l: String) = new ApplicableTactic {
-      def apply() = Some(a)
-      val label = l
-   }
-}
-
+*/
