@@ -132,7 +132,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   def mkRegGroup(l: List[String]): String = l.mkString("(", "|", ")")
 
   private val importKeys: List[String] = List(
-    "guse", "gimport", "importmhmodule"
+    "guse", "gimport", "usemhmodule", "importmhmodule"
   )
   private val importRegs: Regex = ("^\\\\" + mkRegGroup(importKeys)).r
   private val groups: Regex = "\\\\\\w*\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
@@ -239,7 +239,7 @@ class SmsGenerator extends LaTeXBuildTarget {
   val outDim: ArchiveDimension = source
   override val outExt = "sms"
   private val smsKeys: List[String] = List(
-    "guse", "gadopt", "symdef", "abbrdef", "symvariant", "keydef", "listkeydef",
+    "gadopt", "symdef", "abbrdef", "symvariant", "keydef", "listkeydef",
     "importmodule", "gimport", "adoptmodule", "importmhmodule", "adoptmhmodule"
   )
   private val smsTopKeys: List[String] = List(
