@@ -19,7 +19,7 @@ public class MMTToolBar extends JPanel {
     toolBar.add(makeCustomButton("mmt.ins-delimiter",
       new ActionListener(){
         public void actionPerformed(ActionEvent evt) {
-
+//blabla
         }
       }
     ))
