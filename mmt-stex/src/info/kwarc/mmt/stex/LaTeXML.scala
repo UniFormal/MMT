@@ -6,6 +6,7 @@ import java.util.regex.PatternSyntaxException
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils._
 
@@ -113,7 +114,8 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
       } catch {
         case e: PatternSyntaxException =>
           logResult(e.getMessage)
-          logResult("correct no-" + outExt + " property in META-INF/MANIFEST.MF")
+          logResult("correct no-" + outExt + " property in " +
+            bt.archive.root.getName + "/META-INF/MANIFEST.MF")
           true // skip everything until corrected
       }
     val exclude = excludes.exists(patternMatch)
@@ -126,6 +128,96 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   def buildFile(bt: BuildTask): Unit = if (!skip(bt)) reallyBuildFile(bt)
 
   def mkRegGroup(l: List[String]): String = l.mkString("(", "|", ")")
+
+  private val importKeys: List[String] = List(
+    "guse", "gimport", "importmhmodule"
+  )
+  private val importRegs: Regex = ("^\\\\" + mkRegGroup(importKeys)).r
+  private val groups: Regex = "\\\\\\w*\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
+
+  def matchPathAndRep(aStr: String, line: String): Option[(String, FilePath)] =
+    line match {
+      case groups(_, a, b) =>
+        val fp = File(b).setExtension("tex").filepath
+        val optRepo = Option(a).map(_.split(",").toList.sorted.map(_.split("=").toList))
+        optRepo match {
+          case Some(List(List(id))) => Some((id, fp))
+          case Some(List("path", p) :: tl) =>
+            val path = File(p).setExtension("tex").filepath
+            tl match {
+              case List(List("repos", id)) => Some((id, path))
+              case Nil => Some((aStr, path))
+              case _ => None
+            }
+          case None => Some((aStr, fp))
+          case _ => None
+        }
+      case _ => None
+    }
+
+  def readingSource(a: Archive, in: File): Seq[(String, FilePath)] = {
+    val aStr: String = a.groupDir.getName + "/" + a.root.getName
+    val source = scala.io.Source.fromFile(in, "ISO-8859-1")
+    var res: List[(String, FilePath)] = Nil
+    source.getLines().foreach { line =>
+      val idx = line.indexOf('%')
+      val l = (if (idx > -1) line.substring(0, idx) else line).trim
+      val err = "unexpected line: " + l + "\nin file: " + in
+      val verbIndex = l.indexOf("\\verb")
+      if (verbIndex <= -1 && importRegs.findFirstIn(l).isDefined) {
+        matchPathAndRep(aStr, l) match {
+          case None => log(err)
+          case Some(p) => res ::= p
+        }
+      }
+    }
+    log(in + ": " + res.mkString(", "))
+    val safe = res.filter { case ((ar, fp)) =>
+      val ap = File(ar) / inDim.toString / fp.toString
+      val f: File = a.baseDir / ap.toString
+      if (f.exists()) true
+      else {
+        log(LocalError(getOutPath(a, in) + " missing: " + ap ))
+        false
+      }
+    }
+    safe
+  }
+
+  override def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[(Archive, FilePath)] = {
+    val in = a / inDim / fp
+    if (in.exists()) {
+      val fs = readingSource(a, in)
+      var res: Set[(Archive, FilePath)] = Set.empty
+      fs foreach { case (aStr, p) =>
+        controller.getOrAddArchive(a.baseDir / aStr) match {
+          case None =>
+          case Some(arch) =>
+            res += ((arch, p))
+        }
+      }
+      res
+    } else {
+      logResult("unknown file: " + in)
+      Set.empty
+    }
+  }
+}
+
+class LatexDeps extends LaTeXBuildTarget {
+  val key: String = "latex-deps"
+  val outDim: ArchiveDimension = source
+  override val outExt = "tex"
+
+  // unused
+  def reallyBuildFile(bt: BuildTask): Unit = {}
+
+  // no history can be checked therefore simply rebuild on update
+  override def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = build(a, in)
+
+  override def buildFile(bt: BuildTask): Unit = {
+    readingSource(bt.archive, bt.inFile)
+  }
 }
 
 /** sms generation */

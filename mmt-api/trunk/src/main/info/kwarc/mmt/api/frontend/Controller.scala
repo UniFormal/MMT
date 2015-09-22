@@ -476,7 +476,7 @@ class Controller extends ROController with Logger {
     }
 
   /** retrieve or add an Archive by its root file */
-  private def getOrAddArchive(root: File): Option[Archive] =
+  def getOrAddArchive(root: File): Option[Archive] =
     backend.getArchiveByRoot(root).map(Some(_)).
       getOrElse(backend.openArchive(root).map { a =>
         notifyListeners.onArchiveOpen(a)
