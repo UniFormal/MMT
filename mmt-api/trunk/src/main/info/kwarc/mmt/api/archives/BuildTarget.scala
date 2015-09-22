@@ -258,13 +258,14 @@ abstract class TraversingBuildTarget extends BuildTarget with Dependencies {
     { c => cleanFile(a, c) }, { case (c, _) => cleanDir(a, c) })
   }
 
-  /** @return status of input file, obtained by comparing to error file */
-  private def modified(a: Archive, path: FilePath): (Modification, Boolean) = {
-    val errorFile = getErrorFile(a, path)
-    val inFile = a / inDim / path
+  private def modified(inFile: File, errorFile: File): Boolean = {
     val mod = Modification(inFile, errorFile)
-    val hadErrors = errorFile.exists && errorFile.length > 25 // TODO evil hack but more efficient than reading the error file
-    (mod, hadErrors)
+    mod == Modified || mod == Added
+  }
+
+  /** @return status of input file, obtained by comparing to error file */
+  private def hadErrors(errorFile: File): Boolean = {
+    errorFile.exists && errorFile.length > 25 // TODO evil hack but more efficient than reading the error file
   }
 
   /** recursively reruns build if the input file has changed
@@ -274,14 +275,16 @@ abstract class TraversingBuildTarget extends BuildTarget with Dependencies {
   def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = {
     a.traverse[Boolean](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case c@Current(inFile, inPath) =>
-        val (mod, hadErrors) = modified(a, inPath)
-        val del = mod == Deleted
-        val add = mod == Added
-        val both = mod == Modified || hadErrors && up.ifHadErrors
-        if (del) cleanFile(a, c)
-        if (add || both) buildAux(inPath)(a, None)
-        val res = del || add || both
-        if (!res) logResult("up-to-date" + (if (hadErrors) "? " else " ") +
+        val errorFile = getErrorFile(a, inPath)
+        val inFile = a / inDim / inPath
+        val errs = hadErrors(errorFile)
+        val res = modified(inFile, errorFile) || errs && up.ifHadErrors ||
+          getSingleDeps(controller, a, inPath).exists{ p =>
+           val errFile = getErrorFile(p._1, p._2)
+           modified(errFile, errorFile)
+           }
+        if (res) buildAux(inPath)(a, None)
+        if (!res) logResult("up-to-date" + (if (errs) "? " else " ") +
          getOutPath(a, getOutFile(a, inPath)))
         res
     }, { case (c@Current(inDir, inPath), childChanged) =>
@@ -308,7 +311,7 @@ abstract class TraversingBuildTarget extends BuildTarget with Dependencies {
     }
     // includeFile will be checked by build again (as was already checked during dependency analysis)
     val ts = getDeps(controller, getFilesRec(in))
-    ts foreach (_.toList.sortBy(_.toString()).foreach(p => build(p._1, p._2)))
+    ts foreach (_.toList.sortBy(_.toString()).foreach(p => update(p._1, Update(ifHadErrors = false), p._2)))
   }
 
 }
