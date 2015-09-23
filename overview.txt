@@ -1,8 +1,13 @@
-mmt-api, trunk: maintained by Florian
-mmt-api, informal: Mihnea's branch for experimentation, should be deleted as soon as the ideas are integrated into the trunk
-mmt-api, next-version: Alin's old branch, read-only, should be deleted
+This folder contains individual Scala projects.
 
-projects that use mmt-api trunk and that Florian actively maintains (They should always compile.)
+------------------------
+The main project
+
+mmt-api: maintained by Florian
+
+
+------------------------
+projects that use mmt-api and that Florian actively maintains (They should always compile.)
 
 jEdit-mmt: jEdit plugin
 mmt-lf: LF and Twelf plugin
@@ -13,19 +18,21 @@ mmt-pvs: PVS plugin
 mmt-specware: Specware plugin
 mmt-tptp: TPTP plugin
 
-projects that use mmt-api trunk but that are not critical enough to be actively maintained (They might not compile anymore.)
+projects that use mmt-api but that are not critical enough to be actively maintained (They might not compile anymore.)
 
 hets-mmt: Aivaras's work for integrating with Hets, owned by DFKI but kind of died when Till and Aivaras left
 latex-mmt: support for the Florian and Mihnea's LaTeX integration, should be reactivated
 mmt-mathscheme: rudimentary MathScheme plugin by Florian
 mmt-reflection: languages with reflection by Florian, experimental
 
-projects that are independent of MMT but maintained by Florian
+------------------------
+projects that are independent of but used by MMT, maintained by Florian
 
 lfcatalog: Alin's support for Twelf, not MMT-related but needed by Twelf
 tiscaf: a fork/freeze of tiscaf with ~3 bugs fixed, we might try to upgrade to the latest tiscaf
 
-projects Florian doesn't know about, presumably using the informal branch
+------------------------
+projects Florian doesn't maintain
 
 frameit-mmt:
 marpa-mmt: 
