@@ -10,6 +10,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils._
 
+import scala.io.BufferedSource
 import scala.sys.process.{Process, ProcessLogger}
 import scala.util.matching.Regex
 
@@ -164,11 +165,13 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
       case _ => None
     }
 
+  protected def readSourceRebust(f: File): BufferedSource = scala.io.Source.fromFile(f, "ISO-8859-1")
+
   protected def readingSource(a: Archive, in: File, init: List[(String, FilePath)] = Nil):
   Seq[(String, FilePath)] = {
     val aStr: String = archString(a)
     var res = init
-    val source = scala.io.Source.fromFile(in, "ISO-8859-1")
+    val source = readSourceRebust(in)
     source.getLines().foreach { line =>
       val idx = line.indexOf('%')
       val l = (if (idx > -1) line.substring(0, idx) else line).trim
@@ -221,6 +224,14 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
       Set.empty
     }
   }
+
+  protected def noAmble(f: File): Boolean = {
+    val source = readSourceRebust(f)
+    var res = false
+    for (l <- source.getLines(); if !res)
+      if (l.trim.startsWith("\\documentclass")) res = true
+    res
+  }
 }
 
 class AllTeX extends LaTeXBuildTarget {
@@ -253,12 +264,12 @@ class AllTeX extends LaTeXBuildTarget {
   }
 
   private def ambleText(preOrPost: String, a: Archive, lang: Option[String]): List[String] =
-    scala.io.Source.fromFile(getAmbleFile(preOrPost, a, lang)).getLines().toList
+    readSourceRebust(getAmbleFile(preOrPost, a, lang)).getLines().toList
 
   private def createAllFile(a: Archive, lang: Option[String], dir: File, files: List[String]): Unit = {
     val all = dir / ("all" + lang.map("." + _).getOrElse("") + ".tex")
     val w = File.Writer(all)
-    //ambleText("pre", a, lang).foreach(w.println)
+    ambleText("pre", a, lang).foreach(w.println)
     w.println("")
     files.foreach { f =>
       val file = File(f)
@@ -269,7 +280,7 @@ class AllTeX extends LaTeXBuildTarget {
         w.println("")
       }
     }
-    //ambleText("post", a, lang).foreach(w.println)
+    ambleText("post", a, lang).foreach(w.println)
     w.close()
     logSuccess(getOutPath(a, all))
   }
@@ -522,13 +533,15 @@ class PdfLatex extends LaTeXBuildTarget {
     val styDir = stexStyDir(bt)
     val output = new StringBuffer()
     try {
-      val pbCat = Process.cat(Seq(getAmbleFile("pre", bt), bt.inFile,
+      val in = bt.inFile
+      val pbCat = if (noAmble(in)) Process.cat(in.toJava)
+      else Process.cat(Seq(getAmbleFile("pre", bt), in,
         getAmbleFile("post", bt)).map(_.toJava))
       val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
-        bt.inFile.stripExtension.getName, "-interaction", "scrollmode"),
-        bt.inFile.up, env(bt): _*)
+        in.stripExtension.getName, "-interaction", "scrollmode"),
+        in.up, env(bt): _*)
       pb.!(procLogger(output))
-      val pdflogFile = bt.inFile.setExtension("pdflog")
+      val pdflogFile = in.setExtension("pdflog")
       if (!pipeOutput) File.write(pdflogFile, output.toString)
       if (pdfFile.length == 0) {
         bt.errorCont(LatexError("no pdf created", output.toString))
