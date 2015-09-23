@@ -258,7 +258,7 @@ class AllTeX extends LaTeXBuildTarget {
   private def createAllFile(a: Archive, lang: Option[String], dir: File, files: List[String]): Unit = {
     val all = dir / ("all" + lang.map("." + _).getOrElse("") + ".tex")
     val w = File.Writer(all)
-    ambleText("pre", a, lang).foreach(w.println)
+    //ambleText("pre", a, lang).foreach(w.println)
     w.println("")
     files.foreach { f =>
       val file = File(f)
@@ -269,7 +269,7 @@ class AllTeX extends LaTeXBuildTarget {
         w.println("")
       }
     }
-    ambleText("post", a, lang).foreach(w.println)
+    //ambleText("post", a, lang).foreach(w.println)
     w.close()
     logSuccess(getOutPath(a, all))
   }
@@ -500,7 +500,7 @@ class LaTeXML extends LaTeXBuildTarget {
 class PdfLatex extends LaTeXBuildTarget {
   val key = "pdflatex"
   override val outExt = "pdf"
-  val outDim = Dim("export", key, inDim.toString)
+  val outDim = Dim("export", "pdflatex", inDim.toString)
   private var pdflatexPath: String = "xelatex"
 
   override def start(args: List[String]): Unit = {
@@ -553,4 +553,11 @@ class PdfLatex extends LaTeXBuildTarget {
       foreach(f.setExtension(_).delete())
     super.cleanFile(arch, curr)
   }
+}
+
+class AllPdf extends PdfLatex {
+  override val key = "allpdf"
+
+  override def includeFile(n: String): Boolean =
+    n.endsWith(".tex") && n.startsWith("all.")
 }

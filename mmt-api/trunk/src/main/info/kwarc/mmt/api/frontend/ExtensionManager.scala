@@ -250,7 +250,8 @@ class ExtensionManager(controller: Controller) extends Logger {
     "latexml" -> "LaTeXML",
     "pdflatex" -> "PdfLatex",
     "stex-omdoc" -> "STeXImporter",
-    "alltex" -> "AllTeX"
+    "alltex" -> "AllTeX",
+    "allpdf" -> "AllPdf"
   ).map { case (a, b) => (a, "info.kwarc.mmt.stex." + b) } ++
     Map("twelf-omdoc" -> "info.kwarc.mmt.lf.Twelf",
       "tptp-twelf" -> "info.kwarc.mmt.tptp.TPTPImporter",
