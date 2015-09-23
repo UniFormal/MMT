@@ -483,10 +483,11 @@ class LaTeXML extends LaTeXBuildTarget {
     val output = new StringBuffer()
     val argSeq = Seq(latexmlc, bt.inFile.toString,
       "--quiet", "--profile=" + profile, "--path=" + styPath(bt),
-      "--destination=" + lmhOut, "--log=" + logFile,
-      "--preamble=" + getAmbleFile("pre", bt),
-      "--postamble=" + getAmbleFile("post", bt),
-      "--expire=" + expire) ++ port.map("--port=" + _) ++ preloads.map("--preload=" + _) ++
+      "--destination=" + lmhOut, "--log=" + logFile) ++
+      (if (noAmble(bt.inFile)) Nil
+      else Seq("--preamble=" + getAmbleFile("pre", bt),
+        "--postamble=" + getAmbleFile("post", bt))) ++
+      Seq("--expire=" + expire) ++ port.map("--port=" + _) ++ preloads.map("--preload=" + _) ++
       paths.map("--path=" + _)
     log(argSeq.mkString(" ").replace(" --", "\n --"))
     val pb = Process(argSeq, bt.archive / inDim, extEnv(bt): _*)
