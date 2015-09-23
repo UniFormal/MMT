@@ -1,4 +1,4 @@
-This folder contains individual Scala projects.
+This folder contains the individual Scala projects that make up MMT.
 
 ------------------------
 The main project
