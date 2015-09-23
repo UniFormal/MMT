@@ -11,6 +11,7 @@ import scalax.collection.mutable.Graph
 
 class GraphSpec extends FlatSpec with Matchers {
 
+
   class TransitiveGraph{
     type Term = Int
 
@@ -65,7 +66,6 @@ class GraphSpec extends FlatSpec with Matchers {
   }
 
 
-
   "a transitive graph" should "add edges intelligently" in {
     val tg = new TransitiveGraph
     tg.add((1, 2), (2, 3), (2, 4), (5, 4),(6,1))
@@ -113,6 +113,4 @@ class GraphSpec extends FlatSpec with Matchers {
 
 
 }
-
-
 

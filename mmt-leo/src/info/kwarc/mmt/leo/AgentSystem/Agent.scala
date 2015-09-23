@@ -83,9 +83,11 @@ abstract class Agent(blackboardParam: Blackboard) extends Communicator with Logg
 
   val priority: Int
 
-
   /** the name of the agent */
   val name: String
+
+  var terminated = false
+  def terminate()= {terminated=true}
 
   override def toString: String= {name + "::numTasks:" + numTasks}
 
@@ -165,9 +167,11 @@ class AuctionAgent(blackboard: Blackboard) extends Agent(blackboard) {
 
 
   def respond() ={
-    readMail.foreach {
-      case t: Task => taskQueue+=t
-      case _ => throw new IllegalArgumentException("Unknown type of message")
+    if (!terminated) {
+      readMail.foreach {
+        case t: Task => taskQueue += t
+        case _ => throw new IllegalArgumentException("Unknown type of message")
+      }
     }
   }
   
@@ -234,9 +238,13 @@ class ExecutionAgent(blackboard: Blackboard) extends Agent(blackboard) {
 
   val metaTaskQueue = new mutable.Queue[Task]()
 
-  def respond() = { readMail.foreach {
-    case t: Task => log("Executing MetaTask: "+t);parallelExecute(t)
-    case _ => throw new IllegalArgumentException("Unknown type of message")}
+  def respond() = {
+    if (!terminated) {
+      readMail.foreach {
+        case t: Task => log("Executing MetaTask: " + t); parallelExecute(t)
+        case _ => throw new IllegalArgumentException("Unknown type of message")
+      }
+    }
   }
 
   //TODO add parallelization

@@ -37,7 +37,15 @@ abstract class Blackboard(implicit c: Controller, olp:String) extends Logger wit
   var executionAgent: Option[ExecutionAgent] = None
 
   /**flag which prohibits the running of additional tasks*/
-  def isTerminated=false
+  var isTerminated=false
+  def terminate() = {
+    isTerminated=true
+    auctionAgent.get.terminate()
+    executionAgent.get.terminate()
+    agents.foreach(_.terminate())
+    log("BLACKBOARD TERMINATED")
+  }
+
 
   /**Function that registers agents to the blackboard*/
   def registerAgent(a: Agent): Boolean = {
@@ -74,7 +82,7 @@ abstract class Blackboard(implicit c: Controller, olp:String) extends Logger wit
     auctionAgent.get.runAuction()
     log("running execution agent")
     executionAgent.get.respond()
-    log("finished cycle: "+cycle)
+    log("finished cycle: " + cycle)
   }
 
   var cycle = 0

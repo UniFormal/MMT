@@ -98,7 +98,7 @@ case class MetaTask(taskList:List[Task], byAgentVar: Agent) extends Task  {
 
   //TODO implement parallelization
   def execute():Boolean = taskList.map({t=>
-    if (t.isApplicable(this.blackboard)){
+    if (t.isApplicable(this.blackboard) && !t.sentBy.terminated){
       log("Executing Task: " +t)
       t.execute()
     }else{

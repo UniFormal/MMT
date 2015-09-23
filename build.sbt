@@ -113,6 +113,15 @@ lazy val lf = (project in file("mmt-lf")).
     libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
   )
 
+lazy val leo = (project in file("mmt-leo")).
+  dependsOn(lf, api).
+  settings(commonSettings("mmt-leo"): _*).
+  settings(
+    scalaSource in Test := baseDirectory.value / "test",
+    libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
+    libraryDependencies += "com.assembla.scala-incubator" %% "graph-core" % "1.9.4"
+  )
+
 lazy val tptp = (project in file("mmt-tptp")).
   dependsOn(api, lf).
   settings(commonSettings("mmt-tptp"): _*).
