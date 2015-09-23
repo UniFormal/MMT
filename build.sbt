@@ -23,22 +23,22 @@ target in(ScalaUnidoc, unidoc) := file("../doc/api")
 
 lazy val postProcessApi =
   taskKey[Unit]("post process generated api documentation wrt to source links.")
-  
+
 postProcessApi := postProcess(streams.value.log)
 
 lazy val cleandoc =
   taskKey[Unit]("remove api documentation.")
-  
+
 cleandoc := delRecursive(streams.value.log, file("../doc/api"))
 
 lazy val apidoc =
   taskKey[Unit]("generate post processed api documentation.")
-  
+
 apidoc := postProcessApi.value
 
 apidoc <<= apidoc.dependsOn(cleandoc, unidoc in Compile)
 
-// definition of our custom, project-specific targets 
+// definition of our custom, project-specific targets
 
 val deploy =
   TaskKey[Unit]("deploy", "copies packaged jars to deploy location.")
@@ -164,19 +164,10 @@ lazy val oeis = (project in file("mmt-oeis")).
   dependsOn(planetary).
   settings(commonSettings("mmt-oeis"): _*)
 
-lazy val leo = (project in file("mmt-leo")).
-  dependsOn(lf, api).
-  settings(commonSettings("mmt-leo"): _*).
-  settings(
-    scalaSource in Test := baseDirectory.value / "test",
-    libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test",
-    libraryDependencies += "com.assembla.scala-incubator" %% "graph-core" % "1.9.4"
-  )
-
 // wrapper project that depends on most other projects
 // the deployed jar is stand-alone and can be used as a unix shell script
 lazy val mmt = (project in file("mmt-exts")).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, leo).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis).
   settings(commonSettings("mmt-exts"): _*).
   settings(
     exportJars := false,
