@@ -71,17 +71,20 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
         + c + sysEnv(tex)))
   }
 
+  protected def archString(a: Archive): String = a.groupDir.getName + "/" + a.root.getName
+
   protected def createLocalPaths(bt: BuildTask): Unit = {
-    val dir = bt.inFile.up
+    createLocalPaths(bt.archive, bt.inFile.up)
+  }
+
+  protected def createLocalPaths(a: Archive, dir: File): Unit = {
     val fileName = dir / localpathsFile
-    val a = bt.archive
-    val repoDir = a.root
-    val groupRepo = a.groupDir.getName + "/" + repoDir.getName + "}"
+    val groupRepo = archString(a) + "}"
     val text: List[String] = List(
       "% this file defines root path local repository",
       "\\defpath{MathHub}{" + a.baseDir.getPath + "}",
       "\\mhcurrentrepos{" + groupRepo,
-      "\\input{" + repoDir.getPath + "/lib/WApersons}",
+      "\\input{" + a.root.getPath + "/lib/WApersons}",
       "% we also set the base URI for the LaTeXML transformation",
       "\\baseURI[\\MathHub{}]{https://mathhub.info/" + groupRepo
     )
@@ -94,8 +97,11 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   protected def getLang(f: File): Option[String] = f.stripExtension.getExtension
 
   protected def getAmbleFile(preOrPost: String, bt: BuildTask): File = {
-    val repoDir = bt.archive.root
-    val lang: Option[String] = getLang(bt.inFile)
+    getAmbleFile(preOrPost, bt.archive, getLang(bt.inFile))
+  }
+
+  protected def getAmbleFile(preOrPost: String, a: Archive, lang: Option[String]): File = {
+    val repoDir = a.root
     val filePrefix = repoDir / "lib" / preOrPost
     val defaultFile = filePrefix.setExtension("tex")
     if (lang.isDefined) {
@@ -125,6 +131,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
     exclude
   }
 
+  /** to be implemented */
   def reallyBuildFile(bt: BuildTask)
 
   def buildFile(bt: BuildTask): Unit = if (!skip(bt)) reallyBuildFile(bt)
@@ -156,7 +163,6 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
         }
       case _ => None
     }
-  private def archString(a: Archive): String = a.groupDir.getName + "/" + a.root.getName
 
   protected def readingSource(a: Archive, in: File, init: List[(String, FilePath)] = Nil):
   Seq[(String, FilePath)] = {
@@ -217,19 +223,55 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   }
 }
 
-class LatexDeps extends LaTeXBuildTarget {
-  val key: String = "latex-deps"
+class AllTeX extends LaTeXBuildTarget {
+  val key: String = "alltex"
   val outDim: ArchiveDimension = source
   override val outExt = "tex"
 
-  // unused
+  // we do nothing for single files
   def reallyBuildFile(bt: BuildTask): Unit = {}
 
-  // no history can be checked therefore simply rebuild on update
-  override def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = build(a, in)
+  override def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = {
+    buildDir(a, a / inDim / in)
+  }
 
-  override def buildFile(bt: BuildTask): Unit = {
-    readingSource(bt.archive, bt.inFile)
+  override def buildDir(bt: BuildTask, builtChildren: List[BuildTask]): Unit = {
+    buildDir(bt.archive, bt.inFile)
+  }
+
+  private def buildDir(a: Archive, dir: File): Unit = {
+    if (dir.isDirectory && includeDir(dir.getName)) {
+      val files = dir.list.filter(includeFile).toList.sorted
+      if (files.nonEmpty) {
+        createLocalPaths(a, dir)
+        val langs = files.flatMap(f => getLang(File(f))).toSet
+        val nonLangFiles = files.filter(f => getLang(File(f)).isEmpty)
+        if (nonLangFiles.nonEmpty) createAllFile(a, None, dir, nonLangFiles)
+        langs.foreach(l => createAllFile(a, Some(l), dir, files))
+      }
+    }
+  }
+
+  private def ambleText(preOrPost: String, a: Archive, lang: Option[String]): List[String] =
+    scala.io.Source.fromFile(getAmbleFile(preOrPost, a, lang)).getLines().toList
+
+  private def createAllFile(a: Archive, lang: Option[String], dir: File, files: List[String]): Unit = {
+    val all = dir / ("all" + lang.map("." + _).getOrElse("") + ".tex")
+    val w = File.Writer(all)
+    ambleText("pre", a, lang).foreach(w.println)
+    w.println("")
+    files.foreach { f =>
+      val file = File(f)
+      val fLang = getLang(file)
+      if (fLang == lang) {
+        w.println("\\begin{center} \\LARGE File: \\url{" + f + "} \\end{center}")
+        w.println("\\input{" + file.stripExtension + "} \\newpage")
+        w.println("")
+      }
+    }
+    ambleText("post", a, lang).foreach(w.println)
+    w.close()
+    logSuccess(getOutPath(a, all))
   }
 }
 
