@@ -258,7 +258,7 @@ class AllTeX extends LaTeXBuildTarget {
         val langs = files.flatMap(f => getLang(File(f))).toSet
         val nonLangFiles = files.filter(f => getLang(File(f)).isEmpty)
         if (nonLangFiles.nonEmpty) createAllFile(a, None, dir, nonLangFiles)
-        langs.foreach(l => createAllFile(a, Some(l), dir, files))
+        langs.toList.sorted.foreach(l => createAllFile(a, Some(l), dir, files))
       }
     }
   }
