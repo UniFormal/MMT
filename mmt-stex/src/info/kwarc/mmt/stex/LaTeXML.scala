@@ -207,15 +207,19 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
     val in = a / inDim / fp
     if (in.exists()) {
       val optLang = getLang(in)
-      val init = optLang match {
+      val aStr = archString(a)
+      val name = in.getName
+      val init = if (name.startsWith("all"))
+        langFiles(optLang, getDirFiles(a, in.up)).filter(_ != name).map(f => (aStr, fp.dirPath / f))
+      else optLang match {
         case None => Nil
         case Some(lang) =>
-          List((archString(a), fp.toFile.stripExtension.stripExtension.setExtension("tex").filepath))
+          List((aStr, fp.toFile.stripExtension.stripExtension.setExtension("tex").filepath))
       }
       val fs = readingSource(a, in, init)
       var res: Set[(Archive, FilePath)] = Set.empty
-      fs foreach { case (aStr, p) =>
-        controller.getOrAddArchive(a.baseDir / aStr) match {
+      fs foreach { case (ar, p) =>
+        controller.getOrAddArchive(a.baseDir / ar) match {
           case None =>
           case Some(arch) =>
             res += ((arch, p))
@@ -239,18 +243,26 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   /** run process with logger syncronously within a given number of minutes
     *
     * @return exit code
-    * */
+    **/
   protected def timeout(pb: ProcessBuilder, log: ProcessLogger, m: Int): Int = {
-      val proc = pb.run(log)
-      val fut = Future(blocking(proc.exitValue()))
-      try {
-        Await.result(fut, m.minutes)
-      } catch {
-        case e: TimeoutException =>
-          proc.destroy()
-          throw e
-      }
+    val proc = pb.run(log)
+    val fut = Future(blocking(proc.exitValue()))
+    try {
+      Await.result(fut, m.minutes)
+    } catch {
+      case e: TimeoutException =>
+        proc.destroy()
+        throw e
+    }
   }
+
+  protected def getDirFiles(a: Archive, dir: File): List[String] =
+    if (dir.isDirectory && includeDir(dir.getName) && a.includeDir(dir.getName))
+      dir.list.filter(f => includeFile(f) && (dir / f).isFile).toList.sorted
+    else Nil
+
+  protected def langFiles(lang: Option[String], files: List[String]): List[String] =
+    files.filter(f => getLang(File(f)) == lang)
 }
 
 class AllTeX extends LaTeXBuildTarget {
@@ -261,50 +273,63 @@ class AllTeX extends LaTeXBuildTarget {
   // we do nothing for single files
   def reallyBuildFile(bt: BuildTask): Unit = {}
 
-  override def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = {
-    buildDir(a, in, a / inDim / in)
+  override def cleanFile(a: Archive, curr: Current): Unit = {}
+
+  override def cleanDir(a: Archive, curr: Current): Unit = {
+    val dir = curr.file
+    dir.list.filter(f => f.startsWith("all.") && f.endsWith(".tex")).sorted.
+      map(f => dir / f) foreach { f =>
+      f.delete()
+      logResult("deleted " + getOutPath(a, f))
+    }
+    super.cleanDir(a, curr)
   }
 
-  override def buildDir(bt: BuildTask, builtChildren: List[BuildTask]): Unit = {
-    buildDir(bt.archive, bt.inPath, bt.inFile)
-  }
+  override def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit =
+    buildDir(a, in, a / inDim / in, force = false)
 
-  private def buildDir(a: Archive, in: FilePath, dir: File): Unit = {
-    if (dir.isDirectory && includeDir(dir.getName)) {
-      val dirFiles = dir.list.filter(includeFile).toList.sorted
-      if (dirFiles.nonEmpty) {
-        createLocalPaths(a, dir)
-        val ts = getDeps(controller, getFilesRec(a, in)).map(p => p._1 / inDim / p._2)
-        val files = ts.filter(dirFiles.map(f => dir / f).contains(_)).map(_.getName)
-        assert(files.length == dirFiles.length)
-        val langs = files.flatMap(f => getLang(File(f))).toSet
-        val nonLangFiles = files.filter(f => getLang(File(f)).isEmpty)
-        if (nonLangFiles.nonEmpty) createAllFile(a, None, dir, nonLangFiles)
-        langs.toList.sorted.foreach(l => createAllFile(a, Some(l), dir, files))
-      }
+  override def buildDepsFirst(a: Archive, in: FilePath = EmptyPath): Unit =
+    buildDir(a, in, a / inDim / in, force = false)
+
+  override def buildDir(bt: BuildTask, builtChildren: List[BuildTask]): Unit =
+    buildDir(bt.archive, bt.inPath, bt.inFile, force = true)
+
+  private def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): Unit = {
+    val dirFiles = getDirFiles(a, dir)
+    if (dirFiles.nonEmpty) {
+      createLocalPaths(a, dir)
+      val ts = getDeps(controller, getFilesRec(a, in)).map(p => p._1 / inDim / p._2)
+      val files = ts.filter(dirFiles.map(f => dir / f).contains(_)).map(_.getName)
+      assert(files.length == dirFiles.length)
+      val langs = files.flatMap(f => getLang(File(f))).toSet
+      val nonLangFiles = langFiles(None, files)
+      if (nonLangFiles.nonEmpty) createAllFile(a, None, dir, nonLangFiles, force)
+      langs.toList.sorted.foreach(l => createAllFile(a, Some(l), dir, files, force))
     }
   }
 
   private def ambleText(preOrPost: String, a: Archive, lang: Option[String]): List[String] =
     readSourceRebust(getAmbleFile(preOrPost, a, lang)).getLines().toList
 
-  private def createAllFile(a: Archive, lang: Option[String], dir: File, files: List[String]): Unit = {
+  private def createAllFile(a: Archive, lang: Option[String], dir: File,
+                            files: List[String], force: Boolean): Unit = {
     val all = dir / ("all" + lang.map("." + _).getOrElse("") + ".tex")
-    val w = File.Writer(all)
-    ambleText("pre", a, lang).foreach(w.println)
-    w.println("")
-    files.foreach { f =>
-      val file = File(f)
-      val fLang = getLang(file)
-      if (fLang == lang) {
+    val ls = langFiles(lang, files)
+    if (!force && all.exists() && ls.forall(f => (dir / f).lastModified() < all.lastModified()))
+      logResult("up-to-date " + getOutPath(a, all)) // does not detect deleted files!
+    else {
+      val w = File.Writer(all)
+      ambleText("pre", a, lang).foreach(w.println)
+      w.println("")
+      ls.foreach { f =>
         w.println("\\begin{center} \\LARGE File: \\url{" + f + "} \\end{center}")
-        w.println("\\input{" + file.stripExtension + "} \\newpage")
+        w.println("\\input{" + File(f).stripExtension + "} \\newpage")
         w.println("")
       }
+      ambleText("post", a, lang).foreach(w.println)
+      w.close()
+      logSuccess(getOutPath(a, all))
     }
-    ambleText("post", a, lang).foreach(w.println)
-    w.close()
-    logSuccess(getOutPath(a, all))
   }
 }
 
