@@ -41,7 +41,7 @@ class Relational extends TraversingBuildTarget {
   override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): Unit = {
     /* here we clean memory to avoid conflicts with subsequent builds.
      * without it nat.mmt results in several "error: invalid unit:" */
-    controller.memory.content.clear
+    controller.memory.content.clear()
     controller.memory.narration.clear
     // TODO: avoid memory usage and add dependencies (to be computed) directly in StructureParser
   }
@@ -68,7 +68,7 @@ trait Dependencies {
     Set.empty
   }
 
-  def getDeps(controller: Controller, args: Set[(Archive, FilePath)]): List[Set[(Archive, FilePath)]] = {
+  def getDeps(controller: Controller, args: Set[(Archive, FilePath)]): List[(Archive, FilePath)] = {
     var visited: Set[(Archive, FilePath)] = Set.empty
     var unknown = args
     var deps: Map[(Archive, FilePath), Set[(Archive, FilePath)]] = Map.empty
@@ -80,7 +80,7 @@ trait Dependencies {
       unknown -= p
       unknown ++= ds.diff(visited)
     }
-    Relational.topsort(controller, deps)
+    Relational.flatTopsort(controller, deps)
   }
 }
 
@@ -104,4 +104,7 @@ object Relational {
       }
     }
   }
+
+  def flatTopsort[A](controller: Controller, m: Map[A, Set[A]]): List[A] =
+   topsort(controller, m).flatMap(_.toList.sortBy(_.toString))
 }

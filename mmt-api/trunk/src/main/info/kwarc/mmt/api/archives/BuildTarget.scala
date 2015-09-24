@@ -299,21 +299,20 @@ abstract class TraversingBuildTarget extends BuildTarget with Dependencies {
       false
     })
   }
-
-  override def buildDepsFirst(a: Archive, in: FilePath = EmptyPath): Unit = {
-    def getFilesRec(in: FilePath): Set[(Archive, FilePath)] = {
+  protected def getFilesRec(a: Archive, in: FilePath): Set[(Archive, FilePath)] = {
       val inFile = a / inDim / in
       if (inFile.isDirectory && includeDir(inFile.getName))
-        inFile.list.flatMap(n => getFilesRec(FilePath(in.segments ::: List(n)))).toSet
+        inFile.list.flatMap(n => getFilesRec(a, FilePath(in.segments ::: List(n)))).toSet
       else if (inFile.isFile && includeFile(inFile.getName))
         Set((a, in))
       else Set.empty
     }
-    // includeFile will be checked by build again (as was already checked during dependency analysis)
-    val ts = getDeps(controller, getFilesRec(in))
-    ts foreach (_.toList.sortBy(_.toString()).foreach(p => update(p._1, Update(ifHadErrors = false), p._2)))
-  }
 
+  override def buildDepsFirst(a: Archive, in: FilePath = EmptyPath): Unit = {
+    // includeFile will be checked by build again (as was already checked during dependency analysis)
+    val ts = getDeps(controller, getFilesRec(a, in))
+    ts.foreach(p => update(p._1, Update(ifHadErrors = false), p._2))
+  }
 }
 
 /**
