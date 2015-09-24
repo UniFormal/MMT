@@ -374,6 +374,6 @@ class MetaBuildTarget extends BuildTarget {
   }
 
   def clean(a: Archive, in: FilePath): Unit = {
-    targets.foreach { t => t.clean(a, path(a, t, in)) }
+    targets.reverse.foreach { t => t.clean(a, path(a, t, in)) }
   }
 }
