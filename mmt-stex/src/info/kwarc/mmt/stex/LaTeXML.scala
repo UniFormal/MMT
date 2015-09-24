@@ -243,18 +243,21 @@ class AllTeX extends LaTeXBuildTarget {
   def reallyBuildFile(bt: BuildTask): Unit = {}
 
   override def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = {
-    buildDir(a, a / inDim / in)
+    buildDir(a, in, a / inDim / in)
   }
 
   override def buildDir(bt: BuildTask, builtChildren: List[BuildTask]): Unit = {
-    buildDir(bt.archive, bt.inFile)
+    buildDir(bt.archive, bt.inPath, bt.inFile)
   }
 
-  private def buildDir(a: Archive, dir: File): Unit = {
+  private def buildDir(a: Archive, in: FilePath, dir: File): Unit = {
     if (dir.isDirectory && includeDir(dir.getName)) {
-      val files = dir.list.filter(includeFile).toList.sorted
-      if (files.nonEmpty) {
+      val dirFiles = dir.list.filter(includeFile).toList.sorted
+      if (dirFiles.nonEmpty) {
         createLocalPaths(a, dir)
+        val ts = getDeps(controller, getFilesRec(a, in)).map(p => p._1 / inDim / p._2)
+        val files = ts.filter(dirFiles.map(f => dir / f).contains(_)).map(_.getName)
+        assert(files.length == dirFiles.length)
         val langs = files.flatMap(f => getLang(File(f))).toSet
         val nonLangFiles = files.filter(f => getLang(File(f)).isEmpty)
         if (nonLangFiles.nonEmpty) createAllFile(a, None, dir, nonLangFiles)
