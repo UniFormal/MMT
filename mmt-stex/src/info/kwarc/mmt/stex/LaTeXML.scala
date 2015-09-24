@@ -10,8 +10,11 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils._
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent._
+import scala.concurrent.duration._
 import scala.io.BufferedSource
-import scala.sys.process.{Process, ProcessLogger}
+import scala.sys.process._
 import scala.util.matching.Regex
 
 /** common code for sms, latexml und pdf generation */
@@ -231,6 +234,22 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
     for (l <- source.getLines(); if !res)
       if (l.trim.startsWith("\\documentclass")) res = true
     res
+  }
+
+  /** run process with logger syncronously within a given number of minutes
+    *
+    * @return exit code
+    * */
+  protected def timeout(pb: ProcessBuilder, log: ProcessLogger, m: Int): Int = {
+      val proc = pb.run(log)
+      val fut = Future(blocking(proc.exitValue()))
+      try {
+        Await.result(fut, m.minutes)
+      } catch {
+        case e: TimeoutException =>
+          proc.destroy()
+          throw e
+      }
   }
 }
 
@@ -494,7 +513,7 @@ class LaTeXML extends LaTeXBuildTarget {
       paths.map("--path=" + _)
     log(argSeq.mkString(" ").replace(" --", "\n --"))
     val pb = Process(argSeq, bt.archive / inDim, extEnv(bt): _*)
-    val exitCode = pb ! procLogger(output)
+    val exitCode = timeout(pb, procLogger(output), 10)
     if (exitCode != 0 || lmhOut.length == 0) {
       bt.errorCont(LatexError("no omdoc created", output.toString))
       lmhOut.delete()
@@ -544,7 +563,7 @@ class PdfLatex extends LaTeXBuildTarget {
       val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
         in.stripExtension.getName, "-interaction", "scrollmode"),
         in.up, env(bt): _*)
-      pb ! procLogger(output)
+      timeout(pb, procLogger(output), 5)
       val pdflogFile = in.setExtension("pdflog")
       if (!pipeOutput) File.write(pdflogFile, output.toString)
       if (pdfFile.length == 0) {
