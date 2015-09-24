@@ -494,7 +494,7 @@ class LaTeXML extends LaTeXBuildTarget {
       paths.map("--path=" + _)
     log(argSeq.mkString(" ").replace(" --", "\n --"))
     val pb = Process(argSeq, bt.archive / inDim, extEnv(bt): _*)
-    val exitCode = pb.!(procLogger(output))
+    val exitCode = pb ! procLogger(output)
     if (exitCode != 0 || lmhOut.length == 0) {
       bt.errorCont(LatexError("no omdoc created", output.toString))
       lmhOut.delete()
@@ -544,7 +544,7 @@ class PdfLatex extends LaTeXBuildTarget {
       val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
         in.stripExtension.getName, "-interaction", "scrollmode"),
         in.up, env(bt): _*)
-      pb.!(procLogger(output))
+      pb ! procLogger(output)
       val pdflogFile = in.setExtension("pdflog")
       if (!pipeOutput) File.write(pdflogFile, output.toString)
       if (pdfFile.length == 0) {
