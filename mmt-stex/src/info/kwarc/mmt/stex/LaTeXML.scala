@@ -402,7 +402,7 @@ class LaTeXML extends LaTeXBuildTarget {
   val outDim = RedirectableDimension("latexml")
   // the latexml client
   private var latexmlc = "latexmlc"
-  private var expire = "10"
+  private var expire = "600"
   private var port: Option[String] = None
   private var profile = "stex-smglom-module"
   private var perl5lib = "perl5lib"
@@ -529,7 +529,7 @@ class LaTeXML extends LaTeXBuildTarget {
     setLatexmlc(bt)
     val output = new StringBuffer()
     val argSeq = Seq(latexmlc, bt.inFile.toString,
-      "--quiet", "--profile=" + profile, "--path=" + styPath(bt),
+      "--profile=" + profile, "--path=" + styPath(bt),
       "--destination=" + lmhOut, "--log=" + logFile) ++
       (if (noAmble(bt.inFile)) Nil
       else Seq("--preamble=" + getAmbleFile("pre", bt),
