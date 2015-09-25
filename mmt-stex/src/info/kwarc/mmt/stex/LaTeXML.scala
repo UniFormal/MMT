@@ -23,6 +23,9 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   val inDim = source
   protected var pipeOutput: Boolean = false
   protected val pipeOutputOption: String = "--pipe-worker-output"
+  /** timout in seconds */
+  protected var timeoutVal: Int = 300
+  protected val timeoutOption: String = "timeout"
   protected val c = java.io.File.pathSeparator
 
   protected case class LatexError(s: String, l: String) extends ExtensionError(key, s) {
@@ -41,8 +44,25 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
     if (args.contains(pipeOutputOption)) pipeOutput = true
   }
 
-  protected def execArgs(args: List[String]): List[String] =
-    args.map(a => if (a.startsWith("--" + key + "=")) a.substring(key.length + 3) else a)
+  protected def partArg(arg: String, args: List[String]): (List[String], List[String]) = {
+    val (matched, rest) = args.partition(_.startsWith("--" + arg + "="))
+    (matched.map(_.substring(arg.length + 3)), rest)
+  }
+
+  protected def execArgs(args: List[String]): (List[String], List[String]) = {
+    val (matched, rest) = partArg(key, args)
+    val (opts, nonOpts) = rest.filter(pipeOutputOption != _).partition(_.startsWith("--"))
+    val (timeOpts, restOpts) = partArg(timeoutOption, opts)
+    timeOpts match {
+      case Nil =>
+      case hd :: tl => try timeoutVal = hd.toInt catch {
+        case _: Exception =>
+          logResult("illegal timeout value: " + hd)
+      }
+        tl.foreach(t => logResult("ignored time value: " + t))
+    }
+    (restOpts, matched ++ nonOpts)
+  }
 
   protected def procLogger(output: StringBuffer): ProcessLogger = {
     def handleLine(line: String): Unit = {
@@ -240,15 +260,15 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
     res
   }
 
-  /** run process with logger syncronously within a given number of minutes
+  /** run process with logger synchronously within the given timeout
     *
     * @return exit code
     **/
-  protected def timeout(pb: ProcessBuilder, log: ProcessLogger, m: Int): Int = {
+  protected def timeout(pb: ProcessBuilder, log: ProcessLogger): Int = {
     val proc = pb.run(log)
     val fut = Future(blocking(proc.exitValue()))
     try {
-      Await.result(fut, m.minutes)
+      Await.result(fut, timeoutVal.seconds)
     } catch {
       case e: TimeoutException =>
         proc.destroy()
@@ -388,7 +408,7 @@ class SmsGenerator extends LaTeXBuildTarget {
   def reallyBuildFile(bt: BuildTask): Unit = {
     try createSms(bt, encodings)
     catch {
-      case e: Throwable =>
+      case e: Exception =>
         bt.errorCont(LocalError("sms exception: " + e))
         logFailure(bt.outPath)
     }
@@ -409,26 +429,24 @@ class LaTeXML extends LaTeXBuildTarget {
   private var preloads: Seq[String] = Nil
   private var paths: Seq[String] = Nil
 
-  private def filterArg(arg: String, args: List[String]): List[String] =
-    args.filter(_.startsWith("--" + arg + "=")).map(_.substring(arg.length + 3))
-
   private def getArg(arg: String, args: List[String]): Option[String] =
-    filterArg(arg, args).headOption.map(Some(_)).
+    partArg(arg, args)._1.headOption.map(Some(_)).
       getOrElse(controller.getEnvVar("LATEXML" + arg.toUpperCase))
 
   override def start(args: List[String]): Unit = {
     super.start(args)
-    val (opts, nonOptArgs) = execArgs(args).partition(_.startsWith("--"))
+    val (opts, nonOptArgs) = execArgs(args)
     latexmlc = getFromFirstArgOrEnvvar(nonOptArgs, "LATEXMLC", latexmlc)
     expire = getArg("expire", opts).getOrElse(expire)
     port = getArg("port", opts)
     profile = getArg("profile", opts).getOrElse(profile)
-    preloads = filterArg("preload", opts) ++
+    val (preloadOpts, rest1) = partArg("preload", opts)
+    preloads = preloads ++
       controller.getEnvVar("LATEXMLPRELOADS").getOrElse("").split(" ").filter(_.nonEmpty)
-    paths = filterArg("path", opts) ++
+    val (pathOpts, rest2) = partArg("path", opts)
+    paths = pathOpts ++
       controller.getEnvVar("LATEXMLPATHS").getOrElse("").split(" ").filter(_.nonEmpty)
-    val restOpts = opts.diff(List(pipeOutputOption, "--expire=" + expire, "--port=" + port, "--profile=" + profile)).
-      filter(a => !(a.startsWith("--path=") || a.startsWith("--preload=")))
+    val restOpts = rest2.diff(List("--expire=" + expire, "--port=" + port, "--profile=" + profile))
     if (restOpts.nonEmpty) log("unknown options: " + restOpts.mkString(" "))
   }
 
@@ -524,7 +542,6 @@ class LaTeXML extends LaTeXBuildTarget {
     val logFile = bt.outFile.setExtension("ltxlog")
     lmhOut.delete()
     logFile.delete()
-    bt.outFile.delete()
     createLocalPaths(bt)
     setLatexmlc(bt)
     val output = new StringBuffer()
@@ -537,16 +554,23 @@ class LaTeXML extends LaTeXBuildTarget {
       Seq("--expire=" + expire) ++ port.map("--port=" + _) ++ preloads.map("--preload=" + _) ++
       paths.map("--path=" + _)
     log(argSeq.mkString(" ").replace(" --", "\n --"))
-    val pb = Process(argSeq, bt.archive / inDim, extEnv(bt): _*)
-    val exitCode = timeout(pb, procLogger(output), 10)
-    if (exitCode != 0 || lmhOut.length == 0) {
-      bt.errorCont(LatexError("no omdoc created", output.toString))
-      lmhOut.delete()
-      logFailure(bt.outPath)
+    try {
+      val pb = Process(argSeq, bt.archive / inDim, extEnv(bt): _*)
+      val exitCode = timeout(pb, procLogger(output))
+      if (exitCode != 0 || lmhOut.length == 0) {
+        bt.errorCont(LatexError("no omdoc created", output.toString))
+        lmhOut.delete()
+        logFailure(bt.outPath)
+      }
+      if (lmhOut.exists()) logSuccess(bt.outPath)
+      if (logFile.exists())
+        readLogFile(bt, logFile)
+    } catch {
+      case e: Exception =>
+        lmhOut.delete()
+        bt.errorCont(LatexError(e.toString, output.toString))
+        logFailure(bt.outPath)
     }
-    if (bt.outFile.exists()) logSuccess(bt.outPath)
-    if (logFile.exists())
-      readLogFile(bt, logFile)
   }
 
   override def cleanFile(arch: Archive, curr: Current): Unit = {
@@ -564,7 +588,7 @@ class PdfLatex extends LaTeXBuildTarget {
 
   override def start(args: List[String]): Unit = {
     super.start(args)
-    val (opts, nonOptArgs) = execArgs(args).diff(List(pipeOutputOption)).partition(_.startsWith("--"))
+    val (opts, nonOptArgs) = execArgs(args)
     val newPath = getFromFirstArgOrEnvvar(nonOptArgs, "PDFLATEX", pdflatexPath)
     if (newPath != pdflatexPath) {
       pdflatexPath = newPath
@@ -588,7 +612,7 @@ class PdfLatex extends LaTeXBuildTarget {
       val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
         in.stripExtension.getName, "-interaction", "scrollmode"),
         in.up, env(bt): _*)
-      timeout(pb, procLogger(output), 5)
+      timeout(pb, procLogger(output))
       val pdflogFile = in.setExtension("pdflog")
       if (!pipeOutput) File.write(pdflogFile, output.toString)
       if (pdfFile.length == 0) {
@@ -601,7 +625,7 @@ class PdfLatex extends LaTeXBuildTarget {
       if (bt.outFile.exists)
         logSuccess(bt.outPath)
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         bt.outFile.delete()
         bt.errorCont(LatexError(e.toString, output.toString))
         logFailure(bt.outPath)
