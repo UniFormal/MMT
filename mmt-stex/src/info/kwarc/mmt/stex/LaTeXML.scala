@@ -423,7 +423,7 @@ class LaTeXML extends LaTeXBuildTarget {
   // the latexml client
   private var latexmlc = "latexmlc"
   private var expire = "600"
-  private var port: Option[String] = None
+  private var port = "3334"
   private var profile = "stex-smglom-module"
   private var perl5lib = "perl5lib"
   private var preloads: Seq[String] = Nil
@@ -438,7 +438,7 @@ class LaTeXML extends LaTeXBuildTarget {
     val (opts, nonOptArgs) = execArgs(args)
     latexmlc = getFromFirstArgOrEnvvar(nonOptArgs, "LATEXMLC", latexmlc)
     expire = getArg("expire", opts).getOrElse(expire)
-    port = getArg("port", opts)
+    port = getArg("port", opts).getOrElse(port)
     profile = getArg("profile", opts).getOrElse(profile)
     val (preloadOpts, rest1) = partArg("preload", opts)
     preloads = preloads ++
@@ -551,7 +551,7 @@ class LaTeXML extends LaTeXBuildTarget {
       (if (noAmble(bt.inFile)) Nil
       else Seq("--preamble=" + getAmbleFile("pre", bt),
         "--postamble=" + getAmbleFile("post", bt))) ++
-      Seq("--expire=" + expire) ++ port.map("--port=" + _) ++ preloads.map("--preload=" + _) ++
+      Seq("--expire=" + expire, "--port=" + port) ++ preloads.map("--preload=" + _) ++
       paths.map("--path=" + _)
     log(argSeq.mkString(" ").replace(" --", "\n --"))
     try {
