@@ -438,8 +438,11 @@ class LaTeXML extends LaTeXBuildTarget {
 
   override def start(args: List[String]): Unit = {
     super.start(args)
-    val (opts, nonOptArgs) = execArgs(args)
+    val (rOpts, nonOptArgs) = execArgs(args)
     latexmlc = getFromFirstArgOrEnvvar(nonOptArgs, "LATEXMLC", latexmlc)
+    val (sOpts, opts) = partArg(latexmls, rOpts)
+    latexmls = sOpts.headOption.map(Some(_)).getOrElse(controller.getEnvVar("LATEXMLS")).
+      getOrElse(latexmls)
     expire = getArg("expire", opts).getOrElse(expire)
     val newPort = getArg("port", opts)
     portSet = newPort.isDefined
@@ -540,7 +543,7 @@ class LaTeXML extends LaTeXBuildTarget {
         latexmlcpath.toString
       else bin
     }
-  else bin
+    else bin
 
   private def setLatexmlBins(bt: BuildTask): Unit = {
     latexmlc = setLatexmlBin(latexmlc, bt)
