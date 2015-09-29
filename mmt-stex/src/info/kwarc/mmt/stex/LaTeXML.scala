@@ -425,8 +425,8 @@ class LaTeXML extends LaTeXBuildTarget {
   private var latexmls = "latexmls"
   private val ltxsMsg = "Fatal:server:init can't setup server\n"
   private var expire = "600"
-  private var port = "3334"
-  private var portSet = false
+  private var port: Int = 3334
+  private var portSet: Boolean = false
   private var profile = "stex-smglom-module"
   private var perl5lib = "perl5lib"
   private var preloads: Seq[String] = Nil
@@ -446,7 +446,7 @@ class LaTeXML extends LaTeXBuildTarget {
     expire = getArg("expire", opts).getOrElse(expire)
     val newPort = getArg("port", opts)
     portSet = newPort.isDefined
-    port = newPort.getOrElse(port)
+    port = try newPort.getOrElse(port.toString).toInt catch { case _: Exception => port}
     profile = getArg("profile", opts).getOrElse(profile)
     val (preloadOpts, rest1) = partArg("preload", opts)
     preloads = preloads ++
@@ -558,9 +558,9 @@ class LaTeXML extends LaTeXBuildTarget {
     logFile.delete()
     createLocalPaths(bt)
     setLatexmlBins(bt)
-    val realPort = if (portSet) port
+    val realPort: Int = if (portSet) port
     else (try port.toInt catch {
-      case e: Exception => 3334
+      case e: Exception => port
     }) + Math.abs(bt.archive.id.hashCode % 1000)
     val output = new StringBuffer()
     val argSeq = Seq(latexmlc, bt.inFile.toString,
