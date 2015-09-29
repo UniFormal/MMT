@@ -13,7 +13,7 @@ import info.kwarc.mmt.api.utils._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import scala.concurrent.duration._
-import scala.io.BufferedSource
+import scala.io.{BufferedSource, Codec}
 import scala.sys.process._
 import scala.util.matching.Regex
 
@@ -24,7 +24,8 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
   protected var pipeOutput: Boolean = false
   protected val pipeOutputOption: String = "--pipe-worker-output"
   /** timout in seconds */
-  protected var timeoutVal: Int = 300
+  private val timeoutDefault: Int = 300
+  protected var timeoutVal: Int = timeoutDefault
   protected val timeoutOption: String = "timeout"
   protected val c = java.io.File.pathSeparator
 
@@ -188,7 +189,8 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget {
       case _ => None
     }
 
-  protected def readSourceRebust(f: File): BufferedSource = scala.io.Source.fromFile(f, "ISO-8859-1")
+  protected def readSourceRebust(f: File): BufferedSource =
+    scala.io.Source.fromFile(f)(Codec.ISO8859)
 
   protected def readingSource(a: Archive, in: File, init: List[(String, FilePath)] = Nil):
   Seq[(String, FilePath)] = {
@@ -425,7 +427,10 @@ class LaTeXML extends LaTeXBuildTarget {
   private var latexmls = "latexmls"
   private val ltxsMsg = "Fatal:server:init can't setup server\n"
   private var expire = "600"
-  private var port: Int = 3334
+  private val delaySecs: Int = 1000
+  private val portDefault: Int = 3334
+  private var port: Int = portDefault
+  private val portModulo: Int = 1000
   private var portSet: Boolean = false
   private var profile = "stex-smglom-module"
   private var perl5lib = "perl5lib"
@@ -446,7 +451,9 @@ class LaTeXML extends LaTeXBuildTarget {
     expire = getArg("expire", opts).getOrElse(expire)
     val newPort = getArg("port", opts)
     portSet = newPort.isDefined
-    port = try newPort.getOrElse(port.toString).toInt catch { case _: Exception => port}
+    port = try newPort.getOrElse(port.toString).toInt catch {
+      case _: Exception => port
+    }
     profile = getArg("profile", opts).getOrElse(profile)
     val (preloadOpts, rest1) = partArg("preload", opts)
     preloads = preloads ++
@@ -550,6 +557,17 @@ class LaTeXML extends LaTeXBuildTarget {
     latexmls = setLatexmlBin(latexmls, bt)
   }
 
+  private def procIO(output: StringBuffer): ProcessIO =
+    new ProcessIO(_.close(), _.close(), { i =>
+      val in = scala.io.Source.fromInputStream(i)
+      val str = in.mkString
+      in.close()
+      if (str != ltxsMsg) {
+        output.append(str)
+        if (pipeOutput) System.err.print(str)
+      }
+    }, true)
+
   /** Compile a .tex file to OMDoc */
   def reallyBuildFile(bt: BuildTask): Unit = {
     val lmhOut = bt.outFile
@@ -559,9 +577,7 @@ class LaTeXML extends LaTeXBuildTarget {
     createLocalPaths(bt)
     setLatexmlBins(bt)
     val realPort: Int = if (portSet) port
-    else (try port.toInt catch {
-      case e: Exception => port
-    }) + Math.abs(bt.archive.id.hashCode % 1000)
+    else port + Math.abs(bt.archive.id.hashCode % portModulo)
     val output = new StringBuffer()
     val argSeq = Seq(latexmlc, bt.inFile.toString,
       "--profile=" + profile, "--path=" + styPath(bt),
@@ -575,16 +591,8 @@ class LaTeXML extends LaTeXBuildTarget {
     try {
       val pbs = Process(Seq(latexmls, "--expire=" + expire, "--port=" + realPort,
         "--autoflush=100"), bt.archive / inDim, extEnv(bt): _*)
-      pbs.run(io = new ProcessIO(_.close(), _.close(), { i =>
-        val in = scala.io.Source.fromInputStream(i)
-        val str = in.mkString
-        in.close()
-        if (str != ltxsMsg) {
-          output.append(str)
-          if (pipeOutput) System.err.print(str)
-        }
-      }, true))
-      if (output.length == 0) Thread.sleep(1000)
+      pbs.run(procIO(output))
+      if (output.length == 0) Thread.sleep(delaySecs)
       val pb = Process(argSeq, bt.archive / inDim, extEnv(bt): _*)
       val exitCode = timeout(pb, procLogger(output))
       if (exitCode != 0 || lmhOut.length == 0) {
