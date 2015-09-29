@@ -422,6 +422,8 @@ class LaTeXML extends LaTeXBuildTarget {
   val outDim = RedirectableDimension("latexml")
   // the latexml client
   private var latexmlc = "latexmlc"
+  private var latexmls = "latexmls"
+  private val ltxsMsg = "Fatal:server:init can't setup server\n"
   private var expire = "600"
   private var port = "3334"
   private var profile = "stex-smglom-module"
@@ -534,6 +536,7 @@ class LaTeXML extends LaTeXBuildTarget {
       if (latexmlcpath.exists) {
         latexmlc = latexmlcpath.toString
       }
+      latexmls = (extBase(bt) / perl5lib / "bin" / latexmls).toString
     }
 
   /** Compile a .tex file to OMDoc */
@@ -555,6 +558,18 @@ class LaTeXML extends LaTeXBuildTarget {
       paths.map("--path=" + _)
     log(argSeq.mkString(" ").replace(" --", "\n --"))
     try {
+      val pbs = Process(Seq(latexmls, "--expire=" + expire, "--port=" + port,
+        "--autoflush=100"), bt.archive / inDim, extEnv(bt): _*)
+      pbs.run(io = new ProcessIO(_.close(), _.close(), { i =>
+        val in = scala.io.Source.fromInputStream(i)
+        val str = in.mkString
+        in.close()
+        if (str != ltxsMsg) {
+          output.append(str)
+          if (pipeOutput) System.err.print(str)
+        }
+      }, true))
+      if (output.length == 0) Thread.sleep(1000)
       val pb = Process(argSeq, bt.archive / inDim, extEnv(bt): _*)
       val exitCode = timeout(pb, procLogger(output))
       if (exitCode != 0 || lmhOut.length == 0) {
