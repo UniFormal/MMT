@@ -426,6 +426,7 @@ class LaTeXML extends LaTeXBuildTarget {
   private val ltxsMsg = "Fatal:server:init can't setup server\n"
   private var expire = "600"
   private var port = "3334"
+  private var portSet = false
   private var profile = "stex-smglom-module"
   private var perl5lib = "perl5lib"
   private var preloads: Seq[String] = Nil
@@ -440,7 +441,9 @@ class LaTeXML extends LaTeXBuildTarget {
     val (opts, nonOptArgs) = execArgs(args)
     latexmlc = getFromFirstArgOrEnvvar(nonOptArgs, "LATEXMLC", latexmlc)
     expire = getArg("expire", opts).getOrElse(expire)
-    port = getArg("port", opts).getOrElse(port)
+    val newPort = getArg("port", opts)
+    portSet = newPort.isDefined
+    port = newPort.getOrElse(port)
     profile = getArg("profile", opts).getOrElse(profile)
     val (preloadOpts, rest1) = partArg("preload", opts)
     preloads = preloads ++
@@ -530,14 +533,19 @@ class LaTeXML extends LaTeXBuildTarget {
       (p5 -> (perl5path + c + latexmlBlib + c + sysEnv(p5))) :: env(bt)
   }
 
-  private def setLatexmlc(bt: BuildTask): Unit =
-    if (!File(latexmlc).isAbsolute) {
-      val latexmlcpath = extBase(bt) / perl5lib / "bin" / latexmlc
-      if (latexmlcpath.exists) {
-        latexmlc = latexmlcpath.toString
-      }
-      latexmls = (extBase(bt) / perl5lib / "bin" / latexmls).toString
+  private def setLatexmlBin(bin: String, bt: BuildTask): String =
+    if (!File(bin).isAbsolute) {
+      val latexmlcpath = extBase(bt) / perl5lib / "bin" / bin
+      if (latexmlcpath.exists)
+        latexmlcpath.toString
+      else bin
     }
+  else bin
+
+  private def setLatexmlBins(bt: BuildTask): Unit = {
+    latexmlc = setLatexmlBin(latexmlc, bt)
+    latexmls = setLatexmlBin(latexmls, bt)
+  }
 
   /** Compile a .tex file to OMDoc */
   def reallyBuildFile(bt: BuildTask): Unit = {
@@ -546,7 +554,11 @@ class LaTeXML extends LaTeXBuildTarget {
     lmhOut.delete()
     logFile.delete()
     createLocalPaths(bt)
-    setLatexmlc(bt)
+    setLatexmlBins(bt)
+    val realPort = if (portSet) port
+    else (try port.toInt catch {
+      case e: Exception => 3334
+    }) + Math.abs(bt.archive.id.hashCode % 1000)
     val output = new StringBuffer()
     val argSeq = Seq(latexmlc, bt.inFile.toString,
       "--profile=" + profile, "--path=" + styPath(bt),
@@ -554,11 +566,11 @@ class LaTeXML extends LaTeXBuildTarget {
       (if (noAmble(bt.inFile)) Nil
       else Seq("--preamble=" + getAmbleFile("pre", bt),
         "--postamble=" + getAmbleFile("post", bt))) ++
-      Seq("--expire=" + expire, "--port=" + port) ++ preloads.map("--preload=" + _) ++
+      Seq("--expire=" + expire, "--port=" + realPort) ++ preloads.map("--preload=" + _) ++
       paths.map("--path=" + _)
     log(argSeq.mkString(" ").replace(" --", "\n --"))
     try {
-      val pbs = Process(Seq(latexmls, "--expire=" + expire, "--port=" + port,
+      val pbs = Process(Seq(latexmls, "--expire=" + expire, "--port=" + realPort,
         "--autoflush=100"), bt.archive / inDim, extEnv(bt): _*)
       pbs.run(io = new ProcessIO(_.close(), _.close(), { i =>
         val in = scala.io.Source.fromInputStream(i)
