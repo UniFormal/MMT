@@ -30,7 +30,7 @@ import info.kwarc.mmt.api.notations.InstanceName
 
 import info.kwarc.mmt.api.notations.Var
 import info.kwarc.mmt.api.ontology.Binary
-import info.kwarc.mmt.api.ontology.isDefinedBy
+import info.kwarc.mmt.api.informal.IRels._
 import info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api.presentation.StringBuilder
 import info.kwarc.mmt.api.notations._

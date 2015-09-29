@@ -8,11 +8,11 @@ package info.kwarc.mmt.marpa
  * 	New notations are written in sTeX, afterwards LaTeXML is used to convert those to .omdoc ,
  * then MMT is used to parse the .omdoc documents and to store the relevant notations.
  * 		
- *   	Purpose of this code:
+ *   	Purpose:
  * 	The code below uses the notations stored in MMT as Markers (Scala datatypes) to create a Marpa 
  * grammar and make it available via a post request.
  *  	
- *  	 Details about the code:
+ *  	 Details:
  *    To convert from Markers to a Marpa grammar an intermediate format is used (List[String]). 
  * Although the format might have been omitted, using tokenized strings make the recursion and
  * the transformation from Markers to the grammar easier, and creating unique rules also becomes easier.
@@ -28,8 +28,6 @@ import scala.Option.option2Iterable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.matching.Regex
-import scala.util.parsing.json.JSONArray
-import scala.util.parsing.json.JSONObject
 import info.kwarc.mmt.api.DPath
 import info.kwarc.mmt.api.Error
 import info.kwarc.mmt.api.Path
@@ -50,10 +48,9 @@ import info.kwarc.mmt.api.notations.TextNotation
 import info.kwarc.mmt.api.notations.PlaceholderDelimiter
 import info.kwarc.mmt.api.notations.SymbolName
 import info.kwarc.mmt.api.notations.InstanceName
-
 import info.kwarc.mmt.api.notations.Var
 import info.kwarc.mmt.api.ontology.Binary
-import info.kwarc.mmt.api.ontology.isDefinedBy
+import info.kwarc.mmt.api.informal.IRels._
 import info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api.presentation.StringBuilder
 import info.kwarc.mmt.api.notations._
@@ -70,13 +67,15 @@ import info.kwarc.mmt.api._
 import tiscaf.HTalk
 import info.kwarc.mmt.api.objects._
 import info.kwarc.sally4.nnexus.factories.comm.MarpaSubst
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import scala.collection.mutable.HashMap;
-import scala.collection.Map;
+import java.io.ByteArrayInputStream
+import java.io.IOException
+import java.io.ObjectInputStream
+import scala.collection.mutable.HashMap
+import scala.collection.Map
 import scala.collection.JavaConversions._
 import java.net.URLDecoder
+import info.kwarc.mmt.api.utils._
+import scala.collection.mutable.ListBuffer
 
 class MarpaBody(tk: HTalk) extends Body(tk: HTalk) {
 	def asMarpaSubst : MarpaSubst = {
@@ -136,12 +135,13 @@ def getGrammarResponse : HLet  = new HLet {
 		} //notations is now an iterable of (name, notation) pairs
 
 		pairIndexNotation = notations.toList.zipWithIndex
-				pairIndexNotation.foreach( x => 
-				if (x._1._2.presentationMarkers != Nil) {
-					Grammar.addTopRule(x._1._1.toPath+"N"+x._2.toString, x._1._2.presentationMarkers)}) //adding rules to the grammar
-					val resp = new JSONArray( Grammar.getMarpaGrammar );
-		val params = reqBody.asJSON
-				Server.JsonResponse(resp).aact(tk)
+		pairIndexNotation.foreach( x => 
+  		if (x._1._2.presentationMarkers != Nil) {
+  			Grammar.addTopRule(x._1._1.toPath+"N"+x._2.toString, x._1._2.presentationMarkers)}) //adding rules to the grammar
+    val grammarAsStringList = Grammar.getMarpaGrammar.map(x => info.kwarc.mmt.api.utils.JSONString(x))
+		val resp = info.kwarc.mmt.api.utils.JSONArray(grammarAsStringList : _*)
+//		val params = reqBody.asJSON
+		Server.JsonResponse(resp).aact(tk)
 	}
 }
 
@@ -241,7 +241,7 @@ def getContentMathML : HLet  = new HLet {
 			       pairIndexNotation(ruleNr)._1._2 , 
              argMap, varMap, seqArgMap, seqVarMap)
       println("Creating CML response")
-      var data : Map[String, AnyRef] = new HashMap[String, AnyRef]()
+      var data : Map[String, String] = new HashMap[String, String]()
       data += ("status" -> "OK")
       val payloadMap = payload.toMap
       println("payload.toString = " + payloadMap)
@@ -253,7 +253,9 @@ def getContentMathML : HLet  = new HLet {
       data += ("cml" -> cml)
       data += ("input" -> input)
 //      Ok(Json.toJson(response.toMap))
-      val resp = new JSONObject(data.toMap)
+      var dataJSONString : Map[String, JSONString] = data.map(pair => (pair._1 ->  JSONString(pair._2.toString)))
+      var list : Seq[(String, info.kwarc.mmt.api.utils.JSONString)] = new ListBuffer() 
+      val resp = info.kwarc.mmt.api.utils.JSONObject(list : _*)
       println("Sending Content Math ML response = " + resp.toString())
 			Server.JsonResponse(resp).aact(tk)
 		}
@@ -291,56 +293,59 @@ def getContentMathML : HLet  = new HLet {
 			println( "\nTerm = " + term.toCML.toString)
 			term
 	}
-
-	//utils
-	private def errorResponse(text : String, errors : List[Throwable]) : HLet = {
-			JsonResponse("", s"MMT Error in Planetary extension: $text ", errors)
-	}
-
-	private def JsonResponse(content : String, info : String, errors : List[Throwable]) : HLet = {
-			val response = new collection.mutable.HashMap[String, Any]()
-					response("content") = content
-					if (errors == Nil) { //no errors
-						val status = new collection.mutable.HashMap[String, Any]()
-								status("conversion") = 0 //success
-								val messages = new collection.mutable.HashMap[String, Any]()
-								if (info != "") {
-									val message = new collection.mutable.HashMap[String, Any]()
-											message("type") = "Info"
-											message("shortMsg") = info
-											message("shortMsg") = info
-											//no srcref
-											messages("0") = JSONObject(message.toMap)
-								}
-						status("messages") = JSONObject(messages.toMap)
-								response("status") = JSONObject(status.toMap)        
-					} else {
-						val status = new collection.mutable.HashMap[String, Any]()
-								status("conversion") = 2 //failed with errors
-								val messages = new collection.mutable.HashMap[String, Any]()
-								errors.zipWithIndex foreach { p => 
-								val message = new collection.mutable.HashMap[String, Any]()
-								p._1 match {
-								case se : SourceError =>
-								message("type") = "Error"
-								message("shortMsg") = se.mainMessage
-								message("shortMsg") = se.getStackTraceString
-								message("srcref") = JSONObject(List("from" -> JSONObject(List("line" -> se.ref.region.start.line, "col" -> se.ref.region.start.column).toMap), 
-										"to" -> JSONObject(List("line" -> se.ref.region.end.line, "col" -> se.ref.region.end.column).toMap)).toMap)
-								case e =>
-								message("type") = "Error"
-								message("shortMsg") = e.getMessage
-								message("longMsg") = e.getStackTraceString
-								//no srcref :(
-								}
-								messages(p._2.toString) = JSONObject(message.toMap)
-						}
-						status("messages") = JSONObject(messages.toMap)
-								response("status") = JSONObject(status.toMap)
-					}
-			log("Sending Response: " + response)
-			Server.JsonResponse(JSONObject(response.toMap))
-	}
+ //utils
+  private def errorResponse(text : String, errors : List[Throwable]) : HLet = {
+    JsonResponse("", s"MMT Error in Planetary extension: $text ", errors)
+  }
+  
+  private def JsonResponse(content : String, info : String, errors : List[Throwable]) : HLet = {
+    val response : HashMap[String, JSON] = new collection.mutable.HashMap[String, JSON]()
+    response("content") = JSONString(content)
+    if (errors == Nil) { //no errors
+      val status = new collection.mutable.HashMap[String, JSON]()
+      status("conversion") = JSONInt(0) //success
+      val messages = new collection.mutable.HashMap[String, JSON]()
+      if (info != "") {
+        val message = new collection.mutable.HashMap[String, JSON]()
+        message("type") = JSONString("Info")
+        message("shortMsg") = JSONString(info)
+        message("longMsg") = JSONString(info)
+        //no srcref
+        messages("0") = JSONObject(message.toSeq : _*)
+      }
+      status("messages") = JSONObject(messages.toSeq : _*)
+      response("status") = JSONObject(status.toSeq : _*)        
+    } else { //there are errors
+      val status = new collection.mutable.HashMap[String, JSON]()
+      if (content == "") {
+        status("conversion") = JSONInt(2) //failed with errors
+      } else {
+        status("conversion") = JSONInt(2) //success with errors
+      }
+      val messages = new collection.mutable.HashMap[String, JSON]()
+      errors.zipWithIndex foreach { p => 
+        val message = new collection.mutable.HashMap[String, JSON]()
+        p._1 match {
+          case se : SourceError =>
+            message("type") = JSONString("Fatal")
+            message("shortMsg") = JSONString(se.mainMessage)
+            message("longMsg") = JSONString(se.getStackTrace.mkString("\n"))
+            message("srcref") = JSONObject(List("from" -> JSONObject(List("line" -> JSONInt(se.ref.region.start.line), "col"-> JSONInt(se.ref.region.start.column)) : _*), 
+                                 "to" -> JSONObject(List("line" -> JSONInt(se.ref.region.end.line), "col" -> JSONInt(se.ref.region.end.column)) : _*)) : _*)
+          case e =>
+            message("type") = JSONString("Fatal")
+            message("shortMsg") = JSONString(e.getMessage)
+            message("longMsg") = JSONString(e.getStackTrace.mkString("\n"))
+            //no srcref :(
+          }
+          messages(p._2.toString) = JSONObject(message.toSeq : _*)
+      }
+      status("messages") = JSONObject(messages.toSeq : _*)
+      response("status") = JSONObject(status.toSeq : _*)
+    }
+      log("Sending Response: " + response)
+      Server.JsonResponse(JSONObject(response.toSeq : _*))     
+  }
 
 	private def toStringMarkers(not : TextNotation) : List[String] = {
 			not.parsingMarkers flatMap {
