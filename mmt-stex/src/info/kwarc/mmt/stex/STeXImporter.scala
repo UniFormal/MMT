@@ -292,34 +292,41 @@ class STeXImporter extends Importer {
           val name = (n \ "@name").text
           val refPath = Path.parseM("?" + cd, NamespaceMap(doc.path))
           val refName = refPath ? LocalName(name)
-          val c = controller.memory.content.getConstant(refName, p => "Notation for nonexistent constant " + p)
-          //getting macro info
-          try {
-            val macro_name = (n \ "@macro_name").text
-            val nrArgs = (n \ "@nargs").text.toInt
-            val macroMk = Delim("\\" + macro_name)
-            val notArgs = macroMk :: (0 until nrArgs).toList.flatMap(i => Delim("{") :: Arg(i + 1) :: Delim("}") :: Nil)
-            val stexScope = NotationScope(None, "stex" :: "tex" :: Nil, 0)
-            val texNotation = new TextNotation(Mixfix(notArgs), Precedence.integer(0), None, stexScope)
-            c.notC.parsingDim.set(texNotation)
-          } catch {
-            case e: Exception =>
-              val err = STeXParseError.from(e, "Notation is missing latex macro information", Some(s"for symbol ${cd}?${name}") ,sref, Some(Level.Warning))
-              errorCont(err)
-          }
-          //getting mathml rendering info
+           //getting mathml rendering info
           val prototype = n.child.find(_.label == "prototype").get
           val renderings = n.child.filter(_.label == "rendering")
           try {
-            renderings foreach { rendering =>
-              val notation = makeNotation(prototype, rendering)(doc.path)
-              if (notation.markers.nonEmpty)
-                c.notC.presentationDim.set(notation)
+            val c = controller.memory.content.getConstant(refName, p => "Notation for nonexistent constant " + p)
+            //getting macro info
+            try {
+              val macro_name = (n \ "@macro_name").text
+              val nrArgs = (n \ "@nargs").text.toInt
+              val macroMk = Delim("\\" + macro_name)
+              val notArgs = macroMk :: (0 until nrArgs).toList.flatMap(i => Delim("{") :: Arg(i + 1) :: Delim("}") :: Nil)
+              val stexScope = NotationScope(None, "stex" :: "tex" :: Nil, 0)
+              val texNotation = new TextNotation(Mixfix(notArgs), Precedence.integer(0), None, stexScope)
+              c.notC.parsingDim.set(texNotation)
+            } catch {
+              case e: Exception =>
+                val err = STeXParseError.from(e, "Notation is missing latex macro information", Some(s"for symbol ${cd}?${name}") ,sref, Some(Level.Warning))
+                errorCont(err)
+            }
+           
+            try {
+              renderings foreach { rendering =>
+                val notation = makeNotation(prototype, rendering)(doc.path)
+                if (notation.markers.nonEmpty)
+                  c.notC.presentationDim.set(notation)
+              }
+            } catch {
+              case e : Exception => 
+                val err = STeXParseError.from(e, "Invalid notation rendering", Some(s"for symbol ${cd}?${name}"), sref, None)
+                errorCont(err)
             }
           } catch {
-            case e : Exception => 
-              val err = STeXParseError.from(e, "Invalid notation rendering", Some(s"for symbol ${cd}?${name}"), sref, None)
-              errorCont(err)
+            case e : GetError => 
+                val err = STeXParseError.from(e, "Notation for nonexistent constant ", Some(s"for symbol ${refName}"), sref, None)
+                errorCont(err)
           }
         case "metadata" => //TODO
         case "#PCDATA" => //ignore

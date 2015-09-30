@@ -95,14 +95,14 @@ class OEISImporter extends Importer {
   
   
   
-  def translateText(text : String)(implicit dpath : DPath, errCont : ErrorHandler) : Document = {
+  def translateText(text : String)(implicit dpath : DPath, errCont : ErrorHandler) : (Document, Node) = {
     val defSRef = OMDoc.getDefaultSRef(text, dpath)
     val src = scala.io.Source.fromString(text)
     val node = docParser.fromReaderToXML(src)
     src.close()
     translateDocument(node, defSRef)(dpath, errCont)
     val doc = controller.getDocument(dpath)
-    doc
+    (doc, node)
   }
   
   /**
