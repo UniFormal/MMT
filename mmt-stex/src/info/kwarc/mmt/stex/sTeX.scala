@@ -67,6 +67,15 @@ object sTeX {
 
 //COmmon OMDoc functionality that is not specific to the sTeX importer
 object OMDoc {
+  
+  def getDefaultSRef(s : String, dpath : DPath) : SourceRef = {
+    val from = SourcePosition(-1, 1, 1)
+    val lines = s.split(System.lineSeparator)
+    val to = SourcePosition(-1, lines.length, lines.last.length)
+    val sreg = SourceRegion(from,to)
+    SourceRef(dpath.uri, sreg)
+  }
+  
   def parseSourceRef(n : scala.xml.Node,dpath : DPath)(implicit errorCont : ErrorHandler) : Option[SourceRef] = {
     val attrs = n.attributes.asAttrMap
     if (attrs.contains("stex:srcref")) { //try to parse the source ref
@@ -121,26 +130,26 @@ object OMDoc {
     }
   }
   
-   def parseNarrativeObject(n : scala.xml.Node)(implicit dpath : DPath, 
+   def parseNarrativeObject(n : scala.xml.Node, tsref : SourceRef)(implicit dpath : DPath, 
                                                          mpath : MPath, 
                                                          errorCont : ErrorHandler,
-                                                         resolveSPath : (Option[String], Option[String], String, MPath) => GlobalName) : Option[Term]= {
-    val sref = parseSourceRef(n, dpath) 
+                                                         resolveSPath : (Option[String], Option[String], String, MPath, SourceRef) => GlobalName) : Option[Term]= {
+    val sref = parseSourceRef(n, dpath).getOrElse(tsref)
     n.child.find(_.label == "CMP").map(_.child) match {
       case Some(nodes) => 
         val narrNode = <div class="CMP"> {nodes} </div> //effectively treating CMP as a narrative div
-        val cmp =  translateCMP(rewriteCMP(narrNode))(dpath, mpath, errorCont : ErrorHandler)
+        val cmp =  translateCMP(rewriteCMP(narrNode, sref), sref)(dpath, mpath, errorCont)
         Some(cmp)
       case None => 
-        val err = new STeXParseError("No CMP in narrative object " + n.label, None, sref, Some(Level.Warning))
+        val err = new STeXParseError("No CMP in narrative object " + n.label, None, Some(sref), Some(Level.Warning))
         errorCont(err)
         None
     }
   }
   
-  def rewriteCMP(node : scala.xml.Node)(implicit mpath : MPath, 
+  def rewriteCMP(node : scala.xml.Node, tsref : SourceRef)(implicit mpath : MPath, 
                                                  errorCont : ErrorHandler, 
-                                                 resolveSPath : (Option[String], Option[String], String, MPath) => GlobalName) : scala.xml.Node = node.label match {
+                                                 resolveSPath : (Option[String], Option[String], String, MPath, SourceRef) => GlobalName) : scala.xml.Node = node.label match {
     case "OMS" if (xml.attr(node, "cd") == "OMPres") =>
       <om:OMS base={Narration.path.doc.toPath} module={Narration.path.module.toMPath.name.toPath} name={Narration.path.name.toPath}/>
     case "OMS" => 
@@ -155,12 +164,12 @@ object OMDoc {
         case s => Some(s)
       }
       val name = xml.attr(node, "name")
-      val sym = resolveSPath(baseO, cdO, name, mpath)
+      val sym = resolveSPath(baseO, cdO, name, mpath, tsref)
       <om:OMS base={sym.module.toMPath.parent.toPath} module={sym.module.toMPath.name.last.toPath} name={sym.name.last.toPath}/>
     case "OME" => <om:OMV name="error"/> //TODO temporary hack for OEIS
     case "OME" => //OME(args) -> OMA(Informal.error -> args)
       val pre = OMS(Informal.constant("error")).toNode
-      val newChild = node.child.map(rewriteCMP)
+      val newChild = node.child.map(n => rewriteCMP(n, tsref))
       new Elem(node.prefix, "OMA", node.attributes, node.scope, (pre +: newChild) : _*)
     case "OMR" =>
       val baseO =  xml.attr(node, "base") match {
@@ -168,10 +177,10 @@ object OMDoc {
         case s => Some(s)
       }
       val xref = xml.attr(node, "xref")
-      val sym = resolveSPath(baseO, Some(xref), xref, mpath)
+      val sym = resolveSPath(baseO, Some(xref), xref, mpath, tsref)
       <om:OMS base={sym.module.toMPath.parent.toPath} module={sym.module.toMPath.name.last.toPath} name={sym.name.last.toPath}/>
     case "#PCDATA" => new scala.xml.Text(node.toString)
-    case _ => new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, node.child.map(rewriteCMP) :_*)
+    case _ => new scala.xml.Elem(node.prefix, node.label, node.attributes, node.scope, false, node.child.map(n => rewriteCMP(n, tsref)) :_*)
   }
   
   private def getChildren(node : scala.xml.Node, pos : List[Int] = Nil)(implicit hasProp : scala.xml.Node => Boolean) : Seq[(Node, List[Int])] = {
@@ -182,7 +191,7 @@ object OMDoc {
     }
   }
   
-  def translateCMP(n : scala.xml.Node)(implicit dpath : DPath, mpath : MPath, errorCont : ErrorHandler) : Term = {
+  def translateCMP(n : scala.xml.Node, tsref : SourceRef)(implicit dpath : DPath, mpath : MPath, errorCont : ErrorHandler) : Term = {
     val sref = parseSourceRef(n, dpath)
     n.label match {
       case "#PCDATA" =>
@@ -190,7 +199,7 @@ object OMDoc {
       case "OMOBJ" => 
         FlexiformalTerm(Obj.parseTerm(n, NamespaceMap(dpath)))
       case _ => //informal (narrative) term
-        val terms = getChildren(n)(n => n.label == "term" || n.label == "OMOBJ").map(p => (translateCMP(p._1), p._2))
+        val terms = getChildren(n)(n => n.label == "term" || n.label == "OMOBJ").map(p => (translateCMP(p._1, tsref), p._2))
         FlexiformalNode(n, terms.toList)
     }
   }

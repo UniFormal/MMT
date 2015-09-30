@@ -11,14 +11,16 @@ class DocumentParser(val dictionary : Set[String]) {
   private val IDregex = "A\\d+".r
   val textParser = new TextParser(dictionary)
   
-  private def assertion(xclass : String, cmpval : String) : Elem ={
-    <assertion class={xclass}>
+  private def assertion(xclass : String, cmpval : String, lineNr : Int, offset : Int) : Elem ={
+    val srcref = makeSrcRef(lineNr, offset, lineNr, offset + cmpval.length)
+    <assertion class={xclass} stex:srcref={srcref}>
       {CMP(cmpval)}
     </assertion>
   }
 
-  private def omtext(xclass : String, cmpval : String) : Elem = {
-    <omtext class={xclass}>
+  private def omtext(xclass : String, cmpval : String, lineNr : Int, offset :  Int) : Elem = {
+    val srcref = makeSrcRef(lineNr, offset, lineNr, offset + cmpval.length)
+    <omtext class={xclass} stex:srcref={srcref}>
       {CMP(cmpval)}
     </omtext>
   }
@@ -33,54 +35,56 @@ class DocumentParser(val dictionary : Set[String]) {
 
   def fromReaderToXML(source : Source) : Elem = {
 
-    def addHeaders(xml : List[Elem], theory : String) : Elem = {
+    def addHeaders(xml : List[Elem], theory : String, lastLine : Int, lastCol : Int) : Elem = {
+      val srcref = makeSrcRef(1, 1, lastLine, lastCol)
       <omdoc xmlns="http://omdoc.org/ns" xmlns:omdoc="http://omdoc.org/ns" xmlns:html="http://www.w3.org/1999/xhtml" xml:id={theory+".omdoc"}>
         <!--This OMDoc file is generated from an OEIS entry, do not edit-->
-        <theory name={theory}>
+        <theory name={theory} stex:srcref={srcref}>
           {xml}
         </theory>
       </omdoc>
     }
 
-    def omdocWrapperCMP(xclass : String, cmpval : String) = omtext(xclass, cmpval)
-    def omdocWrapperAs(xclass : String, cmpval : String) = assertion(xclass, cmpval)
+    def omdocWrapperCMP(xclass : String, cmpval : String, lineNr : Int, offset : Int) = omtext(xclass, cmpval, lineNr, offset)
+    def omdocWrapperAs(xclass : String, cmpval : String, lineNr : Int, offset : Int) = assertion(xclass, cmpval, lineNr, offset)
 
     var theory : Option[String] = None
-
-    val xml: List[Any] = source.getLines().toList.collect({
-      case line if line.length > 2 =>
+    var lastLine = 1
+    var lastCol = 1
+    val xml: List[Any] = source.getLines().toList.zipWithIndex.collect({
+      case (line, index) if line.length > 2 =>
         val contentIndex: Option[Match] = IDregex.findFirstMatchIn(line)
-
+        lastLine = index
+        lastCol = line.length
         if(!contentIndex.isEmpty && theory.isEmpty){
           theory = Some(contentIndex.get.matched)
         }
+        val offset = contentIndex.get.end
 
         line.substring(0,2) match{
-          case "%N" =>  omdocWrapperCMP("name", line.substring(contentIndex.get.end))
-          case "%S" =>  omdocWrapperCMP("starts-with", line.substring(contentIndex.get.end))
-          case "%C" =>  omdocWrapperCMP("comment", line.substring(contentIndex.get.end))
-          case "%D" =>  omdocWrapperCMP("reference", line.substring(contentIndex.get.end))
-          case "%H" =>  omdocWrapperCMP("link", line.substring(contentIndex.get.end))
-          case "%F" =>  formulaWrap(line.substring(contentIndex.get.end), theory.get)
-          case "%Y" =>  omdocWrapperAs("crossref", line.substring(contentIndex.get.end))
-          case "%K" =>  omdocWrapperAs("keywords", line.substring(contentIndex.get.end))
-          case "%A" =>  omdocWrapperAs("author", line.substring(contentIndex.get.end))
-          case "%p" =>  omdocWrapperCMP("maple", line.substring(contentIndex.get.end))
-          case "%t" =>  omdocWrapperCMP("mathematica", line.substring(contentIndex.get.end))
-          case "%o" =>  omdocWrapperCMP("program", line.substring(contentIndex.get.end))
-          case "%O" =>  omdocWrapperAs("offset", line.substring(contentIndex.get.end))
-          case "%E" =>  omdocWrapperAs("extensions", line.substring(contentIndex.get.end))
-          case "%e" =>  omdocWrapperAs("example", line.substring(contentIndex.get.end))
-          case "%T" =>  omdocWrapperAs("***** UUUU *****", line.substring(contentIndex.get.end))
-          case "%U" =>  omdocWrapperAs("***** IIII *****", line.substring(contentIndex.get.end))
-          case "%I" =>  omdocWrapperAs("***** TTTT *****", line.substring(contentIndex.get.end))
-          case a if line.startsWith("%") => omdocWrapperAs("notsupported","Unexpected tag!")
+          case "%N" =>  omdocWrapperCMP("name", line.substring(offset), index, offset)
+          case "%S" =>  omdocWrapperCMP("starts-with", line.substring(offset), index, offset)
+          case "%C" =>  omdocWrapperCMP("comment", line.substring(offset), index, offset)
+          case "%D" =>  omdocWrapperCMP("reference", line.substring(offset), index, offset)
+          case "%H" =>  omdocWrapperCMP("link", line.substring(offset), index, offset)
+          case "%F" =>  formulaWrap(line.substring(offset), theory.get, index, offset)
+          case "%Y" =>  omdocWrapperAs("crossref", line.substring(offset), index, offset)
+          case "%K" =>  omdocWrapperAs("keywords", line.substring(offset), index, offset)
+          case "%A" =>  omdocWrapperAs("author", line.substring(offset), index, offset)
+          case "%p" =>  omdocWrapperCMP("maple", line.substring(offset), index, offset)
+          case "%t" =>  omdocWrapperCMP("mathematica", line.substring(offset), index, offset)
+          case "%o" =>  omdocWrapperCMP("program", line.substring(offset), index, offset)
+          case "%O" =>  omdocWrapperAs("offset", line.substring(offset), index, offset)
+          case "%E" =>  omdocWrapperAs("extensions", line.substring(offset), index, offset)
+          case "%e" =>  omdocWrapperAs("example", line.substring(offset), index, offset)
+          case "%T" =>  omdocWrapperAs("***** UUUU *****", line.substring(offset), index, offset)
+          case "%U" =>  omdocWrapperAs("***** IIII *****", line.substring(offset), index, offset)
+          case "%I" =>  omdocWrapperAs("***** TTTT *****", line.substring(offset), index, offset)
+          case a if line.startsWith("%") => omdocWrapperAs("notsupported","Unexpected tag!", index, offset)
           case _ =>
         }
     })
-
-
-    addHeaders(xml collect {case a : Elem => a}, theory.get)
+    addHeaders(xml collect {case a : Elem => a}, theory.get, lastLine, lastCol)
   }
 
 
@@ -237,8 +241,16 @@ class DocumentParser(val dictionary : Set[String]) {
     </OMOBJ>
   }
 
-  def formulaWrap(line : String, theory : String ) : Elem = {
-    <omdoc:p class="formula">
+  def makeSrcRef(fromL : Int, fromC : Int, toL : Int, toC : Int) : String = {
+    val trange = s"(from=$fromL;$fromC,to=$toL;$toC)"
+    val srefS = "#textrange" + trange
+    srefS
+  }
+  
+  
+  def formulaWrap(line : String, theory : String, lineNr : Int, offset : Int) : Elem = {
+    val srcref = makeSrcRef(lineNr, offset, lineNr, line.length + offset)
+    <omdoc:p class="formula" stex:srcref={srcref}>
         {textParser.parseLine(line, theory) match {
           case Some(a) => a.toNode(theory)
           case None => <CMP>{line}</CMP>

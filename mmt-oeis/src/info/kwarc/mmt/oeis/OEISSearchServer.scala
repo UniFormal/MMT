@@ -8,6 +8,8 @@ import presentation._
 import notations._
 import symbols._
 import scala.xml._
+import info.kwarc.mmt.stex._
+
 
 class OEISSearchServer extends TEMASearchServer("oeis") {
 /*  lazy val presenter = {
@@ -37,7 +39,8 @@ class OEISSearchServer extends TEMASearchServer("oeis") {
       val dpath = Path.parseD("http://mathhub.info/smglom/mv/defeq.omdoc", NamespaceMap.empty)
       val mpath = dpath ? "defeq"
       val errorCont = new ErrorLogger(controller.report)
-      imp.parseNarrativeObject(narrObj)(dpath, mpath, errorCont)
+      val defSRef = OMDoc.getDefaultSRef(narrObj.toString, dpath)
+      imp.parseNarrativeObject(narrObj, defSRef)(dpath, mpath, errorCont)
     } match {
       case Some(tm) => tm
       case None => throw new Exception("Parsing Failed")
