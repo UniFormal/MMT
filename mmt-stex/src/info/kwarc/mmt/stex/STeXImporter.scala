@@ -15,12 +15,12 @@ import info.kwarc.mmt.api.utils._
 import scala.xml.{Elem, NamespaceBinding, Node}
 
 abstract class STeXError(msg: String, extraMsg: Option[String], severity: Option[Level.Level]) extends Error(msg) {
-  
+
   override val extraMessage = extraMsg.getOrElse("")
   override def level = severity.getOrElse(super.level)
 }
 
-class STeXParseError(val msg: String, extraMsg: Option[String],  val sref: Option[SourceRef], val severity: Option[Level.Level]) 
+class STeXParseError(val msg: String, extraMsg: Option[String],  val sref: Option[SourceRef], val severity: Option[Level.Level])
     extends STeXError(msg, extraMsg, severity) {
   private def srefS = sref.fold("")(_.region.toString)
 
@@ -237,7 +237,7 @@ class STeXImporter extends Importer {
             s.split("\\?").toList match {
               case tname :: sname :: Nil  => resolveSPath(Some(tname), sname, thy.path)
               case l =>
-                val error = new STeXParseError(s"Definition has invalid target attribute", 
+                val error = new STeXParseError(s"Definition has invalid target attribute",
                     Some(s"expected `thyName?symName` found `$s`. Defaulting to current theory and using `${l.last}` as symName"), sref, Some(Level.Error))
                 errorCont(error)
                 resolveSPath(None, l.last, thy.path)
@@ -298,10 +298,10 @@ class STeXImporter extends Importer {
           val cO = try {
             Some(controller.memory.content.getConstant(refName, p => "Notation for nonexistent constant " + p))
           } catch {
-            case e : Exception => None
-          } 
+            case e : Throwable => None
+          }
           cO match {
-            case Some(c) => 
+            case Some(c) =>
               //getting macro info
               try {
                 val macro_name = (n \ "@macro_name").text
@@ -316,7 +316,7 @@ class STeXImporter extends Importer {
                   val err = STeXParseError.from(e, "Notation is missing latex macro information", Some(s"for symbol ${cd}?${name}") ,sref, Some(Level.Warning))
                   errorCont(err)
               }
-             
+
               try {
                 renderings foreach { rendering =>
                   val notation = makeNotation(prototype, rendering)(doc.path)
@@ -324,11 +324,11 @@ class STeXImporter extends Importer {
                     c.notC.presentationDim.set(notation)
                 }
               } catch {
-                case e : Exception => 
+                case e : Exception =>
                   val err = STeXParseError.from(e, "Invalid notation rendering", Some(s"for symbol ${cd}?${name}"), sref, None)
                   errorCont(err)
               }
-            case None => 
+            case None =>
                 val err = new STeXParseError("Notation for nonexistent constant ", Some(s"for symbol ${refName}"), sref, None)
                 errorCont(err)
           }
@@ -397,7 +397,7 @@ class STeXImporter extends Importer {
                   argMap(name) = if (inBinder) ProtoSub(nextArgNumber) else ProtoArg(nextArgNumber)
                   nextArgNumber += 1
                 case "OMBVAR" =>
-                  p.child map {ch => 
+                  p.child map {ch =>
                     val name = (ch \ "@name").text
                     argMap(name) = ProtoVar(nextArgNumber)
                     nextArgNumber += 1
@@ -511,7 +511,7 @@ class STeXImporter extends Importer {
             case e: NotFound =>
               val err = new STeXParseError("Cannot add verbalization notation, symbol not found", Some(s"was looking for symbol $refName"), sref, Some(Level.Warning))
               errorCont(err)
-            case e: GetError => 
+            case e: GetError =>
               val err = new STeXParseError("Cannot add verbalization notation, symbol not found", Some(s"was looking for symbol $refName"), sref, Some(Level.Warning))
               errorCont(err)
           }
@@ -821,7 +821,7 @@ class STeXImporter extends Importer {
             defaultDoc ? defaultThy ? defaultSym
           case hd :: Nil => hd.path
           case _ => //adding error and defaulting
-            val err = new STeXLookupError("Cannot resolve symbol path, several matching symbols. Using default values", 
+            val err = new STeXLookupError("Cannot resolve symbol path, several matching symbols. Using default values",
                 Some(" looking for module=" + tnameSO.getOrElse("*") +" and symbol=" + snameS + ". Several matching symbols: " + symOptions.map(_.path)),
                 Some(Level.Warning))
             errorCont(err)
