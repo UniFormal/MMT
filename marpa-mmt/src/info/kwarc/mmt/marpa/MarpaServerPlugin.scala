@@ -253,9 +253,8 @@ def getContentMathML : HLet  = new HLet {
       data += ("cml" -> cml)
       data += ("input" -> input)
 //      Ok(Json.toJson(response.toMap))
-      var dataJSONString : Map[String, JSONString] = data.map(pair => (pair._1 ->  JSONString(pair._2.toString)))
-      var list : Seq[(String, info.kwarc.mmt.api.utils.JSONString)] = new ListBuffer() 
-      val resp = info.kwarc.mmt.api.utils.JSONObject(list : _*)
+      val dataJSONString : Map[String, JSONString] = data.map(pair => (pair._1 ->  JSONString(pair._2.toString)))
+      val resp = info.kwarc.mmt.api.utils.JSONObject(dataJSONString.toSeq : _*)
       println("Sending Content Math ML response = " + resp.toString())
 			Server.JsonResponse(resp).aact(tk)
 		}
