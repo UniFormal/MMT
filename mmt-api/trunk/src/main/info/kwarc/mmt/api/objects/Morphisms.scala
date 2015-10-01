@@ -8,7 +8,7 @@ import Conversions._
 //TODO definition expansion everywhere
 
 object Morph {
-   val empty = ComplexMorphism(Substitution()) 
+   val empty = ComplexMorphism(Substitution())
    /** pre: m is a well-structured morphism */
 	def domain(m : Term)(implicit lib : Lookup) : Option[Term] = m match {
       case OMIDENT(t) => Some(t)
@@ -34,18 +34,18 @@ object Morph {
       case OMMOD(path) => try {
          lib.get(path) match {case l: Link => Some(l.to)}
       } catch {
-         case _ : Throwable => throw throw InvalidObject(m, "not a well-formed morphism: " + m)
+         case _ : Throwable => throw InvalidObject(m, "not a well-formed morphism: " + m)
       }
       case OMDL(t, _ ) => Some(t)
       case _ => None
    }
-   
-   /** transform a morphism into a list of morphisms by using associativity of composition */ 
+
+   /** transform a morphism into a list of morphisms by using associativity of composition */
    def associateComposition(m: Term) : List[Term] = m match {
       case OMCOMP(ms) => ms flatMap associateComposition
       case m => List(m)
    }
-   
+
    /** pre: m is a valid morphism
     *  post: m and simplify(m) are equal
     *  inclusion and identity morphisms are simplified to OMCOMP()
@@ -84,7 +84,7 @@ object Morph {
    }
 /*
    /** restricts a well-formed morphism to a domain */
-   def restrict(from: Term, m: Term)(implicit lib: Lookup) : Term = m 
+   def restrict(from: Term, m: Term)(implicit lib: Lookup) : Term = m
    m match {     case OMMOD(p) =>       val l = lib.getLink(p)
          if (TheoryExp.equal(l.from, from))
             OMMOD(p)
@@ -106,7 +106,7 @@ object Morph {
       case MUnion(ms) =>
          MUnion(ms) //TODO: from must be included into MUnion(ms') for ms' <= ms
    }*/
-      
+
    /** checks equality of two morphisms using the simplify method; sound but not complete */
    def equal(a: Term, b: Term): Boolean = simplify(a) == simplify(b)
 }
@@ -155,7 +155,7 @@ object TheoryExp {
          if (!ms.isEmpty && ms.forall(m => m == ms.head)) ms.head
          else Nil
    }
-   
+
    /**
     * @param l left theory
     * @param r right theory
@@ -164,8 +164,8 @@ object TheoryExp {
    def union(l: Term, r: Term) = (l,r) match {
       case (ComplexTheory(lC), ComplexTheory(rC)) => ComplexTheory(lC ++ rC)
    }
-   
-   /** 
+
+   /**
     *  @param t a theory
     *  @return the list of elements in the domain of t (not flattened)
     */
@@ -188,14 +188,14 @@ object TheoryExp {
       case ComplexTheory(body) =>
          body.getDomain
    }
-  
+
    /** all directly included named theories */
    def getSupport(t: Term): List[MPath] = t match {
       case OMMOD(p) => List(p)
       case ComplexTheory(cont) => cont.getIncludes.toList
       case TUnion(ts) => (ts flatMap getSupport).distinct
    }
-   
+
    /** returns a human-oriented (short) String representation of a theory expression */
    def toString(t: Term) : String = t match {
       case OMMOD(f) => f.last
@@ -251,7 +251,7 @@ object TUnion {
    }
    def unapply(union: Term) : Option[List[Term]] = union match {
      case OMA(OMID(ModExp.tunion), thys) => Some(thys)
-     
+
      case _ => None
    }
    /** applies associativity of union by merging nested TUnion */
@@ -263,7 +263,7 @@ object TUnion {
 
 /**
  * the normal form of a theory expression is a context
- * 
+ *
  * the apply/unapply functions convert between them
  */
 
@@ -317,7 +317,7 @@ object TheoryType {
  */
 object OMM {
   val path = ModExp.morphismapplication
- /** 
+ /**
   * @param t the term
   * @param m the morphism
   */
@@ -333,7 +333,7 @@ object OMM {
  */
 object OMCOMP {
  val path = ModExp.composition
- /** 
+ /**
   * @param morphs the list of morphisms in diagram order
   * the trivial morphism OMCOMP() is dropped from morphs
   */
