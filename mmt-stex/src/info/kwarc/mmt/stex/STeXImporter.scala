@@ -298,7 +298,7 @@ class STeXImporter extends Importer {
           val cO = try {
             Some(controller.memory.content.getConstant(refName, p => "Notation for nonexistent constant " + p))
           } catch {
-            case e : Throwable => None
+            case e : NotFound => None
           }
           cO match {
             case Some(c) =>
