@@ -73,6 +73,14 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
 
     // display some help text
     if(args.help){
+      args.commands.foreach { s =>
+        val stream = Option(getClass.getResourceAsStream("/help-text/" + s + ".txt"))
+        if (stream.isDefined)
+           {
+             scala.io.Source.fromInputStream(stream.get).getLines.foreach(println)
+             sys.exit(0)
+           }
+       }
       println(helptext)
       sys.exit(0)
     }
