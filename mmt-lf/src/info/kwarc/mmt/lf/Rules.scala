@@ -96,6 +96,7 @@ object ApplyTerm extends InferenceRule(Apply.path, OfType.path) {
         fTOpt match {
            case None =>
               history += "failed"
+              solver.inferType(t)(stack, history.branch) // inference of the argument may solve some varialbes
               None
            case Some(fT) =>
               history += "function type is: " + solver.presentObj(fT)
@@ -148,7 +149,7 @@ object PiType extends TypingRule(Pi.path) {
 /** the extensionality rule (equivalent to Eta) x:A|-f x = g x  --->  f = g  : Pi x:A. B
  * If possible, the name of the new variable x is taken from f, g, or their type; otherwise, a fresh variable is invented. */
 object Extensionality extends TypeBasedEqualityRule(Nil, Pi.path) {
-   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Boolean = {
+   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
       val Pi(x, a, b) = tp
       // pick fresh variable name, trying to reuse existing name 
       val xBase = (tm1, tm2) match {
@@ -159,7 +160,7 @@ object Extensionality extends TypeBasedEqualityRule(Nil, Pi.path) {
       val tm1Eval = Apply(tm1, OMV(xn))
       val tm2Eval = Apply(tm2, OMV(xn))
       val bsub = b ^? (x / OMV(xn))
-      solver.check(Equality(stack ++ xn % a, tm1Eval, tm2Eval, Some(bsub)))
+      Some(solver.check(Equality(stack ++ xn % a, tm1Eval, tm2Eval, Some(bsub))))
    }
 }
 

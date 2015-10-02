@@ -44,7 +44,7 @@ class Twelf extends Importer with frontend.ChangeListener {
 
   /**
    * creates and initializes a Catalog
-   * first argument is the location of the twelf-server script; alternatively set variable GraphViz
+   * first argument is the location of the twelf-server script; alternatively set variable Twelf
    */
   override def start(args: List[String]): Unit = {
     val p = getFromFirstArgOrEnvvar(args, "Twelf", "twelf-server")
@@ -73,7 +73,7 @@ class Twelf extends Importer with frontend.ChangeListener {
     catalog.destroy
   }
 
-  def runTwelf(bf: BuildTask, outFile: File): Unit = {
+  def runTwelf(bf: BuildTask, outFile: File) {
     val procBuilder = new java.lang.ProcessBuilder(path.toString)
     procBuilder.redirectErrorStream
     val proc = procBuilder.start
@@ -120,7 +120,7 @@ class Twelf extends Importer with frontend.ChangeListener {
    * @param bf the build task
    * @param seCont document continuation for indexing
    */
-  def importDocument(bf: BuildTask, seCont: documents.Document => Unit): Unit = {
+  def importDocument(bf: BuildTask, seCont: documents.Document => Unit) {
     val outFile = bf.archive / RedirectableDimension(key) / bf.inPath.toFile.setExtension(outExt).filepath
     outFile.up.mkdirs()
     outFile.delete()

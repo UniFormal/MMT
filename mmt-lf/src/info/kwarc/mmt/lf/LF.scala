@@ -47,12 +47,12 @@ object Lambda extends LFSym ("lambda") {
    def apply(name : LocalName, tp : Term, body : Term) = OMBIND(this.term, OMV(name) % tp, body)
    def apply(con: Context, body : Term) = OMBIND(this.term, con, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
-	   case OMBIND(b, Context(VarDecl(n,Some(t),None, _), rest @_*), s) if b == this.term || b == LF.constant("implicit_lambda") =>
+	   case OMBIND(OMS(this.path), Context(VarDecl(n,Some(a),None, _), rest @_*), s) =>
 	      val newScope = if (rest.isEmpty)
 	         s
 	      else
 	         apply(Context(rest:_*), s)      
-	      Some(n,t,newScope)
+	      Some(n,a,newScope)
 	   case _ => None
    }
 }
@@ -67,12 +67,12 @@ object Pi extends LFSym ("Pi") {
    def apply(name : LocalName, tp : Term, body : Term) = OMBIND(this.term, OMV(name) % tp, body)
    def apply(con: Context, body : Term) = OMBIND(this.term, con, body)
    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
-	   case OMBIND(b, Context(VarDecl(n,Some(t),None,_), rest @ _*), s) if b == this.term || b == LF.constant("implicit_Pi") =>
+	   case OMBIND(OMS(this.path), Context(VarDecl(n,Some(a),None,_), rest @ _*), s) =>
          val newScope = if (rest.isEmpty)
             s
          else
             apply(Context(rest:_*), s)
-         Some(n,t,newScope)
+         Some(n,a,newScope)
 	   case OMA(Arrow.term,args) if args.length >= 2 =>
 	      val name = OMV.anonymous
 	      if (args.length > 2)
