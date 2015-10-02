@@ -4,8 +4,8 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 
 /** Creates a Controller and provides a shell interface to it.
+  *
   * The command syntax is given by the Action class and the parser in its companion object.
-
   */
 class Shell {
   lazy val controller = new Controller
@@ -86,19 +86,19 @@ class Shell {
       //run the commands for each line.
       commands.mkString(" ").split(" ; ") foreach controller.handleLine
 
-      // if we want a prompt, use a prompt
+      // if we want a shell, prompt and handle input
       if (args.prompt) {
         printHelpText("shelltitle")
-      }
-
-      // create a new shell.
-      val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
-
-      // wait for commands as long as we have a prompt.
-      while (args.prompt) {
-        val command = Input.readLine()
-        if (command != null)
-          controller.handleLine(command)
+        // create a new shell.
+        val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
+        // switch on console reports for wrong user inputs
+        controller.report.addHandler(ConsoleHandler)
+        // handle commands as long as we get input.
+        var command = Option(Input.readLine())
+        while (command.isDefined) {
+          controller.handleLine(command.get)
+          command = Option(Input.readLine())
+        }
       }
 
       // cleanup if we want to exit.
