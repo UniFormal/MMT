@@ -1,0 +1,2 @@
+This is the MMT shell.
+See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.frontend.Action for the available commands.

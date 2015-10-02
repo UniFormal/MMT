@@ -9,85 +9,39 @@ import info.kwarc.mmt.api.utils._
   */
 class Shell {
   lazy val controller = new Controller
-  private val usagetext = """usage:
-    mmt [--help|--about] [--shell|--keepalive|--noshell] [--file FILENAME] [--mbt FILENAME] [--send PORT] [COMMANDS]
-"""
-  private val helptext = usagetext+"""
-the MMT shell script
 
-general arguments:
-  -h, --help                show this help message and exit.
-  -a, --about               print some information about MMT.
+  private def getHelpText(cmd: String): Option[Iterator[String]] =
+    (Option(getClass.getResourceAsStream("/help-text/" + cmd + ".txt"))).
+      map(scala.io.Source.fromInputStream(_).getLines())
 
-commands and files to process:
-  COMMANDS                  Semicolon (;) separated commands to be interpreted by MMT. Type "help" inside the shell to
-                            a list of commands or look at the documentation for a list of available commands.
-  -r, --send PORT           instead of executing COMMANDS in a new MMT instance, send them to another MMT Instance
-                            listening at PORT and exit immediately (even if a different termination behaviour is
-                            specified. )
-  -f, --file FILENAME       In addition to running COMMANDS, load mmt-style commands from FILE. May be used multiple
-                            times.
-  -m, --mbt FILENAME        In addition to running COMMANDS, load scala-style commands from FILE. May be used multiple
-                            times.
-
-termination behaviour:
-
-The default exit behaviour is to terminate immediately after COMMANDS have been executed. If no arguments are given to
-MMT, it will start an interactive shell for the user to enter commands. The default behaviour of MMT can be overwritten
-with the following arguments.
-
-  -i, --shell               execute COMMANDS and take further commands on the MMT shell. Default if no arguments are
-                            provided.
-  -w, --keepalive           execute COMMANDS and terminate only after all threads have finished.
-  -e, --noshell             same as --keepalive (for backwards compatibility)
-
-note: any arguments listed here can be given in the form -argument, --argument or /argument syntax.
-"""
-
-  private val shelltitle = """
-This is the MMT shell.
-See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.frontend.Action for the available commands.
-
-                           """
+  private def printHelpText(cmd: String): Unit =
+    getHelpText(cmd).foreach(_.foreach(println))
 
   def main(a: Array[String]): Unit = {
 
     // parse command line arguments
     val args = ShellArguments.parse(a.toList).getOrElse{
-        println(usagetext)
+        printHelpText("usage")
         sys.exit(1)
       }
-
-    // FOR DEBUG PURPOSES
-    /*
-      println("help", args.help)
-      println("about", args.about)
-      println("interactive", args.prompt)
-      println("cleanup", args.runCleanup)
-      println("send", args.send)
-      println("mmtfiles", args.mmtFiles)
-      println("scalafiles", args.scalaFiles)
-      println("commands", args.commands)
-      sys.exit
-    */
 
     // display some help text
     if(args.help){
       args.commands.foreach { s =>
-        val stream = Option(getClass.getResourceAsStream("/help-text/" + s + ".txt"))
-        if (stream.isDefined)
+        val optHelp = getHelpText(s)
+        if (optHelp.isDefined)
            {
-             scala.io.Source.fromInputStream(stream.get).getLines.foreach(println)
+             optHelp.get.foreach(println)
              sys.exit(0)
            }
        }
-      println(helptext)
+      printHelpText("help")
       sys.exit(0)
     }
 
     // display some about text
     if(args.about){
-      println("See documentation in https://svn.kwarc.info/repos/MMT/doc/html/index.html")
+      printHelpText("about")
       sys.exit(0)
     }
 
@@ -127,7 +81,7 @@ See https://svn.kwarc.info/repos/MMT/doc/api/index.html#info.kwarc.mmt.api.front
 
       // if we want a prompt, use a prompt
       if (args.prompt){
-        println(shelltitle)
+        printHelpText("shelltitle")
       }
 
       // create a new shell.
