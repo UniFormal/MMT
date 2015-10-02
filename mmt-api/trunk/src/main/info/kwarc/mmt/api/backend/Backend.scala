@@ -191,20 +191,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
       val manifestOpt = manifestLocations(root).find(_.isFile)
       manifestOpt match {
         case Some(manifest) =>
-          val properties = new scala.collection.mutable.ListMap[String, String]
-          File.ReadLineWise(manifest) { case line =>
-            // usually continuation lines start with a space but we ignore those
-            val tline = line.trim
-            if (!tline.startsWith("//")) {
-              val p = tline.indexOf(":")
-              if (p > 0) {
-                // make sure line contains colon and the key is non-empty
-                val key = tline.substring(0, p).trim
-                val value = tline.substring(p + 1).trim
-                properties(key) = value
-              }
-            }
-          }
+          val properties = File.readProperties(manifest)
           if (properties.isDefinedAt("id")) {
             log("adding archive defined by " + manifest)
             val arch = new Archive(root, properties, report)
