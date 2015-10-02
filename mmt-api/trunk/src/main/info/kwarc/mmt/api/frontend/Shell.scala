@@ -11,7 +11,7 @@ class Shell {
   lazy val controller = new Controller
 
   private def getHelpText(cmd: String): Option[Iterator[String]] =
-    (Option(getClass.getResourceAsStream("/help-text/" + cmd + ".txt"))).
+    Option(getClass.getResourceAsStream("/help-text/" + cmd + ".txt")).
       map(scala.io.Source.fromInputStream(_).getLines())
 
   private def printHelpText(cmd: String): Unit =
@@ -20,27 +20,26 @@ class Shell {
   def main(a: Array[String]): Unit = {
 
     // parse command line arguments
-    val args = ShellArguments.parse(a.toList).getOrElse{
-        printHelpText("usage")
-        sys.exit(1)
-      }
+    val args = ShellArguments.parse(a.toList).getOrElse {
+      printHelpText("usage")
+      sys.exit(1)
+    }
 
     // display some help text
-    if(args.help){
+    if (args.help) {
       args.commands.foreach { s =>
         val optHelp = getHelpText(s)
-        if (optHelp.isDefined)
-           {
-             optHelp.get.foreach(println)
-             sys.exit(0)
-           }
-       }
+        if (optHelp.isDefined) {
+          optHelp.get.foreach(println)
+          sys.exit(0)
+        }
+      }
       printHelpText("help")
       sys.exit(0)
     }
 
     // display some about text
-    if(args.about){
+    if (args.about) {
       printHelpText("about")
       sys.exit(0)
     }
@@ -48,13 +47,21 @@ class Shell {
     // for the remaining cases we want to execute commands.
     // so we will join them with semicolons
 
-    val mmtCommands = if(args.mmtFiles.nonEmpty){"file" :: args.mmtFiles} else {Nil:List[String]}
-    val sbtCommands = if(args.scalaFiles.nonEmpty){"mbt" :: args.scalaFiles} else {Nil:List[String]}
+    val mmtCommands = if (args.mmtFiles.nonEmpty) {
+      "file" :: args.mmtFiles
+    } else {
+      Nil: List[String]
+    }
+    val sbtCommands = if (args.scalaFiles.nonEmpty) {
+      "mbt" :: args.scalaFiles
+    } else {
+      Nil: List[String]
+    }
 
     val commands = mmtCommands ++ sbtCommands ++ args.commands
 
     // maybe we want to send something to the remote
-    if(args.send.isDefined){
+    if (args.send.isDefined) {
       val uri = (URI("http", "localhost:" + args.send.get) / ":admin") ? commands.mkString(" ")
       try {
         println("sending: " + uri.toString)
@@ -80,7 +87,7 @@ class Shell {
       commands.mkString(" ").split(" ; ") foreach controller.handleLine
 
       // if we want a prompt, use a prompt
-      if (args.prompt){
+      if (args.prompt) {
         printHelpText("shelltitle")
       }
 
@@ -91,11 +98,11 @@ class Shell {
       while (args.prompt) {
         val command = Input.readLine()
         if (command != null)
-           controller.handleLine(command)
+          controller.handleLine(command)
       }
 
       // cleanup if we want to exit.
-      if (args.runCleanup){
+      if (args.runCleanup) {
         controller.cleanup()
       }
     } catch {
