@@ -265,7 +265,7 @@ abstract class TraversingBuildTarget extends BuildTarget with Dependencies {
 
   /** @return status of input file, obtained by comparing to error file */
   private def hadErrors(errorFile: File): Boolean = {
-    errorFile.exists && errorFile.length > 25 // TODO evil hack but more efficient than reading the error file
+    errorFile.exists && ErrorReader.getBuildErrors(errorFile, None).nonEmpty
   }
 
   /** recursively reruns build if the input file has changed

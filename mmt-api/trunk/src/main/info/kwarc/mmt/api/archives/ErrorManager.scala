@@ -29,14 +29,14 @@ object Table {
     "shortMsg")
 }
 
+case class ErrorContent(tp: String, level: Level.Level, sourceRef: Option[parser.SourceRef], shortMsg: String)
+
 /** an [[Error]] as reconstructed from an error file */
-case class BuildError(archive: Archive, target: String, path: FilePath,
-                      tp: String, level: Level.Level, sourceRef: Option[parser.SourceRef],
-                      shortMsg: String) {
+case class BuildError(archive: Archive, target: String, path: FilePath, data: ErrorContent) {
   def toStrList: List[String] = {
     val f = (archive / errors / target / path).addExtension("err")
-    List(level.toString,
-      tp,
+    List(data.level.toString,
+      data.tp,
       archive.id,
       archive.groupDir.getName,
       archive.root.getName,
@@ -44,9 +44,52 @@ case class BuildError(archive: Archive, target: String, path: FilePath,
       f.toString,
       new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(f.toJava.lastModified)),
       target,
-      sourceRef.fold("")(_.toString),
-      shortMsg
+      data.sourceRef.fold("")(_.toString),
+      data.shortMsg
     )
+  }
+}
+
+object ErrorReader {
+  def getBuildErrors(f: File, log: Option[String => Unit]): List[ErrorContent] = {
+    val emptyErr = f.length == 0
+    val node = if (emptyErr) <errors></errors> else xml.readFile(f)
+    var bes: List[ErrorContent] = Nil
+    node.child.foreach { x =>
+      val (stacks, others) = x.child partition (_.label == "stacktrace")
+      def getAttrs(attrs: List[String], x: Node): List[String] = {
+        val as = x.attributes
+        attrs map (a => as.get(a).getOrElse("").toString)
+      }
+      val List(tgt, srcRef, errType, shortMsg, level) =
+        getAttrs(List("target", "sref", "type", "shortMsg", "level"), x)
+      def infoMessage(msg: String) =
+        log.map(f => f(msg + "\nFile: " + f + "\nNode: " + shortMsg))
+      var lvl: Level.Level = Level.Error
+      if (level.isEmpty) infoMessage("empty error level")
+      else
+        try {
+          lvl = Level.parse(level)
+        } catch {
+          case e: ParseError => infoMessage(e.getMessage)
+        }
+      val elems = others filter (_.isInstanceOf[Elem])
+      var srcR: Option[SourceRef] = None
+      try {
+        srcR = if (srcRef.isEmpty) None else Some(SourceRef.fromURI(URI(srcRef)))
+      }
+      catch {
+        case e: ParseError => infoMessage(e.getMessage)
+      }
+      if (elems.nonEmpty)
+        infoMessage("ignored sub-elements: " + elems)
+      if (lvl > 1)
+      // only real errors
+        bes ::= ErrorContent(errType, lvl, srcR, shortMsg)
+    }
+    if (node.child.isEmpty && emptyErr)
+      bes ::= ErrorContent("", 0, None, "corrupt error file")
+    bes.reverse
   }
 }
 
@@ -90,48 +133,10 @@ class ErrorManager extends Extension with Logger {
    */
   def loadErrors(a: Archive, target: String, fpath: FilePath): Unit = {
     val f = a / errors / target / fpath
-    val emptyErr = f.length == 0
-    val node = if (emptyErr) <errors></errors> else xml.readFile(f)
-    var bes: List[BuildError] = Nil
-    node.child.foreach { x =>
-      val (stacks, others) = x.child partition (_.label == "stacktrace")
-      def getAttrs(attrs: List[String], x: Node): List[String] = {
-        val as = x.attributes
-        attrs map (a => as.get(a).getOrElse("").toString)
-      }
-      val List(tgt, srcRef, errType, shortMsg, level) =
-        getAttrs(List("target", "sref", "type", "shortMsg", "level"), x)
-      def infoMessage(msg: String) =
-        log(msg + "\nFile: " + f + "\nNode: " + shortMsg)
-      var lvl: Level.Level = Level.Error
-      if (level.isEmpty) infoMessage("empty error level")
-      else
-        try {
-          lvl = Level.parse(level)
-        } catch {
-          case e: ParseError => infoMessage(e.getMessage)
-        }
-      val elems = others filter (_.isInstanceOf[Elem])
-      var srcR: Option[SourceRef] = None
-      try {
-        srcR = if (srcRef.isEmpty) None else Some(SourceRef.fromURI(URI(srcRef)))
-      }
-      catch {
-        case e: ParseError => infoMessage(e.getMessage)
-      }
-      if (elems.nonEmpty)
-        infoMessage("ignored sub-elements: " + elems)
-      if (lvl > 1) {
-        // only real errors
-        val be = BuildError(a, target, fpath.toFile.stripExtension.filepath, errType, lvl, srcR, shortMsg)
-        bes ::= be
-      }
-    }
-    if (node.child.isEmpty && emptyErr)
-      bes ::= BuildError(a, target, fpath.toFile.stripExtension.filepath, "", 0, None,
-        if (emptyErr) "corrupt error file" else "no errors")
+    val bes = ErrorReader.getBuildErrors(f, Some((s: String) => log(s))).
+      map(BuildError(a, target, fpath.toFile.stripExtension.filepath, _))
     val em = apply(a.id)
-    em.put((target, fpath.segments), bes.reverse)
+    em.put((target, fpath.segments), bes)
   }
 
   /** iterator over all errors given as (archive, target, path, error) */
