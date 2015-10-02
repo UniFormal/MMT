@@ -50,17 +50,23 @@ trait STeXUtils {
     getAmbleFile(preOrPost, bt.archive, getLang(bt.inFile))
   }
 
-  protected def getAmbleFile(preOrPost: String, a: Archive, lang: Option[String]): File = {
-    val repoDir = a.root
-    val filePrefix = repoDir / "lib" / preOrPost
-    val defaultFile = filePrefix.setExtension("tex")
+  private def getLangAmbleFile(defaultFile: File, lang: Option[String]): File =
     if (lang.isDefined) {
-      val langFile = filePrefix.setExtension(lang.get + ".tex")
+      val langFile = defaultFile.stripExtension.setExtension(lang.get + ".tex")
       if (langFile.exists)
         langFile
       else defaultFile
     }
     else defaultFile
+
+  protected def groupMetaInf(a: Archive): File = a.groupDir / "meta-inf"
+
+  protected def getAmbleFile(preOrPost: String, a: Archive, lang: Option[String]): File = {
+    def ambleFile(root: File): File = (root / "lib" / preOrPost).setExtension("tex")
+    val repoFile = getLangAmbleFile(ambleFile(a.root), lang)
+    if (repoFile.exists())
+      repoFile
+    else getLangAmbleFile(ambleFile(groupMetaInf(a)), lang)
   }
 
   protected def readSourceRebust(f: File): BufferedSource =
@@ -109,7 +115,7 @@ trait STeXUtils {
     val key = "profile"
     var opt = a.properties.get(key)
     if (opt.isEmpty) {
-      val gm: File = a.groupDir / "meta-inf" / "MANIFEST.MF"
+      val gm: File = groupMetaInf(a) / "MANIFEST.MF"
       if (gm.exists && gm.isFile)
         opt = File.readProperties(gm).get(key)
     }
@@ -177,11 +183,14 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
   protected def createLocalPaths(a: Archive, dir: File): Unit = {
     val fileName = dir / localpathsFile
     val groupRepo = archString(a) + "}"
+    val wa = "lib/WApersons.tex"
+    var wFile = a.root / wa
+    if (!wFile.exists()) wFile = groupMetaInf(a) / wa
     val text: List[String] = List(
       "% this file defines root path local repository",
       "\\defpath{MathHub}{" + a.baseDir.getPath + "}",
       "\\mhcurrentrepos{" + groupRepo,
-      "\\input{" + a.root.getPath + "/lib/WApersons}",
+      "\\input{" + wFile.stripExtension + "}",
       "% we also set the base URI for the LaTeXML transformation",
       "\\baseURI[\\MathHub{}]{https://mathhub.info/" + groupRepo
     )
