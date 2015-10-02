@@ -56,7 +56,6 @@ object ErrorReader {
     val node = if (emptyErr) <errors></errors> else xml.readFile(f)
     var bes: List[ErrorContent] = Nil
     node.child.foreach { x =>
-      val (stacks, others) = x.child partition (_.label == "stacktrace")
       def getAttrs(attrs: List[String], x: Node): List[String] = {
         val as = x.attributes
         attrs map (a => as.get(a).getOrElse("").toString)
@@ -73,7 +72,6 @@ object ErrorReader {
         } catch {
           case e: ParseError => infoMessage(e.getMessage)
         }
-      val elems = others filter (_.isInstanceOf[Elem])
       var srcR: Option[SourceRef] = None
       try {
         srcR = if (srcRef.isEmpty) None else Some(SourceRef.fromURI(URI(srcRef)))
@@ -81,8 +79,6 @@ object ErrorReader {
       catch {
         case e: ParseError => infoMessage(e.getMessage)
       }
-      if (elems.nonEmpty)
-        infoMessage("ignored sub-elements: " + elems)
       if (lvl > 1)
       // only real errors
         bes ::= ErrorContent(errType, lvl, srcR, shortMsg)
