@@ -202,7 +202,7 @@ object ModExp extends uom.TheoryScala {
   val composition = _path ? "composition"
   val morphismapplication = _path ? "morphismapplication"
 
-  //TODO deprecate
+  //TODO deprecate (still used by Twelf)
   val tunion = _path ? "theory-union"
   val munion = _path ? "morphism-union"
 }
