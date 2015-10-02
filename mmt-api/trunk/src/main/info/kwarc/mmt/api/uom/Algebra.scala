@@ -133,7 +133,7 @@ class Involution(op: GlobalName) extends DepthRuleUnary(op, op) {
    val applyUnary : RewriteUnary = inside => GlobalChange(inside.head)
 }
 
-/** the antony of a predicate under negation
+/** the antonym of a predicate under negation
  * {{{
  * not p(args) ---> p'(args)
  * }}}
@@ -265,7 +265,7 @@ object IntegerCounter extends Counter {
  * }}}
  *
  * @param comp the aggregation operation, e.g., +
- * @param action the dual of the above action @ of integers on Terms@ operation above: takes a Term and an OMI
+ * @param action the above @
  * @param unit the value of the empty aggregation (i.e., when all terms cancel out), e.g., 0
  * @param inv the unary operator producing a negative aggregate, e.g., -
  * @param commutative If true, comp is commutative, and the elements are first reordered according to the hashcode of a.

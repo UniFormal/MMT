@@ -47,8 +47,10 @@ trait Body {
             case ln \ n => getMostSpecific(ln, n / rest)
          }
       }
-   /** adds a named or unnamed declaration, throws exception if name already declared */ 
-   def add(s : Declaration) {
+   /** adds a named or unnamed declaration, throws exception if name already declared
+    *  @param afterOpt if given, the new declaration is inserted after that one; otherwise at end  
+    */
+   def add(s : Declaration, afterOpt: Option[LocalName] = None) {
 	      val name = s.name
          if (statements.isDefinedAt(name)) {
             throw AddError("a declaration for the name " + name + " already exists")
@@ -59,7 +61,10 @@ trait Body {
             statements(a) = s
          }
          statements(name) = s
-         order = s :: order
+         var pos = afterOpt.map(a => order.lastIndexWhere(_.name == a)).getOrElse(0)
+         if (pos == -1) pos = 0 // maybe issue warning that afterOpt not found
+         val (bef,aft) = order.splitAt(pos) // order(pos) == aft.head
+         order = bef ::: s :: aft
    }
    /** delete a named declaration (does not have to exist)
     *  @return the deleted declaration

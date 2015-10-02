@@ -27,24 +27,26 @@ trait StructuralElement extends Content with metadata.HasMetaData {
   /** returns a specific component if present */
   def getComponent(c: DeclarationComponent) = getComponents find (_._1 == c) map (_._2)
 
+  private var elaborated = false
+  def hasBeenElaborated = elaborated
+  def setElaborated {elaborated = true}
+
   /** If a StructuralElement has been generated (as opposed to being physically present in the document),
     * this gives its origin.
     *
     * The origin must be set by overriding the field when creating the ContentElement.
     */
   private var origin: Origin = Unelaborated
-
   def setOrigin(o: Origin) {
     origin = o
   }
-
   def getOrigin = origin
+  def isGenerated = origin != Unelaborated
 
-  def isGenerated = origin != Unelaborated && origin != Elaborated
-
+  /** true for declarations that make up the elaborated version of a module */
   def inElaborated = origin match {
     case Unelaborated => true
-    case InstanceElaboration(_) => true
+    case FromStructure(_) => true
     case _ => false
   }
 }

@@ -1,16 +1,17 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.BuildTarget
-import info.kwarc.mmt.api.backend._
-import info.kwarc.mmt.api.checking._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.ontology.QueryExtension
-import info.kwarc.mmt.api.parser._
-import info.kwarc.mmt.api.presentation._
-import info.kwarc.mmt.api.proving._
-import info.kwarc.mmt.api.utils.MyList._
-import info.kwarc.mmt.api.web._
+import archives.BuildTarget
+import backend._
+import checking._
+import libraries._
+import ontology.QueryExtension
+import parser._
+import presentation._
+import proving._
+import uom._
+import utils.MyList._
+import web._
 
 trait Extension extends Logger {
   protected var controller: Controller = null
@@ -29,7 +30,7 @@ trait Extension extends Logger {
   case class LocalError(s: String) extends ExtensionError(logPrefix, s)
 
   /** MMT initialization */
-  def init(controller: Controller): Unit = {
+  def init(controller: Controller) {
     this.controller = controller
     report = controller.report
   }
@@ -99,7 +100,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     classOf[Plugin], classOf[Foundation], classOf[ParserExtension], classOf[QueryTransformer],
     classOf[QueryExtension],
     classOf[ChangeListener], classOf[ServerExtension],
-    classOf[Parser], classOf[Checker], classOf[Interpreter], classOf[Presenter],
+    classOf[Parser], classOf[Checker], classOf[Prover], classOf[Interpreter], classOf[Simplifier], classOf[Presenter],
     classOf[BuildTarget]
   )
 
@@ -127,21 +128,25 @@ class ExtensionManager(controller: Controller) extends Logger {
     val rbc = new RuleBasedChecker
     val msc = new MMTStructureChecker(rbc)
     val mmtint = new TwoStepInterpreter(kwp, msc)
+    val nbpr = new NotationBasedPresenter {override def twoDimensional = false}
+    val msp = new MMTStructurePresenter(nbpr)
+    val rbs = new RuleBasedSimplifier
+    val mss = new MMTStructureSimplifier(rbs)
     //use this for identifying structure and thus dependencies
     //val mmtStructureOnly = new OneStepInterpreter(new KeywordBasedParser(DefaultObjectParser))
     val mmtextr = ontology.MMTExtractor
 
     val rbp = new RuleBasedProver
     var prover: Extension = rbp
+    //TODO temporary hack to replace old prover with Mark's AgentProver if the latter is on the classpath
     val className = "info.kwarc.mmt.leo.provers.AgentProver"
     try {
       prover = Class.forName(className).newInstance().asInstanceOf[Extension]
     } catch {
       case _: Throwable =>
     }
-    //prover=rbp
 
-    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, mmtextr, prover).foreach { e => addExtension(e) }
+    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover).foreach { e => addExtension(e) }
     //targets and presenters
     List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter,
       TextPresenter, OMDocPresenter, controller.presenter).foreach {
@@ -183,7 +188,7 @@ class ExtensionManager(controller: Controller) extends Logger {
   }
 
   /** initializes and adds an extension */
-  def addExtension(ext: Extension, args: List[String] = Nil): Unit = {
+  def addExtension(ext: Extension, args: List[String] = Nil) {
     log("adding extension " + ext.getClass.toString)
     ext.init(controller)
     extensions ::= ext

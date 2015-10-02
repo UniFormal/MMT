@@ -871,7 +871,12 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       // try to simplify the type until an equality rule is applicable
       val tbEqRules = rules.get(classOf[TypeBasedEqualityRule])
       safeSimplifyUntil(tp)(t => tbEqRules.find(_.applicable(t))) match {
-         case (tpS, Some(rule)) => rule(this)(tm1S, tm2S, tpS)
+         case (tpS, Some(rule)) => 
+            rule(this)(tm1S, tm2S, tpS) match {
+               case Some(b) => b
+               case None =>
+                  checkEqualityTermBased(List(tm1S), List(tm2S), false)(stack, history, tp)
+            }
          case (tpS, None) =>
             // this is either a base type or an equality rule is missing
             checkEqualityTermBased(List(tm1S), List(tm2S), false)(stack, history, tp)

@@ -9,5 +9,9 @@ object MMTSystem {
    /**
     * @return if run from jar, the folder containing the jar file; otherwise, the project folder
     */
-   def rootFolder = if (runFromJar) classFolder.up else classFolder.up.up
+   def rootFolder = if (runFromJar)
+      classFolder.up
+   else
+      // this assumes classes are compiled into, e.g., trunk/bin/info/...
+      classFolder.up
 }

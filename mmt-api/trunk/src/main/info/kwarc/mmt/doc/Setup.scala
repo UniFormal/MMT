@@ -39,11 +39,15 @@ oaf root $contentFolder
     File.write(startupFile, startup)
     println("done\n")
    
-    println("cloning content repositories (by calling git)")
+    println("cloning content repositories (by calling git; make sure it's installed and on your path)")
     contentFolder.mkdirs
     val c = new frontend.Controller
     c.handle(ExecFile(startupFile, None))
-    c.handle(OAFClone("MMT/examples"))
+    try {
+       c.handle(OAFClone("MMT/examples"))
+    } catch {case e: Error =>
+       println(e.toStringLong)
+    }
     println("done\n")
    
     if (dojEdit) {

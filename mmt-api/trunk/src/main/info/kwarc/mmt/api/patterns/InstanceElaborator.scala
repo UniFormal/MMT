@@ -31,7 +31,7 @@ class InstanceElaborator(controller: Controller) extends Logger {
         			val nname = inst.name / n
         			log("generating constant " + nname)
         			val c = Constant(inst.home,nname,None,tp.map(auxSub),df.map(auxSub), None, notations.NotationContainer(not))
-        			c.setOrigin(InstanceElaboration(inst.path))
+        			c.setOrigin(FromStructure(inst.path))
         			controller.add(c)
         	}
       case _ =>
@@ -42,8 +42,8 @@ class InstanceElaborator(controller: Controller) extends Logger {
    */
   def elaborate(thy: DeclaredTheory) {
      thy.getInstances foreach {i =>
-        if (i.getOrigin != Elaborated) {
-           i.setOrigin(Elaborated)
+        if (!i.hasBeenElaborated) {
+           i.setElaborated
            apply(i)
         }
      }

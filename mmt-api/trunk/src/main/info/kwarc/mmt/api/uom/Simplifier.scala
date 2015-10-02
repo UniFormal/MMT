@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import frontend._
 import checking._
 import objects._
+import modules._
 
 /** simplifies/rewrites objects */
 trait ObjectSimplifier extends Extension {
@@ -13,6 +14,8 @@ trait ObjectSimplifier extends Extension {
 /** simplifies/elaborates structural elements */
 trait StructureSimplifier extends Extension {
    def apply(se: StructuralElement)
+   def flatten(t: DeclaredTheory): Unit
+   def materialize(context: Context, exp: Term, expandDefs: Boolean, pathOpt: Option[MPath]): Module
 }
 
 /**

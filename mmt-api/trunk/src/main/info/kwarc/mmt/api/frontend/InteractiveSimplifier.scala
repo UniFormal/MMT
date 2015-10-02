@@ -4,10 +4,11 @@ import info.kwarc.mmt.api._
 import objects._
 import uom._
 
+//TODO obsolete
+//should be redone with a clean step-based/interactive object simplifier
 class InteractiveSimplifier(controller : Controller, intp : tools.nsc.interpreter.ILoop) {
-  private var uom = new UOM
-  uom.init(controller)
-  var uomLog = uom.simplificationLog
+  private var uom = controller.simplifier
+  var uomLog: List[(UOMState,Term,Rule)] = Nil //TODO corresponding code in RuleBasedSimplifier is broken
   def current = uomLog.head
   def rule = current._3
   var topTerm : Term = null
@@ -16,7 +17,7 @@ class InteractiveSimplifier(controller : Controller, intp : tools.nsc.interprete
   
   def set(s : String) {
     intp.interpret("if (uom\"" + s + "\" != null) \"Success\"")
-    uomLog = uom.simplificationLog.reverse.filter(p => p._1 != null)
+    //uomLog = uom.simplificationLog.reverse.filter(p => p._1 != null)
     topTerm = current._1.t
     println("Loaded Problem " + render(topTerm))
   }
@@ -71,7 +72,7 @@ class InteractiveSimplifier(controller : Controller, intp : tools.nsc.interprete
           }
           OMA(f, newargs)
         }
-    } 
+    }
   }
   
   

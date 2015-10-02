@@ -388,7 +388,7 @@ class NotationBasedPresenter extends ObjectPresenter {
             case _ => doVariable(n)
          }
          tp foreach {t =>
-            if (metadata.Generated.get(o)) {
+            if (metadata.TagInferredType.get(o)) {
                doInferredType {
                   doOperator(":")
                   recurse(t, noBrackets)(pc.child(1))

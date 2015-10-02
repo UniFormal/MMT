@@ -1,41 +1,43 @@
-<html xmlns="http://www.w3.org/1999/xhtml"
-	xmlns:jobad="http://omdoc.org/presentation" ng-app="browserApp">
-<head>
-<meta charset="UTF-8" />
+
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:jobad="http://omdoc.org/presentation" ng-app="browserApp">
+   <head>
+      <meta charset="UTF-8" />
 <!-- <link rel="stylesheet" type="text/css" href="/css/omdoc/omdoc-default.css"/> -->
-<title>MMT Web Server</title>
-<script type="text/javascript" src="script/jquery/jquery.js"></script>
-<link rel="stylesheet" type="text/css" 
-	href="css/bootstrap/css/bootstrap.min.css"></link>
-<link rel="stylesheet" href="css/bootstrap/css/bootstrap-theme.min.css"></link>
-<script type="text/javascript" src="script/bootstrap/bootstrap.min.js"></script>
-<link rel="stylesheet" type="text/css" href="css/mmt.css" />
-<link rel="stylesheet" type="text/css" href="css/browser.css" />
-<link rel="stylesheet" type="text/css" href="css/JOBAD.css" />
-<link rel="stylesheet" type="text/css" href="css/jquery/jquery-ui.css" />
+      <title>MMT Web Server</title>
+      <script type="text/javascript" src="script/jquery/jquery.js"></script>
+      <link rel="stylesheet" type="text/css" href="css/bootstrap/css/bootstrap.min.css"></link>
+      <link rel="stylesheet" href="css/bootstrap/css/bootstrap-theme.min.css"></link>
+      <script type="text/javascript" src="script/bootstrap/bootstrap.min.js"></script>
+      <link rel="stylesheet" type="text/css" href="css/mmt.css" />
+      <link rel="stylesheet" type="text/css" href="css/browser.css" />
+      <link rel="stylesheet" type="text/css" href="css/JOBAD.css" />
+      <link rel="stylesheet" type="text/css" href="css/jquery/jquery-ui.css" />
 <!-- <link rel="stylesheet" type="text/css" href="/css/jquery/ui.base.css"/> -->
-<link rel="shortcut icon" href="mmt2.png" />
-<script src="script/codemirror2/lib/codemirror.js"></script>
-<link rel="stylesheet" href="script/codemirror2/lib/codemirror.css" />
-<script src="script/codemirror2/mode/lf/lf.js"></script>
-<script type="text/javascript" src="script/jquery/jquery-ui.js"></script>
-<script type="text/javascript" src="script/tree/jquery.hotkeys.js"></script>
-<script type="text/javascript" src="script/tree/jquery.jstree.js"></script>
+      <link rel="shortcut icon" href="mmt2.png" />
+      <!--
+      <script src="script/codemirror2/lib/codemirror.js"></script>
+      <link rel="stylesheet" href="script/codemirror2/lib/codemirror.css" />
+      <script src="script/codemirror2/mode/lf/lf.js"></script>
+      -->
+      <!-- <script type="text/javascript" src="script/jquery/jquery-ui.js"></script> -->
+      <script type="text/javascript" src="script/tree/jquery.hotkeys.js"></script><!-- used by  stree -->
+      <script type="text/javascript" src="script/tree/jquery.jstree.js"></script>
 <!--<script type="text/javascript" src="/script/SVGPan/SVGPan.js"></script>-->
-<!-- JOBAD Deps -->
-<script type="text/javascript" src="script/jobad/deps/underscore-min.js"></script>
-<!-- JOBAD -->
-<script type="text/javascript" src="script/jobad/JOBAD.js"></script>
-<!-- MMT API -->
+
 <!-- Core JS API for MMT interaction -->
-<script type="text/javascript" src="script/mmt/mmt-js-api.js"></script>
+      <script type="text/javascript" src="script/mmt/mmt-js-api.js"></script>
+<!-- browser-specific JS -->
+      <script type="text/javascript" src="script/mmt/mmt-html.js"></script>
+<!-- JOBAD Deps -->
+      <script type="text/javascript" src="script/jobad/deps/underscore-min.js"></script>
+<!-- JOBAD -->
+      <script type="text/javascript" src="script/jobad/JOBAD.js"></script>
 <!-- JOBAD Services -->
-<script type="text/javascript" src="script/jobad/modules/navigation.js"></script>
-<script type="text/javascript" src="script/jobad/modules/hovering.js"></script>
-<script type="text/javascript"
-	src="script/jobad/modules/interactive-viewing.js"></script>
+      <script type="text/javascript" src="script/jobad/modules/navigation.js"></script>
+      <script type="text/javascript" src="script/jobad/modules/hovering.js"></script>
+      <script type="text/javascript" src="script/jobad/modules/interactive-viewing.js"></script>
 <!-- JOBAD Init -->
-<script type="text/javascript">
+      <script type="text/javascript">
 	var JOBAD1;
 	$(function() {
 		JOBAD1 = new JOBAD(
@@ -46,307 +48,248 @@
 		JOBAD1.Setup();
 	})
 </script>
-<script src="script/angularjs/angular-1.3.14/angular.js"></script>
-<script src="script/browseController.js"></script>
-</head>
-<body ng-controller="browserController">
-	<div class="wrapper">
+   </head>
+   <body>
 		<!-- bar -->
-		<br>
-		<div class="col-md-12">
-			<div class="col-md-2">
-				<p class="text-muted pull-left">
-					<b>MMT</b>
-				</p>
-			</div>
-			<div class="col-md-offset-8 col-md-2">
-				<div class="pull-right">
-					<div class="btn-group btn-group-sm btn-group-justified"
-						role="group" aria-label="top">
-						<a type="button" class="btn btn-primary"
-							ng-show="searchClicked == 0"
-							ng-click="searchClicked = 1; showSearch = 1; showSearchKey = 1"><b>Search</b></a>
-						<a type="button" class="btn btn-success"
-							ng-show="searchClicked == 1"
-							ng-click="searchClicked = 0; showSearch = 0; showSearchKey = 0"><b>Search</b></a>
-						<a type="button" class="btn btn-success"
-							ng-show="parseClicked == 1"
-							ng-click="parseClicked = 0; showParse = 0; showParseKey = 0"><b>Parse</b></a>
-						<a type="button" class="btn btn-primary"
-							ng-show="parseClicked == 0"
-							ng-click="parseClicked = 1; showParse = 1; showParseKey = 1"><b>Parse</b></a>
-						<a type="button" class="btn btn-primary" tabindex="0"
-							class="text-info" data-toggle="popover" role="button"
-							data-trigger="focus" data-placement="bottom"
-							data-container="body"
-							data-content="See the documentation &lt;a href='https://svn.kwarc.info/repos/MMT/doc/html/index.html'&gt;here&lt;/a&gt; in the MMT repository for an overview of features!"><b>Help</b></a>
-					</div>
-				</div>
-			</div>
-		</div>
-		<br> <br>
-		<div class="col-md-4">
-			<div class="panel panel-default" id="panelArc">
-				<div class="bg-primary">
-					<div class="panel-heading">
-						<b>Archives</b>
-						<button class="btn btn-info btn-xs pull-right"
-							ng-show="showMainKey==1" ng-click="showMainKey=0">
-							<span class="glyphicon glyphicon-chevron-up" aria-hidden="true"></span>
-						</button>
-						<button class="btn btn-info btn-xs pull-right"
-							ng-show="showMainKey==0" ng-click="showMainKey=1">
-							<span class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
-						</button>
-					</div>
-				</div>
-				<div class="panel-body panelVerticalScroll" ng-show="showMainKey==1">
-					<div id="sidebar">
-						<div id="pathtree"></div>
-					</div>
-				</div>
-			</div>
-		</div>
+               <div>
+                  <div class="pull-right">
+                     <div class="btn-group btn-group-sm btn-group-right" role="group" aria-label="top">
+                        <a type="button" class="btn btn-primary" onclick="$('#search').toggle()">
+                           <b>Search</b>
+                        </a>
+                        <a type="button" class="btn btn-primary" onclick="$('#parse').toggle()">
+                           <b>Parse</b>
+                        </a>
+                        <a type="button" class="btn btn-primary text-info" tabindex="0" data-toggle="popover" role="button" data-trigger="focus" data-placement="bottom" data-container="body" data-content="See the documentation &lt;a href='https://svn.kwarc.info/repos/MMT/doc/html/index.html'&gt;here&lt;/a&gt; in the MMT repository for an overview of features!">
+                           <b>Help</b>
+                        </a>
+                     </div>
+                  </div>
+               </div><br/><br/>
+               <div>
+      <table class="layout">
+         <tr>
+            <td class="layout">
+               <div class="layout">
+                  <div class="panel panel-default" id="panelArc">
+                     <div class="bg-primary">
+                        <div class="panel-heading">
+                           <b>Archives</b>
+                        </div>
+                     </div>
+                     <div class="panel-body">
+                        <div id="sidebar">
+                           <div id="pathtree"></div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </td>
 		<!-- page content -->
-		<div class="col-md-8">
-			<div class="panel panel-default" id="panel0">
-				<div class="bg-primary">
-					<div class="panel-heading">
-						<b>Main</b>
-						<button class="btn btn-info btn-xs pull-right"
-							ng-show="showMainKey==1" ng-click="showMainKey=0">
-							<span class="glyphicon glyphicon-chevron-up" aria-hidden="true"></span>
-						</button>
-						<button class="btn btn-info btn-xs pull-right"
-							ng-show="showMainKey==0" ng-click="showMainKey=1">
-							<span class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
-						</button>
-					</div>
-				</div>
-				<div class="panel-body panelVerticalScroll" ng-show="showMainKey==1">
-					<div id="breadcrumbs" class="col-md-8">
-						<div class="panel panel-back noti-box">
-							<span class="icon-box bg-color-red set-icon"> <i
-								class="fa fa-envelope-o"></i>
-							</span>
-						</div>
-					</div>
-					<br> <br>
-					<div id="main" class="col-md-11">
-						<div class="panel panel-back noti-box">
-							<span class="icon-box bg-color-green set-icon"> <i
-								class="fa fa-bars"></i>
-							</span>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="col-md-4">
-			<div class="panel panel-default" id="panel1"
-				ng-show="showSearch == 1">
-				<div class="panel-heading">
-					<b>Search Form</b>
-					<button class="btn btn-info btn-xs pull-right"
-						ng-show="showSearch==1"
-						ng-click="showResultsKey=0; showSearch=0; searchClicked=0">
-						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-					</button>
-					<button class="btn btn-info btn-xs pull-right"
-						ng-show="showSearchKey==1" ng-click="showSearchKey=0">
-						<span class="glyphicon glyphicon-chevron-up" aria-hidden="true"></span>
-					</button>
-					<button class="btn btn-info btn-xs pull-right"
-						ng-show="showSearchKey==0" ng-click="showSearchKey=1">
-						<span class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
-					</button>
-					<button class="btn btn-info btn-xs pull-right"
-						ng-show="showSearch==1" data-toggle="popover" data-trigger="focus"
-						data-placement="left"
-						data-content="Enter &lt;a href='http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html#sum'>Java regular expressions&lt;/a&gt; to filter based on the URI of a declaration">
-						<span class="glyphicon glyphicon-asterisk" aria-hidden="true"></span>
-					</button>
-				</div>
-				<div class="panel-body" ng-show="showSearchKey==1">
-					<form class="form-horizontal" id="searchForm" name="searchForm">
-						<div class="form-group">
-							<label for="base" class="col-md-4 control-label"><div
-									class="pull-right">Namespace</div></label>
-							<div class="col-md-6">
-								<input type="text" class="form-control" size="30"
-									ng-model="baseInput" id="base" />
-							</div>
-						</div>
-						<div class="form-group">
-							<label for="module" class="col-md-4 control-label"><div
-									class="pull-right">Theory</div></label>
-							<div class="col-md-6">
-								<input type="text" class="form-control" ng-model="moduleInput"
-									size="30" id="module" />
-							</div>
-						</div>
-						<div class="form-group">
-							<label for="name" class="col-md-4 control-label"><div
-									class="pull-right">Name</div></label>
-							<div class="col-md-6">
-								<input type="text" class="form-control" ng-model="nameInput"
-									size="30" id="name" />
-							</div>
-						</div>
-						<div class="form-group">
-							<label class="col-md-4 control-label"><div
-									class="pull-right">Roles</div></label>
-							<div class="checkbox col-md-6">
-								<label><input type="checkbox" ng-model="rolesConstant"
-									id="constant" /> Primitive </label> <label><input
-									type="checkbox" ng-model="rolesDefined" id="defined" />
-									Defined </label> <label><input type="checkbox"
-									ng-model="rolesAxiom" id="axiom" /> Axiom </label> <label><input
-									type="checkbox" ng-model="rolesTheorem" id="theorem" />
+            <td class="layout">
+               <div class="bg-primary">
+                  <div class="panel-heading">
+                     <b>Content</b>
+                  </div>
+               </div>
+               <div class="panel panel-default" id="panel0">
+                  <div class="panel-body">
+                     <div id="breadcrumbs">
+                        <div class="panel panel-back noti-box">
+                           <span class="icon-box bg-color-red set-icon">
+                              <i class="fa fa-envelope-o"></i>
+                           </span>
+                        </div>
+                     </div>
+                     <br/>
+                     <br/>
+                     <div id="main">
+                        <div class="panel panel-back noti-box">
+                           <span class="icon-box bg-color-green set-icon">
+                              <i class="fa fa-bars"></i>
+                           </span>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </td>
+         </tr>
+         </table></div>
+               <div id="search">
+                  <div class="panel panel-default" id="panel1">
+                     <div class="panel-heading">
+                        <b>Search</b>
+                        <button class="btn btn-info btn-xs pull-right" onclick="$('#search').toggle()">
+                           <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                        </button>
+                        <button class="btn btn-info btn-xs pull-right" data-toggle="popover" data-trigger="focus" data-placement="left" data-content="Enter &lt;a href='http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html#sum'>Java regular expressions&lt;/a&gt; to filter based on the URI of a declaration">
+                           <span class="glyphicon glyphicon-asterisk" aria-hidden="true"></span>
+                        </button>
+                     </div>
+                     <div class="panel-body">
+                        <form class="form-horizontal" id="searchForm" name="searchForm">
+                           <div class="form-group">
+                              <label for="base" class="col-sm-4 control-label">
+                                 <div class="pull-right">Namespace</div>
+                              </label>
+                              <div class="col-sm-6">
+                                 <input type="text" class="form-control" size="30" ng-model="baseInput" id="base" />
+                              </div>
+                           </div>
+                           <div class="form-group">
+                              <label for="module" class="col-sm-4 control-label">
+                                 <div class="pull-right">Theory</div>
+                              </label>
+                              <div class="col-sm-6">
+                                 <input type="text" class="form-control" ng-model="moduleInput" size="30" id="module" />
+                              </div>
+                           </div>
+                           <div class="form-group">
+                              <label for="name" class="col-sm-4 control-label">
+                                 <div class="pull-right">Name</div>
+                              </label>
+                              <div class="col-sm-6">
+                                 <input type="text" class="form-control" ng-model="nameInput" size="30" id="name" />
+                              </div>
+                           </div>
+                           <div class="form-group">
+                              <label class="col-sm-4 control-label">
+                                 <div class="pull-right">Roles</div>
+                              </label>
+                              <div class="checkbox col-sm-6">
+                                 <label>
+                                    <input type="checkbox" ng-model="rolesConstant" id="constant" /> Primitive </label>
+                                 <label>
+                                    <input type="checkbox" ng-model="rolesDefined" id="defined" />
+									Defined </label>
+                                 <label>
+                                    <input type="checkbox" ng-model="rolesAxiom" id="axiom" /> Axiom </label>
+                                 <label>
+                                    <input type="checkbox" ng-model="rolesTheorem" id="theorem" />
 									Theorem </label>
-							</div>
-						</div>
-						<div class="form-group">
-							<label for="theory" class="col-md-4 control-label"><div
-									class="pull-right">Enter an expression over theory</div></label>
-							<div class="col-md-6">
-								<input type="text" size="30" class="form-control activetheory"
-									ng-model="theoryInput" id="theory" />
-							</div>
-						</div>
-						<div class="form-group">
-							<label for="type" class="col-md-4 control-label">
-								<div class="pull-right">The expression matches inside the</div>
-							</label>
-							<div class="checkbox col-md-2">
-								<label><input type="checkbox" id="type"
-									ng-model="expType" checked="checked" />Type</label>
-							</div>
-							<label for="type" class="col-md-1 control-label"> or </label>
-							<div class="checkbox col-md-2">
-								<label><input type="checkbox" ng-model="expDef"
-									id="definition" />Definitions of a Declaration</label>
-							</div>
-						</div>
-						<div class="form-group">
-							<div class="col-md-offset-4">
-								<div class="col-md-6">
-									<input type="text" size="30" class="form-control"
-										ng-model="patternInput" id="pattern" />
-								</div>
-							</div>
-						</div>
-						<div class="form-group">
-							<div class="col-md-offset-4">
-								<p class="help-block">Use $x,y,z:query to enter unification
+                              </div>
+                           </div>
+                           <div class="form-group">
+                              <label for="theory" class="col-sm-4 control-label">
+                                 <div class="pull-right">Enter an expression over theory</div>
+                              </label>
+                              <div class="col-sm-6">
+                                 <input type="text" size="30" class="form-control activetheory" ng-model="theoryInput" id="theory" />
+                              </div>
+                           </div>
+                           <div class="form-group">
+                              <label for="type" class="col-sm-4 control-label">
+                                 <div class="pull-right">The expression matches inside the</div>
+                              </label>
+                              <div class="checkbox col-sm-2">
+                                 <label>
+                                    <input type="checkbox" id="type" ng-model="expType" checked="checked" />Type</label>
+                              </div>
+                              <label for="type" class="col-sm-1 control-label"> or </label>
+                              <div class="checkbox col-sm-2">
+                                 <label>
+                                    <input type="checkbox" ng-model="expDef" id="definition" />Definitions of a Declaration</label>
+                              </div>
+                           </div>
+                           <div class="form-group">
+                              <div class="col-sm-offset-4">
+                                 <div class="col-sm-6">
+                                    <input type="text" size="30" class="form-control" ng-model="patternInput" id="pattern" />
+                                 </div>
+                              </div>
+                           </div>
+                           <div class="form-group">
+                              <div class="col-sm-offset-4">
+                                 <p class="help-block">Use $x,y,z:query to enter unification
 									variables.</p>
-								<a role="button" class="bg-info pull-right" value="Search"
-									id="search" ng-click="search()"> <b>Search</b> <span
-									class="glyphicon glyphicon-search" aria-hidden="true"></span>
-								</a>
-							</div>
-						</div>
-					</form>
-				</div>
-			</div>
-		</div>
-		<div class="col-md-4">
-			<div class="panel panel-default" id="panel2"
-				ng-show="showSearch==1 && showResultsKey==1">
-				<div class="panel-heading">
-					<b>Search Results</b>
-					<button class="btn btn-info btn-xs pull-right"
-						ng-show="showResultsKey==1" ng-click="showResultsKey=0">
-						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-					</button>
-				</div>
-				<div class="panel-body">
-					<div id="results">
-						<div></div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="col-md-8">
-			<div class="panel panel-default" id="panel3" ng-show="showParse==1">
-				<div class="panel-heading">
-					<b>Parse</b>
-					<button class="btn btn-info btn-xs pull-right"
-						ng-show="showParse==1"
-						ng-click="showParseKey=0; showParse=0; parseClicked=0">
-						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-					</button>
-					<button class="btn btn-info btn-xs pull-right"
-						ng-show="showParseKey==1" ng-click="showParseKey=0">
-						<span class="glyphicon glyphicon-chevron-up" aria-hidden="true"></span>
-					</button>
-					<button class="btn btn-info btn-xs pull-right"
-						ng-show="showParseKey==0" ng-click="showParseKey=1">
-						<span class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
-					</button>
-				</div>
-				<div class="panel-body" ng-show="showParseKey==1">
-					<form class="form-horizontal" id="parseForm">
-						<div class="form-group">
-							<div class="col-md-offset-1">
-								<label for="activetheory" class="col-md-3 control-label">
-									<div class="pull-right">Enter an object over theory:</div>
-								</label>
-								<div class="col-md-4">
-									<input name="activeTheory" type="text" size=30
-										id="activetheory" class="form-control" />
-								</div>
-							</div>
-						</div>
-						<div class="form-group">
-							<div class="col-md-offset-4">
-								<label><input type="checkbox" name="inputAnalyze"
-									id="inputanalyze" />Analyze</label>
-							</div>
-						</div>
-						<div class="form-group">
-							<div class="col-md-offset-4">
-								<label><input type="checkbox" name="inputSimplify"
-									id="inputsimplify" />Simplify</label>
-							</div>
-						</div>
-						<div class="form-group">
-							<div class="col-md-offset-4">
-								<textarea class="form-control" id="inputbox" rows="3"></textarea>
-							</div>
-						</div>
-						<div class="form-group">
-							<div class="col-md-offset-1">
-								<label class="col-md-3 control-label">
-									<div class="pull-right">Result:</div>
-								</label>
-								<div class="col-md-4" id="inputviewterm">
-									<span></span>
-								</div>
-							</div>
-						</div>
-						<div class="form-group">
-							<div class="col-md-offset-1">
-								<label class="col-md-3 control-label">
-									<div class="pull-right">Inferred Type:</div>
-								</label>
-								<div class="col-md-4" id="inputviewtype">
-									<div>
-										<span></span>
-									</div>
-								</div>
-							</div>
-						</div>
-					</form>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div id="latin-dialog"></div>
-	</div>
-	</div>
-</body>
-<script>
-	
-</script>
+                                 <a role="button" class="bg-info pull-right" value="Search" id="search" ng-click="search()">
+                                    <b>Search</b>
+                                    <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                                 </a>
+                              </div>
+                           </div>
+                        </form>
+                     </div>
+                  </div>
+                  <div class="panel panel-default" id="panel2">
+                     <div class="panel-heading">
+                        <b>Search Results</b>
+                     </div>
+                     <div class="panel-body">
+                        <div id="results">
+                           <div></div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <div id="parse">
+                  <div class="panel panel-default" id="panel3" ng-show="showParse==1">
+                     <div class="panel-heading">
+                        <b>Parse</b>
+                        <button class="btn btn-info btn-xs pull-right" ng-show="showParse==1" ng-click="showParseKey=0; showParse=0; parseClicked=0">
+                           <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                        </button>
+                        <button class="btn btn-info btn-xs pull-right" ng-show="showParseKey==1" ng-click="showParseKey=0">
+                           <span class="glyphicon glyphicon-chevron-up" aria-hidden="true"></span>
+                        </button>
+                        <button class="btn btn-info btn-xs pull-right" ng-show="showParseKey==0" ng-click="showParseKey=1">
+                           <span class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
+                        </button>
+                     </div>
+                     <div class="panel-body" ng-show="showParseKey==1">
+                        <form class="form-horizontal" id="parseForm">
+                           <div class="form-group">
+                              <div class="col-sm-offset-1">
+                                 <label for="activetheory" class="col-sm-3 control-label">
+                                    <div class="pull-right">Enter an object over theory:</div>
+                                 </label>
+                                 <div class="col-sm-4">
+                                    <input name="activeTheory" type="text" size="30" id="activetheory" class="form-control" />
+                                 </div>
+                              </div>
+                           </div>
+                           <div class="form-group">
+                              <div class="col-sm-offset-4">
+                                 <label>
+                                    <input type="checkbox" name="inputAnalyze" id="inputanalyze" />Analyze</label>
+                              </div>
+                           </div>
+                           <div class="form-group">
+                              <div class="col-sm-offset-4">
+                                 <label>
+                                    <input type="checkbox" name="inputSimplify" id="inputsimplify" />Simplify</label>
+                              </div>
+                           </div>
+                           <div class="form-group">
+                              <div class="col-sm-offset-4">
+                                 <textarea class="form-control" id="inputbox" rows="3"></textarea>
+                              </div>
+                           </div>
+                           <div class="form-group">
+                              <div class="col-sm-offset-1">
+                                 <label class="col-sm-3 control-label">
+                                    <div class="pull-right">Result:</div>
+                                 </label>
+                                 <div class="col-sm-4" id="inputviewterm">
+                                    <span></span>
+                                 </div>
+                              </div>
+                           </div>
+                           <div class="form-group">
+                              <div class="col-sm-offset-1">
+                                 <label class="col-sm-3 control-label">
+                                    <div class="pull-right">Inferred Type:</div>
+                                 </label>
+                                 <div class="col-sm-4" id="inputviewtype">
+                                    <div>
+                                       <span></span>
+                                    </div>
+                                 </div>
+                              </div>
+                           </div>
+                        </form>
+                     </div>
+                  </div>
+               </div>
+   </body>
 </html>

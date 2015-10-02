@@ -29,6 +29,11 @@ trait ObjectPresenter extends Extension {
  * see also [[Presenter]]
  */
 trait StructurePresenter extends Extension {
+   /**
+    * @param e the element to present
+    * @param standalone if true, include appropriate header and footer
+    * @param rh output stream
+    */
    def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler)
    def asString(e : StructuralElement): String = {
       val sb = new StringBuilder

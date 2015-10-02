@@ -139,7 +139,7 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
     *  @param context their context
     *  @return true iff the judgment holds
     */
-   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Boolean
+   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean]
 }
 
 /**

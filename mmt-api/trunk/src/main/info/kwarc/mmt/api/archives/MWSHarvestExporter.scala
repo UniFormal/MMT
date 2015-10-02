@@ -9,6 +9,7 @@ import backend._
 import objects._
 import utils._
 import documents._
+import libraries._
 import parser._
 
 import scala.collection.immutable.{HashMap}
@@ -49,147 +50,18 @@ class MWSHarvestExporter extends Exporter {
 }
 
 
-class ModuleFlattener(controller : Controller) {
-  val memory = controller.memory
-  memory.ontology.getInds(ontology.IsTheory) foreach {p => 
-    controller.get(p)
-  } 
-  memory.ontology.getInds(ontology.IsView) foreach {p => 
-    controller.get(p)
-  } 
-  val modules = controller.memory.content.getModules
-  
-  def flatten(t : DeclaredTheory) : DeclaredTheory =  {
-    println("Flattening: " + t.path)
-    val tbar = new DeclaredTheory(t.parent, t.name, t.meta)
-    t.getDeclarations foreach {d =>
-      tbar.add(d)
-    }
-    val views = modules collect {
-      case v : DeclaredView if v.to == t.toTerm => v
-    } // all views to T
-    
-    views foreach { v => 
-      val s = v.from
-      implicit val rules = makeRules(v)
-      modules collect {
-        case sprime : DeclaredTheory if memory.content.visible(sprime.toTerm).toSet.contains(s) =>
-          // here we have v : s -> t and sprime includes s -- (include relation is transitive, reflexive)
-          // therefore we make a structure with sprime^v and add it to tbar
-          /*
-          val str = SimpleDeclaredStructure(tbar.toTerm, (LocalName(v.path) / sprime.path.toPath), sprime.path, false)
-          sprime.getDeclarations foreach {d => 
-            str.add(rewrite(d))
-          }
-          tbar.add(str)
-          */
-          //conceptually this should be a structure, but adding the declarations directly is more efficient
-          sprime.getDeclarations foreach { 
-            case c : Constant => tbar.add(rewrite(c, s.toMPath, tbar.path, t.getInnerContext))
-            case _ => //nothing for now //TODO handle structures
-          }
-      }
-    }
-    println(t.path + ": " + t.getDeclarations.length + " ->  " + tbar.getDeclarations.length)
-    tbar
-  }
-  //Flattens by generating a new theory for every view, used for flatsearch
-  def flattenFineGrained(t : DeclaredTheory) : List[DeclaredTheory] = {
-    var thys : List[DeclaredTheory] = Nil
-    val tbar = new DeclaredTheory(t.parent, t.name, t.meta)
-    t.getDeclarations foreach {d =>
-      tbar.add(d)
-    }
-    thys ::= tbar
-    val views = modules collect {
-      case v : DeclaredView if v.to == t.toTerm => v
-    }
-    views foreach { v=>
-      val s = v.from
-      implicit val rules = makeRules(v)
-      modules collect {
-        case sprime : DeclaredTheory if memory.content.visible(sprime.toTerm).toSet.contains(s) => 
-          val tvw = new DeclaredTheory(t.parent, sprime.name / v.name, t.meta)
-          sprime.getDeclarations foreach { 
-            case c : Constant => tvw.add(rewrite(c, v.path, tbar.path, t.getInnerContext))
-            case _ => //nothing for now //TODO handle structures
-          }
-          thys ::= tvw
-      }
-      
-    }
-    
-    thys
-  }
-  
-  
-  private def makeRules(v : DeclaredView) : HashMap[Path, Term] = {
-    val path = v.from.toMPath
-    var rules = new HashMap[Path,Term]
-    val decl = v.getDeclarations
-    
-    v.getDeclarations foreach {
-      case c : Constant => 
-        c.df.foreach {t =>
-          rules += (path ? c.name -> t)
-        }
-      case d : DefinedStructure => 
-        try {
-          controller.get(d.df.toMPath) match {
-            case d : DeclaredView => rules ++= makeRules(d)
-            case x => //nothing to do
-          }
-        } catch {
-          case e : Error => println(e)//nothing to do
-          case e : Exception => println(e)//nothing to do
-        }
-    }
-    rules
-  }
-  
-  private def rewrite(d : Declaration, vpath : MPath, newhome : MPath, context : Context)(implicit rules : HashMap[Path, Term]) : Declaration = d match {
-    case c : Constant =>
-      val newtpC = TermContainer(c.tp.map(t => controller.simplifier.apply(rewrite(t), context)))
-      val newdfC = TermContainer(c.df.map(rewrite))
-      val newname = LocalName(vpath.toPath) / c.home.toMPath.toPath / c.name
-      val newCons = new FinalConstant(OMMOD(newhome), newname, c.alias, newtpC, newdfC, c.rl, c.notC)
-      import metadata._
-      newCons.metadata.add(new MetaDatum(MetaDatum.keyBase ? LocalName("type"), OMSTR("Induced")))
-      newCons.metadata.add(new MetaDatum(MetaDatum.keyBase ? LocalName("origin"), c.home))
-      newCons.metadata.add(new MetaDatum(MetaDatum.keyBase ? LocalName("view"), OMID(vpath)))
-      newCons
-    case x => x
-  }
-  
-  
-  private def rewrite(t : Term)(implicit rules : HashMap[Path, Term]) : Term = {
-    t match {
-    case OMID(p) => 
-      if (rules.isDefinedAt(p)) rules(p) else t
-    case OMA(f, args) => OMA(rewrite(f), args.map(rewrite))
-    case OMBINDC(b, con, bodies) => OMBINDC(rewrite(b), rewrite(con), bodies.map(rewrite))
-    case _ => t
-  }}
-   
-  private def rewrite(con : Context)(implicit rules : HashMap[Path, Term]) : Context = {
-    val vars = con.variables map {
-      case VarDecl(n, tp, df, not) => VarDecl(n, tp.map(rewrite), df.map(rewrite), not)
-    }
-    Context(vars : _*)
-  }
-}
 
 
 class FlatteningMWSExporter extends Exporter {
   val outDim = Dim("export", "mws-flat")
   val key = "mws-flat-harvest"
   override val outExt = "harvest"
-  lazy val mf = new ModuleFlattener(controller)
+  lazy val mf = controller.simplifier
   def exportTheory(t : DeclaredTheory, bd : BuildTask) {
-    val tbar = mf.flatten(t)
+    mf(t)
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
-    tbar.getDeclarations foreach {
+    t.getDeclarations foreach {
       case d => d.getComponents.foreach {
          case (comp, tc: AbstractTermContainer) =>
             tc.get.foreach {t =>
@@ -262,7 +134,7 @@ import metadata._
 class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
   def key: String = "flatmws"
   override val outExt = "html"
-  lazy val mf = new ModuleFlattener(controller)
+  lazy val mf = controller.extman.get(classOf[MMTStructureSimplifier]).head
   def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) = {
     this._rh = rh
     val f = rh match {
@@ -273,7 +145,7 @@ class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
       case doc : Document => 
         wrapScope(standalone, doc.path)(doDocument(doc))
       case thy : DeclaredTheory => 
-        val newThys = if (thy.path.toPath.contains("math")) mf.flattenFineGrained(thy) else List(thy)
+        val newThys = if (thy.path.toPath.contains("math")) mf.enrichFineGrained(thy) else List(thy)
         newThys foreach { t => 
           val out = (folder / t.name.toPath).setExtension("html")
           this.outputTo(out) {

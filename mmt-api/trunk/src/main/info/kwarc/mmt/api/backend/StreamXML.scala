@@ -62,9 +62,12 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
 
    def apply(ps: parser.ParsingStream)(implicit errorCont: ErrorHandler): Document = {
       val parser = new ConsParser(ps.dpath, new SourceFromReader(ps.stream))
-      parser.nextch
-      errorCont.catchIn {
+      try {
+         parser.nextch
          parser.document()
+      } catch {
+         case e: Error => errorCont << e
+         case e: Exception => errorCont << LocalError("error while parsing XML").setCausedBy(e)
       }
       parser.root
    }

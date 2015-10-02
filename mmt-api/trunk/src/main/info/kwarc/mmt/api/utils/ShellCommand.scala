@@ -1,13 +1,18 @@
 package info.kwarc.mmt.api.utils
 
+import info.kwarc.mmt.api._
 import java.io._
 
 object ShellCommand {
-  private def runInOpt(dir: Option[File], command: String*)(out: String => Unit) = {
+  private def runInOpt(dir: Option[File], command: String*)(out: String => Unit): Option[String] = {
     val pb = new java.lang.ProcessBuilder(command: _*) // use .inheritIO() for debugging
     pb.redirectErrorStream(true)
     dir.foreach { d => pb.directory(d.toJava) }
-    val proc = pb.start()
+    val proc = try {
+       pb.start()
+    } catch {case e: java.io.IOException =>
+       throw GeneralError("error while trying to run external process").setCausedBy(e)
+    }
 
     // read all output immediately to make sure proc does not deadlock if buffer size is limited
     val output = new StringBuilder

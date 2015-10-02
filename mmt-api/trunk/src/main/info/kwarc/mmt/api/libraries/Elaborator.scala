@@ -8,198 +8,211 @@ import objects._
 import utils.MyList.fromList
 import collection.immutable.{HashSet, HashMap}
 
-/* idea: elaboration is structure level simplification
- * defined -> declared module
- * mod exp -> materialization
- * structure -> elaboration
- * constant of THY type <-> theory
- * view -> theory ?
- */
-
 /**
- * Elaborates modules by enriching with induced statements
+ * the primary class for all flattening, materialization, enriching of theories
+ * 
+ * code in [[Closer]] should be merged into here
  */
-class ModuleElaborator(controller : Controller) {
-  private val content = controller.globalLookup
-  private val modules = controller.memory.content.getAllPaths.map(controller.globalLookup.get(_)).toList
-
-  var totalImports : Int = 0
-  var thys : Int = 0
-  var decls : Int = 0
-
-
-  def printStatistics = {
-    println("totalImports : " + totalImports)
-    println("thys : " + thys)
-    println("decls : " + decls)
-  }
-
-  private def rewrite(t : Term)(implicit rules : HashMap[Path,Term]) : Term = t match {
-    case OMID(path) => rules.get(path) match {
-      case None => t
-      case Some(tm) => tm
-    }
-    case OMA(f, args) => OMA(rewrite(f), args.map(rewrite))
-    case OMBINDC(b, context, scopes) =>
-      val nwctx = Context(context.variables.map(v =>
-        VarDecl(v.name, v.tp.map(rewrite), v.df.map(rewrite), v.not)
-      ) :_ *)
-      OMBINDC(rewrite(b), nwctx, scopes.map(rewrite))
-    case OMM(arg,via) => OMM(rewrite(arg), rewrite(via))
-    case OMATTR(arg, key, value) => OMATTR(rewrite(arg), key, rewrite(value)) //TODO maybe handle key (here) & uri (below)
-    case _ => t
-  }
-
-  def getIncludes(t : Term) : List[DeclaredStructure] = {
-    content.getTheory(t.toMPath).getDeclarations flatMap {
-      case s : DeclaredStructure if s.isInclude => List(s)
-      case _ => Nil
-    }
-  }
-
-  private def importsTo(t : DeclaredTheory) : List[DeclaredStructure] = {
-    t.getDeclarations.flatMap {
-      case i @ Include(_, fromPath, _) =>
-         i.asInstanceOf[DeclaredStructure] :: getIncludes(OMMOD(fromPath))
-      case s: DeclaredStructure =>
-         List(s)
-      case _ => Nil
-    }
-  }
-
+class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS) {
+  private lazy val memory = controller.memory
+  private lazy val lup = controller.globalLookup
+  
+  def apply(s: StructuralElement) {s match {
+     case t: DeclaredTheory => flatten(t)
+     case _ =>
+  }}
+  
   /**
-   * @param e the ContentElement to elaborate
-   * @param cont a continuation function to call on every generated StructuralElement (e.g., Controller.add)
+   * flattens all structures in a theory
    */
-  def apply(e: StructuralElement)(implicit cont: StructuralElement => Unit) : Unit = e match {
-    case t : DeclaredTheory =>
-      val elabImports : List[DeclaredStructure] = importsTo(t)
-
-      totalImports += elabImports.length
-      thys += 1
-      var newDecs = new HashSet[Constant]()
-      var rewriteRules = new HashMap[Path,Term]
-      //s.home == t.path
-      elabImports map {case SimpleStructure(s: DeclaredStructure, p) =>
-            if (s.domain.isEmpty) { //import is essentially an include
-              val impThy = content.getTheory(p)
-              impThy.getDeclarations collect {
-                case c : Constant =>
-                  val nwName = ComplexStep(impThy.path) / c.name
-                  val nwHome = OMMOD(t.path)
-                  rewriteRules += (c.home.toMPath ? c.name -> OMID(nwHome.toMPath ? nwName))
-                  newDecs += c
-              }
-            } else { // import is a struct defined by assignments
-              s.domain map {x =>
-                val ass = s.get(x)
-                ass match {
-                  case conAss : Constant =>
-                    val genCons = Constant(conAss.home, conAss.name, conAss.alias, None, conAss.df, None)
-                    newDecs += genCons
-                  case _ => None
-                }
-              }
-            }
+  def flatten(t: DeclaredTheory) {
+     if (! t.hasBeenElaborated) t.getNamedStructures.foreach {
+        case s: DeclaredStructure if !s.hasBeenElaborated =>
+           val dom = materialize(Context(t.path), s.from, true, None).asInstanceOf[DeclaredTheory]
+           flatten(dom)
+           val flats = dom.getPrimitiveDeclarations.map {d =>
+              lup.get(t.path ? (s.name / d.name))
+           }
+           flats.reverseMap {
+              case d: Declaration =>
+                 d.setOrigin(FromStructure(s.path))
+                 t.add(d, Some(s.name))
+              case _ => ()// impossible
+           }
+           s.setElaborated
+        case _ =>
+     }
+     t.setElaborated
+  }
+  
+  private var materializeCounter = 0
+  private def newName: MPath = {
+     val i = materializeCounter
+     materializeCounter += 1
+     utils.mmt.mmtbase ? LocalName("")/"E"/i.toString
+  }
+  /** Elaborate a theory expression into a module
+   *  @param exp the theory expression
+   *  @param expandDefs materialize all DefinedTheory's and return a DeclaredTheory
+   *  @param path the path to use if a new theory has to be created
+   */
+  def materialize(context: Context, exp: Term, expandDefs: Boolean, pathOpt: Option[MPath]): Theory = {
+    exp match {
+      case OMMOD(p: MPath) => lup.getTheory(p) match {
+         case d: DefinedTheory if expandDefs => materialize(context, d.df, expandDefs, None)
+         case d => d
       }
-      val nt = new DeclaredTheory(t.parent, t.name, t.meta)
-      newDecs foreach {
-        case c : Constant =>
-          val nwName = c.name
-          val nwHome = OMMOD(t.path)
-
-          val ntp = c.tp.map(rewrite(_)(rewriteRules))
-          val ndf = c.tp.map(rewrite(_)(rewriteRules))
-
-          val nc = Constant(nwHome, nwName, c.alias, ntp, ndf, c.rl, c.notC)
-          nt.add(nc)
-          decls += 1
-        case _ => nt.add(_)
-      }
-      t.getDeclarations collect {
-        case c : Constant =>
-          newDecs += c
-          nt.add(c)
-          decls += 1
-      }
-      cont(nt)
+      /* case OMPMOD(p, args) =>
+         val t = getTheory(p)
+         new InstantiatedTheory(t, args) */
+      case _ => // create a new theory and return it
+        val path = pathOpt.getOrElse(newName)
+        val ComplexTheory(cont) = exp
+        val meta = TheoryExp.metas(exp, all = false)(lup).headOption
+        val thy = new DeclaredTheory(path.parent, path.name, meta)
+        cont.foreach { vd =>
+          val d = vd.toDeclaration(exp)
+          thy.add(d)
+        }
+        thy.setOrigin(Materialized(exp))
+        thy
+    }
+  }
+  
+  /* everything below here is Mihnea's enrichment code, which may be outdated or incomplete */
+  
+  /** auxiliary method of enriching */
+  private lazy val loadAll = {
+    memory.ontology.getInds(ontology.IsTheory) foreach {p => 
+      controller.get(p)
+    } 
+    memory.ontology.getInds(ontology.IsView) foreach {p => 
+      controller.get(p)
+    }
+  }
+  private lazy val modules = controller.memory.content.getModules
+  
+  /**
+   * adds declarations induced by views to all theories
+   */
+  def enrich(t : DeclaredTheory) : DeclaredTheory =  {
+    loadAll
+    println("Flattening: " + t.path)
+    val tbar = new DeclaredTheory(t.parent, t.name, t.meta)
+    t.getDeclarations foreach {d =>
+      tbar.add(d)
+    }
+    val views = modules collect {
+      case v : DeclaredView if v.to == t.toTerm => v
+    } // all views to T
+    
+    views foreach { v => 
+      val s = v.from
+      implicit val rules = makeRules(v)
       modules collect {
-        case v : DeclaredView =>
-          v.from match {
-            case OMMOD(p) =>
-              var viewRewrRules = new HashMap[Path,Term]
-              v.getDeclarations collect {
-                case ca : Constant =>
-                  ca.df.foreach {t =>
-                     viewRewrRules += (p ? ca.name -> t)
-                  }
-              }
-              if (p == t.path) {    // view from this theory
-              val nwIndThy = new DeclaredTheory(v.to.toMPath.parent, LocalName(v.to.toMPath.name.last + "^" +  escape(v.path.toPath) + "^" + escape(t.path.toPath)), t.meta)
-                newDecs foreach { c =>
-                  val nc = Constant(c.home, c.name, c.alias, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.notC)
-                  nwIndThy.add(nc)
-                  decls += 1
-                }
-                cont(nwIndThy)
-              }  else {
-                elabImports foreach {i =>
-                  i.from match {
-                    case OMMOD(path) =>
-                      if (p == path) {    // view from some imported theory
-
-                      val nwIndThy = new DeclaredTheory(t.parent, LocalName(v.to.toMPath.name.last + "^" +  escape(v.path.toPath) + "^" + escape(t.path.toPath)), t.meta)
-                        newDecs foreach { c =>
-                          val nc = Constant(c.home, c.name, c.alias, c.tp.map(rewrite(_)(viewRewrRules)), c.df.map(rewrite(_)(viewRewrRules)), c.rl, c.notC)
-
-                          nwIndThy.add(nc)
-                          decls += 1
-                        }
-                        cont(nwIndThy)
-                      }
-                  }
-                }
-              }
+        case sprime : DeclaredTheory if memory.content.visible(sprime.toTerm).toSet.contains(s) =>
+          // here we have v : s -> t and sprime includes s -- (include relation is transitive, reflexive)
+          // therefore we make a structure with sprime^v and add it to tbar
+          /*
+          val str = SimpleDeclaredStructure(tbar.toTerm, (LocalName(v.path) / sprime.path.toPath), sprime.path, false)
+          sprime.getDeclarations foreach {d => 
+            str.add(rewrite(d))
+          }
+          tbar.add(str)
+          */
+          //conceptually this should be a structure, but adding the declarations directly is more efficient
+          sprime.getDeclarations foreach { 
+            case c : Constant => tbar.add(rewrite(c, s.toMPath, tbar.path, t.getInnerContext))
+            case _ => //nothing for now //TODO handle structures
           }
       }
-    case v : DeclaredView => cont(v)
-    case _ => None
-  }
-
-  def escape(s : String) = {
-    s.replace("/","|").replace("?","!")
-  }
-  
-  def gatherConstants(thy : DeclaredTheory) : List[Constant] = {
-    var constants : List[Constant] = Nil 		
-    thy.getDeclarations foreach {
-      case c : Constant => constants = constants ::: List(c) //MPath may be irrelevant, otherwise needs changing
-      case _ => 
     }
-    constants
+    println(t.path + ": " + t.getDeclarations.length + " ->  " + tbar.getDeclarations.length)
+    tbar
   }
-  
-  def flatten(thy : DeclaredTheory) : DeclaredTheory = {
-    var includes : HashSet[MPath] = new HashSet[MPath]()
-    var constants : List[Constant] = Nil
-    thy.getDeclarations collect {
-      case s : DeclaredStructure =>
-      if (s.isInclude) {
-        val inclPath = s.from.toMPath
-        controller.get(inclPath) match {
-          case inclThy : DeclaredTheory => 
-            val flatInclThy = flatten(inclThy)
-            constants = constants ::: gatherConstants(flatInclThy)
-          case _ => 
-        }
+  //Flattens by generating a new theory for every view, used for flatsearch
+  def enrichFineGrained(t : DeclaredTheory) : List[DeclaredTheory] = {
+    loadAll
+    var thys : List[DeclaredTheory] = Nil
+    val tbar = new DeclaredTheory(t.parent, t.name, t.meta)
+    t.getDeclarations foreach {d =>
+      tbar.add(d)
+    }
+    thys ::= tbar
+    val views = modules collect {
+      case v : DeclaredView if v.to == t.toTerm => v
+    }
+    views foreach { v=>
+      val s = v.from
+      implicit val rules = makeRules(v)
+      modules collect {
+        case sprime : DeclaredTheory if memory.content.visible(sprime.toTerm).toSet.contains(s) => 
+          val tvw = new DeclaredTheory(t.parent, sprime.name / v.name, t.meta)
+          sprime.getDeclarations foreach { 
+            case c : Constant => tvw.add(rewrite(c, v.path, tbar.path, t.getInnerContext))
+            case _ => //nothing for now //TODO handle structures
+          }
+          thys ::= tvw
       }
-      case c : Constant => 
-        constants = constants ::: c :: Nil
+      
     }
     
-   val nt = new DeclaredTheory(thy.parent, thy.name, thy.meta)
-   constants.foreach(nt add _)
-   nt    
+    thys
+  }
+  
+  
+  private def makeRules(v : DeclaredView) : HashMap[Path, Term] = {
+    val path = v.from.toMPath
+    var rules = new HashMap[Path,Term]
+    val decl = v.getDeclarations
+    
+    v.getDeclarations foreach {
+      case c : Constant => 
+        c.df.foreach {t =>
+          rules += (path ? c.name -> t)
+        }
+      case d : DefinedStructure => 
+        try {
+          controller.get(d.df.toMPath) match {
+            case d : DeclaredView => rules ++= makeRules(d)
+            case x => //nothing to do
+          }
+        } catch {
+          case e : Error => println(e)//nothing to do
+          case e : Exception => println(e)//nothing to do
+        }
+    }
+    rules
+  }
+  
+  private def rewrite(d : Declaration, vpath : MPath, newhome : MPath, context : Context)(implicit rules : HashMap[Path, Term]) : Declaration = d match {
+    case c : Constant =>
+      val newtpC = TermContainer(c.tp.map(t => controller.simplifier.apply(rewrite(t), context)))
+      val newdfC = TermContainer(c.df.map(rewrite))
+      val newname = LocalName(vpath.toPath) / c.home.toMPath.toPath / c.name
+      val newCons = new FinalConstant(OMMOD(newhome), newname, c.alias, newtpC, newdfC, c.rl, c.notC)
+      import metadata._
+      newCons.metadata.add(new MetaDatum(MetaDatum.keyBase ? LocalName("type"), OMSTR("Induced")))
+      newCons.metadata.add(new MetaDatum(MetaDatum.keyBase ? LocalName("origin"), c.home))
+      newCons.metadata.add(new MetaDatum(MetaDatum.keyBase ? LocalName("view"), OMID(vpath)))
+      newCons
+    case x => x
+  }
+  
+  
+  private def rewrite(t : Term)(implicit rules : HashMap[Path, Term]) : Term = {
+    t match {
+    case OMID(p) => 
+      if (rules.isDefinedAt(p)) rules(p) else t
+    case OMA(f, args) => OMA(rewrite(f), args.map(rewrite))
+    case OMBINDC(b, con, bodies) => OMBINDC(rewrite(b), rewrite(con), bodies.map(rewrite))
+    case _ => t
+  }}
+   
+  private def rewrite(con : Context)(implicit rules : HashMap[Path, Term]) : Context = {
+    val vars = con.variables map {
+      case VarDecl(n, tp, df, not) => VarDecl(n, tp.map(rewrite), df.map(rewrite), not)
+    }
+    Context(vars : _*)
   }
 }
-

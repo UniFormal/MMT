@@ -30,7 +30,7 @@ class Closer(controller: Controller) {
   }
 
   def flatten(th: DeclaredTheory)(s: Structure): Unit = {
-    if (!s.isFlattened) {
+    if (!s.hasBeenElaborated) {
       val dom: List[LocalName] = try {
         lup.getO(s.from.toMPath).getOrElse(Nil) match {
           case t: DeclaredTheory =>
@@ -40,11 +40,9 @@ class Closer(controller: Controller) {
       } catch {
         case e: Exception => Nil
       }
-      //val substs =
       dom.foreach { name =>
         val d = lup.get(s.path / name)
-
-        d.setOrigin(Elaborated)
+        d.setOrigin(FromStructure(s.path))
         d match {
           //case d:Declaration => th.add(d)
           case c: FinalConstant => th.add(c)
@@ -52,7 +50,7 @@ class Closer(controller: Controller) {
         }
 
       }
-      // s.isFlattened = true
+      // s.setOrigin(HasBeenElaborated)
     }
   }
 

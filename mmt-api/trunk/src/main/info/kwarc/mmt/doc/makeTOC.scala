@@ -13,7 +13,7 @@ object MakeTOC {
       val out = new HTMLFileWriter(folder / "toc.html")
       import out._
 
-      css("style.css")
+      css("_css/style.css")
       javascript("https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/script/jquery/jquery.js")
       def doFolder(l: List[String]) {
          ul("sidebargroup") {

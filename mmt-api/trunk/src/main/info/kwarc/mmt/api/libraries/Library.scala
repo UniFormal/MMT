@@ -420,26 +420,6 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
     if (via == OMCOMP()) List(from) else Nil
   }
 
-  // TODO move to elaborator
-  /** Elaborate a theory expression ("exp") into a module */
-  private def materialize(path: MPath, exp: Term): Theory = {
-    exp match {
-      case OMMOD(p: MPath) => getTheory(p) // exists already
-      /* case OMPMOD(p, args) =>
-         val t = getTheory(p)
-         new InstantiatedTheory(t, args) */
-      case _ => // create a new theory and return it
-        val ComplexTheory(cont) = exp
-        val meta = TheoryExp.metas(exp, all = false)(this).headOption
-        val thy = new DeclaredTheory(path.parent, path.name, meta)
-        cont.foreach { vd =>
-          val d = vd.toDeclaration(exp)
-          thy.add(d)
-        }
-        thy
-    }
-  }
-
   /** returns the symbol from which the argument symbol arose by a structure declaration */
   def preImage(p: GlobalName): Option[GlobalName] = p.name match {
     case hd / tl =>

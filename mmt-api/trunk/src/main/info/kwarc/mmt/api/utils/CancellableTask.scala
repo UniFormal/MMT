@@ -24,9 +24,13 @@ class CancellableTask[A](c: => A) {
       }
    })
    t.start
-   /** cancels the computation (may produce inconsistent states due to half-executed side effects) */
+   /** cancels the computation
+    *  
+    *  This may produce inconsistent states due to half-executed side effects, but it seems to be the only way to
+    *  cancel an arbitrary asynchronous computation. (The only alternative would be for the latter to poll a flag.) 
+    */
    def cancel {
-      t.interrupt
+      t.stop
       p.failure(new Exception)
    }
 }

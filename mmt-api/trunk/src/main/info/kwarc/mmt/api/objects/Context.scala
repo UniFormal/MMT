@@ -391,28 +391,26 @@ object Context {
 
 /** helper object */
 object VarDecl {
-   private def parseComponents(N: Seq[Node], nsMap: NamespaceMap) : (Option[Term], Option[Term], Option[TextNotation], Boolean) = {
+   private def parseComponents(N: Seq[Node], nsMap: NamespaceMap) : (Option[Term], Option[Term], Option[TextNotation]) = {
       var tp : Option[Term] = None
       var df : Option[Term] = None
       var not: Option[TextNotation] = None
-      var inferred = false
-      N.toList.foreach {
+      N.map(xml.trimOneLevel).foreach {
             case <type>{t}</type> => tp = Some(Obj.parseTerm(t, nsMap))
             case <definition>{t}</definition> => df = Some(Obj.parseTerm(t, nsMap))
             case <notation>{n}</notation> => not = Some(TextNotation.parse(n, nsMap))
-            case _ => inferred = true // for Twelf: all other children mark inferred types
+            case n => throw ParseError("not a well-formed variable component: " + n.toString)
       }
-      (tp, df, not, inferred)
+      (tp, df, not)
    }
    def parse(Nmd: Node, nsMap: NamespaceMap) : VarDecl = {
       val (n,mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, nsMap)
       xml.trimOneLevel(n) match {      
          case <OMV>{body @ _*}</OMV> =>
             val name = LocalName.parse(xml.attr(n, "name"))
-            val (tp, df, not, inferred) = parseComponents(body, nsMap)
+            val (tp, df, not) = parseComponents(body, nsMap)
             val vd = VarDecl(name, tp, df, not)
             mdOpt.foreach {md => vd.metadata = md}
-            if (inferred) metadata.Generated.set(vd) // for Twelf export compatibility, TODO remove
             vd
          case _ => throw ParseError("not a well-formed variable declaration: " + n.toString)
       }

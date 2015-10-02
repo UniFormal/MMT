@@ -404,11 +404,9 @@ class NotationBasedParser extends ObjectParser {
               val t = newUnknown(newType(vname), governingBVars)
               (Some(t), true)
           }
-          // using metadata to signal that the type was unknown
-          // TODO: clean up together with Twelf output
           val vd = VarDecl(vname, finalTp, None, None)
           if (unknown)
-            metadata.Generated.set(vd)
+            metadata.TagInferredType.set(vd)
           SourceRef.update(vd, pu.source.copy(region = reg))
           vd
      }

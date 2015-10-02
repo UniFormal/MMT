@@ -9,6 +9,8 @@ import scala.xml._
 abstract class RenderingHandler {
    /** writes a string, to be implemented by subclasses */
    def write(s : String) : Unit
+   /** shortcut for write */
+   def <<[A <% String](a: A) = write(a)
    /** output a string */
    def apply(s : String) {
      write(s)

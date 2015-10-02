@@ -268,6 +268,7 @@ var mmt = {
 	  - title bar should be thinner
 	  - title bar should only show the cd and name component, but not the cdbase of the symbol href (full href should be shown as @title)
 	*/
+	// $(function(){$('#latin-dialog').dialog({ autoOpen: false})})
 	setLatinDialog : function (content, title){
 		var dia = $("#latin-dialog");
 		dia.dialog('option', 'title', title);
@@ -557,8 +558,6 @@ var action = {
 	},
 
  };
-
-$(function(){$('#latin-dialog').dialog({ autoOpen: false})});
 
 /** function called by generated interaction elements */
 var interaction = {

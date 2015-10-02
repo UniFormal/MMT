@@ -21,28 +21,11 @@ case class UOMState(t : Term, context: Context, rules: RuleSet, path : List[Int]
   val matchRules = rules.get(classOf[InverseOperator])
 }
 
-/** A UOM applies DepthRule's and BreadthRule's exhaustively to simplify a Term */
-class UOM extends ObjectSimplifier {
+/** A RuleBasedSimplifier applies DepthRule's and BreadthRule's exhaustively to simplify a Term */
+// This class used to be called UOM
+class RuleBasedSimplifier extends ObjectSimplifier {
   override val logPrefix = "uom"
 
-  /* code for saving a log of the applied operations, can be used later for interactive systems */
-  var simplificationLog : List[(UOMState,Term,UOMRule)] = Nil
-  var saveLog = true //TODO for now
-  
-  def saveSimplificationResult(start : UOMState, end : Term) = {
-    log("Saving result" +  start + " -> " + end)
-    val (_,_,rule) = simplificationLog.head
-    simplificationLog = (start, end, rule) :: simplificationLog.tail
-    //log(simplificationLog.toString)
-  }
-  
-  def saveSimplificationRule(rule : UOMRule) = {
-    log("Saving rule " +  rule)
-    simplificationLog ::= (null, null, rule)
-    //log(simplificationLog.toString)
-  }
-  /* end of simplification log functions */
-  
   private lazy val StrictOMA = controller.pragmatic.StrictOMA
    
    /** the main simplification method
@@ -61,7 +44,6 @@ class UOM extends ObjectSimplifier {
       log("called on " + controller.presenter.asString(obj) + " in context " + controller.presenter.asString(context))
       val result = obj match {
          case t: Term =>
-            simplificationLog = Nil
             val initState = new UOMState(t, context, rules, Nil)
             val tS: Term = traverse(t,initState, context)
             tS
@@ -96,8 +78,6 @@ class UOM extends ObjectSimplifier {
                   applyAux(t)
                }
                //log("simplified to " + controller.presenter.asString(tS))
-               //if (globalChange)
-                 //saveSimplificationResult(init, tS)
                val tSM = Simple(tS.from(t))
                SimplificationResult.put(t, tSM) // store result to recall later in case of structure sharing
                if (globalChange)

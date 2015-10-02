@@ -78,21 +78,18 @@ class Controller extends ROController with Logger {
   val library = memory.content
   val docstore = memory.narration
 
-  /* TODO these should be extensions; parser and checker already are */
-  /** text-based presenter for error messages, logging, etc. */
-  val presenter: Presenter = new MMTStructurePresenter(new NotationBasedPresenter {
-    override def twoDimensional = false
-  })
-  /** elaborator and universal machine for simplification */
-  val simplifier: Simplifier = new StepBasedElaborator(new UOM)
+  /** maintains all customizations for specific languages */
+  val extman = new ExtensionManager(this)
 
+  /** convenience for getting the default text-based presenter (for error messages, logging, etc.) */
+  def presenter: Presenter = extman.get(classOf[Presenter], "present-text-notations").get
+  /** convenience for getting the default simplifier */
+  def simplifier: Simplifier = extman.get(classOf[Simplifier]).head
   /** convenience for getting the default object parser */
   def objectParser: ObjectParser = extman.get(classOf[ObjectParser], "mmt").get
 
   /** converts between strict and pragmatic syntax using [[notations.NotationExtension]]s */
   val pragmatic = new Pragmatics(this)
-  /** maintains all customizations for specific languages */
-  val extman = new ExtensionManager(this)
   /** the http server */
   var server: Option[Server] = None
   /** the catalog maintaining all registered physical storage units */
@@ -511,10 +508,6 @@ class Controller extends ROController with Logger {
       key match {
         case "check" => arch.check(in, this)
         case "validate" => arch.validate(in, this)
-        case "flat" => arch.produceFlat(in, this)
-        case "enrich" =>
-          val me = new ModuleElaborator(this)
-          arch.produceEnriched(in, me, this)
         case "relational" =>
           arch.readRelational(in, this, "rel")
           arch.readRelational(in, this, "occ")

@@ -12,9 +12,19 @@ body {
     text-align: center;
 }
 
+/* tables used for layouting */
+table.layout {
+}
+
 td.layout {
+   horizontal-align:left;
    vertical-align:top;
 }
+div.layout {
+   overflow: auto;
+   resize: horizontal;
+}
+/* */
 
 #top {
  min-width:640px;
@@ -66,7 +76,7 @@ span.pagelink a:hover {
 }
 
 #sidebar {
-   //overflow: scroll;  
+   /*overflow: scroll;*/  
 }
 
 #pathtree {
@@ -83,8 +93,9 @@ a.treerelation {
 
 #main {
    padding-top: 3%;
-   padding-left : 10px;
-   //overflow: auto;
+   padding-left: 10px;
+   overflow: auto;
+   width:100%;
 }
 
 table.decllist {
@@ -124,6 +135,7 @@ div.flat-container {
    border: solid 1px;
    padding: 5px;
    margin: 10px;
+   display:none;
 }
 
 #inputbox {
@@ -145,6 +157,7 @@ div.flat-container {
    border: solid 1px;
    padding: 5px;
    margin: 10px;
+   display:none;
 }
 
 div.searchgroup {
@@ -172,7 +185,7 @@ div.result {
 }
 
 span.name {
-  //font-weight: bold;
+  /*font-weight: bold;*/
 }
 
 tr.definition, tr.domain, tr.codomain,
@@ -190,8 +203,8 @@ div.constant {
 
 
 span.compLabel {
-  //margin-left: 10px;
-  //margin-right: 40px;
+  /*margin-left: 10px;
+  margin-right: 40px;*/
   font-size: medium;
   color: gray;
 }
@@ -274,7 +287,7 @@ span.name {
 
 #mainBubble {
      background: #fff;
-    // border: solid 1px #ddd;
+     /*border: solid 1px #ddd;*/
      box-shadow: 0 0 4px rgba(0,0,0,0);
      font: 10px sans-serif;
      height: 400px;
@@ -302,44 +315,14 @@ span.name {
 } */
 
 .panelHorizontalScroll {
-    //overflow-x: scroll;
     overflow:scroll;
-    //clear: both;
-   // overflow-y: hidden;
-    //max-width: 80px; 
-    //width: 100px;
+    /*overflow-x: scroll;
+    clear: both;
+    overflow-y: hidden;
+    max-width: 80px; 
+    width: 100px;*/
  }
 
 .constant-components{
-	//overflow:auto;
+	/*overflow:auto;*/
 }
-
-
-/* stuffs */
- .node circle {
-   fill: #fff;
-   //stroke: steelblue;
-   //stroke-width: 3px;
- }
-
- .node text { 
- font: 15px monospace; 
- color: #fff;
- background-color: #fff;}
-
- .link {
-   fill: none;
-   stroke: #2e3436;
-   stroke-width: 2px;
- }
- .miz{
- height: 10px;
- width: 50px;
- background-color: #0080FF;
- }
- .hol{
- margin-top: 5px;
- height: 10px;
- width: 50px;
- background-color: #AED5FC;
- }

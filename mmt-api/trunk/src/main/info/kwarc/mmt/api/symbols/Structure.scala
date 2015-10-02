@@ -17,7 +17,6 @@ import presentation._
  * @param from the domain theory
  */
 abstract class Structure extends Declaration with Link {
-   var isFlattened = false
    /** the domain/type of the structure */
    val tpC: TermContainer
    /** the domain of the structure as a Term, may fail if tpC is undefined */

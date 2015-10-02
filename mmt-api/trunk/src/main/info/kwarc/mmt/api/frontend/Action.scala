@@ -109,8 +109,7 @@ object Action extends RegexParsers {
       ArchiveBuild(id, dim, Build, s)
   }
 
-  private def dimension = "check" | "validate" | "mws-flat" | "mws-enriched" | "mws" | "flat" | "enrich" |
-    "relational" | "delete" | "integrate" | "test" | "close"
+  private def dimension = "check" | "validate" | "relational" | "integrate" | "test" | "close"
 
   private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ { case id ~ trg => ArchiveMar(id, trg) }
 
