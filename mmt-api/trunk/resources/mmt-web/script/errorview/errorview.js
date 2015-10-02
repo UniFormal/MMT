@@ -11,9 +11,7 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
       , fileDate : { x : false, long : 'modified', search : '' }
       , target : { x : true, long : 'target', search : '' }
       , sourceRef : { x : true, long : 'source', search : '' }
-      , shortMsg : { x : true, long : 'short message', search : '' }
-      , longMsg : { x : false, long : 'long message', search : '' }
-      , stackTrace : { x : false, long : 'stack trace', search : '' }};
+      , shortMsg : { x : true, long : 'short message', search : '' }};
     $scope.colProps = [];
     for (k in $scope.columns) { $scope.colProps.push(k) };
     $scope.field = 'shortMsg';

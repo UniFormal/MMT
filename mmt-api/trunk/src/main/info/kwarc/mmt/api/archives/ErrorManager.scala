@@ -26,16 +26,13 @@ object Table {
     "fileDate",
     "target",
     "sourceRef",
-    "shortMsg",
-    "longMsg",
-    "stackTrace")
+    "shortMsg")
 }
 
 /** an [[Error]] as reconstructed from an error file */
 case class BuildError(archive: Archive, target: String, path: FilePath,
                       tp: String, level: Level.Level, sourceRef: Option[parser.SourceRef],
-                      shortMsg: String, longMsg: String,
-                      stackTrace: List[List[String]]) {
+                      shortMsg: String) {
   def toStrList: List[String] = {
     val f = (archive / errors / target / path).addExtension("err")
     List(level.toString,
@@ -48,9 +45,7 @@ case class BuildError(archive: Archive, target: String, path: FilePath,
       new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(f.toJava.lastModified)),
       target,
       sourceRef.fold("")(_.toString),
-      shortMsg,
-      longMsg,
-      stackTrace.flatten.mkString("\n")
+      shortMsg
     )
   }
 }
@@ -116,8 +111,6 @@ class ErrorManager extends Extension with Logger {
         } catch {
           case e: ParseError => infoMessage(e.getMessage)
         }
-      val trace: List[List[String]] = stacks.toList map (e => e.child.toList map (_.text))
-      val longMsg: String = (others map (_.text)).mkString
       val elems = others filter (_.isInstanceOf[Elem])
       var srcR: Option[SourceRef] = None
       try {
@@ -128,12 +121,15 @@ class ErrorManager extends Extension with Logger {
       }
       if (elems.nonEmpty)
         infoMessage("ignored sub-elements: " + elems)
-      val be = BuildError(a, target, fpath.toFile.stripExtension.filepath, errType, lvl, srcR, shortMsg, longMsg, trace)
-      bes ::= be
+      if (lvl > 1) {
+        // only real errors
+        val be = BuildError(a, target, fpath.toFile.stripExtension.filepath, errType, lvl, srcR, shortMsg)
+        bes ::= be
+      }
     }
     if (node.child.isEmpty && emptyErr)
       bes ::= BuildError(a, target, fpath.toFile.stripExtension.filepath, "", 0, None,
-        if (emptyErr) "corrupt error file" else "no errors", "", Nil)
+        if (emptyErr) "corrupt error file" else "no errors")
     val em = apply(a.id)
     em.put((target, fpath.segments), bes.reverse)
   }
