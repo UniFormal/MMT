@@ -264,9 +264,8 @@ abstract class TraversingBuildTarget extends BuildTarget with Dependencies {
   }
 
   /** @return status of input file, obtained by comparing to error file */
-  private def hadErrors(errorFile: File): Boolean = {
+  private def hadErrors(errorFile: File): Boolean =
     errorFile.exists && ErrorReader.getBuildErrors(errorFile, None).nonEmpty
-  }
 
   /** recursively reruns build if the input file has changed
     *
@@ -299,14 +298,15 @@ abstract class TraversingBuildTarget extends BuildTarget with Dependencies {
       false
     })
   }
+
   protected def getFilesRec(a: Archive, in: FilePath): Set[(Archive, FilePath)] = {
-      val inFile = a / inDim / in
-      if (inFile.isDirectory && includeDir(inFile.getName))
-        inFile.list.flatMap(n => getFilesRec(a, FilePath(in.segments ::: List(n)))).toSet
-      else if (inFile.isFile && includeFile(inFile.getName))
-        Set((a, in))
-      else Set.empty
-    }
+    val inFile = a / inDim / in
+    if (inFile.isDirectory && includeDir(inFile.getName))
+      inFile.list.flatMap(n => getFilesRec(a, FilePath(in.segments ::: List(n)))).toSet
+    else if (inFile.isFile && includeFile(inFile.getName))
+      Set((a, in))
+    else Set.empty
+  }
 
   override def buildDepsFirst(a: Archive, in: FilePath = EmptyPath): Unit = {
     // includeFile will be checked by build again (as was already checked during dependency analysis)
