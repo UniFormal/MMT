@@ -104,6 +104,17 @@ trait STeXUtils {
       if (l.trim.startsWith("\\documentclass")) res = true
     res
   }
+
+  protected def getProfile(a: Archive): Option[String] = {
+    val key = "profile"
+    var opt = a.properties.get(key)
+    if (opt.isEmpty) {
+      val gm: File = a.groupDir / "meta-inf" / "MANIFEST.MF"
+      if (gm.exists && gm.isFile)
+        opt = File.readProperties(gm).get(key)
+    }
+    opt
+  }
 }
 
 /** common code for sms, latexml und pdf generation */
@@ -268,7 +279,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
   /** run process with logger synchronously within the given timeout
     *
     * @return exit code
-    **/
+    */
   protected def timeout(pb: ProcessBuilder, log: ProcessLogger): Int = {
     val proc = pb.run(log)
     val fut = Future(blocking(proc.exitValue()))

@@ -157,6 +157,7 @@ class LaTeXML extends LaTeXBuildTarget {
   private val portModulo: Int = 1000
   private var portSet: Boolean = false
   private var profile = "stex-smglom-module"
+  private var profileSet: Boolean = false
   private var perl5lib = "perl5lib"
   private var preloads: Seq[String] = Nil
   private var paths: Seq[String] = Nil
@@ -178,7 +179,9 @@ class LaTeXML extends LaTeXBuildTarget {
     port = try newPort.getOrElse(port.toString).toInt catch {
       case _: Exception => port
     }
-    profile = getArg("profile", opts).getOrElse(profile)
+    val newProfile = getArg("profile", opts)
+    profileSet = newProfile.isDefined
+    profile = newProfile.getOrElse(profile)
     val (preloadOpts, rest1) = partArg("preload", opts)
     preloads = preloads ++
       controller.getEnvVar("LATEXMLPRELOADS").getOrElse("").split(" ").filter(_.nonEmpty)
@@ -302,9 +305,11 @@ class LaTeXML extends LaTeXBuildTarget {
     setLatexmlBins(bt)
     val realPort: Int = if (portSet) port
     else port + Math.abs(bt.archive.id.hashCode % portModulo)
+    val realProfile = if (profileSet) profile
+    else getProfile(bt.archive).getOrElse(profile)
     val output = new StringBuffer()
     val argSeq = Seq(latexmlc, bt.inFile.toString,
-      "--profile=" + profile, "--path=" + styPath(bt),
+      "--profile=" + realProfile, "--path=" + styPath(bt),
       "--destination=" + lmhOut, "--log=" + logFile) ++
       (if (noAmble(bt.inFile)) Nil
       else Seq("--preamble=" + getAmbleFile("pre", bt),
@@ -312,12 +317,13 @@ class LaTeXML extends LaTeXBuildTarget {
       Seq("--expire=" + expire, "--port=" + realPort) ++ preloads.map("--preload=" + _) ++
       paths.map("--path=" + _)
     log(argSeq.mkString(" ").replace(" --", "\n --"))
+    val lEnv = extEnv(bt)
     try {
       val pbs = Process(Seq(latexmls, "--expire=" + expire, "--port=" + realPort,
-        "--autoflush=100"), bt.archive / inDim, extEnv(bt): _*)
+        "--autoflush=100"), bt.archive / inDim, lEnv: _*)
       pbs.run(procIO(output))
       if (output.length == 0) Thread.sleep(delaySecs)
-      val pb = Process(argSeq, bt.archive / inDim, extEnv(bt): _*)
+      val pb = Process(argSeq, bt.archive / inDim, lEnv: _*)
       val exitCode = timeout(pb, procLogger(output))
       if (exitCode != 0 || lmhOut.length == 0) {
         bt.errorCont(LatexError("no omdoc created", output.toString))
