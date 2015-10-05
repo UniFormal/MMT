@@ -83,6 +83,7 @@ abstract class Blackboard(implicit c: Controller, olp:String) extends Logger wit
     log("running execution agent")
     executionAgent.get.respond()
     log("finished cycle: " + cycle)
+    cycle = cycle + 1
   }
 
   var cycle = 0
@@ -96,7 +97,6 @@ abstract class Blackboard(implicit c: Controller, olp:String) extends Logger wit
     sections.foreach(_.initialize())
     while (!isTerminated && !finished && cycle < numCycles) {
       runCycle()
-      cycle = cycle + 1
     }
     if (finished) {log("PROOF COMPLETED!")}else{log("GIVING UP")}
   }

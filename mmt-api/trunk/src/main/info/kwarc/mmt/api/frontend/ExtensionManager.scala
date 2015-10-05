@@ -1,17 +1,18 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
-import archives.BuildTarget
-import backend._
-import checking._
-import libraries._
-import ontology.QueryExtension
-import parser._
-import presentation._
-import proving._
-import uom._
-import utils.MyList._
-import web._
+import info.kwarc.mmt.api.archives.BuildTarget
+import info.kwarc.mmt.api.backend._
+import info.kwarc.mmt.api.checking._
+import info.kwarc.mmt.api.libraries._
+import info.kwarc.mmt.api.ontology.QueryExtension
+import info.kwarc.mmt.api.parser._
+import info.kwarc.mmt.api.presentation._
+import info.kwarc.mmt.api.proving._
+import info.kwarc.mmt.api.uom._
+import info.kwarc.mmt.api.utils.MyList._
+import info.kwarc.mmt.api.web._
+
 
 trait Extension extends Logger {
   protected var controller: Controller = null
@@ -141,8 +142,8 @@ class ExtensionManager(controller: Controller) extends Logger {
     //TODO temporary hack to replace old prover with Mark's AgentProver if the latter is on the classpath
     val className = "info.kwarc.mmt.leo.provers.AgentProver"
     try {
-      prover = Class.forName(className).newInstance().asInstanceOf[Extension]
-    } catch {
+      prover = Class.forName(className).newInstance.asInstanceOf[Extension]
+    }catch {
       case _: Throwable =>
     }
 

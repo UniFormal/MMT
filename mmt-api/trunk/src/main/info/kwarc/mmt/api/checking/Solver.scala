@@ -1,14 +1,13 @@
 package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
-import objects._
-import libraries._
-import modules._
-import symbols._
-import frontend._
-import proving._
-import objects.Conversions._
-import scala.collection.mutable.{HashSet,HashMap}
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.proving._
+
+import scala.collection.mutable.HashSet
 
 /* ideas
  * inferType should guarantee well-formedness (what about LambdaTerm?)
@@ -1103,7 +1102,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       history += msg
       val pu = ProvingUnit(context, conc, logPrefix)
       controller.extman.get(classOf[Prover]) foreach {prover =>
-         val (found, proof) = prover.apply(pu, rules, 5)
+         val (found, proof) = prover.apply(pu, rules, 8) //Set the timeout on the prover
          if (found) {
             val p = proof.get
             history += "proof: " + presentObj(p)

@@ -77,7 +77,6 @@ trait Communicator extends Listener with Speaker
 
 abstract class Agent(blackboardParam: Blackboard) extends Communicator with Logger {
 
-
   def report = blackboard.report
   def logPrefix = blackboard.OLP +"#"+name
 
