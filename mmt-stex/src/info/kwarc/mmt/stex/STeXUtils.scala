@@ -269,7 +269,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
         case Some(lang) =>
           List((aStr, fp.toFile.stripExtension.stripExtension.setExtension("tex").filepath))
       }
-      val fs = readingSource(a, in, init)
+      val fs = readingSource(a, in, (aStr, FilePath(List(localpathsFile))) :: init)
       var res: Set[(Archive, FilePath)] = Set.empty
       fs foreach { case (ar, p) =>
         controller.getOrAddArchive(a.baseDir / ar) match {
