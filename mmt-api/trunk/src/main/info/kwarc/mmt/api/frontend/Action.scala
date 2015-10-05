@@ -99,8 +99,8 @@ object Action extends RegexParsers {
     case Update(hadErrs) => if (hadErrs) "onError" else "onChange"
   })
 
-  private def filebuild = "rbuild" ~> (buildModifier ?) ~ str ~ (pluginArg *) ~ (str +) ^^ {
-    case mod ~ km ~ args ~ ins =>
+  private def filebuild = "rbuild" ~> str ~ (buildModifier ?) ~ (pluginArg *) ~ (str +) ^^ {
+    case km ~ mod ~ args ~ ins =>
       FileBuild(km, mod.getOrElse(Update(ifHadErrors = false)), args, ins.map(File(_)))
   }
 
@@ -474,7 +474,7 @@ case class ArchiveBuild(ids: List[String], dim: String, modifier: BuildTargetMod
 /** builds a dimension for the given files by opening the archive for each file before building */
 case class FileBuild(dim: String, modifier: BuildTargetModifier,
                      args: List[String], files: List[File]) extends Action {
-  override def toString: String = "rbuild " + Action.modifierToString(modifier) + " " + dim +
+  override def toString: String = "rbuild " + dim + " " + Action.modifierToString(modifier) +
     (args ++ files.map(_.toString)).map(" " +).mkString
 }
 
