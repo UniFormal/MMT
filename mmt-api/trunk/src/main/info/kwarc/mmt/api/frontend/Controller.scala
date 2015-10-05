@@ -497,7 +497,7 @@ class Controller extends ROController with Logger {
       report.groups += key
     }
     getBuildTarget(key) foreach (buildTarget =>
-      files.flatMap(f => backend.splitFile(f.getCanonicalFile)) foreach { case (root, in) =>
+      files.flatMap(f => backend.findArchiveFiles(f.getCanonicalFile)) foreach { case (root, in) =>
         getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
       })
   }

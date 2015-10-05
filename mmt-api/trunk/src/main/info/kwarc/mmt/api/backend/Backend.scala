@@ -267,6 +267,14 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
         splitFile(parent) map { case (root, fp) => (root, fp / f.name) })
     }
 
+  /** find archives by traversing folders */
+  def findArchiveFiles(f: File): List[(File, FilePath)] =
+    splitFile(f) match {
+      case None => if (f.isDirectory)
+        f.listFiles.filter(_.isDirectory).toList.flatMap(findArchiveFiles(_))
+      else Nil
+      case Some(p) => List(p)
+    }
 
   /**
    * @param p a module URI
