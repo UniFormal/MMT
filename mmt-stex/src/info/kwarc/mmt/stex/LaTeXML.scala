@@ -1,5 +1,6 @@
 package info.kwarc.mmt.stex
 
+import java.net.{BindException, ServerSocket}
 import java.nio.charset.{Charset, MalformedInputException}
 import java.nio.file.Files
 
@@ -149,7 +150,6 @@ class LaTeXML extends LaTeXBuildTarget {
   // the latexml client
   private var latexmlc = "latexmlc"
   private var latexmls = "latexmls"
-  private val ltxsMsg = "Fatal:server:init can't setup server\n"
   private var expire = "600"
   private val delaySecs: Int = 1000
   private val portDefault: Int = 3334
@@ -289,10 +289,8 @@ class LaTeXML extends LaTeXBuildTarget {
       val in = scala.io.Source.fromInputStream(i)
       val str = in.mkString
       in.close()
-      if (str != ltxsMsg) {
-        output.append(str)
-        if (pipeOutput) System.err.print(str)
-      }
+      output.append(str)
+      if (pipeOutput) System.err.print(str)
     }, true)
 
   /** Compile a .tex file to OMDoc */
@@ -321,8 +319,19 @@ class LaTeXML extends LaTeXBuildTarget {
     try {
       val pbs = Process(Seq(latexmls, "--expire=" + expire, "--port=" + realPort,
         "--autoflush=100"), bt.archive / inDim, lEnv: _*)
-      pbs.run(procIO(output))
-      if (output.length == 0) Thread.sleep(delaySecs)
+      val startServer = try {
+        val s = new ServerSocket(realPort)
+        s.close()
+        true
+      }
+      catch {
+        case ex: BindException =>
+          false
+      }
+      if (startServer) {
+        pbs.run(procIO(output))
+        Thread.sleep(delaySecs)
+      }
       val pb = Process(argSeq, bt.archive / inDim, lEnv: _*)
       val exitCode = timeout(pb, procLogger(output))
       if (exitCode != 0 || lmhOut.length == 0) {
