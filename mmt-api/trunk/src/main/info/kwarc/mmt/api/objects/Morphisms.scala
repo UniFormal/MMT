@@ -125,7 +125,7 @@ object TheoryExp {
   /** checks equality of two theory expression using simplify */
   def equal(s: Term, t: Term) = simplify(s) == simplify(t)
 
-  /** computes the meta-theories of a theory, nearest one first
+  /** computes the meta-theories of a theory (non-reflexive), nearest one first
     *
     * @param all if true, stop after the first meta-theory, false by default
     */
@@ -268,7 +268,7 @@ object ComplexTheory {
   }
 }
 
-/** An OMDL represents a structure */
+/** OMDL is used for the GlobalName of a structure */
 object OMDL {
   def apply(cod: Term, name: LocalName): Term = OMID(cod % name)
 

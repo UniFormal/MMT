@@ -39,8 +39,8 @@ class TermProperty[A](val property: utils.URI) {
    }
    /** get the client property if defined */
    def get(t: Obj): Option[A] = t.clientProperty.get(property) match {
-      case Some(a: A) =>
-         Some(a) // :A is unchecked but true if put was used to set the property
+      case Some(a: A @unchecked) =>  // :A is unchecked but true if put was used to set the property
+         Some(a)
       case None => None
       case Some(_) =>
          throw ImplementationError("client property has bad type") // impossible if put was used
@@ -520,6 +520,18 @@ object ComplexTerm {
  * Obj contains the parsing methods for objects.
  */
 object Obj {
+   def getConstants(t: Obj) = getCs(t).distinct
+   private def getCs(t: Obj): List[GlobalName] = t match {
+      case ComplexTerm(p, subs, con, args) => p :: getCs(subs) ::: getCs(con) ::: (args flatMap getCs)
+      case OMS(p) => List(p)
+      case c: Context => c flatMap getCs
+      case vd: VarDecl => (vd.tp.toList:::vd.df.toList).flatMap(getCs) 
+      case s: Substitution => s flatMap getCs
+      case s: Sub => getCs(s.target)
+      case _ => Nil
+   }
+   
+   
    /** parses a term relative to a base address
     *  @param Nmd node to parse (may not contain metadata) 
     *  @param nm namespace Map to resolve relative URIs

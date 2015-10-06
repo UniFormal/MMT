@@ -52,7 +52,7 @@ class LabeledHashRelation[N,E] {
  * thrown if the uniqueness condition of UniqueGraph is violated
  *  @param value the existing value
  */
-case class AlreadyDefined[E](old: E, nw: E) extends java.lang.Throwable
+case class AlreadyDefined[E](from: Term, to: Term, old: E, nw: E) extends java.lang.Throwable
 
 /** A diagram of theories and morphisms.
  *  i.e., edges between two nodes must be equal. 
@@ -60,8 +60,10 @@ case class AlreadyDefined[E](old: E, nw: E) extends java.lang.Throwable
  *  this criterion is sound and efficient but not complete.
  */
 class UniqueGraph extends LabeledHashRelation[Term,Term] {
-   /** overrides update to check for existing morphisms
-    * @throws AlreadyDefined(m) if an implicit morphism m between the same theories already exists
+   /**
+    * overrides update to check for existing morphisms
+    * 
+    * throws [[AlreadyDefined]] if an implicit morphism between the same theories already exists
     */
    override def update(from: Term, to: Term, morph: Term) {
       val fromN  = TheoryExp.simplify(from)
@@ -72,7 +74,7 @@ class UniqueGraph extends LabeledHashRelation[Term,Term] {
            if (current.get == morphN)
               return
            else
-              throw AlreadyDefined(current.get, morphN)
+              throw AlreadyDefined(from, to, current.get, morphN)
       }
       super.update(fromN, toN, morphN)
    }
@@ -96,7 +98,7 @@ class ThinGeneratedCategory {
     * @param from domain
     * @param to codomain
     * @param the morphism
-    * @throws AlreadyDefined(m) if an implicit morphism m between the same theories already exists
+    * throws [[AlreadyDefined]] if an implicit morphism m between the same theories already exists
     */
    def update(from: Term, to: Term, morph: Term) {
       // TODO: decompose links into complex theories

@@ -61,7 +61,7 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
    private val containers = List("omdoc", "theory", "view")
 
    def apply(ps: parser.ParsingStream)(implicit errorCont: ErrorHandler): Document = {
-      val parser = new ConsParser(ps.dpath, new SourceFromReader(ps.stream))
+      val parser = new ConsParser(ps.dpath, new SourceFromReader(ps.stream), errorCont)
       try {
          parser.nextch
          parser.document()
@@ -73,14 +73,19 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
    }
    
    /** XML parser that streams documents/modules and calls the reader on the other ones */
-   private class ConsParser(dpath: DPath, input: Source) extends ConstructingParser(input, true) {
+   private class ConsParser(dpath: DPath, input: Source, errorCont: ErrorHandler) extends ConstructingParser(input, true) {
       /** the stack of currently open tags, innermost first */
       private var openTags : List[StructuralElement] = Nil
       /** holds the root element once parsing has finished */
       var root: Document = null
    
       private def add(se: StructuralElement) {
-         controller.add(se)
+         try {
+            controller.add(se)
+         } catch {case e: AddError =>
+            // errors in the XML are usually minor and  we can assume we can recover 
+            errorCont << e
+         }
       }
       /** like add, but also pushes the parsed element onto openTags */
       private def catchSE(se: StructuralElement) {

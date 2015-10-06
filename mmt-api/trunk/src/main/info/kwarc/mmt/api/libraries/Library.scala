@@ -466,7 +466,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
         case l: Link if l.isImplicit =>
           implicitGraph(l.from, l.to) = l.toTerm
         case t: DeclaredTheory =>
-          t.getIncludes foreach { m =>
+          t.getIncludes foreach {m =>
             implicitGraph(OMMOD(m), t.toTerm) = OMIDENT(OMMOD(m))
           }
         case t: DefinedTheory =>
@@ -478,8 +478,8 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
         //TODO add equational axioms
       }
     } catch {
-      case AlreadyDefined(old, nw) =>
-        throw AddError(s"implicit morphism $nw induced by ${e.path} in conflict with existing implicit morphism $old")
+      case AlreadyDefined(from, to, old, nw) =>
+        throw AddError(s"implicit morphism $nw from $from to $to induced by ${e.path} in conflict with existing implicit morphism $old")
     }
   }
 
