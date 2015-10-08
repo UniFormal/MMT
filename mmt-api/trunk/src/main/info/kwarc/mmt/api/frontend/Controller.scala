@@ -104,7 +104,10 @@ class Controller extends ROController with Logger {
   val propagator = new moc.OccursInImpactPropagator(memory)
   /** relational manager, handles extracting and parsing relational elements */
   val relman = new RelationalManager(this)
-
+  /** the profile configuration */
+  val config = new MMTConfig(this, true)
+  
+  
   /** all other mutable fields */
   protected val state = new ControllerState
 
