@@ -61,7 +61,7 @@ class AllTeX extends LaTeXBuildTarget {
   private def createAllFile(a: Archive, lang: Option[String], dir: File,
                             files: List[String], force: Boolean): Unit = {
     val all = dir / ("all" + lang.map("." + _).getOrElse("") + ".tex")
-    val ls = langFiles(lang, files).filter(_ != localpathsFile)
+    val ls = langFiles(lang, files)
     if (!force && all.exists() && ls.forall(f => (dir / f).lastModified() < all.lastModified()))
       logResult("up-to-date " + getOutPath(a, all)) // does not detect deleted files!
     else {
