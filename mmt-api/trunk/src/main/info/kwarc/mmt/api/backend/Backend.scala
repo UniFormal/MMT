@@ -271,7 +271,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   def findArchiveFiles(f: File): List[(File, FilePath)] =
     splitFile(f) match {
       case None => if (f.isDirectory)
-        f.listFiles.filter(_.isDirectory).toList.flatMap(findArchiveFiles(_))
+        f.listFiles.filter(_.isDirectory).toList.sorted.flatMap(findArchiveFiles(_))
       else Nil
       case Some(p) => List(p)
     }
