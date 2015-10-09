@@ -107,11 +107,11 @@ class ExtensionManager(controller: Controller) extends Logger {
 
 
   def get[E <: Extension](cls: Class[E]): List[E] = extensions.collect {
-    case e: E @unchecked if cls.isInstance(e) => e
+    case e: E@unchecked if cls.isInstance(e) => e
   }
 
   def get[E <: FormatBasedExtension](cls: Class[E], format: String): Option[E] = extensions.collect {
-    case e: E @unchecked if cls.isInstance(e) && e.isApplicable(format) => e
+    case e: E@unchecked if cls.isInstance(e) && e.isApplicable(format) => e
   }.headOption
 
   var lexerExtensions: List[LexerExtension] = Nil
@@ -129,7 +129,9 @@ class ExtensionManager(controller: Controller) extends Logger {
     val rbc = new RuleBasedChecker
     val msc = new MMTStructureChecker(rbc)
     val mmtint = new TwoStepInterpreter(kwp, msc)
-    val nbpr = new NotationBasedPresenter {override def twoDimensional = false}
+    val nbpr = new NotationBasedPresenter {
+      override def twoDimensional = false
+    }
     val msp = new MMTStructurePresenter(nbpr)
     val rbs = new RuleBasedSimplifier
     val mss = new MMTStructureSimplifier(rbs)
@@ -143,7 +145,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     val className = "info.kwarc.mmt.leo.provers.AgentProver"
     try {
       prover = Class.forName(className).newInstance.asInstanceOf[Extension]
-    }catch {
+    } catch {
       case _: Throwable =>
     }
 
@@ -173,20 +175,26 @@ class ExtensionManager(controller: Controller) extends Logger {
   /** instantiates an extension, initializes it, and adds it
     * @param cls qualified class name (e.g., org.my.Extension), must be on the class path at run time
     * @param args arguments that will be passed when initializing the extension
-    * @return the extension after instantiation, so the caller may use it in some way after
     */
-  def addExtension(cls: String, args: List[String]): Extension = {
+  def addExtension(cls: String, args: List[String]): Unit = {
     log("trying to create extension " + cls)
-    val clsJ = java.lang.Class.forName(cls)
+    val clsJ = Class.forName(cls)
     val ext = try {
-      val Ext = clsJ.asInstanceOf[java.lang.Class[Extension]]
+      val Ext = clsJ.asInstanceOf[Class[Extension]]
       Ext.newInstance
     } catch {
       case e: Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)
     }
     addExtension(ext, args)
-    ext
   }
+
+  /** lookup or add extension */
+  def ensureExtension(cls: String, args: List[String]): Unit =
+    try
+      if (get(Class.forName(cls).asInstanceOf[Class[Extension]]).isEmpty) addExtension(cls, args)
+    catch {
+      case e: ClassCastException => log(RegistrationError("error not an extension class " + cls))
+    }
 
   /** initializes and adds an extension */
   def addExtension(ext: Extension, args: List[String] = Nil) {
@@ -251,7 +259,7 @@ class ExtensionManager(controller: Controller) extends Logger {
   }
 
   /** association between targets/keys and extension class names */
-  def targetToClass: Map[String, String] = Map(
+  val targetToClass: Map[String, String] = Map(
     "sms" -> "SmsGenerator",
     "latexml" -> "LaTeXML",
     "pdflatex" -> "PdfLatex",
