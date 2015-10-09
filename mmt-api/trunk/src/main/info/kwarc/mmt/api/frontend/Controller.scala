@@ -83,8 +83,10 @@ class Controller extends ROController with Logger {
 
   /** convenience for getting the default text-based presenter (for error messages, logging, etc.) */
   def presenter: Presenter = extman.get(classOf[Presenter], "present-text-notations").get
+
   /** convenience for getting the default simplifier */
   def simplifier: Simplifier = extman.get(classOf[Simplifier]).head
+
   /** convenience for getting the default object parser */
   def objectParser: ObjectParser = extman.get(classOf[ObjectParser], "mmt").get
 
@@ -495,8 +497,7 @@ class Controller extends ROController with Logger {
           extman.addExtension(cls, args)
       })
     if (ts.length > 1) {
-      extman.addExtension(
-        "info.kwarc.mmt.api.archives.MetaBuildTarget", key :: ts.flatMap(extman.targetToClass.get))
+      extman.addExtension(new MetaBuildTarget, key :: ts.flatMap(extman.targetToClass.get))
       report.groups += key
     }
     getBuildTarget(key) foreach (buildTarget =>
