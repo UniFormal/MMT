@@ -316,6 +316,9 @@ class NotationBasedPresenter extends ObjectPresenter {
       case OMV(n) =>
          doVariable(n)
          -1
+      case OML(n) =>
+         doVariable(n.name)
+         -1
       case l: OMLITTrait =>
          doLiteral(l)
          -1
@@ -331,6 +334,10 @@ class NotationBasedPresenter extends ObjectPresenter {
                doOperator("[")
                con.zipWithIndex.foreach {case (v,i) =>
                   recurse(v)(pc.child(subs.length+i+1).addCon(vardata.take(i)))
+                  if (i < con.length-1) {
+                    doOperator(",")
+                    doSpace(1)
+                  }
                }
                doOperator("]")
             }
@@ -365,6 +372,10 @@ class NotationBasedPresenter extends ObjectPresenter {
             doOperator("[")
             c.zipWithIndex.foreach {case (v,i) =>
                recurse(v)(pc.child(i+1).addCon(vardata.take(i)))
+               if (i < c.length-1) {
+                 doOperator(",")
+                 doSpace(1)
+               }
             }
             doOperator("]")
             s.zipWithIndex.foreach {case (t,i) =>
@@ -418,7 +429,8 @@ class NotationBasedPresenter extends ObjectPresenter {
          if (! c.isEmpty) {
             c.init.foreach {v =>
                recurse(v, noBrackets)
-               doOperator(", ")
+               doOperator(",")
+               doSpace(1)
             }
             recurse(c.last, noBrackets)
          }
@@ -427,7 +439,8 @@ class NotationBasedPresenter extends ObjectPresenter {
          if (! s.isEmpty) {
             s.init.foreach {c =>
                recurse(c, noBrackets)
-               doOperator(", ")
+               doOperator(",")
+               doSpace(1)
             }
             recurse(s.last, noBrackets)
          }

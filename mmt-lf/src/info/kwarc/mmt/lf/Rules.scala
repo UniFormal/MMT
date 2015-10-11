@@ -51,9 +51,10 @@ object Common {
 
 import Common._
 
-/** the type inference rule x:A:type|-B:U  --->  Pi x:A.B : U
- * This rule works for any universe U */
-object PiTerm extends InferenceRule(Pi.path, OfType.path) {
+/** Formation: the type inference rule x:A:type|-B:U  --->  Pi x:A.B : U
+ * This rule works for any universe U
+  * */
+object PiTerm extends FormationRule(Pi.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case Pi(x,a,b) =>
@@ -72,9 +73,10 @@ object PiTerm extends InferenceRule(Pi.path, OfType.path) {
    }
 }
 
-/** the type inference rule x:A|-t:B  --->  lambda x:A.t : Pi x:A.B
- * This rule works for B:U for any universe U */
-object LambdaTerm extends InferenceRule(Lambda.path, OfType.path) {
+/** Introduction: the type inference rule x:A|-t:B  --->  lambda x:A.t : Pi x:A.B
+ * This rule works for B:U for any universe U
+  * */
+object LambdaTerm extends IntroductionRule(Lambda.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case Lambda(x,a,t) =>
@@ -86,9 +88,9 @@ object LambdaTerm extends InferenceRule(Lambda.path, OfType.path) {
    }
 }
 
-/** the type inference rule f : Pi x:A.B  ,  t : A  --->  f t : B [x/t]
+/** Elimination: the type inference rule f : Pi x:A.B  ,  t : A  --->  f t : B [x/t]
  * This rule works for B:U for any universe U */
-object ApplyTerm extends InferenceRule(Apply.path, OfType.path) {
+object ApplyTerm extends EliminationRule(Apply.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
      case Apply(f,t) =>
         history += "inferring type of function " + solver.presentObj(f)
@@ -126,7 +128,7 @@ object ApplyTerm extends InferenceRule(Apply.path, OfType.path) {
    }
 }
 
-/** the type checking rule x:A|-f x:B  --->  f : Pi x:A.B */
+/** type-checking: the type checking rule x:A|-f x:B  --->  f : Pi x:A.B */
 object PiType extends TypingRule(Pi.path) {
    def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = {
       (tm,tp) match {
@@ -146,7 +148,7 @@ object PiType extends TypingRule(Pi.path) {
    }
 }
 
-/** the extensionality rule (equivalent to Eta) x:A|-f x = g x  --->  f = g  : Pi x:A. B
+/** equality-checking: the extensionality rule (equivalent to Eta) x:A|-f x = g x : B --->  f = g  : Pi x:A. B
  * If possible, the name of the new variable x is taken from f, g, or their type; otherwise, a fresh variable is invented. */
 object Extensionality extends TypeBasedEqualityRule(Nil, Pi.path) {
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
@@ -215,7 +217,7 @@ object PiCongruence extends TermBasedEqualityRule {
    }
 }
 
-/** the beta-reduction rule s : A  --->  (lambda x:A.t) s = t [x/s]
+/** computation: the beta-reduction rule s : A  --->  (lambda x:A.t) s = t [x/s]
  * If not applicable, the function term is simplified recursively and the rule tried again.
  * This rule also normalizes nested applications so that it implicitly implements the currying rule (f s) t = f(s,t).
  */ 
@@ -331,7 +333,7 @@ object SolveMultiple extends SolutionRule(Apply.path) {
    }
 }
 
-/** This rule tries to solve for an unkown by applying lambda-abstraction on both sides and eta-reduction on the left.
+/** solution: This rule tries to solve for an unkown by applying lambda-abstraction on both sides and eta-reduction on the left.
  *  Its effect is, for example, that X x = t is reduced to X = lambda x.t where X is a meta- and x an object variable. 
  */
 object Solve extends SolutionRule(Apply.path) {

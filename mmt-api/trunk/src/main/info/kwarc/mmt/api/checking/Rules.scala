@@ -85,6 +85,10 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term]
 }
 
+abstract class FormationRule(val headx: GlobalName, val typOpx : GlobalName) extends InferenceRule(headx,typOpx)
+abstract class IntroductionRule(val headx: GlobalName, val typOpx : GlobalName) extends InferenceRule(headx,typOpx)
+abstract class EliminationRule(val headx: GlobalName, val typOpx : GlobalName) extends InferenceRule(headx,typOpx)
+
 /** A ComputationRule simplifies an expression operating at the toplevel of the term.
  *  But it may recursively simplify the components if that makes the rule applicable.
  *  The rule must preserve equality and well-typedness of the simplified term. If necessary, additional checks must be performed.

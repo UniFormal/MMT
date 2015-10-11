@@ -85,6 +85,7 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          val cont = Nil // (t.theory_formals map doFormalPars) collect {case Some(v) => v}
          implicit val th = new DeclaredTheory(path,doName(t.named.id),Some(PVSTheory.path),cont)
          t. theory_formals map doFormal
+         t.assuming map doAssumption
          // TODO: assuming, exporting_, possibly named stuff?
          t._decls map doDecl
 
@@ -92,7 +93,11 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          th
       case d:datatype =>
          println(" -- Datatype: "+d.body.named.id)
-         sys.exit
+         implicit val th = new DeclaredTheory(path,doName(d.body.named.id),Some(PVSTheory.path))
+         d.body.theory_formals map doFormal
+         //d.body._constructors.foreach(con => ???)
+         th
+         // TODO !
       case _ =>
          println(" -- OTHER: "+m.getClass)
          sys.exit
@@ -105,6 +110,13 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
       case _ =>
    }
    */
+
+   def doAssumption(ad:AssumingDecl)(implicit th:DeclaredTheory) = ad match {
+      case assumption(named,assert) => th add Constant(th.toTerm,NewName("ASSUME_"+named.named.id),None,
+         Some(parameters.universalizetp(PVSTheory.formula.apply(doExpr(assert._formula)))),None,None)
+         // TODO apply to everything?
+      case d:Decl => doDecl(d)
+   }
 
    def doFormal(f:FormalParameter)(implicit th:DeclaredTheory) = f match {
        /*
@@ -122,10 +134,12 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          counter+=1
         // TODO only here ._declared, because export wrong
 
+      case formal_const_decl(named,tp) => parameters.add(doName(named.named.id),doType(tp._internal),false)
+
       case _ => println("TODO: Formal "+f.getClass); sys.exit
    }
 
-   def doDecl(d: Decl)(implicit th:DeclaredTheory) = {
+   def doDecl(d: Decl)(implicit th:DeclaredTheory) : Unit = {
       d match {
           /*
          case tcc_decl(named, assertion) => None
@@ -237,6 +251,24 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             tempcont = Context()
             th add c
 
+         case subtype_judgement(named,sub,sup) =>
+            th add Constant(OMID(th.path),NewName(named.id.getOrElse("SUBTYPE_JUDGEMENT")),None,
+               Some(PVSTheory.subtypeof(doType(sub._internal),doType(sup._internal))),None,None)
+
+         case name_judgement(named,nameexpr,tp1) =>
+            th add Constant(OMID(th.path),NewName(named.id.getOrElse("NAME_JUDGEMENT")),None,
+               Some(PVSTheory.ofType(doExpr(nameexpr),doType(tp1._internal))),None,None)
+
+         case macro_decl(cdecl) => doDecl(cdecl)
+
+         case type_from_decl(named,ne,tp1) =>
+            val name = NewName(named.named.id)
+            val c = Constant(OMID(th.path),name,None,Some(OMS(PVSTheory.tp)),None,None)
+            th add c
+            th add Constant(OMID(th.path),LocalName(name+"_SUBTYPE_OF"),None,
+               Some(PVSTheory.subtypeof(OMS(c.path),doType(tp1._internal))),
+               None,None)
+
          case _ => println("TODO Decl: "+d.getClass); sys.exit
       }
    }
@@ -312,11 +344,18 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             }
 
          case function_type(place, _from, _to) => _from match {
-            case tp1:Type => PVSTheory.functype(doDomain(_from), doType(_to))
+            case tp1:Type => PVSTheory.functype(doType(tp1), doType(_to))
             case binding(id,named,tp1) => PVSTheory.pitp(doType(tp1),VarDecl(doName(id),Some(OMS(PVSTheory.expr)),None,None),doType(_to))
          }
 
-         case tuple_type(place, doms) => PVSTheory.tptuple(doms map doDomain)
+         case tuple_type(place, doms) =>
+            val (bs,tps) = (doms collect {case b:binding => (b.id,b.named,b._type)}, doms collect {case t:Type => doType(t)})
+            if (bs.isEmpty) PVSTheory.tptuple(tps)
+            else bs.tail.foldRight(
+                  PVSTheory.pitp(doType(bs.head._3),VarDecl(doName(bs.head._1),Some(OMS(PVSTheory.expr)),None,None),PVSTheory.tptuple(tps))
+               )((triple,c) =>
+               PVSTheory.pitp(doType(triple._3),VarDecl(doName(triple._1),Some(OMS(PVSTheory.expr)),None,None),c)
+              )
 
          case record_type(place,fields) => PVSTheory.recordtype(fields map (field => {
             val (named,tp1) = (doName(field.named.id),doType(field._type))
@@ -443,11 +482,13 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
      // case te: TheoryExpr => doTheoryExpr(te)
    }
 
+   /*
    def doDomain(d:domain)(implicit th:DeclaredTheory) : Term = d match {
       case tp: Type => doType(tp)
       case binding(id,named,tp1) => println("Binding in Domain!"); sys.exit//doType(tp1)
 
    }
+   */
 
    def doName(s:String) : LocalName = LocalName(s)
 

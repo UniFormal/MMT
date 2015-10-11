@@ -13,7 +13,7 @@ import frontend._
  * @param component the term component that is validated, e.g., namespace?theory?symbol?type
  * @param context the constant context
  * @param unknowns the unknown context
- * @param judgement the typing judegment to validate
+ * @param judgement the typing judgement to validate
  * 
  * A checking unit involves three contexts, which must be separated because they correspond to a quantifier alternation.
  * The constant context is the (universally quantified) global context that does not change during checking.

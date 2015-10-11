@@ -153,6 +153,10 @@ lazy val pvs = (project in file("mmt-pvs")).
   dependsOn(api,lf).
   settings(commonSettings("mmt-pvs"): _*)
 
+lazy val lfx = (project in file("mmt-lfx")).
+  dependsOn(api,lf).
+  settings(commonSettings("mmt-lfx"): _*)
+
 lazy val specware = (project in file("mmt-specware")).
   dependsOn(api).
   settings(commonSettings("mmt-specware"): _*)

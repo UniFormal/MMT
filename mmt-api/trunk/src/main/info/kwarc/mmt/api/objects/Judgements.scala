@@ -119,7 +119,7 @@ case class Universe(stack: Stack, wfo: Term) extends UnaryObjJudgement(stack, wf
  */
 case class Inhabitable(stack: Stack, wfo: Term) extends UnaryObjJudgement(stack, wfo, "INHABITABLE") with WFJudgement
 /**
- *  A term tp is inhabitable if it occurs on the right side of a Typing judgement.
+ *  A term tp is inhabited if it occurs on the right side of a Typing judgement.
  *  Via Curry-Howard, such terms can be thought of as provable propositions.
  *  Therefore, this judgement is usually undecidable. 
  */

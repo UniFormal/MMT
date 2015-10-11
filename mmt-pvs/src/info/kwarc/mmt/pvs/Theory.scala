@@ -18,6 +18,8 @@ object PVSTheory {
    val exprastype = sym("exprastype")
    val predsub = sym("predsub")
 
+   def subtypeof(sub:Term,sup:Term) = ApplySpine(OMS(sym("subtypeof")),sub,sup)
+
    def numberexpr(i:BigInt) = OML(VarDecl(LocalName(i.toString),Some(OMS(sym("number"))),None,None))
 
    def makecases(e:Term,sel:List[Term]) = ApplySpine(OMS(sym("makecases")),e,sel.tail.foldRight(sel.head)((t,c) =>
