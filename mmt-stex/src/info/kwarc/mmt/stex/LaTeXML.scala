@@ -133,6 +133,7 @@ class SmsGenerator extends LaTeXBuildTarget {
   }
 
   def reallyBuildFile(bt: BuildTask): Unit = {
+    createLocalPaths(bt)
     try createSms(bt, encodings)
     catch {
       case e: Exception =>
