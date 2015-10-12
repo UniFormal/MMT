@@ -78,20 +78,24 @@ trait STeXUtils {
   def mkRegGroup(l: List[String]): String = l.mkString("(", "|", ")")
 
   private val importKeys: List[String] = List(
-    "guse", "gimport", "usemhmodule", "importmhmodule"
+    "guse", "gimport", "usemhmodule", "importmhmodule", "begin\\{modnl\\}"
   )
   protected val importRegs: Regex = ("^\\\\" + mkRegGroup(importKeys)).r
   private val groups: Regex = "\\\\\\w*\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
+  private val beginModnl: Regex = "\\\\begin\\{modnl\\}\\[.*?\\]?\\{(.*?)\\}.*".r
+
+  private def entryToPath(p: String) = File(p).setExtension("tex").filepath
 
   protected def matchPathAndRep(aStr: String, line: String): Option[(String, FilePath)] =
     line match {
+      case beginModnl(b) => Some((aStr, entryToPath(b)))
       case groups(_, a, b) =>
-        val fp = File(b).setExtension("tex").filepath
+        val fp = entryToPath(b)
         val optRepo = Option(a).map(_.split(",").toList.sorted.map(_.split("=").toList))
         optRepo match {
           case Some(List(List(id))) => Some((id, fp))
           case Some(List("path", p) :: tl) =>
-            val path = File(p).setExtension("tex").filepath
+            val path = entryToPath(p)
             tl match {
               case List(List("repos", id)) => Some((id, path))
               case Nil => Some((aStr, path))
@@ -261,11 +265,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
       val name = in.getName
       val init = if (name.startsWith("all"))
         langFiles(optLang, getDirFiles(a, in.up)).filter(_ != name).map(f => (aStr, fp.dirPath / f))
-      else optLang match {
-        case None => Nil
-        case Some(lang) =>
-          List((aStr, fp.toFile.stripExtension.stripExtension.setExtension("tex").filepath))
-      }
+      else Nil
       val fs = readingSource(a, in, init)
       var res: Set[(Archive, FilePath)] = Set.empty
       fs foreach { case (ar, p) =>
