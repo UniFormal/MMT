@@ -183,14 +183,11 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
   protected def createLocalPaths(a: Archive, dir: File): Unit = {
     val fileName = dir / localpathsFile
     val groupRepo = archString(a) + "}"
-    val wa = "lib/WApersons.tex"
-    var wFile = a.root / wa
-    if (!wFile.exists()) wFile = groupMetaInf(a) / wa
     val text: List[String] = List(
       "% this file defines root path local repository",
       "\\defpath{MathHub}{" + a.baseDir.getPath + "}",
       "\\mhcurrentrepos{" + groupRepo,
-      "\\input{" + wFile.stripExtension + "}",
+      "\\libinput{WApersons}",
       "% we also set the base URI for the LaTeXML transformation",
       "\\baseURI[\\MathHub{}]{https://mathhub.info/" + groupRepo
     )
