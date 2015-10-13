@@ -139,7 +139,7 @@ abstract class TraversingBuildTarget extends BuildTarget with Dependencies {
 
   protected def getFolderOutFile(a: Archive, inPath: FilePath) = a / outDim / inPath / (folderName + "." + outExt)
 
-  protected def getOutPath(a: Archive, outFile: File) = a.root.up.relativize(outFile).filepath.down
+  protected def getOutPath(a: Archive, outFile: File) = outFile.filepath
 
   protected def getErrorFile(a: Archive, inPath: FilePath) = (a / errors / key / inPath).addExtension("err")
 
