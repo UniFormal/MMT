@@ -186,6 +186,11 @@ class ExtensionManager(controller: Controller) extends Logger {
       case e: Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)
     }
     addExtension(ext, args)
+    ext match {
+      case bt: BuildTarget =>
+        targetToClass += (bt.key -> cls)
+      case _ =>
+    }
   }
 
   /** make sure that an extension is added by key */
@@ -282,7 +287,7 @@ class ExtensionManager(controller: Controller) extends Logger {
   }
 
   /** association between targets/keys and extension class names */
-  val targetToClass: Map[String, String] = Map(
+  var targetToClass: Map[String, String] = Map(
     "sms" -> "SmsGenerator",
     "latexml" -> "LaTeXML",
     "pdflatex" -> "PdfLatex",
