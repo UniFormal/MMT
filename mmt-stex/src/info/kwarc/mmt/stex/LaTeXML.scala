@@ -33,10 +33,14 @@ class AllTeX extends LaTeXBuildTarget {
   }
 
   override def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit =
-    buildDir(a, in, a / inDim / in, force = false)
+    a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
+      case _ =>
+    }, { case (c@Current(inDir, inPath), _) =>
+         buildDir(a, inPath, inDir, force = false)
+    })
 
   override def buildDepsFirst(a: Archive, in: FilePath = EmptyPath): Unit =
-    buildDir(a, in, a / inDim / in, force = false)
+    update(a, Update(ifHadErrors = false), in)
 
   override def buildDir(bt: BuildTask, builtChildren: List[BuildTask]): Unit =
     buildDir(bt.archive, bt.inPath, bt.inFile, force = true)
