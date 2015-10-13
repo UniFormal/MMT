@@ -1,6 +1,6 @@
-usage: rbuild TARGET [MODIFIER] [OPTION ...] FILE_OR_FOLDER ...
+usage: rbuild TARGET [MODIFIER] [OPTION ...] [FILE_OR_FOLDER ...]
 
-generate Mathhub TARGET content from given files or folders.
+generate Mathhub TARGET content from the given FILE_OR_FOLDER arguments.
 
 TARGET is one of:
  sms          create .sms files from .tex files
@@ -38,3 +38,5 @@ the following OPTION is supported for the TARGET allpdf:
  --allpdf=<exe>      use executable <exe> (default: xelatex in PATH)
 
 The TARGETs sms and alltex do not take further OPTIONs.
+
+If FILE_OR_FOLDER arguments are omitted the current directory (i.e. ".") is used.
