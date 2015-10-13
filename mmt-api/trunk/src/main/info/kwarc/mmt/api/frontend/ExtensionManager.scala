@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.BuildTarget
+import info.kwarc.mmt.api.archives.{BuildTarget, MetaBuildTarget}
 import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.libraries._
@@ -188,10 +188,33 @@ class ExtensionManager(controller: Controller) extends Logger {
     addExtension(ext, args)
   }
 
+  /** make sure that an extension is added by key */
+  def ensureExtension(key: String, args: List[String]): Unit = {
+    val ts = key.split("_").toList
+    ts.foreach(subKey =>
+      targetToClass.get(subKey) match {
+        case None => logError("unknown target " + subKey + " for extension, ignored")
+        case Some(cls) =>
+          report.groups += subKey + "-result"
+          ensureExtensionByClassName(cls, args)
+      })
+    if (ts.length > 1) {
+      ensureExtensionByClassName(classOf[MetaBuildTarget].getName, key :: ts.flatMap(targetToClass.get))
+      report.groups += key
+    }
+  }
+
   /** lookup or add extension */
-  def ensureExtension(cls: String, args: List[String]): Unit =
-    try
-      if (get(Class.forName(cls).asInstanceOf[Class[Extension]]).isEmpty) addExtension(cls, args)
+  def ensureExtensionByClassName(cls: String, args: List[String]): Unit =
+    try {
+      val clsJ = Class.forName(cls)
+      val ls = get(clsJ.asInstanceOf[Class[Extension]])
+      val rs = ls.collect {
+        case e: MetaBuildTarget => args == e.startArgs
+        case _ => true
+      }
+      if (rs.isEmpty) addExtension(cls, args)
+    }
     catch {
       case e: ClassCastException => log(RegistrationError("error not an extension class " + cls))
     }

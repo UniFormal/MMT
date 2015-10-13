@@ -322,6 +322,7 @@ class MetaBuildTarget extends BuildTarget {
   private var _key = ""
   private var _inExt = ""
   private var targets: List[BuildTarget] = Nil
+  var startArgs: List[String] = Nil
 
   def key: String = _key
 
@@ -332,6 +333,7 @@ class MetaBuildTarget extends BuildTarget {
    * remaining arguments: the build targets to chain
    */
   override def start(args: List[String]): Unit = {
+    startArgs = args
     _key = args.headOption.getOrElse(
       throw LocalError("at least one argument required")
     )

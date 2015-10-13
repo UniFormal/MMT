@@ -108,8 +108,8 @@ class Controller extends ROController with Logger {
   val relman = new RelationalManager(this)
   /** the profile configuration */
   val config = new MMTConfig(this, true)
-  
-  
+
+
   /** all other mutable fields */
   protected val state = new ControllerState
 
@@ -486,20 +486,9 @@ class Controller extends ROController with Logger {
       }.headOption)
 
   private def fileBuildAction(key: String, mod: BuildTargetModifier, args: List[String], files: List[File]): Unit = {
-    val ts = key.split("_").toList
     report.groups -= "user"
     report.addHandler(ConsoleHandler)
-    ts.foreach(subKey =>
-      extman.targetToClass.get(subKey) match {
-        case None => logError("unknown target " + subKey + " for extension, ignored")
-        case Some(cls) =>
-          report.groups += subKey + "-result"
-          extman.addExtension(cls, args)
-      })
-    if (ts.length > 1) {
-      extman.addExtension(new MetaBuildTarget, key :: ts.flatMap(extman.targetToClass.get))
-      report.groups += key
-    }
+    extman.ensureExtension(key, args)
     getBuildTarget(key) foreach (buildTarget =>
       files.flatMap(f => backend.findArchiveFiles(f.getCanonicalFile)) foreach { case (root, in) =>
         getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
