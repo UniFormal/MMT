@@ -390,18 +390,23 @@ class PdfLatex extends LaTeXBuildTarget {
       val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
         in.stripExtension.getName, "-interaction", "scrollmode"),
         in.up, env(bt): _*)
-      timeout(pb, procLogger(output))
+      val exit = timeout(pb, procLogger(output))
       val pdflogFile = in.setExtension("pdflog")
       if (!pipeOutput) File.write(pdflogFile, output.toString)
       if (pdfFile.length == 0) {
         bt.errorCont(LatexError("no pdf created", output.toString))
         pdfFile.delete()
         logFailure(bt.outPath)
+      } else if (exit != 0) {
+        bt.errorCont(LatexError("pdflatex exited with " + exit, output.toString))
+        bt.outFile.delete()
+        logFailure(bt.outPath)
+      } else {
+        if (pdfFile.exists && pdfFile != bt.outFile)
+          Files.copy(pdfFile.toPath, bt.outFile.toPath)
+        if (bt.outFile.exists)
+          logSuccess(bt.outPath)
       }
-      if (pdfFile.exists && pdfFile != bt.outFile)
-        Files.copy(pdfFile.toPath, bt.outFile.toPath)
-      if (bt.outFile.exists)
-        logSuccess(bt.outPath)
     } catch {
       case e: Exception =>
         bt.outFile.delete()
