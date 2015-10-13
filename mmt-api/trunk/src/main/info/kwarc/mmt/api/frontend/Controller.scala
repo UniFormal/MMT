@@ -471,7 +471,7 @@ class Controller extends ROController with Logger {
   }
 
   /** get build target */
-  private def getBuildTarget(key: String): Option[BuildTarget] =
+  def getBuildTarget(key: String): Option[BuildTarget] =
     extman.get(classOf[BuildTarget], key).map(Some(_)).getOrElse {
       logError("unknown target " + key + " for building, ignored")
       None
@@ -490,7 +490,8 @@ class Controller extends ROController with Logger {
     report.addHandler(ConsoleHandler)
     extman.ensureExtension(key, args)
     val realFiles = if (files.isEmpty)
-      List(File(System.getProperty("user.dir"))) else files
+      List(File(System.getProperty("user.dir")))
+    else files
     getBuildTarget(key) foreach (buildTarget =>
       realFiles.flatMap(f => backend.findArchiveFiles(f.getCanonicalFile)) foreach { case (root, in) =>
         getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
