@@ -489,8 +489,10 @@ class Controller extends ROController with Logger {
     report.groups -= "user"
     report.addHandler(ConsoleHandler)
     extman.ensureExtension(key, args)
+    val realFiles = if (files.isEmpty)
+      List(File(System.getProperty("user.dir"))) else files
     getBuildTarget(key) foreach (buildTarget =>
-      files.flatMap(f => backend.findArchiveFiles(f.getCanonicalFile)) foreach { case (root, in) =>
+      realFiles.flatMap(f => backend.findArchiveFiles(f.getCanonicalFile)) foreach { case (root, in) =>
         getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
       })
   }

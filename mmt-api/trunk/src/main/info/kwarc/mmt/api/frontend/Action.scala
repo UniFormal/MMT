@@ -99,7 +99,7 @@ object Action extends RegexParsers {
     case Update(hadErrs) => if (hadErrs) "onError" else "onChange"
   })
 
-  private def filebuild = "rbuild" ~> str ~ (buildModifier ?) ~ (pluginArg *) ~ (str +) ^^ {
+  private def filebuild = "rbuild" ~> str ~ (buildModifier ?) ~ (pluginArg *) ~ (str *) ^^ {
     case km ~ mod ~ args ~ ins =>
       FileBuild(km, mod.getOrElse(Update(ifHadErrors = false)), args, ins.map(File(_)))
   }
