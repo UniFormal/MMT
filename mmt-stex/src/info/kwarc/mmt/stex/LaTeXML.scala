@@ -45,7 +45,7 @@ class AllTeX extends LaTeXBuildTarget {
     val dirFiles = getDirFiles(a, dir)
     if (dirFiles.nonEmpty) {
       createLocalPaths(a, dir)
-      val ts = getDeps(controller, getFilesRec(a, in)).map(p => p._1 / inDim / p._2)
+      val ts = getDeps(controller, key, getFilesRec(a, in)).map(d => d.archive / inDim / d.filePath)
       val files = ts.filter(dirFiles.map(f => dir / f).contains(_)).map(_.getName)
       assert(files.length == dirFiles.length)
       val langs = files.flatMap(f => getLang(File(f))).toSet

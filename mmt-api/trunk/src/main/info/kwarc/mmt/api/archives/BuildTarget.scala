@@ -29,7 +29,7 @@ case object BuildDepsFirst extends BuildTargetModifier {
 /** A BuildTarget provides build/update/clean methods that generate one or more dimensions in an [[Archive]]
   * from an input dimension.
   */
-abstract class BuildTarget extends FormatBasedExtension {
+abstract class BuildTarget extends FormatBasedExtension with Dependencies {
   /** a string identifying this build target, used for parsing commands, logging, error messages
     */
   def key: String
@@ -116,7 +116,7 @@ class BuildTask(val archive: Archive, val inFile: File, val isDir: Boolean, val 
  *
  * It implements BuildTarget in terms of a single abstract method called to build a path in the archive.
  */
-abstract class TraversingBuildTarget extends BuildTarget with Dependencies {
+abstract class TraversingBuildTarget extends BuildTarget {
   /** the input dimension/archive folder */
   def inDim: ArchiveDimension
 
@@ -141,7 +141,9 @@ abstract class TraversingBuildTarget extends BuildTarget with Dependencies {
 
   protected def getOutPath(a: Archive, outFile: File) = outFile.filepath
 
-  protected def getErrorFile(a: Archive, inPath: FilePath) = (a / errors / key / inPath).addExtension("err")
+  protected def getErrorFile(a: Archive, inPath: FilePath): File = (a / errors / key / inPath).addExtension("err")
+
+  protected def getErrorFile(d: Dependency): File = (d.archive / errors / d.target / d.filePath).addExtension("err")
 
   protected def getFolderErrorFile(a: Archive, inPath: FilePath) = a / errors / key / inPath / (folderName + ".err")
 
@@ -279,7 +281,7 @@ abstract class TraversingBuildTarget extends BuildTarget with Dependencies {
         val errs = hadErrors(errorFile)
         val res = modified(inFile, errorFile) || errs && up.ifHadErrors ||
           getSingleDeps(controller, a, inPath).exists{ p =>
-           val errFile = getErrorFile(p._1, p._2)
+           val errFile = getErrorFile(p)
            modified(errFile, errorFile)
            }
         if (res) buildAux(inPath)(a, None)
@@ -299,19 +301,23 @@ abstract class TraversingBuildTarget extends BuildTarget with Dependencies {
     })
   }
 
-  protected def getFilesRec(a: Archive, in: FilePath): Set[(Archive, FilePath)] = {
+  protected def getFilesRec(a: Archive, in: FilePath): Set[Dependency] = {
     val inFile = a / inDim / in
     if (inFile.isDirectory && includeDir(inFile.getName))
       inFile.list.flatMap(n => getFilesRec(a, FilePath(in.segments ::: List(n)))).toSet
     else if (inFile.isFile && includeFile(inFile.getName))
-      Set((a, in))
+      Set(Dependency(a, in, key))
     else Set.empty
   }
 
   override def buildDepsFirst(a: Archive, in: FilePath = EmptyPath): Unit = {
     // includeFile will be checked by build again (as was already checked during dependency analysis)
-    val ts = getDeps(controller, getFilesRec(a, in))
-    ts.foreach(p => update(p._1, Update(ifHadErrors = false), p._2))
+    val ts = getDeps(controller, key, getFilesRec(a, in))
+    ts.foreach(d => if (d.target == key) update(d.archive, Update(ifHadErrors = false), d.filePath)
+    else controller.getBuildTarget(d.target) match {
+      case Some(bt) => bt.update(d.archive, Update(ifHadErrors = false), d.filePath)
+      case None => log("build target not found: " + d.target)
+    })
   }
 }
 

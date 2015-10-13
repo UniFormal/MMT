@@ -56,7 +56,7 @@ abstract class Interpreter extends Importer {
     }
 
   /** method from trait Dependencies */
-  override def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[(Archive, FilePath)] = {
+  override def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[Dependency] = {
     val rs = controller.depstore
     val d = getDPath(a, fp)
     log(d.toString)
@@ -88,7 +88,7 @@ abstract class Interpreter extends Importer {
     }
     result -= ((a, fp))
     log(result.toString())
-    result
+    result.map(p => Dependency(p._1, p._2, key))
   }
 }
 

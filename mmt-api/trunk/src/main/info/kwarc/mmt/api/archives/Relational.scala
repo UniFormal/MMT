@@ -62,19 +62,29 @@ class Relational extends TraversingBuildTarget {
   override def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = build(a, in)
 }
 
+/** dependency on relative file path (without inDim) in archive processed by target */
+case class Dependency(archive: Archive, filePath: FilePath, target: String)
+
 trait Dependencies {
   // override this method
-  def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[(Archive, FilePath)] = {
+  def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[Dependency] =
     Set.empty
+
+  def getSingleDeps(controller: Controller, key: String, dep: Dependency): Set[Dependency] =
+  if (dep.target == key)
+    getSingleDeps(controller, dep.archive, dep.filePath)
+  else controller.getBuildTarget(dep.target) match {
+    case Some(bt) => bt.getSingleDeps(controller, dep.archive, dep.filePath)
+    case None => Set.empty
   }
 
-  def getDeps(controller: Controller, args: Set[(Archive, FilePath)]): List[(Archive, FilePath)] = {
-    var visited: Set[(Archive, FilePath)] = Set.empty
+  def getDeps(controller: Controller, key: String, args: Set[Dependency]): List[Dependency] = {
+    var visited: Set[Dependency] = Set.empty
     var unknown = args
-    var deps: Map[(Archive, FilePath), Set[(Archive, FilePath)]] = Map.empty
+    var deps: Map[Dependency, Set[Dependency]] = Map.empty
     while (unknown.nonEmpty) {
       val p = unknown.head
-      val ds = getSingleDeps(controller, p._1, p._2)
+      val ds = getSingleDeps(controller, key, p)
       deps += ((p, ds))
       visited += p
       unknown -= p

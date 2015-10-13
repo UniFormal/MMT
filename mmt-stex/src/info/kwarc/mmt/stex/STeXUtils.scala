@@ -257,7 +257,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
     safe
   }
 
-  override def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[(Archive, FilePath)] = {
+  override def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[Dependency] = {
     val in = a / inDim / fp
     if (in.exists()) {
       val optLang = getLang(in)
@@ -267,12 +267,12 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
         langFiles(optLang, getDirFiles(a, in.up)).filter(_ != name).map(f => (aStr, fp.dirPath / f))
       else Nil
       val fs = readingSource(a, in, init)
-      var res: Set[(Archive, FilePath)] = Set.empty
+      var res: Set[Dependency] = Set.empty
       fs foreach { case (ar, p) =>
         controller.getOrAddArchive(a.baseDir / ar) match {
           case None =>
           case Some(arch) =>
-            res += ((arch, p))
+            res += Dependency(arch, p, key)
         }
       }
       res
