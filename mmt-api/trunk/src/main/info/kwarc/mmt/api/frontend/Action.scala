@@ -82,29 +82,30 @@ object Action extends RegexParsers {
   private def pluginArg = "--\\S+" r
 
   private def buildModifier: Parser[BuildTargetModifier] =
-    ("--force" | "--onChange" | "--onError(=\\d)?".r | "--clean" | "--depsFirst(=\\d)?".r) ^^ {
+    ("--force" | "--onChange" | "--onError\\??(=\\d)?".r | "--clean" | "--depsFirst\\??(=\\d)?".r) ^^ {
       case "--force" => Build
       case "--clean" => Clean
       case "--onError" => Update(Level.Error)
       case "--depsFirst" => BuildDepsFirst(Update(Level.Error))
       case "--onChange" => Update(Level.Ignore)
       case s =>
-        val up = Update(s.last.asDigit - 1) // 0 => force
-        if (s.startsWith("--depsFirst=")) BuildDepsFirst(up)
+        val up = Update(s.last.asDigit - 1, s.contains('?')) // 0 => force
+        if (s.startsWith("--depsFirst")) BuildDepsFirst(up)
         else up
     }
 
   private def upToString(up: Update): String = {
     val lvl = up.errorLevel
-    if (lvl == Level.Error) "" else "=" + (lvl + 1) // undo "-1" above
+    (if (up.dryRun) "?" else "") +
+      (if (lvl == Level.Error) "" else "=" + (lvl + 1)) // undo "-1" above
   }
 
   def modifierToString(m: BuildTargetModifier): String = "--" + (m match {
     case Build => "force"
     case Clean => "clean"
     case BuildDepsFirst(up) => "depsFirst" + upToString(up)
-    case up@Update(lvl) =>
-      if (lvl < Level.Ignore) "onError" + upToString(up)
+    case up: Update =>
+      if (up.errorLevel < Level.Ignore) "onError" + upToString(up)
       else "onChange"
   })
 

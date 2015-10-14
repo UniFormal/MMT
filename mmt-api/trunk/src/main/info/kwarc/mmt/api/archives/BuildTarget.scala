@@ -13,7 +13,7 @@ case object Clean extends BuildTargetModifier {
   def toString(dim: String): String = "-" + dim
 }
 
-case class Update(errorLevel: Level) extends BuildTargetModifier {
+case class Update(errorLevel: Level, dryRun: Boolean = false) extends BuildTargetModifier {
   def key: String = if (errorLevel <= Level.Force) ""
   else
   if (errorLevel < Level.Ignore) "!" else "*"
@@ -289,8 +289,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
            val errFile = getErrorFile(p)
            modified(errFile, errorFile)
            }
-        if (res) buildAux(inPath)(a, None)
-        else logResult("up-to-date " + getOutPath(a, getOutFile(a, inPath)))
+        val outPath = getOutPath(a, getOutFile(a, inPath))
+        if (res) if (up.dryRun) logResult("out-dated " + outPath) else buildAux(inPath)(a, None)
+        else logResult("up-to-date " + outPath)
         res
     }, { case (c@Current(inDir, inPath), childChanged) =>
       if (childChanged.contains(true)) {
