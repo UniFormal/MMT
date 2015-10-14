@@ -25,7 +25,7 @@ case object Build extends BuildTargetModifier {
   def toString(dim: String): String = dim
 }
 
-case class BuildDepsFirst(errorLevel: Level) extends BuildTargetModifier {
+case class BuildDepsFirst(up: Update) extends BuildTargetModifier {
   def toString(dim: String): String = dim + "&"
 }
 
@@ -58,7 +58,7 @@ abstract class BuildTarget extends FormatBasedExtension with Dependencies {
   def clean(a: Archive, in: FilePath): Unit
 
   /** build this target in a given archive but build dependencies first */
-  def buildDepsFirst(arch: Archive, errorLevel: Level, in: FilePath): Unit = {}
+  def buildDepsFirst(arch: Archive, up: Update, in: FilePath): Unit = {}
 
   /** the main function to run the build target
     *
@@ -314,12 +314,12 @@ abstract class TraversingBuildTarget extends BuildTarget {
     else Set.empty
   }
 
-  override def buildDepsFirst(a: Archive, errorLevel: Level, in: FilePath = EmptyPath): Unit = {
+  override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = {
     // includeFile will be checked by build again (as was already checked during dependency analysis)
     val ts = getDeps(controller, key, getFilesRec(a, in))
-    ts.foreach(d => if (d.target == key) update(d.archive, Update(errorLevel), d.filePath)
+    ts.foreach(d => if (d.target == key) update(d.archive, up, d.filePath)
     else controller.getBuildTarget(d.target) match {
-      case Some(bt) => bt.update(d.archive, Update(errorLevel), d.filePath)
+      case Some(bt) => bt.update(d.archive, up, d.filePath)
       case None => log("build target not found: " + d.target)
     })
   }
@@ -377,8 +377,8 @@ class MetaBuildTarget extends BuildTarget {
     targets.foreach { t => t.build(a, path(a, t, in)) }
   }
 
-  override def buildDepsFirst(a: Archive, errorLevel: Level, in: FilePath): Unit = {
-    targets.foreach { t => t.buildDepsFirst(a, errorLevel, path(a, t, in)) }
+  override def buildDepsFirst(a: Archive, up: Update, in: FilePath): Unit = {
+    targets.foreach { t => t.buildDepsFirst(a, up, path(a, t, in)) }
   }
 
   def update(a: Archive, up: Update, in: FilePath): Unit = {
