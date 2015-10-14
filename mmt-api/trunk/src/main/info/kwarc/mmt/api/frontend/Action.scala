@@ -69,9 +69,9 @@ object Action extends RegexParsers {
       (km.tail, Clean)
     else if ("*!&".contains(km.last))
       (km.init, km.last match {
-        case '!' => Update(ifHadErrors = true)
+        case '!' => Update(Level.Error)
         case '&' => BuildDepsFirst
-        case _ => Update(ifHadErrors = false)
+        case _ => Update(Level.Ignore)
       })
     else (km, Build)
   }
@@ -87,21 +87,21 @@ object Action extends RegexParsers {
     ("--force" | "--onChange" | "--onError" | "--clean" | "--depsFirst") ^^ {
       case "--force" => Build
       case "--clean" => Clean
-      case "--onError" => Update(ifHadErrors = true)
+      case "--onError" => Update(Level.Error)
       case "--depsFirst" => BuildDepsFirst
-      case _ => Update(ifHadErrors = false)
+      case _ => Update(Level.Ignore)
     }
 
   def modifierToString(m: BuildTargetModifier): String = "--" + (m match {
     case Build => "force"
     case Clean => "clean"
     case BuildDepsFirst => "depsFirst"
-    case Update(hadErrs) => if (hadErrs) "onError" else "onChange"
+    case Update(lvl) => if (lvl < Level.Ignore) "onError" else "onChange"
   })
 
   private def filebuild = "rbuild" ~> str ~ (buildModifier ?) ~ (pluginArg *) ~ (str *) ^^ {
     case km ~ mod ~ args ~ ins =>
-      FileBuild(km, mod.getOrElse(Update(ifHadErrors = false)), args, ins.map(File(_)))
+      FileBuild(km, mod.getOrElse(Update(Level.Ignore)), args, ins.map(File(_)))
   }
 
   private def archdim = "archive" ~> archiveList ~ dimension ~ optFilePath ^^ {

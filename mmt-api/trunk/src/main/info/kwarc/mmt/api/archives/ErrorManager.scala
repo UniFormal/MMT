@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.archives
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import info.kwarc.mmt.api.Level.Level
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.parser.SourceRef
@@ -12,7 +13,7 @@ import info.kwarc.mmt.api.web._
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.xml.{Elem, Node}
+import scala.xml.Node
 
 object Table {
   val columns: List[String] = List(
@@ -29,7 +30,7 @@ object Table {
     "shortMsg")
 }
 
-case class ErrorContent(tp: String, level: Level.Level, sourceRef: Option[parser.SourceRef], shortMsg: String)
+case class ErrorContent(tp: String, level: Level, sourceRef: Option[parser.SourceRef], shortMsg: String)
 
 /** an [[Error]] as reconstructed from an error file */
 case class BuildError(archive: Archive, target: String, path: FilePath, data: ErrorContent) {
@@ -51,7 +52,8 @@ case class BuildError(archive: Archive, target: String, path: FilePath, data: Er
 }
 
 object ErrorReader {
-  def getBuildErrors(f: File, log: Option[String => Unit]): List[ErrorContent] = {
+  /** only get errors equal or above errorLevel */
+  def getBuildErrors(f: File, errorLevel: Level, log: Option[String => Unit]): List[ErrorContent] = {
     val emptyErr = f.length == 0
     val node = if (emptyErr) <errors></errors> else xml.readFile(f)
     var bes: List[ErrorContent] = Nil
@@ -64,7 +66,7 @@ object ErrorReader {
         getAttrs(List("target", "sref", "type", "shortMsg", "level"), x)
       def infoMessage(msg: String) =
         log.map(f => f(msg + "\nFile: " + f + "\nNode: " + shortMsg))
-      var lvl: Level.Level = Level.Error
+      var lvl: Level = Level.Error
       if (level.isEmpty) infoMessage("empty error level")
       else
         try {
@@ -79,8 +81,7 @@ object ErrorReader {
       catch {
         case e: ParseError => infoMessage(e.getMessage)
       }
-      if (lvl > 1)
-      // only real errors
+      if (lvl >= errorLevel)
         bes ::= ErrorContent(errType, lvl, srcR, shortMsg)
     }
     if (node.child.isEmpty && emptyErr)
@@ -129,7 +130,7 @@ class ErrorManager extends Extension with Logger {
    */
   def loadErrors(a: Archive, target: String, fpath: FilePath): Unit = {
     val f = a / errors / target / fpath
-    val bes = ErrorReader.getBuildErrors(f, Some((s: String) => log(s))).
+    val bes = ErrorReader.getBuildErrors(f, Level.Error, Some((s: String) => log(s))).
       map(BuildError(a, target, fpath.toFile.stripExtension.filepath, _))
     val em = apply(a.id)
     em.put((target, fpath.segments), bes)

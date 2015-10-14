@@ -40,7 +40,7 @@ class AllTeX extends LaTeXBuildTarget {
     })
 
   override def buildDepsFirst(a: Archive, in: FilePath = EmptyPath): Unit =
-    update(a, Update(ifHadErrors = false), in)
+    update(a, Update(Level.Ignore), in)
 
   override def buildDir(bt: BuildTask, builtChildren: List[BuildTask]): Unit =
     buildDir(bt.archive, bt.inPath, bt.inFile, force = true)

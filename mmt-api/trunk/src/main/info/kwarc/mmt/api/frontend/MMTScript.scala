@@ -17,57 +17,57 @@ abstract class MMTScript extends Extension {
   def logModule(s : String) = controller.handle(LoggingOn(s))
   def addArchive(location : String) = controller.handle(AddArchive(File(location)))
   def loadExtension(uri : String, args : List[String] = Nil) = controller.handle(AddExtension(uri, args))
-  
+
   def config = controller.config
   //Utility
-  
+
     def runImporters(aid : String, btm : BuildTargetModifier = Build) = {
       config.getArchive(aid).formats.flatMap(config.getImporters).distinct foreach {imp =>
         build(List(aid), imp, btm)
       }
     }
-    
+
     def runExporters(aid : String, btm : BuildTargetModifier = Build) = {
       config.getArchive(aid).formats.flatMap(config.getImporters).distinct foreach {imp =>
         build(List(aid), imp, btm)
       }
     }
-    
+
     def cleanBuild() {
       config.archives.foreach(a => runImporters(a.id, Clean))
       config.archives.foreach(a => runImporters(a.id, Build))
       config.archives.foreach(a => runExporters(a.id, Clean))
       config.archives.foreach(a => runExporters(a.id, Build))
     }
-    
+
     def updateBuild(ifHadErrors : Boolean) {
-      config.archives.foreach(a => runImporters(a.id, Update(ifHadErrors)))
-      config.archives.foreach(a => runExporters(a.id,  Update(ifHadErrors)))
+      config.archives.foreach(a => runImporters(a.id, Update(Level.Error)))
+      config.archives.foreach(a => runExporters(a.id,  Update(Level.Error)))
     }
-    
+
     def plainBuild(btm : BuildTargetModifier) = {
       config.archives.foreach(a => runImporters(a.id, btm))
       config.archives.foreach(a => runExporters(a.id, btm))
     }
-    
+
     def compUpdateBuild(changedCompsIds : List[String], btm : BuildTargetModifier) = {
-       config.archives foreach {a => 
-         config.getArchive(a.id).formats foreach {f => 
+       config.archives foreach {a =>
+         config.getArchive(a.id).formats foreach {f =>
            val imps = config.getImporters(f)
            val exps = config.getExporters(f)
            var foundChanged = false
-           imps foreach { imp => 
+           imps foreach { imp =>
              if (changedCompsIds.contains(imp)) foundChanged = true
              if (foundChanged) build(List(a.id), imp, Build)
            }
-           
+
            exps foreach { exp =>
              if (changedCompsIds.contains(exp) || foundChanged) build(List(a.id), exp, Build)
            }
          }
        }
     }
-    
+
     def parse(f : String, autoload : Boolean = true) = {
       val file = File(f)
       val s = File.read(file)
@@ -80,39 +80,39 @@ abstract class MMTScript extends Extension {
           section = line.substring(1)
         } else section match {
           case "importers" => line.split(" ").toList match {
-            case uri :: key :: args => 
+            case uri :: key :: args =>
               config.addImporter(ImporterConf(uri, key, args))
             case _ => println("Invalid importer line: `" + line + "`")
           }
           case "exporters" => line.split(" ").toList match {
-            case uri :: key :: args => 
+            case uri :: key :: args =>
               config.addExporter(ExporterConf(uri, key, args))
             case _ => println("Invalid exporter line: `" + line + "`")
           }
           case "archives" => line.split(" ").toList match {
-            case id :: fmtsS :: Nil => 
+            case id :: fmtsS :: Nil =>
               val fmts = fmtsS.split(",").toList
               config.addArchive(ArchiveConf(id, fmts))
             case _ => println("Invalid archives line: `" + line + "`")
           }
           case "formats" => line.split(" ").toList match {
-            case id :: impsS :: expsS :: Nil => 
+            case id :: impsS :: expsS :: Nil =>
               val imps = impsS.split(",").toList
               val exps = expsS.split(",").toList
               config.addFormat(FormatConf(id, imps, exps))
             case _ => println("Invalid formats line: `" + line + "`")
           }
           case "base" => config.setBase(line)
-          case s => println("ignoring invalid section: `" + s + "`") 
+          case s => println("ignoring invalid section: `" + s + "`")
         }
       }
     }
-  
-  
+
+
   def build(ids : List[String], target : String, modifier: archives.BuildTargetModifier, in : FilePath = EmptyPath) : Unit = {
     controller.handle(ArchiveBuild(ids, target, modifier, in))
   }
-  
+
    def main()
 }
 
@@ -131,7 +131,7 @@ class MMTScriptEngine(controller: Controller) {
         case s: MMTScript =>
            s.init(controller)
            s.main()
-        case _ => 
+        case _ =>
      }
    }
 }

@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.archives
 
+import info.kwarc.mmt.api.Level.Level
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.utils._
@@ -12,8 +13,8 @@ case object Clean extends BuildTargetModifier {
   def toString(dim: String): String = "-" + dim
 }
 
-case class Update(ifHadErrors: Boolean) extends BuildTargetModifier {
-  def key: String = if (ifHadErrors) "!" else "*"
+case class Update(errorLevel: Level) extends BuildTargetModifier {
+  def key: String = if (errorLevel <= Level.Fatal) "!" else "*"
 
   def toString(dim: String): String = dim + key
 }
@@ -266,8 +267,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   /** @return status of input file, obtained by comparing to error file */
-  private def hadErrors(errorFile: File): Boolean =
-    errorFile.exists && ErrorReader.getBuildErrors(errorFile, None).nonEmpty
+  private def hadErrors(errorFile: File, errorLevel: Level): Boolean =
+    if (errorLevel > Level.Fatal) false // nothing is more severe than a fatal error
+    else
+      errorFile.exists && ErrorReader.getBuildErrors(errorFile, errorLevel, None).nonEmpty
 
   /** recursively reruns build if the input file has changed
     *
@@ -278,8 +281,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
       case c@Current(inFile, inPath) =>
         val errorFile = getErrorFile(a, inPath)
         val inFile = a / inDim / inPath
-        val errs = hadErrors(errorFile)
-        val res = modified(inFile, errorFile) || errs && up.ifHadErrors ||
+        val errs = hadErrors(errorFile, up.errorLevel)
+        val res = modified(inFile, errorFile) || errs ||
           getSingleDeps(controller, a, inPath).exists{ p =>
            val errFile = getErrorFile(p)
            modified(errFile, errorFile)
@@ -313,9 +316,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
   override def buildDepsFirst(a: Archive, in: FilePath = EmptyPath): Unit = {
     // includeFile will be checked by build again (as was already checked during dependency analysis)
     val ts = getDeps(controller, key, getFilesRec(a, in))
-    ts.foreach(d => if (d.target == key) update(d.archive, Update(ifHadErrors = false), d.filePath)
+    ts.foreach(d => if (d.target == key) update(d.archive, Update(Level.Ignore), d.filePath)
     else controller.getBuildTarget(d.target) match {
-      case Some(bt) => bt.update(d.archive, Update(ifHadErrors = false), d.filePath)
+      case Some(bt) => bt.update(d.archive, Update(Level.Ignore), d.filePath)
       case None => log("build target not found: " + d.target)
     })
   }

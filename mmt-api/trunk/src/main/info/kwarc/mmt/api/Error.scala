@@ -10,10 +10,10 @@ import scala.xml.PrettyPrinter
 abstract class Error(val shortMsg : String) extends java.lang.Exception(shortMsg) {
    /** additional message text, override as needed */
    def extraMessage = ""
-   /** the severity of the error, override as needed */ 
+   /** the severity of the error, override as needed */
    def level = Level.Error
    private var causedBy: Option[Throwable] = None
-   /** get the error due to which this error was thrown */ 
+   /** get the error due to which this error was thrown */
    def setCausedBy(e: Throwable): this.type = {
       causedBy = Some(e)
       this
@@ -68,13 +68,17 @@ object Stacktrace {
    }
 }
 
-/** error levels, see [[Error]] */
+/** error levels, see [[Error]]
+  *
+  * even fatal errors can be ignored (by comparison)
+  */
 object Level {
   type Level = Int
   val Info = 0
   val Warning = 1
   val Error = 2
   val Fatal = 3
+  val Ignore = 4
 
   def parse(s: String) = s match {
     case "0" => Info
@@ -107,7 +111,7 @@ abstract class Invalid(s: String) extends Error(s)
 /** errors that occur when structural elements are invalid */
 case class InvalidElement(elem: StructuralElement, s : String, causedBy: Error = null) extends Invalid("invalid element: " + s + ": " + elem.path.toPath) {
     if (causedBy != null) setCausedBy(causedBy)
-}    
+}
 /** errors that occur when objects are invalid */
 case class InvalidObject(obj: objects.Obj, s: String) extends Invalid("invalid object (" + s + "): " + obj)
 /** errors that occur when judgements do not hold */
@@ -131,7 +135,7 @@ case class PresentationError(s : String) extends Error(s)
 /** errors that occur when registering extensions  */
 case class RegistrationError(s : String) extends Error(s)
 /** errors that are not supposed to occur, e.g., when input violates the precondition of a method */
-case class ImplementationError(s : String) extends Error("implementation error: " + s)      
+case class ImplementationError(s : String) extends Error("implementation error: " + s)
 /** errors that occur during substitution with name of the variable for which the substitution is defined */
 case class SubstitutionUndefined(name: LocalName, m: String) extends Error("Substitution undefined at " + name.toString + "; " + m)
 
@@ -143,7 +147,7 @@ abstract class ExtensionError(prefix: String, s : String) extends Error(prefix +
 
 /**
  * the type of continuation functions for error handling
- * 
+ *
  * An ErrorHandler is passed in most situations in which a component (in particular [[archives.BuildTarget]]s)
  * might produce a non-fatal error.
  */
@@ -154,7 +158,7 @@ abstract class ErrorHandler {
    def hasNewErrors = newErrors
    /**
     * registers an error
-    * 
+    *
     * This should be called exactly once on every error, usually in the order in which they are found.
     */
    def apply(e: Error) {
@@ -188,16 +192,16 @@ class ErrorContainer(report: Option[frontend.Report]) extends ErrorHandler {
    }
    def isEmpty = errors.isEmpty
    def reset {errors = Nil}
-   def getErrors = errors.reverse 
+   def getErrors = errors.reverse
 }
 
 /**
  * writes errors to a file in XML syntax
- * 
+ *
  * @param fileName the file to write the errors into (convention: file ending 'err')
- *  (only created if there are errors) 
+ *  (only created if there are errors)
  * @param report if given, errors are also reported
- *  
+ *
  */
 class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends ErrorHandler {
   private val file = File.Writer(fileName)
