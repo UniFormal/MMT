@@ -13,8 +13,14 @@ the optional MODIFIER is one of:
  --force       definitely (re)create target file(s)
  --onChange    (re)create target file(s) only if sources or dependencies changed
                (this is the default without MODIFIER)
- --onError     additionally retry target file(s) if a previous call failed
- --depsFirst   (re)create target files with default modifier in dependency order
+ --onError[?][=DIGIT]    additionally retry target file(s) if a previous call failed.
+               "?" only does a dry run
+               DIGIT denotes the error level to check for (3 is the default: Error)
+               1 is Info, 2 is Warning, 4 is a fatal error
+               5 corresponds to --onChange
+               0 corresponds to --force
+ --depsFirst[?][=DIGIT]  (re)create target files with default modifier in dependency order.
+               (additional arguments are the same as for --onError)
  --clean       delete target file(s) created previously
 
 the following OPTIONs are supported for the TARGETs latexml and pdflatex:
