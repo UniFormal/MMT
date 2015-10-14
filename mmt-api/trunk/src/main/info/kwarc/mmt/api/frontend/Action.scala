@@ -95,7 +95,9 @@ object Action extends RegexParsers {
     case Build => "force"
     case Clean => "clean"
     case BuildDepsFirst => "depsFirst"
-    case Update(lvl) => if (lvl < Level.Ignore) "onError" else "onChange"
+    case Update(lvl) =>
+      if (lvl < Level.Ignore) "onError" + (if (lvl == Level.Error) "" else "=" + (lvl + 1))
+      else "onChange"
   })
 
   private def filebuild = "rbuild" ~> str ~ (buildModifier ?) ~ (pluginArg *) ~ (str *) ^^ {
