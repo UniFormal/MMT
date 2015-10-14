@@ -106,6 +106,7 @@ object Stacktrace {
   */
 object Level {
   type Level = Int
+  val Force = -1
   val Info = 0
   val Warning = 1
   val Error = 2

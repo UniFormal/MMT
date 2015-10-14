@@ -14,7 +14,9 @@ case object Clean extends BuildTargetModifier {
 }
 
 case class Update(errorLevel: Level) extends BuildTargetModifier {
-  def key: String = if (errorLevel <= Level.Fatal) "!" else "*"
+  def key: String = if (errorLevel <= Level.Force) ""
+  else
+  if (errorLevel < Level.Ignore) "!" else "*"
 
   def toString(dim: String): String = dim + key
 }
@@ -215,7 +217,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
             val le = LocalError("unknown build error: " + e.getMessage).setCausedBy(e)
             errorCont(le)
         } finally {
-          errorWriter.close
+          errorWriter.close()
         }
         controller.notifyListeners.onFileBuilt(a, this, inPath)
         // a.timestamps(this).set(inPath) not needed anymore
@@ -227,7 +229,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
         val outPath = getOutPath(a, outFile)
         val bd = new BuildTask(a, inDir, true, inPath, outFile, outPath, errorCont)
         buildDir(bd, builtChildren)
-        errorCont.close
+        errorCont.close()
         bd
     })
   }
@@ -282,14 +284,13 @@ abstract class TraversingBuildTarget extends BuildTarget {
         val errorFile = getErrorFile(a, inPath)
         val inFile = a / inDim / inPath
         val errs = hadErrors(errorFile, up.errorLevel)
-        val res = modified(inFile, errorFile) || errs ||
+        val res = up.errorLevel <= Level.Force || modified(inFile, errorFile) || errs ||
           getSingleDeps(controller, a, inPath).exists{ p =>
            val errFile = getErrorFile(p)
            modified(errFile, errorFile)
            }
         if (res) buildAux(inPath)(a, None)
-        if (!res) logResult("up-to-date" + (if (errs) "? " else " ") +
-         getOutPath(a, getOutFile(a, inPath)))
+        else logResult("up-to-date " + getOutPath(a, getOutFile(a, inPath)))
         res
     }, { case (c@Current(inDir, inPath), childChanged) =>
       if (childChanged.contains(true)) {
@@ -297,7 +298,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
         val outPath = getOutPath(a, outFile)
         val errorCont = makeHandler(a, inPath, isDir = true)
         val bd = new BuildTask(a, inDir, true, inPath, outFile, outPath, errorCont)
-        errorCont.close
+        errorCont.close()
         buildDir(bd, Nil) // TODO pass proper builtChildren
       }
       false

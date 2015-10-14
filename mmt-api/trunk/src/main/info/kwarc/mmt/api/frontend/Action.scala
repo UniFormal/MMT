@@ -23,9 +23,7 @@ object Action extends RegexParsers {
   private def commented =
     (comment ^^ { c => NoAction }) |
       (action ~ opt(comment) ^^ { case a ~ _ => a }) |
-      empty ^^ { _ => NoAction }
-
-  private def empty = "\\s*" r
+      success(NoAction)
 
   private def comment = "//.*" r
 
@@ -84,12 +82,13 @@ object Action extends RegexParsers {
   private def pluginArg = "--\\S+" r
 
   private def buildModifier: Parser[BuildTargetModifier] =
-    ("--force" | "--onChange" | "--onError" | "--clean" | "--depsFirst") ^^ {
+    ("--force" | "--onChange" | "--onError(=\\d)?".r | "--clean" | "--depsFirst") ^^ {
       case "--force" => Build
       case "--clean" => Clean
       case "--onError" => Update(Level.Error)
       case "--depsFirst" => BuildDepsFirst
-      case _ => Update(Level.Ignore)
+      case "--onChange" => Update(Level.Ignore)
+      case s => Update(s.last.asDigit - 1) // 0 => force
     }
 
   def modifierToString(m: BuildTargetModifier): String = "--" + (m match {
