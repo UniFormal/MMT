@@ -89,7 +89,9 @@ object Action extends RegexParsers {
       case "--depsFirst" => BuildDepsFirst(Update(Level.Error))
       case "--onChange" => Update(Level.Ignore)
       case s =>
-        val up = Update(s.last.asDigit - 1, s.contains('?')) // 0 => force
+        val c = s.last
+        val up = if (c == '?') Update(Level.Error, true)
+        else Update(c.asDigit - 1, s.contains('?')) // 0 => force
         if (s.startsWith("--depsFirst")) BuildDepsFirst(up)
         else up
     }
