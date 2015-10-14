@@ -397,19 +397,14 @@ class PdfLatex extends LaTeXBuildTarget {
       val exit = timeout(pb, procLogger(output))
       val pdflogFile = in.setExtension("pdflog")
       if (!pipeOutput) File.write(pdflogFile, output.toString)
-      if (pdfFile.length == 0) {
-        bt.errorCont(LatexError("no pdf created", output.toString))
-        pdfFile.delete()
-        logFailure(bt.outPath)
-      } else if (exit != 0) {
-        bt.errorCont(LatexError("pdflatex exited with " + exit, output.toString))
+      if (exit != 0) {
+        bt.errorCont(LatexError("exit code " + exit, output.toString))
         bt.outFile.delete()
         logFailure(bt.outPath)
       } else {
-        if (pdfFile.exists && pdfFile != bt.outFile)
+        if (pdfFile.length > 0 && pdfFile != bt.outFile)
           Files.copy(pdfFile.toPath, bt.outFile.toPath)
-        if (bt.outFile.exists)
-          logSuccess(bt.outPath)
+        logSuccess(if (bt.outFile.exists) bt.outPath else EmptyPath)
       }
     } catch {
       case e: Exception =>
