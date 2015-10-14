@@ -4,6 +4,7 @@ import java.net.{BindException, ServerSocket}
 import java.nio.charset.{Charset, MalformedInputException}
 import java.nio.file.Files
 
+import info.kwarc.mmt.api.Level.Level
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
@@ -39,7 +40,7 @@ class AllTeX extends LaTeXBuildTarget {
          buildDir(a, inPath, inDir, force = false)
     })
 
-  override def buildDepsFirst(a: Archive, in: FilePath = EmptyPath): Unit =
+  override def buildDepsFirst(a: Archive, errorLevel: Level, in: FilePath = EmptyPath): Unit =
     update(a, Update(Level.Ignore), in)
 
   override def buildDir(bt: BuildTask, builtChildren: List[BuildTask]): Unit =

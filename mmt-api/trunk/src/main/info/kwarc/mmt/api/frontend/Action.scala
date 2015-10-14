@@ -68,7 +68,7 @@ object Action extends RegexParsers {
     else if ("*!&".contains(km.last))
       (km.init, km.last match {
         case '!' => Update(Level.Error)
-        case '&' => BuildDepsFirst
+        case '&' => BuildDepsFirst(Level.Error)
         case _ => Update(Level.Ignore)
       })
     else (km, Build)
@@ -82,21 +82,26 @@ object Action extends RegexParsers {
   private def pluginArg = "--\\S+" r
 
   private def buildModifier: Parser[BuildTargetModifier] =
-    ("--force" | "--onChange" | "--onError(=\\d)?".r | "--clean" | "--depsFirst") ^^ {
+    ("--force" | "--onChange" | "--onError(=\\d)?".r | "--clean" | "--depsFirst(=\\d)?".r) ^^ {
       case "--force" => Build
       case "--clean" => Clean
       case "--onError" => Update(Level.Error)
-      case "--depsFirst" => BuildDepsFirst
+      case "--depsFirst" => BuildDepsFirst(Level.Error)
       case "--onChange" => Update(Level.Ignore)
-      case s => Update(s.last.asDigit - 1) // 0 => force
+      case s =>
+        val lvl = s.last.asDigit - 1 // 0 => force
+        if (s.startsWith("--depsFirst=")) BuildDepsFirst(lvl)
+        else Update(lvl)
     }
 
   def modifierToString(m: BuildTargetModifier): String = "--" + (m match {
     case Build => "force"
     case Clean => "clean"
-    case BuildDepsFirst => "depsFirst"
+    case BuildDepsFirst(lvl) => "depsFirst" +
+      (if (lvl == Level.Error) "" else "=" + (lvl + 1))
     case Update(lvl) =>
-      if (lvl < Level.Ignore) "onError" + (if (lvl == Level.Error) "" else "=" + (lvl + 1))
+      if (lvl < Level.Ignore) "onError" +
+        (if (lvl == Level.Error) "" else "=" + (lvl + 1)) // undo "-1" above
       else "onChange"
   })
 
