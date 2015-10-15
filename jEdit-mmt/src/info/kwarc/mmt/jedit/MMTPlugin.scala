@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.utils.File._
 import org.gjt.sp.jedit._
 import org.gjt.sp.jedit.msg._
 import org.gjt.sp.jedit.textarea._
-
+import javax.swing.SwingUtilities
 
 /**
  * The main class of the MMTPlugin
@@ -20,7 +20,6 @@ class MMTPlugin extends EBPlugin with Logger {
    val report = controller.report
    val logPrefix = "jedit"
    val errorSource = new DefaultErrorSource("MMT")
-   //val symToolBar = new MMTToolBar(this)
 
    val compileActions = new CompileActions(this)
 
@@ -56,6 +55,7 @@ class MMTPlugin extends EBPlugin with Logger {
       controller.extman.addExtension(mmtListener)
       // make tooltips stay longer
       javax.swing.ToolTipManager.sharedInstance().setDismissDelay(100000)
+
    }
    /** called by jEdit when plugin is unloaded */
    override def stop {
@@ -68,7 +68,7 @@ class MMTPlugin extends EBPlugin with Logger {
        val painter = ta.getPainter
        val sc = new StyleChanger(editPane, "mmt")
        val taExt = new MMTTextAreaExtension(controller, editPane)
-       painter.addExtension(TextAreaPainter.DEFAULT_LAYER, taExt)
+       painter.addExtension(TextAreaPainter.TEXT_LAYER, taExt)
        //painter.addExtension(TextAreaPainter.DEFAULT_LAYER, sc)
        val ma = new MMTMouseAdapter(editPane)
        painter.addMouseListener(ma)
@@ -83,8 +83,9 @@ class MMTPlugin extends EBPlugin with Logger {
                  painter.putClientProperty(taKey, null)
               }*/
    }
+
    override def handleMessage(message: EBMessage) {
-      message match {
+     message match {
         //add MMTTextAreaExtension to every newly-created TextArea
         case epu: EditPaneUpdate =>
            epu.getWhat match {
@@ -100,11 +101,58 @@ class MMTPlugin extends EBPlugin with Logger {
               case ViewUpdate.CREATED =>
                  log("handling " + vup.paramString)
                  view.getEditPanes foreach customizeEditPane
+                 clearMMTToolBar(view)
+                 addMMTToolBar(view)
+              case ViewUpdate.CLOSED =>
+                 log("handling " + vup.paramString)
+                 clearMMTToolBar(view)
               case _ =>
            }
         case _ =>
       }
    }
+
+  //Function that creates a thread and executes it
+  def invokeLater(code: => Unit) {
+     SwingUtilities.invokeLater(
+        new Runnable() {
+          def run() {
+            code
+          }
+        }
+     )
+  }
+
+  //Adds MMT Toolbar
+  def addMMTToolBar(view: View) : Unit = {
+    invokeLater {
+      if (view.getToolBar() != null) {
+        log("Adding a toolbar...")
+        val newbar = new MMTToolBar(this)
+        view.addToolBar(newbar)
+      }
+    }
+  }
+  
+
+  //Clears MMT Toolbar
+  def clearMMTToolBar(view: View) : Unit = {
+    var viewToolBar = view.getToolBar()
+    if (viewToolBar != null) {
+      log("Number of components of this view: ",
+        Some(viewToolBar.getComponentCount().toString()))
+      for(comp <- viewToolBar.getComponents()) {
+        if(comp.isInstanceOf[MMTToolBar]) {
+          log("Removing MMTToolBar")
+          viewToolBar.remove(comp)
+        }
+      }
+    }
+    
+  }
+ 
+
+
 }
 
 object MMTPlugin {

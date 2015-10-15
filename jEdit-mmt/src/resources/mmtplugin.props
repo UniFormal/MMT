@@ -62,10 +62,6 @@ plugin.info.kwarc.mmt.jedit.MMTPlugin.option-pane=info.kwarc.mmt.jedit.MMTPlugin
 options.info.kwarc.mmt.jedit.MMTPlugin.label=MMT
 options.info.kwarc.mmt.jedit.MMTPlugin.code=new info.kwarc.mmt.jedit.MMTOptions();
 
-# toolbar buttons
-# mmt.read.icon=read.png
-mmt.ins-delimiter.icon=delim.png
-
 # sidekick
 sidekick.parser.mmt.label=MMT parser
 mode.mmt.sidekick.parser=mmt

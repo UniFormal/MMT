@@ -7,24 +7,60 @@ import objects._
 import org.gjt.sp.jedit._
 import textarea._
 import syntax._
+import javax.swing.text.Segment
 import java.awt.font.TextAttribute
 
 /** A TextAreaExtension that is added to every EditPane
  *  it can be used for custom painting, e.g., background highlighting, tooltips
- *  Currently it does nothing
+ *  Currently it highlights terminator characters
  */
 class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends TextAreaExtension {
    private def log(msg: String) {controller.report("jedit-painter", msg)}
    private val textArea = editPane.getTextArea
    private val view = editPane.getView
    private val painter = textArea.getPainter
-   //override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
-     //gfx.setColor(java.awt.Color.RED)
-     //val height = painter.getLineHeight()
-     //val startPoint = textArea.offsetToXY(startOffset)
-     //val endPoint = textArea.offsetToXY(endOffset)
-     //gfx.fillRect(0, y, 500, height)
-   //}
+
+   private val segment = new Segment
+
+  override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
+    val height = painter.getFontHeight()
+    val width = painter.getFontMetrics().getWidths()(29)
+
+    val s = segment
+    textArea.getLineText(physicalLine, s)
+    val linelen = s.count
+    val txtsegm = s.array
+
+    var globalOffset = 0
+    var localOffset = 0
+    var startPoint = new java.awt.Point
+
+    for (localOffset <- 0 to linelen-1) {
+      globalOffset = localOffset + s.offset
+      
+      textArea.offsetToXY(physicalLine,
+        localOffset, startPoint)
+
+      txtsegm(globalOffset).toInt match {
+        case 29 =>
+          gfx.setColor(java.awt.Color.RED)
+          gfx.fillRect(startPoint.x, startPoint.y,
+            width, height)
+        case 30 =>
+          gfx.setColor(java.awt.Color.BLUE)
+          gfx.fillRect(startPoint.x, startPoint.y,
+            width, height)
+        case 31 =>
+          gfx.setColor(java.awt.Color.GREEN)
+          gfx.fillRect(startPoint.x, startPoint.y,
+            width, height)
+        case _ =>
+      }
+
+    }
+
+  }   
+
    private def asString(o: Obj) = controller.presenter.asString(o)
    private def onSelection(ta: TextArea, offset: Int): Option[(Int,Int)] = {
       if (textArea.getSelectionCount != 1) return None
