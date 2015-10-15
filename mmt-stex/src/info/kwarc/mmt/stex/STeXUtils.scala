@@ -78,34 +78,14 @@ trait STeXUtils {
   def mkRegGroup(l: List[String]): String = l.mkString("(", "|", ")")
 
   private val importKeys: List[String] = List(
-    "guse", "gimport", "usemhmodule", "importmhmodule", "begin\\{modnl\\}"
+    "guse", "gimport", "usemhmodule", "importmhmodule", "begin\\{modnl\\}", "mhinputref"
   )
   protected val importRegs: Regex = ("^\\\\" + mkRegGroup(importKeys)).r
-  private val groups: Regex = "\\\\\\w*\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
-  private val beginModnl: Regex = "\\\\begin\\{modnl\\}\\[.*?\\]?\\{(.*?)\\}.*".r
+  protected val groups: Regex = "\\\\\\w*\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
+  protected val beginModnl: Regex = "\\\\begin\\{modnl\\}\\[.*?\\]?\\{(.*?)\\}.*".r
+  protected val mhinputRef: Regex = "\\\\mhinputref(\\[(.*?)\\])?\\{(.*?)\\}.*".r
 
-  private def entryToPath(p: String) = File(p).setExtension("tex").filepath
-
-  protected def matchPathAndRep(aStr: String, line: String): Option[(String, FilePath)] =
-    line match {
-      case beginModnl(b) => Some((aStr, entryToPath(b)))
-      case groups(_, a, b) =>
-        val fp = entryToPath(b)
-        val optRepo = Option(a).map(_.split(",").toList.sorted.map(_.split("=").toList))
-        optRepo match {
-          case Some(List(List(id))) => Some((id, fp))
-          case Some(List("path", p) :: tl) =>
-            val path = entryToPath(p)
-            tl match {
-              case List(List("repos", id)) => Some((id, path))
-              case Nil => Some((aStr, path))
-              case _ => None
-            }
-          case None => Some((aStr, fp))
-          case _ => None
-        }
-      case _ => None
-    }
+  protected def entryToPath(p: String) = File(p).setExtension("tex").filepath
 
   protected def noAmble(f: File): Boolean = {
     val source = readSourceRebust(f)
@@ -224,10 +204,41 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
 
   def buildFile(bt: BuildTask): Unit = if (!skip(bt)) reallyBuildFile(bt)
 
-  protected def readingSource(a: Archive, in: File, init: List[(String, FilePath)] = Nil):
-  Seq[(String, FilePath)] = {
-    val aStr: String = archString(a)
-    var res = init
+  def mkDep(a: Archive, ar: String, fp: FilePath, key: String): Option[Dependency] =
+    controller.getOrAddArchive(a.baseDir / ar) match {
+      case None => None
+      case Some(arch) => Some(Dependency(arch, fp, key))
+    }
+
+  protected def matchPathAndRep(a: Archive, line: String): Option[Dependency] =
+    line match {
+      case beginModnl(b) => Some(Dependency(a, entryToPath(b), key))
+      case mhinputRef(_, r, b) =>
+        val fp = entryToPath(b)
+        Option(r) match {
+          case Some(id) => mkDep(a, id, fp, "sms")
+          case None => Some(Dependency(a, fp, "sms"))
+        }
+      case groups(_, r, b) =>
+        val fp = entryToPath(b)
+        val optRepo = Option(r).map(_.split(",").toList.sorted.map(_.split("=").toList))
+        optRepo match {
+          case Some(List(List(id))) => mkDep(a, id, fp, key)
+          case Some(List("path", p) :: tl) =>
+            val path = entryToPath(p)
+            tl match {
+              case List(List("repos", id)) => mkDep(a, id, path, key)
+              case Nil => Some(Dependency(a, path, key))
+              case _ => None
+            }
+          case None => Some(Dependency(a, fp, key))
+          case _ => None
+        }
+      case _ => None
+    }
+
+  protected def readingSource(a: Archive, in: File): Seq[Dependency] = {
+    var res: List[Dependency] = Nil
     val source = readSourceRebust(in)
     source.getLines().foreach { line =>
       val idx = line.indexOf('%')
@@ -235,22 +246,21 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
       val err = "unexpected line: " + l + "\nin file: " + in
       val verbIndex = l.indexOf("\\verb")
       if (verbIndex <= -1 && importRegs.findFirstIn(l).isDefined) {
-        matchPathAndRep(aStr, l) match {
+        matchPathAndRep(a, l) match {
           case None => log(err)
           case Some(p) => res ::= p
         }
       }
     }
     log(in + ": " + res.mkString(", "))
-    val safe = res.filter { case ((ar, fp)) =>
-      val ap = File(ar) / inDim.toString / fp.toString
-      val f: File = a.baseDir / ap.toString
+    val safe = res.filter { case Dependency(ar, fp, _) =>
+      val f: File = ar / inDim / fp
       if (f == in) {
         log(LocalError(getOutPath(a, in) + " imports itself"))
         false
       } else if (f.exists()) true
       else {
-        log(LocalError(getOutPath(a, in) + " missing: " + ap))
+        log(LocalError(getOutPath(a, in) + " missing: " + f))
         false
       }
     }
@@ -260,19 +270,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
   override def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[Dependency] = {
     val in = a / inDim / fp
     if (in.exists()) {
-      val optLang = getLang(in)
-      val aStr = archString(a)
-      val name = in.getName
-      val fs = readingSource(a, in)
-      var res: Set[Dependency] = Set.empty
-      fs foreach { case (ar, p) =>
-        controller.getOrAddArchive(a.baseDir / ar) match {
-          case None =>
-          case Some(arch) =>
-            res += Dependency(arch, p, key)
-        }
-      }
-      res
+      readingSource(a, in).toSet
     } else {
       logResult("unknown file: " + in)
       Set.empty
