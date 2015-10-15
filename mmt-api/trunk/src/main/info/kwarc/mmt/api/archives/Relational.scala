@@ -73,7 +73,7 @@ trait Dependencies {
   def getSingleDeps(controller: Controller, key: String, dep: Dependency): Set[Dependency] =
   if (dep.target == key)
     getSingleDeps(controller, dep.archive, dep.filePath)
-  else controller.getBuildTarget(dep.target) match {
+  else controller.getOrAddBuildTarget(dep.target) match {
     case Some(bt) => bt.getSingleDeps(controller, dep.archive, dep.filePath)
     case None => Set.empty
   }

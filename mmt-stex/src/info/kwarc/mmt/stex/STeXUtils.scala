@@ -263,10 +263,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
       val optLang = getLang(in)
       val aStr = archString(a)
       val name = in.getName
-      val init = if (name.startsWith("all"))
-        langFiles(optLang, getDirFiles(a, in.up)).filter(_ != name).map(f => (aStr, fp.dirPath / f))
-      else Nil
-      val fs = readingSource(a, in, init)
+      val fs = readingSource(a, in)
       var res: Set[Dependency] = Set.empty
       fs foreach { case (ar, p) =>
         controller.getOrAddArchive(a.baseDir / ar) match {
@@ -298,7 +295,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
     }
   }
 
-  protected def getDirFiles(a: Archive, dir: File): List[String] =
+  protected def getDirFiles(a: Archive, dir: File, includeFile: String => Boolean): List[String] =
     if (dir.isDirectory && includeDir(dir.getName) && a.includeDir(dir.getName))
       dir.list.filter(f => includeFile(f) && (dir / f).isFile).toList.sorted
     else Nil

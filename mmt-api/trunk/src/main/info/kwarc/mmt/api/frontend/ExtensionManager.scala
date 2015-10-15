@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.{BuildTarget, MetaBuildTarget}
+import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.libraries._
@@ -201,21 +201,22 @@ class ExtensionManager(controller: Controller) extends Logger {
         case None => logError("unknown target " + subKey + " for extension, ignored")
         case Some(cls) =>
           report.groups += subKey + "-result"
-          ensureExtensionByClassName(cls, args)
+          ensureExtensionByClassName(key, cls, args)
       })
     if (ts.length > 1) {
-      ensureExtensionByClassName(classOf[MetaBuildTarget].getName, key :: ts.flatMap(targetToClass.get))
+      ensureExtensionByClassName(key, classOf[MetaBuildTarget].getName, key :: ts.flatMap(targetToClass.get))
       report.groups += key
     }
   }
 
   /** lookup or add extension */
-  def ensureExtensionByClassName(cls: String, args: List[String]): Unit =
+  def ensureExtensionByClassName(key: String, cls: String, args: List[String]): Unit =
     try {
       val clsJ = Class.forName(cls)
       val ls = get(clsJ.asInstanceOf[Class[Extension]])
-      val rs = ls.collect {
+      val rs = ls.filter {
         case e: MetaBuildTarget => args == e.startArgs
+        case e: TraversingBuildTarget => key == e.key
         case _ => true
       }
       if (rs.isEmpty) addExtension(cls, args)

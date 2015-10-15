@@ -477,6 +477,13 @@ class Controller extends ROController with Logger {
       None
     }
 
+  /** get build target if missing try to add it */
+  def getOrAddBuildTarget(key: String): Option[BuildTarget] =
+    getBuildTarget(key).map(Some(_)).getOrElse {
+      extman.ensureExtension(key, Nil)
+      getBuildTarget(key)
+    }
+
   /** retrieve or add an Archive by its root file */
   def getOrAddArchive(root: File): Option[Archive] =
     backend.getArchiveByRoot(root).map(Some(_)).

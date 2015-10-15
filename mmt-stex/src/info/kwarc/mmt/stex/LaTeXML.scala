@@ -6,6 +6,7 @@ import java.nio.file.Files
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils._
 
@@ -46,7 +47,7 @@ class AllTeX extends LaTeXBuildTarget {
     buildDir(bt.archive, bt.inPath, bt.inFile, force = true)
 
   private def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): Unit = {
-    val dirFiles = getDirFiles(a, dir)
+    val dirFiles = getDirFiles(a, dir, includeFile)
     if (dirFiles.nonEmpty) {
       createLocalPaths(a, dir)
       val ts = getDeps(controller, key, getFilesRec(a, in)).map(d => d.archive / inDim / d.filePath)
@@ -439,4 +440,13 @@ class AllPdf extends PdfLatex {
 
   override def includeFile(n: String): Boolean =
     n.endsWith(".tex") && n.startsWith("all.")
+
+  override def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[Dependency] = {
+    val in = a / inDim / fp
+    val optLang = getLang(in)
+    val aStr = archString(a)
+    val name = in.getName
+    langFiles(optLang, getDirFiles(a, in.up, super.includeFile)).
+      filter(_ != name).map(f => Dependency(a, fp.dirPath / f, "pdflatex")).toSet
+  }
 }

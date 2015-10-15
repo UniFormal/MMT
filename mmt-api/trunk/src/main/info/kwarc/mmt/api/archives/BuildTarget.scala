@@ -319,7 +319,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     // includeFile will be checked by build again (as was already checked during dependency analysis)
     val ts = getDeps(controller, key, getFilesRec(a, in))
     ts.foreach(d => if (d.target == key) update(d.archive, up, d.filePath)
-    else controller.getBuildTarget(d.target) match {
+    else controller.getOrAddBuildTarget(d.target) match {
       case Some(bt) => bt.update(d.archive, up, d.filePath)
       case None => log("build target not found: " + d.target)
     })
