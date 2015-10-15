@@ -471,15 +471,15 @@ class Controller extends ROController with Logger {
   }
 
   /** get build target */
-  def getBuildTarget(key: String): Option[BuildTarget] =
+  def getBuildTarget(key: String, log: Boolean = true): Option[BuildTarget] =
     extman.get(classOf[BuildTarget], key).map(Some(_)).getOrElse {
-      logError("unknown target " + key + " for building, ignored")
+      if (log) logError("unknown target " + key + " for building, ignored")
       None
     }
 
   /** get build target if missing try to add it */
   def getOrAddBuildTarget(key: String): Option[BuildTarget] =
-    getBuildTarget(key).map(Some(_)).getOrElse {
+    getBuildTarget(key, log = false).map(Some(_)).getOrElse {
       extman.ensureExtension(key, Nil)
       getBuildTarget(key)
     }
