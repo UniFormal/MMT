@@ -123,12 +123,24 @@ class SmsGenerator extends LaTeXBuildTarget {
     }
   }
 
+  private def stripComment(line: String): String = {
+    val idx = line.indexOf('%')
+    idx match {
+      case -1 => line
+      case 0 => ""
+      case _ =>
+        val l = line.substring(0, idx)
+        if (l.charAt(idx - 1) == '\\')
+          l + "%" + stripComment(line.substring(idx + 1))
+        else l
+    }
+  }
+
   private def creatingSms(inFile: File, outFile: File, enc: String): Unit = {
     val source = scala.io.Source.fromFile(inFile, enc)
     val w = File.Writer(outFile)
     source.getLines().foreach { line =>
-      val idx = line.indexOf('%')
-      val l = (if (idx > -1) line.substring(0, idx) else line).trim
+      val l = stripComment(line).trim
       val verbIndex = l.indexOf("\\verb")
       if (verbIndex <= -1 && smsRegs.findFirstIn(l).isDefined)
         w.println(l + "%")
