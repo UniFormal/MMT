@@ -326,9 +326,7 @@ class LaTeXML extends LaTeXBuildTarget {
     val output = new StringBuffer()
     val argSeq = Seq(latexmlc, bt.inFile.toString,
       "--profile=" + realProfile, "--path=" + styPath(bt),
-      "--destination=" + lmhOut) ++
-      (if (pipeOutput) Nil
-      else Seq("--log=" + logFile)) ++
+      "--destination=" + lmhOut, "--log=" + logFile) ++
       (if (noAmble(bt.inFile)) Nil
       else Seq("--preamble=" + getAmbleFile("pre", bt),
         "--postamble=" + getAmbleFile("post", bt))) ++
@@ -353,17 +351,18 @@ class LaTeXML extends LaTeXBuildTarget {
         Thread.sleep(delaySecs)
       }
       val pb = Process(argSeq, bt.archive / inDim, lEnv: _*)
-      val exitCode = timeout(pb, procLogger(output))
+      val exitCode = timeout(pb, procLogger(output, pipeOutput = false))
       if (exitCode != 0 || lmhOut.length == 0) {
         bt.errorCont(LatexError("no omdoc created", output.toString))
         lmhOut.delete()
         logFailure(bt.outPath)
       }
       if (lmhOut.exists()) logSuccess(bt.outPath)
-      if (logFile.exists())
+      if (logFile.exists()) {
         readLogFile(bt, logFile)
-      else bt.errorCont(LatexError("no log file created" +
-        (if (pipeOutput) " switch off " + pipeOutputOption else ""), output.toString))
+        if (pipeOutput) File.ReadLineWise(logFile)(println)
+      }
+      if (pipeOutput) print(output.toString)
     } catch {
       case e: Exception =>
         lmhOut.delete()
@@ -411,7 +410,7 @@ class PdfLatex extends LaTeXBuildTarget {
       val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
         in.stripExtension.getName, "-interaction", "scrollmode"),
         in.up, env(bt): _*)
-      val exit = timeout(pb, procLogger(output))
+      val exit = timeout(pb, procLogger(output, pipeOutput = true))
       val pdflogFile = in.setExtension("pdflog")
       if (!pipeOutput) File.write(pdflogFile, output.toString)
       if (exit != 0) {

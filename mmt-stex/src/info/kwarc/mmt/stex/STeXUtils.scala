@@ -147,7 +147,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
     (restOpts, matched ++ nonOpts)
   }
 
-  protected def procLogger(output: StringBuffer): ProcessLogger = {
+  protected def procLogger(output: StringBuffer, pipeOutput: Boolean): ProcessLogger = {
     def handleLine(line: String): Unit = {
       if (pipeOutput) println(line)
       output.append(line + "\n")
