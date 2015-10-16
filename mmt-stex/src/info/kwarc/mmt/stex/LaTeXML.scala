@@ -326,7 +326,9 @@ class LaTeXML extends LaTeXBuildTarget {
     val output = new StringBuffer()
     val argSeq = Seq(latexmlc, bt.inFile.toString,
       "--profile=" + realProfile, "--path=" + styPath(bt),
-      "--destination=" + lmhOut, "--log=" + logFile) ++
+      "--destination=" + lmhOut) ++
+      (if (pipeOutput) Nil
+      else Seq("--log=" + logFile)) ++
       (if (noAmble(bt.inFile)) Nil
       else Seq("--preamble=" + getAmbleFile("pre", bt),
         "--postamble=" + getAmbleFile("post", bt))) ++
