@@ -362,6 +362,8 @@ class LaTeXML extends LaTeXBuildTarget {
       if (lmhOut.exists()) logSuccess(bt.outPath)
       if (logFile.exists())
         readLogFile(bt, logFile)
+      else bt.errorCont(LatexError("no log file created" +
+        (if (pipeOutput) " switch off " + pipeOutputOption else ""), output.toString))
     } catch {
       case e: Exception =>
         lmhOut.delete()
