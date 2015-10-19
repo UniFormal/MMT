@@ -13,7 +13,6 @@ import archives._
 import notations._
 import utils.xml._
 
-
 class NotationPresenter(contr : Controller, var notations : List[(GlobalName,TextNotation)] = Nil)
   extends presentation.MathMLPresenter {
   controller = contr
