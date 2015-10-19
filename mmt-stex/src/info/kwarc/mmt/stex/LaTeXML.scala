@@ -241,12 +241,22 @@ class LaTeXML extends LaTeXBuildTarget {
     var msg: List[String] = Nil
     var newMsg = true
     var region = SourceRegion.none
+    var phase = 1
+
+    def phaseToString(p: Int): String = "latexml-" + (p match {
+      case 1 => "compiler"
+      case 2 => "parsing"
+      case 3 => "post"
+      case 4 => "xslt"
+    })
 
     def reportError(bt: BuildTask): Unit = {
       optLevel match {
         case Some(lev) =>
           val ref = SourceRef(FileURI(bt.inFile), region)
-          bt.errorCont(CompilerError(key, ref, msg.reverse, lev))
+          val messageList = msg.reverse
+          bt.errorCont(SourceError(key, ref, phaseToString(phase) + ": " + messageList.head
+            , messageList.tail, lev))
           optLevel = None
         case None =>
       }
@@ -259,6 +269,12 @@ class LaTeXML extends LaTeXBuildTarget {
   private def readLogFile(bt: BuildTask, logFile: File) {
     val source = scala.io.Source.fromFile(logFile)
     source.getLines().foreach { line =>
+      if (line.startsWith("(Math Parsing..."))
+        LtxLog.phase = 2
+      else if (line.startsWith("(post-processing..."))
+        LtxLog.phase = 3
+      else if (line.startsWith("(XSLT[using "))
+        LtxLog.phase = 4
       val (newLevel, restLine) = line2Level(line)
       if (newLevel.isDefined) {
         LtxLog.reportError(bt)
