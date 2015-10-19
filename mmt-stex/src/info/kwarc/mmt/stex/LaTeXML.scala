@@ -268,7 +268,7 @@ class LaTeXML extends LaTeXBuildTarget {
 
   private def readLogFile(bt: BuildTask, logFile: File) {
     LtxLog.phase = 1
-    val source = scala.io.Source.fromFile(logFile)
+    val source = readSourceRebust(logFile)
     source.getLines().foreach { line =>
       if (line.startsWith("(Math Parsing..."))
         LtxLog.phase = 2
