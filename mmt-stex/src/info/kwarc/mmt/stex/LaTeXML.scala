@@ -358,17 +358,17 @@ class LaTeXML extends LaTeXBuildTarget {
         logFailure(bt.outPath)
       }
       if (lmhOut.exists()) logSuccess(bt.outPath)
-      if (logFile.exists()) {
-        readLogFile(bt, logFile)
-        if (pipeOutput) File.ReadLineWise(logFile)(println)
-      }
-      if (pipeOutput) print(output.toString)
     } catch {
       case e: Exception =>
         lmhOut.delete()
         bt.errorCont(LatexError(e.toString, output.toString))
         logFailure(bt.outPath)
     }
+    if (logFile.exists()) {
+      readLogFile(bt, logFile)
+      if (pipeOutput) File.ReadLineWise(logFile)(println)
+    }
+    if (pipeOutput) print(output.toString)
   }
 
   override def cleanFile(arch: Archive, curr: Current): Unit = {
