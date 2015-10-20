@@ -156,6 +156,7 @@ class OEISImporter extends Importer {
           val tpO = None //tpWrapperO.map(tpN => translateTerm(tpN.child.head))
           val dfO = None //TODO, get also def
           val const = new FinalConstant(OMMOD(mpath), name, None, TermContainer(tpO), TermContainer(dfO), None, NotationContainer())
+          SourceRef.update(const, sref)
           controller.add(const)
         case "#PCDATA" | "#REM" => //Atom or Comment => do nothing
         case  "omtext" => 
@@ -164,6 +165,7 @@ class OEISImporter extends Importer {
           parseNarrativeObject(n, sref) match {
             case Some(t) => 
               val dfn = PlainNarration(OMMOD(mpath), name, t)
+              SourceRef.update(dfn, sref)
               controller.add(dfn)
             case _ => log("WARNING: Ignoring declaration due to no object " + n.toString)
           }
@@ -173,6 +175,7 @@ class OEISImporter extends Importer {
           parseNarrativeObject(n, sref) match {
             case Some(fo) => 
               val a = Assertion(OMMOD(mpath), sname, fo)
+              SourceRef.update(a, sref)
               controller.add(a)
             case _ => errorCont(OEISParseError("Ignoring declaration due to no object " + n.toString, Some(sref), Some(Level.Warning)))
           }
@@ -197,9 +200,10 @@ class OEISImporter extends Importer {
     //filter those that match tname
     val options = tpaths.map(_.toMPath).filter(t => tnameSO.map(t.name.last.toPath == _).getOrElse(true))
     options.toList match {
-      case Nil => 
-        errorCont(OEISParseError("Cannot resolve module for " + tnameSO.getOrElse("*") + "?" + snameS + 
-            " from theory " + container.toPath, Some(tsref), Some(Level.Warning)))
+      case Nil =>
+        if (!((tnameSO == Some("arithmetics") || tnameSO == None) &&  Arithmetics.contains(snameS))) {
+          errorCont(OEISParseError("Unknown symbol " + tnameSO.getOrElse("*") + "?" + snameS + ", assuming variable", Some(tsref), Some(Level.Warning)))
+        }
         defaultPath
       case l => 
         val matches = l.map(controller.get(_)) flatMap {
