@@ -498,10 +498,20 @@ class Controller extends ROController with Logger {
     extman.ensureExtension(key, args)
     val realFiles = if (files.isEmpty)
       List(File(System.getProperty("user.dir")))
-    else files
+    else files.filter { f => if (f.exists()) true
+    else {
+      logError("file \"" + f + "\" does not exist")
+      false
+    }
+    }
     getBuildTarget(key) foreach (buildTarget =>
       realFiles.flatMap(f => backend.findArchiveFiles(f.getCanonicalFile)) foreach { case (root, in) =>
-        getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
+        buildTarget match {
+          case bt: TraversingBuildTarget if in.segments.nonEmpty && in.segments.head != bt.inDim.toString =>
+            logError("wrong in-dimension \"" + in.segments.head + "\"")
+          case _ =>
+            getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
+         }
       })
   }
 
