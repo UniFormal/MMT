@@ -244,7 +244,6 @@ abstract class TraversingBuildTarget extends BuildTarget {
     val outFile = getOutFile(a, inPath)
     delete(outFile)
     delete(getErrorFile(a, inPath))
-    logResult("deleted " + getOutPath(a, outFile))
     controller.notifyListeners.onFileBuilt(a, this, inPath)
   }
 
