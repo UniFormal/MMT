@@ -26,10 +26,7 @@ class AllTeX extends LaTeXBuildTarget {
   override def cleanDir(a: Archive, curr: Current): Unit = {
     val dir = curr.file
     dir.list.filter(f => f.startsWith("all.") && f.endsWith(".tex")).sorted.
-      map(f => dir / f) foreach { f =>
-      f.delete()
-      logResult("deleted " + getOutPath(a, f))
-    }
+      map(f => dir / f).foreach(deleteWithLog)
     super.cleanDir(a, curr)
   }
 
@@ -392,6 +389,12 @@ class LaTeXML extends LaTeXBuildTarget {
     getOutFile(arch, curr.path).setExtension("ltxlog").delete()
     super.cleanFile(arch, curr)
   }
+
+  override def cleanDir(a: Archive, curr: Current): Unit = {
+    super.cleanDir(a, curr)
+    val outDir = getFolderOutFile(a, curr.path).up
+    if (outDir.isDirectory) outDir.deleteDir()
+  }
 }
 
 /** pdf generation */
@@ -447,11 +450,21 @@ class PdfLatex extends LaTeXBuildTarget {
     }
   }
 
+  private def deleteExts: List[String] =
+    List("aux", "idx", "log", "out", "pdf", "pdflog", "thm", "nav", "snm", "toc")
+
   override def cleanFile(arch: Archive, curr: Current): Unit = {
     val f = arch / inDim / curr.path
-    List("aux", "idx", "log", "out", "pdf", "pdflog", "thm", "nav", "snm", "toc").
-      foreach(f.setExtension(_).delete())
+    deleteExts.foreach(f.setExtension(_).delete())
     super.cleanFile(arch, curr)
+  }
+
+  override def cleanDir(a: Archive, curr: Current): Unit = {
+    super.cleanDir(a, curr)
+    val outDir = getFolderOutFile(a, curr.path).up
+    if (outDir.isDirectory) outDir.deleteDir()
+    val srcDir = a / inDim / curr.path
+    getDirFilesByExt(a, srcDir, deleteExts).foreach(deleteWithLog)
   }
 }
 

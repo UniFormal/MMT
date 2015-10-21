@@ -301,4 +301,21 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
     if (dir.isDirectory && includeDir(dir.getName) && a.includeDir(dir.getName))
       dir.list.filter(f => includeFile(f) && (dir / f).isFile).toList.sorted
     else Nil
+
+  protected def getDirFilesByExt(a: Archive, dir: File, exts: List[String]): List[File] =
+    getDirFiles(a, dir, f => exts.exists(e => f.endsWith("." + e))).map(f => dir / f)
+
+  protected def deleteWithLog(f: File): Unit = {
+    f.delete()
+    logResult("deleted " + f)
+  }
+
+  override def cleanDir(a: Archive, curr: Current): Unit = {
+    super.cleanDir(a, curr)
+    val errDir = getFolderErrorFile(a, curr.path).up
+    val outFile = getFolderOutFile(a, curr.path)
+    val outDir = outFile.up
+    if (errDir.isDirectory) errDir.deleteDir()
+    outFile.getExtension.foreach(ext => getDirFilesByExt(a, outDir, List(ext)).foreach(deleteWithLog))
+  }
 }
