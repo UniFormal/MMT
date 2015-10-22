@@ -1,5 +1,5 @@
 package info.kwarc.mmt.tps
-
+/*
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.api.utils._
@@ -132,3 +132,4 @@ class TPSImporter extends Importer {
 
   
 }
+*/
