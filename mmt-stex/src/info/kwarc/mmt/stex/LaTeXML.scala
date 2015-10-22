@@ -430,7 +430,7 @@ class PdfLatex extends LaTeXBuildTarget {
       val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
         in.stripExtension.getName, "-interaction", "scrollmode"),
         in.up, env(bt): _*)
-      val exit = timeout(pb, procLogger(output, pipeOutput = true))
+      val exit = timeout(pb, procLogger(output, pipeOutput = pipeOutput))
       val pdflogFile = in.setExtension("pdflog")
       if (!pipeOutput) File.write(pdflogFile, output.toString)
       if (exit != 0) {
