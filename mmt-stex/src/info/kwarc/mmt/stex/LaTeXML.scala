@@ -483,3 +483,9 @@ class AllPdf extends PdfLatex {
       filter(_ != name).map(f => Dependency(a, fp.dirPath / f, "pdflatex")).toSet
   }
 }
+
+class TikzPdf extends PdfLatex {
+  override val key = "tikzpdf"
+
+  override def includeDir(n: String): Boolean = n.endsWith("tikz")
+}

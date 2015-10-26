@@ -101,7 +101,7 @@ abstract class WritableArchive extends ROArchive {
     val inFile = this / dim / in
     val inFileName = inFile.getName
     if (inFile.isDirectory) {
-      if (includeDir(inFileName) && filterDir(inFileName)) {
+      if (includeDir(inFileName)) {
         if (sendLog) log("entering " + inFile)
         val children = inFile.list.sorted.toList
         val results = if (parallel) children.par flatMap recurse else children flatMap recurse
@@ -109,7 +109,7 @@ abstract class WritableArchive extends ROArchive {
         if (sendLog) log("leaving  " + inFile)
         Some(result)
       } else None
-    } else if (filter(inFileName))
+    } else if (filter(inFileName) && filterDir(inFile.up.getName))
       try {
         val r = onFile(Current(inFile, in))
         Some(r)

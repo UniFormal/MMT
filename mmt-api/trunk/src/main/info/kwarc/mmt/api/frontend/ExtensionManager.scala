@@ -292,6 +292,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     "sms" -> "SmsGenerator",
     "latexml" -> "LaTeXML",
     "pdflatex" -> "PdfLatex",
+    "tikzpdf" -> "TikzPdf",
     "stex-omdoc" -> "STeXImporter",
     "alltex" -> "AllTeX",
     "allpdf" -> "AllPdf"
