@@ -307,9 +307,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   protected def getFilesRec(a: Archive, in: FilePath): Set[Dependency] = {
     val inFile = a / inDim / in
-    if (inFile.isDirectory && includeDir(inFile.getName))
+    if (inFile.isDirectory)
       inFile.list.flatMap(n => getFilesRec(a, FilePath(in.segments ::: List(n)))).toSet
-    else if (inFile.isFile && includeFile(inFile.getName))
+    else if (inFile.isFile && includeFile(inFile.getName) && includeDir(inFile.up.getName))
       Set(Dependency(a, in, key))
     else Set.empty
   }
