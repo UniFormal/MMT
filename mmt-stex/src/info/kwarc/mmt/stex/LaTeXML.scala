@@ -401,7 +401,7 @@ class LaTeXML extends LaTeXBuildTarget {
 class PdfLatex extends LaTeXBuildTarget {
   val key = "pdflatex"
   override val outExt = "pdf"
-  val outDim = Dim("export", "pdflatex", inDim.toString)
+  val outDim: ArchiveDimension = Dim("export", "pdflatex", inDim.toString)
   private var pdflatexPath: String = "xelatex"
 
   override def start(args: List[String]): Unit = {
@@ -415,24 +415,28 @@ class PdfLatex extends LaTeXBuildTarget {
     if (opts.nonEmpty) logResult("unknown options: " + opts.mkString(" "))
   }
 
+  protected def runPdflatex(bt: BuildTask, output: StringBuffer): Int = {
+    val in = bt.inFile
+    val pbCat = if (noAmble(in)) Process.cat(in.toJava)
+    else Process.cat(Seq(getAmbleFile("pre", bt), in,
+      getAmbleFile("post", bt)).map(_.toJava))
+    val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
+      in.stripExtension.getName, "-interaction", "scrollmode"),
+      in.up, env(bt): _*)
+    val exit = timeout(pb, procLogger(output, pipeOutput = pipeOutput))
+    val pdflogFile = in.setExtension("pdflog")
+    if (!pipeOutput) File.write(pdflogFile, output.toString)
+    exit
+  }
+
   def reallyBuildFile(bt: BuildTask): Unit = {
     val pdfFile = bt.inFile.setExtension("pdf")
     pdfFile.delete()
     bt.outFile.delete()
     createLocalPaths(bt)
-    val styDir = stexStyDir(bt)
     val output = new StringBuffer()
     try {
-      val in = bt.inFile
-      val pbCat = if (noAmble(in)) Process.cat(in.toJava)
-      else Process.cat(Seq(getAmbleFile("pre", bt), in,
-        getAmbleFile("post", bt)).map(_.toJava))
-      val pb = pbCat #| Process(Seq(pdflatexPath, "-jobname",
-        in.stripExtension.getName, "-interaction", "scrollmode"),
-        in.up, env(bt): _*)
-      val exit = timeout(pb, procLogger(output, pipeOutput = pipeOutput))
-      val pdflogFile = in.setExtension("pdflog")
-      if (!pipeOutput) File.write(pdflogFile, output.toString)
+      val exit = runPdflatex(bt, output)
       if (exit != 0) {
         bt.errorCont(LatexError("exit code " + exit, output.toString))
         bt.outFile.delete()
@@ -450,12 +454,12 @@ class PdfLatex extends LaTeXBuildTarget {
     }
   }
 
-  private def deleteExts: List[String] =
+  protected def toBeCleanedExts: List[String] =
     List("aux", "idx", "log", "out", "pdf", "pdflog", "thm", "nav", "snm", "toc")
 
   override def cleanFile(arch: Archive, curr: Current): Unit = {
     val f = arch / inDim / curr.path
-    deleteExts.foreach(f.setExtension(_).delete())
+    toBeCleanedExts.foreach(f.setExtension(_).delete())
     super.cleanFile(arch, curr)
   }
 
@@ -464,7 +468,7 @@ class PdfLatex extends LaTeXBuildTarget {
     val outDir = getFolderOutFile(a, curr.path).up
     if (outDir.isDirectory) outDir.deleteDir()
     val srcDir = a / inDim / curr.path
-    getDirFilesByExt(a, srcDir, deleteExts).foreach(deleteWithLog)
+    getDirFilesByExt(a, srcDir, toBeCleanedExts).foreach(deleteWithLog)
   }
 }
 
@@ -484,8 +488,52 @@ class AllPdf extends PdfLatex {
   }
 }
 
-class TikzPdf extends PdfLatex {
-  override val key = "tikzpdf"
+class TikzSvg extends PdfLatex {
+  override val key = "tikzsvg"
+  override val outExt = "svg"
+  override val outDim = source
 
   override def includeDir(n: String): Boolean = n.endsWith("tikz")
+
+  override def reallyBuildFile(bt: BuildTask): Unit = {
+    val pdfFile = bt.inFile.setExtension("pdf")
+    val svgFile = bt.inFile.setExtension("svg")
+    bt.outFile.delete()
+    createLocalPaths(bt)
+    val output = new StringBuffer()
+    try {
+      val exit = runPdflatex(bt, output)
+      if (exit != 0) {
+        bt.errorCont(LatexError("pdflatex exit code " + exit, output.toString))
+        logFailure(bt.outPath)
+      } else {
+        if (pdfFile.length > 0) {
+          val pb = Process(Seq("convert", pdfFile.toString, svgFile.toString))
+          val exitConvert = timeout(pb, procLogger(output, pipeOutput = pipeOutput))
+          if (exitConvert == 0 && svgFile.length() > 0)
+            logSuccess(bt.outPath)
+          else {
+            bt.errorCont(LatexError(if (exitConvert != 0) "exit code " + exitConvert
+            else "no svg created", output.toString))
+            logFailure(bt.outPath)
+          }
+        } else {
+          bt.errorCont(LatexError("no pdf created", output.toString))
+          logFailure(bt.outPath)
+        }
+      }
+    }
+    catch {
+      case e: Exception =>
+        bt.outFile.delete()
+        bt.errorCont(LatexError(e.toString, output.toString))
+        logFailure(bt.outPath)
+    }
+  }
+
+  override def cleanDir(a: Archive, curr: Current): Unit = {
+    super.cleanDir(a, curr)
+    val srcDir = a / inDim / curr.path
+    getDirFilesByExt(a, srcDir, toBeCleanedExts).foreach(deleteWithLog)
+  }
 }
