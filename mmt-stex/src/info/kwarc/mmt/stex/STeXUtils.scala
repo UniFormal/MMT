@@ -250,18 +250,19 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
           case _ => Some(Dependency(a, fp, "tikzsvg"))
         }
       case groups(_, r, b) =>
+        val depKey = if (line.startsWith("\\usemhmodule")) "sms" else key
         val fp = entryToPath(b)
         val optRepo = Option(r).map(_.split(",").toList.sorted.map(_.split("=").toList))
         optRepo match {
-          case Some(List(List(id))) => mkDep(a, id, fp, key)
+          case Some(List(List(id))) => mkDep(a, id, fp, depKey)
           case Some(List("path", p) :: tl) =>
             val path = entryToPath(p)
             tl match {
-              case List(List("repos", id)) => mkDep(a, id, path, key)
-              case Nil => Some(Dependency(a, path, key))
+              case List(List("repos", id)) => mkDep(a, id, path, depKey)
+              case Nil => Some(Dependency(a, path, depKey))
               case _ => None
             }
-          case None => Some(Dependency(a, fp, key))
+          case None => Some(Dependency(a, fp, depKey))
           case _ => None
         }
       case _ => None
@@ -300,9 +301,9 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
   override def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[Dependency] = {
     val in = a / inDim / fp
     if (in.exists()) {
-      readingSource(a, in).filter {
-        case Dependency(_, _, tgt) => key != "sms" || tgt != "tikzsvg"
-      }.toSet
+      if (key == "sms") Set.empty
+      else
+        readingSource(a, in).toSet
     } else {
       logResult("unknown file: " + in)
       Set.empty
