@@ -300,7 +300,9 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
   override def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[Dependency] = {
     val in = a / inDim / fp
     if (in.exists()) {
-      readingSource(a, in).toSet
+      readingSource(a, in).filter {
+        case Dependency(_, _, tgt) => key != "sms" || tgt != "tikzsvg"
+      }.toSet
     } else {
       logResult("unknown file: " + in)
       Set.empty
