@@ -94,11 +94,11 @@ trait STeXUtils {
     "guse", "gimport", "usemhmodule", "importmhmodule", "begin\\{modnl\\}",
     "mhinputref", "mhtikzinput", "cmhtikzinput", "tikzinput", "ctikzinput"
   )
-  protected val importRegs: Regex = ("^\\\\" + mkRegGroup(importKeys)).r
+  protected val importRegs: Regex = ("\\\\" + mkRegGroup(importKeys)).r
   protected val groups: Regex = "\\\\\\w*\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
   protected val beginModnl: Regex = "\\\\begin\\{modnl\\}\\[.*?\\]?\\{(.*?)\\}.*".r
   protected val mhinputRef: Regex = "\\\\mhinputref(\\[(.*?)\\])?\\{(.*?)\\}.*".r
-  protected val tikzinput: Regex = "\\\\c?m?h?tikzinput(\\[(.*?)\\])?\\{(.*?)\\}.*".r
+  protected val tikzinput: Regex = ".*\\\\c?m?h?tikzinput(\\[(.*?)\\])?\\{(.*?)\\}.*".r
 
   protected def entryToPath(p: String) = File(p).setExtension("tex").filepath
 
