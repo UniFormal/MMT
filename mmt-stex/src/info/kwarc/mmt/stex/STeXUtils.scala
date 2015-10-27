@@ -72,18 +72,33 @@ trait STeXUtils {
   protected def readSourceRebust(f: File): BufferedSource =
     scala.io.Source.fromFile(f)(Codec.ISO8859)
 
+  protected def stripComment(line: String): String = {
+    val idx = line.indexOf('%')
+    idx match {
+      case -1 => line
+      case 0 => ""
+      case _ =>
+        val l = line.substring(0, idx)
+        if (l.charAt(idx - 1) == '\\')
+          l + "%" + stripComment(line.substring(idx + 1))
+        else l
+    }
+  }
+
   protected def langFiles(lang: Option[String], files: List[String]): List[String] =
     files.filter(f => getLang(File(f)) == lang)
 
   def mkRegGroup(l: List[String]): String = l.mkString("(", "|", ")")
 
   private val importKeys: List[String] = List(
-    "guse", "gimport", "usemhmodule", "importmhmodule", "begin\\{modnl\\}", "mhinputref"
+    "guse", "gimport", "usemhmodule", "importmhmodule", "begin\\{modnl\\}",
+    "mhinputref", "mhtikzinput", "cmhtikzinput", "tikzinput", "ctikzinput"
   )
   protected val importRegs: Regex = ("^\\\\" + mkRegGroup(importKeys)).r
   protected val groups: Regex = "\\\\\\w*\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
   protected val beginModnl: Regex = "\\\\begin\\{modnl\\}\\[.*?\\]?\\{(.*?)\\}.*".r
   protected val mhinputRef: Regex = "\\\\mhinputref(\\[(.*?)\\])?\\{(.*?)\\}.*".r
+  protected val tikzinput: Regex = "\\\\c?m?h?tikzinput(\\[(.*?)\\])?\\{(.*?)\\}.*".r
 
   protected def entryToPath(p: String) = File(p).setExtension("tex").filepath
 
@@ -223,6 +238,17 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
           case Some(id) => mkDep(a, id, fp, "sms")
           case None => Some(Dependency(a, fp, "sms"))
         }
+      case tikzinput(_, r, b) =>
+        val fp = entryToPath(b)
+        val optRepo = Option(r).map(_.split(",").toList.map(_.split("=").toList).
+          filter {
+            case List("mhrepos", _) => true
+            case _ => false
+          })
+        optRepo match {
+          case Some(List(List(_, id))) => mkDep(a, id, fp, "tikzsvg")
+          case _ => Some(Dependency(a, fp, "tikzsvg"))
+        }
       case groups(_, r, b) =>
         val fp = entryToPath(b)
         val optRepo = Option(r).map(_.split(",").toList.sorted.map(_.split("=").toList))
@@ -245,8 +271,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
     var res: List[Dependency] = Nil
     val source = readSourceRebust(in)
     source.getLines().foreach { line =>
-      val idx = line.indexOf('%')
-      val l = (if (idx > -1) line.substring(0, idx) else line).trim
+      val l = stripComment(line).trim
       val err = "unexpected line: " + l + "\nin file: " + in
       val verbIndex = l.indexOf("\\verb")
       if (verbIndex <= -1 && importRegs.findFirstIn(l).isDefined) {
