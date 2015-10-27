@@ -71,12 +71,12 @@ trait Dependencies {
     Set.empty
 
   def getSingleDeps(controller: Controller, key: String, dep: Dependency): Set[Dependency] =
-  if (dep.target == key)
-    getSingleDeps(controller, dep.archive, dep.filePath)
-  else controller.getOrAddBuildTarget(dep.target) match {
-    case Some(bt) => bt.getSingleDeps(controller, dep.archive, dep.filePath)
-    case None => Set.empty
-  }
+    if (dep.target == key)
+      getSingleDeps(controller, dep.archive, dep.filePath)
+    else controller.getOrAddBuildTarget(dep.target) match {
+      case Some(bt) => bt.getSingleDeps(controller, dep.archive, dep.filePath)
+      case None => Set.empty
+    }
 
   def getDeps(controller: Controller, key: String, args: Set[Dependency]): List[Dependency] = {
     var visited: Set[Dependency] = Set.empty
@@ -100,12 +100,26 @@ object Relational {
   def getArchives(controller: Controller): List[Archive] =
     controller.backend.getStores.collect { case a: Archive => a }
 
+  def close[A](inMap: Map[A, Set[A]]): Map[A, Set[A]] = {
+    var changed = true
+    var m = inMap
+    while (changed) {
+      changed = false
+      m = m.map(p => (p._1, {
+        val n: Set[A] = p._2.flatMap(m).union(p._2)
+        if (n.size != p._2.size) changed = true
+        n
+      }))
+    }
+    m.filter(p => p._2.contains(p._1))
+  }
+
   def topsort[A](controller: Controller, m: Map[A, Set[A]]): List[Set[A]] = {
     if (m.isEmpty) Nil
     else {
       val (noDeps, rest) = m.partition(_._2.isEmpty)
       if (noDeps.isEmpty) {
-        controller.report(new Error("cyclic deps: " + m) {})
+        controller.report(new Error("cyclic deps: " + close(m)) {})
         List(Set.empty, m.keySet)
       }
       else {
@@ -116,5 +130,5 @@ object Relational {
   }
 
   def flatTopsort[A](controller: Controller, m: Map[A, Set[A]]): List[A] =
-   topsort(controller, m).flatMap(_.toList.sortBy(_.toString))
+    topsort(controller, m).flatMap(_.toList.sortBy(_.toString))
 }
