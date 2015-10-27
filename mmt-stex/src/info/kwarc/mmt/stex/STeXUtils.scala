@@ -287,7 +287,8 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
       if (f == in) {
         log(LocalError(getOutPath(a, in) + " imports itself"))
         false
-      } else if (f.exists()) true
+      }
+      else if (f.exists()) true
       else {
         log(LocalError(getOutPath(a, in) + " missing: " + f))
         false
