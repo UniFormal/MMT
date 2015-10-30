@@ -191,7 +191,7 @@ lazy val mmt = (project in file("mmt-exts")).
       prependShellScript = Some(Seq("#!/bin/bash", """exec /usr/bin/java -Xmx2048m -jar "$0" "$@"""")))
   )
 
-// jars to be used in Compile but excluded in assembly for jedit jar
+// jars to be used in Compile (in an assembly - that we no longer make - they should be excluded)
 val jeditJars = Seq(
   "Console.jar",
   "ErrorList.jar",
