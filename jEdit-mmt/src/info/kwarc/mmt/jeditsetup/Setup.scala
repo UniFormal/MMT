@@ -27,7 +27,8 @@ object Setup {
     val jedit = File(args(1))
     val contentOpt = if (l == 3) Some(File(args(2))) else None
     val programLocation = File(getClass.getProtectionDomain.getCodeSource.getLocation.getPath).getParentFile
-    val setup = programLocation.getParentFile
+    val deploy = programLocation.getParentFile
+    val setup = deploy / "jedit-plugin" / "plugin"
     val install = installOpt.get
 
     println("trying to (un)install from " + setup + " to " + jedit)
@@ -35,7 +36,7 @@ object Setup {
       println("error: not valid directories")
       sys.exit()
     }
-    doIt(setup, jedit, install, contentOpt)
+    doIt(setup, deploy, jedit, install, contentOpt)
   }
 
   /** install/uninstall routine
@@ -45,21 +46,24 @@ object Setup {
     * @param install true/false for install/uninstall
     * @param contentOpt the folder in which to look for archives
     */
-  def doIt(setup: File, jedit: File, install: Boolean, contentOpt: Option[File]) {
+  def doIt(setup: File, deploy: File, jedit: File, install: Boolean, contentOpt: Option[File]) {
     /** copies or deletes a file depending on install/uninstall */
-    def copyOrDelete(f: List[String]) {
+    def copyFromOrDelete(dir: File, f: List[String]) {
       if (install) {
-        copy(setup / f, jedit / f)
+        copy(dir / f, jedit / f)
       } else {
         delete(jedit / f)
       }
     }
+    def copyOrDelete(f: List[String]) = copyFromOrDelete(setup, f: List[String])
     // copy/delete the jars
-    (setup / "jars").list.foreach { e =>
-      if (e.endsWith(".jar")) {
-        copyOrDelete(List("jars", e))
-      }
-    }
+    // see src/project/Utils.scala for sbt
+    val mainJars = List("mmt-api.jar", "mmt-lf.jar", "MMTPlugin.jar", "mmt-specware.jar", "mmt-pvs.jar")
+    val libJars = List("scala-library.jar", "scala-parser-combinators.jar", "scala-reflect.jar", "scala-xml.jar",
+      "tiscaf.jar")
+    val allJars = List("lfcatalog", "lfcatalog.jar") :: mainJars.map(List("main", _)) ++
+      libJars.map(List("lib", _))
+    allJars.foreach(copyFromOrDelete(deploy, _))
     // modes
     // * copy/delete the mode files
     val modeFiles = (setup / "modes").list.filter(_.endsWith(".xml"))

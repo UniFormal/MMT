@@ -200,9 +200,6 @@ val jeditJars = Seq(
   "SideKick.jar"
 )
 
-val release =
-  TaskKey[Unit]("release", "assembles jedit jar in deploy/jedit-plugin.")
-
 val install =
   TaskKey[Unit]("install", "copies jedit jars to local jedit installation folder.")
 
@@ -213,11 +210,5 @@ lazy val jedit = (project in file("jEdit-mmt")).
     resourceDirectory in Compile := baseDirectory.value / "src/resources",
     unmanagedJars in Compile ++= jeditJars map (baseDirectory.value / "lib" / _),
     deploy <<= deployPackage("main/MMTPlugin.jar"),
-    release := Utils.releaseJEditJars,
-//    release <<= (assembly in Compile) map {jar => deployTo("jedit-plugin/plugin/jars/MMTPlugin.jar")(jar)},
-//    assemblyExcludedJars in assembly := {
-//      val cp = (fullClasspath in assembly).value
-//      cp filter { j => jeditJars.contains(j.data.getName) }
-//    },
     install := Utils.installJEditJars
   )
