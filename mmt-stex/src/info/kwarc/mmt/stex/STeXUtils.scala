@@ -229,7 +229,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
       case Some(arch) => Some(Dependency(arch, fp, key))
     }
 
-  protected def matchPathAndRep(a: Archive, line: String): Option[Dependency] =
+  protected def matchPathAndRep(key: String, a: Archive, line: String): Option[Dependency] =
     line match {
       case beginModnl(b) => Some(Dependency(a, entryToPath(b), key))
       case mhinputRef(_, r, b) =>
@@ -268,7 +268,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
       case _ => None
     }
 
-  protected def readingSource(a: Archive, in: File): Seq[Dependency] = {
+  protected def readingSource(key: String, a: Archive, in: File): Seq[Dependency] = {
     var res: List[Dependency] = Nil
     val source = readSourceRebust(in)
     source.getLines().foreach { line =>
@@ -276,7 +276,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
       val err = "unexpected line: " + l + "\nin file: " + in
       val verbIndex = l.indexOf("\\verb")
       if (verbIndex <= -1 && importRegs.findFirstIn(l).isDefined) {
-        matchPathAndRep(a, l) match {
+        matchPathAndRep(key, a, l) match {
           case None => log(err)
           case Some(p) => res ::= p
         }
@@ -303,7 +303,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
     if (in.exists()) {
       if (key == "sms") Set.empty
       else
-        readingSource(a, in).toSet
+        readingSource(if (List("tikzsvg", "allpdf").contains(key)) "pdflatex" else key, a, in).toSet
     } else {
       logResult("unknown file: " + in)
       Set.empty
