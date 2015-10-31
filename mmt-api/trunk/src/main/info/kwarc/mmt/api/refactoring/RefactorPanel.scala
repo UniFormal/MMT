@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.refactoring
 
 import java.awt.{Font, BorderLayout, Dimension}
 import java.awt.event.{ActionEvent, ActionListener}
+import java.io.{File, FileWriter}
 import javax.swing._
 
 import info.kwarc.mmt.api.archives.Archive
@@ -378,6 +379,10 @@ class ViewfinderPanel(target:RefactorPanel) extends JPanel with ActionListener {
   }
 
   class finderthread(textf: JTextArea,progress:JProgressBar,result:JPanel) extends javax.swing.SwingWorker[Boolean,Void] {
+    // TODO DELETE ...
+    val output = new java.io.FileWriter(new File("/home/raupi/gdrive/log.txt"))
+    // ...
+
     object textfhandler extends ReportHandler("textfield") {
       def apply(ind: Int, caller: => String, group: String, msgParts: List[String]) = {
         val msg = msgParts.mkString("\n")
@@ -454,6 +459,11 @@ class ViewfinderPanel(target:RefactorPanel) extends JPanel with ActionListener {
       }
     }
     override def done {
+
+      // TODO DELETE ...
+      output.close()
+      // ...
+
       target.viewfinder.report.removeHandler("textfield")
       remove(result)
       if(get) reinit
@@ -464,8 +474,19 @@ class ViewfinderPanel(target:RefactorPanel) extends JPanel with ActionListener {
           case c:(FinalConstant,FinalConstant) => c
         }
         val value = Viewfinder.evaluateViewset(from,to,o)(target.controller)
+
+        // TODO DELETE ...
+          output.write("\nNew View from "+from.path+" to "+to.path+":\n")
+          for (o <- newset) output.write("  "+o._1.parent+"?"+o._1.name+" -> "+o._2.parent+"?"+o._2.name+"\n")
+        // ...
+
         NewViewPanel(newset,value,from,to,target)
       }).toList
+
+      // TODO DELETE ...
+      output.write("\n-----------------------------------------------------\n")
+      // ...
+
       newviews = (newviews:::nviews).distinct
     }
   }

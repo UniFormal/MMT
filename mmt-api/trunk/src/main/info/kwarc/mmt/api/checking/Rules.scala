@@ -127,6 +127,7 @@ trait ApplicableUnder extends Rule {
    private lazy val ops = (under:::List(head)).map(p => OMS(p))
    def applicable(tp: Term) = tp match {
       case OMA(f,a) => (f::a).startsWith(ops)
+      case OMS(p) => under == Nil && p == head
       case _ => false
    }
 }

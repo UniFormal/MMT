@@ -64,9 +64,9 @@ class XMLToScala(pkg: String) {
    private val GroupType = dummyTypes(4)
       
    /** convert Scala id names to xml tag/key names */
-   private def xmlName(s: String) = s.replace("_", "-")
+   def xmlName(s: String) = s.replace("_", "-")
    /** convert xml tag/key names to Scala id names */
-   private def scalaName(s: String) = s.replace("-", "_")
+   def scalaName(s: String) = s.replace("-", "_")
    /** (non-recursively) remove comments and whitespace-only text nodes */
    private def cleanNodes(nodes: List[Node]) = nodes.filter {
       case _:Comment => false
@@ -133,7 +133,9 @@ class XMLToScala(pkg: String) {
 
    /** parse a Node of expected Type expType */
    private def apply(node: Node, expType: Type): Any = {
-    //  println(node.toString)
+      //println(node.toString+"\n - "+node.child.map(x => x.isInstanceOf[SpecialNode].toString+":"+x.toString).mkString("\n - "))
+      //println(" - - "+node.attributes.map(a =>
+      //   a.key + " = " + node.attributes.collectFirst{case p if p.key==a.key || p.key.endsWith(":"+a.key) => p.value.toString}))
       if (node.isInstanceOf[Text])
          // treat text nodes as Strings
          return node.text
@@ -162,7 +164,8 @@ class XMLToScala(pkg: String) {
             }
          }
          val key = xmlName(scalaKey)
-         val att = xml.attr(node, key)
+         val att = node.attributes.collectFirst{case p if p.key == key || p.key.endsWith(":"+key) => p.value.toString}.getOrElse("")
+             // xml.attr(node, key)
          if (att != "" && !attributesTaken.contains(key)) {
             attributesTaken ::= key
             att

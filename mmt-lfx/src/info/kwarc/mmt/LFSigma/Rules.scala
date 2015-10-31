@@ -12,7 +12,7 @@ object Common {
   def isType(solver: Solver, a: Term)(implicit stack: Stack, history: History) =
     solver.check(Typing(stack, a, OMS(Typed.ktype), Some(OfType.path)))(history + "type of bound variable must be a type")
 
-  /** performs safe simplifications and variable transformation to force the argument to become a Pi
+  /** performs safe simplifications and variable transformation to force the argument to become a Sigma
     * @param solver the Solver
     * @param tp the function type
     * @return a type equal to tp that may have Pi shape
@@ -50,8 +50,7 @@ object Common {
     Context.pickFresh(solver.constantContext ++ solver.getPartialSolution ++ stack.context, x)
 }
 
-/** Formation: the type inference rule x:A:type|-B:U  --->  Sigma x:A.B(x) : U
-  * */
+/** Formation: the type inference rule x:A:type|-B:U  --->  Sigma x:A.B(x) : U  * */
 object SigmaTerm extends FormationRule(Sigma.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
     Common.makeSigma(solver,tm) match {
@@ -70,24 +69,21 @@ object SigmaTerm extends FormationRule(Sigma.path, OfType.path) {
   }
 }
 
-/** Introduction: the type inference rule |-t1:A, x:A|-t2:B(x)[t1/x]  --->  <t1,t2>:Sigma x:A.B(x)
-  * This rule works for B:U for any universe U
-  * */
+/** Introduction: the type inference rule |-t1:A, x:A|-t2:B(x)[t1/x]  --->  <t1,t2>:Sigma x:A.B(x)  * */
 object TupleTerm extends IntroductionRule(Tuple.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
     tm match {
       case Tuple(t1,t2) =>
           val tpA = solver.inferType(t1)(stack, history).get
           val (xn,_) = Common.pickFresh(solver,LocalName("x"))
-          val sub : Substitution = xn / t2
+          val sub : Substitution = xn / t2 // TODO Something's wrong here...
           solver.inferType(t2 ^? sub)(stack ++ xn % tpA,history) map {b => Sigma(xn,tpA,b)}
       case _ => None // should be impossible
     }
   }
 }
 
-/** Elimination: the type inference rule t : Sigma x:A.B(x)  --->  Proj1(t):A, Proj2(t):B(Proj1(t))
-  * This rule works for B:U for any universe U */
+/** Elimination: the type inference rule t : Sigma x:A.B(x)  --->  Proj1(t):A, Proj2(t):B(Proj1(t)) */
 object ProjectionTerm {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
     case Proj(i, Tuple(a,b)) => solver.inferType(if (i == 1) a else b)(stack, history)
@@ -129,19 +125,7 @@ object Projection2Term extends EliminationRule(Proj2.path, OfType.path) {
 }
 
 /** type-checking: the type checking rule pi1(t):A|-pi2(t):B(pi1(t))  --->  t : Sigma x:A.B */
-/*
-object SigmaType extends TypingRule(Sigma.path) {
-  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = {
-    (tm,Common.makeSigma(solver,tp)) match {
-      case (Tuple(a,b),Sigma(x,tpA,tpB)) =>
-        solver.check(Typing(stack,a,tpA))(history+(solver.presentObj(a)+" must have type "+solver.presentObj(tpA)))
-        val (xn,sub) = Common.pickFresh(solver, x)
-        val sub2 = xn / a
-        solver.check(Typing(stack ++ xn % tpA, b, tpB ^? sub2))(history + "type checking rule for Sigma")
-      case _ => false
-    }
-  }
-} */
+
 object SigmaType extends TypingRule(Sigma.path) {
   def apply(solver:Solver)(tm:Term, tp:Term)(implicit stack: Stack, history: History) : Boolean = {
     Common.makeSigma(solver,tp) match {
@@ -151,9 +135,12 @@ object SigmaType extends TypingRule(Sigma.path) {
         if (tpA2.isDefined && tpB2.isDefined) solver.check(Equality(stack,tpA,tpA2.get,None)) &&
           solver.check(Equality(stack,tpB ^? (x / Proj1(tm)),tpB2.get,None))
         else false
+      case _ => false
     }
   }
 }
+
+/** Equality rule for sigma and product types */
 
 object SigmaEquality extends TermBasedEqualityRule {
   val head = Sigma.path
@@ -177,7 +164,7 @@ object SigmaEquality extends TermBasedEqualityRule {
   }
 }
 
-/** equality-checking: the eta rule |- pi1(t1) = pi1(t2) : A , x:A |- pi2(t1) = pi2(t2) : B(x) --->  t1 = t2 : Sigma x:A. B */
+/** equality-checking: the eta rule |- pi1(t1) = pi1(t2) : A , |- pi2(t1) = pi2(t2) : B(pi1(t)) --->  t1 = t2 : Sigma x:A. B */
 object TupleEquality extends TypeBasedEqualityRule(Nil, Sigma.path) {
   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     val Sigma(x, tpA, tpB) = Common.makeSigma(solver,tp)
@@ -207,6 +194,7 @@ object Projection2Beta extends ComputationRule(Proj2.path) {
   = ProjectionBeta.apply(solver)(tm, covered)
 }
 
+/** computation: expand product to become sigma type */
 object ExpandProduct extends ComputationRule(Product.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
     case Product(a,b) => Some(Sigma(OMV.anonymous, a, b))

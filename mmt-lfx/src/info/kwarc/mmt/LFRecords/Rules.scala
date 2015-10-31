@@ -1,5 +1,6 @@
 package info.kwarc.mmt.LFRecords
 
+import info.kwarc.mmt.LFRecords._
 import info.kwarc.mmt.api.LocalName
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects._
@@ -54,6 +55,38 @@ object RecordExpTerm extends IntroductionRule(Recexp.path, OfType.path) {
   }
 }
 
+/** Elimination: the type inference rule t : |{a:A,...}|  --->  t.a:A */
+// TODO extend to dependent types ?
+object GetfieldTerm extends EliminationRule(Getfield.path, OfType.path) {
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
+    case Getfield(rec,v) =>
+      val tp = solver.safeSimplifyUntil(solver.inferType(rec).getOrElse(return None))(Rectype.unapply)._1
+      history += (solver.presentObj(rec)+" must have type "+solver.presentObj(tp))
+      tp match {
+        case Rectype(fields) =>
+          val tpv = fields.collectFirst{case OML(p) if p.name==v.vd.name => p}
+          if (tpv.isEmpty || tpv.get.tp.isEmpty) None else Some(tpv.get.tp.get)
+        case _ => None
+      }
+    case _ => None // should be impossible
+  }
+}
+
+/** type-checking: the type checking rule |-t.a1:A1 ... |-t.an:An  --->  t : |{a1:A1,...,an:An}| */
+// TODO extend to dependent types ?
+object RecTypeCheck extends TypingRule(Rectype.path) {
+  def apply(solver:Solver)(tm:Term, tp:Term)(implicit stack: Stack, history: History) : Boolean = tp match {
+      case Rectype(fields) =>
+        val tpmatches = fields map (f =>
+            if (f.vd.tp.isDefined)
+              solver.check(Typing(stack,Getfield(tm,f),f.vd.tp.get))
+            else false
+          )
+        tpmatches forall (p => p)
+      case _ => false
+    }
+}
+
 /** Equality for Record Type
   */
 object RecTypeEquality extends TermHeadBasedEqualityRule(Nil, Rectype.path, Rectype.path) {
@@ -65,5 +98,42 @@ object RecTypeEquality extends TermHeadBasedEqualityRule(Nil, Rectype.path, Rect
         })
       case _ => None
     }
+  }
+}
+
+/** equality-checking:  |- t1.a1 = t2.a1 : A1 ... |- t1.an = t2.an : An  --->  t1 = t2 : |{ a1:A1,...,an:An }| */
+object RecEquality extends TypeBasedEqualityRule(Nil, Rectype.path) {
+  def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] =
+    tp match {
+      case Rectype(fields) =>
+        val tpmatches1 = fields map (f =>
+          if (f.vd.tp.isDefined)
+            solver.check(Typing(stack,Getfield(tm1,f),f.vd.tp.get))
+          else false
+          )
+        if (tpmatches1 exists (p => !p)) return Some(false)
+        val tpmatches2 = fields map (f =>
+          if (f.vd.tp.isDefined)
+            solver.check(Typing(stack,Getfield(tm1,f),f.vd.tp.get))
+          else false
+          )
+        if (tpmatches2 exists (p => !p)) return Some(false)
+        val eqmatches = fields map (f =>
+            solver.check(Equality(stack,Getfield(tm1,f),Getfield(tm2,f),f.vd.tp))
+        )
+        Some(eqmatches forall (p => p))
+      case _ => Some(false)
+    }
+}
+
+/** computation: the rule |[a1=t,...]|.a1 = t
+  */
+
+object GetFieldComp extends ComputationRule(Getfield.path) {
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term]
+    = tm match {
+    case Getfield(Recexp(fields),f) =>
+      fields collectFirst {case OML(g) if g.name==f.vd.name && g.df.isDefined => g.df.get}
+    case _ => None
   }
 }
