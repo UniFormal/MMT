@@ -121,7 +121,7 @@ class SmsGenerator extends LaTeXBuildTarget {
     }
   }
 
-  private val importMhModule: Regex = "\\\\importmhmodule\\[(.*?)\\]\\{(.*?)\\}.*".r
+  private val importMhModule: Regex = "\\\\importmhmodule\\[(.*?)\\](.*?)".r
 
   private def mkImport(b: File, r: String, p: String, a: String) =
     "\\importmodule[load=" + b + "/" + r + "/source/" + p + "]" + a
