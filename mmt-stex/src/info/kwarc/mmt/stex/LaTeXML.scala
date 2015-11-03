@@ -124,8 +124,14 @@ class SmsGenerator extends LaTeXBuildTarget {
   private val importMhModule: Regex = "\\\\importmhmodule\\[(.*?)\\](.*?)".r
   private val gimport: Regex = "\\\\gimport\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
 
-  private def mkImport(b: File, r: String, p: String, a: String) =
-    "\\importmodule[load=" + b + "/" + r + "/source/" + p + "]" + a
+  private def mkImport(b: File, r: String, p: String, a: String, ext: String) =
+    "\\importmodule[load=" + b + "/" + r + "/source/" + p + ",ext=" + ext + "]" + a
+
+  private def mkMhImport(b: File, r: String, p: String, a: String) =
+    mkImport(b, r, p, a, "sms")
+
+  private def mkGImport(b: File, r: String, p: String) =
+    mkImport(b, r, p, "{" + p + "}", "tex")
 
   private def creatingSms(a: Archive, inFile: File, outFile: File, enc: String): Unit = {
     val source = scala.io.Source.fromFile(inFile, enc)
@@ -142,20 +148,19 @@ class SmsGenerator extends LaTeXBuildTarget {
               case List("path", p) :: tl =>
                 tl match {
                   case Nil =>
-                    n = mkImport(a.baseDir, archString(a), p, b)
+                    n = mkMhImport(a.baseDir, archString(a), p, b)
                   case List(List("repos", id)) =>
-                    n = mkImport(a.baseDir, id, p, b)
+                    n = mkMhImport(a.baseDir, id, p, b)
                   case _ =>
                 }
               case _ =>
             }
           case gimport(_, r, p) =>
-            val b = "{" + p + "}"
             Option(r) match {
               case Some(id) =>
-                n = mkImport(a.baseDir, id, p, b)
+                n = mkGImport(a.baseDir, id, p)
               case None =>
-                n = mkImport(a.baseDir, archString(a), p, b)
+                n = mkGImport(a.baseDir, archString(a), p)
             }
           case _ =>
         }
