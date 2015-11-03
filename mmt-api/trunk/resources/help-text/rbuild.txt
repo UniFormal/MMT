@@ -8,6 +8,7 @@ TARGET is one of:
  pdflatex     create .pdf files from .tex files
  alltex       create all.tex file from all .tex files of a folder
  allpdf       create all.pdf file from all.tex file
+ tikzsvg      create .svg files from .tex files in tikz subfolders via .pdf
 
 the optional MODIFIER is one of:
  --force       definitely (re)create target file(s)
@@ -42,6 +43,10 @@ the following OPTION is supported for the TARGET pdflatex:
 
 the following OPTION is supported for the TARGET allpdf:
  --allpdf=<exe>      use executable <exe> (default: xelatex in PATH)
+
+the following OPTION is supported for the TARGET tikzsvg:
+ --tikzsvg=<exe>      use executable <exe> (default: xelatex in PATH)
+ (tikzsvg uses the program convert in PATH to convert pdf to svg)
 
 The TARGETs sms and alltex do not take further OPTIONs.
 
