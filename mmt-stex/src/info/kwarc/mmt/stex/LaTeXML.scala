@@ -131,7 +131,7 @@ class SmsGenerator extends LaTeXBuildTarget {
     mkImport(b, r, p, a, "sms")
 
   private def mkGImport(b: File, r: String, p: String) =
-    "\\mhcurrentmodule{" + p + "}%\n" + mkImport(b, r, p, "{" + p + "}", "tex")
+    "\\mhcurrentmodule{" + r + "}%\n" + mkImport(b, r, p, "{" + p + "}", "tex")
 
   private def creatingSms(a: Archive, inFile: File, outFile: File, enc: String): Unit = {
     val source = scala.io.Source.fromFile(inFile, enc)
