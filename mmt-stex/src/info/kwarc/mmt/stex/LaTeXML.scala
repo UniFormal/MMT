@@ -121,50 +121,14 @@ class SmsGenerator extends LaTeXBuildTarget {
     }
   }
 
-  private val importMhModule: Regex = "\\\\importmhmodule\\[(.*?)\\](.*?)".r
-  private val gimport: Regex = "\\\\gimport\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
-
-  private def mkImport(b: File, r: String, p: String, a: String, ext: String) =
-    "\\importmodule[load=" + b + "/" + r + "/source/" + p + ",ext=" + ext + "]" + a
-
-  private def mkMhImport(b: File, r: String, p: String, a: String) =
-    mkImport(b, r, p, a, "sms")
-
-  private def mkGImport(b: File, r: String, p: String) =
-    mkImport(b, r, p, "{" + p + "}", "tex")
-
   private def creatingSms(a: Archive, inFile: File, outFile: File, enc: String): Unit = {
     val source = scala.io.Source.fromFile(inFile, enc)
     val w = File.Writer(outFile)
     source.getLines().foreach { line =>
       val l = stripComment(line).trim
-      var n = l
       val verbIndex = l.indexOf("\\verb")
       if (verbIndex <= -1 && smsRegs.findFirstIn(l).isDefined) {
-        l match {
-          case importMhModule(r, b) =>
-            val m = r.split(",").toList.sorted.map(_.split("=").toList)
-            m match {
-              case List("path", p) :: tl =>
-                tl match {
-                  case Nil =>
-                    n = mkMhImport(a.baseDir, archString(a), p, b)
-                  case List(List("repos", id)) =>
-                    n = mkMhImport(a.baseDir, id, p, b)
-                  case _ =>
-                }
-              case _ =>
-            }
-          case gimport(_, r, p) =>
-            Option(r) match {
-              case Some(id) =>
-                n = mkGImport(a.baseDir, id, p)
-              case None =>
-                n = mkGImport(a.baseDir, archString(a), p)
-            }
-          case _ =>
-        }
-        w.println(n + "%")
+        w.println(l + "%")
       }
     }
     w.close()
