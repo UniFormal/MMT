@@ -122,6 +122,7 @@ class SmsGenerator extends LaTeXBuildTarget {
   }
 
   private val importMhModule: Regex = "\\\\importmhmodule\\[(.*?)\\](.*?)".r
+  private val gimport: Regex = "\\\\gimport\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
 
   private def mkImport(b: File, r: String, p: String, a: String) =
     "\\importmodule[load=" + b + "/" + r + "/source/" + p + "]" + a
@@ -147,6 +148,14 @@ class SmsGenerator extends LaTeXBuildTarget {
                   case _ =>
                 }
               case _ =>
+            }
+          case gimport(_, r, p) =>
+            val b = "{" + p + "}"
+            Option(r) match {
+              case Some(id) =>
+                n = mkImport(a.baseDir, id, p, b)
+              case None =>
+                n = mkImport(a.baseDir, archString(a), p, b)
             }
           case _ =>
         }
