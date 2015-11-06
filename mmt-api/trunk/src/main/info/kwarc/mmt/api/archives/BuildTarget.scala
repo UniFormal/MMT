@@ -37,9 +37,12 @@ abstract class BuildTarget extends FormatBasedExtension with Dependencies {
     */
   def key: String
 
-  /** default file extension to be used by meta targets
+  /** default file extension to determine the input of subsequent targets within meta targets
     *
     * needs to be overwritten by build targets for sources
+    * i.e. for "rbuild latexml_stex-omdoc" latexml produces latexml/ex.omdoc from source/ex.tex
+    * therefore the inPath for stex-omdoc must be changed from ex.tex (for latexml)
+    * to ex.omdoc (for stex-omdoc) in the pipeline described by the meta target
     * */
   def defaultFileExtension: String = "omdoc"
 
