@@ -210,7 +210,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       case None => errorWriter
       case Some(eC) => new MultipleErrorHandler(List(eC, errorWriter))
     }
-    val outFile = getOutFile(a, inPath)
+    val outFile = if (isDir) getFolderOutFile(a, inPath) else getOutFile(a, inPath)
     val outPath = getOutPath(a, outFile)
     new BuildTask(a, inFile, isDir, inPath, outFile, outPath, errorCont)
   }
