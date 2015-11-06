@@ -250,16 +250,12 @@ abstract class TraversingBuildTarget extends BuildTarget {
     //build every file
     a.traverse[BuildTask](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case Current(inFile, inPath) =>
-        if (!inFile.isFile)
-          throw LocalError("file does not exist: " + inPath)
-        else {
-          val bf = getBuildTask(a, inPath, inFile, false, eCOpt)
-          wrappedBuildFile(bf)
-          bf
-        }
+        val bf = getBuildTask(a, inPath, inFile, isDir = false, eCOpt)
+        wrappedBuildFile(bf)
+        bf
     }, {
       case (Current(inDir, inPath), builtChildren) =>
-        val bd = getBuildTask(a, inPath, inDir, true, None)
+        val bd = getBuildTask(a, inPath, inDir, isDir = true, None)
         wrappedBuildDir(bd, builtChildren)
         bd
     })
@@ -322,16 +318,16 @@ abstract class TraversingBuildTarget extends BuildTarget {
            val errFile = getErrorFile(p)
            modified(errFile, errorFile)
            }
-        val bf = getBuildTask(a, inPath, inFile, false, None)
+        val bf = getBuildTask(a, inPath, inFile, isDir = false, None)
         val outPath = getOutPath(a, getOutFile(a, inPath))
         if (res) if (up.dryRun) logResult("out-dated " + outPath) else wrappedBuildFile(bf)
         else logResult("up-to-date " + outPath)
         (res, bf)
     }, { case (c@Current(inDir, inPath), childChanged) =>
-      val changes = childChanged.map(_._1).contains(true)
-      val bd = getBuildTask(a, inPath, inDir, true, None)
+      val changes = childChanged.exists(_._1)
+      val bd = getBuildTask(a, inPath, inDir, isDir = true, None)
       if (changes) {
-        val bd = getBuildTask(a, inPath, inDir, true, None)
+        val bd = getBuildTask(a, inPath, inDir, isDir = true, None)
         wrappedBuildDir(bd, childChanged.map(_._2))
       }
       (changes, bd)
@@ -369,8 +365,8 @@ class MetaBuildTarget extends BuildTarget {
   override def defaultFileExtension: String = _inExt
 
   /** first argument: the key of this build target
-   * remaining arguments: the build targets to chain
-   */
+    * remaining arguments: the build targets to chain
+    */
   override def start(args: List[String]): Unit = {
     startArgs = args
     _key = args.headOption.getOrElse(

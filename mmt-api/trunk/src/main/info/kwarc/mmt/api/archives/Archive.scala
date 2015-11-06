@@ -3,11 +3,8 @@ package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.utils._
 
 import scala.collection.mutable
@@ -45,10 +42,10 @@ abstract class WritableArchive extends ROArchive {
     nsMap
   }
 
-  /**
-   * @param dim a dimension in the archive
-   * @return the relative path to that
-   */
+  /** the file for the dimension within the archive
+    *
+    * @param dim a dimension in the archive
+    */
   def /(dim: ArchiveDimension): File = dim match {
     case r@RedirectableDimension(key, _) => properties.get(key) match {
       case Some(p) => root / p
@@ -87,6 +84,7 @@ abstract class WritableArchive extends ROArchive {
   }
 
   /** Get the disk path of the module in the content folder
+    *
     * @param m the MPath of the module
     * @return the File descriptor of the destination  file in the content folder
     */
@@ -108,24 +106,26 @@ abstract class WritableArchive extends ROArchive {
         val result = onDir(Current(inFile, in), results.toList)
         if (sendLog) log("leaving  " + inFile)
         Some(result)
-      } else None
-    } else if (filter(inFileName) && filterDir(inFile.up.getName))
-      try {
-        val r = onFile(Current(inFile, in))
-        Some(r)
-      } catch {
-        case e: Error => report(e); None
       }
+      else None
+    }
+    else if (filter(inFileName) && filterDir(inFile.up.getName))
+      if (!inFile.isFile) {
+        if (sendLog) log("file does not exist: " + inFile)
+        None
+      }
+      else Some(onFile(Current(inFile, in)))
     else None
   }
 }
 
 /** archive management
+  *
+  * Archive is a very big class, so most of its functionality is outsourced to various traits that are mixed in here
+  *
   * @param root the root folder that contains the source folder
   * @param properties a key value map
   * @param report the reporting mechanism
-  *
-  *               Archive is a very big class, so most of its functionality is outsourced to various traits that are mixed in here
   */
 class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report)
   extends WritableArchive with Validate with ScalaCode with ZipArchive {
@@ -186,6 +186,7 @@ object Archive {
   }
 
   /** Get the disk path of the module in the content folder
+    *
     * @param m the MPath of the module
     * @return the File descriptor of the destination  file in the content folder
     */
@@ -198,25 +199,25 @@ object Archive {
         List(escape(m.name.toPath) + ".omdoc"))
   }
 
-  /**
-   * Makes sure that a path refers to a file, not to a folder, using .extension files to store information about folders
-   * @param segs a path in a folder with narration structure
-   * @param extension a file extension
-   * @return segs with an appended segment ".extension" if there is no such segment yet
-   */
+  /** Makes sure that a path refers to a file, not to a folder, using .extension files to store information about folders
+    *
+    * @param segs a path in a folder with narration structure
+    * @param extension a file extension
+    * @return segs with an appended segment ".extension" if there is no such segment yet
+    */
   def narrationSegmentsAsFile(segs: FilePath, extension: String): FilePath = {
     if (segs.segments.nonEmpty && segs.segments.last.endsWith("." + extension)) segs
     else FilePath(segs.segments ::: List("." + extension))
   }
 
-  /**
-   * Inverse of narrationSegmentsAsFile
-   * @param segs a path in a folder with narration structure that ends in ".extension"
-   * @param extension a file extension
-   * @return segs with a final segment ".extension" removed if there is one
-   *
-   *         This is inverse to narrationSegmentsAsFile if all files and no folders in the respective dimension end in ".extension"
-   */
+  /** Inverse of narrationSegmentsAsFile
+    *
+    * This is inverse to narrationSegmentsAsFile if all files and no folders in the respective dimension end in ".extension"
+    *
+    * @param segs a path in a folder with narration structure that ends in ".extension"
+    * @param extension a file extension
+    * @return segs with a final segment ".extension" removed if there is one
+    */
   def narrationSegmentsAsFolder(segs: FilePath, extension: String): FilePath = {
     if (segs.segments.nonEmpty && segs.segments.last == "." + extension) segs.dirPath
     else segs
