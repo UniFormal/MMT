@@ -115,6 +115,13 @@ class BuildTask(val archive: Archive, val inFile: File, val isDir: Boolean, val 
   /** the name of the folder if inFile is a folder */
   def dirName: String = outFile.filepath.dirPath.baseName
 
+  private def closeErrorHandler(h: ErrorHandler): Unit = h match {
+    case ew: ErrorWriter => ew.close()
+    case MultipleErrorHandler(hs) => hs.foreach(closeErrorHandler)
+    case _ =>
+  }
+
+  def closeErrorCont() = closeErrorHandler(errorCont)
 }
 
 /**
@@ -194,6 +201,49 @@ abstract class TraversingBuildTarget extends BuildTarget {
     new ErrorWriter(errFileName, Some(report))
   }
 
+  /** create a [[BuildTask]] form some if its components */
+  protected def getBuildTask(a: Archive, inPath: FilePath, inFile: File,
+                             isDir: Boolean, eCOpt: Option[ErrorHandler]): BuildTask = {
+    val errorWriter = makeHandler(a, inPath, isDir)
+    val errorCont = eCOpt match {
+      case None => errorWriter
+      case Some(eC) => new MultipleErrorHandler(List(eC, errorWriter))
+    }
+    val outFile = getOutFile(a, inPath)
+    val outPath = getOutPath(a, outFile)
+    new BuildTask(a, inFile, isDir, inPath, outFile, outPath, errorCont)
+  }
+
+  private def wrappedBuildFile(bf: BuildTask): Unit = {
+    val prefix = "[" + inDim + " -> " + outDim + "] "
+    report("archive", prefix + bf.inFile + " -> " + bf.outFile)
+    bf.outFile.up.mkdirs
+    try {
+      buildFile(bf)
+    } catch {
+      case e: Error => bf.errorCont(e)
+      case e: Exception =>
+        val le = LocalError("unknown build error: " + e.getMessage).setCausedBy(e)
+        bf.errorCont(le)
+    } finally {
+      bf.closeErrorCont()
+    }
+    controller.notifyListeners.onFileBuilt(bf.archive, this, bf.inPath)
+  }
+
+  private def wrappedBuildDir(bd: BuildTask, builtChildren: List[BuildTask]): Unit = {
+    try {
+      buildDir(bd, builtChildren)
+    } catch {
+      case e: Error => bd.errorCont(e)
+      case e: Exception =>
+        val le = LocalError("unknown build dir error: " + e.getMessage).setCausedBy(e)
+        bd.errorCont(le)
+    } finally {
+      bd.closeErrorCont()
+    }
+  }
+
   /** recursive building */
   private def buildAux(in: FilePath = EmptyPath)(implicit a: Archive, eCOpt: Option[ErrorHandler]): Unit = {
     //build every file
@@ -202,37 +252,15 @@ abstract class TraversingBuildTarget extends BuildTarget {
       case Current(inFile, inPath) =>
         if (!inFile.isFile)
           throw LocalError("file does not exist: " + inPath)
-        val outFile = getOutFile(a, inPath)
-        val outPath = getOutPath(a, outFile)
-        report("archive", prefix + inFile + " -> " + outFile)
-        val errorWriter = makeHandler(a, inPath)
-        val errorCont = eCOpt match {
-          case None => errorWriter
-          case Some(eC) => new MultipleErrorHandler(List(eC, errorWriter))
+        else {
+          val bf = getBuildTask(a, inPath, inFile, false, eCOpt)
+          wrappedBuildFile(bf)
+          bf
         }
-        val bf = new BuildTask(a, inFile, false, inPath, outFile, outPath, errorCont)
-        outFile.up.mkdirs
-        try {
-          buildFile(bf)
-        } catch {
-          case e: Error => errorCont(e)
-          case e: Exception =>
-            val le = LocalError("unknown build error: " + e.getMessage).setCausedBy(e)
-            errorCont(le)
-        } finally {
-          errorWriter.close()
-        }
-        controller.notifyListeners.onFileBuilt(a, this, inPath)
-        // a.timestamps(this).set(inPath) not needed anymore
-        bf
     }, {
       case (Current(inDir, inPath), builtChildren) =>
-        val outFile = getFolderOutFile(a, inPath)
-        val errorCont = makeHandler(a, inPath, isDir = true)
-        val outPath = getOutPath(a, outFile)
-        val bd = new BuildTask(a, inDir, true, inPath, outFile, outPath, errorCont)
-        buildDir(bd, builtChildren)
-        errorCont.close()
+        val bd = getBuildTask(a, inPath, inDir, true, None)
+        wrappedBuildDir(bd, builtChildren)
         bd
     })
   }
@@ -281,30 +309,28 @@ abstract class TraversingBuildTarget extends BuildTarget {
     * the decision is made based on the time stamps and the system's last-modified date
     */
   def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = {
-    a.traverse[Boolean](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
+    a.traverse[(Boolean, BuildTask)](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case c@Current(inFile, inPath) =>
         val errorFile = getErrorFile(a, inPath)
-        val inFile = a / inDim / inPath
         val errs = hadErrors(errorFile, up.errorLevel)
         val res = up.errorLevel <= Level.Force || modified(inFile, errorFile) || errs ||
           getSingleDeps(controller, a, inPath).exists{ p =>
            val errFile = getErrorFile(p)
            modified(errFile, errorFile)
            }
+        val bf = getBuildTask(a, inPath, inFile, false, None)
         val outPath = getOutPath(a, getOutFile(a, inPath))
-        if (res) if (up.dryRun) logResult("out-dated " + outPath) else buildAux(inPath)(a, None)
+        if (res) if (up.dryRun) logResult("out-dated " + outPath) else wrappedBuildFile(bf)
         else logResult("up-to-date " + outPath)
-        res
+        (res, bf)
     }, { case (c@Current(inDir, inPath), childChanged) =>
-      if (childChanged.contains(true)) {
-        val outFile = getFolderOutFile(a, inPath)
-        val outPath = getOutPath(a, outFile)
-        val errorCont = makeHandler(a, inPath, isDir = true)
-        val bd = new BuildTask(a, inDir, true, inPath, outFile, outPath, errorCont)
-        errorCont.close()
-        buildDir(bd, Nil) // TODO pass proper builtChildren
+      val changes = childChanged.map(_._1).contains(true)
+      val bd = getBuildTask(a, inPath, inDir, true, None)
+      if (changes) {
+        val bd = getBuildTask(a, inPath, inDir, true, None)
+        wrappedBuildDir(bd, childChanged.map(_._2))
       }
-      false
+      (changes, bd)
     })
   }
 
