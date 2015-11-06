@@ -231,7 +231,7 @@ abstract class ErrorHandler {
 }
 
 /** combines the actions of multiple handlers */
-class MultipleErrorHandler(handlers: List[ErrorHandler]) extends ErrorHandler {
+case class MultipleErrorHandler(handlers: List[ErrorHandler]) extends ErrorHandler {
   def addError(e: Error) {
     handlers.foreach(_.apply(e))
   }
@@ -268,7 +268,7 @@ class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends Error
   file.write("<errors>\n")
 
   protected def addError(e: Error) {
-    report.foreach(_(e))
+    report.foreach(_ (e))
     file.write(new PrettyPrinter(240, 2).format(e.toNode) + "\n")
   }
 
