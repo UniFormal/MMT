@@ -33,8 +33,7 @@ case class BuildDepsFirst(up: Update) extends BuildTargetModifier {
   * from an input dimension.
   */
 abstract class BuildTarget extends FormatBasedExtension with Dependencies {
-  /** a string identifying this build target, used for parsing commands, logging, error messages
-    */
+  /** a string identifying this build target, used for parsing commands, logging, error messages */
   def key: String
 
   /** default file extension to determine the input of subsequent targets within meta targets
@@ -87,15 +86,14 @@ abstract class BuildTarget extends FormatBasedExtension with Dependencies {
   }
 }
 
-/**
- * auxiliary type to represent the parameters and result of building a file/directory
- *
- * @param inFile the input file
- * @param inPath the path of the input file inside the archive, relative to the input dimension
- * @param outFile the intended output file
- * @param outPath the output file inside the archive, relative to the archive root.
- * @param errorCont BuildTargets should report errors here
- */
+/** auxiliary type to represent the parameters and result of building a file/directory
+  *
+  * @param inFile the input file
+  * @param inPath the path of the input file inside the archive, relative to the input dimension
+  * @param outFile the intended output file
+  * @param outPath the output file inside the archive, relative to the archive root.
+  * @param errorCont BuildTargets should report errors here
+  */
 class BuildTask(val archive: Archive, val inFile: File, val isDir: Boolean, val inPath: FilePath,
                 val outFile: File, val outPath: FilePath, val errorCont: ErrorHandler) {
   /** build targets should set this to true if they skipped the file so that it is not passed on to the parent directory */
@@ -124,11 +122,11 @@ class BuildTask(val archive: Archive, val inFile: File, val isDir: Boolean, val 
   def closeErrorCont() = closeErrorHandler(errorCont)
 }
 
-/**
- * This trait provides common functionality for BuildTargets that traverse all files in the input dimension.
- *
- * It implements BuildTarget in terms of a single abstract method called to build a path in the archive.
- */
+/** This abstract class provides common functionality for [[BuildTarget]]s that traverse all files in the input dimension.
+  *
+  * It implements BuildTarget in terms of the abstract method buildFile called to build a file in the archive.
+  * It is also possible to override the method buildDir to post process directory content.
+  */
 abstract class TraversingBuildTarget extends BuildTarget {
   /** the input dimension/archive folder */
   def inDim: ArchiveDimension
@@ -163,29 +161,29 @@ abstract class TraversingBuildTarget extends BuildTarget {
   /** some logging for lmh */
   protected def logResult(s: String) = log(s, Some("result"))
 
-  /**
-   * there is no inExt, instead we test to check which files should be used;
-   * this is often a test for the file extension
-   *
-   * This must be such that all auxiliary files are skipped.
-   */
+  /** there is no inExt, instead we test to check which files should be used;
+    * this is often a test for the file extension
+    *
+    * This must be such that all auxiliary files are skipped.
+    * see defaultFileExtension if you need an inExt (for meta targets)
+    */
   def includeFile(name: String): Boolean
 
-  /**
-   * true by default; override to skip auxiliary directories
-   * TODO actually check for this
-   */
+  /** true by default; override to skip auxiliary directories */
   def includeDir(name: String): Boolean = true
 
   /** the main abstract method that implementations must provide: builds one file
+    *
     * @param bf information about input/output file etc
     */
   def buildFile(bf: BuildTask): Unit
 
-  /** similar to buildOne but called on every directory (after all its children have been processed)
+  /** similar to buildFile but called on every directory (after all its children have been processed)
+    *
+    * This does nothing by default and can be overridden if needed.
+
     * @param bd information about input/output file etc
     * @param builtChildren results from building the children
-    *                      This does nothing by default and can be overridden if needed.
     */
   def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): Unit = {}
 
@@ -201,7 +199,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
     new ErrorWriter(errFileName, Some(report))
   }
 
-  /** create a [[BuildTask]] form some if its components */
+  /** create a [[BuildTask]] form some if its components
+    *
+    * @param eCOpt optional additional [[ErrorHandler]], errors are always written to errors dimension
+    */
   protected def getBuildTask(a: Archive, inPath: FilePath, inFile: File,
                              isDir: Boolean, eCOpt: Option[ErrorHandler]): BuildTask = {
     val errorWriter = makeHandler(a, inPath, isDir)
@@ -247,7 +248,6 @@ abstract class TraversingBuildTarget extends BuildTarget {
   /** recursive building */
   private def buildAux(in: FilePath = EmptyPath)(implicit a: Archive, eCOpt: Option[ErrorHandler]): Unit = {
     //build every file
-    val prefix = "[" + inDim + " -> " + outDim + "] "
     a.traverse[BuildTask](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case Current(inFile, inPath) =>
         if (!inFile.isFile)
@@ -266,9 +266,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   /** additional method that implementations may provide: cleans one file
+    *
+    * deletes the output and error file by default, may be overridden to, e.g., delete auxiliary files
+    *
     * @param a the containing archive
     * @param curr the inDim whose output is to be deleted
-    *             deletes the output and error file by default, may be overridden to, e.g., delete auxiliary files
     */
   def cleanFile(a: Archive, curr: Current): Unit = {
     val inPath = curr.path
@@ -279,9 +281,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   /** additional method that implementations may provide: cleans one directory
+    *
+    * does nothing by default
+    *
     * @param a the containing archive
     * @param curr the outDim directory to be deleted
-    *             does nothing by default
     */
   def cleanDir(a: Archive, curr: Current): Unit = {
     delete(getFolderErrorFile(a, curr.path))
@@ -344,7 +348,6 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = {
-    // includeFile will be checked by build again (as was already checked during dependency analysis)
     val ts = getDeps(controller, key, getFilesRec(a, in))
     ts.foreach(d => if (d.target == key) update(d.archive, up, d.filePath)
     else controller.getOrAddBuildTarget(d.target) match {
@@ -354,9 +357,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 }
 
-/**
- * a build target that chains multiple other targets
- */
+/** a build target that chains multiple other targets */
 class MetaBuildTarget extends BuildTarget {
   private var _key = ""
   private var _inExt = ""
@@ -367,8 +368,7 @@ class MetaBuildTarget extends BuildTarget {
 
   override def defaultFileExtension: String = _inExt
 
-  /**
-   * first argument: the key of this build target
+  /** first argument: the key of this build target
    * remaining arguments: the build targets to chain
    */
   override def start(args: List[String]): Unit = {
