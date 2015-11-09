@@ -235,7 +235,10 @@ object File {
           // make sure line contains colon and the key is non-empty
           val key = tline.substring(0, p).trim
           val value = tline.substring(p + 1).trim
-          properties(key) = value
+          properties(key) = properties.get(key) match {
+            case None => value
+            case Some(old) => old + " " + value
+          }
         }
       }
     }
