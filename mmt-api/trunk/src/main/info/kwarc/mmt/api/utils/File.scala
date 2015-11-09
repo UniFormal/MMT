@@ -5,9 +5,7 @@ import java.io._
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-/**
- * a relative file path
- */
+/** a relative file path usually within an archive below a dimension */
 case class FilePath(segments: List[String]) {
   def toFile: File = File(toString)
 
