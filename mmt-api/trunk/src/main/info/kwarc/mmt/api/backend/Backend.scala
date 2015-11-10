@@ -180,6 +180,9 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
 
   private def manifestLocations(root: File) = List(root / "META-INF", root).map(_ / "MANIFEST.MF")
 
+  private def manifestLocation(root: File): Option[File] =
+    manifestLocations(root).find(f => f.isFile && f.toString == f.getCanonicalPath)
+
   /**
    * opens archives: an archive folder, or a mar file, or any other folder recursively
    * @param root the file/folder containing the archive(s)
@@ -188,7 +191,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
    */
   def openArchive(root: File): List[Archive] = {
     if (root.isDirectory) {
-      val manifestOpt = manifestLocations(root).find(_.isFile)
+      val manifestOpt = manifestLocation(root)
       manifestOpt match {
         case Some(manifest) =>
           val properties = File.readProperties(manifest)
@@ -212,7 +215,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
       val name = root.name
       val unpackedRoot = folder / (name + "-unpacked")
       // check if root is younger than manifest in unpackedRoot
-      val extract = manifestLocations(unpackedRoot).find(_.isFile) match {
+      val extract = manifestLocation(unpackedRoot) match {
         case Some(unpackedManifest) =>
           val mod = Modification(root, unpackedManifest)
           if (mod == Modified) {
@@ -260,7 +263,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
 
   /** split a file name into an archive root and the remaining FilePath */
   def splitFile(f: File): Option[(File, FilePath)] =
-    if (f.isDirectory && manifestLocations(f).exists(_.isFile) && File(".git").exists())
+    if (f.isDirectory && manifestLocation(f).isDefined)
       Some((f, EmptyPath))
     else {
       Option(f.getParentFile).flatMap(parent =>
