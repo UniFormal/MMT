@@ -260,7 +260,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
 
   /** split a file name into an archive root and the remaining FilePath */
   def splitFile(f: File): Option[(File, FilePath)] =
-    if (f.isDirectory && manifestLocations(f).exists(_.isFile))
+    if (f.isDirectory && manifestLocations(f).exists(_.isFile) && File(".git").exists())
       Some((f, EmptyPath))
     else {
       Option(f.getParentFile).flatMap(parent =>
