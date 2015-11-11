@@ -12,9 +12,7 @@ import info.kwarc.mmt.api.utils._
 
 case class NotApplicable(message: String = "") extends java.lang.Throwable
 
-/**
- * An abstraction over physical storage units that hold MMT content
- */
+/** An abstraction over physical storage units that hold MMT content */
 abstract class Storage {
   protected def loadXML(u: URI, dpath: DPath, reader: BufferedReader)(implicit controller: Controller) {
     val ps = new parser.ParsingStream(u, dpath, NamespaceMap(dpath), "omdoc", reader)
@@ -31,15 +29,16 @@ abstract class Storage {
   }
 
   protected def virtDoc(entries: List[String], prefix: String) = {
-    val s = <omdoc>{entries.map(n => <dref target={prefix + n}/>)}</omdoc>.toString()
+    val s = <omdoc>
+      {entries.map(n => <dref target={prefix + n}/>)}
+    </omdoc>.toString()
     new BufferedReader(new java.io.StringReader(s))
   }
 
-  /**
-   * dereferences a path and sends the content to a reader
-   *
-   * a storage may send more/additional content, e.g., the containing file or a dependency closure,
-   */
+  /** dereferences a path and sends the content to a reader
+    *
+    * a storage may send more/additional content, e.g., the containing file or a dependency closure,
+    */
   def load(path: Path)(implicit controller: Controller)
 
   /** called to release all held resources, override as needed */
@@ -75,9 +74,7 @@ case class LocalCopy(scheme: String, authority: String, prefix: String, base: Fi
   }
 }
 
-/**
- * loads a realization from a Java Class Loader and dynamically creates a [[uom.RealizationInScala]] for it
- */
+/** loads a realization from a Java Class Loader and dynamically creates a [[uom.RealizationInScala]] for it */
 class RealizationArchive(file: File, val loader: java.net.URLClassLoader) extends Storage {
   override def toString = "RealizationArchive for " + file
 
@@ -120,11 +117,10 @@ class RealizationArchive(file: File, val loader: java.net.URLClassLoader) extend
   }
 }
 
-/**
- * the backend of a [[Controller]]
- *
- * holds a list of [[Storage]]s and uses them to dereference MMT URIs,
- */
+/** the backend of a [[Controller]]
+  *
+  * holds a list of [[Storage]]s and uses them to dereference MMT URIs,
+  */
 class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.Report) extends Logger {
   /** the registered storages */
   private var stores: List[Storage] = Nil
@@ -153,13 +149,13 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     stores = Nil
   }
 
-  /**
-   * looks up a path in the first Storage that is applicable and sends the content to the reader
-   * the registered storages are searched in the order of registration
-   *
-   * throws [[NotApplicable]] if the resource is not known/available, [[BackendError]] if it is but something goes wrong
-   */
-  def load(p: Path)(implicit controller: Controller) = {
+  /** looks up a path in the first Storage that is applicable and sends the content to the reader
+    *
+    * the registered storages are searched in the order of registration
+    *
+    * throws [[NotApplicable]] if the resource is not known/available, [[BackendError]] if it is but something goes wrong
+    */
+  def load(p: Path)(implicit controller: Controller): Unit = {
     def loadStores(l: List[Storage], p: Path) {
       l match {
         case Nil => throw NotApplicable("no backend available that is applicable to " + p)
@@ -181,14 +177,23 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   private def manifestLocations(root: File) = List(root / "META-INF", root).map(_ / "MANIFEST.MF")
 
   private def manifestLocation(root: File): Option[File] =
-    manifestLocations(root).find(f => f.isFile && f.toString == f.getCanonicalPath)
+    manifestLocations(root).find { f =>
+      if (f.isFile) {
+        val t1 = f.toString
+        val t2 = f.getCanonicalPath
+        if (t1 != t2) log("manifest: " + t1 + "\ndoes not match: " + t2)
+        else log("manifest file: " + t1)
+        t1 == t2
+      }
+      else false
+    }
 
-  /**
-   * opens archives: an archive folder, or a mar file, or any other folder recursively
-   * @param root the file/folder containing the archive(s)
-   * @return the opened archives
-   * @throws NotApplicable if the root is neither a folder nor a mar file
-   */
+  /** opens archives: an archive folder, or a mar file, or any other folder recursively
+    *
+    * @param root the file/folder containing the archive(s)
+    * @return the opened archives
+    * @throws NotApplicable if the root is neither a folder nor a mar file
+    */
   def openArchive(root: File): List[Archive] = {
     if (root.isDirectory) {
       val manifestOpt = manifestLocation(root)
@@ -279,10 +284,11 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
       case Some(p) => List(p)
     }
 
-  /**
-   * @param p a module URI
-   * @return an archive defining it (the corresponding file exists in content dimension)
-   */
+  /** find the archive of a module path
+    *
+    * @param p a module URI
+    * @return an archive defining it (the corresponding file exists in content dimension)
+    */
   def findOwningArchive(p: MPath): Option[Archive] = {
     val cp = Archive.MMTPathToContentPath(p)
     getArchives find { a =>
@@ -308,12 +314,15 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   /** creates and registers a RealizationArchive */
   def openRealizationArchive(file: File) {
     val loader = try {
-      val cl = getClass.getClassLoader // the class loader that loaded this class, may be null for bootstrap class loader
-      if (cl == null)
-        new java.net.URLClassLoader(Array(file.toURI.toURL)) // parent defaults to bootstrap class loader
-      else
-      // delegate to the class loader that loaded MMT - needed if classes to be loaded depend on MMT classes
-        new java.net.URLClassLoader(Array(file.toURI.toURL), cl)
+      val optCl = Option(getClass.getClassLoader)
+      // the class loader that loaded this class, may be null for bootstrap class loader
+      optCl match {
+        case None =>
+          new java.net.URLClassLoader(Array(file.toURI.toURL)) // parent defaults to bootstrap class loader
+        case Some(cl) =>
+          // delegate to the class loader that loaded MMT - needed if classes to be loaded depend on MMT classes
+          new java.net.URLClassLoader(Array(file.toURI.toURL), cl)
+      }
     } catch {
       case _: Exception =>
         logError("could not create class loader for " + file.toString)
