@@ -5,25 +5,6 @@ import java.io._
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-/** a relative file path usually within an archive below a dimension */
-case class FilePath(segments: List[String]) {
-  def toFile: File = File(toString)
-
-  def baseName: String = if (segments.nonEmpty) segments.last else ""
-
-  def dirPath: FilePath = FilePath(if (segments.nonEmpty) segments.init else Nil)
-
-  /** append a segment */
-  def /(s: String): FilePath = FilePath(segments ::: List(s))
-
-  /** strip off a leading segment */
-  def down: FilePath = FilePath(if (segments.nonEmpty) segments.tail else Nil)
-
-  override def toString: String = segments.mkString("/")
-}
-
-object EmptyPath extends FilePath(Nil)
-
 /** File wraps around java.io.File to extend it with convenience methods
   *
   * see implicit conversions with java.io.File at the end of this file
@@ -60,6 +41,8 @@ case class File(toJava: java.io.File) {
     val par = Option(toJava.getParentFile)
     if (par.isEmpty) this else File(par.get)
   }
+  
+  def isRoot = up == this
 
   /** file name */
   def name: String = toJava.getName
@@ -126,6 +109,22 @@ case class File(toJava: java.io.File) {
     toJava.delete()
   }
 }
+
+/** a relative file path usually within an archive below a dimension */
+case class FilePath(segments: List[String]) {
+  def toFile: File = File(toString)
+
+  def baseName: String = if (segments.nonEmpty) segments.last else ""
+
+  def dirPath: FilePath = FilePath(if (segments.nonEmpty) segments.init else Nil)
+
+  /** append a segment */
+  def /(s: String): FilePath = FilePath(segments ::: List(s))
+
+  override def toString: String = segments.mkString("/")
+}
+
+object EmptyPath extends FilePath(Nil)
 
 /** constructs and pattern-matches absolute file:URIs in terms of absolute File's */
 object FileURI {

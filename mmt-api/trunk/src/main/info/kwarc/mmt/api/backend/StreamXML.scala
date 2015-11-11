@@ -51,14 +51,14 @@ object XMLObjectParser extends ObjectParser {
 /** 
  * similar to [[XMLReader]] but streams parsed elements into the continuation function
  */
-// DefinedTheory and DefinedView are parsed wrong
+// TODO DefinedModules and views with from/to children are parsed wrong if are streamed
 class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
    val format = "omdoc"
    override val logPrefix = "streamer"
    private lazy val reader = new XMLReader(report)
 
    /** the structural elements whose children are processed immediately */
-   private val containers = List("omdoc", "theory", "view")
+   private val containers = List("omdoc", "theory")
 
    def apply(ps: parser.ParsingStream)(implicit errorCont: ErrorHandler): Document = {
       val parser = new ConsParser(ps.dpath, new SourceFromReader(ps.stream), errorCont)

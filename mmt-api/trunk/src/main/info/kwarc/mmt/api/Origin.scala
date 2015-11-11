@@ -3,7 +3,7 @@ package info.kwarc.mmt.api
 /** describes the origin of a generated knowledge item */
 abstract class Origin
 /** an original declaration */
-case object Unelaborated extends Origin
+case object Original extends Origin
 /** obtained by elaborating a structure */
 case class FromStructure(structure: GlobalName) extends Origin
 /** obtained by taking the closure under inclusions

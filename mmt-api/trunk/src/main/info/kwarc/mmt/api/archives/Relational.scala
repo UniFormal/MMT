@@ -73,9 +73,9 @@ trait Dependencies {
   def getSingleDeps(controller: Controller, key: String, dep: Dependency): Set[Dependency] =
     if (dep.target == key)
       getSingleDeps(controller, dep.archive, dep.filePath)
-    else controller.getOrAddBuildTarget(dep.target) match {
-      case Some(bt) => bt.getSingleDeps(controller, dep.archive, dep.filePath)
-      case None => Set.empty
+    else {
+       val bt = controller.extman.getOrAddExtension(classOf[BuildTarget],dep.target)
+       bt.getSingleDeps(controller, dep.archive, dep.filePath)
     }
 
   def getDeps(controller: Controller, key: String, args: Set[Dependency]): List[Dependency] = {

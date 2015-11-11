@@ -30,7 +30,7 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
         case s: DeclaredStructure if !s.hasBeenElaborated =>
            val dom = materialize(Context(t.path), s.from, true, None).asInstanceOf[DeclaredTheory]
            flatten(dom)
-           val flats = dom.getPrimitiveDeclarations.map {d =>
+           val flats = dom.getDeclarations.map {d =>
               lup.get(t.path ? (s.name / d.name))
            }
            flats.reverseMap {

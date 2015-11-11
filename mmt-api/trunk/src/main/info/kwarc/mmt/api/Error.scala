@@ -172,6 +172,9 @@ case class GetError(s: String) extends Error("get error: " + s)
 /** errors that occur when the backend believes it should find an applicable resource but cannot */
 case class BackendError(s: String, p: Path) extends Error("Cannot find resource " + p.toString + ": " + s)
 
+/** errors that occur when a configuration entry is missing */
+case class ConfigurationError(id: String) extends Error(s"no entry for $id in current configuration")
+
 /** errors that occur when presenting a knowledge item */
 case class PresentationError(s: String) extends Error(s)
 

@@ -346,9 +346,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
   override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = {
     val ts = getDeps(controller, key, getFilesRec(a, in))
     ts.foreach(d => if (d.target == key) update(d.archive, up, d.filePath)
-    else controller.getOrAddBuildTarget(d.target) match {
-      case Some(bt) => bt.update(d.archive, up, d.filePath)
-      case None => log("build target not found: " + d.target)
+    else {
+       val bt = controller.extman.getOrAddExtension(classOf[BuildTarget],d.target)
+       bt.update(d.archive, up, d.filePath)
     })
   }
 }

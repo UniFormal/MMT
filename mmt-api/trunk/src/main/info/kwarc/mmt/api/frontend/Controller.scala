@@ -1,23 +1,23 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.backend._
-import info.kwarc.mmt.api.checking._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.gui._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.moc._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.parser._
-import info.kwarc.mmt.api.presentation._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.uom._
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.web._
+import archives._
+import backend._
+import checking._
+import documents._
+import gui._
+import libraries._
+import moc._
+import modules._
+import notations._
+import objects._
+import ontology._
+import parser._
+import presentation._
+import symbols._
+import uom._
+import utils._
+import web._
 
 /** An exception that is thrown when a needed knowledge item is not available
   *
@@ -43,6 +43,9 @@ class ControllerState {
   def getOAF: OAF = oaf.getOrElse {
     throw GeneralError("no oaf defined, use 'oaf root'")
   }
+
+  /** the configuration */
+  val config = new MMTConfig
 }
 
 /** An interface to a controller containing read-only methods. */
@@ -100,15 +103,12 @@ class Controller extends ROController with Logger {
   val evaluator = new ontology.Evaluator(this)
   /** the window manager */
   lazy val winman = new WindowManager(this) // lazy so that GUI dependencies are optional
-  /** moc.refiner - handling pragmatic changes in scope */
+  /** moc: pragmatic changes in scope */
   val refiner = new moc.PragmaticRefiner(Set(moc.pragmaticRename, pragmaticAlphaRename))
-  /** moc.propagator - handling change propagation */
+  /** moc: change propagation */
   val propagator = new moc.OccursInImpactPropagator(memory)
   /** relational manager, handles extracting and parsing relational elements */
   val relman = new RelationalManager(this)
-  /** the profile configuration */
-  val config = new MMTConfig(this, true)
-
 
   /** all other mutable fields */
   protected val state = new ControllerState
@@ -121,14 +121,6 @@ class Controller extends ROController with Logger {
 
   /** @return the current home directory */
   def getHome: File = state.home
-
-  /** @return the value of an environment variable */
-  def getEnvVar(name: String): Option[String] =
-    state.environmentVariables.get(name) orElse Option(System.getenv.get(name))
-
-  /** @return the current OAF root */
-  def getOAF: Option[OAF] = state.oaf
-
   /** initially the current working directory
     *
     * @param h sets the current home directory relative to which path names in commands are executed
@@ -137,8 +129,18 @@ class Controller extends ROController with Logger {
     state.home = h
   }
 
+  /** @return the value of an environment variable */
+  def getEnvVar(name: String): Option[String] =
+    state.environmentVariables.get(name) orElse Option(System.getenv.get(name))
+
+  /** @return the current OAF root */
+  def getOAF: Option[OAF] = state.oaf
+
+  /** @return the current configuration */
+  def getConfig = state.config
+  
   private def init() {
-    extman.addDefaultExtensions()
+    extman.addDefaultExtensions
   }
 
   init()
@@ -349,17 +351,17 @@ class Controller extends ROController with Logger {
   }
 
   /** clears the state */
-  def clear() {
-    memory.clear()
-    notifyListeners.onClear()
+  def clear {
+    memory.clear
+    notifyListeners.onClear
   }
 
   /** releases all buffers */
-  def cleanup() {
+  def cleanup {
     // notify all extensions
-    extman.cleanup()
+    extman.cleanup
     //close all open storages in backend
-    backend.cleanup()
+    backend.cleanup
     // close logging
     // report.cleanup
     // stop serversources that are not handled by the garbage collection
@@ -464,52 +466,49 @@ class Controller extends ROController with Logger {
       case e: Error =>
         log(e)
     }
-    report.flush()
+    report.flush
   }
 
-  /** get build target */
-  def getBuildTarget(key: String, log: Boolean = true): Option[BuildTarget] =
-    extman.get(classOf[BuildTarget], key).map(Some(_)).getOrElse {
-      if (log) logError("unknown target " + key + " for building, ignored")
-      None
-    }
-
-  /** get build target if missing try to add it */
-  def getOrAddBuildTarget(key: String): Option[BuildTarget] =
-    getBuildTarget(key, log = false).map(Some(_)).getOrElse {
-      extman.ensureExtension(key, Nil)
-      getBuildTarget(key)
-    }
-
-  /** retrieve or add an Archive by its root file */
-  def getOrAddArchive(root: File): Option[Archive] =
-    backend.getArchiveByRoot(root).map(Some(_)).
-      getOrElse(backend.openArchive(root).map { a =>
-        notifyListeners.onArchiveOpen(a)
-        a
-      }.headOption)
-
-  private def fileBuildAction(key: String, mod: BuildTargetModifier, args: List[String], files: List[File]): Unit = {
+  private def buildFilesAction(keys: List[String], mod: BuildTargetModifier, files: List[File]) {
     report.groups -= "user"
     report.addHandler(ConsoleHandler)
-    extman.ensureExtension(key, args)
     val realFiles = if (files.isEmpty)
       List(File(System.getProperty("user.dir")))
-    else files.filter { f => if (f.exists()) true
     else {
-      logError("file \"" + f + "\" does not exist")
-      false
+       files.filter {f =>
+          val ex = f.exists
+          if (!ex) 
+            logError("file \"" + f + "\" does not exist")
+          ex
+       }
     }
+    /* guess which files/folders the users wants to build
+     *  @return archive root and relative path in it
+     */
+    def collectInputs(f: File): List[(File, FilePath)] = {
+       backend.resolveAnyPhysical(f) match {
+          case Some(ff) =>
+             // f is a file in an archive
+             List(ff)
+          case None =>
+             // not in archive, treat f as directory containing archives
+             f.subdirs.flatMap(collectInputs)
+       }
     }
-    getBuildTarget(key) foreach (buildTarget =>
-      realFiles.flatMap(f => backend.findArchiveFiles(f.getCanonicalFile)) foreach { case (root, in) =>
-        buildTarget match {
-          case bt: TraversingBuildTarget if in.segments.nonEmpty && in.segments.head != bt.inDim.toString =>
-            logError("wrong in-dimension \"" + in.segments.head + "\"")
-          case _ =>
-            getOrAddArchive(root).foreach(buildTarget(mod, _, in.down))
+    val inputs = realFiles flatMap collectInputs
+   
+    val buildTargets = keys map {key => extman.getOrAddExtension(classOf[BuildTarget], key)}
+    
+    inputs foreach {case (root, FilePath(dim :: inPath)) =>
+       handle(AddArchive(root)) // make sure the archive is open
+       val archive = backend.getArchive(root).get // non-empty by invariant of resolveAnyPhysical
+       buildTargets foreach {
+          case bt: TraversingBuildTarget if dim != bt.inDim.toString =>
+            logError("wrong in-dimension \"" + dim + "\"")
+          case bt =>
+            bt(mod, archive, FilePath(inPath))
          }
-      })
+    }
   }
 
   private def archiveBuildAction(ids: List[String], key: String, mod: BuildTargetModifier, in: FilePath): Unit = {
@@ -532,18 +531,9 @@ class Controller extends ROController with Logger {
           val arch = backend.getArchive(id).getOrElse(throw GetError("archive not found"))
           backend.closeArchive(id)
           notifyListeners.onArchiveClose(arch)
-        case _ => getBuildTarget(key).foreach(_ (mod, arch, in))
-      }
-    }
-  }
-
-  private def cloneRecursively(p: String): Unit = {
-    val lcOpt = state.getOAF.clone(p)
-    lcOpt foreach { lc =>
-      val archs = backend.openArchive(lc)
-      archs foreach { a =>
-        val deps = stringToList(a.properties.getOrElse("dependencies", ""))
-        deps foreach { d => cloneRecursively(URI(d).pathAsString) }
+        case _ =>
+           val bt = extman.getOrAddExtension(classOf[BuildTarget], key)
+           bt(mod, arch, in)
       }
     }
   }
@@ -565,6 +555,17 @@ class Controller extends ROController with Logger {
     // run the actionDefinition, if given
     nameOpt foreach { name =>
       handle(Do(Some(folder), name))
+    }
+  }
+
+  private def cloneRecursively(p: String): Unit = {
+    val lcOpt = state.getOAF.clone(p)
+    lcOpt foreach { lc =>
+      val archs = backend.openArchive(lc)
+      archs foreach { a =>
+        val deps = stringToList(a.properties.getOrElse("dependencies", ""))
+        deps foreach { d => cloneRecursively(URI(d).pathAsString) }
+      }
     }
   }
 
@@ -594,8 +595,9 @@ class Controller extends ROController with Logger {
               }
               notifyListeners.onArchiveOpen(a)
             }
-          case FileBuild(key, mod, args, files) =>
-            fileBuildAction(key, mod, args, files)
+          case BuildFiles(keys, mod, _, files) =>
+             //TODO are arguments ever needed if they can be provided by the configuration?
+            buildFilesAction(keys, mod, files)
           case ArchiveBuild(ids, key, mod, in) =>
             archiveBuildAction(ids, key, mod, in)
           case ArchiveMar(id, file) =>
@@ -641,7 +643,7 @@ class Controller extends ROController with Logger {
             interp.run(fOpt)
           case MBT(file) =>
             new MMTScriptEngine(this).apply(file)
-          case Clear => clear()
+          case Clear => clear
           case ExecFile(f, nameOpt) => execFileAction(f, nameOpt)
           case Define(name) =>
             state.currentActionDefinition match {
@@ -697,7 +699,7 @@ class Controller extends ROController with Logger {
             case "off" => winman.closeBrowser
           }
           case Exit =>
-            cleanup()
+            cleanup
             sys.exit()
         }
         if (act != NoAction) report("user", act.toString + " finished")

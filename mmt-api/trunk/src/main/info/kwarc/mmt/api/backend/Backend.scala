@@ -195,7 +195,10 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     * @throws NotApplicable if the root is neither a folder nor a mar file
     */
   def openArchive(root: File): List[Archive] = {
-    if (root.isDirectory) {
+    if (getArchive(root).isDefined)
+       // already open
+       Nil
+    else if (root.isDirectory) {
       val manifestOpt = manifestLocation(root)
       manifestOpt match {
         case Some(manifest) =>
@@ -253,36 +256,18 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     }
   }
 
-  /** retrieve an Archive by its root file */
-  def getArchiveByRoot(root: File): Option[Archive] = stores collectFirst {
-    case a: Archive if a.root == root => a
-  }
-
-  /** retrieve an Archive by its id */
+  /** retrieve an [[Archive]] by its id */
   def getArchive(id: String): Option[Archive] = stores collectFirst {
     case a: Archive if a.properties.get("id").contains(id) => a
   }
 
+  /** retrieve an [[Archive]] by its root folder */
+  def getArchive(root: File): Option[Archive] = stores collectFirst {
+     case a: Archive if a.root == root => a
+  }
+
   /** retrieves all Archives */
   def getArchives: List[Archive] = stores collect { case a: Archive => a }
-
-  /** split a file name into an archive root and the remaining FilePath */
-  def splitFile(f: File): Option[(File, FilePath)] =
-    if (f.isDirectory && manifestLocation(f).isDefined)
-      Some((f, EmptyPath))
-    else {
-      Option(f.getParentFile).flatMap(parent =>
-        splitFile(parent) map { case (root, fp) => (root, fp / f.name) })
-    }
-
-  /** find archives by traversing folders */
-  def findArchiveFiles(f: File): List[(File, FilePath)] =
-    splitFile(f) match {
-      case None => if (f.isDirectory)
-        f.listFiles.filter(_.isDirectory).toList.sorted.flatMap(findArchiveFiles(_))
-      else Nil
-      case Some(p) => List(p)
-    }
 
   /** find the archive of a module path
     *
@@ -308,6 +293,20 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     val segments = file.segments
     getArchives find { a => segments.startsWith(a.root.segments) } map {
       a => (a, segments.drop(a.root.segments.length + 1)) // + 1 to drop "source" directory
+    }
+  }
+
+  /** like resolvePhysical but irrespective of loaded archives
+   *  @return archive root and relative path in archive
+   */
+  def resolveAnyPhysical(f: File): Option[(File, FilePath)] = {
+    if (f.isDirectory && manifestLocation(f).isDefined)
+      Some((f, EmptyPath))
+    else {
+       if (f.isRoot) None
+       else {
+         resolveAnyPhysical(f.up).map {case (root, fp) => (root, fp / f.name)}
+       }
     }
   }
 

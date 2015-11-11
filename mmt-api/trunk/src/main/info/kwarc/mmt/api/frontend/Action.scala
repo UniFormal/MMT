@@ -62,7 +62,7 @@ object Action extends RegexParsers {
 
   private def optFilePath = (str ?) ^^ { case in => FilePath(stringToList(in.getOrElse(""), "/")) }
 
-  private def keyMod: Parser[(String, BuildTargetModifier)] = str ^^ { case km =>
+  private def keyMod = str ^^ { case km =>
     if (km.startsWith("-"))
       (km.tail, Clean)
     else if ("*!&".contains(km.last))
@@ -74,14 +74,13 @@ object Action extends RegexParsers {
     else (km, Build)
   }
 
-  private def archbuild = "build" ~> archiveList ~ keyMod ~ optFilePath ^^ {
+  private def archbuild = "build" ~> stringList ~ keyMod ~ optFilePath ^^ {
     case ids ~ km ~ in =>
       ArchiveBuild(ids, km._1, km._2, in)
   }
 
-  private def pluginArg = "--\\S+" r
-
-  private def buildModifier: Parser[BuildTargetModifier] =
+  // TODO integrate with keyMod
+  private def buildModifier =
     ("--force" | "--onChange" | "--onError\\??(=\\d)?".r | "--clean" | "--depsFirst\\??(=\\d)?".r) ^^ {
       case "--force" => Build
       case "--clean" => Clean
@@ -96,29 +95,15 @@ object Action extends RegexParsers {
         else up
     }
 
-  private def upToString(up: Update): String = {
-    val lvl = up.errorLevel
-    (if (up.dryRun) "?" else "") +
-      (if (lvl == Level.Error) "" else "=" + (lvl + 1)) // undo "-1" above
+  // TODO needs decent name
+  private def filebuild = "rbuild" ~> stringList ~ (buildModifier ?) ~ (("--\\S+"r) *) ~ (file *) ^^ {
+    case keys ~ mod ~ args ~ files =>
+      BuildFiles(keys, mod.getOrElse(Update(Level.Ignore)), args, files)
   }
 
-  def modifierToString(m: BuildTargetModifier): String = "--" + (m match {
-    case Build => "force"
-    case Clean => "clean"
-    case BuildDepsFirst(up) => "depsFirst" + upToString(up)
-    case up: Update =>
-      if (up.errorLevel < Level.Ignore) "onError" + upToString(up)
-      else "onChange"
-  })
-
-  private def filebuild = "rbuild" ~> str ~ (buildModifier ?) ~ (pluginArg *) ~ (str *) ^^ {
-    case km ~ mod ~ args ~ ins =>
-      FileBuild(km, mod.getOrElse(Update(Level.Ignore)), args, ins.map(File(_)))
-  }
-
-  private def archdim = "archive" ~> archiveList ~ dimension ~ optFilePath ^^ {
-    case id ~ dim ~ s =>
-      ArchiveBuild(id, dim, Build, s)
+  private def archdim = "archive" ~> stringList ~ dimension ~ optFilePath ^^ {
+    case ids ~ dim ~ s =>
+      ArchiveBuild(ids, dim, Build, s)
   }
 
   private def dimension = "check" | "validate" | "relational" | "integrate" | "test" | "close"
@@ -225,7 +210,8 @@ object Action extends RegexParsers {
 
   private def mpath = str ^^ { s => Path.parseM(s, nsMap) }
 
-  private def archiveList = ("\\[.*\\]" r) ^^ { s => stringToList(s.substring(1, s.length - 1), ",") } |
+  // [str_1,...,str_n] or str
+  private def stringList = ("\\[.*\\]" r) ^^ { s => stringToList(s.substring(1, s.length - 1), ",")} |
     str ^^ { s => List(s) }
 
   private def file = str ^^ { s => File(home.resolve(s)) }
@@ -280,7 +266,7 @@ object Action extends RegexParsers {
 sealed abstract class Action
 
 case class Compare(p: Path, r: Int) extends Action {
-  override def toString: String = "diff " + p.toPath + ":" + r.toString
+  override def toString = "diff " + p.toPath + ":" + r.toString
 }
 
 /** add a log handler
@@ -291,7 +277,7 @@ case class Compare(p: Path, r: Int) extends Action {
   * @param h log handler
   */
 case class AddReportHandler(h: ReportHandler) extends Action {
-  override def toString: String = "log " + h.toString
+  override def toString = "log " + h.toString
 }
 
 /** switch on logging for a certain group
@@ -300,7 +286,7 @@ case class AddReportHandler(h: ReportHandler) extends Action {
   * Some of the available groups are documented in Report. Generally, plugins may use their own groups.
   */
 case class LoggingOn(group: String) extends Action {
-  override def toString: String = "log+ " + group
+  override def toString = "log+ " + group
 }
 
 /** switch off logging for a certain group
@@ -309,7 +295,7 @@ case class LoggingOn(group: String) extends Action {
   * Some of the available groups are documented in Report. Generally, plugins may use their own groups.
   */
 case class LoggingOff(group: String) extends Action {
-  override def toString: String = "log- " + group
+  override def toString = "log- " + group
 }
 
 /** set the current base path
@@ -317,7 +303,7 @@ case class LoggingOff(group: String) extends Action {
   * concrete syntax: base base:URI
   */
 case class SetBase(base: Path) extends Action {
-  override def toString: String = "base " + base
+  override def toString = "base " + base
 }
 
 /** set an environment variable
@@ -325,7 +311,7 @@ case class SetBase(base: Path) extends Action {
   * concrete syntax: envvar name "value"
   */
 case class SetEnvVar(name: String, value: String) extends Action {
-  override def toString: String = s"""envvar $name "$value""""
+  override def toString = s"""envvar $name "$value""""
 }
 
 /** load a file containing commands and execute them, fails on first error if any
@@ -333,7 +319,7 @@ case class SetEnvVar(name: String, value: String) extends Action {
   * concrete syntax: file file:FILE
   */
 case class ExecFile(file: File, name: Option[String]) extends Action {
-  override def toString: String = "file " + file + name.map(" " +).getOrElse("")
+  override def toString = "file " + file + name.map(" " +).getOrElse("")
 }
 
 /** bind all following commands to a name without executing them
@@ -342,7 +328,7 @@ case class ExecFile(file: File, name: Option[String]) extends Action {
   * concrete syntax: define name:STRING
   */
 case class Define(name: String) extends Action {
-  override def toString: String = "define " + name
+  override def toString = "define " + name
 }
 
 /** ends a [[Define]]
@@ -350,7 +336,7 @@ case class Define(name: String) extends Action {
   * concrete syntax: end
   */
 case object EndDefine extends Action {
-  override def toString: String = "end"
+  override def toString = "end"
 }
 
 /** run a previously named list of commands
@@ -359,14 +345,14 @@ case object EndDefine extends Action {
   * if folder is omitted, this refers to the most recently defined action with the right name
   */
 case class Do(file: Option[File], name: String) extends Action {
-  override def toString: String = "do " + file.getOrElse("") + " " + name
+  override def toString = "do " + file.getOrElse("") + " " + name
 }
 
 /** stores a command binding done with [[Define]] */
 case class Defined(file: File, name: String, body: List[Action])
 
 case class Graph(target: File) extends Action {
-  override def toString: String = "graph " + target
+  override def toString = "graph " + target
 }
 
 /** read a file containing MMT in OMDoc syntax
@@ -374,17 +360,17 @@ case class Graph(target: File) extends Action {
   * concrete syntax: read file:FILE
   */
 case class Read(file: File) extends Action {
-  override def toString: String = "read " + file
+  override def toString = "read " + file
 }
 
 /** check a knowledge item with respect to a certain checker */
 case class Check(p: Path, id: String) extends Action {
-  override def toString: String = s"check $p $id"
+  override def toString = s"check $p $id"
 }
 
 /** navigate to knowledge item */
 case class Navigate(p: Path) extends Action {
-  override def toString: String = "navigate " + p
+  override def toString = "navigate " + p
 }
 
 /** add a catalog entry for the local file system
@@ -394,7 +380,7 @@ case class Navigate(p: Path) extends Action {
   * concrete syntax: mathpath local
   */
 case object Local extends Action {
-  override def toString: String = "mathpath local"
+  override def toString = "mathpath local"
 }
 
 /** add catalog entry for a local directory
@@ -407,7 +393,7 @@ case object Local extends Action {
   * @param file the physical identifeir of the directory
   */
 case class AddMathPathFS(uri: URI, file: File) extends Action {
-  override def toString: String = "mathpath fs " + uri + " " + file
+  override def toString = "mathpath fs " + uri + " " + file
 }
 
 /** add catalog entry for realizations in Java
@@ -415,7 +401,7 @@ case class AddMathPathFS(uri: URI, file: File) extends Action {
   * @param javapath the Java path entry, will be passed to [[java.net.URLClassLoader]]
   */
 case class AddMathPathJava(javapath: File) extends Action {
-  override def toString: String = "mathpath java " + javapath
+  override def toString = "mathpath java " + javapath
 }
 
 /** sets the root for a remote OAF
@@ -426,7 +412,7 @@ case class AddMathPathJava(javapath: File) extends Action {
   * @param file the local directory in which to create clones
   */
 case class OAFRoot(file: File, uri: Option[URI]) extends Action {
-  override def toString: String = "oaf root " + file + " " + uri.getOrElse("")
+  override def toString = "oaf root " + file + " " + uri.getOrElse("")
 }
 
 /** clone an archive from a remote OAF
@@ -434,7 +420,7 @@ case class OAFRoot(file: File, uri: Option[URI]) extends Action {
   * concrete syntax: oaf close path:STRING
   */
 case class OAFInit(path: String) extends Action {
-  override def toString: String = "oaf init " + path
+  override def toString = "oaf init " + path
 }
 
 /** clone an archive from a remote OAF
@@ -442,7 +428,7 @@ case class OAFInit(path: String) extends Action {
   * concrete syntax: oaf close path:STRING
   */
 case class OAFClone(path: String) extends Action {
-  override def toString: String = "oaf clone " + path
+  override def toString = "oaf clone " + path
 }
 
 /** pulls all repostitories from remote OAF
@@ -450,7 +436,7 @@ case class OAFClone(path: String) extends Action {
   * concrete syntax: oaf pull
   */
 case object OAFPull extends Action {
-  override def toString: String = "oaf pull"
+  override def toString = "oaf pull"
 }
 
 /** pushes all repostitories to remote OAF
@@ -458,7 +444,7 @@ case object OAFPull extends Action {
   * concrete syntax: oaf push
   */
 case object OAFPush extends Action {
-  override def toString: String = "oaf push"
+  override def toString = "oaf push"
 }
 
 /** registers a compiler
@@ -469,35 +455,35 @@ case object OAFPush extends Action {
   * @param args a list of arguments that will be passed to the compiler's init method
   */
 case class AddExtension(cls: String, args: List[String]) extends Action {
-  override def toString: String = "extension " + cls + args.map(" " +).mkString
+  override def toString = "extension " + cls + args.map(" " +).mkString
 }
 
 /** add catalog entries for a set of local copies, based on a file in Locutor registry syntax */
 case class AddArchive(folder: java.io.File) extends Action {
-  override def toString: String = "mathpath archive " + folder
+  override def toString = "mathpath archive " + folder
 }
 
 /** builds a dimension in a previously opened archive */
 case class ArchiveBuild(ids: List[String], dim: String, modifier: BuildTargetModifier, in: FilePath = EmptyPath) extends Action {
-  override def toString: String = "build " + ids.mkString("[", ",", "]") + " " + modifier.toString(dim) +
+  override def toString = "build " + ids.mkString("[", ",", "]") + " " + modifier.toString(dim) +
     (if (in.segments.isEmpty) "" else " " + in)
 }
 
-/** builds a dimension for the given files by opening the archive for each file before building */
-case class FileBuild(dim: String, modifier: BuildTargetModifier,
+/** builds multiple targets for multiple files, loading extensions/archives as necessary */
+case class BuildFiles(keys: List[String], modifier: BuildTargetModifier,
                      args: List[String], files: List[File]) extends Action {
-  override def toString: String = "rbuild " + dim + " " + Action.modifierToString(modifier) +
-    (args ++ files.map(_.toString)).map(" " +).mkString
+  override def toString = "rbuild " + keys.mkString("[",",","]") + " " + modifier.toString() +
+    (args ++ files.map(_.toString)).map(" " + _).mkString
 }
 
 /** builds a dimension in a previously opened archive */
 case class ArchiveMar(id: String, file: File) extends Action {
-  override def toString: String = s"archive $id mar $file"
+  override def toString = s"archive $id mar $file"
 }
 
 /** add MathWebSearch as a web service */
 case class AddMWS(uri: URI) extends Action {
-  override def toString: String = "mws " + uri
+  override def toString = "mws " + uri
 }
 
 /** print all loaded knowledge items to STDOUT in text syntax */
@@ -508,12 +494,12 @@ case object PrintAllXML extends Action
 
 /** run a Scala interpreter or evaluate a Scala expression */
 case class Scala(init: Option[String]) extends Action {
-  override def toString: String = "scala"
+  override def toString = "scala"
 }
 
 /** run an .mbt file */
 case class MBT(file: File) extends Action {
-  override def toString: String = "mbt " + file
+  override def toString = "mbt " + file
 }
 
 /** start up the HTTP server
@@ -526,7 +512,7 @@ case class MBT(file: File) extends Action {
   * @param port the port to listen to
   */
 case class ServerOn(port: Int) extends Action {
-  override def toString: String = "server on " + port
+  override def toString = "server on " + port
 }
 
 /** shut down the web server

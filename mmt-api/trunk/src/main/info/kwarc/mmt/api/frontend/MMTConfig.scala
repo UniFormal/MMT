@@ -5,78 +5,146 @@ import info.kwarc.mmt.api.archives._
 import utils._
 import scala.collection.immutable.{ListMap}
 
-abstract class CompilerConf(val uri : String, val key : String, val args : List[String]) 
-case class ImporterConf(override val uri : String, override val key : String, override val args : List[String]) extends CompilerConf(uri, key, args)
-case class ExporterConf(override val uri : String, override val key : String, override val args : List[String]) extends CompilerConf(uri, key, args)
-case class ArchiveConf(id : String, formats : List[String])
-case class FormatConf(id : String, importers : List[String], exporters : List[String])
+/** an entry in an MMT configuration file (.cfg) */
+abstract class ConfEntry {
+   /** archive id, build target key, etc. */
+   val id : String
+} 
 
-class MMTConfig(controller : Controller, autoload : Boolean = true) {
-    private var _base : String = ""
-    private var _importers : List[ImporterConf] = Nil
-    private var _exporters : List[ExporterConf] = Nil
-    private var _archives : List[ArchiveConf] = Nil
-    private var _formats : List[FormatConf] = Nil
-    
-    def base = _base
-    def importers = _importers
-    def exporters = _exporters
-    def archives = _archives
-    def formats = _formats
-    
-    def addImporter(imp : ImporterConf) = {
-      _importers ::= imp
-      if (autoload) loadExtension(imp.uri, imp.args)
-    }
-    def addExporter(exp : ExporterConf) = {
-      _exporters ::= exp
-      if (autoload) loadExtension(exp.uri, exp.args)
-    }
-    
-    def addArchive(a : ArchiveConf) {
-      _archives ::= a
-      if (autoload) loadArchive(base + a.id)
-    }
-    
-    def addFormat(f : FormatConf) {
-      _formats ::= f
-    }
-    
+/**
+ * registers [[BuildTarget]]s with their arguments
+ *
+ * @param cls the qualified Java class name of this target's implementation
+ *  (must only be on the class path if this target is actually used)
+ * @param key the key of the target
+ * @param args the arguments to be used if this target is instantiated
+ */
+case class TargetConf(cls : String, key : String, args : List[String]) extends ConfEntry {
+   val id = key
+}
+
+/**
+ * registers an archive with its formats
+ */
+case class ArchiveConf(id : String, formats : List[String]) extends ConfEntry
+
+/** defines an archive format
+ *  @param id the format name
+ *  @param importers the importers to be used for archives of this format
+ *  @param exporters the exporters to be used for archives of this format
+ */
+case class FormatConf(id : String, importers : List[String], exporters : List[String]) extends ConfEntry
+
+/**
+ * an MMT configuration stores catalogs for finding extensions, archives, etc.
+ * It is a list of [[MMTConfEntry]] that can be read from a .cfg file
+ */
+class MMTConfig {
+    private var base : String = ""
+    private var entries: List[ConfEntry] = Nil
+
+    def addEntry(e: ConfEntry) {entries = entries ::: List(e)}
     def setBase(b : String) {
-      _base = b
+      base = b
+    }
+
+    def add(that: MMTConfig) = {
+       that.getEntries foreach addEntry
+       setBase(that.getBase)
     }
     
-    def getArchive(aid : String) = archives.find(_.id == aid).getOrElse(throw new Exception("Unknown archive id: " + aid))
-    def getImporters(formatId : String) = formats.find(_.id == formatId).getOrElse(throw new Exception("Unknown format id: " + formatId)).importers
-    def getExporters(formatId : String) = formats.find(_.id == formatId).getOrElse(throw new Exception("Unknown format id: " + formatId)).exporters
-    
+    def getBase = base
 
-    def loadActiveExtensions() { 
-      val activeFormats = archives.flatMap(_.formats).toSet[String] map {id => 
-        formats.find(_.id == id).getOrElse(throw new Exception("Unknown format id: " + id))
+    def getEntries() = entries
+    def getEntries[E <: ConfEntry](cls: Class[E]): List[E] = entries.collect {
+       case e: E@unchecked if cls.isInstance(e) => e
+    }
+    def getEntry[E <: ConfEntry](cls: Class[E], id: String): E = getEntries(cls).find {e =>
+       e.id == id
+    }.getOrElse {
+       throw ConfigurationError(id)
+    }
+
+    def getArchive(aid : String) = getEntry(classOf[ArchiveConf], aid)
+    def getArchives = getEntries(classOf[ArchiveConf])
+    def getFormat(id: String) = getEntry(classOf[FormatConf], id)
+    
+    def getImporters(format : String) = getFormat(format).importers
+    def getExporters(format : String) = getFormat(format).exporters
+    def getImportersForArchive(archive : String) = getArchive(archive).formats.flatMap(getImporters).distinct
+    def getExportersForArchive(archive : String) = getArchive(archive).formats.flatMap(getExporters).distinct
+    
+    
+    def loadAllArchives(controller: Controller) {
+       getArchives foreach { arch => 
+        controller.handle(AddArchive(File(base + arch.id)))
+      }
+    }
+    
+    def loadAllNeededTargets(controller: Controller) {
+      val archives = getArchives
+      val activeFormats = archives.flatMap(_.formats).distinct.map {id => 
+        getEntries(classOf[FormatConf]).find(_.id == id).getOrElse(throw new Exception("Unknown format id: " + id))
       }
       
-      val activeImporters = activeFormats.flatMap(_.importers).toSet[String] map {key => 
-        importers.find(_.key == key).getOrElse(throw new Exception("Unknown importer key: " + key))
-      }
-      val activeExporters = activeFormats.flatMap(_.exporters).toSet[String] map {key => 
-        exporters.find(_.key == key).getOrElse(throw new Exception("Unknown exporter key: " + key))
+      val activeTargets = activeFormats.flatMap(f => f.importers ::: f.exporters).distinct.map {key => 
+        getEntry(classOf[TargetConf], key)
       }
       
-      (activeImporters ++ activeExporters) foreach {comp => 
-        println("loading " + comp.uri)
-        loadExtension(comp.uri, comp.args)
+      activeTargets foreach {comp => 
+        println("loading " + comp.cls)
+        controller.handle(AddExtension(comp.cls, comp.args))
       }
     }
-    
-    //Utility
-    def loadExtension(uri : String, args : List[String] = Nil) = controller.handle(AddExtension(uri, args))
-    def loadArchive(location : String) = controller.handle(AddArchive(File(location)))
+}
 
-    def loadAllArchives() {
-      archives foreach { arch => 
-        loadArchive(base + arch.id)
+
+object MMTConfig {
+  /**
+   * parses a configuration file
+   * 
+   * syntax:
+   *  configuration includes: #include PATH/TO/CONF/FILE
+   *  section headers: #targets | #formats | #archives
+   *  all other lines are configuration entries of the respective section
+   */
+  def parse(f: File) : MMTConfig = {
+    val config = new MMTConfig
+    var section = ""
+    File.ReadLineWise(File(f)) {l =>
+      val line = l.trim
+      if (line.startsWith("//") || line.isEmpty) {
+        //ignore
+      } else if (line.startsWith("#include")) {
+         val inc = line.substring("#include".length)
+         val incConf = parse(File(inc))
+         config.add(incConf)
+      } else if (line.startsWith("#")) {
+        section = line.substring(1)
+      } else section match {
+        // TODO "importers" and "exporters" are deprecated but still used by Mihnea
+        case "importers" | "exporters" | "targets" => line.split("\\s+").toList match {
+          case key :: cls :: args =>
+            config.addEntry(TargetConf(cls, key, args))
+          case _ => println(s"Invalid target line: $line")
+        }
+        case "archives" => line.split(" ").toList match {
+          case id :: fmtsS :: Nil =>
+            val fmts = fmtsS.split(",").toList
+            config.addEntry(ArchiveConf(id, fmts))
+          case _ => println("Invalid archives line: `" + line + "`")
+        }
+        case "formats" => line.split(" ").toList match {
+          case id :: impsS :: expsS :: Nil =>
+            val imps = impsS.split(",").toList
+            val exps = expsS.split(",").toList
+            config.addEntry(FormatConf(id, imps, exps))
+          case _ => println("Invalid formats line: `" + line + "`")
+        }
+        case "base" => config.setBase(line)
+        case _ => println("ignoring invalid section: `" + section + "`")
       }
     }
- 
+    config
   }
+}

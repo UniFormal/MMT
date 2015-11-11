@@ -347,7 +347,8 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
           val (newnode, tOpt) = splitOffChild(n, component)
           tOpt match {
              case Some(t) =>
-                if (t.child.length == 1) (newnode, Obj.parseTerm(t.child(0), nsMap))
+                val tT = xml.trimOneLevel(t)
+                if (tT.child.length == 1) (newnode, Obj.parseTerm(tT.child(0), nsMap))
                 else throw ParseError("ill-formed theory: " + t)
              case _ => throw ParseError("no component " + component + " found: " + n)
          }

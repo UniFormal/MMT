@@ -110,10 +110,22 @@ class ExtensionManager(controller: Controller) extends Logger {
     case e: E@unchecked if cls.isInstance(e) => e
   }
 
-  def get[E <: FormatBasedExtension](cls: Class[E], format: String): Option[E] = extensions.collect {
+  def get[E <: FormatBasedExtension](cls: Class[E], format: String): Option[E] = extensions.collectFirst {
     case e: E@unchecked if cls.isInstance(e) && e.isApplicable(format) => e
   }.headOption
 
+  /** like get, but if necessary looks up the key in the current [[MMTConfig]] */
+  def getOrAddExtension[E <: FormatBasedExtension](cls: Class[E], format: String): E = {
+     get(cls, format) getOrElse {
+        val tc = controller.getConfig.getEntry(classOf[TargetConf], format)
+        val ext = addExtension(tc.cls, tc.args)
+        ext match {
+           case e: E@unchecked if (cls.isInstance(e)) => e
+           case _ => throw RegistrationError(s"extension for $format exists but has unexpected type")
+        }
+     }
+  }
+  
   var lexerExtensions: List[LexerExtension] = Nil
   var notationExtensions: List[notations.NotationExtension] = Nil
 
@@ -122,7 +134,7 @@ class ExtensionManager(controller: Controller) extends Logger {
   val report = controller.report
   val logPrefix = "extman"
 
-  def addDefaultExtensions(): Unit = {
+  def addDefaultExtensions {
     // MMT's defaults for the main algorithms
     val nbp = new NotationBasedParser
     val kwp = new KeywordBasedParser(nbp)
@@ -176,7 +188,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     * @param cls qualified class name (e.g., org.my.Extension), must be on the class path at run time
     * @param args arguments that will be passed when initializing the extension
     */
-  def addExtension(cls: String, args: List[String]): Unit = {
+  def addExtension(cls: String, args: List[String]): Extension = {
     log("trying to create extension " + cls)
     val clsJ = Class.forName(cls)
     val ext = try {
@@ -186,44 +198,8 @@ class ExtensionManager(controller: Controller) extends Logger {
       case e: Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)
     }
     addExtension(ext, args)
-    ext match {
-      case bt: BuildTarget =>
-        targetToClass += (bt.key -> cls)
-      case _ =>
-    }
+    ext
   }
-
-  /** make sure that an extension is added by key */
-  def ensureExtension(key: String, args: List[String]): Unit = {
-    val ts = key.split("_").toList
-    ts.foreach(subKey =>
-      targetToClass.get(subKey) match {
-        case None => logError("unknown target " + subKey + " for extension, ignored")
-        case Some(cls) =>
-          report.groups += subKey + "-result"
-          ensureExtensionByClassName(key, cls, args)
-      })
-    if (ts.length > 1) {
-      ensureExtensionByClassName(key, classOf[MetaBuildTarget].getName, key :: ts.flatMap(targetToClass.get))
-      report.groups += key
-    }
-  }
-
-  /** lookup or add extension */
-  def ensureExtensionByClassName(key: String, cls: String, args: List[String]): Unit =
-    try {
-      val clsJ = Class.forName(cls)
-      val ls = get(clsJ.asInstanceOf[Class[Extension]])
-      val rs = ls.filter {
-        case e: MetaBuildTarget => args == e.startArgs
-        case e: TraversingBuildTarget => key == e.key
-        case _ => true
-      }
-      if (rs.isEmpty) addExtension(cls, args)
-    }
-    catch {
-      case e: ClassCastException => log(RegistrationError("error not an extension class " + cls))
-    }
 
   /** initializes and adds an extension */
   def addExtension(ext: Extension, args: List[String] = Nil) {
@@ -282,28 +258,8 @@ class ExtensionManager(controller: Controller) extends Logger {
     }.mkString("")
   }
 
-  def cleanup(): Unit = {
+  def cleanup {
     extensions.foreach(_.destroy())
     extensions = Nil
   }
-
-  /** association between targets/keys and extension class names */
-  var targetToClass: Map[String, String] = Map(
-    "sms" -> "SmsGenerator",
-    "latexml" -> "LaTeXML",
-    "pdflatex" -> "PdfLatex",
-    "tikzsvg" -> "TikzSvg",
-    "stex-omdoc" -> "STeXImporter",
-    "alltex" -> "AllTeX",
-    "allpdf" -> "AllPdf"
-  ).map { case (a, b) => (a, "info.kwarc.mmt.stex." + b) } ++
-    Map("twelf-omdoc" -> "info.kwarc.mmt.lf.Twelf",
-      "tptp-twelf" -> "info.kwarc.mmt.tptp.TPTPImporter",
-      "planetary" -> "info.kwarc.mmt.planetary.PlanetaryPresenter",
-      "mmt-omdoc" -> "info.kwarc.mmt.lf.Plugin") ++
-    Map(
-      "mmt-deps" -> "Relational",
-      "html" -> "HTMLExporter",
-      "svg" -> "GraphViz"
-    ).map { case (a, b) => (a, "info.kwarc.mmt.api.archives." + b) }
 }

@@ -103,15 +103,15 @@ class Shell {
 
       // cleanup if we want to exit.
       if (args.runCleanup) {
-        controller.cleanup()
+        controller.cleanup
       }
     } catch {
       case e: Error =>
         controller.report(e)
-        controller.cleanup()
+        controller.cleanup
         throw e
       case e: Exception =>
-        controller.cleanup()
+        controller.cleanup
         throw e
     }
   }
