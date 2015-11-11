@@ -139,9 +139,6 @@ class Controller extends ROController with Logger {
 
   private def init() {
     extman.addDefaultExtensions()
-    List(presenter, simplifier).foreach {
-      _.init(this)
-    }
   }
 
   init()
