@@ -37,16 +37,16 @@ case class FormatConf(id : String, importers : List[String], exporters : List[St
 
 
 /** registers an extension providing opaque semantics for a theory
-  * @param thy the theory
+  * @param theory the theory
   * @param cls the implementing extension
   */
-case class SemanticsConf(thy: MPath, cls: String, args: List[String]) extends ConfEntry {
-  val id = thy.toPath
+case class SemanticsConf(theory: MPath, cls: String, args: List[String]) extends ConfEntry {
+  val id = theory.toPath
 }
 
 /**
  * an MMT configuration stores catalogs for finding extensions, archives, etc.
- * It is a list of [[MMTConfEntry]] that can be read from a .cfg file
+ * It is a list of [[ConfEntry]] that can be read from a .cfg file
  */
 class MMTConfig {
     private var base : String = ""
@@ -165,7 +165,7 @@ object MMTConfig {
           case _ => fail
         }
         case "base" => config.setBase(line)
-        case _ => println("ignoring invalid section: `" + section + "`")
+        case _ => println(s"ignoring invalid line: $line in section $section")
       }
     }
     config

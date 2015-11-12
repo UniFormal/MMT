@@ -330,8 +330,11 @@ class Controller extends ROController with Logger {
               nw match {
                 case m: Module =>
                   // load extension providing semantics for a theory
-                  getConfig.getEntryO(classOf[SemanticsConf], m.path.toPath).foreach {sc =>
-                    handle(AddExtension(sc.cls, sc.args), false)
+                  if (! extman.get(classOf[Plugin]).exists(_.theory == m.path)) {
+                    getConfig.getEntries(classOf[SemanticsConf]).find(_.theory == m.path).foreach { sc =>
+                      log("loading semantic extension for " + m.path)
+                      extman.addExtension(sc.cls, sc.args)
+                    }
                   }
                 case _ =>
               }
@@ -482,39 +485,46 @@ class Controller extends ROController with Logger {
     val realFiles = if (files.isEmpty)
       List(File(System.getProperty("user.dir")))
     else {
-       files.filter {f =>
-          val ex = f.exists
-          if (!ex)
-            logError("file \"" + f + "\" does not exist")
-          ex
-       }
+      files.filter { f =>
+        val ex = f.exists
+        if (!ex)
+          logError("file \"" + f + "\" does not exist")
+        ex
+      }
     }
     /* guess which files/folders the users wants to build
      *  @return archive root and relative path in it
      */
     def collectInputs(f: File): List[(File, FilePath)] = {
-       backend.resolveAnyPhysical(f) match {
-          case Some(ff) =>
-             // f is a file in an archive
-             List(ff)
-          case None =>
-             // not in archive, treat f as directory containing archives
-             f.subdirs.flatMap(collectInputs)
-       }
+      backend.resolveAnyPhysical(f) match {
+        case Some(ff) =>
+          // f is a file in an archive
+          List(ff)
+        case None =>
+          // not in archive, treat f as directory containing archives
+          f.subdirs.flatMap(collectInputs)
+      }
     }
     val inputs = realFiles flatMap collectInputs
 
-    val buildTargets = keys map {key => extman.getOrAddExtension(classOf[BuildTarget], key, args)}
+    val buildTargets = keys map { key => extman.getOrAddExtension(classOf[BuildTarget], key, args) }
 
-    inputs foreach {case (root, FilePath(dim :: inPath)) =>
-       handle(AddArchive(root)) // make sure the archive is open
-       val archive = backend.getArchive(root).get // non-empty by invariant of resolveAnyPhysical
-       buildTargets foreach {
-          case bt: TraversingBuildTarget if dim != bt.inDim.toString =>
-            logError("wrong in-dimension \"" + dim + "\"")
-          case bt =>
-            bt(mod, archive, FilePath(inPath))
-         }
+    inputs foreach { case (root, fp) =>
+      handle(AddArchive(root)) // make sure the archive is open
+    val archive = backend.getArchive(root).get // non-empty by invariant of resolveAnyPhysical
+      buildTargets foreach { bt =>
+        val inPath = fp.segments match {
+          case dim :: path =>
+            bt match {
+              case bt: TraversingBuildTarget if dim != bt.inDim.toString =>
+                logError("wrong in-dimension \"" + dim + "\"")
+              case _ =>
+            }
+            FilePath(path)
+          case Nil => EmptyPath
+        }
+        bt(mod, archive, inPath)
+      }
     }
   }
 

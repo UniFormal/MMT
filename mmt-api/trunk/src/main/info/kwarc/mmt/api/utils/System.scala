@@ -39,6 +39,6 @@ object MMTSystem {
          else
             null
       }
-
    }
+   def getResourceAsString(path: String): String = scala.io.Source.fromInputStream(getResource(path)).getLines.mkString("\n")
 }
