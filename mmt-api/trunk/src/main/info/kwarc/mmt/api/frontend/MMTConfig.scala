@@ -9,7 +9,7 @@ import scala.collection.immutable.{ListMap}
 abstract class ConfEntry {
    /** archive id, build target key, etc. */
    val id : String
-} 
+}
 
 /**
  * registers [[BuildTarget]]s with their arguments
@@ -35,6 +35,15 @@ case class ArchiveConf(id : String, formats : List[String]) extends ConfEntry
  */
 case class FormatConf(id : String, importers : List[String], exporters : List[String]) extends ConfEntry
 
+
+/** registers an extension providing opaque semantics for a theory
+  * @param thy the theory
+  * @param cls the implementing extension
+  */
+case class SemanticsConf(thy: MPath, cls: String, args: List[String]) extends ConfEntry {
+  val id = thy.toPath
+}
+
 /**
  * an MMT configuration stores catalogs for finding extensions, archives, etc.
  * It is a list of [[MMTConfEntry]] that can be read from a .cfg file
@@ -49,49 +58,52 @@ class MMTConfig {
     }
 
     def add(that: MMTConfig) = {
-       that.getEntries foreach addEntry
+       entries = that.getEntries ::: entries
        setBase(that.getBase)
     }
-    
+
     def getBase = base
 
     def getEntries() = entries
     def getEntries[E <: ConfEntry](cls: Class[E]): List[E] = entries.collect {
        case e: E@unchecked if cls.isInstance(e) => e
     }
-    def getEntry[E <: ConfEntry](cls: Class[E], id: String): E = getEntries(cls).find {e =>
+    def getEntryO[E <: ConfEntry](cls: Class[E], id: String): Option[E] = getEntries(cls).find {e =>
        e.id == id
-    }.getOrElse {
-       throw ConfigurationError(id)
     }
+    def getEntry[E <: ConfEntry](cls: Class[E], id: String): E = getEntryO(cls, id) getOrElse {
+      throw ConfigurationError(id)
+    }
+
+
 
     def getArchive(aid : String) = getEntry(classOf[ArchiveConf], aid)
     def getArchives = getEntries(classOf[ArchiveConf])
     def getFormat(id: String) = getEntry(classOf[FormatConf], id)
-    
+
     def getImporters(format : String) = getFormat(format).importers
     def getExporters(format : String) = getFormat(format).exporters
     def getImportersForArchive(archive : String) = getArchive(archive).formats.flatMap(getImporters).distinct
     def getExportersForArchive(archive : String) = getArchive(archive).formats.flatMap(getExporters).distinct
-    
-    
+
+
     def loadAllArchives(controller: Controller) {
-       getArchives foreach { arch => 
+       getArchives foreach { arch =>
         controller.handle(AddArchive(File(base + arch.id)))
       }
     }
-    
+
     def loadAllNeededTargets(controller: Controller) {
       val archives = getArchives
-      val activeFormats = archives.flatMap(_.formats).distinct.map {id => 
+      val activeFormats = archives.flatMap(_.formats).distinct.map {id =>
         getEntries(classOf[FormatConf]).find(_.id == id).getOrElse(throw new Exception("Unknown format id: " + id))
       }
-      
-      val activeTargets = activeFormats.flatMap(f => f.importers ::: f.exporters).distinct.map {key => 
+
+      val activeTargets = activeFormats.flatMap(f => f.importers ::: f.exporters).distinct.map {key =>
         getEntry(classOf[TargetConf], key)
       }
-      
-      activeTargets foreach {comp => 
+
+      activeTargets foreach {comp =>
         println("loading " + comp.cls)
         controller.handle(AddExtension(comp.cls, comp.args))
       }
@@ -100,19 +112,24 @@ class MMTConfig {
 
 
 object MMTConfig {
+  private def split(line: String): List[String] = line.split("\\s+").toList
   /**
    * parses a configuration file
-   * 
+   *
    * syntax:
    *  configuration includes: #include PATH/TO/CONF/FILE
    *  section headers: #targets | #formats | #archives
    *  all other lines are configuration entries of the respective section
    */
-  def parse(f: File) : MMTConfig = {
+  def parse(f: File): MMTConfig = {
+    parse(File.read(f))
+  }
+  def parse(s: String) : MMTConfig = {
     val config = new MMTConfig
     var section = ""
-    File.ReadLineWise(File(f)) {l =>
+    s.split('\n').foreach {l =>
       val line = l.trim
+      lazy val fail = println(s"invalid $section line: `" + line + "`")
       if (line.startsWith("//") || line.isEmpty) {
         //ignore
       } else if (line.startsWith("#include")) {
@@ -123,23 +140,29 @@ object MMTConfig {
         section = line.substring(1)
       } else section match {
         // TODO "importers" and "exporters" are deprecated but still used by Mihnea
-        case "importers" | "exporters" | "targets" => line.split("\\s+").toList match {
+        case "importers" | "exporters" | "targets" => split(line) match {
           case key :: cls :: args =>
             config.addEntry(TargetConf(cls, key, args))
-          case _ => println(s"Invalid target line: $line")
+          case _ => fail
         }
-        case "archives" => line.split(" ").toList match {
+        case "archives" => split(line) match {
           case id :: fmtsS :: Nil =>
             val fmts = fmtsS.split(",").toList
             config.addEntry(ArchiveConf(id, fmts))
-          case _ => println("Invalid archives line: `" + line + "`")
+          case _ => fail
         }
-        case "formats" => line.split(" ").toList match {
+        case "formats" => split(line) match {
           case id :: impsS :: expsS :: Nil =>
             val imps = impsS.split(",").toList
             val exps = expsS.split(",").toList
             config.addEntry(FormatConf(id, imps, exps))
-          case _ => println("Invalid formats line: `" + line + "`")
+          case _ => fail
+        }
+        case "semantics" => split(line) match {
+          case thy :: cls :: args =>
+            val thyP = Path.parseM(thy, NamespaceMap.empty)
+            SemanticsConf(thyP, cls, args)
+          case _ => fail
         }
         case "base" => config.setBase(line)
         case _ => println("ignoring invalid section: `" + section + "`")

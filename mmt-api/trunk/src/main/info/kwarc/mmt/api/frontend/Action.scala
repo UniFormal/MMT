@@ -96,7 +96,7 @@ object Action extends RegexParsers {
     }
 
   // TODO needs decent name
-  private def filebuild = "rbuild" ~> stringList ~ (buildModifier ?) ~ (("--\\S+"r) *) ~ (file *) ^^ {
+  private def filebuild = ("make" | "rbuild") ~> stringList ~ (buildModifier ?) ~ (("--\\S+"r) *) ~ (file *) ^^ {
     case keys ~ mod ~ args ~ files =>
       BuildFiles(keys, mod.getOrElse(Update(Level.Ignore)), args, files)
   }
@@ -472,7 +472,7 @@ case class ArchiveBuild(ids: List[String], dim: String, modifier: BuildTargetMod
 /** builds multiple targets for multiple files, loading extensions/archives as necessary */
 case class BuildFiles(keys: List[String], modifier: BuildTargetModifier,
                      args: List[String], files: List[File]) extends Action {
-  override def toString = "rbuild " + keys.mkString("[",",","]") + " " + modifier.toString() +
+  override def toString = "make " + keys.mkString("[",",","]") + " " + modifier.toString() +
     (args ++ files.map(_.toString)).map(" " + _).mkString
 }
 

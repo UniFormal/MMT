@@ -13,3 +13,6 @@ tikzsvg    info.kwarc.mmt.stex.TikzSvg
 stex-omdoc info.kwarc.mmt.stex.STeXImporter
 alltex     info.kwarc.mmt.stex.AllTeX
 allpdf     info.kwarc.mmt.stex.AllPdf
+
+#semantics
+http://cds.omdoc.org/urtheories?LF info.kwarc.mmt.lf.Plugin

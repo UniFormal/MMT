@@ -52,13 +52,13 @@ class Shell {
     } else {
       Nil: List[String]
     }
-    val sbtCommands = if (args.scalaFiles.nonEmpty) {
+    val mbtCommands = if (args.scalaFiles.nonEmpty) {
       "mbt" :: args.scalaFiles
     } else {
       Nil: List[String]
     }
 
-    val commands = mmtCommands ++ sbtCommands ++ args.commands
+    val commands = mmtCommands ++ mbtCommands ++ args.commands
 
     // maybe we want to send something to the remote
     if (args.send.isDefined) {
@@ -77,17 +77,20 @@ class Shell {
     try {
       // execute startup arguments
       val startup = MMTSystem.rootFolder / "startup.msl"
-      val startupConf = MMTSystem.rootFolder / "startup.cfg"
-      //println("trying to run " + startup)
       if (startup.exists) {
         controller.handle(ExecFile(startup, None))
       }
-      if (startupConf.exists) {
-        controller.getConfig.add(MMTConfig.parse(startupConf))
+      // TODO val clCfg = FILE path from --cfg switch, add at the end of startuipLocations
+      val cfgLocations: List[File] = List(MMTSystem.rootFolder / "mmtrc", MMTSystem.userConfigFile)
+      //println("trying to run " + startup)
+      cfgLocations.foreach {l =>
+        if (l.exists) {
+          controller.getConfig.add(MMTConfig.parse(l))
+        }
       }
 
       //run the commands for each line.
-      commands.mkString(" ").split(" ; ") foreach controller.handleLine
+      commands.mkString(" ").split(" ; ") foreach {l => controller.handleLine(l, false)}
 
       // if we want a shell, prompt and handle input
       if (args.prompt) {
@@ -99,7 +102,7 @@ class Shell {
         // handle commands as long as we get input.
         var command = Option(Input.readLine())
         while (command.isDefined) {
-          controller.handleLine(command.get)
+          controller.handleLine(command.get, true)
           command = Option(Input.readLine())
         }
       }

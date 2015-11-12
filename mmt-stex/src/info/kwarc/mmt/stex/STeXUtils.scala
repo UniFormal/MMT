@@ -223,11 +223,12 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXUtils {
 
   def buildFile(bt: BuildTask): Unit = if (!skip(bt)) reallyBuildFile(bt)
 
-  def mkDep(a: Archive, ar: String, fp: FilePath, key: String): Option[Dependency] =
-    controller.getOrAddArchive(a.baseDir / ar) match {
+  def mkDep(a: Archive, ar: String, fp: FilePath, key: String): Option[Dependency] = {
+    controller.backend.getArchive(a.baseDir / ar) match {
       case None => None
       case Some(arch) => Some(Dependency(arch, fp, key))
     }
+  }
 
   protected def matchPathAndRep(key: String, a: Archive, line: String): Option[Dependency] =
     line match {

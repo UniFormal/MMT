@@ -138,7 +138,7 @@ class Controller extends ROController with Logger {
 
   /** @return the current configuration */
   def getConfig = state.config
-  
+
   private def init() {
     extman.addDefaultExtensions
   }
@@ -327,6 +327,14 @@ class Controller extends ROController with Logger {
             case _ =>
               // the normal case
               memory.content.add(nw)
+              nw match {
+                case m: Module =>
+                  // load extension providing semantics for a theory
+                  getConfig.getEntryO(classOf[SemanticsConf], m.path.toPath).foreach {sc =>
+                    handle(AddExtension(sc.cls, sc.args), false)
+                  }
+                case _ =>
+              }
               notifyListeners.onAdd(nw)
           }
         case d: NarrativeElement => docstore.add(d)
@@ -458,10 +466,10 @@ class Controller extends ROController with Logger {
   }
 
   /** executes a string command */
-  def handleLine(l: String) {
+  def handleLine(l: String, showLog: Boolean = true) {
     try {
       val act = Action.parseAct(l, getBase, getHome)
-      handle(act)
+      handle(act, showLog)
     } catch {
       case e: Error =>
         log(e)
@@ -469,15 +477,14 @@ class Controller extends ROController with Logger {
     report.flush
   }
 
-  private def buildFilesAction(keys: List[String], mod: BuildTargetModifier, files: List[File]) {
-    report.groups -= "user"
+  private def buildFilesAction(keys: List[String], mod: BuildTargetModifier, args: List[String], files: List[File]) {
     report.addHandler(ConsoleHandler)
     val realFiles = if (files.isEmpty)
       List(File(System.getProperty("user.dir")))
     else {
        files.filter {f =>
           val ex = f.exists
-          if (!ex) 
+          if (!ex)
             logError("file \"" + f + "\" does not exist")
           ex
        }
@@ -496,9 +503,9 @@ class Controller extends ROController with Logger {
        }
     }
     val inputs = realFiles flatMap collectInputs
-   
-    val buildTargets = keys map {key => extman.getOrAddExtension(classOf[BuildTarget], key)}
-    
+
+    val buildTargets = keys map {key => extman.getOrAddExtension(classOf[BuildTarget], key, args)}
+
     inputs foreach {case (root, FilePath(dim :: inPath)) =>
        handle(AddArchive(root)) // make sure the archive is open
        val archive = backend.getArchive(root).get // non-empty by invariant of resolveAnyPhysical
@@ -546,7 +553,7 @@ class Controller extends ROController with Logger {
     state.home = folder
     state.currentActionDefinition = None
     // excecute the file
-    File.read(f).split("\\n").foreach(handleLine)
+    File.read(f).split("\\n").foreach(f => handleLine(f))
     if (state.currentActionDefinition.isDefined)
       throw ParseError("end of definition expected")
     // restore old state
@@ -570,7 +577,7 @@ class Controller extends ROController with Logger {
   }
 
   /** executes an Action */
-  def handle(act: Action): Unit =
+  def handle(act: Action, showLog: Boolean = true): Unit =
     state.currentActionDefinition match {
       case Some(Defined(file, name, acts)) if act != EndDefine =>
         state.currentActionDefinition = Some(Defined(file, name, acts ::: List(act)))
@@ -595,9 +602,8 @@ class Controller extends ROController with Logger {
               }
               notifyListeners.onArchiveOpen(a)
             }
-          case BuildFiles(keys, mod, _, files) =>
-             //TODO are arguments ever needed if they can be provided by the configuration?
-            buildFilesAction(keys, mod, files)
+          case BuildFiles(keys, mod, args, files) =>
+            buildFilesAction(keys, mod, args, files)
           case ArchiveBuild(ids, key, mod, in) =>
             archiveBuildAction(ids, key, mod, in)
           case ArchiveMar(id, file) =>
@@ -663,7 +669,7 @@ class Controller extends ROController with Logger {
           case Do(file, name) =>
             state.actionDefinitions.find { a => (file.isEmpty || a.file == file.get) && a.name == name } match {
               case Some(Defined(_, _, actions)) =>
-                actions foreach handle
+                actions foreach (f => handle(f))
               case None =>
                 logError("not defined")
             }

@@ -9,7 +9,7 @@ object Main {
       var args = a.toList
       val commands = args.toList.mkString(" ").split(" ; ")
       try {
-         commands foreach controller.handleLine 
+         commands foreach (f => controller.handleLine(f))
       } catch {
          case e: Error =>
            controller.report(e)
@@ -22,7 +22,7 @@ object Main {
       val dict = new LanguageDictionary(controller)
       //val json = dict.getDictionaryJSON().toString()
       val json = dict.getDefLinks().toString()
-      
+
       val f = utils.File("/home/mihnea/test.json")
       utils.File.write(f, json)
    }

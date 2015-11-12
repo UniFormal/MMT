@@ -114,18 +114,21 @@ class ExtensionManager(controller: Controller) extends Logger {
     case e: E@unchecked if cls.isInstance(e) && e.isApplicable(format) => e
   }.headOption
 
-  /** like get, but if necessary looks up the key in the current [[MMTConfig]] */
-  def getOrAddExtension[E <: FormatBasedExtension](cls: Class[E], format: String): E = {
+  /** like get, but if necessary looks up the key in the current [[MMTConfig]]
+    *
+    * @param args additional arguments for the extension (appended to those in configuration); ignored if extension has already been created
+    */
+  def getOrAddExtension[E <: FormatBasedExtension](cls: Class[E], format: String, args: List[String] = Nil): E = {
      get(cls, format) getOrElse {
         val tc = controller.getConfig.getEntry(classOf[TargetConf], format)
-        val ext = addExtension(tc.cls, tc.args)
+        val ext = addExtension(tc.cls, tc.args ::: args)
         ext match {
            case e: E@unchecked if (cls.isInstance(e)) => e
            case _ => throw RegistrationError(s"extension for $format exists but has unexpected type")
         }
      }
   }
-  
+
   var lexerExtensions: List[LexerExtension] = Nil
   var notationExtensions: List[notations.NotationExtension] = Nil
 
