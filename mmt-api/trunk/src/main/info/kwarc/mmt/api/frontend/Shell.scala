@@ -77,10 +77,13 @@ class Shell {
     try {
       // execute startup arguments
       val startup = MMTSystem.rootFolder / "startup.msl"
-
+      val startupConf = MMTSystem.rootFolder / "startup.cfg"
       //println("trying to run " + startup)
       if (startup.exists) {
         controller.handle(ExecFile(startup, None))
+      }
+      if (startupConf.exists) {
+        controller.getConfig.add(MMTConfig.parse(startupConf))
       }
 
       //run the commands for each line.
