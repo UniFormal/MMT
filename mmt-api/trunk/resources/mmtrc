@@ -1,0 +1,15 @@
+#targets
+twelf-omdoc info.kwarc.mmt.lf.Twelf
+tptp-twelf  info.kwarc.mmt.tptp.TPTPImporter
+planetary   info.kwarc.mmt.planetary.PlanetaryPresenter
+mmt-deps    info.kwarc.mmt.api.archives.Relational
+html        info.kwarc.mmt.api.archives.HTMLExporter
+svg         info.kwarc.mmt.api.archives.GraphViz
+
+sms        info.kwarc.mmt.stex.SmsGenerator
+latexml    info.kwarc.mmt.stex.LaTeXML
+pdflatex   info.kwarc.mmt.stex.PdfLatex
+tikzsvg    info.kwarc.mmt.stex.TikzSvg
+stex-omdoc info.kwarc.mmt.stex.STeXImporter
+alltex     info.kwarc.mmt.stex.AllTeX
+allpdf     info.kwarc.mmt.stex.AllPdf
