@@ -208,6 +208,7 @@ class ExtensionManager(controller: Controller) extends Logger {
 
   /** initializes and adds an extension */
   def addExtension(ext: Extension, args: List[String] = Nil) {
+    //TODO check if extension already present, extensions.find(e => e.getClass == ext.getClass).foreach
     log("adding extension " + ext.getClass.toString)
     ext.init(controller)
     extensions ::= ext

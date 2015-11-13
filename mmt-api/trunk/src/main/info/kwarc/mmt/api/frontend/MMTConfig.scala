@@ -44,6 +44,10 @@ case class SemanticsConf(theory: MPath, cls: String, args: List[String]) extends
   val id = theory.toPath
 }
 
+case class ForeignConf(section: String, key: String, values: List[String]) extends ConfEntry {
+   val id = section + "_" + key
+}
+
 /**
  * an MMT configuration stores catalogs for finding extensions, archives, etc.
  * It is a list of [[ConfEntry]] that can be read from a .cfg file
@@ -105,7 +109,7 @@ class MMTConfig {
 
       activeTargets foreach {comp =>
         println("loading " + comp.cls)
-        controller.handle(AddExtension(comp.cls, comp.args))
+        controller.extman.addExtension(comp.cls, comp.args)
       }
     }
 }
@@ -165,7 +169,11 @@ object MMTConfig {
           case _ => fail
         }
         case "base" => config.setBase(line)
-        case _ => println(s"ignoring invalid line: $line in section $section")
+        case s => split(line) match {
+           case key::values =>
+              config.addEntry(ForeignConf(section, key, values))
+           case _ => fail
+        }
       }
     }
     config

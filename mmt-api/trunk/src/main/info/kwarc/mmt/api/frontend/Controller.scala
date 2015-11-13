@@ -547,7 +547,7 @@ class Controller extends ROController with Logger {
           arch.readRelational(in, this, "occ")
           log("done reading relational index")
         case "integrate" => arch.integrateScala(this, in)
-        case "test" => // misuse of filepath parameter
+        case "test" => // TODO misuse of filepath parameter
           if (in.segments.length != 1)
             logError("exactly 1 parameter required, found " + in)
           else

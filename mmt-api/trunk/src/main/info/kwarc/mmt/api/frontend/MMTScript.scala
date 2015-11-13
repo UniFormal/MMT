@@ -112,10 +112,14 @@ class MMTScriptEngine(controller: Controller) {
   /**
    * @param f an .mbt file containing scala code that is valid inside a class extending [[MMTScript]]
    */
-  def apply(f: File) {
+  def apply(f: File, expr: String = "") {
     val code = File.read(f)
-    val imports = "import info.kwarc.mmt.api._\nimport info.kwarc.mmt.api.archives.{Build}\n"
-    val textscript = imports + s"object UserScript extends info.kwarc.mmt.api.frontend.MMTScript {\ndef main() {\n$code\n}\n}\nUserScript"
+    val imports = """
+      import info.kwarc.mmt.api._
+      import archives._
+      import frontend._
+    """
+    val textscript = imports + s"object UserScript extends info.kwarc.mmt.api.frontend.MMTScript {\ndef main() {\n$code\n$expr\n}\n}\nUserScript"
     import scala.reflect.runtime._
     val cm = universe.runtimeMirror(getClass.getClassLoader)
     import scala.tools.reflect.ToolBox
