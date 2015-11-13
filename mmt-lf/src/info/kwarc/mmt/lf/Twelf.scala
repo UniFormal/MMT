@@ -3,10 +3,10 @@ package info.kwarc.mmt.lf
 import java.io._
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.parser._
-import info.kwarc.mmt.api.utils.{File, FileURI}
+import archives._
 import info.kwarc.mmt.twelf.Catalog
+import parser._
+import utils.{File, FileURI}
 
 /** helper methods for Twelf */
 object Twelf {
@@ -46,7 +46,7 @@ class Twelf extends Importer with frontend.ChangeListener {
     * creates and initializes a Catalog
     * first argument is the location of the twelf-server script; alternatively set variable Twelf
     */
-  override def start(args: List[String]): Unit = {
+  override def start(args: List[String]) {
     val p = getFromFirstArgOrEnvvar(args, "Twelf", "twelf-server")
     path = File(p)
     catalog = new Catalog(port = port, searchPort = true, log = report("lfcatalog", _))
@@ -54,7 +54,7 @@ class Twelf extends Importer with frontend.ChangeListener {
     controller.backend.getArchives foreach onArchiveOpen
   }
 
-  override def onArchiveOpen(arch: Archive): Unit = {
+  override def onArchiveOpen(arch: Archive) {
     val stringLocs = arch.properties.get("lfcatalog-locations") match {
       case None =>
         List(arch / inDim)
@@ -64,7 +64,7 @@ class Twelf extends Importer with frontend.ChangeListener {
     stringLocs.foreach { l => catalog.addStringLocation(l.getPath) }
   }
 
-  override def onArchiveClose(arch: Archive): Unit = {
+  override def onArchiveClose(arch: Archive) {
     val stringLoc = (arch / inDim).getPath
     catalog.deleteStringLocation(stringLoc)
   }
@@ -83,7 +83,7 @@ class Twelf extends Importer with frontend.ChangeListener {
     if (inFile.length > 100000000) {
       bf.errorCont(LocalError("skipped big elf file: " + inFile))
     } else {
-      def sendToTwelf(s: String): Unit = {
+      def sendToTwelf(s: String) {
         //log(s)
         input.println(s)
       }
@@ -125,7 +125,7 @@ class Twelf extends Importer with frontend.ChangeListener {
     outFile.up.mkdirs()
     outFile.delete()
     runTwelf(bf, outFile)
-    def error(msg: String): Unit = {
+    def error(msg: String) {
       val ref = SourceRef(FileURI(bf.inFile), parser.SourceRegion.none)
       val e = CompilerError(key, ref, List(msg), Level.Fatal)
       bf.errorCont(e)
@@ -141,6 +141,6 @@ class Twelf extends Importer with frontend.ChangeListener {
         case e: scala.xml.parsing.FatalError =>
           error("XML error in omdoc file (likely too big for Twelf to write)")
       }
-    EmptyBuildResult
+    BuildResult.empty
   }
 }

@@ -1,15 +1,17 @@
 package info.kwarc.mmt.mizar.mizar.translator
 
+//TODO package name does not match directory structure
+
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.{BuildResult, EmptyBuildResult}
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.utils._
+import archives.BuildResult
+import documents._
 import info.kwarc.mmt.mizar.mizar.objects._
 import info.kwarc.mmt.mizar.mizar.reader._
 import info.kwarc.mmt.mizar.mmt.objects._
+import modules._
+import objects._
+import symbols._
+import utils._
 
 //import scala.xml._
 
@@ -36,17 +38,17 @@ class MizarCompiler extends archives.Importer {
   }
 
   def parseVocabularies(n: scala.xml.Node): List[String] = {
-    n.child.filter(x => (x.label == "Vocabulary")).map(parseVocabulary).toList
+    n.child.filter(x => x.label == "Vocabulary").map(parseVocabulary).toList
   }
 
   def parseVocabulary(n: scala.xml.Node): String = {
-    val aid = (n.child(0) \ "@name").text
+    val aid = (n.child.head \ "@name").text
     aid
   }
 
   def getNode(source: String): scala.xml.Node = {
     val src = scala.io.Source.fromFile(source)
-    val cp = scala.xml.parsing.ConstructingParser.fromSource(src, false)
+    val cp = scala.xml.parsing.ConstructingParser.fromSource(src, preserveWS = false)
     val input: scala.xml.Node = cp.document()(0)
     src.close
     input
@@ -79,21 +81,21 @@ class MizarCompiler extends archives.Importer {
   }
 
   def getBase(f: File): String = {
-    f.toJava.getParentFile().getParentFile().getParent() match {
+    f.toJava.getParentFile.getParentFile.getParent match {
       case null => "./"
       case s => s + "/"
     }
   }
 
   def getVersion(f: File): String = {
-    f.toJava.getParentFile().getName() match {
+    f.toJava.getParentFile.getName match {
       case null => "522"
       case s => s
     }
   }
 
   def getAid(f: File): String = {
-    val name = f.toJava.getName()
+    val name = f.toJava.getName
     val posOfDot = name.lastIndexOf(".")
     if (posOfDot == -1) name else name.substring(0, posOfDot)
 
@@ -108,7 +110,7 @@ class MizarCompiler extends archives.Importer {
     val doc = controller.getDocument(mizdpath)
     log("INDEXING ARTICLE: " + bf.narrationDPath.last)
     seCont(doc)
-    EmptyBuildResult
+    BuildResult.empty
   }
 
   def getDPath(docBase: DPath, name: String): DPath = {
@@ -149,7 +151,7 @@ class MizarCompiler extends archives.Importer {
     UtilsReader.parseSymbols(getNode(dcx))
     UtilsReader.parseSymbols(getNode(idx))
 
-    ParsingController.selectors(aid) = new scala.collection.mutable.HashMap[Int, Tuple2[Int, Int]]
+    ParsingController.selectors(aid) = new scala.collection.mutable.HashMap[Int, (Int, Int)]
     ParsingController.attributes(aid) = new scala.collection.mutable.HashMap[Int, Int]
 
     //sets TranslationController.currentAid as article.title
@@ -167,7 +169,7 @@ class MizarCompiler extends archives.Importer {
         TranslationController.add(PlainInclude(MMTUtils.getTheoryPath(x), th.path))
     })
     //TranslationController.add(PlainInclude(Mizar.HiddenTh, th.path))
-    TranslationController.controller.add(MRef(doc.path, th.path, true))
+    TranslationController.controller.add(MRef(doc.path, th.path, generated = true))
     ArticleTranslator.translateArticle(article)
     TranslationController.clear()
     ParsingController.dictionary.clear()

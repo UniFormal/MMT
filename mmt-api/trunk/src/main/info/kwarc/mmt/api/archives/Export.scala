@@ -1,12 +1,12 @@
 package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.presentation._
-import info.kwarc.mmt.api.utils._
+import documents._
+import frontend._
+import modules._
+import objects._
+import presentation._
+import utils._
 
 trait Exporter extends BuildTarget {
   self =>
@@ -110,15 +110,16 @@ trait Exporter extends BuildTarget {
           case _ =>
         }
       }
-      EmptyBuildResult
+      BuildResult.empty
     }
 
-    override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]) = {
+    override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = {
       val dp = Archive.ContentPathToDPath(bd.inPath)
       val (nss, mps) = builtChildren.filter(!_.skipped).partition(_.isDir)
       outputTo(bd.outFile) {
         exportNamespace(dp, bd, nss, mps)
       }
+      BuildResult.empty
     }
   }
 
@@ -133,14 +134,15 @@ trait Exporter extends BuildTarget {
       outputTo(bf.outFile) {
         exportDocument(doc, bf)
       }
-      EmptyBuildResult
+      BuildResult.empty
     }
 
-    override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]) = {
+    override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = {
       val doc = controller.getDocument(bd.narrationDPath)
       outputTo(bd.outFile) {
         exportDocument(doc, bd)
       }
+      BuildResult.empty
     }
   }
 }

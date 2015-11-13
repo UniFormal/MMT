@@ -3,8 +3,8 @@ package info.kwarc.mmt.api.archives
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.utils._
+import frontend._
+import utils._
 
 /** */
 class QueuedTask(val target: TraversingBuildTarget, val task: BuildTask, val estDeps: Iterable[Dependency]) {
@@ -15,7 +15,7 @@ class QueuedTask(val target: TraversingBuildTarget, val task: BuildTask, val est
 sealed abstract class BuildResult
 
 object BuildResult {
-  def empty = BuildSuccess(Nil)
+  def empty: BuildResult = BuildSuccess(Nil)
 }
 
 /** */
@@ -52,7 +52,7 @@ case class ForeignDependency(file: File) extends SimpleDependency
 
 /** */
 abstract class BuildManager extends Extension {
-   def addTask(q: QueuedTask)
+  def addTask(q: QueuedTask)
 }
 
 /**
@@ -60,7 +60,7 @@ abstract class BuildManager extends Extension {
   */
 class TrivialBuildManager extends BuildManager {
   def addTask(qt: QueuedTask) {
-     qt.target.runBuildTask(qt.task)
+    qt.target.runBuildTask(qt.task)
   }
 }
 
@@ -72,15 +72,18 @@ class BuildQueue extends BuildManager {
   val sleepTime: Int = 2000
 
   /** add entry at tail of fifo queue */
-  def addTask(qt: QueuedTask) = queue.add(qt)
-
-  override def start(args: List[String]): Unit = {
-     buildThread.start
+  def addTask(qt: QueuedTask) {
+    queue.add(qt)
   }
+
+  override def start(args: List[String]) {
+    buildThread.start
+  }
+
   override def destroy {
-     synchronized {
-       continue = false
-     }
+    synchronized {
+      continue = false
+    }
   }
 
   def destroyWhenQueueEmpty {
@@ -94,7 +97,7 @@ class BuildQueue extends BuildManager {
     /** get entry at head of fifo queue */
     def getNextTask: Option[QueuedTask] = Option(queue.poll())
 
-    override def run(): Unit = {
+    override def run {
       while (continue) {
         getNextTask match {
           case Some(qt) =>

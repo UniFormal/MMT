@@ -1,32 +1,41 @@
 package info.kwarc.mmt.stex
 
-import java.nio.charset.{MalformedInputException, Charset}
+import java.nio.charset.{Charset, MalformedInputException}
 
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.utils.{File, FilePath}
 import info.kwarc.mmt.stex.STeXUtils._
-
 
 case class STeXStructure(smslines: List[String], deps: List[Dependency])
 
 /**
   * Created by maeder on 11.11.15.
   */
-trait STeXAnalysis {self: TraversingBuildTarget =>
+trait STeXAnalysis {
+  self: TraversingBuildTarget =>
+
+  protected def logSuccess(f: FilePath) {
+    logResult("success " + f)
+  }
+
+  protected def logFailure(f: FilePath) {
+    logResult("failure " + f)
+  }
+
   def mkDep(a: Archive, ar: String, fp: FilePath, key: String): Option[Dependency] =
-    controller.getOrAddArchive(a.baseDir / ar) match {
+    controller.backend.getArchive(a.baseDir / ar) match {
       case None => None
-      case Some(arch) => Some(BuildDependency(arch, fp, key))
+      case Some(arch) => Some(BuildDependency(key, arch, fp))
     }
 
   protected def matchPathAndRep(key: String, a: Archive, line: String): Option[Dependency] =
     line match {
-      case beginModnl(b) => Some(BuildDependency(a, entryToPath(b), key))
+      case beginModnl(b) => Some(BuildDependency(key, a, entryToPath(b)))
       case mhinputRef(_, r, b) =>
         val fp = entryToPath(b)
         Option(r) match {
           case Some(id) => mkDep(a, id, fp, "sms")
-          case None => Some(BuildDependency(a, fp, "sms"))
+          case None => Some(BuildDependency("sms", a, fp))
         }
       case tikzinput(_, r, b) =>
         val fp = entryToPath(b)
@@ -37,7 +46,7 @@ trait STeXAnalysis {self: TraversingBuildTarget =>
           })
         optRepo match {
           case Some(List(List(_, id))) => mkDep(a, id, fp, "tikzsvg")
-          case _ => Some(BuildDependency(a, fp, "tikzsvg"))
+          case _ => Some(BuildDependency("tikzsvg", a, fp))
         }
       case groups(_, r, b) =>
         val depKey = if (line.startsWith("\\usemhmodule")) "sms" else key
@@ -49,20 +58,20 @@ trait STeXAnalysis {self: TraversingBuildTarget =>
             val path = entryToPath(p)
             tl match {
               case List(List("repos", id)) => mkDep(a, id, path, depKey)
-              case Nil => Some(BuildDependency(a, path, depKey))
+              case Nil => Some(BuildDependency(depKey, a, path))
               case _ => None
             }
-          case None => Some(BuildDependency(a, fp, depKey))
+          case None => Some(BuildDependency(depKey, a, fp))
           case _ => None
         }
       case _ => None
     }
 
-  private val encodings = List("ISO-8859-1", Charset.defaultCharset.toString, "UTF-8",
+  val encodings = List("ISO-8859-1", Charset.defaultCharset.toString, "UTF-8",
     "UTF-16").distinct
 
   /** pick encoding for sms creation */
-  private def createSmsForEncodings(bt: BuildTask, encs: List[String]): Unit = {
+  def createSmsForEncodings(bt: BuildTask, encs: List[String]) {
     val readMsg = "reading " + bt.inPath
     encs match {
       case hd :: tl =>
@@ -83,7 +92,6 @@ trait STeXAnalysis {self: TraversingBuildTarget =>
   }
 
 
-
   private def mkImport(b: File, r: String, p: String, a: String, ext: String) =
     "\\importmodule[load=" + b + "/" + r + "/source/" + p + ",ext=" + ext + "]" + a
 
@@ -94,7 +102,7 @@ trait STeXAnalysis {self: TraversingBuildTarget =>
     "\\mhcurrentrepos{" + r + "}%\n" + mkImport(b, r, p, "{" + p + "}", "tex")
 
   /** create sms file */
-  private def createSms(a: Archive, inFile: File, outFile: File, enc: String): Unit = {
+  private def createSms(a: Archive, inFile: File, outFile: File, enc: String) {
     val source = scala.io.Source.fromFile(inFile, enc)
     val w = File.Writer(outFile)
     source.getLines().foreach { line =>

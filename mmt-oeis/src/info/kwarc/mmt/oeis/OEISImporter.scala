@@ -1,16 +1,16 @@
 package info.kwarc.mmt.oeis
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.informal._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.parser._
-import info.kwarc.mmt.api.symbols._
+import archives._
+import documents._
+import frontend._
+import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.stex.{FilteringErrorHandler, OMDoc}
+import informal._
+import modules._
+import notations._
+import objects._
+import symbols._
 
 import scala.xml.Node
 
@@ -20,7 +20,7 @@ abstract class OEISError(msg: String) extends Error(msg)
 case class OEISSourceError(msg: String, sref: Option[SourceRef], severity: Option[Level.Level]) extends OEISError(msg) {
   private def srefS = sref.map(_.region.toString).getOrElse("")
 
-  override def toNode = <error type={this.getClass().toString} shortMsg={this.shortMsg} level={severity.getOrElse(Level.Error).toString} sref={srefS}>
+  override def toNode = <error type={this.getClass.toString} shortMsg={this.shortMsg} level={severity.getOrElse(Level.Error).toString} sref={srefS}>
     {this.extraMessage}
   </error>
 }
@@ -62,11 +62,13 @@ class OEISImporter extends Importer {
     report = controller.report
   }
 
-  override def start(args: List[String]) = args match {
-    case hd :: Nil =>
-      val dict = scala.io.Source.fromFile(hd).getLines().map(_.trim).toSet
-      docParser = new parser.DocumentParser(dict)
-    case _ => throw new Exception("Cannot initialize OEISImporter expected one argument (path to the dictionary file), found: " + args.toString)
+  override def start(args: List[String]) {
+    args match {
+      case hd :: Nil =>
+        val dict = scala.io.Source.fromFile(hd).getLines().map(_.trim).toSet
+        docParser = new parser.DocumentParser(dict)
+      case _ => throw new Exception("Cannot initialize OEISImporter expected one argument (path to the dictionary file), found: " + args.toString)
+    }
   }
 
   def parseSourceRef(n: scala.xml.Node, dpath: DPath)(implicit errorCont: ErrorHandler): Option[SourceRef] = {
@@ -93,9 +95,9 @@ class OEISImporter extends Importer {
       controller.clear //to save memory from getting too high
     } catch {
       case e: Throwable =>
-        log("WARNING: Skipping article due to error: " + e.toString() + " \n" + e.getStackTrace.mkString("\n")) //skipping declaration
+        log("WARNING: Skipping article due to error: " + e.toString + " \n" + e.getStackTrace.mkString("\n")) //skipping declaration
     }
-    EmptyBuildResult
+    BuildResult.empty
   }
 
 
@@ -112,7 +114,7 @@ class OEISImporter extends Importer {
   /**
     * Translate a toplevel <omdoc> node
     */
-  private def translateDocument(n: Node, tsref: SourceRef)(implicit dpath: DPath, errorCont: ErrorHandler): Unit = {
+  private def translateDocument(n: Node, tsref: SourceRef)(implicit dpath: DPath, errorCont: ErrorHandler) {
     n.label match {
       case "omdoc" =>
         //creating document
@@ -126,14 +128,14 @@ class OEISImporter extends Importer {
   /**
     * translate second-level, in-document elements (typically modules)
     */
-  private def translateModule(n: Node, tsref: SourceRef)(implicit doc: Document, errorCont: ErrorHandler): Unit = {
+  private def translateModule(n: Node, tsref: SourceRef)(implicit doc: Document, errorCont: ErrorHandler) {
     val sref = OMDoc.parseSourceRef(n, doc.path).getOrElse(tsref)
     try {
       n.label match {
         case "theory" => //create theory
           val name = LocalName((n \ "@name").text)
           val thy = new DeclaredTheory(doc.path, name, None)
-          val ref = MRef(doc.path, thy.path, true)
+          val ref = MRef(doc.path, thy.path, generated = true)
           controller.add(ref)
           controller.add(thy)
           n.child.foreach(translateDeclaration(_, sref)(doc, thy, errorCont))
@@ -148,7 +150,7 @@ class OEISImporter extends Importer {
   /**
     * translate third level, in-module elements (typically declarations)
     */
-  private def translateDeclaration(n: Node, tsref: SourceRef)(implicit doc: Document, thy: DeclaredTheory, errorCont: ErrorHandler): Unit = {
+  private def translateDeclaration(n: Node, tsref: SourceRef)(implicit doc: Document, thy: DeclaredTheory, errorCont: ErrorHandler) {
     val sref = OMDoc.parseSourceRef(n, doc.path).getOrElse(tsref)
     implicit val dpath = doc.path
     implicit val mpath = thy.path
@@ -206,7 +208,7 @@ class OEISImporter extends Importer {
     val options = tpaths.map(_.toMPath).filter(t => tnameSO.map(t.name.last.toPath == _).getOrElse(true))
     options.toList match {
       case Nil =>
-        if (!((tnameSO == Some("arithmetics") || tnameSO == None) && Arithmetics.contains(snameS))) {
+        if (!((tnameSO.contains("arithmetics") || tnameSO.isEmpty) && Arithmetics.contains(snameS))) {
           errorCont(OEISParseError("Unknown symbol " + tnameSO.getOrElse("*") + "?" + snameS + ", assuming variable", Some(tsref), Some(Level.Warning)))
         }
         defaultPath

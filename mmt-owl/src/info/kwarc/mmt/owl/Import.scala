@@ -1,6 +1,6 @@
 package info.kwarc.mmt.owl
 
-import info.kwarc.mmt.api.archives.{BuildResult, EmptyBuildResult}
+import info.kwarc.mmt.api.archives.BuildResult
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.model._
 
@@ -634,7 +634,7 @@ class OWLCompiler extends archives.Importer {
     val doc = controller.getDocument(dpath)
     /* println(doc.toString)*/
     seCont(doc)
-    EmptyBuildResult
+    BuildResult.empty
   }
 }
 

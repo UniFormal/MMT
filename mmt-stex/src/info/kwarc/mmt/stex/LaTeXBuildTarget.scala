@@ -9,10 +9,11 @@ import java.util.regex.PatternSyntaxException
 import STeXUtils._
 import info.kwarc.mmt.api.ExtensionError
 import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.frontend.Extension.LocalError
-import info.kwarc.mmt.api.utils.{File, FilePath}
+import info.kwarc.mmt.api.utils.File
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
+import scala.concurrent.duration._
 import scala.sys.process.{ProcessBuilder, ProcessLogger}
 
 /** common code for sms, latexml und pdf generation */
@@ -30,13 +31,9 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     override val extraMessage = l
   }
 
-  protected def logSuccess(f: FilePath) = logResult("success " + f)
-
-  protected def logFailure(f: FilePath) = logResult("failure " + f)
-
   override def defaultFileExtension: String = "tex"
 
-  override def start(args: List[String]): Unit = {
+  override def start(args: List[String]) {
     if (args.contains(pipeOutputOption)) pipeOutput = true
   }
 
@@ -56,7 +53,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   }
 
   protected def procLogger(output: StringBuffer, pipeOutput: Boolean): ProcessLogger = {
-    def handleLine(line: String): Unit = {
+    def handleLine(line: String) {
       if (pipeOutput) println(line)
       output.append(line + "\n")
     }
@@ -68,11 +65,11 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
 
   override def includeDir(n: String): Boolean = !n.endsWith("tikz")
 
-  protected def createLocalPaths(bt: BuildTask): Unit = {
+  protected def createLocalPaths(bt: BuildTask) {
     createLocalPaths(bt.archive, bt.inFile.up)
   }
 
-  protected def createLocalPaths(a: Archive, dir: File): Unit = {
+  protected def createLocalPaths(a: Archive, dir: File) {
     val fileName = dir / localpathsFile
     val groupRepo = archString(a) + "}"
     val text: List[String] = List(
@@ -134,7 +131,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     }
     log(in + ": " + res.mkString(", "))
     val safe = res.filter {
-      case BuildDependency(ar, fp, _) =>
+      case BuildDependency(_, ar, fp) =>
         val f: File = ar / inDim / fp
         if (f == in) {
           log(LocalError(getOutPath(a, in) + " imports itself"))
@@ -150,12 +147,12 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     safe
   }
 
-  override def getDeps(a: Archive, fp: FilePath): Set[Dependency] = {
-    val in = a / inDim / fp
+  override def getDeps(bt: BuildTask): Set[Dependency] = {
+    val in = bt.inFile
     if (in.exists()) {
       if (key == "sms") Set.empty
       else
-        readingSource(if (List("tikzsvg", "allpdf").contains(key)) "pdflatex" else key, a, in).toSet
+        readingSource(if (List("tikzsvg", "allpdf").contains(key)) "pdflatex" else key, bt.archive, in).toSet
     } else {
       logResult("unknown file: " + in)
       Set.empty
@@ -186,12 +183,12 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   protected def getDirFilesByExt(a: Archive, dir: File, exts: List[String]): List[File] =
     getDirFiles(a, dir, f => exts.exists(e => f.endsWith("." + e))).map(f => dir / f)
 
-  protected def deleteWithLog(f: File): Unit = {
+  protected def deleteWithLog(f: File) {
     f.delete()
     logResult("deleted " + f)
   }
 
-  override def cleanDir(a: Archive, curr: Current): Unit = {
+  override def cleanDir(a: Archive, curr: Current) {
     super.cleanDir(a, curr)
     val errDir = getFolderErrorFile(a, curr.path).up
     val outFile = getFolderOutFile(a, curr.path)

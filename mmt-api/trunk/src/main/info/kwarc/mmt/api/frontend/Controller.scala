@@ -113,7 +113,7 @@ class Controller extends ROController with Logger {
   /** relational manager, handles extracting and parsing relational elements */
   val relman = new RelationalManager(this)
   /** the profile configuration */
-  val config = new MMTConfig(this, true)
+  val config = new MMTConfig
 
 
   /** all other mutable fields */
@@ -127,6 +127,7 @@ class Controller extends ROController with Logger {
 
   /** @return the current home directory */
   def getHome: File = state.home
+
   /** initially the current working directory
     *
     * @param h sets the current home directory relative to which path names in commands are executed
@@ -336,7 +337,7 @@ class Controller extends ROController with Logger {
               nw match {
                 case m: Module =>
                   // load extension providing semantics for a theory
-                  if (! extman.get(classOf[Plugin]).exists(_.theory == m.path)) {
+                  if (!extman.get(classOf[Plugin]).exists(_.theory == m.path)) {
                     getConfig.getEntries(classOf[SemanticsConf]).find(_.theory == m.path).foreach { sc =>
                       log("loading semantic extension for " + m.path)
                       extman.addExtension(sc.cls, sc.args)
@@ -516,10 +517,11 @@ class Controller extends ROController with Logger {
     val buildTargets = keys map { key => extman.getOrAddExtension(classOf[BuildTarget], key, args) }
 
     inputs foreach { case (root, fp) =>
-      handle(AddArchive(root)) // make sure the archive is open
+      handle(AddArchive(root), showLog = false) // make sure the archive is open
     val archive = backend.getArchive(root).get // non-empty by invariant of resolveAnyPhysical
       buildTargets foreach { bt =>
-        val inPath = fp.segments match {
+        report.groups += bt.key + "-result" // ensure logging
+      val inPath = fp.segments match {
           case dim :: path =>
             bt match {
               case bt: TraversingBuildTarget if dim != bt.inDim.toString =>
@@ -534,7 +536,7 @@ class Controller extends ROController with Logger {
     }
   }
 
-  private def archiveBuildAction(ids: List[String], key: String, mod: BuildTargetModifier, in: FilePath): Unit = {
+  private def archiveBuildAction(ids: List[String], key: String, mod: BuildTargetModifier, in: FilePath) {
     ids.foreach { id =>
       val arch = backend.getArchive(id) getOrElse (throw GetError("archive not found: " + id))
       key match {
@@ -555,13 +557,13 @@ class Controller extends ROController with Logger {
           backend.closeArchive(id)
           notifyListeners.onArchiveClose(arch)
         case _ =>
-           val bt = extman.getOrAddExtension(classOf[BuildTarget], key)
-           bt(mod, arch, in)
+          val bt = extman.getOrAddExtension(classOf[BuildTarget], key)
+          bt(mod, arch, in)
       }
     }
   }
 
-  private def execFileAction(f: File, nameOpt: Option[String]): Unit = {
+  private def execFileAction(f: File, nameOpt: Option[String]) {
     val folder = f.getParentFile
     // store old state, and initialize fresh state
     val oldHome = state.home
@@ -581,7 +583,7 @@ class Controller extends ROController with Logger {
     }
   }
 
-  private def cloneRecursively(p: String): Unit = {
+  private def cloneRecursively(p: String) {
     val lcOpt = state.getOAF.clone(p)
     lcOpt foreach { lc =>
       val archs = backend.openArchive(lc)
@@ -593,13 +595,13 @@ class Controller extends ROController with Logger {
   }
 
   /** executes an Action */
-  def handle(act: Action, showLog: Boolean = true): Unit =
+  def handle(act: Action, showLog: Boolean = true) {
     state.currentActionDefinition match {
       case Some(Defined(file, name, acts)) if act != EndDefine =>
         state.currentActionDefinition = Some(Defined(file, name, acts ::: List(act)))
-        report("user", "  " + name + ":  " + act.toString)
+        if (showLog) report("user", "  " + name + ":  " + act.toString)
       case _ =>
-        if (act != NoAction) report("user", act.toString)
+        if (act != NoAction && showLog) report("user", act.toString)
         act match {
           case AddMathPathFS(uri, file) =>
             val lc = LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, file)
@@ -724,6 +726,7 @@ class Controller extends ROController with Logger {
             cleanup
             sys.exit()
         }
-        if (act != NoAction) report("user", act.toString + " finished")
+        if (act != NoAction && showLog) report("user", act.toString + " finished")
     }
+  }
 }

@@ -1,17 +1,17 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.backend._
-import info.kwarc.mmt.api.checking._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.ontology.QueryExtension
-import info.kwarc.mmt.api.parser._
-import info.kwarc.mmt.api.presentation._
-import info.kwarc.mmt.api.proving._
-import info.kwarc.mmt.api.uom._
-import info.kwarc.mmt.api.utils.MyList._
-import info.kwarc.mmt.api.web._
+import archives._
+import backend._
+import checking._
+import libraries._
+import ontology.QueryExtension
+import parser._
+import presentation._
+import proving._
+import uom._
+import utils.MyList._
+import web._
 
 
 trait Extension extends Logger {
@@ -51,42 +51,42 @@ trait Extension extends Logger {
   }
 
   /** extension-specific initialization (override as needed, empty by default) */
-  def start(args: List[String]): Unit = {}
+  def start(args: List[String]) {}
 
   /** extension-specific cleanup (override as needed, empty by default)
     *
     * Extensions may create persistent data structures and processes,
     * but they must clean up after themselves in this method
     */
-  def destroy(): Unit = {}
+  def destroy {}
 }
 
 /** extensions classes that can be tested for applicability based on a format string */
 trait FormatBasedExtension extends Extension {
   /**
-   * @param format the format/key/other identifier, for which an extension is needed
-   * @return true if this extension is applicable
-   */
+    * @param format the format/key/other identifier, for which an extension is needed
+    * @return true if this extension is applicable
+    */
   def isApplicable(format: String): Boolean
 }
 
 /**
- * Common super class of all extensions, whose functionality is systematically split between structure and object level
- *
- * Implementing classes should have a constructor that takes an Extension providing the object level functionality
- * and add the structure level functionality.
- */
+  * Common super class of all extensions, whose functionality is systematically split between structure and object level
+  *
+  * Implementing classes should have a constructor that takes an Extension providing the object level functionality
+  * and add the structure level functionality.
+  */
 trait LeveledExtension extends Extension {
   def objectLevel: Extension
 
-  override def init(controller: Controller): Unit = {
+  override def init(controller: Controller) {
     objectLevel.init(controller)
     super.init(controller)
   }
 
-  override def destroy(): Unit = {
-    objectLevel.destroy()
-    super.destroy()
+  override def destroy {
+    objectLevel.destroy
+    super.destroy
   }
 }
 
@@ -112,21 +112,21 @@ class ExtensionManager(controller: Controller) extends Logger {
 
   def get[E <: FormatBasedExtension](cls: Class[E], format: String): Option[E] = extensions.collectFirst {
     case e: E@unchecked if cls.isInstance(e) && e.isApplicable(format) => e
-  }.headOption
+  }
 
   /** like get, but if necessary looks up the key in the current [[MMTConfig]]
     *
     * @param args additional arguments for the extension (appended to those in configuration); ignored if extension has already been created
     */
   def getOrAddExtension[E <: FormatBasedExtension](cls: Class[E], format: String, args: List[String] = Nil): E = {
-     get(cls, format) getOrElse {
-        val tc = controller.getConfig.getEntry(classOf[TargetConf], format)
-        val ext = addExtension(tc.cls, tc.args ::: args)
-        ext match {
-           case e: E@unchecked if (cls.isInstance(e)) => e
-           case _ => throw RegistrationError(s"extension for $format exists but has unexpected type")
-        }
-     }
+    get(cls, format) getOrElse {
+      val tc = controller.getConfig.getEntry(classOf[TargetConf], format)
+      val ext = addExtension(tc.cls, tc.args ::: args)
+      ext match {
+        case e: E@unchecked if cls.isInstance(e) => e
+        case _ => throw RegistrationError(s"extension for $format exists but has unexpected type")
+      }
+    }
   }
 
   var lexerExtensions: List[LexerExtension] = Nil
@@ -205,39 +205,6 @@ class ExtensionManager(controller: Controller) extends Logger {
     addExtension(ext, args)
     ext
   }
-  }
-
-  /** make sure that an extension is added by key */
-  def ensureExtension(key: String, args: List[String]): Unit = {
-    val ts = key.split("_").toList
-    ts.foreach(subKey =>
-      targetToClass.get(subKey) match {
-        case None => logError("unknown target " + subKey + " for extension, ignored")
-        case Some(cls) =>
-          report.groups += subKey + "-result"
-          ensureExtensionByClassName(key, cls, args)
-      })
-    if (ts.length > 1) {
-      ensureExtensionByClassName(key, classOf[MetaBuildTarget].getName, key :: ts.flatMap(targetToClass.get))
-      report.groups += key
-    }
-  }
-
-  /** lookup or add extension */
-  def ensureExtensionByClassName(key: String, cls: String, args: List[String]): Unit =
-    try {
-      val clsJ = Class.forName(cls)
-      val ls = get(clsJ.asInstanceOf[Class[Extension]])
-      val rs = ls.filter {
-        case e: MetaBuildTarget => args == e.startArgs
-        case e: TraversingBuildTarget => key == e.key
-        case _ => true
-      }
-      if (rs.isEmpty) addExtension(cls, args)
-    }
-    catch {
-      case e: ClassCastException => log(RegistrationError("error not an extension class " + cls))
-    }
 
   /** initializes and adds an extension */
   def addExtension(ext: Extension, args: List[String] = Nil) {
@@ -268,7 +235,7 @@ class ExtensionManager(controller: Controller) extends Logger {
   }
 
   /** remove an extension (must have been stopped already) */
-  def removeExtension(ext: Extension): Unit = {
+  def removeExtension(ext: Extension) {
     extensions = extensions diff List(ext)
   }
 
@@ -297,7 +264,7 @@ class ExtensionManager(controller: Controller) extends Logger {
   }
 
   def cleanup {
-    extensions.foreach(_.destroy())
+    extensions.foreach(_.destroy)
     extensions = Nil
   }
 }

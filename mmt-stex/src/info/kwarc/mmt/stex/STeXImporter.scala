@@ -1,16 +1,16 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.informal._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.parser._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.utils._
+import archives._
+import documents._
+import frontend._
+import informal._
+import modules._
+import notations._
+import objects._
+import parser._
+import symbols._
+import utils._
 
 import scala.xml.{Elem, NamespaceBinding, Node}
 
@@ -62,7 +62,7 @@ class STeXImporter extends Importer {
 
   def inExts = List("omdoc") //stex/latexml generated omdoc
 
-  override def init(controller: Controller): Unit = {
+  override def init(controller: Controller) {
     this.controller = controller
     report = controller.report
   }
@@ -70,7 +70,7 @@ class STeXImporter extends Importer {
   var docCont: Map[DPath, Document => Unit] = Nil.toMap
   var firstRun = true
 
-  override def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath): Unit = {
+  override def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath) {
     modifier match {
       case up: Update => update(arch, up, in)
       case Clean => clean(arch, in)
@@ -101,7 +101,7 @@ class STeXImporter extends Importer {
         val err = STeXParseError.from(e, "Skipping article due to unexpected error", None, None, Some(Level.Fatal))
         bt.errorCont(err)
     }
-    EmptyBuildResult
+    BuildResult.empty
   }
 
   def compileOne(inText: String, dpath: DPath): (String, List[Error]) = {
@@ -128,7 +128,7 @@ class STeXImporter extends Importer {
   val omdocNS = "http://omdoc.org/ns"
   val mhBase = DPath(URI("http://mathhub.info/"))
 
-  def add(s: StructuralElement) = {
+  def add(s: StructuralElement) {
     log("adding " + s.path.toPath)
     controller.add(s)
   }
@@ -152,7 +152,7 @@ class STeXImporter extends Importer {
   /**
     * Translate a toplevel <omdoc> node
     */
-  private def translateDocument(n: Node)(implicit dpath: DPath, errorCont: ErrorHandler): Unit = {
+  private def translateDocument(n: Node)(implicit dpath: DPath, errorCont: ErrorHandler) {
     n.label match {
       case "omdoc" =>
         //creating document and implicit theory
@@ -166,7 +166,7 @@ class STeXImporter extends Importer {
   /**
     * translate second-level, in-document elements (typically modules)
     */
-  private def translateModule(n: Node)(implicit doc: Document, errorCont: ErrorHandler): Unit = {
+  private def translateModule(n: Node)(implicit doc: Document, errorCont: ErrorHandler) {
     val sref = parseSourceRef(n, doc.path)
     try {
       n.label match {
@@ -210,7 +210,7 @@ class STeXImporter extends Importer {
   /**
     * translate third level, in-module elements (typically declarations)
     */
-  private def translateDeclaration(n: Node)(implicit doc: Document, thy: DeclaredTheory, errorCont: ErrorHandler): Unit = {
+  private def translateDeclaration(n: Node)(implicit doc: Document, thy: DeclaredTheory, errorCont: ErrorHandler) {
     implicit val dpath = doc.path
     implicit val mpath = thy.path
     val sref = parseSourceRef(n, doc.path)
@@ -316,7 +316,7 @@ class STeXImporter extends Importer {
                 c.notC.parsingDim.set(texNotation)
               } catch {
                 case e: Exception =>
-                  val err = STeXParseError.from(e, "Notation is missing latex macro information", Some(s"for symbol ${cd}?${name}"), sref, Some(Level.Warning))
+                  val err = STeXParseError.from(e, "Notation is missing latex macro information", Some(s"for symbol $cd?$name"), sref, Some(Level.Warning))
                   errorCont(err)
               }
 
@@ -328,11 +328,11 @@ class STeXImporter extends Importer {
                 }
               } catch {
                 case e: Exception =>
-                  val err = STeXParseError.from(e, "Invalid notation rendering", Some(s"for symbol ${cd}?${name}"), sref, None)
+                  val err = STeXParseError.from(e, "Invalid notation rendering", Some(s"for symbol $cd?$name"), sref, None)
                   errorCont(err)
               }
             case None =>
-              val err = new STeXParseError("Notation for nonexistent constant ", Some(s"for symbol ${refName}"), sref, None)
+              val err = new STeXParseError("Notation for nonexistent constant ", Some(s"for symbol $refName"), sref, None)
               errorCont(err)
           }
         case "metadata" => //TODO
@@ -394,19 +394,20 @@ class STeXImporter extends Importer {
               argMap ++= args
               nextArgNumber = argMap.size + 1
               //computing map of arg names to positions
-              protoBody.child.tail foreach { p => p.label match {
-                case "expr" | "exprlist" =>
-                  val name = (p \ "@name").text
-                  argMap(name) = if (inBinder) ProtoSub(nextArgNumber) else ProtoArg(nextArgNumber)
-                  nextArgNumber += 1
-                case "OMBVAR" =>
-                  p.child map { ch =>
-                    val name = (ch \ "@name").text
-                    argMap(name) = ProtoVar(nextArgNumber)
+              protoBody.child.tail foreach { p =>
+                p.label match {
+                  case "expr" | "exprlist" =>
+                    val name = (p \ "@name").text
+                    argMap(name) = if (inBinder) ProtoSub(nextArgNumber) else ProtoArg(nextArgNumber)
                     nextArgNumber += 1
-                  }
-                case _ => throw ParseError("invalid prototype" + protoBody)
-              }
+                  case "OMBVAR" =>
+                    p.child foreach { ch =>
+                      val name = (ch \ "@name").text
+                      argMap(name) = ProtoVar(nextArgNumber)
+                      nextArgNumber += 1
+                    }
+                  case _ => throw ParseError("invalid prototype" + protoBody)
+                }
               }
               spath
             case _ => throw ParseError("invalid prototype" + protoBody)

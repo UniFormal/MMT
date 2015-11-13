@@ -1,12 +1,12 @@
 package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.ontology.{Declares, RelationExp}
-import info.kwarc.mmt.api.parser._
-import info.kwarc.mmt.api.utils._
+import archives._
+import documents._
+import frontend.Controller
+import ontology.{Declares, RelationExp}
+import parser._
+import utils._
 
 /** parses and returns a checked result */
 abstract class Interpreter extends Importer {
@@ -28,7 +28,7 @@ abstract class Interpreter extends Importer {
     val ps = new ParsingStream(bf.base / bf.inPath.segments, dPath, bf.archive.namespaceMap, format, File.Reader(bf.inFile))
     val doc = apply(ps)(bf.errorCont)
     index(doc)
-    EmptyBuildResult
+    BuildResult.empty
   }
 
   /** bf.narrationDPath except for extension */
@@ -57,7 +57,9 @@ abstract class Interpreter extends Importer {
     }
 
   /** directly resolved logical dependencies */
-  override def getDeps(a: Archive, fp: FilePath): Set[Dependency] = {
+  override def getDeps(bt: BuildTask) : Set[Dependency] = {
+    val a = bt.archive
+    val fp = bt.inPath
     val rs = controller.depstore
     val d = getDPath(a, fp)
     log(d.toString)
@@ -89,7 +91,7 @@ abstract class Interpreter extends Importer {
     }
     result -= ((a, fp))
     log(result.toString())
-    result.map(p => BuildDependency(p._1, p._2, key))
+    result.map(p => BuildDependency(key, p._1, p._2))
   }
 }
 

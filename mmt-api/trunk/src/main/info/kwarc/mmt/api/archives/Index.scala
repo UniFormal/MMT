@@ -1,14 +1,13 @@
 package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.parser._
-import info.kwarc.mmt.api.utils._
+import documents._
+import frontend._
+import modules._
+import parser._
+import utils._
 
-/**
-  * a build target for importing an archive in some source syntax
+/** a build target for importing an archive in some source syntax
   *
   * This should only be needed when OMDoc is received from a third party.
   * OMDoc produced by [[Compiler]]s is indexed automatically.
@@ -40,15 +39,16 @@ abstract class Importer extends TraversingBuildTarget {
     importDocument(bf, doc => indexDocument(bf.archive, doc, bf.inPath))
   }
 
-  override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): Unit = {
+  override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = {
     bd.outFile.up.mkdirs
     val doc = controller.get(DPath(bd.archive.narrationBase / bd.inPath.segments)).asInstanceOf[Document]
     val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
     writeToRel(doc, bd.archive / relational / inPathFile)
+    BuildResult.empty
   }
 
   /** Write a module to content folder */
-  private def writeToContent(a: Archive, mod: Module): Unit = {
+  private def writeToContent(a: Archive, mod: Module) {
     val contFile = a.MMTPathToContentPath(mod.path)
     log("[  -> content   ]     " + contFile.getPath)
     val w = new presentation.FileWriter(contFile)
@@ -59,7 +59,7 @@ abstract class Importer extends TraversingBuildTarget {
   }
 
   /** extract and write the relational information about a knowledge item */
-  private def writeToRel(se: StructuralElement, file: File): Unit = {
+  private def writeToRel(se: StructuralElement, file: File) {
     val relFile = file.setExtension("rel")
     log("[  -> relational]     " + relFile.getPath)
     val relFileHandle = File.Writer(relFile)
@@ -70,7 +70,7 @@ abstract class Importer extends TraversingBuildTarget {
   }
 
   /** index a document */
-  private def indexDocument(a: Archive, doc: Document, inPath: FilePath): Unit = {
+  private def indexDocument(a: Archive, doc: Document, inPath: FilePath) {
     // write narration file
     val narrFile = getOutFile(a, inPath)
     log("[  -> narration ]     " + narrFile)
@@ -82,7 +82,7 @@ abstract class Importer extends TraversingBuildTarget {
   }
 
   /** index a module */
-  private def indexModule(a: Archive, mod: Module): Unit = {
+  private def indexModule(a: Archive, mod: Module) {
     // write content file
     writeToContent(a, mod)
     // write relational file
@@ -90,7 +90,7 @@ abstract class Importer extends TraversingBuildTarget {
   }
 
   /** additionally deletes content and relational */
-  override def cleanFile(a: Archive, curr: Current): Unit = {
+  override def cleanFile(a: Archive, curr: Current) {
     val controller = new Controller(report)
     val Current(inFile, narrPath) = curr
     val narrFile = getOutFile(a, narrPath)
@@ -117,7 +117,7 @@ abstract class Importer extends TraversingBuildTarget {
     super.cleanFile(a, curr)
   }
 
-  override def cleanDir(a: Archive, curr: Current): Unit = {
+  override def cleanDir(a: Archive, curr: Current) {
     val inPathFile = Archive.narrationSegmentsAsFile(curr.path, "omdoc")
     delete((a / relational / inPathFile).setExtension("rel"))
   }
@@ -161,6 +161,6 @@ class OMDocImporter extends Importer {
     val ps = ParsingStream.fromFile(bf.inFile, Some(bf.narrationDPath), Some(bf.archive.namespaceMap))
     val doc = controller.read(ps, interpret = false)(bf.errorCont)
     seCont(doc)
-    EmptyBuildResult
+    BuildResult.empty
   }
 }

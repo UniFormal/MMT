@@ -1,16 +1,15 @@
 package info.kwarc.mmt.stex
 
 import java.net.{BindException, ServerSocket}
-import java.nio.charset.{Charset, MalformedInputException}
 import java.nio.file.Files
 
+import STeXUtils._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils._
 
 import scala.sys.process._
-import scala.util.matching.Regex
 
 class AllTeX extends LaTeXBuildTarget {
   val key: String = "alltex"
@@ -18,31 +17,33 @@ class AllTeX extends LaTeXBuildTarget {
   override val outExt = "tex"
 
   // we do nothing for single files
-  def reallyBuildFile(bt: BuildTask): BuildResult = EmptyBuildResult
+  def reallyBuildFile(bt: BuildTask): BuildResult = BuildResult.empty
 
-  override def cleanFile(a: Archive, curr: Current): Unit = {}
+  override def cleanFile(a: Archive, curr: Current) {}
 
-  override def cleanDir(a: Archive, curr: Current): Unit = {
+  override def cleanDir(a: Archive, curr: Current) {
     val dir = curr.file
     dir.list.filter(f => f.startsWith("all.") && f.endsWith(".tex")).sorted.
       map(f => dir / f).foreach(deleteWithLog)
     super.cleanDir(a, curr)
   }
 
-  override def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit =
+  override def update(a: Archive, up: Update, in: FilePath = EmptyPath) {
     a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case _ =>
     }, { case (c@Current(inDir, inPath), _) =>
       buildDir(a, inPath, inDir, force = false)
     })
+  }
 
-  override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath): Unit =
+  override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
     update(a, up, in)
+  }
 
-  override def buildDir(bt: BuildTask, builtChildren: List[BuildTask]): Unit =
+  override def buildDir(bt: BuildTask, builtChildren: List[BuildTask]): BuildResult =
     buildDir(bt.archive, bt.inPath, bt.inFile, force = true)
 
-  private def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): Unit = {
+  private def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult = {
     val dirFiles = getDirFiles(a, dir, includeFile)
     if (dirFiles.nonEmpty) {
       createLocalPaths(a, dir)
@@ -54,13 +55,14 @@ class AllTeX extends LaTeXBuildTarget {
       if (nonLangFiles.nonEmpty) createAllFile(a, None, dir, nonLangFiles, force)
       langs.toList.sorted.foreach(l => createAllFile(a, Some(l), dir, files, force))
     }
+    BuildResult.empty
   }
 
   private def ambleText(preOrPost: String, a: Archive, lang: Option[String]): List[String] =
     readSourceRebust(getAmbleFile(preOrPost, a, lang)).getLines().toList
 
   private def createAllFile(a: Archive, lang: Option[String], dir: File,
-                            files: List[String], force: Boolean): Unit = {
+                            files: List[String], force: Boolean) {
     val all = dir / ("all" + lang.map("." + _).getOrElse("") + ".tex")
     val ls = langFiles(lang, files)
     if (!force && all.exists() && ls.forall(f => (dir / f).lastModified() < all.lastModified()))
@@ -91,13 +93,13 @@ class SmsGenerator extends LaTeXBuildTarget {
 
   def reallyBuildFile(bt: BuildTask): BuildResult = {
     createLocalPaths(bt)
-    try createSms(bt, encodings)
+    try createSmsForEncodings(bt, encodings)
     catch {
       case e: Exception =>
         bt.errorCont(LocalError("sms exception: " + e))
         logFailure(bt.outPath)
     }
-    EmptyBuildResult
+    BuildResult.empty
   }
 }
 
@@ -125,7 +127,7 @@ class LaTeXML extends LaTeXBuildTarget {
     partArg(arg, args)._1.headOption.map(Some(_)).
       getOrElse(controller.getEnvVar("LATEXML" + arg.toUpperCase))
 
-  override def start(args: List[String]): Unit = {
+  override def start(args: List[String]) {
     super.start(args)
     val (rOpts, nonOptArgs) = execArgs(args)
     latexmlc = getFromFirstArgOrEnvvar(nonOptArgs, "LATEXMLC", latexmlc)
@@ -191,7 +193,7 @@ class LaTeXML extends LaTeXBuildTarget {
       case 4 => "xslt"
     })
 
-    def reportError(bt: BuildTask): Unit = {
+    def reportError(bt: BuildTask) {
       optLevel match {
         case Some(lev) =>
           val ref = SourceRef(FileURI(bt.inFile), region)
@@ -255,7 +257,7 @@ class LaTeXML extends LaTeXBuildTarget {
     }
     else bin
 
-  private def setLatexmlBins(bt: BuildTask): Unit = {
+  private def setLatexmlBins(bt: BuildTask) {
     latexmlc = setLatexmlBin(latexmlc, bt)
     latexmls = setLatexmlBin(latexmls, bt)
   }
@@ -327,15 +329,15 @@ class LaTeXML extends LaTeXBuildTarget {
       if (pipeOutput) File.ReadLineWise(logFile)(println)
     }
     if (pipeOutput) print(output.toString)
-    EmptyBuildResult
+    BuildResult.empty
   }
 
-  override def cleanFile(arch: Archive, curr: Current): Unit = {
+  override def cleanFile(arch: Archive, curr: Current) {
     getOutFile(arch, curr.path).setExtension("ltxlog").delete()
     super.cleanFile(arch, curr)
   }
 
-  override def cleanDir(a: Archive, curr: Current): Unit = {
+  override def cleanDir(a: Archive, curr: Current) {
     super.cleanDir(a, curr)
     val outDir = getFolderOutFile(a, curr.path).up
     if (outDir.isDirectory) outDir.deleteDir()
@@ -349,7 +351,7 @@ class PdfLatex extends LaTeXBuildTarget {
   val outDim: ArchiveDimension = Dim("export", "pdflatex", inDim.toString)
   private var pdflatexPath: String = "xelatex"
 
-  override def start(args: List[String]): Unit = {
+  override def start(args: List[String]) {
     super.start(args)
     val (opts, nonOptArgs) = execArgs(args)
     val newPath = getFromFirstArgOrEnvvar(nonOptArgs, "PDFLATEX", pdflatexPath)
@@ -397,19 +399,19 @@ class PdfLatex extends LaTeXBuildTarget {
         bt.errorCont(LatexError(e.toString, output.toString))
         logFailure(bt.outPath)
     }
-    EmptyBuildResult
+    BuildResult.empty
   }
 
   protected def toBeCleanedExts: List[String] =
     List("aux", "idx", "log", "out", "pdf", "pdflog", "thm", "nav", "snm", "toc")
 
-  override def cleanFile(arch: Archive, curr: Current): Unit = {
+  override def cleanFile(arch: Archive, curr: Current) {
     val f = arch / inDim / curr.path
     toBeCleanedExts.foreach(f.setExtension(_).delete())
     super.cleanFile(arch, curr)
   }
 
-  override def cleanDir(a: Archive, curr: Current): Unit = {
+  override def cleanDir(a: Archive, curr: Current) {
     super.cleanDir(a, curr)
     val outDir = getFolderOutFile(a, curr.path).up
     if (outDir.isDirectory) outDir.deleteDir()
@@ -424,13 +426,14 @@ class AllPdf extends PdfLatex {
   override def includeFile(n: String): Boolean =
     n.endsWith(".tex") && n.startsWith("all.")
 
-  override def getDeps(a: Archive, fp: FilePath): Set[Dependency] = {
-    val in = a / inDim / fp
+  override def getDeps(bt: BuildTask): Set[Dependency] = {
+    val in = bt.inFile
+    val a = bt.archive
     val optLang = getLang(in)
     val aStr = archString(a)
     val name = in.getName
     langFiles(optLang, getDirFiles(a, in.up, super.includeFile)).
-      filter(_ != name).map(f => BuildDependency(a, fp.dirPath / f, "pdflatex")).toSet
+      filter(_ != name).map(f => BuildDependency("pdflatex", a, bt.inPath.dirPath / f)).toSet
   }
 }
 
@@ -475,10 +478,10 @@ class TikzSvg extends PdfLatex {
         bt.errorCont(LatexError(e.toString, output.toString))
         logFailure(bt.outPath)
     }
-    EmptyBuildResult
+    BuildResult.empty
   }
 
-  override def cleanDir(a: Archive, curr: Current): Unit = {
+  override def cleanDir(a: Archive, curr: Current) {
     super.cleanDir(a, curr)
     val srcDir = a / inDim / curr.path
     getDirFilesByExt(a, srcDir, toBeCleanedExts).foreach(deleteWithLog)

@@ -24,7 +24,7 @@ class TptpCompiler extends Importer with backend.QueryTransformer {
     val translator = new TptpTranslator()
     val d = translator.translate(fileDir.mkString("/"), fileName, bf.inFile)
     seCont(d)
-    EmptyBuildResult
+    BuildResult.empty
   }
 
   def transformSearchQuery(n: scala.xml.Node, params: List[String]): List[scala.xml.Node] = {

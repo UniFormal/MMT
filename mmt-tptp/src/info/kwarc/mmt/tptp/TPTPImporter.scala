@@ -98,6 +98,6 @@ class TPTPImporter extends TraversingBuildTarget {
         bt.errorCont(LocalError("exception for file: " + bt.inFile + "\n" +
           Option(e.getMessage).getOrElse("(no message)")).setCausedBy(e))
     }
-    EmptyBuildResult
+    BuildResult.empty
   }
 }

@@ -35,6 +35,6 @@ class TptpTwelfCompiler extends TraversingBuildTarget {
     val cmd = "tcsh " + tptp2x + " " + flags + " " + bf.inFile.toString
     // log(cmd)
     (cmd #> bf.outFile.toString).!
-    EmptyBuildResult
+    BuildResult.empty
   }
 }
