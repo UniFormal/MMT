@@ -1,9 +1,8 @@
 package info.kwarc.mmt.api
 
-import info.kwarc.mmt.api.Level.Level
-import info.kwarc.mmt.api.MultipleErrorHandler
-import info.kwarc.mmt.api.parser.SourceRef
-import info.kwarc.mmt.api.utils._
+import Level.Level
+import parser.SourceRef
+import utils._
 
 import scala.xml._
 
@@ -38,7 +37,7 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
     case Some(e) => "\n\ncaused by\n" + e.getClass + ": " + e.getMessage + e.getStackTrace.map(_.toString).mkString("\n", "\n", "")
   }
 
-  override def toString: String = shortMsg
+  override def toString = shortMsg
 
   def toStringLong: String = {
     shortMsg + "\n" + extraMessage + "\ndetected at\n" + Stacktrace.asString(this) + causedByToString
@@ -220,7 +219,9 @@ abstract class ErrorHandler {
   }
 
   /** convenience for apply */
-  def <<(e: Error): Unit = apply(e)
+  def <<(e: Error) {
+    apply(e)
+  }
 
   /** evaluates a command with this class as the exception handler */
   def catchIn(a: => Unit) {
@@ -236,8 +237,8 @@ abstract class ErrorHandler {
 
 /** an error handler that needs opening and closing */
 abstract class OpenCloseHandler extends ErrorHandler {
-  def open: Unit
-  def close: Unit
+  def open
+  def close
 }
 
 /** combines the actions of multiple handlers */
