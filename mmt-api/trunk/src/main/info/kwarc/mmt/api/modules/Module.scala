@@ -5,8 +5,8 @@ import objects._
 
 /**
  * A Module represents an MMT module.<p>
- * 
- * @param doc the [[Path]] of the parent document
+ *
+ * @param parent the [[Path]] of the parent document
  * @param name the name of the module
  */
 abstract class Module(val parent : DPath, val name : LocalName) extends ContentElement {
