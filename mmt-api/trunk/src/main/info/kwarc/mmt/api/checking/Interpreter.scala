@@ -23,11 +23,12 @@ abstract class Interpreter extends Importer {
   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): Document
 
   /** creates a [[ParsingStream]] for the input file and interprets it */
-  def importDocument(bf: BuildTask, index: Document => Unit) {
+  def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
     val dPath = getDPath(bf.archive, bf.inPath) // bf.narrationDPath except for extension
     val ps = new ParsingStream(bf.base / bf.inPath.segments, dPath, bf.archive.namespaceMap, format, File.Reader(bf.inFile))
     val doc = apply(ps)(bf.errorCont)
     index(doc)
+    EmptyBuildResult
   }
 
   /** bf.narrationDPath except for extension */
@@ -55,8 +56,8 @@ abstract class Interpreter extends Importer {
       case _ => Nil
     }
 
-  /** method from trait Dependencies */
-  override def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[Dependency] = {
+  /** directly resolved logical dependencies */
+  override def getDeps(a: Archive, fp: FilePath): Set[Dependency] = {
     val rs = controller.depstore
     val d = getDPath(a, fp)
     log(d.toString)
@@ -88,15 +89,15 @@ abstract class Interpreter extends Importer {
     }
     result -= ((a, fp))
     log(result.toString())
-    result.map(p => Dependency(p._1, p._2, key))
+    result.map(p => BuildDependency(p._1, p._2, key))
   }
 }
 
 /** a combination of a Parser and a Checker
- *
- * @param parser the parser
- * @param checker the checker
- */
+  *
+  * @param parser the parser
+  * @param checker the checker
+  */
 class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Interpreter {
   def format = parser.format
 

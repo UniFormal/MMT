@@ -43,9 +43,9 @@ class Twelf extends Importer with frontend.ChangeListener {
   private var catalog: Catalog = null
 
   /**
-   * creates and initializes a Catalog
-   * first argument is the location of the twelf-server script; alternatively set variable Twelf
-   */
+    * creates and initializes a Catalog
+    * first argument is the location of the twelf-server script; alternatively set variable Twelf
+    */
   override def start(args: List[String]): Unit = {
     val p = getFromFirstArgOrEnvvar(args, "Twelf", "twelf-server")
     path = File(p)
@@ -116,11 +116,11 @@ class Twelf extends Importer with frontend.ChangeListener {
   }
 
   /**
-   * Compile a Twelf file to OMDoc
-   * @param bf the build task
-   * @param seCont document continuation for indexing
-   */
-  def importDocument(bf: BuildTask, seCont: documents.Document => Unit) {
+    * Compile a Twelf file to OMDoc
+    * @param bf the build task
+    * @param seCont document continuation for indexing
+    */
+  def importDocument(bf: BuildTask, seCont: documents.Document => Unit): BuildResult = {
     val outFile = bf.archive / RedirectableDimension(key) / bf.inPath.toFile.setExtension(outExt).filepath
     outFile.up.mkdirs()
     outFile.delete()
@@ -141,5 +141,6 @@ class Twelf extends Importer with frontend.ChangeListener {
         case e: scala.xml.parsing.FatalError =>
           error("XML error in omdoc file (likely too big for Twelf to write)")
       }
+    EmptyBuildResult
   }
 }

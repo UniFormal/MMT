@@ -6,7 +6,6 @@ import java.nio.file.Files
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils._
 
@@ -19,7 +18,7 @@ class AllTeX extends LaTeXBuildTarget {
   override val outExt = "tex"
 
   // we do nothing for single files
-  def reallyBuildFile(bt: BuildTask): Unit = {}
+  def reallyBuildFile(bt: BuildTask): BuildResult = EmptyBuildResult
 
   override def cleanFile(a: Archive, curr: Current): Unit = {}
 
@@ -34,7 +33,7 @@ class AllTeX extends LaTeXBuildTarget {
     a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case _ =>
     }, { case (c@Current(inDir, inPath), _) =>
-         buildDir(a, inPath, inDir, force = false)
+      buildDir(a, inPath, inDir, force = false)
     })
 
   override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath): Unit =
@@ -47,7 +46,7 @@ class AllTeX extends LaTeXBuildTarget {
     val dirFiles = getDirFiles(a, dir, includeFile)
     if (dirFiles.nonEmpty) {
       createLocalPaths(a, dir)
-      val ts = getDeps(controller, key, getFilesRec(a, in)).map(d => d.archive / inDim / d.filePath)
+      val ts = getTopsortedDeps(key, getFilesRec(a, in)).collect { case bd: BuildDependency => bd }.map(d => d.archive / inDim / d.filePath)
       val files = ts.filter(dirFiles.map(f => dir / f).contains(_)).map(_.getName)
       assert(files.length == dirFiles.length)
       val langs = files.flatMap(f => getLang(File(f))).toSet
@@ -82,95 +81,15 @@ class AllTeX extends LaTeXBuildTarget {
   }
 }
 
+import STeXUtils._
+
 /** sms generation */
 class SmsGenerator extends LaTeXBuildTarget {
   val key = "sms"
   val outDim: ArchiveDimension = source
   override val outExt = "sms"
-  private val smsKeys: List[String] = List(
-    "gadopt", "symdef", "abbrdef", "symvariant", "keydef", "listkeydef",
-    "importmodule", "gimport", "adoptmodule", "importmhmodule", "adoptmhmodule"
-  )
-  private val smsTopKeys: List[String] = List(
-    "module", "importmodulevia", "importmhmodulevia"
-  )
-  private val smsRegs: Regex = {
-    val alt: String = smsTopKeys.mkString("\\{(", "|", ")\\}")
-    ("^\\\\(" + mkRegGroup(smsKeys) + "|begin" + alt + "|end" + alt + ")").r
-  }
-  private val encodings = List("ISO-8859-1", Charset.defaultCharset.toString, "UTF-8",
-    "UTF-16").distinct
 
-  private def createSms(bt: BuildTask, encs: List[String]): Unit = {
-    val readMsg = "reading " + bt.inPath
-    encs match {
-      case hd :: tl =>
-        try {
-          log(readMsg + " using encoding " + hd)
-          creatingSms(bt.archive, bt.inFile, bt.outFile, hd)
-          logSuccess(bt.outPath)
-        }
-        catch {
-          case _: MalformedInputException =>
-            log(readMsg + bt.inPath + " failed")
-            createSms(bt, tl)
-        }
-      case Nil =>
-        bt.errorCont(LocalError("no suitable encoding found for " + bt.inPath))
-        logFailure(bt.outPath)
-    }
-  }
-
-  private val importMhModule: Regex = "\\\\importmhmodule\\[(.*?)\\](.*?)".r
-  private val gimport: Regex = "\\\\gimport\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
-
-  private def mkImport(b: File, r: String, p: String, a: String, ext: String) =
-    "\\importmodule[load=" + b + "/" + r + "/source/" + p + ",ext=" + ext + "]" + a
-
-  private def mkMhImport(b: File, r: String, p: String, a: String) =
-    mkImport(b, r, p, a, "sms")
-
-  private def mkGImport(b: File, r: String, p: String) =
-    "\\mhcurrentrepos{" + r + "}%\n" + mkImport(b, r, p, "{" + p + "}", "tex")
-
-  private def creatingSms(a: Archive, inFile: File, outFile: File, enc: String): Unit = {
-    val source = scala.io.Source.fromFile(inFile, enc)
-    val w = File.Writer(outFile)
-    source.getLines().foreach { line =>
-      val l = stripComment(line).trim
-      var n = l
-      val verbIndex = l.indexOf("\\verb")
-      if (verbIndex <= -1 && smsRegs.findFirstIn(l).isDefined) {
-        l match {
-          case importMhModule(r, b) =>
-            val m = r.split(",").toList.sorted.map(_.split("=").toList)
-            m match {
-              case List("path", p) :: tl =>
-                tl match {
-                  case Nil =>
-                    n = mkMhImport(a.baseDir, archString(a), p, b)
-                  case List(List("repos", id)) =>
-                    n = mkMhImport(a.baseDir, id, p, b)
-                  case _ =>
-                }
-              case _ =>
-            }
-          case gimport(_, r, p) =>
-            Option(r) match {
-              case Some(id) =>
-                n = mkGImport(a.baseDir, id, p)
-              case None =>
-                n = mkGImport(a.baseDir, archString(a), p)
-            }
-          case _ =>
-        }
-        w.println(n + "%")
-      }
-    }
-    w.close()
-  }
-
-  def reallyBuildFile(bt: BuildTask): Unit = {
+  def reallyBuildFile(bt: BuildTask): BuildResult = {
     createLocalPaths(bt)
     try createSms(bt, encodings)
     catch {
@@ -178,6 +97,7 @@ class SmsGenerator extends LaTeXBuildTarget {
         bt.errorCont(LocalError("sms exception: " + e))
         logFailure(bt.outPath)
     }
+    EmptyBuildResult
   }
 }
 
@@ -350,7 +270,7 @@ class LaTeXML extends LaTeXBuildTarget {
     }, true)
 
   /** Compile a .tex file to OMDoc */
-  def reallyBuildFile(bt: BuildTask): Unit = {
+  def reallyBuildFile(bt: BuildTask): BuildResult = {
     val lmhOut = bt.outFile
     val logFile = bt.outFile.setExtension("ltxlog")
     lmhOut.delete()
@@ -407,6 +327,7 @@ class LaTeXML extends LaTeXBuildTarget {
       if (pipeOutput) File.ReadLineWise(logFile)(println)
     }
     if (pipeOutput) print(output.toString)
+    EmptyBuildResult
   }
 
   override def cleanFile(arch: Archive, curr: Current): Unit = {
@@ -453,7 +374,7 @@ class PdfLatex extends LaTeXBuildTarget {
     exit
   }
 
-  def reallyBuildFile(bt: BuildTask): Unit = {
+  def reallyBuildFile(bt: BuildTask): BuildResult = {
     val pdfFile = bt.inFile.setExtension("pdf")
     pdfFile.delete()
     bt.outFile.delete()
@@ -476,6 +397,7 @@ class PdfLatex extends LaTeXBuildTarget {
         bt.errorCont(LatexError(e.toString, output.toString))
         logFailure(bt.outPath)
     }
+    EmptyBuildResult
   }
 
   protected def toBeCleanedExts: List[String] =
@@ -502,13 +424,13 @@ class AllPdf extends PdfLatex {
   override def includeFile(n: String): Boolean =
     n.endsWith(".tex") && n.startsWith("all.")
 
-  override def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[Dependency] = {
+  override def getDeps(a: Archive, fp: FilePath): Set[Dependency] = {
     val in = a / inDim / fp
     val optLang = getLang(in)
     val aStr = archString(a)
     val name = in.getName
     langFiles(optLang, getDirFiles(a, in.up, super.includeFile)).
-      filter(_ != name).map(f => Dependency(a, fp.dirPath / f, "pdflatex")).toSet
+      filter(_ != name).map(f => BuildDependency(a, fp.dirPath / f, "pdflatex")).toSet
   }
 }
 
@@ -519,7 +441,7 @@ class TikzSvg extends PdfLatex {
 
   override def includeDir(n: String): Boolean = n.endsWith("tikz")
 
-  override def reallyBuildFile(bt: BuildTask): Unit = {
+  override def reallyBuildFile(bt: BuildTask): BuildResult = {
     val pdfFile = bt.inFile.setExtension("pdf")
     val svgFile = bt.inFile.setExtension("svg")
     bt.outFile.delete()
@@ -553,6 +475,7 @@ class TikzSvg extends PdfLatex {
         bt.errorCont(LatexError(e.toString, output.toString))
         logFailure(bt.outPath)
     }
+    EmptyBuildResult
   }
 
   override def cleanDir(a: Archive, curr: Current): Unit = {

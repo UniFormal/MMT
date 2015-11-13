@@ -72,6 +72,9 @@ class Controller extends ROController with Logger {
     report_ = r
   }
 
+  /** runs build tasks */
+  def buildManager = extman.get(classOf[BuildManager]).head
+
   /** handles all output and log messages */
   private var report_ : Report = new Report
   val report = report_
@@ -103,12 +106,15 @@ class Controller extends ROController with Logger {
   val evaluator = new ontology.Evaluator(this)
   /** the window manager */
   lazy val winman = new WindowManager(this) // lazy so that GUI dependencies are optional
-  /** moc: pragmatic changes in scope */
+  /** moc.refiner - handling pragmatic changes in scope */
   val refiner = new moc.PragmaticRefiner(Set(moc.pragmaticRename, pragmaticAlphaRename))
-  /** moc: change propagation */
+  /** moc.propagator - handling change propagation */
   val propagator = new moc.OccursInImpactPropagator(memory)
   /** relational manager, handles extracting and parsing relational elements */
   val relman = new RelationalManager(this)
+  /** the profile configuration */
+  val config = new MMTConfig(this, true)
+
 
   /** all other mutable fields */
   protected val state = new ControllerState

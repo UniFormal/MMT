@@ -17,36 +17,38 @@ import scala.xml.{Elem, NamespaceBinding, Node}
 abstract class STeXError(msg: String, extraMsg: Option[String], severity: Option[Level.Level]) extends Error(msg) {
 
   override val extraMessage = extraMsg.getOrElse("")
+
   override def level = severity.getOrElse(super.level)
 }
 
-class STeXParseError(val msg: String, extraMsg: Option[String],  val sref: Option[SourceRef], val severity: Option[Level.Level])
-    extends STeXError(msg, extraMsg, severity) {
+class STeXParseError(val msg: String, extraMsg: Option[String], val sref: Option[SourceRef], val severity: Option[Level.Level])
+  extends STeXError(msg, extraMsg, severity) {
   private def srefS = sref.fold("")(_.region.toString)
 
   override def toNode = <error type={this.getClass.toString} shortMsg={this.shortMsg} level={level.toString} sref={srefS}>
-    {if (extraMessage.isEmpty) Nil else extraMessage}
-    {Stacktrace.asNode(this)}
+    {if (extraMessage.isEmpty) Nil else extraMessage}{Stacktrace.asNode(this)}
   </error>
 }
 
 object STeXParseError {
-  def from(e: Exception, msg : String, preMsg : Option[String], sref: Option[SourceRef] = None, severity: Option[Level.Level] = None): STeXParseError = {
+  def from(e: Exception, msg: String, preMsg: Option[String], sref: Option[SourceRef] = None, severity: Option[Level.Level] = None): STeXParseError = {
     val pre = preMsg.map(_ + ": \n").getOrElse("")
-    val extraMsg = pre + {e match {
-      case er: Error => er.shortMsg
-      case ex: Exception => ex.getMessage
-    }}
+    val extraMsg = pre + {
+      e match {
+        case er: Error => er.shortMsg
+        case ex: Exception => ex.getMessage
+      }
+    }
     val err = new STeXParseError(msg, Some(extraMsg), sref, severity)
     err.setStackTrace(e.getStackTrace)
     err
   }
 }
 
-class STeXLookupError(val msg: String, extraMsg : Option[String], severity: Option[Level.Level]) extends STeXError(msg, extraMsg, severity)
+class STeXLookupError(val msg: String, extraMsg: Option[String], severity: Option[Level.Level]) extends STeXError(msg, extraMsg, severity)
 
 object STeXLookupError {
-  def from(e: Error, msg : String, severity: Option[Level.Level]): STeXLookupError = {
+  def from(e: Error, msg: String, severity: Option[Level.Level]): STeXLookupError = {
     val err = new STeXLookupError(msg, Some(e.shortMsg), severity)
     err.setStackTrace(e.getStackTrace)
     err
@@ -81,7 +83,7 @@ class STeXImporter extends Importer {
     }
   }
 
-  def importDocument(bt: BuildTask, cont: Document => Unit): Unit = {
+  def importDocument(bt: BuildTask, cont: Document => Unit): BuildResult = {
     try {
       docCont += (bt.narrationDPath -> cont) // to reindex document
       val src = scala.io.Source.fromFile(bt.inFile.toString)
@@ -99,6 +101,7 @@ class STeXImporter extends Importer {
         val err = STeXParseError.from(e, "Skipping article due to unexpected error", None, None, Some(Level.Fatal))
         bt.errorCont(err)
     }
+    EmptyBuildResult
   }
 
   def compileOne(inText: String, dpath: DPath): (String, List[Error]) = {
@@ -147,8 +150,8 @@ class STeXImporter extends Importer {
   }
 
   /**
-   * Translate a toplevel <omdoc> node
-   */
+    * Translate a toplevel <omdoc> node
+    */
   private def translateDocument(n: Node)(implicit dpath: DPath, errorCont: ErrorHandler): Unit = {
     n.label match {
       case "omdoc" =>
@@ -161,8 +164,8 @@ class STeXImporter extends Importer {
   }
 
   /**
-   * translate second-level, in-document elements (typically modules)
-   */
+    * translate second-level, in-document elements (typically modules)
+    */
   private def translateModule(n: Node)(implicit doc: Document, errorCont: ErrorHandler): Unit = {
     val sref = parseSourceRef(n, doc.path)
     try {
@@ -205,8 +208,8 @@ class STeXImporter extends Importer {
   }
 
   /**
-   * translate third level, in-module elements (typically declarations)
-   */
+    * translate third level, in-module elements (typically declarations)
+    */
   private def translateDeclaration(n: Node)(implicit doc: Document, thy: DeclaredTheory, errorCont: ErrorHandler): Unit = {
     implicit val dpath = doc.path
     implicit val mpath = thy.path
@@ -235,10 +238,10 @@ class STeXImporter extends Importer {
           val targetsS = (n \ "@for").text.split(" ").filter(_ != "")
           val targets = targetsS map { s =>
             s.split("\\?").toList match {
-              case tname :: sname :: Nil  => resolveSPath(Some(tname), sname, thy.path)
+              case tname :: sname :: Nil => resolveSPath(Some(tname), sname, thy.path)
               case l =>
                 val error = new STeXParseError(s"Definition has invalid target attribute",
-                    Some(s"expected `thyName?symName` found `$s`. Defaulting to current theory and using `${l.last}` as symName"), sref, Some(Level.Error))
+                  Some(s"expected `thyName?symName` found `$s`. Defaulting to current theory and using `${l.last}` as symName"), sref, Some(Level.Error))
                 errorCont(error)
                 resolveSPath(None, l.last, thy.path)
             }
@@ -292,13 +295,13 @@ class STeXImporter extends Importer {
           val name = (n \ "@name").text
           val refPath = Path.parseM("?" + cd, NamespaceMap(doc.path))
           val refName = refPath ? LocalName(name)
-           //getting mathml rendering info
+          //getting mathml rendering info
           val prototype = n.child.find(_.label == "prototype").get
           val renderings = n.child.filter(_.label == "rendering")
           val cO = try {
             Some(controller.memory.content.getConstant(refName, p => "Notation for nonexistent constant " + p))
           } catch {
-            case e : NotFound => None
+            case e: NotFound => None
           }
           cO match {
             case Some(c) =>
@@ -313,7 +316,7 @@ class STeXImporter extends Importer {
                 c.notC.parsingDim.set(texNotation)
               } catch {
                 case e: Exception =>
-                  val err = STeXParseError.from(e, "Notation is missing latex macro information", Some(s"for symbol ${cd}?${name}") ,sref, Some(Level.Warning))
+                  val err = STeXParseError.from(e, "Notation is missing latex macro information", Some(s"for symbol ${cd}?${name}"), sref, Some(Level.Warning))
                   errorCont(err)
               }
 
@@ -324,13 +327,13 @@ class STeXImporter extends Importer {
                     c.notC.presentationDim.set(notation)
                 }
               } catch {
-                case e : Exception =>
+                case e: Exception =>
                   val err = STeXParseError.from(e, "Invalid notation rendering", Some(s"for symbol ${cd}?${name}"), sref, None)
                   errorCont(err)
               }
             case None =>
-                val err = new STeXParseError("Notation for nonexistent constant ", Some(s"for symbol ${refName}"), sref, None)
-                errorCont(err)
+              val err = new STeXParseError("Notation for nonexistent constant ", Some(s"for symbol ${refName}"), sref, None)
+              errorCont(err)
           }
         case "metadata" => //TODO
         case "#PCDATA" => //ignore
@@ -362,7 +365,7 @@ class STeXImporter extends Importer {
         val narrNode = <div class="CMP">
           {nodes}
         </div> //effectively treating CMP as a narrative div
-        val cmp = translateCMP(rewriteCMP(narrNode))(dpath, thy, errorCont: ErrorHandler)
+      val cmp = translateCMP(rewriteCMP(narrNode))(dpath, thy, errorCont: ErrorHandler)
         Some(cmp)
       case None =>
         val err = new STeXParseError("No CMP in narrative object `" + n.label + "`", None, sref, Some(Level.Warning))
@@ -397,13 +400,14 @@ class STeXImporter extends Importer {
                   argMap(name) = if (inBinder) ProtoSub(nextArgNumber) else ProtoArg(nextArgNumber)
                   nextArgNumber += 1
                 case "OMBVAR" =>
-                  p.child map {ch =>
+                  p.child map { ch =>
                     val name = (ch \ "@name").text
                     argMap(name) = ProtoVar(nextArgNumber)
                     nextArgNumber += 1
                   }
                 case _ => throw ParseError("invalid prototype" + protoBody)
-              }}
+              }
+              }
               spath
             case _ => throw ParseError("invalid prototype" + protoBody)
           }
@@ -600,26 +604,26 @@ class STeXImporter extends Importer {
       val sub = parseRenderingMarkers(n.child(1), argMap)
       main ::: List(Delim("_")) ::: sub
     case "msup" => //assuming well formed elem and children
-      val main = parseRenderingMarkers(n.child(0),argMap)
-      val sup = parseRenderingMarkers(n.child(1),argMap)
-      main ::: List(Delim("^")) :::sup
+      val main = parseRenderingMarkers(n.child(0), argMap)
+      val sup = parseRenderingMarkers(n.child(1), argMap)
+      main ::: List(Delim("^")) ::: sup
     case "msubsup" => //assuming well formed elem and children
-      val main = parseRenderingMarkers(n.child(0),argMap)
-      val sub = parseRenderingMarkers(n.child(1),argMap)
-      val sup = parseRenderingMarkers(n.child(2),argMap)
-        main::: List(Delim("_")) :::sub ::: List(Delim("^")) :::sup
+      val main = parseRenderingMarkers(n.child(0), argMap)
+      val sub = parseRenderingMarkers(n.child(1), argMap)
+      val sup = parseRenderingMarkers(n.child(2), argMap)
+      main ::: List(Delim("_")) ::: sub ::: List(Delim("^")) ::: sup
     case "munder" => //assuming well formed elem and children
-      val main = parseRenderingMarkers(n.child(0),argMap)
-      val under = parseRenderingMarkers(n.child(1),argMap)
+      val main = parseRenderingMarkers(n.child(0), argMap)
+      val under = parseRenderingMarkers(n.child(1), argMap)
       main ::: List(Delim("__")) ::: under
     case "mover" => //assuming well formed elem and children
-      val main = parseRenderingMarkers(n.child(0),argMap)
-      val over = parseRenderingMarkers(n.child(1),argMap)
+      val main = parseRenderingMarkers(n.child(0), argMap)
+      val over = parseRenderingMarkers(n.child(1), argMap)
       main ::: List(Delim("^^")) ::: over
     case "munderover" => //assuming well formed elem and children
-      val main = parseRenderingMarkers(n.child(0),argMap)
-      val under = parseRenderingMarkers(n.child(1),argMap)
-      val over = parseRenderingMarkers(n.child(2),argMap)
+      val main = parseRenderingMarkers(n.child(0), argMap)
+      val under = parseRenderingMarkers(n.child(1), argMap)
+      val over = parseRenderingMarkers(n.child(2), argMap)
       main ::: List(Delim("__")) ::: under ::: List(Delim("^^")) ::: over
     case "mpadded" => n.child.flatMap(parseRenderingMarkers(_, argMap)).toList
     case "mo" => makeDelim(n.child.mkString) :: Nil
@@ -822,8 +826,8 @@ class STeXImporter extends Importer {
           case hd :: Nil => hd.path
           case _ => //adding error and defaulting
             val err = new STeXLookupError("Cannot resolve symbol path, several matching symbols. Using default values",
-                Some(" looking for module=" + tnameSO.getOrElse("*") +" and symbol=" + snameS + ". Several matching symbols: " + symOptions.map(_.path)),
-                Some(Level.Warning))
+              Some(" looking for module=" + tnameSO.getOrElse("*") + " and symbol=" + snameS + ". Several matching symbols: " + symOptions.map(_.path)),
+              Some(Level.Warning))
             errorCont(err)
             defaultDoc ? defaultThy ? defaultSym
         }

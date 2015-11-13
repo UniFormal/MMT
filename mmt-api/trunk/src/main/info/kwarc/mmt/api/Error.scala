@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api
 
 import info.kwarc.mmt.api.Level.Level
+import info.kwarc.mmt.api.MultipleErrorHandler
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.utils._
 
@@ -233,10 +234,28 @@ abstract class ErrorHandler {
   protected def addError(e: Error)
 }
 
+/** an error handler that needs opening and closing */
+abstract class OpenCloseHandler extends ErrorHandler {
+  def open: Unit
+  def close: Unit
+}
+
 /** combines the actions of multiple handlers */
-case class MultipleErrorHandler(handlers: List[ErrorHandler]) extends ErrorHandler {
+class MultipleErrorHandler(handlers: List[ErrorHandler]) extends OpenCloseHandler {
   def addError(e: Error) {
     handlers.foreach(_.apply(e))
+  }
+  def open {
+    handlers.foreach {
+      case h: OpenCloseHandler => h.open
+      case _ =>
+    }
+  }
+  def close {
+    handlers.foreach {
+      case h: OpenCloseHandler => h.open
+      case _ =>
+    }
   }
 }
 
@@ -266,17 +285,20 @@ class ErrorContainer(report: Option[frontend.Report]) extends ErrorHandler {
   * @param report if given, errors are also reported
   *
   */
-class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends ErrorHandler {
-  private val file = File.Writer(fileName)
-  file.write("<errors>\n")
+class ErrorWriter(fileName: File, report: Option[frontend.Report]) extends OpenCloseHandler {
+  private var file: StandardPrintWriter = null
 
   protected def addError(e: Error) {
     report.foreach(_ (e))
     file.write(new PrettyPrinter(240, 2).format(e.toNode) + "\n")
   }
 
+  def open {
+    file = File.Writer(fileName)
+    file.write("<errors>\n")
+  }
   /** closes the file */
-  def close() {
+  def close {
     file.write("</errors>\n")
     file.close()
   }

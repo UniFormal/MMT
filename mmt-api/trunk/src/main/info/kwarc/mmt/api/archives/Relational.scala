@@ -30,12 +30,13 @@ class Relational extends TraversingBuildTarget {
     DPath(bt.base / inPathOMDoc.segments)
   }
 
-  def buildFile(bf: BuildTask): Unit = {
+  def buildFile(bf: BuildTask): BuildResult = {
     val ps = new ParsingStream(bf.base / bf.inPath.segments, getDocDPath(bf),
       bf.archive.namespaceMap, "mmt", File.Reader(bf.inFile))
     val doc = parser(ps)(bf.errorCont)
     storeRel(doc)
     doc.getModulesResolved(controller.localLookup) foreach indexModule
+    EmptyBuildResult
   }
 
   override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): Unit = {
@@ -60,38 +61,6 @@ class Relational extends TraversingBuildTarget {
 
   // no history can be checked therefore simply rebuild on update
   override def update(a: Archive, up: Update, in: FilePath = EmptyPath): Unit = build(a, in)
-}
-
-/** dependency on relative file path (without inDim) in archive processed by target */
-case class Dependency(archive: Archive, filePath: FilePath, target: String)
-
-trait Dependencies {
-  // override this method
-  def getSingleDeps(controller: Controller, a: Archive, fp: FilePath): Set[Dependency] =
-    Set.empty
-
-  def getSingleDeps(controller: Controller, key: String, dep: Dependency): Set[Dependency] =
-    if (dep.target == key)
-      getSingleDeps(controller, dep.archive, dep.filePath)
-    else {
-       val bt = controller.extman.getOrAddExtension(classOf[BuildTarget],dep.target)
-       bt.getSingleDeps(controller, dep.archive, dep.filePath)
-    }
-
-  def getDeps(controller: Controller, key: String, args: Set[Dependency]): List[Dependency] = {
-    var visited: Set[Dependency] = Set.empty
-    var unknown = args
-    var deps: Map[Dependency, Set[Dependency]] = Map.empty
-    while (unknown.nonEmpty) {
-      val p = unknown.head
-      val ds = getSingleDeps(controller, key, p)
-      deps += ((p, ds))
-      visited += p
-      unknown -= p
-      unknown ++= ds.diff(visited)
-    }
-    Relational.flatTopsort(controller, deps)
-  }
 }
 
 /** an object to extract dependencies from a controller */

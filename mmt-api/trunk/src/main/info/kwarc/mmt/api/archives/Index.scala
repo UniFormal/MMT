@@ -8,12 +8,12 @@ import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.utils._
 
 /**
- * a build target for importing an archive in some source syntax
- *
- * This should only be needed when OMDoc is received from a third party.
- * OMDoc produced by [[Compiler]]s is indexed automatically.
- *
- */
+  * a build target for importing an archive in some source syntax
+  *
+  * This should only be needed when OMDoc is received from a third party.
+  * OMDoc produced by [[Compiler]]s is indexed automatically.
+  *
+  */
 abstract class Importer extends TraversingBuildTarget {
   imp =>
   /** source by default, may be overridden */
@@ -34,9 +34,9 @@ abstract class Importer extends TraversingBuildTarget {
     * @param bt information about the input document and error reporting
     * @param index a continuation function to be called on every generated document
     */
-  def importDocument(bt: BuildTask, index: Document => Unit): Unit
+  def importDocument(bt: BuildTask, index: Document => Unit): BuildResult
 
-  def buildFile(bf: BuildTask): Unit = {
+  def buildFile(bf: BuildTask): BuildResult = {
     importDocument(bf, doc => indexDocument(bf.archive, doc, bf.inPath))
   }
 
@@ -124,11 +124,11 @@ abstract class Importer extends TraversingBuildTarget {
 
 
   /**
-   * an Interpreter that calls this importer to interpret a parsing stream
-   *
-   * This Interpreter is only applicable if it can determine an archive that the parsing stream is created from.
-   * In that case, it will import the file, i.e., change the state of the archive.
-   */
+    * an Interpreter that calls this importer to interpret a parsing stream
+    *
+    * This Interpreter is only applicable if it can determine an archive that the parsing stream is created from.
+    * In that case, it will import the file, i.e., change the state of the archive.
+    */
   object asInterpreter extends checking.Interpreter {
     init(imp.controller)
 
@@ -161,5 +161,6 @@ class OMDocImporter extends Importer {
     val ps = ParsingStream.fromFile(bf.inFile, Some(bf.narrationDPath), Some(bf.archive.namespaceMap))
     val doc = controller.read(ps, interpret = false)(bf.errorCont)
     seCont(doc)
+    EmptyBuildResult
   }
 }

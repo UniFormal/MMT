@@ -165,6 +165,8 @@ class ExtensionManager(controller: Controller) extends Logger {
     }
 
     List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover).foreach { e => addExtension(e) }
+    // build manager
+    addExtension(new TrivialBuildManager)
     //targets and presenters
     List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter,
       TextPresenter, OMDocPresenter, controller.presenter).foreach {
@@ -203,6 +205,39 @@ class ExtensionManager(controller: Controller) extends Logger {
     addExtension(ext, args)
     ext
   }
+  }
+
+  /** make sure that an extension is added by key */
+  def ensureExtension(key: String, args: List[String]): Unit = {
+    val ts = key.split("_").toList
+    ts.foreach(subKey =>
+      targetToClass.get(subKey) match {
+        case None => logError("unknown target " + subKey + " for extension, ignored")
+        case Some(cls) =>
+          report.groups += subKey + "-result"
+          ensureExtensionByClassName(key, cls, args)
+      })
+    if (ts.length > 1) {
+      ensureExtensionByClassName(key, classOf[MetaBuildTarget].getName, key :: ts.flatMap(targetToClass.get))
+      report.groups += key
+    }
+  }
+
+  /** lookup or add extension */
+  def ensureExtensionByClassName(key: String, cls: String, args: List[String]): Unit =
+    try {
+      val clsJ = Class.forName(cls)
+      val ls = get(clsJ.asInstanceOf[Class[Extension]])
+      val rs = ls.filter {
+        case e: MetaBuildTarget => args == e.startArgs
+        case e: TraversingBuildTarget => key == e.key
+        case _ => true
+      }
+      if (rs.isEmpty) addExtension(cls, args)
+    }
+    catch {
+      case e: ClassCastException => log(RegistrationError("error not an extension class " + cls))
+    }
 
   /** initializes and adds an extension */
   def addExtension(ext: Extension, args: List[String] = Nil) {

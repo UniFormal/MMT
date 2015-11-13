@@ -23,12 +23,12 @@ class TPTPImporter extends TraversingBuildTarget {
   private var tptpCommand: List[String] = List(swipl, "-f", tptp2Xmain, "-g", tptp2Xgoal)
 
   /**
-   * expects command to run TPTP as arguments, e.g.,
-   *
-   * swipl -f /tptp/Distribution/sourceTPTP2X/tptp2x.main -g tptp2X('INFILE',none,lf,'OUTDIR'),halt.
-   * INFILE and OUTDIR must be absolute files
-   * the (swi) prolog binary, file, and goal can also be given via "envvar" (below)
-   */
+    * expects command to run TPTP as arguments, e.g.,
+    *
+    * swipl -f /tptp/Distribution/sourceTPTP2X/tptp2x.main -g tptp2X('INFILE',none,lf,'OUTDIR'),halt.
+    * INFILE and OUTDIR must be absolute files
+    * the (swi) prolog binary, file, and goal can also be given via "envvar" (below)
+    */
   override def start(args: List[String]): Unit = {
 
     args match {
@@ -51,7 +51,7 @@ class TPTPImporter extends TraversingBuildTarget {
 
   private def escape(f: File) = f.toString.replace("\\", "/")
 
-  def buildFile(bt: BuildTask): Unit = {
+  def buildFile(bt: BuildTask): BuildResult = {
     // make tptp2Xmain absolute
     if (!File(tptp2Xmain).isAbsolute)
       tptp2Xmain = File(bt.archive / inDim / tptp2Xmain).toString
@@ -98,5 +98,6 @@ class TPTPImporter extends TraversingBuildTarget {
         bt.errorCont(LocalError("exception for file: " + bt.inFile + "\n" +
           Option(e.getMessage).getOrElse("(no message)")).setCausedBy(e))
     }
+    EmptyBuildResult
   }
 }
