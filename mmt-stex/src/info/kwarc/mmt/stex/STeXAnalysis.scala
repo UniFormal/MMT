@@ -22,11 +22,16 @@ trait STeXAnalysis {
     logResult("failure " + f)
   }
 
-  def mkDep(a: Archive, ar: String, fp: FilePath, key: String): Option[Dependency] =
-    controller.backend.getArchive(a.baseDir / ar) match {
-      case None => None
+  def mkDep(a: Archive, ar: String, fp: FilePath, key: String): Option[Dependency] = {
+    val root = a.baseDir / ar
+    controller.addArchive(root)
+    controller.backend.getArchive(root) match {
+      case None =>
+        logError("missing archive " + ar + " for " + fp)
+        None
       case Some(arch) => Some(BuildDependency(key, arch, fp))
     }
+  }
 
   protected def matchPathAndRep(key: String, a: Archive, line: String): Option[Dependency] =
     line match {
