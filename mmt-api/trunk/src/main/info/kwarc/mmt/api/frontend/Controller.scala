@@ -517,21 +517,27 @@ class Controller extends ROController with Logger {
     val buildTargets = keys map { key => extman.getOrAddExtension(classOf[BuildTarget], key, args) }
 
     inputs foreach { case (root, fp) =>
-      handle(AddArchive(root), showLog = false) // make sure the archive is open
-    val archive = backend.getArchive(root).get // non-empty by invariant of resolveAnyPhysical
-      buildTargets foreach { bt =>
-        report.groups += bt.key + "-result" // ensure logging
-      val inPath = fp.segments match {
-          case dim :: path =>
-            bt match {
-              case bt: TraversingBuildTarget if dim != bt.inDim.toString =>
-                logError("wrong in-dimension \"" + dim + "\"")
-              case _ =>
-            }
-            FilePath(path)
-          case Nil => EmptyPath
-        }
-        bt(mod, archive, inPath)
+      handle(AddArchive(root), showLog = false) // add the archive TODO avoid calling handle
+      backend.getArchive(root) match {
+        case None =>
+          // opening may fail despite resolveAnyPhysical (i.e. formerly by a MANIFEST.MF without id)
+          logError("not an archive: " + root)
+        case Some(archive) =>
+          buildTargets foreach {
+            bt =>
+              report.groups += bt.key + "-result" // ensure logging
+            val inPath = fp.segments match {
+                case dim :: path =>
+                  bt match {
+                    case bt: TraversingBuildTarget if dim != bt.inDim.toString =>
+                      logError("wrong in-dimension \"" + dim + "\"")
+                    case _ =>
+                  }
+                  FilePath(path)
+                case Nil => EmptyPath
+              }
+              bt(mod, archive, inPath)
+          }
       }
     }
   }
