@@ -205,13 +205,14 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
           val properties = File.readProperties(manifest)
           if (properties.isDefinedAt("id")) {
             log("adding archive defined by " + manifest)
+          } else {
+            val generatedId = root.up.getName + "/" + root.getName
+            log(manifest + " does not contain id, creating " + generatedId)
+            properties += (("id", generatedId))
+          }
             val arch = new Archive(root, properties, report)
             addStore(arch)
             List(arch)
-          } else {
-            log(manifest + " does not contain id, skipping this archive")
-            Nil
-          }
         case None =>
           log(root + " is not an archive - recursing")
           // folders beginning with . are skipped
