@@ -31,8 +31,6 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     override val extraMessage = l
   }
 
-  override def defaultFileExtension: String = "tex"
-
   override def start(args: List[String]) {
     if (args.contains(pipeOutputOption)) pipeOutput = true
   }

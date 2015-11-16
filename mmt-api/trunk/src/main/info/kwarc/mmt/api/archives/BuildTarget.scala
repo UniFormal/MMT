@@ -36,15 +36,6 @@ abstract class BuildTarget extends FormatBasedExtension {
   /** a string identifying this build target, used for parsing commands, logging, error messages */
   def key: String
 
-  /** default file extension to determine the input of subsequent targets within meta targets
-    *
-    * needs to be overwritten by build targets for sources
-    * i.e. for "rbuild latexml_stex-omdoc" latexml produces latexml/ex.omdoc from source/ex.tex
-    * therefore the inPath for stex-omdoc must be changed from ex.tex (for latexml)
-    * to ex.omdoc (for stex-omdoc) in the pipeline described by the meta target
-    * */
-  def defaultFileExtension: String = "omdoc"
-
   def isApplicable(format: String): Boolean = format == key
 
   /** defaults to the key */
@@ -394,61 +385,5 @@ abstract class TraversingBuildTarget extends BuildTarget {
       }
       case _ =>
     }
-  }
-}
-
-/** a build target that chains multiple other targets */
-class MetaBuildTarget extends BuildTarget {
-  private var _key = ""
-  private var targets: List[BuildTarget] = Nil
-  var startArgs: List[String] = Nil
-
-  def key: String = _key
-
-  /** first argument: the key of this build target
-    * remaining arguments: the build targets to chain
-    */
-  override def start(args: List[String]) {
-    startArgs = args
-    _key = args.headOption.getOrElse(
-      throw LocalError("at least one argument required")
-    )
-    targets = args.tail.map(k =>
-      controller.extman.get(classOf[BuildTarget]).find(_.getClass.getName == k).getOrElse {
-        throw LocalError("unknown target: " + k)
-      })
-  }
-
-  /** @return the path to pass to the target t, override as needed */
-  def path(a: Archive, t: BuildTarget, inPath: FilePath): FilePath = {
-    t match {
-      case t: TraversingBuildTarget if t.inDim != content =>
-        val file = a / t.inDim / inPath
-        val in = if (file.isDirectory || t.includeFile(inPath.baseName)) inPath
-        else
-          inPath.toFile.setExtension(t.defaultFileExtension).filepath
-        log("trying " + t.key + " in " + a.id + " with " + (t.inDim :: in.segments).mkString("/"))
-        in
-      case _ =>
-        log("ignoring " + t.key + " in " + a.id +
-          (if (inPath.segments.isEmpty) "" else " for " + inPath))
-        EmptyPath
-    }
-  }
-
-  def build(a: Archive, in: FilePath) {
-    targets.foreach { t => t.build(a, path(a, t, in)) }
-  }
-
-  override def buildDepsFirst(a: Archive, up: Update, in: FilePath) {
-    targets.foreach { t => t.buildDepsFirst(a, up, path(a, t, in)) }
-  }
-
-  def update(a: Archive, up: Update, in: FilePath) {
-    targets.foreach { t => t.update(a, up, path(a, t, in)) }
-  }
-
-  def clean(a: Archive, in: FilePath) {
-    targets.reverse.foreach { t => t.clean(a, path(a, t, in)) }
   }
 }
