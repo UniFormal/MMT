@@ -465,14 +465,14 @@ case class AddArchive(folder: java.io.File) extends Action {
 
 /** builds a dimension in a previously opened archive */
 case class ArchiveBuild(ids: List[String], dim: String, modifier: BuildTargetModifier, in: FilePath = EmptyPath) extends Action {
-  override def toString = "build " + ids.mkString("[", ",", "]") + " " + modifier.toString(dim) +
+  override def toString = "build " + MyList(ids).mkString("[", ",", "]") + " " + modifier.toString(dim) +
     (if (in.segments.isEmpty) "" else " " + in)
 }
 
 /** builds multiple targets for multiple files, loading extensions/archives as necessary */
 case class BuildFiles(keys: List[String], modifier: BuildTargetModifier,
                      args: List[String], files: List[File]) extends Action {
-  override def toString = "make " + keys.mkString("[",",","]") + " " + modifier.toString() +
+  override def toString = "make " + MyList(keys).mkString("[",",","]") + " " + modifier.toString() +
     (args ++ files.map(_.toString)).map(" " + _).mkString
 }
 
