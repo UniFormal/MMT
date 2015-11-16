@@ -1,16 +1,9 @@
 package info.kwarc.mmt.stex
 
-import java.util.regex.PatternSyntaxException
-
-import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.utils._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent._
-import scala.concurrent.duration._
 import scala.io.{BufferedSource, Codec}
-import scala.sys.process._
 import scala.util.matching.Regex
 
 object STeXUtils {
