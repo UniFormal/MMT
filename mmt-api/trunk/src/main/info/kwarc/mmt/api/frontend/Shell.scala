@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.utils._
+import utils._
 
 /** Creates a Controller and provides a shell interface to it.
   *
@@ -14,10 +14,11 @@ class Shell {
     Option(getClass.getResourceAsStream("/help-text/" + cmd + ".txt")).
       map(scala.io.Source.fromInputStream(_).getLines())
 
-  private def printHelpText(cmd: String): Unit =
+  private def printHelpText(cmd: String) {
     getHelpText(cmd).foreach(_.foreach(println))
+  }
 
-  def main(a: Array[String]): Unit = {
+  def main(a: Array[String]) {
 
     // parse command line arguments
     val args = ShellArguments.parse(a.toList).getOrElse {
@@ -78,7 +79,7 @@ class Shell {
       // execute startup arguments
       val startup = MMTSystem.rootFolder / "startup.msl"
       if (startup.exists) {
-        controller.handle(ExecFile(startup, None))
+        controller.execFileAction(startup, None)
       }
       controller.getConfig.add(MMTConfig.parse(MMTSystem.getResourceAsString("/mmtrc")))
       // TODO val clCfg = FILE path from --cfg switch, add at the end of startuipLocations
@@ -91,7 +92,7 @@ class Shell {
       }
 
       //run the commands for each line.
-      commands.mkString(" ").split(" ; ") foreach {l => controller.handleLine(l, false)}
+      commands.mkString(" ").split(" ; ") foreach {l => controller.handleLine(l, showLog = false)}
 
       // if we want a shell, prompt and handle input
       if (args.prompt) {
@@ -103,7 +104,7 @@ class Shell {
         // handle commands as long as we get input.
         var command = Option(Input.readLine())
         while (command.isDefined) {
-          controller.handleLine(command.get, true)
+          controller.handleLine(command.get, showLog = true)
           command = Option(Input.readLine())
         }
       }

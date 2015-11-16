@@ -16,8 +16,8 @@ object Diff {
 
     val firstController = new Controller
     val secondController = new Controller
-    firstController.handle(ExecFile(new java.io.File("startup.mmt"), None))
-    secondController.handle(ExecFile(new java.io.File("startup.mmt"), None))
+    firstController.execFileAction(new java.io.File("startup.mmt"), None)
+    secondController.execFileAction(new java.io.File("startup.mmt"), None)
 
     var currentVersion: File = null
     var olderVersion: File = null
@@ -35,29 +35,29 @@ object Diff {
       val currentDir = currentVersion.getParent() // DIR
 
       if (currentDir == null) {
-        if ((((new File(".svn"))./("text-base"))./(currentName + ".svn-base")).exists() == false) {
+        if (!new File(".svn")./("text-base")./(currentName + ".svn-base").exists()) {
           println("USAGE: info.kwarc.mmt.owl.Diff NEWFILE OLDFILE")
           sys.exit
         }
         else
         //.svn/text-base/Name.svn-base
-          olderVersion = ((new File(".svn"))./("text-base"))./(currentName + ".svn-base")
+          olderVersion = (new File(".svn"))./("text-base")./(currentName + ".svn-base")
       }
       else {
-        if (((((new File(currentDir))./(".svn"))./("text-base"))./(currentName + ".svn-base")).exists() == false) {
+        if (!new File(currentDir)./(".svn")./("text-base")./(currentName + ".svn-base").exists()) {
           println("USAGE: info.kwarc.mmt.owl.Diff NEWFILE OLDFILE")
           sys.exit
         }
         else
         // DIR/.svn/text-base/NAME.svn-base
-          olderVersion = (((new File(currentDir))./(".svn"))./("text-base"))./(currentName + ".svn-base")
+          olderVersion = ((new File(currentDir))./(".svn"))./("text-base")./(currentName + ".svn-base")
       }
     }
     else
       olderVersion = new File(args(1))
 
-    val olderDoc: DPath = firstController.read(parser.ParsingStream.fromFile(olderVersion), false).path
-    val currentDoc: DPath = secondController.read(parser.ParsingStream.fromFile(currentVersion), false).path
+    val olderDoc: DPath = firstController.read(parser.ParsingStream.fromFile(olderVersion), interpret = false).path
+    val currentDoc: DPath = secondController.read(parser.ParsingStream.fromFile(currentVersion), interpret = false).path
 
     var diff = Differ.diff(firstController, secondController, olderDoc, currentDoc)
     //    println(diff.toNode.toString())

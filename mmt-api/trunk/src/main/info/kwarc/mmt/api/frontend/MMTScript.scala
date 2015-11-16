@@ -1,33 +1,43 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.utils._
+import archives._
+import utils._
 
 /**
  * parent class for classes generated from .mbt
- * 
+ *
  * all methods defined in this class can be used inside .mbt scripts
  */
 abstract class MMTScript extends Extension {
   //MMT Actions
-  def logToFile(f: String, ts: Boolean = false): Unit = controller.handle(AddReportHandler(new TextFileHandler(File(f), ts)))
+  def logToFile(f: String, ts: Boolean = false) {
+    controller.report.addHandler(new TextFileHandler(File(f), ts))
+  }
 
-  def logToConsole(): Unit = controller.handle(AddReportHandler(ConsoleHandler))
+  def logToConsole() {
+    controller.report.addHandler(ConsoleHandler)
+  }
 
-  def logToHTML(f: String): Unit = controller.handle(AddReportHandler(new HtmlFileHandler(File(f))))
+  def logToHTML(f: String) {
+    controller.report.addHandler(new HtmlFileHandler(File(f)))
+  }
 
-  def logModule(s: String): Unit = controller.handle(LoggingOn(s))
+  def logModule(s: String) {
+    controller.report.groups += s
+  }
 
-  def addArchive(location: String): Unit = controller.handle(AddArchive(File(location)))
+  def addArchive(location: String) {
+    controller.addArchive(File(location))
+  }
 
   def loadExtension(uri: String, args: List[String] = Nil) {
-     controller.handle(AddExtension(uri, args))
+     controller.extman.addExtension(uri, args)
   }
-  
+
   /**
    * loads a configuration file and appends to the current [[MMTConfig]]
-   * 
+   *
    * @param f the configuration file
    * @param autoload also load all archives and extensions in f
    */
@@ -39,12 +49,12 @@ abstract class MMTScript extends Extension {
         conf.loadAllArchives(controller)
      }
   }
-     
+
 
   //Utility
 
   def config = controller.getConfig
-  
+
   def runImporters(aid: String, btm: BuildTargetModifier = Build) {
     config.getImportersForArchive(aid) foreach {imp =>
       build(List(aid), imp, btm)
@@ -71,13 +81,13 @@ abstract class MMTScript extends Extension {
     archives.foreach(a => runExporters(a.id, Update(Level.Error)))
   }
 
-  def plainBuild(btm: BuildTargetModifier): Unit = {
+  def plainBuild(btm: BuildTargetModifier) {
     val archives = config.getArchives
     archives.foreach(a => runImporters(a.id, btm))
     archives.foreach(a => runExporters(a.id, btm))
   }
 
-  def compUpdateBuild(changedCompsIds: List[String], btm: BuildTargetModifier): Unit = {
+  def compUpdateBuild(changedCompsIds: List[String], btm: BuildTargetModifier) {
     config.getArchives foreach {a =>
       config.getArchive(a.id).formats foreach {f =>
         val imps = config.getImporters(f)
@@ -95,14 +105,14 @@ abstract class MMTScript extends Extension {
     }
   }
 
-  def build(ids: List[String], target: String, modifier: archives.BuildTargetModifier, in: FilePath = EmptyPath): Unit = {
-    controller.handle(ArchiveBuild(ids, target, modifier, in))
+  def build(ids: List[String], target: String, modifier: archives.BuildTargetModifier, in: FilePath = EmptyPath) {
+    controller.archiveBuildAction(ids, target, modifier, in)
   }
 
   /**
    * run the script; the content of the .mbt file will be used to implement this method
    */
-  def main(): Unit
+  def main
 }
 
 /**
@@ -119,7 +129,8 @@ class MMTScriptEngine(controller: Controller) {
       import archives._
       import frontend._
     """
-    val textscript = imports + s"object UserScript extends info.kwarc.mmt.api.frontend.MMTScript {\ndef main() {\n$code\n$expr\n}\n}\nUserScript"
+    val textscript = imports +
+      s"object UserScript extends info.kwarc.mmt.api.frontend.MMTScript {\ndef main() {\n$code\n$expr\n}\n}\nUserScript"
     import scala.reflect.runtime._
     val cm = universe.runtimeMirror(getClass.getClassLoader)
     import scala.tools.reflect.ToolBox
@@ -129,7 +140,7 @@ class MMTScriptEngine(controller: Controller) {
     scalascript match {
       case s: MMTScript =>
         s.init(controller)
-        s.main()
+        s.main
       case _ =>
     }
   }

@@ -1,9 +1,8 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives._
+import archives._
 import utils._
-import scala.collection.immutable.{ListMap}
 
 /** an entry in an MMT configuration file (.cfg) */
 abstract class ConfEntry {
@@ -61,14 +60,14 @@ class MMTConfig {
       base = b
     }
 
-    def add(that: MMTConfig) = {
+    def add(that: MMTConfig) {
        entries = that.getEntries ::: entries
        setBase(that.getBase)
     }
 
     def getBase = base
 
-    def getEntries() = entries
+    def getEntries = entries
     def getEntries[E <: ConfEntry](cls: Class[E]): List[E] = entries.collect {
        case e: E@unchecked if cls.isInstance(e) => e
     }
@@ -93,7 +92,7 @@ class MMTConfig {
 
     def loadAllArchives(controller: Controller) {
        getArchives foreach { arch =>
-        controller.handle(AddArchive(File(base + arch.id)))
+        controller.addArchive(File(base + arch.id))
       }
     }
 
@@ -169,7 +168,7 @@ object MMTConfig {
           case _ => fail
         }
         case "base" => config.setBase(line)
-        case s => split(line) match {
+        case _ => split(line) match {
            case key::values =>
               config.addEntry(ForeignConf(section, key, values))
            case _ => fail

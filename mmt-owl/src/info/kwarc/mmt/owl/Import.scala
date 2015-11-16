@@ -81,7 +81,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
     val theory = new DeclaredTheory(ontoDPath, LocalName("_"), Some(OWL2OMS.path ? "OWL2")) //log. base, name, meta //it was OWL2Full
     controller.add(theory)
     currThy = theory.path
-    controller.add(MRef(docDPath, currThy, true)) // phys, log
+    controller.add(MRef(docDPath, currThy, generated = true)) // phys, log
 
     //manager.method
     //java.util.Set<OWLOntology> 	getImportsClosure(OWLOntology ontology)
@@ -566,18 +566,18 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
     val base =
       if (ap.isBuiltIn) {
         apString match {
-          case r if (r == "http://www.w3.org/2000/01/rdf-schema#label" || r == "http://www.w3.org/2000/01/rdf-schema#comment" ||
-            r == "http://www.w3.org/2000/01/rdf-schema#seeAlso" || r == "http://www.w3.org/2000/01/rdf-schema#isDefinedBy")
+          case r if r == "http://www.w3.org/2000/01/rdf-schema#label" || r == "http://www.w3.org/2000/01/rdf-schema#comment" ||
+            r == "http://www.w3.org/2000/01/rdf-schema#seeAlso" || r == "http://www.w3.org/2000/01/rdf-schema#isDefinedBy"
           => "http://www.w3.org/2000/01/rdf-schema"
 
-          case o if (o == "http://www.w3.org/2002/07/owl#deprecated" || o == "http://www.w3.org/2002/07/owl#priorVersion" ||
-            o == "http://www.w3.org/2002/07/owl#backwardCompatibleWith" || o == "http://www.w3.org/2002/07/owl#incompatibleWith")
+          case o if o == "http://www.w3.org/2002/07/owl#deprecated" || o == "http://www.w3.org/2002/07/owl#priorVersion" ||
+            o == "http://www.w3.org/2002/07/owl#backwardCompatibleWith" || o == "http://www.w3.org/2002/07/owl#incompatibleWith"
           => "http://www.w3.org/2002/07/owl"
           case _ => throw Exception("none of the built in annotation properties")
         }
       }
       else
-        (utils.URI(apIRI.toURI).copy(fragment = None)).toString
+        utils.URI(apIRI.toURI).copy(fragment = None).toString
 
     val dpath = DPath(utils.URI(base))
     val name = ap.getIRI.getFragment
@@ -622,7 +622,7 @@ class OWLCompiler extends archives.Importer {
     val target: File = bf.outFile.setExtension("omdoc")
 
     val controller = new Controller
-    controller.handle(ExecFile(new java.io.File("startup.mmt"), None))
+    controller.execFileAction(new java.io.File("startup.mmt"), None)
     val manager: OWLOntologyManager = OWLManager.createOWLOntologyManager()
     val importer = new Import(manager, controller)
 

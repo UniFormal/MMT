@@ -296,9 +296,11 @@ class Controller extends ROController with Logger {
       e match {
         case nw: ContentElement =>
           localLookup.getO(e.path) match {
-            //TODO localLookup yields a generated Constant when retrieving assignments in a view, which old.compatible(nw) false due to having different origin
+            //TODO localLookup yields a generated Constant when retrieving assignments in a view,
+            // which old.compatible(nw) false due to having different origin
             //probably introduced when changing the representation of paths in views
-            //might also be because old is read from .omdoc due to dependency from checking earlier item and nw is read from .mmt when checking nw
+            //might also be because old is read from .omdoc due to dependency from checking earlier item
+            // and nw is read from .mmt when checking nw
             case Some(old) =>
               /* optimization for change management
                * if e.path is already loaded but inactive, and the new e is compatible with it,
@@ -487,7 +489,27 @@ class Controller extends ROController with Logger {
     report.flush
   }
 
-  private def buildFilesAction(keys: List[String], mod: BuildTargetModifier, args: List[String], files: List[File]) {
+  /** guess which files/folders the users wants to build
+   *  @return archive root and relative path in it
+   */
+  def collectInputs(f: File): List[(File, FilePath)] = {
+    backend.resolveAnyPhysical(f) match {
+      case Some(ff) =>
+        // f is a file in an archive
+        List(ff)
+      case None =>
+        // not in archive, treat f as directory containing archives
+        if (f.isDirectory) f.subdirs.flatMap(collectInputs)
+        else {
+          logError("not a file within an archive: " + f)
+          Nil
+        }
+    }
+  }
+
+  // for most actions provide a separate procedure that may be called directly
+
+  def buildFilesAction(keys: List[String], mod: BuildTargetModifier, args: List[String], files: List[File]) {
     report.addHandler(ConsoleHandler)
     val realFiles = if (files.isEmpty)
       List(File(System.getProperty("user.dir")))
@@ -499,25 +521,12 @@ class Controller extends ROController with Logger {
         ex
       }
     }
-    /* guess which files/folders the users wants to build
-     *  @return archive root and relative path in it
-     */
-    def collectInputs(f: File): List[(File, FilePath)] = {
-      backend.resolveAnyPhysical(f) match {
-        case Some(ff) =>
-          // f is a file in an archive
-          List(ff)
-        case None =>
-          // not in archive, treat f as directory containing archives
-          f.subdirs.flatMap(collectInputs)
-      }
-    }
     val inputs = realFiles flatMap collectInputs
 
     val buildTargets = keys map { key => extman.getOrAddExtension(classOf[BuildTarget], key, args) }
 
     inputs foreach { case (root, fp) =>
-      handle(AddArchive(root), showLog = false) // add the archive TODO avoid calling handle
+      addArchive(root) // add the archive
       backend.getArchive(root) match {
         case None =>
           // opening may fail despite resolveAnyPhysical (i.e. formerly by a MANIFEST.MF without id)
@@ -542,7 +551,7 @@ class Controller extends ROController with Logger {
     }
   }
 
-  private def archiveBuildAction(ids: List[String], key: String, mod: BuildTargetModifier, in: FilePath) {
+  def archiveBuildAction(ids: List[String], key: String, mod: BuildTargetModifier, in: FilePath) {
     ids.foreach { id =>
       val arch = backend.getArchive(id) getOrElse (throw GetError("archive not found: " + id))
       key match {
@@ -569,7 +578,7 @@ class Controller extends ROController with Logger {
     }
   }
 
-  private def execFileAction(f: File, nameOpt: Option[String]) {
+  def execFileAction(f: File, nameOpt: Option[String]) {
     val folder = f.getParentFile
     // store old state, and initialize fresh state
     val oldHome = state.home
@@ -585,11 +594,11 @@ class Controller extends ROController with Logger {
     state.currentActionDefinition = oldCAD
     // run the actionDefinition, if given
     nameOpt foreach { name =>
-      handle(Do(Some(folder), name))
+      doAction(Some(folder), name)
     }
   }
 
-  private def cloneRecursively(p: String) {
+  def cloneRecursively(p: String) {
     val lcOpt = state.getOAF.clone(p)
     lcOpt foreach { lc =>
       val archs = backend.openArchive(lc)
@@ -598,6 +607,33 @@ class Controller extends ROController with Logger {
         deps foreach { d => cloneRecursively(URI(d).pathAsString) }
       }
     }
+  }
+
+  /** add an archive plus its optional classpath and notify listeners */
+  def addArchive(root: File) {
+    val archs = backend.openArchive(root)
+    archs.foreach { a =>
+      a.properties.get("classpath").foreach { cp =>
+        backend.openRealizationArchive(a.root / cp)
+      }
+      notifyListeners.onArchiveOpen(a)
+    }
+  }
+
+  def doAction(file: Option[File], name: String) {
+    state.actionDefinitions.find { a => (file.isEmpty || a.file == file.get) && a.name == name } match {
+      case Some(Defined(_, _, actions)) =>
+        actions foreach (f => handle(f))
+      case None =>
+        logError("not defined")
+    }
+  }
+
+  def checkAction(p: Path, id: String) {
+                val checker = extman.get(classOf[Checker], id).getOrElse {
+              throw GeneralError(s"no checker $id found")
+            }
+            checker(p)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore))
   }
 
   /** executes an Action */
@@ -619,13 +655,7 @@ class Controller extends ROController with Logger {
             val b = URI.fromJava(currentDir.toURI)
             backend.addStore(LocalSystem(b))
           case AddArchive(f) =>
-            val archs = backend.openArchive(f)
-            archs.foreach { a =>
-              a.properties.get("classpath").foreach { cp =>
-                handle(AddMathPathJava(a.root / cp))
-              }
-              notifyListeners.onArchiveOpen(a)
-            }
+            addArchive(f)
           case BuildFiles(keys, mod, args, files) =>
             buildFilesAction(keys, mod, args, files)
           case ArchiveBuild(ids, key, mod, in) =>
@@ -690,13 +720,7 @@ class Controller extends ROController with Logger {
               case None =>
                 throw ParseError("no definition to end")
             }
-          case Do(file, name) =>
-            state.actionDefinitions.find { a => (file.isEmpty || a.file == file.get) && a.name == name } match {
-              case Some(Defined(_, _, actions)) =>
-                actions foreach (f => handle(f))
-              case None =>
-                logError("not defined")
-            }
+          case Do(file, name) => doAction(file, name)
           case AddReportHandler(h) => report.addHandler(h)
           case LoggingOn(g) => report.groups += g
           case LoggingOff(g) => report.groups -= g
@@ -708,10 +732,7 @@ class Controller extends ROController with Logger {
             }
             read(ps, interpret = false, mayImport = true)(new ErrorLogger(report))
           case Check(p, id) =>
-            val checker = extman.get(classOf[Checker], id).getOrElse {
-              throw GeneralError(s"no checker $id found")
-            }
-            checker(p)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore))
+            checkAction(p, id)
           case Graph(f) =>
             val tg = new TheoryGraph(depstore)
             val gv = new GraphExporter(tg.nodes.toIterable, Nil, tg)

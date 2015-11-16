@@ -1,9 +1,9 @@
 package info.kwarc.mmt.owl
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.moc._
-import info.kwarc.mmt.api.utils.URI
+import frontend._
+import moc._
+import utils.URI
 
 import scala.xml._
 
@@ -19,8 +19,8 @@ object MoCinOWL {
     val controllerOld = new Controller
     val controllerCurr = new Controller
 
-    controllerOld.handle(ExecFile(new java.io.File("startup.mmt"), None))
-    controllerCurr.handle(ExecFile(new java.io.File("startupCurrent.mmt"), None))
+    controllerOld.execFileAction(new java.io.File("startup.mmt"), None)
+    controllerCurr.execFileAction(new java.io.File("startupCurrent.mmt"), None)
 
     //http://docs.omdoc.org/older.omdoc
     if (args.length < 1) {
@@ -31,7 +31,8 @@ object MoCinOWL {
     val dpath: DPath = new DPath(URI(args(0)))
 
     //we need the older version in the source folder to be able to get dependency relations.
-    //two versions have the same ontology IRI, so they should not be in the source folder together, because we cannot compare them
+    //two versions have the same ontology IRI, so they should not be in the source folder together,
+    // because we cannot compare them
     //olderVersion has to be in the source folder
     //currentVersion should not be in the source folder; elsewhere
 

@@ -63,10 +63,8 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
 
     val symbols = theory.getPrimitiveDeclarations
     symbols.foreach {
-      symbol => symbol match {
-        case symbol: Constant => constantToOWL(symbol)
-        //case symbol : Include => IncludeToOWL(symbol)
-      }
+      case symbol: Constant => constantToOWL(symbol)
+      //case symbol : Include => IncludeToOWL(symbol)
     }
     ontoIRI
   }
@@ -272,9 +270,9 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
       case OMA(OWL2OMS("OWL2SUB", "literal"), List(OMSTR(s))) =>
         val lexicalValue = s
         dataFactory.getOWLLiteral(lexicalValue)
-      case OMA(OWL2OMS("OWL2SUB", "literal"), List(OMSTR(s), OMSTR(t))) =>
+      case OMA(OWL2OMS("OWL2SUB", "literal"), List(OMSTR(s), OMSTR(st))) =>
         val lexicalValue = s
-        val lang = t
+        val lang = st
         dataFactory.getOWLLiteral(lexicalValue, lang)
 
       case OMA(OWL2OMS("OWL2SUB", "literal"), List(OMSTR(s), dt)) =>
@@ -316,10 +314,10 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
 
     val consName: LocalName = constant.name
     println(consName)
-    val consType: Term = (constant.tp match {
+    val consType: Term = constant.tp match {
       case Some(t) => t
       case None => throw Exception("")
-    })
+    }
     val path = constant.path
 
     val axiom = consType match {
@@ -539,13 +537,13 @@ object Export {
     implicit val eh = ErrorThrower
 
     val controller = new Controller
-    controller.handle(ExecFile(utils.File("startup.mmt"), None))
+    controller.execFileAction(utils.File("startup.mmt"), None)
     val manager: OWLOntologyManager = OWLManager.createOWLOntologyManager()
     val exporter = new Export(manager, controller)
 
     val source = utils.File(args(0))
     val target = utils.File(args(1))
-    val doc: DPath = controller.read(parser.ParsingStream.fromFile(source), false).path
+    val doc: DPath = controller.read(parser.ParsingStream.fromFile(source), interpret = false).path
 
     def writeToFile(iri: IRI, trg: File) {
       val onto = manager.getOntology(iri)

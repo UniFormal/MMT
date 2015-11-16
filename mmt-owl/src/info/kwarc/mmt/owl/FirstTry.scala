@@ -15,14 +15,14 @@ object FirstTry {
     val firstController = new Controller
     val secondController = new Controller
 
-    firstController.handle(ExecFile(new java.io.File("startup.mmt"), None))
-    secondController.handle(ExecFile(new java.io.File("startup.mmt"), None))
+    firstController.execFileAction(new java.io.File("startup.mmt"), None)
+    secondController.execFileAction(new java.io.File("startup.mmt"), None)
 
     val older: File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\Test\\compiled\\try.omdoc")
     val current: File = new File("E:\\Fall10\\CompSem\\Project\\MMT\\src\\mmt-owl\\try.omdoc")
 
-    val olderDoc: DPath = firstController.read(parser.ParsingStream.fromFile(older), false).path
-    val currentDoc: DPath = secondController.read(parser.ParsingStream.fromFile(current), false).path
+    val olderDoc: DPath = firstController.read(parser.ParsingStream.fromFile(older), interpret = false).path
+    val currentDoc: DPath = secondController.read(parser.ParsingStream.fromFile(current), interpret = false).path
 
     var diff = Differ.diff(firstController, secondController, olderDoc, currentDoc)
     val pretty = new PrettyPrinter(150, 3)
