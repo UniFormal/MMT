@@ -761,6 +761,10 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     *
     * post: subtyping judgment is covered
     */
+   // TODO this should infer supertypes and equate those; then prove compatibility
+   // problem: what to do if unknowns block supertype inference?
+   // eventually, we have to solve here
+   // when can constants, unknowns, and variables be assumed to be maximal?
    private def checkSubtyping(j: Subtyping)(implicit history: History) : Boolean = {
       val stRules = rules.get(classOf[SubtypingRule])
       // optimization: if there are no rules, we can skip immediately to equality checking

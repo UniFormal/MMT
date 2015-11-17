@@ -105,6 +105,7 @@ abstract class Importer extends TraversingBuildTarget {
         report(LocalError("io error, could not clean content of " + narrFile).setCausedBy(e))
         return
     }
+    // TODO remove document from controller? mark document as dirty in controller?
     //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly
     doc.getItems foreach {
       case r: documents.MRef =>
