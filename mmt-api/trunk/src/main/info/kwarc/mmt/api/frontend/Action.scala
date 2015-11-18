@@ -472,7 +472,7 @@ case class ArchiveBuild(ids: List[String], dim: String, modifier: BuildTargetMod
 /** builds multiple targets for multiple files, loading extensions/archives as necessary */
 case class BuildFiles(keys: List[String], modifier: BuildTargetModifier,
                      args: List[String], files: List[File]) extends Action {
-  override def toString = "make " + MyList(keys).mkString("[",",","]") + " " + modifier.toString() +
+  override def toString = "make " + MyList(keys).mkString("[",",","]") + " " + modifier.toStringLong("")
     (args ++ files.map(_.toString)).map(" " + _).mkString
 }
 
