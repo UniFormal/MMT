@@ -8,7 +8,18 @@ import symbols._
 import objects._
 import informal._
 import utils._
+import metadata._
 
+
+object sTeXMetaData {
+  val mod : MPath = DPath(URI("http://mathhub.info/metadata/stex.omdoc")) ? "stex" 
+  val primarySymbolPath = mod ? "primary-symbol"
+  val rolePath = mod ? "role"
+  
+  val conservativeExtensionPath = mod ? ""
+  val primarySymbol : MetaDatum = new MetaDatum(rolePath, OMSTR("primary"))
+  val conservativeExtension : MetaDatum = new MetaDatum(rolePath, OMSTR("conservative-extension"))
+}
 
 /** Filters errors before passing them to the another error handler */
 class FilteringErrorHandler(handler : ErrorHandler, filter : Error => Boolean) extends ErrorHandler {

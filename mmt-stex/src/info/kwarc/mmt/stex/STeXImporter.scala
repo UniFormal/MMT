@@ -221,6 +221,11 @@ class STeXImporter extends Importer {
           val from = parseMPath(fromS, doc.path)
           if (from != mpath) {
             val include = PlainInclude(from, thy.path)
+            (n \ "@conservative").text match {
+            case "true" =>
+              include.metadata.add(sTeXMetaData.conservativeExtension)
+            case _ => //nothing to do
+            }
             add(include)
           }
         case "symbol" => //omdoc symbol -> mmt constant
@@ -228,10 +233,17 @@ class STeXImporter extends Importer {
             case "" => getName(n, thy)
             case s => LocalName(s)
           }
+          
           val tpWrapperO = n.child.find(_.label == "type")
           val tpO = tpWrapperO.map(tpN => Obj.parseTerm(rewriteCMP(tpN.child.head), NamespaceMap(dpath)))
           val dfO = None //TODO, get also def
-        val const = new FinalConstant(OMMOD(mpath), name, None, TermContainer(tpO), TermContainer(dfO), None, NotationContainer())
+          val const = new FinalConstant(OMMOD(mpath), name, None, TermContainer(tpO), TermContainer(dfO), None, NotationContainer())
+          //adding metadata
+          (n \ "@role").text match {
+            case "primary" =>
+              const.metadata.add(sTeXMetaData.primarySymbol)
+            case _ => //nothing to do
+          }
           add(const)
         case "definition" => //omdoc definition -> immt flexiformal declaration
           val name = getName(n, thy)
