@@ -7,10 +7,12 @@ import utils._
 
 sealed abstract class BuildTargetModifier {
   def toString(dim: String): String
+  def toStringLong(dim: String): String
 }
 
 case object Clean extends BuildTargetModifier {
   def toString(dim: String) = "-" + dim
+  def toStringLong(dim: String) = dim + " --clean"
 }
 
 case class Update(errorLevel: Level, dryRun: Boolean = false) extends BuildTargetModifier {
@@ -19,14 +21,21 @@ case class Update(errorLevel: Level, dryRun: Boolean = false) extends BuildTarge
     else if (errorLevel < Level.Ignore) "!" else "*"
 
   def toString(dim: String) = dim + key
+
+  def toStringLong(opt: String, dim: String) = dim + " --" + opt + "=" + (errorLevel + 1) +
+    (if (dryRun) " --dry-run" else "")
+
+  def toStringLong(dim: String) = toStringLong("onError", dim)
 }
 
 case object Build extends BuildTargetModifier {
   def toString(dim: String) = dim
+  def toStringLong(dim: String) = dim + " --force"
 }
 
 case class BuildDepsFirst(up: Update) extends BuildTargetModifier {
   def toString(dim: String) = dim + "&"
+  def toStringLong(dim: String) = up.toStringLong("depsFirst", dim)
 }
 
 /** A BuildTarget provides build/update/clean methods that generate one or more dimensions in an [[Archive]]
