@@ -106,7 +106,7 @@ class BuildTask(val key: String, val archive: Archive, val inFile: File, val chi
 
   /** the name of the folder if inFile is a folder */
   def dirName: String = outFile.filepath.dirPath.baseName
-  
+
   def asDependency = children match {
      case Some(ch) => DirBuildDependency(key, archive, inPath, ch)
      case None => BuildDependency(key, archive, inPath)
@@ -190,16 +190,15 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   def build(a: Archive, in: FilePath, errorCont: Option[ErrorHandler]) {
-    buildAux(in, a, errorCont) {qt =>
-       // TODO delete output (and error) file?
-       controller.buildManager.addTask(qt)
-    }
+    val qts = makeBuildTasks(a, in, errorCont)
+    // TODO delete output (and error) file?
+    controller.buildManager.addTask(qts)
   }
-  
+
   /** like build, but returns all build tasks without adding them to the build manager */
-  def makeBuildTasks(a: Archive, in: FilePath): List[QueuedTask] = {
+  def makeBuildTasks(a: Archive, in: FilePath, errorCont: Option[ErrorHandler]): List[QueuedTask] = {
      var tasks : List[QueuedTask] = Nil
-     buildAux(in, a, None) {qt =>
+     buildAux(in, a, errorCont) {qt =>
        tasks ::= qt
      }
      tasks.reverse
@@ -354,11 +353,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
     })
   }
 
-  
-  
-  
-  
-  
+
+
+
+
+
   protected def getFilesRec(a: Archive, in: FilePath): Set[Dependency] = {
     val inFile = a / inDim / in
     if (inFile.isDirectory)
@@ -367,7 +366,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       Set(BuildDependency(key, a, in))
     else Set.empty
   }
-  
+
   /** makes a build task for a single file */
   def makeBuildTask(a: Archive, inPath: FilePath): BuildTask = {
     makeBuildTask(a, inPath, a / inDim / inPath, None, None)
