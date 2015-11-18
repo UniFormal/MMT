@@ -102,18 +102,19 @@ class MetaDatum(val key: GlobalName, val value: Obj) {
 object MetaDatum {
    val keyBase = DPath(URI("http", "purl.org") / "dc" / "terms") ? "_"
    /** parses a MetaDatum */
-   def parse(node: Node, nsMap: NamespaceMap) : MetaDatum = node match {
+   def parse(node: Node, nsMap: NamespaceMap) : MetaDatum = xml.trimOneLevel(node) match {
       case <link/> =>
          val key = Path.parseS(xml.attr(node, "rel"), nsMap(keyBase))
          Link(key, URI(xml.attr(node, "resource")))
       case <tag/> =>
          val key = Path.parseS(xml.attr(node, "property"), nsMap(keyBase))
          Tag(key)
-      case Elem(_,"meta",_,_,literal @ _*) => //strangely, XML matching does not work
+      case Elem(_,"meta",_,_,literal) => //strangely, XML matching does not work
          val key = Path.parseS(xml.attr(node, "property"), nsMap(keyBase))
-         new MetaDatum(key, OMSTR(literal.text)) // TODO: for now parsing everything into a string
+         val value = Obj.parseTerm(literal, nsMap)
+         new MetaDatum(key, value)
          //throw ParseError("object in metadatum must be text node:" + node)
-      case _ => throw ParseError("meta or link expected: " + node)
+      case _ => throw ParseError("meta or link or tag expected: " + node)
    }
 }
 
