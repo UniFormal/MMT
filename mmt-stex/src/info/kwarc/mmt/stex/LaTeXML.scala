@@ -122,6 +122,7 @@ class LaTeXML extends LaTeXBuildTarget {
   private var perl5lib = "perl5lib"
   private var preloads: Seq[String] = Nil
   private var paths: Seq[String] = Nil
+  private var reboot: Boolean = false
 
   private def getArg(arg: String, args: List[String]): Option[String] =
     partArg(arg, args)._1.headOption.map(Some(_)).
@@ -146,10 +147,13 @@ class LaTeXML extends LaTeXBuildTarget {
     val (preloadOpts, rest1) = partArg("preload", opts)
     preloads = preloads ++
       controller.getEnvVar("LATEXMLPRELOADS").getOrElse("").split(" ").filter(_.nonEmpty)
-    val (pathOpts, rest2) = partArg("path", opts)
+    val (pathOpts, rest2) = partArg("path", rest1)
     paths = pathOpts ++
       controller.getEnvVar("LATEXMLPATHS").getOrElse("").split(" ").filter(_.nonEmpty)
-    val restOpts = rest2.diff(List("--expire=" + expire, "--port=" + port, "--profile=" + profile))
+    val (rebootFlag, rest3) = partArgAux("--reboot", rest2)
+    reboot = rebootFlag.nonEmpty
+    if (reboot) expire = "1"
+    val restOpts = rest3.diff(List("--expire=" + expire, "--port=" + port, "--profile=" + profile))
     if (restOpts.nonEmpty) log("unknown options: " + restOpts.mkString(" "))
   }
 
@@ -271,64 +275,75 @@ class LaTeXML extends LaTeXBuildTarget {
       if (pipeOutput) System.err.print(str)
     }, true)
 
-  /** Compile a .tex file to OMDoc */
-  def reallyBuildFile(bt: BuildTask): BuildResult = {
-    val lmhOut = bt.outFile
-    val logFile = bt.outFile.setExtension("ltxlog")
-    lmhOut.delete()
-    logFile.delete()
-    createLocalPaths(bt)
-    setLatexmlBins(bt)
-    val realPort: Int = if (portSet) port
-    else port + Math.abs(bt.archive.id.hashCode % portModulo)
-    val realProfile = if (profileSet) profile
-    else getProfile(bt.archive).getOrElse(profile)
-    val output = new StringBuffer()
-    val argSeq = Seq(latexmlc, bt.inFile.toString,
-      "--profile=" + realProfile, "--path=" + styPath(bt),
-      "--destination=" + lmhOut, "--log=" + logFile) ++
-      (if (noAmble(bt.inFile)) Seq("--whatsin=document")
-      else Seq("--preamble=" + getAmbleFile("pre", bt),
-        "--postamble=" + getAmbleFile("post", bt))) ++
-      Seq("--expire=" + expire, "--port=" + realPort) ++ preloads.map("--preload=" + _) ++
-      paths.map("--path=" + _)
-    log(argSeq.mkString(" ").replace(" --", "\n --"))
-    val lEnv = extEnv(bt)
-    try {
-      val pbs = Process(Seq(latexmls, "--expire=" + expire, "--port=" + realPort,
-        "--autoflush=100"), bt.archive / inDim, lEnv: _*)
-      val startServer = try {
+  def isServerRunning(realPort: Int): Boolean =
+      try {
         val s = new ServerSocket(realPort)
         s.close()
-        true
+        false
       }
       catch {
         case ex: BindException =>
-          false
+          true
       }
-      if (startServer) {
-        pbs.run(procIO(output))
-        Thread.sleep(delaySecs)
+
+  /** Compile a .tex file to OMDoc */
+  def reallyBuildFile(bt: BuildTask): BuildResult = {
+    val realPort: Int = if (portSet) port
+    else port + Math.abs(bt.archive.id.hashCode % portModulo)
+    setLatexmlBins(bt)
+    val lEnv = extEnv(bt)
+    val output = new StringBuffer()
+    if (reboot) {
+        val pbc = Process(Seq(latexmlc, "--expire=" + expire, "--port=" + realPort, "literal:restarting"), bt.archive / inDim, lEnv: _*)
+        if (isServerRunning(realPort)) {
+          logResult("trying to kill latexml server: " + latexmls + " --port=" + realPort)
+          pbc.!(ProcessLogger(_ => (), _ => ()))
+          Thread.sleep(delaySecs)
+        }
+    } else {
+      val lmhOut = bt.outFile
+      val logFile = bt.outFile.setExtension("ltxlog")
+      lmhOut.delete()
+      logFile.delete()
+      createLocalPaths(bt)
+      val realProfile = if (profileSet) profile
+      else getProfile(bt.archive).getOrElse(profile)
+      val argSeq = Seq(latexmlc, bt.inFile.toString,
+        "--profile=" + realProfile, "--path=" + styPath(bt),
+        "--destination=" + lmhOut, "--log=" + logFile) ++
+        (if (noAmble(bt.inFile)) Seq("--whatsin=document")
+        else Seq("--preamble=" + getAmbleFile("pre", bt),
+          "--postamble=" + getAmbleFile("post", bt))) ++
+        Seq("--expire=" + expire, "--port=" + realPort) ++ preloads.map("--preload=" + _) ++
+        paths.map("--path=" + _)
+      log(argSeq.mkString(" ").replace(" --", "\n --"))
+      try {
+        val pbs = Process(Seq(latexmls, "--expire=" + expire, "--port=" + realPort,
+          "--autoflush=100"), bt.archive / inDim, lEnv: _*)
+        if (!isServerRunning(realPort)) {
+          pbs.run(procIO(output))
+          Thread.sleep(delaySecs)
+        }
+        val pb = Process(argSeq, bt.archive / inDim, lEnv: _*)
+        val exitCode = timeout(pb, procLogger(output, pipeOutput = false))
+        if (exitCode != 0 || lmhOut.length == 0) {
+          bt.errorCont(LatexError("no omdoc created", output.toString))
+          lmhOut.delete()
+          logFailure(bt.outPath)
+        }
+        if (lmhOut.exists()) logSuccess(bt.outPath)
+      } catch {
+        case e: Exception =>
+          lmhOut.delete()
+          bt.errorCont(LatexError(e.toString, output.toString))
+          logFailure(bt.outPath)
       }
-      val pb = Process(argSeq, bt.archive / inDim, lEnv: _*)
-      val exitCode = timeout(pb, procLogger(output, pipeOutput = false))
-      if (exitCode != 0 || lmhOut.length == 0) {
-        bt.errorCont(LatexError("no omdoc created", output.toString))
-        lmhOut.delete()
-        logFailure(bt.outPath)
+      if (logFile.exists()) {
+        readLogFile(bt, logFile)
+        if (pipeOutput) File.ReadLineWise(logFile)(println)
       }
-      if (lmhOut.exists()) logSuccess(bt.outPath)
-    } catch {
-      case e: Exception =>
-        lmhOut.delete()
-        bt.errorCont(LatexError(e.toString, output.toString))
-        logFailure(bt.outPath)
+      if (pipeOutput) print(output.toString)
     }
-    if (logFile.exists()) {
-      readLogFile(bt, logFile)
-      if (pipeOutput) File.ReadLineWise(logFile)(println)
-    }
-    if (pipeOutput) print(output.toString)
     BuildResult.empty
   }
 
