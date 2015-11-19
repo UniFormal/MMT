@@ -233,7 +233,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
        span("name") {
          text(doc.path.last)
        }
-       ul("ref") { doc.getItems foreach {
+       ul("ref") { doc.getDeclarations foreach {
          case d: DRef =>
            li("dref") {
              span(cls = "name loadable", attributes=List("jobad:load" -> d.target.toPath)) {
@@ -268,7 +268,7 @@ class MMTDocExporter extends HTMLPresenter(new MathMLPresenter) {
   override def doDocument(doc: Document) {
       html {
          body {
-            ul {doc.getItems foreach {
+            ul {doc.getDeclarations foreach {
                case d: DRef =>
                   li("dref") {
                      a(d.target.toPath) {

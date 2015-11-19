@@ -632,9 +632,9 @@ case class Closure(p: Path) extends MakeAbstract {
   def make(controller: Controller): Document = p match {
     case doc ? name =>
       controller.get(doc ? name) // retrieve once to make sure it's in memory
-    val cl = controller.depstore.theoryClosure(doc ? name)
-      val clp = cl.map(MRef(doc, _, generated = true))
-      new Document(doc, clp)
+      val cl = controller.depstore.theoryClosure(doc ? name)
+      val clp = cl.map{p => MRef(doc, p)}
+      new Document(doc, true, clp)
   }
 
   override def toString: String = p + " closure"

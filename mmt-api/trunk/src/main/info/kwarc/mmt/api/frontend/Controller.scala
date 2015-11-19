@@ -396,7 +396,8 @@ class Controller extends ROController with Logger {
     docstore.delete(d).toList.flatMap { doc =>
       log("deactivating document " + d)
       logGroup {
-        doc.getLocalItems flatMap {
+        doc.getDeclarations flatMap {
+          case inner: Document => deactivateDocument(inner.path)
           case r: DRef => deactivateDocument(r.target)
           case r: MRef => localLookup.getO(r.target) match {
             case Some(m: Module) =>

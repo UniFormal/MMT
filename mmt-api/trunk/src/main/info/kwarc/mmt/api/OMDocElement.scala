@@ -124,22 +124,13 @@ trait ContentElement extends StructuralElement {
   }
 }
 
-/*
-/** A PresentationElement is any knowledge item element that is used to represent notations.
-  *
-  * These includes styles and notations.
-  */
-trait PresentationElement extends StructuralElement
-*/
-
-/** A DocumentItem is anything that may occur in documents */
-trait DocumentItem extends Content
-
 /** A NarrativeElement is any OMDoc element that is used to represent narration and document structure.
   *
   * These include documents and cross-references.
   */
-trait NarrativeElement extends StructuralElement with DocumentItem {
+trait NarrativeElement extends StructuralElement {
+  /** the containing document (if any) */
+  def parentOpt: Option[DPath]
   def getComponents = Nil
 }
 

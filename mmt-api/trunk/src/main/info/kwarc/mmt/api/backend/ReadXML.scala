@@ -31,7 +31,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
    }
    private def addModule(m: Module, md: Option[MetaData], docOpt: Option[Document])(implicit cont: StructuralElement => Unit) {
       add(m, md)
-      docOpt map (d => add(MRef(d.path, m.path, true)))
+      docOpt map (d => add(new MRef(d.path, LocalName(m.path), m.path)))
    }
    
    /**
@@ -48,7 +48,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
            val base = Path.parseD(xml.attr(node, "base"), nsMap)
            val nsMapB = nsMap(base)
            log("document with URI " + dpath + " found")
-           val d = new Document(dpath, Nil, nsMapB)
+           val d = new Document(dpath, true, Nil, nsMapB)
            add(d)
            modules foreach {m => readIn(nsMapB, d, m)}
         case _ => throw ParseError("document expected: " + node)
@@ -74,22 +74,22 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
     */
    def readInDocument(nsMap: NamespaceMap, docOpt: Option[Document], node : Node)(implicit cont: StructuralElement => Unit) {
       lazy val doc = docOpt.getOrElse {throw ParseError("document element without containing document")}
+      lazy val name = LocalName.parse(xml.attr(node,"name"), nsMap)
       node match {
          case <omdoc>{mods}</omdoc> =>
-            val name = LocalName.parse(xml.attr(node,"name"),nsMap)
             val dpath = doc.path / name
             val innerdoc = new Document(dpath)
-            add(DRef(doc.path, dpath, true))
+            add(innerdoc)
             readIn(nsMap, innerdoc, mods)
          case <dref/> =>
 	         val d = xml.attr(node, "target")
 	         log("dref to " + d + " found")
-	         val r = DRef(doc.path, Path.parseD(d,nsMap), false)
+	         val r = new DRef(doc.path, name, Path.parseD(d,nsMap))
 	         add(r)
          case <mref/> =>
 	         val t = xml.attr(node, "target")
 	         log("mref to " + t + " found")
-	         val r = MRef(doc.path, Path.parseM(t,nsMap), false)
+	         val r = new MRef(doc.path, name, Path.parseM(t,nsMap))
 	         add(r)
          case scala.xml.Comment(_) =>
          case <metadata>{_*}</metadata> =>

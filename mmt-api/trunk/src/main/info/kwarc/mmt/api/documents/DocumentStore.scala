@@ -12,19 +12,23 @@ abstract class RODocStore {
 class DocStore(mem : ROMemory, report : Report) extends RODocStore {
    private val documents = new scala.collection.mutable.HashMap[DPath,Document]
    /** adds a document to the DocStore */
-   def add(d : NarrativeElement) {d match {
-      case d : Document =>
-         documents(d.path) = d
-         mem.ontology += ontology.IsDocument(d.path)
-      case r : XRef =>
-         val d = try {documents(r.parent)} catch {case _ : Throwable => throw AddError("document does not exist in " + r)}
-         d.add(r)
-         mem.ontology += ontology.Declares(d.path, r.target)
-   }}
+   def add(n : NarrativeElement) {
+      n.parentOpt.map {p =>
+         val doc = documents.get(p).getOrElse {
+            throw AddError("containing document does not exist " + p)
+         }
+         doc.add(n)
+      }
+      n match {
+         case d : Document =>
+            documents(d.path) = d
+         case _ =>
+      }
+   }
    /** retrieves a document from the DocStore */
    def get(p : DPath) = {
       try {documents(p)}
-      catch {case _ : Throwable => throw NotFound(p)}
+      catch {case _ : Exception => throw NotFound(p)}
    }
    /** retrieves all documents in any order */
    def getDocuments : List[Document] = documents.values.toList 

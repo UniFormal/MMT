@@ -30,7 +30,7 @@ class ControllerNode(controller: Controller) extends MMTNode {
 class StructuralElementNode(val se: StructuralElement, controller: Controller) extends MMTNode {
    override def toString = se.path.last
    lazy val children = se.getDeclarations.mapPartial[MMTNode] {
-      case r: XRef =>
+      case r: NRef =>
          Some(new PathNode(r.target, controller))
       //case o: Obj =>
       //    Some(new ObjNode(o))

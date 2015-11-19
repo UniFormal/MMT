@@ -83,7 +83,7 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
          //TODO delimiters, metadata
          case d: Document =>
             rh("document " + d.path.toPath + "\n")
-            d.getItems foreach {i => apply(i, indent+1)}
+            d.getDeclarations foreach {i => apply(i, indent+1)}
          case r: DRef =>
             rh("document " + r.target.toPath)
          case r: MRef =>

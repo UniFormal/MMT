@@ -174,6 +174,7 @@ object LocalName {
    /** parses a LocalName, complex segments are parsed relative to base */
    def parse(s: String, nsMap : NamespaceMap): LocalName = LocalRef.parse(s).toLocalName(nsMap)
    def parse(s:String): LocalName = parse(s, NamespaceMap.empty)
+   val empty = LocalName(Nil)
 }
 
 /** a step in a LocalName */

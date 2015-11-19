@@ -30,8 +30,8 @@ abstract class Storage {
 
   protected def virtDoc(entries: List[String], prefix: String) = {
     val s = <omdoc>
-      {entries.map(n => <dref target={prefix + n}/>)}
-    </omdoc>.toString()
+      {entries.map(n => <dref name={n} target={prefix + n}/>)}
+    </omdoc>.toString
     new BufferedReader(new java.io.StringReader(s))
   }
 

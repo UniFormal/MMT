@@ -19,7 +19,7 @@ abstract class BasicTheoryParser(objectParser: ObjectParser, meta: Option[MPath]
       val ns = DPath(uri.copy(path = uri.path.init))
       val name = LocalName(uri.path.last)
       val thy = new DeclaredTheory(ns, name, meta)
-      val doc = new Document(ns, List(new MRef(ns, thy.path)))
+      val doc = new Document(ns, true, List(MRef(ns, thy.path)))
       controller.add(doc)
       controller.add(thy)
       

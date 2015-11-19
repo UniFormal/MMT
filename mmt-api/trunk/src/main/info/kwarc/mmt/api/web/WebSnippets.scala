@@ -27,11 +27,7 @@ class TreeView extends ServerExtension("tree") {
          path match {
            case p: DPath =>
              val doc = controller.getDocument(p)
-             val docitems = doc.getItems.sortWith {
-                case (r: DRef, s: MRef) => false
-                case (r: MRef, s: DRef) => true
-                case (r,s)  => r.target.last <= s.target.last
-             } 
+             val docitems = doc.getRefs
              <root>{ docitems.map { i => item(i.target, "closed") } }</root>
            case p: MPath =>
              val rels: List[(String, RelationExp)] = role match {

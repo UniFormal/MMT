@@ -107,7 +107,7 @@ abstract class Importer extends TraversingBuildTarget {
     }
     // TODO remove document from controller? mark document as dirty in controller?
     //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly
-    doc.getItems foreach {
+    doc.getDeclarations foreach {
       case r: documents.MRef =>
         val cPath = Archive.MMTPathToContentPath(r.target)
         delete(a / content / cPath)

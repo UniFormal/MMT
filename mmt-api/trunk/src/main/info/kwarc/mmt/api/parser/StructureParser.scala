@@ -167,7 +167,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   private def apply(state: ParserState): (Document, ParserState) = {
     val dpath = state.ps.dpath
-    val doc = new Document(dpath, Nil, state.namespaces)
+    val doc = new Document(dpath, true, Nil, state.namespaces)
     seCont(doc)(state)
     logGroup {
       readInDocument(doc)(state)
@@ -331,7 +331,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val (ns, name) = parent match {
       case doc: DPath =>
         val ns = DPath(state.namespaces.default)
-        val mref = MRef(doc, ns ? rname, generated = true)
+        val mref = MRef(doc, ns ? rname)
         seCont(mref)
         (ns, rname)
       case mp: MPath =>
@@ -415,7 +415,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val (ns, name) = parent match {
       case doc: DPath =>
         val ns = DPath(state.namespaces.default)
-        val mref = MRef(doc, ns ? rname, generated = true)
+        val mref = MRef(doc, ns ? rname)
         seCont(mref)
         (ns, rname)
       case mp: MPath =>
@@ -659,8 +659,6 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           val dpath = doc.path / name
           val d = new Document(dpath)
           seCont(d)
-          val dref = DRef(doc.path, dpath)
-          seCont(dref)
           logGroup {
             readInDocument(d)
           }
