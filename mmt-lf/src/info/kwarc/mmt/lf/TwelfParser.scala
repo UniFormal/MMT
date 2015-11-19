@@ -99,7 +99,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     var i = 0  // position in the flattened file
 
     // add (empty, for now) narrative document to the controller
-    val doc = new Document(dpath)
+    val doc = new Document(dpath, true)
     add(doc)
     try {
        // add document metadata and source references
@@ -1260,7 +1260,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     addSourceRef(theory, start, endsAt)
 
     // add the link to this theory to the narrative document
-    add(MRef(dpath, theory.path, true)) //TODO is it true or false ?
+    add(MRef(dpath, theory.path))
     return endsAt + 1
   }
 
@@ -1362,7 +1362,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     addSourceRef(view, start, endsAt)
 
     // add a link to this view to the narrative document
-    add(MRef(dpath, view.path, true))
+    add(MRef(dpath, view.path))
     return endsAt + 1
   }
 
@@ -1487,7 +1487,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     addSourceRef(theory, start, endsAt)
 
     // add the link to this theory to the narrative document
-    add(MRef(dpath, theory.path, true)) //TODO is it true or false ?
+    add(MRef(dpath, theory.path))
     return endsAt + 1
   }
   

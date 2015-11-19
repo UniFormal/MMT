@@ -23,9 +23,8 @@ object TPTP {
    case class Var(name: String) extends TPTPFormula {
       override def toString = {
          val upperFirst = if (!name(0).isUpper) "X" else ""
-         val escaped = Escape(name, '\'' -> "prime")
-         if (escaped.exists(c => !c.isLetter && !c.isDigit))
-            println(name)//TODO delete
+         val escaped = Escape(name, '\'' -> "prime", '/' -> "slash")
+         //if (escaped.exists(c => !c.isLetter && !c.isDigit)) println(name)// test for illegal characters
          upperFirst + escaped
       }
    }
@@ -90,18 +89,17 @@ class TPTPPresenter extends Presenter(TPTPObjectPresenter) {
    /**
     * @param home a theory
     * @param t a term over home
-    * @return (theory T, meta-theory of home that imports T, list of symbols from T in t)
+    * @return list of (meta-theory M, list of (theory T that is imported into M, list of symbols from T in t))
     */
-   private def getConstantsGroupedByMetaTheory(home: Term, t: Term): Iterable[(Term,MPath,List[GlobalName])] = {
+   private def getConstantsGroupedByMetaTheory(home: Term, t: Term): Iterable[(MPath,Iterable[(Term,List[GlobalName])])] = {
       val cons = Obj.getConstants(t).groupBy(_.module)
-      val metas = home.toMPath :: TheoryExp.metas(home)(lup)
-      cons.map {case (thy, ps) =>
-         val m = metas.find(m => lup.hasImplicit(thy, OMMOD(m))).getOrElse{
+      val metas = TheoryExp.metas(home)(lup).reverse ::: List(home.toMPath)
+      cons.groupBy {case (thy, ps) =>
+         metas.find(m => lup.hasImplicit(thy, OMMOD(m))).getOrElse {
             log("symbols from " + thy + " occurring in " + home + " appear to be invalid")
             //recover by defaulting to the theory itself
             metas.head
          }
-         (thy,m,ps)
       }
    }
    
@@ -109,7 +107,7 @@ class TPTPPresenter extends Presenter(TPTPObjectPresenter) {
 
    def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {e match {
       case d: Document =>
-         d.getItems.foreach {i => apply(i)}
+         d.getDeclarations.foreach {i => apply(i)}
       case r: DRef =>
          rh << Incl(r.parent.uri.relativize(r.target.uri.setExtension(outExt)))
       case r: MRef =>
@@ -123,7 +121,8 @@ class TPTPPresenter extends Presenter(TPTPObjectPresenter) {
                rh << "\n"
             }
          }
-         t.getDeclarations.foreach {d =>
+         val decs = t.getDeclarationsElaborated
+         decs.foreach {d =>
             apply(d)
             rh << "\n"
          }
@@ -140,12 +139,14 @@ class TPTPPresenter extends Presenter(TPTPObjectPresenter) {
          c.df.foreach {d =>
             // rh << " = "
             // apply(d, None)
-            val cons = getConstantsGroupedByMetaTheory(c.home, d).init // .init removes framework-level theories
-            cons.foreach{case (t,_,ps) =>
-               rh << "," + Sym(t.toMPath.toPath) + ":"
-               ps.foreach {p =>
-                  rh << " "
-                  doName(p)
+            val cons = getConstantsGroupedByMetaTheory(c.home, d) // .init removes framework-level theories
+            cons.init.foreach {case (m,tps) =>
+               rh << "," + Sym(m.toPath) + ":"
+               tps.foreach {case (t,ps) =>
+                  ps.foreach {p =>
+                     rh << " "
+                     doName(p)
+                  }
                }
             }
          }
