@@ -135,7 +135,7 @@ class OEISImporter extends Importer {
         case "theory" => //create theory
           val name = LocalName((n \ "@name").text)
           val thy = new DeclaredTheory(doc.path, name, None)
-          val ref = MRef(doc.path, thy.path, generated = true)
+          val ref = MRef(doc.path, thy.path)
           controller.add(ref)
           controller.add(thy)
           n.child.foreach(translateDeclaration(_, sref)(doc, thy, errorCont))

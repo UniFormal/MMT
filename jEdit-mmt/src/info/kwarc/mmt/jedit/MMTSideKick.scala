@@ -115,7 +115,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val reg = getRegion(doc) getOrElse SourceRegion(SourcePosition(0,0,0),SourcePosition(0,0,0))
       val child = new DefaultMutableTreeNode(new MMTElemAsset(doc, doc.path.toPath, reg))
       node.add(child)
-      doc.getItems foreach {
+      doc.getDeclarations foreach {
         case d: DRef =>
            buildTreeDoc(child, controller.getDocument(d.target))
         case m: MRef =>

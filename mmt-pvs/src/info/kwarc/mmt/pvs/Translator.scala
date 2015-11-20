@@ -73,8 +73,8 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
    def doDocument(d: pvs_file) {
       println("Document:" +bt.narrationDPath)
       val modsM = d._modules map doModule(path)
-      val mrefsM = modsM.map(m => {controller.add(m) ;MRef(bt.narrationDPath, m.path,true)})
-      val doc = new Document(bt.narrationDPath, mrefsM)
+      val mrefsM = modsM.map(m => {controller.add(m) ;MRef(bt.narrationDPath, m.path)})
+      val doc = new Document(bt.narrationDPath, true, mrefsM)
       index(doc)
    }
 

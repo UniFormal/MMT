@@ -169,7 +169,7 @@ class MizarCompiler extends archives.Importer {
         TranslationController.add(PlainInclude(MMTUtils.getTheoryPath(x), th.path))
     })
     //TranslationController.add(PlainInclude(Mizar.HiddenTh, th.path))
-    TranslationController.controller.add(MRef(doc.path, th.path, generated = true))
+    TranslationController.controller.add(MRef(doc.path, th.path))
     ArticleTranslator.translateArticle(article)
     TranslationController.clear()
     ParsingController.dictionary.clear()
