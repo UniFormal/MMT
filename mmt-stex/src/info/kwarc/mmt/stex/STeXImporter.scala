@@ -142,7 +142,7 @@ class STeXImporter extends Importer {
     } catch {
       case e: GetError =>
         val anonthy = new DeclaredTheory(anonpath.doc, anonpath.name, None) //no meta for now
-      val ref = MRef(dpath, anonthy.path, generated = true)
+      val ref = MRef(dpath, anonthy.path)
         controller.add(anonthy)
         controller.add(ref)
         anonthy
@@ -173,14 +173,14 @@ class STeXImporter extends Importer {
         case "theory" => //create theory
           val name = getName(n, doc)
           val thy = new DeclaredTheory(doc.path, name, None)
-          val ref = MRef(doc.path, thy.path, generated = true)
+          val ref = MRef(doc.path, thy.path)
           add(ref)
           add(thy)
           n.child.foreach(translateDeclaration(_)(doc, thy, errorCont))
         case "omgroup" => //recurse to find internal modules
           val name = getName(n, doc)
           val newDoc = new Document(doc.path / name)
-          val ref = DRef(doc.path, newDoc.path, generated = true)
+          val ref = new DRef(doc.path, LocalName.empty, newDoc.path)
           add(newDoc)
           add(ref)
           n.child.foreach(n => translateModule(n)(newDoc, errorCont))
@@ -192,7 +192,7 @@ class STeXImporter extends Importer {
           //val target = doc.path.^! / (href + ".omdoc")
           //val dref = new DRef(doc.path, target)
           val target = parseRelDPath(href, doc.path)
-          val dref = new DRef(doc.path, target)
+          val dref = new DRef(doc.path, LocalName.empty, target)
           add(dref)
         case "#PCDATA" | "#REM" => //Atom or Comment => do nothing
         case "tableofcontents" => //ignore for now
@@ -233,7 +233,7 @@ class STeXImporter extends Importer {
             case "" => getName(n, thy)
             case s => LocalName(s)
           }
-          
+
           val tpWrapperO = n.child.find(_.label == "type")
           val tpO = tpWrapperO.map(tpN => Obj.parseTerm(rewriteCMP(tpN.child.head), NamespaceMap(dpath)))
           val dfO = None //TODO, get also def
