@@ -445,7 +445,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
    }
 
 
-   def doRef(r : XRef) = r match {
+   def doRef(r : NRef) = r match {
      case d: DRef if d.target.last == OMV.anonymous => //nested doc
        rh("<div class=\"group\">")
          controller.get(d.target) match {
@@ -477,7 +477,8 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
    def doDocument(doc: Document) {
      div("document") {
        ul("doc-body") { doc.getDeclarations foreach {
-         case x : XRef => doRef(x)
+         case x : NRef => doRef(x)
+         case d : Document => doDocument(d)
          case s => throw ImplementationError("Presenting for " + s.getClass() + " not implemented yet ")
        }}
      }

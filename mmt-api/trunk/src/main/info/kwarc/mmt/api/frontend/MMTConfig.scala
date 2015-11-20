@@ -77,9 +77,7 @@ class MMTConfig {
     def getEntry[E <: ConfEntry](cls: Class[E], id: String): E = getEntryO(cls, id) getOrElse {
       throw ConfigurationError(id)
     }
-
-
-
+    
     def getArchive(aid : String) = getEntry(classOf[ArchiveConf], aid)
     def getArchives = getEntries(classOf[ArchiveConf])
     def getFormat(id: String) = getEntry(classOf[FormatConf], id)
@@ -136,7 +134,7 @@ object MMTConfig {
       if (line.startsWith("//") || line.isEmpty) {
         //ignore
       } else if (line.startsWith("#include")) {
-         val inc = line.substring("#include".length)
+         val inc = line.substring("#include".length).trim
          val incConf = parse(File(inc))
          config.add(incConf)
       } else if (line.startsWith("#")) {

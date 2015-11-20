@@ -126,7 +126,7 @@ class MMTScriptEngine(controller: Controller) {
     val code = File.read(f)
     val imports = """
       import info.kwarc.mmt.api._
-      import archives._
+      import info.kwarc.mmt.api.archives._
       import frontend._
     """
     val textscript = imports +

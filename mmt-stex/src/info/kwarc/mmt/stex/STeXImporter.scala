@@ -142,7 +142,7 @@ class STeXImporter extends Importer {
     } catch {
       case e: GetError =>
         val anonthy = new DeclaredTheory(anonpath.doc, anonpath.name, None) //no meta for now
-      val ref = MRef(dpath, anonthy.path)
+        val ref = MRef(dpath, anonthy.path)
         controller.add(anonthy)
         controller.add(ref)
         anonthy
@@ -180,9 +180,7 @@ class STeXImporter extends Importer {
         case "omgroup" => //recurse to find internal modules
           val name = getName(n, doc)
           val newDoc = new Document(doc.path / name)
-          val ref = new DRef(doc.path, LocalName.empty, newDoc.path)
           add(newDoc)
-          add(ref)
           n.child.foreach(n => translateModule(n)(newDoc, errorCont))
         case "metadata" => //TODO
         case "bibliography" => //TODO
@@ -192,7 +190,7 @@ class STeXImporter extends Importer {
           //val target = doc.path.^! / (href + ".omdoc")
           //val dref = new DRef(doc.path, target)
           val target = parseRelDPath(href, doc.path)
-          val dref = new DRef(doc.path, LocalName.empty, target)
+          val dref = new DRef(doc.path, LocalName.empty ,target)
           add(dref)
         case "#PCDATA" | "#REM" => //Atom or Comment => do nothing
         case "tableofcontents" => //ignore for now
