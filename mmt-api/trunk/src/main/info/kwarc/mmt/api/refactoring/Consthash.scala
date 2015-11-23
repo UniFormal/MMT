@@ -9,12 +9,13 @@ import info.kwarc.mmt.api.symbols.FinalConstant
 
 import scala.util.{Try, Success}
 
+
 /**
  * Helper class that makes matching end evaluation of FinalConstants easier.
  * @param name the GlobalName of c
  * @param hash a hashed version of the term tree making up c
  * @param pars the list of constants occuring in the type of c
- * @param isAxiom True, if c is an axiom (i.e. its type contains a [role Judgment] declaration)
+ * @param isAxiom True, if c is an axiom (i.e. its type contains a [role Judgement] declaration)
  */
 case class Consthash(name:GlobalName,hash:Int,pars:List[GlobalName],isAxiom:Boolean) {
 
@@ -147,8 +148,8 @@ object Consthash {
       (th.getConstants collect {case t:FinalConstant => t.path}).toSet++arg
     ).toList
 
-    val hashes1 = for {o <- consts1} yield apply(o,commonconsts,judg1)
-    val hashes2 = for {o <- consts2} yield apply(o,commonconsts,judg2)
+    val hashes1 = consts1.map(apply(_,commonconsts,judg1))
+    val hashes2 = consts2.map(apply(_,commonconsts,judg2))
 
     ((hashes1,hashes2),(judg1,judg2))
 
@@ -187,7 +188,7 @@ object AxiomHandler {
         val closer = new Closer(ctrl)
         closer.getIncludes(th,true)
     }
-    ((for {o <- ths} yield findJudgmentIt(o)) collect {case Some(x) => x}).headOption
+    ((ths map findJudgmentIt) collect {case Some(x) => x}).headOption
 
   }
 

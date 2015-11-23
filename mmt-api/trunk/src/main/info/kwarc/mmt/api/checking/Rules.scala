@@ -69,6 +69,22 @@ abstract class SubtypingRule extends CheckingRule {
    def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History) : Option[Boolean]
 }
 
+/** A SupertypeRule represnts a type as a subtype of a bigger one
+  *  @param head the head of the term whose type this rule infers
+  */
+abstract class SupertypeRule(val head: GlobalName) extends CheckingRule {
+   /**
+     *  @param solver provides callbacks to the currently solved system of judgments
+     *  @param tp the type
+     *  @param covered if true, well-formedness may be assumed
+     *  @param stack its context
+     *  @param history the history so far
+     *  @return the supertype and the condition defining the original type as a subtype
+     */
+   def apply(solver: Solver)(tp: Term, covered: Boolean)(implicit stack: Stack, history: History): (Option[(Boolean,Term)],Option[Term])
+}
+
+
 /** An InferenceRule infers the type of an expression
  *  It may recursively infer the types of components.
  *  @param head the head of the term whose type this rule infers 

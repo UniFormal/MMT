@@ -4,98 +4,106 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, DeclaredStructure}
-import info.kwarc.mmt.lf.{Arrow, Lambda, ApplySpine}
+import info.kwarc.mmt.lf.{Lambda, Apply, ApplySpine, Arrow}
 import utils._
 
 object PVSTheory {
    val rootdpath = DPath(URI.http colon "pvs.csl.sri.com")
    val thname = "PVS"
-   val path = rootdpath ? thname
-   def sym(s: String) = path ? s
-
-   def pitp(tp1:Term,v:VarDecl,tp2:Term) = sym("pitp").apply(tp1,Lambda(v,tp2))
-
-   val exprastype = sym("exprastype")
-   val predsub = sym("predsub")
-
-   def subtypeof(sub:Term,sup:Term) = ApplySpine(OMS(sym("subtypeof")),sub,sup)
-
-   def numberexpr(i:BigInt) = OML(VarDecl(LocalName(i.toString),Some(OMS(sym("number"))),None,None))
-
-   def makecases(e:Term,sel:List[Term]) = ApplySpine(OMS(sym("makecases")),e,sel.tail.foldRight(sel.head)((t,c) =>
-      ApplySpine(OMS(sym("casetuple")),t,c)))
-   def casematch(head:Term,exp:Term) = ApplySpine(OMS(sym("casematch")),head,exp)
-
-   val tp = sym("tp")
-   val expr = sym("expr")
-   def ofType(t1:Term,tp:Term) = ApplySpine(OMS(sym("ofType")),t1,tp)
-   def constdecl(name:LocalName,home:MPath) =
-      DeclaredStructure(OMID(home),name,OMID(path / LocalName("constdecl")),false)
-
-   def PVSLambda(con:Context,t:Term) = con.foldRight(t)((v,b) => sym("lambda").apply(
-      v.tp.get,Lambda(VarDecl(v.name,Some(OMS(expr)),None,None),b)))
-
-   def forall(con:Context,t:Term) = con.foldRight(t)((v,b) => sym("forall").apply(
-      v.tp.get,Lambda(VarDecl(v.name,Some(OMS(expr)),None,None),b)))
-
-   def exists(con:Context,t:Term) = con.foldRight(t)((v,b) => sym("exists").apply(
-      v.tp.get,Lambda(VarDecl(v.name,Some(OMS(expr)),None,None),b)))
-
-   def casebind(con:Context,t:Term) = con.foldRight(t)((v,b) => sym("casebind").apply(
-      v.tp.get,Lambda(VarDecl(v.name,Some(OMS(expr)),None,None),b)))
-
-   val app = sym("app")
-   val tpapp = sym("tpapp")
-   val formula = sym("formula")
-   val axiom = sym("axiom")
-
-   def functype(from:Term,to:Term) = ApplySpine(OMS(sym("functype")),from,to)
-   def tptuple(pars:List[Term]) = pars.dropRight(1).foldRight(pars.last)((p,c) => sym("tptuple").apply(p,c))
-   def exprtuple(pars:List[Term]) = pars.dropRight(1).foldRight(pars.last)((p,c) => sym("exprtuple").apply(p,c))
-   def recordtype(pars:List[Term]) = sym("recordtype").apply(pars.dropRight(1).foldRight(pars.last)((p,c) => sym("recordfieldtuple").apply(p,c)))
-
-   def makerecordfield(name:LocalName,tp:Term) = ApplySpine(OMS(sym("makerecordfield")),
-      OML(VarDecl(name,Some(Arrow(OMS(PVSTheory.expr),OMS(PVSTheory.expr))),None,None)),tp)
-
-   def recordexpr(fields: List[(OML,Term)]) : Term = {
-      val recflist = fields.map(f => ApplySpine(OMS(sym("definerecordfield")),f._1,f._2))
-      sym("recordexpr").apply(recflist.dropRight(1).foldRight(recflist.last.asInstanceOf[Term])((p,c) => sym("recordfieldtuple").apply(p,c)))
+   val thpath = rootdpath ? thname
+   abstract class sym(s: String) {
+      val path = thpath ? s
+      val term = OMS(path)
    }
 
-   def recdef(name:LocalName,home:MPath) =
-      DeclaredStructure(OMID(home),name,OMID(path / LocalName("defdecl")),false)
-   //def tpapp(tp:Term,args:List[Term]) = sym("tpapp").apply(tp,exprtuple(args))
+   object expr extends sym("expr")
+   object tp extends sym("tp")
+   object ofType extends sym("ofType") {
+      def apply(tm:Term,tp:Term) = ApplySpine(this.term,tm,tp)
+   }
+   object subtp extends sym("subtypeof") {
+      def apply(sub:Term,sup:Term) = ApplySpine(this.term,sub,sup)
+   }
+   object arrow extends sym("funtype") {
+      def apply(dom:Term,cod:Term) = ApplySpine(this.term,dom,cod)
+      def unapply(t:Term) : Option[(Term,Term)] = t match {
+         case ApplySpine(this.term,List(dom,cod)) => Some((dom,cod))
+         case _ => None
+      }
+   }
 
-   //def tm(t:Term) = sym("tm").apply(t)
-   /*
-   val functype = sym("functype")
-   val tptuple = sym("tptuple")
-   val exprtuple = sym("exprtuple")
-   val predsub = sym("predsub")
-   val union = sym("union")
-   val asType = sym("asType")
-   val expr = sym("expr")
-   val tp = sym("tp")
-   val app = sym("app")
-   val tpapp = sym("tpapp")
+   object tptuple extends sym("tptuple") {
+      def apply(a:Term,b:Term) : Term = ApplySpine(this.term,a,b)
+      def apply(l:List[Term]) : Term = if (l.length>2) ApplySpine(this.term,l.head,apply(l.tail))
+         else apply(l.head,l.tail.head)
+   }
 
-   val fieldapp = sym("fieldapp")
+   object exprtuple extends sym("exprtuple") {
+      def apply(a:Term,b:Term) : Term = ApplySpine(this.term,a,b)
+      def apply(l:List[Term]) : Term = if (l.length>2) ApplySpine(this.term,l.head,apply(l.tail))
+      else apply(l.head,l.tail.head)
+   }
 
-   val ofType = sym("ofType")
-   val cases = sym("cases")
-   def pvscase(name:Term,expr:Term) = ApplySpine(OMS(sym("case")),name,expr)
-   val formula = sym("formula")
-   def subtp(th:DeclaredTheory,name:String,of:Term) =
-      DeclaredStructure(OMID(th.path), LocalName(name), sym("SubtypeDecl").apply(of), false)
-   def ofTypeDecl(th:DeclaredTheory,name:String,of:Term) =
-      DeclaredStructure(OMID(th.path), LocalName(name), sym("ofTypeDecl").apply(of), false)
-   def defdecl(th:DeclaredTheory, name:String, oftype: Term) =
-      DeclaredStructure(OMID(th.path),LocalName(name),sym("defDecl").apply(oftype),false)
-   def exprtocase(con:Context,name:Term,expr:Term) = PVSLambda(con,sym("exprtocase").apply(name,expr))
-   def casedist(exp:Term, cases:List[Term]) = sym("casedist").apply(exp,cases.tail.foldLeft(cases.head)((c,t) =>
-      ApplySpine(OMS(sym("casetuple")),c,t)))
+   object lambda extends sym("lambda") {
+      def apply(_var:LocalName,tp:Term,bd:Term) = ApplySpine(this.term,tp,Lambda(_var,expr.term,bd))
+   }
 
-   def forall(con:Context,t:Term) = con.foldRight(t)((v,b) => sym("forall").apply(
-      v.tp.get,Lambda(VarDecl(v.name,Some(OMS(expr)),None,None),b)))
-      */
+   object forall extends sym("forall") {
+      def apply(_var:LocalName,tp:Term,bd:Term) = ApplySpine(this.term,tp,Lambda(_var,expr.term,bd))
+   }
+
+   object PVSapply extends sym("PVSapply") {
+      def apply(f:Term,a:Term) : Term = ApplySpine(this.term,f,a)
+      def apply(f:Term,l:List[Term]) : Term = l.foldLeft(f)((g,t) => apply(g,t))
+   }
+
+   object formula extends sym("formula") {
+      def apply(kind:String, phi:Term) = ApplySpine(this.term,OMS(thpath ? kind),phi)
+   }
+
+   object Lift {
+      object Elem extends sym("Elem") {
+         def apply(tp:Term) = OMA(this.term,List(tp))
+         def unapply(tp:Term) : Option[Term] = tp match {
+            case OMA(this.term,List(tp1)) => Some(tp1)
+            case _ => None
+         }
+      }
+      private object elem extends sym("elem") {
+         def apply(expr:Term,tp:Term,tprel:Term) = OMA(this.term,List(expr,tp,tprel))
+      }
+      private object funType_out extends sym("funType_out") {
+         def apply(f:Term,tp1:Term,tp2:Term) = OMA(this.term,List(tp1,tp2,tp(arrow(tp1,tp2))))
+      }
+
+      def tp(tp:Term) = Elem.apply(tp)
+
+      def expr(expr:Term,tp:Term,tprel:Term) = elem.apply(expr,tp,tprel)
+
+      def funType(f:Term,tp:Term) : Option[Term] = tp match {
+         case arrow(dom,cod) => Some(funType_out(f,dom,cod))
+         case _ => None
+      }
+   }
+
+   object Lower {
+      private object funType_in extends sym("funType_in") {
+         def apply(f:Term,tp1:Term,tp2:Term) = OMA(this.term,List(tp1,tp2,f))
+      }
+
+      def funtype(f:Term,tp:Term) = tp match {
+         case Arrow(Lift.Elem(tp1),Lift.Elem(tp2)) => Some(funType_in(f,tp1,tp2))
+         case _ => None
+      }
+   }
+
+   def constdecl(th:DeclaredTheory, name:String, tp1:Term, _def:Option[Term])(dotp: Term => Term = x => x) = {
+      val s = DeclaredStructure(th.toTerm,LocalName(name+"_INTERNAL"),
+         OMID((rootdpath / thname) ? LocalName("constdecl")),false)
+      s add Constant(s.toTerm,LocalName("PVStype"),None,Some(dotp(tp.term)),Some(tp1),None)
+      if (_def.isDefined)
+         s add Constant(s.toTerm,LocalName("def"),None,Some(dotp(expr.term)),_def,None)
+      List(s,Constant(th.toTerm,LocalName(name),None,Some(dotp(expr.term)),Some(OMS((th.path / s.name) ? LocalName("def"))),None))
+   }
+
 }

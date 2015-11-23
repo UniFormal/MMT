@@ -11,7 +11,7 @@ import info.kwarc.mmt.api.modules.DeclaredTheory
  */
 object SubtractDeclaration {
 
-  def getConstants(th:DeclaredTheory,a:List[GlobalName],ctrl:Controller) : Set[FinalConstant] = {
+  def getConstants(th:DeclaredTheory,a:List[GlobalName],ctrl:Controller) : List[FinalConstant] = {
     val closer = new Closer(ctrl)
     val includes = closer.getIncludes(th,true)-th
     val consts = th.getConstants collect {case t:FinalConstant => t}
@@ -24,7 +24,7 @@ object SubtractDeclaration {
     val hashes = for {o <- consts} yield Consthash(o,inclnames,judg)
     val filteredindic = hashes.indices.filter(i => !a.exists(b => occursIn(b,hashes(i),hashes)))
 
-    filteredindic.map(consts(_)).toSet
+    filteredindic.map(consts(_)).toList
   }
 
   /**

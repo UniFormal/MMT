@@ -285,6 +285,12 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       val cod = codOpt orElse Morph.codomain(m)(content) getOrElse {
          throw InvalidObject(m, "cannot infer codomain of morphism")
       }
+      lazy val domC = ComplexTheory.unapply(dom) getOrElse {
+         throw InvalidObject(m, "domain is not a theory")
+      }
+      lazy val codC = ComplexTheory.unapply(cod) getOrElse {
+         throw InvalidObject(m, "codomain is not a theory")
+      }
       val (mR, domI, codI) = m match {
         case OMMOD(p) =>
            val l = controller.globalLookup.getLink(p)
@@ -320,17 +326,14 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
         case ComplexMorphism(body) =>
            // get domain and codomain as contexts
-           val from = ComplexTheory.unapply(dom) getOrElse {
-              throw InvalidObject(m, "domain is not a theory")
-           }
-           val to = ComplexTheory.unapply(cod) getOrElse {
-              throw InvalidObject(m, "codomain is not a theory")
-           }
-           val bodyR = checkSubstitution(context, body, from, to, false)
+           val bodyR = checkSubstitution(context, body, domC, codC, false)
            (ComplexMorphism(bodyR), dom, cod)
       }
-      val implDom = content.getImplicit(dom, domI)
-      val implCod = content.getImplicit(codI, cod)
+      lazy val domIC = ComplexTheory.unapply(domI) getOrElse {
+         throw InvalidObject(m, "domain is not a theory")
+      }
+      val implDom = content.getImplicit(dom, ComplexTheory(context ++ domIC))
+      val implCod = content.getImplicit(codI, ComplexTheory(context ++ codC))
       val mRR = (implDom, implCod) match {
          case (Some(l0), Some(l1)) => OMCOMP(l0, mR, l1)
          case _ =>

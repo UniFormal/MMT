@@ -25,6 +25,7 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
   /**
    * flattens all structures in a theory
    */
+  // TODO 2 boolean flags for includes and constants, extend to views
   def flatten(t: DeclaredTheory) {
      if (! t.hasBeenElaborated) t.getNamedStructures.foreach {
         case s: DeclaredStructure if !s.hasBeenElaborated =>

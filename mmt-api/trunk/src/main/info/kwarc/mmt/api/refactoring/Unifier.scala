@@ -13,7 +13,7 @@ import scala.util.{Success, Try}
  * Takes two theories A,B and partial views A->C, B->C and yields (modulo renamings)
  * (AuB)nC=:C' and a new theory C*:=C\C' with C' as include
  */
-
+/*
 object Unifier {
   /**
    * Takes all (ultimately) necessary parameters:
@@ -121,3 +121,4 @@ object Unifier {
   }
 
 }
+*/

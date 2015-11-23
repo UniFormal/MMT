@@ -49,8 +49,7 @@ class MMTPlugin extends EBPlugin with Logger {
       val archives = MMTOptions.archives.get orElse
         controller.getOAF.map(_.root.toString) getOrElse "mars"
       controller.addArchive(home resolve archives)
-      // add this only after executing the startup file because the status bar is not available yet
-      // this command itself may also not be logged
+      // status bar is not actually available yet at this point
       controller.report.addHandler(StatusBarLogger)
       controller.extman.addExtension(mmtListener)
       // make tooltips stay longer

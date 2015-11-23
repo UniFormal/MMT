@@ -14,7 +14,7 @@ import ActiveNotation._
  *    if not a singleton, all [[TextNotation]]s must TextNotation.agree 
  */
 class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val firstToken: Int) {
-   // invariant: found.reverse (qua List[Marker]) ::: left == markers
+   // invariant: found.reverse (qua List[Marker]) ::: left == markers of each rule
 
    override def toString = toShortString + " " + found.reverse.mkString("", " ", "")
    def toShortString = rules.map(_.name.last).mkString("/")

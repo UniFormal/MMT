@@ -1,5 +1,7 @@
 package info.kwarc.mmt.tps
 
+import java.io.{FileWriter, PrintWriter}
+
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.notations._
@@ -32,7 +34,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
       index(doc)
    }
 
-   def doName(s:String) : LocalName = LocalName(s)
+   def doName(s:String) : LocalName = LocalName(s.replace("-","_"))
 
    def doTheoryName(s:String) : MPath = {
       //println("Regex match! "+s)
@@ -40,11 +42,19 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
       val docdoc = """logics/(.+)""".r
       s match {
          case doctheory(doc,th) => if (doc==th) path ? th else doc match {
-            case docdoc(th2) => (path / LocalName("tpslogic")) ? th2
+            case docdoc(th2) =>
+               println("TH: "+(path / LocalName("tpslogic")) ? th2)
+               (path / LocalName("tpslogic")) ? th2
          }
          case _ =>
-            println(" regex fail!")
-            sys.exit
+            val ths = List("simpletypes","truthval","lambda-calc","pl0","ind","sthold","sthol")
+            if(ths.contains(s)) (path / LocalName("tpslogic")) ? s
+            else if (s.startsWith("tps."))  path ? s
+            else {
+               println("Theory Name: "+s)
+               sys.exit
+               // (path / LocalName("tpslogic")) ? s
+            }
       }
    }
 
@@ -68,7 +78,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             th add Constant(th.toTerm,name,None,Some(tp),OptDef,None,OptNot.getOrElse(NotationContainer()))
          })
 
-         println(" -- Theory: "+th)
+         // println(" -- Theory: "+th)
          th
       case _ =>
          println(" -- OTHER: "+m.getClass)
@@ -94,7 +104,8 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
 
    def doObject(o: omobject) : Term = o match {
       case syntax.OMA(head,pars) => ApplySpine(doObject(head),pars map doObject :_*)
-      case syntax.OMS(cd, name) => objects.OMS((path ? cd) ? doName(name))
+      case syntax.OMS(cd, name) =>
+         objects.OMS(doTheoryName(cd) ? doName(name))
       case syntax.OMV(name) => objects.OMV(doName(name))
       case syntax.OMBIND(s,vars,pars) =>
          val con : Context = vars map (v => v match {

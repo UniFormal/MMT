@@ -1,19 +1,164 @@
 package info.kwarc.mmt.api.refactoring
 
-import info.kwarc.mmt.api.notations.{TextNotation, NotationContainer}
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.{ComplexStep, NamespaceMap, LocalName, GlobalName}
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory, DeclaredView}
-import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.frontend.{Logger, Controller}
 
-import scala.util.{Success, Try}
+abstract class Intersecter extends Logger {
+  implicit val controller: Controller
+  val logPrefix = "Viewfinder"
+  lazy val report = controller.report
 
+  def intersect(vs:Viewset): (TheorySet,TheorySet) = {
+    require(vs.from.isDefined && vs.to.isDefined)
+    vs.distribute
+    val metaasincludes = vs.from.get.meta!=vs.to.get.meta
+    val from = TheorySet(vs.from.get,metaasincludes)
+    val to = TheorySet(vs.to.get,metaasincludes)
+    intersectOne(vs,from,to)
+    (from,to)
+  }
+
+  private def intersectOne(vs:Viewset,from:TheorySet,to:TheorySet) {
+    // println("top: "+vs)
+    // println("from: "+from)
+    // println("to: "+to)
+    vs.includes.foreach(w => {
+      // println("include:"+w)
+      val newfrom = (from::from.allincludes).find(ts => ts.getPath.isDefined && w.from.isDefined && ts.getPath.get==w.from.get.path)
+      val newto = (to::to.allincludes).find(ts => ts.getPath.isDefined && w.to.isDefined && ts.getPath.get==w.to.get.path)
+      if(newfrom.isEmpty || newto.isEmpty) throw new Exception("Viewset or Theoryset has no path!")
+      intersectOne(w,newfrom.get,newto.get)
+    })
+    if(vs.localassignments.isEmpty) return Nil
+    val consts = vs.localassignments.map(pair => {
+      val (c,d) = (from.localconsts.find(fc => fc._2.contains(pair._1)),to.localconsts.find(fc => fc._2.contains(pair._2)))
+      if (c.isDefined && d.isDefined) {
+        from.localconsts-=c.get
+        to.localconsts-=d.get
+        (c.get._1,(pair._1::pair._2::c.get._2:::d.get._2).distinct)
+      } else throw new Exception("Constant not available in TheorySet")
+    })
+    if(from.localconsts.isEmpty && from.includes.forall(to.includes.contains)) {
+      from.localconsts=consts.toSet
+      to.includes = to.includes.filter(!from.includes.contains(_))
+      to.includes::=from
+    } else if (to.localconsts.isEmpty && to.includes.forall(from.includes.contains)) {
+      to.localconsts=consts.map(c => (c._1,c._2 match {case x::y::l => y::x::l case _ => c._2})).toSet
+      from.includes = from.includes.filter(!to.includes.contains(_))
+      from.includes::=to
+    } else if (consts.nonEmpty) {
+      val ts = TheorySet(consts.map(_._1))
+      ts.localconsts = consts.toSet
+      ts.includes = from.includes.filter(to.includes.contains)
+      from.includes = ts::from.includes.filter(!ts.includes.contains(_))
+      to.includes = ts::to.includes.filter(!ts.includes.contains(_))
+    }
+  }
+
+  /*
+  def intersect(vs:Viewset, takefromCodomain:Boolean = false, intname:String ="", refact : List[TheorySet] = Nil) : List[TheorySet] = {
+    require(vs.from.isDefined && vs.to.isDefined)
+
+    vs.distribute
+
+    val refactored = vs.includes.foldLeft(refact)((r,x) => intersect(x,takefromCodomain):::r)
+    if (vs.localassignments.isEmpty) return refactored
+
+    val metaasincludes = vs.from.get.meta!=vs.to.get.meta
+
+    val from = TheorySet(vs.from.get,metaasincludes)
+    val to = refactored.find(s => s.getPath.get==vs.to.get.path).getOrElse(TheorySet(vs.to.get,metaasincludes))
+    from.includes = from.includes map (x => refactored.find(w => w.getPath == x.getPath) getOrElse x)
+    to.includes = to.includes map (x => refactored.find(w => w.getPath == x.getPath) getOrElse x)
+
+    val incs1 : Set[MPath] = from.allincludes.map(x => x.getPath.get).toSet
+    val incs2 = to.allincludes.map(x => x.getPath.get).toSet
+
+    if ((from.localconsts forall (c => vs.localassignments.exists(p => p._1==c.path))) &&
+      (incs1 subsetOf incs2)) {
+      var subst = vs.localassignments.filter(p => to.localconsts.exists(c => c.path==p._2))
+      to.localconsts = to.localconsts.filter(c => !vs.localassignments.exists(p => p._2==c.path))
+
+      val s = DeclaredStructure(vs.to.get.toTerm,from.getPath.get.name,vs.from.get.toTerm,false)
+      vs.localassignments foreach (pair =>{
+        val constOpt = to.localconsts.find(c => pair._2.name==c.name)
+        if (pair._1.name!=pair._2.name || constOpt.exists(_.df.nonEmpty)) {
+          s add Constant(s.toTerm,ComplexStep(from.getPath.get) / pair._1.name,if (pair._1.name!=pair._2.name) Some(pair._2.name) else None,
+            constOpt.map(_.tp).getOrElse(None),constOpt.map(_.df).getOrElse(None),None)
+        }
+      })
+      if (s.getDeclarations.isEmpty) to.includes = from::to.includes
+      else {
+        to.structures = s::to.structures
+        subst = subst.map(pair => {
+          val c = s.getDeclarations.find(d => d.name==pair._1.name)
+          if (c.isDefined) (pair._1,c.get.path) else pair
+        })
+      }
+
+      to.subst = subst
+      List(from,to)
+
+    } else if ((to.localconsts forall (c => vs.localassignments.exists(p => p._2==c.path))) &&
+      (incs2 subsetOf incs1)) {
+      var subst = vs.localassignments.filter(p => to.localconsts.exists(c => c.path==p._2)).map(p => (p._2,p._1))
+      from.localconsts = from.localconsts.filter(c => !vs.localassignments.exists(p => p._1==c.path))
+
+      val s = DeclaredStructure(vs.from.get.toTerm,to.getPath.get.name,vs.to.get.toTerm,false)
+      vs.localassignments foreach (pair =>{
+        val constOpt = from.localconsts.find(c => pair._1.name==c.name)
+        if (pair._1.name!=pair._2.name || constOpt.exists(_.df.nonEmpty)) {
+          s add Constant(s.toTerm,ComplexStep(to.getPath.get) / pair._2.name,if (pair._1.name!=pair._2.name) Some(pair._1.name) else None,
+            constOpt.map(_.tp).getOrElse(None),constOpt.map(_.df).getOrElse(None),None)
+        }
+      })
+      if (s.getDeclarations.isEmpty) from.includes = to::from.includes
+      else {
+        from.structures = s::from.structures
+        subst = subst.map(pair => {
+          val c = s.getDeclarations.find(d => d.name==pair._1.name)
+          if (c.isDefined) (pair._1,c.get.path) else pair
+        })
+      }
+
+      to.subst = subst
+      List(from,to)
+    } else {
+      var subst1 : List[(GlobalName,GlobalName)] = Nil
+      var subst2 : List[(GlobalName,GlobalName)] = Nil
+      val path : MPath = from.getPath.get.doc ? LocalName(if (intname=="") vs.hashCode.toString else intname)
+      val consts = vs.localassignments.map(pair => {
+        val const = if (takefromCodomain) to.localconsts.find(c => c.path==pair._2) else
+          from.localconsts.find(c => c.path==pair._1)
+        if (takefromCodomain) {
+          subst1::=(path?pair._2.name,pair._1)
+          subst2::=(path?pair._2.name,pair._2)
+        } else {
+          subst1::=(path?pair._1.name,pair._1)
+          subst2::=(path?pair._1.name,pair._2)
+        }
+        const.getOrElse(throw new Exception("Erroneous assignment in Viewset during intersecting"))
+      })
+      from.localconsts = from.localconsts.filter(p => !vs.localassignments.exists(pair => p.path==pair._1))
+      to.localconsts = to.localconsts.filter(p => !vs.localassignments.exists(pair => p.path==pair._2))
+      val includes = from.includes.toSet intersect to.includes.toSet
+      val int = TheorySet(consts,includes.toList)
+      if (from.meta.isDefined && from.meta==to.meta) int.setMeta(from.meta.get)
+      int.setPath(path)
+      from.includes = int::from.includes.filter(i => !includes.contains(i))
+      to.includes = int::to.includes.filter(i => !includes.contains(i))
+      from.subst=subst1
+      to.subst=subst2
+      List(int,from,to)
+    }
+  }
+  */
+}
+/*
 /**
  * Intersects theories
  */
 case class Intersecter(controller:Controller) {
-  def apply(th1:DeclaredTheory,th2:DeclaredTheory,pairs:List[(FinalConstant,FinalConstant,LocalName,Option[String])],intname:LocalName):List[DeclaredModule] = {
+  def apply(th1:DeclaredTheory,th2:DeclaredTheory,pairs:List[(FinalConstant,FinalConstant,LocalName,Option[String])],intname:LocalName):List[DeclaredTheory] = {
     val int = new DeclaredTheory(th1.path.^^,intname,if (th1.meta==th2.meta) th1.meta else None)
 
     val includes = (int.meta match {
@@ -36,8 +181,8 @@ case class Intersecter(controller:Controller) {
     })
     Moduleadder(int,consts.toSet)
 
-    val newth1 = new DeclaredTheory(th1.path.^^,th1.name,th1.meta)
-    val newth2 = new DeclaredTheory(th2.path.^^,th2.name,th2.meta)
+    var newth1 = new DeclaredTheory(th1.path.^^,th1.name,th1.meta)
+    var newth2 = new DeclaredTheory(th2.path.^^,th2.name,th2.meta)
     val simple1 = if (pairs.forall(p => p._3==p._1.name && p._1.df.isEmpty)) true else false
     val simple2 = if (pairs.forall(p => p._3==p._2.name && p._2.df.isEmpty)) true else false
     var subst1 = if(simple1) pairs.map(p => (int.get(p._3).path,p._1.path)) else List()
@@ -77,11 +222,18 @@ case class Intersecter(controller:Controller) {
     List(int,newth1,newth2)
   }
 
-  def apply(th1:DeclaredTheory,th2:DeclaredTheory,intname:LocalName):List[DeclaredModule] = {
+  def apply(th1:DeclaredTheory,th2:DeclaredTheory,intname:LocalName):List[DeclaredTheory] = {
     val viewfinder = new Viewfinder(controller)
     val view = viewfinder.findBest(th1,th2).getOrElse(return List())._1
     val pairs = Intersecter.getPairs(view,th1,th2).map(p => (p._1,p._2,p._1.name,None))
     apply(th1,th2,pairs,intname)
+  }
+
+  def apply(th1:DeclaredTheory,th2:DeclaredTheory,v:DeclaredView,intname:Option[String],takecod:Boolean = false):List[DeclaredTheory] = {
+    require(v.from==th1.toTerm && v.to==th2.toTerm)
+
+    val pairs = Intersecter.getPairs(v,th1,th2).map(p => (p._1,p._2,if (takecod) p._2.name else p._1.name,None))
+    apply(th1,th2,pairs,if (intname.isDefined && intname.get!="") LocalName(intname.get) else LocalName("INTERSECTION"))
   }
 }
 
@@ -153,3 +305,5 @@ object Intersecter {
       all collect {case (t:Term, c:FinalConstant) => (t,c)})
   }
 }
+
+*/

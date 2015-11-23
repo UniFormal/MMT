@@ -21,12 +21,12 @@ import scala.util.{Success, Try}
  * Created by raupi on 29.05.15.
  */
 
-class RefactorPanel(ctrl:Controller,publish: List[DeclaredModule] => Unit) extends JPanel with ActionListener {
+class RefactorPanel(ctrl:Controller,publish: List[DeclaredModule] => Unit) extends JPanel {// with ActionListener {
   val controller = ctrl
 
   var theories = (controller.memory.content.getModules collect { case t: DeclaredTheory => t }).toList
   var views = (controller.memory.content.getModules collect { case v: DeclaredView => v }).toList
-
+  /*
   var theorynames = List().asInstanceOf[List[String]]
   var viewnames = List().asInstanceOf[List[String]]
   val viewfinder = new Viewfinder(controller)
@@ -175,9 +175,9 @@ class RefactorPanel(ctrl:Controller,publish: List[DeclaredModule] => Unit) exten
       reinit
     }
   }
-
+  */
 }
-
+/*
 class ViewfinderPanel(target:RefactorPanel) extends JPanel with ActionListener {
 
   val TopPanel = new JPanel
@@ -1201,3 +1201,4 @@ case class PushoutArea(thA:DeclaredTheory,thB:DeclaredTheory,target:RefactorPane
     if (ae.getSource==backButton) target.reinit
   }
 }
+*/

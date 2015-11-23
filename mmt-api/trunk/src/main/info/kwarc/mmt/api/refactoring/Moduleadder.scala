@@ -49,12 +49,12 @@ object Moduleadder {
     true
   }
 
-  def apply(v:DeclaredView,list:Set[(FinalConstant,FinalConstant)]):Boolean = {
-    for (a <- orderp(list.toList)) apply(v,a)
+  def apply(v:DeclaredView,list:List[(FinalConstant,FinalConstant)]):Boolean = {
+    for (a <- orderp(list)) apply(v,a)
     true
   }
 
-  def apply(th:DeclaredTheory,set:Set[FinalConstant],substs:List[(GlobalName,GlobalName)]):Boolean = {
+  def apply(th:DeclaredTheory,set:List[FinalConstant],substs:List[(GlobalName,GlobalName)]):Boolean = {
     val list = set.toList
     val nsubsts = for {a <- list} yield (GlobalName(OMID(th.path),a.name),a.path)
     for (a <- order(list)) th.add(new FinalConstant(OMID(th.path), a.name, a.alias,
@@ -63,9 +63,9 @@ object Moduleadder {
     true
   }
 
-  def apply(th:DeclaredTheory,list:Set[FinalConstant]):Boolean = apply(th,list,List())
+  def apply(th:DeclaredTheory,list:List[FinalConstant]):Boolean = apply(th,list,List())
 
-  def apply(v:DeclaredView,list:Set[(GlobalName,GlobalName)],ctrl:Controller):Boolean = {
+  def apply(v:DeclaredView,list:List[(GlobalName,GlobalName)],ctrl:Controller):Boolean = {
     val pairs = for {a <- list} yield (ctrl.get(a._1), ctrl.get(a._2)) match {
       case (c1: FinalConstant, c2: FinalConstant) => Some(c1, c2)
       case _ => None
@@ -74,7 +74,7 @@ object Moduleadder {
     else apply(v,pairs.map(_.get))
   }
 
-  def apply(th:DeclaredTheory,list:Set[GlobalName],substs:List[(GlobalName,GlobalName)],ctrl:Controller):Boolean = {
+  def apply(th:DeclaredTheory,list:List[GlobalName],substs:List[(GlobalName,GlobalName)],ctrl:Controller):Boolean = {
     val consts = for {a <- list} yield ctrl.get(a) match {
       case c: FinalConstant => Some(c)
       case _ => None
@@ -83,7 +83,7 @@ object Moduleadder {
     else apply(th,consts.map(_.get),substs)
   }
 
-  def apply(th:DeclaredTheory,list:Set[GlobalName],ctrl:Controller):Boolean = apply(th,list,List(),ctrl)
+  def apply(th:DeclaredTheory,list:List[GlobalName],ctrl:Controller):Boolean = apply(th,list,List(),ctrl)
 
   /**
    * For every (t1,t2) in
