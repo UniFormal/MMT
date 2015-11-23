@@ -37,7 +37,7 @@ class Document(val path: DPath, val root: Boolean = false, inititems: List[Narra
 
   /** returns the list of modules declared in the document (not user-written references) */
   def getModulesResolved(lib: Lookup): List[Module] = items collect {
-    case r: MRef if r.isGenerated => lib.getModule(r.target)
+    case r: MRef => lib.getModule(r.target)
   }
 
   /**
