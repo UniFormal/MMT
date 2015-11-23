@@ -1,6 +1,5 @@
-package info.kwarc.mmt.LFRecords
+package info.kwarc.mmt.LFX.LFRecords
 
-import info.kwarc.mmt.LFRecords._
 import info.kwarc.mmt.api.LocalName
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects._

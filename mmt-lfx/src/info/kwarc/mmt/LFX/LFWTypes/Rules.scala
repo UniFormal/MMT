@@ -1,4 +1,4 @@
-package info.kwarc.mmt.LFWTypes
+package info.kwarc.mmt.LFX.LFWTypes
 
 import info.kwarc.mmt.api.{objects, LocalName}
 import info.kwarc.mmt.api.checking._

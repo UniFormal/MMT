@@ -1,4 +1,4 @@
-package info.kwarc.mmt.LFFiniteTypes
+package info.kwarc.mmt.LFX.LFFiniteTypes
 
 import info.kwarc.mmt.api.DPath
 import info.kwarc.mmt.api.objects.{Term, OMA, OMS}

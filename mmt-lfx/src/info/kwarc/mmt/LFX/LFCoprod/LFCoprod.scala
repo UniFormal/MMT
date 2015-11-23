@@ -1,4 +1,4 @@
-package info.kwarc.mmt.LFCoprod
+package info.kwarc.mmt.LFX.LFCoprod
 
 import info.kwarc.mmt.api.{LocalName, DPath}
 import info.kwarc.mmt.api.checking.{History, Solver, TypingRule}

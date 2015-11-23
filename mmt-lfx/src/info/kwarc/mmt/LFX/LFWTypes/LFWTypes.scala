@@ -1,4 +1,4 @@
-package info.kwarc.mmt.LFWTypes
+package info.kwarc.mmt.LFX.LFWTypes
 
 import info.kwarc.mmt.api.{LocalName, DPath}
 import info.kwarc.mmt.api.objects._

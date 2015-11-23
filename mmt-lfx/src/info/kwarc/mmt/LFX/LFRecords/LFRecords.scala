@@ -1,4 +1,4 @@
-package info.kwarc.mmt.LFRecords
+package info.kwarc.mmt.LFX.LFRecords
 
 import info.kwarc.mmt.api.DPath
 import info.kwarc.mmt.api._

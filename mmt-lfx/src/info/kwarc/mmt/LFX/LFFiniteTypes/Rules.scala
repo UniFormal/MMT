@@ -1,4 +1,4 @@
-package info.kwarc.mmt.LFFiniteTypes
+package info.kwarc.mmt.LFX.LFFiniteTypes
 
 import info.kwarc.mmt.api.LocalName
 import info.kwarc.mmt.api.checking._

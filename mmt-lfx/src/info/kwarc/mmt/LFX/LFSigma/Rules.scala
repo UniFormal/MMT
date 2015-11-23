@@ -1,4 +1,4 @@
-package info.kwarc.mmt.LFSigma
+package info.kwarc.mmt.LFX.LFSigma
 
 import info.kwarc.mmt.api.{objects, LocalName}
 import info.kwarc.mmt.api.checking._
