@@ -1,6 +1,7 @@
 theory http://cds.omdoc.org/mmt?mmt
 Declares http://cds.omdoc.org/mmt?mmt http://cds.omdoc.org/mmt?mmt?context
 constant http://cds.omdoc.org/mmt?mmt?context
+Declares http://cds.omdoc.org/mmt?mmt http://cds.omdoc.org/mmt?mmt?QMT
 theory http://cds.omdoc.org/mmt?mmt/QMT
 Declares http://cds.omdoc.org/mmt?mmt/QMT http://cds.omdoc.org/mmt?mmt/QMT?query
 constant http://cds.omdoc.org/mmt?mmt/QMT?query
