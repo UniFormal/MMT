@@ -33,6 +33,19 @@ trait STeXAnalysis {
     }
   }
 
+  def mhRepos(a: Archive, r: String, b: String, key: String): Option[Dependency] =  {
+         val fp = entryToPath(b)
+        val optRepo = Option(r).map(_.split(",").toList.map(_.split("=").toList).
+          filter {
+            case List("mhrepos", _) => true
+            case _ => false
+          })
+        optRepo match {
+          case Some(List(List(_, id))) => mkDep(a, id, fp, key)
+          case _ => Some(BuildDependency(key, a, fp))
+        }
+  }
+
   protected def matchPathAndRep(key: String, a: Archive, line: String): Option[Dependency] =
     line match {
       case beginModnl(b) => Some(BuildDependency(key, a, entryToPath(b)))
@@ -42,19 +55,10 @@ trait STeXAnalysis {
           case Some(id) => mkDep(a, id, fp, "sms")
           case None => Some(BuildDependency("sms", a, fp))
         }
-      case tikzinput(_, r, b) =>
-        val fp = entryToPath(b)
-        val optRepo = Option(r).map(_.split(",").toList.map(_.split("=").toList).
-          filter {
-            case List("mhrepos", _) => true
-            case _ => false
-          })
-        optRepo match {
-          case Some(List(List(_, id))) => mkDep(a, id, fp, "tikzsvg")
-          case _ => Some(BuildDependency("tikzsvg", a, fp))
-        }
+      case tikzinput(_, r, b) => mhRepos(a, r, b, "tikzsvg")
+      case includeMhProblem(_, r, b) => mhRepos(a, r, b, key)
       case groups(_, r, b) =>
-        val depKey = if (line.startsWith("\\usemhmodule")) "sms" else key
+        val depKey = if (line.startsWith("\\importmhmodule")) "sms" else key
         val fp = entryToPath(b)
         val optRepo = Option(r).map(_.split(",").toList.sorted.map(_.split("=").toList))
         optRepo match {

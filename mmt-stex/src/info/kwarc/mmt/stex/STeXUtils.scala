@@ -86,11 +86,12 @@ object STeXUtils {
   def mkRegGroup(l: List[String]): String = l.mkString("(", "|", ")")
 
   private val importKeys: List[String] = List(
-    "guse", "gimport", "usemhmodule", "importmhmodule", "begin\\{modnl\\}",
+    "guse", "gimport", "usemhmodule", "importmhmodule", "includemhproblem", "begin\\{modnl\\}",
     "mhinputref", "mhtikzinput", "cmhtikzinput", "tikzinput", "ctikzinput"
   )
   val importRegs: Regex = ("\\\\" + mkRegGroup(importKeys)).r
   val groups: Regex = "\\\\\\w*\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
+  val includeMhProblem: Regex = "\\\\includemhproblem(\\[(.*?)\\])?\\{(.*?)\\}.*".r
   val beginModnl: Regex = "\\\\begin\\{modnl\\}\\[.*?\\]?\\{(.*?)\\}.*".r
   val mhinputRef: Regex = "\\\\mhinputref(\\[(.*?)\\])?\\{(.*?)\\}.*".r
   val tikzinput: Regex = ".*\\\\c?m?h?tikzinput(\\[(.*?)\\])?\\{(.*?)\\}.*".r
