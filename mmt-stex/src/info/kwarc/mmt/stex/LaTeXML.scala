@@ -124,6 +124,8 @@ class LaTeXML extends LaTeXBuildTarget {
   private var preloads: Seq[String] = Nil
   private var paths: Seq[String] = Nil
   private var reboot: Boolean = false
+  private var nopost: Boolean = false
+  private var nopostFlag = "--nopost"
 
   private def getArg(arg: String, args: List[String]): Option[String] =
     partArg(arg, args)._1.headOption.map(Some(_)).
@@ -154,7 +156,9 @@ class LaTeXML extends LaTeXBuildTarget {
     val (rebootFlag, rest3) = partArgAux("--reboot", rest2)
     reboot = rebootFlag.nonEmpty
     if (reboot) expire = "1"
-    val restOpts = rest3.diff(List("--expire=" + expire, "--port=" + port, "--profile=" + profile))
+    val (nopostOpt, rest4) = partArgAux(nopostFlag, rest3)
+    nopost = nopostOpt.nonEmpty
+    val restOpts = rest4.diff(List("--expire=" + expire, "--port=" + port, "--profile=" + profile))
     if (restOpts.nonEmpty) log("unknown options: " + restOpts.mkString(" "))
   }
 
@@ -315,7 +319,9 @@ class LaTeXML extends LaTeXBuildTarget {
         (if (noAmble(bt.inFile)) Seq("--whatsin=document")
         else Seq("--preamble=" + getAmbleFile("pre", bt),
           "--postamble=" + getAmbleFile("post", bt))) ++
-        Seq("--expire=" + expire, "--port=" + realPort) ++ preloads.map("--preload=" + _) ++
+        Seq("--expire=" + expire, "--port=" + realPort) ++
+        (if (nopost) Seq(nopostFlag) else Nil) ++
+        preloads.map("--preload=" + _) ++
         paths.map("--path=" + _)
       log(argSeq.mkString(" ").replace(" --", "\n --"))
       try {
