@@ -58,7 +58,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
          case d: Document =>
             d.getDeclarations foreach {i => check(context, i)}
          case r: NRef =>
-            if (r.isGenerated)
+            // if (r.isGenerated)
                check(context, controller.get(r.target))
          case t: DeclaredTheory =>
             var contextMeta = context
