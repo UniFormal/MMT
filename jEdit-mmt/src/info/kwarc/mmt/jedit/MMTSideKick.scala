@@ -55,7 +55,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
            var l = 0 // number of character to the left of the caret that are id characters
            while (l < p && MMTPlugin.isIDChar(textArea.getText(p - l - 1,1)(0))) {l = l + 1}
            val partialName = textArea.getText(p - l, l)
-           val compls = Names.resolve(a, Nil, partialName)(controller.localLookup)
+           val compls = Names.resolve(OMMOD(a), Nil, partialName)(controller.localLookup)
            val paths = compls.map(_.path)
            val symbols = paths.flatMap {p =>
               controller.globalLookup.getO(p) match {
@@ -171,9 +171,9 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    /** add child nodes for all components of an element */
    private def buildTreeComps(node: DefaultMutableTreeNode, ce: ContentElement, context: Context, defaultReg: SourceRegion) {
       ce.getComponents foreach {
-         case (comp, cont: AbstractTermContainer) if cont.get.isDefined =>
+         case DeclarationComponent(comp, cont: AbstractTermContainer) if cont.get.isDefined =>
             buildTreeComp(node, ce.path $ comp, cont.get.get, context, defaultReg)
-         case (comp: NotationComponent, cont: NotationContainer) =>
+         case NotationComponent(comp, cont) =>
             buildTreeNot(node, ce.path, cont, comp, defaultReg)
          case _ =>
       }
@@ -188,7 +188,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
    }
 
    /** build the sidekick outline tree: notations */
-   private def buildTreeNot(node: DefaultMutableTreeNode, owner: ContentPath, cont: NotationContainer, comp: NotationComponent, defaultReg: SourceRegion) {
+   private def buildTreeNot(node: DefaultMutableTreeNode, owner: ContentPath, cont: NotationContainer, comp: NotationComponentKey, defaultReg: SourceRegion) {
       val tn = cont(comp).get // always defined here
       val reg = getRegion(tn) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
       val label = comp match {

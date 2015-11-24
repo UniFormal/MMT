@@ -27,7 +27,7 @@ class MMTPlugin extends EBPlugin with Logger {
    val mmtListener = new ChangeListener {
       override def onNavigate(p: Path) {
          log("navigating to " + p)
-         val ref = controller.globalLookup.getO(p) flatMap {
+         val ref = controller.getO(p) flatMap {
             e => MMTHyperlink.elemToSourceRef(controller, e)
          }
          ref foreach {r =>

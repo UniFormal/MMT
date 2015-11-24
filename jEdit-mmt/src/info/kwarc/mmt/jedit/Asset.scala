@@ -20,7 +20,7 @@ case class MyPosition(offset : Int) extends javax.swing.text.Position {
 abstract class MMTAsset(name: String, val region: SourceRegion)
   extends enhanced.SourceAsset(name, region.start.line, MyPosition(region.start.offset)) {
   setEnd(MyPosition(region.end.offset+1))
-  def getScope : Option[Term]
+  def getScope : Option[MPath]
 }
 
 /** node in the sidekick outline tree: declarations
@@ -31,12 +31,12 @@ class MMTElemAsset(val elem : StructuralElement, name: String, reg: SourceRegion
    setLongDescription(path.toPath)  // tool tip
    //setIcon
    def path = elem.path
-   def getScope : Option[objects.Term] = elem match {
+   def getScope : Option[MPath] = elem match {
       case _ : NarrativeElement => None
       case c : ContentElement => c match {
-        case t: DeclaredTheory => Some(objects.OMMOD(t.path))
+        case t: DeclaredTheory => Some(t.path)
         case v: modules.View => None //would have to be parsed to be available
-        case d: Declaration => Some(d.home)
+        case d: Declaration => Some(d.path.module)
         case _ => None
       }
    }
