@@ -28,7 +28,7 @@ sealed abstract class Path extends ontology.BaseType {
    def toPath(long : Boolean) : String = this match {
       case DPath(uri) => uri.toString + (if (long) "??" else "")
       case doc ? name => doc.toPath + "?" + name.toPath + (if (long) "?" else "")
-      case mod % name => mod.toMPath.toPath + "?" + name.toPath
+      case mod ?? name => mod.toPath + "?" + name.toPath
       case CPath(p, c) => p.toPathLong + "?" + c
    }
    /** as toPath(false) */
@@ -41,8 +41,7 @@ sealed abstract class Path extends ontology.BaseType {
    def last : String
    /** breaks an MMT URI reference into its components, all of which are optional */
    def toTriple : (Option[DPath], Option[LocalName], Option[LocalName]) = this match {
-      case mod % name =>
-         val mp = mod.toMPath
+      case mp ?? name =>
          (Some(mp.parent), Some(mp.name), Some(name))
       case doc ? mod => (Some(doc), Some(mod), None)
       case doc : DPath => (Some(doc), None, None)
@@ -59,17 +58,23 @@ trait SlashFunctions[A] {
    def /(n: LNStep): A = this / LocalName(n)
 }
 
+/** auxiliary trait to mixin convenience methods into [[Path]] classes */
+trait QuestionMarkFunctions[A] {
+   def ?(n: LocalName): A
+   def ?(n: String): A = this ? LocalName(n)
+   def ?(n: LNStep): A = this ? LocalName(n)
+}
+
 /**
  * A DPath represents an MMT document level path.
  * @param uri the URI of the document (may not contain query or fragment)
  */
-case class DPath(uri : URI) extends Path with SlashFunctions[DPath] {
+case class DPath(uri : URI) extends Path with SlashFunctions[DPath] with QuestionMarkFunctions[MPath] {
    def doc = this
    def last = uri.path match {case Nil | List("") => uri.authority.getOrElse("") case l => l.last}
    def /(n : LocalName) = DPath(uri / n.steps.map(_.toPath))
-   def ^! = DPath(uri ^)
-   def ?(n : String) : MPath = this ? LocalName(n)
    def ?(n : LocalName) = MPath(this, n)
+   def ^! = DPath(uri ^)
    def version : Option[String] = uri.path match {
        case Nil => None
        case l => l.last.indexOf(";") match {
@@ -83,10 +88,8 @@ case class DPath(uri : URI) extends Path with SlashFunctions[DPath] {
  * A path to a module or symbol
  */
 sealed trait ContentPath extends Path {
-   /** checks if the path is a generic MMT path */
-   def isGeneric : Boolean
-   def $(comp: DeclarationComponent) = CPath(this, comp)
-   def module : Term
+   def $(comp: ComponentKey) = CPath(this, comp)
+   def module : MPath
    def name : LocalName
 }
 
@@ -95,38 +98,36 @@ sealed trait ContentPath extends Path {
  * @param parent the path of the parent document
  * @param name the name of the module
  */
-case class MPath(parent : DPath, name : LocalName) extends ContentPath with SlashFunctions[MPath] {
+case class MPath(parent : DPath, name : LocalName) extends ContentPath with SlashFunctions[MPath] with QuestionMarkFunctions[GlobalName]{
    def doc = parent
    def last = name.steps.last.toPath
+   /** go down to a submodule */
+   def /(n : LocalName) = MPath(parent, name / n)
+   /** go down to a symbol */
+   def ?(n : LocalName) = GlobalName(this, n)
    /** go up to containing document */
    def ^ : MPath = parent ? name.init
    def ^^ : DPath = parent
    def ^! = if (name.length <= 1) ^^ else ^
-   /** go down to a submodule */
-   def /(n : LocalName) = MPath(parent, name / n)
-   /** go down to a symbol */
-   def ?(n : LocalName) : GlobalName = OMID(this) % n
-   def ?(n : String) : GlobalName = this ? LocalName(n)
-   def isGeneric = (this == mmt.mmtcd)
-   def module = OMMOD(this)
+   def module = this
    def toGlobalName = ^ ? LocalName(name.last)
 }
 
-/** A GlobalName represents the MMT URI of a symbol-level declaration.
- * This includes virtual declarations and declarations within complex module expressions.
+/**
+ * A GlobalName represents the MMT URI of a symbol-level declaration.
+ * This includes induced declarations.
  */
-case class GlobalName(module: Term, name: LocalName) extends ContentPath with SlashFunctions[GlobalName] {
-   def doc = module.toMPath.doc
-   def ^! = if (name.length == 1) module.toMPath else GlobalName(module, name.init)
+case class GlobalName(module: MPath, name: LocalName) extends ContentPath with SlashFunctions[GlobalName] {
+   def doc = module.doc
+   def ^! = if (name.length == 1) module else GlobalName(module, name.init)
    def /(n : LocalName) = GlobalName(module, name / n)
    def last = name.last.toPath
    def apply(args: List[Term]) : Term = OMA(OMS(this), args)
    def apply(args: Term*) : Term = apply(args.toList)
    def apply(con: Context, args: List[Term]) : Term = OMBINDC(OMS(this), con, args)
    def apply(subs: Substitution, con: Context, args: List[Term]) : Term = ComplexTerm(this, subs, con, args)
-   /** true iff the parent is a named module and each include step is simple */
-   def isSimple : Boolean = module.isInstanceOf[OMID] && name.steps.forall(_.isInstanceOf[SimpleStep])
-   def isGeneric = (module.toMPath == mmt.mmtcd)
+   /** true iff each include step is simple */
+   def isSimple : Boolean = name.steps.forall(_.isInstanceOf[SimpleStep])
 }
 
 /**
@@ -195,7 +196,7 @@ case class ComplexStep(path: MPath) extends LNStep {
    override def toString = toPath
 }
 
-case class CPath(parent: ContentPath, component: DeclarationComponent) extends Path {
+case class CPath(parent: ContentPath, component: ComponentKey) extends Path {
    def doc = parent.doc
    def ^! = parent
    def last = component.toString
@@ -394,17 +395,7 @@ object ? {
  */
 object ?? {
    def unapply(p : Path) : Option[(MPath,LocalName)] = p match {
-      case GlobalName(OMMOD(p), n) => Some((p,n))
-      case _ => None
-   }
-}
-
-/** 
- * This permits the syntax mod % sym in patterns.
- */
-object % {
-   def unapply(p : Path) : Option[(Term,LocalName)] = p match {
-      case GlobalName(term,n) => Some((term,n))
+      case GlobalName(p, n) => Some((p,n))
       case _ => None
    }
 }

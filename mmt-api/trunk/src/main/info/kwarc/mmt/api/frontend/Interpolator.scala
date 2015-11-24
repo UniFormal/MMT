@@ -25,10 +25,10 @@ class MMTInterpolator(controller: frontend.Controller) {
    private def theory = controller.getBase match {
         case d: DPath => utils.mmt.mmtcd 
         case p: MPath => p
-        case GlobalName(t,_) => t.toMPath
+        case GlobalName(t,_) => t
         case CPath(par,_) => par match {
            case p: MPath => p
-           case GlobalName(t,_) => t.toMPath
+           case GlobalName(t,_) => t
         }
      }
    private def parse(sc: StringContext, ts: List[Term], top: Option[ParsingRule], check: Boolean) = {

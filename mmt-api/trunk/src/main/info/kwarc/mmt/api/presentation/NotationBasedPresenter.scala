@@ -31,7 +31,7 @@ case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: 
    def child(p: Position) = copy(pos = pos / p)
    /** the MMT context of the presented object */
    def getContext: Context = {
-      val ownerCon: Context = owner.toList.flatMap(cp => TheoryExp.getSupport(cp.parent.module).map(IncludeVarDecl(_,Nil)))
+      val ownerCon: Context = owner.toList.map(cp => IncludeVarDecl(cp.parent.module,Nil))
       ownerCon ++ context.map(_.decl)
    }
    /** convenience method to append to the context */
@@ -57,7 +57,7 @@ class NotationBasedPresenter extends ObjectPresenter {
     */
    def doIdentifier(p: ContentPath)(implicit pc: PresentationContext) {
       val s = p match {
-         case OMMOD(m) % name => name.toPath  //not parsable if there are name clashes 
+         case m ?? name => name.toPath  //not parsable if there are name clashes 
          case _ => p.toPath
       }
       pc.out(s)

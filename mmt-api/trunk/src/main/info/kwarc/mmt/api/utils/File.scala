@@ -49,7 +49,7 @@ case class File(toJava: java.io.File) {
 
   /** segments as a FilePath
     */
-  def filepath: FilePath = FilePath(segments)
+  def toFilePath = FilePath(segments)
 
   /** the list of file/directory/volume label names making up this file path
     * an absolute Unix paths begin with an empty segment
@@ -66,7 +66,7 @@ case class File(toJava: java.io.File) {
 
   def isAbsolute: Boolean = toJava.isAbsolute
 
-  override def toString: String = toJava.toString
+  override def toString = toJava.toString
 
   /** @return the last file extension (if any) */
   def getExtension: Option[String] = {
@@ -100,31 +100,40 @@ case class File(toJava: java.io.File) {
   def subdirs: List[File] = children.filter(_.toJava.isDirectory)
 
   /** delete this, recursively if directory */
-  def deleteDir(): Unit = {
+  def deleteDir {
     toJava.list foreach { n =>
       val f = this / n
-      if (f.toJava.isDirectory) f.deleteDir()
-      else f.toJava.delete()
+      if (f.toJava.isDirectory) f.deleteDir
+      else f.toJava.delete
     }
-    toJava.delete()
+    toJava.delete
   }
 }
 
 /** a relative file path usually within an archive below a dimension */
 case class FilePath(segments: List[String]) {
-  def toFile: File = File(toString)
+  def toFile = File(toString)
 
-  def baseName: String = if (segments.nonEmpty) segments.last else ""
+  def name: String = if (segments.nonEmpty) segments.last else ""
 
-  def dirPath: FilePath = FilePath(if (segments.nonEmpty) segments.init else Nil)
+  def dirPath = FilePath(if (segments.nonEmpty) segments.init else Nil)
 
   /** append a segment */
   def /(s: String): FilePath = FilePath(segments ::: List(s))
 
   override def toString: String = segments.mkString("/")
+  
+  def getExtension = toFile.getExtension
+  def setExtension(e: String) = toFile.setExtension(e).toFilePath
 }
 
 object EmptyPath extends FilePath(Nil)
+
+object FilePath {
+   def apply(s:String): FilePath = FilePath(List(s))
+   implicit def filePathToList(fp: FilePath) = fp.segments
+   implicit def listToFilePath(l: List[String]) = FilePath(l)
+}
 
 /** constructs and pattern-matches absolute file:URIs in terms of absolute File's */
 object FileURI {

@@ -35,7 +35,7 @@ class DiffReader(controller : Controller) {
           n.child.foreach {c => xmlReader.readInDocument(NamespaceMap(path.doc), None, c)(cont)}
         case "declaration" => 
           val path = Path.parseS((n \ "@path").text, nsMap)
-          n.child foreach {c => xmlReader.readInModule(path.module.toMPath, NamespaceMap(base), None, c)(cont)}
+          n.child foreach {c => xmlReader.readInModule(path.module, NamespaceMap(base), None, c)(cont)}
       }
       changes = changes.reverse
       changes
@@ -46,7 +46,7 @@ class DiffReader(controller : Controller) {
         case c : ContentPath => c
         case p => throw ImplementationError("Expected content path found : " + p.toPath)
       }      
-      val compName = DeclarationComponent.parse((n \ "@name").text)
+      val compName = ComponentKey.parse((n \ "@name").text)
       val oldXMLO = n.child.find(x => x.label == "old")
       val newXMLO = n.child.find(x => x.label == "new")
       val old = oldXMLO.map(Obj.parseTerm(_, nsMap))

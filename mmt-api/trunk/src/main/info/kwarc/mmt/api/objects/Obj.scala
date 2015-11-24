@@ -172,9 +172,6 @@ sealed abstract class Term extends Obj {
      case OMMOD(p) => p
      case _ => mmt.mmtbase ? Obj.toPathEncoding(this)
    }
-   /** This permits the syntax term % sym for path composition */
-   def %(n: LocalName) : GlobalName = GlobalName(this,n)
-   def %(n: String) : GlobalName = GlobalName(this,LocalName(n))
    /** applies copyFrom and returns this
     * 
     * @return this object but with the metadata from o
@@ -193,15 +190,11 @@ case class OMID(path: ContentPath) extends Term {
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
    def subobjects = Nil
-   override def toString = path match {
-      case doc ? mod => doc + "?" + mod.toString
-      case OMMOD(mod) % name => mod.name.toString + "?" + name.toString
-      case thy % name => "[" + thy.toString + "]?" + name.toString
-   }
+   override def toString = path.toString
    def toNode = path match {
       case doc ? mod => <om:OMS base={doc.toPath} module={mod.toPath}>{mdNode}</om:OMS>
-      case OMMOD(doc ? mod) % name => <om:OMS base={doc.toPath} module={mod.toPath} name={name.toPath}>{mdNode}</om:OMS>
-      case thy % name => <om:OMS name={name.toPath}>{mdNode}{thy.toNode}</om:OMS>
+      case doc ? mod ?? name => <om:OMS base={doc.toPath} module={mod.toPath} name={name.toPath}>{mdNode}</om:OMS>
+      //case thy % name => <om:OMS name={name.toPath}>{mdNode}{thy.toNode}</om:OMS>
    }
    def toCMLQVars(implicit qvars: Context) = <csymbol>{path.toPath}</csymbol>
 }
@@ -619,10 +612,10 @@ object Obj {
         val mod = xml.attr(N,"module")
         val name = xml.attr(N,"name")
         Path.parse(doc, mod, name, "", nsmap)
-      case <OMS>{n}</OMS> =>
+      /*case <OMS>{n}</OMS> =>
         val mod = parseTermRec(n)
         val name = xml.attr(N,"name")
-        mod % name
+        mod % name*/
       case _ => throw ParseError("not a well-formed identifier: " + N.toString)
   }
   

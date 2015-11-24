@@ -33,7 +33,7 @@ abstract class Interpreter extends Importer {
 
   /** bf.narrationDPath except for extension */
   def getDPath(a: Archive, fp: FilePath): DPath = {
-    val inPathOMDoc = fp.toFile.setExtension("omdoc").filepath
+    val inPathOMDoc = fp.toFile.setExtension("omdoc").toFilePath
     DPath(a.narrationBase / inPathOMDoc.segments)
   }
 

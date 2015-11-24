@@ -77,8 +77,8 @@ abstract class MMTScript extends Extension {
 
   def updateBuild(ifHadErrors: Boolean) {
     val archives = config.getArchives
-    archives.foreach(a => runImporters(a.id, Update(Level.Error)))
-    archives.foreach(a => runExporters(a.id, Update(Level.Error)))
+    archives.foreach(a => runImporters(a.id, UpdateOnError(Level.Error)))
+    archives.foreach(a => runExporters(a.id, UpdateOnError(Level.Error)))
   }
 
   def plainBuild(btm: BuildTargetModifier) {

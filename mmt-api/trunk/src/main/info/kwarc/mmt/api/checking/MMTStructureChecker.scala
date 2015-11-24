@@ -58,8 +58,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
          case d: Document =>
             d.getDeclarations foreach {i => check(context, i)}
          case r: NRef =>
-            // if (r.isGenerated)
-               check(context, controller.get(r.target))
+            check(context, controller.get(r.target))
          case t: DeclaredTheory =>
             var contextMeta = context
             t.meta map {mt =>
@@ -297,8 +296,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
            env.pCont(p)
            (m, l.from, l.to)
         case OMDL(to, name) =>
-           checkTheory(context, to)
-           content.get(to % name) match {
+           checkTheory(context, OMMOD(to))
+           content.get(to ? name) match {
               case l: Structure =>
                  env.pCont(l.path)
                  (m, l.from, l.to)

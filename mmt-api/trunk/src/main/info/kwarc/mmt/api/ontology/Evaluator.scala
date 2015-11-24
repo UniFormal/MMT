@@ -88,7 +88,7 @@ class Evaluator(controller: Controller) {
       case Component(of, comp) =>
          val res = empty
          evaluateESet(of) foreach {
-            case List(p: Path) =>
+            case List(p: ContentPath) =>
                lup.get(p).getComponent(comp) match {
                   case Some(tc: AbstractTermContainer) => tc.get foreach {res += _}
                   case Some(_) => throw GetError("component exists but does not indicate an object: " + comp)

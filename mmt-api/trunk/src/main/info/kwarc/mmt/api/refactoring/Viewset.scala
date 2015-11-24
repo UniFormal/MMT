@@ -50,19 +50,19 @@ sealed trait Viewset {
   def evaluateOnDom(implicit controller: Controller): Double = {
     require(from.isDefined && to.isDefined)
     val (domc, codc) = getdomcod
-    assignments.count(p => domc.exists(q => (ComplexStep(q.path.module.toMPath) / q.name) == p._1.name)).toDouble / domc.length
+    assignments.count(p => domc.exists(q => (ComplexStep(q.path.module) / q.name) == p._1.name)).toDouble / domc.length
   }
 
   def evaluateOnCod(implicit controller: Controller): Double = {
     require(from.isDefined && to.isDefined)
     val (domc, codc) = getdomcod
-    assignments.count(p => domc.exists(q => (ComplexStep(q.path.module.toMPath) / q.name) == p._1.name)).toDouble / codc.length
+    assignments.count(p => domc.exists(q => (ComplexStep(q.path.module) / q.name) == p._1.name)).toDouble / codc.length
   }
   def evaluate(implicit controller: Controller): Double = {
     require(from.isDefined && to.isDefined)
     val (domc, codc) = getdomcod
 
-    assignments.count(p => domc.exists(q => (ComplexStep(q.path.module.toMPath) / q.name) == p._1.name)).toDouble /
+    assignments.count(p => domc.exists(q => (ComplexStep(q.path.module) / q.name) == p._1.name)).toDouble /
       (if (domc.length < codc.length) domc.length else codc.length).toDouble
   }
 
@@ -84,7 +84,7 @@ sealed trait Viewset {
       case t:DeclaredTheory => t
       case _ => return false
     }
-    (dec.module.toMPath == thp && th.declares(dec.name)) || th.getIncludes.exists(p => canclaim(p,dec))
+    (dec.module == thp && th.declares(dec.name)) || th.getIncludes.exists(p => canclaim(p,dec))
   }
 
   // tries to find the lowest theory in the inclusion tree of thp that declares all elements in decs
@@ -108,7 +108,7 @@ sealed trait Viewset {
 
     val ass = assignments
     includes = Nil
-    localassignments = ass.filter(p => p._1.module.toMPath == from.get.path && from.get.declares(p._1.name))
+    localassignments = ass.filter(p => p._1.module == from.get.path && from.get.declares(p._1.name))
     var nonlocal = ass.filter(p => !localassignments.contains(p))
     val incs = from.get.getIncludes
     val newto = getbottomth(to.get.path,ass.map(_._2))
@@ -139,8 +139,8 @@ sealed trait Viewset {
     if (isdistributed) return
     val ass = assignments
     includes = Nil
-    localassignments = ass.filter(p => p._1.module.toMPath == from.get.path && from.get.declares(p._1.name) &&
-      p._2.module.toMPath == to.get.path && to.get.declares(p._2.name))
+    localassignments = ass.filter(p => p._1.module == from.get.path && from.get.declares(p._1.name) &&
+      p._2.module == to.get.path && to.get.declares(p._2.name))
     var nonlocal = ass.filter(p => !localassignments.contains(p))
     val incsleft = from.get.getIncludes
     val incsright = to.get.getIncludes
@@ -234,17 +234,17 @@ object Viewset {
 
   def evaluateOnDom(v: DeclaredView, from: Option[DeclaredTheory], to: Option[DeclaredTheory])(implicit controller: Controller): Double = {
     val (domc, codc) = getConstants(v, from, to)
-    flatDomain(v).count(p => domc.exists(q => (ComplexStep(q.path.module.toMPath) / q.name) == p)).toDouble / domc.length
+    flatDomain(v).count(p => domc.exists(q => (ComplexStep(q.path.module) / q.name) == p)).toDouble / domc.length
   }
 
   def evaluateOnCod(v: DeclaredView, from: Option[DeclaredTheory], to: Option[DeclaredTheory])(implicit controller: Controller): Double = {
     val (domc, codc) = getConstants(v, from, to)
-    flatDomain(v).count(p => domc.exists(q => (ComplexStep(q.path.module.toMPath) / q.name) == p)).toDouble / codc.length
+    flatDomain(v).count(p => domc.exists(q => (ComplexStep(q.path.module) / q.name) == p)).toDouble / codc.length
   }
 
   def evaluateView(v: DeclaredView, from: Option[DeclaredTheory], to: Option[DeclaredTheory])(implicit controller: Controller): Double = {
     val (domc, codc) = getConstants(v, from, to)
-    flatDomain(v).count(p => domc.exists(q => (ComplexStep(q.path.module.toMPath) / q.name) == p)).toDouble / (if (domc.length < codc.length) domc.length else codc.length).toDouble
+    flatDomain(v).count(p => domc.exists(q => (ComplexStep(q.path.module) / q.name) == p)).toDouble / (if (domc.length < codc.length) domc.length else codc.length).toDouble
   }
 
   def apply(v:DeclaredView)(implicit controller : Controller) : Viewset = {

@@ -20,7 +20,7 @@ abstract class Constant extends Declaration with HasNotation {
   def tp = tpC.get
   def df = dfC.get
   
-  def getComponents = List((TypeComponent, tpC), (DefComponent, dfC)) ::: notC.getComponents
+  def getComponents = List(TypeComponent(tpC), DefComponent(dfC)) ::: notC.getComponents
   def getDeclarations = Nil
   
   def toNode =

@@ -68,7 +68,7 @@ object MMTExtractor extends RelationalExtractor {
                      f(dec)
                      f(IsConstant(c.path))
                      c.alias foreach {a =>
-                       f(IsAliasFor(c.home % a, c.path))
+                       f(IsAliasFor(t.path ? a, c.path))
                      }
                   case s: Structure =>
                      val from = s.from match {

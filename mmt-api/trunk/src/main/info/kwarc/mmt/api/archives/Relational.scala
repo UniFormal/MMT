@@ -26,7 +26,7 @@ class Relational extends TraversingBuildTarget {
   def includeFile(s: String) = s.endsWith(".mmt")
 
   private def getDocDPath(bt: BuildTask): DPath = {
-    val inPathOMDoc = bt.inPath.toFile.setExtension("omdoc").filepath
+    val inPathOMDoc = bt.inPath.toFile.setExtension("omdoc").toFilePath
     DPath(bt.base / inPathOMDoc.segments)
   }
 

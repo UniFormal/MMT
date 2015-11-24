@@ -42,7 +42,7 @@ object Functor {
              case PatternSym(p) => 
                   //val iTE = new InstanceElaborator(controller)
                   val pt = controller.globalLookup.getPattern(p)         
-                  val lpair = pt.body.map {d => (d.name,d.name / OMID(inst.home % (inst.name / d.name)))} //TODO Check c.c1
+                  val lpair = pt.body.map {d => (d.name,d.name / OMID(inst.path / d.name))} //TODO Check c.c1
         	       val names = lpair.unzip._1
         	       val subs = lpair.unzip._2  
                   def auxSub(x : Term): Term = {

@@ -22,10 +22,10 @@ trait StructuralElement extends Content with metadata.HasMetaData {
   def getDeclarations: List[StructuralElement]
 
   /** returns all term components of this elements */
-  def getComponents: List[(DeclarationComponent, ComponentContainer)]
+  def getComponents: List[DeclarationComponent]
 
   /** returns a specific component if present */
-  def getComponent(c: DeclarationComponent) = getComponents find (_._1 == c) map (_._2)
+  def getComponent(k: ComponentKey) = getComponents find (_.key == k) map (_.value)
 
   private var elaborated = false
   def hasBeenElaborated = elaborated
@@ -96,7 +96,7 @@ trait ContentElement extends StructuralElement {
 
   /** recursively applies a function to all components in this element (in declaration order) */
   def foreachComponent(f: (CPath, ComponentContainer) => Unit) {
-    getComponents foreach { case (c, t) => f(path $ c, t) }
+    getComponents foreach { case DeclarationComponent(c, t) => f(path $ c, t) }
     getDeclarations foreach { d => d.foreachComponent(f) }
   }
 

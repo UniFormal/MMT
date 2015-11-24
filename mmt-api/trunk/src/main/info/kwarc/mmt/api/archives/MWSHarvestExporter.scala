@@ -24,7 +24,7 @@ class MWSHarvestExporter extends Exporter {
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
     t.getDeclarations foreach {d =>
       d.getComponents.foreach {
-         case (comp, tc: AbstractTermContainer) =>
+         case DeclarationComponent(comp, tc: AbstractTermContainer) =>
             tc.get.foreach {t =>
                val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML}</mws:expr>
                rh(node.toString + "\n")
@@ -63,7 +63,7 @@ class FlatteningMWSExporter extends Exporter {
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
     t.getDeclarations foreach {
       case d => d.getComponents.foreach {
-         case (comp, tc: AbstractTermContainer) =>
+         case DeclarationComponent(comp, tc: AbstractTermContainer) =>
             tc.get.foreach {t =>
                val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML}</mws:expr>
                rh(node.toString + "\n")

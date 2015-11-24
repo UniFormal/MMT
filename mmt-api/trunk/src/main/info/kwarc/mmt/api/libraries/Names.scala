@@ -42,7 +42,7 @@ object Names {
          incls flatMap {i => lookIn(i, partialName)}
       } else {
          val name = LocalName(qualifiers map SimpleStep)
-         lib.getO(home % name) match {
+         lib.getO(home, name) match {
             case Some(l : Structure) => resolve(l.from, Nil, partialName)
             case Some(_) => Nil
             case None =>
@@ -58,7 +58,7 @@ object Names {
    /** resolves the unqualified identifier name in the theory home */
    def resolve(home: Term, name: LocalName)(implicit lib: Lookup) : Option[ContentElement] = {
       {
-         lib.getO(home % name)  // symbol in the current theory
+         lib.getO(home, name)  // symbol in the current theory
       } orElse {
          home match {
             case OMMOD(p) => lib.getO(p.parent ? name) // module in the namespace of the current theory
@@ -66,7 +66,7 @@ object Names {
          }
       } orElse {
          val incls = lib.visible(home).toList
-         val es = incls mapPartial {i => lib.getO(i % name)}
+         val es = incls mapPartial {i => lib.getO(i, name)}
          if (es.length == 1) Some(es(0)) else None  // uniquely resolvable symbol in an included theory
       }
    }

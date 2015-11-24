@@ -49,7 +49,7 @@ object Unifier {
     Moduleadder(union,cod)
     val allnewconsts = (thC.getConstants collect {case t:FinalConstant => t}).toSet
     val newconsts = allnewconsts--cod
-    val substs = (for {o <- cod} yield (GlobalName(OMID(union.path),o.name),o.path)).toList
+    val substs = (for {o <- cod} yield (GlobalName(union.path,o.name),o.path)).toList
     Moduleadder(newthC,newconsts,substs)
     for (o <- thC.getIncludesWithoutMeta) newthC.add(PlainInclude(o,newthC.path))
 

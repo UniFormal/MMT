@@ -168,7 +168,7 @@ case class Intersecter(controller:Controller) {
 
     for (o <- includes) int.add(PlainInclude(o,int.path))
 
-    val namelist = pairs.map(p => (GlobalName(OMID(int.path),p._3),p._1.path))
+    val namelist = pairs.map(p => (GlobalName(int.path,p._3),p._1.path))
     val consts = pairs map (c => {
       val tp = Moduleadder.substitute(c._1.tp,namelist)
       val df = None //TODO ?
@@ -255,7 +255,7 @@ object Intersecter {
     }
 
     (for {o <- domconsts} yield (o.name.tail,o.df.get)).filter(p =>
-      p._2.head.get.module.toMPath==cod.path
+      p._2.head.get.module==cod.path
     ).map(p => (dom.get(p._1),cod.get(p._2.head.get.name))) collect {
       case (c1:FinalConstant,c2:FinalConstant) => (c1,c2)
     }
@@ -278,7 +278,7 @@ object Intersecter {
       case c: FinalConstant if c.df.isDefined => c
     }).map(c => Try({
       val c1 = dom.get(c.name.tail)
-      val c2 = if (c.df.get.head.get.module.toMPath==cod.path) cod.get(c.df.get.head.get.name) match {
+      val c2 = if (c.df.get.head.get.module==cod.path) cod.get(c.df.get.head.get.name) match {
         case d:FinalConstant => d
         case _ => c.df.get
       } else c.df.get
@@ -290,7 +290,7 @@ object Intersecter {
         case c: FinalConstant if c.df.isDefined => c
       }).map(c => Try({
         val c1 = cod.get(c.name.tail)
-        val c2 = if (c.df.get.head.get.module.toMPath == dom.path) dom.get(c.df.get.head.get.name) match {
+        val c2 = if (c.df.get.head.get.module == dom.path) dom.get(c.df.get.head.get.name) match {
           case d: FinalConstant => d
           case _ => c.df.get
         } else c.df.get

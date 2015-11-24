@@ -189,49 +189,18 @@ class Controller extends ROController with Logger {
   val logPrefix = "controller"
 
   /** a lookup that uses only the current memory data structures */
-  val localLookup = new Lookup {
-    def get(path: Path) = try {
-      library.get(path)
-    } catch {
-      case NotFound(p) => throw GetError(p.toPath + " not known")
+  val localLookup = new LookupWithNotFoundHandler(library) {
+    protected def handler[A](code: => A): A = try {
+       code
+    } catch {case NotFound(p) =>
+       throw GetError(p.toPath + " not known")
     }
-
-    //def imports(from: Term, to: Term) = library.imports(from, to)
-    def visible(to: Term) = library.visible(to)
-
-    def getImplicit(from: Term, to: Term) = library.getImplicit(from, to)
-
-    def preImage(p: GlobalName) = library.preImage(p)
-
     def getDeclarationsInScope(mod: Term) = library.getDeclarationsInScope(mod)
   }
-  private val self = this
   /** a lookup that loads missing modules dynamically */
-  val globalLookup = new Lookup {
-    def get(path: Path) = {
-      val se = iterate {
-        self.get(path)
-      }
-      se match {
-        case ce: ContentElement => ce
-        case _ => throw GetError(path + " exists but is not a content element")
-      }
-    }
-
-    //def imports(from: Term, to: Term) = iterate {library.imports(from, to)}
-    def visible(to: Term) = iterate {
-      library.visible(to)
-    }
-
-    def getImplicit(from: Term, to: Term) = library.getImplicit(from, to)
-
-    def preImage(p: GlobalName) = iterate {
-      library.preImage(p)
-    }
-
-    def getDeclarationsInScope(mod: Term) = iterate {
-      library.getDeclarationsInScope(mod)
-    }
+  val globalLookup = new LookupWithNotFoundHandler(library) {
+    protected def handler[A](code: => A): A = iterate {code}
+    def getDeclarationsInScope(mod: Term) = iterate {library.getDeclarationsInScope(mod)}
   }
 
   /** loads a path via the backend and reports it */
@@ -289,13 +258,14 @@ class Controller extends ROController with Logger {
       case _: CPath => throw ImplementationError("cannot retrieve component paths")
     }
   }
+  def getO(path: Path) = try {Some(get(path))} catch {case _: GetError => None}
 
   /** adds a knowledge item */
   def add(e: StructuralElement) {
     iterate {
       e match {
         case nw: ContentElement =>
-          localLookup.getO(e.path) match {
+          localLookup.getO(nw.path) match {
             //TODO localLookup yields a generated Constant when retrieving assignments in a view,
             // which old.compatible(nw) false due to having different origin
             //probably introduced when changing the representation of paths in views
@@ -317,7 +287,7 @@ class Controller extends ROController with Logger {
                 }
                 // update metadata and components
                 old.metadata = nw.metadata
-                nw.getComponents.foreach { case (comp, cont) =>
+                nw.getComponents.foreach { case DeclarationComponent(comp, cont) =>
                   old.getComponent(comp).foreach {
                     _.update(cont)
                   }
@@ -359,10 +329,9 @@ class Controller extends ROController with Logger {
     * no change management, deletions are non-recursive
     */
   def delete(p: Path) {
-    val seOpt = localLookup.getO(p)
     p match {
       case d: DPath => docstore.delete(d)
-      case _ =>
+      case p: ContentPath =>
         library.delete(p)
         localLookup.getO(p) foreach { se =>
           notifyListeners.onDelete(se)

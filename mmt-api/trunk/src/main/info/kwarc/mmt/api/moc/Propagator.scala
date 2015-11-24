@@ -286,8 +286,8 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
     val impacts = new mutable.HashSet[Path]()
     
     affectedPaths(path) foreach {p =>
-      mem.ontology.query(p,ToSubject(RefersTo)) {p => 
-        try {
+      mem.ontology.query(p,ToSubject(RefersTo)) {
+         case p: ContentPath => try {
           mem.content.get(p) match {
             case c : Constant => 
               impacts += CPath(c.path, TypeComponent) 
@@ -295,7 +295,7 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
             case _ => //TODO
           }
         } catch {
-          case _ : Throwable => //TODO
+          case _ : Exception => //TODO
         }
       }
         
@@ -305,7 +305,7 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
   
   private def affectedPaths(path : Path) : List[Path] = path match {
     case c : CPath => c :: affectedPaths(c.parent)
-    case g : GlobalName => g :: affectedPaths(g.module.toMPath)
+    case g : GlobalName => g :: affectedPaths(g.module)
     case m : MPath => m :: Nil
     case _ => Nil //doc's don't count
   }
@@ -393,7 +393,7 @@ class StructuralImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
     
     path match {
       case CPath(GlobalName(mod, lname), DefComponent) =>
-        mem.ontology.query(mod.toMPath, ToSubject(HasDomain)) {
+        mem.ontology.query(mod, ToSubject(HasDomain)) {
           case viewPath : MPath => 
             impacts += viewPath ? lname
           case _ => 
@@ -423,12 +423,12 @@ class StructuralImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
           changes.head match {
             //definition is deleted -> one more undefined constant -> assignment needed for it
             case UpdateComponent(cPath, DefComponent, Some(s), None) => 
-              val ca = ConstantAssignment(mod, lname, None, Some(emptyBox))
+              val ca = ConstantAssignment(OMMOD(mod), lname, None, Some(emptyBox))
               List(AddDeclaration(ca))                
            
             //definition is added -> one less undefined constant -> assignment for it no longer needed
             case UpdateComponent(cPath, DefComponent, None, Some(s)) => 
-              val ca = mem.content.getConstant(mod.toMPath ? lname)
+              val ca = mem.content.getConstant(mod ? lname)
               List(DeleteDeclaration(ca))
             
             case _ => Nil

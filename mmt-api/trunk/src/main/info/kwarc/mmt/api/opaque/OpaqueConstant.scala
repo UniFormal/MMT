@@ -52,7 +52,7 @@ abstract class OpaqueDeclarationInterpreter extends Extension {
    def toNode(oc: OpaqueDeclaration): scala.xml.Node
 
    def getDeclarations(oc: OpaqueDeclaration): List[ContentElement]
-   def getComponents(oc: OpaqueDeclaration): List[(DeclarationComponent,ComponentContainer)]
+   def getComponents(oc: OpaqueDeclaration): List[DeclarationComponent]
 }
 
 class XMLConstant(val home: Term, val name: LocalName, node: scala.xml.Node) extends OpaqueDeclaration("xml", node.toString)

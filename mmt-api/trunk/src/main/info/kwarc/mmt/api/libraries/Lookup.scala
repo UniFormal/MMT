@@ -10,32 +10,50 @@ import scala.collection.mutable.HashSet
 
 /** A read-only abstraction of a library. A Library is a Lookup with write methods */
 abstract class Lookup {
-   def apply(path : Path) = get(path)
+   def apply(path : ContentPath) = get(path)
 
-   def get(path : Path) : ContentElement
-   /** Same as get, but returns an option
-    * @return Some(content) if get succeeds, None if get throws an error
-    */
-   def getO(path: Path) : Option[ContentElement] = try {Some(get(path))} catch {case _:GetError => None}
    private def defmsg(path : Path) : String = "element exists but has unexpected type at " + path
-   /**
-    * as get but with finer return type
-    * @tparam E required return type
-    * @param cls class object of E
-    * @return same as get(path) but cast into E 
-    * 
-    * usage example: getAs(classOf[Constant], path): Constant
-    */
-   def getAs[E <: ContentElement](cls : Class[E], path: Path): E = {
-      val se = get(path)
-      if (cls.isInstance(se))
-         se.asInstanceOf[E]
+
+   /** for get methods with restricted return type */
+   private def as[E <: ContentElement](cls : Class[E])(code : => ContentElement) : E = {
+      val ce = code
+      if (cls.isInstance(ce))
+         ce.asInstanceOf[E]
       else
-         throw GetError("element at " + path + " exists but has unexpected type " + se.getClass + " (expected: " + cls + ")")
+         throw GetError("element at " + ce.path + " exists but has unexpected type " + ce.getClass + " (expected: " + cls + ")")
    }
    
+   private type ErrorCont = String => Nothing
+   private val defError = (s:String) => throw GetError(s)
+   /** for get methods with optional return value */
+   private def optional[E](code: ErrorCont => E): Option[E] = try {Some(code(defError))} catch {case _:GetError => None}
 
-   // obsolete
+   /** lookup a path */
+   def get(path : ContentPath) : ContentElement
+   /** special case of get */
+   def getModule(p: MPath): Module = getAs(classOf[Module], p)
+   /** like get, but returns option */
+   def getO(path: ContentPath) = optional {_ => get(path)}
+   /**
+    * like get but with restricted return type 
+    * example: getAs(classOf[Constant], path): Constant
+    */
+   def getAs[E <: ContentElement](cls : Class[E], path: ContentPath): E = as(cls) {get(path)}
+
+   /** lookup a declaration in a (possibly complex) module 
+    * @param home the module in which to look up
+    * @param name the name look up
+    * @param error the continuation to call on the error message
+    * @return the declaration
+    */
+   def get(home: Term, name: LocalName, error: String => Nothing): Declaration
+   /** like get but returns optional */ 
+   def getO(home: Term, name: LocalName) = optional {e => get(home,name,e)}
+   /** like get but with restricted return type */ 
+   def getAs[E <: ContentElement](cls : Class[E], home: Term, name: LocalName, error: String => Nothing): E =
+      as(cls){get(home, name, error)}
+
+   // deprecated, use getAs(classOf[X] instead of getX
    def getModule(path : MPath, msg : Path => String = defmsg) : Module =
      get(path) match {case m: Module => m case _ => throw GetError(msg(path))}
    def getTheory(path : MPath, msg : Path => String = defmsg) : Theory =
@@ -85,7 +103,7 @@ abstract class Lookup {
    def getDomain(a: Declaration) : (DeclaredTheory,Option[DeclaredLink]) = {
       val p = a.home match {
          case OMMOD(p) => p
-         case OMDL(OMMOD(p), name) => OMMOD(p) % name 
+         case OMDL(p, name) => p ? name 
          case _ => throw GetError("non-atomic link")
       }
       val l = get(p) match {
@@ -94,7 +112,7 @@ abstract class Lookup {
          case _ => throw GetError("non-declared link") 
       }
       val dom = l.from match {
-         case OMMOD(t) => getTheory(t) match {
+         case OMMOD(t) => getAs(classOf[Theory],t) match {
            case t: DeclaredTheory => t
            case _ => throw GetError("domain of declared link is not a declared theory")
          }
@@ -109,7 +127,7 @@ abstract class Lookup {
     */
    object ExpandDefinitions extends Traverser[ContentPath => Boolean] {
       def traverse(t: Term)(implicit con: Context, expand: ContentPath => Boolean) = t match {
-         case OMID(p: GlobalName) if expand(p) => getConstant(p).df match {
+         case OMID(p: GlobalName) if expand(p) => getAs(classOf[Constant],p).df match {
             case Some(t) => traverse(t)
             case None => OMID(p)
          }
@@ -124,7 +142,7 @@ abstract class Lookup {
    object ApplyMorphs extends Traverser[Term] {
      def traverse(t: Term)(implicit con: Context, morph: Term) : Term = {
        def notmeta(theo:MPath,ln:LocalName) : Term = {
-         val aOpt = getAs(classOf[Constant], morph % (LocalName(theo) / ln)).df
+         val aOpt = getAs(classOf[Constant], morph, LocalName(theo) / ln, msg => throw GetError("assignment not found")).df
          aOpt match {
            case Some(df) => df
            case None => getAs(classOf[Constant], theo ? ln).df match {
@@ -164,4 +182,17 @@ abstract class Lookup {
      }
      }
    }
+}
+
+/**
+ * delegates all lookup methods to another Lookup and handles the [[NotFound]] exception
+ */
+abstract class LookupWithNotFoundHandler(lup: Lookup) extends Lookup {
+    protected def handler[A](code: => A): A
+
+    def get(path: ContentPath) = handler {lup.get(path)}
+    def get(home: Term, name: LocalName, error: String => Nothing) = handler {lup.get(home, name, error)}
+    def visible(to: Term) = handler {lup.visible(to)}
+    def getImplicit(from: Term, to: Term) = handler {lup.getImplicit(from, to)}
+    def preImage(p: GlobalName) = handler {lup.preImage(p)}
 }

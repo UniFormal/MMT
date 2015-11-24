@@ -24,7 +24,7 @@ abstract class Structure extends Declaration with Link {
    /** the domain of a structure is its home theory*/
    val to = home
    val isImplicit: Boolean
-   def toTerm = OMDL(home, name)
+   def toTerm = OMDL(home.toMPath, name)
    
    def isInclude = Include.unapply(this).isDefined
    private def nameOrKeyword = this match {
@@ -59,7 +59,7 @@ abstract class Structure extends Declaration with Link {
  */
 class DeclaredStructure(val home : Term, val name : LocalName, val tpC: TermContainer, val isImplicit : Boolean)
       extends Structure with DeclaredLink {
-   def getComponents = List((DomComponent, tpC))
+   def getComponents = List(DomComponent(tpC))
 }
 
  /**
@@ -74,7 +74,7 @@ class DeclaredStructure(val home : Term, val name : LocalName, val tpC: TermCont
 class DefinedStructure(val home : Term, val name : LocalName,
                        val tpC: TermContainer, val dfC : TermContainer, val isImplicit : Boolean)
       extends Structure with DefinedLink {
-   def getComponents = List((DomComponent, tpC), (DefComponent, dfC))
+   def getComponents = List(DomComponent(tpC), DefComponent(dfC))
 }
 
 

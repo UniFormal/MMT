@@ -67,9 +67,9 @@ object Action extends RegexParsers {
       (km.tail, Clean)
     else if ("*!&".contains(km.last))
       (km.init, km.last match {
-        case '!' => Update(Level.Error)
-        case '&' => BuildDepsFirst(Update(Level.Error))
-        case _ => Update(Level.Ignore)
+        case '!' => UpdateOnError(Level.Error)
+        case '&' => BuildDepsFirst(UpdateOnError(Level.Error))
+        case _ => UpdateOnError(Level.Ignore)
       })
     else (km, Build)
   }
@@ -84,13 +84,13 @@ object Action extends RegexParsers {
     ("--force" | "--onChange" | "--onError\\??(=\\d)?".r | "--clean" | "--depsFirst\\??(=\\d)?".r) ^^ {
       case "--force" => Build
       case "--clean" => Clean
-      case "--onError" => Update(Level.Error)
-      case "--depsFirst" => BuildDepsFirst(Update(Level.Error))
-      case "--onChange" => Update(Level.Ignore)
+      case "--onError" => UpdateOnError(Level.Error)
+      case "--depsFirst" => BuildDepsFirst(UpdateOnError(Level.Error))
+      case "--onChange" => UpdateOnError(Level.Ignore)
       case s =>
         val c = s.last
-        val up = if (c == '?') Update(Level.Error, true)
-        else Update(c.asDigit - 1, s.contains('?')) // 0 => force
+        val up = if (c == '?') UpdateOnError(Level.Error, true)
+        else UpdateOnError(c.asDigit - 1, s.contains('?')) // 0 => force
         if (s.startsWith("--depsFirst")) BuildDepsFirst(up)
         else up
     }
@@ -98,7 +98,7 @@ object Action extends RegexParsers {
   // TODO needs decent name
   private def filebuild = ("make" | "rbuild") ~> stringList ~ (buildModifier ?) ~ (("--\\S+"r) *) ~ (file *) ^^ {
     case keys ~ mod ~ args ~ files =>
-      BuildFiles(keys, mod.getOrElse(Update(Level.Ignore)), args, files)
+      BuildFiles(keys, mod.getOrElse(UpdateOnError(Level.Ignore)), args, files)
   }
 
   private def archdim = "archive" ~> stringList ~ dimension ~ optFilePath ^^ {
@@ -193,7 +193,7 @@ object Action extends RegexParsers {
 
   private def elaboration = path <~ "elaboration" ^^ { p => Elaboration(p) }
 
-  private def component = (path <~ "component") ~ str ^^ { case p ~ s => Component(p, DeclarationComponent.parse(s)) }
+  private def component = (path <~ "component") ~ str ^^ { case p ~ s => Component(p, ComponentKey.parse(s)) }
 
   private def get = path ^^ { p => Get(p) }
 
@@ -612,7 +612,7 @@ case class Get(p: Path) extends MakeAbstract {
 }
 
 /** retrieves a component of a knowledge item */
-case class Component(p: Path, comp: DeclarationComponent) extends MakeAbstract {
+case class Component(p: Path, comp: ComponentKey) extends MakeAbstract {
   def make(controller: Controller): Content = {
     val o = controller.get(p)
     val tOpt = o.getComponent(comp) flatMap {

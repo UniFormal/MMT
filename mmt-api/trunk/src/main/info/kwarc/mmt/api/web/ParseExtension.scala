@@ -55,7 +55,7 @@ class ParseServer extends ServerExtension(":parse") {
                         controller.getDocument(d).getRefs.flatMap(x => invPaths(x.target, parents + d)).toSet
                       case m : MPath => 
                         val affected = boxedPaths exists {cp => cp.parent match {
-                          case gn : GlobalName => gn.module.toMPath == m
+                          case gn : GlobalName => gn.module == m
                           case mp : MPath => mp == p 
                           case _ => false
                         }}

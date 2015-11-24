@@ -95,73 +95,42 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
   /** returns all module paths indexed by this library */
   def getAllPaths = modules.keys
 
-  /** special case of get with more specific types */
-  def getModule(p: MPath): Module = getAs(classOf[Module], p)
-
   /** Special case of get that throws GetError with a standard error message */
-  def get(p: Path): ContentElement =
-    get(p, msg => throw GetError("error while retrieving " + p + ": " + msg))
+  def get(p: ContentPath): ContentElement = {
+     val error = (msg:String) => throw GetError("error while retrieving " + p + ": " + msg)
+     p match {
+        case p: MPath => get(p, error)
+        case p ?? n => get(OMMOD(p), n, error)
+     }
+  }
 
-  /** Dereferences a path and returns the found ContentElement.
-    *
-    * @param path the path to be dereferenced
-    * @param error the continuation to call on the error message
-    * @return the content element
-    */
-  def get(path: Path, error: String => Nothing): ContentElement = path match {
-    case doc: DPath => throw ImplementationError("getting documents from library impossible")
-    case mp: MPath =>
-      val (mod, left) = getMostSpecific(mp)
+  def get(p: MPath, error: String => Nothing): ContentElement = {
+      val (mod, left) = getMostSpecific(p)
       if (left.isEmpty) mod
       else {
-        get(mod.path ? left, error) match {
+        get(OMMOD(mod.path), left, error) match {
           case s: Structure => s
           case e => error("complex module path did not resolve to a declaration that is allowed as a module: " + e)
         }
       }
-    //lookup in atomic modules
-    case OMPMOD(p, args) % name => get(p, error) match {
+  }
+   
+  private val sourceError = (s: String) => throw GetError("error while looking up source declaration: "+s)
+
+  def get(home: Term, name: LocalName, error: String => Nothing): Declaration = home match {
+    case OMPMOD(p, args) => get(p, error) match {
+      //lookup in atomic modules
       case t: DefinedTheory =>
-        get(t.df % name, error) match {
+        get(t.df, name, error) match {
           case d: Declaration => instantiate(d, t.parameters, args)
           case d => error("illegal declaration in theory " + d.path)
         }
       case t: DeclaredTheory =>
-        val decl = t.getMostSpecific(name) map { case (d, ln) => (instantiate(d, t.parameters, args), ln) }
-        decl match {
-          case Some((d, LocalName(Nil))) => d // perfect match
-          case Some((d, ln)) => d match {
-            // a prefix exists and resolves to d, a suffix ln is left
-            case _: Constant | _: RuleConstant => error("local name " + ln + " left after resolving to constant")
-            case s: Structure =>
-              val sym = getSymbol(s.from % ln, p => error("could not lookup source symbol " + p)) // resolve ln in the domain of d
-              translateByLink(sym, s, error) // translate sym along l
-            case nm: NestedModule =>
-              error("local name " + ln + " left after resolving to nested module")
-          }
-          case None => name match {
-            // no prefix of name is declared in t
-            case ComplexStep(mpath) / ln =>
-              get(mpath) match {
-                case _: Theory =>
-                  // continue lookup in mpath
-                  val imp = implicitGraph(OMMOD(mpath), t.toTerm) getOrElse {
-                    throw GetError("no implicit morphism from " + mpath + " to " + t.path)
-                  }
-                  val sym = getSymbol(mpath ? ln, mpath => error("could not lookup source symbol " + p))
-                  translate(sym, imp, error) // translate the result along the implicit morphism
-                case l: Link =>
-                  // continue lookup in domain of l
-                  val sym = getSymbol(l.from % ln)
-                  translateByLink(sym, l, error) // translate the result along the link
-              }
-            case _ => throw GetError(name + " is not declared in " + t.path)
-          }
-        }
+         getInTheory(t, args, name, error)
       case s: Structure =>
         if (0 != args.length)
           throw GetError("number of arguments does not match number of parameters")
-        get(s.toTerm % name, error)
+        get(s.toTerm, name, error)
       case v: View =>
         if (0 != args.length)
           throw GetError("number of arguments does not match number of parameters")
@@ -169,7 +138,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
           getInLink(v, name, error)
         } catch {
           case PartialLink() =>
-            val da = get(v.from % name) match {
+            val da = get(v.from, name, sourceError) match {
               // return default assignment
               case c: Constant => ConstantAssignment(v.toTerm, name, None, None)
               case s: Structure => DefLinkAssignment(v.toTerm, name, s.from, Morph.empty)
@@ -179,23 +148,24 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
             da
         }
     }
-    case OMDL(h, n) % name =>
-      val s = getStructure(h % n, msg => throw GetError("declaration exists but is not a structure: " + h % n + "\n" + msg))
+    // lookup in structures
+    case OMDL(h, n) =>
+      val s = getStructure(h ? n, msg => throw GetError("declaration exists but is not a structure: " + h ? n + "\n" + msg))
       try {
         getInLink(s, name, error)
       } catch {
         case PartialLink() =>
           // return default assignment
-          val da = get(s.from % name) match {
-            case c: Constant => ConstantAssignment(s.toTerm, name, None, Some(OMID(s.to % (s.name / name))))
-            case d: Structure => DefLinkAssignment(s.toTerm, name, d.from, OMDL(s.to, s.name / name))
+          val da = get(s.from, name, sourceError) match {
+            case c: Constant => ConstantAssignment(s.toTerm, name, None, Some(OMID(h ? s.name / name)))
+            case d: Structure => DefLinkAssignment(s.toTerm, name, d.from, OMDL(h, s.name / name))
             case _ => throw ImplementationError("unimplemented default assignment")
           }
           da.setOrigin(DefaultAssignment)
           da
       }
     // lookup in complex modules
-    case (home@ComplexTheory(cont)) % name =>
+    case ComplexTheory(cont) =>
       cont.mapVarDecls { case (before, vd) =>
         val vdDecl = vd.toDeclaration(ComplexTheory(before))
         vd match {
@@ -203,7 +173,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
             name.head match {
               case ComplexStep(q) =>
                 getImplicit(q, p).foreach { m =>
-                  val sym = getSymbol(OMPMOD(q, args) % name.tail)
+                  val sym = get(OMPMOD(q, args), name.tail, sourceError)
                   val symT = translate(sym, m, error)
                   return symT
                 }
@@ -228,47 +198,85 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
         }
       }
       throw GetError("name " + name + " not found in " + cont)
-    case TUnion(ts) % name => ts mapFind { t =>
-      getO(t % name)
+    case TUnion(ts) => ts mapFind { t =>
+      getO(t,name)
     } getOrElse {
       throw GetError("union of theories has no declarations except includes")
     }
-    case OMCOMP(Nil) % _ => throw GetError("cannot lookup in identity morphism without domain: " + path)
-    case (m@OMCOMP(hd :: tl)) % name =>
-      val a = get(hd % name, error)
+    case OMCOMP(Nil) => throw GetError("cannot lookup in identity morphism without domain: " + home)
+    case OMCOMP(hd :: tl) =>
+      val a = get(hd, name, error)
       if (tl.isEmpty)
         a
       else a match {
-        case a: Constant => ConstantAssignment(m, a.name, a.alias, a.df.map(_ * OMCOMP(tl)))
-        case a: DefinedStructure => DefLinkAssignment(m, a.name, a.from, OMCOMP(a.df :: tl))
+        case a: Constant => ConstantAssignment(home, a.name, a.alias, a.df.map(_ * OMCOMP(tl)))
+        case a: DefinedStructure => DefLinkAssignment(home, a.name, a.from, OMCOMP(a.df :: tl))
       }
-    case (m@OMIDENT(t)) % name => get(t % name) match {
-      case c: Constant => ConstantAssignment(m, name, None, Some(c.toTerm))
-      case l: Structure => DefLinkAssignment(m, name, l.from, l.toTerm)
+    case OMIDENT(t) => get(t, name, error) match {
+      case c: Constant => ConstantAssignment(home, name, None, Some(c.toTerm))
+      case l: Structure => DefLinkAssignment(home, name, l.from, l.toTerm)
     }
-    case Morph.empty % name => throw GetError("empty morphism has no assignments")
-    case MUnion(ms) % name => ms mapFind {
-      m => getO(m % name)
+    case Morph.empty => throw GetError("empty morphism has no assignments")
+    case MUnion(ms) => ms mapFind {
+      m => getO(m, name)
     } getOrElse {
       throw GetError("union of morphisms has no assignments except includes")
     }
   }
 
+  /** auxiliary method of get for lookups in a [[DeclaredTheory]] */
+  private def getInTheory(t: DeclaredTheory, args: List[Term], name: LocalName, error: String => Nothing) = { 
+     val decl = t.getMostSpecific(name) map {
+        case (d, ln) => (instantiate(d, t.parameters, args), ln)
+     }
+     decl match {
+       case Some((d, LocalName(Nil))) => d // perfect match
+       case Some((d, ln)) => d match {
+         // a prefix exists and resolves to d, a suffix ln is left
+         case _: Constant | _: RuleConstant => error("local name " + ln + " left after resolving to constant")
+         case s: Structure =>
+           val sym = get(s.from, ln, sourceError) // resolve ln in the domain of d
+           translateByLink(sym, s, error) // translate sym along l
+         case nm: NestedModule =>
+           error("local name " + ln + " left after resolving to nested module")
+       }
+       case None => name match {
+         // no prefix of name is declared in t
+         case ComplexStep(mpath) / ln =>
+           get(mpath) match {
+             case _: Theory =>
+               // continue lookup in mpath
+               val imp = implicitGraph(OMMOD(mpath), t.toTerm) getOrElse {
+                 throw GetError("no implicit morphism from " + mpath + " to " + t.path)
+               }
+               val sym = get(OMMOD(mpath), ln, sourceError)
+               translate(sym, imp, error) // translate the result along the implicit morphism
+             case l: Link =>
+               // continue lookup in domain of l
+               val sym = get(l.from, ln, sourceError)
+               translateByLink(sym, l, error) // translate the result along the link
+           }
+         case _ => throw GetError(name + " is not declared in " + t.path)
+          }
+     }
+  }
+
+  
   /** thrown by getInLink if the link provides no assignment */
   private case class PartialLink() extends java.lang.Throwable
-
+  
   /** auxiliary method of get to unify lookup in structures and views
     * throws PartialLink() if no assignment provided
     */
-  private def getInLink(l: Link, name: LocalName, error: String => Nothing): ContentElement = l match {
+  private def getInLink(l: Link, name: LocalName, error: String => Nothing): Declaration = l match {
     case l: DefinedLink =>
-      get(l.df % name, error)
+      get(l.df, name, error)
     case l: DeclaredLink =>
       l.getMostSpecific(name.simplify) match {
         case Some((a, LocalName(Nil))) => a // perfect match TODO Here should probably happen something
         case Some((a, ln)) => a match {
           case a: Constant => error("local name " + ln + " left after resolving to constant assignment")
-          case a: DefinedLink => get(a.df % name.simplify, error) // <- names in links should always start with [T]/...?
+          case a: DefinedLink => get(a.df, ln, error)
         }
         case None =>
           // TODO multiple ComplexSteps resulting from inclusions in a row must be normalized away somewhere
@@ -312,7 +320,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
         val link = getView(v)
         translateByLink(d, link, error)
       case OMDL(h, n) =>
-        val link = getStructure(h % n)
+        val link = getStructure(h ? n)
         translateByLink(d, link, error)
       case OMCOMP(Nil) => d
       case OMCOMP(hd :: tl) => translate(translate(d, hd, error), OMCOMP(tl), error)
@@ -424,23 +432,14 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
   def preImage(p: GlobalName): Option[GlobalName] = p.name match {
     case hd / tl =>
       try {
-        get(p.module % !hd) match {
-          case s: Structure => Some(s.from % tl)
+        get(p.module ? hd) match {
+          case s: Structure => Some(s.from.toMPath ? tl) //TODO
         }
       } catch {
         case _: Throwable => None
       }
     case !(hd) => None
     case _ => None
-  }
-
-  private def getContainer(m: Term, error: String => Nothing): ContentElement = m match {
-    case OMMOD(p) => get(p)
-    case OMDL(OMMOD(p), !(n)) => get(OMMOD(p) % !n, error) match {
-      case s: Structure => s
-      case _ => error("not a structure: " + m)
-    }
-    case _ => error("not a theory, view, or structure: " + m)
   }
 
   /**
@@ -453,8 +452,8 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
       case (_, doc: DPath) => throw ImplementationError("addtion of document to library impossible")
       case (doc ? mod, m: Module) =>
         modules(doc ? mod) = m
-      case (par % ln, _) =>
-        val c = getContainer(par, msg => throw AddError("illegal parent: " + msg))
+      case (par ?? ln, _) =>
+        val c = get(par, msg => throw AddError("illegal parent: " + msg))
         (c, e) match {
           case (b: Body, e: Declaration) =>
             b.add(e)
@@ -492,10 +491,10 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
     path match {
       case doc: DPath => throw ImplementationError("deletion of documents from library impossible")
       case doc ? mod => modules -= doc ? mod
-      case par % ln => getContainer(par, msg => throw DeleteError("illegal parent: " + msg)) match {
+      case par ?? ln => get(par, msg => throw DeleteError("illegal parent: " + msg)) match {
         case t: DeclaredTheory =>
           t.delete(ln) foreach { s =>
-            s.getComponents.foreach { case (comp, cont) =>
+            s.getComponents.foreach { case DeclarationComponent(comp, cont) =>
               if (cont.isDefined) notifyUpdated(s.path $ comp)
             }
           }

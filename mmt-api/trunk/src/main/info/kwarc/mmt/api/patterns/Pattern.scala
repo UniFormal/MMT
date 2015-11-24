@@ -28,8 +28,8 @@ class Pattern(val home: Term, val name : LocalName, val params: Context, val bod
        {notC.toNode}
      </pattern>    
    def tp = OMBINDC(OMS(utils.mmt.mmtsymbol("param")),params,Nil)
-   def getComponents = (TypeComponent, new FinalTermContainer(tp)) :: notC.getComponents
-   def getDeclarations = body mapVarDecls {case (con,vd) => vd.toConstant(home, con)}
+   def getComponents = DeclarationComponent(TypeComponent, new FinalTermContainer(tp)) :: notC.getComponents
+   def getDeclarations = body mapVarDecls {case (con,vd) => vd.toConstant(home.toMPath, con)}
    override def toString = 
      "Pattern for " + name.toString + {if (params.variables.toList.isEmpty) "" else  {" [ " + params.toString + " ]" }} +
      " { " + body.toString + " }" + notC.toString
@@ -65,7 +65,7 @@ class Instance(val home : Term, val name : LocalName, val pattern : GlobalName, 
      <instance name={name.toPath} pattern={pattern.toPath}>
         {matches.map(_.toNode)}
      </instance>
-   def getComponents = List((TypeComponent, new FinalTermContainer(OMA(OMS(pattern), matches))))
+   def getComponents = List(DeclarationComponent(TypeComponent, new FinalTermContainer(OMA(OMS(pattern), matches))))
    def getDeclarations = Nil
    override def toString = 
      "instance " + name.toString + " of pattern " + pattern.toString + " with " + { if (matches.isEmpty) "no args" else matches.map(_.toString).mkString("[ ", "; ", "]") }  

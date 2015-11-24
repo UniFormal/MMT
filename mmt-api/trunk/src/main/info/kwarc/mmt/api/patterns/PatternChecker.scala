@@ -69,7 +69,7 @@ class PatternChecker(controller: Controller) {
       sub = z.foldLeft(sub)((a,b) => a ++ b)
       mat.metaContext.toSubstitution
       val c = constants(0)
-      Some(new Instance(c.home,c.name,GlobalName(c.home, pattern.name),sub.map(_.target)))
+      Some(new Instance(c.home,c.name,c.home.toMPath ? pattern.name,sub.map(_.target)))
       
     } else None //Fail: Wrong number of declarations in pattern or number of constants               
   }  

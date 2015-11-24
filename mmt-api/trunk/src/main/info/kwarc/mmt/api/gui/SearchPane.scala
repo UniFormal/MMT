@@ -42,11 +42,11 @@ class SearchPane(controller: Controller) extends JPanel {
       val mwsResults = mws(MathWebSearchQuery(mwsQuery))
       // node for all results in this search
       val root = new DefaultMutableTreeNode(q)
-      val orderedResults = mwsResults.groupBy(_.cpath.parent.module).toList.sortBy(_._1.toMPath.toString)
+      val orderedResults = mwsResults.groupBy(_.cpath.parent.module).toList.sortBy(_._1.toString)
       orderedResults.foreach {
          case (mod,modAnsws) =>
             // node for all results in the module mode
-            val moduleNode = new DefaultMutableTreeNode(mod.toMPath.toString)
+            val moduleNode = new DefaultMutableTreeNode(mod.toString)
             root.add(moduleNode)
             modAnsws.groupBy(_.cpath).toList.sortBy(_._1.toString).foreach {case (cp, cpAnsws) =>
                // node for all results in the component cp

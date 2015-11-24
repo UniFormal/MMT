@@ -70,6 +70,8 @@ trait Exporter extends BuildTarget {
     narrationExporter.clean(a, in)
   }
 
+  def producesFrom(out: FilePath) = contentExporter.producesFrom(out) orElse narrationExporter.producesFrom(out)
+  
   /** the file name for files representing folders, defaults to "", override as needed */
   protected def folderName = ""
 

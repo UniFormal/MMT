@@ -69,13 +69,13 @@ class NotationContainer extends ComponentContainer {
    def verbalization = verbalizationDim.default
    
    /** get the notation for a certain component */
-   def apply(c: NotationComponent) = c match {
+   def apply(c: NotationComponentKey) = c match {
       case ParsingNotationComponent => parsing
       case PresentationNotationComponent => presentation
       case VerbalizationNotationComponent => verbalization
    }
    /** set the notation for a certain component */
-   def update(c: NotationComponent, tn: TextNotation) {c match {
+   def update(c: NotationComponentKey, tn: TextNotation) {c match {
       case ParsingNotationComponent => parsingDim.set(tn)
       case PresentationNotationComponent => presentationDim.set(tn)
       case VerbalizationNotationComponent => verbalizationDim.set(tn)
@@ -94,9 +94,9 @@ class NotationContainer extends ComponentContainer {
       verbalizationDim.delete
    }
    def isDefined = parsing.isDefined || presentation.isDefined || verbalization.isDefined
-   def getComponents = parsing.toList.map(_ => (ParsingNotationComponent, this)) :::
-                       presentation.toList.map(_ => (PresentationNotationComponent, this))
-                       verbalization.toList.map(_ => (VerbalizationNotationComponent, this))
+   def getComponents = parsing.toList.map(_ => ParsingNotationComponent(this)) :::
+                       presentation.toList.map(_ => PresentationNotationComponent(this))
+                       verbalization.toList.map(_ => VerbalizationNotationComponent(this))
    
    /** @return an appropriate notation for presentation, if any */
    def getPresent: Option[TextNotation] = presentation orElse parsing orElse verbalization

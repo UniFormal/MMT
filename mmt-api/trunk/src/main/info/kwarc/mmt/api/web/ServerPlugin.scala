@@ -68,8 +68,8 @@ class SVGServer extends ServerExtension("svg") {
       case dp: DPath => (true, dp)
       // module path
       case mp: MPath => (false, mp)
-      case gp: GlobalName => (false, gp.module.toMPath)
-      case cp: CPath => (false, cp.parent.module.toMPath)
+      case gp: GlobalName => (false, gp.module)
+      case cp: CPath => (false, cp.parent.module)
     }
     val svgFile = if (inNarr) {
       val dp = newPath.asInstanceOf[DPath]

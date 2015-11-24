@@ -22,7 +22,7 @@ object Morph {
       case _: Throwable => throw InvalidObject(m, "not a well-formed morphism")
     }
     case OMDL(h, n) => try {
-      val structure = lib.getStructure(h % n)
+      val structure = lib.getStructure(h ? n)
       Some(structure.from)
     } catch {
       case _: Throwable => throw InvalidObject(m, "not a well-formed morphism")
@@ -41,7 +41,7 @@ object Morph {
     } catch {
       case _: Throwable => throw InvalidObject(m, "not a well-formed morphism: " + m)
     }
-    case OMDL(t, _) => Some(t)
+    case OMDL(t, _) => Some(OMMOD(t))
     case _ => None
   }
 
@@ -270,10 +270,10 @@ object ComplexTheory {
 
 /** OMDL is used for the GlobalName of a structure */
 object OMDL {
-  def apply(cod: Term, name: LocalName): Term = OMID(cod % name)
+  def apply(cod: MPath, name: LocalName): Term = OMID(cod ? name)
 
-  def unapply(t: Term): Option[(Term, LocalName)] = t match {
-    case OMID(cod % name) => Some((cod, name))
+  def unapply(t: Term): Option[(MPath, LocalName)] = t match {
+    case OMID(cod ?? name) => Some((cod, name))
     case _ => None
   }
 }

@@ -16,7 +16,7 @@ case class PathPattern(basePattern: Option[String], modulePattern: Option[String
       val (modOpt, nameOpt) = p match {
          case _: DPath => (None, None)
          case m: MPath => (Some(m.name), None)
-         case g: GlobalName => (Some(g.module.toMPath.name), Some(g.name))
+         case g: GlobalName => (Some(g.module.name), Some(g.name))
          case _ => throw ImplementationError("")
       }
       val comps = Some(p.doc.toPath) :: List(modOpt, nameOpt).map(c => c.map(_.toPath))
@@ -58,7 +58,7 @@ object TermPattern {
 }
 
 /** a query that can be sent to [[Search]] */
-case class SearchQuery(pp: PathPattern, comps: List[DeclarationComponent], pattern: Option[TermPattern])
+case class SearchQuery(pp: PathPattern, comps: List[ComponentKey], pattern: Option[TermPattern])
 /** a result returned by [[Search]] or [[MathWebSearch]] */
 case class SearchResult(cpath: CPath, pos: Position, term: Option[Term])
 

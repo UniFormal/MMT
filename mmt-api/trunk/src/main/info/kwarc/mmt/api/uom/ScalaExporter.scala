@@ -26,7 +26,7 @@ object GenericScalaExporter {
   // TODO: temporary hack, check characters are legal in Scala IDs
     s flatMap { c => if (c == '≃') "" else c.toString }
 
-  def nameToScalaQ(p: GlobalName) = (p.module.toMPath.name.toPath + "_" + escapeChars(p.name.toPath)).replace(".", "__")
+  def nameToScalaQ(p: GlobalName) = (p.module.name.toPath + "_" + escapeChars(p.name.toPath)).replace(".", "__")
 
   def nameToScala(l: LocalName) = escape(l.toPath.replace("/", "."))
 

@@ -23,7 +23,7 @@ class InstanceElaborator(controller: Controller) extends Logger {
    def apply(e: StructuralElement) {e match {
       case inst : Instance => 
         	val pt : Pattern = controller.globalLookup.getPattern(inst.pattern)
-        	val subs = pt.body.map {d => d.name / OMID(inst.home % (inst.name / d.name))} //TODO Check c.c1
+        	val subs = pt.body.map {d => d.name / OMID(inst.path / d.name)} //TODO Check c.c1
          def auxSub(x : Term): Term = {
         		x ^? (pt.getSubstitution(inst) ++ Substitution(subs : _*))  
         	}

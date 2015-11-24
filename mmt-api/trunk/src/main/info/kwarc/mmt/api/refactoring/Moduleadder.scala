@@ -34,7 +34,7 @@ object Moduleadder {
   def apply(v:DeclaredView,a:(FinalConstant,FinalConstant)):Boolean = {
     v.add(new FinalConstant(
       OMID(v.path),
-      ComplexStep(a._1.path.module.toMPath) / a._1.name,
+      ComplexStep(a._1.path.module) / a._1.name,
       None,
       TermContainer(a._1.tp),
       TermContainer(OMID(a._2.path)),
@@ -56,7 +56,7 @@ object Moduleadder {
 
   def apply(th:DeclaredTheory,set:List[FinalConstant],substs:List[(GlobalName,GlobalName)]):Boolean = {
     val list = set.toList
-    val nsubsts = for {a <- list} yield (GlobalName(OMID(th.path),a.name),a.path)
+    val nsubsts = for {a <- list} yield (GlobalName(th.path,a.name),a.path)
     for (a <- order(list)) th.add(new FinalConstant(OMID(th.path), a.name, a.alias,
       TermContainer(substitute(a.tp,nsubsts:::substs)), TermContainer(substitute(a.df,nsubsts:::substs)), a.rl,
       NotationContainer(a.not)))

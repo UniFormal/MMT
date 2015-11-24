@@ -277,6 +277,21 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
          case <metadata>{_*}</metadata> =>
             val md = MetaData.parse(node, nsMap)
             module.metadata = md
+         case <derived>{body @_*}</derived> =>
+            val feature = xml.attr(symbol, "feature")
+            val (comps,decls) = body.map(xml.trimOneLevel).partition(_.label == "component")
+            val components = comps.toList map {c =>
+               val key = ComponentKey.parse(xml.attr(c, "key"))
+               val value = TermContainer(Obj.parseTerm(c, nsMap))
+               DeclarationComponent(key, value)
+            }
+            val dd = new DerivedDeclaration(homeTerm, name, feature, components)
+            add(dd, md)
+            decls.foreach {d =>
+               logGroup {
+                  readInModule(home / name, nsMap, None, d)
+               }
+            }
          //TODO remove patterns and instances
          case <pattern>{ch @_*}</pattern> => 
            log("pattern with name " + name + " found")

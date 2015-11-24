@@ -15,7 +15,9 @@ case object Clean extends BuildTargetModifier {
   def toStringLong(dim: String) = dim + " --clean"
 }
 
-case class Update(errorLevel: Level, dryRun: Boolean = false) extends BuildTargetModifier {
+abstract class Update extends BuildTargetModifier
+
+case class UpdateOnError(errorLevel: Level, dryRun: Boolean = false) extends Update {
   def key: String =
     if (errorLevel <= Level.Force) ""
     else if (errorLevel < Level.Ignore) "!" else "*"
@@ -28,12 +30,13 @@ case class Update(errorLevel: Level, dryRun: Boolean = false) extends BuildTarge
   def toStringLong(dim: String) = toStringLong("onError", dim)
 }
 
-case object Build extends BuildTargetModifier {
+/** forces building independent of status */
+case object Build extends Update {
   def toString(dim: String) = dim
   def toStringLong(dim: String) = dim + " --force"
 }
 
-case class BuildDepsFirst(up: Update) extends BuildTargetModifier {
+case class BuildDepsFirst(up: UpdateOnError) extends Update {
   def toString(dim: String) = dim + "&"
   def toStringLong(dim: String) = up.toStringLong("depsFirst", dim)
 }
@@ -51,16 +54,13 @@ abstract class BuildTarget extends FormatBasedExtension {
   override def logPrefix: String = key
 
   /** build this target in a given archive */
-  def build(a: Archive, in: FilePath)
+  def build(a: Archive, in: FilePath) //TODO this should simply call update(a, Build, in)}
 
   /** update this target in a given archive */
   def update(a: Archive, up: Update, in: FilePath)
 
   /** clean this target in a given archive */
   def clean(a: Archive, in: FilePath)
-
-  /** build this target in a given archive but build dependencies first */
-  def buildDepsFirst(arch: Archive, up: Update, in: FilePath) {}
 
   /** the main function to run the build target
     *
@@ -70,10 +70,9 @@ abstract class BuildTarget extends FormatBasedExtension {
     */
   def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath) {
     modifier match {
+      case Build => build(arch, in) 
       case up: Update => update(arch, up, in)
       case Clean => clean(arch, in)
-      case Build => build(arch, in)
-      case BuildDepsFirst(lvl) => buildDepsFirst(arch, lvl, in)
     }
   }
 
@@ -114,7 +113,7 @@ class BuildTask(val key: String, val archive: Archive, val inFile: File, val chi
   def isDir = children.isDefined
 
   /** the name of the folder if inFile is a folder */
-  def dirName: String = outFile.filepath.dirPath.baseName
+  def dirName: String = outFile.toFilePath.dirPath.name
 
   def asDependency = children match {
      case Some(ch) => DirBuildDependency(key, archive, inPath, ch)
@@ -150,7 +149,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   protected def getFolderOutFile(a: Archive, inPath: FilePath) = a / outDim / inPath / (folderName + "." + outExt)
 
-  protected def getOutPath(a: Archive, outFile: File) = outFile.filepath
+  protected def getOutPath(a: Archive, outFile: File) = outFile.toFilePath
 
   protected def getErrorFile(a: Archive, inPath: FilePath): File = (a / errors / key / inPath).addExtension("err")
 
@@ -170,6 +169,14 @@ abstract class TraversingBuildTarget extends BuildTarget {
     * see defaultFileExtension if you need an inExt (for meta targets)
     */
   def includeFile(name: String): Boolean
+  
+  /**
+   * if this target produces additional files (e.g., the aux files of LaTeX),
+   * this method should map them to the respective main file
+   * @param outPath the output path (relative to archive)
+   * @return the input path (relative to inDim) 
+   */
+  def producesFrom(outPath: FilePath): Option[FilePath] = None
 
   /** true by default; override to skip auxiliary directories */
   def includeDir(name: String): Boolean = true
@@ -187,7 +194,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     * @param bd information about input/output file etc
     * @param builtChildren tasks for building the children
     */
-  def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = BuildSuccess(Nil)
+  def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = BuildSuccess(Nil,Nil)
 
   /** abstract method to compute the estimated direct dependencies */
   def getDeps(bf: BuildTask): Set[Dependency] =
@@ -201,7 +208,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   def build(a: Archive, in: FilePath, errorCont: Option[ErrorHandler]) {
     val qts = makeBuildTasks(a, in, errorCont)
     // TODO delete output (and error) file?
-    controller.buildManager.addTask(qts)
+    controller.buildManager.addTasks(qts)
   }
 
   /** like build, but returns all build tasks without adding them to the build manager */
@@ -274,7 +281,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       case e: Exception =>
         val le = LocalError("unknown build error: " + e.getMessage).setCausedBy(e)
         bt.errorCont(le)
-        res = BuildFailure(Nil)
+        res = BuildFailure(Nil,Nil)
     } finally {
       bt.errorCont.close
     }
@@ -330,26 +337,31 @@ abstract class TraversingBuildTarget extends BuildTarget {
     *
     * the decision is made based on the time stamps and the system's last-modified date
     */
-  def update(a: Archive, up: Update, in: FilePath = EmptyPath) {
+  def update(a: Archive, up: Update, in: FilePath) {
     a.traverse[(Boolean, BuildTask)](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case c@Current(inFile, inPath) =>
         val errorFile = getErrorFile(a, inPath)
-        lazy val errs = hadErrors(errorFile, up.errorLevel)
-        lazy val bf = makeBuildTask(a, inPath, inFile, None, None)
-        val rebuildNeeded = up.errorLevel <= Level.Force || modified(inFile, errorFile) || errs ||
-          getDeps(bf).exists {
-            case bd: BuildDependency =>
-              val errFile = getErrorFile(bd)
-              modified(errFile, errorFile)
-            case ForeignDependency(fFile) => modified(fFile, errorFile)
-            case _ => false
-          }
         val outPath = getOutPath(a, getOutFile(a, inPath))
-        if (rebuildNeeded) {
-           if (up.dryRun) logResult("out-dated " + outPath)
-           else runBuildTask(bf)
-        } else
-           logResult("up-to-date " + outPath)
+        lazy val bf = makeBuildTask(a, inPath, inFile, None, None)
+        val rebuildNeeded = up match {
+           case Build => true
+           case up: UpdateOnError =>
+              lazy val errs = hadErrors(errorFile, up.errorLevel)
+              val rn = up.errorLevel <= Level.Force || modified(inFile, errorFile) || errs ||
+                getDeps(bf).exists {
+                  case bd: BuildDependency =>
+                    val errFile = getErrorFile(bd)
+                    modified(errFile, errorFile)
+                  case ForeignDependency(fFile) => modified(fFile, errorFile)
+                  case _ => false
+                }
+              if (rn && up.dryRun) {
+                 logResult("out-dated " + outPath)
+                 false
+              } else {
+                 rn
+              }
+        }
         (rebuildNeeded, bf)
     }, { case (c@Current(inDir, inPath), childChanged) =>
       val changes = childChanged.exists(_._1)
@@ -361,6 +373,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
       (changes, bd)
     })
   }
+
+
+
+//TODO delete everything below here
+
 
   protected def getFilesRec(a: Archive, in: FilePath): Set[Dependency] = {
     val inFile = a / inDim / in
@@ -376,24 +393,24 @@ abstract class TraversingBuildTarget extends BuildTarget {
     makeBuildTask(a, inPath, a / inDim / inPath, None, None)
   }
 
-  def getAnyDeps(dep: BuildDependency): Set[Dependency] = {
+  def getAnyDeps(key: String, dep: BuildDependency): Set[Dependency] = {
     if (dep.key == key)
       getDeps(makeBuildTask(dep.archive, dep.inPath))
-    else controller.extman.getOrAddExtension(classOf[BuildTarget], dep.key, Nil) match {
+    else controller.extman.getOrAddExtension(classOf[BuildTarget], key, Nil) match {
       case bt: TraversingBuildTarget => bt.getDeps(bt.makeBuildTask(dep.archive, dep.inPath))
       //TODO resolve non-simple dependencies
       case _ => Set.empty
     }
   }
 
-  def getTopsortedDeps(args: Set[Dependency]): List[Dependency] = {
+  def getTopsortedDeps(key: String, args: Set[Dependency]): List[Dependency] = {
     var visited: Set[Dependency] = Set.empty
     var unknown = args
     var deps: Map[Dependency, Set[Dependency]] = Map.empty
     while (unknown.nonEmpty) {
       val p = unknown.head
       val ds: Set[Dependency] = p match {
-        case bd: BuildDependency => getAnyDeps(bd)
+        case bd: BuildDependency => getAnyDeps(key, bd)
         case _ => Set.empty
       }
       deps += ((p, ds))
@@ -404,11 +421,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
     Relational.flatTopsort(controller, deps)
   }
 
-  override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
-    val ts = getTopsortedDeps(getFilesRec(a, in))
+  def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
+    val ts = getTopsortedDeps(key, getFilesRec(a, in))
     ts.foreach {
       case bd: BuildDependency => if (bd.key == key) update(bd.archive, up, bd.inPath)
-      else controller.extman.getOrAddExtension(classOf[BuildTarget], bd.key, Nil) match {
+      else controller.extman.getOrAddExtension(classOf[BuildTarget], key, Nil) match {
         case bt: TraversingBuildTarget => bt.update(bd.archive, up, bd.inPath)
         case _ => log("build target not found: " + bd.key)
       }

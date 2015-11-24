@@ -136,7 +136,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
                  def toggle(label: String) {
                     button("compToggle  btn btn-sm btn-default pull-right", onclick = s"interaction.toggleClick(this.parentNode,'$label')") {text(label)}
                  }
-                 d.getComponents.foreach {case (comp, tc) => if (tc.isDefined)
+                 d.getComponents.foreach {case DeclarationComponent(comp, tc) => if (tc.isDefined)
                     toggle(comp.toString)
                  }
                  //if (! usedby.isEmpty)
@@ -148,13 +148,13 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
                }
                table("constant-components ") {
                   d.getComponents.foreach {
-                     case (comp, tc: AbstractTermContainer) =>
+                     case DeclarationComponent(comp, tc: AbstractTermContainer) =>
                         tr(comp.toString) {
                            tc.get.foreach {t =>
                                doComponent(d.path $ comp, t)
                            }
                         }
-                     case (comp: NotationComponent, nc: NotationContainer) =>
+                     case DeclarationComponent(comp: NotationComponentKey, nc: NotationContainer) =>
                         tr(comp.toString) {
                            nc(comp).foreach {n =>
                               doNotComponent(d.path $ comp, n)

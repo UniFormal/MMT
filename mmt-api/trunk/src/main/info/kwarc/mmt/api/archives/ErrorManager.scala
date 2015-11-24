@@ -131,7 +131,7 @@ class ErrorManager extends Extension with Logger {
   def loadErrors(a: Archive, target: String, fpath: FilePath): Unit = {
     val f = a / errors / target / fpath
     val bes = ErrorReader.getBuildErrors(f, Level.Error, Some((s: String) => log(s))).
-      map(BuildError(a, target, fpath.toFile.stripExtension.filepath, _))
+      map(BuildError(a, target, fpath.toFile.stripExtension.toFilePath, _))
     val em = apply(a.id)
     em.put((target, fpath.segments), bes)
   }
@@ -172,7 +172,7 @@ class ErrorManager extends Extension with Logger {
     /** reloads the errors */
     override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath): Unit = {
       Future {
-        loadErrors(a, t.key, p.toFile.addExtension("err").filepath)
+        loadErrors(a, t.key, p.toFile.addExtension("err").toFilePath)
       }
     }
   }

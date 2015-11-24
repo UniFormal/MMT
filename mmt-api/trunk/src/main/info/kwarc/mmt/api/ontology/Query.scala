@@ -72,7 +72,7 @@ sealed abstract class Query
   */
 case class Bound(index: Int) extends Query
 
-case class Component(of: Query, component: DeclarationComponent) extends Query
+case class Component(of: Query, component: ComponentKey) extends Query
 
 /** subobject of an object at a certain position */
 case class SubObject(of: Query, position: Position) extends Query
@@ -376,7 +376,7 @@ object Query {
     case <bound/> => Bound(xml.attrInt(n, "index", ParseError))
     case <let>{v}{in}</let> => Let(parse(v), parse(in))
     case <uris/> => Paths(relManager.parseUnary(xml.attr(n, "concept")))
-    case <component>{o}</component> => Component(parse(o), DeclarationComponent.parse(xml.attr(n, "index")))
+    case <component>{o}</component> => Component(parse(o), ComponentKey.parse(xml.attr(n, "index")))
     case <subobject>{o}</subobject> => SubObject(parse(o), Position.parse(xml.attr(n, "position")))
     case <related>{to}{by}</related> => Related(parse(to), RelationExp.parse(by))
     case <closure>{of}</closure> => Closure(parse(of))

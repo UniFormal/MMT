@@ -45,7 +45,7 @@ class MathMLPresenter extends NotationBasedPresenter {
    }
    override def doIdentifier(p: ContentPath)(implicit pc : PresentationContext) {
       val s = p match {
-         case OMMOD(m) % name => name.toString  //not parsable if there are name clashes 
+         case m ?? name => name.toString  //not parsable if there are name clashes 
          case _ => p.toPath
       }
       val mo = utils.xml.element("mo", (symref -> p.toPath) :: jobadattribs, s)

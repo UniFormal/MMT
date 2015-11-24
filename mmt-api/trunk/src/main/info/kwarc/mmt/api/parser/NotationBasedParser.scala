@@ -454,7 +454,7 @@ class NotationBasedParser extends ObjectParser {
         }
         // the level of the notation: if not provided, default to the meta-theory of the constant
         val level = notation.meta orElse {
-           controller.globalLookup.getO(con.module.toMPath) match {
+           controller.globalLookup.getO(con.module) match {
              case Some(t: modules.DeclaredTheory) => t.meta
              case _ => None
            }

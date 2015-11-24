@@ -1,5 +1,8 @@
 package info.kwarc.mmt.api
 
+/** A component of a declaration, e.g., the type of a [[Constant]] (akin to XML attributes) */
+case class DeclarationComponent(key: ComponentKey, value: ComponentContainer)
+
 /** A ComponentContainer holds the data keyed by a DeclarationComponent */
 trait ComponentContainer {
    /** updates this container using the pieces of another one */
@@ -22,13 +25,14 @@ class FinalTermContainer(t: objects.Term) extends AbstractTermContainer {
    def get = Some(t) 
 }
 
-/** A DeclarationComponent identifies a component of a Declaration. It is used in CPath's */
-abstract class DeclarationComponent(s : String) {
+/** A ComponentKey identifies a [[DeclarationComponent]]. */
+abstract class ComponentKey(s : String) {
    override def toString = s
+   def apply(cont: ComponentContainer) = DeclarationComponent(this, cont)
 }
 
-object DeclarationComponent {
-  def parse(s : String) : DeclarationComponent = s match {
+object ComponentKey {
+  def parse(s : String) : ComponentKey = s match {
     case "type" => TypeComponent
     case "definition" => DefComponent
     case "domain" => DomComponent
@@ -36,31 +40,42 @@ object DeclarationComponent {
     case "params" => ParamsComponent
     case "pattern-body" => PatternBodyComponent
     case "metadata" => MetaDataComponent
+    case s if s.startsWith("ext-") => OtherComponent(s)
     case s => throw ParseError("Invalid name of declaration component: " + s)
   }
 }
 
 /** type of a [[symbols.Constant]] */
-case object TypeComponent extends DeclarationComponent("type")
+case object TypeComponent extends ComponentKey("type")
 /** definitiens of [[symbols.Constant]], DefinedTheory, DefinedView, DefinedStructure */
-case object DefComponent  extends DeclarationComponent("definition")
+case object DefComponent  extends ComponentKey("definition")
 /** domain of a [[modules.Link]], meta-theory of a theory */
-case object DomComponent  extends DeclarationComponent("domain")
+case object DomComponent  extends ComponentKey("domain")
 /** codomain of a [[modules.Link]] */
-case object CodComponent  extends DeclarationComponent("codomain")
+case object CodComponent  extends ComponentKey("codomain")
 
-abstract class NotationComponent(s: String) extends DeclarationComponent(s)
+/** custome component, e.g., in a [[DerivedDeclaration]] */
+case class OtherComponent(s: String) extends ComponentKey(s)
+
+abstract class NotationComponentKey(s: String) extends ComponentKey(s)
 /** (text-based) parsing notation of a symbol */
-case object ParsingNotationComponent extends NotationComponent("parsing-notation")
+case object ParsingNotationComponent extends NotationComponentKey("parsing-notation")
 /** (two-dimensional, MathML-like) presentation notation of a symbol */
-case object PresentationNotationComponent extends NotationComponent("presentation-notation")
+case object PresentationNotationComponent extends NotationComponentKey("presentation-notation")
 /** (narrative) verbalization notation of a symbol */
-case object VerbalizationNotationComponent extends NotationComponent("verbalization-notation")
+case object VerbalizationNotationComponent extends NotationComponentKey("verbalization-notation")
+
+object NotationComponent {
+   def unapply(d: DeclarationComponent) = d match {
+      case DeclarationComponent(k: NotationComponentKey, v: notations.NotationContainer) => Some((k,v))
+      case _ => None
+   }
+}
 
 // the following components are used only by change management
-case object ParamsComponent extends DeclarationComponent("params")
-case object PatternBodyComponent extends DeclarationComponent("pattern-body")
-case object MetaDataComponent extends DeclarationComponent("metadata")
+case object ParamsComponent extends  ComponentKey("params")
+case object PatternBodyComponent extends ComponentKey("pattern-body")
+case object MetaDataComponent extends ComponentKey("metadata")
 
 object TermComponent {
    private val components = List(TypeComponent,DefComponent,DomComponent,CodComponent)

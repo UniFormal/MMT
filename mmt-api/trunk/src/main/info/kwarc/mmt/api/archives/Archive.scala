@@ -42,16 +42,16 @@ abstract class WritableArchive extends ROArchive {
     nsMap
   }
 
-  /** the file for the dimension within the archive
-    *
-    * @param dim a dimension in the archive
-    */
-  def /(dim: ArchiveDimension): File = dim match {
+  /** the absolute path to a given dimension */
+  def /(dim: ArchiveDimension) = root / resolveDimension(dim)
+  
+  /** the relative path in the archive of a give dimension */
+  def resolveDimension(dim: ArchiveDimension): FilePath = dim match {
     case r@RedirectableDimension(key, _) => properties.get(key) match {
-      case Some(p) => root / p
-      case None => this / r.default
+      case Some(p) => FilePath(p)
+      case None => resolveDimension(r.default)
     }
-    case Dim(path@_*) => root / path.toList
+    case Dim(path@_*) => FilePath(path.toList)
   }
 
   def includeDir(n: String): Boolean = !List(".svn", ".mmt", ".git").contains(n)
@@ -67,7 +67,7 @@ abstract class WritableArchive extends ROArchive {
         // dpath is a dummy URI to be used when creating the Document that contains the module mod
         val dpath = DPath(narrationBase / Archive.MMTPathToContentPath(mod).segments)
         loadXML(mod.doc.uri, dpath, File.Reader(p))
-      case OMMOD(m) % _ => load(m)
+      case m ?? _ => load(m)
     }
   }
 

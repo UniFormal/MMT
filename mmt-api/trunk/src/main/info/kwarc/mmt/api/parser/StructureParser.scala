@@ -275,13 +275,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     (obj, reg, parsed)
   }
 
-  private def doComponent(c: DeclarationComponent, tc: TermContainer, cont: Context)(implicit state: ParserState) {
+  private def doComponent(c: ComponentKey, tc: TermContainer, cont: Context)(implicit state: ParserState) {
     val (obj, _, tm) = readParsedObject(cont)
     tc.read = obj
     tc.parsed = tm
   }
 
-  private def doNotation(c: NotationComponent, nc: NotationContainer, treg: SourceRegion,
+  private def doNotation(c: NotationComponentKey, nc: NotationContainer, treg: SourceRegion,
                          cpath: GlobalName)(implicit state: ParserState) {
     val notString = state.reader.readObject._1
     if (nc(c).isDefined)

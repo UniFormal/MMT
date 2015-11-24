@@ -202,9 +202,9 @@ object pragmaticRename extends PragmaticChangeType {
   def description(diff : Diff) : String = {
     val (mod,old,nw) = diff.changes match {
       case DeleteDeclaration(o : Constant) :: AddDeclaration(n : Constant) :: Nil =>
-        (o.path.module.toMPath, o.path.name, n.path.name)
+        (o.path.module, o.path.name, n.path.name)
       case AddDeclaration(n : Constant) :: DeleteDeclaration(o : Constant) :: Nil =>
-        (o.path.module.toMPath, o.path.name, n.path.name)
+        (o.path.module, o.path.name, n.path.name)
       case _ => 
         throw ImplementationError("unexpected error: invalid diff used to propagate in pragmatic change: " + name)
     }
@@ -285,7 +285,7 @@ case class DeleteDeclaration(d : Declaration) extends DeleteContent(d) with Chan
  */
 case class Component(c : Option[Obj])
 
-case class UpdateComponent(path : ContentPath, name : DeclarationComponent, old : Option[Obj], nw : Option[Obj]) extends UpdateContent with ContentChange {
+case class UpdateComponent(path : ContentPath, name : ComponentKey, old : Option[Obj], nw : Option[Obj]) extends UpdateContent with ContentChange {
 
   def getReferencedURI : CPath = CPath(path, MetaDataComponent)
 

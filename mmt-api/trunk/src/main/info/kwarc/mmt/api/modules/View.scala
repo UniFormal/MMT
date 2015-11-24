@@ -52,22 +52,22 @@ class DeclaredView(doc : DPath, name : LocalName, val from : Term, val to : Term
       case _ => Nil
    }
    def getInnerContext = codomainAsContext
-   def getComponents = List((DomComponent,new FinalTermContainer(from)),(CodComponent,new FinalTermContainer(to)))
+   def getComponents = List(DomComponent(new FinalTermContainer(from)),CodComponent(new FinalTermContainer(to)))
 }
 
   /**
-   * A DefinedView represents an MMT view given by an existing morphism.<p>
+   * A DefinedView represents an MMT view given by an existing morphism.
    * 
-   * @param doc the [[Path]] of the parent document
+   * @param doc the URI of the parent document
    * @param name the name of the view
    * @param from the domain theory
    * @param to the codomain theory
-   * @param df the definiens
+   * @param dfC the definiens
    * @param isImplicit true iff the link is implicit
    */
 class DefinedView(doc : DPath, name : LocalName, val from : Term, val to : Term, val dfC : TermContainer, val isImplicit : Boolean)
       extends View(doc, name) with DefinedModule with DefinedLink {
-   def getComponents = List((DefComponent, dfC))
+   def getComponents = List(DeclarationComponent(DefComponent, dfC))
 }
 
 object DefinedView {

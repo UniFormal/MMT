@@ -228,7 +228,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
         case Some(unpackedManifest) =>
           val mod = Modification(root, unpackedManifest)
           if (mod == Modified) {
-            unpackedRoot.deleteDir()
+            unpackedRoot.deleteDir
           }
           if (mod == Unmodified)
             log("skipping unpacked, unmodified archive " + unpackedRoot)
