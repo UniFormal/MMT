@@ -172,7 +172,7 @@ object MorphCheck extends TypingRule(ModExp.morphtype) {
          val current = subsToCheck.subs.head
          val Sub(n, t) = current
          // for each one, we look up the declaration of n and check t
-         val d = lup.get(from % n)
+         val d = lup.getO(from, n).get
          val historyN =  history + ("checking map of " + n)
          val mayhold = d match {
             case s: Structure =>

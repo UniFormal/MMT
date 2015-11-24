@@ -91,11 +91,11 @@ class TPTPPresenter extends Presenter(TPTPObjectPresenter) {
     * @param t a term over home
     * @return list of (meta-theory M, list of (theory T that is imported into M, list of symbols from T in t))
     */
-   private def getConstantsGroupedByMetaTheory(home: Term, t: Term): Iterable[(MPath,Iterable[(Term,List[GlobalName])])] = {
+   private def getConstantsGroupedByMetaTheory(home: Term, t: Term): Iterable[(MPath,Iterable[(MPath,List[GlobalName])])] = {
       val cons = Obj.getConstants(t).groupBy(_.module)
       val metas = TheoryExp.metas(home)(lup).reverse ::: List(home.toMPath)
       cons.groupBy {case (thy, ps) =>
-         metas.find(m => lup.hasImplicit(thy, OMMOD(m))).getOrElse {
+         metas.find(m => lup.hasImplicit(OMMOD(thy), OMMOD(m))).getOrElse {
             log("symbols from " + thy + " occurring in " + home + " appear to be invalid")
             //recover by defaulting to the theory itself
             metas.head

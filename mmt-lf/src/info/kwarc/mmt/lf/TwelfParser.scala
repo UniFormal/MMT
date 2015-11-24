@@ -633,7 +633,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     val endsAt = expectNext(i, ".")
 
     // create the constant object
-    val constant = Constant(cpath.module, cpath.name, None, constantType, constantDef, None, constantNotation)
+    val constant = Constant(OMMOD(cpath.module), cpath.name, None, constantType, constantDef, None, constantNotation)
     addSourceRef(constant, start, endsAt)
     addSemanticComment(constant, oldComment)
     add(constant)
@@ -666,7 +666,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
       val startOfAlias = i
       val (ref, positionAfterRef) = crawlIdentifier(i)
       var endOfAlias = positionAfterRef - 1 // in case there is no %as statement
-      val refGlobalName = GlobalName(if (link.from != null) link.from else link.toTerm, LocalName(ref))
+      val refGlobalName = GlobalName((if (link.from != null) link.from else link.toTerm).toMPath, LocalName(ref))
 
       // reset comment and check for new comments, in case there is no %as statement
       keepComment = None
@@ -1042,6 +1042,11 @@ class TwelfParser extends Parser(new NotationBasedParser) {
       }
    }
 
+   private def assPath(l: Link, n: LocalName) = l match {
+       case v: View => v.path ? n
+       case s: Structure => s.path / n
+    } 
+   
   /** Reads a constant assignment.
     * @param start the position of the first character in the constant identifier
     * @param parent the parent link
@@ -1057,7 +1062,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     val constantName = LocalName.parse(cstName.replaceAll("\\.", "/"))
     i = positionAfter
     val cstNameRes = resolveAssignmentName(parent.from, constantName).getOrElse(constantName)
-    val apath = parent.toTerm % cstNameRes
+    val apath = assPath(parent, cstNameRes)
 
     i = expectNext(i, ":=")
     i += ":=".length
@@ -1097,7 +1102,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     val structureName = LocalName.parse(strName.replaceAll("\\.", "/"))
     i = positionAfter
     val strNameRes = resolveAssignmentName(parent.from, structureName).getOrElse(structureName)
-    val apath = parent.toTerm % strNameRes
+    val apath = assPath(parent, strNameRes)
 
     i = expectNext(i, ":=")
     i += ":=".length
@@ -1132,7 +1137,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     val i = skipws(crawlKeyword(start, "%include"))
 
     val domain = utils.mmt.mmtbase ? i.toString //dummy value - should be required in input, i is needed for uniqueness
-    val apath = parent.toTerm % LocalName(ComplexStep(domain))
+    val apath = assPath(parent, LocalName(domain))
 
     // get the morphism
     val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, apath $ DefComponent, parent.codomainAsContext)
@@ -1525,7 +1530,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
         i = positionAfter
         i = skipwscomments(i)
         val pattern = meta ? name
-        i = crawlInstanceDeclaration(i, Context(parent.path), pattern)
+        i = crawlInstanceDeclaration(i, parent.path, pattern)
       }
       else if (flat.startsWith("%", i) && (i < flat.length && isIdentifierPartCharacter(flat.codePointAt(i + 1)))) { // unknown %-declaration => ignore it
         i = skipAfterDot(i)
@@ -1551,9 +1556,8 @@ class TwelfParser extends Parser(new NotationBasedParser) {
      *   (%instance pattern) name arg1 ... argn
      *   (%pattern) name arg1 ... argn
      */
-   private def crawlInstanceDeclaration(start: Int, context: Context, pattern: GlobalName) : Int =
+   private def crawlInstanceDeclaration(start: Int, parent: MPath, pattern: GlobalName) : Int =
    {
-     val parent = ComplexTheory(context)
      var i = start
      val oldComment = keepComment
      // parse instance name
@@ -1561,9 +1565,9 @@ class TwelfParser extends Parser(new NotationBasedParser) {
      val nameI = LocalName(n)
      i = positionAfter
      i = skipwscomments(i)
-     val instancePath = parent % nameI     
+     val instancePath = parent ? nameI     
      val (t,posAfter) = if (flat.charAt(i) != '.') {
-        crawlTerm(i, Nil, Nil, instancePath $ TypeComponent, context)
+        crawlTerm(i, Nil, Nil, instancePath $ TypeComponent, Context(parent))
      }
      else
         (OMS(pattern), i)
@@ -1578,7 +1582,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
      i = posAfter
      val endsAt = expectNext(i, ".")
      // add the pattern instance to the parent theory           
-      val instance = new Instance(parent, nameI, pattern, matches)
+      val instance = new Instance(OMMOD(parent), nameI, pattern, matches)
       add(instance)
      
       return endsAt + 1
