@@ -3,16 +3,14 @@ package info.kwarc.mmt.jedit
 import java.awt._
 import java.awt.event._
 import javax.swing._
+import javax.swing.ImageIcon
 import javax.swing.event._
 
-import org.gjt.sp.jedit.GUIUtilities
-import org.gjt.sp.jedit.jEdit
-import org.gjt.sp.jedit.View
+import org.gjt.sp.jedit._
 import org.gjt.sp.jedit.msg._
 
 /*
-MMT toolbar with useful symbols. This is a temporary
-solution to the problem regarding the terminating character.
+MMT toolbar with useful symbols and a clear button.
  */
 
 class MMTToolBar(mmtp: MMTPlugin) extends JToolBar {
@@ -21,14 +19,28 @@ class MMTToolBar(mmtp: MMTPlugin) extends JToolBar {
   private val insRS = new JButton("Declaration Terminator (RS)")
   private val insGS = new JButton("Module Terminator (GS)")
 
+  val clrIMG = (new ImageIcon(
+    this.getClass().getResource(
+      "/images/clear_button.png"))).getImage()
+  val clrIMGs = clrIMG.getScaledInstance(
+    16, 16, java.awt.Image.SCALE_SMOOTH );
+  private val clrBTN = new JButton("Clear",
+    new ImageIcon(clrIMGs))
+
+  private val controller = mmtp.controller
+
   val toolBar = new JToolBar("Symbol toolbar")
   toolBar.setFloatable(false)
   add(insUS)
   add(insRS)
   add(insGS)
+  add(clrBTN)
 
   //Adding components
-  insUS.setToolTipText("Inserts delimiter 1")
+  insUS.setToolTipText("Inserts object delimiter")
+  insRS.setToolTipText("Inserts declaration delimiter")
+  insGS.setToolTipText("Inserts module delimiter")
+  clrBTN.setToolTipText("Clears MMT memory")
 
   insUS.addActionListener(new ActionListener()
     {
@@ -57,6 +69,15 @@ class MMTToolBar(mmtp: MMTPlugin) extends JToolBar {
       {
         val view = jEdit.getActiveView()
         Inserter.insertGSReturn(view.getTextArea())
+      }
+    }
+  )
+
+  clrBTN.addActionListener(new ActionListener()
+    {
+      def actionPerformed(e: ActionEvent)
+      {
+        controller.clear
       }
     }
   )

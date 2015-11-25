@@ -31,8 +31,8 @@ class MMTInterpolator(controller: frontend.Controller) {
            case GlobalName(t,_) => t
         }
      }
-   private def parse(sc: StringContext, ts: List[Term], top: Option[ParsingRule], check: Boolean) = {
-         val strings = sc.parts.iterator
+   def parse(ss: Iterable[String], ts: Iterable[Term], top: Option[ParsingRule], check: Boolean) = {
+         val strings = ss.iterator
          val args = ts.iterator
          val buf = new StringBuffer(strings.next)
          var cont = Context.empty
@@ -48,7 +48,7 @@ class MMTInterpolator(controller: frontend.Controller) {
         val str = buf.toString
         val pu = ParsingUnit(SourceRef.anonymous(str), Context(theory) ++ cont, str, NamespaceMap(theory.doc), top) 
         val t = controller.extman.get(classOf[Parser], "mmt").get.apply(pu)(ErrorThrower)
-        val tI = t ^ cont.toPartialSubstitution
+        val tI = t ^? cont.toPartialSubstitution
         if (check) {
 	        val stack = Stack(Context(theory) ++ cont)
 	        val (tR, tpR) = checking.Solver.check(controller, stack, tI).getOrElse {
@@ -61,23 +61,24 @@ class MMTInterpolator(controller: frontend.Controller) {
    
    /**
     * defines string interpolation methods
-    * 
+    *
     * use them as m"x" where m is the method name and x a string representing an Obj
     * notations are used according to the current theory,
     * integers and floats are turned into MMT objects
     * 
     * example: val x = OMI(1); uom"1+$x" yields OMI(2) (if appropriate notation and simplification rule for + are registered)
     */
-   implicit class MMTContext(sc: StringContext) {
+  implicit class MMTContext(sc: StringContext) {
+      val ss = sc.parts
       /** mmt"s" parses s into a Term */
-      def mmt(ts: Term*): Term = parse(sc, ts.toList, None, false)
+      def mmt(ts: Term*): Term = parse(ss, ts.toList, None, false)
       /** uom"s" parses and simplifies s */
       def uom(ts: Term*): Term = {
          val t = mmt(ts : _*)
 	      controller.simplifier(t, Context(theory))
       }
       /** r"s" parses and type-checks s */
-      def r(ts: Term*): Term = parse(sc, ts.toList, None, true)
+      def r(ts: Term*): Term = parse(ss, ts.toList, None, true)
       /** s"s" parses, type-checks, and simplifies s */
       def rs(ts: Term*): Term = {
          val t = r(ts : _*)
@@ -85,7 +86,7 @@ class MMTInterpolator(controller: frontend.Controller) {
       }
       /** cont"s" parses s into a Context */
       def cont(ts: Term*) : Context = {
-         val t = parse(sc, ts.toList, None, false)
+         val t = parse(ss, ts.toList, None, false)
          t match {
             case OMBINDC(_,con, Nil) => con
             case _ => throw ParseError("not a context")
@@ -93,7 +94,7 @@ class MMTInterpolator(controller: frontend.Controller) {
       }
       /** present"s" parses and presents s */
       def present(ts : Term*) : String = {
-        val t = parse(sc, ts.toList, None, false)
+        val t = parse(ss, ts.toList, None, false)
         controller.presenter.asString(t)
       }
       /** uomp"s" parses, simplifies, and presents s */

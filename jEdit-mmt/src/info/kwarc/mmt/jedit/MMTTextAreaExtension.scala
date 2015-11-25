@@ -8,7 +8,9 @@ import org.gjt.sp.jedit._
 import textarea._
 import syntax._
 import javax.swing.text.Segment
+import java.awt.Font
 import java.awt.font.TextAttribute
+import javax.swing.ImageIcon
 
 /** A TextAreaExtension that is added to every EditPane
  *  it can be used for custom painting, e.g., background highlighting, tooltips
@@ -20,6 +22,16 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
    private val view = editPane.getView
    private val painter = textArea.getPainter
 
+   val oIMG = new ImageIcon(
+     this.getClass().getResource(
+       "/images/object_t.png")).getImage()
+   val dIMG = new ImageIcon(
+     this.getClass().getResource(
+       "/images/clear_button.png")).getImage()
+   val mIMG = new ImageIcon(
+     this.getClass().getResource(
+       "/images/clear_button.png")).getImage()
+
    private val segment = new Segment
 
   override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
@@ -30,6 +42,8 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
     textArea.getLineText(physicalLine, s)
     val linelen = s.count
     val txtsegm = s.array
+
+    val font = painter.getFont
 
     var globalOffset = 0
     var localOffset = 0
@@ -43,17 +57,53 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
 
       txtsegm(globalOffset).toInt match {
         case 29 =>
-          gfx.setColor(java.awt.Color.RED)
+          gfx.setColor(java.awt.Color.WHITE)
           gfx.fillRect(startPoint.x, startPoint.y,
             width, height)
+
+          gfx.setColor(new java.awt.Color(24, 28, 114))
+          gfx.fillRect(startPoint.x,
+            startPoint.y + height/2 - width/2,
+            width, width)
+
+          gfx.setColor(java.awt.Color.WHITE)
+          gfx.setFont(new Font(font.getName(),
+            Font.PLAIN, 2*font.getSize()/3))
+          gfx.drawString("M",
+            startPoint.x + width/6,
+            startPoint.y + height/2 + 3*width/8)
         case 30 =>
-          gfx.setColor(java.awt.Color.BLUE)
+          gfx.setColor(java.awt.Color.WHITE)
           gfx.fillRect(startPoint.x, startPoint.y,
             width, height)
+
+          gfx.setColor(new java.awt.Color(24, 28, 114))
+          gfx.fillRect(startPoint.x,
+            startPoint.y + height/2 - width/2,
+            width, width)
+
+          gfx.setColor(java.awt.Color.WHITE)
+          gfx.setFont(new Font(font.getName(),
+            Font.PLAIN, 2*font.getSize()/3))
+          gfx.drawString("D",
+            startPoint.x + width/6,
+            startPoint.y + height/2 + 3*width/8)
         case 31 =>
-          gfx.setColor(java.awt.Color.GREEN)
+          gfx.setColor(java.awt.Color.WHITE)
           gfx.fillRect(startPoint.x, startPoint.y,
             width, height)
+
+          gfx.setColor(new java.awt.Color(24, 28, 114))
+          gfx.fillRect(startPoint.x,
+            startPoint.y + height/2 - width/2,
+            width, width)
+
+          gfx.setColor(java.awt.Color.WHITE)
+          gfx.setFont(new Font(font.getName(),
+            Font.PLAIN, 2*font.getSize()/3))
+          gfx.drawString("O",
+            startPoint.x + width/6,
+            startPoint.y + height/2 + 3*width/8)
         case _ =>
       }
 

@@ -1,153 +1,265 @@
 package info.kwarc.mmt.jedit
 
-import scala.util.Random
+import scala.util._
+import scala.collection.mutable.HashMap
 
-import org.gjt.sp.jedit.bufferset.BufferSetManager
-import org.gjt.sp.jedit.buffer.JEditBuffer 
+import org.gjt.sp.jedit.bufferset._
+import org.gjt.sp.jedit.buffer._
 import org.gjt.sp.jedit._
+
+import info.kwarc.mmt.api.parser._
+import info.kwarc.mmt.api._
+import frontend.{SetBase, MMTInterpolator}
+import objects._
 
 import console._
 
 //Class for the MMT interpreter
 class MMTInterpreter extends console.Shell("mmt-interpreter") {
-  val mmt : MMTPlugin = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).asInstanceOf[MMTPlugin]
-  //!!!
-  //THIS WILL BE NORMALLY USED TO DISPLAY THE ERRORS IN THE
-  //SCRACHPAD
-  //!!!
-  //val controller : Controller = mmt.controller
-  val compileActions = mmt.compileActions
+  val mmt = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).
+    asInstanceOf[MMTPlugin]
+  val controller = mmt.controller
   val buffmanag : BufferSetManager = jEdit.getBufferSetManager()
+  val interpolator = new MMTInterpolator(controller)
 
-  //Hashmap for loaded files list
+  var scratchfname = "Untitled-1"
+  var scratchtheory = "scratch"
+  var scratchcheck = true
+  var scratchoutput = true
 
-  var filestack : scala.collection.mutable.Map[String, Buffer] =
-    scala.collection.mutable.Map[String, Buffer]()
+  val tmap = HashMap.empty[String, Int]
 
   //Default message
   override def printInfoMessage (output: Output) {
      output.print(null, """This is the MMT Interpreter.
 
-For importing files, use '!import buffername' where
-'buffername' is the buffer which you want to import.
+For help, type '!help'.
 """)
+  }
+
+  private var success : Option[Boolean] = None
+  override def waitFor(console: Console) : Boolean = {
+    synchronized {success.get}
   }
 
   //Nothing to do here...
   override def stop (console: Console) {}
 
+  //Overrides prompt
+  override def printPrompt(console : Console, output : Output){
+    output.writeAttrs(
+      ConsolePane.colorAttributes(new java.awt.Color(10, 170, 10)),
+      "MMTinterp>")
+    output.writeAttrs(
+      ConsolePane.colorAttributes(java.awt.Color.BLACK)
+        , " ")
+  }
+
   //Main execution
   def execute(console: Console, input: String,
-    output: Output, error: Output, command: String) {
+    output: Output, error: Output, command: String) = synchronized {
 
-    val buffers : Array[Buffer] = jEdit.getBuffers()
-    val iformat = """!import (.*)""".r
-    val uformat = """!unimport (.*)""".r
-    val lformat = """(!list)""".r
+    val buffers = jEdit.getBuffers()
+    val helpcmd = """!help(.*)""".r
+
+    val namecmd = """!setname (.*)""".r
+    val chckcmd = """!check (.*)""".r
+    val outpcmd = """!output (.*)""".r
+    val thrycmd = """!theory (.*)""".r
+
     val cformat = """!(.*)""".r
-
-    var scratch : Buffer = null
-    var tbuffer : Buffer = null
-
-    //Checks all the buffers for the MMTScratchpad.
-    //If it exists, it loads it. If not, it creates and loads it.
-    for (somebuffer <- buffers) {
-      if(somebuffer.getName() == "Untitled-1") {
-        scratch = somebuffer
-      }
-    }
-
-    if (scratch == null) {
-      scratch = BufferSetManager.createUntitledBuffer()
-      scratch.setStringProperty("name", "MMTScratchpad")
-      scratch.setReadOnly(true)
-      buffmanag.addBuffer(null.asInstanceOf[View], scratch)
-      output.print(null, scratch.toString())
-    }
 
     //Matches commands
     command match {
 
-      //Import file command
-      case iformat(fname) =>
-        if (filestack.contains(fname)) {
-          output.print(null, "File already imported.")
-        } else {
-          for (somebuffer <- buffers) {
-            if (somebuffer.getName() == fname) {
-              tbuffer = somebuffer
-            }
-          }
-          if (tbuffer == null) {
-            error.print(null, "Buffer " + fname + " not found!")
-          } else {
-            filestack += (fname -> tbuffer)
-            output.print(null, "Buffer imported!")
-          }
-        }
+      case helpcmd(_) =>
+        output.print(null, """
+Usage:
 
-      //Unimport file command
-      case uformat(fname) =>
-        filestack.remove(fname) match {
-          case Some(_) =>
-            output.print(null, "Unimported buffer " + fname + "!")
-          case None =>
-            output.print(null, "Buffer is not imported!")
+Commands always begin with '!'
+
+Returns this help screen:
+!help
+
+Sets scratch buffer name (default 'Untitled-1'):
+!setname (name)
+
+Sets type-checking (default 'true'):
+!check (true|false)
+
+Sets output to scratchpad (default 'true'):
+!output (true|false)
+
+Sets theory name in the scratchpad (default 'scratch'):
+!theory (name)
+
+Non-commands are MMT code.
+""")
+
+      case namecmd(name) =>
+        scratchfname = name
+
+      case chckcmd(cond) =>
+        cond match {
+          case "true" =>
+            scratchcheck = true
+          case "false" =>
+            scratchcheck = false
           case _ =>
+            output.print(null, "Illegal argument!")
         }
 
-      //List all imported files
-      case lformat(_) =>
-        filestack.foreach((b : (String, _)) =>
-          output.print(null, b._1))
+      case outpcmd(cond) =>
+        cond match {
+          case "true" =>
+            scratchoutput = true
+          case "false" =>
+            scratchoutput = false
+          case _ =>
+            output.print(null, "Illegal argument!")
+        }
 
-      //Any other case
-      case cformat(cname) =>
-        error.print(null, "Invalid command " + cname + " !")
+      case thrycmd(name) =>
+        scratchtheory = name
 
-      //MMT command?
-      case _ =>
-        //!!!
-        //It must always generate a new random-named file
-        //The only problem is that when I save,
-        //it still asks me for the directory and filename
-        //Maybe deleting it after I use it will be enough
-        //!!!
-        var tmpstr : String = ""
-        val tmpfile = Random.alphanumeric.take(7).mkString + ".txt"
-        val tmpbuff = jEdit.openTemporary(null.asInstanceOf[View],
-          "./", tmpfile, true)
+      case cformat(_) =>
+        output.print(null, "Unknown command!")
 
-        //writing into file all the imported files +
-        //the command
-        filestack.foreach((b : (_, Buffer)) =>
-          tmpstr += "\n" + b._2.getText())
-        tmpstr += "\n" + command
-
-        tmpbuff.insert(0, tmpstr)
-        tmpbuff.save(null.asInstanceOf[View], null)
-
-
-        //!!!
-        //THIS IS THE CODE WHICH WILL BE USED
-        //TO TREAT ERRORS
-        //!!!
         /*
-        try {
-          controller.build(tmpstr)
-        } catch {
-          case e: Error =>
 
-        } finally {
-          jEdit.closeBuffer(null.asInstanceOf[View], tmpbuff)
-         
-         }
+         MMT command
+
          */
+      case _ =>
+        //Buffer stuff
 
-        //!!!
-        //FOR NOW, I WILL USE THE ERROR DIALOG
-        //!!!
-        compileActions.compile(tmpfile)
+        //Checks all the buffers for the MMTScratchpad.
+        //If it exists, it loads it. If not, it creates and loads it.
+        val scratch = buffers.find(b => b.getName == scratchfname).getOrElse {
+          val scratch = BufferSetManager.createUntitledBuffer()
+          scratch.setReadOnly(true)
+          buffmanag.addBuffer(null.asInstanceOf[View], scratch)
+          scratch.setMode("mmt")
+          scratch
+        }
+
+        val currView = jEdit.getActiveView()
+        val caretPos = currView.getEditPane().
+          getTextArea().getCaretPosition()
+
+        //Gets current theory and current metatheory
+        val ct = (try{
+          (MMTSideKick.getAssetAtOffset(currView, caretPos) getOrElse
+            null).getScope getOrElse null
+        } catch {
+          case _ : Throwable =>
+            output.print(null, "Caret not positioned in theory!")
+        }).asInstanceOf[Term]
+        
+        val mt = try{
+          controller.handle(SetBase(ct.toMPath));
+          //" : " + controller.globalLookup.get(ct.toMPath).parent.toString
+          " : " + controller.globalLookup.getDeclaredTheory(ct.toMPath).toString
+        } catch {
+          case _ : Throwable=> ""
+        }
+
+        //Parsing occurs here
+        try {
+          val t = interpolator.parse(List(command), Nil, None, scratchcheck)
+          val tP = controller.presenter.asString(t)
+
+          output.print(null, tP)
+          output.print(null, t.toString)
+
+          if (scratchoutput){
+            addDeclaration(scratch, scratchtheory,
+              tP, mt, "?" + ct.toMPath.name.toString)
+            scratch.setReadOnly(true)
+          }
+
+          success = Some(true)
+        } catch {
+          //Basic error handling
+          case e : Error =>
+            output.print(null, "Error:")
+            output.print(null, e.toString)
+            success = Some(false)
+          case e : Throwable=>
+            val eM = GeneralError("unknown exception during parsing").setCausedBy(e)
+            output.print(null, e.toString)
+            success = Some(false)
+        } finally {
+          controller.report("jedit", "MMTInterp - done.")
+        }
     }
+    output.commandDone
+  }
+  /*
+   Adds declaration to scratchpad
+   buffer      : The scratchpad buffer
+   theoryName  : The desired theory name to create
+   declaration : The declaration which is to be put
+   mtname      : Metatheory name
+   tname       : Theory to include
+   */
+  def addDeclaration(buffer : Buffer, theoryName : String,
+    declaration : String, mtname : String, tname : String) {
+
+    val tpattern = ("""(?s).*theory """ +
+      theoryName + """(.*?)=\n(.*?)"""+Reader.GS.toChar.toString).r
+    val currText = buffer.getText
+
+    val tcontent = tpattern findFirstMatchIn currText getOrElse null
+
+    //Checks if theory is existent or not :
+    //If it is, it writes declarations in the new theory;
+    //if not, creates a new theory
+    if(tcontent == null) {
+      buffer.insert(buffer.getText.length,
+        "theory " + theoryName + mtname + " =\n  include " +
+          tname + Reader.RS.toChar.toString + "\n  it = " +
+          declaration + Reader.RS.toChar.toString + "\n" +
+          Reader.GS.toChar.toString + "\n")
+      tmap += (theoryName -> 0)
+
+    } else {
+      val scontent = tcontent.start(2)
+      val econtent = tcontent.end(2)
+      val content = tcontent.group(2)
+
+      //Matches 'it'; if not found, appends a new it
+      val itpattern = """it =(.*)\n""".r
+      val itmatch = itpattern findFirstMatchIn content getOrElse null
+
+      try{
+        buffer.remove(itmatch.start +
+          scontent, 2)
+          buffer.insert(itmatch.start +
+            scontent, "c" + tmap(theoryName))
+        tmap(theoryName) = tmap(theoryName) + 1
+      } catch {
+        case _ : Throwable =>
+      }
+
+      buffer.insert(econtent, "  it = " +
+        declaration + Reader.RS.toChar.toString + "\n")
+
+      //Matches inclusion of theories
+      val inpattern = ("""include (.*)""" + Reader.RS.toChar.toString).r
+      val inmap = inpattern findAllMatchIn content
+
+      if (inmap exists {
+        m => m match {
+          case inpattern(incl) => (incl == tname)
+          case _ => false
+        }
+      }) { } else {
+        buffer.insert(scontent, "  include " +
+          tname + Reader.RS.toChar.toString + "\n")
+      }
+
+    }
+
   }
 }
