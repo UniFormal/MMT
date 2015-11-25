@@ -119,7 +119,7 @@ class Twelf extends Importer with frontend.ChangeListener {
     * @param seCont document continuation for indexing
     */
   def importDocument(bf: BuildTask, seCont: documents.Document => Unit): BuildResult = {
-    val outFile = bf.archive / RedirectableDimension(key) / bf.inPath.toFile.setExtension(outExt).filepath
+    val outFile = bf.archive / RedirectableDimension(key) / bf.inPath.toFile.setExtension(outExt).toFilePath
     outFile.up.mkdirs()
     outFile.delete()
     runTwelf(bf, outFile)
