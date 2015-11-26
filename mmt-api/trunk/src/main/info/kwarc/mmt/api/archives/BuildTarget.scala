@@ -15,6 +15,11 @@ case object Clean extends BuildTargetModifier {
   def toStringLong(dim: String) = dim + " --clean"
 }
 
+case class BuildDepsFirst(up: UpdateOnError) extends BuildTargetModifier {
+  def toString(dim: String) = dim + "&"
+  def toStringLong(dim: String) = up.toStringLong("depsFirst", dim)
+}
+
 abstract class Update extends BuildTargetModifier
 
 case class UpdateOnError(errorLevel: Level, dryRun: Boolean = false) extends Update {
@@ -34,11 +39,6 @@ case class UpdateOnError(errorLevel: Level, dryRun: Boolean = false) extends Upd
 case object Build extends Update {
   def toString(dim: String) = dim
   def toStringLong(dim: String) = dim + " --force"
-}
-
-case class BuildDepsFirst(up: UpdateOnError) extends Update {
-  def toString(dim: String) = dim + "&"
-  def toStringLong(dim: String) = up.toStringLong("depsFirst", dim)
 }
 
 /** A BuildTarget provides build/update/clean methods that generate one or more dimensions in an [[Archive]]
