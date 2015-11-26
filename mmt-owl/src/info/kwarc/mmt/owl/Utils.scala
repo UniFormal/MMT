@@ -23,7 +23,7 @@ object OWLOMS {
 
   def unapply(t: Term): Option[(String, String)] = {
     t match {
-      case OMID(OMMOD((this.path ? !(SimpleStep(m)))) ?? !(SimpleStep(n))) => Some((m, n))
+      case OMID((this.path ? !(SimpleStep(m))) ?? !(SimpleStep(n))) => Some((m, n))
       case _ => None
     }
   }
@@ -38,7 +38,7 @@ object OWL2OMS {
 
   def unapply(t: Term): Option[(String, String)] = {
     t match {
-      case OMID(OMMOD((this.path ? !(SimpleStep(m)))) ?? !(SimpleStep(n))) => Some((m, n))
+      case OMID((this.path ? !(SimpleStep(m))) ?? !(SimpleStep(n))) => Some((m, n))
       case _ => None
     }
   }

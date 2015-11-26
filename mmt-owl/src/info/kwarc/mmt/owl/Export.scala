@@ -28,7 +28,7 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
   def globalNameToIRI(gname: GlobalName): IRI = {
     println("globalname" + gname)
     gname match {
-      case OMMOD(doc ? !(SimpleStep("_"))) ?? name => IRI.create(doc.toPath + "/" + name.toPath) //flat
+      case (doc ? !(SimpleStep("_"))) ?? name => IRI.create(doc.toPath + "/" + name.toPath) //flat
       case _ => IRI.create(gname.toPath)
     }
   }
