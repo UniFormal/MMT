@@ -59,6 +59,9 @@ abstract class BuildTarget extends FormatBasedExtension {
   /** update this target in a given archive */
   def update(a: Archive, up: Update, in: FilePath)
 
+  /** build estimated dependencies first */
+  def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {}
+
   /** clean this target in a given archive */
   def clean(a: Archive, in: FilePath)
 
@@ -71,6 +74,7 @@ abstract class BuildTarget extends FormatBasedExtension {
   def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath) {
     modifier match {
       case Build => build(arch, in)
+      case BuildDepsFirst(up) => buildDepsFirst(arch, up, in)
       case up: Update => update(arch, up, in)
       case Clean => clean(arch, in)
     }
@@ -418,7 +422,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     Relational.flatTopsort(controller, deps)
   }
 
-  def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
+  override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
     val ts = getTopsortedDeps(getFilesRec(a, in))
     ts.foreach {
       case bd: BuildDependency => if (bd.key == key) update(bd.archive, up, bd.inPath)
