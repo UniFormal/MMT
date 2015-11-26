@@ -568,12 +568,12 @@ class STeXImporter extends Importer {
 
   def rewriteCMP(node: scala.xml.Node)(implicit mpath: MPath, errorCont: ErrorHandler): scala.xml.Node = node.label match {
     case "OMS" if xml.attr(node, "cd") == "OMPres" =>
-        <om:OMS base={Narration.path.doc.toPath} module={Narration.path.module.toMPath.name.toPath} name={Narration.path.name.toPath}/>
+        <om:OMS base={Narration.path.doc.toPath} module={Narration.path.module.name.toPath} name={Narration.path.name.toPath}/>
     case "OMS" =>
       val cd = xml.attr(node, "cd")
       val name = xml.attr(node, "name")
       val sym = resolveSPath(Some(cd), name, mpath)
-        <om:OMS base={sym.module.toMPath.parent.toPath} module={sym.module.toMPath.name.last.toPath} name={sym.name.last.toPath}/>
+        <om:OMS base={sym.module.parent.toPath} module={sym.module.name.last.toPath} name={sym.name.last.toPath}/>
     case "OME" => //OME(args) -> OMA(Informal.error -> args)
       val pre = OMS(Informal.constant("error")).toNode
       val newChild = node.child.map(rewriteCMP)

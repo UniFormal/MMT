@@ -10,7 +10,7 @@ class OEISObjectPresenter extends InformalMathMLPresenter {
   override def getNotation(p: GlobalName): Option[TextNotation] = {
     super.getNotation(p) match {
       case Some(not) => Some(not)
-      case None if (p.module.toMPath.last == "arithmetics") => Some(Arithmetics.getNotation(p.last))
+      case None if (p.module.last == "arithmetics") => Some(Arithmetics.getNotation(p.last))
       case None => None
     }
   }

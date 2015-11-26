@@ -110,7 +110,7 @@ object STeXUtils {
   val gimport: Regex = "\\\\gimport\\*?(\\[(.*?)\\])?\\{(.*?)\\}.*".r
 
 
-  def entryToPath(p: String) = File(p).setExtension("tex").filepath
+  def entryToPath(p: String) = File(p).setExtension("tex").toFilePath
 
   def noAmble(f: File): Boolean = {
     val source = readSourceRebust(f)

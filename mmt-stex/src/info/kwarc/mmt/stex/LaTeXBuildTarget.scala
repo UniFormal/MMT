@@ -191,7 +191,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     val errDir = getFolderErrorFile(a, curr.path).up
     val outFile = getFolderOutFile(a, curr.path)
     val outDir = outFile.up
-    if (errDir.isDirectory) errDir.deleteDir()
+    if (errDir.isDirectory) errDir.deleteDir
     outFile.getExtension.foreach(ext => getDirFilesByExt(a, outDir, List(ext)).foreach(deleteWithLog))
   }
 }

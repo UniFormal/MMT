@@ -47,7 +47,7 @@ class AllTeX extends LaTeXBuildTarget {
     val dirFiles = getDirFiles(a, dir, includeFile)
     if (dirFiles.nonEmpty) {
       createLocalPaths(a, dir)
-      val ds = getTopsortedDeps(getFilesRec(a, in))
+      val ds = getTopsortedDeps(key, getFilesRec(a, in))
       val ts = ds.collect { case bd: BuildDependency if bd.key == key => bd }.map(d => d.archive / inDim / d.inPath)
       val files = ts.filter(dirFiles.map(f => dir / f).contains(_)).map(_.getName)
       assert(files.length == dirFiles.length)
@@ -362,7 +362,7 @@ class LaTeXML extends LaTeXBuildTarget {
   override def cleanDir(a: Archive, curr: Current) {
     super.cleanDir(a, curr)
     val outDir = getFolderOutFile(a, curr.path).up
-    if (outDir.isDirectory) outDir.deleteDir()
+    if (outDir.isDirectory) outDir.deleteDir
   }
 }
 
@@ -436,7 +436,7 @@ class PdfLatex extends LaTeXBuildTarget {
   override def cleanDir(a: Archive, curr: Current) {
     super.cleanDir(a, curr)
     val outDir = getFolderOutFile(a, curr.path).up
-    if (outDir.isDirectory) outDir.deleteDir()
+    if (outDir.isDirectory) outDir.deleteDir
     val srcDir = a / inDim / curr.path
     getDirFilesByExt(a, srcDir, toBeCleanedExts).foreach(deleteWithLog)
   }

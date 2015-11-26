@@ -213,7 +213,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
    protected def doName(p: Path) {
       val s = p.last
       var attrs = p match {
-        case g : GlobalName => List("id" -> (g.module.toMPath.name.toPath + "?" + g.name.toPath))
+        case g : GlobalName => List("id" -> (g.module.name.toPath + "?" + g.name.toPath))
         case m : MPath => List("id" -> m.name.toPath)
         case _ => Nil
       }
@@ -236,7 +236,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
       td {span {text(comp.toString)}}
       td {doMath(t)}
    }
-   private def doNotComponent(comp: NotationComponent, tn: TextNotation) {
+   private def doNotComponent(comp: NotationComponentKey, tn: TextNotation) {
       td {span {text(comp.toString)}}
       td {span {text(tn.toText)}}
    }
@@ -282,7 +282,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
    }
 
    def encPath(path : GlobalName) : String = {
-     path.module.toMPath.name.toString + "_" + path.name.toString
+     path.module.name.toString + "_" + path.name.toString
    }
 
 

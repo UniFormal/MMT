@@ -28,7 +28,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
       case _ => throw ServerError("Invalid JSON " + bodyS)
     }
   }
-    
+
   def apply(uriComps: List[String], query: String, body: Body): HLet = {
     try {
       uriComps match {
@@ -155,7 +155,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
     }
 
     val usedDeclarations = constants.flatMap(_.getComponents).flatMap {
-      case (_, t: AbstractTermContainer) => t.get.map(getUsage)
+      case DeclarationComponent(_, t: AbstractTermContainer) => t.get.map(getUsage)
       case _ => Nil
     }.toSet
 

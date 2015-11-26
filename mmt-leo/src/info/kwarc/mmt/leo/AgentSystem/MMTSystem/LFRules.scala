@@ -56,12 +56,12 @@ object BackwardPiElimination extends BackwardSearch {
          case _ => None
       }
    }
-   
+
    /**
-    * @param context current context 
+    * @param context current context
     * @param goal term relative to context
     * @param fact closed (function) type
-    * @return the argument types of fact such that applying a function of type fact yields a result of type goal 
+    * @return the argument types of fact such that applying a function of type fact yields a result of type goal
     */
    private def makeSubgoals(blackboard: MMTBlackboard, context: Context, goal: Term, fact: Term): Option[Context] = {
       // tp must be of the form Pi bindings.scope
@@ -133,7 +133,7 @@ object BackwardPiElimination extends BackwardSearch {
                  onApply("Pi elimination backward using " + tm) {makeAlternative(g, tm, argDecls)}.toList
               } else {
                  // no: try to match the first unnamed argument against a known fact to instantiate the remaining ones
-                 // now find the first argument that mentions all remaining unsolved parameters 
+                 // now find the first argument that mentions all remaining unsolved parameters
                  val uAOpt = argDecls.find {
                     case UnnamedArgument(t) =>
                        val tvars = t.freeVars
@@ -148,7 +148,7 @@ object BackwardPiElimination extends BackwardSearch {
                        val UnnamedArgument(uAtp) = uA
                        // match uAtp against known facts
                        blackboard.facts.termsOfTypeAtGoal(g, unsolvedParameters, uAtp) flatMap {case (subs, p) =>
-                          // update the argument declarations with the new information 
+                          // update the argument declarations with the new information
                           val argDecls2 = argDecls.map {
                              case vd if vd == uA =>
                                 // the matched goal is already solved by p
@@ -158,9 +158,9 @@ object BackwardPiElimination extends BackwardSearch {
                                 vd.copy(df = subs(x))
                              case vd @ SolvedParameter(_,_) =>
                                 // previously solved parameters remain unchanged
-                                vd 
+                                vd
                              case vd @ UnnamedArgument(t) =>
-                                // substitute the new solutions in the remaining unnamed arguments 
+                                // substitute the new solutions in the remaining unnamed arguments
                                 vd.copy(tp = Some(t ^ subs))
                           }
                           onApply("Pi elimination backward using " + tm + " and " + blackboard.presentObj(p) + " : " + blackboard.presentObj(uAtp ^ subs)) {
@@ -180,7 +180,7 @@ object BackwardPiElimination extends BackwardSearch {
                                 case vd if vd == uP =>
                                    VarDecl(x, None, Some(p), None)
                                 case vd @ SolvedParameter(_,_) =>
-                                   vd 
+                                   vd
                                 case vd @ UnnamedArgument(t) =>
                                    vd.copy(tp = Some(t ^? x/p))
                              }
@@ -265,7 +265,7 @@ object ForwardPiElimination extends ForwardSearch {
                   case Some(sub) =>
                      // if all parameters were instantiated,
                      // we apply fun to all parameters and found arguments
-                     // and add the new fact, whose type is obtained by substituting all parameters and named arguments in scope 
+                     // and add the new fact, whose type is obtained by substituting all parameters and named arguments in scope
                      val f = Fact(g, ApplyGeneral(fun, sub.map(_.target) ::: foundArgs.map(_._2)), scope ^? (sub ++ foundSubs))
                      facts.add(f,Some(factSection))
                   case None =>
@@ -273,7 +273,7 @@ object ForwardPiElimination extends ForwardSearch {
                }
             case (nOpt, tp) :: rest =>
                // substitute solved parameters and found named arguments in tp
-               // tpS stills contain free variables for the so-far-unsolved parameters 
+               // tpS stills contain free variables for the so-far-unsolved parameters
                val tpS = tp ^? (parameters.toPartialSubstitution ++ foundSubs)
                // get all possible arguments for tpS
                val args = facts.termsOfTypeBelowGoal(g, parameters, tpS)
@@ -364,8 +364,8 @@ object TermGeneration extends ForwardSearch {
 class TransitivityGeneration(blackboard:MMTBlackboard,rel: GlobalName, ded: GlobalName)
                             (implicit controller: Controller,oLP:String) extends TransitivityAgent(blackboard){
 
-   val Ded = new UnaryLFConstantScala(ded.module.toMPath, ded.name.toString)
-   val Rel = new BinaryLFConstantScala(rel.module.toMPath, rel.name.toString)
+   val Ded = new UnaryLFConstantScala(ded.module, ded.name.toString)
+   val Rel = new BinaryLFConstantScala(rel.module, rel.name.toString)
    override val head = Pi.path
    override val priority = 0
 

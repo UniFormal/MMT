@@ -41,7 +41,7 @@ class EditingServicePlugin(val controller: Controller) {
       case _ => throw ServerError("No theory found")
     }
     val incl = thy.getIncludes
-    //thy.components.length 
+    //thy.components.length
     def remover(checked: List[MPath], rest: List[MPath]): List[MPath] = rest match {
       case Nil => checked
       case (hd :: tl) =>
@@ -278,7 +278,7 @@ class EditingServicePlugin(val controller: Controller) {
             case p: GlobalName =>
               //getting language
               //FIXME terrible hack, to add language field to definition instead
-              val lang = p.module.toMPath.name.toPath.split('.').toList match {
+              val lang = p.module.name.toPath.split('.').toList match {
                 case l if l.contains("de") => "de"
                 case l if l.contains("en") => "en"
                 case l => throw new IllegalStateException

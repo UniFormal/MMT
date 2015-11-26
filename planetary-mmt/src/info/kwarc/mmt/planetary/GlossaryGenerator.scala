@@ -17,7 +17,7 @@ import ontology._
 import info.kwarc.mmt.stex._
 
 object GlossaryGenerator {
-  
+
   private var counter = 0
   def getNewId : String = {
     counter += 1
@@ -34,9 +34,9 @@ object GlossaryGenerator {
     }
     this.rh = new StringBuilder
     presenter.setRh(rh)
-    
+
     val mpaths = controller.depstore.getInds(ontology.IsTheory).toList
-    val modules = mpaths flatMap { p => 
+    val modules = mpaths flatMap { p =>
       try {
         controller.get(p) match {
           case d : DeclaredTheory => Some(d)
@@ -61,7 +61,7 @@ object GlossaryGenerator {
   // easy-to-use HTML markup
   protected val htmlRh = utils.HTML(s => rh(s))
   import htmlRh._
-  
+
   private def makeString(not : TextNotation) : String = {
     val smks = not.markers map {
       case d : Delimiter => d.text
@@ -71,14 +71,14 @@ object GlossaryGenerator {
   }
 
   private def present(verbs: Iterable[(GlobalName, TextNotation)]): Unit = {
-    val items = new collection.mutable.HashMap[String, List[(GlobalName, TextNotation)]] 
-    verbs foreach {p => p._2.scope.languages.foreach { lang => 
+    val items = new collection.mutable.HashMap[String, List[(GlobalName, TextNotation)]]
+    verbs foreach {p => p._2.scope.languages.foreach { lang =>
      if (lang != "") {
        if (!items.contains(lang)) {
          items(lang) = Nil
        }
        items(lang) ::= p
-     } 
+     }
     }}
     def getCls(lang: String) = if (lang == "en") "active" else ""
     div(attributes = List("id" -> "glossary")) {
@@ -104,13 +104,13 @@ object GlossaryGenerator {
 
   private def present(lang : String, spath : GlobalName, not: TextNotation): Unit = {
     val doc = spath.doc
-    val mod = spath.module.toMPath.name
+    val mod = spath.module.name
     val name = spath.name
     val constant = controller.library.getConstant(spath)
     val alternatives = constant.notC.verbalizationDim.notations.values.flatten.flatMap(_.scope.languages.filter(_ != lang)).toSet
-    
+
     val notations = (constant.notC.parsingDim.notations.values.flatten ++ constant.notC.presentationDim.notations.values.flatten).map(n => spath -> n).toList.distinct
-    
+
     val defs = controller.depstore.queryList(spath, ToObject(IRels.isDefinedBy)) map {
           case p: Path =>
             controller.get(p) match {
@@ -127,10 +127,10 @@ object GlossaryGenerator {
     if (defs.isEmpty) {
       return;
     }
-    
+
     li(cls = "entry") {
       div {
-        //name 
+        //name
         span(cls="name keyword", attributes=List("id" -> (presenter.encPath(spath) + "_" + lang))) {
           span {
             presenter.doNotationRendering(spath, not)
@@ -162,9 +162,9 @@ object GlossaryGenerator {
         }
         // Notations Table -- hidden by default, activated by notations trigger
         presenter.doNotationsTable(notations, notId)
-        
+
         // adding definition (as hidden for now)
-        //("style" -> "display:none;") 
+        //("style" -> "display:none;")
         div(attributes = ("id" -> (defId)) :: ("style" -> "display:none;") :: Nil) {
           defs.flatten foreach { fd =>
             presenter(fd)(rh)
