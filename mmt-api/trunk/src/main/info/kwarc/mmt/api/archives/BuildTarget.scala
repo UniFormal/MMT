@@ -70,7 +70,7 @@ abstract class BuildTarget extends FormatBasedExtension {
     */
   def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath) {
     modifier match {
-      case Build => build(arch, in) 
+      case Build => build(arch, in)
       case up: Update => update(arch, up, in)
       case Clean => clean(arch, in)
     }
@@ -169,12 +169,12 @@ abstract class TraversingBuildTarget extends BuildTarget {
     * see defaultFileExtension if you need an inExt (for meta targets)
     */
   def includeFile(name: String): Boolean
-  
+
   /**
    * if this target produces additional files (e.g., the aux files of LaTeX),
    * this method should map them to the respective main file
    * @param outPath the output path (relative to archive)
-   * @return the input path (relative to inDim) 
+   * @return the input path (relative to inDim)
    */
   def producesFrom(outPath: FilePath): Option[FilePath] = None
 
@@ -374,10 +374,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     })
   }
 
-
-
 //TODO delete everything below here
-
 
   protected def getFilesRec(a: Archive, in: FilePath): Set[Dependency] = {
     val inFile = a / inDim / in
@@ -393,24 +390,24 @@ abstract class TraversingBuildTarget extends BuildTarget {
     makeBuildTask(a, inPath, a / inDim / inPath, None, None)
   }
 
-  def getAnyDeps(key: String, dep: BuildDependency): Set[Dependency] = {
+  def getAnyDeps(dep: BuildDependency): Set[Dependency] = {
     if (dep.key == key)
       getDeps(makeBuildTask(dep.archive, dep.inPath))
-    else controller.extman.getOrAddExtension(classOf[BuildTarget], key, Nil) match {
+    else controller.extman.getOrAddExtension(classOf[BuildTarget], dep.key, Nil) match {
       case bt: TraversingBuildTarget => bt.getDeps(bt.makeBuildTask(dep.archive, dep.inPath))
       //TODO resolve non-simple dependencies
       case _ => Set.empty
     }
   }
 
-  def getTopsortedDeps(key: String, args: Set[Dependency]): List[Dependency] = {
+  def getTopsortedDeps(args: Set[Dependency]): List[Dependency] = {
     var visited: Set[Dependency] = Set.empty
     var unknown = args
     var deps: Map[Dependency, Set[Dependency]] = Map.empty
     while (unknown.nonEmpty) {
       val p = unknown.head
       val ds: Set[Dependency] = p match {
-        case bd: BuildDependency => getAnyDeps(key, bd)
+        case bd: BuildDependency => getAnyDeps(bd)
         case _ => Set.empty
       }
       deps += ((p, ds))
@@ -422,10 +419,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
-    val ts = getTopsortedDeps(key, getFilesRec(a, in))
+    val ts = getTopsortedDeps(getFilesRec(a, in))
     ts.foreach {
       case bd: BuildDependency => if (bd.key == key) update(bd.archive, up, bd.inPath)
-      else controller.extman.getOrAddExtension(classOf[BuildTarget], key, Nil) match {
+      else controller.extman.getOrAddExtension(classOf[BuildTarget], bd.key, Nil) match {
         case bt: TraversingBuildTarget => bt.update(bd.archive, up, bd.inPath)
         case _ => log("build target not found: " + bd.key)
       }
