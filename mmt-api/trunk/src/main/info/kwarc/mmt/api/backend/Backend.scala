@@ -81,7 +81,7 @@ class RealizationArchive(file: File, val loader: java.net.URLClassLoader) extend
   def load(path: Path)(implicit controller: Controller) {
     val mp = path match {
       case mp: MPath => mp
-      case GlobalName(objects.OMMOD(mp1), _) => mp1
+      case GlobalName(mp1, _) => mp1
       case _ => throw NotApplicable("no module path found")
     }
     val s = uom.GenericScalaExporter.mpathToScala(mp) + "$"

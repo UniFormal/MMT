@@ -17,7 +17,7 @@ class LatexExporter extends Exporter {
   override protected val folderName = "NAMESPACE"
 
   private def doConstantName(p: GlobalName) = p match {
-    case GlobalName(OMMOD(m), !(n)) => "\\" + translate(m.last + n, commandEscapes ::: UnicodeConverter.mapsRaw)
+    case GlobalName(m, !(n)) => "\\" + translate(m.last + n, commandEscapes ::: UnicodeConverter.mapsRaw)
     case _ =>
       logError("cannot translate to constant name: " + p)
       s"\\ERROR($p)"
