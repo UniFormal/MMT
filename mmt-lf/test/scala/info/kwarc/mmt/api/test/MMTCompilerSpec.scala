@@ -1,8 +1,9 @@
 package scala.info.kwarc.mmt.api.test
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.utils._
+import archives.BuildManager
+import frontend._
+import utils._
 import org.scalatest._
 
 class MMTCompilerSpec extends FlatSpec with Matchers {
@@ -58,7 +59,7 @@ class MMTCompilerSpec extends FlatSpec with Matchers {
     controller.handleLine("build urtheories mmt-omdoc")
     controller.handleLine("build test mmt-omdoc")
     controller.handleLine("build test mmt-omdoc")
-
+    controller.extman.get(classOf[BuildManager]).foreach(_.waitToEnd)
   }
   it should "allow access to documents from narration" in {
     controller.memory.clear

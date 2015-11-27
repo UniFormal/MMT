@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
+import archives.{BuildManager, BuildQueue}
 import utils._
 
 /** Creates a Controller and provides a shell interface to it.
@@ -108,7 +109,8 @@ class Shell {
           command = Option(Input.readLine())
         }
       }
-
+      val optBuildQueue = controller.extman.get(classOf[BuildManager])
+      optBuildQueue.foreach(_.waitToEnd)
       // cleanup if we want to exit.
       if (args.runCleanup) {
         controller.cleanup
