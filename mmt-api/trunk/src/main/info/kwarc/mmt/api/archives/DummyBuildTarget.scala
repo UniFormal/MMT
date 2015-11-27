@@ -32,10 +32,19 @@ class DummyBuildTarget extends TraversingBuildTarget {
         providedEntities ::= l
       }
     }
-    if (missingDeps.isEmpty)
-      if (providedEntities.isEmpty) BuildFailure(Nil, Nil)
-      else
+    if (missingDeps.isEmpty) {
+      if (providedEntities.isEmpty) {
+        logResult("failure for " + bf.inFile)
+        BuildFailure(Nil, Nil)
+      } else {
+        File.write(bf.outFile, providedEntities.mkString("", "\n", "\n"))
+        logResult("success " + bf.outPath)
         BuildSuccess(Nil, Nil)
-    else MissingDependency(missingDeps, Nil)
+      }
+    }
+    else {
+      logResult("missing dependencies for " + bf.inPath + ": " + missingDeps)
+      MissingDependency(missingDeps, Nil)
+    }
   }
 }

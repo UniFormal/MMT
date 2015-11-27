@@ -14,5 +14,7 @@ stex-omdoc info.kwarc.mmt.stex.STeXImporter
 alltex     info.kwarc.mmt.stex.AllTeX
 allpdf     info.kwarc.mmt.stex.AllPdf
 
+foobar     info.kwarc.mmt.api.archives.DummyBuildTarget
+
 #semantics
 http://cds.omdoc.org/urtheories?LF info.kwarc.mmt.lf.Plugin
