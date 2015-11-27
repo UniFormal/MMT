@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
-import archives.{BuildManager, BuildQueue}
+import archives.BuildManager
 import utils._
 
 /** Creates a Controller and provides a shell interface to it.
