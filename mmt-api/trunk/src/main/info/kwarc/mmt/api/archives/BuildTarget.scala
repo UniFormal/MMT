@@ -359,12 +359,18 @@ abstract class TraversingBuildTarget extends BuildTarget {
                   case ForeignDependency(fFile) => modified(fFile, errorFile)
                   case _ => false
                 }
+              if (!rn) {
+                logResult("up-to-date " + outPath)
+              }
               if (rn && up.dryRun) {
                  logResult("out-dated " + outPath)
                  false
               } else {
                  rn
               }
+        }
+        if (rebuildNeeded) {
+          runBuildTask(bf)
         }
         (rebuildNeeded, bf)
     }, { case (c@Current(inDir, inPath), childChanged) =>
