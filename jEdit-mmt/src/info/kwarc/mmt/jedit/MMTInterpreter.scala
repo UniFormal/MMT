@@ -22,6 +22,7 @@ class MMTInterpreter extends console.Shell("mmt-interpreter") {
   val buffmanag : BufferSetManager = jEdit.getBufferSetManager()
   val interpolator = new MMTInterpolator(controller)
 
+  var scratchnspace = "http://cds.omdoc.org/scratch"
   var scratchfname = "Untitled-1"
   var scratchtheory = "scratch"
   var scratchcheck = true
@@ -140,6 +141,8 @@ Non-commands are MMT code.
           scratch.setReadOnly(true)
           buffmanag.addBuffer(null.asInstanceOf[View], scratch)
           scratch.setMode("mmt")
+          scratch.insert(0, "namespace " + scratchnspace +
+          Reader.GS.toChar.toString + "\n\n")
           scratch
         }
 
@@ -154,27 +157,61 @@ Non-commands are MMT code.
         } catch {
           case _ : Throwable =>
             output.print(null, "Caret not positioned in theory!")
-        }).asInstanceOf[Term]
+        }).asInstanceOf[MPath]
         
         val mt = try{
-          controller.handle(SetBase(ct.toMPath));
-          //" : " + controller.globalLookup.get(ct.toMPath).parent.toString
-          " : " + controller.globalLookup.getDeclaredTheory(ct.toMPath).toString
+          controller.handle(SetBase(ct))
+          controller.globalLookup.get(ct) match {
+            case d: modules.DeclaredTheory =>
+              d.meta.map(" : " + _.toPath).getOrElse("")
+            case _ => ""
+          }
         } catch {
           case _ : Throwable=> ""
         }
 
+        //Type checking and simplification
+
         //Parsing occurs here
         try {
-          val t = interpolator.parse(List(command), Nil, None, scratchcheck)
-          val tP = controller.presenter.asString(t)
+          val tp = interpolator.parse(List(command), Nil, None, false)
+          val tP = controller.presenter.asString(tp)
 
+          output.print(null, "Internal form: " + tp.toString)
           output.print(null, tP)
-          output.print(null, t.toString)
+
+          //-------------
+          val str = command
+          val theory = ct
+
+          val pu = ParsingUnit(SourceRef.anonymous(str),
+            Context(theory), str, NamespaceMap(theory.doc), None)
+          val t : Term = controller.extman.get(classOf[Parser],
+            "mmt").get.apply(pu)(ErrorThrower)
+
+          //Type checking
+	  val stack = Stack(Context(theory))
+	  val (tR, tpR) = checking.Solver.check(controller, stack, t).
+            getOrElse (null, null)
+
+          //Simplification
+          val tRS = controller.simplifier(tR, Context(theory))
+
+          output.print(null, "===DEBUG===")
+
+          if ((tR, tpR) != (null, null)){
+            output.print(null, tR.toString)
+            output.print(null, tpR.toString)
+            output.print(null, tRS.toString)
+            output.print(null, controller.simplifier(tRS, Context(theory)).toString)
+          }
+
+          output.print(null, "===========")
+          //-------------
 
           if (scratchoutput){
             addDeclaration(scratch, scratchtheory,
-              tP, mt, "?" + ct.toMPath.name.toString)
+              tP, mt, ct.toString)
             scratch.setReadOnly(true)
           }
 
@@ -229,8 +266,12 @@ Non-commands are MMT code.
       val content = tcontent.group(2)
 
       //Matches 'it'; if not found, appends a new it
-      val itpattern = """it =(.*)\n""".r
+      val itpattern = ("""it = (.*)""" +
+      Reader.RS.toChar.toString + """\n""").r
       val itmatch = itpattern findFirstMatchIn content getOrElse null
+      val itcontent = itmatch.group(1)
+
+      val ndeclaration = declaration.replaceAll("it", itcontent)
 
       try{
         buffer.remove(itmatch.start +
@@ -243,22 +284,25 @@ Non-commands are MMT code.
       }
 
       buffer.insert(econtent, "  it = " +
-        declaration + Reader.RS.toChar.toString + "\n")
-
+        ndeclaration + Reader.RS.toChar.toString + "\n")
+/*
       //Matches inclusion of theories
-      val inpattern = ("""include (.*)""" + Reader.RS.toChar.toString).r
-      val inmap = inpattern findAllMatchIn content
+      if (!tname.startsWith(scratchnspace)) {
+        val inpattern = ("""include (.*)""" + Reader.RS.toChar.toString).r
+        val inmap = inpattern findAllMatchIn content
 
-      if (inmap exists {
-        m => m match {
-          case inpattern(incl) => (incl == tname)
-          case _ => false
+        if (inmap exists {
+          m => m match {
+            case inpattern(incl) => (incl == tname)
+            case _ => false
+          }
+        }) { } else {
+          buffer.insert(scontent, "  include " +
+            tname + Reader.RS.toChar.toString + "\n")
         }
-      }) { } else {
-        buffer.insert(scontent, "  include " +
-          tname + Reader.RS.toChar.toString + "\n")
       }
 
+ */
     }
 
   }
