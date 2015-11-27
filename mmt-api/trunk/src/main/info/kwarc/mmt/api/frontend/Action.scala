@@ -79,7 +79,7 @@ object Action extends RegexParsers {
       ArchiveBuild(ids, km._1, km._2, in)
   }
 
-  // TODO integrate with keyMod
+  // the old keyMod must be kept for compatibility reasons of .msl files
   private def buildModifier =
     ("--force" | "--onChange" | "--onError\\??(=\\d)?".r | "--clean" | "--depsFirst\\??(=\\d)?".r) ^^ {
       case "--force" => Build
@@ -95,10 +95,9 @@ object Action extends RegexParsers {
         else up
     }
 
-  // TODO needs decent name
-  private def filebuild = ("make" | "rbuild") ~> stringList ~ (buildModifier ?) ~ (("--\\S+"r) *) ~ (file *) ^^ {
-    case keys ~ mod ~ args ~ files =>
-      BuildFiles(keys, mod.getOrElse(UpdateOnError(Level.Ignore)), args, files)
+  private def filebuild = ("make" | "rbuild") ~> str ~ (buildModifier ?) ~ (("--\\S+"r) *) ~ (file *) ^^ {
+    case key ~ mod ~ args ~ files =>
+      BuildFiles(key, mod.getOrElse(UpdateOnError(Level.Ignore)), args, files)
   }
 
   private def archdim = "archive" ~> stringList ~ dimension ~ optFilePath ^^ {
@@ -470,9 +469,9 @@ case class ArchiveBuild(ids: List[String], dim: String, modifier: BuildTargetMod
 }
 
 /** builds multiple targets for multiple files, loading extensions/archives as necessary */
-case class BuildFiles(keys: List[String], modifier: BuildTargetModifier,
+case class BuildFiles(key: String, modifier: BuildTargetModifier,
                      args: List[String], files: List[File]) extends Action {
-  override def toString = "make " + MyList(keys).mkString("[",",","]") + " " + modifier.toStringLong("") +
+  override def toString = "make " + modifier.toStringLong(key) +
     (args ++ files.map(_.toString)).map(" " + _).mkString
 }
 

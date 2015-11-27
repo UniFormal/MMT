@@ -479,7 +479,7 @@ class Controller extends ROController with Logger {
 
   // for most actions provide a separate procedure that may be called directly
 
-  def buildFilesAction(keys: List[String], mod: BuildTargetModifier, args: List[String], files: List[File]) {
+  def buildFilesAction(key: String, mod: BuildTargetModifier, args: List[String], files: List[File]) {
     report.addHandler(ConsoleHandler)
     val realFiles = if (files.isEmpty)
       List(File(System.getProperty("user.dir")))
@@ -492,9 +492,7 @@ class Controller extends ROController with Logger {
       }
     }
     val inputs = realFiles flatMap collectInputs
-
-    val buildTargets = keys map { key => extman.getOrAddExtension(classOf[BuildTarget], key, args) }
-
+    val bt = extman.getOrAddExtension(classOf[BuildTarget], key, args)
     inputs foreach { case (root, fp) =>
       addArchive(root) // add the archive
       backend.getArchive(root) match {
@@ -502,21 +500,18 @@ class Controller extends ROController with Logger {
           // opening may fail despite resolveAnyPhysical (i.e. formerly by a MANIFEST.MF without id)
           logError("not an archive: " + root)
         case Some(archive) =>
-          buildTargets foreach {
-            bt =>
-              report.groups += bt.key + "-result" // ensure logging
-            val inPath = fp.segments match {
-                case dim :: path =>
-                  bt match {
-                    case bt: TraversingBuildTarget if dim != bt.inDim.toString =>
-                      logError("wrong in-dimension \"" + dim + "\"")
-                    case _ =>
-                  }
-                  FilePath(path)
-                case Nil => EmptyPath
+          report.groups += bt.key + "-result" // ensure logging
+        val inPath = fp.segments match {
+            case dim :: path =>
+              bt match {
+                case bt: TraversingBuildTarget if dim != bt.inDim.toString =>
+                  logError("wrong in-dimension \"" + dim + "\"")
+                case _ =>
               }
-              bt(mod, archive, inPath)
+              FilePath(path)
+            case Nil => EmptyPath
           }
+          bt(mod, archive, inPath)
       }
     }
   }
@@ -626,8 +621,8 @@ class Controller extends ROController with Logger {
             backend.addStore(LocalSystem(b))
           case AddArchive(f) =>
             addArchive(f)
-          case BuildFiles(keys, mod, args, files) =>
-            buildFilesAction(keys, mod, args, files)
+          case BuildFiles(key, mod, args, files) =>
+            buildFilesAction(key, mod, args, files)
           case ArchiveBuild(ids, key, mod, in) =>
             archiveBuildAction(ids, key, mod, in)
           case ArchiveMar(id, file) =>
