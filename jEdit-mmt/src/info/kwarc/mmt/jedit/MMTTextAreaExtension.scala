@@ -22,15 +22,15 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
    private val view = editPane.getView
    private val painter = textArea.getPainter
 
-   val oIMG = new ImageIcon(
-     this.getClass().getResource(
-       "/images/object_t.png")).getImage()
-   val dIMG = new ImageIcon(
-     this.getClass().getResource(
-       "/images/clear_button.png")).getImage()
-   val mIMG = new ImageIcon(
-     this.getClass().getResource(
-       "/images/clear_button.png")).getImage()
+   //val oIMG = new ImageIcon(
+   //  this.getClass().getResource(
+   //    "/images/object_t.png")).getImage()
+   //val dIMG = new ImageIcon(
+   //  this.getClass().getResource(
+   //    "/images/clear_button.png")).getImage()
+   //val mIMG = new ImageIcon(
+   //  this.getClass().getResource(
+   //    "/images/clear_button.png")).getImage()
 
    private val segment = new Segment
 
@@ -61,10 +61,10 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
           gfx.fillRect(startPoint.x, startPoint.y,
             width, height)
 
-          gfx.setColor(new java.awt.Color(24, 28, 114))
+          gfx.setColor(new java.awt.Color(114, 28, 24))
           gfx.fillRect(startPoint.x,
-            startPoint.y + height/2 - width/2,
-            width, width)
+            startPoint.y,
+            width, height)
 
           gfx.setColor(java.awt.Color.WHITE)
           gfx.setFont(new Font(font.getName(),
@@ -79,8 +79,8 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
 
           gfx.setColor(new java.awt.Color(24, 28, 114))
           gfx.fillRect(startPoint.x,
-            startPoint.y + height/2 - width/2,
-            width, width)
+            startPoint.y,
+            width, height)
 
           gfx.setColor(java.awt.Color.WHITE)
           gfx.setFont(new Font(font.getName(),
@@ -93,10 +93,10 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
           gfx.fillRect(startPoint.x, startPoint.y,
             width, height)
 
-          gfx.setColor(new java.awt.Color(24, 28, 114))
+          gfx.setColor(new java.awt.Color(24, 114, 28))
           gfx.fillRect(startPoint.x,
-            startPoint.y + height/2 - width/2,
-            width, width)
+            startPoint.y,
+            width, height)
 
           gfx.setColor(java.awt.Color.WHITE)
           gfx.setFont(new Font(font.getName(),
