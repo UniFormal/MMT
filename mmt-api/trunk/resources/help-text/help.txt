@@ -27,6 +27,6 @@ with the following arguments.
   -i, --shell               execute COMMANDS and take further commands on the MMT shell. Default if no arguments are
                             provided.
   -w, --keepalive           execute COMMANDS and terminate only after all threads have finished.
-  -e, --noshell             same as --keepalive (for backwards compatibility)
+  -w, --noshell             same as --keepalive (for backwards compatibility)
 
-note: any arguments listed here can be given in the form -argument, --argument or /argument syntax.
+note: for long options arguments can also be given using "=", i.e. --file=FILENAME.
