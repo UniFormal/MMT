@@ -22,15 +22,15 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
    private val view = editPane.getView
    private val painter = textArea.getPainter
 
-   //val oIMG = new ImageIcon(
-   //  this.getClass().getResource(
-   //    "/images/object_t.png")).getImage()
-   //val dIMG = new ImageIcon(
-   //  this.getClass().getResource(
-   //    "/images/clear_button.png")).getImage()
-   //val mIMG = new ImageIcon(
-   //  this.getClass().getResource(
-   //    "/images/clear_button.png")).getImage()
+   val oIMG = new ImageIcon(
+     this.getClass().getResource(
+       "/images/object_t.png")).getImage()
+   val dIMG = new ImageIcon(
+     this.getClass().getResource(
+       "/images/clear_button.png")).getImage()
+   val mIMG = new ImageIcon(
+     this.getClass().getResource(
+       "/images/clear_button.png")).getImage()
 
    private val segment = new Segment
 
