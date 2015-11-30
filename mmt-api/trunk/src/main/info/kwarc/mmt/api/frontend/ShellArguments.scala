@@ -7,19 +7,17 @@ import scala.util.Try
 /** describe the kind of a command line option */
 sealed class OptionArgument
 
+/** just a flag */
 case object NoArg extends OptionArgument
 
-// just a flag
-
+/** expect an integer argument */
 case object IntArg extends OptionArgument
-
-// expect an integer argument
 
 case object StringArg extends OptionArgument
 
+/** collect multiple values */
 case object StringListArg extends OptionArgument
 
-// collect multiple values
 
 /** the possible values given by options */
 sealed class OptionValue {
