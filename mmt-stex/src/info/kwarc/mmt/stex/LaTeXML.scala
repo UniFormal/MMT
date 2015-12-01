@@ -6,6 +6,7 @@ import java.nio.file.Files
 import STeXUtils._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils._
 
@@ -125,41 +126,57 @@ class LaTeXML extends LaTeXBuildTarget {
   private var paths: Seq[String] = Nil
   private var reboot: Boolean = false
   private var nopost: Boolean = false
-  private var nopostFlag = "--nopost"
 
-  private def getArg(arg: String, args: List[String]): Option[String] =
-    partArg(arg, args)._1.headOption.map(Some(_)).
-      getOrElse(controller.getEnvVar("LATEXML" + arg.toUpperCase))
+  private val latexmlOpts: List[OptionDescr] = List(
+    OptionDescr("latexmlc", "", StringArg, "executable path for (client) latexmlc"),
+    OptionDescr("latexmls", "", StringArg, "executable path for (server) latexmls"),
+    OptionDescr("expire", "", IntArg, "expire argument for (server) latexmls"),
+    OptionDescr("port", "", IntArg, "port for (server) latexmls"),
+    OptionDescr("profile", "", StringArg, "latexml profile"),
+    OptionDescr("preload", "", StringListArg, "preload arguments"),
+    OptionDescr("path", "", StringListArg, "path arguments"),
+    OptionDescr("reboot", "", NoArg, "ony try to terminate (server) latexmls"),
+    OptionDescr("nopost", "", NoArg, "omit post processing, create xml")
+  )
+
+  private def getArg(arg: String, m: Map[String, OptionValue]): Option[String] =
+    m.get(arg).map {
+      case IntVal(v) => Some(v.toString)
+      case StringVal(s) => Some(s)
+      case _ => None
+    }.getOrElse(controller.getEnvVar("LATEXML" + arg.toUpperCase))
 
   override def start(args: List[String]) {
     super.start(args)
-    val (rOpts, nonOptArgs) = execArgs(args)
-    latexmlc = getFromFirstArgOrEnvvar(nonOptArgs, "LATEXMLC", latexmlc)
-    val (sOpts, opts) = partArg(latexmls, rOpts)
-    latexmls = sOpts.headOption.map(Some(_)).getOrElse(controller.getEnvVar("LATEXMLS")).
-      getOrElse(latexmls)
-    expire = getArg("expire", opts).getOrElse(expire)
-    val newPort = getArg("port", opts)
-    portSet = newPort.isDefined
-    port = try newPort.getOrElse(port.toString).toInt catch {
-      case _: Exception => port
+    val (m, rest) = AnaArgs.anaArgs(latexmlOpts, remainingStartArguments)
+    remainingStartArguments = rest
+    val (restOpts, nonOpts) = AnaArgs.getTrailingNonOptions(rest)
+    if (restOpts.nonEmpty) {
+      logError("unrecognized remaining options: " + restOpts.mkString(" "))
     }
-    val newProfile = getArg("profile", opts)
+    m.get("latexmlc").foreach { s =>
+      if (nameOfExecutable.nonEmpty) {
+        logError("executable overwritten by --latexmlc" )
+      }
+      nameOfExecutable = s.getStringVal }
+    val nonOptArgs = if (nameOfExecutable.isEmpty) nonOpts else nameOfExecutable :: nonOpts
+    latexmlc = getFromFirstArgOrEnvvar(nonOptArgs, "LATEXMLC", latexmlc)
+    latexmls = m.get("latexmls").map(v => Some(v.getStringVal)).getOrElse(controller.getEnvVar("LATEXMLS")).
+      getOrElse(latexmls)
+    expire = getArg("expire", m).getOrElse(expire)
+    val newPort = getArg("port", m)
+    portSet = newPort.isDefined
+    port = newPort.getOrElse(port.toString).toInt
+    val newProfile = getArg("profile", m)
     profileSet = newProfile.isDefined
     profile = newProfile.getOrElse(profile)
-    val (preloadOpts, rest1) = partArg("preload", opts)
-    preloads = preloads ++
+    preloads = AnaArgs.getStringList(m, "preload") ++
       controller.getEnvVar("LATEXMLPRELOADS").getOrElse("").split(" ").filter(_.nonEmpty)
-    val (pathOpts, rest2) = partArg("path", rest1)
-    paths = pathOpts ++
+    paths = AnaArgs.getStringList(m, "path") ++
       controller.getEnvVar("LATEXMLPATHS").getOrElse("").split(" ").filter(_.nonEmpty)
-    val (rebootFlag, rest3) = partArgAux("--reboot", rest2)
-    reboot = rebootFlag.nonEmpty
+    reboot = m.get("reboot").isDefined
     if (reboot) expire = "1"
-    val (nopostOpt, rest4) = partArgAux(nopostFlag, rest3)
-    nopost = nopostOpt.nonEmpty
-    val restOpts = rest4.diff(List("--expire=" + expire, "--port=" + port, "--profile=" + profile))
-    if (restOpts.nonEmpty) log("unknown options: " + restOpts.mkString(" "))
+    nopost = m.get("nopost").isDefined
   }
 
   private def str2Level(lev: String): Level.Level = lev match {
@@ -299,7 +316,8 @@ class LaTeXML extends LaTeXBuildTarget {
     val lEnv = extEnv(bt)
     val output = new StringBuffer()
     if (reboot) {
-        val pbc = Process(Seq(latexmlc, "--expire=" + expire, "--port=" + realPort, "literal:restarting"), bt.archive / inDim, lEnv: _*)
+        val pbc = Process(Seq(latexmlc, "--expire=" + expire, "--port=" + realPort,
+          "literal:restarting"), bt.archive / inDim, lEnv: _*)
         if (isServerRunning(realPort)) {
           logResult("trying to kill latexml server: " + latexmls + " --port=" + realPort)
           pbc.!(ProcessLogger(_ => (), _ => ()))
@@ -320,7 +338,7 @@ class LaTeXML extends LaTeXBuildTarget {
         else Seq("--preamble=" + getAmbleFile("pre", bt),
           "--postamble=" + getAmbleFile("post", bt))) ++
         Seq("--expire=" + expire, "--port=" + realPort) ++
-        (if (nopost) Seq(nopostFlag) else Nil) ++
+        (if (nopost) Seq("--nopost") else Nil) ++
         preloads.map("--preload=" + _) ++
         paths.map("--path=" + _)
       log(argSeq.mkString(" ").replace(" --", "\n --"))
@@ -375,13 +393,13 @@ class PdfLatex extends LaTeXBuildTarget {
 
   override def start(args: List[String]) {
     super.start(args)
-    val (opts, nonOptArgs) = execArgs(args)
+    val nonOptArgs = if (nameOfExecutable.nonEmpty) nameOfExecutable :: remainingStartArguments
+    else remainingStartArguments
     val newPath = getFromFirstArgOrEnvvar(nonOptArgs, "PDFLATEX", pdflatexPath)
     if (newPath != pdflatexPath) {
       pdflatexPath = newPath
       log("using executable \"" + pdflatexPath + "\"")
     }
-    if (opts.nonEmpty) logResult("unknown options: " + opts.mkString(" "))
   }
 
   protected def runPdflatex(bt: BuildTask, output: StringBuffer): Int = {

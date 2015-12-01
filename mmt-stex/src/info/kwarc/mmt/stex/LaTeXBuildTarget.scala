@@ -9,6 +9,7 @@ import java.util.regex.PatternSyntaxException
 import STeXUtils._
 import info.kwarc.mmt.api.ExtensionError
 import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.utils.File
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,18 +22,34 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   val localpathsFile = "localpaths.tex"
   val inDim = source
   var pipeOutput: Boolean = false
-  val pipeOutputOption: String = "--pipe-worker-output"
+  val pipeOutputOption: String = "pipe-worker-output"
   /** timout in seconds */
   private val timeoutDefault: Int = 300
   protected var timeoutVal: Int = timeoutDefault
   protected val timeoutOption: String = "timeout"
+  protected var nameOfExecutable: String = ""
 
   protected case class LatexError(s: String, l: String) extends ExtensionError(key, s) {
     override val extraMessage = l
   }
 
+  private val commonOpts: List[OptionDescr] = List(
+    OptionDescr(pipeOutputOption, "", NoArg, "echo output of executables to console"),
+    OptionDescr(timeoutOption, "", IntArg, "timeout in seconds for executables"),
+    OptionDescr(key, "", StringArg, "name of executable for " + key),
+    OptionDescr("execute", "", StringArg, "name of main executable")
+  )
+
   override def start(args: List[String]) {
-    if (args.contains(pipeOutputOption)) pipeOutput = true
+    super.start(args)
+    val (m, rest) = AnaArgs.anaArgs(commonOpts, remainingStartArguments)
+    remainingStartArguments = rest
+    pipeOutput = m.get(pipeOutputOption).isDefined
+    m.get(timeoutOption).foreach { case v => timeoutVal = v.getIntVal }
+    m.get(key).foreach { case v => nameOfExecutable = v.getStringVal }
+    m.get("execute").foreach { case v =>
+      if (nameOfExecutable.isEmpty) nameOfExecutable = v.getStringVal
+      else logError("executable already set by: --" + key + "=" + nameOfExecutable) }
   }
 
   protected def execArgs(args: List[String]): (List[String], List[String]) = {

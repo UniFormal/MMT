@@ -103,6 +103,19 @@ abstract class BuildTarget extends FormatBasedExtension {
   /** defaults to the key */
   override def logPrefix: String = key
 
+  override def start(args: List[String]): Unit = {
+    val (m, rest) = AnaArgs.anaArgs(List(
+      OptionDescr("test", "", NoArg, "compare build results with test dimension")), args)
+    remainingStartArguments = rest
+    compareWithTest = m.get("test").isDefined
+  }
+
+  /** arguments to be consumed by subclasses */
+  var remainingStartArguments: List[String] = Nil
+
+  /** should be build results be compared with results in test dimension */
+  var compareWithTest: Boolean = false
+
   /** build this target in a given archive */
   def build(a: Archive, in: FilePath) //TODO this should simply call update(a, Build, in)}
 

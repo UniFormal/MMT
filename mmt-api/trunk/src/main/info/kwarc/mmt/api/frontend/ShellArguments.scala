@@ -24,8 +24,12 @@ case object StringListArg extends OptionArgument
 
 /** the possible values given by options */
 sealed class OptionValue {
-  /** convenience method for string lists */
+  /** convenience methods */
   def getStringList = this.asInstanceOf[StringListVal].value
+
+  def getStringVal = this.asInstanceOf[StringVal].value
+
+  def getIntVal = this.asInstanceOf[IntVal].value
 }
 
 case object NoVal extends OptionValue
@@ -74,6 +78,8 @@ object AnaArgs {
         }
     }
   }
+  def getStringList(m: Map[String, OptionValue], arg: String): List[String] =
+    m.getOrElse(arg, StringListVal(Nil)).getStringList
 
   def toOptInt(s: String) = Try(s.toInt).toOption
 
@@ -154,9 +160,9 @@ object ShellArguments {
       help = helpFlag,
       about = aboutFlag,
       send = m.get("send").map(a => a.asInstanceOf[IntVal].value),
-      mmtFiles = m.getOrElse("file", StringListVal(Nil)).getStringList,
-      scalaFiles = m.getOrElse("mbt", StringListVal(Nil)).getStringList,
-      cfgFiles = m.getOrElse("cfg", StringListVal(Nil)).getStringList,
+      mmtFiles = AnaArgs.getStringList(m, "file"),
+      scalaFiles = AnaArgs.getStringList(m, "mbt"),
+      cfgFiles = AnaArgs.getStringList(m, "cfg"),
       commands = cs,
       prompt = m.get("shell").isDefined,
       runCleanup = m.get("keepalive").isEmpty && m.get("noshell").isEmpty)
