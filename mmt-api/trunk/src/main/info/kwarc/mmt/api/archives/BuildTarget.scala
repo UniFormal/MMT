@@ -38,6 +38,7 @@ object BuildTargetModifier {
     OptionDescr("depsFirst", "", OptIntArg, "treat dependencies first"),
     OptionDescr("depsFirst?", "", OptIntArg, "dry-run dependencies first"),
     OptionDescr("onError", "", OptIntArg, "rebuild on error or change"),
+    OptionDescr("onError?", "", OptIntArg, "dry-run on error or change"),
     OptionDescr("onChange", "", NoArg, "rebuild on change"),
     OptionDescr("dry-run", "n", NoArg, "only show what needs to be build"),
     OptionDescr("force", "", NoArg, "force building")
@@ -55,13 +56,14 @@ object BuildTargetModifier {
     val force = m.get("force").toList
     val onChange = m.get("onChange").toList
     val onError = m.get("onError").toList
+    val onErrorDry = m.get("onError?").toList
     val depsFirst = m.get("depsFirst").toList
     val depsFirstDry = m.get("depsFirst?").toList
-    val os = clean ++ force ++ onChange ++ onError ++ depsFirst ++ depsFirstDry
+    val os = clean ++ force ++ onChange ++ onError ++ onErrorDry ++ depsFirst ++ depsFirstDry
     var fail = false
     var mod: BuildTargetModifier = UpdateOnError(Level.Ignore)
     if (os.length > 1) {
-      log("only one allowed of: clean, force, onChange, onError, depsFirst, depsFirst?")
+      log("only one allowed of: clean, force, onChange, onError, depsFirst")
       fail = true
     }
     if (dr && clean.nonEmpty) {
@@ -79,6 +81,8 @@ object BuildTargetModifier {
     }
     onError.foreach { o =>
       mod = makeUpdateModifier(o, dr) }
+    onErrorDry.foreach { o =>
+      mod = makeUpdateModifier(o, dry = true) }
     depsFirst.foreach { o =>
       mod = BuildDepsFirst(makeUpdateModifier(o, dr)) }
     depsFirstDry.foreach { o =>
