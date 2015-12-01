@@ -224,6 +224,7 @@ class Controller extends ROController with Logger {
     *
     * dependency cycles are detected
     * be aware that the argument may be evaluated repeatedly
+    *
     * @param a this is evaluated until evaluation does not throw NotFound
     * @return the evaluation
     */
@@ -460,8 +461,9 @@ class Controller extends ROController with Logger {
   }
 
   /** guess which files/folders the users wants to build
-   *  @return archive root and relative path in it
-   */
+    *
+    * @return archive root and relative path in it
+    */
   def collectInputs(f: File): List[(File, FilePath)] = {
     backend.resolveAnyPhysical(f) match {
       case Some(ff) =>
@@ -479,39 +481,45 @@ class Controller extends ROController with Logger {
 
   // for most actions provide a separate procedure that may be called directly
 
-  def buildFilesAction(key: String, mod: BuildTargetModifier, args: List[String], files: List[File]) {
+  def makeAction(key: String, allArgs: List[String]) {
     report.addHandler(ConsoleHandler)
-    val realFiles = if (files.isEmpty)
-      List(File(System.getProperty("user.dir")))
-    else {
-      files.filter { f =>
-        val ex = f.exists
-        if (!ex)
-          logError("file \"" + f + "\" does not exist")
-        ex
+    val optPair = BuildTargetModifier.splitArgs(allArgs, s => logError(s))
+    optPair.foreach { case (mod, restArgs) =>
+      val (args, fileNames) = AnaArgs.getTrailingNonOptions(restArgs)
+      val home: File = File(System.getProperty("user.dir"))
+      val files = fileNames.map(s => File(home.resolve(s)))
+      val realFiles = if (files.isEmpty)
+        List(home)
+      else {
+        files.filter { f =>
+          val ex = f.exists
+          if (!ex)
+            logError("file \"" + f + "\" does not exist")
+          ex
+        }
       }
-    }
-    val inputs = realFiles flatMap collectInputs
-    val bt = extman.getOrAddExtension(classOf[BuildTarget], key, args)
-    inputs foreach { case (root, fp) =>
-      addArchive(root) // add the archive
-      backend.getArchive(root) match {
-        case None =>
-          // opening may fail despite resolveAnyPhysical (i.e. formerly by a MANIFEST.MF without id)
-          logError("not an archive: " + root)
-        case Some(archive) =>
-          report.groups += bt.key + "-result" // ensure logging
-        val inPath = fp.segments match {
-            case dim :: path =>
-              bt match {
-                case bt: TraversingBuildTarget if dim != bt.inDim.toString =>
-                  logError("wrong in-dimension \"" + dim + "\"")
-                case _ =>
-              }
-              FilePath(path)
-            case Nil => EmptyPath
-          }
-          bt(mod, archive, inPath)
+      val inputs = realFiles flatMap collectInputs
+      val bt = extman.getOrAddExtension(classOf[BuildTarget], key, args)
+      inputs foreach { case (root, fp) =>
+        addArchive(root) // add the archive
+        backend.getArchive(root) match {
+          case None =>
+            // opening may fail despite resolveAnyPhysical (i.e. formerly by a MANIFEST.MF without id)
+            logError("not an archive: " + root)
+          case Some(archive) =>
+            report.groups += bt.key + "-result" // ensure logging
+          val inPath = fp.segments match {
+              case dim :: path =>
+                bt match {
+                  case bt: TraversingBuildTarget if dim != bt.inDim.toString =>
+                    logError("wrong in-dimension \"" + dim + "\"")
+                  case _ =>
+                }
+                FilePath(path)
+              case Nil => EmptyPath
+            }
+            bt(mod, archive, inPath)
+        }
       }
     }
   }
@@ -621,8 +629,8 @@ class Controller extends ROController with Logger {
             backend.addStore(LocalSystem(b))
           case AddArchive(f) =>
             addArchive(f)
-          case BuildFiles(key, mod, args, files) =>
-            buildFilesAction(key, mod, args, files)
+          case MakeAction(key, args) =>
+            makeAction(key, args)
           case ArchiveBuild(ids, key, mod, in) =>
             archiveBuildAction(ids, key, mod, in)
           case ArchiveMar(id, file) =>

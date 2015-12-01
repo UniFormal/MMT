@@ -95,9 +95,8 @@ object Action extends RegexParsers {
         else up
     }
 
-  private def filebuild = ("make" | "rbuild") ~> str ~ (buildModifier ?) ~ (("--\\S+"r) *) ~ (file *) ^^ {
-    case key ~ mod ~ args ~ files =>
-      BuildFiles(key, mod.getOrElse(UpdateOnError(Level.Ignore)), args, files)
+  private def filebuild = ("make" | "rbuild") ~> str ~ (str *) ^^ {
+    case key ~ args => MakeAction(key, args)
   }
 
   private def archdim = "archive" ~> stringList ~ dimension ~ optFilePath ^^ {
@@ -468,11 +467,9 @@ case class ArchiveBuild(ids: List[String], dim: String, modifier: BuildTargetMod
     (if (in.segments.isEmpty) "" else " " + in)
 }
 
-/** builds multiple targets for multiple files, loading extensions/archives as necessary */
-case class BuildFiles(key: String, modifier: BuildTargetModifier,
-                     args: List[String], files: List[File]) extends Action {
-  override def toString = "make " + modifier.toStringLong(key) +
-    (args ++ files.map(_.toString)).map(" " + _).mkString
+/** handle the make command line */
+case class MakeAction(key: String, args: List[String]) extends Action {
+  override def toString = "make" + args.map(" " + _).mkString
 }
 
 /** builds a dimension in a previously opened archive */
@@ -583,6 +580,7 @@ case class BrowserAction(command: String) extends Action {
   * CONCRETE ::= present param | deps
   * OUTPUT   ::= write FILE | window | respond | CONCRETE
   * The productions for ABSTRACT, CONCRETE, OUTPUT correspond to the instances of MakeAbstract, MakeConcrete, and Output.
+  *
   * @param o the instance of Output that executes all three steps.
   */
 case class GetAction(o: Output) extends Action {

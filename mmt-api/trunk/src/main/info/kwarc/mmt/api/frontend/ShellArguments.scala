@@ -13,6 +13,9 @@ case object NoArg extends OptionArgument
 /** expect an integer argument */
 case object IntArg extends OptionArgument
 
+/** expect an optional integer argument that must not be given as a separate argument */
+case object OptIntArg extends OptionArgument
+
 case object StringArg extends OptionArgument
 
 /** collect multiple values */
@@ -35,17 +38,15 @@ case class StringListVal(value: List[String]) extends OptionValue
 
 /** a description of one option */
 case class OptionDescr(long: String, short: String, arg: OptionArgument, description: String) {
-  def shortMatch(opt: String) = "-" + short == opt
+  def shortMatch(opt: String) = short.nonEmpty && "-" + short == opt
 
   def longExact(opt: String) = "--" + long == opt
-
-  def longStart(opt: String) = opt.startsWith("--" + long)
 
   def longEqual(opt: String) = opt.startsWith("--" + long + "=")
 
   def exactMatch(opt: String) = shortMatch(opt) || longExact(opt)
 
-  def mayMatch(opt: String) = shortMatch(opt) || longStart(opt)
+  def mayMatch(opt: String) = exactMatch(opt) || longEqual(opt)
 }
 
 object AnaArgs {
@@ -60,40 +61,48 @@ object AnaArgs {
             val (m, r) = anaArgs(opts, tl)
             (m, hd :: r)
           case Some(o) =>
-            o.arg match {
-              case NoArg if o.exactMatch(hd) =>
-                val (m, r) = anaArgs(opts, tl)
-                (m + (o.long -> NoVal), r)
-              case _ if o.longEqual(hd) =>
-                val v = hd.substring(o.long.length + 3)
-                anaArgs(opts, "--" + o.long :: v :: tl)
-              case k if o.exactMatch(hd) => tl match {
-                case snd :: rt =>
-                  val (m, r) = anaArgs(opts, rt)
-                  k match {
-                    case IntArg => Try(snd.toInt).toOption match {
-                      case Some(i) if m.get(o.long).isEmpty => // trailing options win
-                        (m + (o.long -> IntVal(i)), r)
-                      case _ =>
-                        (m, ("--" + o.long + "=" + snd) :: r)
-                    }
-                    case StringArg if m.get(o.long).isEmpty => // trailing options win
-                      (m + (o.long -> StringVal(snd)), r)
-                    case StringListArg =>
-                      (m + (o.long -> StringListVal(snd ::
-                        m.getOrElse(o.long, StringListVal(Nil)).getStringList)), r)
-                    case _ =>
-                      (m, hd :: snd :: r)
-                  }
-                case Nil =>
-                  (Map.empty, args)
-              }
-              case _ =>
-                val (m, r) = anaArgs(opts, tl)
-                (m, hd :: r)
+            val equalOpt = o.longEqual(hd)
+            val checkTail = equalOpt || o.arg == NoArg || tl.isEmpty ||
+              o.arg == OptIntArg && toOptInt(tl.head).isEmpty
+            val v = if (equalOpt) Some(hd.substring(o.long.length + 3))
+            else if (checkTail) None else Some(tl.head)
+            val (m, r) = anaArgs(opts, if (checkTail) tl else tl.tail)
+            getOptOptionValue(m, o, v) match {
+              case None => (m, hd :: (if (checkTail) r else tl.head :: r))
+              case Some(e) => (m + (o.long -> e), r)
             }
         }
     }
+  }
+
+  def toOptInt(s: String) = Try(s.toInt).toOption
+
+  def getOptOptionValue(m: Map[String, OptionValue], o: OptionDescr, value: Option[String]): Option[OptionValue] = {
+    if (m.get(o.long).isDefined && o.arg != StringListArg) None // already defined
+    else {
+      value match {
+        case None =>
+          if (o.arg == NoArg || o.arg == OptIntArg) Some(NoVal) else None
+        case Some(v) =>
+          o.arg match {
+            case OptIntArg | IntArg =>
+              toOptInt(v).map(IntVal)
+            case StringArg =>
+              Some(StringVal(v))
+            case StringListArg =>
+              Some(StringListVal(v ::
+                m.getOrElse(o.long, StringListVal(Nil)).getStringList))
+            case _ =>
+              None
+          }
+      }
+    }
+  }
+
+  def getTrailingNonOptions(args: List[String]): (List[String], List[String]) =
+  {
+    val (rest, opts) = args.reverse.span(!_.startsWith("--"))
+    (opts.reverse, rest.reverse)
   }
 }
 

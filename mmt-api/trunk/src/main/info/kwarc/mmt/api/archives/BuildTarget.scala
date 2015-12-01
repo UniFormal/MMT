@@ -7,17 +7,14 @@ import utils._
 
 sealed abstract class BuildTargetModifier {
   def toString(dim: String): String
-  def toStringLong(dim: String): String
 }
 
 case object Clean extends BuildTargetModifier {
   def toString(dim: String) = "-" + dim
-  def toStringLong(dim: String) = dim + " --clean"
 }
 
 case class BuildDepsFirst(up: UpdateOnError) extends BuildTargetModifier {
   def toString(dim: String) = dim + "&"
-  def toStringLong(dim: String) = up.toStringLong("depsFirst", dim)
 }
 
 abstract class Update extends BuildTargetModifier
@@ -28,17 +25,66 @@ case class UpdateOnError(errorLevel: Level, dryRun: Boolean = false) extends Upd
     else if (errorLevel < Level.Ignore) "!" else "*"
 
   def toString(dim: String) = dim + key
-
-  def toStringLong(opt: String, dim: String) = dim + " --" + opt + "=" + (errorLevel + 1) +
-    (if (dryRun) " --dry-run" else "")
-
-  def toStringLong(dim: String) = toStringLong("onError", dim)
 }
 
 /** forces building independent of status */
 case object Build extends Update {
   def toString(dim: String) = dim
-  def toStringLong(dim: String) = dim + " --force"
+}
+
+object BuildTargetModifier {
+  def optDescrs: List[OptionDescr] = List(
+    OptionDescr("clean", "", NoArg, "clean up"),
+    OptionDescr("depsFirst", "", OptIntArg, "treat dependencies first"),
+    OptionDescr("depsFirst?", "", OptIntArg, "dry-run dependencies first"),
+    OptionDescr("onError", "", OptIntArg, "rebuild on error or change"),
+    OptionDescr("onChange", "", NoArg, "rebuild on change"),
+    OptionDescr("dry-run", "n", NoArg, "only show what needs to be build"),
+    OptionDescr("force", "", NoArg, "force building")
+  )
+
+  def makeUpdateModifier(flag: OptionValue, dry: Boolean): UpdateOnError = UpdateOnError(flag match {
+    case IntVal(i) => i - 1
+    case _ => Level.Error
+  }, dryRun = dry)
+
+  def splitArgs(args: List[String], log: String => Unit): Option[(BuildTargetModifier, List[String])] = {
+    val (m, r) = AnaArgs.anaArgs(optDescrs, args)
+    val dr = m.get("dry-run").isDefined
+    val clean = m.get("clean").toList
+    val force = m.get("force").toList
+    val onChange = m.get("onChange").toList
+    val onError = m.get("onError").toList
+    val depsFirst = m.get("depsFirst").toList
+    val depsFirstDry = m.get("depsFirst?").toList
+    val os = clean ++ force ++ onChange ++ onError ++ depsFirst ++ depsFirstDry
+    var fail = false
+    var mod: BuildTargetModifier = UpdateOnError(Level.Ignore)
+    if (os.length > 1) {
+      log("only one allowed of: clean, force, onChange, onError, depsFirst, depsFirst?")
+      fail = true
+    }
+    if (dr && clean.nonEmpty) {
+      log("dry-run not possible for clean")
+      fail = true
+    }
+    clean.foreach { _ =>
+      mod = Clean
+    }
+    force.foreach { _ =>
+      mod = if (dr) UpdateOnError(Level.Force, dryRun = dr) else Build
+    }
+    onChange.foreach { _ =>
+      mod = UpdateOnError(Level.Ignore, dryRun = dr)
+    }
+    onError.foreach { o =>
+      mod = makeUpdateModifier(o, dr) }
+    depsFirst.foreach { o =>
+      mod = BuildDepsFirst(makeUpdateModifier(o, dr)) }
+    depsFirstDry.foreach { o =>
+      mod = BuildDepsFirst(makeUpdateModifier(o, dry = true)) }
+    if (fail) None else Some((mod, r))
+  }
 }
 
 /** A BuildTarget provides build/update/clean methods that generate one or more dimensions in an [[Archive]]
@@ -175,11 +221,12 @@ abstract class TraversingBuildTarget extends BuildTarget {
   def includeFile(name: String): Boolean
 
   /**
-   * if this target produces additional files (e.g., the aux files of LaTeX),
-   * this method should map them to the respective main file
-   * @param outPath the output path (relative to archive)
-   * @return the input path (relative to inDim)
-   */
+    * if this target produces additional files (e.g., the aux files of LaTeX),
+    * this method should map them to the respective main file
+    *
+    * @param outPath the output path (relative to archive)
+    * @return the input path (relative to inDim)
+    */
   def producesFrom(outPath: FilePath): Option[FilePath] = None
 
   /** true by default; override to skip auxiliary directories */
@@ -194,7 +241,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   /** similar to buildFile but called on every directory (after all its children have been processed)
     *
     * This does nothing by default and can be overridden if needed.
-
+    *
     * @param bd information about input/output file etc
     * @param builtChildren tasks for building the children
     */
