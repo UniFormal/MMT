@@ -113,7 +113,7 @@ class LaTeXML extends LaTeXBuildTarget {
   // the latexml client
   private var latexmlc = "latexmlc"
   private var latexmls = "latexmls"
-  private var expire = "600"
+  private var expire: Int = 600
   private val delaySecs: Int = 1000
   private val portDefault: Int = 3334
   private var port: Int = portDefault
@@ -163,7 +163,7 @@ class LaTeXML extends LaTeXBuildTarget {
     latexmlc = getFromFirstArgOrEnvvar(nonOptArgs, "LATEXMLC", latexmlc)
     latexmls = m.get("latexmls").map(v => Some(v.getStringVal)).getOrElse(controller.getEnvVar("LATEXMLS")).
       getOrElse(latexmls)
-    expire = getArg("expire", m).getOrElse(expire)
+    expire = getArg("expire", m).getOrElse(expire.toString).toInt
     val newPort = getArg("port", m)
     portSet = newPort.isDefined
     port = newPort.getOrElse(port.toString).toInt
@@ -175,7 +175,7 @@ class LaTeXML extends LaTeXBuildTarget {
     paths = AnaArgs.getStringList(m, "path") ++
       controller.getEnvVar("LATEXMLPATHS").getOrElse("").split(" ").filter(_.nonEmpty)
     reboot = m.get("reboot").isDefined
-    if (reboot) expire = "1"
+    if (reboot) expire = 1
     nopost = m.get("nopost").isDefined
   }
 
@@ -345,7 +345,7 @@ class LaTeXML extends LaTeXBuildTarget {
       try {
         val pbs = Process(Seq(latexmls, "--expire=" + expire, "--port=" + realPort,
           "--autoflush=100"), bt.archive / inDim, lEnv: _*)
-        if (!isServerRunning(realPort)) {
+        if (!isServerRunning(realPort) && expire > -1 ) {
           pbs.run(procIO(output))
           Thread.sleep(delaySecs)
         }
