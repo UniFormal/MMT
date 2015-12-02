@@ -22,7 +22,7 @@ object ShellCommand {
       line = Option(outputReader.readLine)
       line.isDefined
     }) {
-      output.append(line.get)
+      output.append(line.get + "\n")
       out(line.get)
     }
 

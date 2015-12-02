@@ -1,5 +1,7 @@
 package info.kwarc.mmt.api.archives
 
+import java.nio.file.Files
+
 import info.kwarc.mmt.api._
 import Level.Level
 import frontend._
@@ -103,11 +105,18 @@ abstract class BuildTarget extends FormatBasedExtension {
   /** defaults to the key */
   override def logPrefix: String = key
 
+  private def testOps: List[OptionDescr] = List(
+    OptionDescr("test", "", NoArg, "compare build results with test dimension"),
+    OptionDescr("test-add", "", NoArg, "add new ouput files to test dimension"),
+    OptionDescr("test-update", "", NoArg, "update changed ouput files in test dimension")
+  )
+
   override def start(args: List[String]): Unit = {
-    val (m, rest) = AnaArgs.anaArgs(List(
-      OptionDescr("test", "", NoArg, "compare build results with test dimension")), args)
+    val (m, rest) = AnaArgs.anaArgs(testOps, args)
     remainingStartArguments = rest
     compareWithTest = m.get("test").isDefined
+    addTest = m.get("test-add").isDefined
+    updateTest = m.get("test-update").isDefined
   }
 
   /** arguments to be consumed by subclasses */
@@ -115,6 +124,8 @@ abstract class BuildTarget extends FormatBasedExtension {
 
   /** should be build results be compared with results in test dimension */
   var compareWithTest: Boolean = false
+  var addTest: Boolean = false
+  var updateTest: Boolean = false
 
   /** build this target in a given archive */
   def build(a: Archive, in: FilePath) //TODO this should simply call update(a, Build, in)}
@@ -213,6 +224,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
   protected val folderName = ""
 
   protected def getOutFile(a: Archive, inPath: FilePath) = (a / outDim / inPath).setExtension(outExt)
+
+  protected def getTestOutFile(a: Archive, inPath: FilePath) =
+    (a / RedirectableDimension("test") / inPath).setExtension(outExt)
 
   protected def getFolderOutFile(a: Archive, inPath: FilePath) = a / outDim / inPath / (folderName + "." + outExt)
 
@@ -329,6 +343,33 @@ abstract class TraversingBuildTarget extends BuildTarget {
     new BuildTask(key, a, inFile, children, inPath, outFile, outPath, errorCont)
   }
 
+  def buildFileAndCompare(bt: BuildTask): BuildResult = {
+    val res = buildFile(bt)
+    if (compareWithTest) {
+      val testFile = getTestOutFile(bt.archive, bt.inPath)
+      val outFile = bt.outFile
+      if (!outFile.exists)
+      {
+        logError("missing output file: " + outFile)
+      } else if (testFile.exists) {
+        val diffLog = ShellCommand.run("diff", outFile.toString, testFile.toString)
+        diffLog.foreach(s => s.split("\n").map(l => logError(l)))
+        if (diffLog.isDefined && updateTest) {
+          testFile.delete
+          Files.copy(outFile.toPath, testFile.toPath)
+          logResult("updated " + testFile)
+        }
+      } else {
+        if (addTest) {
+          testFile.up.mkdirs
+          Files.copy(outFile.toPath, testFile.toPath)
+          logResult("added " + testFile)
+        }
+      }
+    }
+    res
+  }
+
   /** like buildFile but with error handling, logging, etc.  */
   def runBuildTask(bt: BuildTask): BuildResult = {
     if (!bt.isDir) {
@@ -340,7 +381,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     bt.errorCont.open
     try {
       res = bt.children match {
-        case None => buildFile(bt)
+        case None => buildFileAndCompare(bt)
         case Some(children) =>
           buildDir(bt, children)
       }
@@ -409,7 +450,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
     a.traverse[(Boolean, BuildTask)](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case c@Current(inFile, inPath) =>
         val errorFile = getErrorFile(a, inPath)
-        val outPath = getOutPath(a, getOutFile(a, inPath))
+        val outFile = getOutFile(a, inPath)
+        val testFile = getTestOutFile(a, inPath)
+        val outPath = getOutPath(a, outFile)
         lazy val bf = makeBuildTask(a, inPath, inFile, None, None)
         val rebuildNeeded = up match {
            case Build => true
@@ -432,6 +475,16 @@ abstract class TraversingBuildTarget extends BuildTarget {
               } else {
                  rn
               }
+        }
+        if (addTest && outFile.exists && !testFile.exists) {
+          testFile.up.mkdirs
+          Files.copy(outFile.toPath, testFile.toPath)
+          logResult("added " + testFile)
+        }
+        if (updateTest && outFile.exists && testFile.exists) {
+          testFile.delete
+          Files.copy(outFile.toPath, testFile.toPath)
+          logResult("updated " + testFile)
         }
         if (rebuildNeeded) {
           runBuildTask(bf)
