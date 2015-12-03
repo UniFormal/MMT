@@ -174,16 +174,18 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             // = checking the definiens =
             // check that the definiens of c (if given) type-checks against the type of c (if given)
             getTermToCheck(c.dfC, "definiens") foreach {d =>
-               val (unknowns, dR, valid) = prepareTerm(d)
-               if (valid) {
-                  c.tp match {
-                     case Some(tp) =>
-                        val j = Typing(Stack(Context()), dR, tp, None)
-                        objectChecker(CheckingUnit(c.path $ DefComponent, context, unknowns, j), env.rules)
-                     case None =>
-                        //TODO infer type
-                  }
-               }
+              val (unk, dR, valid) = prepareTerm(d)
+              if (valid) {
+                val cp = c.path $ DefComponent
+                val (unknowns,expTp) = c.tp match {
+                  case Some(t) => (unk, t)
+                  case None =>
+                    val tpVar = LocalName("") / "omitted_type"
+                    (unk ++ VarDecl(tpVar,None,None,None), OMV(tpVar))
+                }
+                val j = Typing(Stack(Context()), dR, expTp, None)
+                objectChecker(CheckingUnit(cp, context, unknowns, j), env.rules)
+              }
             }
             // == additional check in a link ==
             // translate the definiens of cOrg

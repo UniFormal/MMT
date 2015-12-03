@@ -192,7 +192,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     * @param prefix the log prefix to use (the normal one by default)
     * (occasionally it's useful to use a different prefix, e.g., "error" or when the normal prefix is not logged but the result should be)
     */
-   def logState(prefix: String = logPrefix) {
+  def logState(prefix: String = logPrefix) {
       def logHistory(h: History) {
          logGroup {
             h.getSteps.reverse.foreach(s => report(prefix, s.present))
@@ -1147,18 +1147,20 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
 
 object Solver {
   /** reconstructs a single term and returns the reconstructed term and its type */
-  def check(controller: Controller, stack: Stack, tm: Term): Option[(Term,Term)] = {
+  def check(controller: Controller, stack: Stack, tm: Term): Either[(Term,Term),Solver] = {
       val (unknowns,tmU) = parser.ObjectParser.splitOffUnknowns(tm)
       val etp = LocalName("expected_type")
       val rules = RuleSet.collectRules(controller, stack.context)
       val solver = new Solver(controller, stack.context, unknowns ++ VarDecl(etp, None, None, None), rules)
       val j = Typing(stack, tmU, OMV(etp), None)
       solver(j)
-      if (solver.checkSucceeded) solver.getSolution.map {sub =>
+    if (solver.checkSucceeded) solver.getSolution match {
+      case Some(sub) =>
           val tmR = tmU ^ sub
-          (tmR, sub("expected_type").get) // must be defined if there is a solution
-      } else
-         None
+          Left(tmR, sub("expected_type").get) // must be defined if there is a solution
+      case None => Right(solver)
+    } else
+      Right(solver)
   }
   /** infers the type of a term that is known to be well-formed */
   def infer(controller: Controller, context: Context, tm: Term, rulesOpt: Option[RuleSet]): Option[Term] = {

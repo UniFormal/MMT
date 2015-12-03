@@ -50,11 +50,12 @@ class MMTInterpolator(controller: frontend.Controller) {
         val t = controller.extman.get(classOf[Parser], "mmt").get.apply(pu)(ErrorThrower)
         val tI = t ^? cont.toPartialSubstitution
         if (check) {
-	        val stack = Stack(Context(theory) ++ cont)
-	        val (tR, tpR) = checking.Solver.check(controller, stack, tI).getOrElse {
-	           throw InvalidObject(t, "term was parsed but did not type-check")
-	        }
-	        tR
+	  val stack = Stack(Context(theory) ++ cont)
+	  val (tR, tpR) = checking.Solver.check(controller, stack, tI).
+            left.toOption.getOrElse {
+	      throw InvalidObject(t, "term was parsed but did not type-check")
+	    }
+	  tR
         } else
           tI
    }

@@ -69,7 +69,7 @@ class Analyze extends QueryExtension("analyze", ObjType, List(ObjType,ObjType)) 
       argument match { 
          case t: Term =>
             val stack = Stack(mp)
-            val (tR, tpR) = checking.Solver.check(controller, stack, t).getOrElse {
+            val (tR, tpR) = checking.Solver.check(controller, stack, t).left.toOption.getOrElse {
                throw InvalidObject(t, "term was parsed but did not type-check")
             }
             List(tR,tpR)

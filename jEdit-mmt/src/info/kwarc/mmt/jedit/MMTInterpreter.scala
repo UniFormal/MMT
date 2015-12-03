@@ -7,6 +7,7 @@ import org.gjt.sp.jedit.bufferset._
 import org.gjt.sp.jedit.buffer._
 import org.gjt.sp.jedit._
 
+import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api._
 import frontend.{SetBase, MMTInterpolator}
@@ -22,8 +23,8 @@ class MMTInterpreter extends console.Shell("mmt-interpreter") {
   val buffmanag : BufferSetManager = jEdit.getBufferSetManager()
   val interpolator = new MMTInterpolator(controller)
 
-  var scratchnspace = "http://cds.omdoc.org/scratch"
-  var scratchfname = "Untitled-1"
+  var scratchnspace = DPath(URI("http://cds.omdoc.org/scratch"))
+  var scratchfname = "scratchpad.mmt"
   var scratchtheory = "scratch"
   var scratchcheck = true
   var scratchoutput = true
@@ -137,12 +138,18 @@ Non-commands are MMT code.
         //Checks all the buffers for the MMTScratchpad.
         //If it exists, it loads it. If not, it creates and loads it.
         val scratch = buffers.find(b => b.getName == scratchfname).getOrElse {
-          val scratch = BufferSetManager.createUntitledBuffer()
+          val scratch = jEdit.openTemporary(jEdit.getActiveView,
+            jEdit.getSettingsDirectory,
+            scratchfname,
+            true)
           scratch.setReadOnly(true)
           buffmanag.addBuffer(null.asInstanceOf[View], scratch)
           scratch.setMode("mmt")
           scratch.insert(0, "namespace " + scratchnspace +
-          Reader.GS.toChar.toString + "\n\n")
+            Reader.GS.toChar.toString + "\n\n")
+          jEdit.commitTemporary(scratch)
+          scratch.save(jEdit.getActiveView,
+            jEdit.getSettingsDirectory + "/" + scratchfname, false, false)
           scratch
         }
 
@@ -188,22 +195,37 @@ Non-commands are MMT code.
             Context(theory), str, NamespaceMap(theory.doc), None)
           val t : Term = controller.extman.get(classOf[Parser],
             "mmt").get.apply(pu)(ErrorThrower)
+          //
 
           //Type checking
 	  val stack = Stack(Context(theory))
-	  val (tR, tpR) = checking.Solver.check(controller, stack, t).
-            getOrElse (null, null)
+          val solveout = checking.Solver.check(controller, stack, t)
+
+          val (tR, tpR) = solveout match{
+            case Left((a,b)) => (a,b)
+            case Right(solver) =>
+              solver.logState("jedit-interp")
+              throw new Exception("Checking error!")
+          }
+
+          //Def expanding
+          val tExp = controller.globalLookup.ExpandDefinitions(tR,
+            p => p.doc == scratchnspace)
 
           //Simplification
-          val tRS = controller.simplifier(tR, Context(theory))
+          val tRS = tExp match {
+            case null => null
+            case tExp => controller.simplifier(tExp, Context(theory))
+          }
 
           output.print(null, "===DEBUG===")
 
           if ((tR, tpR) != (null, null)){
-            output.print(null, tR.toString)
-            output.print(null, tpR.toString)
-            output.print(null, tRS.toString)
-            output.print(null, controller.simplifier(tRS, Context(theory)).toString)
+            //output.print(null, tR.toString)
+            //output.print(null, tpR.toString)
+            //output.print(null, tRS.toString)
+            //output.print(null, controller.simplifier(tRS, Context(theory)).toString)
+            output.print(null, tExp.toString)
           }
 
           output.print(null, "===========")
@@ -225,10 +247,13 @@ Non-commands are MMT code.
           case e : Throwable=>
             val eM = GeneralError("unknown exception during parsing").setCausedBy(e)
             output.print(null, e.toString)
+            e.printStackTrace()
             success = Some(false)
         } finally {
           controller.report("jedit", "MMTInterp - done.")
         }
+        scratch.autosave
+
     }
     output.commandDone
   }
@@ -267,10 +292,10 @@ Non-commands are MMT code.
 
       //Matches 'it'; if not found, appends a new it
       val itpattern = ("""it = (.*)""" +
-      Reader.RS.toChar.toString + """\n""").r
+        Reader.RS.toChar.toString + """\n""").r
+
       val itmatch = itpattern findFirstMatchIn content getOrElse null
       val itcontent = itmatch.group(1)
-
       val ndeclaration = declaration.replaceAll("it", itcontent)
 
       try{
@@ -282,12 +307,12 @@ Non-commands are MMT code.
       } catch {
         case _ : Throwable =>
       }
-
+ 
       buffer.insert(econtent, "  it = " +
         ndeclaration + Reader.RS.toChar.toString + "\n")
-/*
+
       //Matches inclusion of theories
-      if (!tname.startsWith(scratchnspace)) {
+      if (!tname.startsWith(scratchnspace.toString)) {
         val inpattern = ("""include (.*)""" + Reader.RS.toChar.toString).r
         val inmap = inpattern findAllMatchIn content
 
@@ -302,7 +327,7 @@ Non-commands are MMT code.
         }
       }
 
- */
+ 
     }
 
   }
