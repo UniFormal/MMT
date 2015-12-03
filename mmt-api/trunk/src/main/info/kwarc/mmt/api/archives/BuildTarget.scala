@@ -226,7 +226,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   protected def getOutFile(a: Archive, inPath: FilePath) = (a / outDim / inPath).setExtension(outExt)
 
   protected def getTestOutFile(a: Archive, inPath: FilePath) =
-    (a / RedirectableDimension("test") / inPath).setExtension(outExt)
+    (a / Dim("test", outDim.toString) / inPath).setExtension(outExt)
 
   protected def getFolderOutFile(a: Archive, inPath: FilePath) = a / outDim / inPath / (folderName + "." + outExt)
 
