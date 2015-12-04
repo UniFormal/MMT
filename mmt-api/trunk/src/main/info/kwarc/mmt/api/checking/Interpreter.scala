@@ -62,7 +62,7 @@ abstract class Interpreter extends Importer {
     val fp = bt.inPath
     val rs = controller.depstore
     val d = getDPath(a, fp)
-    log(d.toString)
+    log("estimate dependencies for: " + d.toString)
     val usedTheories = rs.querySet(d, +Declares * RelationExp.Deps)
     val reducedTheories = usedTheories.map {
       case MPath(p, LocalName(hd :: _ :: _)) => MPath(p, LocalName(List(hd)))
@@ -90,7 +90,7 @@ abstract class Interpreter extends Importer {
       }
     }
     result -= ((a, fp))
-    log(result.toString())
+    log(if (result.isEmpty) "no dependencies" else "dependencies are: " + result.mkString(" "))
     result.map(p => BuildDependency(key, p._1, p._2))
   }
 }
