@@ -135,7 +135,7 @@ class LaTeXML extends LaTeXBuildTarget {
     OptionDescr("profile", "", StringArg, "latexml profile"),
     OptionDescr("preload", "", StringListArg, "preload arguments"),
     OptionDescr("path", "", StringListArg, "path arguments"),
-    OptionDescr("reboot", "", NoArg, "ony try to terminate (server) latexmls"),
+    OptionDescr("reboot", "", NoArg, "only try to terminate (server) latexmls"),
     OptionDescr("nopost", "", NoArg, "omit post processing, create xml")
   )
 
@@ -153,6 +153,7 @@ class LaTeXML extends LaTeXBuildTarget {
     val (restOpts, nonOpts) = getTrailingNonOptions(rest)
     if (restOpts.nonEmpty) {
       logError("unrecognized remaining options: " + restOpts.mkString(" "))
+      usageMessage(commonOpts ++ latexmlOpts).foreach(println)
     }
     m.get("latexmlc").foreach { s =>
       if (nameOfExecutable.nonEmpty) {

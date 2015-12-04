@@ -33,8 +33,8 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     override val extraMessage = l
   }
 
-  private val commonOpts: OptionDescrs = List(
-    OptionDescr(pipeOutputOption, "", NoArg, "echo output of executables to console"),
+  protected def commonOpts: OptionDescrs = List(
+    OptionDescr(pipeOutputOption, "p", NoArg, "echo output of executables to console"),
     OptionDescr(timeoutOption, "", IntArg, "timeout in seconds for executables"),
     OptionDescr(key, "", StringArg, "name of executable for " + key),
     OptionDescr("execute", "", StringArg, "name of main executable")

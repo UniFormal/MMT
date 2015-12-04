@@ -8,15 +8,14 @@ general arguments:
   -a, --about               print some information about MMT.
 
 commands and files to process:
-  COMMANDS                  Semicolon (;) separated commands to be interpreted by MMT. Type "help" inside the shell to
-                            a list of commands or look at the documentation for a list of available commands.
-  -r, --send PORT           instead of executing COMMANDS in a new MMT instance, send them to another MMT Instance
-                            listening at PORT and exit immediately (even if a different termination behaviour is
-                            specified. )
-  -f, --file FILENAME       In addition to running COMMANDS, load mmt-style commands from FILE. May be used multiple
-                            times.
-  -m, --mbt FILENAME        In addition to running COMMANDS, load scala-style commands from FILE. May be used multiple
-                            times.
+  COMMANDS                  Semicolon ( ; ) separated commands to be interpreted by MMT. Type "help" inside the shell
+                            for a list of commands or look at the documentation for available commands.
+  -r, --send PORT           send COMMANDS to an already running MMT Instance listening at PORT and exit immediately
+                            (even if a different termination behaviour is specified.)
+  -f, --file FILENAME       load mmt-style commands from FILE before interpreting COMMANDS.
+                            (this option may be repeated multiple times.)
+  -m, --mbt FILENAME        load scala-style commands from FILE before interpreting COMMANDS.
+                            (this option may be repeated multiple times.)
 
 termination behaviour:
 
@@ -24,9 +23,10 @@ The default exit behaviour is to terminate immediately after COMMANDS have been 
 MMT, it will start an interactive shell for the user to enter commands. The default behaviour of MMT can be overwritten
 with the following arguments.
 
-  -i, --shell               execute COMMANDS and take further commands on the MMT shell. Default if no arguments are
-                            provided.
+  -i, --shell               execute COMMANDS and take further commands on the MMT shell.
+                            (this is the default if no arguments are provided.)
   -w, --keepalive           execute COMMANDS and terminate only after all threads have finished.
+                            (no MMT shell will be started.)
   -w, --noshell             same as --keepalive (for backwards compatibility)
 
 note: for long options arguments can also be given using "=", i.e. --file=FILENAME.

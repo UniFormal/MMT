@@ -89,7 +89,12 @@ object BuildTargetModifier extends AnaArgs {
       mod = BuildDepsFirst(makeUpdateModifier(o, dr)) }
     depsFirstDry.foreach { o =>
       mod = BuildDepsFirst(makeUpdateModifier(o, dry = true)) }
-    if (fail) None else Some((mod, r))
+    if (fail) {
+      usageMessage(optDescrs).foreach(println)
+      None
+    } else {
+      Some((mod, r))
+    }
   }
 }
 

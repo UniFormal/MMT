@@ -5,7 +5,7 @@ import java.nio.file.{Files, Paths}
 import scala.util.Try
 
 /** describe the kind of a command line option */
-sealed class OptionArgument
+sealed abstract class OptionArgument
 
 /** just a flag */
 case object NoArg extends OptionArgument
@@ -21,15 +21,14 @@ case object StringArg extends OptionArgument
 /** collect multiple values */
 case object StringListArg extends OptionArgument
 
-
 /** the possible values given by options */
-sealed class OptionValue {
+sealed abstract class OptionValue {
   /** convenience methods */
-  def getStringList = this.asInstanceOf[StringListVal].value
+  def getStringList: List[String] = this.asInstanceOf[StringListVal].value
 
-  def getStringVal = this.asInstanceOf[StringVal].value
+  def getStringVal: String = this.asInstanceOf[StringVal].value
 
-  def getIntVal = this.asInstanceOf[IntVal].value
+  def getIntVal: Int = this.asInstanceOf[IntVal].value
 }
 
 case object NoVal extends OptionValue
@@ -85,9 +84,9 @@ trait AnaArgs {
   def getStringList(m: OptionMap, arg: String): List[String] =
     m.getOrElse(arg, StringListVal(Nil)).getStringList
 
-  def toOptInt(s: String) = Try(s.toInt).toOption
+  private def toOptInt(s: String) = Try(s.toInt).toOption
 
-  def getOptOptionValue(m: OptionMap, o: OptionDescr, value: Option[String]): Option[OptionValue] = {
+  private def getOptOptionValue(m: OptionMap, o: OptionDescr, value: Option[String]): Option[OptionValue] = {
     if (m.get(o.long).isDefined && o.arg != StringListArg) None // already defined
     else {
       value match {
@@ -113,6 +112,32 @@ trait AnaArgs {
     val (rest, opts) = args.reverse.span(!_.startsWith("--"))
     (opts.reverse, rest.reverse)
   }
+
+  def usageMessage(optionDescrs: OptionDescrs): List[String] =
+    "supported command line options:" ::
+    optionDescrs.map { case OptionDescr(long, short, optArg, descr) =>
+      val longOpt =
+        (if (optArg == StringListArg) " (--" else "  --") +
+          long + (optArg match {
+        case NoArg => " "
+        case IntArg => "=INT "
+        case OptIntArg => "[=N] "
+        case StringArg => "=STR "
+        case StringListArg => "=STR)+ "
+      })
+      (if (short.nonEmpty) {
+        "  -" + short +
+          (optArg match {
+          case NoArg => "    "
+          case IntArg => " INT "
+          case OptIntArg => " [N] "
+          case _ => " STR "
+        })
+      }
+      else "        ") + longOpt +
+        List.fill(24)(" ").mkString.substring(Math.min(longOpt.length, 23)) +
+        descr
+    }
 }
 
 object AnaArgs extends AnaArgs
@@ -187,6 +212,9 @@ object ShellArguments extends AnaArgs {
           println("Argument " + f + " cannot be used: " + path.toString + " is not a file.")
           fail = true
         }
+      }
+      if (fail || helpFlag) {
+        usageMessage(toplevelArgs).foreach(println)
       }
       if (fail) None else Some(sa)
     }
