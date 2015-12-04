@@ -53,9 +53,12 @@ case class OptionDescr(long: String, short: String, arg: OptionArgument, descrip
   def mayMatch(opt: String) = exactMatch(opt) || longEqual(opt)
 }
 
-object AnaArgs {
+trait AnaArgs {
+  type OptionDescrs = List[OptionDescr]
+  type OptionMap = Map[String, OptionValue]
+
   /** extract matching options */
-  def anaArgs(opts: List[OptionDescr], args: List[String]): (Map[String, OptionValue], List[String]) = {
+  def anaArgs(opts: OptionDescrs, args: List[String]): (OptionMap, List[String]) = {
     args match {
       case Nil => (Map.empty, Nil)
       case hd :: tl =>
@@ -78,12 +81,13 @@ object AnaArgs {
         }
     }
   }
-  def getStringList(m: Map[String, OptionValue], arg: String): List[String] =
+
+  def getStringList(m: OptionMap, arg: String): List[String] =
     m.getOrElse(arg, StringListVal(Nil)).getStringList
 
   def toOptInt(s: String) = Try(s.toInt).toOption
 
-  def getOptOptionValue(m: Map[String, OptionValue], o: OptionDescr, value: Option[String]): Option[OptionValue] = {
+  def getOptOptionValue(m: OptionMap, o: OptionDescr, value: Option[String]): Option[OptionValue] = {
     if (m.get(o.long).isDefined && o.arg != StringListArg) None // already defined
     else {
       value match {
@@ -105,12 +109,13 @@ object AnaArgs {
     }
   }
 
-  def getTrailingNonOptions(args: List[String]): (List[String], List[String]) =
-  {
+  def getTrailingNonOptions(args: List[String]): (List[String], List[String]) = {
     val (rest, opts) = args.reverse.span(!_.startsWith("--"))
     (opts.reverse, rest.reverse)
   }
 }
+
+object AnaArgs extends AnaArgs
 
 /**
   * Represents arguments parsed to MMT on the command line.
@@ -137,9 +142,9 @@ case class ShellArguments(
                            runCleanup: Boolean // do not keep alive but terminate/cleanup processes
                          )
 
-object ShellArguments {
+object ShellArguments extends AnaArgs {
 
-  private val toplevelArgs: List[OptionDescr] = List(
+  private val toplevelArgs: OptionDescrs = List(
     OptionDescr("help", "h", NoArg, "command line help"),
     OptionDescr("about", "a", NoArg, "about the program"),
     OptionDescr("shell", "i", NoArg, "start an interactive shell"),
@@ -152,7 +157,7 @@ object ShellArguments {
   )
 
   def parse(arguments: List[String]): Option[ShellArguments] = {
-    val (m, cs) = AnaArgs.anaArgs(toplevelArgs, arguments)
+    val (m, cs) = anaArgs(toplevelArgs, arguments)
     val helpFlag = m.get("help").isDefined
     val aboutFlag = m.get("about").isDefined
     val os = m.get("keepalive").toList ++ m.get("shell").toList ++ m.get("noshell").toList
@@ -160,9 +165,9 @@ object ShellArguments {
       help = helpFlag,
       about = aboutFlag,
       send = m.get("send").map(a => a.asInstanceOf[IntVal].value),
-      mmtFiles = AnaArgs.getStringList(m, "file"),
-      scalaFiles = AnaArgs.getStringList(m, "mbt"),
-      cfgFiles = AnaArgs.getStringList(m, "cfg"),
+      mmtFiles = getStringList(m, "file"),
+      scalaFiles = getStringList(m, "mbt"),
+      cfgFiles = getStringList(m, "cfg"),
       commands = cs,
       prompt = m.get("shell").isDefined,
       runCleanup = m.get("keepalive").isEmpty && m.get("noshell").isEmpty)

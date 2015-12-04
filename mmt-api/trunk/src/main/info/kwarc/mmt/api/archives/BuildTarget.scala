@@ -34,8 +34,8 @@ case object Build extends Update {
   def toString(dim: String) = dim
 }
 
-object BuildTargetModifier {
-  def optDescrs: List[OptionDescr] = List(
+object BuildTargetModifier extends AnaArgs {
+  def optDescrs: OptionDescrs = List(
     OptionDescr("clean", "", NoArg, "clean up"),
     OptionDescr("depsFirst", "", OptIntArg, "treat dependencies first"),
     OptionDescr("depsFirst?", "", OptIntArg, "dry-run dependencies first"),
@@ -52,7 +52,7 @@ object BuildTargetModifier {
   }, dryRun = dry)
 
   def splitArgs(args: List[String], log: String => Unit): Option[(BuildTargetModifier, List[String])] = {
-    val (m, r) = AnaArgs.anaArgs(optDescrs, args)
+    val (m, r) = anaArgs(optDescrs, args)
     val dr = m.get("dry-run").isDefined
     val clean = m.get("clean").toList
     val force = m.get("force").toList
@@ -105,14 +105,14 @@ abstract class BuildTarget extends FormatBasedExtension {
   /** defaults to the key */
   override def logPrefix: String = key
 
-  private def testOps: List[OptionDescr] = List(
+  private def testOps: OptionDescrs = List(
     OptionDescr("test", "", NoArg, "compare build results with test dimension"),
     OptionDescr("test-add", "", NoArg, "add new ouput files to test dimension"),
     OptionDescr("test-update", "", NoArg, "update changed ouput files in test dimension")
   )
 
   override def start(args: List[String]): Unit = {
-    val (m, rest) = AnaArgs.anaArgs(testOps, args)
+    val (m, rest) = anaArgs(testOps, args)
     remainingStartArguments = rest
     compareWithTest = m.get("test").isDefined
     addTest = m.get("test-add").isDefined

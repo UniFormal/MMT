@@ -127,7 +127,7 @@ class LaTeXML extends LaTeXBuildTarget {
   private var reboot: Boolean = false
   private var nopost: Boolean = false
 
-  private val latexmlOpts: List[OptionDescr] = List(
+  private val latexmlOpts: OptionDescrs = List(
     OptionDescr("latexmlc", "", StringArg, "executable path for (client) latexmlc"),
     OptionDescr("latexmls", "", StringArg, "executable path for (server) latexmls"),
     OptionDescr("expire", "", IntArg, "expire argument for (server) latexmls"),
@@ -139,7 +139,7 @@ class LaTeXML extends LaTeXBuildTarget {
     OptionDescr("nopost", "", NoArg, "omit post processing, create xml")
   )
 
-  private def getArg(arg: String, m: Map[String, OptionValue]): Option[String] =
+  private def getArg(arg: String, m: OptionMap): Option[String] =
     m.get(arg).map {
       case IntVal(v) => Some(v.toString)
       case StringVal(s) => Some(s)
@@ -148,9 +148,9 @@ class LaTeXML extends LaTeXBuildTarget {
 
   override def start(args: List[String]) {
     super.start(args)
-    val (m, rest) = AnaArgs.anaArgs(latexmlOpts, remainingStartArguments)
+    val (m, rest) = anaArgs(latexmlOpts, remainingStartArguments)
     remainingStartArguments = rest
-    val (restOpts, nonOpts) = AnaArgs.getTrailingNonOptions(rest)
+    val (restOpts, nonOpts) = getTrailingNonOptions(rest)
     if (restOpts.nonEmpty) {
       logError("unrecognized remaining options: " + restOpts.mkString(" "))
     }
@@ -170,9 +170,9 @@ class LaTeXML extends LaTeXBuildTarget {
     val newProfile = getArg("profile", m)
     profileSet = newProfile.isDefined
     profile = newProfile.getOrElse(profile)
-    preloads = AnaArgs.getStringList(m, "preload") ++
+    preloads = getStringList(m, "preload") ++
       controller.getEnvVar("LATEXMLPRELOADS").getOrElse("").split(" ").filter(_.nonEmpty)
-    paths = AnaArgs.getStringList(m, "path") ++
+    paths = getStringList(m, "path") ++
       controller.getEnvVar("LATEXMLPATHS").getOrElse("").split(" ").filter(_.nonEmpty)
     reboot = m.get("reboot").isDefined
     if (reboot) expire = 1

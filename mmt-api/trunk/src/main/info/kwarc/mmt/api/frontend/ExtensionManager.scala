@@ -14,7 +14,7 @@ import utils.MyList._
 import web._
 
 
-trait Extension extends Logger {
+trait Extension extends Logger with AnaArgs {
   protected var controller: Controller = null
   protected var report: Report = null
 
