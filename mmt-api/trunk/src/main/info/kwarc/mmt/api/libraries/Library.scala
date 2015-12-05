@@ -276,7 +276,8 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
         case Some((a, LocalName(Nil))) => a // perfect match TODO Here should probably happen something
         case Some((a, ln)) => a match {
           case a: Constant => error("local name " + ln + " left after resolving to constant assignment")
-          case a: DefinedLink => get(a.df, ln, error)
+          case a: DefinedLink => get(a.df, name.simplify, error) // <- names in links should always start with [T]/...?
+
         }
         case None =>
           // TODO multiple ComplexSteps resulting from inclusions in a row must be normalized away somewhere

@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.utils.URI
 
 object LFSubTyped {
   val baseURI = DPath(URI.http colon "cds.omdoc.org") / "LFX"
-  val thname = "SubTyped"
+  val thname = "Sub"
   val path = baseURI ? thname
   def lfsubsymbol(name : String) = path ? name
 }

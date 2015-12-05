@@ -582,7 +582,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
          case None =>
             val tm1S = safeSimplifyOne(tm1)
             val tm2S = safeSimplifyOne(tm2)
-            if ((tm1S hashneq tm2S) || (tm2S hashneq tm2))
+            if ((tm1S hashneq tm1) || (tm2S hashneq tm2))
                   safeSimplifyUntil(tm1S, tm2S)(simple)
                else
                   (tm1S,tm2S,None)
@@ -614,6 +614,12 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
             case j: Inhabited => checkInhabited(j)
          }
       }
+   }
+
+   def safecheck(j:Judgement)(implicit history : History): Option[Boolean] = state.immutably[Boolean](check(j)) match {
+      case s:Success[Boolean] => Some(s.result)
+      case WouldFail => Some(false)
+      case MightFail => None
    }
 
    /** proves a Typing Judgement by bidirectional type checking
@@ -734,15 +740,28 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
         //foundation-dependent cases if necessary
         //syntax-driven type inference
         resFoundInd orElse {
-            val (tmS, ruleOpt) = limitedSimplify(tm,rules.get(classOf[InferenceRule]))
-            ruleOpt match {
-              case Some(rule) =>
-                 history += ("applying rule for " + rule.head.name.toString)
-                 rule(this)(tmS, covered)
-              case None =>
-                 history += "no applicable rule"
-                 None
-            }
+           var activerules = rules.get(classOf[InferenceRule])
+           var haveresult = false
+           var ret = None.asInstanceOf[Option[Term]]
+           while (!haveresult) {
+              val (tmS, ruleOpt) = limitedSimplify(tm, activerules)
+              ruleOpt match {
+                 case Some(rule) =>
+                    history += ("applying rule for " + rule.head.name.toString)
+                    haveresult = true
+                    ret = try {rule(this)(tmS, covered)} catch {
+                       case TypingRule.NotApplicable =>
+                          history+="rule not applicable!"
+                        haveresult = false
+                        activerules -= rule
+                        None
+                    }
+                 case None =>
+                    history += "no applicable rule"
+                    haveresult = true
+              }
+           }
+           ret
         }
      }
      log("inferred: " + res.getOrElse("failed"))
@@ -768,19 +787,29 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    private def checkSubtyping(j: Subtyping)(implicit history: History) : Boolean = {
       val stRules = rules.get(classOf[SubtypingRule])
       // optimization: if there are no rules, we can skip immediately to equality checking
-      if (!stRules.isEmpty) {
+     // if (stRules.nonEmpty) {
+      def stcheck(activerules: Set[SubtypingRule]) : Option[Boolean] = {
+         if (activerules.isEmpty) return None
          implicit val stack = j.stack
          val (tp1S, tp2S, rOpt) = safeSimplifyUntil(j.tp1, j.tp2) { case (a1,a2) =>
-            stRules.find(_.applicable(a1,a2))
+            activerules.find(_.applicable(a1,a2))
          }
-         rOpt flatMap {r => r(this)(tp1S, tp2S)} match {
-            case Some(r) =>
-               return r
-            case None =>
-               if (existsActivatable)
+         rOpt map {r => history += ("applying rule for " + r.head.name.toString); state.immutably(r(this)(tp1S, tp2S))} match {
+            case (Some(s:Success[a])) =>
+               val r = rOpt.get(this)(tp1S,tp2S)
+               history += ("yields "+r)
+               r
+            case _ =>
+               if (existsActivatable && rOpt.isDefined && (activerules-rOpt.get).isEmpty)
                   // maybe other branches solve unknowns that make a rule applicable
-                  return delay(Subtyping(stack, tp1S, tp2S), true)
+                  return Some(delay(Subtyping(stack, tp1S, tp2S), true))
+               else if (rOpt.isDefined) stcheck(activerules-rOpt.get) else None
+               // else return false
          }
+      }
+      if (stRules.nonEmpty) stcheck(stRules.toSet) match {
+         case Some(x) => return x
+         case _ =>
       }
       // otherwise, we default to checking equality
       // in the absence of subtyping rules, this is the needed behavior anyway

@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.utils.URI
 
 /**
  * This class bundles all state that is maintained by a [[StructureParser]]
@@ -458,7 +459,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val spath = parent ? name
     readDelimiter(":")
     val tpC = new TermContainer
-    doComponent(TypeComponent, tpC, context)
+    //doComponent(TypeComponent, tpC, context)
+    val tp = OMMOD(readMPath(spath)._2)
+    tpC.parsed = tp
     val s = new DeclaredStructure(OMMOD(parent), name, tpC, isImplicit) // TODO add metamorph?
     seCont(s)
     if (state.reader.endOfDeclaration) {
@@ -754,7 +757,26 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
               SourceRef.update(as.df, inclRef)
               seCont(as)
           }
-        case "structure" => readStructure(mpath, linkOpt, context, isImplicit = false)
+        case "structure" =>
+          mod match {
+            case thy: DeclaredTheory => readStructure(mpath, linkOpt, context, isImplicit = false)
+            case link: DeclaredLink =>
+              val name = readName
+              val orig = controller.get(link.from.toMPath ? name) match {
+                case s: Structure => s
+                case _ => fail("not a structure: "+link.from.toMPath?name)
+              }
+              readDelimiter("=")
+              val incl = readSPath(link.path)
+              val target = controller.get(incl) match {
+                case s: Link => s
+                case _ => fail("not a link: "+incl)
+              }
+              val as = DefLinkAssignment(link.toTerm,name,target.from,target.toTerm)
+              // SourceRef.update(as.df,SourceRef.fromURI(URI.apply(target.path.toString)))
+              // SourceRef.update(as.from,SourceRef.fromURI(URI.apply(orig.path.toString)))
+              seCont(as)
+          }
         case "theory" => readTheory(mod.path, context)
         case ViewKey(_) => readView(mod.path, context, isImplicit = false)
         //Pattern
