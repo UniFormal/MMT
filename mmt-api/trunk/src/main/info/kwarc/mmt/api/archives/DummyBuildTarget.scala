@@ -24,7 +24,7 @@ class DummyBuildTarget extends TraversingBuildTarget {
       if (l == "#provides") {
         readDeps = false
       } else if (readDeps) {
-        val d = File(l)
+        val d = File((bf.outFile.up / l).setExtension(outExt))
         if (!d.exists) {
           missingDeps ::= PhysicalDependency(d)
         }
