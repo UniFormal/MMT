@@ -617,7 +617,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    }
 
    def safecheck(j:Judgement)(implicit history : History): Option[Boolean] = state.immutably[Boolean](check(j)) match {
-      case s:Success[Boolean] => Some(s.result)
+      case Success(s:Boolean) => Some(s)
       case WouldFail => Some(false)
       case MightFail => None
    }
@@ -788,6 +788,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       val stRules = rules.get(classOf[SubtypingRule])
       // optimization: if there are no rules, we can skip immediately to equality checking
      // if (stRules.nonEmpty) {
+     /*
       def stcheck(activerules: Set[SubtypingRule]) : Option[Boolean] = {
          if (activerules.isEmpty) return None
          implicit val stack = j.stack
@@ -807,9 +808,33 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
                // else return false
          }
       }
-      if (stRules.nonEmpty) stcheck(stRules.toSet) match {
-         case Some(x) => return x
-         case _ =>
+      */
+      if (stRules.nonEmpty) {
+        implicit val stack = j.stack
+        var activerules = rules.get(classOf[SubtypingRule])
+        var haveresult = false
+        while (!haveresult) {
+          val (tp1S, tp2S, rOpt) = safeSimplifyUntil(j.tp1, j.tp2) { case (a1,a2) =>
+            activerules.find(_.applicable(a1,a2))
+          }
+          haveresult = true
+          rOpt match {
+            case Some(rule) =>
+              history += ("applying rule for " + rule.head.name.toString)
+              (try { rule(this)(tp1S,tp2S)} catch {
+                case TypingRule.NotApplicable =>
+                  history+="rule not applicable!"
+                  haveresult = false
+                  activerules -= rule
+                  None
+              }) match {
+                case Some(b) => return b
+                case _ =>
+              }
+            case None =>
+              // if (existsActivatable) return delay(Subtyping(stack, tp1S, tp2S), true)
+          }
+        }
       }
       // otherwise, we default to checking equality
       // in the absence of subtyping rules, this is the needed behavior anyway

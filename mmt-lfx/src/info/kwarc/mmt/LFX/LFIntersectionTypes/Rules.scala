@@ -40,7 +40,7 @@ object IntersectionSubtypeRule extends SubtypingRule {
         if (solver.safecheck(Subtyping(stack,t1,tp2)).getOrElse(false))
           Some(solver.check(Subtyping(stack,t1,tp2)))
         else Some(solver.check(Subtyping(stack,t2,tp2)))
-      case _ => None
+      case _ => throw TypingRule.NotApplicable
     }
 }
 
