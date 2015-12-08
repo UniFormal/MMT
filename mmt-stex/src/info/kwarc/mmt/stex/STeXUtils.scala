@@ -9,14 +9,6 @@ import scala.util.matching.Regex
 object STeXUtils {
   val c = java.io.File.pathSeparator
 
-  def partArg(arg: String, args: List[String]): (List[String], List[String]) =
-      partArgAux("--" + arg + "=", args)
-
-  def partArgAux(arg: String, args: List[String]): (List[String], List[String]) = {
-    val (matched, rest) = args.partition(_.startsWith(arg))
-    (matched.map(_.substring(arg.length)), rest)
-  }
-
   def mathHubDir(bt: BuildTask): File = bt.archive.baseDir.up
 
   def extBase(bt: BuildTask): File = mathHubDir(bt) / "ext"

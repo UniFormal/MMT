@@ -40,31 +40,16 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     OptionDescr("execute", "", StringArg, "name of main executable")
   )
 
+  override def buildOpts: OptionDescrs = commonOpts
+
   override def start(args: List[String]) {
     super.start(args)
-    val (m, rest) = anaArgs(commonOpts, remainingStartArguments)
-    remainingStartArguments = rest
-    pipeOutput = m.get(pipeOutputOption).isDefined
-    m.get(timeoutOption).foreach { case v => timeoutVal = v.getIntVal }
-    m.get(key).foreach { case v => nameOfExecutable = v.getStringVal }
-    m.get("execute").foreach { case v =>
+    pipeOutput = optionsMap.get(pipeOutputOption).isDefined
+    optionsMap.get(timeoutOption).foreach { case v => timeoutVal = v.getIntVal }
+    optionsMap.get(key).foreach { case v => nameOfExecutable = v.getStringVal }
+    optionsMap.get("execute").foreach { case v =>
       if (nameOfExecutable.isEmpty) nameOfExecutable = v.getStringVal
       else logError("executable already set by: --" + key + "=" + nameOfExecutable) }
-  }
-
-  protected def execArgs(args: List[String]): (List[String], List[String]) = {
-    val (matched, rest) = partArg(key, args)
-    val (opts, nonOpts) = rest.filter(pipeOutputOption != _).partition(_.startsWith("--"))
-    val (timeOpts, restOpts) = partArg(timeoutOption, opts)
-    timeOpts match {
-      case Nil =>
-      case hd :: tl => try timeoutVal = hd.toInt catch {
-        case _: Exception =>
-          logResult("illegal timeout value: " + hd)
-      }
-        tl.foreach(t => logResult("ignored time value: " + t))
-    }
-    (restOpts, matched ++ nonOpts)
   }
 
   protected def procLogger(output: StringBuffer, pipeOutput: Boolean): ProcessLogger = {

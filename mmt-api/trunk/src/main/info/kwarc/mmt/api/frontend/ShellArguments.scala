@@ -108,10 +108,8 @@ trait AnaArgs {
     }
   }
 
-  def getTrailingNonOptions(args: List[String]): (List[String], List[String]) = {
-    val (rest, opts) = args.reverse.span(!_.startsWith("--"))
-    (opts.reverse, rest.reverse)
-  }
+  def splitOptions(args: List[String]): (List[String], List[String]) =
+    args.partition(_.startsWith("-"))
 
   def usageMessage(optionDescrs: OptionDescrs): List[String] =
     "supported command line options:" ::
@@ -169,7 +167,7 @@ case class ShellArguments(
 
 object ShellArguments extends AnaArgs {
 
-  private val toplevelArgs: OptionDescrs = List(
+  val toplevelArgs: OptionDescrs = List(
     OptionDescr("help", "h", NoArg, "command line help"),
     OptionDescr("about", "a", NoArg, "about the program"),
     OptionDescr("shell", "i", NoArg, "start an interactive shell"),

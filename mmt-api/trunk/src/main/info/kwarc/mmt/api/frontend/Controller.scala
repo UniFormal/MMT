@@ -337,6 +337,7 @@ class Controller extends ROController with Logger {
         localLookup.getO(p) foreach { se =>
           notifyListeners.onDelete(se)
         }
+      case _ =>
     }
   }
 
@@ -485,7 +486,7 @@ class Controller extends ROController with Logger {
     report.addHandler(ConsoleHandler)
     val optPair = BuildTargetModifier.splitArgs(allArgs, s => logError(s))
     optPair.foreach { case (mod, restArgs) =>
-      val (args, fileNames) = AnaArgs.getTrailingNonOptions(restArgs)
+      val (args, fileNames) = AnaArgs.splitOptions(restArgs)
       val home: File = File(System.getProperty("user.dir"))
       val files = fileNames.map(s => File(home.resolve(s)))
       val realFiles = if (files.isEmpty)
@@ -507,7 +508,12 @@ class Controller extends ROController with Logger {
             // opening may fail despite resolveAnyPhysical (i.e. formerly by a MANIFEST.MF without id)
             logError("not an archive: " + root)
           case Some(archive) =>
-            report.groups += bt.key + "-result" // ensure logging
+            if (!bt.quiet) {
+              report.groups += bt.key + "-result" // ensure logging if non-quiet
+            }
+            if (bt.verbose) {
+              report.groups += bt.key // even more logging
+            }
           val inPath = fp.segments match {
               case dim :: path =>
                 bt match {

@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.archives
 
-import java.nio.file.Files
+import java.nio.file.{Files, StandardCopyOption}
 
 import info.kwarc.mmt.api._
 import Level.Level
@@ -53,7 +53,7 @@ object BuildTargetModifier extends AnaArgs {
 
   def splitArgs(args: List[String], log: String => Unit): Option[(BuildTargetModifier, List[String])] = {
     val (m, r) = anaArgs(optDescrs, args)
-    val dr = m.get("dry-run").isDefined
+    val dr = m.isDefinedAt("dry-run")
     val clean = m.get("clean").toList
     val force = m.get("force").toList
     val onChange = m.get("onChange").toList
@@ -63,7 +63,7 @@ object BuildTargetModifier extends AnaArgs {
     val depsFirstDry = m.get("depsFirst?").toList
     val os = clean ++ force ++ onChange ++ onError ++ onErrorDry ++ depsFirst ++ depsFirstDry
     var fail = false
-    var mod: BuildTargetModifier = UpdateOnError(Level.Ignore)
+    var mod: BuildTargetModifier = UpdateOnError(Level.Ignore, dryRun = dr)
     if (os.length > 1) {
       log("only one allowed of: clean, force, onChange, onError, depsFirst")
       fail = true
@@ -82,13 +82,17 @@ object BuildTargetModifier extends AnaArgs {
       mod = UpdateOnError(Level.Ignore, dryRun = dr)
     }
     onError.foreach { o =>
-      mod = makeUpdateModifier(o, dr) }
+      mod = makeUpdateModifier(o, dr)
+    }
     onErrorDry.foreach { o =>
-      mod = makeUpdateModifier(o, dry = true) }
+      mod = makeUpdateModifier(o, dry = true)
+    }
     depsFirst.foreach { o =>
-      mod = BuildDepsFirst(makeUpdateModifier(o, dr)) }
+      mod = BuildDepsFirst(makeUpdateModifier(o, dr))
+    }
     depsFirstDry.foreach { o =>
-      mod = BuildDepsFirst(makeUpdateModifier(o, dry = true)) }
+      mod = BuildDepsFirst(makeUpdateModifier(o, dry = true))
+    }
     if (fail) {
       usageMessage(optDescrs).foreach(println)
       None
@@ -111,26 +115,45 @@ abstract class BuildTarget extends FormatBasedExtension {
   override def logPrefix: String = key
 
   private def testOps: OptionDescrs = List(
+    OptionDescr("quiet", "q", NoArg, "do not show result information"),
+    OptionDescr("verbose", "v", NoArg, "show log information"),
     OptionDescr("test", "", NoArg, "compare build results with test dimension"),
-    OptionDescr("test-add", "", NoArg, "add new ouput files to test dimension"),
+    OptionDescr("test-add", "", NoArg, "add new output files to test dimension"),
     OptionDescr("test-update", "", NoArg, "update changed ouput files in test dimension")
   )
 
-  override def start(args: List[String]): Unit = {
-    val (m, rest) = anaArgs(testOps, args)
+  /** options to be overriden by subclasses */
+  def buildOpts: OptionDescrs = Nil
+
+  override def start(args: List[String]) {
+    val (m, rest) = anaArgs(testOps ++ buildOpts, args)
+    optionsMap = m
     remainingStartArguments = rest
-    compareWithTest = m.get("test").isDefined
-    addTest = m.get("test-add").isDefined
-    updateTest = m.get("test-update").isDefined
+    compareWithTest = m.isDefinedAt("test")
+    addTest = m.isDefinedAt("test-add")
+    updateTest = m.isDefinedAt("test-update")
+    verbose = m.isDefinedAt("verbose")
+    quiet = m.isDefinedAt("quiet")
+    val (otherOpts, _) = splitOptions(rest)
+    if (otherOpts.nonEmpty) {
+      logError("unknown option: " + otherOpts.mkString(" "))
+      usageMessage(ShellArguments.toplevelArgs ++ BuildTargetModifier.optDescrs ++ testOps ++ buildOpts).foreach(println)
+    }
   }
+
+  /** the map computed from buildOpts */
+  var optionsMap: OptionMap = Map.empty
 
   /** arguments to be consumed by subclasses */
   var remainingStartArguments: List[String] = Nil
 
-  /** should be build results be compared with results in test dimension */
+  /** should build results be compared with results in test dimension */
   var compareWithTest: Boolean = false
   var addTest: Boolean = false
   var updateTest: Boolean = false
+
+  var verbose: Boolean = false
+  var quiet: Boolean = false
 
   /** build this target in a given archive */
   def build(a: Archive, in: FilePath) //TODO this should simply call update(a, Build, in)}
@@ -147,8 +170,8 @@ abstract class BuildTarget extends FormatBasedExtension {
   /** the main function to run the build target
     *
     * @param modifier chooses build, clean, or update
-    * @param arch the archive to build on
-    * @param in the folder inside the archive's inDim folder to which building in restricted (i.e., Nil for whole archive)
+    * @param arch     the archive to build on
+    * @param in       the folder inside the archive's inDim folder to which building in restricted (i.e., Nil for whole archive)
     */
   def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath) {
     modifier match {
@@ -170,11 +193,11 @@ abstract class BuildTarget extends FormatBasedExtension {
 
 /** auxiliary type to represent the parameters and result of building a file/directory
   *
-  * @param inFile the input file
-  * @param inPath the path of the input file inside the archive, relative to the input dimension
-  * @param children the build tasks of the children if this task refers to a directory
-  * @param outFile the intended output file
-  * @param outPath the output file inside the archive, relative to the archive root.
+  * @param inFile    the input file
+  * @param inPath    the path of the input file inside the archive, relative to the input dimension
+  * @param children  the build tasks of the children if this task refers to a directory
+  * @param outFile   the intended output file
+  * @param outPath   the output file inside the archive, relative to the archive root.
   * @param errorCont BuildTargets should report errors here
   */
 class BuildTask(val key: String, val archive: Archive, val inFile: File, val children: Option[List[BuildTask]], val inPath: FilePath,
@@ -199,8 +222,8 @@ class BuildTask(val key: String, val archive: Archive, val inFile: File, val chi
   def dirName: String = outFile.toFilePath.dirPath.name
 
   def asDependency = children match {
-     case Some(ch) => DirBuildDependency(key, archive, inPath, ch)
-     case None => BuildDependency(key, archive, inPath)
+    case Some(ch) => DirBuildDependency(key, archive, inPath, ch)
+    case None => BuildDependency(key, archive, inPath)
   }
 }
 
@@ -278,10 +301,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
     *
     * This does nothing by default and can be overridden if needed.
     *
-    * @param bd information about input/output file etc
+    * @param bd            information about input/output file etc
     * @param builtChildren tasks for building the children
     */
-  def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = BuildSuccess(Nil,Nil)
+  def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = BuildSuccess(Nil, Nil)
 
   /** abstract method to compute the estimated direct dependencies */
   def getDeps(bf: BuildTask): Set[Dependency] =
@@ -300,11 +323,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   /** like build, but returns all build tasks without adding them to the build manager */
   def makeBuildTasks(a: Archive, in: FilePath, errorCont: Option[ErrorHandler]): List[QueuedTask] = {
-     var tasks : List[QueuedTask] = Nil
-     buildAux(in, a, errorCont) {qt =>
-       tasks ::= qt
-     }
-     tasks.reverse
+    var tasks: List[QueuedTask] = Nil
+    buildAux(in, a, errorCont) { qt =>
+      tasks ::= qt
+    }
+    tasks.reverse
   }
 
   /** recursive creation of [[BuildTask]]s */
@@ -348,29 +371,37 @@ abstract class TraversingBuildTarget extends BuildTarget {
     new BuildTask(key, a, inFile, children, inPath, outFile, outPath, errorCont)
   }
 
+  def compareOutputAndTest(bt: BuildTask) {
+    val testFile = getTestOutFile(bt.archive, bt.inPath)
+    val diffFile = testFile.addExtension("diff")
+    val outFile = bt.outFile
+    if (!outFile.exists) {
+      logError("missing output file: " + outFile)
+    } else if (testFile.exists) {
+      val diffLog = ShellCommand.run("diff", "-u", outFile.toString, testFile.toString)
+      if (diffLog.isDefined) {
+        File.write(diffFile, diffLog.get)
+        logResult("wrote: " + diffFile)
+      } else {
+        logResult("no differences for: " + outFile)
+      }
+      if (diffLog.isDefined && updateTest) {
+        Files.copy(outFile.toPath, testFile.toPath, StandardCopyOption.REPLACE_EXISTING)
+        logResult("updated " + testFile)
+      }
+    } else {
+      if (addTest) {
+        testFile.up.mkdirs
+        Files.copy(outFile.toPath, testFile.toPath)
+        logResult("added " + testFile)
+      }
+    }
+  }
+
   def buildFileAndCompare(bt: BuildTask): BuildResult = {
     val res = buildFile(bt)
     if (compareWithTest) {
-      val testFile = getTestOutFile(bt.archive, bt.inPath)
-      val outFile = bt.outFile
-      if (!outFile.exists)
-      {
-        logError("missing output file: " + outFile)
-      } else if (testFile.exists) {
-        val diffLog = ShellCommand.run("diff", outFile.toString, testFile.toString)
-        diffLog.foreach(s => s.split("\n").map(l => logError(l)))
-        if (diffLog.isDefined && updateTest) {
-          testFile.delete
-          Files.copy(outFile.toPath, testFile.toPath)
-          logResult("updated " + testFile)
-        }
-      } else {
-        if (addTest) {
-          testFile.up.mkdirs
-          Files.copy(outFile.toPath, testFile.toPath)
-          logResult("added " + testFile)
-        }
-      }
+      compareOutputAndTest(bt)
     }
     res
   }
@@ -395,7 +426,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       case e: Exception =>
         val le = LocalError("unknown build error: " + e.getMessage).setCausedBy(e)
         bt.errorCont(le)
-        res = BuildFailure(Nil,Nil)
+        res = BuildFailure(Nil, Nil)
     } finally {
       bt.errorCont.close
     }
@@ -407,7 +438,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     *
     * deletes the output and error file by default, may be overridden to, e.g., delete auxiliary files
     *
-    * @param a the containing archive
+    * @param a    the containing archive
     * @param curr the inDim whose output is to be deleted
     */
   def cleanFile(a: Archive, curr: Current) {
@@ -422,7 +453,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     *
     * does nothing by default
     *
-    * @param a the containing archive
+    * @param a    the containing archive
     * @param curr the outDim directory to be deleted
     */
   def cleanDir(a: Archive, curr: Current) {
@@ -443,7 +474,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   /** @return status of input file, obtained by comparing to error file */
   private def hadErrors(errorFile: File, errorLevel: Level): Boolean =
     if (errorLevel > Level.Fatal)
-       false // nothing is more severe than a fatal error
+      false // nothing is more severe than a fatal error
     else
       errorFile.exists && ErrorReader.getBuildErrors(errorFile, errorLevel, None).nonEmpty
 
@@ -460,39 +491,32 @@ abstract class TraversingBuildTarget extends BuildTarget {
         val outPath = getOutPath(a, outFile)
         lazy val bf = makeBuildTask(a, inPath, inFile, None, None)
         val rebuildNeeded = up match {
-           case Build => true
-           case up: UpdateOnError =>
-              lazy val errs = hadErrors(errorFile, up.errorLevel)
-              val rn = up.errorLevel <= Level.Force || modified(inFile, errorFile) || errs ||
-                getDeps(bf).exists {
-                  case bd: BuildDependency =>
-                    val errFile = getErrorFile(bd)
-                    modified(errFile, errorFile)
-                  case ForeignDependency(fFile) => modified(fFile, errorFile)
-                  case _ => false
-                }
-              if (!rn) {
-                logResult("up-to-date " + outPath)
+          case Build => true
+          case up: UpdateOnError =>
+            lazy val errs = hadErrors(errorFile, up.errorLevel)
+            val rn = up.errorLevel <= Level.Force || modified(inFile, errorFile) || errs ||
+              getDeps(bf).exists {
+                case bd: BuildDependency =>
+                  val errFile = getErrorFile(bd)
+                  modified(errFile, errorFile)
+                case ForeignDependency(fFile) => modified(fFile, errorFile)
+                case _ => false
               }
-              if (rn && up.dryRun) {
-                 logResult("out-dated " + outPath)
-                 false
-              } else {
-                 rn
-              }
-        }
-        if (addTest && outFile.exists && !testFile.exists) {
-          testFile.up.mkdirs
-          Files.copy(outFile.toPath, testFile.toPath)
-          logResult("added " + testFile)
-        }
-        if (updateTest && outFile.exists && testFile.exists) {
-          testFile.delete
-          Files.copy(outFile.toPath, testFile.toPath)
-          logResult("updated " + testFile)
+            if (!rn) {
+              logResult("up-to-date " + outPath)
+            }
+            if (rn && up.dryRun) {
+              logResult("out-dated " + outPath)
+              false
+            } else {
+              rn
+            }
         }
         if (rebuildNeeded) {
           runBuildTask(bf)
+        }
+        if (compareWithTest) {
+          compareOutputAndTest(bf)
         }
         (rebuildNeeded, bf)
     }, { case (c@Current(inDir, inPath), childChanged) =>
@@ -506,25 +530,25 @@ abstract class TraversingBuildTarget extends BuildTarget {
     })
   }
 
-//TODO sort this out
-/*
- here is indeed some duplicate work.
- getFilesRec is similar to makeBuildTasks, both traverse the folders recursively
- - getFilesRec returns files to be built as dependencies (but no directories)
- - makeBuildTasks returns QueuedTasks (also for directories)
- QueuedTasks (bad name?) are created from BuildTasks still to be queued by addTasks in build
- (the construction via traverse, a continuation and reverse is overkill compared to getFilesRec)
+  //TODO sort this out
+  /*
+   here is indeed some duplicate work.
+   getFilesRec is similar to makeBuildTasks, both traverse the folders recursively
+   - getFilesRec returns files to be built as dependencies (but no directories)
+   - makeBuildTasks returns QueuedTasks (also for directories)
+   QueuedTasks (bad name?) are created from BuildTasks still to be queued by addTasks in build
+   (the construction via traverse, a continuation and reverse is overkill compared to getFilesRec)
 
- we still have 4 separate actions: build, update, depsFirst and clean (where clean is undisputed)
- - tasks are currently only collected and queued for "build"!
- - "build" should be a special case of "update", however
- "update" needs to perform the up-to-date test to exclude some task that need not to be rebuild
- but the up-to-date test should be made by the queue manager.
+   we still have 4 separate actions: build, update, depsFirst and clean (where clean is undisputed)
+   - tasks are currently only collected and queued for "build"!
+   - "build" should be a special case of "update", however
+   "update" needs to perform the up-to-date test to exclude some task that need not to be rebuild
+   but the up-to-date test should be made by the queue manager.
 
- "depsFirst" is a wrapper around the update action, where dependent task are updated earlier
-  via the estimated dependencies getDeps. (This only works if the estimated dependencies are
-  at least the actual dependencies and are non-cyclic.)
-*/
+   "depsFirst" is a wrapper around the update action, where dependent task are updated earlier
+    via the estimated dependencies getDeps. (This only works if the estimated dependencies are
+    at least the actual dependencies and are non-cyclic.)
+  */
 
   protected def getFilesRec(a: Archive, in: FilePath): Set[Dependency] = {
     val inFile = a / inDim / in

@@ -139,6 +139,8 @@ class LaTeXML extends LaTeXBuildTarget {
     OptionDescr("nopost", "", NoArg, "omit post processing, create xml")
   )
 
+  override def buildOpts: OptionDescrs = commonOpts ++ latexmlOpts
+
   private def getArg(arg: String, m: OptionMap): Option[String] =
     m.get(arg).map {
       case IntVal(v) => Some(v.toString)
@@ -148,36 +150,30 @@ class LaTeXML extends LaTeXBuildTarget {
 
   override def start(args: List[String]) {
     super.start(args)
-    val (m, rest) = anaArgs(latexmlOpts, remainingStartArguments)
-    remainingStartArguments = rest
-    val (restOpts, nonOpts) = getTrailingNonOptions(rest)
-    if (restOpts.nonEmpty) {
-      logError("unrecognized remaining options: " + restOpts.mkString(" "))
-      usageMessage(commonOpts ++ latexmlOpts).foreach(println)
-    }
-    m.get("latexmlc").foreach { s =>
+    val (_, nonOpts) = splitOptions(remainingStartArguments)
+    optionsMap.get("latexmlc").foreach { s =>
       if (nameOfExecutable.nonEmpty) {
         logError("executable overwritten by --latexmlc" )
       }
       nameOfExecutable = s.getStringVal }
     val nonOptArgs = if (nameOfExecutable.isEmpty) nonOpts else nameOfExecutable :: nonOpts
     latexmlc = getFromFirstArgOrEnvvar(nonOptArgs, "LATEXMLC", latexmlc)
-    latexmls = m.get("latexmls").map(v => Some(v.getStringVal)).getOrElse(controller.getEnvVar("LATEXMLS")).
+    latexmls = optionsMap.get("latexmls").map(v => Some(v.getStringVal)).getOrElse(controller.getEnvVar("LATEXMLS")).
       getOrElse(latexmls)
-    expire = getArg("expire", m).getOrElse(expire.toString).toInt
-    val newPort = getArg("port", m)
+    expire = getArg("expire", optionsMap).getOrElse(expire.toString).toInt
+    val newPort = getArg("port", optionsMap)
     portSet = newPort.isDefined
     port = newPort.getOrElse(port.toString).toInt
-    val newProfile = getArg("profile", m)
+    val newProfile = getArg("profile", optionsMap)
     profileSet = newProfile.isDefined
     profile = newProfile.getOrElse(profile)
-    preloads = getStringList(m, "preload") ++
+    preloads = getStringList(optionsMap, "preload") ++
       controller.getEnvVar("LATEXMLPRELOADS").getOrElse("").split(" ").filter(_.nonEmpty)
-    paths = getStringList(m, "path") ++
+    paths = getStringList(optionsMap, "path") ++
       controller.getEnvVar("LATEXMLPATHS").getOrElse("").split(" ").filter(_.nonEmpty)
-    reboot = m.get("reboot").isDefined
+    reboot = optionsMap.get("reboot").isDefined
     if (reboot) expire = 1
-    nopost = m.get("nopost").isDefined
+    nopost = optionsMap.get("nopost").isDefined
   }
 
   private def str2Level(lev: String): Level.Level = lev match {
