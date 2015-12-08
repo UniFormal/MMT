@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.archives
 
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.ConcurrentLinkedDeque
 import scala.collection.mutable.{HashMap}
 
 import info.kwarc.mmt.api._
@@ -100,7 +100,7 @@ class TrivialBuildManager extends BuildManager {
  * queues build tasks for multi-threaded execution, includes dependency management
  */
 class BuildQueue extends BuildManager {
-  private var queued = new ConcurrentLinkedQueue[QueuedTask]
+  private val queued = new ConcurrentLinkedDeque[QueuedTask]
   private var blocked : List[QueuedTask] = Nil
 
   /** all tasks currently in the queue */
@@ -137,9 +137,9 @@ class BuildQueue extends BuildManager {
      }
      // add to front/end of queue depending on priority
      if (qt.lowPriority) {
-       queued.add(qt) //TODO add at end instead of front
+       queued.addLast(qt)
      } else {
-       queued.add(qt)
+       queued.addFirst(qt)
      }
      alreadyQueued(qtDep) = qt
   }
@@ -174,7 +174,7 @@ class BuildQueue extends BuildManager {
            // should not happen, cannot be handled at this point
            Nil
      }
-     if (!qt.missingDeps.isEmpty) {
+     if (qt.missingDeps.nonEmpty) {
         // dependency has not been built yet
         queued.poll
         alreadyQueued -= qtDep
@@ -268,7 +268,7 @@ class BuildQueue extends BuildManager {
                  // remember finished build
                  val qtDep = qt.task.asDependency
                  alreadyBuilt(qtDep) = res
-              case MissingDependency(provided, missing) =>
+              case MissingDependency(missing, provided) =>
                  // register missing dependencies and requeue
                  qt.missingDeps = missing
                  queued.add(qt)
