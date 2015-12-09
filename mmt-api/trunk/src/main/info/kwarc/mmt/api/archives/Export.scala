@@ -35,8 +35,20 @@ trait Exporter extends BuildTarget {
     report = controller.report
     contentExporter.init(controller)
     narrationExporter.init(controller)
-    controller.extman.addExtension(contentExporter)
-    controller.extman.addExtension(narrationExporter)
+  }
+
+  override def start(args: List[String]) {
+    super.start(args)
+    if (!quiet){
+      controller.report.groups += contentExporter.logPrefix + "-result"
+      controller.report.groups += narrationExporter.logPrefix + "-result"
+    }
+    if (verbose){
+      controller.report.groups += contentExporter.logPrefix
+      controller.report.groups += narrationExporter.logPrefix
+    }
+    controller.extman.addExtension(contentExporter, args)
+    controller.extman.addExtension(narrationExporter, args)
   }
 
   /** applied to each document (i.e., narration-folders and .omdoc files) */
@@ -71,7 +83,7 @@ trait Exporter extends BuildTarget {
   }
 
   def producesFrom(out: FilePath) = contentExporter.producesFrom(out) orElse narrationExporter.producesFrom(out)
-  
+
   /** the file name for files representing folders, defaults to "", override as needed */
   protected def folderName = ""
 
@@ -80,7 +92,7 @@ trait Exporter extends BuildTarget {
 
   /** the common properties of the content and the narration exporter */
   private trait ExportInfo extends TraversingBuildTarget {
-    def key = self.key + "-" + inDim.toString
+    def key = self.key + "_" + inDim.toString
 
     def includeFile(name: String) = name.endsWith(".omdoc")
 
