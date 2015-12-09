@@ -1,5 +1,13 @@
 package info.kwarc.mmt.api.utils
 
+/** simpler version of the [[StringMatcher]] classes using regexes, but without apply methods */
+object StringMatcher {
+   def apply(before: String, after: String) = (before+"(.*)"+after)r
+   def apply(before: String, middle: String, after: String) = (before+"(.*)"+middle+"(.*)"+after)r
+   def apply(before: String, middle1: String, middle2: String, after: String) =
+      (before+"(.*)"+middle1+"(.*)"+middle2+"(.*)"+after)r
+}
+
 /**
  * matches S1 in "beforeS1after"
  */
