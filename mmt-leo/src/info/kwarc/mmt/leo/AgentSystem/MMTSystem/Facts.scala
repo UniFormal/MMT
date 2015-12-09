@@ -160,10 +160,15 @@ class Facts(blackboard: MMTBlackboard, shapeDepth: Int) extends Logger {
   }
   def getConstantAtoms = constantAtoms
 
+  def getAllFacts = facts.pairs.map(_._2)
+
    /**
     * the database of (non-atomic) facts, indexed by the shape of the type
     */
    private val facts = new HashMapToSet[Shape,Fact]
+
+
+
    /** the facts added in the current iteration */
    private var futureFacts : List[Fact] = Nil
    

@@ -23,12 +23,13 @@ class AgentProver extends Prover {
       //val exa = new ExpansionAgent
       val sba = new SearchBackwardAgent(blackboard)
       val sfa = new SearchForwardAgent(blackboard)
+      val ta = new TransitivityAgent(blackboard)
       val aa = new AuctionAgent(blackboard)
       val ea = new ExecutionAgent(blackboard)
 
 
       implicit val ec = ExecutionContext.global
-      val timeout = 10000
+      val timeout = 10000000
 
       val t0 = System.nanoTime()
       val f = Future {

@@ -1,6 +1,5 @@
 package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
-import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.leo.AgentSystem.{Agent, Change}
 
 /**
@@ -24,12 +23,7 @@ class InductionAgent(tp: GlobalName, constructors: List[(GlobalName,Term)]) {
 
 abstract class MMTAgent(blackboardParam: MMTBlackboard) extends Agent(blackboardParam) {
 
-
-
-  def head: GlobalName = null //TODO Talk to florian about global name
-
-
-  override val name: String = "GoalAgent"
+  override val name: String = "MMTAgent"
 
   lazy val presentObj = blackboard.presentObj
   lazy val rules = blackboard.rules
@@ -125,14 +119,15 @@ class TermGenerationAgent(blackboard: MMTBlackboard) extends MMTAgent(blackboard
 
 }
 
-abstract class TransitivityAgent(blackboard: MMTBlackboard) extends MMTAgent(blackboard) {
+class TransitivityAgent(blackboard: MMTBlackboard) extends MMTAgent(blackboard) {
 
   val priority = 0
-  override val name =  "TermGeneratingAgent"
+  override val name =  "TransitivityAgent"
   def wantToSubscribeTo = List(blackboard.factSection)
   override val interests = List("ADD") //TODO make it interested in the addition of relation shaped facts
+  val transitivitySection = blackboard.transitivitySection
 
-  def addTask():Unit
+  def addTask():Unit = taskQueue+=new TransitivityTask(this)
 
   override def respond() = {
     log("responding to: " + mailbox.length + " message(s)")

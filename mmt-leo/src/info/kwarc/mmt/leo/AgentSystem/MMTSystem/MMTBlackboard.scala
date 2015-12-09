@@ -32,7 +32,7 @@ class MMTBlackboard(val rules:RuleSet,val goal: Goal)(implicit c: Controller,olp
   val searchBackward     = List(BackwardPiElimination)
   val searchForward      = List(ForwardPiElimination)
   val searchTerms        = List(TermGeneration)
-  val transitivityRules  = Nil //List(TransitivityGeneration)
+  var transitivityRules:List[TransitivityGeneration]  = Nil // List(new TransitivityGeneration())
 
 
   log("Rules: " + Display.listDisplay(rules.getAll.toList ))

@@ -1,11 +1,9 @@
 package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
-import java.lang.IllegalArgumentException
-
 import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.api.objects.{Obj, Term}
 
-import scala.collection.mutable
+import scala.util.control.Breaks._
 import scalax.collection.GraphTraversal.Predecessors
 import scalax.collection.edge.{LDiEdge, LUnDiEdge}
 import scalax.collection.mutable.Graph
@@ -71,7 +69,6 @@ abstract class RelationGraph(globalName: GlobalName) {
   def getGraph = graph
   val directed:Boolean
 
-
   def add(x:Term,y:Term, f:Fact): Unit ={
     val tx = TransitivityEntry(f.goal,x)
     val ty = TransitivityEntry(f.goal,y)
@@ -97,10 +94,6 @@ abstract class RelationGraph(globalName: GlobalName) {
     graph get entry
   }
 
-  def getTermEntry(term:Term): TransitivityEntry = {
-    graph.nodes.find(n=> n.tp==term).asInstanceOf[TransitivityEntry] //TODO check that this handles the case of terms at different goals
-  }
-
   def compareAtGoal(a:TransitivityEntry,b:TransitivityEntry,g:Goal):Option[Boolean] = {
     if (n(a,Some(g)).withSubgraph(nodes = _.goal.isAbove(g),edges = isEdgeAboveGoal(_,g)).pathTo(n(b,Some(g))).isDefined){
       return Some(true)
@@ -108,9 +101,24 @@ abstract class RelationGraph(globalName: GlobalName) {
     None
   }
 
-  def getProofAtGoal(x:Term,y:Term,g:Goal):Option[List[Fact]]={
-    getProofAtGoal(getTermEntry(x),getTermEntry(y),g) //TODO check that this gets the right terms
+  def getTermEntriesAtGoal(term:Term, g:Goal): List[TransitivityEntry] = {
+    graph.nodes.filter(n => n.tp==term && n.goal.isAbove(g) ).asInstanceOf[List[TransitivityEntry]]
   }
+
+  def getProofAtGoal(x:Term,y:Term,g:Goal):Option[List[Fact]]={
+    val xEntries = getTermEntriesAtGoal(x,g)
+    val yEntries = getTermEntriesAtGoal(y,g)
+    var proof = None : Option[List[Fact]]
+    breakable{
+      for(xEntry <- xEntries; yEntry <- yEntries){
+        proof = getProofAtGoal(xEntry,yEntry,g) //TODO make this not brute force
+        if(proof.isDefined) break()
+      }
+    }
+    proof
+  }
+
+
 
   def getProofAtGoal(x:TransitivityEntry,y:TransitivityEntry,g:Goal):Option[List[Fact]]={
     val path = n(x,Some(g)).withSubgraph(nodes = _.goal.isAbove(g),edges = isEdgeAboveGoal(_,g)).pathTo(n(y,Some(g)))

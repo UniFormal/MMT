@@ -165,15 +165,15 @@ class TransitivityTask(agent:TransitivityAgent) extends MMTTask {
   /** Determines if a given task is applicable given the current blackboard */
   override def isApplicable[BB <: Blackboard](b: BB): Boolean = !b.finished //TODO expand this
 
-/*  def transitivitySearch() {
+  def transitivitySearch() {
     agent.transitivityRules.foreach { e =>
-      e.generate(blackboard.get, interactive = false)
+      e.generate(blackboard, interactive = false)
     }
-  }*/
+  }
 
   def execute() = {
-    log("Term Search Executing")
-    //transitivitySearch()
+    log("Transitivity Search Executing")
+    transitivitySearch()
     true
   }
 

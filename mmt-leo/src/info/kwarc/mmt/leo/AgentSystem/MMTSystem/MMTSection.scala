@@ -157,13 +157,32 @@ class TermSection(blackboard:MMTBlackboard) extends Section(blackboard) {
 class TransitivitySection(blackboard:MMTBlackboard) extends Section(blackboard) {
   val name ="TransitivitySection"
 
-  type ObjectType = List[TransitivityDB]
-  var data:ObjectType= Nil
+  type ObjectType = TransitivityDB
+  var data:ObjectType = new TransitivityDB
   var changes: List[Change[_]] = Nil
 
 
   def passiveOp(flag:String) = handleChange(new Change(this, true, List(flag)))//TODO add specific fact pointers
   def passiveAdd() = passiveOp("ADD")
 
-  def initialize():Unit = {}//TODO ADD INITIALIZATION
+  def initialize():Unit = {
+    if (!blackboard.factSection.isInitialized){blackboard.factSection.initialize()}
+    //val rels = blackboard.factSection.data.getConstantAtoms.filter({atom =>
+    //  atom.rl.contains("Transitive") || atom.rl.contains("Equality") //TODO find out why roles do not show up
+    //})
+
+    //TODO fix this temporary hack to get transitive rels
+    val rels = List(blackboard.factSection.data.getConstantAtoms(0), blackboard.factSection.data.getConstantAtoms(2))
+
+    val ded = blackboard.factSection.data.getConstantAtoms.find(_.rl.contains("Judgment"))
+
+    ded.foreach({ ded_var =>
+      rels.foreach({ rel =>
+        val isEquality = rel.rl.contains("Equality")
+        data.addRelation(rel.tm.toMPath.toGlobalName,isEquality)
+        blackboard.transitivityRules ::= new TransitivityGeneration(rel.tm.toMPath.toGlobalName, ded_var.tm.toMPath.toGlobalName)
+      })
+    })
+  }
+
 }

@@ -1,7 +1,6 @@
 package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
 
-import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.Conversions._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.{GlobalName, LocalName}
@@ -361,17 +360,17 @@ object TermGeneration extends ForwardSearch {
 }
 
 
-class TransitivityGeneration(blackboard:MMTBlackboard,rel: GlobalName, ded: GlobalName)
-                            (implicit controller: Controller,oLP:String) extends TransitivityAgent(blackboard){
+class TransitivityGeneration(rel: GlobalName, ded: GlobalName) extends ForwardSearch{
 
    val Ded = new UnaryLFConstantScala(ded.module, ded.name.toString)
    val Rel = new BinaryLFConstantScala(rel.module, rel.name.toString)
    override val head = Pi.path
-   override val priority = 0
+   val priority = 0
 
-   def generate(blackboard: MMTBlackboard, interactive: Boolean) = ???
-
-   def addTask()= taskQueue+=new TransitivityTask(this)
+   def generate(blackboard: MMTBlackboard, interactive: Boolean) = {
+      // add all facts to the transitivity database
+      blackboard.facts.getAllFacts.foreach(addFact(_,blackboard.transitivitySection.data))
+   }
 
    def addFact(f:Fact,tdb:TransitivityDB): Unit ={
       f.tp match {
@@ -379,7 +378,7 @@ class TransitivityGeneration(blackboard:MMTBlackboard,rel: GlobalName, ded: Glob
             tdb.getGraph(rel).add(x,y,f)
          case Rel(x,y) =>
             tdb.getGraph(rel).add(x,y,f)
-         case _ => throw new IllegalArgumentException("Not a valid type of fact: need a transitive fact")
+         case _ =>
       }
    }
 
