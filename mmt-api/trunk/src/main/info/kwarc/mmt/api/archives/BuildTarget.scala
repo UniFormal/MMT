@@ -378,12 +378,15 @@ abstract class TraversingBuildTarget extends BuildTarget {
     if (!outFile.exists) {
       logError("missing output file: " + outFile)
     } else if (testFile.exists) {
-      val diffLog = ShellCommand.run("diff", "-u", outFile.toString, testFile.toString)
-      if (diffLog.isDefined) {
-        File.write(diffFile, diffLog.get)
-        logResult("wrote: " + diffFile)
-      } else {
-        logResult("no differences for: " + outFile)
+      var diffLog: Option[String] = Some("") // assume a difference if no diff is run
+      if (compareWithTest) {
+        diffLog = ShellCommand.run("diff", "-u", outFile.toString, testFile.toString)
+        if (diffLog.isDefined) {
+          File.write(diffFile, diffLog.get)
+          logResult("wrote: " + diffFile)
+        } else {
+          logResult("no differences for: " + outFile)
+        }
       }
       if (diffLog.isDefined && updateTest) {
         Files.copy(outFile.toPath, testFile.toPath, StandardCopyOption.REPLACE_EXISTING)
@@ -400,7 +403,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   def buildFileAndCompare(bt: BuildTask): BuildResult = {
     val res = buildFile(bt)
-    if (compareWithTest) {
+    if (compareWithTest || addTest || updateTest) {
       compareOutputAndTest(bt)
     }
     res
@@ -515,7 +518,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
         if (rebuildNeeded) {
           runBuildTask(bf)
         }
-        if (compareWithTest) {
+        if (compareWithTest || addTest || updateTest) {
           compareOutputAndTest(bf)
         }
         (rebuildNeeded, bf)
