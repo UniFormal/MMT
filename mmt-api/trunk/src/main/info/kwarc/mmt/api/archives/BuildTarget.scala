@@ -119,7 +119,7 @@ abstract class BuildTarget extends FormatBasedExtension {
     OptionDescr("verbose", "v", NoArg, "show log information"),
     OptionDescr("test", "", NoArg, "compare build results with test dimension"),
     OptionDescr("test-add", "", NoArg, "add new output files to test dimension"),
-    OptionDescr("test-update", "", NoArg, "update changed ouput files in test dimension")
+    OptionDescr("test-update", "", NoArg, "update changed output files in test dimension")
   )
 
   /** options to be overriden by subclasses */
