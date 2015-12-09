@@ -517,8 +517,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
         }
         if (rebuildNeeded) {
           runBuildTask(bf)
-        }
-        if (compareWithTest || addTest || updateTest) {
+        } else if (compareWithTest || addTest || updateTest) {
           compareOutputAndTest(bf)
         }
         (rebuildNeeded, bf)
