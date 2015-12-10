@@ -127,9 +127,9 @@ trait AnaArgs {
         "  -" + short +
           (optArg match {
           case NoArg => "    "
-          case IntArg => " INT "
-          case OptIntArg => " [N] "
-          case _ => " STR "
+          case IntArg => " INT"
+          case OptIntArg => " [N]"
+          case _ => " STR"
         })
       }
       else "        ") + longOpt +

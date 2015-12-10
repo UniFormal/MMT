@@ -1,6 +1,7 @@
 package info.kwarc.mmt.tptp
 
 import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.frontend.{StringArg, OptionDescr}
 import info.kwarc.mmt.api.utils._
 
 class TPTPImporter extends TraversingBuildTarget {
@@ -22,6 +23,12 @@ class TPTPImporter extends TraversingBuildTarget {
   /** to be adjusted before being called */
   private var tptpCommand: List[String] = List(swipl, "-f", tptp2Xmain, "-g", tptp2Xgoal)
 
+  override def buildOpts: OptionDescrs = List(
+    OptionDescr("swipl", "", StringArg, "swipl program to use"),
+    OptionDescr("tptp2Xmain", "", StringArg, "tptp2X.main prolog file to use"),
+    OptionDescr("tptp2Xgoal", "g", StringArg, "tptp2X('INFILE',none,lf,'OUTDIR'),halt.")
+  )
+
   /**
     * expects command to run TPTP as arguments, e.g.,
     *
@@ -29,24 +36,14 @@ class TPTPImporter extends TraversingBuildTarget {
     * INFILE and OUTDIR must be absolute files
     * the (swi) prolog binary, file, and goal can also be given via "envvar" (below)
     */
-  override def start(args: List[String]): Unit = {
-
-    args match {
-      case hd :: tl =>
-        swipl = hd
-        tl match {
-          case "-f" :: snd :: rt =>
-            tptp2Xmain = snd
-            rt match {
-              case "-g" :: gl :: Nil => tptp2Xgoal = gl
-              case Nil => tptp2Xgoal = controller.getEnvVar("Tptp2XGoal").getOrElse(tptp2Xgoal)
-              case _ => LocalError("expected TPTP goal (-g) instead of: " + rt.mkString(" "))
-            }
-          case Nil => tptp2Xmain = controller.getEnvVar("Tptp2X").getOrElse(tptp2Xmain)
-          case _ => LocalError("expected TPTP prolog file (-f) instead of: " + tl.mkString(" "))
-        }
-      case Nil => swipl = controller.getEnvVar("SwiProlog").getOrElse(swipl)
-    }
+  override def start(args: List[String]) {
+    super.start(args)
+    tptp2Xmain = optionsMap.get("tptp2Xmain").map(_.getStringVal).
+      getOrElse(controller.getEnvVar("Tptp2X").getOrElse(tptp2Xmain))
+    tptp2Xgoal = optionsMap.get("tptp2Xgoal").map(_.getStringVal).
+      getOrElse(controller.getEnvVar("Tptp2XGoal").getOrElse(tptp2Xgoal))
+    swipl = optionsMap.get("swipl").map(_.getStringVal).
+      getOrElse(controller.getEnvVar("SwiProlog").getOrElse(swipl))
   }
 
   private def escape(f: File) = f.toString.replace("\\", "/")
