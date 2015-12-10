@@ -1,26 +1,23 @@
 package info.kwarc.mmt.jedit
 
-import scala.util._
-import scala.collection.mutable.HashMap
-
-import org.gjt.sp.jedit.bufferset._
-import org.gjt.sp.jedit.buffer._
-import org.gjt.sp.jedit._
-
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.parser._
-import info.kwarc.mmt.api._
-import frontend.{SetBase, MMTInterpolator}
-import objects._
-
 import console._
+import info.kwarc.mmt.api._
+import frontend.{MMTInterpolator, SetBase}
+import objects._
+import org.gjt.sp.jedit._
+import org.gjt.sp.jedit.bufferset._
+import parser._
+import utils.URI
+
+import scala.collection.mutable
+import scala.util._
 
 //Class for the MMT interpreter
 class MMTInterpreter extends console.Shell("mmt-interpreter") {
   val mmt = jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).
     asInstanceOf[MMTPlugin]
   val controller = mmt.controller
-  val buffmanag : BufferSetManager = jEdit.getBufferSetManager()
+  val buffmanag : BufferSetManager = jEdit.getBufferSetManager
   val interpolator = new MMTInterpolator(controller)
 
   var scratchnspace = DPath(URI("http://cds.omdoc.org/scratch"))
@@ -29,7 +26,7 @@ class MMTInterpreter extends console.Shell("mmt-interpreter") {
   var scratchcheck = true
   var scratchoutput = true
 
-  val tmap = HashMap.empty[String, Int]
+  val tmap = mutable.HashMap.empty[String, Int]
 
   //Default message
   override def printInfoMessage (output: Output) {
@@ -61,7 +58,7 @@ For help, type '!help'.
   def execute(console: Console, input: String,
     output: Output, error: Output, command: String) = synchronized {
 
-    val buffers = jEdit.getBuffers()
+    val buffers = jEdit.getBuffers
     val helpcmd = """!help(.*)""".r
 
     val namecmd = """!setname (.*)""".r
@@ -153,19 +150,18 @@ Non-commands are MMT code.
           scratch
         }
 
-        val currView = jEdit.getActiveView()
-        val caretPos = currView.getEditPane().
-          getTextArea().getCaretPosition()
+        val currView = jEdit.getActiveView
+        val caretPos = currView.getEditPane.
+          getTextArea.getCaretPosition
 
         //Gets current theory and current metatheory
         val ct = (try{
-          (MMTSideKick.getAssetAtOffset(currView, caretPos) getOrElse
-            null).getScope getOrElse null
+          MMTSideKick.getAssetAtOffset(currView, caretPos).orNull.getScope.orNull
         } catch {
           case _ : Throwable =>
             output.print(null, "Caret not positioned in theory!")
         }).asInstanceOf[MPath]
-        
+
         val mt = try{
           controller.handle(SetBase(ct))
           controller.globalLookup.get(ct) match {
@@ -181,7 +177,7 @@ Non-commands are MMT code.
 
         //Parsing occurs here
         try {
-          val tp = interpolator.parse(List(command), Nil, None, false)
+          val tp = interpolator.parse(List(command), Nil, None, check = false)
           val tP = controller.presenter.asString(tp)
 
           output.print(null, "Internal form: " + tp.toString)
@@ -215,7 +211,7 @@ Non-commands are MMT code.
           //Simplification
           val tRS = tExp match {
             case null => null
-            case tExp => controller.simplifier(tExp, Context(theory))
+            case _ => controller.simplifier(tExp, Context(theory))
           }
 
           output.print(null, "===DEBUG===")
@@ -269,10 +265,10 @@ Non-commands are MMT code.
     declaration : String, mtname : String, tname : String) {
 
     val tpattern = ("""(?s).*theory """ +
-      theoryName + """(.*?)=\n(.*?)"""+Reader.GS.toChar.toString).r
+      theoryName + """(.*?)=\n(.*?)""" + Reader.GS.toChar.toString).r
     val currText = buffer.getText
 
-    val tcontent = tpattern findFirstMatchIn currText getOrElse null
+    val tcontent = (tpattern findFirstMatchIn currText).orNull
 
     //Checks if theory is existent or not :
     //If it is, it writes declarations in the new theory;
@@ -294,7 +290,7 @@ Non-commands are MMT code.
       val itpattern = ("""it = (.*)""" +
         Reader.RS.toChar.toString + """\n""").r
 
-      val itmatch = itpattern findFirstMatchIn content getOrElse null
+      val itmatch = (itpattern findFirstMatchIn content).orNull
       val itcontent = itmatch.group(1)
       val ndeclaration = declaration.replaceAll("it", itcontent)
 
@@ -307,7 +303,7 @@ Non-commands are MMT code.
       } catch {
         case _ : Throwable =>
       }
- 
+
       buffer.insert(econtent, "  it = " +
         ndeclaration + Reader.RS.toChar.toString + "\n")
 
@@ -317,18 +313,13 @@ Non-commands are MMT code.
         val inmap = inpattern findAllMatchIn content
 
         if (inmap exists {
-          m => m match {
-            case inpattern(incl) => (incl == tname)
-            case _ => false
-          }
+          case inpattern(incl) => incl == tname
+          case _ => false
         }) { } else {
           buffer.insert(scontent, "  include " +
             tname + Reader.RS.toChar.toString + "\n")
         }
       }
-
- 
     }
-
   }
 }
