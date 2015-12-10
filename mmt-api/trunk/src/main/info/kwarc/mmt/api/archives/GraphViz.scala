@@ -1,10 +1,10 @@
 package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.utils._
+import documents._
+import modules._
+import ontology._
+import utils._
 
 /**
  * uses [[ontology.GraphExporter]] to produce a dot file and then calls dot to produce an svg file
@@ -17,34 +17,34 @@ class GraphViz extends Exporter {
   private var graphviz: String = "dot"
 
   /** expects one argument: the path to graphviz; alternatively set variable GraphViz */
-  override def start(args: List[String]): Unit = {
+  override def start(args: List[String]) {
     super.start(args)
     tg = new ontology.TheoryGraph(controller.depstore)
     graphviz = getFromFirstArgOrEnvvar(remainingStartArguments, "GraphViz", graphviz)
   }
 
   /** contains at least all elements of the document */
-  def exportDocument(doc: Document, bf: BuildTask): Unit = {
+  def exportDocument(doc: Document, bf: BuildTask) {
     val theories = controller.depstore.querySet(doc.path, Transitive(+Declares) * HasType(IsTheory))
     val views = controller.depstore.querySet(doc.path, Transitive(+Declares) * HasType(IsView))
     produceGraph(theories, views, bf)
   }
 
   /** contains at least the theory */
-  def exportTheory(thy: DeclaredTheory, bf: BuildTask): Unit = {
+  def exportTheory(thy: DeclaredTheory, bf: BuildTask) {
     produceGraph(List(thy.path), Nil, bf)
   }
 
   /** contains at least domain, codomain, and view */
-  def exportView(view: DeclaredView, bf: BuildTask): Unit = {
+  def exportView(view: DeclaredView, bf: BuildTask) {
     val theories = List(view.from, view.to).flatMap(objects.TheoryExp.getSupport)
     produceGraph(theories, List(view.path), bf)
   }
 
   /** nothing for now */
-  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]): Unit = {}
+  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
 
-  private def produceGraph(theories: Iterable[Path], views: Iterable[Path], bt: BuildTask): Unit = {
+  private def produceGraph(theories: Iterable[Path], views: Iterable[Path], bt: BuildTask) {
     val outStringPostProcessed = getSVG(theories, views, Some(bt.outFile), Some(tg), m => bt.errorCont(LocalError(m)))
     File.write(bt.outFile, outStringPostProcessed)
   }
