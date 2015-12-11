@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
 import documents._
+import frontend._
 import modules._
 import objects._
 import presentation._
@@ -28,6 +29,13 @@ trait Exporter extends BuildTarget {
 
   /** gives access to the RenderingHandler for sending output */
   protected def rh = _rh
+
+  override def init(controller: Controller) {
+    this.controller = controller
+    report = controller.report
+    contentExporter.init(controller)
+    narrationExporter.init(controller)
+  }
 
   override def start(args: List[String]) {
     super.start(args)
