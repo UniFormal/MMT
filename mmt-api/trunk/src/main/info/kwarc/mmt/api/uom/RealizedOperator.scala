@@ -8,22 +8,30 @@ import parser._
  * A RealizedType couples a syntactic type (a Constant) with a semantic type (a Scala type as given by a [[SemanticType]]).
  */
 trait RealizedType extends SemanticType with uom.UOMRule {
-   private var _synType: GlobalName = null
-   def head = synType
+   private var _synType: Term = null
+   private var _head: GlobalName = null
    /** Due to various constraints including limitations of the Scala type system,
     *  the most convenient solution is to initialize _synType null.
     *  
     *  Therefore, instances of RealizedType must set them by calling this method exactly once.
     *  MMT does that automatically when using a Scala object as a realization.
     */
-   def init(synType: GlobalName) {
+   def init(synType: Term) {
       if (_synType == null) {
          _synType = synType
+         synType.head match {
+            case Some(p: GlobalName) => _head = p
+            case _ => throw ImplementationError("syntactic type must have head")
+         }
       } else
          throw ImplementationError("syntactic type already set")
    }
+   /** convenience variant for atomic types */
+   def init(synType: GlobalName) {init(OMS(synType))}
    /** the syntactic type */
    def synType = _synType 
+   /** the head operator of the syntactic type */ 
+   def head = _head
    /** apply method to construct OMLITs as rt(u) */
    def apply(u: univ) = OMLIT(this)(u)
    /** unapply method to pattern-match OMLITs as rt(u) */

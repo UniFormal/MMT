@@ -356,31 +356,14 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
    }
    /** parses a theory using the attribute or child "component" of "n", returns the remaining node and the theory */
    private def getTheoryFromAttributeOrChild(n: Node, component: String, nsMap: NamespaceMap) : (Node, Term) = {
-      if (n.attribute(component).isDefined) {
-         (n, OMMOD(Path.parseM(xml.attr(n, component), nsMap)))
-      } else {
-          val (newnode, tOpt) = splitOffChild(n, component)
-          tOpt match {
-             case Some(t) =>
-                val tT = xml.trimOneLevel(t)
-                if (tT.child.length == 1) (newnode, Obj.parseTerm(tT.child(0), nsMap))
-                else throw ParseError("ill-formed theory: " + t)
-             case _ => throw ParseError("no component " + component + " found: " + n)
-         }
+      val (newnode, value) = xml.getAttrOrChild(n, component)
+      val thy = value match { 
+         case Left(s) => OMMOD(Path.parseM(s, nsMap))
+         case Right(c) => 
+             val cT = xml.trimOneLevel(c)
+             if (cT.child.length == 1) Obj.parseTerm(cT.child(0), nsMap)
+             else throw ParseError("ill-formed theory: " + c)
       }
-   }
-   /** removes the child with label "label" from "node" (if any), returns the remaining node and that child */
-   private def splitOffChild(node: Node, label : String) : (Node, Option[Node]) = node match {
-       case scala.xml.Elem(p,l,a,s,cs @ _*) =>
-           var n : Option[Node] = None
-           val cs2 = cs flatMap {e =>
-              if (e.label == label) {
-                 n = Some(e)
-                 Nil
-              } else
-                 e
-           }
-           (scala.xml.Elem(p,l,a,s,true,cs2 : _*), n)
-       case n => (n, None)
+      (newnode, thy)
    }
 }

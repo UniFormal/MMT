@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.utils
 
 /** Wrapper around List to provide some custom extensions */
-case class MyList[A](val l: List[A]) {
+case class MyList[A](l: List[A]) {
   /** returns the first non-None result of applying the argument function to elements of the list */
   def mapFind[B](f: A => Option[B]): Option[B] = l match {
     case Nil => None

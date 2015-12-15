@@ -62,6 +62,45 @@ object xml {
    def addAttr(N: Elem, key: String, value: String): Elem = {
       N % (new UnprefixedAttribute(key, value, scala.xml.Null))
    }
+
+   /** dual of addAttrOrChild
+    *  @return the node without the child (if any) and the attribute/child (without the key), empty string by default
+    */
+   def getAttrOrChild(n: Node, key: String): (Node, Union[String,Node]) = {
+      if (n.attribute(key).isDefined) {
+         (n, Left(attr(n, key)))
+      } else {
+          val (newnode, cOpt) = splitOffChild(n, key)
+          val value: Union[String,Node] = cOpt match {
+             case Some(c) => Right(c)
+             case None => Left("")
+          }
+          (newnode, value)
+      }
+   }
+   
+   /** adds either key="value" or <key>value</key> to a node, depending on whether the value is a string or a node */ 
+   def addAttrOrChild(n: Elem, key: String, value: Union[String,Node]) = value match {
+      case Left(s) => addAttr(n, key, s)
+      case Right(c) =>
+        val wc = Elem(null, key, Null, n.scope, c) 
+        n.copy(child = wc ++ n.child)
+   }
+ 
+   /** removes the child with label "label" from "node" (if any), returns the remaining node and that child */
+   def splitOffChild(node: Node, label : String) : (Node, Option[Node]) = node match {
+       case scala.xml.Elem(p,l,a,s,cs @ _*) =>
+           var n : Option[Node] = None
+           val cs2 = cs flatMap {e =>
+              if (e.label == label) {
+                 n = Some(e)
+                 Nil
+              } else
+                 e
+           }
+           (scala.xml.Elem(p,l,a,s,true,cs2 : _*), n)
+       case n => (n, None)
+   }
    
    /** returns the list of namespaces of a node */
    def namespaces(nb: NamespaceBinding, seen: List[String] = Nil): List[(String,String)] = nb match {

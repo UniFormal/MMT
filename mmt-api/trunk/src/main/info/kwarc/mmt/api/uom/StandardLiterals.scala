@@ -31,7 +31,7 @@ abstract class SemanticType {
    def quotedLiteral(key: String) = Some(new AsymmetricEscapeLexer(key+"\"", "\""))
    /** convenience method to construct a lexer for this type */
    def escapedLiteral(begin: String, end: String) = Some(new AsymmetricEscapeLexer(begin, end))
-   /** @return a LexerExtension that is to be used when this type is in Scope */
+   /** @return a LexerExtension that is to be used when this type is in scope */
    def lex: Option[parser.LexFunction] = None
 }
 
@@ -124,7 +124,7 @@ class StandardRat extends SemanticType {
       if (d == 1) e.toString
       else (e.toString + "/" + d.toString)
    }
-   private val matcher = new utils.StringMatcher2("","/","")
+   private val matcher = utils.StringMatcher("","/","")
    override def fromString(s: String) = s match {
       case this.matcher(e,d) => (BigInt(e.trim),BigInt(d.trim))
       case s => (BigInt(s.trim),1)

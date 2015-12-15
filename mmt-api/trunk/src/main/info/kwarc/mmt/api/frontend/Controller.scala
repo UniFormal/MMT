@@ -337,7 +337,8 @@ class Controller extends ROController with Logger {
         localLookup.getO(p) foreach { se =>
           notifyListeners.onDelete(se)
         }
-      case _ =>
+      case cp: CPath =>
+         throw DeleteError("deletion of component paths not implemented")
     }
   }
 

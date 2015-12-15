@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
 import utils._
+import utils.xml.addAttrOrChild 
 import libraries._
 import modules._
 import metadata._
@@ -356,11 +357,11 @@ object OMATTRMany {
 
 /** The joint methods of OMLIT and UnknownOMLIT */
 sealed trait OMLITTrait extends Term {
-   def synType: GlobalName
-   def head = None
-   def path = synType / toString
-   def toNode = <om:OMLIT value={toString} type={synType.toPath}/>
-   def toCMLQVars(implicit qvars: Context) = <cn encoding="mmt-literal" definitionURL={synType.toPath}>{toString}</cn>
+   def synType: Term
+   def head = synType.head
+   def synTypeXML = Obj.toStringOrNode(synType)
+   def toNode = addAttrOrChild(<om:OMLIT value={toString}/>, "type", synTypeXML)
+   def toCMLQVars(implicit qvars: Context) = addAttrOrChild(<cn encoding="mmt-literal">{toString}</cn>, "definitionURL", synTypeXML)
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
    def subobjects = Nil
@@ -417,7 +418,7 @@ object OMLIT {
  *  
  *  @param synType the type of the this literal
  */
-case class UnknownOMLIT(value: String, synType: GlobalName) extends Term with OMLITTrait {
+case class UnknownOMLIT(value: String, synType: Term) extends Term with OMLITTrait {
    override def toString = value
 }
 
@@ -523,7 +524,20 @@ object Obj {
       case s: Sub => getCs(s.target)
       case _ => Nil
    }
-   
+  
+   /** use this in conjunction with utils.addAttrOrNode to generate XML with attributes instead of children where possible */
+   def toStringOrNode(t: Term): Union[String,Node] = t match {
+      case OMID(p) => Left(p.toPath)
+      case _ => Right(t.toNode)
+   }
+   /** dual of toStringOrNode */
+   def parseStringOrNode(v: Union[String,Node], nm: NamespaceMap): Term = v match {
+      case Left(s) => Path.parse(s, nm) match {
+         case cp: ContentPath => OMID(cp)
+         case p => throw ParseError("Not a term: " + p)
+      }
+      case Right(c) => parseTerm(c, nm)
+   }
    
    /** parses a term relative to a base address
     *  @param Nmd node to parse (may not contain metadata) 
@@ -548,7 +562,7 @@ object Obj {
          val bind = parseTermRec(binder)
          val cont = Context.parse(context, nsMap)
          if (cont.isEmpty)
-            throw new ParseError("at least one variable required in " + Nmd.toString)
+            throw ParseError("at least one variable required in " + Nmd.toString)
          val scopesP = scopes.map(parseTermRec(_))
          OMBINDC(bind, cont, scopesP)
       }
@@ -571,7 +585,8 @@ object Obj {
          case <OMBIND>{binder}{context}{scopes @ _*}</OMBIND> =>
             doBinder(binder, context, scopes.toList)
          case <OMLIT/> =>
-            val tp = Path.parseS(xml.attr(N, "type"), nsMap)
+            val (_, tpN) = xml.getAttrOrChild(N, "type")
+            val tp = parseStringOrNode(tpN, nsMap)
             val v = xml.attr(N, "value")
             UnknownOMLIT(v, tp)
          case <OMI>{i}</OMI> => OMI.parse(i.toString)

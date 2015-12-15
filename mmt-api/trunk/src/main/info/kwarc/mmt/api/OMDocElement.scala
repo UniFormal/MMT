@@ -147,20 +147,4 @@ trait Content {
   def toNode(rh: RenderingHandler) {
     rh(toNode)
   }
-
-  /*
-  /** the role, the non-terminal in the MMT grammar producing this item */
-  def role : Role
-  /** the governingPath is used to define the owner of components in a CPath */
-  def governingPath : Option[ContentPath]
-  /** the components are an abstract definition of the children of a content item that are used for presentation
-    *
-    * Other algorithms than presentation should use the corresponding methods of ContentElement
-    */
-  def components : List[Content]
-  /** content items may provide short names for their components, Nil by default */
-  def compNames : List[(DeclarationComponent,Int)] = Nil
-  /** this ContentComponents object permits accessing components by name */
-  def contComponents = ContentComponents(components, compNames, governingPath)
-  */
 }

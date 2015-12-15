@@ -666,7 +666,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
            }
            case Some(t) => check(Subtyping(stack, t, tp))
          }
-       case l: OMLIT => check(Subtyping(stack, OMS(l.rt.synType), tp))
+       case l: OMLIT => check(Subtyping(stack, l.rt.synType, tp))
        // the foundation-dependent cases
        // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
@@ -723,7 +723,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
           case l: OMLIT =>
              history += "lookup in literal"
              // structurally well-formed literals carry their type
-             return Some(OMS(l.rt.synType)) // no need to use InferredType.put on literals
+             return Some(l.rt.synType) // no need to use InferredType.put on literals
           case OMMOD(p) =>
              // types of theories and views are formed using meta-level operators
              history += "lookup in library"

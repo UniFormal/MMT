@@ -177,14 +177,22 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               val (unk, dR, valid) = prepareTerm(d)
               if (valid) {
                 val cp = c.path $ DefComponent
+                var performCheck = true
                 val (unknowns,expTp) = c.tp match {
-                  case Some(t) => (unk, t)
+                  case Some(t) =>
+                     (unk, t)
                   case None =>
-                    val tpVar = LocalName("") / "omitted_type"
-                    (unk ++ VarDecl(tpVar,None,None,None), OMV(tpVar))
+                     if (d.isInstanceOf[OMID])
+                        // no need to check atomic definiens without expected type
+                        // slightly hacky trick to allow atomic definitions in the absence of a type system
+                        performCheck = false
+                     val tpVar = LocalName("") / "omitted_type"
+                     (unk ++ VarDecl(tpVar,None,None,None), OMV(tpVar))
                 }
                 val j = Typing(Stack(Context()), dR, expTp, None)
-                objectChecker(CheckingUnit(cp, context, unknowns, j), env.rules)
+                if (performCheck) {
+                   objectChecker(CheckingUnit(cp, context, unknowns, j), env.rules)
+                }
               }
             }
             // == additional check in a link ==
@@ -415,15 +423,15 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             OMM(argR, morphR).from(s)
          case l: OMLIT =>
             val synType = l.rt.synType
-            checkTerm(context, OMS(synType))
-            val rts = env.rules.getByHead(classOf[uom.RealizedType], synType)
+            checkTerm(context, synType)
+            val rts = env.rules.getByHead(classOf[uom.RealizedType], l.rt.head)
             if (! (rts contains l.rt))
                env.errorCont(InvalidObject(s, "literal not in scope: " + l.toString))               
             l
          // resolve type and parse unknown literal, return OMLIT
          case UnknownOMLIT(v, synType) =>
-            checkTerm(context, OMS(synType))
-            val rts = env.rules.getByHead(classOf[uom.RealizedType], synType).toList
+            checkTerm(context, synType)
+            val rts = env.rules.get(classOf[uom.RealizedType]).filter(_.synType == synType).toList
             rts match {
                case rule :: Nil =>
                   rule.parse(v).from(s)
