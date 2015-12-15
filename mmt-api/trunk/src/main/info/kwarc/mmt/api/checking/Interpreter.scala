@@ -38,7 +38,7 @@ abstract class Interpreter extends Importer {
   }
 
   /** reconstruct source file form DPATH */
-  def dPathToFile(controller: Controller)(p: Path): List[(Archive, FilePath)] =
+  def dPathToFile(p: Path): List[(Archive, FilePath)] =
     p match {
       case DPath(uri) =>
         Relational.getArchives(controller).
@@ -57,7 +57,7 @@ abstract class Interpreter extends Importer {
     }
 
   /** directly resolved logical dependencies */
-  override def getDeps(bt: BuildTask) : Set[Dependency] = {
+  override def getDeps(bt: BuildTask): Set[Dependency] = {
     val a = bt.archive
     val fp = bt.inPath
     val rs = controller.depstore
@@ -74,12 +74,12 @@ abstract class Interpreter extends Importer {
       if (provider.isEmpty)
         log("  nothing provides: " + theo + " for " + d)
       else {
-        val ds = provider.flatMap(dPathToFile(controller))
+        val ds = provider.flatMap(dPathToFile)
         result ++= ds
         ds match {
           case Nil => log("  no document found for: " + theo)
           case hd :: Nil =>
-            if (ds == dPathToFile(controller)(d))
+            if (ds == dPathToFile(d))
               log("  theory provided in same document: " + theo)
             else
               log("  " + hd + " for " + theo)
@@ -97,7 +97,7 @@ abstract class Interpreter extends Importer {
 
 /** a combination of a Parser and a Checker
   *
-  * @param parser the parser
+  * @param parser  the parser
   * @param checker the checker
   */
 class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Interpreter {
