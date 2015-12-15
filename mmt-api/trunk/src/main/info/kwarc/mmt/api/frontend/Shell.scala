@@ -84,7 +84,8 @@ class Shell {
       }
       controller.getConfig.add(MMTConfig.parse(MMTSystem.getResourceAsString("/mmtrc")))
       // TODO val clCfg = FILE path from --cfg switch, add at the end of startuipLocations
-      val cfgLocations: List[File] = List(MMTSystem.rootFolder / "mmtrc", MMTSystem.userConfigFile)
+      val cfgLocations: List[File] = List(MMTSystem.rootFolder / "mmtrc", MMTSystem.userConfigFile) ++
+        args.cfgFiles.map(File(_))
       //println("trying to run " + startup)
       cfgLocations.foreach {l =>
         if (l.exists) {
