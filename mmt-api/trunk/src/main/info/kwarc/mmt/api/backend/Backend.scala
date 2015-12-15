@@ -35,14 +35,15 @@ abstract class Storage {
     new BufferedReader(new java.io.StringReader(s))
   }
 
-  /** dereferences a path and sends the content to a reader
+  /** dereferences a path and adds the content to the controller or throws [[NotApplicable]]
+    *  e.g., by sending an XML document to the XML reader
     *
-    * a storage may send more/additional content, e.g., the containing file or a dependency closure,
+    * a storage may add more/additional content than necessary, e.g., the containing file/theory or a dependency closure
     */
   def load(path: Path)(implicit controller: Controller)
 
   /** called to release all held resources, override as needed */
-  def destroy() {}
+  def destroy {}
 }
 
 /** a Storage that retrieves file URIs from the local system */
@@ -144,8 +145,8 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   def getStores: List[Storage] = stores
 
   /** releases all resources held by storages */
-  def cleanup() {
-    stores.foreach(_.destroy())
+  def cleanup {
+    stores.foreach(_.destroy)
     stores = Nil
   }
 
@@ -155,7 +156,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     *
     * throws [[NotApplicable]] if the resource is not known/available, [[BackendError]] if it is but something goes wrong
     */
-  def load(p: Path)(implicit controller: Controller): Unit = {
+  def load(p: Path)(implicit controller: Controller) {
     def loadStores(l: List[Storage], p: Path) {
       l match {
         case Nil => throw NotApplicable("no backend available that is applicable to " + p)

@@ -105,19 +105,15 @@ class Unparsed(s: String, error: String => Nothing) {
    }
 }
 
-
-
 object JSON {
-   
-   
    // for quick testing
+   /*
    def main(args: Array[String]) {
       val j = JSON.parse(""" { "xx":["a", 1, -5, 1.23, -2.5E-5, true, false, null],
         "bla" : "\\\\", "foo" : [{} ], "fooo": []} """)
       println(j)
-   }
-   
-   
+   }*/
+      
    case class JSONError(s: String) extends java.lang.Exception(s)
    
    def parse(s: String) : JSON = {

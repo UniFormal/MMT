@@ -45,8 +45,7 @@ abstract class MMTScript extends Extension {
      val conf = MMTConfig.parse(File(f))
      controller.getConfig.add(conf)
      if (autoload) {
-        conf.loadAllNeededTargets(controller)
-        conf.loadAllArchives(controller)
+        conf.process(controller)
      }
   }
 

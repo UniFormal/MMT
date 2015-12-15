@@ -22,10 +22,19 @@ case class TargetConf(cls : String, key : String, args : List[String]) extends C
    val id = key
 }
 
+abstract class BackendConf extends ConfEntry
+
 /**
  * registers an archive with its formats
  */
-case class ArchiveConf(id : String, formats : List[String]) extends ConfEntry
+case class ArchiveConf(id : String, formats : List[String]) extends BackendConf
+
+/**
+ * registers a remote database
+ */
+case class DatabaseConf(url: URI, uri: URI) extends BackendConf {
+   val id = url.toString
+}
 
 /** defines an archive format
  *  @param id the format name
@@ -88,6 +97,11 @@ class MMTConfig {
     def getExportersForArchive(archive : String) = getArchive(archive).formats.flatMap(getExporters).distinct
 
 
+    def process(controller: Controller) {
+       loadAllArchives(controller)
+       loadAllNeededTargets(controller)
+    }
+    
     def loadAllArchives(controller: Controller) {
        getArchives foreach { arch =>
         controller.addArchive(File(base + arch.id))

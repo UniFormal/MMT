@@ -33,7 +33,7 @@ abstract class WritableArchive extends ROArchive {
   /** the NamespaceMap built from the ns and ns-prefix properties */
   val namespaceMap = {
     var nsMap = NamespaceMap.empty
-    val Matcher = new utils.StringMatcher2("", "-", "")
+    val Matcher = utils.StringMatcher("", "-", "")
     properties.foreach {
       case ("ns", uri) => nsMap = nsMap.base(uri)
       case (Matcher("ns", prefix), uri) => nsMap = nsMap.add(prefix, uri)
