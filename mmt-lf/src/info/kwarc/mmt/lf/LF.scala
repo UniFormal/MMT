@@ -339,7 +339,7 @@ class LFF extends Foundation {
 	   					else throw LFError("argument type mismatch: " + argtype + "   !=  " + a)
 	   				case _ => throw LFError("application of non-function")
 	   			}
-	   		case l: OMLIT => OMS(l.synType)
+	   		case l: OMLIT => l.synType
 	   		case _ => throw LFError("ill-formed")
 	 	}
    }
