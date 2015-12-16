@@ -1,3 +1,5 @@
+/* main layout */
+
 body {
  min-width:640px;
  min-height:300px;
@@ -8,40 +10,19 @@ body {
  background: white;
 }
 
+/* general purpose rules */
+
 .centered {
     text-align: center;
 }
 
-/* tables used for layouting */
-table.layout {
+table {
+    border-collapse: collapse;   
 }
 
-td.layout {
-   horizontal-align:left;
-   vertical-align:top;
-}
-div.layout {
-   overflow: auto;
-   resize: horizontal;
-}
-/* */
+/* header */
 
-#top {
- min-width:640px;
- background: url("../images/bg.png");
-}
-
-#title {
-   height: 25px;
-   font-size:20px;
-   font-weight:bold;
-   text-align: center;
-}
-
-
-#menu_bar {
-  text-align : center;
-  height:24px;
+#header {
 }
 
 span.pagelink a {
@@ -57,23 +38,42 @@ span.pagelink a:hover {
  background : url("../images/bg-hover-bak.png")
 }
 
-#styleselector {
-   height: 20px;
+/* middle area (containing #sidebar and #breadcrumbs+#main) */
+
+#middle {
 }
 
-#breadcrumbs {
-   height: 30px;
-   font-size:20px;
-   margin-top: 3%;
-   white-space: nowrap;
-     
+#layouttable {
 }
-#breadcrumbs .mmturi {
-   margin-left: 10px;
-   margin-right: 10px;
-   color: blue;
-   white-space: nowrap;
+
+.layouttablecell {
+   horizontal-align:left;
+   vertical-align:top;
+   padding: 3px;
+   border-style: solid;
+   border-width: 1px;
+   border-color: lightgray;
+
+   /*white-space:nowrap; /* for :lastchild trick below */
 }
+
+td.layouttablecell:last-child {
+  width:100%;
+}
+
+.layouttablecell .title {
+   background-color: lightblue;
+   border-radius: 5px;
+   font-weight: bold;
+}
+
+/* .layouttablecell cellcontent {
+   overflow: auto;
+   resize: horizontal;
+}*/
+
+
+/* sidebar */
 
 #sidebar {
    /*overflow: scroll;*/  
@@ -87,9 +87,29 @@ a.treerelation {
   background: lightblue;
 }
 
-#crossrefs {
+.crossrefs {
    background: lightgray;
 }
+
+
+/* breadcrumbs */
+
+#breadcrumbs {
+   height: 30px;
+   font-size:20px;
+   margin-top: 3%;
+   white-space: nowrap;
+     
+}
+
+#breadcrumbs .mmturi {
+   margin-left: 10px;
+   margin-right: 10px;
+   color: blue;
+   white-space: nowrap;
+}
+
+/* content area */
 
 #main {
    padding-top: 3%;
@@ -108,7 +128,46 @@ table.decllist {
 table.decllist td {
 }
 
+span.name {
+	font-size:large;
+	color: blue;
+	marging-left: 30 px;
+}
 
+span.compLabel {
+  /*margin-left: 10px;
+  margin-right: 40px;*/
+  font-size: medium;
+  color: gray;
+}
+.compLabel {
+	margin-right: 5px;
+}
+.constant-components{
+	/*overflow:auto;*/
+}
+span.name {
+	margin-right: 10px;	
+}
+
+div.constant-header {
+	border-top-style: solid;
+	border-top-color: lightgrey;
+	marging-left: 30 px;
+	padding-top: 15px;
+	padding-bottom: 15px;
+}
+
+tr.definition, tr.domain, tr.codomain,
+tr.parsing-notation, tr.presentation-notation, tr.used-by {
+  display: none;
+}
+tr.tags, tr.metadata {
+  display: none;
+}
+div.constant {
+    
+}
 div.flat-container {
        border-style: dotted;
        border-width: thin;
@@ -131,6 +190,8 @@ div.flat-container {
     margin-right: 5px;
 }
 
+/* interpreter widget */
+
 #parse  {
    border: solid 1px;
    padding: 5px;
@@ -152,6 +213,7 @@ div.flat-container {
    min-width:300px;
 }
 
+/* search widget */
 
 #search {
    border: solid 1px;
@@ -184,61 +246,13 @@ div.result {
    background-color: lightblue;
 }
 
-span.name {
-  /*font-weight: bold;*/
-}
-
-tr.definition, tr.domain, tr.codomain,
-tr.parsing-notation, tr.presentation-notation, tr.used-by {
-  display: none;
-}
-tr.tags, tr.metadata {
-  display: none;
-}
-
-
-div.constant {
-    
-}
-
-
-span.compLabel {
-  /*margin-left: 10px;
-  margin-right: 40px;*/
-  font-size: medium;
-  color: gray;
-}
-
-#footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 50px;
-  background-color: #f5f5f5;
-}
-div.constant-header {
-	border-top-style: solid;
-	border-top-color: lightgrey;
-	marging-left: 30 px;
-	padding-top: 15px;
-	padding-bottom: 15px;
-}
-
-
-span.name {
-	font-size:large;
-	color: blue;
-	marging-left: 30 px;
-
-}
-.graph {
-	width: 50%;
-}
+/* math */
 
 .math.math-selected {
 	font-size: large;
 }
+
+/* unknown rules, delete? */
 
 .bigDiv {
     overflow: hidden;
@@ -271,18 +285,9 @@ div.ui-state-disabled.ui-draggable-disabled {opacity: 1;}
 	height: 30px;
 	width: 80%;
 }
-.compLabel {
-	margin-right: 5px;
-}
-span.name {
-	margin-right: 10px;	
-}
-
 .comm {
 	margin-top:3%;
 	margin-bottom: 2%
-	
-
 }
 
 #mainBubble {
@@ -321,8 +326,4 @@ span.name {
     overflow-y: hidden;
     max-width: 80px; 
     width: 100px;*/
- }
-
-.constant-components{
-	/*overflow:auto;*/
 }

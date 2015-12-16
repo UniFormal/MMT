@@ -244,9 +244,8 @@ var mmt = {
 	
 	/** opens current MMT URI in a new window */
 	openCurrent : function () {
-        console.log(this);
-		var url = this.adaptMMTURI(this.currentURI, '', true);
-		window.open(url, '_blank', '', false);
+		var url = this.currentURI;
+		window.open("/?"+url, '_blank', '', false);
 	},
 	
 	sideBarClick : function(event,p) {
