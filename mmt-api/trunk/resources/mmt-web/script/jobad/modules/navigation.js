@@ -71,19 +71,21 @@ var navigation = {
 
 	contextMenuEntries: function(targetArray, JOBADInstance) {
 	   target = targetArray[0];
-		var res = {};
+		var res = {}
+		if (!target.hasAttribute(mmtattr.symref))
+		  return res;
+      var r = target.getAttribute(mmtattr.symref);
+		var sub = {};
 		var me = this;
-		if (target.hasAttribute(mmtattr.symref)) {
-		   res["local navigation"] = function() {
-		         var r = target.getAttribute(mmtattr.symref);
-		         me.navigate(r);
-		   };
-		   res["remote navigation"] = function() {
-		         var r = target.getAttribute(mmtattr.symref);
-		         me.navigateServer(r);
-		   };
-         res["open in new window"] = function() {mmt.openCurrent();};
-		}
+      sub["in this window"] = function() {
+            me.navigate(r);
+      };
+      sub["in new window"] = function() {mmt.openCurrent();};
+      sub["in remote listeners"] = function() {
+            me.navigateServer(r);
+      };
+      var name = mmt.splitMMTURI(r).slice(-1)[0];
+		res["go to declaration of '" + name + "'"] = sub;
       return res;
    },
 };

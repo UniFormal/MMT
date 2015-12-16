@@ -15,7 +15,7 @@ var interactiveViewing = {
 		var target = targetArray[0];  //for some reason jobad passes [target] instead of target
 		mmt.setCurrentPosition(target);
 		var res = this.visibMenu();
-        if (mmt.focusIsMath) {
+      if (mmt.focusIsMath) {
 			var me = this;
 			res["infer type"] = function(){me.showComputationResult("i", "inferred")};
 			res["simplify"] = function(){me.showComputationResult("s", "simplified")};
@@ -27,17 +27,16 @@ var interactiveViewing = {
 		}
 		if (mmt.currentURI !== null) {
 			var me = this;
-			res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};
-			res["show URI"] = function(){alert(mmt.currentURI);};
+			/*res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};*/
 			res["show declaration"] = function(){me.showComp(null);};
 			res["show graph"] = function() {
 				var svgURI = ":svg?" + mmt.currentURI;
 				var title =  mmt.currentURI.split('/');
 				var contentNode = mmt.createInlineBox(mmt.target, title.slice(-1)[0], '50%');
 				mmt.ajaxAppendBox(svgURI, contentNode);
-				};
-         //res["show alignments"] = function() {me.showAlignments()};
-			res["comment"] = function(){me.addComment()};
+			};
+			res["show URI"] = function(){alert(mmt.currentURI);};
+/*			res["comment"] = function(){me.addComment()};*/
 		}
 		return res;
 	},
@@ -98,18 +97,19 @@ var interactiveViewing = {
 
 	visibSubmenu : function(prop){
 	   var me = this;
+	   var sub
 		return {
-			"show" : function(){me.setVisib(prop,true)},
-			"hide" : function(){me.setVisib(prop,false)},
+			"on" : function(){me.setVisib(prop,true)},
+			"off" : function(){me.setVisib(prop,false)},
 		};
 	},
 
 	visibMenu : function(){
-	    return {
+	    return {"visibility" : {
 			"reconstructed types" :  this.visibSubmenu('reconstructed'),
 			"implicit arguments" : this.visibSubmenu('implicit-arg'),
 			"redundant brackets" : this.visibSubmenu('brackets'),
-		}
+		}}
 	},
 	
 	addComment: function() {
