@@ -11,10 +11,8 @@
 /* JOBAD Hover */
 .JOBAD.JOBAD_Hover {
 	position: fixed;
-	background-color: #696969;
-	-webkit-border-radius: 5;
-	-moz-border-radius: 5;
-	border-radius: 5;
+	background-color: lightgray;
+	border-radius: 5px;
 	border: 1px solid #000000;
 }
 
