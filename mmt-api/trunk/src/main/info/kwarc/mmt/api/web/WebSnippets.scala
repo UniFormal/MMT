@@ -9,19 +9,37 @@ import Server._
  * serves a tree-based navigation component for an HTML page
  */
 class TreeView extends ServerExtension("tree") {
+   /** item for a knowledge item (including archives) */
    private def item(p : Path, state : String, label : Option[String] = None) = 
       <item id={p.toPath} state={state}>
         <content><name href="#" onclick={"mmt.sideBarClick(event, '" + p.toPath + "')"}>{label.getOrElse(p.last)}</name></content>
-        </item>
+      </item>
+   /** item for an archive group */
+   private def groupItem(name: List[String], state: String) = {
+      <item id={(":root"::name).mkString("/")} state={state}>
+         <content><name>{name.last}</name></content>
+      </item>
+   }
+   /** items for all archives/groups whose id starts with prefix */
+   def archivesIn(prefix: List[String]) = {
+      val archIds = controller.backend.getArchives.map(a => (a,utils.stringToList(a.id,"/")))
+      val archSuffs = archIds.filter(_._2.startsWith(prefix)) map {case (a,s) => (a,s.drop(prefix.length))}
+      val children = archSuffs.map {
+         case (a,s) => (s.head, if (s.tail.isEmpty) Some(a) else None)
+      }.distinct.sortBy(_._1.toLowerCase)
+      <root>{children map {case (name, archOpt) =>
+         archOpt match {
+            case Some(a) => item(DPath(a.narrationBase), "closed", Some(name))
+            case None => groupItem(prefix ::: List(name), "closed")
+         }
+      }}</root>
+   }
    def apply(path: List[String], query: String, body: Body) = {
        val q = query
-       val node = if (q == ":root")
-         <root>{
-           controller.backend.getArchives.sortBy(_.id.toLowerCase) map {a =>
-              item(DPath(a.narrationBase), "closed", Some(a.id))
-           }
-         }</root>
-       else {
+       val node = if (q.startsWith(":root")) {
+         val prefix = utils.stringToList(q, "/").tail
+         archivesIn(prefix)
+       } else {
          val path = Path.parse(q, controller.getNamespaceMap)
          val role = controller.depstore.getType(path)
          path match {

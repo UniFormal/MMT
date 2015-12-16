@@ -136,14 +136,15 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
                  def toggle(label: String) {
                     button("compToggle  btn btn-sm btn-default pull-right", onclick = s"interaction.toggleClick(this.parentNode,'$label')") {text(label)}
                  }
-                 d.getComponents.foreach {case DeclarationComponent(comp, tc) => if (tc.isDefined)
-                    toggle(comp.toString)
+                 d.getComponents.foreach {case DeclarationComponent(comp, tc) =>
+                    if (tc.isDefined)
+                      toggle(comp.toString)
                  }
-                 //if (! usedby.isEmpty)
+                 if (! usedby.isEmpty)
                     toggle("used-by")
-                 //if (! d.metadata.getTags.isEmpty)
+                 if (! d.metadata.getTags.isEmpty)
                     toggle("tags")
-                 //if (! d.metadata.getAll.isEmpty)
+                 if (! d.metadata.getAll.isEmpty)
                     toggle("metadata")
                }
                table("constant-components ") {

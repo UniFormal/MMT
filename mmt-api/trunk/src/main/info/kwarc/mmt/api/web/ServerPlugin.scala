@@ -282,6 +282,8 @@ class ActionServer extends ServerExtension("action") {
 
 
 /**
+ * experimental server for submitting comments
+ *  
  * Handle the body of the POST request (json format)
  * and store the comment as user+date into the discussions folder
  */
@@ -340,6 +342,7 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
   }
 }
 
+/** obsolete */
 class AlignServer extends ServerExtension("align") {
   //override def start(args: List[String]) {}
   def apply(path: List[String], query: String, body: Body) = {
