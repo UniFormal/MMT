@@ -7,6 +7,10 @@ import Level.Level
 import frontend._
 import utils._
 
+case class TestModifiers(compareWithTest: Boolean = false, addTest: Boolean = false, updateTest: Boolean = false) {
+  def makeTests: Boolean = compareWithTest || addTest || updateTest
+}
+
 sealed abstract class BuildTargetModifier {
   def toString(dim: String): String
 }
@@ -21,7 +25,7 @@ case class BuildDepsFirst(up: UpdateOnError) extends BuildTargetModifier {
 
 abstract class Update extends BuildTargetModifier
 
-case class UpdateOnError(errorLevel: Level, dryRun: Boolean = false) extends Update {
+case class UpdateOnError(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModifiers = TestModifiers()) extends Update {
   def key: String =
     if (errorLevel <= Level.Force) ""
     else if (errorLevel < Level.Ignore) "!" else "*"
@@ -43,13 +47,24 @@ object BuildTargetModifier extends AnaArgs {
     OptionDescr("onError?", "", OptIntArg, "dry-run on error or change"),
     OptionDescr("onChange", "", NoArg, "rebuild on change"),
     OptionDescr("dry-run", "n", NoArg, "only show what needs to be build"),
-    OptionDescr("force", "", NoArg, "force building")
+    OptionDescr("force", "", NoArg, "force building"),
+    OptionDescr("test", "", NoArg, "compare build results with test dimension"),
+    OptionDescr("test-add", "", NoArg, "add new output files to test dimension"),
+    OptionDescr("test-update", "", NoArg, "update changed output files in test dimension")
   )
 
-  def makeUpdateModifier(flag: OptionValue, dry: Boolean): UpdateOnError = UpdateOnError(flag match {
-    case IntVal(i) => i - 1
-    case _ => Level.Error
-  }, dryRun = dry)
+  private def makeUpdateModifier(flag: OptionValue, dry: Boolean, testMod: TestModifiers): UpdateOnError = UpdateOnError(
+    flag match {
+      case IntVal(i) => i - 1
+      case _ => Level.Error
+    },
+    dryRun = dry,
+    testMod)
+
+  private def makeTestModifiers(m: OptionMap): TestModifiers = TestModifiers(
+    compareWithTest = m.isDefinedAt("test"),
+    addTest = m.isDefinedAt("test-add"),
+    updateTest = m.isDefinedAt("test-update"))
 
   def splitArgs(args: List[String], log: String => Unit): Option[(BuildTargetModifier, List[String])] = {
     val (m, r) = anaArgs(optDescrs, args)
@@ -62,8 +77,9 @@ object BuildTargetModifier extends AnaArgs {
     val depsFirst = m.get("depsFirst").toList
     val depsFirstDry = m.get("depsFirst?").toList
     val os = clean ++ force ++ onChange ++ onError ++ onErrorDry ++ depsFirst ++ depsFirstDry
+    val testMod = makeTestModifiers(m)
     var fail = false
-    var mod: BuildTargetModifier = UpdateOnError(Level.Ignore, dryRun = dr)
+    var mod: BuildTargetModifier = UpdateOnError(Level.Ignore, dryRun = dr, testMod)
     if (os.length > 1) {
       log("only one allowed of: clean, force, onChange, onError, depsFirst")
       fail = true
@@ -76,22 +92,22 @@ object BuildTargetModifier extends AnaArgs {
       mod = Clean
     }
     force.foreach { _ =>
-      mod = if (dr) UpdateOnError(Level.Force, dryRun = dr) else Build
+      mod = if (dr || testMod.makeTests) UpdateOnError(Level.Force, dryRun = dr, testMod) else Build
     }
     onChange.foreach { _ =>
-      mod = UpdateOnError(Level.Ignore, dryRun = dr)
+      mod = UpdateOnError(Level.Ignore, dryRun = dr, testMod)
     }
     onError.foreach { o =>
-      mod = makeUpdateModifier(o, dr)
+      mod = makeUpdateModifier(o, dr, testMod)
     }
     onErrorDry.foreach { o =>
-      mod = makeUpdateModifier(o, dry = true)
+      mod = makeUpdateModifier(o, dry = true, testMod)
     }
     depsFirst.foreach { o =>
-      mod = BuildDepsFirst(makeUpdateModifier(o, dr))
+      mod = BuildDepsFirst(makeUpdateModifier(o, dr, testMod))
     }
     depsFirstDry.foreach { o =>
-      mod = BuildDepsFirst(makeUpdateModifier(o, dry = true))
+      mod = BuildDepsFirst(makeUpdateModifier(o, dry = true, testMod))
     }
     if (fail) {
       usageMessage(optDescrs).foreach(println)
@@ -114,30 +130,24 @@ abstract class BuildTarget extends FormatBasedExtension {
   /** defaults to the key */
   override def logPrefix: String = key
 
-  private def testOps: OptionDescrs = List(
+  private def verbOpts: OptionDescrs = List(
     OptionDescr("quiet", "q", NoArg, "do not show result information"),
-    OptionDescr("verbose", "v", NoArg, "show log information"),
-    OptionDescr("test", "", NoArg, "compare build results with test dimension"),
-    OptionDescr("test-add", "", NoArg, "add new output files to test dimension"),
-    OptionDescr("test-update", "", NoArg, "update changed output files in test dimension")
+    OptionDescr("verbose", "v", NoArg, "show log information")
   )
 
   /** options to be overriden by subclasses */
   def buildOpts: OptionDescrs = Nil
 
   override def start(args: List[String]) {
-    val (m, rest) = anaArgs(testOps ++ buildOpts, args)
+    val (m, rest) = anaArgs(verbOpts ++ buildOpts, args)
     optionsMap = m
     remainingStartArguments = rest
-    compareWithTest = m.isDefinedAt("test")
-    addTest = m.isDefinedAt("test-add")
-    updateTest = m.isDefinedAt("test-update")
     verbose = m.isDefinedAt("verbose")
     quiet = m.isDefinedAt("quiet")
     val (otherOpts, _) = splitOptions(rest)
     if (otherOpts.nonEmpty) {
       logError("unknown option: " + otherOpts.mkString(" "))
-      usageMessage(ShellArguments.toplevelArgs ++ BuildTargetModifier.optDescrs ++ testOps ++ buildOpts).foreach(println)
+      usageMessage(ShellArguments.toplevelArgs ++ BuildTargetModifier.optDescrs ++ verbOpts ++ buildOpts).foreach(println)
     }
   }
 
@@ -146,11 +156,6 @@ abstract class BuildTarget extends FormatBasedExtension {
 
   /** arguments to be consumed by subclasses */
   var remainingStartArguments: List[String] = Nil
-
-  /** should build results be compared with results in test dimension */
-  var compareWithTest: Boolean = false
-  var addTest: Boolean = false
-  var updateTest: Boolean = false
 
   var verbose: Boolean = false
   var quiet: Boolean = false
@@ -169,9 +174,11 @@ abstract class BuildTarget extends FormatBasedExtension {
 
   /** the main function to run the build target
     *
+    * en empty in filepath addresses the whole archive
+    *
     * @param modifier chooses build, clean, or update
     * @param arch     the archive to build on
-    * @param in       the folder inside the archive's inDim folder to which building in restricted (i.e., Nil for whole archive)
+    * @param in       the folder inside the archive's inDim folder to which building is restricted
     */
   def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath) {
     modifier match {
@@ -193,6 +200,8 @@ abstract class BuildTarget extends FormatBasedExtension {
 
 /** auxiliary type to represent the parameters and result of building a file/directory
   *
+  * this is no case class due to a state-dependent error continuation
+  *
   * @param inFile    the input file
   * @param inPath    the path of the input file inside the archive, relative to the input dimension
   * @param children  the build tasks of the children if this task refers to a directory
@@ -200,8 +209,8 @@ abstract class BuildTarget extends FormatBasedExtension {
   * @param outPath   the output file inside the archive, relative to the archive root.
   * @param errorCont BuildTargets should report errors here
   */
-class BuildTask(val key: String, val archive: Archive, val inFile: File, val children: Option[List[BuildTask]], val inPath: FilePath,
-                val outFile: File, val outPath: FilePath, val errorCont: OpenCloseHandler) {
+class BuildTask(val key: String, val archive: Archive, val inFile: File, val children: Option[List[BuildTask]],
+                val inPath: FilePath, val outFile: File, val outPath: FilePath, val errorCont: OpenCloseHandler) {
   /** build targets should set this to true if they skipped the file so that it is not passed on to the parent directory */
   var skipped = false
   /** the narration-base of the containing archive */
@@ -371,15 +380,13 @@ abstract class TraversingBuildTarget extends BuildTarget {
     new BuildTask(key, a, inFile, children, inPath, outFile, outPath, errorCont)
   }
 
-  def compareOutputAndTest(bt: BuildTask) {
+  def compareOutputAndTest(testMod: TestModifiers, bt: BuildTask) {
     val testFile = getTestOutFile(bt.archive, bt.inPath)
     val diffFile = testFile.addExtension("diff")
     val outFile = bt.outFile
-    if (!outFile.exists) {
-      logError("missing output file: " + outFile)
-    } else if (testFile.exists) {
+    if (outFile.exists && testFile.exists) {
       var diffLog: Option[String] = Some("") // assume a difference if no diff is run
-      if (compareWithTest) {
+      if (testMod.compareWithTest) {
         diffLog = ShellCommand.run("diff", "-u", outFile.toString, testFile.toString)
         if (diffLog.isDefined) {
           File.write(diffFile, diffLog.get)
@@ -388,25 +395,17 @@ abstract class TraversingBuildTarget extends BuildTarget {
           logResult("no differences for: " + outFile)
         }
       }
-      if (diffLog.isDefined && updateTest) {
+      if (diffLog.isDefined && testMod.updateTest) {
         Files.copy(outFile.toPath, testFile.toPath, StandardCopyOption.REPLACE_EXISTING)
         logResult("updated " + testFile)
       }
     } else {
-      if (addTest) {
+      if (testMod.addTest) {
         testFile.up.mkdirs
         Files.copy(outFile.toPath, testFile.toPath)
         logResult("added " + testFile)
       }
     }
-  }
-
-  def buildFileAndCompare(bt: BuildTask): BuildResult = {
-    val res = buildFile(bt)
-    if (compareWithTest || addTest || updateTest) {
-      compareOutputAndTest(bt)
-    }
-    res
   }
 
   /** like buildFile but with error handling, logging, etc.  */
@@ -420,7 +419,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     bt.errorCont.open
     try {
       res = bt.children match {
-        case None => buildFileAndCompare(bt)
+        case None => buildFile(bt)
         case Some(children) =>
           buildDir(bt, children)
       }
@@ -493,11 +492,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
         val testFile = getTestOutFile(a, inPath)
         val outPath = getOutPath(a, outFile)
         lazy val bf = makeBuildTask(a, inPath, inFile, None, None)
-        val rebuildNeeded = up match {
-          case Build => true
-          case up: UpdateOnError =>
-            lazy val errs = hadErrors(errorFile, up.errorLevel)
-            val rn = up.errorLevel <= Level.Force || modified(inFile, errorFile) || errs ||
+        val (rebuildNeeded, testMod) = up match {
+          case Build => (true, TestModifiers())
+          case UpdateOnError(errLev, dryRun, testFlag) =>
+            lazy val errs = hadErrors(errorFile, errLev)
+            val rn = errLev <= Level.Force || modified(inFile, errorFile) || errs ||
               getDeps(bf).exists {
                 case bd: BuildDependency =>
                   val errFile = getErrorFile(bd)
@@ -508,17 +507,18 @@ abstract class TraversingBuildTarget extends BuildTarget {
             if (!rn) {
               logResult("up-to-date " + outPath)
             }
-            if (rn && up.dryRun) {
+            (if (rn && dryRun) {
               logResult("out-dated " + outPath)
               false
             } else {
               rn
-            }
+            }, testFlag)
         }
         if (rebuildNeeded) {
           runBuildTask(bf)
-        } else if (compareWithTest || addTest || updateTest) {
-          compareOutputAndTest(bf)
+        }
+        if (testMod.makeTests) {
+          compareOutputAndTest(testMod, bf)
         }
         (rebuildNeeded, bf)
     }, { case (c@Current(inDir, inPath), childChanged) =>
