@@ -1,11 +1,12 @@
 package info.kwarc.mmt.latex
 import info.kwarc.mmt.api._
 import utils._
-import info.kwarc.mmt.api.web._
+import web._
 import objects._
 import parser._
 import symbols._
 import presentation._
+import notations._
 import frontend._
 import scala.collection._
 import scala.concurrent._
@@ -13,9 +14,8 @@ import tiscaf._
 
 case class LatexError(val text : String) extends Error(text)
 
+/*
 class LatexState(val dpath : DPath, controller : Controller) {
-  
- 
   val dictionary = new mutable.HashMap[LocalName, String] // ?needed
   
   val parser = new LatexStructureParser(this, controller)        
@@ -66,11 +66,130 @@ class LatexState(val dpath : DPath, controller : Controller) {
     Thread.sleep(100)
   }
 }
-                                                    //with Presenter
-class LatexPresenter extends ServerExtension("latex") with Logger {
+* */
+
+class LatexObjectPresenter extends NotationBasedPresenter {
+   private val unicodeMap = new scala.collection.mutable.HashMap[Char,String]()
+   private def fillMap(s: String) {
+      utils.stringToList(s,"\n").foreach {l =>
+         val lT = l.trim
+         if (!lT.isEmpty || lT.startsWith("//")) {
+            if (lT.length <= 2 || l(1) != ' ')
+               throw LocalError(s"illegal line in unicode-latex map: $l")
+            val c = lT(0)
+            val s = lT.substring(2)
+            unicodeMap(c) = s + " "
+         }
+      }
+   }
+   override def start(args: List[String]) {
+      val basicmap = MMTSystem.getResourceAsString("latex/unicode-latex-map")
+      fillMap(basicmap)
+      args.foreach {a =>
+         fillMap(File.read(File(a)))
+      }
+   }
+   
+   private def wrap(before: String, after: String)(body: => Unit)(implicit pc: PresentationContext) {
+      pc.rh << before
+      body
+      pc.rh << after
+   }
+   private def group(body: => Unit)(implicit pc: PresentationContext) {wrap("{","}")(body)}
+   
+   override def doIdentifier(p: ContentPath)(implicit pc: PresentationContext) {
+      pc.rh << s"\\mmt@symref{${p.toPath}}{${p.last.toString}}"
+   }
+   override def doVariable(n: LocalName)(implicit pc: PresentationContext) {
+      pc.rh << s"\\mmt@varref{${n.toPath}}{${n.toPath}}"
+   }
+   override def doLiteral(l: OMLITTrait)(implicit pc: PresentationContext) {
+      pc.rh << s"\\mmt@lit{${l.toString}}"
+   }
+   override def doDelimiter(p: GlobalName, d: Delimiter, implicits: List[Cont])(implicit pc: PresentationContext) {
+      val s = d.text
+      val sL = if (s.length == 1) unicodeMap.get(s(0)).getOrElse(s) else s
+      pc.rh << s"\\mmt@symref{${p.toPath}}{$sL}"
+   }
+   override def doDelimiter(n: LocalName, d: Delimiter)(implicit pc: PresentationContext) {
+      pc.rh << s"\\mmt@varref{${n.toPath}}{${d.text}}"
+   }
+   override def doSpace(level: Int)(implicit pc: PresentationContext) {
+      Range(0,level).foreach {_ => pc.rh << "\\,"}
+   }
+   override def doToplevel(body: => Unit)(implicit pc: PresentationContext) {
+      val tooltip = pc.owner.flatMap {cp => controller.globalLookup.getComponent(cp) match {
+         case tc : TermContainer => tc.read
+         case _ => None
+      }}
+      tooltip match {
+         case Some(t) =>
+            wrap(s"\mmt@tooltip{$t}{","}") {
+              body
+            }
+         case None =>
+            body
+      }
+   }
+   override def doBracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
+      wrap("\\left(\\mmt@group{","}\\right)") {
+        body
+      }
+   }
+   override def doUnbracketedGroup(body: => Unit)(implicit pc: PresentationContext) {
+      wrap("\\mmt@group{","}") {
+        body
+      }
+   }
+   override def doImplicit(body: => Unit)(implicit pc: PresentationContext) {
+      wrap("\\mmt@implicit{","}") {
+        body
+      }
+   }
+   override def doInferredType(body: => Unit)(implicit pc: PresentationContext) {
+      wrap("\\mmt@inferred{","}") {
+        body
+      }
+   }
+   override def doScript(main: => Unit, sup: Option[Cont], sub: Option[Cont],
+                                        over: Option[Cont], under: Option[Cont])(implicit pc: PresentationContext) {
+      val overunder = over.isDefined || under.isDefined
+      if (overunder)
+         pc.rh << "\\stackrel{"
+      wrap("{", "}"){main}
+      sup.foreach {s =>
+         pc.rh << "^"
+         group{s()}
+      }
+      sub.foreach {s =>
+         pc.rh << "_"
+         group{s()}
+      }
+      if (overunder)
+         pc.rh << "}"
+      over.foreach {s =>
+         pc.rh << "^"
+         group{s()}
+      }
+      under.foreach {s =>
+         pc.rh << "_"
+         group{s()}
+      }
+   }
+   override def doFraction(above: List[Cont], below: List[Cont], line: Boolean)(implicit pc: PresentationContext) {
+      val w = if (line) "1pt" else "0pt"
+      pc.rh << s"\\genfrac{}{}{$w}{0}"
+      group{doListWithSpace(above, 2)}
+      group{doListWithSpace(below, 2)}
+   }
+}
+
+
+/*
+class LatexPresenter(oP: ObjectPresenter) extends Presenter(oP) {
    var currentJob : String = ""
    
-   override val logPrefix = "latexPlugin"    
+   override val logPrefix = "mmt-latex"    
      
    val states = new mutable.HashMap[String, LatexState] 
    
@@ -79,21 +198,6 @@ class LatexPresenter extends ServerExtension("latex") with Logger {
    }
    
    def apply(o : Obj, rh : RenderingHandler) : Unit = apply(o, rh, states(currentJob).dictionary)
-   
-   def apply(o: Obj, rh: RenderingHandler, con : Map[LocalName,String]) {
-      o match {
-         case OMS(p) => rh(s"\\${p.last}{${p.toPath}}")
-         case OMA(OMID(p), args) =>
-            rh(s"\\${p.last}{${p.toPath}}")
-            args foreach {a =>
-              rh("{")
-              apply(a, rh)
-              rh("}")
-            }
-         case OMBIND(OMID(p), Context(VarDecl(v, tpOpt, _)), scope) =>
-         case OMV(v) => s"\\varref{${v.toPath}{${con(v)}}"
-      }
-   }
    
    private def toLatex(tm : Term, scope : MPath, state : LatexState) : String = {
      val (notations, extensions) = AbstractObjectParser.getNotations(controller, OMMOD(scope))
@@ -479,3 +583,4 @@ object Utils {
 
 }
 
+*/
