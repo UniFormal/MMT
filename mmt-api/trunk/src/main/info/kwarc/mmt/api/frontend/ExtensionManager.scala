@@ -14,7 +14,7 @@ import utils.MyList._
 import web._
 
 
-trait Extension extends Logger with AnaArgs {
+trait Extension extends Logger {
   protected var controller: Controller = null
   protected var report: Report = null
 
@@ -120,7 +120,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     */
   def getOrAddExtension[E <: FormatBasedExtension](cls: Class[E], format: String, args: List[String] = Nil): E = {
     get(cls, format) getOrElse {
-      val tc = controller.getConfig.getEntry(classOf[TargetConf], format)
+      val tc = controller.getConfig.getEntry(classOf[ExtensionConf], format)
       val ext = addExtension(tc.cls, tc.args ::: args)
       ext match {
         case e: E@unchecked if cls.isInstance(e) => e
@@ -137,58 +137,6 @@ class ExtensionManager(controller: Controller) extends Logger {
   val report = controller.report
   val logPrefix = "extman"
 
-  def addDefaultExtensions {
-    // MMT's defaults for the main algorithms
-    val nbp = new NotationBasedParser
-    val kwp = new KeywordBasedParser(nbp)
-    val rbc = new RuleBasedChecker
-    val msc = new MMTStructureChecker(rbc)
-    val mmtint = new TwoStepInterpreter(kwp, msc)
-    val nbpr = new NotationBasedPresenter {
-      override def twoDimensional = false
-    }
-    val msp = new MMTStructurePresenter(nbpr)
-    val rbs = new RuleBasedSimplifier
-    val mss = new MMTStructureSimplifier(rbs)
-    //use this for identifying structure and thus dependencies
-    //val mmtStructureOnly = new OneStepInterpreter(new KeywordBasedParser(DefaultObjectParser))
-    val mmtextr = ontology.MMTExtractor
-
-    val rbp = new RuleBasedProver
-    var prover: Extension = rbp
-    //TODO temporary hack to replace old prover with Mark's AgentProver if the latter is on the classpath
-    val className = "info.kwarc.mmt.leo.provers.AgentProver"
-    try {
-      prover = Class.forName(className).newInstance.asInstanceOf[Extension]
-    } catch {
-      case _: Throwable =>
-    }
-
-    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover).foreach { e => addExtension(e) }
-    // build manager
-    addExtension(new TrivialBuildManager)
-    //targets and presenters
-    List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter,
-      TextPresenter, OMDocPresenter, controller.presenter).foreach {
-      e => addExtension(e)
-    }
-    //parser
-    List(new symbols.RuleConstantParser, parser.MetadataParser, parser.CommentIgnorer).foreach(addExtension(_))
-    //parserExtensions ::= new ControlParser
-    //serverPlugins
-    List(new web.GetActionServer, new web.SVGServer, new web.QueryServer, new web.SearchServer,
-      new web.TreeView, new web.BreadcrumbsServer, new web.ActionServer, new web.AlignServer,
-      new web.SubmitCommentServer).foreach(addExtension(_))
-    //queryExtensions
-    List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
-      new ontology.Present, new ontology.PresentDecl).foreach(addExtension(_))
-    lexerExtensions ::= GenericEscapeLexer
-    lexerExtensions ::= UnicodeReplacer
-    lexerExtensions ::= new PrefixedTokenLexer('\\')
-
-    notationExtensions ::= notations.MixfixNotation
-  }
-
   /** instantiates an extension, initializes it, and adds it
     * @param cls qualified class name (e.g., org.my.Extension), must be on the class path at run time
     * @param args arguments that will be passed when initializing the extension
@@ -196,6 +144,10 @@ class ExtensionManager(controller: Controller) extends Logger {
   def addExtension(cls: String, args: List[String]): Extension = {
     log("trying to create extension " + cls)
     val clsJ = Class.forName(cls)
+    extensions.find(e => e.getClass == clsJ).foreach {e =>
+       log("... already loaded, skipping")
+       return e
+    }
     val ext = try {
       val Ext = clsJ.asInstanceOf[Class[Extension]]
       Ext.newInstance
@@ -208,7 +160,6 @@ class ExtensionManager(controller: Controller) extends Logger {
 
   /** initializes and adds an extension */
   def addExtension(ext: Extension, args: List[String] = Nil) {
-    //TODO check if extension already present, extensions.find(e => e.getClass == ext.getClass).foreach
     log("adding extension " + ext.getClass.toString)
     ext.init(controller)
     extensions ::= ext
@@ -262,6 +213,58 @@ class ExtensionManager(controller: Controller) extends Logger {
       val es = get(cls)
       if (es.isEmpty) "" else cls.getName + "\n" + es.map("  " + _.toString + "\n").mkString("") + "\n\n"
     }.mkString("")
+  }
+
+  def addDefaultExtensions {
+    // MMT's defaults for the main algorithms
+    val nbp = new NotationBasedParser
+    val kwp = new KeywordBasedParser(nbp)
+    val rbc = new RuleBasedChecker
+    val msc = new MMTStructureChecker(rbc)
+    val mmtint = new TwoStepInterpreter(kwp, msc)
+    val nbpr = new NotationBasedPresenter {
+      override def twoDimensional = false
+    }
+    val msp = new MMTStructurePresenter(nbpr)
+    val rbs = new RuleBasedSimplifier
+    val mss = new MMTStructureSimplifier(rbs)
+    //use this for identifying structure and thus dependencies
+    //val mmtStructureOnly = new OneStepInterpreter(new KeywordBasedParser(DefaultObjectParser))
+    val mmtextr = ontology.MMTExtractor
+
+    val rbp = new RuleBasedProver
+    var prover: Extension = rbp
+    //TODO temporary hack to replace old prover with Mark's AgentProver if the latter is on the classpath
+    val className = "info.kwarc.mmt.leo.provers.AgentProver"
+    try {
+      prover = Class.forName(className).newInstance.asInstanceOf[Extension]
+    } catch {
+      case _: Exception =>
+    }
+
+    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover).foreach { e => addExtension(e) }
+    // build manager
+    addExtension(new TrivialBuildManager)
+    //targets and presenters
+    List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter,
+      TextPresenter, OMDocPresenter).foreach {
+      e => addExtension(e)
+    }
+    //parser
+    List(new symbols.RuleConstantParser, parser.MetadataParser, parser.CommentIgnorer).foreach(addExtension(_))
+    //parserExtensions ::= new ControlParser
+    //serverPlugins
+    List(new web.GetActionServer, new web.SVGServer, new web.QueryServer, new web.SearchServer,
+      new web.TreeView, new web.BreadcrumbsServer, new web.ActionServer, new web.AlignServer,
+      new web.SubmitCommentServer).foreach(addExtension(_))
+    //queryExtensions
+    List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
+      new ontology.Present, new ontology.PresentDecl).foreach(addExtension(_))
+    lexerExtensions ::= GenericEscapeLexer
+    lexerExtensions ::= UnicodeReplacer
+    lexerExtensions ::= new PrefixedTokenLexer('\\')
+
+    notationExtensions ::= notations.MixfixNotation
   }
 
   def cleanup {

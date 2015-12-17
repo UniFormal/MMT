@@ -164,25 +164,26 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
         case ":change" :: _ => Some(ChangeResponse)
         case ":mws" :: _ => Some(MwsResponse)
         case hd::tl if hd.startsWith(":") =>
-          controller.extman.get(classOf[ServerExtension], hd.substring(1)) match {
-            case Some(pl) =>
-               val hlet = new HLet {
-                  def aact(tk: HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
-                     log("handling request via plugin " + pl.logPrefix)
-                     val hl = try {
-                        pl(tl, req.query, new Body(tk))
-                     } catch {
-                        case e: Error => errorResponse(e)
-                        case e: Exception =>
-                           val le = pl.LocalError("unknown error while serving " + reqString).setCausedBy(e)
-                           errorResponse(le)
-                     }
-                     hl.aact(tk)
-                  }
-               }
-               Some(hlet)
-            case None => Some(errorResponse("no plugin registered for context " + hd))
+          val pl = try {controller.extman.getOrAddExtension(classOf[ServerExtension], hd.substring(1))}
+          catch {case e: Error =>
+             return Some(errorResponse("no plugin registered for context " + hd))
           }
+          val hlet = new HLet {
+            def aact(tk: HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
+               log("handling request via plugin " + pl.logPrefix)
+               val hl = try {
+                  pl(tl, req.query, new Body(tk))
+               } catch {
+                  case e: Error =>
+                     errorResponse(e)
+                  case e: Exception =>
+                     val le = pl.LocalError("unknown error while serving " + reqString).setCausedBy(e)
+                     errorResponse(le)
+               }
+               hl.aact(tk)
+            }
+          }
+          Some(hlet)
         // empty path 
         case List("") | Nil => Some(resourceResponse("browse.html"))
         // other resources

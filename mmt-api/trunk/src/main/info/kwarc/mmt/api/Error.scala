@@ -51,6 +51,19 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
       </error>
 
   def toHTML: String = HTML.build { h => import h._
+    def trace(t: Throwable) {
+      div {
+        Stacktrace.asStringList(t).foreach { s =>
+          div {
+            span {
+              text {
+                s
+              }
+            }
+          }
+        }
+      }
+    } 
     div("error") {
       div {
         text(this.getClass.getName + " of level " + level.toString)
@@ -63,25 +76,19 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
           extraMessage
         }
       }
-      div {
-        Stacktrace.asStringList(this).foreach { s =>
-          div {
-            span {
-              text {
-                s
-              }
-            }
-          }
-        }
-      }
-      causedBy.foreach {
-        case e: Error => div {
-          literal(e.toHTML)
-        }
-        case e: Throwable => div {
-          text {
-            e.getClass + " : " + e.getMessage
-          }
+      trace(this)
+      causedBy.foreach {e =>
+        div {text {"caused by"}}
+        e match {
+           case e: Error => div {
+             literal(e.toHTML)
+           }
+           case e: Throwable => div {
+             text {
+               e.getClass + " : " + e.getMessage
+             }
+             trace(e)
+           }
         }
       }
     }

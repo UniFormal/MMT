@@ -37,13 +37,6 @@ class ControllerState {
 
   var environmentVariables = new scala.collection.mutable.ListMap[String, String]
 
-  /** interface to a remote OAF */
-  var oaf: Option[OAF] = None
-
-  def getOAF: OAF = oaf.getOrElse {
-    throw GeneralError("no oaf defined, use 'oaf root'")
-  }
-
   /** the configuration */
   val config = new MMTConfig
 }
@@ -141,7 +134,15 @@ class Controller extends ROController with Logger {
     state.environmentVariables.get(name) orElse Option(System.getenv.get(name))
 
   /** @return the current OAF root */
-  def getOAF: Option[OAF] = state.oaf
+  def getOAF: Option[OAF] = {
+     val ocO = config.getEntries(classOf[OAFConf]).headOption
+     ocO map {oc =>
+        if (oc.local.isDirectory)
+           throw GeneralError(oc.local + " is not a directory")
+        new OAF(oc.remote.getOrElse(OAF.defaultURL), oc.local, report)
+     }
+  }
+  private def getOAFOrError = getOAF.getOrElse {throw GeneralError("no OAF configuration entry found")}
 
   /** @return the current configuration */
   def getConfig = state.config
@@ -509,13 +510,8 @@ class Controller extends ROController with Logger {
             // opening may fail despite resolveAnyPhysical (i.e. formerly by a MANIFEST.MF without id)
             logError("not an archive: " + root)
           case Some(archive) =>
-            if (!bt.quiet) {
-              report.groups += bt.key + "-result" // ensure logging if non-quiet
-            }
-            if (bt.verbose) {
-              report.groups += bt.key // even more logging
-            }
-          val inPath = fp.segments match {
+            report.groups += bt.key
+            val inPath = fp.segments match {
               case dim :: path =>
                 bt match {
                   case bt: TraversingBuildTarget if dim != bt.inDim.toString =>
@@ -579,7 +575,7 @@ class Controller extends ROController with Logger {
   }
 
   def cloneRecursively(p: String) {
-    val lcOpt = state.getOAF.clone(p)
+    val lcOpt = getOAFOrError.clone(p)
     lcOpt foreach { lc =>
       val archs = backend.openArchive(lc)
       archs foreach { a =>
@@ -647,16 +643,14 @@ class Controller extends ROController with Logger {
             extman.addExtension(c, args)
           case AddMWS(uri) =>
             extman.mws = Some(new MathWebSearch(uri.toURL))
-          case OAFRoot(dir, uriOpt) =>
-            if (!dir.isDirectory)
-              throw GeneralError(dir + " is not a directory")
-            state.oaf = Some(new OAF(uriOpt.getOrElse(OAF.defaultURL), dir, report))
           case OAFInit(path) =>
-            state.getOAF.init(path)
+            getOAFOrError.init(path)
           case OAFClone(path) =>
             cloneRecursively(path)
-          case OAFPull => state.getOAF.pull
-          case OAFPush => state.getOAF.push
+          case OAFPull =>
+             getOAFOrError.pull
+          case OAFPush =>
+             getOAFOrError.push
           case SetBase(b) =>
             state.nsMap = state.nsMap(b)
             report("response", "base: " + getBase)

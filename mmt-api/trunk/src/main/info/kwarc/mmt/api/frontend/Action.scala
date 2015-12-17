@@ -108,9 +108,7 @@ object Action extends RegexParsers {
 
   private def archmar = "archive" ~> str ~ ("mar" ~> file) ^^ { case id ~ trg => ArchiveMar(id, trg) }
 
-  private def oaf = "oaf" ~> (oafRoot | oafInit | oafClone | oafPull | oafPush)
-
-  private def oafRoot = "root" ~> file ~ (uri ?) ^^ { case f ~ u => OAFRoot(f, u) }
+  private def oaf = "oaf" ~> (oafInit | oafClone | oafPull | oafPush)
 
   private def oafInit = "init" ~> str ^^ { case s => OAFInit(s) }
 
@@ -402,17 +400,6 @@ case class AddMathPathJava(javapath: File) extends Action {
   override def toString = "mathpath java " + javapath
 }
 
-/** sets the root for a remote OAF
-  *
-  * concrete syntax: oaf root file:FILE [uri:URI]
-  *
-  * @param uri the root URI of the OAF, e.g., http://gl.mathhub.info/
-  * @param file the local directory in which to create clones
-  */
-case class OAFRoot(file: File, uri: Option[URI]) extends Action {
-  override def toString = "oaf root " + file + " " + uri.getOrElse("")
-}
-
 /** clone an archive from a remote OAF
   *
   * concrete syntax: oaf close path:STRING
@@ -429,7 +416,7 @@ case class OAFClone(path: String) extends Action {
   override def toString = "oaf clone " + path
 }
 
-/** pulls all repostitories from remote OAF
+/** pulls all repositories from remote OAF
   *
   * concrete syntax: oaf pull
   */
@@ -437,7 +424,7 @@ case object OAFPull extends Action {
   override def toString = "oaf pull"
 }
 
-/** pushes all repostitories to remote OAF
+/** pushes all repositories to remote OAF
   *
   * concrete syntax: oaf push
   */

@@ -52,27 +52,32 @@ case class OptionDescr(long: String, short: String, arg: OptionArgument, descrip
   def mayMatch(opt: String) = exactMatch(opt) || longEqual(opt)
 }
 
-trait AnaArgs {
+/** helper function for parsing command line arguments */
+object AnaArgs {
   type OptionDescrs = List[OptionDescr]
   type OptionMap = Map[String, OptionValue]
 
   /** extract matching options */
-  def anaArgs(opts: OptionDescrs, args: List[String]): (OptionMap, List[String]) = {
+  def apply(opts: OptionDescrs, args: List[String]): (OptionMap, List[String]) = {
     args match {
       case Nil => (Map.empty, Nil)
       case hd :: tl =>
         val optO = opts.find(_.mayMatch(hd))
         optO match {
           case None =>
-            val (m, r) = anaArgs(opts, tl)
+            val (m, r) = apply(opts, tl)
             (m, hd :: r)
           case Some(o) =>
             val equalOpt = o.longEqual(hd)
             val checkTail = equalOpt || o.arg == NoArg || tl.isEmpty ||
               o.arg == OptIntArg && toOptInt(tl.head).isEmpty
-            val v = if (equalOpt) Some(hd.substring(o.long.length + 3))
-            else if (checkTail) None else Some(tl.head)
-            val (m, r) = anaArgs(opts, if (checkTail) tl else tl.tail)
+            val v = if (equalOpt)
+               Some(hd.substring(o.long.length + 3))
+            else if (checkTail)
+               None
+            else
+               Some(tl.head)
+            val (m, r) = apply(opts, if (checkTail) tl else tl.tail)
             getOptOptionValue(m, o, v) match {
               case None => (m, hd :: (if (checkTail) r else tl.head :: r))
               case Some(e) => (m + (o.long -> e), r)
@@ -138,35 +143,34 @@ trait AnaArgs {
     }
 }
 
-object AnaArgs extends AnaArgs
-
 /**
-  * Represents arguments parsed to MMT on the command line.
+  * Represents arguments passed to MMT on the command line.
   *
-  * @param help       Should we print an help text
+  * @param help       Should we print a help text
   * @param about      Should we print an about text
   * @param send       Should we send commands to a remote port instead of running them locally?
   * @param mmtFiles   List of MMT files to load
-  * @param scalaFiles List of SCALA files to load
+  * @param scalaFiles List of Scala files to load
   * @param cfgFiles   List of config files to load
   * @param commands   List of commands to run
   * @param prompt     Should we start a prompt?
   * @param runCleanup Should we cleanup running threads and exit after commands have been processed
   */
 case class ShellArguments(
-                           help: Boolean,
-                           about: Boolean,
-                           send: Option[Int],
-                           mmtFiles: List[String],
-                           scalaFiles: List[String],
-                           cfgFiles: List[String],
-                           commands: List[String],
-                           prompt: Boolean, // run interactive shell
-                           runCleanup: Boolean // do not keep alive but terminate/cleanup processes
-                         )
+   help: Boolean,
+   about: Boolean,
+   send: Option[Int],
+   mmtFiles: List[String],
+   scalaFiles: List[String],
+   cfgFiles: List[String],
+   commands: List[String],
+   prompt: Boolean, // run interactive shell
+   runCleanup: Boolean // do not keep alive but terminate/cleanup processes
+ )
 
-object ShellArguments extends AnaArgs {
+import AnaArgs._
 
+object ShellArguments {
   val toplevelArgs: OptionDescrs = List(
     OptionDescr("help", "h", NoArg, "command line help"),
     OptionDescr("about", "a", NoArg, "about the program"),
@@ -180,7 +184,7 @@ object ShellArguments extends AnaArgs {
   )
 
   def parse(arguments: List[String]): Option[ShellArguments] = {
-    val (m, cs) = anaArgs(toplevelArgs, arguments)
+    val (m, cs) = AnaArgs(toplevelArgs, arguments)
     val helpFlag = m.get("help").isDefined
     val aboutFlag = m.get("about").isDefined
     val os = m.get("keepalive").toList ++ m.get("shell").toList ++ m.get("noshell").toList
@@ -200,7 +204,7 @@ object ShellArguments extends AnaArgs {
       None
     }
     else if (os.length > 1) {
-      println("Atmost one of --shell, --noshell and --keepalive arguments can be used.")
+      println("At most one of --shell, --noshell and --keepalive arguments can be used.")
       None
     } else {
       var fail = false

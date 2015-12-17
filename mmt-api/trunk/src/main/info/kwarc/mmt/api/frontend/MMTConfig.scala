@@ -18,7 +18,7 @@ abstract class ConfEntry {
  * @param key the key of the target
  * @param args the arguments to be used if this target is instantiated
  */
-case class TargetConf(cls : String, key : String, args : List[String]) extends ConfEntry {
+case class ExtensionConf(cls : String, key : String, args : List[String]) extends ConfEntry {
    val id = key
 }
 
@@ -35,6 +35,14 @@ case class ArchiveConf(id : String, formats : List[String]) extends BackendConf
 case class DatabaseConf(url: URI, uri: URI) extends BackendConf {
    val id = url.toString
 }
+
+/**
+ * registers a set of OAF working copies
+ */
+case class OAFConf(local: File, remote: Option[URI]) extends BackendConf {
+   val id = remote.toString
+}
+
 
 /** defines an archive format
  *  @param id the format name
@@ -115,7 +123,7 @@ class MMTConfig {
       }
 
       val activeTargets = activeFormats.flatMap(f => f.importers ::: f.exporters).distinct.map {key =>
-        getEntry(classOf[TargetConf], key)
+        getEntry(classOf[ExtensionConf], key)
       }
 
       activeTargets foreach {comp =>
@@ -137,9 +145,13 @@ object MMTConfig {
    *  all other lines are configuration entries of the respective section
    */
   def parse(f: File): MMTConfig = {
-    parse(File.read(f))
+    parse(File.read(f), Some(f.up))
   }
-  def parse(s: String) : MMTConfig = {
+  def parse(s: String, home: Option[File]) : MMTConfig = {
+    def relFile(f: String) = home match {
+       case Some(h) => h.resolve(f)
+       case None => File(s)
+    }
     val config = new MMTConfig
     var section = ""
     s.split('\n').foreach {l =>
@@ -149,15 +161,15 @@ object MMTConfig {
         //ignore
       } else if (line.startsWith("#include")) {
          val inc = line.substring("#include".length).trim
-         val incConf = parse(File(inc))
+         val incConf = parse(relFile(inc))
          config.add(incConf)
       } else if (line.startsWith("#")) {
         section = line.substring(1)
       } else section match {
         // TODO "importers" and "exporters" are deprecated but still used by Mihnea
-        case "importers" | "exporters" | "targets" => split(line) match {
+        case "importers" | "exporters" | "targets" | "extensions" => split(line) match {
           case key :: cls :: args =>
-            config.addEntry(TargetConf(cls, key, args))
+            config.addEntry(ExtensionConf(cls, key, args))
           case _ => fail
         }
         case "archives" => split(line) match {
@@ -178,6 +190,12 @@ object MMTConfig {
             val thyP = Path.parseM(thy, NamespaceMap.empty)
             config.addEntry(SemanticsConf(thyP, cls, args))
           case _ => fail
+        }
+        case "backends" => split(line) match {
+           case "oaf" :: local :: args if args.length <= 1 =>
+              val remote = args.headOption.map(URI(_))
+              config.addEntry(OAFConf(relFile(local), remote))
+           case _ => fail
         }
         case "base" => config.setBase(line)
         case _ => split(line) match {

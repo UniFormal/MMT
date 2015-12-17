@@ -38,7 +38,10 @@ case object Build extends Update {
   def toString(dim: String) = dim
 }
 
-object BuildTargetModifier extends AnaArgs {
+import AnaArgs._
+
+object BuildTargetModifier {
+
   def optDescrs: OptionDescrs = List(
     OptionDescr("clean", "", NoArg, "clean up"),
     OptionDescr("depsFirst", "", OptIntArg, "treat dependencies first"),
@@ -67,7 +70,7 @@ object BuildTargetModifier extends AnaArgs {
     updateTest = m.isDefinedAt("test-update"))
 
   def splitArgs(args: List[String], log: String => Unit): Option[(BuildTargetModifier, List[String])] = {
-    val (m, r) = anaArgs(optDescrs, args)
+    val (m, r) = AnaArgs(optDescrs, args)
     val dr = m.isDefinedAt("dry-run")
     val clean = m.get("clean").toList
     val force = m.get("force").toList
@@ -134,12 +137,17 @@ abstract class BuildTarget extends FormatBasedExtension {
     OptionDescr("quiet", "q", NoArg, "do not show result information"),
     OptionDescr("verbose", "v", NoArg, "show log information")
   )
-
-  /** options to be overriden by subclasses */
-  def buildOpts: OptionDescrs = Nil
+  /** options to be overridden by subclasses */
+  protected def buildOpts: OptionDescrs = Nil
+  /** the map computed from buildOpts */
+  protected var optionsMap: OptionMap = Map.empty
+  /** arguments to be consumed by subclasses */
+  protected var remainingStartArguments: List[String] = Nil
+  protected var verbose: Boolean = false
+  protected var quiet: Boolean = false
 
   override def start(args: List[String]) {
-    val (m, rest) = anaArgs(verbOpts ++ buildOpts, args)
+    val (m, rest) = AnaArgs(verbOpts ++ buildOpts, args)
     optionsMap = m
     remainingStartArguments = rest
     verbose = m.isDefinedAt("verbose")
@@ -147,18 +155,8 @@ abstract class BuildTarget extends FormatBasedExtension {
     val (otherOpts, _) = splitOptions(rest)
     if (otherOpts.nonEmpty) {
       logError("unknown option: " + otherOpts.mkString(" "))
-      usageMessage(ShellArguments.toplevelArgs ++ BuildTargetModifier.optDescrs ++ verbOpts ++ buildOpts).foreach(println)
     }
   }
-
-  /** the map computed from buildOpts */
-  var optionsMap: OptionMap = Map.empty
-
-  /** arguments to be consumed by subclasses */
-  var remainingStartArguments: List[String] = Nil
-
-  var verbose: Boolean = false
-  var quiet: Boolean = false
 
   /** build this target in a given archive */
   def build(a: Archive, in: FilePath) //TODO this should simply call update(a, Build, in)}

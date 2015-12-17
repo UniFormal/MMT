@@ -141,7 +141,7 @@ class NotationBasedPresenter extends ObjectPresenter {
     */
    def doImplicit(body: => Unit)(implicit pc: PresentationContext) {}
    /**
-    * called to wrap around infered types of bound variables
+    * called to wrap around inferred types of bound variables
     * @param body the argument
     */
    def doInferredType(body: => Unit)(implicit pc: PresentationContext) {}
@@ -168,20 +168,25 @@ class NotationBasedPresenter extends ObjectPresenter {
       doSpace(1)
    }
    
+   /** auxiliary function for inserting a separator (such as whitespace) into a list */
+   def doListWithSeparator(l: List[Cont], sep: Cont) {
+      if (l.isEmpty) return
+      l.head()
+      l.tail.foreach {e => 
+         sep()
+         e()
+      }
+   }
+   def doListWithSpace(l: List[Cont], n: Int = 1)(implicit pc: PresentationContext) =
+      doListWithSeparator(l, () => doSpace(n))
+
    def doFraction(above: List[Cont], below: List[Cont], line: Boolean)(implicit pc: PresentationContext) {
       doBracketedGroup {
-         above.head()
-         above.foreach {e => 
-            doSpace(1)
-            e()
-         }
+         doListWithSpace(above)
       }
       doOperator("/")
       doBracketedGroup {
-         below.foreach {e => 
-            doSpace(1)
-            e()
-         }
+         doListWithSpace(below)
       }
    }
    
@@ -247,13 +252,13 @@ class NotationBasedPresenter extends ObjectPresenter {
 
    def doErrorMarker(args: List[Cont])(implicit pc: PresentationContext){
       doOperator("#err_")
-    doBracketedGroup {
-     args.head
-     args.tail.foreach {e =>
-       doSpace(1)
-       e()
-     }
-   }
+      doBracketedGroup {
+        args.head
+        args.tail.foreach {e =>
+          doSpace(1)
+          e()
+        }
+      }
    }
    
    def doPhantomMarker(args: List[Cont])(implicit pc: PresentationContext){
@@ -660,8 +665,8 @@ class NotationBasedPresenter extends ObjectPresenter {
                            case InferenceMarker =>
                               checking.Solver.infer(controller, pc.getContext, t, None) match {
                                  case Some(tp) =>
-                                    //TODO pass PresentationContext
-                                    recurse(tp, _ => -1)
+                                    //TODO change owner? (currently needed to get the theory into the context)
+                                    recurse(tp, _ => -1)(pc.copy(source = None))
                                  case None =>
                                     doOperator("?")
                               }
@@ -678,7 +683,7 @@ class NotationBasedPresenter extends ObjectPresenter {
                   }
                   br
             }
-            //so that subclasses can override these methods to add special behaviour for supported attribute keys
+            //so that subclasses can override these methods to add special behavior for supported attribute keys
             case OMATTR(t, k, v) =>
               doAttributedTerm(t, k, v)(pc)
             case t =>
