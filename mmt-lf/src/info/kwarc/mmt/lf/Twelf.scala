@@ -60,7 +60,7 @@ class Twelf extends Importer with frontend.ChangeListener {
       case Some(s) =>
         utils.stringToList(s, "\\s").map { f => arch / inDim / f }
     }
-    stringLocs.foreach { l => catalog.addStringLocation(l.getPath) }
+    stringLocs.foreach { l => if (l.exists) catalog.addStringLocation(l.getPath) }
   }
 
   override def onArchiveClose(arch: Archive) {
