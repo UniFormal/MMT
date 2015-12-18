@@ -156,7 +156,7 @@ class STeXImporter extends Importer {
     n.label match {
       case "omdoc" =>
         //creating document and implicit theory
-        implicit val doc = new Document(dpath)
+        implicit val doc = new Document(dpath, true)
         add(doc)
         //recursing into children
         n.child.foreach(translateModule)
