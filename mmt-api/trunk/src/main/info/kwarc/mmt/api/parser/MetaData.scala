@@ -14,7 +14,7 @@ object MetadataParser extends ParserExtension {
    private val keywords = List("tag", "link", "meta")
    private val extraKeywords = List("@creator", "@created", "@description", "@abstract", "@subject", "@title")
    def isApplicable(se: StructuralElement, kw: String) = (keywords:::extraKeywords) contains kw 
-   def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, k: String) {
+   def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, k: String, con:Context = Context.empty) {
       val md = if (extraKeywords contains k) {
          val key = MetaDatum.keyBase ? k.substring(1)
          val (_,_,value) = sp.readParsedObject(Context(MetaDatum.keyBase))(s)

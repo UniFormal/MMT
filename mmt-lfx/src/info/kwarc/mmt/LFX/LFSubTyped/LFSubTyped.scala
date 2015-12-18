@@ -1,7 +1,9 @@
 package info.kwarc.mmt.LFX.LFSubTyped
 
-import info.kwarc.mmt.api.DPath
-import info.kwarc.mmt.api.objects.{OMID, OMA, Term, OMS}
+import info.kwarc.mmt.api.symbols.FinalConstant
+import info.kwarc.mmt.api.{StructuralElement, DPath}
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.parser.{ParserState, KeywordBasedParser, ParserExtension}
 import info.kwarc.mmt.api.utils.URI
 
 object LFSubTyped {

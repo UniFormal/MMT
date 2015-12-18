@@ -48,7 +48,7 @@ class RuleConstantParser extends ParserExtension {
    def isApplicable(se: StructuralElement, keyword: String) = {
       se.isInstanceOf[DeclaredTheory] && keyword == "rule"
    }
-   def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, keyword: String) = { 
+   def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, keyword: String, con:Context = Context.empty) = {
       val (n, reg) = s.reader.readDeclaration
       val thy = se.asInstanceOf[DeclaredTheory].path
       val rc = RuleConstantInterpreter.fromString(n.trim, thy)

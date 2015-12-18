@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api._
 import frontend._
 import documents._
+import info.kwarc.mmt.api.objects.Context
 import modules._
 import symbols._
 
@@ -25,5 +26,5 @@ abstract class ParserExtension extends Extension {
     * 
     * the keyword but nothing else has been read already when this is called
     */
-   def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, keyword: String)
+   def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, keyword: String, con:Context = Context.empty)
 }

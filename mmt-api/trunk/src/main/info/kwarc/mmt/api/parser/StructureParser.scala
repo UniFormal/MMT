@@ -80,7 +80,7 @@ class RelKeywordBasedParser extends KeywordBasedParser(DefaultObjectParser) {
 }
 
 object RelRuleParser extends RuleConstantParser {
-  override def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, keyword: String) =
+  override def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, keyword: String, con:Context = Context.empty) =
     s.reader.readDeclaration
 }
 
@@ -551,7 +551,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             val (obj, reg) = state.reader.readObject
             val reader = Reader(obj)
             reader.setSourcePosition(reg.start)
-            parser(this, state.copy(reader), cons, k)
+            parser(this, state.copy(reader), cons, k, context)
           case None =>
             if (!state.reader.endOfDeclaration) {
               errorCont(makeError(treg, "expected " + keyString + ", found " + k))
@@ -830,7 +830,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
               val (decl, reg) = state.reader.readDeclaration
               val reader = Reader(decl)
               reader.setSourcePosition(reg.start)
-              parsOpt.get.apply(this, state.copy(reader), mod, k)
+              parsOpt.get.apply(this, state.copy(reader), mod, k,context)
             } else {
               // 3) a constant with name k
               val name = LocalName.parse(k)
