@@ -9,6 +9,7 @@ import java.util.regex.PatternSyntaxException
 import STeXUtils._
 import info.kwarc.mmt.api.ExtensionError
 import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.frontend.AnaArgs.OptionDescrs
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.utils.File
 
