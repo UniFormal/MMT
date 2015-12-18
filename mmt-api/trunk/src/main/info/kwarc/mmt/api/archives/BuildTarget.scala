@@ -143,8 +143,8 @@ abstract class BuildTarget extends FormatBasedExtension {
   protected var optionsMap: OptionMap = Map.empty
   /** arguments to be consumed by subclasses */
   protected var remainingStartArguments: List[String] = Nil
-  protected var verbose: Boolean = false
-  protected var quiet: Boolean = false
+  var verbose: Boolean = false
+  var quiet: Boolean = false
 
   override def start(args: List[String]) {
     val (m, rest) = AnaArgs(verbOpts ++ buildOpts, args)

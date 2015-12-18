@@ -135,14 +135,17 @@ class Controller extends ROController with Logger {
 
   /** @return the current OAF root */
   def getOAF: Option[OAF] = {
-     val ocO = config.getEntries(classOf[OAFConf]).headOption
-     ocO map {oc =>
-        if (oc.local.isDirectory)
-           throw GeneralError(oc.local + " is not a directory")
-        new OAF(oc.remote.getOrElse(OAF.defaultURL), oc.local, report)
-     }
+    val ocO = config.getEntries(classOf[OAFConf]).headOption
+    ocO map { oc =>
+      if (oc.local.isDirectory)
+        throw GeneralError(oc.local + " is not a directory")
+      new OAF(oc.remote.getOrElse(OAF.defaultURL), oc.local, report)
+    }
   }
-  private def getOAFOrError = getOAF.getOrElse {throw GeneralError("no OAF configuration entry found")}
+
+  private def getOAFOrError = getOAF.getOrElse {
+    throw GeneralError("no OAF configuration entry found")
+  }
 
   /** @return the current configuration */
   def getConfig = state.config
@@ -192,16 +195,23 @@ class Controller extends ROController with Logger {
   /** a lookup that uses only the current memory data structures */
   val localLookup = new LookupWithNotFoundHandler(library) {
     protected def handler[A](code: => A): A = try {
-       code
-    } catch {case NotFound(p) =>
-       throw GetError(p.toPath + " not known")
+      code
+    } catch {
+      case NotFound(p) =>
+        throw GetError(p.toPath + " not known")
     }
+
     def getDeclarationsInScope(mod: Term) = library.getDeclarationsInScope(mod)
   }
   /** a lookup that loads missing modules dynamically */
   val globalLookup = new LookupWithNotFoundHandler(library) {
-    protected def handler[A](code: => A): A = iterate {code}
-    def getDeclarationsInScope(mod: Term) = iterate {library.getDeclarationsInScope(mod)}
+    protected def handler[A](code: => A): A = iterate {
+      code
+    }
+
+    def getDeclarationsInScope(mod: Term) = iterate {
+      library.getDeclarationsInScope(mod)
+    }
   }
 
   /** loads a path via the backend and reports it */
@@ -260,7 +270,12 @@ class Controller extends ROController with Logger {
       case _: CPath => throw ImplementationError("cannot retrieve component paths")
     }
   }
-  def getO(path: Path) = try {Some(get(path))} catch {case _: GetError => None}
+
+  def getO(path: Path) = try {
+    Some(get(path))
+  } catch {
+    case _: GetError => None
+  }
 
   /** adds a knowledge item */
   def add(e: StructuralElement) {
@@ -339,7 +354,7 @@ class Controller extends ROController with Logger {
           notifyListeners.onDelete(se)
         }
       case cp: CPath =>
-         throw DeleteError("deletion of component paths not implemented")
+        throw DeleteError("deletion of component paths not implemented")
     }
   }
 
@@ -510,7 +525,8 @@ class Controller extends ROController with Logger {
             // opening may fail despite resolveAnyPhysical (i.e. formerly by a MANIFEST.MF without id)
             logError("not an archive: " + root)
           case Some(archive) =>
-            report.groups += bt.key
+            if (!bt.quiet) report.groups += bt.key + "-result" // ensure logging if non-quiet
+            if (bt.verbose) report.groups += bt.key
             val inPath = fp.segments match {
               case dim :: path =>
                 bt match {
@@ -606,10 +622,10 @@ class Controller extends ROController with Logger {
   }
 
   def checkAction(p: Path, id: String) {
-                val checker = extman.get(classOf[Checker], id).getOrElse {
-              throw GeneralError(s"no checker $id found")
-            }
-            checker(p)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore))
+    val checker = extman.get(classOf[Checker], id).getOrElse {
+      throw GeneralError(s"no checker $id found")
+    }
+    checker(p)(new CheckingEnvironment(new ErrorLogger(report), RelationHandler.ignore))
   }
 
   /** executes an Action */
@@ -648,9 +664,9 @@ class Controller extends ROController with Logger {
           case OAFClone(path) =>
             cloneRecursively(path)
           case OAFPull =>
-             getOAFOrError.pull
+            getOAFOrError.pull
           case OAFPush =>
-             getOAFOrError.push
+            getOAFOrError.push
           case SetBase(b) =>
             state.nsMap = state.nsMap(b)
             report("response", "base: " + getBase)
