@@ -42,8 +42,7 @@ class Relational extends TraversingBuildTarget {
   override def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = {
     /* here we clean memory to avoid conflicts with subsequent builds.
      * without it nat.mmt results in several "error: invalid unit:" */
-    controller.memory.content.clear()
-    controller.memory.narration.clear
+    controller.memory.content.clear
     // TODO: avoid memory usage and add dependencies (to be computed) directly in StructureParser
     BuildResult.empty
   }

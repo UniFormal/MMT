@@ -33,7 +33,10 @@ object Patcher {
       case DeleteDeclaration(d) => mem.content.delete(d.path)
       */
       case UpdateComponent(path, comp, old, nw) =>
-        val d = controller.memory.content.get(path)
+        val d = controller.memory.content.get(path) match {
+           case ce: ContentElement => ce
+           case _ => throw ImplementationError("does not refer to content element: " + path)
+        }
         val dnew = updateComponent(d, comp, old, nw)
         controller.memory.content.update(dnew)
       case UpdateMetadata(path,key,old,nw) => 

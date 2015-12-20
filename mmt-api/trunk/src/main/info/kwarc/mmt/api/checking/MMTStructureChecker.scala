@@ -510,7 +510,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       while (! subsDomain.isEmpty) {
          val DomainElement(n, _, _) = subsDomain.head
          subsDomain = subsDomain.tail
-         val matchingDomElems = fromDomain.filter {case de => n.hasPrefix(de.name).isDefined}.toList
+         val matchingDomElems = fromDomain.filter {case de => n.dropPrefix(de.name).isDefined}.toList
          matchingDomElems match {
             case List(de @ DomainElement(p, defined, subdomainOpt)) =>
                if (defined)

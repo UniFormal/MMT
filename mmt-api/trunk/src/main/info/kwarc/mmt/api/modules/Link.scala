@@ -5,9 +5,9 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
 
 /**
- * A Link represents an MMT link unifying structures and views.
+ * represents an MMT link unifying structures and views.
  */
-trait Link {
+trait Link extends ContentElement {
    /** the domain of the link */
    def from : Term
    /** the codomain of the link */
@@ -18,7 +18,6 @@ trait Link {
     }
    
    def toTerm : Term
-   def path : ContentPath
    val isImplicit : Boolean
    
    protected def innerNodes : Seq[scala.xml.Node]
@@ -29,16 +28,14 @@ trait Link {
    override def toString = outerString + innerString
 }
 
- /**
-  * A DeclaredLink represents an MMT link given by a set of assignments.<p>
-  *
-  * Declared links are constructed empty. Body is derived to hold a set of name-indexed assignments.
+/**
+  * represents an MMT link given by a set of assignments.
   */
 trait DeclaredLink extends Link with Body {
    val metamorph: Option[Term] = None
  }
 
   /**
-   * A DeclaredLink represents an MMT link given by an existing morphism.
+   * represents an MMT link given by an existing morphism
    */
 trait DefinedLink extends Link with ModuleDefiniens

@@ -17,6 +17,8 @@ trait StructuralElement extends Content with metadata.HasMetaData {
   //def governingPath = path match {case c: ContentPath => Some(c) case _ => None}
   /** the containing knowledge item, a URL if none */
   def parent: Path
+  /** the name relative to the parent */
+  def name: LocalName
 
   /** the children of this element */
   def getDeclarations: List[StructuralElement]
@@ -42,6 +44,36 @@ trait StructuralElement extends Content with metadata.HasMetaData {
   }
   def getOrigin = origin
   def isGenerated = origin != Original
+
+  /** the API may deactivate a StructuralElement instead of deleting it to permit reusing it later
+    *
+    * invariant: API client code may assume that this flag is never set
+    */
+  var status: ElementStatus = Active
+
+  /** two StructuralElement's are compatible
+    * if they have the same type, same Path, and agree in all parts that are TermContainer's
+    */
+  def compatible(that: StructuralElement): Boolean = {
+    if (this.path != that.path || this.getClass != that.getClass || this.getOrigin != that.getOrigin)
+       return false
+    ((this, that) match {
+        case (a: DeclaredTheory, b: DeclaredTheory) =>
+          a.meta == b.meta && a.parameters == b.parameters
+        case (a: DefinedTheory, b: DefinedTheory) =>
+          a.parameters == b.parameters
+        case (a: View, b: View) =>
+          a.from == b.from &&
+            a.to == b.to && (a.isImplicit == b.isImplicit)
+        case (a: NestedModule, b: NestedModule) =>
+          a.module.compatible(b.module)
+        case (a: Constant, b: Constant) =>
+          a.alias == b.alias && a.rl == b.rl
+        case (a: Structure, b: Structure) =>
+          a.isImplicit == b.isImplicit
+        case _ => false
+      })
+  }
 }
 
 /** the status of a [[ContentElement]] during a parse-check cycle
@@ -77,12 +109,6 @@ case object Inactive extends ElementStatus
   * This includes virtual knowledge items.
   */
 trait ContentElement extends StructuralElement {
-  /** the API may deactivate a ContentElement instead of deleting it to permit reusing it later
-    *
-    * invariant: API client code may assume that this flag is never set
-    */
-  var status: ElementStatus = Active
-
   def path: ContentPath
 
   /** returns all children of this elements */
@@ -99,29 +125,6 @@ trait ContentElement extends StructuralElement {
     getComponents foreach { case DeclarationComponent(c, t) => f(path $ c, t) }
     getDeclarations foreach { d => d.foreachComponent(f) }
   }
-
-  /** two ContentElement's are compatible
-    * if they have the same type, same Path, and agree in all parts that are TermContainer's
-    */
-  def compatible(that: ContentElement): Boolean = {
-    this.getOrigin == that.getOrigin &&
-      ((this, that) match {
-        case (a: DeclaredTheory, b: DeclaredTheory) =>
-          a.path == b.path && a.meta == b.meta && a.parameters == b.parameters
-        case (a: DefinedTheory, b: DefinedTheory) =>
-          a.path == b.path && a.parameters == b.parameters
-        case (a: View, b: View) =>
-          a.getClass == b.getClass && a.path == b.path && a.from == b.from &&
-            a.to == b.to && (a.isImplicit == b.isImplicit)
-        case (a: NestedModule, b: NestedModule) =>
-          a.module.compatible(b.module)
-        case (a: Constant, b: Constant) =>
-          a.path == b.path && a.alias == b.alias && a.rl == b.rl
-        case (a: Structure, b: Structure) =>
-          a.getClass == b.getClass && a.path == b.path && (a.isImplicit == b.isImplicit)
-        case _ => false
-      })
-  }
 }
 
 /** A NarrativeElement is any OMDoc element that is used to represent narration and document structure.
@@ -129,6 +132,7 @@ trait ContentElement extends StructuralElement {
   * These include documents and cross-references.
   */
 trait NarrativeElement extends StructuralElement {
+  def path: DPath
   /** the containing document (if any) */
   def parentOpt: Option[DPath]
   def getComponents = Nil

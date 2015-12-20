@@ -30,8 +30,8 @@ class ParserState(val reader: Reader, val ps: ParsingStream, val errorCont: Erro
   /** the position at which the current StructuralElement started */
   var startPosition = reader.getSourcePosition
 
-  def copy(reader: Reader = reader): ParserState = {
-    val s = new ParserState(reader, ps, errorCont)
+  def copy(rd: Reader = reader): ParserState = {
+    val s = new ParserState(rd, ps, errorCont)
     s.namespaces = namespaces
     s
   }
@@ -60,11 +60,7 @@ class RelKeywordBasedParser extends KeywordBasedParser(DefaultObjectParser) {
         val reg = currentSourceRegion
         SourceRef.update(se, SourceRef(state.ps.source, reg))
         try {
-          se match {
-            case ce: ContentElement => controller.memory.content.add(ce)
-            case ne: NarrativeElement => controller.docstore.add(ne)
-            case _ =>
-          }
+           controller.memory.content.add(se)
         } catch {
           case e: Error => log("error after parsing: " + e.getMessage)
         }

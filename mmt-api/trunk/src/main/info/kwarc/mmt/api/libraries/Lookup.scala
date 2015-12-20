@@ -15,7 +15,7 @@ abstract class Lookup {
    private def defmsg(path : Path) : String = "element exists but has unexpected type at " + path
 
    /** for get methods with restricted return type */
-   private def as[E <: ContentElement](cls : Class[E])(code : => ContentElement) : E = {
+   private def as[E <: StructuralElement](cls : Class[E])(code : => StructuralElement) : E = {
       val ce = code
       if (cls.isInstance(ce))
          ce.asInstanceOf[E]
@@ -29,16 +29,16 @@ abstract class Lookup {
    private def optional[E](code: ErrorCont => E): Option[E] = try {Some(code(defError))} catch {case _:GetError => None}
 
    /** lookup a path */
-   def get(path : ContentPath) : ContentElement
+   def get(path : Path) : StructuralElement
    /** special case of get */
    def getModule(p: MPath): Module = getAs(classOf[Module], p)
    /** like get, but returns option */
-   def getO(path: ContentPath) = optional {_ => get(path)}
+   def getO(path: Path) = optional {_ => get(path)}
    /**
     * like get but with restricted return type 
     * example: getAs(classOf[Constant], path): Constant
     */
-   def getAs[E <: ContentElement](cls : Class[E], path: ContentPath): E = as(cls) {get(path)}
+   def getAs[E <: StructuralElement](cls : Class[E], path: Path): E = as(cls) {get(path)}
 
    /** lookup a declaration in a (possibly complex) module 
     * @param home the module in which to look up
@@ -190,7 +190,7 @@ abstract class Lookup {
 abstract class LookupWithNotFoundHandler(lup: Lookup) extends Lookup {
     protected def handler[A](code: => A): A
 
-    def get(path: ContentPath) = handler {lup.get(path)}
+    def get(path: Path) = handler {lup.get(path)}
     def get(home: Term, name: LocalName, error: String => Nothing) = handler {lup.get(home, name, error)}
     def visible(to: Term) = handler {lup.visible(to)}
     def getImplicit(from: Term, to: Term) = handler {lup.getImplicit(from, to)}

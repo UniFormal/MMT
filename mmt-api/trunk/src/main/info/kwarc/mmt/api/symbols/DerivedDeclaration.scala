@@ -10,11 +10,9 @@ class DerivedDeclaration(home: Term, name: LocalName, feature: String, component
    val theory = new DeclaredTheory(home.toMPath.parent, home.toMPath.name/name, None)
 } with NestedModule(theory)
 
-abstract class StructuralFeature extends Extension {
+abstract class StructuralFeature(key: String) extends Extension {
    
-   val id: String
-   
-   def check(d: DerivedDeclaration)(implicit env: CheckingEnvironment)
+   def check(d: DerivedDeclaration)(implicit env: CheckingEnvironment): Unit
    
    def declarationNames(d: DerivedDeclaration): List[LocalName]
    
@@ -27,9 +25,7 @@ abstract class StructuralFeature extends Extension {
    def modules(d: DerivedDeclaration): List[Module]
 }
 
-abstract class StructureSemantics extends StructuralFeature {
-   
-   val id = "structure"
+abstract class GenerativePushout extends StructuralFeature("structure") {
    
    def domain(ds: DerivedDeclaration): List[LocalName]
    

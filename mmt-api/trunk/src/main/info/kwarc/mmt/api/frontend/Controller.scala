@@ -75,7 +75,6 @@ class Controller extends ROController with Logger {
   val memory = new Memory(report)
   val depstore = memory.ontology
   val library = memory.content
-  val docstore = memory.narration
 
   /** maintains all customizations for specific languages */
   val extman = new ExtensionManager(this)
@@ -262,14 +261,7 @@ class Controller extends ROController with Logger {
   }
 
   /** retrieves a knowledge item */
-  def get(path: Path): StructuralElement = {
-    path match {
-      case p: DPath => iterate(docstore.get(p))
-      case p: MPath => iterate(library.get(p))
-      case p: GlobalName => iterate(library.get(p))
-      case _: CPath => throw ImplementationError("cannot retrieve component paths")
-    }
-  }
+  def get(path: Path): StructuralElement = iterate {library.get(path)}
 
   def getO(path: Path) = try {
     Some(get(path))
@@ -336,7 +328,7 @@ class Controller extends ROController with Logger {
               }
               notifyListeners.onAdd(nw)
           }
-        case d: NarrativeElement => docstore.add(d)
+        case d: NarrativeElement => library.add(d)
       }
     }
   }
@@ -347,14 +339,13 @@ class Controller extends ROController with Logger {
     */
   def delete(p: Path) {
     p match {
-      case d: DPath => docstore.delete(d)
-      case p: ContentPath =>
+      case cp: CPath =>
+         throw DeleteError("deletion of component paths not implemented")
+      case p =>
         library.delete(p)
-        localLookup.getO(p) foreach { se =>
+        localLookup.getO(p) foreach {se =>
           notifyListeners.onDelete(se)
         }
-      case cp: CPath =>
-        throw DeleteError("deletion of component paths not implemented")
     }
   }
 
@@ -381,21 +372,23 @@ class Controller extends ROController with Logger {
 
   /** deletes a document, deactivates and returns its modules */
   private def deactivateDocument(d: DPath): List[Module] = {
-    docstore.delete(d).toList.flatMap { doc =>
-      log("deactivating document " + d)
-      logGroup {
-        doc.getDeclarations flatMap {
-          case inner: Document => deactivateDocument(inner.path)
-          case r: DRef => deactivateDocument(r.target)
-          case r: MRef => localLookup.getO(r.target) match {
-            case Some(m: Module) =>
-              log("deactivating " + m.path)
-              m.status = Inactive
-              List(m)
-            case _ => Nil
-          }
-        }
-      }
+    library.deleteAndReturn(d).toList.flatMap {
+       case doc: Document =>
+         log("deactivating document " + d)
+         logGroup {
+           doc.getDeclarations flatMap {
+             case inner: Document => deactivateDocument(inner.path)
+             case r: DRef => deactivateDocument(r.target)
+             case r: MRef => localLookup.getO(r.target) match {
+               case Some(m: Module) =>
+                 log("deactivating " + m.path)
+                 m.status = Inactive
+                 List(m)
+               case _ => Nil
+             }
+           }
+         }
+       case _ => Nil
     }
   }
 

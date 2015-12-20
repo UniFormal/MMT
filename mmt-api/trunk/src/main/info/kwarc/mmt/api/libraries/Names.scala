@@ -56,7 +56,7 @@ object Names {
       }
    }
    /** resolves the unqualified identifier name in the theory home */
-   def resolve(home: Term, name: LocalName)(implicit lib: Lookup) : Option[ContentElement] = {
+   def resolve(home: Term, name: LocalName)(implicit lib: Lookup) : Option[StructuralElement] = {
       {
          lib.getO(home, name)  // symbol in the current theory
       } orElse {

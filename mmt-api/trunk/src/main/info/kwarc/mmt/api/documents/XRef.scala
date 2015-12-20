@@ -23,11 +23,16 @@ class DRef(val parent : DPath, val name: LocalName, val target : DPath) extends 
    def toNode = <omdoc href={target.toPath}/>
 }
 
-/** reference to a module */
+/** reference to a [[Module]] */
 class MRef(val parent : DPath, val name: LocalName, val target : MPath) extends NRef {
    def toNode = <mref target={target.toPath}/>
 }
 
 object MRef {
-   def apply(p : DPath, t : MPath) = new MRef(p, LocalName.empty, t)
+   def apply(p : DPath, t : MPath) = new MRef(p, LocalName(t), t)
+}
+
+/** reference to a [[Declaration]]} */
+class SRef(val parent : DPath, val name: LocalName, val target : GlobalName) extends NRef {
+   def toNode = <sref target={target.toPath}/>
 }

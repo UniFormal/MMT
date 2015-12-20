@@ -60,8 +60,8 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
       // base is unchanged for documents, module.path for theories, codomain for views
       se match {
          case d: Document => readInDocument(nsMap, Some(d), node)
-         case t: DeclaredTheory => readInModule(t.path, nsMap(t.path), Some(t), node)
-         case v: DeclaredView => readInModule(v.path, nsMap(v.to.toMPath), Some(v), node)
+         case t: DeclaredTheory => readInModule(t.path, nsMap(t.path), t, node)
+         case v: DeclaredView => readInModule(v.path, nsMap(v.to.toMPath), v, node)
          //case s: DeclaredStructure => readInTheory(s.home / s.name, s.path, Some(s), node)
       }
    }
@@ -164,10 +164,14 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
    /**
     * @param home the mpath to use to refer to module (module.path for theories and views)
     * @param nsMap used for relative paths (base is set by readIn)
-    * @param module the containing theory, view, or structure (of type Body)
+    * @param body the containing theory, view, or structure
     * @param node the node to parse 
     */
-   def readInModule(home: MPath, nsMap: NamespaceMap, moduleOpt: Option[StructuralElement], node: Node)(implicit cont: StructuralElement => Unit) {
+   def readInModule(home: MPath, nsMap: NamespaceMap, body: Body, node: Node)(implicit cont: StructuralElement => Unit) {
+      readInModuleAux(home, body.asDocument.path, nsMap, body, node)
+   }
+   /** additionally keeps track of the document nesting inside the body */
+   private def readInModuleAux(home: MPath, docHome: DPath, nsMap: NamespaceMap, body: Body, node: Node)(implicit cont: StructuralElement => Unit) {
       val homeTerm = OMMOD(home)
       def doPat(name : LocalName, parOpt : Option[Node], con : Node, xmlNotation : NodeSeq, md: Option[MetaData]) {
     	  log("pattern " + name.toString + " found")
@@ -186,10 +190,15 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
          case a => Some(LocalName.parse(a))
       }
       val (symbol, md) = MetaData.parseMetaDataChild(node, nsMap)
-      lazy val module = moduleOpt.getOrElse {
-         throw ParseError("missing containing module")
-      } 
       xml.trimOneLevel(symbol) match {
+         case <document>{dnodes}</document> =>
+            val name = xml.attr(symbol, "name")
+            val innerDoc = new Document(docHome / name)
+            md.foreach {innerDoc.metadata = _}
+            body.addNarration(innerDoc) // TODO this should call the add method
+            dnodes.foreach {n =>
+               readInModuleAux(home, innerDoc.path, nsMap, body, n)
+            }
          case <constant>{comps @_*}</constant> =>
             log("constant " + name.toString + " found")
             var tp: Option[Term] = None
@@ -239,7 +248,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                case assignments =>
                   val s = DeclaredStructure(homeTerm, adjustedName, from, isImplicit)
                   add(s,md)
-                  assignments foreach {a => readInModule(home / adjustedName, nsMap, Some(s), a)}
+                  assignments foreach {a => readInModule(home / adjustedName, nsMap, s, a)}
             }
          case <theory>{body @_*}</theory> =>
             val parent = home.parent
@@ -270,13 +279,13 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
             add(rc, md)
          case <parameters>{parN}</parameters> =>
             val par = Context.parse(parN, nsMap)
-            module match {
+            body match {
                case d: DeclaredTheory => d.parameters = par
                case _ => throw ParseError("parameters outside declared theory")
             }
          case <metadata>{_*}</metadata> =>
             val md = MetaData.parse(node, nsMap)
-            module.metadata = md
+            body.metadata = md
          case <derived>{body @_*}</derived> =>
             val feature = xml.attr(symbol, "feature")
             val (comps,decls) = body.map(xml.trimOneLevel).partition(_.label == "component")
@@ -289,7 +298,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
             add(dd, md)
             decls.foreach {d =>
                logGroup {
-                  readInModule(home / name, nsMap, None, d)
+                  readInModule(home / name, nsMap, dd.theory, d)
                }
             }
          //TODO remove patterns and instances
@@ -320,33 +329,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
          case _ => throw ParseError("symbol level element expected: " + symbol)
       }
    }
-   /*
-   def readNotations(nset : MPath, base : Path, notations : NodeSeq)(implicit cont: StructuralElement => Unit) {
-      for (N <- notations) {
-         N match {
-	        case <notation>{_*}</notation> =>
-	           val forpath = xml.attr(N,"for") match {
-	              case "" => None
-                  case s => Some(Path.parse(s, base))
-               }
-               val roles : List[String] = xml.attr(N,"role").split("\\s").toList
-               roles.map {case r =>
-                  val role = info.kwarc.mmt.api.Role.parse(r)
-	               val key = NotationKey(forpath, role)
-	               log("notation read for " + key)
-                  val not = presentation.StyleNotation.parse(N, nset, key)
-                  add(not)
-               }
-	        case <include/> =>
-	           val from = Path.parseM(xml.attr(N, "from"), base)
-               log("notation import found from " + from)
-	           add(NotationImport(from, nset))
-            case scala.xml.Comment(_) =>
-            case _ => throw ParseError("notation expected: " + N)
-	     }
-	  }
-   }
-   */
+
    private def parseImplicit(n: Node): Boolean = {
       xml.attr(n, "implicit") match {
          case "true" => true

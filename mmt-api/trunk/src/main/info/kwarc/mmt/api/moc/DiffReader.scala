@@ -35,7 +35,10 @@ class DiffReader(controller : Controller) {
           n.child.foreach {c => xmlReader.readInDocument(NamespaceMap(path.doc), None, c)(cont)}
         case "declaration" => 
           val path = Path.parseS((n \ "@path").text, nsMap)
-          n.child foreach {c => xmlReader.readInModule(path.module, NamespaceMap(base), None, c)(cont)}
+          // TODO xmlReader.readInModule uses side-effects for a few minor features that we do not care about yet
+          // so we pass a dummy arguments that absorbs the side effects
+          val dummy = new DeclaredTheory(path.doc, path.module.name, None)
+          n.child foreach {c => xmlReader.readInModule(path.module, NamespaceMap(base), dummy, c)(cont)}
       }
       changes = changes.reverse
       changes

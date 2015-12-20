@@ -1,11 +1,12 @@
 package info.kwarc.mmt.api.libraries
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.utils.MyList._
+import frontend._
+import documents._
+import modules._
+import objects._
+import symbols._
+import utils.MyList._
 
 import scala.collection._
 import scala.ref.SoftReference
@@ -62,6 +63,11 @@ class ModuleHashMap {
   * @param report parameter for logging.
   */
 class Library(val report: frontend.Report) extends Lookup with Logger {
+  val logPrefix = "library"
+
+  /** all known root documents */
+  private val documents = new scala.collection.mutable.HashMap[DPath,Document]
+  /** all known root modules */
   private val modules = new ModuleHashMap
   private val implicitGraph = new ThinGeneratedCategory
 
@@ -69,9 +75,13 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
     modules.get(p).getOrElse {
       throw frontend.NotFound(p)
     }
+  private def documentsGetNF(d: DPath): Document =
+    documents.get(d).getOrElse {
+      throw frontend.NotFound(d)
+    }
 
   /**
-   * @return the deepest module in mp and the remaining suffix
+   * @return the deepest known prefix mp and the remaining suffix
    */
   private def getMostSpecific(mp: MPath): (Module, LocalName) = {
     val top = mp.doc ? LocalName(mp.name.head)
@@ -89,18 +99,54 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
     }
     (mod, left)
   }
-
-  val logPrefix = "library"
+  
+  /**
+   * @return the root document in which a DPath can be found
+   */
+  private def getMostSpecific(dp: DPath): (Document, LocalName) = {
+    val top = dp.^^
+    val name = dp.name
+    val rootDoc = name.prefixes.mapFind {n =>
+       documents.get(top / n)
+    }.getOrElse {throw NotFound(dp)}
+    val ln = name.drop(rootDoc.path.name.length)
+    (rootDoc,ln)
+  }
 
   /** returns all module paths indexed by this library */
   def getAllPaths = modules.keys
 
   /** Special case of get that throws GetError with a standard error message */
-  def get(p: ContentPath): ContentElement = {
+  def get(p: Path): StructuralElement = {
      val error = (msg:String) => throw GetError("error while retrieving " + p + ": " + msg)
      p match {
+        case d: DPath => getNarrative(d, error)
         case p: MPath => get(p, error)
         case p ?? n => get(OMMOD(p), n, error)
+        case c: CPath => throw GetError("retrieval of components not possible")
+     }
+  }
+
+  def getNarrative(d: DPath, error: String => Nothing): NarrativeElement = {
+     documents.get(d) match {
+        case Some(d) => d
+        case None =>
+           if (d.name.length > 0) {
+              val parDoc = getDocument(d ^, error)
+              parDoc.getO(LocalName(d.name.last)).getOrElse {
+                 error("no child " + d.name.last + " found in document " + parDoc.path)
+              }
+           } else {
+              throw NotFound(d)
+           }
+     }
+  }
+  
+  /** as getNarrative but checks for being a Document */
+  private def getDocument(d: DPath, error: String => Nothing) = {
+     getNarrative(d, error) match {
+        case doc: Document => doc
+        case _ => error("parent path exists but does not refer to a document: " + d) 
      }
   }
 
@@ -116,7 +162,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
   }
    
   private val sourceError = (s: String) => throw GetError("error while looking up source declaration: "+s)
-
+  
   def get(home: Term, name: LocalName, error: String => Nothing): Declaration = home match {
     case OMPMOD(p, args) => get(p, error) match {
       //lookup in atomic modules
@@ -447,10 +493,22 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
    * adds a declaration
    * @param e the added declaration
    */
-  def add(e: ContentElement) {
+  def add(e: StructuralElement) {
     log("adding " + e.path.toString + " TYPE " + e.getClass)
     (e.path, e) match {
-      case (_, doc: DPath) => throw ImplementationError("addtion of document to library impossible")
+      case (_, ne: NarrativeElement) =>
+         ne.parentOpt match {
+            case Some(par) =>
+               val parDoc = getDocument(par, msg => throw AddError("parent not found: " + msg))
+               parDoc.add(ne)
+            case None =>
+               ne match {
+                  case d: Document => 
+                     documents(d.path) = d
+                  case _ =>
+                     throw AddError("root narrative element must be document")
+               }
+         }
       case (doc ? mod, m: Module) =>
         modules(doc ? mod) = m
       case (par ?? ln, _) =>
@@ -483,26 +541,37 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
     }
   }
 
-  /** Dereferences a path and deletes the found content element
+  /** deletes the element with the given URI
     *
     * @param path the path to the element to be deleted
     */
   def delete(path: Path) {
     log("deleting " + path)
     path match {
-      case doc: DPath => throw ImplementationError("deletion of documents from library impossible")
-      case doc ? mod => modules -= doc ? mod
-      case par ?? ln => get(par, msg => throw DeleteError("illegal parent: " + msg)) match {
-        case t: DeclaredTheory =>
-          t.delete(ln) foreach { s =>
-            s.getComponents.foreach { case DeclarationComponent(comp, cont) =>
-              if (cont.isDefined) notifyUpdated(s.path $ comp)
-            }
-          }
-        case l: DeclaredLink =>
-          l.delete(ln)
-        case _ => throw DeleteError("cannot delete from " + path)
-      }
+      case dp: DPath =>
+         if (documents.isDefinedAt(dp))
+            documents -= dp
+         else {
+            val doc = getDocument(dp ^, msg => throw DeleteError("illegal parent: " + msg))
+            doc.delete(LocalName(dp.name.last))
+         }
+      case mp: MPath =>
+         modules -= mp
+         if (mp.name.length > 1)
+            delete(mp.toGlobalName)
+      case par ?? ln =>
+         val se = get(par, msg => throw DeleteError("illegal parent: " + msg))
+         se match {
+           case t: DeclaredTheory =>
+             t.delete(ln) foreach { s =>
+               s.getComponents.foreach { case DeclarationComponent(comp, cont) =>
+                 if (cont.isDefined) notifyUpdated(s.path $ comp)
+               }
+             }
+           case l: DeclaredLink =>
+             l.delete(ln)
+           case _ => throw DeleteError("cannot delete from " + path)
+         }
       case cp@CPath(par, comp) => getO(par) foreach { ce =>
         ce.getComponent(comp).foreach {
           _.delete
@@ -510,6 +579,14 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
         notifyUpdated(cp)
       }
     }
+  }
+  
+  /** convenience method for a deletion that returns the deleted element (if any) */
+  def deleteAndReturn(path: Path): Option[StructuralElement] = {
+     val se = getO(path)
+     if (se.isDefined)
+        delete(path)
+     se
   }
 
   /** updates a ContentElement by deleting and adding it */

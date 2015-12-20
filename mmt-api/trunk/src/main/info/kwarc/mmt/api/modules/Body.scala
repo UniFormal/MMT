@@ -6,31 +6,65 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
 
 import scala.xml.Node
+import documents._
 
 /**
  * Body represents the content of modules, i.e., a set of declarations.
  * 
- * It is mixed into theories and links to hold the symbols and assignments, respectively.
- * It provides a name-indexed hash map named declarations, and a set of unnamed declarations.
- * For named declarations, the name must be unique; for unnamed declarations, the field implictKey must be non-empty and unique. 
+ * It is mixed into elements that contain declarations, e.g., declared theories.
+ * 
+ * It stores both the logical [[Declaration]]s as well as their narrative structure.
+ * The former uses a hash from [[LocalName]] to [[Declaration]], which completely ignores narrative structure.
+ * In particular, declaration names must be unique independent of the narrative grouping.
+ * The latter is stored as a [[Document]], which holds [[SRef]] to the logical declarations.  
 */
-trait Body {
+trait Body extends ContentElement {
    /** the set of named statements, indexed by name
     * if a statement has an alternativeName, it occurs twice in this map
     */
    protected val statements = new scala.collection.mutable.HashMap[LocalName,Declaration]
-   /** all declarations in reverse order of addition */
-   protected var order : List[Declaration] = Nil
+
+   /** anything pertaining to the narrative structure */
+   private object narrativeStructure {
+      /** the DPath of this Body as a document */
+      val dpath = path match {
+        case doc ? mod => doc / mod
+        case doc ? mod ?? name => doc / mod / name
+      }
+      /** this Body as a document */
+      val document = new Document(dpath, true)
+      /** retrieval of a nested Document */
+      def getDocument(dn: LocalName): Option[Document] = {
+         if (dn.length == 0) Some(document)
+         else {
+            getDocument(dn.init).flatMap {parDoc =>
+               parDoc.getO(LocalName(dn.last)).flatMap {
+                 case d: Document => Some(d)
+                 case _ => None
+               }
+            }
+         }
+      }
+      /** call a function on all logical declarations and their parent document */
+      def traverse(f: (Document,LocalName) => Unit) {traverse(document, f)}
+      private def traverse(doc: Document, f: (Document,LocalName) => Unit) {
+         doc.getDeclarations.foreach {
+            case r: SRef => f(doc, r.name)
+            case childDoc: Document => traverse(childDoc, f)
+            case _ => // impossible
+         }
+      }
+   }
+   import narrativeStructure._
+
    /** true iff a declaration for a name is present */ 
    def declares(name: LocalName) = statements.isDefinedAt(name)
    /** the set of names of all declarations */
    def domain = statements.keySet
    /** retrieve a named declaration, may throw exception if not present */ 
    def get(name : LocalName) : Declaration = statements(name)
-   /** retrieve a declaration, None if not present */ 
-   def getO(name : LocalName) : Option[Declaration] =
-      try {Some(get(name))}
-      catch {case _ : Throwable => None}
+   /** retrieve a declaration */ 
+   def getO(name : LocalName) : Option[Declaration] = statements.get(name)
    /** same as get(LocalName(name)) */ 
    def get(name : String) : Declaration = get(LocalName(name))
    /** retrieves the most specific applicable declaration
@@ -47,24 +81,32 @@ trait Body {
             case ln \ n => getMostSpecific(ln, n / rest)
          }
       }
-   /** adds a named or unnamed declaration, throws exception if name already declared
-    *  @param afterOpt if given, the new declaration is inserted after that one; otherwise at end  
+   /** adds a named declaration, throws exception if name already declared
+    *  @param afterOpt if given, the new declaration is inserted after that one; otherwise at end
+    *  @param inDoc nested document in which to insert; toplevel by default otherwise  
     */
-   def add(s : Declaration, afterOpt: Option[LocalName] = None) {
-	      val name = s.name
-         if (statements.isDefinedAt(name)) {
-            throw AddError("a declaration for the name " + name + " already exists")
-         }
-         s.alternativeName foreach {a =>
-            if (statements.isDefinedAt(a))
-               throw AddError("a declaration for the name " + a + " already exists")
-            statements(a) = s
-         }
-         statements(name) = s
-         var pos = afterOpt.map(a => order.lastIndexWhere(_.name == a)).getOrElse(0)
-         if (pos == -1) pos = 0 // maybe issue warning that afterOpt not found
-         val (bef,aft) = order.splitAt(pos) // order(pos) == aft.head
-         order = bef ::: s :: aft
+   def add(s : Declaration, afterOpt: Option[LocalName] = None, inDoc: LocalName = LocalName.empty) {
+      val name = s.name
+      if (statements.isDefinedAt(name)) {
+         throw AddError("a declaration for the name " + name + " already exists")
+      }
+      statements(name) = s
+      addAlternativeName(s)
+      val doc = getDocument(inDoc).getOrElse {
+         throw AddError(s"document $inDoc does not exist in theory $path")
+      }
+      val ref = new SRef(doc.path, s.name, s.path)
+      doc.add(ref, afterOpt)
+   }
+   /** adds narrative structure */
+   def addNarration(ne: NarrativeElement, afterOpt: Option[LocalName] = None) {
+      val inDoc = dpath.dropPrefix(ne.path).getOrElse {
+         throw AddError(s"document ${ne.path} does have prefix $dpath")
+      }
+      val parDoc = getDocument(inDoc).getOrElse {
+         throw AddError(s"document $inDoc does not exist in theory $path")
+      }
+      parDoc.add(ne, afterOpt)
    }
    /** delete a named declaration (does not have to exist)
     *  @return the deleted declaration
@@ -72,50 +114,58 @@ trait Body {
    def delete(name : LocalName): Option[Declaration] = {
       statements.get(name) map {s =>
          statements -= s.name
-         s.alternativeName foreach {a => statements -= a} 
-         order = order.filter(_.name != name)
+         deleteAlternativeName(s)
+         traverse {case (parDoc,ln) =>
+            if (ln == name) parDoc.delete(ln)
+         }
          s
       }
    }
+   private def addAlternativeName(s: Declaration) {
+      s.alternativeName foreach {a =>
+         if (statements.isDefinedAt(a))
+            throw AddError("a declaration for the name " + a + " already exists")
+         statements(a) = s
+      }
+   }
+   private def deleteAlternativeName(s: Declaration) {
+      s.alternativeName.foreach {a => statements -= a}
+   }
    /** updates a named declaration (preserving the order) */
    def update(s : Declaration) = {
-	   replace(s.name, s)
-   }
-   /** replaces a named declaration with others (preserving the order) */
-   //TODO alternativeNames
-   def replace(name: LocalName, decs: Declaration*) {
-      var seen : List[Declaration] = Nil
-      var tosee : List[Declaration] = order
-      var continue = true
-      while (continue && ! tosee.isEmpty) {
-         val hd = tosee.head
-         if (hd.name == name) {
-            order = seen.reverse ::: decs.reverse.toList ::: tosee.tail
-            continue = false
-         } else {
-            seen = hd :: seen
-            tosee = tosee.tail
-         }
-      }
-      if (continue) throw AddError("no declaration " + name + " found")
-      statements -= name
-      decs foreach {d =>
-        if (statements.isDefinedAt(d.name))
-           throw AddError("a declaration for the name " + d.name + " already exists")
-        statements(d.name) = d
-      }
+      if (statements.isDefinedAt(s.name)) {
+         deleteAlternativeName(statements(s.name))
+         statements(s.name) = s
+         addAlternativeName(s)
+      } else
+         add(s)
    }
    /** true iff no declarations present */
    def isEmpty = statements.isEmpty
-   /** the list of declarations in the order of addition, includes declarations generated by MMT */
-   def getDeclarations: List[Declaration] = order.reverse
+   /** the narrative structure */
+   def asDocument = document
+   /** the list of declarations in narrative order, includes generated declarations */
+   def getDeclarations: List[Declaration] = {
+      var decs: List[Declaration] = Nil
+      traverse {case (_,ln) =>
+         decs ::= statements(ln)
+      }
+      decs.reverse
+   }
    /** the list of declarations in the order of addition, excludes declarations generated by MMT */
    def getPrimitiveDeclarations = getDeclarations.filterNot(_.isGenerated)
    /** the list of declarations using elaborated declarations where possible */
    def getDeclarationsElaborated = getDeclarations.filterNot(_.hasBeenElaborated)
-   /** the list of declarations in the order of addition as an iterator */
-   def iterator = getDeclarations.iterator
-   protected def innerNodes = getPrimitiveDeclarations.map(_.toNode)
+   /** getPrimitiveDeclarations, with narrative structure */
+   protected def innerNodes = document.getDeclarations.flatMap {
+      case r: SRef =>
+         val s = statements(r.name)
+         if (s.isGenerated) s.toNode else Nil
+      case d: Document =>
+         throw ImplementationError("documents inside modules not fully implemented yet")
+      case ne => ne.toNode 
+   }
+   /** getDeclarationsElaborated, without narrative structure */
    protected def innerNodesElab = getDeclarationsElaborated.map(_.toNode)
    protected def innerString =
       if (getPrimitiveDeclarations.isEmpty) ""

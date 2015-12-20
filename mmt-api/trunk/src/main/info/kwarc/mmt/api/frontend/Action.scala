@@ -626,7 +626,7 @@ case class Closure(p: Path) extends MakeAbstract {
 
 /** retrieves the elaboration of an instance */
 case class Elaboration(p: Path) extends MakeAbstract {
-  def make(controller: Controller): TGroup = {
+  def make(controller: Controller) = {
     controller.get(p) match {
       //case i : Instance => new TGroup(i.parent,p,Instance.elaborate(i)) //TODO
       case _ => throw ImplementationError("Non-instance element at " + p)

@@ -6,6 +6,8 @@ import objects._
 import checking._
 import frontend._
 
+// this file is experimental; delete code if superseded
+
 /**
  * An opaque declaration is a semantic entity whose precise structure is not accessible to MMT
  * but which may expose functionality that MMT can make use of.

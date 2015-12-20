@@ -70,18 +70,30 @@ trait QuestionMarkFunctions[A] {
  * @param uri the URI of the document (may not contain query or fragment)
  */
 case class DPath(uri : URI) extends Path with SlashFunctions[DPath] with QuestionMarkFunctions[MPath] {
+   def ^^ = DPath(uri ^!)
+   /** the path of this document, this == ^^ / name */
+   def name = LocalName(uri.path.map(SimpleStep(_)))
    def doc = this
    def last = uri.path match {case Nil | List("") => uri.authority.getOrElse("") case l => l.last}
    def /(n : LocalName) = DPath(uri / n.steps.map(_.toPath))
    def ?(n : LocalName) = MPath(this, n)
-   def ^! = DPath(uri ^)
+   def ^ = DPath(uri ^)
+   def ^! = ^
+   /** if this = pref / l then Some(l) */
+   def dropPrefix(pref: DPath): Option[LocalName] = {
+      if (this.^^ == pref.^^)
+         this.name.dropPrefix(pref.name)
+      else
+         None
+   }   
+   /* this looks obsolete
    def version : Option[String] = uri.path match {
        case Nil => None
        case l => l.last.indexOf(";") match {
           case -1 => None
           case i => Some(l.last.substring(i+1))
        }
-   }
+   }*/
 }
 
 /**
@@ -130,6 +142,18 @@ case class GlobalName(module: MPath, name: LocalName) extends ContentPath with S
    def isSimple : Boolean = name.steps.forall(_.isInstanceOf[SimpleStep])
 }
 
+object LocalName {
+   def apply(step: LNStep) : LocalName = LocalName(List(step))
+   def apply(step: String) : LocalName = LocalName(SimpleStep(step))
+   def apply(p: MPath) : LocalName = LocalName(ComplexStep(p))
+   implicit def toList(ln: LocalName): List[LNStep] = ln.steps
+   implicit def fromList(l: List[LNStep]): LocalName = LocalName(l)
+   /** parses a LocalName, complex segments are parsed relative to base */
+   def parse(s: String, nsMap : NamespaceMap): LocalName = LocalRef.parse(s).toLocalName(nsMap)
+   def parse(s:String): LocalName = parse(s, NamespaceMap.empty)
+   val empty = LocalName(Nil)
+}
+
 /**
  * A LocalName represents a local MMT symbol-level declarations (relative to a module).
  * @param steps the list of (in MMT: slash-separated) components
@@ -137,16 +161,11 @@ case class GlobalName(module: MPath, name: LocalName) extends ContentPath with S
 case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
    def /(n: LocalName) : LocalName = LocalName(steps ::: n.steps)
    def init = LocalName(steps.init)
-   def tail = LocalName(steps.tail)
-   def head = steps.head
-   def last = steps.last
-   def length = steps.length
-   def isEmpty = steps.isEmpty
    /**
-    * @return if this == p / l, then Some(p), else None
+    * @return if this == p / l, then Some(l), else None
     */
-   def hasPrefix(l: LocalName): Option[LocalName] =
-      if (steps.startsWith(l.steps)) Some(LocalName(steps.drop(l.length)))
+   def dropPrefix(p: LocalName): Option[LocalName] =
+      if (steps.startsWith(p.steps)) Some(this.drop(p.length))
       else None
    /** removes repeated complex steps, keeping the later one */
    def simplify: LocalName = {
@@ -160,22 +179,12 @@ case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
       }
       LocalName(stepsRS.reverse)
    }
-   /** returns the list of all names contained in this one, starting with the shortest */
-   def prefixes : List[LocalName] = if (length <= 1) List(this) else init.prefixes ::: List(this)
+   /** returns the list of all prefixes of this name, from atomic to this one */
+   def prefixes : List[LocalName] = if (this.length <= 1) List(this) else init.prefixes ::: List(this)
    /** machine-oriented string representation of this name, parsable and official */
    def toPath : String = steps.map(_.toPath).mkString("", "/", "")
   /** human-oriented string representation of this name, no encoding, possibly shortened */
    override def toString : String = steps.map(_.toString).mkString("", "/", "")
-}
-
-object LocalName {
-   def apply(step: LNStep) : LocalName = LocalName(List(step))
-   def apply(step: String) : LocalName = LocalName(SimpleStep(step))
-   def apply(p: MPath) : LocalName = LocalName(ComplexStep(p))
-   /** parses a LocalName, complex segments are parsed relative to base */
-   def parse(s: String, nsMap : NamespaceMap): LocalName = LocalRef.parse(s).toLocalName(nsMap)
-   def parse(s:String): LocalName = parse(s, NamespaceMap.empty)
-   val empty = LocalName(Nil)
 }
 
 /** a step in a LocalName */

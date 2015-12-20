@@ -13,12 +13,12 @@ abstract class ConfEntry {
 /**
  * registers [[BuildTarget]]s with their arguments
  *
+ * @param key the key of the target
  * @param cls the qualified Java class name of this target's implementation
  *  (must only be on the class path if this target is actually used)
- * @param key the key of the target
  * @param args the arguments to be used if this target is instantiated
  */
-case class ExtensionConf(cls : String, key : String, args : List[String]) extends ConfEntry {
+case class ExtensionConf(key : String, cls : String, args : List[String]) extends ConfEntry {
    val id = key
 }
 
@@ -110,13 +110,13 @@ class MMTConfig {
        loadAllNeededTargets(controller)
     }
     
-    def loadAllArchives(controller: Controller) {
+    private def loadAllArchives(controller: Controller) {
        getArchives foreach { arch =>
         controller.addArchive(File(base + arch.id))
       }
     }
 
-    def loadAllNeededTargets(controller: Controller) {
+    private def loadAllNeededTargets(controller: Controller) {
       val archives = getArchives
       val activeFormats = archives.flatMap(_.formats).distinct.map {id =>
         getEntries(classOf[FormatConf]).find(_.id == id).getOrElse(throw new Exception("Unknown format id: " + id))
@@ -167,9 +167,9 @@ object MMTConfig {
         section = line.substring(1)
       } else section match {
         // TODO "importers" and "exporters" are deprecated but still used by Mihnea
-        case "importers" | "exporters" | "targets" | "extensions" => split(line) match {
+        case "importers" | "exporters" | "extensions" => split(line) match {
           case key :: cls :: args =>
-            config.addEntry(ExtensionConf(cls, key, args))
+            config.addEntry(ExtensionConf(key, cls, args))
           case _ => fail
         }
         case "archives" => split(line) match {

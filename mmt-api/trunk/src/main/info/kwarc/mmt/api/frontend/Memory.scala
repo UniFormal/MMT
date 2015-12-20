@@ -7,7 +7,6 @@ import info.kwarc.mmt.api.ontology._
 /** A read-only abstraction of memory */
 abstract class ROMemory {
   val ontology: RelStore
-  val narration: RODocStore
   val content: Lookup
 }
 
@@ -18,13 +17,10 @@ class Memory(val report: Report) extends ROMemory {
   val ontology = new RelStore(report)
   /** maintains all content elements */
   val content = new Library(report)
-  /** maintains all narrative elements */
-  val narration = new DocStore(this, report)
 
   /** forgets everything */
-  def clear() {
+  def clear {
     ontology.clear
-    content.clear()
-    narration.clear
+    content.clear
   }
 }
