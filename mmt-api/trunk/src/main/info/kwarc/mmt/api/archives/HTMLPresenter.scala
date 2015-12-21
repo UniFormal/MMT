@@ -235,16 +235,16 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
          text(doc.path.last)
        }
        ul("ref") { doc.getDeclarations foreach {
-         case d: DRef =>
-           li("dref") {
-             span(cls = "name loadable", attributes=List("jobad:load" -> d.target.toPath)) {
-               text(d.target.last)
-             }
+         case r: NRef =>
+           val label = r match {
+              case _:DRef => "dref"
+              case _:MRef => "mref"
+              case _:SRef => "sref"
            }
-         case m : MRef =>
-           li("mref") {
-             span(cls = "name loadable", attributes=List("jobad:load" -> m.target.toPath)) {
-               text(m.target.last)
+           li(label) {
+             span(cls = "name loadable", attributes=List("jobad:load" -> r.target.toPath)) {
+               val name = if (r.name.nonEmpty) r.name.toString else r.target.last 
+               text(name)
              }
            }
        }}

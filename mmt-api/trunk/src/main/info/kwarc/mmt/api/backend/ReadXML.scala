@@ -48,7 +48,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
            val base = Path.parseD(xml.attr(node, "base"), nsMap)
            val nsMapB = nsMap(base)
            log("document with URI " + dpath + " found")
-           val d = new Document(dpath, true, Nil, nsMapB)
+           val d = new Document(dpath, root = true, nsMap = nsMapB)
            add(d)
            modules foreach {m => readIn(nsMapB, d, m)}
         case _ => throw ParseError("document expected: " + node)
@@ -59,7 +59,12 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
    def readIn(nsMap: NamespaceMap, se: StructuralElement, node: Node)(implicit cont: StructuralElement => Unit) {
       // base is unchanged for documents, module.path for theories, codomain for views
       se match {
-         case d: Document => readInDocument(nsMap, Some(d), node)
+         case d: Document => d.contentAncestor match {
+            case Some(ce) =>
+               readInModuleAux(ce.path.toMPath, d.path, nsMap, ce, node)
+            case None =>
+               readInDocument(nsMap, Some(d), node)
+         }
          case t: DeclaredTheory => readInModule(t.path, nsMap(t.path), t, node)
          case v: DeclaredView => readInModule(v.path, nsMap(v.to.toMPath), v, node)
          //case s: DeclaredStructure => readInTheory(s.home / s.name, s.path, Some(s), node)
@@ -72,31 +77,33 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
     * @param docOpt the containing document, if any; if given, XRef's will be generated
     * @param node the node to parse
     */
-   def readInDocument(nsMap: NamespaceMap, docOpt: Option[Document], node : Node)(implicit cont: StructuralElement => Unit) {
+   def readInDocument(nsMap: NamespaceMap, docOpt: Option[Document], nodeMd : Node)(implicit cont: StructuralElement => Unit) {
       lazy val doc = docOpt.getOrElse {throw ParseError("document element without containing document")}
-      lazy val name = LocalName.parse(xml.attr(node,"name"), nsMap)
+      lazy val dname = LocalName.parse(xml.attr(nodeMd,"name"), nsMap)
+      val (node, md) = MetaData.parseMetaDataChild(nodeMd, nsMap)
       node match {
          case <omdoc>{mods}</omdoc> =>
-            val dpath = doc.path / name
+            val dpath = doc.path / dname
             val innerdoc = new Document(dpath)
-            add(innerdoc)
+            add(innerdoc, md)
             readIn(nsMap, innerdoc, mods)
          case <dref/> =>
 	         val d = xml.attr(node, "target")
 	         log("dref to " + d + " found")
-	         val r = new DRef(doc.path, name, Path.parseD(d,nsMap))
+	         val r = new DRef(doc.path, dname, Path.parseD(d,nsMap))
 	         add(r)
          case <mref/> =>
 	         val t = xml.attr(node, "target")
 	         log("mref to " + t + " found")
-	         val r = new MRef(doc.path, name, Path.parseM(t,nsMap))
+	         val r = new MRef(doc.path, dname, Path.parseM(t,nsMap))
 	         add(r)
+         case <sref/> =>
+            val t = xml.attr(node, "target")
+            log("sref to " + t + " found")
+            val r = new SRef(doc.path, dname, Path.parseS(t,nsMap))
+            add(r)
          case scala.xml.Comment(_) =>
-         case <metadata>{_*}</metadata> =>
-            val md = MetaData.parse(node, nsMap)
-            doc.metadata = md
-         case node =>
-           val (m, md) = MetaData.parseMetaDataChild(node, nsMap)
+         case m =>
            val namespace = Path.parseD(xml.attr(m,"base"), nsMap)
            val name = LocalName.parse(xml.attr(m,"name"), nsMap(namespace))
            xml.trimOneLevel(m) match {
@@ -144,19 +151,8 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                 }
 	         case <rel>{_*}</rel> => 
 	            //ignoring logical relations, produced by Twelf, but not implemented yet
-	         /*
-	         case (base : DPath, <style>{notations @ _*}</style>) =>
-		         log("style " + name + " found")
-			      val npath = base ? name
-		         val from = Path.parse(xml.attr(m,"from"), base)
-               val to = Path.parse(xml.attr(m, "to"), utils.mmt.mimeBase)
-		         val nset = new Style(base, name, from, to)
-		         add(nset, md)
-		         docParent map (dp => add(MRef(dp, npath, true)))
-		         readNotations(npath, from, notations)
-		         */
            case n if Utility.trimProper(n).isEmpty => //whitespace node => nothing to do 
-	         case _ => throw ParseError("module level element expected: " + m)
+           case _ => throw ParseError("module level element expected: " + m)
          }
       }
    }
@@ -193,9 +189,8 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
       xml.trimOneLevel(symbol) match {
          case <document>{dnodes}</document> =>
             val name = xml.attr(symbol, "name")
-            val innerDoc = new Document(docHome / name)
-            md.foreach {innerDoc.metadata = _}
-            body.addNarration(innerDoc) // TODO this should call the add method
+            val innerDoc = new Document(docHome / name, contentAncestor = Some(body))
+            add(innerDoc, md)
             dnodes.foreach {n =>
                readInModuleAux(home, innerDoc.path, nsMap, body, n)
             }
@@ -248,7 +243,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                case assignments =>
                   val s = DeclaredStructure(homeTerm, adjustedName, from, isImplicit)
                   add(s,md)
-                  assignments foreach {a => readInModule(home / adjustedName, nsMap, s, a)}
+                  assignments foreach {a => readInModule(s.path.toMPath, nsMap, s, a)}
             }
          case <theory>{body @_*}</theory> =>
             val parent = home.parent
@@ -283,9 +278,6 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                case d: DeclaredTheory => d.parameters = par
                case _ => throw ParseError("parameters outside declared theory")
             }
-         case <metadata>{_*}</metadata> =>
-            val md = MetaData.parse(node, nsMap)
-            body.metadata = md
          case <derived>{body @_*}</derived> =>
             val feature = xml.attr(symbol, "feature")
             val (comps,decls) = body.map(xml.trimOneLevel).partition(_.label == "component")

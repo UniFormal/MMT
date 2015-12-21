@@ -16,7 +16,7 @@ import scala.xml.Elem
  * @param root true if this does not have a containing document
  * @param nsMap the namespaces declared in this document
  */
-class Document(val path: DPath, val root: Boolean = false, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty) extends NarrativeElement {
+class Document(val path: DPath, val root: Boolean = false, val contentAncestor: Option[Body] = None, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty) extends NarrativeElement {
   /** the containing document if root == false; otherwise, the URI without path */ 
   def parentOpt = if (root) None else Some(parent)
   val parent: DPath = if (root) path ^^ else path ^
@@ -68,7 +68,7 @@ class Document(val path: DPath, val root: Boolean = false, inititems: List[Narra
      items = items.filterNot(_.name == n)
   }
 
-  override def toString: String = "document " + path + items.map("\n  " + _.toString).mkString
+  override def toString: String = "document " + path + items.map("\n  " + _.toString).mkString + "\n"
 
   def toNode: Elem = <omdoc base={path.toPath}>{getMetaDataNode}{items.map(_.toNode)}</omdoc>
 

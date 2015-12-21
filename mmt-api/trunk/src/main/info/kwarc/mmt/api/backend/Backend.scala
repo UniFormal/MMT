@@ -29,8 +29,9 @@ abstract class Storage {
   }
 
   protected def virtDoc(entries: List[String], prefix: String) = {
+    // dref must be unnamed; using name={n} would give the dref the same URI as the referenced document
     val s = <omdoc>
-      {entries.map(n => <dref name={n} target={prefix + n}/>)}
+      {entries.map(n => <dref name="" target={prefix + n}/>)}
     </omdoc>.toString
     new BufferedReader(new java.io.StringReader(s))
   }

@@ -15,17 +15,17 @@ abstract class NRef extends NarrativeElement {
    val path = parent / name
    def getDeclarations = Nil
    def toNode : scala.xml.Node
-   override def toString = "ref " +  target.toPath
+   override def toString = "ref " +  name + " -> " + target.toPath
 }
 
 /** reference to a document section */
 class DRef(val parent : DPath, val name: LocalName, val target : DPath) extends NRef {
-   def toNode = <omdoc href={target.toPath}/>
+   def toNode = <dref name={name.toPath} target={target.toPath}/>
 }
 
 /** reference to a [[Module]] */
 class MRef(val parent : DPath, val name: LocalName, val target : MPath) extends NRef {
-   def toNode = <mref target={target.toPath}/>
+   def toNode = <mref name={name.toPath} target={target.toPath}/>
 }
 
 object MRef {
@@ -34,5 +34,5 @@ object MRef {
 
 /** reference to a [[Declaration]]} */
 class SRef(val parent : DPath, val name: LocalName, val target : GlobalName) extends NRef {
-   def toNode = <sref target={target.toPath}/>
+   def toNode = <sref name={name.toPath} target={target.toPath}/>
 }

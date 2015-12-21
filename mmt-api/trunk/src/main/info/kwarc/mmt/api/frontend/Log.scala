@@ -61,13 +61,13 @@ class Report extends Logger {
   }
 
   /** flushes all handlers */
-  def flush() {
-    handlers.foreach(_.flush())
+  def flush {
+    handlers.foreach(_.flush)
   }
 
   /** closes all handlers */
-  def cleanup() {
-    handlers.foreach(_.cleanup())
+  def cleanup {
+    handlers.foreach(_.cleanup)
   }
 
   /** the registered handlers */

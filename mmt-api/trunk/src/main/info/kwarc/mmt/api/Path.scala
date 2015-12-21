@@ -72,7 +72,7 @@ trait QuestionMarkFunctions[A] {
 case class DPath(uri : URI) extends Path with SlashFunctions[DPath] with QuestionMarkFunctions[MPath] {
    def ^^ = DPath(uri ^!)
    /** the path of this document, this == ^^ / name */
-   def name = LocalName(uri.path.map(SimpleStep(_)))
+   def name = LocalName(uri.path map {s => LNStep.parse(s, NamespaceMap.empty)})
    def doc = this
    def last = uri.path match {case Nil | List("") => uri.authority.getOrElse("") case l => l.last}
    def /(n : LocalName) = DPath(uri / n.steps.map(_.toPath))
@@ -86,14 +86,8 @@ case class DPath(uri : URI) extends Path with SlashFunctions[DPath] with Questio
       else
          None
    }   
-   /* this looks obsolete
-   def version : Option[String] = uri.path match {
-       case Nil => None
-       case l => l.last.indexOf(";") match {
-          case -1 => None
-          case i => Some(l.last.substring(i+1))
-       }
-   }*/
+   /** if this.name != Nil then this.toMPath.toDPath == this */
+   def toMPath = ^ ? LocalName(name.last)
 }
 
 /**
@@ -101,8 +95,13 @@ case class DPath(uri : URI) extends Path with SlashFunctions[DPath] with Questio
  */
 sealed trait ContentPath extends Path {
    def $(comp: ComponentKey) = CPath(this, comp)
-   def module : MPath
-   def name : LocalName
+   /** for GlobalName's referring to a theory-like [[Declaration]], this yields the URI of the corresponding [[Module]] */ 
+   def toMPath : MPath
+   
+   /** the longest LocalName suffix */
+   def name: LocalName
+   /** the longest MPath prefix */
+   def module: MPath
 }
 
 /**
@@ -121,8 +120,13 @@ case class MPath(parent : DPath, name : LocalName) extends ContentPath with Slas
    def ^ : MPath = parent ? name.init
    def ^^ : DPath = parent
    def ^! = if (name.length <= 1) ^^ else ^
-   def module = this
+   /** if name.length == 1 then this.toDPath.toMPath == this */
+   def toDPath = parent / name
+   /** this.toMPath == this */
+   def toMPath = this
+   /** if this.name != Nil then this.toGlobalName.toMPath == this */
    def toGlobalName = ^ ? LocalName(name.last)
+   def module = this
 }
 
 /**
@@ -140,6 +144,8 @@ case class GlobalName(module: MPath, name: LocalName) extends ContentPath with S
    def apply(subs: Substitution, con: Context, args: List[Term]) : Term = ComplexTerm(this, subs, con, args)
    /** true iff each include step is simple */
    def isSimple : Boolean = name.steps.forall(_.isInstanceOf[SimpleStep])
+   /** if name.length == 1 then this.toMPath.toGlobalName == this */
+   def toMPath = module / name
 }
 
 object LocalName {
@@ -194,6 +200,16 @@ abstract class LNStep {
    def /(n: LocalName) = LocalName(this) / n
    def /(n: LNStep) = LocalName(this) / n
 }
+
+object LNStep {
+   def parse(s: String, nsMap: NamespaceMap) = {
+      if (s.startsWith("["))
+         ComplexStep(Path.parseM(s.substring(1,s.length - 1), nsMap))
+      else
+         SimpleStep(s)
+   }
+}
+
 /** constant or structure declaration */
 case class SimpleStep(name: String) extends LNStep {
    def toPath = xml.encodeURI(name)
@@ -228,12 +244,7 @@ object LNEmpty {
  */
 case class LocalRef(segments : List[String], absolute : Boolean) {
    def toLocalName(nsMap : NamespaceMap) = {
-      val steps = segments map {s =>
-         if (s.startsWith("["))
-            ComplexStep(Path.parseM(s.substring(1,s.length - 1), nsMap))
-         else
-            SimpleStep(s)
-      }
+      val steps = segments map {s => LNStep.parse(s, nsMap)}
       LocalName(steps)
    }
    override def toString = segments.mkString(if (absolute) "/" else "","/","")

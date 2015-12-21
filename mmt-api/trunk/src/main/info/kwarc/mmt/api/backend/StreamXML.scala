@@ -51,14 +51,14 @@ object XMLObjectParser extends ObjectParser {
 /** 
  * similar to [[XMLReader]] but streams parsed elements into the continuation function
  */
-// TODO DefinedModules and views with from/to children are parsed wrong if are streamed
 class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
    val format = "omdoc"
    override val logPrefix = "streamer"
    private lazy val reader = new XMLReader(report)
 
    /** the structural elements whose children are processed immediately */
-   private val containers = List("omdoc", "theory")
+   private val containers = List("omdoc", "theory", "view")
+   private val shapeRelevant = List("metadata", "definition", "from", "to")
 
    def apply(ps: parser.ParsingStream)(implicit errorCont: ErrorHandler): Document = {
       val parser = new ConsParser(ps.dpath, new SourceFromReader(ps.stream), errorCont)
@@ -72,10 +72,23 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
       parser.root
    }
    
+   private object Stack {
+      abstract class StackElement
+      case class UnparsedContainer(elem: Elem) extends StackElement {
+         var children: List[Elem] = Nil
+         def toNode = elem.copy(child = children.reverse)
+      }
+      case class ParsedContainer(container: StructuralElement) extends StackElement
+      case class AppendUnparsed(container: UnparsedContainer) extends StackElement
+      case class AppendParsed(container: ParsedContainer) extends StackElement
+      case object Other extends StackElement
+   }
+   import Stack._
+   
    /** XML parser that streams documents/modules and calls the reader on the other ones */
    private class ConsParser(dpath: DPath, input: Source, errorCont: ErrorHandler) extends ConstructingParser(input, true) {
       /** the stack of currently open tags, innermost first */
-      private var openTags : List[StructuralElement] = Nil
+      private var openTags : List[StackElement] = Nil
       /** holds the root element once parsing has finished */
       var root: Document = null
    
@@ -90,32 +103,71 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
       /** like add, but also pushes the parsed element onto openTags */
       private def catchSE(se: StructuralElement) {
          add(se)
-         // hack: push the expected container element (will also be called for XRef's though)
          se match {
-            case _:Document | _:DeclaredModule => openTags ::= se
-            case nm: NestedModule => openTags ::= nm.module
-            case _ =>
+            case _:Document | _:Module => openTags ::= ParsedContainer(se)
+            case nm: NestedModule => openTags ::= ParsedContainer(nm.module)
+            case _: MRef => // ignore the MRef generated in addition to a Module 
+            case e => throw ImplementationError("non-container element: " + e) // impossible
+         }
+      }
+      
+      /** parse the top element, which must be an UnparsedContainer, and replace it with a ParsedContainer */
+      private def parseHead {
+         // pop the top element and obtain the node read so far
+         val uc @ UnparsedContainer(_) = openTags.head
+         openTags = openTags.tail
+         val node = uc.toNode
+         // below, catchSE will push the ParsedContainer that replaces uc
+         openTags match {
+            case Nil =>
+               // special treatment of the toplevel container 
+               streamer.log("parsing shape of top element")
+               reader.readDocument(dpath, node)(catchSE)
+               val ParsedContainer(doc: Document) = openTags.head
+               root = doc
+            case ParsedContainer(parent) :: _ => 
+               streamer.log("parsing shape of " + node.label + " in " + parent.path)
+               reader.readIn(root.getNamespaceMap, parent, node)(catchSE)
+            case hd :: _ => throw ImplementationError("illegal head: " + hd) // impossible
          }
       }
       
       // called when an opening tag is encountered
+      // invariant: possibly parse the top element; push exactly one element onto the stack
       override def elemStart(pos: Int, pre: String, label: String, attrs: MetaData, scope: NamespaceBinding) {
          // construct empty element
          lazy val elem = Elem(pre, label, attrs, scope, true)
-         // if this is a container element, we read the empty one immediately and push it to openTags
-         label match {
-            case "omdoc" if openTags.isEmpty =>
-               // toplevel container
-               streamer.log("streaming in top element")
-               reader.readDocument(dpath, elem)(catchSE)
-               root = openTags.head.asInstanceOf[Document]
-            case l if containers contains l =>
-               // nested container
-               streamer.log("streaming in " + l)
-               reader.readIn(root.getNamespaceMap, openTags.head, elem)(catchSE)
-            case _ =>
-               // in all other cases, we push a dummy element
-               openTags ::= null
+         // based on the label, we remember what to do when we encounter their children or closing tag
+         if (containers contains label) {
+               // for containers, we collect the opening tag and the shape-relevant components
+             streamer.log("streaming in " + label)
+             openTags match {
+                case (_: UnparsedContainer) :: _ =>
+                   // elem is the first non-shape-relevant child of uc: so parse uc first
+                   parseHead
+                case _ =>
+             }
+             openTags ::= UnparsedContainer(elem)
+         } else {
+            openTags.head match {
+               case uc: UnparsedContainer =>
+                  // shape-relevant children of containers are collected
+                  if (shapeRelevant contains label) {
+                     streamer.log("found shape relevant child: " + label)
+                     openTags ::= AppendUnparsed(uc)
+                  } else {
+                     // the first non-shape-relevant child of a container: parse the container
+                     streamer.log("found other child: " + label)
+                     parseHead
+                     val pc @ ParsedContainer(_) = openTags.head
+                     openTags ::= AppendParsed(pc)
+                  }
+               case pc: ParsedContainer =>
+                  openTags ::= AppendParsed(pc)
+               case _ =>
+                  // all other tags are irrelevant for streaming
+                  openTags ::= Other
+            }
          }
       }
 
@@ -123,31 +175,43 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
       // the return value of this method replaces the node
       override def elem(pos: Int, pre: String, label: String, attrs: MetaData,
                         scope: NamespaceBinding, empty: Boolean, nodes: NodeSeq) = {
-         // the element to be read
-         val n = Elem(pre, label, attrs, scope, empty, nodes:_*)
-         // pop n from openTags
+         // the element that has been read
+         lazy val n = Elem(pre, label, attrs, scope, empty, nodes:_*)
+         // pop the instruction and execute it
+         val instruction = openTags.head
          openTags = openTags.tail
-         // check where we are in the XML
-         openTags match {
-            case null :: _ =>
-               // n is some inner node: return it (same behavior as the super method)
+         instruction match {
+            case AppendUnparsed(uc) =>
+               // shape-relevant child of a container: add to the unparsed container
+               streamer.log("done reading shape-relevant child " + label)
+               uc.children ::= n
+            case AppendParsed(pc) =>
+               // non-shape-relevant child of a container: parse and add it to the container
+               streamer.log("streaming " + label + " in " + pc.container.path)
+               reader.readIn(root.getNamespaceMap, pc.container, n)(add)
+            case uc: UnparsedContainer =>
+               // unparsed container: parse it (this only happens if a container is empty)
+               parseHead
+               streamer.log("done streaming in " + label)
+            case pc: ParsedContainer =>
+               // parsed container: the container and its content have been streamed, nothing to do
+               streamer.log("done streaming in " + pc.container.path)
+            case Other =>
+               // any other element: no special treatment
+         }
+         // check if we have to return a node
+         instruction match {
+            case Other =>
+               // bubble up the inner node (same behavior as the super method)
                n
-            case hd :: _ =>
-               // n is the child of a container element
-               // if n is a container itself, it was already handled in elemStart
-               //   otherwise, we process it now
-               if (containers.contains(label)) {
-                 streamer.log("done streaming in " + label)
+            case _ =>
+               // the node is handled and can be dropped
+               if (openTags.isEmpty) {
+                 // at the toplevel, we have to make up a node
+                 <dummy/>
                } else {
-                 streamer.log("processing " + label)
-                 reader.readIn(root.getNamespaceMap, hd, n)(add)
+                  NodeSeq.Empty
                }
-               // either way, n is handled at this point and can be dropped
-               NodeSeq.Empty
-            case Nil =>
-               // n is the root node (which may not be empty)
-               streamer.log("done streaming in top element")
-               <dummy/>
          }
       }
    }

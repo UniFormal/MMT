@@ -30,8 +30,6 @@ abstract class Lookup {
 
    /** lookup a path */
    def get(path : Path) : StructuralElement
-   /** special case of get */
-   def getModule(p: MPath): Module = getAs(classOf[Module], p)
    /** like get, but returns option */
    def getO(path: Path) = optional {_ => get(path)}
    /**
@@ -39,6 +37,9 @@ abstract class Lookup {
     * example: getAs(classOf[Constant], path): Constant
     */
    def getAs[E <: StructuralElement](cls : Class[E], path: Path): E = as(cls) {get(path)}
+
+   /** important special case */
+   def getModule(path: MPath): Module = getAs(classOf[Module], path)
 
    /** lookup a declaration in a (possibly complex) module 
     * @param home the module in which to look up
@@ -54,8 +55,6 @@ abstract class Lookup {
       as(cls){get(home, name, error)}
 
    // deprecated, use getAs(classOf[X] instead of getX
-   def getModule(path : MPath, msg : Path => String = defmsg) : Module =
-     get(path) match {case m: Module => m case _ => throw GetError(msg(path))}
    def getTheory(path : MPath, msg : Path => String = defmsg) : Theory =
      get(path) match {case t: Theory => t case _ => throw GetError(msg(path))}
    def getDeclaredTheory(path : MPath, msg : Path => String = defmsg) : DeclaredTheory =

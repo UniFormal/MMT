@@ -18,7 +18,7 @@ import documents._
  * In particular, declaration names must be unique independent of the narrative grouping.
  * The latter is stored as a [[Document]], which holds [[SRef]] to the logical declarations.  
 */
-trait Body extends ContentElement {
+trait Body extends ContentElement {self =>
    /** the set of named statements, indexed by name
     * if a statement has an alternativeName, it occurs twice in this map
     */
@@ -27,12 +27,9 @@ trait Body extends ContentElement {
    /** anything pertaining to the narrative structure */
    private object narrativeStructure {
       /** the DPath of this Body as a document */
-      val dpath = path match {
-        case doc ? mod => doc / mod
-        case doc ? mod ?? name => doc / mod / name
-      }
+      val dpath = path.toMPath.toDPath
       /** this Body as a document */
-      val document = new Document(dpath, true)
+      val document = new Document(dpath, true, Some(self))
       /** retrieval of a nested Document */
       def getDocument(dn: LocalName): Option[Document] = {
          if (dn.length == 0) Some(document)

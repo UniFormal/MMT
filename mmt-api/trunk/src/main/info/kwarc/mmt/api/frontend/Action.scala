@@ -618,7 +618,7 @@ case class Closure(p: Path) extends MakeAbstract {
       controller.get(doc ? name) // retrieve once to make sure it's in memory
       val cl = controller.depstore.theoryClosure(doc ? name)
       val clp = cl.map{p => MRef(doc, p)}
-      new Document(doc, true, clp)
+      new Document(doc, root = true, inititems = clp)
   }
 
   override def toString: String = p + " closure"

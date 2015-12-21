@@ -61,7 +61,7 @@ object Morph {
       case OMMOD(p) => OMMOD(p)
       case OMDL(h, ln) =>
         val lnS = ln.simplify
-        if (lnS.length == 1 && lnS.head.isInstanceOf[ComplexStep])
+        if (lnS.length == 1 && lnS.steps.head.isInstanceOf[ComplexStep])
           OMCOMP()
         else
           OMDL(h, lnS)

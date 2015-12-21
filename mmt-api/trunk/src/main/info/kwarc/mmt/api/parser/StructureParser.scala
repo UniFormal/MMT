@@ -164,7 +164,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   private def apply(state: ParserState): (Document, ParserState) = {
     val dpath = state.ps.dpath
-    val doc = new Document(dpath, true, Nil, state.namespaces)
+    val doc = new Document(dpath, root = true, nsMap = state.namespaces)
     seCont(doc)(state)
     logGroup {
       readInDocument(doc)(state)

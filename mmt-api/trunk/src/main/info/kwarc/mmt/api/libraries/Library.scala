@@ -36,8 +36,8 @@ class ModuleHashMap {
 
   def values = underlying.values.flatMap(_.get)
 
-  def clear() {
-    underlying.clear()
+  def clear {
+    underlying.clear
   }
 
   override def toString = {
@@ -65,135 +65,144 @@ class ModuleHashMap {
 class Library(val report: frontend.Report) extends Lookup with Logger {
   val logPrefix = "library"
 
-  /** all known root documents */
+  // ************************ stateful data structures and basic accessors
+  
+  /** all known root documents except for those induced by modules */
   private val documents = new scala.collection.mutable.HashMap[DPath,Document]
-  /** all known root modules */
+  /** all known root modules (which also induce root documents) */
   private val modules = new ModuleHashMap
+  /** the diagram of implicit morphisms */
   private val implicitGraph = new ThinGeneratedCategory
 
-  private def modulesGetNF(p: MPath): Module =
-    modules.get(p).getOrElse {
-      throw frontend.NotFound(p)
-    }
-  private def documentsGetNF(d: DPath): Document =
-    documents.get(d).getOrElse {
-      throw frontend.NotFound(d)
-    }
+  override def toString = modules.values.map(_.toString).mkString("", "\n\n", "")
 
-  /**
-   * @return the deepest known prefix mp and the remaining suffix
-   */
-  private def getMostSpecific(mp: MPath): (Module, LocalName) = {
-    val top = mp.doc ? LocalName(mp.name.head)
-    var mod = modulesGetNF(top)
-    var left = mp.name.tail
-    var stop = false
-    while (!left.isEmpty && !stop) {
-      modules.get(mp.doc ? mod.name / left.head) match {
-        case Some(m) =>
-          mod = m
-          left = left.tail
-        case None =>
-          stop = true
-      }
-    }
-    (mod, left)
+    /** returns all module paths indexed by this library */
+  def getAllPaths = modules.keys
+
+  /** retrieves all modules in any order */
+  def getModules = modules.values
+
+  /** direct lookup of p for mp = p / ln, also returns ln */
+  private def modulesGetRoot(mp: MPath): (Module, LocalName) = {
+    val top = mp.doc
+    val name = mp.name
+    val rootMod = name.prefixes.mapFind {n =>
+       modules.get(top ? n)
+    }.getOrElse {throw NotFound(mp)}
+    val ln = name.drop(rootMod.name.length)
+    (rootMod, ln)
   }
   
-  /**
-   * @return the root document in which a DPath can be found
+  /** direct lookup of p for dp = p / ln, also returns ln
+   *  this considers both root documents  p / ln and root modules p / ln.init ? ln.head
+   *  the longest known p is chosen in case of ambiguity 
    */
-  private def getMostSpecific(dp: DPath): (Document, LocalName) = {
+  private def documentsGetRoot(dp: DPath, error: String => Nothing): (Document, LocalName) = {
     val top = dp.^^
     val name = dp.name
-    val rootDoc = name.prefixes.mapFind {n =>
-       documents.get(top / n)
+    val rootDoc = name.prefixes.reverse.mapFind {n =>
+       val topn = top / n
+       documents.get(topn) orElse {
+          if (n.nonEmpty) modules.get(topn.toMPath).map(m => seeAsDoc(m, error))
+          else None // n may be empty if name is empty to begin with
+       }
     }.getOrElse {throw NotFound(dp)}
     val ln = name.drop(rootDoc.path.name.length)
     (rootDoc,ln)
   }
 
-  /** returns all module paths indexed by this library */
-  def getAllPaths = modules.keys
-
-  /** Special case of get that throws GetError with a standard error message */
+  /** top level retrieval method */
   def get(p: Path): StructuralElement = {
      val error = (msg:String) => throw GetError("error while retrieving " + p + ": " + msg)
      p match {
         case d: DPath => getNarrative(d, error)
-        case p: MPath => get(p, error)
+        case p: MPath => getModule(p, error)
         case p ?? n => get(OMMOD(p), n, error)
         case c: CPath => throw GetError("retrieval of components not possible")
      }
   }
 
-  def getNarrative(d: DPath, error: String => Nothing): NarrativeElement = {
-     documents.get(d) match {
-        case Some(d) => d
-        case None =>
-           if (d.name.length > 0) {
-              val parDoc = getDocument(d ^, error)
-              parDoc.getO(LocalName(d.name.last)).getOrElse {
-                 error("no child " + d.name.last + " found in document " + parDoc.path)
-              }
-           } else {
-              throw NotFound(d)
-           }
+  // ******************* document level retrieval
+  /* retrieval starts in the root document d or in a root module d.toMPath
+   * then it dereferences step-wise, considering the nesting both documents or modules
+   * NRefs are dereferenced as well, which allows crossing from a document into a module
+   */
+  
+  /** dereferences a DPath */
+  private def getNarrative(d: DPath, error: String => Nothing): NarrativeElement = {
+     /** step-wise looks up left in ne */
+     def getNarrativeAux(ne: NarrativeElement, left: LocalName): NarrativeElement = {
+        if (left.isEmpty) ne
+        else {
+            val doc = seeAsDoc(ne, error)
+            val child = doc.getO(LocalName(left.head)).getOrElse {
+               throw NotFound(doc.path / left.head)
+               // no error here because the document may exist separately
+               //error("no child " + left.head + " found in document " + doc.path)
+            }
+            getNarrativeAux(child, left.tail)
+         }
      }
+     // try root document
+     val (doc, left) = documentsGetRoot(d, error)
+     getNarrativeAux(doc, left)
   }
   
-  /** as getNarrative but checks for being a Document */
-  private def getDocument(d: DPath, error: String => Nothing) = {
-     getNarrative(d, error) match {
-        case doc: Document => doc
-        case _ => error("parent path exists but does not refer to a document: " + d) 
+  /** refines the type to Document, treats modules as documents, and dereferences NRefs */
+  private def seeAsDoc(se: StructuralElement, error: String => Nothing): Document = se match {
+     case d: Document => d
+     case r: NRef => getO(r.target) match {
+        case Some(se) => seeAsDoc(se, error)
+        case None => error("referenced element does not exist: " + r.target)
      }
+     case b: Body => b.asDocument
+     case nm: NestedModule => seeAsDoc(nm.module, error)
+     case _ => error("element exists but is not document-like: " + se.path)
   }
 
-  def get(p: MPath, error: String => Nothing): ContentElement = {
-      val (mod, left) = getMostSpecific(p)
-      if (left.isEmpty) mod
-      else {
-        get(OMMOD(mod.path), left, error) match {
-          case s: Structure => s
-          case e => error("complex module path did not resolve to a declaration that is allowed as a module: " + e)
-        }
-      }
+  // ******************* module level retrieval
+  /* retrieval starts in the root module p
+   * then it dereferences step-wise, considering only the nesting of modules
+   * NestedModules are turned into modules, which allows referencing into nested theories
+   */
+
+  private def getModule(p: MPath, error: String => Nothing): ContentElement = {
+     /** step-wise looks up left in ce */
+     def getModuleAux(ce: ContentElement, left: LocalName): ContentElement = {
+        if (left.isEmpty) ce
+        else {
+           val d = getInAtomicModule(ce, Nil, LocalName(left.head), error)
+           val m = seeAsMod(d, error)
+           getModuleAux(m, left.tail)
+         }
+     }
+
+     val (mod, left) = modulesGetRoot(p)
+     getModuleAux(mod, left)
+  }
+  /** refines the type to a module */
+  // TODO Once structures are nested modules, this can return Module instead of ContentElement
+  private def seeAsMod(ce: ContentElement, error: String => Nothing) = ce match {
+     case m: Module => m
+     case nm: NestedModule => nm.module
+     case s: Structure => s
+     case _ => error("element exists but is not module-like: " + ce.path)
   }
    
+  // ******************* declaration level retrieval
+  /* retrieval starts in the given module 'home'
+   * then it dereferences step-wise, considering only the MMT module system, in particular elaboration
+   * 
+   * the module may be a complex expression (for URI lookup, it is simply an OMMOD)
+   * defined modules are expanded, which allows referencing into their materialized body
+   */
+
   private val sourceError = (s: String) => throw GetError("error while looking up source declaration: "+s)
-  
+
   def get(home: Term, name: LocalName, error: String => Nothing): Declaration = home match {
-    case OMPMOD(p, args) => get(p, error) match {
-      //lookup in atomic modules
-      case t: DefinedTheory =>
-        get(t.df, name, error) match {
-          case d: Declaration => instantiate(d, t.parameters, args)
-          case d => error("illegal declaration in theory " + d.path)
-        }
-      case t: DeclaredTheory =>
-         getInTheory(t, args, name, error)
-      case s: Structure =>
-        if (0 != args.length)
-          throw GetError("number of arguments does not match number of parameters")
-        get(s.toTerm, name, error)
-      case v: View =>
-        if (0 != args.length)
-          throw GetError("number of arguments does not match number of parameters")
-        try {
-          getInLink(v, name, error)
-        } catch {
-          case PartialLink() =>
-            val da = get(v.from, name, sourceError) match {
-              // return default assignment
-              case c: Constant => ConstantAssignment(v.toTerm, name, None, None)
-              case s: Structure => DefLinkAssignment(v.toTerm, name, s.from, Morph.empty)
-              case _ => throw ImplementationError("unimplemented default assignment")
-            }
-            da.setOrigin(DefaultAssignment)
-            da
-        }
-    }
+    // lookup in atomic modules
+    case OMPMOD(p, args) =>
+       getInAtomicModule(getModule(p, error), args, name, error)
     // lookup in structures
     case OMDL(h, n) =>
       val s = getStructure(h ? n, msg => throw GetError("declaration exists but is not a structure: " + h ? n + "\n" + msg))
@@ -270,6 +279,38 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
     }
   }
 
+  /** auxiliary method of get for lookups in a parent that has already been retrieved */
+  private def getInAtomicModule(mod: ContentElement, args: List[Term], name: LocalName, error: String => Nothing): Declaration = {
+    mod match {
+      //lookup in atomic modules
+      case t: DefinedTheory =>
+        val d = get(t.df, name, error)
+        instantiate(d, t.parameters, args)
+      case t: DeclaredTheory =>
+         getInTheory(t, args, name, error)
+      case s: Structure =>
+        if (0 != args.length)
+          throw GetError("number of arguments does not match number of parameters")
+        get(s.toTerm, name, error)
+      case v: View =>
+        if (0 != args.length)
+          throw GetError("number of arguments does not match number of parameters")
+        try {
+          getInLink(v, name, error)
+        } catch {
+          case PartialLink() =>
+            val da = get(v.from, name, sourceError) match {
+              // return default assignment
+              case c: Constant => ConstantAssignment(v.toTerm, name, None, None)
+              case s: Structure => DefLinkAssignment(v.toTerm, name, s.from, Morph.empty)
+              case _ => throw ImplementationError("unimplemented default assignment")
+            }
+            da.setOrigin(DefaultAssignment)
+            da
+        }
+    }
+  }
+  
   /** auxiliary method of get for lookups in a [[DeclaredTheory]] */
   private def getInTheory(t: DeclaredTheory, args: List[Term], name: LocalName, error: String => Nothing) = { 
      val decl = t.getMostSpecific(name) map {
@@ -439,6 +480,8 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
         newDecl
     }
 
+  // ******************* additional retrieval methods
+  
   def getDeclarationsInScope(mod: Term): List[Content] = {
     val impls = visibleVia(mod).toList
     val decls = impls flatMap { case (from, via) =>
@@ -489,17 +532,20 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
     case _ => None
   }
 
+  // ******************* adding elements
+  
   /**
    * adds a declaration
    * @param e the added declaration
    */
   def add(e: StructuralElement) {
+    val errorFun = (msg: String) => throw AddError(msg)
     log("adding " + e.path.toString + " TYPE " + e.getClass)
     (e.path, e) match {
       case (_, ne: NarrativeElement) =>
          ne.parentOpt match {
             case Some(par) =>
-               val parDoc = getDocument(par, msg => throw AddError("parent not found: " + msg))
+               val parDoc = seeAsDoc(getNarrative(par, errorFun), errorFun)
                parDoc.add(ne)
             case None =>
                ne match {
@@ -512,7 +558,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
       case (doc ? mod, m: Module) =>
         modules(doc ? mod) = m
       case (par ?? ln, _) =>
-        val c = get(par, msg => throw AddError("illegal parent: " + msg))
+        val c = getModule(par, msg => throw AddError("illegal parent: " + msg))
         (c, e) match {
           case (b: Body, e: Declaration) =>
             b.add(e)
@@ -541,18 +587,21 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
     }
   }
 
+ // ******************* deleting elements
+
   /** deletes the element with the given URI
     *
     * @param path the path to the element to be deleted
     */
   def delete(path: Path) {
     log("deleting " + path)
+    val errorFun = (msg: String) => throw DeleteError(msg)
     path match {
       case dp: DPath =>
          if (documents.isDefinedAt(dp))
             documents -= dp
          else {
-            val doc = getDocument(dp ^, msg => throw DeleteError("illegal parent: " + msg))
+            val doc = seeAsDoc(getNarrative(dp ^, errorFun), errorFun)
             doc.delete(LocalName(dp.name.last))
          }
       case mp: MPath =>
@@ -560,7 +609,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
          if (mp.name.length > 1)
             delete(mp.toGlobalName)
       case par ?? ln =>
-         val se = get(par, msg => throw DeleteError("illegal parent: " + msg))
+         val se = getModule(par, msg => throw DeleteError("illegal parent: " + msg))
          se match {
            case t: DeclaredTheory =>
              t.delete(ln) foreach { s =>
@@ -579,14 +628,6 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
         notifyUpdated(cp)
       }
     }
-  }
-  
-  /** convenience method for a deletion that returns the deleted element (if any) */
-  def deleteAndReturn(path: Path): Option[StructuralElement] = {
-     val se = getO(path)
-     if (se.isDefined)
-        delete(path)
-     se
   }
 
   /** updates a ContentElement by deleting and adding it */
@@ -620,16 +661,12 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
     }
   }
 
+  // delete everything
+  
   /** forgets everything */
-  def clear() {
-    modules.clear()
+  def clear {
+    modules.clear
     implicitGraph.clear
+    documents.clear
   }
-
-  /** retrieves all modules in any order */
-  def getModules = modules.values
-
-  def toNode: NodeSeq = modules.values.map(_.toNode).toList
-
-  override def toString = modules.values.map(_.toString).mkString("", "\n\n", "")
 }
