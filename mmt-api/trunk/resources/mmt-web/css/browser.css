@@ -61,16 +61,17 @@ td.layouttablecell:last-child {
   width:100%;
 }
 
-.layouttablecell .title {
+.layouttablecell .celltitle {
    background-color: lightblue;
    border-radius: 5px;
    font-weight: bold;
 }
 
-/* .layouttablecell cellcontent {
-   overflow: auto;
+.layouttablecell .cellcontent {
+   height: 90vh;
+   overflow: scroll;
    resize: horizontal;
-}*/
+}
 
 
 /* sidebar */
