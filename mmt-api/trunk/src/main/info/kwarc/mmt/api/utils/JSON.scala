@@ -48,63 +48,6 @@ object JSONObject {
    def apply(cases: (String,JSON)*): JSONObject = JSONObject(cases.toList map {case (k,v) => (JSONString(k),v)})
 }
 
-class Unparsed(s: String, error: String => Nothing) {
-   private var rest: String = s
-   def remainder = rest
-   def head = rest(0)
-   def next() = {
-      if (rest.isEmpty) error("expected character, found nothing")
-      val c = head
-      rest = rest.substring(1)
-      c
-   }
-   def tail: this.type = {
-      next
-      this
-   }
-   def trim: this.type = {
-      while (!remainder.isEmpty && head.isWhitespace) next()
-      this
-   }
-   def drop(s: String) {
-      if (rest.startsWith(s))
-         rest = rest.substring(s.length)
-      else
-         error(s"expected $s, found $rest")
-   }
-   def next(test: Char => Boolean): String = {
-      if (test(head)) next() + next(test) else ""
-   }
-   
-   import scala.util.matching.Regex
-   def next(regex: String): Regex.Match = {
-      val m = new Regex(regex)
-      m.findPrefixMatchOf(rest).getOrElse {
-         error(s"expected match of $regex, found $rest")
-      }
-   }
-   
-   /**
-    * @param unescape maps a string after the escape character to the eaten escape sequence and its unescaped value
-    */
-   def next(until: Char, exceptAfter: Char)(unescape: String => (String,String)): String = {
-      var seen = ""
-      while (head != until) {
-         if (head == exceptAfter) {
-            next
-            val (eaten, unescaped) = unescape(rest)
-            drop(eaten)
-            seen += unescaped
-         } else {
-            seen += head
-            next
-         }
-      }
-      next
-      seen
-   }
-}
-
 object JSON {
    // for quick testing
    /*
@@ -163,7 +106,6 @@ object JSON {
          JSONInt(f * main.toInt)
       } else
          JSONFloat(mt.matched.toDouble)
-      s.drop(mt.matched)
       jn
    }
    
