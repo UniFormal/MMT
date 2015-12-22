@@ -116,26 +116,28 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
      val error = (msg:String) => throw GetError("error while retrieving " + p + ": " + msg)
      p match {
         case d: DPath => getNarrative(d, error)
-        case p: MPath => getModule(p, error)
+        case p: MPath => getContent(p, error)
         case p ?? n => get(OMMOD(p), n, error)
         case c: CPath => throw GetError("retrieval of components not possible")
      }
   }
 
   // ******************* document level retrieval
-  /* retrieval starts in the root document d or in a root module d.toMPath
-   * then it dereferences step-wise, considering the nesting both documents or modules
-   * NRefs are dereferenced as well, which allows crossing from a document into a module
+  /** 
+   *  dereferences a narrative URI d
+   *  Retrieval starts in the root document doc such that d = doc.path / left.
+   *  Then it dereferences left step-wise (from left to right), considering any nesting (e.g., documents or modules).
+   *  seeAsDoc is used to turn intermediate retrieval results into [[Document]]s.
+   *
+   *  Note the similarity to getContent.
    */
-  
-  /** dereferences a DPath */
   private def getNarrative(d: DPath, error: String => Nothing): NarrativeElement = {
      /** step-wise looks up left in ne */
      def getNarrativeAux(ne: NarrativeElement, left: LocalName): NarrativeElement = {
         if (left.isEmpty) ne
         else {
             val doc = seeAsDoc(ne, error)
-            val child = doc.getO(LocalName(left.head)).getOrElse {
+            val child = doc.getLocally(LocalName(left.head)).getOrElse {
                throw NotFound(doc.path / left.head)
                // no error here because the document may exist separately
                //error("no child " + left.head + " found in document " + doc.path)
@@ -148,7 +150,9 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
      getNarrativeAux(doc, left)
   }
   
-  /** refines the type to Document, treats modules as documents, and dereferences NRefs */
+  /** tries to interpret a narrative element as a document
+   *  in particular, this treats modules as documents, and dereferences NRefs
+   */
   private def seeAsDoc(se: StructuralElement, error: String => Nothing): Document = se match {
      case d: Document => d
      case r: NRef => getO(r.target) match {
@@ -161,26 +165,32 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
   }
 
   // ******************* module level retrieval
-  /* retrieval starts in the root module p
-   * then it dereferences step-wise, considering only the nesting of modules
-   * NestedModules are turned into modules, which allows referencing into nested theories
-   */
 
-  private def getModule(p: MPath, error: String => Nothing): ContentElement = {
+  /** 
+   *  dereferences a content URI p
+   *  Retrieval starts in the root module mod such that p = mod.path / left.
+   *  Then it dereferences left step-wise (from left to right), considering only the nesting of modules.
+   *  seeAsMod is used to turn intermediate retrieval results into modules.
+   *  
+   *  Note the similarity to getNarrative.
+   */
+  private def getContent(p: MPath, error: String => Nothing): ContentElement = {
      /** step-wise looks up left in ce */
-     def getModuleAux(ce: ContentElement, left: LocalName): ContentElement = {
+     def getContentAux(ce: ContentElement, left: LocalName): ContentElement = {
         if (left.isEmpty) ce
         else {
-           val d = getInAtomicModule(ce, Nil, LocalName(left.head), error)
-           val m = seeAsMod(d, error)
-           getModuleAux(m, left.tail)
+           val m = seeAsMod(ce, error)
+           val d = getInAtomicModule(m, Nil, LocalName(left.head), error)
+           getContentAux(m, left.tail)
          }
      }
 
      val (mod, left) = modulesGetRoot(p)
-     getModuleAux(mod, left)
+     getContentAux(mod, left)
   }
-  /** refines the type to a module */
+  /** tries to interpret a content element as a module
+   *  In particular, [[NestedModule]]s are turned into [[Module]]s, which allows referencing into nested theory-like elements.
+   */
   // TODO Once structures are nested modules, this can return Module instead of ContentElement
   private def seeAsMod(ce: ContentElement, error: String => Nothing) = ce match {
      case m: Module => m
@@ -190,19 +200,24 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
   }
    
   // ******************* declaration level retrieval
-  /* retrieval starts in the given module 'home'
-   * then it dereferences step-wise, considering only the MMT module system, in particular elaboration
-   * 
-   * the module may be a complex expression (for URI lookup, it is simply an OMMOD)
-   * defined modules are expanded, which allows referencing into their materialized body
-   */
-
   private val sourceError = (s: String) => throw GetError("error while looking up source declaration: "+s)
+
+  /** dereferences a declaration level reference
+   * 
+   * Retrieval starts in the given module 'home'.
+   * Then it dereferences 'name' step-wise, considering only the MMT module system, in particular elaboration.
+   * 
+   * This method goes beyond URI dereferencing because the module may be a complex expression.
+   * For plain URI dereferencing, the 'home' is simply an OMMOD.
+   * 
+   * Defined modules are expanded, which allows referencing into their materialized body.
+   */
 
   def get(home: Term, name: LocalName, error: String => Nothing): Declaration = home match {
     // lookup in atomic modules
     case OMPMOD(p, args) =>
-       getInAtomicModule(getModule(p, error), args, name, error)
+       val mod = seeAsMod(getContent(p, error), error)
+       getInAtomicModule(mod, args, name, error)
     // lookup in structures
     case OMDL(h, n) =>
       val s = getStructure(h ? n, msg => throw GetError("declaration exists but is not a structure: " + h ? n + "\n" + msg))
@@ -558,11 +573,11 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
       case (doc ? mod, m: Module) =>
         modules(doc ? mod) = m
       case (par ?? ln, _) =>
-        val c = getModule(par, msg => throw AddError("illegal parent: " + msg))
+        val c = seeAsMod(getContent(par, errorFun), errorFun)
         (c, e) match {
           case (b: Body, e: Declaration) =>
-            b.add(e)
-          case _ => throw AddError("only addition of symbols to declared theories or assignments to declared links allowed")
+            b.add(e, inDoc = e.relativeDocumentHome)
+          case (s,e) => errorFun("cannot add " + e.name + " to " + s.path)
         }
     }
     try {
@@ -609,17 +624,17 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
          if (mp.name.length > 1)
             delete(mp.toGlobalName)
       case par ?? ln =>
-         val se = getModule(par, msg => throw DeleteError("illegal parent: " + msg))
+         val se = seeAsMod(getContent(par, errorFun), errorFun)
          se match {
            case t: DeclaredTheory =>
              t.delete(ln) foreach { s =>
-               s.getComponents.foreach { case DeclarationComponent(comp, cont) =>
+             s.getComponents.foreach { case DeclarationComponent(comp, cont) =>
                  if (cont.isDefined) notifyUpdated(s.path $ comp)
                }
              }
            case l: DeclaredLink =>
              l.delete(ln)
-           case _ => throw DeleteError("cannot delete from " + path)
+           case _ => errorFun("cannot delete from " + path)
          }
       case cp@CPath(par, comp) => getO(par) foreach { ce =>
         ce.getComponent(comp).foreach {

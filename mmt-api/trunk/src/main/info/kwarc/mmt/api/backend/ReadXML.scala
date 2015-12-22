@@ -169,7 +169,17 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
    /** additionally keeps track of the document nesting inside the body */
    private def readInModuleAux(home: MPath, docHome: DPath, nsMap: NamespaceMap, body: Body, node: Node)(implicit cont: StructuralElement => Unit) {
       val homeTerm = OMMOD(home)
-      def doPat(name : LocalName, parOpt : Option[Node], con : Node, xmlNotation : NodeSeq, md: Option[MetaData]) {
+      val relDocHome = home.toDPath.dropPrefix(docHome).getOrElse {
+         throw ImplementationError("document home must extend content home")
+      } 
+      val (symbol, md) = MetaData.parseMetaDataChild(node, nsMap)
+      /* declarations must only be added through this method */
+      def addDeclaration(d: Declaration) {
+         d.setDocumentHome(relDocHome)
+         add(d, md)
+      }
+      
+      def doPat(name : LocalName, parOpt : Option[Node], con : Node, xmlNotation : NodeSeq) {
     	  log("pattern " + name.toString + " found")
     	  val pr = parOpt match {
     	 	  case Some(par) => Context.parse(par, nsMap)
@@ -178,14 +188,13 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
     	  val cn = Context.parse(con, nsMap)
         val notation = NotationContainer.parse(xmlNotation, home ? name)
     	  val p = new Pattern(homeTerm, name, pr, cn, notation)
-    	  add(p, md)
+    	  addDeclaration(p)
       }
       val name = LocalName.parse(xml.attr(node,"name"), nsMap)
       val alias = xml.attr(node, "alias") match {
          case "" => None
          case a => Some(LocalName.parse(a))
       }
-      val (symbol, md) = MetaData.parseMetaDataChild(node, nsMap)
       xml.trimOneLevel(symbol) match {
          case <document>{dnodes}</document> =>
             val name = xml.attr(symbol, "name")
@@ -226,7 +235,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                case r => Some(r)
             }
             val c = Constant(homeTerm, name, alias, tp, df, rl, notC.getOrElse(NotationContainer()))
-            add(c,md)
+            addDeclaration(c)
          case imp @ <import>{seq @ _*}</import> =>
             log("import " + name + " found")
             val (rest, from) = getTheoryFromAttributeOrChild(imp, "from", nsMap)
@@ -239,10 +248,10 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                case <definition>{d}</definition> :: Nil =>
                   val df = Obj.parseTerm(d, nsMap)
                   val s = DefinedStructure(homeTerm, adjustedName, from, df, isImplicit)
-                  add(s,md)
+                  addDeclaration(s)
                case assignments =>
                   val s = DeclaredStructure(homeTerm, adjustedName, from, isImplicit)
-                  add(s,md)
+                  addDeclaration(s)
                   assignments foreach {a => readInModule(s.path.toMPath, nsMap, s, a)}
             }
          case <theory>{body @_*}</theory> =>
@@ -252,7 +261,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                case <definition>{d}</definition> =>
                   val df = Obj.parseTerm(d, nsMap)
                   val t = DefinedTheory(parent, tname, df)
-                  add(new NestedModule(t), md)
+                  addDeclaration(new NestedModule(t))
                case symbols =>
                   val meta = xml.attr(symbol, "meta") match {
                      case "" => None
@@ -261,7 +270,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                         Some(Path.parseM(mt, nsMap))
                   }
                   val t = new DeclaredTheory(parent, tname, meta)
-                  add(new NestedModule(t), md)
+                  addDeclaration(new NestedModule(t))
                   symbols.foreach {d => 
                      logGroup {
                         readIn(nsMap, t, d)
@@ -271,7 +280,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
          case <ruleconstant/> =>
             log("found rule constant " + name + ", trying RuleConstantInterpreter")
             val rc = RuleConstantInterpreter.fromNode(symbol, home)
-            add(rc, md)
+            addDeclaration(rc)
          case <parameters>{parN}</parameters> =>
             val par = Context.parse(parN, nsMap)
             body match {
@@ -287,7 +296,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
                DeclarationComponent(key, value)
             }
             val dd = new DerivedDeclaration(homeTerm, name, feature, components)
-            add(dd, md)
+            addDeclaration(dd)
             decls.foreach {d =>
                logGroup {
                   readInModule(home / name, nsMap, dd.theory, d)
@@ -299,23 +308,23 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
            <pattern> {ch.map(xml.trimOneLevel)} </pattern> match {
              case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations></pattern> =>
                 log("pattern with name " + name + " found")
-                doPat(name, Some(params), decls, Nil, md)
+                doPat(name, Some(params), decls, Nil)
              case <pattern><parameters>{params}</parameters><declarations>{decls}</declarations><notation>{ns @_*}</notation></pattern> =>
                 log("pattern with name " + name + " found")
-                doPat(name, Some(params), decls, ns, md)
+                doPat(name, Some(params), decls, ns)
              case <pattern><declarations>{decls}</declarations></pattern> =>
                 log("pattern with name " + name + " found")
-                doPat(name, None, decls, Nil, md)         
+                doPat(name, None, decls, Nil)
              case <pattern><declarations>{decls}</declarations><notation>{ns @ _*}</notation></pattern> =>
                 log("pattern with name " + name + " found")
-                doPat(name, None, decls, ns, md)
+                doPat(name, None, decls, ns)
            }
          case <instance>{ns @ _*}</instance> =>
             val p = xml.attr(symbol,"pattern")
          	log("instance " + name.toString + " of pattern " + p + " found")
          	val args = ns map (Obj.parseTerm(_, nsMap))
             val inst = new Instance(homeTerm,name,Path.parseS(p,nsMap),args.toList)
-            add(inst, md)
+            addDeclaration(inst)
          case scala.xml.Comment(_) =>
          case n if Utility.trimProper(n).isEmpty => //whitespace node => nothing to do 
          case _ => throw ParseError("symbol level element expected: " + symbol)

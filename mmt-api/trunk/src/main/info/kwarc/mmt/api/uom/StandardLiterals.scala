@@ -64,6 +64,7 @@ object Quotient {
       def fromString(s: String) = of.fromString(s)
    }
 }
+
 /** bundles functions that are typically used when defining literals based on integers */
 trait IntegerLiteral extends SemanticType {
    type univ = BigInt

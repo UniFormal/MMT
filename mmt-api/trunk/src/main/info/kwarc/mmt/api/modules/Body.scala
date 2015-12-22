@@ -30,18 +30,6 @@ trait Body extends ContentElement {self =>
       val dpath = path.toMPath.toDPath
       /** this Body as a document */
       val document = new Document(dpath, true, Some(self))
-      /** retrieval of a nested Document */
-      def getDocument(dn: LocalName): Option[Document] = {
-         if (dn.length == 0) Some(document)
-         else {
-            getDocument(dn.init).flatMap {parDoc =>
-               parDoc.getO(LocalName(dn.last)).flatMap {
-                 case d: Document => Some(d)
-                 case _ => None
-               }
-            }
-         }
-      }
       /** call a function on all logical declarations and their parent document */
       def traverse(f: (Document,LocalName) => Unit) {traverse(document, f)}
       private def traverse(doc: Document, f: (Document,LocalName) => Unit) {
@@ -89,12 +77,14 @@ trait Body extends ContentElement {self =>
       }
       statements(name) = s
       addAlternativeName(s)
-      val doc = getDocument(inDoc).getOrElse {
-         throw AddError(s"document $inDoc does not exist in theory $path")
+      val doc = asDocument.getLocally(inDoc) match {
+         case Some(d: Document) => d
+         case _ => throw AddError(s"document $inDoc does not exist in theory $path")
       }
       val ref = new SRef(doc.path, s.name, s.path)
       doc.add(ref, afterOpt)
    }
+   /*
    /** adds narrative structure */
    def addNarration(ne: NarrativeElement, afterOpt: Option[LocalName] = None) {
       val inDoc = dpath.dropPrefix(ne.path).getOrElse {
@@ -104,7 +94,7 @@ trait Body extends ContentElement {self =>
          throw AddError(s"document $inDoc does not exist in theory $path")
       }
       parDoc.add(ne, afterOpt)
-   }
+   }*/
    /** delete a named declaration (does not have to exist)
     *  @return the deleted declaration
     */

@@ -6,59 +6,40 @@ import objects._
 import checking._
 import frontend._
 
-// this file is experimental; delete code if superseded
-
-/**
- * An opaque declaration is a semantic entity whose precise structure is not accessible to MMT
- * but which may expose functionality that MMT can make use of.
- */
-abstract class OpaqueDeclaration(format: String, raw: String) extends Declaration {
-   private[api] var interpreter: OpaqueDeclarationInterpreter = null
-   
-   def toNode = {
-      if (interpreter == null)
-         <opaque name={name.toPath} format={format}>{getMetaDataNode}{raw}</opaque>
-      else
-         interpreter.toNode(this)
-   }
-   override def toString = {
-      if (interpreter == null)
-         raw
-      else
-         interpreter.toString(this)
-   }
-   def getComponents   = {
-      if (interpreter == null)
-         Nil
-      else
-         interpreter.getComponents(this)
-   }
-   def getDeclarations = {
-      if (interpreter == null)
-         Nil
-      else
-         interpreter.getDeclarations(this)
-   }
+abstract class OpaqueElement extends NarrativeElement {
+   def format: String
+   def raw: String
 }
 
 /**
- * an extension that provides (parts of) the meaning of [[OpaqueDeclaration]]s
+ * an extension that provides (parts of) the meaning of [[OpaqueElement]]s
  */
-abstract class OpaqueDeclarationInterpreter extends Extension {
+abstract class OpaqueElementInterpreter[OE <: OpaqueElement] extends Extension {
    /** the format of opaque declaration this can interpret */
    def format : String
    
-   def toString(oc: OpaqueDeclaration): String
+   def toString(oc: OE): String
 
-   def fromNode(node: scala.xml.Node, base: Path): OpaqueDeclaration
-   def toNode(oc: OpaqueDeclaration): scala.xml.Node
-
-   def getDeclarations(oc: OpaqueDeclaration): List[ContentElement]
-   def getComponents(oc: OpaqueDeclaration): List[DeclarationComponent]
+   def fromNode(node: scala.xml.Node, base: Path): OE
+   def toNode(oc: OpaqueElement): scala.xml.Node
 }
 
-class XMLConstant(val home: Term, val name: LocalName, node: scala.xml.Node) extends OpaqueDeclaration("xml", node.toString)
 
-abstract class XMLConstantInterpreter extends OpaqueDeclarationInterpreter {
-   def format = "xml"
+trait OpaqueTextParser[OE <: OpaqueElement] {self: OpaqueElementInterpreter[OE] =>
+   def fromString(s: String): OE
+}
+
+trait OpaqueHTMLPresenter[OE <: OpaqueElement] {self: OpaqueElementInterpreter[OE] =>
+   def toHTML(oe: OE): String
+}
+
+abstract class UnknownOpaqueElement(val parent: Path, val raw: String) extends OpaqueElement {
+   def format = "unknown"
+   override def toString = raw
+   def toNode = <opaque format="unknown">{raw}</opaque>
+}
+
+abstract class DefalultOpaqueElementInterpreter extends OpaqueElementInterpreter[UnknownOpaqueElement] with OpaqueHTMLPresenter[UnknownOpaqueElement] {
+   def format = "unknown"
+   def toHTML(oe: UnknownOpaqueElement) = s"<pre>${oe.raw}</pre>"
 }

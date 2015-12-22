@@ -13,6 +13,18 @@ import notations._
 abstract class Declaration extends ContentElement {
    /** the containing module */
    lazy val parent = home.toMPath
+
+   /** the containing document if there is a document between this declaration and the containing module */
+   /* This is meant to be provided when constructing the declaration.
+      But it is realized as a variable because it would be too tedious to add it as a constructor argument everywhere.
+    */
+   private var relDocHome_ = LocalName.empty
+   def setDocumentHome(ln: LocalName) {
+      relDocHome_ = ln
+   }
+   def relativeDocumentHome = relDocHome_
+   def documentHome = parent.toDPath / relDocHome_
+
    /** the containing module
     * 
     * this is almost always OMMOD(p:MPath),

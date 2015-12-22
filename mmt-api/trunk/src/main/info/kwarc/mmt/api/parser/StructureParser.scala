@@ -1,13 +1,13 @@
 package info.kwarc.mmt.api.parser
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.patterns._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.utils.URI
+import documents._
+import modules._
+import notations._
+import objects._
+import patterns._
+import symbols._
+import utils._
 
 /**
  * This class bundles all state that is maintained by a [[StructureParser]]
@@ -289,13 +289,21 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
   }
 
-  /** like seCont but may wrap in NestedModule if parent is MPath */
-  private def moduleCont(m: Module, parent: Path)(implicit state: ParserState) {
-    parent match {
-      case _: DPath => seCont(m)
-      case _: MPath => seCont(new NestedModule(m))
-      case _ => throw ImplementationError("bad parent")
+  /** parent of a module: either a document, or a section in a module */ 
+  private abstract class ModParent
+  private case class IsDoc(doc: DPath) extends ModParent
+  private case class IsMod(mod: MPath, relDoc: LocalName) extends ModParent  
+
+  /** like seCont but may wrap in NestedModule */
+  private def moduleCont(m: Module, par: ModParent)(implicit state: ParserState) {
+    val se = par match {
+       case IsDoc(dp) => m
+       case IsMod(mp, ln) =>
+          val nm = new NestedModule(m)
+          nm.setDocumentHome(ln)
+          nm
     }
+    seCont(se)
   }
 
   protected def resolveName(home: Term, name: LocalName)(implicit state: ParserState) = {
@@ -310,8 +318,277 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         name
     }
   }
+  
+  // *************** the two major methods for reading in documents and modules 
 
-  def readParameters(context: Context)(implicit state: ParserState): Context = {
+  private lazy val titleAnnotator = new NarrativeMetadata("title")
+  
+  /** the main loop for reading declarations that can occur in documents
+    * @param doc the containing Document (must be in the controller already)
+    */
+  private def readInDocument(doc: Document)(implicit state: ParserState) {
+    if (state.reader.endOfDocument) return
+    val (keyword, reg) = state.reader.readToken
+    state.startPosition = reg.start
+    try {
+      keyword match {
+        case "" =>
+          if (state.reader.endOfDocument) {
+            return
+          } else
+            throw makeError(reg, "keyword expected, within " + doc).copy(level = Level.Fatal)
+        case "document" =>
+          val name = readName
+          val dpath = doc.path / name
+          val d = new Document(dpath)
+          seCont(d)
+          logGroup {
+            readInDocument(d)
+          }
+          end(d)
+        case "namespace" =>
+          // default namespace is set relative to current default namespace
+          val ns = readDPath(DPath(state.namespaces.default))
+          state.namespaces = state.namespaces(DPath(ns.uri))
+        case "import" =>
+          val (n, _) = state.reader.readToken
+          val ns = readDPath(DPath(state.namespaces.default))
+          state.namespaces = state.namespaces.add(n, ns.uri)
+        case "theory" =>
+          readTheory(IsDoc(doc.path), Context.empty)
+        case ViewKey(_) => readView(IsDoc(doc.path), Context.empty, isImplicit = false)
+        case "implicit" =>
+          val (keyword2, reg2) = state.reader.readToken
+          keyword2 match {
+            case ViewKey(_) => readView(IsDoc(doc.path), Context.empty, isImplicit = true)
+            case _ => throw makeError(reg2, "only views can be implicit here")
+          }
+        case k =>
+          // other keywords are treated as parser plugins
+          val extParser = getParseExt(doc, k).getOrElse {
+            throw makeError(reg, "unknown keyword: " + k)
+          }
+          val (mod, mreg) = state.reader.readModule
+          val reader = Reader(mod)
+          reader.setSourcePosition(mreg.start)
+          extParser(this, state.copy(reader), doc, k)
+      }
+      // check that the reader is at the end of a module level declaration, throws error otherwise
+      if (!state.reader.endOfModule) {
+        val (rest, reg) = state.reader.readModule
+        if (rest != "")
+          throw makeError(reg, "extraneous tokens, ignored: " + rest)
+      }
+    } catch {
+      case e: SourceError =>
+        errorCont(e)
+        if (!state.reader.endOfModule)
+          state.reader.readModule
+    }
+    readInDocument(doc) // compiled code is not actually tail-recursive
+  }
+
+  /** the main loop for reading declarations that can occur in a theory
+    * @param mod the containing module (added already)
+    * @param context the context (including the containing module)
+    * @param patterns the patterns of the meta-theory (precomputed in readInDocument)
+    *
+    *                 this function handles one declaration if possible, then calls itself recursively
+    */
+  private def readInModule(mod: Body, context: Context,
+                           patterns: List[(String, GlobalName)])(implicit state: ParserState) {
+     readInModuleAux(mod, mod.asDocument.path, context, patterns)
+  }
+  
+  private def readInModuleAux(mod: Body, docHome: DPath, context: Context,
+                           patterns: List[(String, GlobalName)])(implicit state: ParserState) {
+    //This would make the last RS marker of a module optional, but it's problematic with nested modules.
+    //if (state.reader.endOfModule) return
+    val linkOpt = mod match {
+      case l: DeclaredLink => Some(l)
+      case _ => None
+    }
+    val mpath = mod.path.toMPath // non-trivial only for structures
+    /** the root name of all sections and the LocalName of the currentSection */
+    val docRoot = mpath.toDPath
+    val currentSection = docHome.dropPrefix(docRoot).getOrElse {
+       throw ImplementationError("document home must extend content home")
+    }
+    lazy val modParent = IsMod(mpath, currentSection)
+    /* declarations must only be added through this method */
+    def addDeclaration(d: Declaration) {
+         d.setDocumentHome(currentSection)
+         seCont(d)
+    }
+    // to be set if the section changes
+    var nextSection = currentSection
+    try {
+      val (keyword, reg) = state.reader.readToken
+      state.startPosition = reg.start
+      def fail(s: String) = throw makeError(reg, s)
+      keyword match {
+        //this case occurs if we read the GS marker
+        case "" =>
+          if (state.reader.endOfModule) {
+            return
+          } else
+            fail("keyword expected, within module " + mod.path)
+        //Constant
+        case "constant" =>
+          val name = readName
+          val c = readConstant(name, mpath, linkOpt, context)
+          addDeclaration(c)
+        //PlainInclude
+        case "include" =>
+          mod match {
+            case thy: DeclaredTheory =>
+              val (fromRef, from) = readMPath(thy.path)
+              val incl = PlainInclude(from, thy.path)
+              SourceRef.update(incl.from, fromRef)
+              addDeclaration(incl)
+            case link: DeclaredLink =>
+              val (fromRef, from) = readMPath(link.path)
+              readDelimiter("=")
+              val (inclRef, incl) = readMPath(link.path)
+              //readParsedObject(view.to)
+              val as = PlainViewInclude(link.toTerm, from, incl)
+              SourceRef.update(as.from, fromRef)
+              SourceRef.update(as.df, inclRef)
+              addDeclaration(as)
+          }
+        case "structure" =>
+          mod match {
+            case thy: DeclaredTheory => readStructure(modParent, linkOpt, context, isImplicit = false)
+            case link: DeclaredLink =>
+              val name = readName
+              val orig = controller.get(link.from.toMPath ? name) match {
+                case s: Structure => s
+                case _ => fail("not a structure: "+link.from.toMPath?name)
+              }
+              readDelimiter("=")
+              val incl = readSPath(link.path)
+              val target = controller.get(incl) match {
+                case s: Link => s
+                case _ => fail("not a link: "+incl)
+              }
+              val as = DefLinkAssignment(link.toTerm,name,target.from,target.toTerm)
+              // SourceRef.update(as.df,SourceRef.fromURI(URI.apply(target.path.toString)))
+              // SourceRef.update(as.from,SourceRef.fromURI(URI.apply(orig.path.toString)))
+              addDeclaration(as)
+          }
+        case "theory" => readTheory(modParent, context)
+        case ViewKey(_) => readView(modParent, context, isImplicit = false)
+        case k if k.forall(_ == '=') =>
+            val currentLevel = currentSection.length
+            val thisLevel = k.length
+            val (nameTitle,reg) = state.reader.readDeclaration
+            if (nameTitle.isEmpty) {
+               // end section: =...=
+               if (thisLevel > currentLevel) {
+                  throw makeError(reg, s"no document at level $thisLevel open")
+               } else {
+                 nextSection = currentSection.take(thisLevel-1)
+               }
+            } else {
+               // begin section: =...= #NAME TITLE  or =...= TITLE
+               val (name,title) = if (nameTitle.startsWith("#")) {
+                  val pos = nameTitle.indexWhere(_.isWhitespace)
+                  (nameTitle.substring(1,pos),nameTitle.substring(pos).trim)
+               } else ("", nameTitle)
+               nextSection = currentSection / name
+               val innerDoc = new Document(docRoot / nextSection, contentAncestor = Some(mod))
+               titleAnnotator.update(innerDoc, title)
+               seCont(innerDoc)
+            }
+        //Pattern
+        case "pattern" =>
+          mod match {
+            case thy: DeclaredTheory =>
+              val name = readName
+              thy.meta match {
+                case None =>
+                  fail("pattern declaration illegal without meta-theory")
+                case Some(mt) =>
+                  //                           val pattern = readSPath(mt)
+                  val p = readPattern(name: LocalName, thy.path)
+                  addDeclaration(p)
+              }
+            case link: DeclaredLink =>
+              fail("pattern declaration in link")
+          }
+        //Instance
+        case "instance" =>
+          mod match {
+            case thy: DeclaredTheory =>
+              val name = readName
+              thy.meta match {
+                case None =>
+                  fail("instance declaration illegal without meta-theory")
+                case Some(mt) =>
+                  val i = readInstance(name, thy.path, None)
+                  addDeclaration(i)
+              }
+            case link: DeclaredLink =>
+              fail("instance declaration in link")
+          }
+        case "implicit" =>
+          val (keyword2, reg2) = state.reader.readToken
+          keyword2 match {
+            case ViewKey(_) => readView(modParent, context, isImplicit = true)
+            case "structure" => readStructure(modParent, linkOpt, context, isImplicit = true)
+            case _ => throw makeError(reg2, "only links can be implicit here")
+          }
+        case k =>
+          // other keywords are treated as ...
+          val patOpt = patterns.find(_._1 == k)
+          if (patOpt.isDefined) {
+            // 1) an instance of a Pattern with LocalName k visible in meta-theory
+            val pattern = patOpt.get._2
+            val name = readName
+            val i = readInstance(name, mpath, Some(pattern))
+            addDeclaration(i)
+          } else {
+            val parsOpt = getParseExt(mod, k)
+            if (parsOpt.isDefined) {
+              // 2) a parser plugin identified by k
+              val (decl, reg) = state.reader.readDeclaration
+              val reader = Reader(decl)
+              reader.setSourcePosition(reg.start)
+              val se = if (currentSection.length == 0) mod
+              else mod.asDocument.getLocally(currentSection).getOrElse {
+                 throw ImplementationError("section not found in module")
+              }
+              parsOpt.get.apply(this, state.copy(reader), se, k,context)
+            } else {
+              // 3) a constant with name k
+              val name = LocalName.parse(k)
+              val c = readConstant(name, mpath, linkOpt, context)
+              addDeclaration(c)
+            }
+          }
+      }
+      if (!state.reader.endOfDeclaration) {
+        val (rest, reg) = state.reader.readDeclaration
+        if (rest != "")
+          throw makeError(reg, "end of declaration expected, found and ignored: " + rest)
+      }
+    } catch {
+      case e: Error =>
+        // wrap in source error if not source error already
+        val se: SourceError = e match {
+          case se: SourceError => se
+          case _ => makeError(currentSourceRegion, "error while parsing: " + e.getMessage).setCausedBy(e)
+        }
+        errorCont(se)
+        if (!state.reader.endOfDeclaration)
+          state.reader.readDeclaration
+    }
+    readInModuleAux(mod, docRoot / nextSection, context, patterns) // compiled code is not actually tail-recursive
+  }
+
+  // *************** auxiliary methods of readInModule and readInDocument that read particular elements 
+  
+  private def readParameters(context: Context)(implicit state: ParserState): Context = {
     val (name,srg) = state.reader.readToken
     readDelimiter(":")
     val (obj,reg,parsed) = readParsedObject(context)
@@ -320,20 +597,20 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       else vdc
   }
   /** auxiliary function to read Theories
-    * @param parent the containing document/module
+    * @param docHome the containing document (not the namespace) or module
+    * @param modHome the containing theory (if any)
     * @param context the context (excluding the theory to be read)
     */
-  private def readTheory(parent: Path, context: Context)(implicit state: ParserState) {
+  private def readTheory(parent: ModParent, context: Context)(implicit state: ParserState) {
     val rname = readName
     val (ns, name) = parent match {
-      case doc: DPath =>
+      case IsDoc(doc) =>
         val ns = DPath(state.namespaces.default)
         val mref = MRef(doc, ns ? rname)
         seCont(mref)
         (ns, rname)
-      case mp: MPath =>
-        (mp.doc, mp.name / rname)
-      case _ => throw ImplementationError("bad parent")
+      case IsMod(mod,_) =>
+        (mod.doc, mod.name / rname)
     }
     val tpath = ns ? name
     var delim = state.reader.readToken
@@ -360,7 +637,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           case (unk, OMBINDC(OMS(utils.mmt.context), cont, Nil)) => unk ++ cont
           case _ =>
             errorCont(makeError(reg, "parameters of theory must be context: " + controller.presenter.asString(p)))
-            Context()
+            Context.empty
         }
         delim = state.reader.readToken
         params
@@ -371,13 +648,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         ct
         */
       } else
-        Context()
+        Context.empty
       val t = new DeclaredTheory(ns, name, meta, parameters)
       moduleCont(t, parent)
       if (delim._1 == "=") {
         val patterns: List[(String, GlobalName)] = getPatternsFromMeta(meta)
         logGroup {
-          readInModule(t, t.path, context ++ t.getInnerContext, patterns)
+          readInModule(t, context ++ t.getInnerContext, patterns)
         }
         end(t)
       } else {
@@ -407,17 +684,16 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     * @param context the context (excluding the view to be read)
     * @param isImplicit whether the view is implicit
     */
-  private def readView(parent: Path, context: Context, isImplicit: Boolean)(implicit state: ParserState) {
+  private def readView(parent: ModParent, context: Context, isImplicit: Boolean)(implicit state: ParserState) {
     val rname = readName
     val (ns, name) = parent match {
-      case doc: DPath =>
+      case IsDoc(doc) =>
         val ns = DPath(state.namespaces.default)
         val mref = MRef(doc, ns ? rname)
         seCont(mref)
         (ns, rname)
-      case mp: MPath =>
-        (mp.doc, mp.name / rname)
-      case _ => throw ImplementationError("bad parent")
+      case IsMod(mod,_) =>
+        (mod.doc, mod.name / rname)
     }
     val vpath = ns ? name
     readDelimiter(":")
@@ -437,51 +713,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         val v = new DeclaredView(ns, name, from, to, isImplicit) // TODO add metamorph?
         moduleCont(v, parent)
         logGroup {
-          readInModule(v, v.path, context ++ v.codomainAsContext, Nil)
+          readInModule(v, context ++ v.codomainAsContext, Nil)
         }
         end(v)
     }
-  }
-
-  /** auxiliary function to read structures
-    * @param parent the containing module
-    * @param context the context (excluding the strucutre to be read)
-    * @param isImplicit whether the structure is implicit
-    */
-  private def readStructure(parent: MPath, link: Option[DeclaredLink], context: Context,
-                            isImplicit: Boolean)(implicit state: ParserState) {
-    val givenName = readName
-    val name = link.map { l => resolveName(l.from, givenName) }.getOrElse(givenName)
-    val spath = parent ? name
-    readDelimiter(":")
-    val tpC = new TermContainer
-    //doComponent(TypeComponent, tpC, context)
-    val tp = OMMOD(readMPath(spath)._2)
-    tpC.parsed = tp
-    val s = new DeclaredStructure(OMMOD(parent), name, tpC, isImplicit) // TODO add metamorph?
-    seCont(s)
-    if (state.reader.endOfDeclaration) {
-      // s: tp RS
-      end(s)
-      return
-    }
-    val (t, reg) = state.reader.readToken
-    t match {
-      case "=" =>
-        // s : tp US = body GS
-        logGroup {
-          readInModule(s, parent / s.name, context, Nil)
-        }
-      case "" =>
-        // good: s : tp US RS
-        // bad:  s : tp US _
-        if (!state.reader.endOfDeclaration)
-          throw makeError(reg, "'=' or end of declaration expected, within structure " + spath)
-      case _ =>
-        // s : tp US _
-        throw makeError(reg, "'=' or end of declaration expected, within structure " + spath)
-    }
-    end(s)
   }
 
   /**
@@ -564,7 +799,49 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     constant
   }
 
-  private def readInstance(name: LocalName, tpath: MPath, patOpt: Option[GlobalName])(implicit state: ParserState) {
+  /** auxiliary function to read structures
+    * @param parent the containing module
+    * @param context the context (excluding the structure to be read)
+    * @param isImplicit whether the structure is implicit
+    */
+  private def readStructure(parent: IsMod, link: Option[DeclaredLink], context: Context,
+                            isImplicit: Boolean)(implicit state: ParserState) {
+    val givenName = readName
+    val name = link.map { l => resolveName(l.from, givenName) }.getOrElse(givenName)
+    val spath = parent.mod ? name
+    readDelimiter(":")
+    val tpC = new TermContainer
+    //doComponent(TypeComponent, tpC, context)
+    val tp = OMMOD(readMPath(spath)._2)
+    tpC.parsed = tp
+    val s = new DeclaredStructure(OMMOD(parent.mod), name, tpC, isImplicit) // TODO add metamorph?
+    s.setDocumentHome(parent.relDoc)
+    seCont(s)
+    if (state.reader.endOfDeclaration) {
+      // s: tp RS
+      end(s)
+      return
+    }
+    val (t, reg) = state.reader.readToken
+    t match {
+      case "=" =>
+        // s : tp US = body GS
+        logGroup {
+          readInModule(s, context, Nil)
+        }
+      case "" =>
+        // good: s : tp US RS
+        // bad:  s : tp US _
+        if (!state.reader.endOfDeclaration)
+          throw makeError(reg, "'=' or end of declaration expected, within structure " + spath)
+      case _ =>
+        // s : tp US _
+        throw makeError(reg, "'=' or end of declaration expected, within structure " + spath)
+    }
+    end(s)
+  }
+
+  private def readInstance(name: LocalName, tpath: MPath, patOpt: Option[GlobalName])(implicit state: ParserState): Instance = {
     var pattern: GlobalName = null
     var arguments: List[Term] = Nil
     if (state.reader.endOfDeclaration) {
@@ -592,11 +869,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           throw makeError(reg, "not an instance of pattern " + p.toPath)
       }
     }
-    val instance = new Instance(OMMOD(tpath), name, pattern, arguments)
-    seCont(instance)
+    new Instance(OMMOD(tpath), name, pattern, arguments)
   }
 
-  private def readPattern(name: LocalName, tpath: MPath)(implicit state: ParserState) {
+  private def readPattern(name: LocalName, tpath: MPath)(implicit state: ParserState): Pattern = {
     val ppath = tpath ? name
     val nt = new NotationContainer
     var pr: Context = Context() // params
@@ -635,222 +911,6 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           doNotation(PresentationNotationComponent, nt, treg, ppath)
       }
     }
-    val pattern = new Pattern(OMMOD(tpath), name, pr, bd, nt)
-    seCont(pattern)
-  }
-
-  /** the main loop for reading declarations that can occur in documents
-    * @param doc the containing Document (must be in the controller already)
-    */
-  private def readInDocument(doc: Document)(implicit state: ParserState) {
-    if (state.reader.endOfDocument) return
-    val (keyword, reg) = state.reader.readToken
-    state.startPosition = reg.start
-    try {
-      keyword match {
-        case "" =>
-          if (state.reader.endOfDocument) {
-            return
-          } else
-            throw makeError(reg, "keyword expected, within " + doc).copy(level = Level.Fatal)
-        case "document" =>
-          val name = readName
-          val dpath = doc.path / name
-          val d = new Document(dpath)
-          seCont(d)
-          logGroup {
-            readInDocument(d)
-          }
-          end(d)
-        case "namespace" =>
-          // default namespace is set relative to current default namespace
-          val ns = readDPath(DPath(state.namespaces.default))
-          state.namespaces = state.namespaces(DPath(ns.uri))
-        case "import" =>
-          val (n, _) = state.reader.readToken
-          val ns = readDPath(DPath(state.namespaces.default))
-          state.namespaces = state.namespaces.add(n, ns.uri)
-        case "theory" =>
-          readTheory(doc.path, Context.empty)
-        case ViewKey(_) => readView(doc.path, Context.empty, isImplicit = false)
-        case "implicit" =>
-          val (keyword2, reg2) = state.reader.readToken
-          keyword2 match {
-            case ViewKey(_) => readView(doc.path, Context.empty, isImplicit = true)
-            case _ => throw makeError(reg2, "only views can be implicit here")
-          }
-        case k =>
-          // other keywords are treated as parser plugins
-          val extParser = getParseExt(doc, k).getOrElse {
-            throw makeError(reg, "unknown keyword: " + k)
-          }
-          val (mod, mreg) = state.reader.readModule
-          val reader = Reader(mod)
-          reader.setSourcePosition(mreg.start)
-          extParser(this, state.copy(reader), doc, k)
-      }
-      // check that the reader is at the end of a module level declaration, throws error otherwise
-      if (!state.reader.endOfModule) {
-        val (rest, reg) = state.reader.readModule
-        if (rest != "")
-          throw makeError(reg, "extraneous tokens, ignored: " + rest)
-      }
-    } catch {
-      case e: SourceError =>
-        errorCont(e)
-        if (!state.reader.endOfModule)
-          state.reader.readModule
-    }
-    readInDocument(doc) // compiled code is not actually tail-recursive
-  }
-
-  /** the main loop for reading declarations that can occur in a theory
-    * @param mod the containing module (added already)
-    * @param context the context (including the containing module)
-    * @param patterns the patterns of the meta-theory (precomputed in readInDocument)
-    *
-    *                 this function handles one declaration if possible, then calls itself recursively
-    */
-  private def readInModule(mod: StructuralElement with Body, mpath: MPath, context: Context,
-                           patterns: List[(String, GlobalName)])(implicit state: ParserState) {
-    //This would make the last RS marker of a module optional, but it's problematic with nested modules.
-    //if (state.reader.endOfModule) return
-    val linkOpt = mod match {
-      case l: DeclaredLink => Some(l)
-      case _ => None
-    }
-    try {
-      val (keyword, reg) = state.reader.readToken
-      state.startPosition = reg.start
-      def fail(s: String) = throw makeError(reg, s)
-      keyword match {
-        //this case occurs if we read the GS marker
-        case "" =>
-          if (state.reader.endOfModule) {
-            return
-          } else
-            fail("keyword expected, within module " + mod.path)
-        //Constant
-        case "constant" =>
-          val name = readName
-          val c = readConstant(name, mpath, linkOpt, context)
-          seCont(c)
-        //PlainInclude
-        case "include" =>
-          mod match {
-            case thy: DeclaredTheory =>
-              val (fromRef, from) = readMPath(thy.path)
-              val incl = PlainInclude(from, thy.path)
-              SourceRef.update(incl.from, fromRef)
-              seCont(incl)
-            case link: DeclaredLink =>
-              val (fromRef, from) = readMPath(link.path)
-              readDelimiter("=")
-              val (inclRef, incl) = readMPath(link.path)
-              //readParsedObject(view.to)
-              val as = PlainViewInclude(link.toTerm, from, incl)
-              SourceRef.update(as.from, fromRef)
-              SourceRef.update(as.df, inclRef)
-              seCont(as)
-          }
-        case "structure" =>
-          mod match {
-            case thy: DeclaredTheory => readStructure(mpath, linkOpt, context, isImplicit = false)
-            case link: DeclaredLink =>
-              val name = readName
-              val orig = controller.get(link.from.toMPath ? name) match {
-                case s: Structure => s
-                case _ => fail("not a structure: "+link.from.toMPath?name)
-              }
-              readDelimiter("=")
-              val incl = readSPath(link.path)
-              val target = controller.get(incl) match {
-                case s: Link => s
-                case _ => fail("not a link: "+incl)
-              }
-              val as = DefLinkAssignment(link.toTerm,name,target.from,target.toTerm)
-              // SourceRef.update(as.df,SourceRef.fromURI(URI.apply(target.path.toString)))
-              // SourceRef.update(as.from,SourceRef.fromURI(URI.apply(orig.path.toString)))
-              seCont(as)
-          }
-        case "theory" => readTheory(mod.path, context)
-        case ViewKey(_) => readView(mod.path, context, isImplicit = false)
-        //Pattern
-        case "pattern" =>
-          mod match {
-            case thy: DeclaredTheory =>
-              val name = readName
-              thy.meta match {
-                case None =>
-                  fail("pattern declaration illegal without meta-theory")
-                case Some(mt) =>
-                  //                           val pattern = readSPath(mt)
-                  readPattern(name: LocalName, thy.path)
-              }
-            case link: DeclaredLink =>
-              fail("pattern declaration in link")
-          }
-        //Instance
-        case "instance" =>
-          mod match {
-            case thy: DeclaredTheory =>
-              val name = readName
-              thy.meta match {
-                case None =>
-                  fail("instance declaration illegal without meta-theory")
-                case Some(mt) =>
-                  readInstance(name, thy.path, None)
-              }
-            case link: DeclaredLink =>
-              fail("instance declaration in link")
-          }
-        case "implicit" =>
-          val (keyword2, reg2) = state.reader.readToken
-          keyword2 match {
-            case ViewKey(_) => readView(mpath, context, isImplicit = true)
-            case "structure" => readStructure(mpath, linkOpt, context, isImplicit = true)
-            case _ => throw makeError(reg2, "only links can be implicit here")
-          }
-        case k =>
-          // other keywords are treated as ...
-          val patOpt = patterns.find(_._1 == k)
-          if (patOpt.isDefined) {
-            // 1) an instance of a Pattern with LocalName k visible in meta-theory
-            val pattern = patOpt.get._2
-            val name = readName
-            readInstance(name, mpath, Some(pattern))
-          } else {
-            val parsOpt = getParseExt(mod, k)
-            if (parsOpt.isDefined) {
-              // 2) a parser plugin identified by k
-              val (decl, reg) = state.reader.readDeclaration
-              val reader = Reader(decl)
-              reader.setSourcePosition(reg.start)
-              parsOpt.get.apply(this, state.copy(reader), mod, k,context)
-            } else {
-              // 3) a constant with name k
-              val name = LocalName.parse(k)
-              val c = readConstant(name, mpath, linkOpt, context)
-              seCont(c)
-            }
-          }
-      }
-      if (!state.reader.endOfDeclaration) {
-        val (rest, reg) = state.reader.readDeclaration
-        if (rest != "")
-          throw makeError(reg, "end of declaration expected, found and ignored: " + rest)
-      }
-    } catch {
-      case e: Error =>
-        // wrap in source error if not source error already
-        val se: SourceError = e match {
-          case se: SourceError => se
-          case _ => makeError(currentSourceRegion, "error while parsing: " + e.getMessage).setCausedBy(e)
-        }
-        errorCont(se)
-        if (!state.reader.endOfDeclaration)
-          state.reader.readDeclaration
-    }
-    readInModule(mod, mpath, context, patterns) // compiled code is not actually tail-recursive
+    new Pattern(OMMOD(tpath), name, pr, bd, nt)
   }
 }

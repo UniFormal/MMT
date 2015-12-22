@@ -59,10 +59,30 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
      val (bef,aft) = items.splitAt(pos) // order(pos) == aft.head
      items = bef ::: i :: aft
   }
-  /** retrieves a child */
-  def getO(n: LocalName) = items.find(_.name == n)
-  /** retrieves a child */
-  def get(n: LocalName) = getO(n).get
+  
+   def getMostSpecific(name: LocalName) : Option[(NarrativeElement, LocalName)] = {
+     if (name.isEmpty) Some((this, LocalName.empty))
+     else items.find(i => name.startsWith(i.name)).map {ne =>
+        val rest = name.drop(ne.name.length)
+        (ne, rest)
+      }
+   }
+  
+  /** retrieves a descendant
+   *  
+   *  This may fail for two reasons:
+   *  - a segment of n does not exist
+   *  - a segment of n exists but is not a [[Document]]
+   *  
+   *  use Library.getNarrative for smarter dereferencing
+   */
+  def getLocally(name: LocalName): Option[NarrativeElement] = { 
+     getMostSpecific(name).flatMap {
+       case (parDoc: Document, rest) => parDoc.getLocally(rest)
+       case _ => None
+     }
+  }
+  
   /** deletes a child */
   def delete(n: LocalName) {
      items = items.filterNot(_.name == n)
