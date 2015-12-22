@@ -144,17 +144,33 @@ trait Body extends ContentElement {self =>
    /** the list of declarations using elaborated declarations where possible */
    def getDeclarationsElaborated = getDeclarations.filterNot(_.hasBeenElaborated)
    /** getPrimitiveDeclarations, with narrative structure */
-   protected def innerNodes = document.getDeclarations.flatMap {
-      case r: SRef =>
-         val s = statements(r.name)
-         if (s.isGenerated) s.toNode else Nil
-      case d: Document =>
-         throw ImplementationError("documents inside modules not fully implemented yet")
-      case ne => ne.toNode 
+   protected def innerNodes = {
+      def makeNodes(doc: Document): scala.xml.NodeSeq = {
+         val nodes = doc.getDeclarations.flatMap {
+            case r: SRef =>
+               val s = statements(r.name)
+               if (!s.isGenerated) s.toNode else Nil
+            case d: Document =>
+               <document name={d.name.last.toPath}>{makeNodes(d)}</document>
+            case ne => ne.toNode 
+         }
+         doc.getMetaDataNode ++ nodes
+      }
+      makeNodes(document)
    }
    /** getDeclarationsElaborated, without narrative structure */
    protected def innerNodesElab = getDeclarationsElaborated.map(_.toNode)
-   protected def innerString =
-      if (getPrimitiveDeclarations.isEmpty) ""
-      else getPrimitiveDeclarations.map("\t" + _.toString).mkString(" = {\n", "\n", "\n}")
+   protected def innerString = {
+      def makeStrings(doc: Document, indent: Int): List[(Int,String)] = {
+         doc.getDeclarations.flatMap {
+            case r: SRef =>
+               val s = statements(r.name)
+               if (!s.isGenerated) List((indent,s.toString)) else Nil
+            case d: Document =>
+               (indent, "document " + d.name.last.toPath) :: makeStrings(d, indent+1)
+            case ne => List((indent, ne.toString))
+         }
+      }
+      makeStrings(document,0).map {case (ind, s) => Range(0,ind).map(_ => "  ") + s}.mkString("\n")
+   }
 }

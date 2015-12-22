@@ -54,7 +54,7 @@ object XMLObjectParser extends ObjectParser {
 class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
    val format = "omdoc"
    override val logPrefix = "streamer"
-   private lazy val reader = new XMLReader(report)
+   private lazy val reader = new XMLReader(controller)
 
    /** the structural elements whose children are processed immediately */
    private val containers = List("omdoc", "theory", "view")

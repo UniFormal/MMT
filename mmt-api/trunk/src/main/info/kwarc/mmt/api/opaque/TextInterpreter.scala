@@ -31,6 +31,7 @@ class TextInterpreter extends OpaqueElementInterpreter[OpaqueText]
                       with OpaqueTextParser[OpaqueText]
                       with OpaqueHTMLPresenter[OpaqueText] {
    def format = "text"
+   override def isApplicable(f: String) = super.isApplicable(f) || f == "T"
    
    def fromNode(parent: DPath, nsMap: NamespaceMap, nodes: NodeSeq): OpaqueText = {
       val frags = nodes.toList map {

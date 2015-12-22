@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.backend
 import info.kwarc.mmt.api._
 import documents._
+import frontend._
 import metadata._
 import modules._
 import notations._
@@ -10,6 +11,7 @@ import patterns._
 import utils._
 import ontology._
 import presentation._
+import opaque._
 
 import scala.xml.{Node,NodeSeq,Utility}
 
@@ -18,7 +20,8 @@ import scala.xml.{Node,NodeSeq,Utility}
  *  The XML may contain CURIEs.
  *  However, all namespace prefixes must be declared on the toplevel omdoc element; other bindings are ignored.
  */
-class XMLReader(val report: frontend.Report) extends frontend.Logger {
+class XMLReader(controller: Controller) extends Logger {
+   val report = controller.report
    val logPrefix = "reader"
    /** calls the continuation function */
    private def add(e : StructuralElement)(implicit cont: StructuralElement => Unit) {
@@ -87,6 +90,13 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
             val innerdoc = new Document(dpath)
             add(innerdoc, md)
             readIn(nsMap, innerdoc, mods)
+         case <opaque>{ops @_*}</opaque> =>
+            val format = xml.attr(node, "format")
+            val oi = controller.extman.get(classOf[OpaqueElementInterpreter[_<: OpaqueElement]], format).getOrElse {
+               throw ParseError("unknown opaque format: " + format)
+            }
+            val oe = oi.fromNode(doc.path, nsMap, ops)
+            add(oe, md)
          case <dref/> =>
 	         val d = xml.attr(node, "target")
 	         log("dref to " + d + " found")
@@ -172,7 +182,7 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
       val relDocHome = home.toDPath.dropPrefix(docHome).getOrElse {
          throw ImplementationError("document home must extend content home")
       } 
-      val (symbol, md) = MetaData.parseMetaDataChild(node, nsMap)
+      val (symbolWS, md) = MetaData.parseMetaDataChild(node, nsMap)
       /* declarations must only be added through this method */
       def addDeclaration(d: Declaration) {
          d.setDocumentHome(relDocHome)
@@ -195,7 +205,8 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
          case "" => None
          case a => Some(LocalName.parse(a))
       }
-      xml.trimOneLevel(symbol) match {
+      val symbol = if (symbolWS.label == "opaque") symbolWS else xml.trimOneLevel(symbolWS)
+      symbol match {
          case <document>{dnodes}</document> =>
             val name = xml.attr(symbol, "name")
             val innerDoc = new Document(docHome / name, contentAncestor = Some(body))
@@ -203,6 +214,13 @@ class XMLReader(val report: frontend.Report) extends frontend.Logger {
             dnodes.foreach {n =>
                readInModuleAux(home, innerDoc.path, nsMap, body, n)
             }
+         case <opaque>{ops @_*}</opaque> =>
+            val format = xml.attr(node, "format")
+            val oi = controller.extman.get(classOf[OpaqueElementInterpreter[_<: OpaqueElement]], format).getOrElse {
+               throw ParseError("unknown opaque format: " + format)
+            }
+            val oe = oi.fromNode(docHome, nsMap, ops)
+            add(oe, md)
          case <constant>{comps @_*}</constant> =>
             log("constant " + name.toString + " found")
             var tp: Option[Term] = None

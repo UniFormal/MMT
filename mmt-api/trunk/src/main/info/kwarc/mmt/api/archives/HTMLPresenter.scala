@@ -1,13 +1,14 @@
 package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.presentation._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.utils._
+import documents._
+import modules._
+import notations._
+import objects._
+import presentation._
+import symbols._
+import opaque._
+import utils._
 
 abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
    override val outExt = "html"
@@ -219,6 +220,37 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
       }}
    }
 
+   /** auxiliary method of doDocument */
+   private def doNarrativeElement(ne: NarrativeElement) {ne match {
+      case doc: Document =>
+        div("document") {
+          div("document-header") {
+             span("name") {
+                text(doc.path.last)
+             }
+          }
+          div("document-body") {
+             doc.getDeclarations foreach doNarrativeElement
+          }
+        }
+      case oe: OpaqueElement =>
+         val oi = controller.extman.get(classOf[OpaqueHTMLPresenter[_ <: OpaqueElement]], oe.format)
+                  .getOrElse(DefaultOpaqueElementInterpreter)
+         oi.toHTMLForce(objectPresenter, oe)(rh)
+      case r: NRef =>
+        val label = r match {
+           case _:DRef => "dref"
+           case _:MRef => "mref"
+           case _:SRef => "sref"
+        }
+        div("document-"+label) {
+            span(cls = "name loadable", attributes=List("jobad:load" -> r.target.toPath)) {
+            val name = if (r.name.nonEmpty) r.name.toString else r.target.last 
+            text(name)
+          }
+        }
+   }}
+   
    def doDocument(doc: Document) {
      val locOpt = controller.backend.resolveLogical(doc.path.uri)
      val svgOpt = locOpt flatMap {
@@ -230,28 +262,10 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
          else
            None
      }
-     div("document") {
-       span("name") {
-         text(doc.path.last)
-       }
-       ul("ref") { doc.getDeclarations foreach {
-         case r: NRef =>
-           val label = r match {
-              case _:DRef => "dref"
-              case _:MRef => "mref"
-              case _:SRef => "sref"
-           }
-           li(label) {
-             span(cls = "name loadable", attributes=List("jobad:load" -> r.target.toPath)) {
-               val name = if (r.name.nonEmpty) r.name.toString else r.target.last 
-               text(name)
-             }
-           }
-       }}
-       svgOpt foreach {src =>
-          div("graph") {
-            htmlobject(src, "image/svg+xml")
-          }
+     doNarrativeElement(doc)
+     svgOpt foreach {src =>
+       div("graph") {
+         htmlobject(src, "image/svg+xml")
        }
      }
    }

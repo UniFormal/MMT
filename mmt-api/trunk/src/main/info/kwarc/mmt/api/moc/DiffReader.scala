@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.objects._
 
 
 class DiffReader(controller : Controller) {
-  private val xmlReader = new XMLReader(controller.report)
+  private val xmlReader = new XMLReader(controller)
   def apply(n : scala.xml.Node) : Diff = n.label match {
     case "omdoc-diff" => 
       val changes = n.child.map(parseChange).toList

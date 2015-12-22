@@ -20,7 +20,7 @@ abstract class OpaqueElement extends NarrativeElement {
    
    // default implementations that may be overridden
 
-   def toNode = <opaque format={format}>{raw}</opaque>
+   def toNode = <opaque format={format}>{getMetaDataNode}{raw}</opaque>
    override def toString = raw.toString
    def name = LocalName.empty
    def path = parent / name
@@ -31,9 +31,20 @@ abstract class OpaqueElement extends NarrativeElement {
 /**
  * an extension that provides (parts of) the meaning of [[OpaqueElement]]s
  */
-abstract class OpaqueElementInterpreter[OE <: OpaqueElement] extends Extension {
+abstract class OpaqueElementInterpreter[OE <: OpaqueElement] extends FormatBasedExtension {
    /** the format of [[OpaqueElement]]s this can interpret */
    def format : String
+   def isApplicable(f: String) = f == format
+   
+   /** work around in case the Scala type system cannot tell that an OpaqueElement has type OE
+    *  pre: oe : OE
+    */
+   def force(oe: OpaqueElement): OE = {
+      if (isApplicable(oe.format)) {
+         try {oe.asInstanceOf[OE]}
+         catch {case _: Exception => throw ImplementationError("opaque element has bad type")}
+      } else throw LocalError("opaque element has bad format: " + format)
+   }
    
    /** constructs an [[OpaqueElement]] from a raw string */
    def fromNode(parent: DPath, nsMap: NamespaceMap, nodes: NodeSeq): OE
