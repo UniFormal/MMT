@@ -129,74 +129,96 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    }
 
    def doDeclaration(d: Declaration) {
-            val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
-            div("containerconstant toggleTarget inlineBoxSibling  panelHorizontalScroll ") {
-               div(" constant-header") {
-                 span {doName(d.path)}
-
-                 def toggle(label: String) {
-                    button("compToggle  btn btn-sm btn-default pull-right", onclick = s"interaction.toggleClick(this.parentNode,'$label')") {text(label)}
-                 }
-                 d.getComponents.foreach {case DeclarationComponent(comp, tc) =>
-                    if (tc.isDefined)
-                      toggle(comp.toString)
-                 }
-                 if (! usedby.isEmpty)
-                    toggle("used-by")
-                 if (! d.metadata.getTags.isEmpty)
-                    toggle("tags")
-                 if (! d.metadata.getAll.isEmpty)
-                    toggle("metadata")
-               }
-               table("constant-components ") {
-                  d.getComponents.foreach {
-                     case DeclarationComponent(comp, tc: AbstractTermContainer) =>
-                        tr(comp.toString) {
-                           tc.get.foreach {t =>
-                               doComponent(d.path $ comp, t)
-                           }
-                        }
-                     case DeclarationComponent(comp: NotationComponentKey, nc: NotationContainer) =>
-                        tr(comp.toString) {
-                           nc(comp).foreach {n =>
-                              doNotComponent(d.path $ comp, n)
-                            }
-                        }
-                  }
-                  if (! usedby.isEmpty) {
-                     tr("used-by") {
-                        td {span("compLabel") {text{"used by"}}}
-                        td {usedby foreach doPath}
+      val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
+      div("constant toggleTarget inlineBoxSibling") {
+         div("constant-header") {
+           span {doName(d.path)}
+           def toggle(label: String) {
+              button("compToggle btn btn-sm btn-default pull-right", onclick = s"interaction.toggleClick(this.parentNode,'$label')") {text(label)}
+           }
+           d.getComponents.foreach {case DeclarationComponent(comp, tc) =>
+              if (tc.isDefined)
+                toggle(comp.toString)
+           }
+           if (! usedby.isEmpty)
+              toggle("used-by")
+           if (! d.metadata.getTags.isEmpty)
+              toggle("tags")
+           if (! d.metadata.getAll.isEmpty)
+              toggle("metadata")
+         }
+         table("constant-components ") {
+            d.getComponents.foreach {
+               case DeclarationComponent(comp, tc: AbstractTermContainer) =>
+                  tr(comp.toString) {
+                     tc.get.foreach {t =>
+                         doComponent(d.path $ comp, t)
                      }
                   }
-                  if (! d.metadata.getTags.isEmpty)
-                     tr("tags") {
-                     td {span("compLabel"){text{" ---tags"}}}
-                     td {d.metadata.getTags.foreach {
-                        k => div("tag") {text(k.toPath)}
-                     }}
+               case DeclarationComponent(comp: NotationComponentKey, nc: NotationContainer) =>
+                  tr(comp.toString) {
+                     nc(comp).foreach {n =>
+                        doNotComponent(d.path $ comp, n)
+                      }
                   }
-                  def doKey(k: GlobalName) {
-                     td{span("key compLabel", title=k.toPath) {text(k.toString)}}
-                  }
-                  d.metadata.getAll.foreach {
-                     case metadata.Link(k,u) => tr("link metadata") {
-                        doKey(k)
-                        td {a(u.toString) {text(u.toString)}}
-                     }
-                     case md: metadata.MetaDatum => tr("metadatum metadata") {
-                        doKey(md.key)
-                        td {doMath(md.value, None)}
-                     }
-                  }
+            }
+            if (! usedby.isEmpty) {
+               tr("used-by") {
+                  td {span("compLabel") {text{"used by"}}}
+                  td {usedby foreach doPath}
                }
             }
+            if (! d.metadata.getTags.isEmpty)
+               tr("tags") {
+               td {span("compLabel"){text{" ---tags"}}}
+               td {d.metadata.getTags.foreach {
+                  k => div("tag") {text(k.toPath)}
+               }}
+            }
+            def doKey(k: GlobalName) {
+               td{span("key compLabel", title=k.toPath) {text(k.toString)}}
+            }
+            d.metadata.getAll.foreach {
+               case metadata.Link(k,u) => tr("link metadata") {
+                  doKey(k)
+                  td {a(u.toString) {text(u.toString)}}
+               }
+               case md: metadata.MetaDatum => tr("metadatum metadata") {
+                  doKey(md.key)
+                  td {doMath(md.value, None)}
+               }
+            }
+         }
+      }
    }
 
+   /** auxiliary method of doTheory */
+   private def doNarrativeElementInMod(body: Body, ne: NarrativeElement) {ne match {
+      case doc: Document =>
+        div("document") {
+          div("document-header") {
+             span("name") {
+                text(doc.path.last)
+             }
+          }
+          div("document-body") {
+             doc.getDeclarations foreach {d => doNarrativeElementInMod(body,d)}
+          }
+        }
+      case oe: OpaqueElement =>
+         val oi = controller.extman.get(classOf[OpaqueHTMLPresenter], oe.format)
+                  .getOrElse(DefaultOpaqueElementInterpreter)
+         oi.toHTML(objectPresenter, oe)(rh)
+      case r:SRef =>
+         val d = body.get(r.name)
+         doDeclaration(d)
+      case r: NRef => throw ImplementationError("nref in module") // impossible
+   }}
+
    def doTheory(t: DeclaredTheory) {
-      div("theory container-fluid") {
+      div("theory") {
          div("theory-header", onclick="toggleClick(this)") {doName(t.path)}
-         t.getPrimitiveDeclarations foreach doDeclaration
+         doNarrativeElementInMod(t, t.asDocument)
       }
    }
    def doView(v: DeclaredView) {}
@@ -221,7 +243,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    }
 
    /** auxiliary method of doDocument */
-   private def doNarrativeElement(ne: NarrativeElement) {ne match {
+   private def doNarrativeElementInDoc(ne: NarrativeElement) {ne match {
       case doc: Document =>
         div("document") {
           div("document-header") {
@@ -230,13 +252,13 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
              }
           }
           div("document-body") {
-             doc.getDeclarations foreach doNarrativeElement
+             doc.getDeclarations foreach doNarrativeElementInDoc
           }
         }
       case oe: OpaqueElement =>
-         val oi = controller.extman.get(classOf[OpaqueHTMLPresenter[_ <: OpaqueElement]], oe.format)
+         val oi = controller.extman.get(classOf[OpaqueHTMLPresenter], oe.format)
                   .getOrElse(DefaultOpaqueElementInterpreter)
-         oi.toHTMLForce(objectPresenter, oe)(rh)
+         oi.toHTML(objectPresenter, oe)(rh)
       case r: NRef =>
         val label = r match {
            case _:DRef => "dref"
@@ -262,7 +284,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
          else
            None
      }
-     doNarrativeElement(doc)
+     doNarrativeElementInDoc(doc)
      svgOpt foreach {src =>
        div("graph") {
          htmlobject(src, "image/svg+xml")

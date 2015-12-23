@@ -11,4 +11,6 @@ package object utils {
       case l => l
    }
    def listToString[A](l: List[A], sep: String) = {}
+   
+   def repeatString(s: String, n: Int, sep: String = "") = Range(0,n).map(_ => s).mkString(sep)
 }

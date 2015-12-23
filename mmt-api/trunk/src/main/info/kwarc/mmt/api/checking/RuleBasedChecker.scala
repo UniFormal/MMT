@@ -15,13 +15,17 @@ import frontend._
 class RuleBasedChecker extends ObjectChecker {
    override val logPrefix = "object-checker"
 
-   def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) {
-      log("checking unit " + cu.component + ": " + cu.judgement.present(o => controller.presenter.asString(o)))
-      val tc = controller.globalLookup.getComponent(cu.component) match {
-         case tc: TermContainer => tc
-         case _ => throw ImplementationError("not a TermContainer")
+   def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) = {
+      log("checking unit " + cu.component.getOrElse("without URI") + ": " + cu.judgement.present(o => controller.presenter.asString(o)))
+      // if a component is given, we perform side effects on it
+      val updateComponent = cu.component map {comp =>
+         controller.globalLookup.getComponent(comp) match {
+            case tc: TermContainer =>
+               tc.dependsOn.clear
+               (comp,tc)
+            case _ => throw ImplementationError("not a TermContainer")
+         }
       }
-      tc.dependsOn.clear
       // ** checking **
       log("using " + rules.getAll.mkString(", "))
       val solver = new Solver(controller, cu.context, cu.unknowns, rules)
@@ -43,9 +47,11 @@ class RuleBasedChecker extends ObjectChecker {
       // ** logging and error reporting **
       if (success) {
          log("success")
-         solver.getDependencies foreach {d =>
-            env.reCont(ontology.DependsOn(cu.component, d))
-            tc.dependsOn += d
+         updateComponent foreach {case (comp, tc) =>
+            solver.getDependencies foreach {d =>
+               env.reCont(ontology.DependsOn(comp, d))
+               tc.dependsOn += d
+            }
          }
       } else {
          log("------------- failure " + (if (mayHold) " (not proved)" else " (disproved)"))
@@ -64,16 +70,19 @@ class RuleBasedChecker extends ObjectChecker {
          }
       }
       // ** change management **
-      val changed = Some(result) != tc.analyzed
-      tc.analyzed = result // set it even if unchanged so that dirty flag gets cleared
-      if (! success)
-         tc.setAnalyzedDirty // revisit failed declarations
-      if (changed) {
-         log("changed")
-         controller.memory.content.notifyUpdated(cu.component) //TODO: this could be cleaner if taken care of by the onCheck method
-      } else {
-         log("not changed")
+      updateComponent foreach {case (comp, tc) =>
+         val changed = Some(result) != tc.analyzed
+         tc.analyzed = result // set it even if unchanged so that dirty flag gets cleared
+         if (! success)
+            tc.setAnalyzedDirty // revisit failed declarations
+         if (changed) {
+            log("changed")
+            controller.memory.content.notifyUpdated(comp) //TODO: this could be cleaner if taken care of by the onCheck method
+         } else {
+            log("not changed")
+         }
       }
+      CheckingResult(success, Some(psol))
    }
    /**
     * A Traverser that reduces all redexes introduced by solving unknowns.

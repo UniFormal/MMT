@@ -1,4 +1,5 @@
 package info.kwarc.mmt.api.ontology
+
 import info.kwarc.mmt.api._
 import documents._
 import modules._
@@ -6,6 +7,7 @@ import symbols._
 import patterns._
 import objects._
 import frontend._
+import opaque._
 
 
 abstract class RelationalExtractor extends Extension {
@@ -35,17 +37,19 @@ object MMTExtractor extends RelationalExtractor {
       e match {
          case d: Document =>
             f(IsDocument(d.path))
-            //TODO should getLocalItems but then it wouldn't work for documents created from folders
+            //TODO should use getLocalItems but then it wouldn't work for documents created from folders
             d.getDeclarations.foreach {i =>
                val c = i match {
                   case inner: Document =>
                      apply(inner)
                      inner.path
+                  case oe: OpaqueElement => oe.path
                   case nr: NRef => nr.target
                }
                f(Declares(d.path, c))
             }
          case n: NRef =>
+         case oe: OpaqueElement =>
          case t: Theory =>
             f(IsTheory(path))
             t match {

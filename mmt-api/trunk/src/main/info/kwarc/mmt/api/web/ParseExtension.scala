@@ -49,22 +49,27 @@ class ParseServer extends ServerExtension(":parse") {
                     val boxedPaths = controller.update(sdiff, pchanges)
 
                     def invPaths(p : Path, parents : Set[Path] = Nil.toSet) : Set[Path] = {
-                    println("calling for path " + p + " with parents " + parents.mkString(", "))  
-                    p match {
-                      case d : DPath => 
-                        controller.getDocument(d).getRefs.flatMap(x => invPaths(x.target, parents + d)).toSet
-                      case m : MPath => 
-                        val affected = boxedPaths exists {cp => cp.parent match {
-                          case gn : GlobalName => gn.module == m
-                          case mp : MPath => mp == p 
-                          case _ => false
-                        }}
-                        if (affected)
-                          parents + p
-                        else 
-                          Nil.toSet
-                      case _ => Nil.toSet
-                    }}
+                       println("calling for path " + p + " with parents " + parents.mkString(", "))  
+                       p match {
+                         case d : DPath => 
+                           controller.getDocument(d).getDeclarations.flatMap {
+                              case r: documents.NRef => invPaths(r.target, parents + d)
+                              case doc: documents.Document => invPaths(doc.path, parents + d)
+                              case _ => Nil
+                           }.toSet
+                         case m : MPath => 
+                           val affected = boxedPaths exists {cp => cp.parent match {
+                             case gn : GlobalName => gn.module == m
+                             case mp : MPath => mp == p 
+                             case _ => false
+                           }}
+                           if (affected)
+                             parents + p
+                           else 
+                             Nil.toSet
+                         case _ => Nil.toSet
+                       }
+                    }
                     response ::= "pres" -> JSONArray(invPaths(controller.getBase).toList.map(x => JSONString(x.toString)) :_*)
                 }
                 JsonResponse(JSONObject(response :_*))

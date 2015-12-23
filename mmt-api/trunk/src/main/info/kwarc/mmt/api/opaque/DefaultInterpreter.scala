@@ -11,8 +11,9 @@ class UnknownOpaqueElement(val parent: DPath, val raw: NodeSeq) extends OpaqueEl
 }
 
 /** a fallback/default parser for completely unknown elements  */
-object DefaultOpaqueElementInterpreter extends OpaqueElementInterpreter[OpaqueElement]
-                                          with OpaqueHTMLPresenter[OpaqueElement] {
+object DefaultOpaqueElementInterpreter extends OpaqueElementInterpreter with OpaqueHTMLPresenter {
+   type OE = UnknownOpaqueElement
+   
    def format = "unknown"
 
    def fromNode(parent: DPath, nsMap: NamespaceMap, nodes: NodeSeq) = new UnknownOpaqueElement(parent, nodes)

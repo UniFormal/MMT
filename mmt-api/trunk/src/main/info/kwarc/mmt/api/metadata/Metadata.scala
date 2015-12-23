@@ -96,6 +96,10 @@ class MetaDatum(val key: GlobalName, val value: Obj) {
       case Tag(key) => <tag property={key.toPath}/>
       case _ => <meta property={key.toPath}>{value.toOBJNode}</meta> 
    }
+   override def toString = {
+      if (value == null) key.toString
+      else {key.toString + " -> " + value.toString}
+   } 
 }
 
 /** helper object */

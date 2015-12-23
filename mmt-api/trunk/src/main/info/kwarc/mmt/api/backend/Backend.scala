@@ -28,14 +28,6 @@ abstract class Storage {
       throw NotApplicable()
   }
 
-  protected def virtDoc(entries: List[String], prefix: String) = {
-    // dref must be unnamed; using name={n} would give the dref the same URI as the referenced document
-    val s = <omdoc>
-      {entries.map(n => <dref name="" target={prefix + n}/>)}
-    </omdoc>.toString
-    new BufferedReader(new java.io.StringReader(s))
-  }
-
   /** dereferences a path and adds the content to the controller or throws [[NotApplicable]]
     *  e.g., by sending an XML document to the XML reader
     *
@@ -63,14 +55,24 @@ case class LocalSystem(base: URI) extends Storage {
 case class LocalCopy(scheme: String, authority: String, prefix: String, base: File) extends Storage {
   def localBase = URI(scheme + "://" + authority + prefix)
 
+  /**
+   * @param uri the logical URI
+   * @param folder the physical location 
+   */
+  def fromFolder(uri: URI, folder: File) = {
+    val entries = folder.list.toList.sorted.diff(List(".svn"))
+    val relativePrefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
+    // dref must be unnamed; using name={n} would give the dref the same URI as the referenced document
+    val node = <omdoc>{entries.map(n => <dref name="" target={prefix + n}/>)}</omdoc>
+    new BufferedReader(new java.io.StringReader(node.toString))
+  }
+
   def load(path: Path)(implicit controller: Controller) {
     val uri = path.doc.uri
     val target = base / getSuffix(localBase, uri)
     val reader = if (target.isFile) File.Reader(target)
     else if (target.isDirectory) {
-      val entries = target.list.toList.sorted.diff(List(".svn"))
-      val relativePrefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
-      virtDoc(entries, relativePrefix)
+       fromFolder(uri, target)
     } else throw BackendError("file/folder " + target + " not found or not accessible", path)
     loadXML(uri, path.doc, reader)
   }

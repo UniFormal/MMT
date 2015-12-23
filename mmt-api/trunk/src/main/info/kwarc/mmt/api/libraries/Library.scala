@@ -556,8 +556,8 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
   def add(e: StructuralElement) {
     val errorFun = (msg: String) => throw AddError(msg)
     log("adding " + e.path.toString + " TYPE " + e.getClass)
-    (e.path, e) match {
-      case (_, ne: NarrativeElement) =>
+    e match {
+      case ne: NarrativeElement =>
          ne.parentOpt match {
             case Some(par) =>
                val parDoc = seeAsDoc(getNarrative(par, errorFun), errorFun)
@@ -570,14 +570,14 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
                      throw AddError("root narrative element must be document")
                }
          }
-      case (doc ? mod, m: Module) =>
-        modules(doc ? mod) = m
-      case (par ?? ln, _) =>
-        val c = seeAsMod(getContent(par, errorFun), errorFun)
-        (c, e) match {
-          case (b: Body, e: Declaration) =>
-            b.add(e, inDoc = e.relativeDocumentHome)
-          case (s,e) => errorFun("cannot add " + e.name + " to " + s.path)
+      case m: Module =>
+         modules(m.path) = m
+      case d: Declaration =>
+         val par = seeAsMod(getContent(d.parent, errorFun), errorFun)
+         (par, e) match {
+             case (par: Body, e: Declaration) =>
+                 par.add(e, inDoc = e.relativeDocumentHome)
+             case (par,e) => errorFun("cannot add " + e.name + " to " + par.path)
         }
     }
     try {

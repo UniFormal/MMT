@@ -171,6 +171,6 @@ trait Body extends ContentElement {self =>
             case ne => List((indent, ne.toString))
          }
       }
-      makeStrings(document,0).map {case (ind, s) => Range(0,ind).map(_ => "  ") + s}.mkString("\n")
+      makeStrings(document,0).map {case (ind, s) => repeatString("  ", ind) + s}.mkString("\n")
    }
 }

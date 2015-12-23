@@ -99,6 +99,9 @@ object RelRuleParser extends RuleConstantParser {
  *
  * 3) It leaves processing of MMT entities application-independently via high-level continuation functions.
  */
+
+// TODO first add all structure, notations, then check semantics
+
 class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser) {
   override val logPrefix = "structure-parser"
   val format = "mmt"
@@ -512,7 +515,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                seCont(innerDoc)
             }
         case "/" =>
-            val oe = readOpaque(parentInfo, Context.empty)
+            val oe = readOpaque(parentInfo, context)
             seCont(oe)
         //Pattern
         case "pattern" =>
@@ -930,7 +933,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   def readOpaque(pi: ParentInfo, context: Context)(implicit state: ParserState): OpaqueElement = {
       val (format, freg) = state.reader.readToken
-      val oi = controller.extman.get(classOf[OpaqueTextParser[_<: OpaqueElement]], format).getOrElse {
+      val oi = controller.extman.get(classOf[OpaqueTextParser], format).getOrElse {
          throw makeError(freg, "unknown opaque format: " + format)
       }
       val (text, treg) = pi match {

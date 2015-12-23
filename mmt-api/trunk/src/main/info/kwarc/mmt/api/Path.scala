@@ -97,8 +97,6 @@ sealed trait ContentPath extends Path {
    def $(comp: ComponentKey) = CPath(this, comp)
    /** for GlobalName's referring to a theory-like [[Declaration]], this yields the URI of the corresponding [[Module]] */ 
    def toMPath : MPath
-   
-   /** the longest LocalName suffix */
    def name: LocalName
    /** the longest MPath prefix */
    def module: MPath
@@ -203,7 +201,7 @@ abstract class LNStep {
 
 object LNStep {
    def parse(s: String, nsMap: NamespaceMap) = {
-      if (s.startsWith("["))
+      if (s.startsWith("[") && s.endsWith("]"))
          ComplexStep(Path.parseM(s.substring(1,s.length - 1), nsMap))
       else
          SimpleStep(s)
@@ -267,7 +265,10 @@ object LocalRef {
       def charDone {current = current + left(0); left = left.substring(1)}
       //parses s segment-wise; if a segment starts with [, pass control to complex
       def start {   if (left == "")            {if (current != "" || ! seen.isEmpty) segmentDone}
-               else if (left.startsWith("[") && current == "")
+               else if (left.startsWith("[") && current == "" && {
+                  val p = left.indexOf("]")
+                  p != -1 && left.length > p+1 && left(p+1) == '/'
+               })
                                                {complex}
                else if (left.startsWith("/"))  {segmentDone; left = left.substring(1); start}
                else                            {charDone; start}

@@ -45,8 +45,11 @@ class TreeView extends ServerExtension("tree") {
          path match {
            case p: DPath =>
              val doc = controller.getDocument(p)
-             val docitems = doc.getRefs
-             <root>{ docitems.map { i => item(i.target, "closed") } }</root>
+             val docitems = doc.getDeclarations.collect {
+                case r: NRef => r.target
+                case doc: Document => doc.path
+             }
+             <root>{ docitems.map { i => item(i, "closed") } }</root>
            case p: MPath =>
              val rels: List[(String, RelationExp)] = role match {
                case Some(ontology.IsTheory) =>

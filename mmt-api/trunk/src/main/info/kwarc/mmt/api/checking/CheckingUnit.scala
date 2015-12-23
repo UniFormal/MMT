@@ -5,25 +5,44 @@ import objects._
 import frontend._
 
 /**
- * A validation unit encapsulates the proof obligations produced by the [[MMTStructureChecker]] and passed on to the [[Solver]].
+ * A checking unit encapsulates the proof obligations produced by a [[StructureChecker]]
+ * and passed on to an [[ObjectChecker]].
  * 
- * Each validation unit validates a single term that is part of a WFJudgement, i.e.,
+ * Typically, each checking unit checks a single term that is part of a WFJudgement, i.e.,
  * the other parts of the judgement are assumed to be valid.
  * 
  * @param component the term component that is validated, e.g., namespace?theory?symbol?type
  * @param context the constant context
  * @param unknowns the unknown context
- * @param judgement the typing judgement to validate
+ * @param judgement the typing judgement to check
  * 
  * A checking unit involves three contexts, which must be separated because they correspond to a quantifier alternation.
  * The constant context is the (universally quantified) global context that does not change during checking.
  * It includes in particular the theory relative to which a unit is formed.
  * The unknown context is the (existentially quantified) context of unknowns that are to be solved during checking.
  * The variable context is the context that arises from traversing binders during checking.
- * It changes during checking and is therefor stored within the judgement.
+ * It changes during checking and is therefore stored within the judgement.
  */
-case class CheckingUnit(component: CPath, context: Context, unknowns: Context, judgement: WFJudgement) {
+case class CheckingUnit(component: Option[CPath], context: Context, unknowns: Context, judgement: WFJudgement) {
   /** a toString method that may call a continuation on its objects
    */
   def present(implicit cont: Obj => String) = component.toString + ": " + judgement.present
 }
+
+object CheckingUnit {
+   val unknownType = LocalName("") / "omitted_type"
+   def byInference(cpath: Option[CPath], context: Context, unkt: Term) = {
+      val (unk,t) = parser.ObjectParser.splitOffUnknowns(unkt)
+      val j = Typing(Stack(Context.empty), t, OMV(unknownType))
+      CheckingUnit(cpath, context, unk ++ VarDecl(unknownType,None,None,None), j)
+   }
+}
+
+/**
+ * A checking result encapsulates all information returned by an [[ObjectChecker]].
+ * 
+ * See [[CheckingUnit]].
+ * 
+ * @param solution the substitution for the unknown context
+ */
+case class CheckingResult(solved: Boolean, solution: Option[Context])

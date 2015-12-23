@@ -111,7 +111,7 @@ object JSON {
    
    def parseString(s: Unparsed) = {
       s.drop("\"")
-      val p = s.next('"', '\\') {rest =>
+      val (p,closed) = s.next('"', '\\') {rest =>
          rest(0) match {
             case c if c == '"' || c == '\\' => (c.toString, c.toString)
             case 'b' => ("b", "\b")
@@ -122,6 +122,8 @@ object JSON {
             case 'u' => (rest.substring(0,5), "u"+rest.substring(1,4)) //TODO make char
          }
       }
+      if (!closed)
+         throw JSONError("unclosed string")
       JSONString(p)
    }
 

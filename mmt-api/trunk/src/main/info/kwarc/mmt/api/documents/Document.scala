@@ -30,12 +30,6 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
   /** returns the list of children of the document (including narration) */
   def getDeclarations: List[NarrativeElement] = items
 
-  /** returns the list of children of the document with nested documents replaced with NRefs */
-  def getRefs: List[NRef] = items map {
-    case d: Document => new DRef(path, LocalName.empty, d.path)
-    case r: NRef => r
-  }
-
   /** returns the list of modules declared in the document (not user-written references) */
   def getModulesResolved(lib: Lookup): List[Module] = items collect {
     case r: MRef => lib.getModule(r.target)
@@ -62,10 +56,15 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
   
    def getMostSpecific(name: LocalName) : Option[(NarrativeElement, LocalName)] = {
      if (name.isEmpty) Some((this, LocalName.empty))
-     else items.find(i => name.startsWith(i.name)).map {ne =>
-        val rest = name.drop(ne.name.length)
-        (ne, rest)
-      }
+     else {
+        // items should have unique names, but occasionally multiple unnamed items (= empty name) can be useful 
+        // in that case, it's more helpful to return the last (= most recently added) item
+        // so we revert the list
+        items.reverse.find(i => name.startsWith(i.name)).map {ne =>
+           val rest = name.drop(ne.name.length)
+           (ne, rest)
+        }
+     }
    }
   
   /** retrieves a descendant
@@ -78,6 +77,7 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
    */
   def getLocally(name: LocalName): Option[NarrativeElement] = { 
      getMostSpecific(name).flatMap {
+       case (ne, LocalName.empty) => Some(ne)
        case (parDoc: Document, rest) => parDoc.getLocally(rest)
        case _ => None
      }

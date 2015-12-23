@@ -31,7 +31,7 @@ trait ObjectChecker extends Extension {
     * @param rules rules to use during checking
     * @param env continuation functions
     */
-   def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment)
+   def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment): CheckingResult
 }
 
 /**
@@ -54,7 +54,9 @@ trait StructureChecker extends FormatBasedExtension {
 /** trivial checkers that do nothing */
 object NullChecker {
    object objects extends ObjectChecker {
-      def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) {}
+      def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) = {
+         CheckingResult(false, None)
+      }
    }
    object structure extends Checker(objects) {
       val id = "null"

@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
+
 import documents._
 import info.kwarc.mmt.api.libraries.Closer
 import modules._
@@ -11,6 +12,7 @@ import ontology._
 import utils._
 import moc._
 import frontend._
+import opaque._
 
 import utils.MyList.fromList
 import objects.Conversions._
@@ -57,6 +59,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       e match {
          case d: Document =>
             d.getDeclarations foreach {i => check(context, i)}
+         case oe: OpaqueElement =>
+            controller.extman.get(classOf[OpaqueChecker], oe.format) match {
+               case None => env.errorCont(InvalidElement(oe, "no checker found for format " + oe.format))
+               case Some(oc) =>
+                  oc.check(objectChecker, context, oe)
+            }
+            //TODO check all declarations, components?
          case r: NRef =>
             check(context, controller.get(r.target))
          case t: DeclaredTheory =>
@@ -66,6 +75,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               contextMeta = contextMeta ++ mt
             }
             checkContext(contextMeta, t.parameters)
+            // content structure
             val tDecls = t.getPrimitiveDeclarations
             tDecls foreach {d => d.status = Inactive}
             logGroup {
@@ -74,6 +84,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                   d.status = Active
                }
             }
+            // narrative structure
+            def doDoc(ne: NarrativeElement) {ne match {
+               case doc: Document => doc.getDeclarations foreach doDoc
+               case r: NRef =>
+               case oe: OpaqueElement => check(context,oe)
+            }}
+            doDoc(t.asDocument)
          case t: DefinedTheory =>
             val dfR = checkTheory(context, t.df)
             t.dfC.analyzed = dfR
@@ -154,7 +171,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                val (unknowns, tR, valid) = prepareTerm(t)
                if (valid) {
                   val j = Inhabitable(Stack(Context()), tR)
-                  objectChecker(CheckingUnit(c.path $ TypeComponent, context, unknowns, j), env.rules)
+                  objectChecker(CheckingUnit(Some(c.path $ TypeComponent), context, unknowns, j), env.rules)
                }
             }
             // == additional check in a link ==
@@ -173,25 +190,32 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             }
             // = checking the definiens =
             // check that the definiens of c (if given) type-checks against the type of c (if given)
+            val tpVar = CheckingUnit.unknownType
             getTermToCheck(c.dfC, "definiens") foreach {d =>
               val (unk, dR, valid) = prepareTerm(d)
               if (valid) {
                 val cp = c.path $ DefComponent
                 var performCheck = true
-                val (unknowns,expTp) = c.tp match {
+                val (unknowns,expTp,inferType) = c.tp match {
                   case Some(t) =>
-                     (unk, t)
+                     (unk, t, false)
                   case None =>
                      if (d.isInstanceOf[OMID])
                         // no need to check atomic definiens without expected type
                         // slightly hacky trick to allow atomic definitions in the absence of a type system
                         performCheck = false
-                     val tpVar = LocalName("") / "omitted_type"
-                     (unk ++ VarDecl(tpVar,None,None,None), OMV(tpVar))
+                     (unk ++ VarDecl(tpVar,None,None,None), OMV(tpVar), true)
                 }
-                val j = Typing(Stack(Context()), dR, expTp, None)
+                val j = Typing(Stack(Context.empty), dR, expTp, None)
                 if (performCheck) {
-                   objectChecker(CheckingUnit(cp, context, unknowns, j), env.rules)
+                   val cr = objectChecker(CheckingUnit(Some(cp), context, unknowns, j), env.rules)
+                   if (inferType && cr.solved) {
+                      // if no expected type was known but the type could be inferred, add it
+                      cr.solution.foreach {sol =>
+                         val tp = sol(tpVar).df
+                         c.tpC.analyzed = tp
+                      }
+                   }
                 }
               }
             }
@@ -375,6 +399,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @param s the term
     * @return the reconstructed term
     */
+   //TODO make more reusable (maybe by moving to RuleBasedChecker?)
    private def checkTerm(context : Context, s : Term)(implicit env: Environment) : Term = {
       s match {
 //         case OMID(GlobalName(h, IncludeStep(from) / ln)) =>

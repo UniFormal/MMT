@@ -12,6 +12,7 @@ class Unparsed(s: String, error: String => Nothing) {
    private var column : Int = 0
    private def advancePositionBy(c: Char) {
       offset += 1
+      column += 1
       if (c == '\n') {
          line += 1
          column = 0
@@ -66,14 +67,14 @@ class Unparsed(s: String, error: String => Nothing) {
    }
    
    /**
-    * returns all characters up to the next unescaped occurrent of 'until' (that occurrence is eaten but not returned)
+    * returns all characters up to the next unescaped occurrence of 'until' (that occurrence is eaten but not returned)
     * @param until the delimiter to scan for
     * @param exceptAfter the an escape character  
     * @param unescape maps a string after the escape character to the eaten escape sequence and its unescaped value
     */
-   def next(until: Char, exceptAfter: Char)(unescape: String => (String,String)): String = {
+   def next(until: Char, exceptAfter: Char)(unescape: String => (String,String)): (String,Boolean) = {
       var seen = ""
-      while (head != until) {
+      while (remainder.nonEmpty && head != until) {
          if (head == exceptAfter) {
             next
             val (eaten, unescaped) = unescape(rest)
@@ -84,7 +85,12 @@ class Unparsed(s: String, error: String => Nothing) {
             next
          }
       }
-      next
-      seen
+      if (remainder.isEmpty) {
+         (seen, false)
+      }
+      else {
+         next
+         (seen, true)
+      }
    }
 }

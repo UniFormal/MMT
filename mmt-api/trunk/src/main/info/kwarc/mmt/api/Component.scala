@@ -54,7 +54,7 @@ case object DomComponent  extends ComponentKey("domain")
 /** codomain of a [[modules.Link]] */
 case object CodComponent  extends ComponentKey("codomain")
 
-/** custome component, e.g., in a [[DerivedDeclaration]] */
+/** custom component, e.g., in a [[DerivedDeclaration]] */
 case class OtherComponent(s: String) extends ComponentKey(s)
 
 abstract class NotationComponentKey(s: String) extends ComponentKey(s)

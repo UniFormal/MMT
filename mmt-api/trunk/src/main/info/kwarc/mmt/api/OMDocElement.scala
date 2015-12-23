@@ -135,7 +135,7 @@ trait NarrativeElement extends StructuralElement {
   def path: DPath
   /** the containing document (if any) */
   def parentOpt: Option[DPath]
-  def getComponents = Nil
+  def getComponents: List[DeclarationComponent] = Nil
 }
 
 /** The trait Content is mixed into any class that can be rendered.

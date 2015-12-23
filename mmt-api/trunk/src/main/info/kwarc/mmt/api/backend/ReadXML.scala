@@ -92,7 +92,7 @@ class XMLReader(controller: Controller) extends Logger {
             readIn(nsMap, innerdoc, mods)
          case <opaque>{ops @_*}</opaque> =>
             val format = xml.attr(node, "format")
-            val oi = controller.extman.get(classOf[OpaqueElementInterpreter[_<: OpaqueElement]], format).getOrElse {
+            val oi = controller.extman.get(classOf[OpaqueElementInterpreter], format).getOrElse {
                throw ParseError("unknown opaque format: " + format)
             }
             val oe = oi.fromNode(doc.path, nsMap, ops)
@@ -216,7 +216,7 @@ class XMLReader(controller: Controller) extends Logger {
             }
          case <opaque>{ops @_*}</opaque> =>
             val format = xml.attr(node, "format")
-            val oi = controller.extman.get(classOf[OpaqueElementInterpreter[_<: OpaqueElement]], format).getOrElse {
+            val oi = controller.extman.get(classOf[OpaqueElementInterpreter], format).getOrElse {
                throw ParseError("unknown opaque format: " + format)
             }
             val oe = oi.fromNode(docHome, nsMap, ops)

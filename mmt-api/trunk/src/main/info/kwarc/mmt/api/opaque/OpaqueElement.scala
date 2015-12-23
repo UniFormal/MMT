@@ -22,7 +22,7 @@ abstract class OpaqueElement extends NarrativeElement {
 
    def toNode = <opaque format={format}>{getMetaDataNode}{raw}</opaque>
    override def toString = raw.toString
-   def name = LocalName.empty
+   def name = LocalName("")
    def path = parent / name
    def parentOpt = Some(parent)
    def getDeclarations = Nil
@@ -30,16 +30,31 @@ abstract class OpaqueElement extends NarrativeElement {
 
 /**
  * an extension that provides (parts of) the meaning of [[OpaqueElement]]s
+ *
+ * Instances of this class must be coupled with a subclass OE <: [[OpaqueElement]].
+ * Methods of an OpaqueElementInterpreter will be passed to and must return only instances of OE, never of other OpaqueElements.
+ * 
+ * OE is not a type parameter of OpaqueElementInterpreter because that is less helpful than one may think.
+ * Interpreters are anyway chosen at run time based on the format so that the type information can rarely be exploited
+ * and often requires casting anyway. 
+ * 
+ * Therefore, all methods work simply with [[OpaqueElement]].
+ * But MMT and all oi:OpaqueElementInterpreter must respect the following invariant:
+ * If oe:OpaqueElement and oi.isApplicable(oe.format), then oe.isInstanceOf[oi.OE].
+ * In particular, the 'downcast' method can be used to refine the type of inputs passed to this class.
  */
-abstract class OpaqueElementInterpreter[OE <: OpaqueElement] extends FormatBasedExtension {
+abstract class OpaqueElementInterpreter extends FormatBasedExtension {
+   type OE <: OpaqueElement
+      
    /** the format of [[OpaqueElement]]s this can interpret */
    def format : String
    def isApplicable(f: String) = f == format
    
-   /** work around in case the Scala type system cannot tell that an OpaqueElement has type OE
-    *  pre: oe : OE
+   /**
+    * Casts an opaque element to type OE.
+    * Guaranteed to be safe on all input passed to this class.
     */
-   def force(oe: OpaqueElement): OE = {
+   protected def downcast(oe: OpaqueElement): OE = {
       if (isApplicable(oe.format)) {
          try {oe.asInstanceOf[OE]}
          catch {case _: Exception => throw ImplementationError("opaque element has bad type")}
