@@ -58,7 +58,7 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
 
    /** the structural elements whose children are processed immediately */
    private val containers = List("omdoc", "theory", "view")
-   private val shapeRelevant = List("metadata", "definition", "from", "to")
+   private val shapeRelevant = List("metadata", "parameters", "definition", "from", "to")
 
    def apply(ps: parser.ParsingStream)(implicit errorCont: ErrorHandler): Document = {
       val parser = new ConsParser(ps.dpath, new SourceFromReader(ps.stream), errorCont)

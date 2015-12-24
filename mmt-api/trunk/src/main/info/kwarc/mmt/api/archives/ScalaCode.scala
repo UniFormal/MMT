@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.utils._
 
-trait ScalaCode extends WritableArchive {
+trait ScalaCode {self: Archive =>
 
   private var loader: java.net.URLClassLoader = null
 

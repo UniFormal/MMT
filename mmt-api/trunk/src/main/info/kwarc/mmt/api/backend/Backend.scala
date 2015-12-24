@@ -52,30 +52,67 @@ case class LocalSystem(base: URI) extends Storage {
 }
 
 /** a Storage that retrieves repository URIs from the local working copy */
-case class LocalCopy(scheme: String, authority: String, prefix: String, base: File) extends Storage {
+class LocalCopy(scheme: String, authority: String, prefix: String, val base: File) extends Storage {
   def localBase = URI(scheme + "://" + authority + prefix)
 
   /**
+   * load delegates to this method if the requested resource is a folder
    * @param uri the logical URI
    * @param folder the physical location 
    */
-  def fromFolder(uri: URI, folder: File) = {
+  def loadFromFolder(uri: URI, suffix: List[String])(implicit controller: Controller) {
+    val folder = base / suffix 
     val entries = folder.list.toList.sorted.diff(List(".svn"))
-    val relativePrefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
+    val prefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
     // dref must be unnamed; using name={n} would give the dref the same URI as the referenced document
     val node = <omdoc>{entries.map(n => <dref name="" target={prefix + n}/>)}</omdoc>
-    new BufferedReader(new java.io.StringReader(node.toString))
+    val reader = new BufferedReader(new java.io.StringReader(node.toString))
+    loadXML(uri, DPath(uri), reader)
   }
 
   def load(path: Path)(implicit controller: Controller) {
     val uri = path.doc.uri
-    val target = base / getSuffix(localBase, uri)
-    val reader = if (target.isFile) File.Reader(target)
-    else if (target.isDirectory) {
-       fromFolder(uri, target)
+    val suffix = getSuffix(localBase, uri)
+    val target = base / suffix
+    if (target.isFile) {
+       val reader = File.Reader(target) 
+       loadXML(uri, path.doc, reader)
+    } else if (target.isDirectory) {
+       loadFromFolder(uri, suffix)
     } else throw BackendError("file/folder " + target + " not found or not accessible", path)
-    loadXML(uri, path.doc, reader)
+    
   }
+}
+
+/**
+ * like [[LocalCopy]] but optimized for [[Archive]]s
+ * 
+ * custom HTML snippets are spliced into folder-documents
+ * @param a the archive
+ * @param folderName file name of folder descriptions in source folder (without .html ending) 
+ */
+class ArchiveNarrationStorage(a: Archive, folderName: String) extends {val nBase = a.narrationBase}
+      with LocalCopy(nBase.schemeNull, nBase.authorityNull, nBase.pathAsString, a / narration) {
+   override def loadFromFolder(uri: URI, suffix: List[String])(implicit controller: Controller) {
+      val narrFolder = base / suffix
+      val entries = narrFolder.list.toList.sorted.diff(List(".svn"))
+      val prefix = if (uri.path.isEmpty) "" else uri.path.last + "/"
+      val descOpt = {
+         // TODO test for files with other endings than html, use the ending as the format
+         val htmlFile = a / source / suffix / (folderName + ".html")
+         if (htmlFile.exists) {
+            val htmlString = File.read(htmlFile)
+            val htmlDiv = s"""<div class="folder-description">$htmlString</div>""" 
+            Some(htmlDiv,"html")
+         } else None
+      }
+      val oe = descOpt.map {case (desc,format) =>
+         s"""<opaque format="$format">$desc</opaque>"""
+      }
+      val docS = s"""<omdoc>$oe${entries.map(n => <dref name="" target={prefix + n}/>)}</omdoc>"""
+      val reader = new BufferedReader(new java.io.StringReader(docS))
+      loadXML(uri, DPath(uri), reader)
+   }
 }
 
 /** loads a realization from a Java Class Loader and dynamically creates a [[uom.RealizationInScala]] for it */

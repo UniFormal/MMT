@@ -28,18 +28,18 @@ trait DeclaredModule extends Module with Body {
 /**
  * Module given by existing modules/morphisms
  */
-trait DefinedModule extends ModuleDefiniens {
+trait DefinedModule extends Module with ModuleDefiniens {
 }
 
 /**
  * A Module or Link given by existing modules/morphisms
  */
-trait ModuleDefiniens {
+trait ModuleDefiniens extends StructuralElement {
   /** the TermContainer holding the definiens */
    val dfC : TermContainer
    /** the definiens as a Term */
    def df = dfC.get.get // TODO for now, we assume the definiens is always present
    protected def innerString = " = " + df.toString
-   protected def innerNodes = <definition>{df.toNode}</definition>
+   protected def innerNodes = getMetaDataNode ++ <definition>{df.toNode}</definition>
    def getDeclarations = Nil
 }

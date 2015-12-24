@@ -26,6 +26,7 @@ class DRef(val parent : DPath, val name: LocalName, val target : DPath) extends 
 /** reference to a [[Module]] */
 class MRef(val parent : DPath, val name: LocalName, val target : MPath) extends NRef {
    def toNode = <mref name={name.toPath} target={target.toPath}/>
+   def nameIsTrivial = name == LocalName(target)
 }
 
 object MRef {

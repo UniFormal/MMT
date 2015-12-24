@@ -10,6 +10,8 @@ import symbols._
 import opaque._
 import utils._
 
+import HTMLAttributes._
+
 abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
    override val outExt = "html"
 
@@ -36,11 +38,11 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
          case LocalName(ComplexStep(t)::Nil) => (t.name.toString, t) // hardcoding the import case of includes
          case n => (n.toString, p)
       }
-      span("name", attributes=List(("jobad:href",path.toPath))) {text(name)}
+      span("name", attributes=List(href -> path.toPath)) {text(name)}
    }
    /** renders a MMT URI outside a math object */
    private def doPath(p: Path) {
-      span("mmturi", attributes=List("jobad:href" -> p.toPath)) {
+      span("mmturi", attributes=List(href -> p.toPath)) {
          val pS = p match {
             case d: DPath => d.last
             case m: MPath => m.name.toString
@@ -53,12 +55,15 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    private def doMath(t: Obj, owner: Option[CPath]) {
         objectLevel(t, owner)(rh)
    }
+   
+   private val compLabel = "constant-component-label"
+
    private def doComponent(cpath: CPath, t: Obj) {
-      td {span("compLabel") {text(cpath.component.toString)}}
+      td {span(compLabel) {text(cpath.component.toString)}}
       td {doMath(t, Some(cpath))}
    }
    private def doNotComponent(cpath: CPath, tn: TextNotation) {
-      td {span("compLabel") {text(cpath.component.toString)}}
+      td {span(compLabel) {text(cpath.component.toString)}}
       td {span {
          val firstVar = tn.arity.firstVarNumberIfAny
          val firstArg = tn.arity.firstArgNumberIfAny
@@ -102,7 +107,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
     */
    private def doHTMLOrNot(dpath: DPath, doit: Boolean)(b: => Unit) {
       if (! doit) {
-        return div(attributes=List("xmlns" -> utils.xml.namespace("html"), "xmlns:jobad" -> utils.xml.namespace("jobad"))) {b}
+        return div(attributes=List("xmlns" -> utils.xml.namespace("html"))) {b}
       }
       val pref = Range(0,dpath.uri.path.length+2).map(_ => "../").mkString("")
       html(attributes=List("xmlns" -> utils.xml.namespace("html"))) {
@@ -113,11 +118,10 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
           css(pref + "html.css")
           javascript(scriptbase + "jquery/jquery.js")
           javascript(scriptbase + "jquery/jquery-ui.js")
-          javascript(scriptbase + "mmt/mmt-html.js")
           javascript(scriptbase + "mmt/mmt-js-api.js")
+          javascript(scriptbase + "mmt/browser.js")
           javascript(scriptbase + "jobad/deps/underscore-min.js")
           javascript(scriptbase + "jobad/JOBAD.js")
-          javascript(scriptbase + "jobad/modules/navigation.js")
           javascript(scriptbase + "jobad/modules/hovering.js")
           javascript(scriptbase + "jobad/modules/interactive-viewing.js")
           javascript(pref + "html.js")
@@ -147,16 +151,16 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
            if (! d.metadata.getAll.isEmpty)
               toggle("metadata")
          }
-         table("constant-components ") {
+         table("constant-body ") {
             d.getComponents.foreach {
                case DeclarationComponent(comp, tc: AbstractTermContainer) =>
-                  tr(comp.toString) {
+                  tr("constant-" + comp.toString) {
                      tc.get.foreach {t =>
                          doComponent(d.path $ comp, t)
                      }
                   }
                case DeclarationComponent(comp: NotationComponentKey, nc: NotationContainer) =>
-                  tr(comp.toString) {
+                  tr("constant-" + comp.toString) {
                      nc(comp).foreach {n =>
                         doNotComponent(d.path $ comp, n)
                       }
@@ -164,19 +168,19 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
             }
             if (! usedby.isEmpty) {
                tr("used-by") {
-                  td {span("compLabel") {text{"used by"}}}
+                  td {span(compLabel) {text{"used by"}}}
                   td {usedby foreach doPath}
                }
             }
             if (! d.metadata.getTags.isEmpty)
                tr("tags") {
-               td {span("compLabel"){text{" ---tags"}}}
+               td {span(compLabel){text{" ---tags"}}}
                td {d.metadata.getTags.foreach {
                   k => div("tag") {text(k.toPath)}
                }}
             }
             def doKey(k: GlobalName) {
-               td{span("key compLabel", title=k.toPath) {text(k.toString)}}
+               td{span("key " + compLabel, title=k.toPath) {text(k.toString)}}
             }
             d.metadata.getAll.foreach {
                case metadata.Link(k,u) => tr("link metadata") {
@@ -195,13 +199,19 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    /** auxiliary method of doTheory */
    private def doNarrativeElementInMod(body: Body, ne: NarrativeElement) {ne match {
       case doc: Document =>
-        div("document") {
-          div("document-header") {
+        div("document toggle-root") {
+          div("document-header toggle-trigger") {
+             val name = doc.path.last
              span("name") {
-                text(doc.path.last)
+                text(name)
              }
+             NarrativeMetadata.title.get(doc).foreach {t =>
+                if (name != "")
+                  text(": ")
+                text(t)
+             } 
           }
-          div("document-body") {
+          div("document-body toggle-target") {
              doc.getDeclarations foreach {d => doNarrativeElementInMod(body,d)}
           }
         }
@@ -217,7 +227,6 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
 
    def doTheory(t: DeclaredTheory) {
       div("theory") {
-         div("theory-header", onclick="toggleClick(this)") {doName(t.path)}
          doNarrativeElementInMod(t, t.asDocument)
       }
    }
@@ -245,20 +254,25 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    /** auxiliary method of doDocument */
    private def doNarrativeElementInDoc(ne: NarrativeElement) {ne match {
       case doc: Document =>
-        div("document") {
-          div("document-header") {
+        div("document toggle-root") {
+          div("document-header toggle-trigger") {
              span("name") {
                 text(doc.path.last)
              }
+             NarrativeMetadata.title.get(doc).foreach {t =>
+                text(": " + t)
+             } 
           }
-          div("document-body") {
+          div("document-body toggle-target") {
              doc.getDeclarations foreach doNarrativeElementInDoc
           }
         }
       case oe: OpaqueElement =>
          val oi = controller.extman.get(classOf[OpaqueHTMLPresenter], oe.format)
                   .getOrElse(DefaultOpaqueElementInterpreter)
-         oi.toHTML(objectPresenter, oe)(rh)
+         div("opaque-"+oe.format) {
+            oi.toHTML(objectPresenter, oe)(rh)
+         }
       case r: NRef =>
         val label = r match {
            case _:DRef => "dref"
@@ -266,14 +280,23 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
            case _:SRef => "sref"
         }
         div("document-"+label) {
-            span(cls = "name loadable", attributes=List("jobad:load" -> r.target.toPath)) {
-            val name = if (r.name.nonEmpty) r.name.toString else r.target.last 
-            text(name)
+          span(cls = "name mmturi loadable", attributes=List(load -> r.target.toPath)) {
+            val hideName = r.name.steps.forall(_==LNStep.empty) || (r match {
+               case r:MRef =>
+                  r.nameIsTrivial
+               case _ => false
+            })
+            if (!hideName) {
+               text(r.name.toString)
+               literal(" &#8594; ")
+            }
+            text(r.target.toString)
           }
         }
    }}
    
    def doDocument(doc: Document) {
+     doNarrativeElementInDoc(doc)
      val locOpt = controller.backend.resolveLogical(doc.path.uri)
      val svgOpt = locOpt flatMap {
        case (arch, path) =>
@@ -284,7 +307,6 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
          else
            None
      }
-     doNarrativeElementInDoc(doc)
      svgOpt foreach {src =>
        div("graph") {
          htmlobject(src, "image/svg+xml")

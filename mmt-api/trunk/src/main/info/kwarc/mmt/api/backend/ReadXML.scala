@@ -44,15 +44,16 @@ class XMLReader(controller: Controller) extends Logger {
     *  
     *  If the document has a base attribute, it is used as the default namespace of modules.
     */
-   def readDocument(dpath : DPath, node : Node)(implicit cont: StructuralElement => Unit) {
-      val nsMap = NamespaceMap.fromXML(node)(dpath)
+   def readDocument(dpath : DPath, nodeMd : Node)(implicit cont: StructuralElement => Unit) {
+      val nsMap = NamespaceMap.fromXML(nodeMd)(dpath)
+      val (node, md) = MetaData.parseMetaDataChild(nodeMd, nsMap)
       node match {
         case <omdoc>{modules @ _*}</omdoc> =>
            val base = Path.parseD(xml.attr(node, "base"), nsMap)
            val nsMapB = nsMap(base)
            log("document with URI " + dpath + " found")
            val d = new Document(dpath, root = true, nsMap = nsMapB)
-           add(d)
+           add(d,md)
            modules foreach {m => readIn(nsMapB, d, m)}
         case _ => throw ParseError("document expected: " + node)
       }
@@ -162,7 +163,7 @@ class XMLReader(controller: Controller) extends Logger {
 	         case <rel>{_*}</rel> => 
 	            //ignoring logical relations, produced by Twelf, but not implemented yet
            case n if Utility.trimProper(n).isEmpty => //whitespace node => nothing to do 
-           case _ => throw ParseError("module level element expected: " + m)
+           case _ => throw ParseError("element not allowed in document: " + m)
          }
       }
    }
@@ -179,8 +180,8 @@ class XMLReader(controller: Controller) extends Logger {
    /** additionally keeps track of the document nesting inside the body */
    private def readInModuleAux(home: MPath, docHome: DPath, nsMap: NamespaceMap, body: Body, node: Node)(implicit cont: StructuralElement => Unit) {
       val homeTerm = OMMOD(home)
-      val relDocHome = home.toDPath.dropPrefix(docHome).getOrElse {
-         throw ImplementationError("document home must extend content home")
+      val relDocHome = docHome.dropPrefix(home.toDPath).getOrElse {
+         throw ImplementationError(s"document home must extend content home")
       } 
       val (symbolWS, md) = MetaData.parseMetaDataChild(node, nsMap)
       /* declarations must only be added through this method */
@@ -207,7 +208,7 @@ class XMLReader(controller: Controller) extends Logger {
       }
       val symbol = if (symbolWS.label == "opaque") symbolWS else xml.trimOneLevel(symbolWS)
       symbol match {
-         case <document>{dnodes}</document> =>
+         case <document>{dnodes @_*}</document> =>
             val name = xml.attr(symbol, "name")
             val innerDoc = new Document(docHome / name, contentAncestor = Some(body))
             add(innerDoc, md)

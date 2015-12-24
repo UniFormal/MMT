@@ -646,7 +646,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
   }
 
   /** updates a ContentElement by deleting and adding it */
-  def update(e: ContentElement) {
+  def update(e: StructuralElement) {
     delete(e.path)
     add(e)
   }

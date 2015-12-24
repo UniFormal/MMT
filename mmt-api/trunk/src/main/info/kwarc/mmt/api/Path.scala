@@ -206,6 +206,7 @@ object LNStep {
       else
          SimpleStep(s)
    }
+   val empty = SimpleStep("")
 }
 
 /** constant or structure declaration */
@@ -267,7 +268,7 @@ object LocalRef {
       def start {   if (left == "")            {if (current != "" || ! seen.isEmpty) segmentDone}
                else if (left.startsWith("[") && current == "" && {
                   val p = left.indexOf("]")
-                  p != -1 && left.length > p+1 && left(p+1) == '/'
+                  p != -1 && (left.length == p+1 || (left.length > p+1 && left(p+1) == '/'))
                })
                                                {complex}
                else if (left.startsWith("/"))  {segmentDone; left = left.substring(1); start}

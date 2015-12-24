@@ -25,6 +25,9 @@ class MetaData {
    def delete(key: GlobalName) {
       data = data.filter(md => md.key != key)
    }
+   def update(md: MetaDatum) {
+      update(md.key, md.value)
+   }
    def update(key: GlobalName, values: Obj*) {
       delete(key)
       values map  {value => add(new MetaDatum(key, value))}

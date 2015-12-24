@@ -106,11 +106,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   override val logPrefix = "structure-parser"
   val format = "mmt"
 
+  // *********************************** interface to the controller: add elements and errors etc.
+  
   /**
    * A continuation function called on every StructuralElement that was found
    *
-   * For grouping elements (documents, modules with body), this is called on the empty element first
-   * and then on each child.
+   * For grouping elements (documents, modules with body), this must be called on the empty element first
+   * and then on each child, finally end(se) must be called on the grouping element.
    */
   protected def seCont(se: StructuralElement)(implicit state: ParserState) {
     log(se.toString)
@@ -126,6 +128,31 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         errorCont(se)
     }
   }
+  /** called at the end of a document or module, does common bureaucracy */
+  protected def end(s: StructuralElement)(implicit state: ParserState) {
+    //extend source reference until end of element
+    SourceRef.get(s) foreach { r =>
+      SourceRef.update(s, r.copy(region = r.region.copy(end = state.reader.getSourcePosition)))
+    }
+    log("end " + s.path)
+  }
+  /** the region from the start of the current structural element to the current position */
+  protected def currentSourceRegion(implicit state: ParserState) =
+    SourceRegion(state.startPosition, state.reader.getSourcePosition)
+
+
+  /** like seCont but may wrap in NestedModule */
+  private def moduleCont(m: Module, par: ParentInfo)(implicit state: ParserState) {
+    val se = par match {
+       case IsDoc(dp) => m
+       case IsMod(mp, ln) =>
+          val nm = new NestedModule(m)
+          nm.setDocumentHome(ln)
+          nm
+    }
+    seCont(se)
+  }
+
 
   /**
    * A continuation function called on every ParsingUnit that was found
@@ -153,16 +180,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   private def errorCont(e: SourceError)(implicit state: ParserState) = {
     state.errorCont(e)
   }
+  /** convenience function to create SourceError's */
+  protected def makeError(reg: SourceRegion, s: String)(implicit state: ParserState) =
+    SourceError("structure-parser", state.makeSourceRef(reg), s)
 
-  /** called at the end of a document or module, does common bureaucracy */
-  protected def end(s: StructuralElement)(implicit state: ParserState) {
-    //extend source reference until end of element
-    SourceRef.get(s) foreach { r =>
-      SourceRef.update(s, r.copy(region = r.region.copy(end = state.reader.getSourcePosition)))
-    }
-    log("end " + s.path)
-  }
 
+  // ******************************* the entry points
+  
   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): Document = {
     val (d, _) = apply(new ParserState(new Reader(ps.stream), ps, errorCont))
     d
@@ -175,18 +199,12 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     logGroup {
       readInDocument(doc)(state)
     }
-    log("end " + dpath)
+    end(doc)(state)
     (doc, state)
   }
 
-  /** convenience function to create SourceError's */
-  protected def makeError(reg: SourceRegion, s: String)(implicit state: ParserState) =
-    SourceError("structure-parser", state.makeSourceRef(reg), s)
-
-  /** the region from the start of the current structural element to the current position */
-  protected def currentSourceRegion(implicit state: ParserState) =
-    SourceRegion(state.startPosition, state.reader.getSourcePosition)
-
+  // ********************************* low level read functions for names, terms, etc.
+  
   /** read a LocalName from the stream
     * throws SourceError iff ill-formed or empty
     */
@@ -295,27 +313,6 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
   }
 
-  /** parent of a module: either a document, or a section in a module */ 
-  private abstract class ParentInfo {
-     def docHome: DPath
-  }
-  private case class IsDoc(docHome: DPath) extends ParentInfo
-  private case class IsMod(mod: MPath, relDoc: LocalName) extends ParentInfo {
-     def docHome = mod.toDPath / relDoc
-  }  
-
-  /** like seCont but may wrap in NestedModule */
-  private def moduleCont(m: Module, par: ParentInfo)(implicit state: ParserState) {
-    val se = par match {
-       case IsDoc(dp) => m
-       case IsMod(mp, ln) =>
-          val nm = new NestedModule(m)
-          nm.setDocumentHome(ln)
-          nm
-    }
-    seCont(se)
-  }
-
   protected def resolveName(home: Term, name: LocalName)(implicit state: ParserState) = {
     libraries.Names.resolve(home, name)(controller.globalLookup) match {
       case Some(ce: Constant) =>
@@ -331,7 +328,14 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   
   // *************** the two major methods for reading in documents and modules 
 
-  private lazy val titleAnnotator = new NarrativeMetadata("title")
+  /** abstraction to unify operations inside a document and inside a module */ 
+  private abstract class ParentInfo {
+     def docHome: DPath
+  }
+  private case class IsDoc(docHome: DPath) extends ParentInfo
+  private case class IsMod(mod: MPath, relDoc: LocalName) extends ParentInfo {
+     def docHome = mod.toDPath / relDoc
+  }  
   
   /** the main loop for reading declarations that can occur in documents
     * @param doc the containing Document (must be in the controller already)
@@ -496,22 +500,32 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             val currentLevel = currentSection.length
             val thisLevel = k.length
             val (nameTitle,reg) = state.reader.readDeclaration
+            // close all sections from currentLevel up to and including thisLevel
+            if (thisLevel <= currentLevel) {
+               Range(currentLevel,thisLevel-1,-1).foreach {l =>
+                  mod.asDocument.getLocally(currentSection.take(l)).foreach {d =>
+                    end(d)
+                  }
+               }
+               nextSection = currentSection.take(thisLevel-1)
+            }
             if (nameTitle.isEmpty) {
-               // end section: =...=
+               // just end a section: =...= 
                if (thisLevel > currentLevel) {
                   throw makeError(reg, s"no document at level $thisLevel open")
-               } else {
-                 nextSection = currentSection.take(thisLevel-1)
                }
             } else {
-               // begin section: =...= #NAME TITLE  or =...= TITLE
+               // additionally begin a new section: =...= #NAME TITLE  or =...= TITLE
+               if (thisLevel > currentLevel+1) {
+                  throw makeError(reg, s"no document at level ${thisLevel-1} open")
+               }
                val (name,title) = if (nameTitle.startsWith("#")) {
                   val pos = nameTitle.indexWhere(_.isWhitespace)
                   (nameTitle.substring(1,pos),nameTitle.substring(pos).trim)
                } else ("", nameTitle)
-               nextSection = currentSection / name
+               nextSection = nextSection / name
                val innerDoc = new Document(docRoot / nextSection, contentAncestor = Some(mod))
-               titleAnnotator.update(innerDoc, title)
+               NarrativeMetadata.title.update(innerDoc, title)
                seCont(innerDoc)
             }
         case "/" =>

@@ -72,7 +72,9 @@ var mmtattr = function(){
 	   source: prefix + "source",
 	   owner: prefix + "owner",
 	   component: prefix + "component",
-	   position: prefix + "position"
+	   position: prefix + "position",
+	   href: prefix + "href",
+	   load: prefix + "load"
    }
 }();
 
@@ -97,8 +99,8 @@ var mmt = {
 	
 	/* set focus, focusIsMath, currentURI, currentElement, currentComponent, currentPosition according to elem */
 	setCurrentPosition : function(elem){
-		this.target = target;
-	    var math = $(elem).closest('math')
+		this.target = elem;
+	   var math = $(elem).closest('math')
 		this.focusIsMath = (math.length !== 0);
 		if (this.focusIsMath) {
 		   this.focus = this.getSelectedParent(elem);
@@ -111,14 +113,16 @@ var mmt = {
 		   this.currentComponent = null;
 		   this.currentPosition = null;
 		}
-		if (elem.hasAttribute(mmtattr.symref)) {
-			mmt.currentURI = elem.getAttribute(mmtattr.symref);
-		} else if ($(elem).parent().hasAttribute("xlink:href")) {
-			// in SVG graphs, the parent carries the link, attribute currently for legacy SVG
-			mmt.currentURI = $(elem).parent().attr("xlink:href");
-		} else {
-			mmt.currentURI = null;
-		}
+		var uriAttrs = [mmtattr.symref, mmtattr.href, mmtattr.load]
+		var noUriFound = uriAttrs.every(function(attr) {
+         if (elem.hasAttribute(attr)) {
+            mmt.currentURI = elem.getAttribute(attr);
+            return false;
+         } else
+            return true;
+		})
+	   if (noUriFound)
+	      mmt.currentURI = null;
 	},
 	
 	/* the active theory is used for operations that must be executed relative to a theory, e.g., parsing */
@@ -154,12 +158,16 @@ var mmt = {
    /*
     * splits a URI into the (doc, mod, sym) triple; omitted parts are returned as ""
     */
-   splitMMTURI : function(uri) {
+   splitMMTURI : function(uri, includeEmpty = true) {
    	var arr = uri.split("?");
 		var doc = (arr.length >= 1) ? arr[0] : "";
 		var mod = (arr.length >= 2) ? arr[1] : "";
 		var sym = (arr.length >= 3) ? arr[2] : "";
-		return [doc, mod, sym];
+		var arr = [doc, mod, sym];
+		if (!includeEmpty) {
+		   while (arr.length > 0 && arr.slice(-1)[0] == "") arr.pop();
+		}
+	   return arr;
 	},
 	
 	/*
@@ -249,7 +257,7 @@ var mmt = {
 	},
 	
 	sideBarClick : function(event,p) {
-	      if (event.detail == 1) navigation.navigate(p);
+	      if (event.detail == 1) interactiveViewing.navigate(p);
 	      else if (event.detail == 2) {
 	         if (graphWindow == null) {
 	        	 openGraph(p);
@@ -567,7 +575,7 @@ var interaction = {
    },
    /** click on a search result */
    resultClick: function(p){
-      navigation.navigate(p);
+      interactiveViewing.navigate(p);
    },
 }
 

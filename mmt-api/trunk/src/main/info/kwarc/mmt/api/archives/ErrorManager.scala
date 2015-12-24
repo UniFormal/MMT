@@ -39,7 +39,7 @@ case class BuildError(archive: Archive, target: String, path: FilePath, data: Er
     List(data.level.toString,
       data.tp,
       archive.id,
-      archive.groupDir.getName,
+      archive.root.up.getName,
       archive.root.getName,
       path.toString,
       f.toString,

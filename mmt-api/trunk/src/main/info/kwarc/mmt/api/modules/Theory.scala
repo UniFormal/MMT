@@ -58,10 +58,9 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
       case _ => Nil
    }
    override def toString = "theory " + path + meta.map(" : " + _.toPath).getOrElse("") +
-     (if(parameters.nonEmpty) " > " + parameters else "") + innerString
+     (if(parameters.nonEmpty) " > " + parameters else "") + "\n" + innerString
    def toNode =
       <theory name={name.last.toPath} base={doc.toPath} meta={if (meta.isDefined) meta.get.toPath else null}>
-        {getMetaDataNode}
         {if (parameters.isEmpty) Nil else <parameters>{parameters.toNode}</parameters>}
         {innerNodes}
       </theory>
@@ -72,13 +71,11 @@ class DeclaredTheory(doc : DPath, name : LocalName, var meta : Option[MPath], va
     </theory>
    override def toNode(rh: presentation.RenderingHandler) {
       val metaS = if (meta.isDefined) s""" meta="${meta.get.toPath}"""" else ""
-      rh(s"""<theory name="${name.last.toPath}" base="${doc.toPath}"$metaS>""")
-      rh(getMetaDataNode)
-      if (parameters.nonEmpty) rh(<parameters>{parameters.toNode}</parameters>)
-      getPrimitiveDeclarations.foreach {i =>
-         i.toNode(rh)
-      }
-      rh("</theory>")
+      rh << s"""<theory name="${name.last.toPath}" base="${doc.toPath}"$metaS>"""
+      if (parameters.nonEmpty)
+         rh(<parameters>{parameters.toNode}</parameters>)
+      streamInnerNodes(rh)
+      rh << "</theory>"
    }
 }
 
@@ -88,7 +85,6 @@ class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) exte
    override def toString = path + innerString
    def toNode = 
     <theory name={name.last.toPath} base={doc.toPath}>
-        {getMetaDataNode}
         {innerNodes}
     </theory>
 }

@@ -9,7 +9,7 @@ import java.io.{FileInputStream, FileOutputStream}
 import java.util.zip._
 import java.util.jar._
 
-trait ZipArchive extends WritableArchive {
+trait ZipArchive {self: Archive =>
     /**
      * add a file to a MAR file
      */

@@ -91,7 +91,7 @@ class BreadcrumbsServer extends ServerExtension("breadcrumbs") {
          def gsep = span {text {"?"}}
          def lsep = span {text {"/"}}
          // strangely, the client somehow does not handle this right if the XML is given literally, might be due to namespaces
-         div(attributes = List("xmlns" -> utils.xml.namespace("xhtml"), "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
+         div(attributes = List("xmlns" -> utils.xml.namespace("xhtml"))) {
             ancs.foreach {p =>
                p match {
                   case p : MPath if ! mpathfound => mpathfound = true; gsep
@@ -99,7 +99,7 @@ class BreadcrumbsServer extends ServerExtension("breadcrumbs") {
                   case p if p.^! == p => Nil
                   case _ => lsep
                }
-               span("mmturi", attributes=List("jobad:href" -> p.toPath)) {text {p.last}}
+               span("mmturi", attributes=List(presentation.HTMLAttributes.href -> p.toPath)) {text {p.last}}
             }
          }
       }

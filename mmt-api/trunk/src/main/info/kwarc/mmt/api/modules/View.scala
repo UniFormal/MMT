@@ -17,7 +17,6 @@ abstract class View(doc : DPath, name : LocalName) extends Module(doc, name) wit
    protected def outerString = path + " : " + from.toString + " -> " + to.toString
    def toNode = {
       val node = <view name={name.last.toPath} base={doc.toPath} implicit={if (isImplicit) "true" else null}>
-           {getMetaDataNode}
            {innerNodes}
          </view>
       val fromN = Obj.toStringOrNode(from)

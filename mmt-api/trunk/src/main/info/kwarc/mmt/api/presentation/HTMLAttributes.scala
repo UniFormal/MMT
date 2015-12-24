@@ -8,6 +8,10 @@ object HTMLAttributes {
     * HTML5-compliant pseudo namespace of MMT-generated attributes
     */
    val prefix = "data-mmt-"
+   /** reference to the corresponding MMT URI
+    *  present on various HTML elements relating to the URI
+    */
+   val href = prefix + "href"
    /** reference to the declaration of the present symbol occurrence
     *  present on <mo> elements
     */
@@ -32,5 +36,9 @@ object HTMLAttributes {
     *  present on all grouping MathML elements
     */
    val position = prefix + "position"
+   /** the MMT URI that should be loaded to replace the target if clicked
+    *  present on arbitrary elements
+    */
+   val load = prefix + "load"
 }
 

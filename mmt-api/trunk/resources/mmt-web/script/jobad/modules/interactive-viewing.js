@@ -10,11 +10,80 @@ var interactiveViewing = {
 		'hasCleanNamespace': false
 	},
 
+	init: function(JOBADInstance) {
+		var query = window.location.search.substring(1);
+		if (query != "")
+		   this.navigate(query);
+	},
+
+	navigate: function(uri) {
+		// main div
+		var url = mmt.adaptMMTURI(uri, '', true);
+		mmt.ajaxReplaceIn(url, 'main');
+		var bcurl = '/:breadcrumbs?' + uri;
+		mmt.ajaxReplaceIn(bcurl, 'breadcrumbs');
+		if (uri.split("?").length == 2)
+			mmt.setActiveTheory(uri);
+	    // setSVGPanRoot($('svg')[0]);
+	},
+	
+	navigateServer: function(uri) {
+	   url = '/:admin?navigate ' + uri;
+	   $.ajax({'url': url});
+	},
+
+	leftClick: function(elem, JOBADInstance) {
+	   var target = $(elem);
+	   //handling clicks on parts of the document
+        /* TODO is this code ever used?
+        if(target.hasAttribute('data-mmt-link')) {
+			var uri = target.attr('data-mmt-link');
+			this.navigate(uri);
+		}
+		if(target.hasAttribute('loadable')) {
+			var elem = target.parent().get(0);
+			var ref = mmt.load(elem);
+			$(ref).find('span').attr('foldable', 'true');
+			$(elem).replaceWith(ref);
+		}
+		if(target.hasAttribute('data-mmt-flattenable')) {
+			var elem = target.parent().get(0);
+			var loaded = mmt.load(elem);
+			var fc = $(elem).children().filterMClass('flat-container');
+			fc.children().replaceWith(loaded);
+			fc.toggle();
+		}
+		if(target.hasAttribute('foldable')) {
+			var content = $(target).parent().find('table').toggle();				
+		}
+		if (target.hasClass("loadable")) {
+			var elem = target.get(0); 
+			var ref = mmt.load(elem);
+			$(elem).replaceWith(ref);
+		}*/
+
+		/* clicking on class toggle-trigger
+		   toggles all toggle-target children of the next toggle-root ancestor */
+		if (target.hasClass("toggle-trigger")) {
+			target.closest('.toggle-root').children('.toggle-target').toggle();
+		}
+		
+		/*
+		if (target.hasAttribute(mmtattr.symref)) {
+			var uri = target.attr(mmtattr.symref);
+			this.navigate(uri);
+		}*/
+
+		mmt.unsetSelected();	
+		return true;
+	},
 
 	contextMenuEntries: function(targetArray, JOBADInstance) {
-		var target = targetArray[0];  //for some reason jobad passes [target] instead of target
+      var target = targetArray[0];  //for some reason jobad passes [target] instead of target
 		mmt.setCurrentPosition(target);
+
 		var res = this.visibMenu();
+
       if (mmt.focusIsMath) {
 			var me = this;
 			res["infer type"] = function(){me.showComputationResult("i", "inferred")};
@@ -25,18 +94,33 @@ var interactiveViewing = {
             else
                res['fold'] = function(){$(mmt.focus).addMClass('math-folded');};
 		}
+		
 		if (mmt.currentURI !== null) {
+      	var uri = mmt.currentURI;
+
+			var sub = {};
 			var me = this;
+   	   sub["in this window"] = function() {
+            me.navigate(uri);
+      	};
+	      sub["in new window"] = function() {mmt.openCurrent();};
+   	   sub["in remote listeners"] = function() {
+            me.navigateServer(uri);
+      	};
+      	var name = mmt.splitMMTURI(uri, false).slice(-1)[0];
+			res["go to declaration of '" + name + "'"] = sub;
+
 			/*res["set active theory"] = function(){mmt.setActiveTheory(mmt.currentURI);};*/
-			res["show declaration"] = function(){me.showComp(null);};
+			res["show declaration"] =
+			   function(){me.showComp(null);};
 			res["show graph"] = function() {
-				var svgURI = ":svg?" + mmt.currentURI;
-				var title =  mmt.currentURI.split('/');
+				var svgURI = ":svg?" + uri;
+				var title = uri.split('/');
 				var contentNode = mmt.createInlineBox(mmt.target, title.slice(-1)[0], '50%');
 				mmt.ajaxAppendBox(svgURI, contentNode);
 			};
-			res["show URI"] = function(){alert(mmt.currentURI);};
-/*			res["comment"] = function(){me.addComment()};*/
+			res["show URI"] = function(){alert(uri);};
+         /*	res["comment"] = function(){me.addComment()};*/
 		}
 		return res;
 	},
@@ -241,5 +325,3 @@ var interactiveViewing = {
 };
 
 JOBAD.modules.register(interactiveViewing);
-
-

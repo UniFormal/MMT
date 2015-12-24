@@ -9,7 +9,7 @@ import utils._
 import scala.collection._
 
 /** This trait adds validation operations to Archive's */
-trait Validate extends WritableArchive {
+trait Validate {self: Archive =>
   /** checks modules in content structurally and generates term-level dependency relation in .occ files */
   def check(in: FilePath = EmptyPath, controller: Controller) {
     val rels = new mutable.HashSet[RelationalElement]

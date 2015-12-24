@@ -28,7 +28,7 @@ class OpaqueText(val parent: DPath, val fragments: List[TextFragment]) extends O
    def raw: NodeSeq = fragments.map {
       case StringFragment(s) => scala.xml.Text(s)
       case tf: TermFragment => tf.tc.get match {
-         case Some(t) => t.toNode
+         case Some(t) => t.toOBJNode
          case None => <unparsed>{tf.tc.parsed}</unparsed>
       }
    }

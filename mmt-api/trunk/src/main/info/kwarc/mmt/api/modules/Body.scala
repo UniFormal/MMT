@@ -28,8 +28,9 @@ trait Body extends ContentElement {self =>
    private object narrativeStructure {
       /** the DPath of this Body as a document */
       val dpath = path.toMPath.toDPath
-      /** this Body as a document */
+      /** this Body as a document (sharing the same metadata) */
       val document = new Document(dpath, true, Some(self))
+      document.metadata = metadata
       /** call a function on all logical declarations and their parent document */
       def traverse(f: (Document,LocalName) => Unit) {traverse(document, f)}
       private def traverse(doc: Document, f: (Document,LocalName) => Unit) {
@@ -150,14 +151,33 @@ trait Body extends ContentElement {self =>
             case r: SRef =>
                val s = statements(r.name)
                if (!s.isGenerated) s.toNode else Nil
+            case oe: opaque.OpaqueElement => oe.toNode 
             case d: Document =>
                <document name={d.name.last.toPath}>{makeNodes(d)}</document>
-            case ne => ne.toNode 
          }
          doc.getMetaDataNode ++ nodes
       }
       makeNodes(document)
    }
+   def streamInnerNodes(rh: presentation.RenderingHandler) {
+      def streamNodes(doc: Document) {
+         rh(doc.getMetaDataNode)
+         doc.getDeclarations.foreach {
+            case r: SRef =>
+               val s = statements(r.name)
+               if (!s.isGenerated)
+                  s.toNode(rh)
+            case oe: opaque.OpaqueElement =>
+               oe.toNode(rh) 
+            case d: Document =>
+               rh << s"""<document name="${d.name.last.toPath}">"""
+               streamNodes(d)
+               rh << "</document>"
+         }
+      }
+      streamNodes(document)
+   }
+
    /** getDeclarationsElaborated, without narrative structure */
    protected def innerNodesElab = getDeclarationsElaborated.map(_.toNode)
    protected def innerString = {
@@ -171,6 +191,6 @@ trait Body extends ContentElement {self =>
             case ne => List((indent, ne.toString))
          }
       }
-      makeStrings(document,0).map {case (ind, s) => repeatString("  ", ind) + s}.mkString("\n")
+      makeStrings(document,1).map {case (ind, s) => repeatString("  ", ind) + s}.mkString("\n")
    }
 }

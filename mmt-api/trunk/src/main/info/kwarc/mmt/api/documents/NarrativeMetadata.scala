@@ -9,7 +9,9 @@ object NarrativeMetadata {
    val keyBase = DPath(URI("http", "purl.org") / "dc" / "terms") ? "_"
   
    def allKeys = List("creator", "created", "description", "abstract", "subject", "title")
-   def allAnnotators = allKeys map {k => new NarrativeMetadata(k)}  
+   def allAnnotators = allKeys map {k => new NarrativeMetadata(k)}
+   
+   val title = new NarrativeMetadata("title")
 }
 
 /** this class should be generalized to allow any semi-formal values  */
@@ -24,4 +26,5 @@ class NarrativeMetadata(name: String) extends Annotator[String](NarrativeMetadat
    }
    def toObject(s: String) = OMSemiFormal(List(Text("", s)))
 }
+
 

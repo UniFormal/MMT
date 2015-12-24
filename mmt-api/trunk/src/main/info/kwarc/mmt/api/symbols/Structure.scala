@@ -45,7 +45,7 @@ abstract class Structure extends Declaration with Link {
          case _ => (null, <from>{from.toNode}</from>)
       }
       val implAtt =if (isInclude) null else if (isImplicit) "true" else null 
-      <import name={nameAtt} from={fromAtt} implicit={implAtt}>{getMetaDataNode}{fromNode}{innerNodes}</import>
+      <import name={nameAtt} from={fromAtt} implicit={implAtt}>{fromNode}{innerNodes}</import>
    }
 }
 

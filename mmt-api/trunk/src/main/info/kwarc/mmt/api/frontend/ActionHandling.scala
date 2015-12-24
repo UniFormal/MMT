@@ -41,7 +41,7 @@ trait ActionHandling {self: Controller =>
         if (act != NoAction && showLog) report("user", act.toString)
         act match {
           case AddMathPathFS(uri, file) =>
-            val lc = LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, file)
+            val lc = new LocalCopy(uri.schemeNull, uri.authorityNull, uri.pathAsString, file)
             backend.addStore(lc)
           case AddMathPathJava(file) =>
             backend.openRealizationArchive(file)

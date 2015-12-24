@@ -26,8 +26,18 @@ abstract class ROArchive extends Storage with Logger {
   val logPrefix = "archive"
 }
 
-abstract class WritableArchive extends ROArchive {
-  val root: File
+/** archive management
+  *
+  * Archive is a very big class, so most of its functionality is outsourced to various traits that are mixed in here
+  *
+  * @param root the root folder that contains the source folder
+  * @param properties a key value map
+  * @param report the reporting mechanism
+  */
+class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report)
+  extends ROArchive with Validate with ScalaCode with ZipArchive {
+
+  val rootString = root.toString
   val id = properties("id")
   val narrationBase = utils.URI(properties.getOrElse("narration-base", ""))
   /** the NamespaceMap built from the ns and ns-prefix properties */
@@ -56,11 +66,12 @@ abstract class WritableArchive extends ROArchive {
 
   def includeDir(n: String): Boolean = !List(".svn", ".mmt", ".git").contains(n)
 
-  val narrationBackend = LocalCopy(narrationBase.schemeNull, narrationBase.authorityNull, narrationBase.pathAsString, this / narration)
+  val narrationBackend = new ArchiveNarrationStorage(this, "desc")
 
   def load(p: Path)(implicit controller: Controller): Unit = {
     p match {
-      case doc: DPath => narrationBackend.load(doc)
+      case doc: DPath =>
+         narrationBackend.load(doc)
       case mod: MPath =>
         val p = MMTPathToContentPath(mod)
         if (!p.exists) throw NotApplicable("file not found")
@@ -117,22 +128,6 @@ abstract class WritableArchive extends ROArchive {
       else Some(onFile(Current(inFile, in)))
     else None
   }
-}
-
-/** archive management
-  *
-  * Archive is a very big class, so most of its functionality is outsourced to various traits that are mixed in here
-  *
-  * @param root the root folder that contains the source folder
-  * @param properties a key value map
-  * @param report the reporting mechanism
-  */
-class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report)
-  extends WritableArchive with Validate with ScalaCode with ZipArchive {
-
-  val rootString = root.toString
-  val groupDir = root.up
-  val baseDir = groupDir.up
 
   def readRelational(in: FilePath, controller: Controller, kd: String): Unit = {
     if ((this / relational).exists) {
@@ -152,6 +147,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     }
   }
 }
+
 
 object Archive {
   /** a string containing all characters that are illegal in file names */

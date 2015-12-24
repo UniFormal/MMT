@@ -83,7 +83,7 @@ object xml {
    def addAttrOrChild(n: Elem, key: String, value: Union[String,Node]) = value match {
       case Left(s) => addAttr(n, key, s)
       case Right(c) =>
-        val wc = Elem(null, key, Null, n.scope, c) 
+        val wc = Elem(null, key, Null, n.scope, true, c) 
         n.copy(child = wc ++ n.child)
    }
  
@@ -119,7 +119,7 @@ object xml {
    def trimOneLevel(n : Node) : Node = n match {
      case e : Elem => 
        val nonWSchild = e.child.filter(c => !Utility.trimProper(c).isEmpty)
-       Elem(e.prefix, e.label, e.attributes, e.scope, e.minimizeEmpty, nonWSchild : _*)
+       e.copy(child = nonWSchild)
      case _ => n
    }
    
@@ -184,12 +184,10 @@ object xml {
    }
       
    /** common namespaces */
-   def namespace (ns : String) : String = {
+   def namespace(ns : String) : String = {
       ns match {
          case "xml" => "http://www.w3.org/XML/1998/namespace"
          case "omdoc" => "http://www.mathweb.org/omdoc"
-         case "jobad" => "http://omdoc.org/presentation"
-         case "visib" => namespace("omdoc")
          case "om" => "http://www.openmath.org/OpenMath"
          case "xhtml" => "http://www.w3.org/1999/xhtml"
          case "html" => "http://www.w3.org/1999/xhtml"
