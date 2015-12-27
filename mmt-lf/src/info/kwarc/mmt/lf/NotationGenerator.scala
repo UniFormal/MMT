@@ -37,8 +37,8 @@ class NotationGenerator extends ChangeListener {
          }
       case _ => false
    }
-   override def onUpdate(e: ContentElement) {onAdd(e)}
-   override def onAdd(e: ContentElement) {e match {
+   def onUpdate(e: ContentElement) {onAdd(e)}
+   def onAdd(e: ContentElement) {e match {
       case c: Constant =>
          val notC = c.notC
          if (notC.parsing.isDefined && notC.presentation.isDefined) return

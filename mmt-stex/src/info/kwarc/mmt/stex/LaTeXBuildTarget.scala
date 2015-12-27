@@ -75,7 +75,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     val groupRepo = archString(a) + "}"
     val text: List[String] = List(
       "% this file defines root path local repository",
-      "\\defpath{MathHub}{" + a.baseDir.getPath + "}",
+      "\\defpath{MathHub}{" + a.root.up.up.getPath + "}",
       "\\mhcurrentrepos{" + groupRepo,
       "\\libinput{WApersons}",
       "% we also set the base URI for the LaTeXML transformation",

@@ -77,8 +77,8 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
       println("Document:" +bt.narrationDPath)
       val modsM = d._modules map doModule(path)
       val mrefsM = modsM.map(m => {controller.add(m) ;MRef(bt.narrationDPath, m.path)})
-      val doc = new Document(bt.narrationDPath, true, mrefsM)
-      index(doc)
+      // val doc = new Document(bt.narrationDPath, true, mrefsM)
+      // index(doc)
    }
 
    def doModule(d:DPath)(m: syntax.Module): modules.Module = m match {

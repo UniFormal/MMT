@@ -23,7 +23,7 @@ trait STeXAnalysis {
   }
 
   def mkDep(a: Archive, ar: String, fp: FilePath, key: String): Option[Dependency] = {
-    val root = a.baseDir / ar
+    val root = a.root.up.up / ar
     controller.addArchive(root)
     controller.backend.getArchive(root) match {
       case None =>
@@ -126,9 +126,9 @@ trait STeXAnalysis {
               case List("path", p) :: tl =>
                 tl match {
                   case Nil =>
-                    n = mkMhImport(a.baseDir, archString(a), p, b)
+                    n = mkMhImport(a.root.up.up, archString(a), p, b)
                   case List(List("repos", id)) =>
-                    n = mkMhImport(a.baseDir, id, p, b)
+                    n = mkMhImport(a.root.up.up, id, p, b)
                   case _ =>
                 }
               case _ =>
@@ -136,9 +136,9 @@ trait STeXAnalysis {
           case gimport(_, r, p) =>
             Option(r) match {
               case Some(id) =>
-                n = mkGImport(a.baseDir, id, p)
+                n = mkGImport(a.root.up.up, id, p)
               case None =>
-                n = mkGImport(a.baseDir, archString(a), p)
+                n = mkGImport(a.root.up.up, archString(a), p)
             }
           case _ =>
         }

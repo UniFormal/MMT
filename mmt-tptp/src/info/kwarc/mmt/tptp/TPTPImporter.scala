@@ -54,7 +54,7 @@ class TPTPImporter extends TraversingBuildTarget {
     if (!File(tptp2Xmain).isAbsolute)
       tptp2Xmain = File(bt.archive / inDim / tptp2Xmain).toString
     if (!File(tptp2Xmain).exists)
-      tptp2Xmain = File(bt.archive.baseDir / "tptp" / "Distribution" / "source" / "TPTP2X" / "tptp2X.main").toString
+      tptp2Xmain = File(bt.archive.root.up.up / "tptp" / "Distribution" / "source" / "TPTP2X" / "tptp2X.main").toString
     tptpCommand = List(swipl, "-f", tptp2Xmain, "-g", tptp2Xgoal)
     val outFile = bt.outFile
     val tempFile = outFile.setExtension("temp")

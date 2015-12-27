@@ -9,7 +9,7 @@ import scala.util.matching.Regex
 object STeXUtils {
   val c = java.io.File.pathSeparator
 
-  def mathHubDir(bt: BuildTask): File = bt.archive.baseDir.up
+  def mathHubDir(bt: BuildTask): File = bt.archive.root.up.up.up
 
   def extBase(bt: BuildTask): File = mathHubDir(bt) / "ext"
 
@@ -29,7 +29,7 @@ object STeXUtils {
         + c + sysEnv(tex)))
   }
 
-  def archString(a: Archive): String = a.groupDir.getName + "/" + a.root.getName
+  def archString(a: Archive): String = a.root.up.getName + "/" + a.root.getName
 
   def getLang(f: File): Option[String] = f.stripExtension.getExtension
 
@@ -46,7 +46,7 @@ object STeXUtils {
     }
     else defaultFile
 
-  def groupMetaInf(a: Archive): File = a.groupDir / "meta-inf"
+  def groupMetaInf(a: Archive): File = a.root.up / "meta-inf"
 
   def getAmbleFile(preOrPost: String, a: Archive, lang: Option[String]): File = {
     def ambleFile(root: File): File = (root / "lib" / preOrPost).setExtension("tex")

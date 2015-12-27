@@ -196,7 +196,7 @@ trait ActionHandling {self: Controller =>
 
   /** builds a file in an archive choosing an appropriate importer */
   // obsolete?
-  /* def build(f: File)(implicit errorCont: ErrorHandler) {
+  def build(f: File)(implicit errorCont: ErrorHandler) {
     backend.resolvePhysical(f) match {
       case Some((a, p)) =>
         val format = f.getExtension.getOrElse {
@@ -210,7 +210,7 @@ trait ActionHandling {self: Controller =>
       case None =>
         throw GeneralError(f + " is not in a known archive")
     }
-  }*/
+  }
 
   /** auxiliary function of makeAction: guess which files/folders the users wants to build
     *

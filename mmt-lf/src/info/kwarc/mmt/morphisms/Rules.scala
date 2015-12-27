@@ -120,7 +120,7 @@ object MorphCheck extends TypingRule(ModExp.morphtype) {
          val currentSub = subsDomain.head
          val currentSubName = currentSub.name 
          // all domain elements of from to which current applies
-         val matchingDomElems = fromDomain.filter {case de => currentSubName.hasPrefix(de.name).isDefined}.toList
+         val matchingDomElems = fromDomain.filter {case de => currentSubName.dropPrefix(de.name).isDefined}.toList
          matchingDomElems match {
             case List(de @ DomainElement(p, defined, subdomainOpt)) =>
                if (defined)

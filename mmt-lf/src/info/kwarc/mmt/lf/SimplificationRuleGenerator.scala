@@ -48,15 +48,15 @@ class SimplificationRuleGenerator extends ChangeListener {
      }
   }
      
-  override def onUpdate(e: ContentElement) {
+  def onUpdate(e: ContentElement) {
      onDelete(e)
      onAdd(e)
   }
-  override def onAdd(e: ContentElement) {onCheck(e)}
-  override def onDelete(e: ContentElement) {
+  def onAdd(e: ContentElement) {onCheck(e)}
+  def onDelete(e: ContentElement) {
      getGeneratedRule(e.path).foreach {r => controller.delete(rulePath(r))}
   }
-  override def onCheck(e: ContentElement) {
+  def onCheck(e: ContentElement) {
        val c = e match {
           case c: symbols.Constant if c.rl == Some(SimplifyTag) =>
              if (c.tpC.analyzed.isDefined) {

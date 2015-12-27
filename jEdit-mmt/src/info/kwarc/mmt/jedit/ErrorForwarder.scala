@@ -44,7 +44,7 @@ class ErrorListForwarder(errorSource: DefaultErrorSource, controller: Controller
             case e: InvalidUnit =>
                val steps = e.history.getSteps.reverse
                extraMessages = steps.map(_.present(o => controller.presenter.asString(o)))
-               val decl = controller.localLookup.get(e.unit.component.parent)
+               val decl = controller.localLookup.get(e.unit.component.get.parent)
                // WFJudgement must exist because we always start with it
                // find first WFJudegment whose region is within the failed checking unit
                // but maybe lastWFJ.wfo has lost its region through simplification?

@@ -228,7 +228,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       val presenter = controller.extman.get(classOf[Presenter]).find(_.isApplicable(styleS)) getOrElse {
         throw ServerError("no presenter found")
       }
-      val reader = new XMLReader(controller.report)
+      val reader = new XMLReader(controller)
       val bodyXML = scala.xml.XML.loadString(bodyS)
       
       val cont = controller //new Controller
