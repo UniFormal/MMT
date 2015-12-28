@@ -157,6 +157,10 @@ lazy val lfx = (project in file("mmt-lfx")).
   dependsOn(api,lf).
   settings(commonSettings("mmt-lfx"): _*)
 
+lazy val odk = (project in file("mmt-odk")).
+  dependsOn(api,lf).
+  settings(commonSettings("mmt-odk"): _*)
+
 lazy val specware = (project in file("mmt-specware")).
   dependsOn(api).
   settings(commonSettings("mmt-specware"): _*)
