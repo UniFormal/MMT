@@ -207,7 +207,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
           }
           catch {
             case NotApplicable(msg) =>
-              log(hd.toString + " not applicable to " + p + (if (msg != "") s" ($msg)" else ""))
+              log(hd.toString + " not applicable to " + p + (if (msg != "") " ("+msg+")" else ""))
               loadStores(tl, p)
           }
       }

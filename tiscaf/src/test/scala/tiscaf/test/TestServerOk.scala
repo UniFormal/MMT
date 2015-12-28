@@ -2,6 +2,7 @@ package tiscaf
 package test
 
 import org.scalatest._
+import org.scalatest.matchers.ShouldMatchers
 import scala.concurrent.ExecutionContext.Implicits.global
 import dispatch._
 

@@ -16,7 +16,7 @@ import scala.util.parsing.combinator._
   * This object implements a combinator parser for Actions. It is used in particular by the [[Controller]]
   * It is straightforward to understand the grammar from the source code.
   */
-object Action extends RegexParsers {
+object Action extends  RegexParsers {
   private var nsMap: NamespaceMap = NamespaceMap.empty
   private var home: File = File(System.getProperty("user.dir"))
 
