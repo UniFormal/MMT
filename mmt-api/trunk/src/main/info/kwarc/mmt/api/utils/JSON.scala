@@ -144,6 +144,7 @@ object JSON {
          s.trim
          s.drop(":")
          val value = parse(s)
+         s.trim
          val first = (key,value)
          val c = s.next
          if (c == ',') {
@@ -151,7 +152,7 @@ object JSON {
             first :: rest
          } else if (c == '}') {
             JSONObject(List(first))
-         } else throw JSONError("expected ',' or '}', found " + c)
+         } else throw JSONError("expected ',' or '}', found " + c + " " + c.isWhitespace)
       }
    }
    
