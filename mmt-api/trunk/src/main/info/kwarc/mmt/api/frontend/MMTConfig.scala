@@ -30,6 +30,11 @@ abstract class BackendConf extends ConfEntry
 case class ArchiveConf(id : String, formats : List[String]) extends BackendConf
 
 /**
+ * Registers a profile as a subset of active archives 
+ */
+case class ProfileConf(id : String, archives : List[String]) extends BackendConf
+
+/**
  * registers a remote database
  */
 case class DatabaseConf(url: URI, uri: URI) extends BackendConf {
@@ -98,7 +103,8 @@ class MMTConfig {
     def getArchive(aid : String) = getEntry(classOf[ArchiveConf], aid)
     def getArchives = getEntries(classOf[ArchiveConf])
     def getFormat(id: String) = getEntry(classOf[FormatConf], id)
-
+    def getProfile(id : String) = getEntry(classOf[ProfileConf], id)
+    
     def getImporters(format : String) = getFormat(format).importers
     def getExporters(format : String) = getFormat(format).exporters
     def getImportersForArchive(archive : String) = getArchive(archive).formats.flatMap(getImporters).distinct
@@ -176,6 +182,12 @@ object MMTConfig {
           case id :: fmtsS :: Nil =>
             val fmts = fmtsS.split(",").toList
             config.addEntry(ArchiveConf(id, fmts))
+          case _ => fail
+        }
+        case "profiles" => split(line) match {
+          case id :: archsS :: Nil =>
+            val archs = archsS.split(",").toList
+            config.addEntry(ProfileConf(id, archs))
           case _ => fail
         }
         case "formats" => split(line) match {

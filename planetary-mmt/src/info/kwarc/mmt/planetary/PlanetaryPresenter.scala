@@ -173,15 +173,13 @@ abstract class PlanetaryAbstractPresenter(name : String) extends Presenter(new I
           rh(<meta name="url" content={mathhubPath(uri)}></meta>)
         }
         body{
-          div(attributes=List("xmlns" -> utils.xml.namespace("html"),
-                              "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
+          div(attributes=List("xmlns" -> utils.xml.namespace("html"))) {
             content
           }
         }
       }
     } else {
-      div(attributes=List("xmlns" -> utils.xml.namespace("html"),
-                          "xmlns:jobad" -> utils.xml.namespace("jobad"))) {
+      div(attributes=List("xmlns" -> utils.xml.namespace("html"))) {
         content
       }
     }
@@ -191,19 +189,24 @@ abstract class PlanetaryAbstractPresenter(name : String) extends Presenter(new I
 class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
 
    def setRh(rh : RenderingHandler) = this._rh = rh
+   override val logPrefix = "PlanetaryPresenter"
 
    def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) = {
-     this._rh = rh
-     s match {
-       case doc : Document =>
-         wrapScope(standalone, doc.path)(doDocument(doc))
-       case thy : DeclaredTheory =>
-         wrapScope(standalone, thy.path)(doTheory(thy))
-       case view : DeclaredView =>
-         wrapScope(standalone, view.path)(doView(view))
-       case c : Constant =>
-         wrapScope(standalone, c.path)(doConstant(c))
-       case _ => rh("TODO: Not implemented yet, presentation function for " + s.getClass().toString())
+     try {
+       this._rh = rh
+       s match {
+         case doc : Document =>
+           wrapScope(standalone, doc.path)(doDocument(doc))
+         case thy : DeclaredTheory =>
+           wrapScope(standalone, thy.path)(doTheory(thy))
+         case view : DeclaredView =>
+           wrapScope(standalone, view.path)(doView(view))
+         case c : Constant =>
+           wrapScope(standalone, c.path)(doConstant(c))
+         case _ => rh("TODO: Not implemented yet, presentation function for " + s.getClass().toString())
+       }
+     } catch {
+       case e : Exception => log(s"Failed Presenting ${s.path} due to unexpected error : ${e.getMessage} \n  ${e.getStackTrace.mkString("\n")}")
      }
      //TODO? reset this._rh
    }

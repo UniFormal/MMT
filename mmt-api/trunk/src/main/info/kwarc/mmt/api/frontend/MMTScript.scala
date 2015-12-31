@@ -86,19 +86,24 @@ abstract class MMTScript extends Extension {
     archives.foreach(a => runExporters(a.id, btm))
   }
 
-  def compUpdateBuild(changedCompsIds: List[String], btm: BuildTargetModifier) {
-    config.getArchives foreach {a =>
+    
+  def smartBuild(mod : BuildTargetModifier, profile : String, targets : List[String]) {
+    val archives = try {
+      config.getProfile(profile).archives.map(aid => config.getArchive(aid))
+    } catch {
+      case e : Exception => config.getArchives
+    }
+    archives foreach {a =>
       config.getArchive(a.id).formats foreach {f =>
         val imps = config.getImporters(f)
         val exps = config.getExporters(f)
         var foundChanged = false
         imps foreach { imp =>
-          if (changedCompsIds.contains(imp)) foundChanged = true
-          if (foundChanged) build(List(a.id), imp, Build)
+          if (targets.contains(imp) || targets.isEmpty) foundChanged = true
+          if (foundChanged) build(List(a.id), imp, mod)
         }
-
         exps foreach { exp =>
-          if (changedCompsIds.contains(exp) || foundChanged) build(List(a.id), exp, Build)
+          if (targets.contains(exp) || foundChanged || targets.isEmpty) build(List(a.id), exp, mod)
         }
       }
     }
