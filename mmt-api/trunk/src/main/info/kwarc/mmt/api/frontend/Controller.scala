@@ -389,6 +389,7 @@ class Controller extends ROController with ActionHandling with Logger {
                  List(m)
                case _ => Nil
              }
+             case ne => Nil
            }
          }
        case _ => Nil

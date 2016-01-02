@@ -6,6 +6,7 @@ import backend._
 import checking._
 import libraries._
 import ontology.QueryExtension
+import opaque._
 import parser._
 import presentation._
 import proving._
@@ -245,8 +246,9 @@ class ExtensionManager(controller: Controller) extends Logger {
     List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover).foreach { e => addExtension(e) }
     // build manager
     addExtension(new TrivialBuildManager)
-    //targets and presenters
+    //targets, opaque formats, and presenters
     List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter,
+      new TextInterpreter, new HTMLInterpreter,
       TextPresenter, OMDocPresenter).foreach {
       e => addExtension(e)
     }

@@ -195,7 +195,7 @@ trait ActionHandling {self: Controller =>
   }
 
   /** builds a file in an archive choosing an appropriate importer */
-  // obsolete?
+  // obsolete? only used by jedit
   def build(f: File)(implicit errorCont: ErrorHandler) {
     backend.resolvePhysical(f) match {
       case Some((a, p)) =>

@@ -496,9 +496,9 @@ var svgHelper = {
       return (num*by).toString() + unit;
    },
    zoom: function(svg, by) {
-      var h = $(svg).attr('height')
-      $(svg).attr('height', this.multiplyDim(h, by))
-      var w = $(svg).attr('width')
-      $(svg).attr('width', this.multiplyDim(w, by))
+      var h = $(svg).attr('height');
+      $(svg).attr('height', this.multiplyDim(h, by));
+      var w = $(svg).attr('width');
+      $(svg).attr('width', this.multiplyDim(w, by));
    },
 };   
