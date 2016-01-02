@@ -60,7 +60,7 @@ td.layouttablecell:last-child {
 
 .layouttablecell .cellcontent {
    height: 90vh;
-   overflow: scroll;
+   overflow: auto;
    resize: horizontal;
 }
 
@@ -342,7 +342,7 @@ div.result {
 
 .inlinebox-content {
    resize: vertical;
-   overflow: scroll;
+   overflow: auto;
 	margin: 5px;
 }
 
@@ -363,7 +363,7 @@ div.graph {
     width: 60vw; /* this is awkward, but necessary to avoid zooming to increase the div.graph */
     height: 50vh;
     resize: both;
-    overflow: scroll;
+    overflow: auto;
 }
 
 /* graphviz draws a <polygon> around clusters */
