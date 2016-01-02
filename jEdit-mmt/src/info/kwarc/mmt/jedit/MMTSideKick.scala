@@ -116,6 +116,8 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val child = new DefaultMutableTreeNode(new MMTElemAsset(doc, doc.path.toPath, reg))
       node.add(child)
       doc.getDeclarations foreach {
+        case d: Document =>
+           buildTreeDoc(child, d)
         case d: DRef =>
            buildTreeDoc(child, controller.getDocument(d.target))
         case m: MRef =>
@@ -127,6 +129,8 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
               val child = new DefaultMutableTreeNode(new MMTAsset(m.target.name.toPath + " (unknown)", reg) {def getScope = null})
               node.add(child)
            }
+        case s: SRef =>
+        case oe: opaque.OpaqueElement =>
       }
    }
 

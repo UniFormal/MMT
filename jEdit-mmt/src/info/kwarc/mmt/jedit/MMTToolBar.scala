@@ -1,5 +1,7 @@
 package info.kwarc.mmt.jedit
 
+import info.kwarc.mmt.api.gui._
+
 import java.awt._
 import java.awt.event._
 import javax.swing._
@@ -14,72 +16,42 @@ MMT toolbar with useful symbols and a clear button.
  */
 
 class MMTToolBar(mmtp: MMTPlugin) extends JToolBar {
-
-  private val insUS = new JButton("Object Terminator (US)")
-  private val insRS = new JButton("Declaration Terminator (RS)")
-  private val insGS = new JButton("Module Terminator (GS)")
-
-  val clrIMG = (new ImageIcon(
-    this.getClass().getResource(
-      "/images/clear_button.png"))).getImage()
-  val clrIMGs = clrIMG.getScaledInstance(
-    16, 16, java.awt.Image.SCALE_SMOOTH );
-  private val clrBTN = new JButton("Clear",
-    new ImageIcon(clrIMGs))
-
   private val controller = mmtp.controller
 
-  val toolBar = new JToolBar("Symbol toolbar")
-  toolBar.setFloatable(false)
-  add(insUS)
-  add(insRS)
-  add(insGS)
-  add(clrBTN)
+  private val insUS = Swing.Button("O") {
+     val view = jEdit.getActiveView()
+     Inserter.insertUSorTab(view.getTextArea())     
+  }
+  insUS.setToolTipText("Inserts object delimiter (US)")
 
-  //Adding components
-  insUS.setToolTipText("Inserts object delimiter")
-  insRS.setToolTipText("Inserts declaration delimiter")
-  insGS.setToolTipText("Inserts module delimiter")
+  private val insRS = Swing.Button("D") {
+     val view = jEdit.getActiveView()
+     Inserter.insertRSReturn(view.getTextArea())
+  }
+  insRS.setToolTipText("Inserts declaration delimiter (RS)")
+  
+  private val insGS = Swing.Button("M") {
+     val view = jEdit.getActiveView()
+     Inserter.insertGSReturn(view.getTextArea())
+  }
+  insGS.setToolTipText("Inserts module delimiter (GS)")
+
+  val clrIMG = (new ImageIcon(this.getClass().getResource("/images/clear_button.png"))).getImage()
+  val clrIMGs = clrIMG.getScaledInstance(16, 16, java.awt.Image.SCALE_SMOOTH )
+  private val clrBTN = new JButton("Clear", new ImageIcon(clrIMGs))
   clrBTN.setToolTipText("Clears MMT memory")
-
-  insUS.addActionListener(new ActionListener()
-    {
-      def actionPerformed(e: ActionEvent)
-      {
-        val view = jEdit.getActiveView()
-        Inserter.insertUSorTab(view.getTextArea())
-      }
-    }
-  )
-
-  insRS.addActionListener(new ActionListener()
-    {
-      def actionPerformed(e: ActionEvent)
-      {
-        val view = jEdit.getActiveView()
-        Inserter.insertRSReturn(view.getTextArea())
-      }
-    }
-
-  )
-
-  insGS.addActionListener(new ActionListener()
-    {
-      def actionPerformed(e: ActionEvent)
-      {
-        val view = jEdit.getActiveView()
-        Inserter.insertGSReturn(view.getTextArea())
-      }
-    }
-  )
-
-  clrBTN.addActionListener(new ActionListener()
-    {
-      def actionPerformed(e: ActionEvent)
-      {
+  clrBTN.addActionListener(new ActionListener() {
+      def actionPerformed(e: ActionEvent) {
         controller.clear
       }
     }
   )
+
+  val toolBar = new JToolBar("Symbol toolbar")
+  //toolBar.setFloatable(false)
+  add(insUS)
+  add(insRS)
+  add(insGS)
+  add(clrBTN)
 }
 

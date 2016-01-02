@@ -22,93 +22,48 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
    private val view = editPane.getView
    private val painter = textArea.getPainter
 
-   val oIMG = new ImageIcon(
-     this.getClass().getResource(
-       "/images/object_t.png")).getImage()
-   val dIMG = new ImageIcon(
-     this.getClass().getResource(
-       "/images/clear_button.png")).getImage()
-   val mIMG = new ImageIcon(
-     this.getClass().getResource(
-       "/images/clear_button.png")).getImage()
+   //val oIMG = new ImageIcon(this.getClass().getResource("/images/object_t.png")).getImage()
+   //val dIMG = new ImageIcon(this.getClass().getResource("/images/clear_button.png")).getImage()
+   //val mIMG = new ImageIcon(this.getClass().getResource("/images/clear_button.png")).getImage()
 
-   private val segment = new Segment
+  private val segment = new Segment
 
   override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
+    import java.awt.{Point,Color}
     val height = painter.getFontHeight()
     val width = painter.getFontMetrics().getWidths()(29)
-
     val s = segment
     textArea.getLineText(physicalLine, s)
+    val font = painter.getFont
+    def paintDelim(startPoint: Point, color: Color, letter: String) {
+       //gfx.setColor(Color.WHITE)
+       //gfx.fillRect(startPoint.x, startPoint.y, width, height)
+       gfx.setColor(color)
+       gfx.fillRect(startPoint.x, startPoint.y, width, height)
+       gfx.setColor(Color.WHITE)
+       gfx.setFont(new Font(font.getName(), Font.PLAIN, font.getSize()*2/3))
+       gfx.drawString(letter, startPoint.x + width/4, startPoint.y + height*3/4)
+    }
     val linelen = s.count
     val txtsegm = s.array
-
-    val font = painter.getFont
-
+    val high = 255
+    val low = 192
     var globalOffset = 0
-    var localOffset = 0
-    var startPoint = new java.awt.Point
-
     for (localOffset <- 0 to linelen-1) {
       globalOffset = localOffset + s.offset
-      
-      textArea.offsetToXY(physicalLine,
-        localOffset, startPoint)
-
+      val startPoint = textArea.offsetToXY(physicalLine, localOffset)
       txtsegm(globalOffset).toInt match {
+        case 28 =>
+          paintDelim(startPoint, new Color(high, low, low), "S")
         case 29 =>
-          gfx.setColor(java.awt.Color.WHITE)
-          gfx.fillRect(startPoint.x, startPoint.y,
-            width, height)
-
-          gfx.setColor(new java.awt.Color(114, 28, 24))
-          gfx.fillRect(startPoint.x,
-            startPoint.y,
-            width, height)
-
-          gfx.setColor(java.awt.Color.WHITE)
-          gfx.setFont(new Font(font.getName(),
-            Font.PLAIN, 2*font.getSize()/3))
-          gfx.drawString("M",
-            startPoint.x + width/6,
-            startPoint.y + height/2 + 3*width/8)
+          paintDelim(startPoint, new Color(high, low, low), "M")
         case 30 =>
-          gfx.setColor(java.awt.Color.WHITE)
-          gfx.fillRect(startPoint.x, startPoint.y,
-            width, height)
-
-          gfx.setColor(new java.awt.Color(24, 28, 114))
-          gfx.fillRect(startPoint.x,
-            startPoint.y,
-            width, height)
-
-          gfx.setColor(java.awt.Color.WHITE)
-          gfx.setFont(new Font(font.getName(),
-            Font.PLAIN, 2*font.getSize()/3))
-          gfx.drawString("D",
-            startPoint.x + width/6,
-            startPoint.y + height/2 + 3*width/8)
+          paintDelim(startPoint, new Color(low, high, low), "D")
         case 31 =>
-          gfx.setColor(java.awt.Color.WHITE)
-          gfx.fillRect(startPoint.x, startPoint.y,
-            width, height)
-
-          gfx.setColor(new java.awt.Color(24, 114, 28))
-          gfx.fillRect(startPoint.x,
-            startPoint.y,
-            width, height)
-
-          gfx.setColor(java.awt.Color.WHITE)
-          gfx.setFont(new Font(font.getName(),
-            Font.PLAIN, 2*font.getSize()/3))
-          gfx.drawString("O",
-            startPoint.x + width/6,
-            startPoint.y + height/2 + 3*width/8)
+          paintDelim(startPoint, new Color(low, low, high), "O")
         case _ =>
       }
-
     }
-
   }   
 
    private def asString(o: Obj) = controller.presenter.asString(o)
