@@ -4,13 +4,9 @@ Therefore, it intentionally contains empty rules for some classes. */
 /* main layout */
 
 body {
- min-width:640px;
- min-height:300px;
- margin-top: 0px;
-
- margin-left:0px;
- margin-right:0px;
- background: white;
+  min-width:640px;
+  min-height:300px;
+  background: white;
 }
 
 /* general purpose rules */
@@ -26,19 +22,12 @@ table {
 /* header */
 
 #header {
-}
-
-span.pagelink a {
- padding-left:5px;
- padding-right:5px;
- color: blue;
- font-weight:bold;
- text-decoration:none;
- background : lightgray;
-}
-
-span.pagelink a:hover {
- background : url("../images/bg-hover-bak.png")
+   font-weight: bold;
+   font-size: large;
+   border: black 1px solid;
+   border-radius: 5px;
+   text-align: center;
+   background-color: lightyellow;
 }
 
 /* middle area (containing #sidebar and #breadcrumbs+#main) */
@@ -56,10 +45,9 @@ span.pagelink a:hover {
    border-style: solid;
    border-width: 1px;
    border-color: lightgray;
-
-   /*white-space:nowrap; /* for :lastchild trick below */
 }
 
+/* fully use horizontal space */
 td.layouttablecell:last-child {
   width:100%;
 }
@@ -119,7 +107,7 @@ a.treerelation {
 #main {
    padding-top: 3%;
    padding-left: 10px;
-   overflow: auto;
+   overflow: visible;
    width:100%;
 }
 
@@ -142,9 +130,10 @@ span.name {
 
 .document {
     border-left-style: solid;
-    border-left-width: 2px;
+    border-left-width: 4px;
     border-left-color: black;
     padding: 5px;
+    margin: 5px;
 }
 
 .document-header {
@@ -160,7 +149,7 @@ span.name {
 .document-body {
 }
 
-.document-dref span.name, .document-mref span.name, .document-sref span.name {
+.document-dref > span.name, .document-mref > span.name, .document-sref > span.name {
    border-radius: 5px;
    border: solid 1px black;
    margin-top: 3px;
@@ -191,24 +180,39 @@ span.name {
 
 .constant {
    border: solid 1px black;
+   border-radius: 5px;
    margin-top: 3px;
-   margin-bottom: 3px;  
+   margin-bottom: 3px;
+   background-color: whitesmoke;
+	padding: 5px;
 }
 
 .constant-header {
-	marging-left: 30 px;
-	padding: 10px;
 }
 
 table.constant-body {
 }
 
-/* one row for each component */
-tr.constant-type {
+/* one toggle button and one row for each component
+   the button toggles the corresponding row */
+button.component-toggle {
+   font-size: small;
+   color: white;
+   background-color: blue;
+   border-radius: 10px;
+   border: solid 1px black;
+   margin-left: 2px;
+   float: right;
+}
+button.component-toggle:hover {
+   background-color: darkblue;
 }
 
-tr.constant-definition, tr.constant-domain, tr.constant-codomain,
-tr.constant-parsing-notation, tr.constant-presentation-notation {
+tr.component-type {
+}
+
+tr.component-definition, tr.component-domain, tr.component-codomain,
+tr.component-parsing-notation, tr.component-presentation-notation {
   display: none;
 }
 
@@ -217,9 +221,11 @@ tr.tags, tr.metadata, tr.used-by {
 }
 
 .constant-component-label {
-  font-size: medium;
-  color: gray;
-  margin-right: 5px;
+   font-size: small;
+   color: gray;
+   background-color: lightblue;
+   border-radius: 3px;
+   margin-right: 5px;
 }
 
 .used-by .mmturi {
@@ -295,34 +301,126 @@ div.result {
 	font-size: large;
 }
 
-/* unknown rules, delete? */
+/* rules for inline boxes */
 
-.bigDiv {
-    overflow: hidden;
-	margin-top: 10px;
-	marging-bottom: 10px;	
+.inlinebox {
+   background-color: white;
+	margin-top: 5px;
+	margin-bottom: 5px;
+   border: 3px solid blue;
+   border-radius: 5px;	
 }
 
+.inlinebox-title {
+   background-color:lightgray;
+   padding: 2px;
+}
+
+.inlinebox-buttons {
+   float: right;
+}
+
+.inlinebox-buttons span {
+   font-size: small;
+   color: white;
+   background-color: blue;
+   border-radius: 10px;
+   border: solid 1px black;
+   margin-left: 2px;
+   padding: 2px;
+}
+.inlinebox-buttons span:hover {
+   background-color: darkblue;
+}
+
+.inlinebox-button-drag::before {
+   content: "drag";
+}
+.inlinebox-button-close::before {
+   content: "close";
+}
+
+.inlinebox-content {
+   resize: vertical;
+   overflow: scroll;
+	margin: 5px;
+}
 
 div.ui-state-disabled.ui-draggable-disabled {opacity: 1;}
 
+/* svg graphs */
 
-.contDiv {
-	height: auto;
-	margin-top: 10px;
-	clear: both;
-	padding-bottom: 15px;
-	padding-top: 15px;
-	margin-left: 50px;
-	margin-right: 50px;	
+div.graph {
+    border: 1px solid black;
 }
 
-.inlineBtn{
-	float: right;
+.graph-header {
+   padding: 3px;
+   background-color: lightgray;
 }
-.btnDiv {
-	width: 100%;
+
+.graph-body {
+    width: 60vw; /* this is awkward, but necessary to avoid zooming to increase the div.graph */
+    height: 50vh;
+    resize: both;
+    overflow: scroll;
 }
+
+/* graphviz draws a <polygon> around clusters */
+.cluster polygon {
+   /* stroke: black; */
+}
+
+/* graphviz produces nodes as <ellipse> elements containing a <text> element */
+.graphtheory ellipse {
+   stroke: black;
+}
+.graphtheory text {
+}
+
+.graphexttheory ellipse {
+   stroke: black;
+   fill: gray;
+}
+.graphexttheory text {
+}
+
+/* graphviz produces arrows as <path> and arrow tips as <polygon> elements */
+
+.graphmeta path {
+   stroke: black;
+   stroke-dasharray: 1,1;
+}
+.graphmeta polygon {
+   fill: black;
+   stroke: black;
+}
+
+.graphinclude path {
+   stroke: black;
+}
+.graphinclude polygon {
+   fill: black;
+   stroke: black;
+}
+
+.graphstructure path {
+   stroke: red;
+}
+.graphstructure polygon {
+   fill: red;
+   stroke: red;
+}
+
+.graphview path {
+   stroke: blue;
+}
+.graphview polygon {
+   fill: blue;
+   stroke: blue;
+}
+
+/* unknown rules, delete? */
 
 .mybox {
 	height: 30px;

@@ -62,10 +62,11 @@ var interactiveViewing = {
 			$(elem).replaceWith(ref);
 		}*/
 
-		/* clicking on class toggle-trigger
-		   toggles all toggle-target children of the next toggle-root ancestor */
-		if (target.hasClass("toggle-trigger")) {
-			target.closest('.toggle-root').children('.toggle-target').toggle();
+		/* clicking on attributes toggleTarget
+		   toggles all .toggleTarget children of the next toggle-root ancestor */
+		if (target.hasAttribute(mmtattr.toggleTarget)) {
+		   var toggleTarget = target.attr(mmtattr.toggleTarget)
+			target.closest('.toggle-root').find('.'+toggleTarget).toggle();
 		}
 		
 		/*
@@ -79,14 +80,25 @@ var interactiveViewing = {
 	},
 
 	contextMenuEntries: function(targetArray, JOBADInstance) {
-      var target = targetArray[0];  //for some reason jobad passes [target] instead of target
+      var target = targetArray[0];
 		mmt.setCurrentPosition(target);
 
 		var res = this.visibMenu();
 
+	   if (mmt.focusIsSVG) {
+	      var svg = targetArray.closest('svg')[0];
+         var zoomFun = function(by) {return function() {svgHelper.zoom(svg,by)}};
+	      res["zoom"] = {
+	         "in by 2": zoomFun(2),
+	         "in by 1.1": zoomFun(1.1),
+	         "out by 1.1": zoomFun(1/1.1),
+	         "out by 2": zoomFun(1/2),
+	      }
+	   }
+		
       if (mmt.focusIsMath) {
-			var me = this;
-			res["infer type"] = function(){me.showComputationResult("i", "inferred")};
+			var me = this;                                                                                                            
+			res["infer type"] = function(){me.showComputationResult("i", "inferred type")};
 			res["simplify"] = function(){me.showComputationResult("s", "simplified")};
  		    var folded = $(mmt.focus).closest('.math-folded');
             if (folded.length !== 0)
@@ -116,7 +128,8 @@ var interactiveViewing = {
 			res["show graph"] = function() {
 				var svgURI = ":svg?" + uri;
 				var title = uri.split('/');
-				var contentNode = mmt.createInlineBox(mmt.target, title.slice(-1)[0], '50%');
+				var contentNode = inlineBox.create(mmt.target, title.slice(-1)[0]);
+				$(contentNode).addClass('graph-body');
 				mmt.ajaxAppendBox(svgURI, contentNode);
 			};
 			res["show URI"] = function(){alert(uri);};
@@ -158,16 +171,17 @@ var interactiveViewing = {
 	/* sends a query to the server and shows the presented result */
 	showQuery : function(query, title) {
       qmt.exec(query,
-   	     function(result){
-   			try {
-			   var pres = result.firstChild.firstChild.firstChild;
-			   var contentNode = mmt.createInlineBox(mmt.target, title);
-			   $(contentNode).append(pres);
-   			} catch (err) {
-			   var errorNode = mmt.createInlineBox(mmt.target, "error");
-			   $(errorNode).append(result.firstChild);
-   			}
-   	  });
+   	   function(result){
+   		  try {
+			    var pres = result.firstChild.firstChild.firstChild;
+			    var contentNode = inlineBox.create(mmt.target, title);
+			    $(contentNode).append(pres);
+   		  } catch (err) {
+			    var errorNode = inlineBox.create(mmt.target, "error");
+			    $(errorNode).append(result.firstChild);
+   		  }
+   	   }
+   	);
 	},
 
 	/* Helper Functions  */
@@ -199,7 +213,7 @@ var interactiveViewing = {
 	addComment: function() {
 	    var query = mmt.currentURI;
 	    var title = mmt.currentURI.split('/')
-	    var commNode = mmt.createInlineBox(mmt.target, "New comment: " + title.slice(-1)[0]);
+	    var commNode = inlineBox.create(mmt.target, "New comment: " + title.slice(-1)[0]);
 	    var first = document.createElement('div');
 	    $(first).append("<form id=\"form-id\" method=\"post\">" +
 	        "<input class=\"comm\" id=\"user-id\" type=\"text\" " +
@@ -239,7 +253,7 @@ var interactiveViewing = {
 		var get = mmt.currentURI;
 		var cont = ":align?" + mmt.currentURI;
 		var title = mmt.currentURI.split('/')
-		var alignNode = mmt.createInlineBox(mmt.target, "Alignments for symbol " + title.slice(-1)[0]);
+		var alignNode = inlineBox.create(mmt.target, "Alignments for symbol " + title.slice(-1)[0]);
 		mmt.ajaxAppendBox(get, alignNode);
 		$.ajax({
 			url: cont,

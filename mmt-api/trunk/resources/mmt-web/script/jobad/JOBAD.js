@@ -845,7 +845,7 @@ JOBAD.UI.hover = {}
 JOBAD.UI.hover.config = {
 	"offsetX": 10, //offset from the mouse in X and Y
 	"offsetY": 10,
-	"hoverDelay": 1000 //Delay for showing tooltip after hovering. (in milliseconds)	
+	"hoverDelay": 500 //Delay for showing tooltip after hovering. (in milliseconds)	
 }
 
 var hoverActive = false;

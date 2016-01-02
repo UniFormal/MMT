@@ -19,6 +19,7 @@
 /* JOBAD ContextMenu */
 .JOBAD.JOBAD_Contextmenu {
 	/* applied to the context menu */
+	width: 100%;
 }
 
 /* JOBAD Sidebar */

@@ -27,13 +27,18 @@ var hovering = {
 	},
 
 	hoverText: function(targetObj, JOBADInstance) {
-		//hover on OMS: show jobad:href and select the smallest proper superexpression
+		//hover on element with symref: show and select the smallest proper superexpression
 		var target = targetObj[0];
-		if (target.hasAttribute(mmtattr.symref)) {			
-			var mr = targetObj.parents().filter(function(){return this.hasAttribute(mmtattr.position)});
-			var select = (mr.length == 0) ? target : mr[0];
-			mmt.setSelected(select);
-			this.selectSource(select);
+		if (targetObj.closest('svg').length !== 0)
+		   return false; // hoverText in svg confuses JOBAD
+		var onMath = targetObj.closest('math').length !== 0;
+		if (target.hasAttribute(mmtattr.symref)) {
+			if (onMath) {
+			   var mr = targetObj.parents().filter(function(){return this.hasAttribute(mmtattr.position)});
+			   var select = (mr.length == 0) ? target : mr[0];
+			   mmt.setSelected(select);
+			   this.selectSource(select);
+			}
 			return target.getAttribute(mmtattr.symref);
 		}
 		// hover on bracketed expression: select expression

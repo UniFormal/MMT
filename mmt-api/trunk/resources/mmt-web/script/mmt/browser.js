@@ -26,20 +26,15 @@ $(function () {
    });
 });
 
-// initialize tooltips
+// initialize tooltips (still used?)
 $(function () {
    $('[data-toggle="tooltip"]').tooltip()
 });
 
-// initialize popovers
+// initialize popovers (still used?)
 $(function () {
    $('[data-toggle="popover"]').popover({html:true})
 });
-
-// toggle helper
-function toggle(elem,s) {
-   $(elem).closest('.constant').find('.' + s).toggle()
-}
 
 // add event handler to parse box that parses via the server 
 $(function(){
@@ -71,3 +66,11 @@ $(function(){
       );
    })
 });
+
+/** function called by generated interaction elements */
+var interaction = {
+   /** click on a search result */
+   resultClick: function(p){
+      interactiveViewing.navigate(p);
+   },
+};
