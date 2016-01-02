@@ -40,5 +40,9 @@ object HTMLAttributes {
     *  present on arbitrary elements
     */
    val load = prefix + "load"
+   /** the CSS class that should be toggle when clicking this element, affects all children of the '.toggle-root' ancestor
+    *  present on arbitrary elements
+    */
+   val toggleTarget = prefix + "toggle"
 }
 

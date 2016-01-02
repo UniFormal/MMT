@@ -112,7 +112,7 @@ abstract class Importer extends TraversingBuildTarget {
         val cPath = Archive.MMTPathToContentPath(r.target)
         delete(a / content / cPath)
         delete((a / relational / cPath).setExtension("rel"))
-      case r: documents.DRef => //TODO recursively delete subdocuments
+      case _ => //TODO recursively delete subdocuments
     }
     delete((a / relational / narrPath).setExtension("rel"))
     super.cleanFile(a, curr)

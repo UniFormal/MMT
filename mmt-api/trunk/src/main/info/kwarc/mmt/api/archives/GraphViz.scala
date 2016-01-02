@@ -49,6 +49,15 @@ class GraphViz extends Exporter {
     File.write(bt.outFile, outStringPostProcessed)
   }
 
+  /** graphviz cannot produce the SVG styling that we need; so we post-process it a bit */ 
+  private def adaptSVG(svg: String) = {
+    //TODO remove width/height attributes of svg element to allow for automatic resizing in the browser
+    // we use the title attribute as a css class and remove the default style so that we can style with css
+    svg.replace("xlink:title", "class")
+       .replace("xlink:href", presentation.HTMLAttributes.symref)
+       .replace("stroke=\"black\"", "")
+       .replace("fill=\"black\"", "")
+  }
   def getSVG(theories: Iterable[Path], views: Iterable[Path], file: Option[File], graph: Option[TheoryGraph],
              errorcont: String => Unit): String = {
     val outFile = file.getOrElse(File(System.getProperty("java.io.tmpdir")) / "MMTGraph.svg")
@@ -61,7 +70,7 @@ class GraphViz extends Exporter {
     val result = ShellCommand.run(graphviz, "-Tsvg", "-o" + outFile, dotFile.toString)
     result foreach { m => errorcont(m) }
     dotFile.delete
-    //TODO remove width/height attributes of svg element to allow for automatic resizing in the browser
-    File.read(outFile).replace("xlink:title", "class").replace("xlink:href", presentation.HTMLAttributes.symref)
+    val svg = File.read(outFile)
+    adaptSVG(svg)
   }
 }

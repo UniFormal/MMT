@@ -56,7 +56,114 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
         objectLevel(t, owner)(rh)
    }
    
-   private val compLabel = "constant-component-label"
+   private object cssClasses {
+      def compRow(c: ComponentKey) = {
+         "component-" + c.toString.toLowerCase 
+      }
+      val compLabel = "constant-component-label"
+      val compToggle = "component-toggle"
+   }
+   import cssClasses._
+
+   private val scriptbase = "https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/script/"
+   private val cssbase    = "https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/css/"
+   /**
+    * @param dpath identifies the directory (needed for relative paths)
+    * @param doit if true, wrap HTML header etc. around argument, otherwise, return arguments as a div
+    */
+   private def doHTMLOrNot(dpath: DPath, doit: Boolean)(b: => Unit) {
+      if (! doit) {
+        return div(attributes=List("xmlns" -> utils.xml.namespace("html"))) {b}
+      }
+      val pref = Range(0,dpath.uri.path.length+2).map(_ => "../").mkString("")
+      html(attributes=List("xmlns" -> utils.xml.namespace("html"))) {
+        head {
+          css(cssbase+"mmt.css")
+          css(cssbase+"JOBAD.css")
+          css(cssbase+"jquery/jquery-ui.css")
+          css(pref + "html.css")
+          javascript(scriptbase + "jquery/jquery.js")
+          javascript(scriptbase + "jquery/jquery-ui.js")
+          javascript(scriptbase + "mmt/mmt-js-api.js")
+          javascript(scriptbase + "mmt/browser.js")
+          javascript(scriptbase + "jobad/deps/underscore-min.js")
+          javascript(scriptbase + "jobad/JOBAD.js")
+          javascript(scriptbase + "jobad/modules/hovering.js")
+          javascript(scriptbase + "jobad/modules/interactive-viewing.js")
+          javascript(pref + "html.js")
+        }
+        body {
+           b
+        }
+      }
+   }
+
+   def doDeclaration(d: Declaration) {
+      val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
+      div("constant toggle-root inlineBoxSibling") {
+         div("constant-header") {
+           span {doName(d.path)}
+           def toggleComp(comp: ComponentKey) {
+              toggle(compRow(comp), comp.toString.replace("-", " "))
+           }
+           def toggle(key: String, label: String) {
+              button(compToggle, attributes = List(toggleTarget -> key)) {text(label)}
+           }
+           if (! usedby.isEmpty)
+              toggle("used-by", "used by")
+           if (! d.metadata.getTags.isEmpty)
+              toggle("tags", "tags")
+           if (! d.metadata.getAll.isEmpty)
+              toggle("metadata", "metadata")
+           d.getComponents.reverseMap {case DeclarationComponent(comp, tc) =>
+              if (tc.isDefined)
+                toggleComp(comp)
+           }
+         }
+         table("constant-body ") {
+            d.getComponents.foreach {
+               case DeclarationComponent(comp, tc: AbstractTermContainer) =>
+                  tr(compRow(comp)) {
+                     tc.get.foreach {t =>
+                         doComponent(d.path $ comp, t)
+                     }
+                  }
+               case DeclarationComponent(comp: NotationComponentKey, nc: NotationContainer) =>
+                  tr(compRow(comp)) {
+                     nc(comp).foreach {n =>
+                        doNotComponent(d.path $ comp, n)
+                      }
+                  }
+            }
+            if (! usedby.isEmpty) {
+               tr("used-by") {
+                  td {span(compLabel) {text{"used by"}}}
+                  td {usedby foreach doPath}
+               }
+            }
+            if (! d.metadata.getTags.isEmpty)
+               tr("tags") {
+               td {span(compLabel){text{" ---tags"}}}
+               td {d.metadata.getTags.foreach {
+                  k => div("tag") {text(k.toPath)}
+               }}
+            }
+            def doKey(k: GlobalName) {
+               td{span("key " + compLabel, title=k.toPath) {text(k.toString)}}
+            }
+            d.metadata.getAll.foreach {
+               case metadata.Link(k,u) => tr("link metadata") {
+                  doKey(k)
+                  td {a(u.toString) {text(u.toString)}}
+               }
+               case md: metadata.MetaDatum => tr("metadatum metadata") {
+                  doKey(md.key)
+                  td {doMath(md.value, None)}
+               }
+            }
+         }
+      }
+   }
 
    private def doComponent(cpath: CPath, t: Obj) {
       td {span(compLabel) {text(cpath.component.toString)}}
@@ -99,131 +206,6 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
          text {" (precedence " + tn.precedence.toString + ")"}
       }}
    }
-   private val scriptbase = "https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/script/"
-   private val cssbase    = "https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/css/"
-   /**
-    * @param dpath identifies the directory (needed for relative paths)
-    * @param doit if true, wrap HTML header etc. around argument, otherwise, return arguments as a div
-    */
-   private def doHTMLOrNot(dpath: DPath, doit: Boolean)(b: => Unit) {
-      if (! doit) {
-        return div(attributes=List("xmlns" -> utils.xml.namespace("html"))) {b}
-      }
-      val pref = Range(0,dpath.uri.path.length+2).map(_ => "../").mkString("")
-      html(attributes=List("xmlns" -> utils.xml.namespace("html"))) {
-        head {
-          css(cssbase+"mmt.css")
-          css(cssbase+"JOBAD.css")
-          css(cssbase+"jquery/jquery-ui.css")
-          css(pref + "html.css")
-          javascript(scriptbase + "jquery/jquery.js")
-          javascript(scriptbase + "jquery/jquery-ui.js")
-          javascript(scriptbase + "mmt/mmt-js-api.js")
-          javascript(scriptbase + "mmt/browser.js")
-          javascript(scriptbase + "jobad/deps/underscore-min.js")
-          javascript(scriptbase + "jobad/JOBAD.js")
-          javascript(scriptbase + "jobad/modules/hovering.js")
-          javascript(scriptbase + "jobad/modules/interactive-viewing.js")
-          javascript(pref + "html.js")
-        }
-        body {
-           b
-        }
-      }
-   }
-
-   def doDeclaration(d: Declaration) {
-      val usedby = controller.depstore.querySet(d.path, -ontology.RefersTo).toList.sortBy(_.toPath)
-      div("constant toggleTarget inlineBoxSibling") {
-         div("constant-header") {
-           span {doName(d.path)}
-           def toggle(label: String) {
-              button("compToggle btn btn-sm btn-default pull-right", onclick = s"interaction.toggleClick(this.parentNode,'$label')") {text(label)}
-           }
-           d.getComponents.foreach {case DeclarationComponent(comp, tc) =>
-              if (tc.isDefined)
-                toggle(comp.toString)
-           }
-           if (! usedby.isEmpty)
-              toggle("used-by")
-           if (! d.metadata.getTags.isEmpty)
-              toggle("tags")
-           if (! d.metadata.getAll.isEmpty)
-              toggle("metadata")
-         }
-         table("constant-body ") {
-            d.getComponents.foreach {
-               case DeclarationComponent(comp, tc: AbstractTermContainer) =>
-                  tr("constant-" + comp.toString) {
-                     tc.get.foreach {t =>
-                         doComponent(d.path $ comp, t)
-                     }
-                  }
-               case DeclarationComponent(comp: NotationComponentKey, nc: NotationContainer) =>
-                  tr("constant-" + comp.toString) {
-                     nc(comp).foreach {n =>
-                        doNotComponent(d.path $ comp, n)
-                      }
-                  }
-            }
-            if (! usedby.isEmpty) {
-               tr("used-by") {
-                  td {span(compLabel) {text{"used by"}}}
-                  td {usedby foreach doPath}
-               }
-            }
-            if (! d.metadata.getTags.isEmpty)
-               tr("tags") {
-               td {span(compLabel){text{" ---tags"}}}
-               td {d.metadata.getTags.foreach {
-                  k => div("tag") {text(k.toPath)}
-               }}
-            }
-            def doKey(k: GlobalName) {
-               td{span("key " + compLabel, title=k.toPath) {text(k.toString)}}
-            }
-            d.metadata.getAll.foreach {
-               case metadata.Link(k,u) => tr("link metadata") {
-                  doKey(k)
-                  td {a(u.toString) {text(u.toString)}}
-               }
-               case md: metadata.MetaDatum => tr("metadatum metadata") {
-                  doKey(md.key)
-                  td {doMath(md.value, None)}
-               }
-            }
-         }
-      }
-   }
-
-   /** auxiliary method of doTheory */
-   private def doNarrativeElementInMod(body: Body, ne: NarrativeElement) {ne match {
-      case doc: Document =>
-        div("document toggle-root") {
-          div("document-header toggle-trigger") {
-             val name = doc.path.last
-             span("name") {
-                text(name)
-             }
-             NarrativeMetadata.title.get(doc).foreach {t =>
-                if (name != "")
-                  text(": ")
-                text(t)
-             } 
-          }
-          div("document-body toggle-target") {
-             doc.getDeclarations foreach {d => doNarrativeElementInMod(body,d)}
-          }
-        }
-      case oe: OpaqueElement =>
-         val oi = controller.extman.get(classOf[OpaqueHTMLPresenter], oe.format)
-                  .getOrElse(DefaultOpaqueElementInterpreter)
-         oi.toHTML(objectPresenter, oe)(rh)
-      case r:SRef =>
-         val d = body.get(r.name)
-         doDeclaration(d)
-      case r: NRef => throw ImplementationError("nref in module") // impossible
-   }}
 
    def doTheory(t: DeclaredTheory) {
       div("theory") {
@@ -251,26 +233,57 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
       }}
    }
 
-   /** auxiliary method of doDocument */
-   private def doNarrativeElementInDoc(ne: NarrativeElement) {ne match {
+   def doDocument(doc: Document) {
+     div {
+        doNarrativeElementInDoc(doc)
+        val locOpt = controller.backend.resolveLogical(doc.path.uri)
+        val svgOpt = locOpt flatMap {
+          case (arch, path) =>
+            val fpath = Archive.narrationSegmentsAsFile(FilePath(path), "omdoc")
+            val f = (arch.root / "export" / "svg" / "narration" / fpath).setExtension("svg")
+            if (f.exists)
+               Some(xml.readFile(f))
+            else
+               None
+        }
+        svgOpt foreach {src =>
+          div("graph toggle-root") {
+             div("graph-header", attributes=List(toggleTarget -> "graph-body")) {
+                text("diagram")
+             }
+             div("graph-body", attributes=List("style" -> "display:none")) {
+                literal(src)
+             }
+          }
+        }
+     }
+   }
+   
+   // ********************** narrative elements
+
+   /** captures common parts of narrative and content element rendering */
+   private def doNarrativeElement(ne: NarrativeElement, recurse: NarrativeElement => Unit) {ne match {
       case doc: Document =>
-        div("document toggle-root") {
-          div("document-header toggle-trigger") {
+        div("document toggle-root inlineBoxSibling", attributes=List(toggleTarget -> "document-body")) {
+          div("document-header", attributes=List(toggleTarget -> "document-body")) {
+             val name = doc.path.last
              span("name") {
-                text(doc.path.last)
+                text(name)
              }
              NarrativeMetadata.title.get(doc).foreach {t =>
-                text(": " + t)
+                if (name != "")
+                  text(": ")
+                text(t)
              } 
           }
           div("document-body toggle-target") {
-             doc.getDeclarations foreach doNarrativeElementInDoc
+             doc.getDeclarations foreach recurse
           }
         }
       case oe: OpaqueElement =>
          val oi = controller.extman.get(classOf[OpaqueHTMLPresenter], oe.format)
                   .getOrElse(DefaultOpaqueElementInterpreter)
-         div("opaque-"+oe.format) {
+         div("opaque-"+oe.format + " inlineBoxSibling") {
             oi.toHTML(objectPresenter, oe)(rh)
          }
       case r: NRef =>
@@ -279,7 +292,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
            case _:MRef => "mref"
            case _:SRef => "sref"
         }
-        div("document-"+label) {
+        div("document-"+label + " inlineBoxSibling") {
           span(cls = "name mmturi loadable", attributes=List(load -> r.target.toPath)) {
             val hideName = r.name.steps.forall(_==LNStep.empty) || (r match {
                case r:MRef =>
@@ -294,25 +307,19 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
           }
         }
    }}
-   
-   def doDocument(doc: Document) {
-     doNarrativeElementInDoc(doc)
-     val locOpt = controller.backend.resolveLogical(doc.path.uri)
-     val svgOpt = locOpt flatMap {
-       case (arch, path) =>
-         val fpath = Archive.narrationSegmentsAsFile(FilePath(path), "omdoc")
-         val f = (arch.root / "export" / "svg" / "narration" / fpath).setExtension("svg")
-         if (f.toJava.exists())
-            Some("/:svg?"+doc.path.uri.toString)
-         else
-           None
-     }
-     svgOpt foreach {src =>
-       div("graph") {
-         htmlobject(src, "image/svg+xml")
-       }
-     }
+   /** auxiliary method of doDocument */
+   private def doNarrativeElementInDoc(ne: NarrativeElement) {
+      doNarrativeElement(ne, doNarrativeElementInDoc(_))
    }
+   /** auxiliary method of doTheory */
+   private def doNarrativeElementInMod(body: Body, ne: NarrativeElement) {ne match {
+      case r:SRef =>
+         val d = body.get(r.name)
+         doDeclaration(d)
+      case r: NRef => throw ImplementationError("nref in module") // impossible
+      case ne =>
+        doNarrativeElement(ne, doNarrativeElementInMod(body, _))
+   }}
 }
 
 class HTMLExporter extends HTMLPresenter(new MathMLPresenter) {

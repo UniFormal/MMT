@@ -62,29 +62,23 @@ class GraphExporter(theories: Iterable[Path], views: Iterable[Path], tg: TheoryG
    def exportGEXF(filename: utils.File) {
       utils.File.write(filename, toGEXF.toString)
    }
-   private def dotNode(id:Path, tp: String, external: Boolean) = {
+   // note graphviz does not like some characters (including -) in the tooltip attributes
+   private def dotNode(id:Path, tp: String) = {
       val label = id match {
-         case utils.mmt.mmtbase ? !(name) =>
+         case utils.mmt.mmtbase ? !(name)  if name.toString.startsWith("[") =>
             objects.TheoryExp.toString(objects.Obj.fromPathEncoding(name.toString))
          case _ =>
             id.last
       }
       val tooltipAtt = s"""tooltip="graph$tp""""
-      val styleAtts = if (external) "style=filled,fillcolor=gray," else ""
       val uriAtt = s"""href="${id.toPath}""""
-      "\"" + id.toPath + "\" [label=\"" + label + "\"," + tooltipAtt + "," + styleAtts + uriAtt + "];"
+      "\"" + id.toPath + "\" [label=\"" + label + "\"," + tooltipAtt + "," + uriAtt + "];"
    }
    private def dotEdge(id:Option[Path], from: Path, to: Path, tp: String, external: Boolean) = {
       val idAtts = id match {
          case None => s"""tooltip="graph$tp""""
          case Some(id) => s"""label="${id.last}" tooltip="graph$tp" href="${id.toPath}"""" 
       }
-     /*val styleAtts = tp match {
-         case "view" => "style=dashed,color=\"blue:blue\""
-         case "structure" => "style=bold,color=red"
-         case "include" => "style=solid,color=black"
-         case "meta" => "style=solid,color=green"
-      }*/
       val weight = if (external) 1 else 10
       "\"" + from.toPath + "\" -> \"" + to.toPath + "\" " + s"[$idAtts,weight=$weight];"
    }
@@ -105,13 +99,13 @@ class GraphExporter(theories: Iterable[Path], views: Iterable[Path], tg: TheoryG
      // add the minimal theories
      res ::= "subgraph cluster_local {"
      theories.foreach {node =>
-        res ::= dotNode(node, "theory", false)
+        res ::= dotNode(node, "theory")
         nodesDone ::= node
      }
      res ::= "}"
      def addNodeIfNeeded(p: Path) : Boolean = {
         if (! nodesDone.contains(p)) {
-           res ::= dotNode(p, "theory", true)
+           res ::= dotNode(p, "exttheory")
            nodesDone ::= p
            externalNodes ::= p
            true
@@ -132,11 +126,16 @@ class GraphExporter(theories: Iterable[Path], views: Iterable[Path], tg: TheoryG
      }
      // add the minimal views
      views.foreach {view =>
-        val from = tg.domain(view).get
-        val to = tg.codomain(view).get
-        addNodeIfNeeded(from)
-        addNodeIfNeeded(to)
-        res ::= dotEdge(Some(view), from, to, "view", false)
+        val fromO = tg.domain(view)
+        val toO = tg.codomain(view)
+        (fromO,toO) match {
+           case (Some(from),Some(to)) =>
+              addNodeIfNeeded(from)
+              addNodeIfNeeded(to)
+              res ::= dotEdge(Some(view), from, to, "view", false)
+           case _ =>
+              throw GeneralError("domain/codomain of view not known: " + view)
+        } 
      }
      // add all the links from/out of the minimal theories that aren't part of the minimal views
      theories.foreach {from =>

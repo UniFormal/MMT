@@ -67,7 +67,12 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
          parser.document()
       } catch {
          case e: Error => errorCont << e
-         case e: Exception => errorCont << LocalError("error while parsing XML").setCausedBy(e)
+         case e: Exception =>
+            val le = LocalError("error while parsing XML").setCausedBy(e)
+            if (parser.root == null)
+               throw le
+            else
+               errorCont << le 
       }
       parser.root
    }
@@ -179,7 +184,6 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
          lazy val n = Elem(pre, label, attrs, scope, empty, nodes:_*)
          // pop the instruction and execute it
          val instruction = openTags.head
-         openTags = openTags.tail
          instruction match {
             case AppendUnparsed(uc) =>
                // shape-relevant child of a container: add to the unparsed container
@@ -199,6 +203,7 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
             case Other =>
                // any other element: no special treatment
          }
+         openTags = openTags.tail
          // check if we have to return a node
          instruction match {
             case Other =>

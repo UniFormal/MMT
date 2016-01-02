@@ -175,10 +175,10 @@ object File {
    * @param f the target file
    * @param strings the content to write
    */
-  def write(f: File, strings: String*): Unit = {
+  def write(f: File, strings: String*) {
     val fw = Writer(f)
     strings.foreach { s => fw.write(s) }
-    fw.close()
+    fw.close
   }
 
   /**
@@ -188,12 +188,12 @@ object File {
    * @param f the target file
    * @param lines the lines (without line terminator - will be chosen by Java and appended)
    */
-  def WriteLineWise(f: File, lines: List[String]): Unit = {
+  def WriteLineWise(f: File, lines: List[String]) {
     val fw = Writer(f)
     lines.foreach { l =>
       fw.println(l)
     }
-    fw.close()
+    fw.close
   }
 
   /**
@@ -205,7 +205,7 @@ object File {
   def read(f: File): String = {
     val s = new StringBuilder
     ReadLineWise(f) { l => s.append(l + "\n") }
-    s.result()
+    s.result
   }
 
   /** convenience method to obtain a typical (buffered, UTF-8) reader for a file */
@@ -216,7 +216,7 @@ object File {
     * @param f the file
     * @param proc a function applied to every line (without line terminator)
     */
-  def ReadLineWise(f: File)(proc: String => Unit): Unit = {
+  def ReadLineWise(f: File)(proc: String => Unit) {
     val r = Reader(f)
     var line: Option[String] = None
     try {
@@ -226,7 +226,7 @@ object File {
       })
         proc(line.get)
     } finally {
-      r.close()
+      r.close
     }
   }
 
