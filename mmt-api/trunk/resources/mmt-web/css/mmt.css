@@ -2,17 +2,11 @@
 
 math {
 	color: blue;
-	font-weight: bold;
 }
 
 mo {
 	color: black;
 	font-weight: normal;
-	font-size: large;
-}
-
-mo.symdecl {
-	color: #000000;
 }
 
 mi {
@@ -29,10 +23,10 @@ mi {
 }
 
 .math-folded {
-	font-size: 10%;
+	font-size: 5%;
 }
 
-.brackets mo {
+mo.opt-brackets {
 	color: gray;
 }
 
@@ -46,7 +40,7 @@ mi {
 	border-width: thin
 }
 
-.reconstructed-hidden, .implicit-arg-hidden, .brackets-hidden {
+.reconstructed-hidden, .implicit-arg-hidden, .opt-brackets-hidden {
 	display: none;
 }
 

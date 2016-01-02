@@ -206,7 +206,7 @@ var interactiveViewing = {
 	    return {"visibility" : {
 			"reconstructed types" :  this.visibSubmenu('reconstructed'),
 			"implicit arguments" : this.visibSubmenu('implicit-arg'),
-			"redundant brackets" : this.visibSubmenu('brackets'),
+			"redundant brackets" : this.visibSubmenu('opt-brackets'),
 		}}
 	},
 	

@@ -97,10 +97,10 @@ class MathMLPresenter extends NotationBasedPresenter {
       body
       pc.out(closeTag("math"))
    }
-   private def bracket(hidden: Boolean, open: Boolean) = {
-      val cls = if (hidden) " brackets-hidden" else ""
+   private def bracket(optional: Boolean, open: Boolean) = {
+      val cls = if (optional) "opt-brackets opt-brackets-hidden" else "brackets"
       val brack = if (open) "(" else ")"
-      element("mo", List(("class", "operator brackets" + cls)), brack)
+      element("mo", List(("class", "operator " + cls)), brack)
    }
    /**
     * wraps brackets around argument
@@ -203,7 +203,7 @@ class MathMLPresenter extends NotationBasedPresenter {
          doSqrt(base) 
        }
      }
-     else doSqrt(base)     
+     else doSqrt(base)
    }
    
    override def doNumberMarker(arg : Delim)(implicit pc: PresentationContext) {
