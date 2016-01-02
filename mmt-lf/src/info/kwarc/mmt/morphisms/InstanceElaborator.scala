@@ -52,7 +52,7 @@ class InstanceElaborator extends ChangeListener {
   /** uses expandTheory to turn the type of a [[symbols.Constant]] into ComplexTheory(cont) ^ subs1 ^ ... ^ subsn
    *  and uses that to generate one [[ElaboratedConstant]] for each variable in cont
    */
-  def onAdd(e: ContentElement) {
+  override def onAdd(e: StructuralElement) {
       e match {
          case c: Constant =>
             c.tp foreach {tp =>

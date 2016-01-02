@@ -36,16 +36,16 @@ abstract class RuleGenerator extends ChangeListener {
      }
   }
      
-  def onUpdate(e: ContentElement) {
+  override def onUpdate(e: StructuralElement) {
      onDelete(e)
      onAdd(e)
   }
-  def onAdd(e: ContentElement) {onCheck(e)}
-  def onDelete(e: ContentElement) {
+  override def onAdd(e: StructuralElement) {onCheck(e)}
+  override def onDelete(e: StructuralElement) {
      getGeneratedRule(e.path).foreach {r => controller.delete(r.rulePath)}
   }
 
-  def onCheck(e: ContentElement) {
+  override def onCheck(e: StructuralElement) {
      val c = e match {
         case c: Constant if c.rl.map(ruleTags.contains).getOrElse(false) =>
           if (c.tpC.analyzed.isDefined) {

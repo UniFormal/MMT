@@ -48,15 +48,15 @@ class SimplificationRuleGenerator extends ChangeListener {
      }
   }
      
-  def onUpdate(e: ContentElement) {
+  override def onUpdate(e: StructuralElement) {
      onDelete(e)
      onAdd(e)
   }
-  def onAdd(e: ContentElement) {onCheck(e)}
-  def onDelete(e: ContentElement) {
+  override def onAdd(e: StructuralElement) {onCheck(e)}
+  override def onDelete(e: StructuralElement) {
      getGeneratedRule(e.path).foreach {r => controller.delete(rulePath(r))}
   }
-  def onCheck(e: ContentElement) {
+  override def onCheck(e: StructuralElement) {
        val c = e match {
           case c: symbols.Constant if c.rl == Some(SimplifyTag) =>
              if (c.tpC.analyzed.isDefined) {
@@ -101,7 +101,7 @@ class SimplificationRuleGenerator extends ChangeListener {
               error(e, "not a depth rule")
        }
   }
-  private def error(e: ContentElement, msg: String) {
+  private def error(e: StructuralElement, msg: String) {
      logError(e.path + ": " + msg)
   }
   private def present(t: Term) = controller.presenter.asString(t)
