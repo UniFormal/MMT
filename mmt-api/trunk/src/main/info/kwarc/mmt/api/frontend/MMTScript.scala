@@ -108,6 +108,8 @@ abstract class MMTScript extends Extension {
       }
     }
   }
+  
+  def make(comp : String, files : List[String]) = controller.makeAction(comp, files)
 
   def build(ids: List[String], target: String, modifier: archives.BuildTargetModifier, in: FilePath = EmptyPath) {
     controller.archiveBuildAction(ids, target, modifier, in)

@@ -110,7 +110,6 @@ class MMTConfig {
     def getImportersForArchive(archive : String) = getArchive(archive).formats.flatMap(getImporters).distinct
     def getExportersForArchive(archive : String) = getArchive(archive).formats.flatMap(getExporters).distinct
 
-
     def process(controller: Controller) {
        loadAllArchives(controller)
        loadAllNeededTargets(controller)
@@ -127,12 +126,13 @@ class MMTConfig {
       val activeFormats = archives.flatMap(_.formats).distinct.map {id =>
         getEntries(classOf[FormatConf]).find(_.id == id).getOrElse(throw new Exception("Unknown format id: " + id))
       }
-
-      val activeTargets = activeFormats.flatMap(f => f.importers ::: f.exporters).distinct.map {key =>
-        getEntry(classOf[ExtensionConf], key)
+      val preloadedBuildTargets = controller.extman.get(classOf[BuildTarget])
+      val neededTargets = activeFormats.flatMap(f => f.importers ::: f.exporters).distinct.flatMap {key => 
+        if (!preloadedBuildTargets.exists(_.key == key)) {
+          Some(getEntry(classOf[ExtensionConf], key))
+        } else None
       }
-
-      activeTargets foreach {comp =>
+      neededTargets foreach {comp =>
         println("loading " + comp.cls)
         controller.extman.addExtension(comp.cls, comp.args)
       }
