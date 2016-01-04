@@ -1,4 +1,0 @@
-theory http://cds.omdoc.org/urtheories?LFModulo
-Includes http://cds.omdoc.org/urtheories?LFModulo http://cds.omdoc.org/urtheories?LF
-Declares http://cds.omdoc.org/urtheories?LFModulo http://cds.omdoc.org/urtheories?LFModulo?Rewrite
-constant http://cds.omdoc.org/urtheories?LFModulo?Rewrite

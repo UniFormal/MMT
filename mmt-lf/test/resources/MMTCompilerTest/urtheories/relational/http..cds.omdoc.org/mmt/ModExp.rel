@@ -1,9 +1,0 @@
-theory http://cds.omdoc.org/mmt?ModExp
-Declares http://cds.omdoc.org/mmt?ModExp http://cds.omdoc.org/mmt?ModExp?composition
-constant http://cds.omdoc.org/mmt?ModExp?composition
-Declares http://cds.omdoc.org/mmt?ModExp http://cds.omdoc.org/mmt?ModExp?theory-union
-constant http://cds.omdoc.org/mmt?ModExp?theory-union
-Declares http://cds.omdoc.org/mmt?ModExp http://cds.omdoc.org/mmt?ModExp?identity
-constant http://cds.omdoc.org/mmt?ModExp?identity
-Declares http://cds.omdoc.org/mmt?ModExp http://cds.omdoc.org/mmt?ModExp?rel-mor-composition
-constant http://cds.omdoc.org/mmt?ModExp?rel-mor-composition

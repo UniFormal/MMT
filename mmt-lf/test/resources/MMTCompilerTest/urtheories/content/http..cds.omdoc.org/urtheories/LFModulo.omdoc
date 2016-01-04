@@ -1,6 +1,0 @@
-<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath"><theory name="LFModulo" base="http://cds.omdoc.org/urtheories"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/lfmodulo.mmt#44.2.0:61.2.17"/><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/lfmodulo.mmt#44.2.0:129.6.1"/></metadata><import from="http://cds.omdoc.org/urtheories?LF"><metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/lfmodulo.mmt#65.3.3:77.3.15"/></metadata></import><constant name="Rewrite">
-       <metadata><link rel="http://cds.omdoc.org/mmt?metadata?sourceRef" resource="http://docs.omdoc.org/urtheories/lfmodulo.mmt#85.5.3:127.5.45"/></metadata>
-       
-       
-       <notations><notation dimension="1" precedence="-10005" fixity="mixfix" arguments="{ V1T,… } 2 --&gt; 3"> <scope languages="" priority="0"/> </notation></notations>
-     </constant></theory></omdoc>

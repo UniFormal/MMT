@@ -1,7 +1,0 @@
-theory http://cds.omdoc.org/mmt?Errors
-Declares http://cds.omdoc.org/mmt?Errors http://cds.omdoc.org/mmt?Errors?missing
-constant http://cds.omdoc.org/mmt?Errors?missing
-Declares http://cds.omdoc.org/mmt?Errors http://cds.omdoc.org/mmt?Errors?illtyped
-constant http://cds.omdoc.org/mmt?Errors?illtyped
-Declares http://cds.omdoc.org/mmt?Errors http://cds.omdoc.org/mmt?Errors?unknown
-constant http://cds.omdoc.org/mmt?Errors?unknown
