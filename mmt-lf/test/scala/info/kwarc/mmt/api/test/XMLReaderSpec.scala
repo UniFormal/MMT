@@ -9,7 +9,7 @@ import org.scalatest._
 //@Ignore
 class XMLReaderSpec extends FlatSpec with Matchers {
   val controller = new Controller()
-  val xmlReader = new XMLReader(controller.report)
+  val xmlReader = new XMLReader(controller)
   //controller.handleLine("log console")
   //controller.handleLine("log+ reader")
 
