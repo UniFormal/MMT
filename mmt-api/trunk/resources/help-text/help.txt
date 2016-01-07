@@ -10,11 +10,11 @@ general arguments:
 commands and files to process:
   COMMANDS                  Semicolon ( ; ) separated commands to be interpreted by MMT. Type "help" inside the shell
                             for a list of commands or look at the documentation for available commands.
-  -r, --send PORT           send COMMANDS to an already running MMT Instance listening at PORT and exit immediately
+      --send PORT           send COMMANDS to an already running MMT Instance listening at PORT and exit immediately
                             (even if a different termination behaviour is specified.)
-  -f, --file FILENAME       load mmt-style commands from FILE before interpreting COMMANDS.
+      --file FILENAME       load mmt-style commands from FILE before interpreting COMMANDS.
                             (this option may be repeated multiple times.)
-  -m, --mbt FILENAME        load scala-style commands from FILE before interpreting COMMANDS.
+      --mbt FILENAME        load scala-style commands from FILE before interpreting COMMANDS.
                             (this option may be repeated multiple times.)
 
 termination behaviour:
@@ -23,7 +23,7 @@ The default exit behaviour is to terminate immediately after COMMANDS have been 
 MMT, it will start an interactive shell for the user to enter commands. The default behaviour of MMT can be overwritten
 with the following arguments.
 
-  -i, --shell               execute COMMANDS and take further commands on the MMT shell.
+      --shell               execute COMMANDS and take further commands on the MMT shell.
                             (this is the default if no arguments are provided.)
   -w, --keepalive           execute COMMANDS and terminate only after all threads have finished.
                             (no MMT shell will be started.)
