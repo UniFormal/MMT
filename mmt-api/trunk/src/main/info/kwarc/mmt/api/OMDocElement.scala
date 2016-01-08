@@ -1,8 +1,10 @@
 package info.kwarc.mmt.api
 
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.presentation._
-import info.kwarc.mmt.api.symbols._
+import modules._
+import presentation._
+import symbols._
+import documents._
+import opaque._
 
 import scala.xml.Node
 
@@ -58,6 +60,12 @@ trait StructuralElement extends Content with metadata.HasMetaData {
     if (this.path != that.path || this.getClass != that.getClass || this.getOrigin != that.getOrigin)
        return false
     ((this, that) match {
+        case (a: Document, b: Document) =>
+           a.root == b.root && a.contentAncestor == b.contentAncestor
+        case (a: NRef, b: NRef) =>
+           a.target == b.target
+        case (a: OpaqueElement, b: OpaqueElement) =>
+           false // subclasses of OpaqueElement may override this method to give better results
         case (a: DeclaredTheory, b: DeclaredTheory) =>
           a.meta == b.meta && a.parameters == b.parameters
         case (a: DefinedTheory, b: DefinedTheory) =>
@@ -82,16 +90,6 @@ trait StructuralElement extends Content with metadata.HasMetaData {
   * the old instance is kept for change management.
   */
 abstract class ElementStatus
-
-/** a special case beyond the normal state: the element exists in the theory and has been checked.
-  *
-  * This does not guarantee that the element is logically valid:
-  * It only guarantees that all invalidity errors have been reported.
-  *
-  * Most algorithms can treat this status as equivalent to [[Active]].
-  * The main exception are the checking algorithms themselves.
-  */
-case object Checked extends ElementStatus
 
 /** the default state: the element exists in the MMT content base
   */

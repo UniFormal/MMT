@@ -12,7 +12,7 @@ import objects._
  */
 object MetadataParser extends ParserExtension {
    private val keywords = List("tag", "link", "meta")
-   private val extraKeywords = documents.NarrativeMetadata.allKeys
+   private val extraKeywords = documents.NarrativeMetadata.allKeys.map("@"+_)
    def isApplicable(se: StructuralElement, kw: String) = (keywords:::extraKeywords) contains kw 
    def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, k: String, con:Context = Context.empty) {
       val md = if (extraKeywords contains k) {

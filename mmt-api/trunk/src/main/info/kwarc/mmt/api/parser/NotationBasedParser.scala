@@ -110,7 +110,7 @@ class NotationBasedParser extends ObjectParser {
     log("parsing: " + pu.term)
     log("notations:")
     logGroup {
-      notations.foreach(o => log(o.toString()))
+      notations.foreach(n => log(n.toString))
     }
     val escMan = new EscapeManager(controller.extman.lexerExtensions ::: lexing)
     val tl = TokenList(pu.term, escMan, pu.source.region.start)
@@ -164,12 +164,13 @@ class NotationBasedParser extends ObjectParser {
     val closer = new libraries.Closer(controller)
     val support = context.getIncludes
     //TODO we can also collect notations attached to variables
-    support foreach { p => closer(p) }
-    val includes = support.flatMap { p => controller.library.visible(OMMOD(p)) }.distinct
-    val decls1 = includes flatMap { tm =>
+    support foreach {p => closer(p)}
+    val includes = support.flatMap {p => controller.library.visible(OMMOD(p))}.distinct
+    val decls1 = includes flatMap {tm =>
       controller.localLookup.getO(tm.toMPath) match {
-        case Some(d: modules.DeclaredTheory) => d.getDeclarations
-        case _ => None
+        case Some(d: modules.DeclaredTheory) =>
+           d.getDeclarations
+        case _ => Nil
       }
     }
     val decls = decls1.flatMap {

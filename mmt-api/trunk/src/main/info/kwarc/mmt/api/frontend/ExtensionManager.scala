@@ -247,7 +247,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     // build manager
     addExtension(new TrivialBuildManager)
     //targets, opaque formats, and presenters
-    List(new archives.HTMLExporter, new archives.PythonExporter, new uom.ScalaExporter, new uom.OpenMathScalaExporter,
+    List(new archives.HTMLExporter, new archives.PythonExporter, new uom.GenericScalaExporter, new uom.OpenMathScalaExporter,
       new TextInterpreter, new HTMLInterpreter,
       TextPresenter, OMDocPresenter).foreach {
       e => addExtension(e)

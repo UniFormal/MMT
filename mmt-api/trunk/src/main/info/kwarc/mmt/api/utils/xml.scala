@@ -33,8 +33,8 @@ object xml {
     */
    def writeFile(N : scala.xml.Node, file : File) {
       val out = File.Writer(file)
-      val s = new PrettyPrinter(160,2).format(N)
-      out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "\n" + s)
+      // do not use pretty printing - whitespace matters
+      out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "\n" + N.toString)
       out.close
    }
   

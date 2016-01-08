@@ -41,17 +41,18 @@ class TermContainer extends AbstractTermContainer {
    /** the analyzed representation after type and argument reconstruction */
    def analyzed = _analyzed.term
    /** setter for the unparsed string representation */
-   def read_=(s: Option[String]) {
+   def read_=(s: Option[String]): Boolean = {
       val changed = s != _read
       if (changed) {
          _read           = s
          _parsed.dirty   = true
          _analyzed.dirty = true
       }
+      changed
    }
    def read_=(s: String) {read_=(Some(s))}
    /** setter for the parsed representation without further analysis */
-   def parsed_=(t: Option[Term]) {
+   def parsed_=(t: Option[Term]): Boolean = {
       val changed = t != _parsed.term
       /*
        * TODO assume old-parsed (op), old-analyzed (oa), new-parsed (np), need new-analyzed (na)
@@ -66,18 +67,22 @@ class TermContainer extends AbstractTermContainer {
          _analyzed.dirty = true
       }
       _parsed.dirty = false
+      changed
    }
    def parsed_=(t: Term) {parsed_=(Some(t))}
    /** setter for the analyzed representation */
-   def analyzed_=(t: Option[Term]) {
+   def analyzed_=(t: Option[Term]): Boolean = {
       val changed = t != _analyzed.term
       _analyzed.term = t  // set this even if equal in order to get the metadata of the new term
       if (changed) {
          _analyzed.time = System.currentTimeMillis
       }
       _analyzed.dirty = false
+      changed
    }
-   def analyzed_=(t: Term) {analyzed_=(Some(t))}
+   def analyzed_=(t: Term): Boolean = {
+      analyzed_=(Some(t))
+   }
    /** true if the term must still be (re)parsed */
    def isParsedDirty = ! _parsed.dirty
    /** time of the last change */
@@ -95,13 +100,14 @@ class TermContainer extends AbstractTermContainer {
    /** copies over the components of another TermContainer
     *  dependent dimensions that are not part of tc become dirty
     */
-   def update(tc: ComponentContainer) {tc match {
+   def update(tc: ComponentContainer) = {tc match {
       case tc: TermContainer =>
-         read = tc.read
+         var changed = (read = tc.read)
          if (!(tc.parsed.isEmpty && tc.read.isDefined)) // keep old, now dirty, value if tc is unparsed
-            parsed = tc.parsed
+            changed ||= (parsed = tc.parsed)
          if (!(tc.analyzed.isEmpty && tc.parsed.isDefined)) // keep old, now dirty, value if tc is unanalyzed
-            analyzed = tc.analyzed
+            changed ||= (analyzed = tc.analyzed)
+         changed
       case _ => throw ImplementationError("not a TermContainer")
    }}
    /** delete this component */

@@ -496,7 +496,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           }
         case "theory" => readTheory(parentInfo, context)
         case ViewKey(_) => readView(parentInfo, context, isImplicit = false)
-        case k if k.forall(_ == '=') =>
+        case k if k.forall(_ == '#') =>
             val currentLevel = currentSection.length
             val thisLevel = k.length
             val (nameTitle,reg) = state.reader.readDeclaration
@@ -510,19 +510,25 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                nextSection = currentSection.take(thisLevel-1)
             }
             if (nameTitle.isEmpty) {
-               // just end a section: =...= 
+               // just end a section: #...#
                if (thisLevel > currentLevel) {
                   throw makeError(reg, s"no document at level $thisLevel open")
                }
             } else {
-               // additionally begin a new section: =...= #NAME TITLE  or =...= TITLE
+               // additionally begin a new section: #...# :NAME TITLE  or #...# TITLE
                if (thisLevel > currentLevel+1) {
                   throw makeError(reg, s"no document at level ${thisLevel-1} open")
                }
                val (name,title) = if (nameTitle.startsWith("#")) {
                   val pos = nameTitle.indexWhere(_.isWhitespace)
                   (nameTitle.substring(1,pos),nameTitle.substring(pos).trim)
-               } else ("", nameTitle)
+               } else {
+                  val name = mod.asDocument.getLocally(currentSection) match {
+                     case Some(d) => (d.getDeclarations.length+1).toString
+                     case _ => throw ImplementationError("section not found") 
+                  }
+                  (name, nameTitle)
+               }
                nextSection = nextSection / name
                val innerDoc = new Document(docRoot / nextSection, contentAncestor = Some(mod))
                NarrativeMetadata.title.update(innerDoc, title)

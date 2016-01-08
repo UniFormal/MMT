@@ -30,7 +30,7 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
   /** returns the list of children of the document (including narration) */
   def getDeclarations: List[NarrativeElement] = items
 
-  /** returns the list of modules declared in the document (not user-written references) */
+  /** returns the list of modules declared in the document */
   def getModulesResolved(lib: Lookup): List[Module] = items collect {
     case r: MRef => lib.getModule(r.target)
   }
@@ -46,21 +46,27 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
     case d: Document => d.collectModules(controller)
   }
 
-  /** adds a child at the end of the documents */
+  /**
+   * adds a child after a given child or at the end
+   */
   def add(i: NarrativeElement, afterOpt: Option[LocalName] = None) {
-     var pos = afterOpt.map(a => items.indexWhere(_.name == a)).getOrElse(items.length)
-     if (pos == -1) pos = items.length // maybe issue warning that afterOpt not found
+     // default: insert at end
+     def defaultPos = items.length
+     val pos = afterOpt match {
+        case Some(a) => items.indexWhere(_.name == a) match {
+           case -1 => defaultPos // maybe issue warning that afterOpt not found
+           case i => i
+        }
+        case None => defaultPos 
+     }
      val (bef,aft) = items.splitAt(pos) // order(pos) == aft.head
      items = bef ::: i :: aft
   }
   
-   def getMostSpecific(name: LocalName) : Option[(NarrativeElement, LocalName)] = {
+  def getMostSpecific(name: LocalName) : Option[(NarrativeElement, LocalName)] = {
      if (name.isEmpty) Some((this, LocalName.empty))
      else {
-        // items should have unique names, but occasionally multiple unnamed items (= empty name) can be useful 
-        // in that case, it's more helpful to return the last (= most recently added) item
-        // so we revert the list
-        items.reverse.find(i => name.startsWith(i.name)).map {ne =>
+        items.find(i => name.startsWith(i.name)).map {ne =>
            val rest = name.drop(ne.name.length)
            (ne, rest)
         }
@@ -86,6 +92,14 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
   /** deletes a child */
   def delete(n: LocalName) {
      items = items.filterNot(_.name == n)
+  }
+  /** updates or adds a child */
+  def update(ne: NarrativeElement) {
+     val i = items.indexWhere(_.name == ne.name)
+     if (i != -1)
+       items = items.take(i) ::: ne :: items.drop(i+1)
+     else
+       add(ne)
   }
 
   override def toString: String = "document " + path + items.map("\n  " + _.toString).mkString + "\n"

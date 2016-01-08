@@ -77,11 +77,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             checkContext(contextMeta, t.parameters)
             // content structure
             val tDecls = t.getPrimitiveDeclarations
-            tDecls foreach {d => d.status = Inactive}
             logGroup {
-               t.getPrimitiveDeclarations foreach {d =>
+               tDecls foreach {d =>
                   check(context ++ t.getInnerContext, d)
-                  d.status = Active
                }
             }
             // narrative structure

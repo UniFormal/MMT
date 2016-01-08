@@ -684,6 +684,7 @@ abstract class Output {
 case class Print(pres: MakeConcrete) extends Output {
   def make(controller: Controller) {
     pres.make(controller, ConsoleWriter)
+    ConsoleWriter("\n")
   }
 
   override def toString: String = pres.toString
@@ -718,7 +719,7 @@ case class ToWindow(pres: MakeConcrete, window: String) extends Output {
   */
 case class Respond(pres: MakeConcrete) extends Output {
   def get(controller: Controller): String = {
-    val rb = new StringBuilder // TODO try a to-be-written StringBuilder instead of XMLBuilder for speed
+    val rb = new StringBuilder
     pres.make(controller, rb)
     rb.get
   }

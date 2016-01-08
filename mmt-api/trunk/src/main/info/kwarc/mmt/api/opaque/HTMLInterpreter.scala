@@ -58,6 +58,14 @@ class OpaqueHTML(val parent: DPath, val node: Node, val terms: List[TermFragment
    override def getComponents = terms map {tf =>
       DeclarationComponent(tf.comp, tf.tc)
    }
+   
+   def compatibilityKey = node
+   
+   override def compatible(that: StructuralElement) = that match {
+      case that: OpaqueHTML =>
+         this.compatibilityKey == that.compatibilityKey
+      case _ => false
+   }
 }
 
 /** very rough proof of concept, should be refined a lot */

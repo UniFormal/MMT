@@ -109,7 +109,7 @@ class ArchiveNarrationStorage(a: Archive, folderName: String) extends {val nBase
       val oe = descOpt.map {case (desc,format) =>
          s"""<opaque format="$format">$desc</opaque>"""
       }
-      val es = entries.map(n => <dref name="" target={prefix + n}/>)
+      val es = entries.map(n => <dref name="" target={prefix + n}/>).mkString("\n")
       val docS = s"""<omdoc>$oe$es</omdoc>"""
       val reader = new BufferedReader(new java.io.StringReader(docS))
       loadXML(uri, DPath(uri), reader)

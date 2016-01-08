@@ -40,6 +40,16 @@ class OpaqueText(val parent: DPath, val fragments: List[TextFragment]) extends O
          List(dc)
       case _:StringFragment => Nil
    }
+   
+   def compatibilityKey = fragments.collect {
+      case f: StringFragment => f
+   }
+   
+   override def compatible(that: StructuralElement) = that match {
+      case that: OpaqueText =>
+         this.compatibilityKey == that.compatibilityKey
+      case _ => false
+   }
 }
 
 class TextInterpreter extends OpaqueElementInterpreter

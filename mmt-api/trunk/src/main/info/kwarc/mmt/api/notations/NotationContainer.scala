@@ -6,17 +6,17 @@ import collection.mutable.HashMap
 
 
 class NotationDimension {
-   private var _notations = new HashMap[Int,List[TextNotation]]()
+   private var _notations = new HashMap[Int,List[TextNotation]]
    private var _maxArity = -1 //maximum arity of this notations, smaller ones imply partial applications
-   
+
    def notations = _notations
-   
+
    def isDefined = !notations.isEmpty
-   
+
    def maxArity = _maxArity
    //default notation
    def default = get(maxArity, None) //assuming fully applied
-   
+
    def get(arity : Int, lang : Option[String] = None) : Option[TextNotation] = {
      notations.get(arity) match {
        case Some(l) => 
@@ -33,25 +33,28 @@ class NotationDimension {
        case None => None
      }
    }
-   
+
    def set(not : TextNotation) = {
-     if (!notations.isDefinedAt(not.arity.length)) { //new arity
-       notations(not.arity.length) = Nil
-       if (not.arity.length > maxArity) {
-         _maxArity = not.arity.length
+     val l = not.arity.length
+     if (!notations.isDefinedAt(l)) { //new arity
+       notations(l) = Nil
+       if (l > maxArity) {
+         _maxArity = l
        }
      }
      //TODO avoid duplicate notations better, currently equality is checked via their string representation
-     if (!notations(not.arity.length).map(_.toString).contains(not.toString)) {
-       notations(not.arity.length) ::= not
+     if (!notations(l).map(_.toString).contains(not.toString)) {
+       notations(l) ::= not
      }
    }
    
-   def update(nd : NotationDimension) = {
+   def update(nd : NotationDimension) : Boolean = {
+      val changed = false //TODO report changes
      _notations = nd.notations
      _maxArity = nd.maxArity
+     changed
    }
-   def delete() = notations.clear()
+   def delete = notations.clear
 }
 
 /** A NotationContainer wraps around various notations that can be associated with a Declaration */
@@ -81,10 +84,10 @@ class NotationContainer extends ComponentContainer {
       case VerbalizationNotationComponent => verbalizationDim.set(tn)
    }}
    /** update all notations using the values of a different container */
-   def update(c: ComponentContainer) {c match {
+   def update(c: ComponentContainer) = {c match {
       case nc: NotationContainer =>
-         parsingDim.update(nc.parsingDim)
-         presentationDim.update(nc.presentationDim)
+         parsingDim.update(nc.parsingDim) ||
+         presentationDim.update(nc.presentationDim) ||
          verbalizationDim.update(nc.verbalizationDim)
       case _ => throw ImplementationError("not a NotationContainer")
    }}

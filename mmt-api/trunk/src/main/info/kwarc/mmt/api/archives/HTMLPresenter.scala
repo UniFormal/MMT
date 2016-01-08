@@ -271,8 +271,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
                 text(name)
              }
              NarrativeMetadata.title.get(doc).foreach {t =>
-                if (name != "")
-                  text(": ")
+                text(": ")
                 text(t)
              } 
           }

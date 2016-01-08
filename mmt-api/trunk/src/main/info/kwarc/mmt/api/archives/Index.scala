@@ -52,7 +52,7 @@ abstract class Importer extends TraversingBuildTarget {
     val contFile = a.MMTPathToContentPath(mod.path)
     log("[  -> content   ]     " + contFile.getPath)
     val w = new presentation.FileWriter(contFile)
-    w( """<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">""")
+    w("""<omdoc xmlns="http://omdoc.org/ns" xmlns:om="http://www.openmath.org/OpenMath">""")
     mod.toNode(w)
     w("</omdoc>")
     w.done
@@ -66,7 +66,7 @@ abstract class Importer extends TraversingBuildTarget {
     controller.relman.extract(se) {
       r => relFileHandle.write(r.toPath + "\n")
     }
-    relFileHandle.close()
+    relFileHandle.close
   }
 
   /** index a document */
@@ -107,12 +107,10 @@ abstract class Importer extends TraversingBuildTarget {
     }
     // TODO remove document from controller? mark document as dirty in controller?
     //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly
-    doc.getDeclarations foreach {
-      case r: documents.MRef =>
-        val cPath = Archive.MMTPathToContentPath(r.target)
+    doc.collectModules(controller) foreach {mp =>
+        val cPath = Archive.MMTPathToContentPath(mp)
         delete(a / content / cPath)
         delete((a / relational / cPath).setExtension("rel"))
-      case _ => //TODO recursively delete subdocuments
     }
     delete((a / relational / narrPath).setExtension("rel"))
     super.cleanFile(a, curr)

@@ -110,7 +110,7 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Inter
       checker(doc)(new CheckingEnvironment(errorCont, RelationHandler.ignore))
       doc
     } finally {
-      ps.stream.close()
+      ps.stream.close
     }
   }
 }

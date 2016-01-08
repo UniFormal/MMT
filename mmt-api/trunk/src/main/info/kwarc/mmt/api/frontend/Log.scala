@@ -16,12 +16,12 @@ trait Logger {
   protected def log(e: Error) = report(e)
 
   protected def logGroup[A](a: => A): A = {
-    report.indent()
+    report.indent
     try {
       a
     }
     finally {
-      report.unindent()
+      report.unindent
     }
   }
 
@@ -76,7 +76,7 @@ class Report extends Logger {
   /** adds a ReportHandler */
   def addHandler(h: ReportHandler) {
     log("logging to " + h)
-    h.init()
+    h.init
     handlers = (handlers ::: List(h)).distinct
   }
 
@@ -89,12 +89,12 @@ class Report extends Logger {
   private var ind = 0
 
   /** increase indentation */
-  private[frontend] def indent() {
+  private[frontend] def indent {
     ind += 1
   }
 
   /** decrease indentation */
-  private[frontend] def unindent() {
+  private[frontend] def unindent {
     if (ind >= 1) ind -= 1
   }
 
@@ -142,13 +142,13 @@ abstract class ReportHandler(val id: String) {
   def indentString(i: Int): String = Range(0, i).map(_ => "  ").mkString("")
 
   /** flushes the handler, nothing by default */
-  def flush() {}
+  def flush {}
 
   /** initializes the handler, nothing by default */
-  def init() {}
+  def init {}
 
   /** closes the handler, nothing by default */
-  def cleanup() {}
+  def cleanup {}
 
   /** returns the id */
   override def toString: String = id
@@ -175,12 +175,12 @@ object ConsoleHandler extends ReportHandler("console") {
 abstract class FileHandler(val filename: File) extends ReportHandler(filename.toString) {
   protected val file = utils.File.Writer(filename)
 
-  override def flush() {
-    file.flush()
+  override def flush {
+    file.flush
   }
 
-  override def cleanup() {
-    file.close()
+  override def cleanup {
+    file.close
   }
 }
 
@@ -192,7 +192,7 @@ class TextFileHandler(filename: File, timestamps: Boolean) extends FileHandler(f
       val m = t + indentString(ind) + group + ": " + msg
       file.println(m)
     }
-    flush()
+    flush
   }
 
   override def toString: String = "file " + filename
@@ -200,8 +200,8 @@ class TextFileHandler(filename: File, timestamps: Boolean) extends FileHandler(f
 
 /** outputs to a file in html syntax */
 class HtmlFileHandler(filename: File) extends FileHandler(filename) {
-  override def init() {
-    super.init()
+  override def init {
+    super.init
     val script = """<script type="text/javascript" src="script.js"></script>"""
     val jquery = "<script type=\"text/javascript\" src=" +
       "\"https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/script/jquery/jquery.js\"></script>"
@@ -216,7 +216,7 @@ class HtmlFileHandler(filename: File) extends FileHandler(filename) {
     val msg = msgParts.mkString("<br/>")
     file.println( s"""<div><span class="group">$group:</span><span class="message">$msg</span></div>""")
     file.println("</div>")
-    flush()
+    flush
   }
 
   override def apply(ind: Int, e: Error, debug: Boolean) {
@@ -232,9 +232,9 @@ class HtmlFileHandler(filename: File) extends FileHandler(filename) {
 
   override def toString: String = "html " + filename
 
-  override def cleanup() {
+  override def cleanup {
     file.println("</body>\n</html>\n")
-    super.cleanup()
+    super.cleanup
   }
 }
 
@@ -243,7 +243,7 @@ class RecordingHandler(id: String) extends ReportHandler(id) {
   private var memory: List[String] = Nil
   private var recording = false
 
-  def record() {
+  def record {
     recording = true
   }
 
@@ -252,7 +252,7 @@ class RecordingHandler(id: String) extends ReportHandler(id) {
     memory.reverse
   }
 
-  def clear() {
+  def clear {
     memory = Nil
   }
 

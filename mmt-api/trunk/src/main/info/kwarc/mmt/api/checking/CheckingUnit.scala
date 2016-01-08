@@ -26,7 +26,7 @@ import frontend._
 case class CheckingUnit(component: Option[CPath], context: Context, unknowns: Context, judgement: WFJudgement) {
   /** a toString method that may call a continuation on its objects
    */
-  def present(implicit cont: Obj => String) = component.toString + ": " + judgement.present
+  def present(implicit cont: Obj => String) = component.map(_.toString + ": ").getOrElse("") + judgement.present
 }
 
 object CheckingUnit {

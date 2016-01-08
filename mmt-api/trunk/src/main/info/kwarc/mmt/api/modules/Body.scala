@@ -71,31 +71,22 @@ trait Body extends ContentElement {self =>
     *  @param afterOpt if given, the new declaration is inserted after that one; otherwise at end
     *  @param inDoc nested document in which to insert; toplevel by default otherwise  
     */
-   def add(s : Declaration, afterOpt: Option[LocalName] = None, inDoc: LocalName = LocalName.empty) {
+   def add(s : Declaration, afterOpt: Option[LocalName] = None) {
       val name = s.name
       if (statements.isDefinedAt(name)) {
          throw AddError("a declaration for the name " + name + " already exists")
       }
       statements(name) = s
       addAlternativeName(s)
+      val inDoc = s.relativeDocumentHome
       val doc = asDocument.getLocally(inDoc) match {
          case Some(d: Document) => d
+         case Some(_) => throw AddError(s"narrative element $inDoc exists in theory $path but is not a document")
          case _ => throw AddError(s"document $inDoc does not exist in theory $path")
       }
       val ref = new SRef(doc.path, s.name, s.path)
       doc.add(ref, afterOpt)
    }
-   /*
-   /** adds narrative structure */
-   def addNarration(ne: NarrativeElement, afterOpt: Option[LocalName] = None) {
-      val inDoc = dpath.dropPrefix(ne.path).getOrElse {
-         throw AddError(s"document ${ne.path} does have prefix $dpath")
-      }
-      val parDoc = getDocument(inDoc).getOrElse {
-         throw AddError(s"document $inDoc does not exist in theory $path")
-      }
-      parDoc.add(ne, afterOpt)
-   }*/
    /** delete a named declaration (does not have to exist)
     *  @return the deleted declaration
     */
@@ -136,7 +127,8 @@ trait Body extends ContentElement {self =>
    def getDeclarations: List[Declaration] = {
       var decs: List[Declaration] = Nil
       traverse {case (_,ln) =>
-         decs ::= statements(ln)
+         val s = statements(ln)
+         decs ::= s
       }
       decs.reverse
    }

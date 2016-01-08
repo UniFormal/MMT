@@ -5,8 +5,10 @@ case class DeclarationComponent(key: ComponentKey, value: ComponentContainer)
 
 /** A ComponentContainer holds the data keyed by a DeclarationComponent */
 trait ComponentContainer {
-   /** updates this container using the pieces of another one */
-   def update(nw: ComponentContainer)
+   /** updates this container using the pieces of another one
+    *  @return true if a change took place
+    */
+   def update(nw: ComponentContainer): Boolean
    /** empties this container, afterwards the component is absent */
    def delete: Unit
    /** true if (some dimension of) this component is present */
@@ -19,7 +21,7 @@ trait AbstractTermContainer extends ComponentContainer {
 
 /** a dummy container for a stateless term */ 
 class FinalTermContainer(t: objects.Term) extends AbstractTermContainer {
-   def update(nw: ComponentContainer) {}
+   def update(nw: ComponentContainer) = true
    def delete {}
    def isDefined = true
    def get = Some(t) 

@@ -189,36 +189,47 @@ class Controller extends ROController with ActionHandling with Logger {
     * @return the read Document
     */
   def read(ps: ParsingStream, interpret: Boolean, mayImport: Boolean = false)(implicit errorCont: ErrorHandler): Document = {
-    val modules = deactivateDocument(ps.dpath)
-    log((if (interpret) "interpreting " else "parsing ") + ps.source + " with format " + ps.format +
+     // (M) denotes whether the document is already in memory
+     // If (M), we reuse the old structure and merge updates into it
+     // The merging happens in the 'add' method.
+     val oldDocOpt = localLookup.getO(ps.dpath) map {
+        case d: Document => d
+        case _ => throw AddError("a non-document with this URI already exists: " + ps.dpath)
+     }
+     oldDocOpt.foreach {doc =>
+        // (M): deactivate the old structure
+        log("deactivating " + doc.path)
+        deactivate(doc)
+     }
+     // find an appropriate interpreter
+     log((if (interpret)"interpreting " else "parsing ") + ps.source + " with format " + ps.format +
       (if (mayImport) "; using importer if necessary" else ""))
-    var interpreterOpt = if (interpret) {
-      extman.get(classOf[Interpreter], ps.format) orElse
-        extman.get(classOf[Parser], ps.format).map(p => new OneStepInterpreter(p))
-    } else {
-      val parserOpt = extman.get(classOf[Parser], ps.format) orElse {
-        extman.get(classOf[TwoStepInterpreter], ps.format).map(_.parser)
-      }
-      parserOpt.map { p => new OneStepInterpreter(p) }
-    }
-    interpreterOpt = interpreterOpt orElse {
-      if (mayImport) {
-        extman.get(classOf[Importer]).find { imp =>
-          imp.inExts contains ps.format
-        }.map { imp => imp.asInterpreter }
-      } else None
-    }
-    val interpreter = interpreterOpt.getOrElse {
-      throw GeneralError(s"no ${if (interpret) "interpreter" else "parser"} for format ${ps.format} found")
-    }
-    val doc = interpreter(ps)
-    if (modules.nonEmpty) {
-      log("deleting the remaining deactivated elements")
-      logGroup {
-        modules foreach { m => deleteInactive(m) }
-      }
-    }
-    doc
+     var interpreterOpt = if (interpret) {
+        extman.get(classOf[Interpreter], ps.format) orElse
+           extman.get(classOf[Parser], ps.format).map(p => new OneStepInterpreter(p))
+     } else {
+        val parserOpt = extman.get(classOf[Parser], ps.format) orElse {
+           extman.get(classOf[TwoStepInterpreter], ps.format).map(_.parser)
+        }
+        parserOpt.map {p => new OneStepInterpreter(p)}
+     }
+     interpreterOpt = interpreterOpt orElse {
+        if (mayImport) {
+          extman.get(classOf[Importer]).find { imp =>
+            imp.inExts contains ps.format
+          }.map { imp => imp.asInterpreter }
+        } else None
+     }
+     val interpreter = interpreterOpt.getOrElse {
+       throw GeneralError(s"no ${if (interpret) "interpreter" else "parser"} for format ${ps.format} found")
+     }
+     // interprete the document
+     val newDoc = interpreter(ps)
+     // (M): delete all now-inactive parts of the old structure 
+     oldDocOpt.foreach {doc => deleteInactive(doc)}
+     // return the read document
+     // (M) return the reused document
+     oldDocOpt getOrElse newDoc
   }
 
   // ******************************* lookup of MMT URIs
@@ -307,56 +318,68 @@ class Controller extends ROController with ActionHandling with Logger {
   // ******************************* adding elements and in-memory change management
 
   /** adds a knowledge item */
-  def add(e: StructuralElement) {
+  def add(nw: StructuralElement) {
     iterate {
-      e match {
-        case nw: ContentElement =>
           localLookup.getO(nw.path) match {
-            //TODO localLookup yields a generated Constant when retrieving assignments in a view,
-            // which old.compatible(nw) false due to having different origin
-            //probably introduced when changing the representation of paths in views
-            //might also be because old is read from .omdoc due to dependency from checking earlier item
-            // and nw is read from .mmt when checking nw
-            case Some(old) =>
+            case Some(old) if old.status == Inactive =>
               /* optimization for change management
-               * if e.path is already loaded but inactive, and the new e is compatible with it,
-               * we reactivate the existing declaration
-               * otherwise, we remove the deactivated declaration and proceed normally
+               * If an inactive element with the same path already exists, we try to reuse it.
+               * That way, already-performed computations and checks do not have to be redone;
+               *  this applies in particular to object-level parsing and checking.
+               *  (Incidentally, Java pointers to the elements stay valid.)
+               * Reuse is only possible if the elements are compatible;
+               *  intuitively, that means they have to agree in all fields except possibly for components and children.
+               * In that case, they new components replace the old ones (if different);
+               *   and the new child declarations are recursively added or merged into the old ones later on.
+               * Otherwise, the new element is added as usual.
+               * When adding elements to Body, the order is irrelevant because the children are stored as a set;
+               *  but when adding to a Document (including Body.asDocument), the order matters;
+               *  adding Declarations to Body works because no SRefs in Body.asDocument are never reused.
+               *  TODO NarrativeElement are not ordered properly yet.
                */
-              //TODO we currently reactivate declarations even if they occur in different orders
-              //     if no reactivatable element exists, we append at the end
               if (old.compatible(nw)) {
                 log("activating " + old.path)
-                // deactivate all children
-                old.getDeclarations.foreach {
-                  _.status = Inactive
+                // update metadata
+                old.metadata = nw.metadata // no change management for metadata so far
+                var hasChanged = false // will be true if a component changed
+                var deletedKeys = old.getComponents.map(_.key).toSet // will contain the list of no-longer-present components 
+                // update/add components
+                nw.getComponents.foreach {case DeclarationComponent(comp, cont) =>
+                  deletedKeys -= comp 
+                  old.getComponent(comp).foreach {oldCont =>
+                    val ch = oldCont.update(cont)
+                    hasChanged ||= ch
+                  }
                 }
-                // update metadata and components
-                old.metadata = nw.metadata
-                nw.getComponents.foreach { case DeclarationComponent(comp, cont) =>
+                // delete components
+                if (deletedKeys.nonEmpty)
+                   hasChanged = true
+                deletedKeys foreach {comp =>
                   old.getComponent(comp).foreach {
-                    _.update(cont)
+                    _.delete
                   }
                 }
                 // activate the old one
                 old.status = Active
-                notifyListeners.onUpdate(nw)
+                // notify listeners if a component changed
+                if (hasChanged)
+                   notifyListeners.onUpdate(nw)
               } else {
                 // delete the deactivated old one, and add the new one
                 log("deleting deactivated " + old.path)
                 memory.content.update(nw)
-                if (old.getOrigin != DefaultAssignment) // TODO hacky, but need to handle this case somehow
-                  notifyListeners.onDelete(old)
-                notifyListeners.onAdd(nw)
+                //if (old.getOrigin != DefaultAssignment) notifyListeners.onDelete(old) // an old hack that should not be necessary anymore
+                notifyListeners.onUpdate(nw)
               }
+            //case Some(_) => // in this case, we could already report an error; but the None case reports it anyway
             case _ =>
               // the normal case
               memory.content.add(nw)
+              // load extension providing semantics for a Module
               nw match {
                 case m: Module =>
-                  // load extension providing semantics for a theory
                   if (!extman.get(classOf[Plugin]).exists(_.theory == m.path)) {
-                    getConfig.getEntries(classOf[SemanticsConf]).find(_.theory == m.path).foreach { sc =>
+                    getConfig.getEntries(classOf[SemanticsConf]).find(_.theory == m.path).foreach {sc =>
                       log("loading semantic extension for " + m.path)
                       extman.addExtension(sc.cls, sc.args)
                     }
@@ -365,46 +388,35 @@ class Controller extends ROController with ActionHandling with Logger {
               }
               notifyListeners.onAdd(nw)
           }
-        case d: NarrativeElement => library.add(d)
-      }
     }
   }
 
-  /** deletes a document, deactivates and returns its modules */
-  private def deactivateDocument(d: DPath): List[Module] = {
-     val doc = localLookup.getO(d)
-     if (doc.isDefined)
-        library.delete(d)
-     doc.toList.flatMap {
-       case doc: Document =>
-         log("deactivating document " + d)
-         logGroup {
-           doc.getDeclarations flatMap {
-             case inner: Document => deactivateDocument(inner.path)
-             case r: DRef => deactivateDocument(r.target)
-             case r: MRef => localLookup.getO(r.target) match {
-               case Some(m: Module) =>
-                 log("deactivating " + m.path)
-                 m.status = Inactive
-                 List(m)
-               case _ => Nil
-             }
-             case ne => Nil
-           }
-         }
-       case _ => Nil
-    }
+  /** marks this and its descendants as inactive */
+  private def deactivate(se: StructuralElement) {
+     log("deactivating " + se.path)
+     se.status = Inactive
+     se.getDeclarations foreach deactivate
+     se match {
+        case b: modules.Body =>
+           deactivate(b.asDocument)
+        case _ =>
+     }
   }
-
-  /** deletes everything in ce that is marked for deletion (i.e., inactive) */
-  private def deleteInactive(ce: ContentElement) {
-    ce.foreachDeclaration { d => if (d.status == Inactive) {
-      log("deleting deactivated " + d.path)
-      delete(d.path)
-    }
-    }
+  /** deletes all inactive descendants */
+  private def deleteInactive(se: StructuralElement) {
+     if (se.status == Inactive) {
+        log("deleting deactivated " + se.path)
+        delete(se.path)
+     } else {
+        se.getDeclarations foreach deleteInactive
+     }
+     se match {
+        case b: modules.Body =>
+           deleteInactive(b.asDocument)
+        case _ =>
+     }
   }
-  
+   
   // ******************************* deleting elements
 
   /** deletes a document or module from memory

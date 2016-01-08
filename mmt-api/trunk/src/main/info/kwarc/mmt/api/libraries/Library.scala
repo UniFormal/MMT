@@ -181,12 +181,16 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
         else {
            val m = seeAsMod(ce, error)
            val d = getInAtomicModule(m, Nil, LocalName(left.head), error)
-           getContentAux(m, left.tail)
+           getContentAux(d, left.tail)
          }
      }
-
      val (mod, left) = modulesGetRoot(p)
-     getContentAux(mod, left)
+     val ce = getContentAux(mod, left)
+     // at this level, NestedModules are artifacts, so we don't unwrap the module
+     ce match {
+        case nm: NestedModule => nm.module
+        case ce => ce
+     }
   }
   /** tries to interpret a content element as a module
    *  In particular, [[NestedModule]]s are turned into [[Module]]s, which allows referencing into nested theory-like elements.
@@ -547,6 +551,45 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
     case _ => None
   }
 
+  // ******************* state-changing interface: add, delete, update
+  
+  /** add, delete, and update must first locate the containing element
+   *  Therefore, they share a lot of code, which is captured in this class.
+   */
+  private abstract class ChangeProcessor {
+     def errorFun(msg: String): Nothing
+     def primitiveDocument(dp: DPath): Unit
+     def otherNarrativeElement(parent: Document, ln: LocalName): Unit
+     def primitiveModule(mp: MPath): Unit
+     def otherContentElement(parent: Body, ln: LocalName): Unit
+     def component(cp: CPath, cont: ComponentContainer): Unit
+     /** This does the relevant case distinction and then delegates to one of the abstract methods. */
+     def apply(p: Path) {p match {
+        case dp: DPath =>
+           if (documents.isDefinedAt(dp))
+             primitiveDocument(dp)
+           else {
+             val doc = seeAsDoc(getNarrative(dp ^, errorFun), errorFun)
+             otherNarrativeElement(doc, LocalName(dp.name.last))
+           }
+        case mp: MPath =>
+           primitiveModule(mp)
+        case GlobalName(p,ln) =>
+            val se = seeAsMod(getContent(p, errorFun), errorFun)
+            se match {
+              case b: Body =>
+                 otherContentElement(b, ln)
+              case _ => errorFun("parent does not resolve to container " + se.path)
+            }
+        case cp: CPath =>
+           getO(cp.parent) foreach {se =>
+              se.getComponent(cp.component).foreach {cont =>
+                component(cp, cont)
+              }
+           }
+     }}
+  }
+    
   // ******************* adding elements
   
   /**
@@ -554,31 +597,19 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
    * @param e the added declaration
    */
   def add(e: StructuralElement) {
-    val errorFun = (msg: String) => throw AddError(msg)
-    log("adding " + e.path.toString + " TYPE " + e.getClass)
+    log("adding " + e.path + "(which is a " + e.getClass + ")")
+    val adder = new Adder(e)
     e match {
-      case ne: NarrativeElement =>
-         ne.parentOpt match {
-            case Some(par) =>
-               val parDoc = seeAsDoc(getNarrative(par, errorFun), errorFun)
-               parDoc.add(ne)
-            case None =>
-               ne match {
-                  case d: Document => 
-                     documents(d.path) = d
-                  case _ =>
-                     throw AddError("root narrative element must be document")
-               }
-         }
-      case m: Module =>
-         modules(m.path) = m
-      case d: Declaration =>
-         val par = seeAsMod(getContent(d.parent, errorFun), errorFun)
-         (par, e) match {
-             case (par: Body, e: Declaration) =>
-                 par.add(e, inDoc = e.relativeDocumentHome)
-             case (par,e) => errorFun("cannot add " + e.name + " to " + par.path)
-        }
+       case doc: Document if doc.root =>
+          // special treatment for root documents, this case can't be detected by ChangeProcessor
+          adder.primitiveDocument(doc.path)
+       case ne: NarrativeElement if ne.name.length != 1 =>
+          // this case is needed because ChangeProcessor assumes ne.name.length == 1 && ne.parentOpt = Some(ne.path ^)
+          // can it be specified away?
+          val parDoc = seeAsDoc(getNarrative(ne.parentOpt.get, adder.errorFun), adder.errorFun)
+          adder.otherNarrativeElement(parDoc, ne.name)
+       case _ =>
+          adder.run
     }
     try {
       e match {
@@ -601,6 +632,51 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
         throw AddError(s"implicit morphism $nw from $from to $to induced by ${e.path} in conflict with existing implicit morphism $old")
     }
   }
+  
+  /** the bureaucracy of adding 'se' */
+  private class Adder(se: StructuralElement) extends ChangeProcessor {
+     def errorFun(msg: String) = throw AddError(msg)
+     def wrongType(exp: String) {errorFun("expected a " + exp)}
+     def run {
+        apply(se.path)
+     }
+     def primitiveDocument(dp: DPath) = {
+        se match {
+           case doc: Document =>
+              documents(dp) = doc
+           case _ =>
+              wrongType("document")
+        }
+     }
+     def otherNarrativeElement(doc: Document, ln: LocalName) = {
+        se match {
+           case ne: NarrativeElement =>
+              doc.add(ne)
+           case _ =>
+              wrongType("narrative element")
+        }
+     }
+     def primitiveModule(mp: MPath) = {
+        se match {
+           case mod: Module =>
+              modules(mp) = mod
+           case _ =>
+              wrongType("module")
+        }
+     }
+     def otherContentElement(body: Body, ln: LocalName) = {
+        se match {
+           case d: Declaration =>
+              body.add(d)
+           case _ =>
+              wrongType("declaration")
+        }
+     }
+     def component(cp: CPath, cont: ComponentContainer) = {
+        wrongType("content element") // should be impoosible
+     }
+  }
+
 
  // ******************* deleting elements
 
@@ -610,47 +686,65 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
     */
   def delete(path: Path) {
     log("deleting " + path)
-    val errorFun = (msg: String) => throw DeleteError(msg)
-    path match {
-      case dp: DPath =>
-         if (documents.isDefinedAt(dp))
-            documents -= dp
-         else {
-            val doc = seeAsDoc(getNarrative(dp ^, errorFun), errorFun)
-            doc.delete(LocalName(dp.name.last))
+    Deleter.apply(path)
+  }
+  
+  private object Deleter extends ChangeProcessor {
+     def errorFun(msg: String) = throw DeleteError(msg)
+     def primitiveDocument(dp: DPath) = {
+        documents -= dp
+     }
+     def otherNarrativeElement(doc: Document, ln: LocalName) = {
+        doc.delete(ln)
+     }
+     def primitiveModule(mp: MPath) = {
+        modules -= mp
+        //if (mp.name.length > 1) delete(mp.toGlobalName)
+     }
+     def otherContentElement(body: Body, ln: LocalName) = {
+       body.delete(ln) foreach {s =>
+         s.getComponents.foreach {case DeclarationComponent(comp, cont) =>
+           if (cont.isDefined) notifyUpdated(s.path $ comp)
          }
-      case mp: MPath =>
-         modules -= mp
-         if (mp.name.length > 1)
-            delete(mp.toGlobalName)
-      case par ?? ln =>
-         val se = seeAsMod(getContent(par, errorFun), errorFun)
-         se match {
-           case t: DeclaredTheory =>
-             t.delete(ln) foreach { s =>
-             s.getComponents.foreach { case DeclarationComponent(comp, cont) =>
-                 if (cont.isDefined) notifyUpdated(s.path $ comp)
-               }
-             }
-           case l: DeclaredLink =>
-             l.delete(ln)
-           case _ => errorFun("cannot delete from " + path)
-         }
-      case cp@CPath(par, comp) => getO(par) foreach { ce =>
-        ce.getComponent(comp).foreach {
-          _.delete
-        }
+       }
+     }
+     def component(cp: CPath, cont: ComponentContainer) = {
+        cont.delete
         notifyUpdated(cp)
-      }
-    }
+     }
   }
-
-  /** updates a ContentElement by deleting and adding it */
+  
+ // ******************* updating elements  
+  
+  /** updates a StructuralElement */
   def update(e: StructuralElement) {
-    delete(e.path)
-    add(e)
+    log("updating " + e.path)
+    new Updater(e).run
   }
-
+  
+  /** almost the same as Adder; the only overrides are replacing "add" and "Add" with "update" and "Update" */
+  private class Updater(se: StructuralElement) extends Adder(se) {
+     override def errorFun(msg: String) = throw UpdateError(msg)
+     override def otherNarrativeElement(doc: Document, ln: LocalName) = {
+        se match {
+           case ne: NarrativeElement =>
+              doc.update(ne)
+           case _ =>
+              wrongType("narrative element")
+        }
+     }
+     override def otherContentElement(body: Body, ln: LocalName) = {
+        se match {
+           case d: Declaration =>
+              body.update(d)
+           case _ =>
+              wrongType("declaration")
+        }
+     }
+  }
+  
+  // change management
+  
   /** marks all known dependent components as dirty
     *
     * This method is public because components may be changed from the outside.
