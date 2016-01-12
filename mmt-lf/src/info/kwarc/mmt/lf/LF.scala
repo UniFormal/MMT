@@ -23,7 +23,7 @@ import objects.Conversions._
    s ^ S  : application of the substitution S to s : Term
 */
 
-case class LFError(msg : String) extends java.lang.Throwable(msg)
+case class LFError(msg : String) extends java.lang.Exception(msg)
 
 object LF {
    val _base = Typed._base

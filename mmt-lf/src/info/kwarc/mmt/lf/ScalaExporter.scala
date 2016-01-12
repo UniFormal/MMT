@@ -4,15 +4,16 @@ import info.kwarc.mmt.api._
 import modules._
 import symbols._
 import objects._
+import uom._
 
-import uom.GenericScalaExporter._
+import GenericScalaExporter._
 
 //TODO translate LF definitions to Scala definitions  
 
-class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) with uom.GenericScalaExporter {
-   val key = "lf-scala"
+class ScalaExporter extends GenericScalaExporter {
+   override val key = "lf-scala"
    override val packageSep = List("lf")
-   
+    
    private object IllFormed extends Throwable
    private def typeEras(t: Term): (List[GlobalName],GlobalName) = t match {
       case OMS(a) => (Nil, a)
@@ -34,65 +35,94 @@ class ScalaExporter extends archives.FoundedExporter(LF._path, uom.Scala._path) 
       case _ => throw IllFormed
    }
       
-   def exportCoveredTheory(t: DeclaredTheory) {
-      outputHeader(t.parent.doc)
-      outputTrait(t){c =>
-         c.tp match {
-            case None => ""
-            case Some(tp) => try {
-               val synName = nameToScala(t.name) + "." + nameToScala(c.name) + ".path"
-               val semName = nameToScalaQ(c.path)
-               val Some((args,ret)) = FunType.unapply(tp)
-               val (decl, ini) = if (ret == Univ(1)) {
-                  //scalaType(c.path)
-                  val ini = s"  realizes {universe($synName)($semName)}"
-                  val decl = c.df match {
-                     case None =>
-                        scalaVal(c.path, "RealizedType")
-                     case Some(d) => d match {
-                        // nice idea but does not work well; better expand all definitions if they are used later
-                        // case OMS(p) => scalaValDef(c.path, Some("RealizedType"), nameToScalaQ(p))
-                        case _ =>
-                           scalaVal(c.path, "RealizedType")
-                     }
-                  }
-                  (decl, ini)
-               } else {
-                  // create "realizes {function(name, argType1, ..., argTypeN, retType)(function)}
-                  val (argsE, retE) = typeEras(tp)
-                  val lts = (argsE ::: List(retE)).map(nameToScalaQ).mkString(", ")
-                  val ini = s"  realizes {function($synName, $lts)($semName)}"
-                  // create def name(x0: argType1._univ, ..., xN: argTypeN._univ): retType.univ
-                  val names = args.zipWithIndex.map {
-                     case ((Some(n), _), _) => n.toPath
-                     case ((None   , _), i) => "x" + i.toString
-                  }
-                  val argsES = argsE.map(a => nameToScalaQ(a) + ".univ")
-                  val decl = scalaDef(c.path, names zip argsES, nameToScalaQ(retE) + ".univ")
-                  (decl, ini)
-                  /*
-                   val argsS = args.zipWithIndex.map {
-                     case ((nOpt, t), i) => 
-                        val tS = typeToScala(t)
-                        val nS = nOpt match {
-                           case Some(n) => n.toPath
-                           case None => "x" + i.toString
-                        }
-                        (nS, tS)
-                  }
-                  val df = scalaDef(c.path, argsS, typeToScala(ret))
-                  */
-               }
-               decl +"\n" + ini + "\n"
-            } catch {case IllFormed => "// skipping ill-formed " + c.name} 
+   override def outputTrait(t: DeclaredTheory) {
+      val includes = t.getIncludesWithoutMeta.filter {i =>
+         controller.globalLookup.getO(i) match {
+            case Some(r: RealizationInScala) =>
+               false //TODO handle includes of models
+            case Some(t: DeclaredTheory) =>
+               t.name.length == 1 // we only take basic theories for now
+            case _ => false // should not happen
          }
       }
-      outputCompanionObject(t){c => ""}
-   }
-   
-   def exportFunctor(v: DeclaredView) {}
+      val metas = objects.TheoryExp.metas(t.toTerm)(controller.globalLookup)
+      val lfpos = metas.indexOf(LF._path)
+      if (lfpos == -1) {
+         log("skipping " + t.path + " (LF not meta-theory)")
+         return
+      }
+      val metasUpToLF = metas.take(lfpos)
+      val includesS = (metasUpToLF ::: includes).map(i => " with " + mpathToScala(i, packageSep)).mkString("")
+      val tpathS = t.path.toString
+      val name = nameToScala(t.name)
+      rh.writeln(s"/** The type of realizations of the theory $tpathS */")
+      rh.writeln(s"trait $name extends RealizationInScala$includesS {")
+      val domainOver = if (includesS.isEmpty) "" else "override " // override included values
+      rh.writeln(s"  ${domainOver}val _domain: TheoryScala = $name\n")
+      t.getPrimitiveDeclarations foreach {
+         case c: Constant if c.path.name.toPath != "int" =>
+            val d = constantToString(t, c)
+            rh.writeln(d)
+         //TODO exclude declarations with extraneous types that should not be implemented, e.g., m:MOR a b
+         case SimpleStructure(s, fromPath) if !s.isInclude =>
+            // unnamed structures have been handled above already
+            rh.writeln("  val " + nameToScalaQ(s.path) + ": " + mpathToScala(fromPath))
+         case _ =>
+      }
+      rh.writeln("}\n")
+   }    
 
-   def exportRealization(v: DeclaredView) {}
+    private def constantToString(t: DeclaredTheory, c: Constant): String = {    
+      c.tp match {
+         case None => ""
+         case Some(tp) => try {
+            val synName = nameToScala(t.name) + "." + nameToScala(c.name) + ".path"
+            val semName = nameToScalaQ(c.path)
+            val Some((args,ret)) = FunType.unapply(tp)
+            val (decl, ini) = if (ret == Univ(1)) {
+               //scalaType(c.path)
+               val ini = s"  realizes {universe($synName)($semName)}"
+               val decl = c.df match {
+                  case None =>
+                     scalaVal(c.path, "RealizedType")
+                  case Some(d) => d match {
+                     // nice idea but does not work well; better expand all definitions if they are used later
+                     // case OMS(p) => scalaValDef(c.path, Some("RealizedType"), nameToScalaQ(p))
+                     case _ =>
+                        scalaVal(c.path, "RealizedType")
+                  }
+               }
+               (decl, ini)
+            } else {
+               // create "realizes {function(name, argType1, ..., argTypeN, retType)(function)}
+               val (argsE, retE) = typeEras(tp)
+               val lts = (argsE ::: List(retE)).map(nameToScalaQ).mkString(", ")
+               val ini = s"  realizes {function($synName, $lts)($semName)}"
+               // create def name(x0: argType1._univ, ..., xN: argTypeN._univ): retType.univ
+               val names = args.zipWithIndex.map {
+                  case ((Some(n), _), _) => n.toPath
+                  case ((None   , _), i) => "x" + i.toString
+               }
+               val argsES = argsE.map(a => nameToScalaQ(a) + ".univ")
+               val decl = scalaDef(c.path, names zip argsES, nameToScalaQ(retE) + ".univ")
+               (decl, ini)
+               /*
+                val argsS = args.zipWithIndex.map {
+                  case ((nOpt, t), i) => 
+                     val tS = typeToScala(t)
+                     val nS = nOpt match {
+                        case Some(n) => n.toPath
+                        case None => "x" + i.toString
+                     }
+                     (nS, tS)
+               }
+               val df = scalaDef(c.path, argsS, typeToScala(ret))
+               */
+            }
+            decl +"\n" + ini + "\n"
+         } catch {case IllFormed => "// skipping ill-formed " + c.name} 
+      }
+   }
 }
 
 import checking._
