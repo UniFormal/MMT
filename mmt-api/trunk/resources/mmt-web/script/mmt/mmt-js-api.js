@@ -19,7 +19,7 @@ function getClassArray(elem) {
 $.fn.addMClass = function(cl){
    this.each(function(){
       if (this.hasAttribute('class'))
-         $(this).attr('class', $(this).attr('class') + ' ' + cl);   
+         $(this).attr('class', $(this).attr('class') + ' ' + cl);
       else
          this.setAttribute('class', cl);
    });
@@ -80,17 +80,17 @@ var mmtattr = function(){
 }();
 
 var mmt = {
-   /* these are auxiliary variables used to communicate information about the 
-    * current focus from the context menu entries to the methods; they are not 
+   /* these are auxiliary variables used to communicate information about the
+    * current focus from the context menu entries to the methods; they are not
     * passed as an argument to avoid encoding problems */
     // holds a reference to the clicked object
    target: null,
    // focus: holds a reference to the selected object that was clicked by the user
    focus : null,
    // focus: true if focus is within a math object
-   focusIsMath : false,    
+   focusIsMath : false,
    // focus: true if focus is within an svg object
-   focusIsSVG : false,    
+   focusIsSVG : false,
    //jobad:href of the object clicked on (if any)
    currentURI : null,
    //URI of the OMDoc ContentElement that generated the math object clicked on
@@ -98,8 +98,8 @@ var mmt = {
    //name of the component of currentElement that generated the math object clicked on
    currentComponent : null,
    //position of the subobject clicked on within its math object
-   currentPosition : null, 
-   
+   currentPosition : null,
+
    /* set focus, focusIsMath, currentURI, currentElement, currentComponent, currentPosition according to elem */
    setCurrentPosition : function(elem){
       this.target = elem;
@@ -136,7 +136,7 @@ var mmt = {
          }
       }
    },
-   
+
    /* the active theory is used for operations that must be executed relative to a theory, e.g., parsing */
    getActiveTheory : function() {
       return $('#parseForm #activetheory').val();
@@ -154,7 +154,7 @@ var mmt = {
 
      }
    },
-   
+
    /*
     * Converts a relative to an absolute url if the base url is set.
     * Necessary when used within another application to connect with external mmt server (e.g. in planetary)
@@ -162,15 +162,19 @@ var mmt = {
    makeURL : function(relUrl) {
       if ((typeof mmtUrl) != 'undefined') {
          return mmtUrl + relUrl; //compute absolute uri to external mmt server
-      } else { 
+      } else {
          return relUrl;
-      }  
+      }
    },
 
    /*
     * splits a URI into the (doc, mod, sym) triple; omitted parts are returned as ""
     */
-   splitMMTURI : function(uri, includeEmpty = true) {
+   splitMMTURI : function(uri, includeEmpty) {
+      if (typeof includeEmpty === "undefined"){
+        includeEmpty = true;
+      }
+
       var arr = uri.split("?");
       var doc = (arr.length >= 1) ? arr[0] : "";
       var mod = (arr.length >= 2) ? arr[1] : "";
@@ -181,7 +185,7 @@ var mmt = {
       }
       return arr;
    },
-   
+
    /*
     * adaptMMTURI - convert MMTURI to URL using current catalog and possibly notation style
     * act: String: additional action to call after "get uri"
@@ -197,7 +201,7 @@ var mmt = {
       var relativeURL = '/:mmt?get ' + arr[0] + '?' + arr[1] + '?' + arr[2] + ' ' + act + pres + " respond";
       return this.makeURL(relativeURL);
    },
-   
+
    /**
        * @param url the URL to load from
        * @param targetid the XML id of the element, where it appends
@@ -210,13 +214,13 @@ var mmt = {
             }
             if (async == null) async = true;
             $.ajax({  'type': "GET",
-                     'url': url,      
+                     'url': url,
                     'dataType': 'xml',
                     'async': async,
                     'success': cont,
                   });
          },
-         
+
    /**
     * @param url the URL to load from
     * @param targetid the XML id of the element, whose child to replace with the loaded node
@@ -234,8 +238,8 @@ var mmt = {
              'success': cont
             });
    },
-   
-   
+
+
    load : function (elem) {
       if (elem.hasAttribute('jobad:load')) {
          var url = this.adaptMMTURI(elem.getAttribute('jobad:load'), '', true);
@@ -250,28 +254,28 @@ var mmt = {
          return res.firstChild;
       }
    },
-   
+
 
    /** opens current URI in a new window as OMDoc */
    openCurrentOMDoc : function () {
-      var url = this.adaptMMTURI(this.currentURI, 'xml', false);  
+      var url = this.adaptMMTURI(this.currentURI, 'xml', false);
       window.open(url, '_blank', '', false);
    },
-   
+
    /** opens current MMT URI in a new window */
    openCurrent : function () {
       var url = this.currentURI;
       window.open("/?"+url, '_blank', '', false);
    },
-   
+
    sideBarClick : function(event,p) {
          if (event.detail == 1) interactiveViewing.navigate(p);
          else if (event.detail == 2) {
-            if (graphWindow == null) {
+            if (graphWindow == null || typeof graphWindow == "undefined") {
              openGraph(p);
             }
             else{
-             graphWindow.navigateGraph(p); 
+             graphWindow.navigateGraph(p);
             }
          }
    },
@@ -283,21 +287,21 @@ var mmt = {
       else
          return s[0];
    },
-   
+
    unsetSelected : function(){
       $('.math-selected').removeMClass('math-selected');
    },
-   
+
    isSelected : function(target) {
       $(target).filterMClass("math-selected").length !== 0;
    },
-   
+
    setSelected : function(target){
       this.unsetSelected();
       $(target).addMClass('math-selected');
    },
-   
-   
+
+
    /**
     * getTagPrefix - function that returns the tag prefix of a given element
     *
@@ -311,7 +315,7 @@ var mmt = {
       returnPrefix = tagName.match(regExpPrefix);
       return returnPrefix;
    },
-   
+
    /**
     * getTagName - function that returns the tag name of a given element
     *
@@ -352,11 +356,11 @@ var XML = {
 
 var qmtAux = {
    // returns a binary convenience function that returns a QMT query expression for a unary atomic function
-   // the second argument is an MMT URI that the unary function is parametrized by 
+   // the second argument is an MMT URI that the unary function is parametrized by
    // defaultParam: a function returning the default value of the second argument of the returned function
    extensionFunction : function(name, defaultParam) {
       return function(o, param) {
-         var p = (param == null) ? ((defaultParam == null) ? mmt.getActiveTheory() : defaultParam()) : param; 
+         var p = (param == null) ? ((defaultParam == null) ? mmt.getActiveTheory() : defaultParam()) : param;
          return XML.elem('function', o, 'name', name, 'param', p);
       };
    },
@@ -384,7 +388,7 @@ var qmt = {
    exec : function (q, cont) {
       var qUrl = mmt.makeURL('/:query');
       $.ajax({
-         url:qUrl, 
+         url:qUrl,
          type:'POST',
          data:q,
           dataType : 'xml',
@@ -410,22 +414,22 @@ var action = {
       });
    }
 };
- 
+
 var inlineBox = {
    /**
     * Inserts an empty inline box after the closest .inlineBoxSibling ancestor of 'origin'.
     * #main is used if no such ancestor exists.
     * The created box can be dragged and resized.
-    * 
+    *
     * @param origin the node to which the inline box belongs
     * @param title the title of the box
     * @param width optional string parameter setting the width of the box
-    * @returns the body of the inline box, to which further content can/should be added 
+    * @returns the body of the inline box, to which further content can/should be added
     */
    create: function(origin, title, width) {
        // we append the box after inlBoxSib
        var inlBoxSib = $(origin).closest(".inlineBoxSibling");
-       // the box exists inside a container 
+       // the box exists inside a container
        var container = document.createElement('div');
        var box = document.createElement('div');
        $(box).addClass("inlinebox toggle-root");
@@ -435,11 +439,11 @@ var inlineBox = {
            // fall back if no inlBoxSib found
            var list = $("#main").children();
            if (list.length === 0) {
-             $(container).insertAfter("#main");            
+             $(container).insertAfter("#main");
            }
            else {
              $(container).insertBefore(list[0]);
-           }        
+           }
        } else {
            $(inlBoxSib).append(container);
        }
@@ -451,7 +455,7 @@ var inlineBox = {
        var titleDiv = document.createElement('div');
        $(titleDiv).addClass("inlinebox-title")
        $(titleDiv).append("<span>" + title + "</span>");
-       $(titleDiv).attr(mmtattr.toggleTarget, "inlinebox-content")       
+       $(titleDiv).attr(mmtattr.toggleTarget, "inlinebox-content")
        $(box).append(titleDiv);
        var contentDiv = document.createElement('div');
        $(contentDiv).addClass("inlinebox-content");
@@ -501,4 +505,4 @@ var svgHelper = {
       var w = $(svg).attr('width');
       $(svg).attr('width', this.multiplyDim(w, by));
    },
-};   
+};
