@@ -11,15 +11,15 @@ import backend._
 import ontology._
 
 /** an auxiliary class to split the [[Controller]] class into multiple files */
-trait ActionHandling {self: Controller =>
-   
+trait ActionHandling { self: Controller =>
+
   private def getOAFOrError = getOAF.getOrElse {
     throw GeneralError("no OAF configuration entry found")
   }
-  
+
   // ******************************** handling actions
   // some actions are defined in separate methods below
-  
+
   /** executes a string command */
   def handleLine(l: String, showLog: Boolean = true) {
     try {

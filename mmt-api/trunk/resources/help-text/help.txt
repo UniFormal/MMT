@@ -6,6 +6,8 @@ the MMT shell script
 general arguments:
   -h, --help                show this help message and exit.
   -a, --about               print some information about MMT.
+      --usage               show usage message for specific 'make' COMMANDS
+      --help-command        currently identical to --usage
 
 commands and files to process:
   COMMANDS                  Semicolon ( ; ) separated commands to be interpreted by MMT. Type "help" inside the shell
