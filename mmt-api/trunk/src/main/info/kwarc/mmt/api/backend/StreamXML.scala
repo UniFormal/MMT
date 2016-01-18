@@ -41,10 +41,10 @@ class SourceFromReader(r: java.io.Reader) extends Source {
 /** a straightforward ObjectParser that relegates to Obj.parse */
 object XMLObjectParser extends ObjectParser {
    def isApplicable(s: String) = s == "openmath"
-   def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): Term = {
+   def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = {
       val xml = scala.xml.XML.loadString(pu.term)
       val o = Obj.parseTerm(xml, pu.nsMap)
-      o
+      ParseResult.fromTerm(o)
    }
 }
 

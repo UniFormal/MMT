@@ -36,23 +36,18 @@ class NotationDimension {
 
    def set(not : TextNotation) = {
      val l = not.arity.length
-     if (!notations.isDefinedAt(l)) { //new arity
-       notations(l) = Nil
-       if (l > maxArity) {
-         _maxArity = l
-       }
-     }
-     //TODO avoid duplicate notations better, currently equality is checked via their string representation
-     if (!notations(l).map(_.toString).contains(not.toString)) {
-       notations(l) ::= not
+     val nots = notations.getOrElse(l, Nil) 
+     notations(l) = (not :: nots).distinct // replaces previous occurrence of same notation (which might differ in metadata)
+     if (l > maxArity) {
+       _maxArity = l
      }
    }
    
    def update(nd : NotationDimension) : Boolean = {
-      val changed = false //TODO report changes
-     _notations = nd.notations
-     _maxArity = nd.maxArity
-     changed
+      val changed = _notations != nd.notations // over-reports changes in the rare case where nothing but the order changed
+      _notations = nd.notations
+      _maxArity = nd.maxArity
+      changed
    }
    def delete = notations.clear
 }

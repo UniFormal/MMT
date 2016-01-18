@@ -37,10 +37,11 @@ class RuleBasedChecker extends ObjectChecker {
       val psol = solver.getPartialSolution
       val remUnknowns = solver.getUnsolvedVariables 
       val subs = psol.toPartialSubstitution
-      val tI = cu.judgement.wfo ^? subs //fill in inferred values
+      val t = parser.ParseResult(Context.empty,cu.judgement.context, cu.judgement.wfo).toTerm
+      val tI = t ^? subs //fill in inferred values
       val tIS = SimplifyInferred(tI, rules, cu.context ++ remUnknowns) //substitution may have created simplifiable terms
       TermProperty.eraseAll(tIS) // reset term properties (whether a term is, e.g., simplified, depends on where it is used)
-      val result = if (remUnknowns.variables.isEmpty) tIS else OMBIND(OMID(parser.ObjectParser.unknown), remUnknowns, tIS)
+      val result = parser.ParseResult(remUnknowns, Context.empty, tIS).toTerm
       //now report results, dependencies, errors
       val solution = solver.getSolution
       val success = solver.checkSucceeded

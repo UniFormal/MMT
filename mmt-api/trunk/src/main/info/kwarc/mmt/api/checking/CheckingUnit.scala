@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.checking
 import info.kwarc.mmt.api._
 import objects._
 import frontend._
+import parser._
 
 /**
  * A checking unit encapsulates the proof obligations produced by a [[StructureChecker]]
@@ -32,9 +33,9 @@ case class CheckingUnit(component: Option[CPath], context: Context, unknowns: Co
 object CheckingUnit {
    val unknownType = LocalName("") / "omitted_type"
    def byInference(cpath: Option[CPath], context: Context, unkt: Term) = {
-      val (unk,t) = parser.ObjectParser.splitOffUnknowns(unkt)
-      val j = Typing(Stack(Context.empty), t, OMV(unknownType))
-      CheckingUnit(cpath, context, unk ++ VarDecl(unknownType,None,None,None), j)
+      val pr = ParseResult.fromTerm(unkt)
+      val j = Typing(Stack(pr.free), pr.term, OMV(unknownType))
+      CheckingUnit(cpath, context, pr.unknown ++ VarDecl(unknownType,None,None,None), j)
    }
 }
 

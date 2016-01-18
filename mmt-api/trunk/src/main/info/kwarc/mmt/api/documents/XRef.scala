@@ -37,3 +37,7 @@ object MRef {
 class SRef(val parent : DPath, val name: LocalName, val target : GlobalName) extends NRef {
    def toNode = <sref name={name.toPath} target={target.toPath}/>
 }
+
+object SRef {
+   def apply(p: DPath, t: GlobalName) = new SRef(p, LocalName(t.toMPath), t)
+}

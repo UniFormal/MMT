@@ -275,7 +275,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
     case TUnion(ts) => ts mapFind { t =>
       getO(t,name)
     } getOrElse {
-      throw GetError("union of theories has no declarations except includes")
+      error("union of theories has no declarations except includes")
     }
     case OMCOMP(Nil) => throw GetError("cannot lookup in identity morphism without domain: " + home)
     case OMCOMP(hd :: tl) =>
@@ -290,12 +290,13 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
       case c: Constant => ConstantAssignment(home, name, None, Some(c.toTerm))
       case l: Structure => DefLinkAssignment(home, name, l.from, l.toTerm)
     }
-    case Morph.empty => throw GetError("empty morphism has no assignments")
+    case Morph.empty => error("empty morphism has no assignments")
     case MUnion(ms) => ms mapFind {
       m => getO(m, name)
     } getOrElse {
-      throw GetError("union of morphisms has no assignments except includes")
+      error("union of morphisms has no assignments except includes")
     }
+    case _ => error("unknown module: " + home)
   }
 
   /** auxiliary method of get for lookups in a parent that has already been retrieved */
@@ -597,7 +598,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
    * @param e the added declaration
    */
   def add(e: StructuralElement) {
-    log("adding " + e.path + "(which is a " + e.getClass + ")")
+    log("adding " + e.path + " (which is a " + e.getClass.getName + ")")
     val adder = new Adder(e)
     e match {
        case doc: Document if doc.root =>
@@ -743,6 +744,23 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
      }
   }
   
+  /** moves an element with a given path to the end of its parent document */
+  def reorder(p: Path) {
+     Reorderer.apply(p)
+  }
+  private object Reorderer extends ChangeProcessor {
+     def errorFun(msg: String) = throw UpdateError(msg)
+     def primitiveDocument(dp: DPath) {}
+     def otherNarrativeElement(doc: Document, ln: LocalName) {
+        doc.reorder(ln)
+     }
+     def primitiveModule(mp: MPath) {}
+     def otherContentElement(body: Body, ln: LocalName) {
+        body.reorder(ln)
+     }
+     def component(cp: CPath, cont: ComponentContainer) {}
+  }
+  
   // change management
   
   /** marks all known dependent components as dirty
@@ -757,11 +775,23 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
   def notifyUpdated(p: CPath) {
     log("updated: " + p)
     logGroup {
+      // notify the definiens (if any) if a type changed
+      if (p.component == TypeComponent) {
+         getO(p.parent) foreach {
+            se => se.getComponent(DefComponent) foreach {
+               case df: TermContainer =>
+                  log("definiens needs recheck")
+                  df.setAnalyzedDirty
+               case _ =>
+            }
+         }
+      }
+      // notify all dependencies
       modules.values.foreach { case m: Module =>
         m.foreachComponent {
           case (comp, tc: TermContainer) =>
             if (tc.dependsOn contains p) {
-              log("setting dirty: " + comp)
+              log("dependency needs recheck: " + comp)
               tc.setAnalyzedDirty
             }
           case _ =>

@@ -13,8 +13,7 @@ import utils._
   * OMDoc produced by [[Compiler]]s is indexed automatically.
   *
   */
-abstract class Importer extends TraversingBuildTarget {
-  imp =>
+abstract class Importer extends TraversingBuildTarget {imp =>
   /** source by default, may be overridden */
   def inDim = source
 

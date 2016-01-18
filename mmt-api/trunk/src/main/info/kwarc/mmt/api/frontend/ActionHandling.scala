@@ -119,12 +119,15 @@ trait ActionHandling { self: Controller =>
           case LoggingOn(g) => report.groups += g
           case LoggingOff(g) => report.groups -= g
           case NoAction => ()
-          case Read(f) =>
+          case Read(f, interpret) =>
+            if (!f.isFile)
+               throw GeneralError("file not found: " + f)
             val ps = backend.resolvePhysical(f) match {
               case Some((arch, p)) => ParsingStream.fromSourceFile(arch, FilePath(p))
               case None => ParsingStream.fromFile(f)
             }
-            read(ps, interpret = false, mayImport = true)(new ErrorLogger(report))
+            read(ps, interpret, mayImport = true)(new ErrorLogger(report))
+            ps.stream.close
           case Check(p, id) =>
             checkAction(p, id)
           case Graph(f) =>

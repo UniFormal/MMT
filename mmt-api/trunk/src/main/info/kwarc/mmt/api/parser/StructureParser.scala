@@ -162,7 +162,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    * Fatal errors are recovered from by defaulting to [[DefaultObjectParser]]
    */
   private def puCont(pu: ParsingUnit)(implicit state: ParserState): Term = {
-    val obj = try {
+    val pr = try {
       objectParser(pu)(state.errorCont)
     } catch {
       case e: Error =>
@@ -171,7 +171,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         state.errorCont(se)
         DefaultObjectParser(pu)(state.errorCont)
     }
-    obj
+    pr.toTerm
   }
 
   /**
@@ -667,11 +667,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case _ => context
       }
 
-      val contextRule = ParsingRule(utils.mmt.context, TextNotation(Precedence.integer(0), None)(Var(1, true, Some(Delim(",")))))
+      val contextRule = ParsingRule(utils.mmt.context, TextNotation.fromMarkers(Precedence.integer(0), None)(Var(1, true, Some(Delim(",")))))
       val parameters = if (delim._1 == ">") {
         val (_, reg, p) = readParsedObject(contextMeta, Some(contextRule))
-        val params = ObjectParser.splitOffUnknowns(p) match {
-          case (unk, OMBINDC(OMS(utils.mmt.context), cont, Nil)) => unk ++ cont
+        val params = ParseResult.fromTerm(p) match {
+          case ParseResult(unk, free, OMBINDC(OMS(utils.mmt.context), cont, Nil)) => unk ++ free ++ cont
           case _ =>
             errorCont(makeError(reg, "parameters of theory must be context: " + controller.presenter.asString(p)))
             Context.empty
@@ -912,8 +912,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   private def readPattern(name: LocalName, tpath: MPath)(implicit state: ParserState): Pattern = {
     val ppath = tpath ? name
     val nt = new NotationContainer
-    var pr: Context = Context() // params
-    var bd: Context = Context() // body
+    var pr = Context.empty
+    var bd = Context.empty
     while (!state.reader.endOfDeclaration) {
       val (delim, treg) = state.reader.readToken
       // branch based on the delimiter

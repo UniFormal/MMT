@@ -24,7 +24,14 @@ abstract class Declaration extends ContentElement {
    }
    def relativeDocumentHome = relDocHome_
    def documentHome = parent.toDPath / relDocHome_
-
+   override def merge(that: StructuralElement) {
+      that match {
+         case that: Declaration =>
+           relDocHome_ = that.relDocHome_
+         case _ => throw ImplementationError("not a declaration")
+      }
+   }
+   
    /** the containing module
     * 
     * this is almost always OMMOD(p:MPath),

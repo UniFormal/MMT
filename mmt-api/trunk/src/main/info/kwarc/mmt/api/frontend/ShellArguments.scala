@@ -153,8 +153,9 @@ object AnaArgs {
   * @param scalaFiles List of Scala files to load
   * @param cfgFiles   List of config files to load
   * @param commands   List of commands to run
-  * @param prompt     Should we start a prompt?
-  * @param runCleanup Should we cleanup running threads and exit after commands have been processed
+  * @param shell      interactive shell requested
+  * @param noshell    interactive shell unrequested
+  * @param keepalive  keepalive requested
   */
 case class ShellArguments(
    help: Boolean,
@@ -164,9 +165,19 @@ case class ShellArguments(
    scalaFiles: List[String],
    cfgFiles: List[String],
    commands: List[String],
-   prompt: Boolean, // run interactive shell
-   runCleanup: Boolean // do not keep alive but terminate/cleanup processes
- )
+   shell: Boolean,
+   noshell: Boolean,
+   keepalive: Boolean
+ ) {
+   /** decides whether or not to show the shell
+    *  default behavior: show shell if nothing else is happening
+    */
+   def prompt = if (shell) true else if (noshell) false else {
+      send.isEmpty && commands.isEmpty
+   }
+   /** do not keep alive but terminate/cleanup processes and exit after commands have been processed */
+   def runCleanup = ! keepalive && ! prompt
+}
 
 import AnaArgs._
 
@@ -196,8 +207,10 @@ object ShellArguments {
       scalaFiles = getStringList(m, "mbt"),
       cfgFiles = getStringList(m, "cfg"),
       commands = cs,
-      prompt = m.get("shell").isDefined,
-      runCleanup = m.get("keepalive").isEmpty && m.get("noshell").isEmpty)
+      shell = m.get("shell").isDefined,
+      noshell = m.get("noshell").isDefined,
+      keepalive = m.get("keepalive").isDefined
+    )
     val fs = sa.mmtFiles ++ sa.scalaFiles ++ sa.cfgFiles
     if (helpFlag && aboutFlag) {
       println("atmost one of --help and --about arguments can be used.")

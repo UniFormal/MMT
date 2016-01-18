@@ -260,7 +260,8 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
              }
              val tm = try {
                val str = body.asString
-               controller.objectParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), objects.Context(scope), str, NamespaceMap(scope.doc)))(ErrorThrower)
+               val pr = controller.objectParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), objects.Context(scope), str, NamespaceMap(scope.doc)))(ErrorThrower)
+               pr.toTerm
              } catch {
                case e : Throwable =>
                  throw e

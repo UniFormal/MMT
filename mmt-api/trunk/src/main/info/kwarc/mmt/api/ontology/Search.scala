@@ -42,17 +42,16 @@ object TermPattern {
          case _ => Traverser(this, t)
       }
    }
-   /** parses $ qvars:query, all unknown variables are turned into additional query variables */
+   /** parses $ qvars:query, all unknown or free variables are turned into additional query variables */
    def parse(controller: Controller, theory: String, pattern: String, format: String): TermPattern = {
       val mp = Path.parseM(theory, NamespaceMap(utils.mmt.mmtcd))
       val pu = ParsingUnit(SourceRef.anonymous(pattern), Context(mp), pattern, NamespaceMap(mp), Some(qvarRule))
       val parser = controller.extman.get(classOf[ObjectParser], format).getOrElse(throw ParseError("no parser found for $format"))
-      val unkQP = parser(pu)(ErrorThrower)
-      val (unk, qP) = ObjectParser.splitOffUnknowns(unkQP)
-      val qPM = (new RemoveUnknowns(unk)).apply(qP, Context())
+      val pr = parser(pu)(ErrorThrower)
+      val qPM = (new RemoveUnknowns(pr.unknown++pr.free)).apply(pr.term, Context.empty)
       qPM match {
-         case OMBIND(OMS(this.qvarBinder), qvars, qBody) => TermPattern(qvars++unk, qBody)
-         case t => TermPattern(unk, t)
+         case OMBIND(OMS(this.qvarBinder), qvars, qBody) => TermPattern(qvars++pr.unknown++pr.free, qBody)
+         case t => TermPattern(pr.unknown++pr.free, t)
       }
    }
 }

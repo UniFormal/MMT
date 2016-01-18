@@ -118,7 +118,11 @@ object MetaDatum {
          Tag(key)
       case Elem(_,"meta",_,_,literal) => //strangely, XML matching does not work
          val key = Path.parseS(xml.attr(node, "property"), nsMap(keyBase))
-         val value = Obj.parseTerm(literal, nsMap)
+         val value = if (literal.isInstanceOf[Elem])
+            Obj.parseTerm(literal, nsMap)
+         else
+            // fallback: string-valued meta-data
+            OMSTR(literal.text)
          new MetaDatum(key, value)
          //throw ParseError("object in metadatum must be text node:" + node)
       case _ => throw ParseError("meta or link or tag expected: " + node)

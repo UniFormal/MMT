@@ -32,10 +32,10 @@ trait Body extends ContentElement {self =>
       val document = new Document(dpath, true, Some(self))
       document.metadata = metadata
       /** call a function on all logical declarations and their parent document */
-      def traverse(f: (Document,LocalName) => Unit) {traverse(document, f)}
-      private def traverse(doc: Document, f: (Document,LocalName) => Unit) {
+      def traverse(f: (Document,SRef) => Unit) {traverse(document, f)}
+      private def traverse(doc: Document, f: (Document,SRef) => Unit) {
          doc.getDeclarations.foreach {
-            case r: SRef => f(doc, r.name)
+            case r: SRef => f(doc, r)
             case childDoc: Document => traverse(childDoc, f)
             case _ => // impossible
          }
@@ -78,14 +78,7 @@ trait Body extends ContentElement {self =>
       }
       statements(name) = s
       addAlternativeName(s)
-      val inDoc = s.relativeDocumentHome
-      val doc = asDocument.getLocally(inDoc) match {
-         case Some(d: Document) => d
-         case Some(_) => throw AddError(s"narrative element $inDoc exists in theory $path but is not a document")
-         case _ => throw AddError(s"document $inDoc does not exist in theory $path")
-      }
-      val ref = new SRef(doc.path, s.name, s.path)
-      doc.add(ref, afterOpt)
+      addRef(s, afterOpt)
    }
    /** delete a named declaration (does not have to exist)
     *  @return the deleted declaration
@@ -94,12 +87,32 @@ trait Body extends ContentElement {self =>
       statements.get(name) map {s =>
          statements -= s.name
          deleteAlternativeName(s)
-         traverse {case (parDoc,ln) =>
-            if (ln == name) parDoc.delete(ln)
-         }
+         deleteRef(name)
          s
       }
    }
+
+   /* adding/deleting the entry in the document */
+   
+   private def addRef(s: Declaration, afterOpt: Option[LocalName]) {
+      val inDoc = s.relativeDocumentHome
+      val doc = asDocument.getLocally(inDoc) match {
+         case Some(d: Document) => d
+         case Some(_) => throw AddError(s"narrative element $inDoc exists in theory $path but is not a document")
+         case _ => throw AddError(s"document $inDoc does not exist in theory $path")
+      }
+      val ref = SRef(doc.path, s.path)
+      doc.add(ref, afterOpt)
+   }
+   /** delete the SRef for the Declaration with local name 'name' */
+   private def deleteRef(name: LocalName) {
+      traverse {case (parDoc,r) =>
+         if (r.target.name == name) parDoc.delete(r.name)
+      }
+   }
+   
+   /* adding/deleting hashmap entry for the alias */
+   
    private def addAlternativeName(s: Declaration) {
       s.alternativeName foreach {a =>
          if (statements.isDefinedAt(a))
@@ -110,15 +123,40 @@ trait Body extends ContentElement {self =>
    private def deleteAlternativeName(s: Declaration) {
       s.alternativeName.foreach {a => statements -= a}
    }
+   
    /** updates a named declaration (preserving the order) */
-   def update(s : Declaration) = {
-      if (statements.isDefinedAt(s.name)) {
-         deleteAlternativeName(statements(s.name))
-         statements(s.name) = s
-         addAlternativeName(s)
-      } else
-         add(s)
+   def update(s : Declaration) {
+      statements.get(s.name) match {
+         case Some(old) =>
+            deleteAlternativeName(old)
+            statements(s.name) = s
+            addAlternativeName(s)
+         case None =>
+            add(s)
+      }
    }
+   /** moves  to the end of its section (if the relDocHome of ln has changed, it is also moved to the new section)
+    *  also moves all subsequent ln/X declarations (and updates their relDocHome) 
+    */ 
+   def reorder(ln: LocalName) {
+      statements.get(ln) match {
+         case Some(s) =>
+            deleteRef(ln)
+            addRef(s, None)
+            // now reorder all SRefs to declarations ln/X
+            traverse {case (doc, r) =>
+               val rln = r.target.name
+               if (rln.startsWith(ln) && rln != ln) {
+                  val rs = statements(rln)
+                  rs.setDocumentHome(s.relativeDocumentHome)
+                  deleteRef(ln)
+                  addRef(s, None)
+               }
+            }
+         case None => throw ImplementationError("declaration does not exist") 
+      }
+   }
+   
    /** true iff no declarations present */
    def isEmpty = statements.isEmpty
    /** the narrative structure */
@@ -126,8 +164,8 @@ trait Body extends ContentElement {self =>
    /** the list of declarations in narrative order, includes generated declarations */
    def getDeclarations: List[Declaration] = {
       var decs: List[Declaration] = Nil
-      traverse {case (_,ln) =>
-         val s = statements(ln)
+      traverse {case (_,r) =>
+         val s = statements(r.target.name)
          decs ::= s
       }
       decs.reverse
@@ -141,7 +179,7 @@ trait Body extends ContentElement {self =>
       def makeNodes(doc: Document): scala.xml.NodeSeq = {
          val nodes = doc.getDeclarations.flatMap {
             case r: SRef =>
-               val s = statements(r.name)
+               val s = statements(r.target.name)
                if (!s.isGenerated) s.toNode else Nil
             case oe: opaque.OpaqueElement => oe.toNode 
             case d: Document =>
@@ -156,7 +194,7 @@ trait Body extends ContentElement {self =>
          rh(doc.getMetaDataNode)
          doc.getDeclarations.foreach {
             case r: SRef =>
-               val s = statements(r.name)
+               val s = statements(r.target.name)
                if (!s.isGenerated)
                   s.toNode(rh)
             case oe: opaque.OpaqueElement =>
@@ -176,7 +214,7 @@ trait Body extends ContentElement {self =>
       def makeStrings(doc: Document, indent: Int): List[(Int,String)] = {
          doc.getDeclarations.flatMap {
             case r: SRef =>
-               val s = statements(r.name)
+               val s = statements(r.target.name)
                if (!s.isGenerated) List((indent,s.toString)) else Nil
             case d: Document =>
                (indent, "document " + d.name.last.toPath) :: makeStrings(d, indent+1)

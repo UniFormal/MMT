@@ -101,6 +101,16 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
      else
        add(ne)
   }
+  
+  /** moves ln to the end */
+  def reorder(ln: LocalName) {
+     items.find(_.name == ln) match {
+        case Some(i) => 
+          delete(ln)
+          items = items ::: List(i)
+        case None => throw ImplementationError("element does not exist")
+     }
+  }
 
   override def toString: String = "document " + path + items.map("\n  " + _.toString).mkString + "\n"
 

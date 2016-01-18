@@ -1,11 +1,12 @@
 package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.objects.Conversions._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.proving._
+import frontend._
+import modules._
+import objects.Conversions._
+import objects._
+import proving._
+import parser.ParseResult
 
 import scala.collection.mutable.HashSet
 
@@ -1202,19 +1203,19 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
 object Solver {
   /** reconstructs a single term and returns the reconstructed term and its type */
   def check(controller: Controller, stack: Stack, tm: Term): Either[(Term,Term),Solver] = {
-      val (unknowns,tmU) = parser.ObjectParser.splitOffUnknowns(tm)
+      val ParseResult(unknowns,free,tmU) = ParseResult.fromTerm(tm)
       val etp = LocalName("expected_type")
       val rules = RuleSet.collectRules(controller, stack.context)
       val solver = new Solver(controller, stack.context, unknowns ++ VarDecl(etp, None, None, None), rules)
       val j = Typing(stack, tmU, OMV(etp), None)
       solver(j)
-    if (solver.checkSucceeded) solver.getSolution match {
-      case Some(sub) =>
-          val tmR = tmU ^ sub
-          Left(tmR, sub("expected_type").get) // must be defined if there is a solution
-      case None => Right(solver)
-    } else
-      Right(solver)
+      if (solver.checkSucceeded) solver.getSolution match {
+         case Some(sub) =>
+             val tmR = tmU ^ sub
+             Left(tmR, sub("expected_type").get) // must be defined if there is a solution
+         case None => Right(solver)
+      } else
+         Right(solver)
   }
   /** infers the type of a term that is known to be well-formed */
   def infer(controller: Controller, context: Context, tm: Term, rulesOpt: Option[RuleSet]): Option[Term] = {

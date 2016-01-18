@@ -26,6 +26,7 @@ sealed abstract class Path extends ontology.BaseType {
     *  @param long add trailing ?
     */
    def toPath(long : Boolean) : String = this match {
+      // TODO URI.toString escapes DPaths containing ComplexSteps falsely
       case DPath(uri) => uri.toString + (if (long) "??" else "")
       case doc ? name => doc.toPath + "?" + name.toPath + (if (long) "?" else "")
       case mod ?? name => mod.toPath + "?" + name.toPath

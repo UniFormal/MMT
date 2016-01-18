@@ -95,7 +95,7 @@ class TextInterpreter extends OpaqueElementInterpreter
                val tc = TermContainer(fragS)
                val onCheck = () => {
                   log("parsing with context: " + pu.context.toString)
-                  tc.parsed = oP(sU)
+                  tc.parsed = oP(sU).toTerm
                }
                i += 1
                new TermFragment(OtherComponent(i.toString), tc, onCheck)

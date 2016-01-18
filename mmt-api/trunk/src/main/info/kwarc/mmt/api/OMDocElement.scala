@@ -82,6 +82,10 @@ trait StructuralElement extends Content with metadata.HasMetaData {
         case _ => false
       })
   }
+  /** merge all properties of 'that' into 'this' except for components and declarations */
+  def merge(that: StructuralElement) {
+     this.metadata = that.metadata
+  }
 }
 
 /** the status of a [[ContentElement]] during a parse-check cycle

@@ -21,8 +21,42 @@ import scala.language.implicitConversions
   * @param top an optional notation that the whole input must match;
   */
 case class ParsingUnit(source: SourceRef, context: Context, term: String, nsMap: NamespaceMap, top: Option[ParsingRule] = None)
-
 // TODO top should be Option[GlobalName]
+
+/** encapsulates the output of an [[ObjectParser]]
+ *  @param unknown the unknown variables that must be solved
+ *  @param the free variables that must be bound at the outside (may use unknowns)
+ *  @param the parsed term (may use unknowns and free variables)
+ */
+case class ParseResult(unknown: Context, free: Context, term: Term) {
+   def toTerm = {
+      var res = term
+      if (free.nonEmpty) {
+         res = OMBIND(OMS(ParseResult.free), free, res)
+      }
+      if (unknown.nonEmpty) {
+         res = OMBIND(OMS(ParseResult.unknown), unknown, res)
+      }
+      res
+  }
+}
+
+object ParseResult {
+   val unknown = utils.mmt.mmtcd ? "unknown"
+   val free = utils.mmt.mmtcd ? "free"
+   def fromTerm(uft: Term) = {
+      val (u,ft) = uft match {
+         case OMBIND(OMS(this.unknown), u, ft) => (u, ft)
+         case _ => (Context.empty, uft)
+      }
+      val (f,t) = ft match {
+         case OMBIND(OMS(this.free), f, t) => (f,t)
+         case _ => (Context.empty, ft)
+      }
+      ParseResult(u,f,t)
+   }
+}
+
 
 /** ParsingStream encapsulates the input of a [[StructureParser]]
   *
@@ -100,21 +134,15 @@ object ParsingStream {
   *
   */
 trait ObjectParser extends FormatBasedExtension {
-  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): Term
+  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): ParseResult
 }
 
 /** helper object */
 object ObjectParser {
-  val unknown = utils.mmt.mmtcd ? "unknown"
   val oneOf = utils.mmt.mmtcd ? "oneOf"
 
-  def splitOffUnknowns(t: Term) = t match {
-    case OMBIND(OMID(ObjectParser.unknown), us, s) => (us, s)
-    case _ => (Context(), t)
-  }
-
   /** @return true if t is a result of parsing that may need further analysis */
-  def isOnlyParsed(t: Term) = t.head.contains(unknown)
+  def isOnlyParsed(t: Term) = t.head.contains(ParseResult.unknown)
 }
 
 //TODO: notations should not be computed separately for each ParsingUnit; they must be cached theory-wise
@@ -123,10 +151,10 @@ object ObjectParser {
 object DefaultObjectParser extends ObjectParser {
   def isApplicable(format: String) = true
 
-  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): Term = {
+  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = {
     val t = OMSemiFormal(objects.Text("unparsed", pu.term))
     SourceRef.update(t, pu.source)
-    t
+    ParseResult(Context.empty, Context.empty, t)
   }
 }
 
@@ -141,7 +169,6 @@ trait StructureParser extends FormatBasedExtension {
     * @return the document into which the stream was parsed
     */
   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): Document
-
 }
 
 /** the designated super class for all parsers */
@@ -152,4 +179,11 @@ abstract class Parser(val objectLevel: ObjectParser) extends StructureParser wit
 
   /** relegates to objectParser */
   def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = objectLevel.apply(pu)
+  
+  /** an interpreter that does not check */
+  def asInterpreter = {
+     val int = new checking.OneStepInterpreter(this)
+     initOther(int)
+     int     
+  }
 }

@@ -49,64 +49,89 @@ class NotationBasedParser extends ObjectParser {
    * the variable names are irrelevant as long as they are unique within each call to the parser
    * Moreover, we make sure the names are chosen the same way every time to support change management.
    */
-  // due to the recursive processing, variables in children are always found first
-  // so adding to the front yields the right order
-  private var vardecls: List[VarDecl] = Nil
-  private var counter = 0
-
-  private def next = {
-    val s = counter.toString
-    counter += 1
-    s
+  private object Variables {
+     // due to the recursive processing, variables in children are always found first
+     // so adding to the front yields the right order
+     /** unknown variables */
+     private var vardecls: List[VarDecl] = Nil
+     private var counter = 0
+     
+     /** free variables, whose types may depend on the unknowns */
+     private var freevars: List[LocalName] = Nil
+     def getFreeVars = freevars
+     
+     def getVariables(implicit pu: ParsingUnit): (Context,Context) = {
+        val vdNames = vardecls.map(_.name)
+        val fvDecls = freevars map {n =>
+           val tp = newUnknown(newType(n), vdNames)
+           VarDecl(n, Some(tp), None, None)
+        }
+        (vardecls, fvDecls)
+     }
+   
+     private def next = {
+       val s = counter.toString
+       counter += 1
+       s
+     }
+   
+     def reset() {
+       vardecls = Nil
+       counter = 0
+       freevars = Nil
+     }
+   
+     /** name of an omitted implicit argument */
+     def newArgument =
+       LocalName("") / "I" / next
+   
+     /** name of the omitted type of a variable */
+     def newType(name: LocalName) =
+       LocalName("") / name / next
+   
+     /** name of an explicitly omitted argument */
+     def newExplicitUnknown =
+       LocalName("") / "_" / next
+   
+     /** generates a new unknown variable, constructed by applying a fresh name to all bound variables */
+     def newUnknown(name: LocalName, bvars: List[LocalName])(implicit pu: ParsingUnit) = {
+       vardecls ::= VarDecl(name, None, None, None)
+       if (bvars.isEmpty)
+         OMV(name)
+       else {
+         //apply meta-variable to all bound variables in whose scope it occurs
+         prag.defaultApplication(Some(pu.context.getIncludes.last), OMV(name), bvars.map(OMV(_)))
+       }
+     }
+   
+     /** generates a new unknown variable for the index that chooses from a list of options in an ambiguity
+      *  always an integer, thus independent of bound variables
+      */
+     def newAmbiguity = {
+       val name = LocalName("") / "A" / next
+       vardecls ::= VarDecl(name, None, None, None)
+       OMV(name)
+     }
+       
+     /** generates a new free variable that is meant to be bound on the outside */
+     def newFreeVariable(n: String) = {
+       val name = LocalName(n)
+       freevars ::= name 
+       OMV(name)
+     }
   }
+  import Variables._
 
-  private def resetVarGenerator() {
-    vardecls = Nil
-    counter = 0
-  }
-
-  /** an omitted implicit argument */
-  private def newArgument =
-    LocalName("") / "I" / next
-
-  /** the omitted index type of a variable */
-  private def newType(name: LocalName) =
-    LocalName("") / name / next
-
-  /** an explicitly omitted argument */
-  private def newExplicitUnknown =
-    LocalName("") / "_" / next
-
-  /** a new unknown variable, constructed by applying a fresh name to all bound variables */
-  private def newUnknown(name: LocalName, bvars: List[LocalName])(implicit pu: ParsingUnit) = {
-    vardecls ::= VarDecl(name, None, None, None)
-    if (bvars.isEmpty)
-      OMV(name)
-    else {
-      //apply meta-variable to all bound variables in whose scope it occurs
-      prag.defaultApplication(Some(pu.context.getIncludes.last), OMV(name), bvars.map(OMV(_)))
-    }
-  }
-
-  /** the index choosing from a list of options in an ambiguity
-   *  always an integer, thus independent of bound variables
-   */
-  private def newAmbiguity = {
-    val name = LocalName("") / "A" / next
-    vardecls ::= VarDecl(name, None, None, None)
-    OMV(name)
-  }
-    
 
   /**
    * @param pu the parsing unit
    */
-  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): Term = {
+  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): ParseResult = {
     implicit val puI = pu
     //gathering notations and lexer extensions in scope
     val (parsing, lexing) = getRules(pu.context)
     val notations = tableNotations(parsing)
-    resetVarGenerator()
+    Variables.reset()
     log("parsing: " + pu.term)
     log("notations:")
     logGroup {
@@ -151,10 +176,8 @@ class NotationBasedParser extends ObjectParser {
           makeTerm(scanned, Nil)
         }
         log("parse result: " + tm.toString)
-        if (vardecls.isEmpty)
-          tm
-        else
-          OMBIND(OMID(ObjectParser.unknown), Context(vardecls: _*), tm)
+        val (unk, free) = getVariables
+        ParseResult(unk, free, tm)
       //}
     }
   }
@@ -209,6 +232,16 @@ class NotationBasedParser extends ObjectParser {
     (nots, les)
   }
 
+  /** true if n may be the name of a free variable, see [[ParseResult]]
+   *  
+   *  making this always true hides source errors
+   *  making this never true requires awkwardly binding all variables 
+   */
+  private def mayBeFree(n: String) = {
+     n != "" && n(0).isLetter &&
+     n.forall(c => c.isLetter || c.isDigit)
+  }
+  
   /**
    * recursively transforms a TokenListElem (usually obtained from a [[Scanner]]) to an MMT Term
    * @param te the element to transform
@@ -222,7 +255,7 @@ class NotationBasedParser extends ObjectParser {
       case Token(word, _, _, _) =>
         lazy val unparsed = OMSemiFormal(objects.Text("unknown", word)) // fallback option
         val name = LocalName.parse(word)
-        val term = if (boundVars.contains(name) || pu.context.exists(_.name == name)) {
+        val term = if (boundVars.contains(name) || getFreeVars.contains(name) || pu.context.exists(_.name == name)) {
           //single Tokens may be bound variables ...
           OMV(name)
         } else if (word == "_") {
@@ -251,6 +284,8 @@ class NotationBasedParser extends ObjectParser {
               makeError(msg, te.region)
               unparsed
           }
+        } else if (mayBeFree(word)) {
+           newFreeVariable(word)
         } else {
           //in all other cases, we don't know
           makeError("unbound token: " + word, te.region)

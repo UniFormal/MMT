@@ -6,6 +6,8 @@ import objects._
 class TermDimension {
    /** the Term */
    var term: Option[Term] = None
+   /** getter for term, but only if it is not dirty */
+   def termIfNotDirty = if (dirty) None else term
    /** true if the Term is dirty, i.e., has to be recomputed */
    var dirty: Boolean = false
    /** the time of the last change */
@@ -93,8 +95,8 @@ class TermContainer extends AbstractTermContainer {
    def setAnalyzedDirty {_analyzed.dirty = true}
    /** time of the last change */
    def lastChangeAnalyzed = _analyzed.time
-   /** getter for the best available representation: analyzed or parsed */
-   def get: Option[Term] = _analyzed.term orElse _parsed.term
+   /** getter for the best available non-dirty representation: analyzed or parsed */
+   def get: Option[Term] = _analyzed.termIfNotDirty orElse _parsed.termIfNotDirty
    /** true if any dimension is present, i.e., if the component is present */
    def isDefined = _read.isDefined || get.isDefined
    /** copies over the components of another TermContainer
@@ -103,21 +105,23 @@ class TermContainer extends AbstractTermContainer {
    def update(tc: ComponentContainer) = {tc match {
       case tc: TermContainer =>
          var changed = (read = tc.read)
-         if (!(tc.parsed.isEmpty && tc.read.isDefined)) // keep old, now dirty, value if tc is unparsed
-            changed ||= (parsed = tc.parsed)
-         if (!(tc.analyzed.isEmpty && tc.parsed.isDefined)) // keep old, now dirty, value if tc is unanalyzed
-            changed ||= (analyzed = tc.analyzed)
+         if (changed)
+            true
+         if (changed || tc.parsed.isDefined)
+            changed |= (parsed = tc.parsed)
+         if (changed || tc.analyzed.isDefined)
+            changed |= (analyzed = tc.analyzed)
          changed
       case _ => throw ImplementationError("not a TermContainer")
    }}
+   /** stores the set of components that analysis depended on */
+   lazy val dependsOn = new scala.collection.mutable.HashSet[CPath]
    /** delete this component */
    def delete {
       _read = None
       List(_parsed,_analyzed).foreach {_.delete}
       dependsOn.clear
    }
-   /** stores the set of components that analysis depended on */
-   lazy val dependsOn = new scala.collection.mutable.HashSet[CPath]
 }
 
 /** helper object */

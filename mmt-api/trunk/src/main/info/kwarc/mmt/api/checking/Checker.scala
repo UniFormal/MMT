@@ -53,12 +53,13 @@ trait StructureChecker extends FormatBasedExtension {
 
 /** trivial checkers that do nothing */
 object NullChecker {
-   object objects extends ObjectChecker {
+   class Objects extends ObjectChecker {
       def apply(cu: CheckingUnit, rules: RuleSet)(implicit env: CheckingEnvironment) = {
          CheckingResult(false, None)
       }
    }
-   object structure extends Checker(objects) {
+   class Structure extends Checker(new Objects) {
+      override def init(c: Controller){super.init(c); objectLevel.init(c)}
       val id = "null"
       def apply(e : StructuralElement)(implicit env: CheckingEnvironment) {}
    }

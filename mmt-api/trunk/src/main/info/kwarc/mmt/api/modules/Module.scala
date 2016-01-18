@@ -4,7 +4,7 @@ import symbols._
 import objects._
 
 /**
- * A Module represents an MMT module.<p>
+ * A Module represents an MMT module.
  *
  * @param parent the [[Path]] of the parent document
  * @param name the name of the module

@@ -21,10 +21,28 @@ trait AbstractTermContainer extends ComponentContainer {
 
 /** a dummy container for a stateless term */ 
 class FinalTermContainer(t: objects.Term) extends AbstractTermContainer {
-   def update(nw: ComponentContainer) = true
+   def update(nw: ComponentContainer) = nw match {
+      case nw: FinalTermContainer => nw.get != Some(t)
+      case _ => true
+   }
    def delete {}
    def isDefined = true
    def get = Some(t) 
+}
+
+/** container for a ContentPath */
+class MPathContainer(var path: Option[MPath]) extends AbstractTermContainer {
+   def update(nw: ComponentContainer) = nw match {
+      case nw: MPathContainer =>
+         val changed = path != nw.path
+         path = nw.path
+         changed
+      case _ => throw ImplementationError("expected atomic component")
+   }
+   def delete {path = None}
+   def isDefined = path.isDefined
+   def get = path map {p => objects.OMMOD(p)}
+   def getPath = path
 }
 
 /** A ComponentKey identifies a [[DeclarationComponent]]. */

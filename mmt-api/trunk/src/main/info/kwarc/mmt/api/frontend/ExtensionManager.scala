@@ -36,6 +36,11 @@ trait Extension extends Logger {
     this.controller = controller
     report = controller.report
   }
+  
+  /** any extension can initialize other extensions if those are not meant to be added to the ExtensionManager */
+  protected def initOther(e: Extension) {
+     e.init(controller)
+  }
 
   protected def getFromFirstArgOrEnvvar(args: List[String], name: String,
                                         default: String = ""): String = {
@@ -210,7 +215,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     objects.TheoryExp.metas(thy)(controller.globalLookup) mapFind getFoundation
 
   def stringDescription: String = {
-    knownExtensionTypes.map { cls =>
+    knownExtensionTypes.map {cls =>
       val es = get(cls)
       if (es.isEmpty) "" else cls.getName + "\n" + es.map("  " + _.toString + "\n").mkString("") + "\n\n"
     }.mkString("")
@@ -243,7 +248,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       case _: Exception =>
     }
 
-    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover).foreach { e => addExtension(e) }
+    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover).foreach {e => addExtension(e)}
     // build manager
     addExtension(new TrivialBuildManager)
     //targets, opaque formats, and presenters

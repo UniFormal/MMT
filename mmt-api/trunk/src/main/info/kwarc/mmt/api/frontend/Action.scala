@@ -29,7 +29,7 @@ object Action extends  RegexParsers {
 
   private def action = log | mathpath | archive | oaf | extension | mws | server |
     windowaction | execfile | defactions | scala | mbt |
-    setbase | envvar | read | graph | check | navigate |
+    setbase | envvar | read | interpret | graph | check | navigate |
     printall | printallxml | diff | clear | exit | getaction // getaction must be at end for default get
 
   private def log = logfilets | logfile | loghtml | logconsole | logon | logoff
@@ -62,38 +62,10 @@ object Action extends  RegexParsers {
 
   private def optFilePath = (str ?) ^^ { case in => FilePath(stringToList(in.getOrElse(""), "/")) }
 
-  private def keyMod = str ^^ { case km =>
-    if (km.startsWith("-"))
-      (km.tail, Clean)
-    else if ("*!&".contains(km.last))
-      (km.init, km.last match {
-        case '!' => UpdateOnError(Level.Error)
-        case '&' => BuildDepsFirst(UpdateOnError(Level.Error))
-        case _ => UpdateOnError(Level.Ignore)
-      })
-    else (km, Build)
-  }
-
   private def archbuild = "build" ~> stringList ~ keyMod ~ optFilePath ^^ {
     case ids ~ km ~ in =>
       ArchiveBuild(ids, km._1, km._2, in)
   }
-
-  // the old keyMod must be kept for compatibility reasons of .msl files
-  private def buildModifier =
-    ("--force" | "--onChange" | "--onError\\??(=\\d)?".r | "--clean" | "--depsFirst\\??(=\\d)?".r) ^^ {
-      case "--force" => Build
-      case "--clean" => Clean
-      case "--onError" => UpdateOnError(Level.Error)
-      case "--depsFirst" => BuildDepsFirst(UpdateOnError(Level.Error))
-      case "--onChange" => UpdateOnError(Level.Ignore)
-      case s =>
-        val c = s.last
-        val up = if (c == '?') UpdateOnError(Level.Error, true)
-        else UpdateOnError(c.asDigit - 1, s.contains('?')) // 0 => force
-        if (s.startsWith("--depsFirst")) BuildDepsFirst(up)
-        else up
-    }
 
   private def filebuild = ("make" | "rbuild") ~> str ~ (str *) ^^ {
     case key ~ args => MakeAction(key, args)
@@ -146,7 +118,8 @@ object Action extends  RegexParsers {
 
   private def envvar = "envvar" ~> str ~ quotedStr ^^ { case name ~ value => SetEnvVar(name, value) }
 
-  private def read = "read" ~> file ^^ { f => Read(f) }
+  private def read = "read" ~> file ^^ { f => Read(f, false) }
+  private def interpret = "interpret" ~> file ^^ { f => Read(f, true) }
 
   private def graph = "graph" ~> file ^^ { f => Graph(f) }
 
@@ -223,6 +196,36 @@ object Action extends  RegexParsers {
 
   /** regular expression for quoted string (that may contain whitespace) */
   private def quotedStr = ("\".*\"" r) ^^ { s => s.substring(1, s.length - 1) }
+
+  /** build modifiers */
+  private def keyMod = str ^^ { case km =>
+    if (km.startsWith("-"))
+      (km.tail, Clean)
+    else if ("*!&".contains(km.last))
+      (km.init, km.last match {
+        case '!' => UpdateOnError(Level.Error)
+        case '&' => BuildDepsFirst(UpdateOnError(Level.Error))
+        case _ => UpdateOnError(Level.Ignore)
+      })
+    else (km, Build)
+  }
+
+  /** build modifiers */
+  // the old keyMod must be kept for compatibility reasons of .msl files
+  private def buildModifier =
+    ("--force" | "--onChange" | "--onError\\??(=\\d)?".r | "--clean" | "--depsFirst\\??(=\\d)?".r) ^^ {
+      case "--force" => Build
+      case "--clean" => Clean
+      case "--onError" => UpdateOnError(Level.Error)
+      case "--depsFirst" => BuildDepsFirst(UpdateOnError(Level.Error))
+      case "--onChange" => UpdateOnError(Level.Ignore)
+      case s =>
+        val c = s.last
+        val up = if (c == '?') UpdateOnError(Level.Error, true)
+        else UpdateOnError(c.asDigit - 1, s.contains('?')) // 0 => force
+        if (s.startsWith("--depsFirst")) BuildDepsFirst(up)
+        else up
+    }
 
   /** parses an action from a string, relative to a base path */
   def parseAct(s: String, b: Path, h: File): Action = {
@@ -355,8 +358,8 @@ case class Graph(target: File) extends Action {
   *
   * concrete syntax: read file:FILE
   */
-case class Read(file: File) extends Action {
-  override def toString = "read " + file
+case class Read(file: File, interpret: Boolean) extends Action {
+  override def toString = (if (interpret) "interpret " else "read ") + file
 }
 
 /** check a knowledge item with respect to a certain checker */

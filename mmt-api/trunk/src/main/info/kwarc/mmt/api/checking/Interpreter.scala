@@ -56,6 +56,7 @@ abstract class Interpreter extends Importer {
       case _ => Nil
     }
 
+  //TODO this method does not belong here; also remove any its auxiliary functions
   /** directly resolved logical dependencies */
   override def getDeps(bt: BuildTask): Set[Dependency] = {
     val a = bt.archive
@@ -107,7 +108,7 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Inter
   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): Document = {
     try {
       val doc = parser(ps)(errorCont)
-      checker(doc)(new CheckingEnvironment(errorCont, RelationHandler.ignore))
+      checker(ps.dpath)(new CheckingEnvironment(errorCont, RelationHandler.ignore))
       doc
     } finally {
       ps.stream.close
@@ -116,4 +117,7 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Inter
 }
 
 /** an interpreter created from a trusted parser */
-class OneStepInterpreter(p: Parser) extends TwoStepInterpreter(p, NullChecker.structure)
+class OneStepInterpreter(parser: Parser) extends Interpreter {
+    def format = parser.format
+    def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) = parser(ps)
+}

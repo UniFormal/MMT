@@ -57,7 +57,6 @@ class Report extends Logger {
     val debug = groups contains "debug"
     if (groups.contains("error") || debug)
       handlers.foreach(_.apply(ind, e, debug))
-
   }
 
   /** flushes all handlers */

@@ -37,8 +37,8 @@ object NotationScope {
  * 
  * if the only marker is SeqArg, it must hold that OMA(name, List(x)) = x because sequences of length 1 are parsed as themselves 
  */
-class TextNotation(val fixity: Fixity, val precedence: Precedence, val meta: Option[MPath],
-                   val scope : NotationScope = NotationScope.default) extends metadata.HasMetaData {
+case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPath],
+                        scope : NotationScope = NotationScope.default) extends metadata.HasMetaData {
    /** @return the list of markers used for parsing/presenting with this notations */
    lazy val markers: List[Marker] = fixity.markers
    /** @return the arity of this notation */
@@ -145,7 +145,8 @@ class TextNotation(val fixity: Fixity, val precedence: Precedence, val meta: Opt
 }
 
 object TextNotation {
-   def apply(prec: Precedence, meta: Option[MPath], scope : NotationScope = NotationScope.default)(ms: Any*): TextNotation = {
+   /** helpful when constructing notations programmatically */
+   def fromMarkers(prec: Precedence, meta: Option[MPath], scope : NotationScope = NotationScope.default)(ms: Any*): TextNotation = {
       val markers : List[Marker] = ms.toList map {
          case i: Int => Arg(i)
          case m: Marker => m

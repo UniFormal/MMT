@@ -118,7 +118,6 @@ class Controller extends ROController with ActionHandling with Logger {
    */
   private[api] def notifyListeners = new Notify(extman.get(classOf[ChangeListener]), report)
 
-
   // **************************** control state and configuration
   
   /** all control state */
@@ -148,8 +147,8 @@ class Controller extends ROController with ActionHandling with Logger {
   /** @return the current OAF root */
   def getOAF: Option[OAF] = {
     val ocO = state.config.getEntries(classOf[OAFConf]).headOption
-    ocO map { oc =>
-      if (oc.local.isDirectory)
+    ocO map {oc =>
+      if (!oc.local.isDirectory)
         throw GeneralError(oc.local + " is not a directory")
       new OAF(oc.remote.getOrElse(OAF.defaultURL), oc.local, report)
     }
@@ -202,28 +201,27 @@ class Controller extends ROController with ActionHandling with Logger {
         deactivate(doc)
      }
      // find an appropriate interpreter
-     log((if (interpret)"interpreting " else "parsing ") + ps.source + " with format " + ps.format +
+     log((if (interpret) "interpreting " else "parsing ") + ps.source + " with format " + ps.format +
       (if (mayImport) "; using importer if necessary" else ""))
-     var interpreterOpt = if (interpret) {
+     lazy val fromImporter = if (mayImport) {
+        extman.get(classOf[Importer]).find {imp =>
+            imp.inExts contains ps.format
+        }.map {imp => imp.asInterpreter}
+     } else None
+     val interpreterOpt = if (interpret) {
         extman.get(classOf[Interpreter], ps.format) orElse
-           extman.get(classOf[Parser], ps.format).map(p => new OneStepInterpreter(p))
+           fromImporter orElse
+              extman.get(classOf[Parser], ps.format).map(_.asInterpreter)
      } else {
         val parserOpt = extman.get(classOf[Parser], ps.format) orElse {
            extman.get(classOf[TwoStepInterpreter], ps.format).map(_.parser)
         }
-        parserOpt.map {p => new OneStepInterpreter(p)}
-     }
-     interpreterOpt = interpreterOpt orElse {
-        if (mayImport) {
-          extman.get(classOf[Importer]).find { imp =>
-            imp.inExts contains ps.format
-          }.map { imp => imp.asInterpreter }
-        } else None
+        parserOpt.map(_.asInterpreter) orElse fromImporter
      }
      val interpreter = interpreterOpt.getOrElse {
        throw GeneralError(s"no ${if (interpret) "interpreter" else "parser"} for format ${ps.format} found")
      }
-     // interprete the document
+     // interpret the document
      val newDoc = interpreter(ps)
      // (M): delete all now-inactive parts of the old structure 
      oldDocOpt.foreach {doc => deleteInactive(doc)}
@@ -333,14 +331,13 @@ class Controller extends ROController with ActionHandling with Logger {
                *   and the new child declarations are recursively added or merged into the old ones later on.
                * Otherwise, the new element is added as usual.
                * When adding elements to Body, the order is irrelevant because the children are stored as a set;
-               *  but when adding to a Document (including Body.asDocument), the order matters;
-               *  adding Declarations to Body works because no SRefs in Body.asDocument are never reused.
-               *  TODO NarrativeElement are not ordered properly yet.
+               *  but when adding to a Document (including Body.asDocument), the order matters.
+               *  Therefore, we call reorder after every add/update.
                */
               if (old.compatible(nw)) {
-                log("activating " + old.path)
-                // update metadata
-                old.metadata = nw.metadata // no change management for metadata so far
+                log("reusing deactivated " + old.path)
+                // update everything but components and children
+                old.merge(nw)
                 var hasChanged = false // will be true if a component changed
                 var deletedKeys = old.getComponents.map(_.key).toSet // will contain the list of no-longer-present components 
                 // update/add components
@@ -348,14 +345,18 @@ class Controller extends ROController with ActionHandling with Logger {
                   deletedKeys -= comp 
                   old.getComponent(comp).foreach {oldCont =>
                     val ch = oldCont.update(cont)
-                    hasChanged ||= ch
+                    if (ch) {
+                       log(comp.toString + " changed or added")
+                       hasChanged = true
+                    }
                   }
                 }
                 // delete components
                 if (deletedKeys.nonEmpty)
-                   hasChanged = true
+                  hasChanged = true
                 deletedKeys foreach {comp =>
                   old.getComponent(comp).foreach {
+                    log(comp.toString + " deleted")
                     _.delete
                   }
                 }
@@ -366,11 +367,12 @@ class Controller extends ROController with ActionHandling with Logger {
                    notifyListeners.onUpdate(nw)
               } else {
                 // delete the deactivated old one, and add the new one
-                log("deleting deactivated " + old.path)
+                log("overwriting deactivated " + old.path)
                 memory.content.update(nw)
                 //if (old.getOrigin != DefaultAssignment) notifyListeners.onDelete(old) // an old hack that should not be necessary anymore
                 notifyListeners.onUpdate(nw)
               }
+              memory.content.reorder(nw.path)
             //case Some(_) => // in this case, we could already report an error; but the None case reports it anyway
             case _ =>
               // the normal case
@@ -393,13 +395,21 @@ class Controller extends ROController with ActionHandling with Logger {
 
   /** marks this and its descendants as inactive */
   private def deactivate(se: StructuralElement) {
-     log("deactivating " + se.path)
-     se.status = Inactive
-     se.getDeclarations foreach deactivate
+     if (!se.isGenerated)
+       // generated constants and refs to them (see (*)) should be updated/removed by change listeners
+       se.status = Inactive
+     //log("deactivating " + se.path)
      se match {
         case b: modules.Body =>
-           deactivate(b.asDocument)
+           b.asDocument.getDeclarations foreach deactivate
+        case r: NRef =>
+           localLookup.getO(r.target) foreach {d =>
+              if (d.isGenerated)
+                 se.status = Active //(*)
+              deactivate(d)
+           }
         case _ =>
+           se.getDeclarations foreach deactivate
      }
   }
   /** deletes all inactive descendants */
@@ -407,13 +417,16 @@ class Controller extends ROController with ActionHandling with Logger {
      if (se.status == Inactive) {
         log("deleting deactivated " + se.path)
         delete(se.path)
+        notifyListeners.onDelete(se)
      } else {
-        se.getDeclarations foreach deleteInactive
-     }
-     se match {
-        case b: modules.Body =>
-           deleteInactive(b.asDocument)
-        case _ =>
+        se match {
+           case b: modules.Body =>
+              deleteInactive(b.asDocument)
+           case r: NRef =>
+              localLookup.getO(r.target) foreach deleteInactive
+           case _ =>
+              se.getDeclarations foreach deleteInactive
+        }
      }
   }
    

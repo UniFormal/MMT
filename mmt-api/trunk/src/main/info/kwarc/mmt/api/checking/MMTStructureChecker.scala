@@ -11,6 +11,7 @@ import patterns._
 import ontology._
 import utils._
 import moc._
+import parser._
 import frontend._
 import opaque._
 
@@ -45,7 +46,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @param e the element to check
     */
    def apply(e : StructuralElement)(implicit ce: CheckingEnvironment) {
-      check(Context(), e)
+      check(Context.empty, e)
    }
    /**
     * @param context all variables and theories that may be used in e (including the theory in which is declared)
@@ -158,18 +159,18 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             /* auxiliary function for structural checking of a term:
              * @return unknown variables, structural reconstruction, boolean result of latter
              */
-            def prepareTerm(t: Term) : (Context, Term, Boolean) = {
-               val (unknowns,tU) = parser.ObjectParser.splitOffUnknowns(t)
-               val (tR, valid) = checkTermTop(context ++ unknowns, tU)
-               (unknowns, tR, valid)
+            def prepareTerm(t: Term) : (ParseResult, Boolean) = {
+               val pr = ParseResult.fromTerm(t)
+               val (tR, valid) = checkTermTop(context ++ pr.unknown ++ pr.free, pr.term)
+               (ParseResult(pr.unknown, pr.free, tR), valid)
             }
             // = checking the type =
             // check that the type of c (if given) is in a universe
             getTermToCheck(c.tpC, "type") foreach {t =>
-               val (unknowns, tR, valid) = prepareTerm(t)
+               val (pr, valid) = prepareTerm(t)
                if (valid) {
-                  val j = Inhabitable(Stack(Context()), tR)
-                  objectChecker(CheckingUnit(Some(c.path $ TypeComponent), context, unknowns, j), env.rules)
+                  val j = Inhabitable(Stack(pr.free), pr.term)
+                  objectChecker(CheckingUnit(Some(c.path $ TypeComponent), context, pr.unknown, j), env.rules)
                }
             }
             // == additional check in a link ==
@@ -190,21 +191,21 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             // check that the definiens of c (if given) type-checks against the type of c (if given)
             val tpVar = CheckingUnit.unknownType
             getTermToCheck(c.dfC, "definiens") foreach {d =>
-              val (unk, dR, valid) = prepareTerm(d)
+              val (pr, valid) = prepareTerm(d)
               if (valid) {
                 val cp = c.path $ DefComponent
                 var performCheck = true
                 val (unknowns,expTp,inferType) = c.tp match {
                   case Some(t) =>
-                     (unk, t, false)
+                     (pr.unknown, t, false)
                   case None =>
                      if (d.isInstanceOf[OMID])
                         // no need to check atomic definiens without expected type
                         // slightly hacky trick to allow atomic definitions in the absence of a type system
                         performCheck = false
-                     (unk ++ VarDecl(tpVar,None,None,None), OMV(tpVar), true)
+                     (pr.unknown ++ VarDecl(tpVar,None,None,None), OMV(tpVar), true)
                 }
-                val j = Typing(Stack(Context.empty), dR, expTp, None)
+                val j = Typing(Stack(pr.free), pr.term, expTp, None)
                 if (performCheck) {
                    val cr = objectChecker(CheckingUnit(Some(cp), context, unknowns, j), env.rules)
                    if (inferType && cr.solved) {
@@ -236,17 +237,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             //succeed for everything else but signal error
             logError("unchecked " + path)
       }
-      // call the registered change listeners
-      e match {
-         case ce: ContentElement =>
-            new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(ce)
-            //TODO set Checked status
-         case _ =>
-      }
+      new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
    }
    
   /** determines which dimension of a term (parsed, analyzed, or neither) is checked */
-  private def getTermToCheck(tc: TermContainer, dim: String) =
+  private def getTermToCheck(tc: TermContainer, dim: String) = {
       if (tc.parsed.isDefined && tc.analyzed.isDefined) {
          if (tc.isAnalyzedDirty) {
             log(s"re-checking dirty $dim")
@@ -263,6 +258,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             log(s"no $dim given")
          t
       }
+  }
 
   /** checks whether a theory object is well-formed
     *  @param context the context relative to which m is checked
