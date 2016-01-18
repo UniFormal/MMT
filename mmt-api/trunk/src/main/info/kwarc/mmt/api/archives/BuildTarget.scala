@@ -133,12 +133,12 @@ abstract class BuildTarget extends FormatBasedExtension {
   /** defaults to the key */
   override def logPrefix: String = key
 
-  private def verbOpts: OptionDescrs = List(
+  def verbOpts: OptionDescrs = List(
     OptionDescr("quiet", "q", NoArg, "do not show result information"),
     OptionDescr("verbose", "v", NoArg, "show log information")
   )
   /** options to be overridden by subclasses */
-  protected def buildOpts: OptionDescrs = Nil
+  def buildOpts: OptionDescrs = Nil
   /** the map computed from buildOpts */
   protected var optionsMap: OptionMap = Map.empty
   /** arguments to be consumed by subclasses */

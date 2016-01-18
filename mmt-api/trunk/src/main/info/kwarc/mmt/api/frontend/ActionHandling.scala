@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
 import archives._
+import info.kwarc.mmt.api.frontend.AnaArgs.OptionDescrs
 import utils._
 import checking._
 import web._
@@ -149,7 +150,11 @@ trait ActionHandling {self: Controller =>
         if (act != NoAction && showLog) report("user", act.toString + " finished")
     }
   }
-  
+
+  def usageOption: OptionDescrs = List(
+    OptionDescr("usage", "", NoArg, "display usage message"),
+    OptionDescr("help-command", "", NoArg, "help about the build target"))
+
   def makeAction(key: String, allArgs: List[String]) {
     report.addHandler(ConsoleHandler)
     val optPair = BuildTargetModifier.splitArgs(allArgs, s => logError(s))
@@ -168,27 +173,33 @@ trait ActionHandling {self: Controller =>
         }
       }
       val inputs = realFiles flatMap collectInputs
+      val (usageOpts, _) = AnaArgs(usageOption, args)
       val bt = extman.getOrAddExtension(classOf[BuildTarget], key, args)
-      inputs foreach { case (root, fp) =>
-        addArchive(root) // add the archive
-        backend.getArchive(root) match {
-          case None =>
-            // opening may fail despite resolveAnyPhysical (i.e. formerly by a MANIFEST.MF without id)
-            logError("not an archive: " + root)
-          case Some(archive) =>
-            if (!bt.quiet) report.groups += bt.key + "-result" // ensure logging if non-quiet
-            if (bt.verbose) report.groups += bt.key
-            val inPath = fp.segments match {
-              case dim :: path =>
-                bt match {
-                  case bt: TraversingBuildTarget if dim != bt.inDim.toString =>
-                    logError("wrong in-dimension \"" + dim + "\"")
-                  case _ =>
-                }
-                FilePath(path)
-              case Nil => EmptyPath
-            }
-            bt(mod, archive, inPath)
+      if (usageOpts.nonEmpty) {
+        AnaArgs.usageMessage(ShellArguments.toplevelArgs ++ usageOption ++
+          BuildTargetModifier.optDescrs ++ bt.verbOpts ++ bt.buildOpts).foreach(println)
+      } else {
+        inputs foreach { case (root, fp) =>
+          addArchive(root) // add the archive
+          backend.getArchive(root) match {
+            case None =>
+              // opening may fail despite resolveAnyPhysical (i.e. formerly by a MANIFEST.MF without id)
+              logError("not an archive: " + root)
+            case Some(archive) =>
+              if (!bt.quiet) report.groups += bt.key + "-result" // ensure logging if non-quiet
+              if (bt.verbose) report.groups += bt.key
+              val inPath = fp.segments match {
+                case dim :: path =>
+                  bt match {
+                    case bt: TraversingBuildTarget if dim != bt.inDim.toString =>
+                      logError("wrong in-dimension \"" + dim + "\"")
+                    case _ =>
+                  }
+                  FilePath(path)
+                case Nil => EmptyPath
+              }
+              bt(mod, archive, inPath)
+          }
         }
       }
     }
