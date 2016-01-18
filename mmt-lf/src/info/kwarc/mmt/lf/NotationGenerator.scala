@@ -43,7 +43,8 @@ class NotationGenerator extends ChangeListener {
          val notC = c.notC
          if (notC.parsing.isDefined && notC.presentation.isDefined) return
          val tpU = c.tpC.get.getOrElse(return) // nothing to do if there is no (function) type
-         val (_, tp) = parser.ObjectParser.splitOffUnknowns(tpU)
+         val tp = parser.ParseResult.fromTerm(tpU).term
+         //TODO handle free variables here?
          val (args, scp) = FunType.unapply(tp).getOrElse(return)
          val numTotalArgs = args.length
          if (numTotalArgs == 0 || ! isJudgment(scp)) return

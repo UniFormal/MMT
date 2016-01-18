@@ -49,7 +49,6 @@ class SimplificationRuleGenerator extends ChangeListener {
   }
      
   override def onUpdate(e: StructuralElement) {
-     onDelete(e)
      onAdd(e)
   }
   override def onAdd(e: StructuralElement) {onCheck(e)}
@@ -59,18 +58,20 @@ class SimplificationRuleGenerator extends ChangeListener {
   override def onCheck(e: StructuralElement) {
        val c = e match {
           case c: symbols.Constant if c.rl == Some(SimplifyTag) =>
+             val name = c.name
              if (c.tpC.analyzed.isDefined) {
                 // check if an up-to-date rule for this constant exists already: if so break, otherwise delete it
                 getGeneratedRule(c.path) foreach {r =>
                    if (r.validSince >= c.tpC.lastChangeAnalyzed) {
-                      log("rule is up-to-date")
+                      log(s"rule for $name is up-to-date")
                       return
                    } else
                       controller.delete(rulePath(r))
                 }
                 c
              } else {
-                log("not valid, skipped")
+                if (c.tp.isDefined)
+                   log(s"type of $name not valid or not checked yet, skipped")
                 return
              }
           case _ => return

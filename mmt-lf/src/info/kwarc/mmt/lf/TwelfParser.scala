@@ -306,14 +306,14 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     def computeReturnValue = {
       val term = getSlice(start, i - 1)
       val pu = ParsingUnit(getSourceRef(start, i - 1), context, term, prefixes)
-      val obj = try {
+      val pr = try {
          objectLevel(pu)(ErrorThrower)
       } catch {case e: Error =>
          errors ::= TextParseError(toPos(start), "object continuation caused error: " + e.getMessage)
          DefaultObjectParser(pu)(ErrorThrower)
       }
       
-      (obj, i)
+      (pr.toTerm, i)
     }
 
     throw TextParseError(toPos(i), "end of file reached while reading term")
@@ -750,7 +750,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
   {
     var i = skipws(crawlKeyword(start, "%meta"))
     val (metaTheoryName, positionAfter) = crawlIdentifier(i)    // read meta theory name
-    parent.meta = moduleToAbsoluteURI(i, metaTheoryName)
+    parent.metaC.path = moduleToAbsoluteURI(i, metaTheoryName)
     i = positionAfter
     val endsAt = expectNext(i, ".")
     return endsAt + 1
@@ -1234,9 +1234,11 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     i = expectNext(i, "=")
     i += 1    // jump over "="
     i = skipws(i)
-    
+    // default to meta-theory LF
+    if (meta.isEmpty)
+       meta = Some(LF._path)
+
     var theory : Theory = null
-        
     if (flat.codePointAt(i) == '{') {
        // It's a DeclaredTheory
        i = expectNext(i, "{")
