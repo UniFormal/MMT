@@ -189,12 +189,10 @@ Non-commands are MMT code.
 
           val pu = ParsingUnit(SourceRef.anonymous(str),
             Context(theory), str, NamespaceMap(theory.doc), None)
-          val t : Term = controller.extman.get(classOf[Parser],
-            "mmt").get.apply(pu)(ErrorThrower)
-          //
-
+          val parser = controller.extman.get(classOf[Parser], "mmt").get
+          val t = parser(pu)(ErrorThrower).toTerm
           //Type checking
-	  val stack = Stack(Context(theory))
+	       val stack = Stack(Context(theory))
           val solveout = checking.Solver.check(controller, stack, t)
 
           val (tR, tpR) = solveout match{

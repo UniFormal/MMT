@@ -26,14 +26,19 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
    //val dIMG = new ImageIcon(this.getClass().getResource("/images/clear_button.png")).getImage()
    //val mIMG = new ImageIcon(this.getClass().getResource("/images/clear_button.png")).getImage()
 
+  import java.awt.{Point,Color}
+
+  // imperatively reusing the same variables for efficiency
   private val segment = new Segment
+  private val startPoint = new Point
+  // parameters for coloring the delimiters
+  private val high = 255
+  private val low = 192
 
   override def paintValidLine(gfx: java.awt.Graphics2D, screenLine: Int, physicalLine: Int, startOffset: Int, endOffset: Int, y: Int) {
-    import java.awt.{Point,Color}
     val height = painter.getFontHeight()
     val width = painter.getFontMetrics().getWidths()(29)
-    val s = segment
-    textArea.getLineText(physicalLine, s)
+    textArea.getLineText(physicalLine, segment) // stores the line in 'segment'
     val font = painter.getFont
     def paintDelim(startPoint: Point, color: Color, letter: String) {
        //gfx.setColor(Color.WHITE)
@@ -44,25 +49,31 @@ class MMTTextAreaExtension(controller: Controller, editPane: EditPane) extends T
        gfx.setFont(new Font(font.getName(), Font.PLAIN, font.getSize()*2/3))
        gfx.drawString(letter, startPoint.x + width/4, startPoint.y + height*3/4)
     }
-    val linelen = s.count
-    val txtsegm = s.array
-    val high = 255
-    val low = 192
     var globalOffset = 0
-    for (localOffset <- 0 to linelen-1) {
-      globalOffset = localOffset + s.offset
-      val startPoint = textArea.offsetToXY(physicalLine, localOffset)
-      txtsegm(globalOffset).toInt match {
-        case 28 =>
-          paintDelim(startPoint, new Color(high, low, low), "S")
-        case 29 =>
-          paintDelim(startPoint, new Color(high, low, low), "M")
-        case 30 =>
-          paintDelim(startPoint, new Color(low, high, low), "D")
-        case 31 =>
-          paintDelim(startPoint, new Color(low, low, high), "O")
-        case _ =>
-      }
+    try {
+       val txtsegm = segment.array
+       (0 to segment.count) foreach {localOffset =>
+         globalOffset = localOffset + segment.offset
+         // assigns to startPoint; or returns null if line not visible (which sometimes happens)
+         val res = textArea.offsetToXY(physicalLine, localOffset, startPoint)
+         if (res != null) txtsegm(globalOffset).toInt match {
+           case 28 =>
+             paintDelim(startPoint, new Color(high, low, low), "S")
+           case 29 =>
+             paintDelim(startPoint, new Color(high, low, low), "M")
+           case 30 =>
+             paintDelim(startPoint, new Color(low, high, low), "D")
+           case 31 =>
+             paintDelim(startPoint, new Color(low, low, high), "O")
+           case _ =>
+         }
+       }
+    } catch {
+       // need to hide all exceptions because jEdit removes our painter if it throws exceptions
+       // e.g., sometimes txtsegm(globalOffset) throws ArrayIndexOutOfBounds
+       // maybe because the buffer changes while we're painting?
+       case e:Exception =>
+          // log(e.getClass.toString + ": " + e.getMessage)
     }
   }   
 
