@@ -20,3 +20,8 @@ mmttex     info.kwarc.mmt.latex.MMTTeX
 
 #semantics
 http://cds.omdoc.org/urtheories?LF info.kwarc.mmt.lf.Plugin
+
+#namespaces
+ur         http://cds.omdoc.org/urtheories
+syn        http://latin.omdoc.org/logics/syntax
+models     http://models.latin.omdoc.org/
