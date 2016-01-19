@@ -518,7 +518,7 @@ class STeXImporter extends Importer {
             }
             val prec = Precedence.integer(0)
             val verbScope = NotationScope(None, sTeX.getLanguage(thy.path).toList, 0)
-            val not = TextNotation(prec, None, verbScope)(markers: _*)
+            val not = TextNotation.fromMarkers(prec, None, verbScope)(markers: _*)
             const.notC.verbalizationDim.set(not)
             val doc = controller.getDocument(const.parent.doc, d => "cannot find parent doc for reindexing" + d)
             docCont(doc.path)(doc) //reindexing that document
