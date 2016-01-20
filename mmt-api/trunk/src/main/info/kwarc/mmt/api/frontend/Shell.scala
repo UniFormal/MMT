@@ -1,7 +1,8 @@
 package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
-import archives.BuildManager
+import info.kwarc.mmt.api.archives.{BuildQueue, BuildManager}
+import info.kwarc.mmt.api.frontend.AnaArgs.OptionDescrs
 import utils._
 
 /** Creates a Controller and provides a shell interface to it.
@@ -60,6 +61,10 @@ class Shell {
       Nil: List[String]
     }
 
+    if (args.useQueue)
+      {
+        controller.extman.addExtension(new BuildQueue)
+      }
     val commands = mmtCommands ++ mbtCommands ++ args.commands
 
     // maybe we want to send something to the remote

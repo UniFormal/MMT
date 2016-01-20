@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html ng-app="buildQueueApp">
+<meta charset="UTF-8">
+<head>
+    <script src="script/angularjs/angular-1.3.14/angular.min.js"></script>
+    <script src="script/buildqueue/buildqueue.js"></script>
+</head>
+<body>
+<h3 style="display:inline">BuildQueue viewer</h3>
+
+<div ng-controller="QueueViewer">
+    <p>refresh rate:
+    <input type="number" min="0" max="10000" ng-click="stopRepeat(); repeat()" ng-model="refreshRate"/>
+        queue length {{queue.length}}</p>
+    queue<ul>
+    <li ng-repeat="e in queue.queue">{{e}}</li>
+    </ul>
+    blocked<ul>
+    <li ng-repeat="e in queue.blocked">{{e}}</li>
+    </ul>
+    finished<ul>
+    <li ng-repeat="e in queue.finished">
+        {{e.dependency}} {{e.result.success}}
+        <ul>
+            <li ng-repeat="n in e.result.needed">
+            {{n}}
+        </ul>
+        used
+        <ul>
+            <li ng-repeat="n in e.result.used">
+            {{n}}
+        </ul>
+        provided
+        <ul>
+            <li ng-repeat="n in e.result.provided">
+            {{n}}
+        </ul>
+    </li>
+    </ul>
+</div>
+</body>
+</html>

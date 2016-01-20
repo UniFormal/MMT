@@ -167,7 +167,8 @@ case class ShellArguments(
    commands: List[String],
    shell: Boolean,
    noshell: Boolean,
-   keepalive: Boolean
+   keepalive: Boolean,
+   useQueue: Boolean
  ) {
    /** decides whether or not to show the shell
     *  default behavior: show shell if nothing else is happening
@@ -191,7 +192,8 @@ object ShellArguments {
     OptionDescr("send", "", IntArg, "send commands to remote port"),
     OptionDescr("mbt", "", StringListArg, "mbt input file "),
     OptionDescr("file", "", StringListArg, "msl input file"),
-    OptionDescr("cfg", "", StringListArg, "config input file")
+    OptionDescr("cfg", "", StringListArg, "config input file"),
+    OptionDescr("queue", "", NoArg, "start a build queue")
   )
 
   def parse(arguments: List[String]): Option[ShellArguments] = {
@@ -209,7 +211,8 @@ object ShellArguments {
       commands = cs,
       shell = m.get("shell").isDefined,
       noshell = m.get("noshell").isDefined,
-      keepalive = m.get("keepalive").isDefined
+      keepalive = m.get("keepalive").isDefined,
+      useQueue = m.get("queue").isDefined
     )
     val fs = sa.mmtFiles ++ sa.scalaFiles ++ sa.cfgFiles
     if (helpFlag && aboutFlag) {

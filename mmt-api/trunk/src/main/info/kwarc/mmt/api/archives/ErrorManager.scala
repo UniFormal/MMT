@@ -84,8 +84,10 @@ object ErrorReader {
       if (lvl >= errorLevel)
         bes ::= ErrorContent(errType, lvl, srcR, shortMsg)
     }
-    if (node.child.isEmpty && emptyErr)
-      bes ::= ErrorContent("", 0, None, "corrupt error file")
+    if (node.child.isEmpty && (emptyErr || errorLevel <= Level.Force)) {
+      bes ::= (if (emptyErr) ErrorContent("", 0, None, "corrupt error file")
+      else ErrorContent("", 0, None, "no error"))
+    }
     bes.reverse
   }
 }
@@ -103,6 +105,9 @@ class ErrorManager extends Extension with Logger {
   override val logPrefix = "errormanager"
   /** the mutable data: one ErrorMap per open Archive */
   private var errorMaps: List[ErrorMap] = Nil
+
+  /** the error level to pick */
+  private var level: Level = Level.Error
 
   /**
    * @param id the archive
@@ -122,15 +127,15 @@ class ErrorManager extends Extension with Logger {
     }
   }
 
-  /**
-   * @param a the archive
-   * @param target the build target
-   * @param fpath the file
-   *              load all errors of a build target applied to a file
-   */
+  /** load all errors of a build target applied to a file
+    *
+    * @param a      the archive
+    * @param target the build target
+    * @param fpath  the file
+    */
   def loadErrors(a: Archive, target: String, fpath: FilePath): Unit = {
     val f = a / errors / target / fpath
-    val bes = ErrorReader.getBuildErrors(f, Level.Error, Some((s: String) => log(s))).
+    val bes = ErrorReader.getBuildErrors(f, level, Some((s: String) => log(s))).
       map(BuildError(a, target, fpath.toFile.stripExtension.toFilePath, _))
     val em = apply(a.id)
     em.put((target, fpath.segments), bes)
@@ -145,6 +150,8 @@ class ErrorManager extends Extension with Logger {
 
   /** registers a [[ChangeListener]] and a [[ServerExtension]] */
   override def start(args: List[String]): Unit = {
+    val (m, _) = AnaArgs(List(OptionDescr("level", "", IntArg, "error level to pick (0 means all)")), args)
+    m.get("level").foreach { v => level = v.getIntVal - 1 }
     controller.extman.addExtension(cl)
     controller.extman.addExtension(serve)
     controller.backend.getArchives.foreach { a => loadAllErrors(a) }
