@@ -3,6 +3,13 @@ package info.kwarc.mmt.api.valuebases
 import info.kwarc.mmt.api._
 import objects._
 import utils._
+import uom._
+
+object Codecs {
+   val thy: MPath = ???
+   val list = thy ? "list"
+   val intAsList = thy ? "IntAsList"
+}
 
 /**
  * embeds string encodings into JSON encodings
@@ -12,34 +19,6 @@ object StringToJSON extends Embedding[String,JSON] {
    def extract(j: JSON) = j match {
       case JSONString(s) => Some(s)
       case _ => None
-   }
-}
-
-object OMLITCodec {
-   def tmKey = "term"
-   def tpKey = "type"
-}
-
-import OMLITCodec._
-
-/**
- * codes literals as pairs of string representation and type 
- */
-class OMLITCodec(tp: GlobalName) extends Codec[JSON](OMS(tp)) {
-   def encode(t: Term) = t match {
-      case l: OMLITTrait => JSONObject(
-         tmKey -> JSONString(l.toString),
-         tpKey -> JSONString(tp.toPath)
-      )
-      case _ => throw CodecNotApplicable
-   }
-   
-   def decode(j: JSON) = j match {
-      case j: JSONObject =>
-         val tm = j(tmKey).toString
-         val tp = Path.parseS(j(tpKey).toString, NamespaceMap.empty)
-         UnknownOMLIT(tm, OMS(tp))
-      case _ => throw CodecNotApplicable
    }
 }
 
@@ -71,27 +50,22 @@ class BigIntSplitter(base: BigInt) {
    }
 }
 
-class BigIntCodec(rt: uom.RealizedType) extends Codec[JSON](rt.synType) {
+class BigIntCodec(synType: Term) extends AtomicCodec[BigInt,JSON](Codecs.intAsList, synType, StandardInt) {
    val splitter = new BigIntSplitter(BigInt(1) << 31) // 2^31
    
-   def encode(t: Term) = t match {
-      case l: OMLIT if l.synType == rt.synType && l.value.isInstanceOf[BigInt] =>
-         val i = l.value.asInstanceOf[BigInt]
-         val (sgn, abs) = splitter.split(i) // TODO sign currently ignored 
-         JSONArray(JSONInt(abs.length) :: abs.map(JSONInt(_)) :_*)
-      case _ => throw CodecNotApplicable
+   def encodeRep(i: BigInt) = {
+      val (sgn, abs) = splitter.split(i) // TODO sign currently ignored 
+      JSONArray(JSONInt(abs.length) :: abs.map(JSONInt(_)) :_*)
    }
    
-   def decode(j: JSON) = {
+   def decodeRep(j: JSON): BigInt = {
       j match {
          case JSONArray(_, jdigits @_*) =>
            val digits = jdigits.toList map {
               case JSONInt(i) => i
               case _ => throw CodecNotApplicable
            }
-           val b = splitter.assemble(true, digits)
-           val bU = b.asInstanceOf[rt.univ]  // assuming rt.univ == BigInt
-           rt(bU)
+           splitter.assemble(true, digits)
          case _ => throw CodecNotApplicable
       }
    }
@@ -100,7 +74,7 @@ class BigIntCodec(rt: uom.RealizedType) extends Codec[JSON](rt.synType) {
 /**
  * codes a list as a JSON array
  */
-class ListAsArray(tp: GlobalName, nil: GlobalName, cons: GlobalName) extends ListCodec[JSON](tp, nil, cons) {
+class ListAsArray(tp: GlobalName, nil: GlobalName, cons: GlobalName) extends ListCodec[JSON](Codecs.list, tp, nil, cons) {
    def encode(args: List[JSON]): JSON = {
       JSONArray(args :_*)
    }
@@ -111,4 +85,3 @@ class ListAsArray(tp: GlobalName, nil: GlobalName, cons: GlobalName) extends Lis
       }
    }
 }
-

@@ -3,15 +3,6 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import parser._
 
-/*
-/** a reservoir of ground values that can be used to implement [[SemanticType]]s */
-abstract class Any
-case class Integer(value: BigInt) extends Any
-case class DoubleType(value: Double) extends Any
-case class StringType(value: String) extends Any
-case class Sequence(values: List[Any]) extends Any
-*/
-
 /**
  * SemanticType's are closed under subtypes and quotients by using valid and normalform.
  * 
@@ -84,6 +75,26 @@ class ListType(val over: SemanticType) extends SemanticType {
    }
 }
 
+object TupleType {
+   val matcher = new utils.StringMatcher2Sep("(",",",")")
+}
+class TupleType(val over: SemanticType, val dim: Int) extends SemanticType {
+   override def valid(u: Any) = u match {
+      case us: List[_] if us.length == dim => us.forall(over.valid)
+      case _ => false
+   }
+   override def normalform(u: Any) = u match {
+      case us: List[_] => us map over.normalform
+   }
+   def fromString(s: String) = {
+      val us = TupleType.matcher.unapply(s).get
+      us map over.fromString
+   }
+   def toString(u: Any) = u match {
+      case us: List[_] => TupleType.matcher(us map over.toString)
+   }
+}
+
 abstract class Subtype(val of: SemanticType) extends SemanticType {
    def by(u: Any): Boolean
    override def valid(u: Any) = of.valid(u) && by(u)
@@ -114,6 +125,8 @@ trait RepresentationType[V] {
 abstract class Atomic[V] extends SemanticType with RepresentationType[V] {
    override def valid(u: Any) = unapply(u).isDefined
    def toString(u: Any) = unapply(u).get.toString
+   /** narrower type */
+   def fromString(s: String): V
 }
 
 /** bundles functions that are typically used when defining literals based on integers */
