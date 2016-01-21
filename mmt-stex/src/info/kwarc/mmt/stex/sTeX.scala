@@ -9,6 +9,7 @@ import objects._
 import informal._
 import utils._
 import metadata._
+import uom.OMLiteral.OMSTR
 
 
 object sTeXMetaData {
