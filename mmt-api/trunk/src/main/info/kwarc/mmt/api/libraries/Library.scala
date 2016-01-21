@@ -363,7 +363,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
                val sym = get(l.from, ln, sourceError)
                translateByLink(sym, l, error) // translate the result along the link
            }
-         case _ => throw GetError(name + " is not declared in " + t.path)
+         case _ => throw NotFound(t.path ? name)//GetError(name + " is not declared in " + t.path)
           }
      }
   }

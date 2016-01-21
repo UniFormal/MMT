@@ -15,6 +15,9 @@ object Lmfdbtest {
        extension info.kwarc.mmt.odk.LMFDB.Plugin
     """.split("\n").foreach(controller.handleLine(_))
 
-    controller.get(Path.parse("http://mathhub.info/ODK?EC_11a1"))
+    val c = controller.get(Path.parse("http://www.lmfdb.org/?elliptic_curves?11a1"))
+    val d = controller.get(Path.parse("http://www.lmfdb.org/?elliptic_curves?35a2"))
+    println(c)
+    println(d)
   }
 }

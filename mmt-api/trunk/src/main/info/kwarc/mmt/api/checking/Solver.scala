@@ -655,7 +655,22 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
               solveType(x, tp) //TODO: check for occurrences of bound variables?
             else
               error("untyped variable type-checks against nothing: " + x)
-         case Some(t) => check(Subtyping(stack, t, tp))
+         // TODO: Make this less ugly! (Necessary to get DynamicLF work (checking of typed variables against a type using rules))
+         case Some(t) =>  safecheck(Subtyping(stack, t, tp)) match { // check, whether given type already checks out; if not, look for rules
+           case Some(true) =>
+             check(Subtyping(stack, t, tp))
+           case _ => limitedSimplify(tp,rules.get(classOf[TypingRule])) match {
+             case (tpS, Some(rule)) =>
+               try {
+                 rule(this)(tm, tpS)
+               } catch {case TypingRule.SwitchToInference =>
+                 checkByInference(tpS)
+               }
+             case (tpS, None) =>
+               // either this is an atomic type, or no typing rule is known
+               checkByInference(tpS)
+           }
+         }
        }
        case OMS(p) =>
          getType(p) match {
