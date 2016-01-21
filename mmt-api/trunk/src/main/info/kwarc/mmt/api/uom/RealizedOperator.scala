@@ -5,9 +5,13 @@ import objects._
 import parser._
 
 /**
- * A RealizedType couples a syntactic type (a [[Term]]) with a semantic type (a PER on the [[Universe]]).
+ * A RealizedType couples a syntactic type (a [[Term]]) with a semantic type (a PER on the universe of Scala values).
  */
 class RealizedType(val synType: Term, val semType: SemanticType) extends uom.UOMRule {
+   override def equals(that: Any) = that match {
+      case rt: RealizedType => synType == rt.synType && semType == rt.semType
+      case _ => false
+   }
    type univ = Any
    def head = synType.head match {
       case Some(h: GlobalName) => h

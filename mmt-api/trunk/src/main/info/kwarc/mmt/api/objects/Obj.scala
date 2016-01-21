@@ -369,7 +369,7 @@ sealed trait OMLITTrait extends Term {
 
    /** checks equality, including the case [[OMLIT]] =?= [[UnknownOMLIT]] */
    override def equals(that: Any): Boolean = (this, that) match {
-      case (l: OMLIT, m: OMLIT) => l.rt.synType == m.rt.synType && l.rt.semType == m.rt.semType && l.value == m.value
+      case (l: OMLIT, m: OMLIT) => l.rt == m.rt && l.value == m.value
       case (l: UnknownOMLIT, m: UnknownOMLIT) => l.synType == m.synType && l.value == m.value
       case (l: OMLIT, m: UnknownOMLIT) =>
          (l.synType == m.synType) && l == l.rt.parse(m.value) 
