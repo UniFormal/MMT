@@ -275,6 +275,7 @@ class Collect(comp : GlobalName, var action: GlobalName, var unit: Option[Global
    private case class Quantity(base: Term, amount: BigInt) {
       def add(that: Quantity) = Quantity(base, this.amount + that.amount)
    }
+   import OMLiteral.OMI
    private object QuantityMatcher {
       def unapply(t: Term) : Option[(Term,BigInt)] = t match {
          case OMA(OMS(op), List(base, OMI(n))) if op == action => Some((base, n))

@@ -8,6 +8,9 @@ import objects._
 import utils.MyList.fromList
 import collection.immutable.{HashSet, HashMap}
 
+/** used by [[MMTStructureSimplifier]] */
+case class ByStructureSimplifier(home: Term, view: Term) extends Origin
+
 /**
  * the primary class for all flattening, materialization, enriching of theories
  * 
@@ -192,10 +195,7 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
       val newdfC = TermContainer(c.df.map(rewrite))
       val newname = LocalName(vpath.toPath) / c.home.toMPath.toPath / c.name
       val newCons = new FinalConstant(OMMOD(newhome), newname, c.alias, newtpC, newdfC, c.rl, c.notC)
-      import metadata._
-      newCons.metadata.add(new MetaDatum(MetaDatum.keyBase ? LocalName("type"), OMSTR("Induced")))
-      newCons.metadata.add(new MetaDatum(MetaDatum.keyBase ? LocalName("origin"), c.home))
-      newCons.metadata.add(new MetaDatum(MetaDatum.keyBase ? LocalName("view"), OMID(vpath)))
+      newCons.setOrigin(ByStructureSimplifier(c.home, OMID(vpath)))
       newCons
     case x => x
   }

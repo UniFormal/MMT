@@ -117,12 +117,13 @@ object ParsingStream {
     *
     * @return the parsing stream
     */
-  def fromSourceFile(a: Archive, inPath: FilePath, strOpt: Option[java.io.BufferedReader] = None): ParsingStream = {
+  def fromSourceFile(a: Archive, inPath: FilePath, strOpt: Option[java.io.BufferedReader] = None, nsMapOpt: Option[NamespaceMap] = None): ParsingStream = {
     val inPathOMDoc = inPath.toFile.setExtension("omdoc").segments
     val base = a.narrationBase
     val dpath = DPath(base / inPathOMDoc) // bf.narrationDPath except for extension
     val stream = strOpt.getOrElse(File.Reader(a / source / inPath))
-    ParsingStream(base / inPath.segments, dpath, a.namespaceMap(dpath), inPath.toFile.getExtension.getOrElse(""), stream)
+    val nsMap = nsMapOpt.getOrElse(NamespaceMap.empty) ++ a.namespaceMap 
+    ParsingStream(base / inPath.segments, dpath, nsMap(dpath), inPath.toFile.getExtension.getOrElse(""), stream)
   }
 }
 

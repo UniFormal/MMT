@@ -27,7 +27,7 @@ case class NotFound(path: Path) extends java.lang.Throwable
 
 /** minor variables kept by the controller, usually modifiable via actions */
 class ControllerState {
-  /** MMT base URI */
+  /** namespace prefixes that are in scope */
   var nsMap = NamespaceMap.empty
   /** base URL In the local system
    *  initially the current working directory
@@ -154,6 +154,41 @@ class Controller extends ROController with ActionHandling with Logger {
     }
   }
 
+   /** integrate a configuration into the current state */
+   def loadConfig(conf: MMTConfig, loadEverything: Boolean) {
+       state.config.add(conf)
+       conf.getEntries(classOf[NamespaceConf]).foreach {case NamespaceConf(id,uri) =>
+          state.nsMap = state.nsMap.add(id, uri)
+       }
+       if (loadEverything) {
+         loadAllArchives(conf)
+         loadAllNeededTargets(conf)
+       }
+    }
+    
+   private def loadAllArchives(conf: MMTConfig) {
+       conf.getArchives foreach { arch =>
+        addArchive(File(conf.getBase + arch.id))
+      }
+   }
+
+   private def loadAllNeededTargets(conf: MMTConfig) {
+      val archives = conf.getArchives
+      val activeFormats = archives.flatMap(_.formats).distinct.map {id =>
+        conf.getEntries(classOf[FormatConf]).find(_.id == id).getOrElse(throw new Exception("Unknown format id: " + id))
+      }
+      val preloadedBuildTargets = extman.get(classOf[BuildTarget])
+      val neededTargets = activeFormats.flatMap(f => f.importers ::: f.exporters).distinct.flatMap {key => 
+        if (!preloadedBuildTargets.exists(_.key == key)) {
+          Some(conf.getEntry(classOf[ExtensionConf], key))
+        } else None
+      }
+      neededTargets foreach {comp =>
+        log("loading " + comp.cls)
+        extman.addExtension(comp.cls, comp.args)
+      }
+   }
+
   // *************************** initialization and termination 
   
   private def init {
@@ -176,7 +211,7 @@ class Controller extends ROController with ActionHandling with Logger {
     }
     server = None
   }
-
+  
   // **************************** reading source files
 
   /** parses a ParsingStream with an appropriate parser and optionally checks it

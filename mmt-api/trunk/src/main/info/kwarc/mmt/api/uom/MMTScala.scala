@@ -92,9 +92,11 @@ trait RuleCreators {
    /**
     * adds a rule for implementing a type
     */
-   def universe(synType: GlobalName)(rt: RealizedType) {
-      if (rt.synType == null) rt.init(synType) // included RealizedTypes are already initialized
+   def universe(rt: RealizedType) {
       rule(rt)
+   }
+   def universe(synType: GlobalName)(rt: RealizedType) {
+      universe(rt)
    }
    /** adds a rule for implementing a nullary symbol */
    def function(op:GlobalName, rType: RealizedType)(comp: rType.univ) {

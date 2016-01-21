@@ -337,7 +337,7 @@ class QuoteEval(bQ: String, eQ: String, bE: String, eE: String) extends LexerExt
            val parsed: List[Term] = parts map {
               case QuotePart(q) =>
                  current = current.after(q + bE) 
-                 val t = OMSTR(q.asInstanceOf[OMSTR.univ])
+                 val t = uom.OMLiteral.OMSTR(q)
                  SourceRef.update(t, outer.source.copy(region = SourceRegion(current, current.after(q))))
                  t
               case EvalPart(e) =>

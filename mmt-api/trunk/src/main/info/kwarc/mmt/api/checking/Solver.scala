@@ -916,6 +916,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       // different literals are always non-equal
       (tm1S, tm2S) match {
          case (l1: OMLIT, l2: OMLIT) => if (l1.value != l2.value) return error(s"$l1 and $l2 are inequal literals")
+         // TODO for equal values (and therefore different realized types) check compatibility of the types
          case _ =>
       }
       // solve an unknown

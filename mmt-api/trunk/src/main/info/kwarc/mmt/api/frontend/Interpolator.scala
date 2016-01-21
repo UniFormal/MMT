@@ -8,6 +8,8 @@ import parser._
 
 import scala.math.BigInt.int2bigInt
 
+import uom.OMLiteral._
+
 /**
  * provides convenience methods to be used in an interactive Scala interpreter session
  * 

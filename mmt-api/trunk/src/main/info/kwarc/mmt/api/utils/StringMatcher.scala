@@ -45,6 +45,23 @@ class StringMatcher2(before: String, middle: String, after: String) {
 }
 
 /**
+ * matches S1, ..., Sn in "beforeS1sep...sepSnafter"
+ */
+class StringMatcher2Sep(before: String, sep: String, after: String) {
+   private val baLength = before.length + after.length
+   private val mLength = sep.length
+   def apply(ss: List[String]) = before + ss.mkString(sep) + after
+   def unapply(s: String): Option[List[String]] = {
+      if (s.startsWith(before) && s.endsWith(after)) {
+         val inner = s.substring(before.length, s.length-baLength)
+         val ss = stringToList(inner,sep)
+         Some(ss)
+      } else
+         None
+   }
+}
+
+/**
  * matches S1, S2, S3 in "beforeS1middle1S2middle2S3after"
  *
  * first occurrence of 'middle1' after 'before' and 'middle2' after 'middle1' is used if ambiguous

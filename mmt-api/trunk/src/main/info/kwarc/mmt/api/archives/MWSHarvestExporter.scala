@@ -181,25 +181,22 @@ class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
               objectLevel(o, None)(rh)
             }
           }
-          if (c.metadata.get(MetaDatum.keyBase ? LocalName("type")).map(_.value).contains(OMSTR("Induced"))) { //induced statement
-            val origin = c.metadata.get(MetaDatum.keyBase ? "origin").head.value match {
-              case t : Term => t.toMPath
-            }
-            val view = c.metadata.get(MetaDatum.keyBase ? "view").head.value match {
-              case OMID(p : MPath) => p
-            }
-            val path = c.home.toMPath
-            p {
-              text {
-                " Induced statement found in " + path.toPath + ". "
-              }
-              text {
-                path.last + " is a " + origin.last  + " if we interpret over view " + view.last + ". "
-              }
-              text {
-                origin.last + " contains the statement " + c.name.last + "."
-              }
-            }
+          c.getOrigin match {
+             case ByStructureSimplifier(t, OMID(view)) =>
+               val origin = t.toMPath
+               val path = c.home.toMPath
+               p {
+                 text {
+                   " Induced statement found in " + path.toPath + ". "
+                 }
+                 text {
+                   path.last + " is a " + origin.last  + " if we interpret over view " + view.last + ". "
+                 }
+                 text {
+                   origin.last + " contains the statement " + c.name.last + "."
+                 }
+               }
+             case _ =>
           }
         }
       case _ => //TODO

@@ -350,6 +350,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
        case None => name match {
          // no prefix of name is declared in t
          case ComplexStep(mpath) / ln =>
+           // TODO is this needed?
            get(mpath) match {
              case _: Theory =>
                // continue lookup in mpath
@@ -364,7 +365,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
                translateByLink(sym, l, error) // translate the result along the link
            }
          case _ => throw NotFound(t.path ? name)//GetError(name + " is not declared in " + t.path)
-          }
+       }
      }
   }
 

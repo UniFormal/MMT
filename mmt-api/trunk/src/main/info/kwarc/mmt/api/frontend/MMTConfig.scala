@@ -35,6 +35,11 @@ case class ArchiveConf(id : String, formats : List[String]) extends BackendConf
 case class ProfileConf(id : String, archives : List[String]) extends BackendConf
 
 /**
+ * declares an abbreviation (CURIE-style namespace prefix) for a URI 
+ */
+case class NamespaceConf(id: String, uri: URI) extends ConfEntry
+
+/**
  * registers a remote database
  */
 case class DatabaseConf(url: URI, uri: URI) extends BackendConf {
@@ -109,34 +114,6 @@ class MMTConfig {
     def getExporters(format : String) = getFormat(format).exporters
     def getImportersForArchive(archive : String) = getArchive(archive).formats.flatMap(getImporters).distinct
     def getExportersForArchive(archive : String) = getArchive(archive).formats.flatMap(getExporters).distinct
-
-    def process(controller: Controller) {
-       loadAllArchives(controller)
-       loadAllNeededTargets(controller)
-    }
-    
-    private def loadAllArchives(controller: Controller) {
-       getArchives foreach { arch =>
-        controller.addArchive(File(base + arch.id))
-      }
-    }
-
-    private def loadAllNeededTargets(controller: Controller) {
-      val archives = getArchives
-      val activeFormats = archives.flatMap(_.formats).distinct.map {id =>
-        getEntries(classOf[FormatConf]).find(_.id == id).getOrElse(throw new Exception("Unknown format id: " + id))
-      }
-      val preloadedBuildTargets = controller.extman.get(classOf[BuildTarget])
-      val neededTargets = activeFormats.flatMap(f => f.importers ::: f.exporters).distinct.flatMap {key => 
-        if (!preloadedBuildTargets.exists(_.key == key)) {
-          Some(getEntry(classOf[ExtensionConf], key))
-        } else None
-      }
-      neededTargets foreach {comp =>
-        println("loading " + comp.cls)
-        controller.extman.addExtension(comp.cls, comp.args)
-      }
-    }
 }
 
 
@@ -182,6 +159,11 @@ object MMTConfig {
           case id :: fmtsS :: Nil =>
             val fmts = fmtsS.split(",").toList
             config.addEntry(ArchiveConf(id, fmts))
+          case _ => fail
+        }
+        case "namespaces" => split(line) match {
+          case id :: uri :: Nil =>
+            config.addEntry(NamespaceConf(id, URI(uri)))
           case _ => fail
         }
         case "profiles" => split(line) match {

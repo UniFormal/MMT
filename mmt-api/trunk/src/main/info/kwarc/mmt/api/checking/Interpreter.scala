@@ -25,7 +25,8 @@ abstract class Interpreter extends Importer {
   /** creates a [[ParsingStream]] for the input file and interprets it */
   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
     val dPath = getDPath(bf.archive, bf.inPath) // bf.narrationDPath except for extension
-    val ps = new ParsingStream(bf.base / bf.inPath.segments, dPath, bf.archive.namespaceMap, format, File.Reader(bf.inFile))
+    val nsMap = controller.getNamespaceMap ++ bf.archive.namespaceMap
+    val ps = new ParsingStream(bf.base / bf.inPath.segments, dPath, nsMap, format, File.Reader(bf.inFile))
     val doc = apply(ps)(bf.errorCont)
     index(doc)
     BuildResult.empty

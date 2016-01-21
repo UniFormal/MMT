@@ -87,14 +87,15 @@ class Shell {
       if (startup.exists) {
         controller.execFileAction(startup, None)
       }
-      controller.getConfig.add(MMTConfig.parse(MMTSystem.getResourceAsString("/mmtrc"), Some(controller.getHome)))
+      val mmtrc = MMTConfig.parse(MMTSystem.getResourceAsString("/mmtrc"), Some(controller.getHome))
+      controller.loadConfig(mmtrc, false)
       // TODO val clCfg = FILE path from --cfg switch, add at the end of startupLocations
       val cfgLocations: List[File] = List(MMTSystem.rootFolder / "mmtrc", MMTSystem.userConfigFile) ++
         args.cfgFiles.map(File(_))
       //println("trying to run " + startup)
       cfgLocations.foreach {l =>
         if (l.exists) {
-          controller.getConfig.add(MMTConfig.parse(l))
+          controller.loadConfig(MMTConfig.parse(l), false)
         }
       }
 

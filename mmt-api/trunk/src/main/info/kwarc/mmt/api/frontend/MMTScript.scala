@@ -43,10 +43,7 @@ abstract class MMTScript extends Extension {
    */
   def loadConfig(f: String, autoload: Boolean = true) {
      val conf = MMTConfig.parse(File(f))
-     controller.getConfig.add(conf)
-     if (autoload) {
-        conf.process(controller)
-     }
+     controller.loadConfig(conf, autoload)
   }
 
 

@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import objects._
 import parser._
 import uom._
+import OMLiteral.OMI
 
 /**
  * oneOf(OMI(i),a_1,...a_n)  --->  a_i

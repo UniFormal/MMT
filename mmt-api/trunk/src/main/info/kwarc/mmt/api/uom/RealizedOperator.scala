@@ -5,48 +5,37 @@ import objects._
 import parser._
 
 /**
- * A RealizedType couples a syntactic type (a Constant) with a semantic type (a Scala type as given by a [[SemanticType]]).
+ * A RealizedType couples a syntactic type (a [[Term]]) with a semantic type (a PER on the [[Universe]]).
  */
-trait RealizedType extends SemanticType with uom.UOMRule {
-   private var _synType: Term = null
-   private var _head: GlobalName = null
-   /** Due to various constraints including limitations of the Scala type system,
-    *  the most convenient solution is to initialize _synType null.
-    *  
-    *  Therefore, instances of RealizedType must set them by calling this method exactly once.
-    *  MMT does that automatically when using a Scala object as a realization.
-    */
-   def init(synType: Term) {
-      if (_synType == null) {
-         _synType = synType
-         synType.head match {
-            case Some(p: GlobalName) => _head = p
-            case _ => throw ImplementationError("syntactic type must have head")
-         }
-      } else
-         throw ImplementationError("syntactic type already set")
+class RealizedType(val synType: Term, val semType: SemanticType) extends uom.UOMRule {
+   type univ = Any
+   def head = synType.head match {
+      case Some(h: GlobalName) => h
+      case _ => throw ImplementationError("syntactic type must have head")
    }
-   /** convenience variant for atomic types */
-   def init(synType: GlobalName) {init(OMS(synType))}
-   /** the syntactic type */
-   def synType = _synType 
-   /** the head operator of the syntactic type */ 
-   def head = _head
-   /** apply method to construct OMLITs as rt(u) */
-   def apply(u: univ) = OMLIT(this)(u)
-   /** unapply method to pattern-match OMLITs as rt(u) */
+   /** apply method to construct OMLITs as this(u) */
+   def apply(u: univ) = {
+      if (!semType.valid(u))
+         throw ParseError("invalid literal value: " + u)
+      val vN = semType.normalform(u)
+      OMLIT(vN, this)
+   }
+   /** unapply method to pattern-match OMLITs as this(u) */
    def unapply(t: Term) : Option[univ] = t match {
-      case t : OMLIT if t.rt == this =>
-         Some(t.value.asInstanceOf[univ]) // type cast succeeds by invariant of OMLIT
+      case OMLIT(v, rt) if rt == this => Some(v)
       case _ => None
    }
    /** @return the OMLIT obtained by using fromString */
    def parse(s: String) = {
-      val sP = fromString(s)
-      OMLIT(this)(sP)
+      val sP = semType.fromString(s)
+      apply(sP)
    }
    /** @return the lexer extension to be used by the lexer, defined in terms of the LexFunction lex */
-   def lexerExtension = lex map {case l => new LexParseExtension(l, new LiteralParser(this))} 
+   def lexerExtension = semType.lex map {case l => new LexParseExtension(l, new LiteralParser(this))} 
+}
+
+class RepresentedRealizedType[V](synType: Term, semType: SemanticType with RepresentationType[V]) extends RealizedType(synType,semType) {
+   override def unapply(u: objects.Term): Option[V] = super.unapply(u) flatMap semType.unapply
 }
 
 /** A RealizedOperator couples a syntactic function (a Constant) with a semantic function (a Scala function) */

@@ -122,7 +122,7 @@ object MetaDatum {
             Obj.parseTerm(literal, nsMap)
          else
             // fallback: string-valued meta-data
-            OMSTR(literal.text)
+            uom.OMLiteral.OMSTR(literal.text)
          new MetaDatum(key, value)
          //throw ParseError("object in metadatum must be text node:" + node)
       case _ => throw ParseError("meta or link or tag expected: " + node)
@@ -132,9 +132,9 @@ object MetaDatum {
 
 /** Helper object to distinguish MetaDatum's whose objects are URIs (<link>) from other ones (<meta>) */
 object Link {
-   def apply(key: GlobalName, uri: utils.URI) = new MetaDatum(key, URILiteral(uri))
+   def apply(key: GlobalName, uri: utils.URI) = new MetaDatum(key, uom.OMLiteral.URI(uri))
    def unapply(d: MetaDatum) : Option[(GlobalName, utils.URI)] = d.value match {
-      case URILiteral(uri) => Some((d.key, uri))
+      case uom.OMLiteral.URI(uri) => Some((d.key, uri))
       case _ => None
    }
 }

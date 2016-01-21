@@ -369,7 +369,7 @@ sealed trait OMLITTrait extends Term {
 
    /** checks equality, including the case [[OMLIT]] =?= [[UnknownOMLIT]] */
    override def equals(that: Any): Boolean = (this, that) match {
-      case (l: OMLIT, m: OMLIT) => l.rt == m.rt && l.value == m.value
+      case (l: OMLIT, m: OMLIT) => l.rt.synType == m.rt.synType && l.rt.semType == m.rt.semType && l.value == m.value
       case (l: UnknownOMLIT, m: UnknownOMLIT) => l.synType == m.synType && l.value == m.value
       case (l: OMLIT, m: UnknownOMLIT) =>
          (l.synType == m.synType) && l == l.rt.parse(m.value) 
@@ -379,37 +379,16 @@ sealed trait OMLITTrait extends Term {
 }
 
 /**
- * A literal consists of a RealizedType rt and a value:rt.univ.
+ * A literal consists of a RealizedType rt and a value of [[SemanticType]] rt.semType.
  * 
- * OMLIT is abstract due to subtleties of the Scala type system. equals is overridden accordingly. 
- * 
- * Literals can be constructed conveniently using OMLIT.apply or RealizedType.apply 
+ * Literals can be constructed conveniently using RealizedType.apply 
  *
  * invariant for structurally well-formed literals: the value is valid and normal, i.e,
- *   rt.valid(value) and rt.normalform(value) == value
+ *   rt.semType.valid(value) and rt.semType.normalform(value) == value
  */
-sealed abstract class OMLIT(val rt: uom.RealizedType) extends Term with OMLITTrait {
-   val value: rt.univ
+case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait {
    def synType = rt.synType
-   override def toString = rt.toString(value)
-}
-
-object OMLIT {
-   /**
-    * the canonical way to construct literals
-    * the value is always normalized and checked for validity
-    */
-   def apply(rt: uom.RealizedType)(v: rt.univ) = {
-      new OMLIT(rt) {
-         val value = {
-            // This always type checks, but the Scala compiler cannot prove it and needs a type cast
-            val vN = rt.normalform(v.asInstanceOf[rt.univ])
-            if (! rt.valid(vN))
-               throw ParseError("invalid literal value")
-            vN
-         }
-      }
-   }
+   override def toString = rt.semType.toString(value)
 }
 
 /** degenerate case of OMLIT when no RealizedType was known to parse a literal
@@ -590,9 +569,9 @@ object Obj {
             val tp = parseStringOrNode(tpN, nsMap)
             val v = xml.attr(N, "value")
             UnknownOMLIT(v, tp)
-         case <OMI>{i}</OMI> => OMI.parse(i.toString)
-         case <OMSTR>{s @ _*}</OMSTR> => OMSTR.parse(s.toString)
-         case <OMF/> => OMF.parse(xml.attr(N, "dec"))
+         case <OMI>{i}</OMI> => uom.OMLiteral.OMI.parse(i.toString)
+         case <OMSTR>{s @ _*}</OMSTR> => uom.OMLiteral.OMSTR.parse(s.toString)
+         case <OMF/> => uom.OMLiteral.OMF.parse(xml.attr(N, "dec"))
          case <OMATTR><OMATP>{key}{value}</OMATP>{rest @ _*}</OMATTR> =>
             val k = parseTermRec(key)
             if (! k.isInstanceOf[OMID])
