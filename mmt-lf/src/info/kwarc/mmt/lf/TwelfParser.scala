@@ -567,7 +567,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
         case e : SourceError => errors ::= e   // add to the list of errors returned
     }
 
-    return (MetaData(properties.map(keyValue => new MetaDatum(Path.parseS("??" + keyValue._1, NamespaceMap(MetaDatum.keyBase)), OMSTR(keyValue._2))).toSeq : _*), endsAt + 1)
+    return (MetaData(properties.map(keyValue => new MetaDatum(Path.parseS("??" + keyValue._1, NamespaceMap(MetaDatum.keyBase)), uom.OMLiteral.OMSTR(keyValue._2))).toSeq : _*), endsAt + 1)
   }
 
   // ------------------------------- symbol level -------------------------------
