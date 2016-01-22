@@ -25,7 +25,7 @@ object MetadataParser extends ParserExtension {
             case "tag" =>
                Tag(key)
             case "meta" =>
-               val (_,_,value) = sp.readParsedObject(Context(MetaDatum.keyBase))(s)
+               val (_,_,value) = sp.readParsedObject(con)(s)
                new MetaDatum(key,value)
             case "link" =>
                val (u,reg) = s.reader.readToken

@@ -3,6 +3,8 @@ package info.kwarc.mmt.odk.LMFDB
 import info.kwarc.mmt.api._
 import backend._
 import frontend._
+import info.kwarc.mmt.api.metadata.{Linker, MetaData}
+import info.kwarc.mmt.odk.codecs.{LMFDBCoder, TMString, TMInt, TMList}
 import modules._
 import objects._
 import symbols._
@@ -22,30 +24,21 @@ class Plugin extends frontend.Plugin {
 }
 
 object LMFDB {
-   val path = DPath(URI("http","www.lmfdb.org/"))
+   val path = DPath(URI("http","www.lmfdb.org"))
+   val implKey = LMFDB.path ? "meta" ? "implements"
+   val codecKey = codecs.Codecs.path ? "codec"
 }
 
-case class DBField(jsonKey: String, mmtName: String, codec: Codec[JSON])
+case class DBField(jsonKey: String, codec: Codec[JSON])
 case class DBSchema(fields: List[DBField])
-case class DB(meta: MPath, tp: GlobalName, schemaTheory: MPath, schema: DBSchema, dbpath: String)
+case class DB(tp: GlobalName, schemaTheory: MPath, dbpath: String)
 
 object Elliptic_curves {
    val path   =  LMFDB.path ? "elliptic_curves"
    val schemaThy = LMFDB.path ? "elliptic_curves_schema"
    val meta   = LMFDB.path ? "elliptic_curves_meta"
    
-   val schema = DBSchema(List(
-      DBField("2adic_gens",      "2adic_generators", TMList(TMInt)),
-      DBField("2adic_index",     "2adic_index", TMInt),
-      DBField("2adic_label",     "2adic_label", TMString),
-      DBField("2adic_log_level", "2adic_log_level", TMInt),
-      DBField("ainvs",           "a_invariants", TMList(TMInt)),
-      DBField("cm",              "has_complex_multiplication", TMInt),
-      DBField("conductor",       "conductor", TMInt),
-      DBField("degree",          "modular_degree", TMInt)
-   ))
-   
-   val db = DB(meta, meta ? "ec", schemaThy, schema, "elliptic_curves/curves")
+   val db = DB(meta ? "ec", schemaThy, "elliptic_curves/curves")
 }
 
 object LMFDBStore extends Storage {
@@ -68,9 +61,15 @@ object LMFDBStore extends Storage {
 
   private def getElement(name: LocalName, th: DeclaredTheory, db: DB)(implicit controller: Controller) {
     val regex = """(\d+)(\w)(\d+)""".r
-    val meta = controller.globalLookup.getAs(classOf[DeclaredTheory], db.meta)// TODO: change accordingly
     val tp = controller.globalLookup.getAs(classOf[Constant], db.tp) // TODO: change accordingly
     val schema = controller.globalLookup.getAs(classOf[DeclaredTheory], db.schemaTheory)
+
+    val fields = schema.getConstants.flatMap {c =>
+       c.metadata.getValues(LMFDB.codecKey).headOption.toList.collect {
+         case codecExp: Term =>
+            DBField(c.name.toString, LMFDBCoder.buildCodec(codecExp))
+       }
+    }
     
     name.toString match {
       case regex(n1,a,n2) =>
@@ -79,7 +78,7 @@ object LMFDBStore extends Storage {
             case j: JSONObject => j.find(p => p._1 == JSONString("data")).map(_._2) match {
                case Some(j2: JSONArray) =>
                   val flat = j2.values.toList.flatMap { // TODO this flattening looks wrong
-                     case a: JSONObject => a.map.toList
+                     case a: JSONObject => a.map
                      case j => Nil
                   }
                   JSONObject(flat)
@@ -88,7 +87,7 @@ object LMFDBStore extends Storage {
           }
           case _ => throw BackendError("Error querying LMFDB: not a JSON Object", th.path ? name)
         }
-        val omls = toOML(json, db)
+        val omls = toOML(json, db, fields)
         val df = OMA(schema.toTerm, omls) // TODO
         val c = Constant(th.toTerm, name, None, Some(tp.toTerm), Some(df), None)
         controller.add(c)
@@ -96,13 +95,13 @@ object LMFDBStore extends Storage {
     }
   }
 
-  private def toOML(json: JSONObject, db: DB)(implicit controller: Controller): List[OML] = {
-    db.schema.fields map {case DBField(key, name, codec) =>
+  private def toOML(json: JSONObject, db: DB, fields: List[DBField])(implicit controller: Controller): List[OML] = {
+    fields map {case DBField(key, codec) =>
       val dfJ = json(key).getOrElse {
          throw BackendError("could not find JSON value " + key + " in \n" + json, db.schemaTheory) //TODO use correct path
       }
       val df = codec.decode(dfJ)
-      OML(VarDecl(LocalName(name), None, Some(df), None))
+      OML(VarDecl(LocalName(key), None, Some(df), None))
     }
   }
 

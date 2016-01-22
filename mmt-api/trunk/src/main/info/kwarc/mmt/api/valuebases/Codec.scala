@@ -8,7 +8,7 @@ case object CodecNotApplicable extends java.lang.Throwable
 
 /**
  * encodes/decodes terms of a certain type
- * @param id the id of this codec
+ * @param exp the id of this codec
  * @param tp the type that is coded
  */
 abstract class Codec[Code](val exp: Term, val tp: Term) {
@@ -34,7 +34,8 @@ abstract class AtomicCodec[Rep,Code](id: GlobalName, tp: Term, semType: Semantic
  * @param tp the type operator
  */
 abstract class CodecOperator[Code](val id: GlobalName, val tp: GlobalName) {
-   
+
+   val numberOfOtherParameters: Int
    val numberOfTypeParameters: Int
    /**
     * @param cs one codec for each type parameter; pre: cs.length == this.numberOfTypeParameters

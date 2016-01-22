@@ -140,7 +140,7 @@ object URI {
   }
 
   /** returns a relative URI with scheme and authority only */
-  def apply(s: String, a: String): URI = URI(Some(s), Some(a))
+  def apply(s: String, a: String): URI = URI(Some(s), Some(a), abs = true)
 
   /** returns an absolute URI with scheme, authority, and path */
   def apply(s: String, a: String, p: List[String]): URI = URI(Some(s), Some(a), p, abs = true)
