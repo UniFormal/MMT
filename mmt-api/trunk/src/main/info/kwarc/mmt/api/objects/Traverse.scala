@@ -51,6 +51,7 @@ object Traverser {
 	         OMPMOD(p, newArgs).from(t)
 		   case OMID(_) => t
 		   case OMV(_) => t
+			 case OML(VarDecl(n, tp, df, nt)) => OML(VarDecl(n, tp map rec, df map rec, nt))
 		   case t: OMLITTrait => t
 		   case OMFOREIGN(_) => t
 		   case OMATTR(arg,key,value) => OMATTR(rec(arg), key, rec(value)).from(t) //TODO traversal into key

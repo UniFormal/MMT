@@ -566,7 +566,11 @@ object Obj {
             doBinder(binder, context, scopes.toList)
          case <OMLIT/> | <OMLIT>{_*}</OMLIT> =>
             val (_, tpN) = xml.getAttrOrChild(N, "type")
-            val tp = parseStringOrNode(tpN, nsMap)
+            val tpN2 : Union[String, Node] = tpN match {
+               case Right(<type>{c}</type>) => Right(c)
+               case _ => tpN
+            }
+            val tp = parseStringOrNode(tpN2, nsMap)
             val v = xml.attr(N, "value")
             UnknownOMLIT(v, tp)
          case <OMI>{i}</OMI> => uom.OMLiteral.OMI.parse(i.toString)
