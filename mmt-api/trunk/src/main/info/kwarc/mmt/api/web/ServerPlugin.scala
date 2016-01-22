@@ -63,13 +63,11 @@ class SVGServer extends ServerExtension("svg") {
 
   def apply(path: List[String], query: String, body: Body) = {
     val path = Path.parse(query, controller.getNamespaceMap)
-    val (inNarr, newPath) = path match {
-      // doc path
+    val (inNarr, newPath) = path.dropComp match {
+      // narrative
       case dp: DPath => (true, dp)
-      // module path
-      case mp: MPath => (false, mp)
-      case gp: GlobalName => (false, gp.module)
-      case cp: CPath => (false, cp.parent.module)
+      // content
+      case c: ContentPath => (false, c.module)
     }
     val svgFile = if (inNarr) {
       val dp = newPath.asInstanceOf[DPath]

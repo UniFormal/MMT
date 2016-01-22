@@ -258,9 +258,8 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
    */
   private def box(tm : Term, changes : Set[ContentChange]) : Term = {
     
-    def makeTerm(path : Path) : Term = path match {
+    def makeTerm(path : Path) : Term = path.dropComp match {
       case p : ContentPath => OMID(p)
-      case cp : CPath => OMID(cp.parent)
       case _ => throw ImplementationError("Expected ContentPath or CPath found: " + path.toPath)
       
     }
@@ -365,10 +364,9 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
   private def box(tm : Term, changes : Set[ContentChange]) : Term = changes.toSeq match {
     case Seq(p : PragmaticChange) => p.termProp(tm)
     case _ => 
-      def makeTerm(path : Path) : Term = path match {
+      def makeTerm(path : Path) : Term = path.dropComp match {
         case p : ContentPath => OMID(p)
-        case cp : CPath => OMID(cp.parent)
-        case _ => throw ImplementationError("Expected ContentPath or CPath found: " + path.toPath)
+        case _ => throw ImplementationError("cannot handle narrative path: " + path.toPath)
       }
       OMA(OMID(mmt.mmtsymbol("fullbox")), tm :: changes.flatMap(_.getReferencedURIs).map(makeTerm(_)).toList) 
   }

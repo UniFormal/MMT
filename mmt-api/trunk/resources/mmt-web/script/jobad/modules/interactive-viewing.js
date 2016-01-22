@@ -40,12 +40,6 @@ var interactiveViewing = {
 			var uri = target.attr('data-mmt-link');
 			this.navigate(uri);
 		}
-		if(target.hasAttribute('loadable')) {
-			var elem = target.parent().get(0);
-			var ref = mmt.load(elem);
-			$(ref).find('span').attr('foldable', 'true');
-			$(elem).replaceWith(ref);
-		}
 		if(target.hasAttribute('data-mmt-flattenable')) {
 			var elem = target.parent().get(0);
 			var loaded = mmt.load(elem);
@@ -56,24 +50,23 @@ var interactiveViewing = {
 		if(target.hasAttribute('foldable')) {
 			var content = $(target).parent().find('table').toggle();				
 		}
-		if (target.hasClass("loadable")) {
-			var elem = target.get(0); 
-			var ref = mmt.load(elem);
-			$(elem).replaceWith(ref);
+		if (target.hasAttribute(mmtattr.symref)) {
+			var uri = target.attr(mmtattr.symref);
+			this.navigate(uri);
 		}*/
-
+		
 		/* clicking on attributes toggleTarget
 		   toggles all .toggleTarget children of the next toggle-root ancestor */
 		if (target.hasAttribute(mmtattr.toggleTarget)) {
 		   var toggleTarget = target.attr(mmtattr.toggleTarget)
 			target.closest('.toggle-root').find('.'+toggleTarget).toggle();
 		}
-		
-		/*
-		if (target.hasAttribute(mmtattr.symref)) {
-			var uri = target.attr(mmtattr.symref);
-			this.navigate(uri);
-		}*/
+
+		if (target.hasAttribute(mmtattr.load)) {
+			var elem = target.get(0);
+			var ref = mmt.load(elem);
+			$(elem).replaceWith(ref);
+		}
 
 		mmt.unsetSelected();	
 		return true;

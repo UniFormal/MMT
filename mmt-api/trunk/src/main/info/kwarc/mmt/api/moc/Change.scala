@@ -285,7 +285,7 @@ case class DeleteDeclaration(d : Declaration) extends DeleteContent(d) with Chan
  */
 case class Component(c : Option[Obj])
 
-case class UpdateComponent(path : ContentPath, name : ComponentKey, old : Option[Obj], nw : Option[Obj]) extends UpdateContent with ContentChange {
+case class UpdateComponent(path : ComponentParent, name : ComponentKey, old : Option[Obj], nw : Option[Obj]) extends UpdateContent with ContentChange {
 
   def getReferencedURI : CPath = CPath(path, MetaDataComponent)
 

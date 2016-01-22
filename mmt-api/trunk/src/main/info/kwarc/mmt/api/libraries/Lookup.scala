@@ -74,8 +74,8 @@ abstract class Lookup {
    def getPattern(path : GlobalName, msg: Path => String = defmsg) : Pattern = 
      get(path) match {case e : Pattern => e case _ => throw GetError(msg(path))}
    
-   def getComponent(path: CPath, msg: Path => String = defmsg) : ComponentContainer = {
-      val se = getO(path.parent).getOrElse(throw GetError(msg(path.parent)))
+   def getComponent(path: CPath) : ComponentContainer = {
+      val se = getO(path.parent).getOrElse(throw GetError("parent does not exist: " + path))
       se.getComponent(path.component) getOrElse {
          throw GetError("illegal component: " + path)
       }

@@ -23,6 +23,10 @@ table {
    cursor: pointer;
 }
 
+[data-mmt-load] {
+   cursor: pointer;
+}
+
 /* header */
 
 #header {

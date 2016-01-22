@@ -38,7 +38,7 @@ object OpaqueHTML {
 import OpaqueHTML._
 
 case class TermFragmentInHTML(index: Int, format: String, tc: TermContainer) {
-   def comp = OtherComponent(index.toString)
+   def comp = OtherComponent("ext-"+index.toString)
    def rawString = tc.read.getOrElse("")
 }
 
@@ -91,13 +91,13 @@ class HTMLInterpreter extends OpaqueElementInterpreter
       new OpaqueHTML(parent, nodeM, terms.reverse)
    }
   
-   def check(oC: ObjectChecker, context: Context, oe : OpaqueElement)(implicit ce: CheckingEnvironment) {
+   def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe : OpaqueElement)(implicit ce: CheckingEnvironment) {
       val oh = downcast(oe)
-      oh.terms foreach {tc =>
-         /*f.tc.parsed.foreach {t =>
-            val cu = CheckingUnit.byInference(Some(oe.path $ f.comp), context, t)
-            oC(cu, rules) TODO get the rules efficiently from somewhere
-         }*/
+      oh.terms foreach {tf =>
+         tf.tc.parsed.foreach {t =>
+            val cu = CheckingUnit.byInference(Some(oe.path $ tf.comp), context, t)
+            oC(cu, rules)
+         }
       }
    }
    

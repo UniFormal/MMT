@@ -2,9 +2,7 @@
 var JOBAD1;
 $(function(){	
   JOBAD1 = new JOBAD($("#main,#parseForm #inputviewterm,#parseForm #inputviewtype,#results,#breadcrumbs,#sidebar,#pathtree"));
-/*
 
-*/
   JOBAD1.modules.load("kwarc.mmt.hovering", []);
   JOBAD1.modules.load("kwarc.mmt.intvw", []);
   JOBAD1.Setup();

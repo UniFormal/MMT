@@ -22,7 +22,7 @@ abstract class OpaqueElement extends NarrativeElement {
 
    def toNode = <opaque format={format}>{getMetaDataNode}{raw}</opaque>
    override def toString = raw.toString
-   def name = LocalName("")
+   lazy val name = LocalName("opaque_" + raw.hashCode.toString) //TODO this is not always unique  
    def path = parent / name
    def parentOpt = Some(parent)
    def getDeclarations = Nil

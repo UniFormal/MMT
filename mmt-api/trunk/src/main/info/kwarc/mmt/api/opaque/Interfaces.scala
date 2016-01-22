@@ -14,7 +14,7 @@ trait OpaqueTextParser extends OpaqueElementInterpreter {
 
 /** used to extend the [[StructureChecker]]s */
 trait OpaqueChecker extends OpaqueElementInterpreter {
-   def check(oC: ObjectChecker, context: Context, oe : OpaqueElement)(implicit ce: CheckingEnvironment): Unit
+   def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe : OpaqueElement)(implicit ce: CheckingEnvironment): Unit
 }
 
 /** used to extend [[HTMLPresenter]]s */

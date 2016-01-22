@@ -31,7 +31,10 @@ case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: 
    def child(p: Position) = copy(pos = pos / p)
    /** the MMT context of the presented object */
    def getContext: Context = {
-      val ownerCon: Context = owner.toList.map(cp => IncludeVarDecl(cp.parent.module,Nil))
+      val ownerCon: Context = owner match {
+         case Some(CPath(cp: ContentPath,_)) => IncludeVarDecl(cp.module,Nil)
+         case _ => Nil
+      }
       ownerCon ++ context.map(_.decl)
    }
    /** convenience method to append to the context */

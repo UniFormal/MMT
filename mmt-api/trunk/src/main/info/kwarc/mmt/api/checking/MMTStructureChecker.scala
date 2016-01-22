@@ -64,9 +64,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             controller.extman.get(classOf[OpaqueChecker], oe.format) match {
                case None => env.errorCont(InvalidElement(oe, "no checker found for format " + oe.format))
                case Some(oc) =>
-                  oc.check(objectChecker, context, oe)
+                  oc.check(objectChecker, context, rules, oe)
             }
-            //TODO check all declarations, components?
+            //TODO check all declarations, components? currently done in each OpaqueChecker
          case r: NRef =>
             check(context, controller.get(r.target))
          case t: DeclaredTheory =>
@@ -76,18 +76,19 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               contextMeta = contextMeta ++ mt
             }
             checkContext(contextMeta, t.parameters)
+            val contextI = context ++ t.getInnerContext
             // content structure
             val tDecls = t.getPrimitiveDeclarations
             logGroup {
                tDecls foreach {d =>
-                  check(context ++ t.getInnerContext, d)
+                  check(contextI, d)
                }
             }
             // narrative structure
             def doDoc(ne: NarrativeElement) {ne match {
                case doc: Document => doc.getDeclarations foreach doDoc
                case r: NRef =>
-               case oe: OpaqueElement => check(context,oe)
+               case oe: OpaqueElement => check(contextI,oe)
             }}
             doDoc(t.asDocument)
          case t: DefinedTheory =>

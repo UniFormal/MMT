@@ -14,7 +14,8 @@ import scala.xml._
 abstract class TextFragment
 
 // TODO remove the onCheck method, once structure is decoupled from object parsing
-class TermFragment(val comp: ComponentKey, val tc: TermContainer, val onCheck: () => Unit) extends TextFragment {
+class TermFragment(val index: Int, val tc: TermContainer, val onCheck: () => Unit) extends TextFragment {
+   def comp = OtherComponent("ext-"+index.toString)
    override def toString = "$" + tc.get.map(_.toString).getOrElse(tc.read.getOrElse("")) + "$"
 }
 
@@ -68,7 +69,7 @@ class TextInterpreter extends OpaqueElementInterpreter
             val t = Obj.parseTerm(n, nsMap)
             val tc = TermContainer(t)
             i += 1
-            new TermFragment(OtherComponent(i.toString), tc, () => ())
+            new TermFragment(i, tc, () => ())
       }
       new OpaqueText(parent, frags)
    }
@@ -91,14 +92,14 @@ class TextInterpreter extends OpaqueElementInterpreter
             val frag = if (term) {
                val srcref = pu.source.copy(region = SourceRegion(absPos(begin), absPos(end)))
                val sU = ParsingUnit(srcref, pu.context, fragS, pu.nsMap)
-               // we cannot parse at this point because MMT cannot handle forward references yet
+               // we cannot parse at this point because opaque elements may have forward references
                val tc = TermContainer(fragS)
                val onCheck = () => {
                   log("parsing with context: " + pu.context.toString)
                   tc.parsed = oP(sU).toTerm
                }
                i += 1
-               new TermFragment(OtherComponent(i.toString), tc, onCheck)
+               new TermFragment(i, tc, onCheck)
             } else
                StringFragment(fragS)
             fragments ::= frag
@@ -108,17 +109,17 @@ class TextInterpreter extends OpaqueElementInterpreter
       new OpaqueText(parent, fragments.reverse)
    }
    
-   def check(oC: ObjectChecker, context: Context, oe : OpaqueElement)(implicit ce: CheckingEnvironment) {
+   def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe : OpaqueElement)(implicit ce: CheckingEnvironment) {
       val ot = downcast(oe)
       ot.fragments foreach {
          case f: StringFragment =>
          case f: TermFragment =>
             log("checking " + oe.toString)
             f.onCheck()
-            /*f.tc.parsed.foreach {t =>
+            f.tc.parsed.foreach {t =>
                val cu = CheckingUnit.byInference(Some(oe.path $ f.comp), context, t)
-               oC(cu, rules) TODO get the rules efficiently from somewhere
-            }*/
+               oC(cu, rules)
+            }
       }
    }
    
@@ -131,7 +132,9 @@ class TextInterpreter extends OpaqueElementInterpreter
                case None => rh(<pre>{tf.tc.read}</pre>)
             }
          case StringFragment(s) =>
-            rh(s)
+            val escaped = scala.xml.Utility.escape(s)
+            val formatted = escaped.replace("\n\n", "<p/>").replace("\n","<br/>")
+            rh(formatted)
       }
    }
 

@@ -239,22 +239,19 @@ var mmt = {
             });
    },
 
-
    load : function (elem) {
-      if (elem.hasAttribute('jobad:load')) {
-         var url = this.adaptMMTURI(elem.getAttribute('jobad:load'), '', true);
+      if (elem.hasAttribute(mmtattr.load)) {
+         var url = this.adaptMMTURI(elem.getAttribute(mmtattr.load), '', true);
          var res = null;
          $.ajax({ 'url': url,
                 'dataType': 'xml',
                 'async': false,
                 'success': function cont(data) {res = data;}
                });
-         //proxyAjax('get', url, '', cont, false, 'text/xml');
-         elem.removeAttribute('jobad:load');
+         elem.removeAttribute(mmtattr.load);
          return res.firstChild;
       }
    },
-
 
    /** opens current URI in a new window as OMDoc */
    openCurrentOMDoc : function () {

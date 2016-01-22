@@ -50,6 +50,11 @@ sealed abstract class Path extends ontology.BaseType {
    }
    /** currently same as toPath, only toPath guarantees official string representation */
    override def toString = toPath
+   /** remove the component, if any */
+   def dropComp: ComponentParent = this match {
+      case p: ComponentParent => p
+      case CPath(p,_) => p
+   }
 }
 
 /** auxiliary trait to mixin convenience methods into [[Path]] classes */
@@ -70,7 +75,7 @@ trait QuestionMarkFunctions[A] {
  * A DPath represents an MMT document level path.
  * @param uri the URI of the document (may not contain query or fragment)
  */
-case class DPath(uri : URI) extends Path with SlashFunctions[DPath] with QuestionMarkFunctions[MPath] {
+case class DPath(uri : URI) extends Path with ComponentParent with SlashFunctions[DPath] with QuestionMarkFunctions[MPath] {
    def ^^ = DPath(uri ^!)
    /** the path of this document, this == ^^ / name */
    def name = LocalName(uri.path map {s => LNStep.parse(s, NamespaceMap.empty)})
@@ -91,16 +96,19 @@ case class DPath(uri : URI) extends Path with SlashFunctions[DPath] with Questio
    def toMPath = ^ ? LocalName(name.last)
 }
 
-/**
- * A path to a module or symbol
- */
-sealed trait ContentPath extends Path {
-   def $(comp: ComponentKey) = CPath(this, comp)
+/** A path to a module or symbol */
+sealed trait ContentPath extends Path with ComponentParent {
    /** for GlobalName's referring to a theory-like [[Declaration]], this yields the URI of the corresponding [[Module]] */ 
    def toMPath : MPath
    def name: LocalName
    /** the longest MPath prefix */
    def module: MPath
+}
+
+/** A path that is not a CPath (and thus may have a component) */
+sealed trait ComponentParent extends Path {
+   def $(comp: ComponentKey) = CPath(this, comp)
+   def name: LocalName
 }
 
 /**
@@ -221,7 +229,7 @@ case class ComplexStep(path: MPath) extends LNStep {
    override def toString = toPath
 }
 
-case class CPath(parent: ContentPath, component: ComponentKey) extends Path {
+case class CPath(parent: ComponentParent, component: ComponentKey) extends Path {
    def doc = parent.doc
    def ^! = parent
    def last = component.toString

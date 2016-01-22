@@ -67,7 +67,7 @@ object ComponentKey {
 
 /** type of a [[symbols.Constant]] */
 case object TypeComponent extends ComponentKey("type")
-/** definitiens of [[symbols.Constant]], DefinedTheory, DefinedView, DefinedStructure */
+/** definiens of [[symbols.Constant]], DefinedTheory, DefinedView, DefinedStructure */
 case object DefComponent  extends ComponentKey("definition")
 /** domain of a [[modules.Link]], meta-theory of a theory */
 case object DomComponent  extends ComponentKey("domain")
