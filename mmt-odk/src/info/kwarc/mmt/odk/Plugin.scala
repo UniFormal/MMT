@@ -1,18 +1,16 @@
 package info.kwarc.mmt.odk
 
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.DeclaredTheory
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.uom.{StandardString, StandardInt, SemanticType, RealizedType}
-import info.kwarc.mmt.api.utils.{JSONArray, JSONString, JSONInt, JSON}
-import info.kwarc.mmt.api.{LocalName, frontend, NamespaceMap, Path}
-import info.kwarc.mmt.lf.{ApplySpine, Apply}
+import info.kwarc.mmt.api._
+import frontend._
+import objects._
+import uom._
+import valuebases._
+import utils._
 
-/**
-  * Created by raupi on 20.01.16.
-  */
+import info.kwarc.mmt.lf._
+
 class Plugin extends frontend.Plugin {
-  val theory = Path.parseM("http://www.opendreamkit.org/?TypeSystem",NamespaceMap.empty)
+  val theory = Typesystem.path
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
     // content enhancers
@@ -20,70 +18,54 @@ class Plugin extends frontend.Plugin {
   }
 }
 
+object ODK {
+   val path = DPath(URI("http","www.opendreamkit.org"))
+}
+
 object Typesystem {
-  val path = Path.parseM("http://www.opendreamkit.org/?TypeSystem",NamespaceMap.empty)
-  def theory(implicit controller: Controller) = controller.get(Typesystem.path).asInstanceOf[DeclaredTheory]
+  val path = ODK.path ? "TypeSystem"
+
+  val int = path ? "int"
+  val string = path ? "string"
+  val list = path ? "list"
+  val nil = path ? "nil"
+  val cons = path ? "cons"
 }
 
-trait Codec {
-  val symbol : OMID
-  val tm : Term
-  type univ
-  def apply(u:univ) : Term
-  def fromJSON(json:JSON) : Term
+object Codecs {
+   val path = ODK.path ? "Codecs"
+
+   val int = path ? "int"
+   val string = path ? "string"
+   val list = path ? "list"
 }
 
-abstract class RealCodec extends Codec {
-  val tp : RealizedType
-  def apply(u:univ) : OMLIT
-  def fromJSON(json:JSON) : OMLIT
-}
-
-object TMIntRT extends RealizedType(
-  Apply(OMS(Typesystem.path ? LocalName("tm")),OMS(Typesystem.path ? LocalName("int"))),
-  StandardInt)
-
-object TMInt extends RealCodec {
-  val symbol = OMS(Typesystem.path ? LocalName("int"))
-  val tm = Apply(OMS(Typesystem.path ? LocalName("tm")),symbol)
-  val tp = TMIntRT
-  type univ = BigInt
-  def apply(u:univ) = tp.apply(u)
-  def fromString(s:String) = BigInt(s)
-  def fromJSON(json:JSON) = json match {
-    case i:JSONInt => apply(BigInt(i.value))
-    case i:JSONString => apply(BigInt(i.value))
-    case _ => throw new Exception("Error: Not a JSON Int or String!")
+object TMInt extends AtomicCodec[BigInt,JSON](Codecs.int, OMS(Typesystem.int), StandardInt) {
+  def encodeRep(i: BigInt): JSON = {
+    if (i.isValidInt)
+       JSONInt(i.toInt)
+    else
+       JSONString(i.toString)
+  }
+  def decodeRep(j: JSON): BigInt = j match {
+    case JSONInt(i) => BigInt(i)
+    case JSONString(s) => BigInt(s)
+    case _ => throw CodecNotApplicable
   }
 }
 
-object TMStringRT extends RealizedType(
-  Apply(OMS(Typesystem.path ? LocalName("tm")),OMS(Typesystem.path ? LocalName("string"))),
-  StandardString)
-
-object TMString extends RealCodec {
-  val symbol = OMS(Typesystem.path ? LocalName("string"))
-  val tm = Apply(OMS(Typesystem.path ? LocalName("tm")),symbol)
-  val tp = TMStringRT
-  type univ = String
-  def apply(u:univ) = tp.apply(u)
-  def fromString(s:String) = s
-  def fromJSON(json:JSON) = json match {
-    case i:JSONString => apply(i.value)
-    case _ => throw new Exception("Error: Not a JSON String!")
+object TMString extends AtomicCodec[String,JSON](Codecs.string, OMS(Typesystem.string), StandardString) {
+  def encodeRep(s: String) = JSONString(s)
+  def decodeRep(j: JSON) = j match {
+     case JSONString(s) => s
+     case _ => throw CodecNotApplicable
   }
 }
 
-case class TMList(c:RealCodec) extends Codec {
-  val symbol = OMS(Typesystem.path ? LocalName("list"))
-  val tm = OMA(OMS(Typesystem.path ? LocalName("tm")),List(OMA(symbol,List(c.symbol))))
-  val nil = OMS(Typesystem.path ? LocalName("nil"))
-  val cons = OMS(Typesystem.path ? LocalName("cons"))
-  type univ = List[c.univ]
-  def apply(s:List[c.univ]) : Term = if (s.isEmpty) Apply(nil,c.symbol)
-    else ApplySpine(cons,c.symbol,c.apply(s.head),apply(s.tail))
-  def fromJSON(json:JSON) = json match {
-    case i:JSONArray => apply(i.values.toList.map(c.fromJSON).map(_.value.asInstanceOf[c.univ]))//.map(_.value))
-    case _ => throw new Exception("Error: Not a JSON Array of type " + c.tp.synType)
+object TMList extends ListCodec[JSON](Codecs.list, Typesystem.list, Typesystem.nil, Typesystem.cons) {
+  def aggregate(cs: List[JSON]): JSON = JSONArray(cs:_*)
+  def separate(j: JSON): List[JSON] = j match {
+     case JSONArray(js@_*) => js.toList
+     case _ => throw CodecNotApplicable
   }
 }
