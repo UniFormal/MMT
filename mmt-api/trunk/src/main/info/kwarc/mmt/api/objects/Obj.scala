@@ -564,7 +564,7 @@ object Obj {
             OMA(fun, args)
          case <OMBIND>{binder}{context}{scopes @ _*}</OMBIND> =>
             doBinder(binder, context, scopes.toList)
-         case <OMLIT/> =>
+         case <OMLIT/> | <OMLIT>{_*}</OMLIT> =>
             val (_, tpN) = xml.getAttrOrChild(N, "type")
             val tp = parseStringOrNode(tpN, nsMap)
             val v = xml.attr(N, "value")
