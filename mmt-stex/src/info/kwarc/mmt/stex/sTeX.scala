@@ -38,11 +38,10 @@ object sTeX {
   }
 
   def getLanguage(p : Path) : Option[String] = {
-    val name = p match {
+    val name = p.dropComp match {
       case s : GlobalName => s.module.name.toPath
       case m : MPath => m.name.toPath
       case d : DPath => d.last.split('.').toList.init.mkString(".") // removing extension
-      case c : CPath => c.parent.module.name.toPath
     }
     name.split("\\.").toList match {
       case hd :: lang :: tl => Some(lang)

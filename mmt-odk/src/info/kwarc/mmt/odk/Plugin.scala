@@ -36,5 +36,5 @@ object Typesystem {
   val cons = path ? "cons"
 }
 
-object TMIntRT extends RealizedType(Apply(OMS(Typesystem.tm),OMS(Typesystem.int)),StandardInt)
-object TMStringRT extends RealizedType(Apply(OMS(Typesystem.tm),OMS(Typesystem.string)),StandardString)
+object IntegerLiterals extends RealizedType(Apply(OMS(Typesystem.tm),OMS(Typesystem.int)),StandardInt)
+object StringLiterals extends RealizedType(Apply(OMS(Typesystem.tm),OMS(Typesystem.string)),StandardString)

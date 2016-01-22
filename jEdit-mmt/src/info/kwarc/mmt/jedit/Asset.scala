@@ -51,8 +51,10 @@ class MMTObjAsset(val obj: Obj, val context: Context, val parent: CPath, name: S
   obj.head map {case p =>
     setLongDescription(p.toPath)
   }
-  def getTheory = parent.parent.module
-  def getScope = Some(getTheory)
+  def getScope = parent.parent match {
+     case cp: ContentPath => Some(cp.module)
+     case _ => None
+  }
 }
 
 class MMTNotAsset(owner: ContentPath, label: String, not: TextNotation, reg: SourceRegion) extends MMTAsset(label, reg) {
