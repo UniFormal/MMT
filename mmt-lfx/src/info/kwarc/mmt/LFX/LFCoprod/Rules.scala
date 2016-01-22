@@ -31,13 +31,32 @@ object CoprodTerm extends FormationRule(Coprod.path, OfType.path) {
 object inlTerm extends IntroductionRule(inl.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
     tm match {
-      case inl(tm,tp2) =>
+      case inl(t,tp2) =>
         if (Common.isType(solver,tp2)) {
-          val tp1 = solver.inferType(tm).getOrElse(return None)
+          val tp1 = solver.inferType(t).getOrElse(return None)
           Some(Coprod(tp1,tp2))
         } else None
       case _ => None
     }
+  }
+}
+
+object CoprodType extends TypingRule(Coprod.path) {
+  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = tp match {
+    case Coprod(tpA,tpB) =>
+      solver.safeSimplifyUntil(tm)(inl.unapply)._1 match {
+        case inl(a,tpnB) =>
+          val tpnA = solver.inferType(a,false).getOrElse(return false)
+          solver.check(Equality(stack,tpA,tpnA,None))
+          solver.check(Equality(stack,tpB,tpnB,None))
+        case _ => solver.safeSimplifyUntil(tm)(inr.unapply)._1 match {
+          case inr(b,tpnA) =>
+            val tpnB = solver.inferType(b,false).getOrElse(return false)
+            solver.check(Equality(stack,tpA,tpnA,None))
+            solver.check(Equality(stack,tpB,tpnB,None))
+        }
+      }
+    case _ => throw TypingRule.NotApplicable
   }
 }
 
@@ -46,9 +65,9 @@ object inlTerm extends IntroductionRule(inl.path, OfType.path) {
 object inrTerm extends IntroductionRule(inr.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
     tm match {
-      case inr(tm,tp1) =>
+      case inr(t,tp1) =>
         if (Common.isType(solver,tp1)) {
-          val tp2 = solver.inferType(tm).getOrElse(return None)
+          val tp2 = solver.inferType(t).getOrElse(return None)
           Some(Coprod(tp1,tp2))
         } else None
       case _ => None

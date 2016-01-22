@@ -6,6 +6,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.api.uom.OMLiteral._
 
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.lfs._

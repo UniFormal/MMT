@@ -16,6 +16,7 @@ import info.kwarc.mmt.lf._
 import info.kwarc.mmt.morphisms._
 import objects.Conversions._
 import info.kwarc.mmt.api.notations.NotationContainer
+import info.kwarc.mmt.api.uom.OMLiteral._
 
 
 object DefinitionTranslator {

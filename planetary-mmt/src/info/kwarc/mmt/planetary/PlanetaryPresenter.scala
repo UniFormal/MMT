@@ -347,7 +347,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        case s : SeqArg =>
          val baseName = getVarName(s.number - 1)
          val first = OMV(baseName + "1")
-         val middle = OMSTR("…")
+         val middle = uom.OMLiteral.OMSTR("…")
          val last = OMV(baseName + "n")
          List(first, middle, last)
        case a => List(OMV(getVarName(a.number - 1)))

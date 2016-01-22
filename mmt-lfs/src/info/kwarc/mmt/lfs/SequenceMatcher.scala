@@ -9,6 +9,7 @@ import patterns._
 import presentation._
 import utils._
 import Conversions._
+import uom.OMLiteral._
 
 import info.kwarc.mmt.lf._
 import SeqNormalize._

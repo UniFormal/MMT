@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.lfs._
+import info.kwarc.mmt.api.uom.OMLiteral._
 
 object PropositionTranslator {
 	def translateFormula(form : MizFormula) : Term = {

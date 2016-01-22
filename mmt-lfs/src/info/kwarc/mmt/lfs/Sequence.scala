@@ -7,7 +7,7 @@ import modules._
 import presentation._
 import objects._
 import Conversions._
-
+import uom.OMLiteral._
 import info.kwarc.mmt.lf._
 import scala.xml.{Node}
 

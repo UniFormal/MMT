@@ -11,12 +11,13 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.lfs._
+import info.kwarc.mmt.api.uom.OMLiteral._
 
 
 object Mizar {
-	val mmlBase = URI("http", "oaff.mathweb.org") / "MML" 
+	val mmlBase = utils.URI("http", "oaff.mathweb.org") / "MML"
   val mathHubBase = "http://gl.mathhub.info/Mizar/MML/blob/master"
-	private val mizarBase =  DPath(URI("http", "latin.omdoc.org") / "foundations"/ "mizar")
+	private val mizarBase =  DPath(utils.URI("http", "latin.omdoc.org") / "foundations"/ "mizar")
 	val MizarTh = mizarBase ? "mizar-curry"
 	val MizarPatternsTh = mizarBase ? "mizar-patterns"
 	val HiddenTh = mizarBase ? "HIDDEN"

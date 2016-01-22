@@ -33,6 +33,7 @@ object VarSubtypeRule extends SubtypingRule {
 object VarTypeRule extends TypingRule(VarType.path) {
   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = (tm,tp) match {
     case (OMV(x),VarType(alpha)) =>
+      history += "Trying Typing rule for Var"
       val v = stack.context.find(w => w.name == x).getOrElse(return false)
       solver.check(Typing(stack,v.toTerm,alpha))
     case (_,VarType(alpha)) =>
