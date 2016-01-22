@@ -39,13 +39,16 @@ abstract class RealCodec extends Codec {
   def fromJSON(json:JSON) : OMLIT
 }
 
+object TMIntRT extends RealizedType(
+  Apply(OMS(Typesystem.path ? LocalName("tm")),OMS(Typesystem.path ? LocalName("int"))),
+  StandardInt)
+
 object TMInt extends RealCodec {
   val symbol = OMS(Typesystem.path ? LocalName("int"))
   val tm = Apply(OMS(Typesystem.path ? LocalName("tm")),symbol)
-  object rtp extends RealizedType(tm,StandardInt)
-  val tp = rtp
+  val tp = TMIntRT
   type univ = BigInt
-  def apply(u:univ) = rtp.apply(u)
+  def apply(u:univ) = tp.apply(u)
   def fromString(s:String) = BigInt(s)
   def fromJSON(json:JSON) = json match {
     case i:JSONInt => apply(BigInt(i.value))
@@ -54,13 +57,16 @@ object TMInt extends RealCodec {
   }
 }
 
+object TMStringRT extends RealizedType(
+  Apply(OMS(Typesystem.path ? LocalName("tm")),OMS(Typesystem.path ? LocalName("string"))),
+  StandardString)
+
 object TMString extends RealCodec {
   val symbol = OMS(Typesystem.path ? LocalName("string"))
   val tm = Apply(OMS(Typesystem.path ? LocalName("tm")),symbol)
-  object rtp extends RealizedType(tm,StandardString)
-  val tp = rtp
+  val tp = TMStringRT
   type univ = String
-  def apply(u:univ) = rtp.apply(u)
+  def apply(u:univ) = tp.apply(u)
   def fromString(s:String) = s
   def fromJSON(json:JSON) = json match {
     case i:JSONString => apply(i.value)
