@@ -5,12 +5,6 @@ import objects._
 import utils._
 import uom._
 
-object Codecs {
-   val thy: MPath = ???
-   val list = thy ? "list"
-   val intAsList = thy ? "IntAsList"
-}
-
 /**
  * embeds string encodings into JSON encodings
  */
@@ -50,7 +44,7 @@ class BigIntSplitter(base: BigInt) {
    }
 }
 
-class BigIntCodec(synType: Term) extends AtomicCodec[BigInt,JSON](Codecs.intAsList, synType, StandardInt) {
+class BigIntCodec(id: GlobalName, synType: Term) extends AtomicCodec[BigInt,JSON](id, synType, StandardInt) {
    val splitter = new BigIntSplitter(BigInt(1) << 31) // 2^31
    
    def encodeRep(i: BigInt) = {
@@ -67,21 +61,6 @@ class BigIntCodec(synType: Term) extends AtomicCodec[BigInt,JSON](Codecs.intAsLi
            }
            splitter.assemble(true, digits)
          case _ => throw CodecNotApplicable
-      }
-   }
-}
-
-/**
- * codes a list as a JSON array
- */
-class ListAsArray(tp: GlobalName, nil: GlobalName, cons: GlobalName) extends ListCodec[JSON](Codecs.list, tp, nil, cons) {
-   def encode(args: List[JSON]): JSON = {
-      JSONArray(args :_*)
-   }
-   def decode(rep: JSON): Option[List[JSON]] = {
-      rep match {
-         case JSONArray(args @_*) => Some(args.toList)
-         case _ => None
       }
    }
 }

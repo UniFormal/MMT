@@ -7,13 +7,13 @@ import uom._
 /**
  * codes a list
  */
-abstract class ListCodec[Code](id: GlobalName, tp: GlobalName, nil: GlobalName, cons: GlobalName)
-   extends CodecOperator[Code](id, tp) {self =>
+abstract class ListCodec[Code](id: GlobalName, list: GlobalName, nil: GlobalName, cons: GlobalName)
+   extends CodecOperator[Code](id, list) {self =>
    
    val numberOfTypeParameters = 1
    
-   def encode(cs: List[Code]): Code
-   def decode(c: Code): Option[List[Code]]
+   def aggregate(cs: List[Code]): Code
+   def separate(c: Code): List[Code]
    
    def destruct(tm: Term): List[Term] = tm match {
       case OMS(nil) => Nil
@@ -30,8 +30,8 @@ abstract class ListCodec[Code](id: GlobalName, tp: GlobalName, nil: GlobalName, 
          throw CodecNotApplicable
       val codec = cs.head
       new Codec[Code](id(codec.exp), tp(codec.tp)) {
-         def encode(t: Term) = self.encode(self.destruct(t) map codec.encode)
-         def decode(c: Code) = self.construct(self.decode(c).get map codec.decode)
+         def encode(t: Term) = self.aggregate(self.destruct(t) map codec.encode)
+         def decode(c: Code) = self.construct(self.separate(c) map codec.decode)
       }
    }
 }
