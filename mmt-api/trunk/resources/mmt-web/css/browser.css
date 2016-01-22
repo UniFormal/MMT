@@ -19,6 +19,10 @@ table {
     border-collapse: collapse;   
 }
 
+[data-mmt-toggle] {
+   cursor: pointer;
+}
+
 /* header */
 
 #header {
@@ -335,9 +339,11 @@ div.result {
 
 .inlinebox-button-drag::before {
    content: "drag";
+   cursor: move;
 }
 .inlinebox-button-close::before {
    content: "close";
+   cursor: pointer;
 }
 
 .inlinebox-content {

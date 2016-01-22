@@ -264,7 +264,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    /** captures common parts of narrative and content element rendering */
    private def doNarrativeElement(ne: NarrativeElement, recurse: NarrativeElement => Unit) {ne match {
       case doc: Document =>
-        div("document toggle-root inlineBoxSibling", attributes=List(toggleTarget -> "document-body")) {
+        div("document toggle-root inlineBoxSibling") {
           div("document-header", attributes=List(toggleTarget -> "document-body")) {
              val name = doc.path.last
              span("name") {
@@ -275,7 +275,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
                 text(t)
              } 
           }
-          div("document-body toggle-target") {
+          div("document-body") {
              doc.getDeclarations foreach recurse
           }
         }
@@ -313,7 +313,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    /** auxiliary method of doTheory */
    private def doNarrativeElementInMod(body: Body, ne: NarrativeElement) {ne match {
       case r:SRef =>
-         val d = body.get(r.name)
+         val d = body.get(r.target.name)
          doDeclaration(d)
       case r: NRef => throw ImplementationError("nref in module") // impossible
       case ne =>
