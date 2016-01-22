@@ -184,7 +184,7 @@ lazy val oeis = (project in file("mmt-oeis")).
 // wrapper project that depends on most other projects
 // the deployed jar is stand-alone and can be used as a unix shell script
 lazy val mmt = (project in file("mmt-exts")).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk).
   settings(commonSettings("mmt-exts"): _*).
   settings(
     exportJars := false,
