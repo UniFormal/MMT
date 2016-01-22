@@ -22,6 +22,14 @@ case object XMLType extends QueryBaseType
 /** queries returning arbitrary strings */
 case object StringType extends QueryBaseType
 
+object QueryBaseType {
+   def parse(s: String) = s match {
+      case "path" => PathType
+      case "object" => ObjType
+      case "xml" => XMLType
+      case "string" => StringType
+   }
+}
 /** the types of the query language */
 sealed abstract class QueryType
 
@@ -370,9 +378,23 @@ object Query {
     */
   def parse(n: Node)(implicit queryFunctions: List[QueryExtension], relManager: RelationalManager): Query = n match {
     case <literal/> =>
+       //TODO remove this
       Literal(Path.parse(xml.attr(n, "uri")))
-    case <literal>{l}</literal> =>
-      Literal(StringValue(l.text))
+    case <literal>{l}</literal> => l match {
+       case <object>{o}</object> =>
+          val oP = Obj.parseTerm(o, NamespaceMap.empty)
+          Literal(oP)
+       case <xml>{n}</xml> =>
+          Literal(XMLValue(n))
+       case <string>{s}</string> =>
+          Literal(StringValue(s.text))
+       case <uri/> =>
+          val uri = Path.parse(xml.attr(l, "path"))
+          Literal(uri)
+       case _ =>
+          //TODO remove this
+          Literal(StringValue(l.text))
+    }
     case <bound/> => Bound(xml.attrInt(n, "index", ParseError))
     case <let>{v}{in}</let> => Let(parse(v), parse(in))
     case <uris/> => Paths(relManager.parseUnary(xml.attr(n, "concept")))
