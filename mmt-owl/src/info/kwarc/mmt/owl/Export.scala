@@ -5,9 +5,11 @@ import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.uom.URILiteral
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.io._
 import org.semanticweb.owlapi.model._
+import uom.OMLiteral._
 
 //import java.io.FileNotFoundException
 //import java.io.IOException
@@ -42,6 +44,7 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
 
   /**
    * translates all theories in an MMT document to ontologies
+ *
    * @param doc the URI of the MMT document
    * @return the list of IRIs of the ontologies
    */

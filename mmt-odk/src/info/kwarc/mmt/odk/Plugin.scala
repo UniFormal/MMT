@@ -3,7 +3,7 @@ package info.kwarc.mmt.odk
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.uom.RealizedType
+import info.kwarc.mmt.api.uom.{StandardString, StandardInt, SemanticType, RealizedType}
 import info.kwarc.mmt.api.utils.{JSONArray, JSONString, JSONInt, JSON}
 import info.kwarc.mmt.api.{LocalName, frontend, NamespaceMap, Path}
 import info.kwarc.mmt.lf.{ApplySpine, Apply}
@@ -29,22 +29,24 @@ trait Codec {
   val symbol : OMID
   val tm : Term
   type univ
-  def apply(s:univ) : Term
+  def apply(u:univ) : Term
   def fromJSON(json:JSON) : Term
 }
 
-trait RealCodec extends RealizedType with Codec {
-  override def apply(s:univ) : OMLIT
+abstract class RealCodec extends Codec {
+  val tp : RealizedType
+  def apply(u:univ) : OMLIT
   def fromJSON(json:JSON) : OMLIT
 }
 
 object TMInt extends RealCodec {
   val symbol = OMS(Typesystem.path ? LocalName("int"))
-  val tm = Apply(OMS(Typesystem.path ? LocalName("tm")),symbol)//OMA(OMS(Typesystem.path ? LocalName("tm")),List(symbol))
+  val tm = Apply(OMS(Typesystem.path ? LocalName("tm")),symbol)
+  object rtp extends RealizedType(tm,StandardInt)
+  val tp = rtp
   type univ = BigInt
+  def apply(u:univ) = rtp.apply(u)
   def fromString(s:String) = BigInt(s)
-  init(tm)
-  override def apply(s:BigInt) = OMLIT(this)(s)
   def fromJSON(json:JSON) = json match {
     case i:JSONInt => apply(BigInt(i.value))
     case i:JSONString => apply(BigInt(i.value))
@@ -54,11 +56,12 @@ object TMInt extends RealCodec {
 
 object TMString extends RealCodec {
   val symbol = OMS(Typesystem.path ? LocalName("string"))
-  val tm = OMA(OMS(Typesystem.path ? LocalName("tm")),List(symbol))
+  val tm = Apply(OMS(Typesystem.path ? LocalName("tm")),symbol)
+  object rtp extends RealizedType(tm,StandardString)
+  val tp = rtp
   type univ = String
+  def apply(u:univ) = rtp.apply(u)
   def fromString(s:String) = s
-  init(tm)
-  override def apply(s:String) = OMLIT(this)(s)
   def fromJSON(json:JSON) = json match {
     case i:JSONString => apply(i.value)
     case _ => throw new Exception("Error: Not a JSON String!")
@@ -74,7 +77,7 @@ case class TMList(c:RealCodec) extends Codec {
   def apply(s:List[c.univ]) : Term = if (s.isEmpty) Apply(nil,c.symbol)
     else ApplySpine(cons,c.symbol,c.apply(s.head),apply(s.tail))
   def fromJSON(json:JSON) = json match {
-    case i:JSONArray => apply(i.values.toList.map(c.fromJSON).map(_.value.asInstanceOf[c.univ]))
-    case _ => throw new Exception("Error: Not a JSON Array of type " + c.synType)
+    case i:JSONArray => apply(i.values.toList.map(c.fromJSON).map(_.value.asInstanceOf[c.univ]))//.map(_.value))
+    case _ => throw new Exception("Error: Not a JSON Array of type " + c.tp.synType)
   }
 }

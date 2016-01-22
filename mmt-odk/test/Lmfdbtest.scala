@@ -12,7 +12,7 @@ object Lmfdbtest {
     """log console
        mathpath archive ../../MathHub/
        extension info.kwarc.mmt.lf.Plugin
-       extension info.kwarc.mmt.odk.LMFDB.Plugin
+       extension info.kwarc.mmt.odk.Plugin
     """.split("\n").foreach(controller.handleLine(_))
 
     val c = controller.get(Path.parse("http://www.lmfdb.org/?elliptic_curves?11a1"))

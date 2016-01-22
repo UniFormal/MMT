@@ -142,7 +142,7 @@ class AddImpacts(memory: ROMemory) extends ImpactPropagator(memory) {
     val dpath = DPath(utils.URI(base))
     val key: GlobalName = dpath ? "_" ? name
     //set value for metadatum
-    val value: Term = ApplySpine(OWL2OMS("OWL2SUB", "literal"), OMSTR(setLiteral(impCons, changeType, changedConstant)), OWLOMS("OWL1Datatype", "string"))
+    val value: Term = ApplySpine(OWL2OMS("OWL2SUB", "literal"), uom.OMLiteral.OMSTR(setLiteral(impCons, changeType, changedConstant)), OWLOMS("OWL1Datatype", "string"))
     val md = new MetaDatum(key, value)
     md
   }

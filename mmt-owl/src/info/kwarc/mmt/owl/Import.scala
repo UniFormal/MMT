@@ -4,8 +4,6 @@ import info.kwarc.mmt.api.archives.BuildResult
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.model._
 
-//
-
 import scala.collection.JavaConversions._
 
 //
@@ -17,6 +15,8 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf._
+import info.kwarc.mmt.api.uom.OMLiteral._
+import info.kwarc.mmt.api.uom._
 
 //import jomdoc.objects.{Term,OMS,OMI}
 
@@ -599,7 +599,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
 
   def annotationValueToLF(av: OWLAnnotationValue): Term = {
     av match {
-      case av: IRI => URILiteral(av.toURI)
+      case av: IRI => OMLiteral.URI(av.toURI)
       case av: OWLLiteral => literalToLF(av)
       case av: OWLAnonymousIndividual => individualToLF(av)
     }
