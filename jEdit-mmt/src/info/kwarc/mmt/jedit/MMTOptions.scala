@@ -82,6 +82,7 @@ class BooleanOption(val key: String, val label: String) extends MMTOption[Boolea
 /** contains the various MMT options */
 object MMTOptions {
   val startup = new StringOption("startup", "custom startup msl file")
+  val config = new StringOption("config", "custom configuration file")
   val archives = new StringOption("archives", "custom folder that contains archives")
   val all = List(startup, archives)
 }

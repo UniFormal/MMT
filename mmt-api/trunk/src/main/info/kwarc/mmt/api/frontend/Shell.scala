@@ -87,8 +87,7 @@ class Shell {
       if (startup.exists) {
         controller.execFileAction(startup, None)
       }
-      val mmtrc = MMTConfig.parse(MMTSystem.getResourceAsString("/mmtrc"), Some(controller.getHome))
-      controller.loadConfig(mmtrc, false)
+      // load additional configurations (default config is loaded by Controller.init)
       // TODO val clCfg = FILE path from --cfg switch, add at the end of startupLocations
       val cfgLocations: List[File] = List(MMTSystem.rootFolder / "mmtrc", MMTSystem.userConfigFile) ++
         args.cfgFiles.map(File(_))

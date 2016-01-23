@@ -42,9 +42,17 @@ class MMTPlugin extends EBPlugin with Logger {
       val home = getPluginHome
       home.mkdirs
       controller.setHome(home)
+
       val startup = MMTOptions.startup.get.getOrElse("startup.msl")
       val file = home resolve startup
-      controller.execFileAction(file, None)
+      if (file.exists)
+         controller.execFileAction(file, None)
+      
+      val conf = MMTOptions.config.get.getOrElse("mmtrc")
+      val confFile = home resolve conf
+      if (confFile.exists)
+         controller.loadConfig(MMTConfig.parse(confFile), false)
+
       errorlist.ErrorSource.registerErrorSource(errorSource)
       val archives = MMTOptions.archives.get orElse
         controller.getOAF.map(_.root.toString) getOrElse "mars"

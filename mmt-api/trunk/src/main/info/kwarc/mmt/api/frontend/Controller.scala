@@ -193,6 +193,9 @@ class Controller extends ROController with ActionHandling with Logger {
   
   private def init {
     extman.addDefaultExtensions
+    // load default configuration
+    val mmtrc = MMTConfig.parse(MMTSystem.getResourceAsString("/mmtrc"), None)
+    loadConfig(mmtrc, false)
   }
 
   init
