@@ -30,6 +30,7 @@ object Typesystem {
   val tt = path ? "true"
   val ff = path ? "false"
   val int = path ? "int"
+  val nat = path ? "nat"
   val string = path ? "string"
   val list = path ? "list"
   val nil = path ? "nil"
@@ -37,4 +38,5 @@ object Typesystem {
 }
 
 object IntegerLiterals extends RealizedType(Apply(OMS(Typesystem.tm),OMS(Typesystem.int)),StandardInt)
+object NatLiterals extends RealizedType(Apply(OMS(Typesystem.tm),OMS(Typesystem.nat)),StandardNat)
 object StringLiterals extends RealizedType(Apply(OMS(Typesystem.tm),OMS(Typesystem.string)),StandardString)
