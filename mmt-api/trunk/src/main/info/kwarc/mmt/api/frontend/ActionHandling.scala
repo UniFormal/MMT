@@ -139,6 +139,8 @@ trait ActionHandling { self: Controller =>
           case a: GetAction => a.make(this)
           case PrintAllXML => report("response", "\n" + library.getModules.map(_.toNode).mkString("\n"))
           case PrintAll => report("response", "\n" + library.toString)
+          case PrintConfig =>
+             println(state.config.toString)
           case Compare(p, r) => //TODO
           case WindowClose(w) => winman.deleteWindow(w)
           case WindowPosition(w, x, y) => winman.getWindow(w).setLocation(x, y)

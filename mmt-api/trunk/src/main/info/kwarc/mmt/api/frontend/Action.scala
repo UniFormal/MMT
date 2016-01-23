@@ -30,7 +30,7 @@ object Action extends  RegexParsers {
   private def action = log | mathpath | archive | oaf | extension | mws | server |
     windowaction | execfile | defactions | scala | mbt |
     setbase | envvar | read | interpret | graph | check | navigate |
-    printall | printallxml | diff | clear | exit | getaction // getaction must be at end for default get
+    printall | printallxml | printConfig | diff | clear | exit | getaction // getaction must be at end for default get
 
   private def log = logfilets | logfile | loghtml | logconsole | logon | logoff
 
@@ -130,6 +130,8 @@ object Action extends  RegexParsers {
   private def printall = "printAll" ^^ { case _ => PrintAll }
 
   private def printallxml = "printXML" ^^ { case _ => PrintAllXML }
+  
+  private def printConfig = "printConfig" ^^ {case _ => PrintConfig}
 
   private def clear = "clear" ^^ { case _ => Clear }
 
@@ -477,6 +479,11 @@ case object PrintAll extends Action
 
 /** print all loaded knowledge items to STDOUT in XML syntax */
 case object PrintAllXML extends Action
+
+/** print all configuration entries to STDOUT*/
+case object PrintConfig extends Action {
+   override def toString = "printConfig"
+}
 
 /** run a Scala interpreter or evaluate a Scala expression */
 case class Scala(init: Option[String]) extends Action {
