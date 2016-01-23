@@ -10,7 +10,7 @@ import utils._
 import info.kwarc.mmt.lf._
 
 class Plugin extends frontend.Plugin {
-  val theory = Typesystem.path
+  val theory = Math.path
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
     // content enhancers
@@ -22,8 +22,8 @@ object ODK {
    val path = DPath(URI("http","www.opendreamkit.org"))
 }
 
-object Typesystem {
-  val path = ODK.path ? "TypeSystem"
+object Math {
+  val path = ODK.path ? "Math"
 
   val tm = path ? "tm"
   val bool = path ? "bool"
@@ -37,6 +37,6 @@ object Typesystem {
   val cons = path ? "cons"
 }
 
-object IntegerLiterals extends RealizedType(Apply(OMS(Typesystem.tm),OMS(Typesystem.int)),StandardInt)
-object NatLiterals extends RealizedType(Apply(OMS(Typesystem.tm),OMS(Typesystem.nat)),StandardNat)
-object StringLiterals extends RealizedType(Apply(OMS(Typesystem.tm),OMS(Typesystem.string)),StandardString)
+object IntegerLiterals extends RealizedType(Apply(OMS(Math.tm),OMS(Math.int)),StandardInt)
+object NatLiterals extends RealizedType(Apply(OMS(Math.tm),OMS(Math.nat)),StandardNat)
+object StringLiterals extends RealizedType(Apply(OMS(Math.tm),OMS(Math.string)),StandardString)

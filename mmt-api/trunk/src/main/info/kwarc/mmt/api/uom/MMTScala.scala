@@ -111,6 +111,20 @@ trait RuleCreators {
       }
       rule(inv)
    }
+
+   /** typed variant, experimental, not used by ScalaExporter yet */
+   def functionT[U,V](op:GlobalName, argType1: RepresentedRealizedType[U], rType: RepresentedRealizedType[V])(comp: U => V) {
+      val ro = new RealizedOperator(op) {
+         val argTypes = List(argType1)
+         val retType = rType
+         def apply(args: List[Term]): OMLIT = args(0) match {
+            case argType1(x) => rType(comp(x))
+            case _ => throw ImplementationError("illegal arguments")
+         }
+      }
+      rule(ro)
+   }
+   
    /** adds a rule for implementing a unary symbol */
    def function(op:GlobalName, argType1: RealizedType, rType: RealizedType)(comp: argType1.univ => rType.univ) {
       val ro = new RealizedOperator(op) {

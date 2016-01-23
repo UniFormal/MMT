@@ -20,7 +20,7 @@ object MetadataParser extends ParserExtension {
          val (_,_,value) = sp.readParsedObject(Context(MetaDatum.keyBase))(s)
          new MetaDatum(key,value)
       } else {
-         val key = sp.readSPath(MetaDatum.keyBase)(s)
+         val key = sp.readSPath(s.namespaces.base)(s)
          k match {
             case "tag" =>
                Tag(key)
@@ -28,8 +28,8 @@ object MetadataParser extends ParserExtension {
                val (_,_,value) = sp.readParsedObject(con)(s)
                new MetaDatum(key,value)
             case "link" =>
-               val (u,reg) = s.reader.readToken
-               val value = utils.URI(u)
+               val (u,reg) = s.reader.readAll
+               val value = s.namespaces.base.doc.uri resolve utils.URI(u)
                Link(key,value)
          }
       }

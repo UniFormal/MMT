@@ -16,7 +16,7 @@ import info.kwarc.mmt.odk._
 import scala.util.Try
 
 class Plugin extends frontend.Plugin {
-  val theory = Typesystem.path
+  val theory = Math.path
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
     controller.backend.addStore(LMFDBStore)
@@ -25,74 +25,98 @@ class Plugin extends frontend.Plugin {
 
 object LMFDB {
    val path = DPath(URI("http","www.lmfdb.org"))
-   val implKey = LMFDB.path ? "meta" ? "implements"
-   val codecKey = codecs.Codecs.path ? "codec"
+   val schemaPath = path / "schema"
+   val dbPath = path / "db"
+}
+
+object Metadata {
+   val path = LMFDB.path ? "Metadata"
+   val implements = path ? "implements"
+   val key = path ? "key"
+   val codec = path ? "codec"
 }
 
 case class DBField(jsonKey: String, codec: Codec[JSON])
 case class DBSchema(fields: List[DBField])
-case class DB(tp: GlobalName, schemaTheory: MPath, dbpath: String)
 
-object Elliptic_curves {
-   val path   =  LMFDB.path ? "elliptic_curves"
-   val schemaThy = LMFDB.path ? "elliptic_curves_schema"
-   val meta   = LMFDB.path ? "elliptic_curves_meta"
-   
-   val db = DB(meta ? "ec", schemaThy, "elliptic_curves/curves")
+case class DB(suffix: LocalName, mod: LocalName) {
+   def schemaTheory: MPath = (LMFDB.schemaPath / suffix) ? mod
+   def dbTheory: MPath = (LMFDB.dbPath / suffix) ? mod
+   def dbpath: String = suffix.toString + "/" + mod.toString
 }
 
 object LMFDBStore extends Storage {
 
   def load(path: Path)(implicit controller: Controller) {
-    val (ndoc,mod,dec) = path.toTriple
-    if ((ndoc contains LMFDB.path) && (mod contains Elliptic_curves.path.name)) {
-       val th = controller.localLookup.getO(Elliptic_curves.path) match {
-          case Some(thy: DeclaredTheory) => thy 
-          case Some(_) => throw BackendError("unexpected type", Elliptic_curves.path)
-          case None => 
-             val t = new DeclaredTheory(LMFDB.path, Elliptic_curves.path.name, Some(Elliptic_curves.meta))
-             controller add t
-             t
-       }
-       if (dec.isDefined) getElement(dec.get, th, Elliptic_curves.db)
+    val (ndocO,modO,_) = path.toTriple
+    val ndoc = ndocO.getOrElse {
+       throw NotApplicable("")
     }
-    else throw NotApplicable("")
-  }
+    val mod = modO.getOrElse {
+       throw NotApplicable("")
+    }
+    val dbsuffix = ndoc.dropPrefix(LMFDB.dbPath).getOrElse {
+       throw NotApplicable("")
+    }
 
-  private def getElement(name: LocalName, th: DeclaredTheory, db: DB)(implicit controller: Controller) {
-    val regex = """(\d+)(\w)(\d+)""".r
-    val tp = controller.globalLookup.getAs(classOf[Constant], db.tp) // TODO: change accordingly
+    val db = DB(dbsuffix, mod)
+    
     val schema = controller.globalLookup.getAs(classOf[DeclaredTheory], db.schemaTheory)
 
+    val th = controller.localLookup.getO(db.dbTheory) match {
+       case Some(thy: DeclaredTheory) => thy 
+       case Some(_) => throw BackendError("unexpected type", db.dbTheory)
+       case None =>
+          val t = new DeclaredTheory(db.dbTheory.parent, db.dbTheory.name, schema.meta)
+          controller add t
+          t
+    }
+    path match {
+       case p: GlobalName => getElement(p, schema, db)
+       case _ =>
+    }
+  }
+
+  private def getElement(path: GlobalName, schema: DeclaredTheory, db: DB)(implicit controller: Controller) {
+    def error(msg: String) = throw BackendError(msg, path)
+    val tp = schema.metadata.getValues(Metadata.implements).headOption.getOrElse {
+       error("metadata key 'implements' not found in schema: " + schema.path)
+    } match {
+       case t: Term => t
+       case _ => error("metadata key 'key' not found in schema: " + schema.path)
+    }
+    val key = schema.metadata.getValues(Metadata.key).headOption.getOrElse {
+       error("metadata key 'key' not found in schema: " + schema.path)
+    } match {
+       case StringLiterals(k) => k
+       case _ => error("metadata key 'key' is not a string in schema: " + schema.path)
+    }
+    
     val fields = schema.getConstants.flatMap {c =>
-       c.metadata.getValues(LMFDB.codecKey).headOption.toList.collect {
+       c.metadata.getValues(Metadata.codec).headOption.toList.collect {
          case codecExp: Term =>
             DBField(c.name.toString, LMFDBCoder.buildCodec(codecExp))
        }
     }
     
-    name.toString match {
-      case regex(n1,a,n2) =>
-        val query = "&label=" + n1 + a + n2
-        val json = lmfdbquery(db.dbpath, query) match {
-            case j: JSONObject => j.find(p => p._1 == JSONString("data")).map(_._2) match {
-               case Some(j2: JSONArray) =>
-                  val flat = j2.values.toList.flatMap { // TODO this flattening looks wrong
-                     case a: JSONObject => a.map
-                     case j => Nil
-                  }
-                  JSONObject(flat)
-               case _ =>
-                  throw BackendError("Error: ill-formed JSON returned dfrom LMFDB", th.path ? name)
-          }
-          case _ => throw BackendError("Error querying LMFDB: not a JSON Object", th.path ? name)
-        }
-        val omls = toOML(json, db, fields)
-        val df = OMA(schema.toTerm, omls) // TODO
-        val c = Constant(th.toTerm, name, None, Some(tp.toTerm), Some(df), None)
-        controller.add(c)
-      case _ => throw NotApplicable("")
-    }
+     val query = "&" + key + "=" + path.name.toString
+     val json = lmfdbquery(db.dbpath, query) match {
+         case j: JSONObject => j.find(p => p._1 == JSONString("data")).map(_._2) match {
+            case Some(j2: JSONArray) =>
+               val flat = j2.values.toList.flatMap { // TODO this flattening looks wrong
+                  case a: JSONObject => a.map
+                  case j => Nil
+               }
+               JSONObject(flat)
+            case _ =>
+               error("Error: ill-formed JSON returned dfrom LMFDB")
+       }
+       case _ => error("Error querying LMFDB: not a JSON Object")
+     }
+     val omls = toOML(json, db, fields)
+     val df = OMA(schema.toTerm, omls)
+     val c = Constant(OMMOD(db.dbTheory), path.name, None, Some(tp), Some(df), None)
+     controller.add(c)
   }
 
   private def toOML(json: JSONObject, db: DB, fields: List[DBField])(implicit controller: Controller): List[OML] = {

@@ -23,5 +23,6 @@ http://cds.omdoc.org/urtheories?LF info.kwarc.mmt.lf.Plugin
 
 #namespaces
 ur         http://cds.omdoc.org/urtheories
+odk        http://www.opendreamkit.org
 syn        http://latin.omdoc.org/logics/syntax
-models     http://models.latin.omdoc.org/
+models     http://models.latin.omdoc.org
