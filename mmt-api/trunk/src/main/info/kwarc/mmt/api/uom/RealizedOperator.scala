@@ -27,6 +27,7 @@ class RealizedType(val synType: Term, val semType: SemanticType) extends uom.UOM
    /** unapply method to pattern-match OMLITs as this(u) */
    def unapply(t: Term) : Option[univ] = t match {
       case OMLIT(v, rt) if rt == this => Some(v)
+      case UnknownOMLIT(v,st) if st == synType => Some(semType.fromString(v))
       case _ => None
    }
    /** @return the OMLIT obtained by using fromString */
