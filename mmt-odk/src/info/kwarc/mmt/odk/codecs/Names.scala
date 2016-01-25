@@ -13,6 +13,7 @@ object Codecs {
   val standardBool = path ? "standardBool"
   val boolAsInt = path ? "boolAsInt"
   val standardList = path ? "standardList"
+  val standardVector = path ? "standardVector"
 }
 
 object LMFDBCoder extends Coder(List(TMInt,TMString,BoolAsInt,StandardBool), List(TMList)) {

@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.objects.{Term, OMS}
 import info.kwarc.mmt.api.uom.{StandardString, StandardInt, RealizedType}
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.valuebases._
-import info.kwarc.mmt.lf.Apply
+import info.kwarc.mmt.lf.{ApplySpine, Apply}
 import info.kwarc.mmt.odk._
 
 object TMInt extends AtomicCodec[BigInt,JSON](Codecs.standardInt, OMS(Math.int), StandardInt) {
@@ -59,3 +59,39 @@ object TMList extends ListCodec[JSON](Codecs.standardList, Math.list, Math.nil, 
     case _ => throw CodecNotApplicable
   }
 }
+/*
+object StandardVector extends CodecOperator[JSON](Codecs.standardVector, Math.vector) {self =>
+
+  val numberOfOtherParameters = 1
+  val numberOfTypeParameters = 1
+
+  def aggregate(cs: List[JSON]): JSON
+  def separate(c: JSON): List[JSON]
+
+  val nil = Math.zerovec
+
+  def destruct(tm: Term): List[Term] = tm match {
+    case Apply(OMS(nil), _) => Nil
+    case ApplySpine(OMS(cons), List(_, hd, tl)) => hd :: destruct(tl)
+  }
+  def construct(elemTp: Term, tms: List[Term]): Term = {
+    tms.foldLeft[Term](Apply(OMS(nil),elemTp)) {
+      case (sofar, next) => ApplySpine(OMS(cons), elemTp, next, sofar)
+    }
+  }
+
+  /**
+    * @param cs one codec for each type parameter; pre: cs.length == this.numberOfTypeParameters
+    * @return a codec for OMA(OMS(tp), cs.head.tp)
+    */
+  def apply(cs: Codec[Code]*) = {
+    if (cs.length != numberOfTypeParameters)
+      throw CodecNotApplicable
+    val codec = cs.head
+    new Codec[Code](id(codec.exp), tp(codec.tp)) {
+      def encode(t: Term) = self.aggregate(self.destruct(t) map codec.encode)
+      def decode(c: Code) = self.construct(codec.tp, self.separate(c) map codec.decode)
+    }
+  }
+}
+*/
