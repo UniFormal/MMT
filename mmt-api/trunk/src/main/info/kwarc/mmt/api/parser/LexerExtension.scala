@@ -49,15 +49,17 @@ abstract class LexerExtension {
  * 
  * typical example: PrefixedTokenLexer(\)
  */
-class PrefixedTokenLexer(delim: Char) extends LexerExtension {
+class PrefixedTokenLexer(delim: Char, onlyLetters: Boolean = true, includeDelim: Boolean = true) extends LexerExtension {
   def applicable(s: String, i: Int) = s(i) == delim
   def apply(s: String, index: Int, firstPosition: SourcePosition) = {
      var i = index+1
-     while (i < s.length && s(i).isLetter) {
+     while (i < s.length && !s(i).isWhitespace && (!onlyLetters || s(i).isLetter)) {
         i += 1
      }
-     val text = s.substring(index, i)
-     Token(text, firstPosition, true)
+     val start = if (includeDelim) index else index + 1
+     val word = s.substring(start, i)
+     val text = if (includeDelim) None else Some(delim + word)
+     Token(word, firstPosition, true, text)
   }
 }
 
