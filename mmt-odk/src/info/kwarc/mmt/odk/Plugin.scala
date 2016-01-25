@@ -13,8 +13,8 @@ class Plugin extends frontend.Plugin {
   val theory = Math.path
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
-    // content enhancers
     controller.extman.addExtension(new LMFDB.Plugin)
+    
   }
 }
 
@@ -25,14 +25,13 @@ object ODK {
 object Math {
   val path = ODK.path ? "Math"
 
-  val typesystem = ODK.path ? "Typesystem"
+  val typesystem = ODK.path ? "Types"
   val logic = ODK.path ? "Logic"
-  val equality = ODK.path ? "Equality"
-  val natliterals = ODK.path ? "NatLiterals"
-  val intliterals = ODK.path ? "IntLiterals"
-  val stringliterals = ODK.path ? "StringLiterals"
-  val listliterals = ODK.path ? "ListLiterals"
-  val vectorliterals = ODK.path ? "VectorLiterals"
+  val natliterals = ODK.path ? "Nat"
+  val intliterals = ODK.path ? "Int"
+  val strings = ODK.path ? "Strings"
+  val lists = ODK.path ? "Lists"
+  val vectors = ODK.path ? "Vectors"
 
   val tm = typesystem ? "tm"
   val bool = logic ? "bool"
@@ -41,13 +40,13 @@ object Math {
   val int = intliterals ? "int"
   val nat = natliterals ? "nat"
   val succ = natliterals ? "nat_succ"
-  val string = stringliterals ? "string"
-  val list = listliterals ? "list"
-  val nil = listliterals ? "nil"
-  val cons = listliterals ? "cons"
-  val vector = vectorliterals ? "vector"
-  val zerovec = vectorliterals ? "zerovec"
-  val vectorprepend = vectorliterals ? "vector_prepend"
+  val string = strings ? "string"
+  val list = lists ? "list"
+  val nil = lists ? "nil"
+  val cons = lists ? "cons"
+  val vector = vectors ? "vector"
+  val zerovec = vectors ? "zerovec"
+  val vectorprepend = vectors ? "vector_prepend"
 }
 
 object IntegerLiterals extends RealizedType(Apply(OMS(Math.tm),OMS(Math.int)),StandardInt)

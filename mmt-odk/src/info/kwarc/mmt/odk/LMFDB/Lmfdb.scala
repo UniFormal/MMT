@@ -20,6 +20,7 @@ class Plugin extends frontend.Plugin {
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
     controller.backend.addStore(LMFDBStore)
+    controller.extman.addExtension(new ImplementsRuleGenerator)
   }
 }
 
