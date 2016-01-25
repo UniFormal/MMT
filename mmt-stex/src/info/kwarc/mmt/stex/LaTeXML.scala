@@ -27,7 +27,10 @@ class AllTeX extends LaTeXBuildTarget {
     val dir = curr.file
     dir.list.filter(f => f.startsWith("all.") && f.endsWith(".tex")).sorted.
       map(f => dir / f).foreach(deleteWithLog)
-    super.cleanDir(a, curr)
+    val errFile = getFolderErrorFile(a, curr.path)
+    delete(errFile)
+    val errDir = errFile.up
+    if (errDir.isDirectory) errDir.deleteDir
   }
 
   override def update(a: Archive, up: Update, in: FilePath = EmptyPath) {
