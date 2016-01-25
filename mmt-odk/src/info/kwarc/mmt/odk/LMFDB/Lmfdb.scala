@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import backend._
 import frontend._
 import info.kwarc.mmt.api.metadata.{Linker, MetaData}
+import info.kwarc.mmt.lf.records.Intro
 import info.kwarc.mmt.odk.codecs.{LMFDBCoder, TMString, TMInt, TMList}
 import modules._
 import objects._
@@ -115,7 +116,7 @@ object LMFDBStore extends Storage {
        case _ => error("Error querying LMFDB: not a JSON Object")
      }
      val omls = toOML(json, db, fields)
-     val df = OMA(schema.toTerm, omls)
+     val df = Intro(schema.toTerm,omls)
      val c = Constant(OMMOD(db.dbTheory), path.name, None, Some(tp), Some(df), None)
      controller.add(c)
   }
