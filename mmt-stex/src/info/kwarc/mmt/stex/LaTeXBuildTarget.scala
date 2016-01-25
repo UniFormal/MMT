@@ -50,7 +50,8 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     optionsMap.get(key).foreach { case v => nameOfExecutable = v.getStringVal }
     optionsMap.get("execute").foreach { case v =>
       if (nameOfExecutable.isEmpty) nameOfExecutable = v.getStringVal
-      else logError("executable already set by: --" + key + "=" + nameOfExecutable) }
+      else logError("executable already set by: --" + key + "=" + nameOfExecutable)
+    }
   }
 
   protected def procLogger(output: StringBuffer, pipeOutput: Boolean): ProcessLogger = {
@@ -63,8 +64,6 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
 
   def includeFile(n: String): Boolean =
     n.endsWith(".tex") && !n.endsWith(localpathsFile) && !n.startsWith("all.")
-
-  override def includeDir(n: String): Boolean = !n.endsWith("tikz")
 
   protected def createLocalPaths(bt: BuildTask) {
     createLocalPaths(bt.archive, bt.inFile.up)

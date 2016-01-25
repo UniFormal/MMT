@@ -94,6 +94,8 @@ class SmsGenerator extends LaTeXBuildTarget {
   val outDim: ArchiveDimension = source
   override val outExt = "sms"
 
+  override def includeDir(n: String): Boolean = !n.endsWith("tikz")
+
   def reallyBuildFile(bt: BuildTask): BuildResult = {
     createLocalPaths(bt)
     try createSmsForEncodings(bt, encodings)
@@ -110,6 +112,9 @@ class SmsGenerator extends LaTeXBuildTarget {
 class LaTeXML extends LaTeXBuildTarget {
   val key = "latexml"
   override val outExt = "omdoc"
+
+  override def includeDir(n: String): Boolean = !n.endsWith("tikz")
+
   val outDim = RedirectableDimension("latexml")
   // the latexml client
   private var latexmlc = "latexmlc"
@@ -154,9 +159,10 @@ class LaTeXML extends LaTeXBuildTarget {
     val (_, nonOpts) = splitOptions(remainingStartArguments)
     optionsMap.get("latexmlc").foreach { s =>
       if (nameOfExecutable.nonEmpty) {
-        logError("executable overwritten by --latexmlc" )
+        logError("executable overwritten by --latexmlc")
       }
-      nameOfExecutable = s.getStringVal }
+      nameOfExecutable = s.getStringVal
+    }
     val nonOptArgs = if (nameOfExecutable.isEmpty) nonOpts else nameOfExecutable :: nonOpts
     latexmlc = getFromFirstArgOrEnvvar(nonOptArgs, "LATEXMLC", latexmlc)
     latexmls = optionsMap.get("latexmls").map(v => Some(v.getStringVal)).getOrElse(controller.getEnvVar("LATEXMLS")).
@@ -296,15 +302,15 @@ class LaTeXML extends LaTeXBuildTarget {
     }, true)
 
   def isServerRunning(realPort: Int): Boolean =
-      try {
-        val s = new ServerSocket(realPort)
-        s.close()
-        false
-      }
-      catch {
-        case ex: BindException =>
-          true
-      }
+    try {
+      val s = new ServerSocket(realPort)
+      s.close()
+      false
+    }
+    catch {
+      case ex: BindException =>
+        true
+    }
 
   /** Compile a .tex file to OMDoc */
   def reallyBuildFile(bt: BuildTask): BuildResult = {
@@ -314,13 +320,13 @@ class LaTeXML extends LaTeXBuildTarget {
     val lEnv = extEnv(bt)
     val output = new StringBuffer()
     if (reboot) {
-        val pbc = Process(Seq(latexmlc, "--expire=" + expire, "--port=" + realPort,
-          "literal:restarting"), bt.archive / inDim, lEnv: _*)
-        if (isServerRunning(realPort)) {
-          logResult("trying to kill latexml server: " + latexmls + " --port=" + realPort)
-          pbc.!(ProcessLogger(_ => (), _ => ()))
-          Thread.sleep(delaySecs)
-        }
+      val pbc = Process(Seq(latexmlc, "--expire=" + expire, "--port=" + realPort,
+        "literal:restarting"), bt.archive / inDim, lEnv: _*)
+      if (isServerRunning(realPort)) {
+        logResult("trying to kill latexml server: " + latexmls + " --port=" + realPort)
+        pbc.!(ProcessLogger(_ => (), _ => ()))
+        Thread.sleep(delaySecs)
+      }
     } else {
       val lmhOut = bt.outFile
       val logFile = bt.outFile.setExtension("ltxlog")
@@ -343,7 +349,7 @@ class LaTeXML extends LaTeXBuildTarget {
       try {
         val pbs = Process(Seq(latexmls, "--expire=" + expire, "--port=" + realPort,
           "--autoflush=100"), bt.archive / inDim, lEnv: _*)
-        if (!isServerRunning(realPort) && expire > -1 ) {
+        if (!isServerRunning(realPort) && expire > -1) {
           pbs.run(procIO(output))
           Thread.sleep(delaySecs)
         }
