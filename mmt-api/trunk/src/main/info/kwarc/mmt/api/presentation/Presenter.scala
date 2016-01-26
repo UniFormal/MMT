@@ -142,11 +142,8 @@ object TextPresenter extends Presenter(ObjectTextPresenter) {
  * This Presenter can be used without initialization.
  */
 object OpenMathPresenter extends ObjectPresenter {
-   private val pp = new scala.xml.PrettyPrinter(100, 2)
    def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) {
-      val sb = new scala.collection.mutable.StringBuilder
-      pp.format(o.toNode, sb)
-      rh(sb.result)
+      rh << o.toOBJNode.toString
    }
 }
 
@@ -159,10 +156,7 @@ object OMDocPresenter extends Presenter(OpenMathPresenter) {
    val key = "present-omdoc"
    override def outExt = "omdoc"
    override def isApplicable(format: String) = format == "xml"
-   private val pp = new scala.xml.PrettyPrinter(100, 2)
    def apply(c : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {
-      val sb = new scala.collection.mutable.StringBuilder
-      pp.format(c.toNode, sb)
-      rh(sb.result)
+      rh << c.toNode.toString
    }
 }
