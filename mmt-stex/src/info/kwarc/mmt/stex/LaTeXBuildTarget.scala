@@ -11,7 +11,7 @@ import info.kwarc.mmt.api.ExtensionError
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.frontend.AnaArgs.OptionDescrs
 import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.utils.{EmptyPath, FilePath, File}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
@@ -196,4 +196,45 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     if (errDir.isDirectory) errDir.deleteDir
     outFile.getExtension.foreach(ext => getDirFilesByExt(a, outDir, List(ext)).foreach(deleteWithLog))
   }
+}
+
+abstract class LaTeXDirTarget extends LaTeXBuildTarget {
+  val outDim: ArchiveDimension = source
+  override val outExt = "tex"
+
+  // we do nothing for single files
+  def reallyBuildFile(bt: BuildTask): BuildResult = BuildResult.empty
+
+  override def cleanFile(a: Archive, curr: Current) {
+  }
+
+  def dirFileFilter(f: String): Boolean
+
+  override def cleanDir(a: Archive, curr: Current) {
+    val dir = curr.file
+    dir.list.filter(dirFileFilter).sorted.
+      map(f => dir / f).foreach(deleteWithLog)
+    val errFile = getFolderErrorFile(a, curr.path)
+    delete(errFile)
+    val errDir = errFile.up
+    if (errDir.isDirectory) errDir.deleteDir
+  }
+
+  override def update(a: Archive, up: Update, in: FilePath = EmptyPath) {
+    a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
+      case _ =>
+    }, {
+      case (c@Current(inDir, inPath), _) =>
+        buildDir(a, inPath, inDir, force = false)
+    })
+  }
+
+  override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
+    update(a, up, in)
+  }
+
+  override def buildDir(bt: BuildTask, builtChildren: List[BuildTask]): BuildResult =
+    buildDir(bt.archive, bt.inPath, bt.inFile, force = true)
+
+  def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult
 }

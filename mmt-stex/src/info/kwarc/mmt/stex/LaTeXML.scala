@@ -13,42 +13,13 @@ import info.kwarc.mmt.api.utils._
 
 import scala.sys.process._
 
-class AllTeX extends LaTeXBuildTarget {
+class AllTeX extends LaTeXDirTarget {
   val key: String = "alltex"
-  val outDim: ArchiveDimension = source
-  override val outExt = "tex"
 
-  // we do nothing for single files
-  def reallyBuildFile(bt: BuildTask): BuildResult = BuildResult.empty
+  def dirFileFilter(f: String): Boolean =
+    f.startsWith("all.") && f.endsWith(".tex")
 
-  override def cleanFile(a: Archive, curr: Current) {}
-
-  override def cleanDir(a: Archive, curr: Current) {
-    val dir = curr.file
-    dir.list.filter(f => f.startsWith("all.") && f.endsWith(".tex")).sorted.
-      map(f => dir / f).foreach(deleteWithLog)
-    val errFile = getFolderErrorFile(a, curr.path)
-    delete(errFile)
-    val errDir = errFile.up
-    if (errDir.isDirectory) errDir.deleteDir
-  }
-
-  override def update(a: Archive, up: Update, in: FilePath = EmptyPath) {
-    a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
-      case _ =>
-    }, { case (c@Current(inDir, inPath), _) =>
-      buildDir(a, inPath, inDir, force = false)
-    })
-  }
-
-  override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
-    update(a, up, in)
-  }
-
-  override def buildDir(bt: BuildTask, builtChildren: List[BuildTask]): BuildResult =
-    buildDir(bt.archive, bt.inPath, bt.inFile, force = true)
-
-  private def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult = {
+  def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult = {
     val dirFiles = getDirFiles(a, dir, includeFile)
     if (dirFiles.nonEmpty) {
       createLocalPaths(a, dir)
