@@ -115,9 +115,9 @@ class Shell {
         }
       }
       val optBuildQueue = controller.extman.get(classOf[BuildManager])
-      optBuildQueue.foreach(_.waitToEnd)
       // cleanup if we want to exit.
       if (args.runCleanup) {
+        optBuildQueue.foreach(_.waitToEnd)
         controller.cleanup
       }
     } catch {
