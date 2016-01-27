@@ -13,6 +13,7 @@ object Lmfdbtest {
     println("Start...")
     val controller = new Controller
     """log console
+       log+ debug
        mathpath archive ../../MathHub/
        extension info.kwarc.mmt.lf.Plugin
        extension info.kwarc.mmt.odk.Plugin
@@ -27,5 +28,7 @@ object Lmfdbtest {
     val res2 = controller.simplifier.apply(Apply(cond.toTerm,d.toTerm),Context.empty)
     println(res1)
     println(res2)
+
+    controller.handleLine("build ODK/GAP gap-omdoc")
   }
 }

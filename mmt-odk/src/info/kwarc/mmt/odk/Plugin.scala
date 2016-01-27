@@ -2,6 +2,7 @@ package info.kwarc.mmt.odk
 
 import info.kwarc.mmt.api._
 import frontend._
+import info.kwarc.mmt.odk.GAP
 import objects._
 import uom._
 import valuebases._
@@ -14,7 +15,7 @@ class Plugin extends frontend.Plugin {
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
     controller.extman.addExtension(new LMFDB.Plugin)
-    
+    controller.extman.addExtension(new GAP.Plugin)
   }
 }
 
