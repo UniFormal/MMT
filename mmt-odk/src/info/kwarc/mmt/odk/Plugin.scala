@@ -33,6 +33,7 @@ object Math {
   val strings = ODK.path ? "Strings"
   val lists = ODK.path ? "Lists"
   val vectors = ODK.path ? "Vectors"
+  val matrices = ODK.path ? "Matrices"
 
   val tm = typesystem ? "tm"
   val bool = logic ? "bool"
@@ -48,6 +49,8 @@ object Math {
   val vector = vectors ? "vector"
   val zerovec = vectors ? "zerovec"
   val vectorprepend = vectors ? "vector_prepend"
+  val matrix = matrices ? "matrix"
+  val matrixconst = matrices ? "matrix_const"
 }
 
 object IntegerLiterals extends RealizedType(Apply(OMS(Math.tm),OMS(Math.int)),StandardInt)

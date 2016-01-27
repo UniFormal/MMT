@@ -19,6 +19,7 @@ object Lmfdbtest {
        extension info.kwarc.mmt.odk.Plugin
     """.split("\n").foreach(controller.handleLine(_))
 
+    /*
     val c = controller.get(Path.parse("http://www.lmfdb.org/db/elliptic_curves?curves?11a1")).asInstanceOf[FinalConstant]
     val d = controller.get(Path.parse("http://www.lmfdb.org/db/elliptic_curves?curves?35a2")).asInstanceOf[FinalConstant]
     println(c)
@@ -28,6 +29,7 @@ object Lmfdbtest {
     val res2 = controller.simplifier.apply(Apply(cond.toTerm,d.toTerm),Context.empty)
     println(res1)
     println(res2)
+    */
 
     controller.handleLine("build ODK/GAP gap-omdoc")
   }

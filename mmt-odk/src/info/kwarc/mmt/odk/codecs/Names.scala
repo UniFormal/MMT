@@ -14,9 +14,10 @@ object Codecs {
   val boolAsInt = path ? "boolAsInt"
   val standardList = path ? "standardList"
   val standardVector = path ? "standardVector"
+  val standardMatrix = path ? "standardMatrix"
 }
 
-object LMFDBCoder extends Coder(List(TMInt,TMString,BoolAsInt,StandardBool), List(TMList)) {
+object LMFDBCoder extends Coder(List(TMInt,TMString,BoolAsInt,StandardBool), List(TMList,StandardVector)) {
    override def destruct(t: Term) = t match {
      case ApplySpine(OMS(op), pars) => Some((op, pars))
      case _ => None

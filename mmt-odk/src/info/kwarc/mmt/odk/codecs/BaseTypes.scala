@@ -59,39 +59,70 @@ object TMList extends ListCodec[JSON](Codecs.standardList, Math.list, Math.nil, 
     case _ => throw CodecNotApplicable
   }
 }
-/*
+
 object StandardVector extends CodecOperator[JSON](Codecs.standardVector, Math.vector) {self =>
 
   val numberOfOtherParameters = 1
   val numberOfTypeParameters = 1
 
-  def aggregate(cs: List[JSON]): JSON
-  def separate(c: JSON): List[JSON]
-
-  val nil = Math.zerovec
+  def aggregate(cs: List[JSON]): JSON = JSONArray(cs:_*)
+  def separate(j: JSON): List[JSON] = j match {
+    case JSONArray(js@_*) => js.toList
+    case _ => throw CodecNotApplicable
+  }
 
   def destruct(tm: Term): List[Term] = tm match {
-    case Apply(OMS(nil), _) => Nil
-    case ApplySpine(OMS(cons), List(_, hd, tl)) => hd :: destruct(tl)
+    case Apply(OMS(Math.zerovec), _) => Nil
+    case ApplySpine(OMS(Math.vectorprepend), List(_, _, hd, tl)) => hd :: destruct(tl)
   }
   def construct(elemTp: Term, tms: List[Term]): Term = {
-    tms.foldLeft[Term](Apply(OMS(nil),elemTp)) {
-      case (sofar, next) => ApplySpine(OMS(cons), elemTp, next, sofar)
+    tms.foldLeft[Term](Apply(OMS(Math.zerovec),elemTp)) {
+      case (sofar, next) => ApplySpine(OMS(Math.vectorprepend), elemTp, NatLiterals(destruct(sofar).length), next, sofar)
     }
   }
 
-  /**
-    * @param cs one codec for each type parameter; pre: cs.length == this.numberOfTypeParameters
-    * @return a codec for OMA(OMS(tp), cs.head.tp)
-    */
-  def apply(cs: Codec[Code]*) = {
-    if (cs.length != numberOfTypeParameters)
+  def apply(cs: Codec[JSON]*) = {
+    if (cs.length != 1)
       throw CodecNotApplicable
     val codec = cs.head
-    new Codec[Code](id(codec.exp), tp(codec.tp)) {
+    new Codec[JSON](id(codec.exp), tp(codec.tp)) {
       def encode(t: Term) = self.aggregate(self.destruct(t) map codec.encode)
-      def decode(c: Code) = self.construct(codec.tp, self.separate(c) map codec.decode)
+      def decode(c: JSON) = self.construct(codec.tp, self.separate(c) map codec.decode)
     }
   }
+
+}
+
+/*
+object StandardMatrix extends CodecOperator[JSON](Codecs.standardMatrix, Math.matrix) {self =>
+
+  val numberOfOtherParameters = 1
+  val numberOfTypeParameters = 1
+
+  def aggregate(cs: List[JSON]): JSON = JSONArray(cs:_*)
+  def separate(j: JSON): List[JSON] = j match {
+    case JSONArray(js@_*) => js.toList
+    case _ => throw CodecNotApplicable
+  }
+
+  def destruct(tm: Term): List[Term] = tm match {
+    case ApplySpine(OMS(Math.matrixconst), List(_,_,_,a,b)) => List(a,b)
+  }
+  def construct(elemTp: Term, tms: List[Term]): Term = {
+    tms match {
+      case List(a,b)
+    }
+  }
+
+  def apply(cs: Codec[JSON]*) = {
+    if (cs.length != 1)
+      throw CodecNotApplicable
+    val codec = cs.head
+    new Codec[JSON](id(codec.exp), tp(codec.tp)) {
+      def encode(t: Term) = self.aggregate(self.destruct(t) map codec.encode)
+      def decode(c: JSON) = self.construct(codec.tp, self.separate(c) map codec.decode)
+    }
+  }
+
 }
 */

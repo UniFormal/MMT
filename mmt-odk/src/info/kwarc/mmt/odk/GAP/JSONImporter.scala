@@ -44,12 +44,24 @@ abstract class GAPObject {
   private var impls : Set[GAPObject] = Set()
   private var computed = false
 
+  def getInner = this
+
+  private val reg1 = """Tester\((\w+)\)""".r
+  private val reg2 = """CategoryCollections\((\w+)\)""".r
+
   def implications(all:List[GAPObject]) : Set[GAPObject] = if (!computed) {
+    def fromName(s:String) : GAPObject = s match {
+      case reg1(s2) => Tester(fromName(s2))
+      case reg2(s2) => CategoryCollections(fromName(s2))
+      case _ => all.find(_.name==s).getOrElse {
+        throw new ParseError("GAP Object not found in import: " + s)
+      }
+    }
     impls = implied.map(ref =>
-      if (ref == "<<unknown>>") this else
-      all.find(_.name==ref).getOrElse {
-      throw new ParseError("GAP Object not found in import: " + ref)
-    }).toSet - this
+      if (ref == "<<unknown>>") this else {try { fromName(ref) } catch {
+        case ParseError(s) => throw new ParseError(s + " in " + ref)
+      }}
+      ).toSet - this
     computed = true
     impls
   } else impls
@@ -64,6 +76,22 @@ case class GAPAttribute(name : String, implied : List[String]) extends GAPObject
 case class GAPTester( name : String, implied : List[String]) extends GAPObject
 case class GAPRepresentation(name : String, implied : List[String]) extends GAPObject
 case class GAPFilter(name : String, implied : List[String]) extends GAPObject
+case class GAPUnknown(name : String) extends GAPObject {
+  val implied = Nil
+}
+
+case class Tester(obj : GAPObject) extends GAPObject {
+  val name = obj.name + ".tester"
+  val implied = List()
+  override def getInner = obj.getInner
+  override def toString = name
+}
+case class CategoryCollections(obj: GAPObject) extends GAPObject {
+  val name = obj.name + ".catcollection"
+  val implied = List()
+  override def getInner = obj.getInner
+  override def toString = name
+}
 
 class GAPReader {
 
@@ -101,9 +129,16 @@ class GAPReader {
     }
   }
 
+  private val reg1 = """Tester\((\w+)\)""".r
+  private val reg2 = """CategoryCollections\((\w+)\)""".r
+
   def apply(json: JSON) {
     json match {
-      case obj : JSONObject => obj.map.foreach(p => convert(p._1,p._2))
+      case obj : JSONObject => obj.map.foreach(p => p._1.value match {
+        case reg1(s) =>
+        case reg2(s) =>
+        case _ => convert(p._1,p._2)
+      })
       case _ => throw new ParseError("Not a JSON Object")
     }
   }

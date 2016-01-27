@@ -9,15 +9,17 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit)
   var dones : List[GAPObject] = Nil
   var notready : List[GAPObject] = Nil
 
+  private val reg = """Tester\((\w+)\)""".r
+
   private var gap : GAPReader = null
 
   private def sort(list:List[GAPObject]) : Unit = {
     list.foreach { g =>
       val refs = g.implications(gap.all)
-      if (refs.forall(p => dones contains p)) dones::=g
-      else notready::=g
+        if (refs.forall(p => dones contains p.getInner)) dones::=g
+        else notready::=g
     }
-    if (dones.length != gap.all.length) sort({
+    if (dones.length < gap.all.length) sort({
       val old = notready
       notready = Nil
       old
@@ -28,5 +30,8 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit)
     gap = ngap
     sort(gap.all)
     dones.foreach(println(_))
+    println(dones.length)
+    // println("\n\n--------------------------------------------------\n Throwaways:")
+    // testers.foreach(println(_))
   }
 }
