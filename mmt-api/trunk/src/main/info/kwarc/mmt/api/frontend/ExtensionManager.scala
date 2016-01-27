@@ -44,13 +44,15 @@ trait Extension extends Logger {
 
   protected def getFromFirstArgOrEnvvar(args: List[String], name: String,
                                         default: String = ""): String = {
-    args match {
+    AnaArgs.splitOptions(args)._2 match {
       case Nil => controller.getEnvVar(name).getOrElse({
         log("environment variable " + name + " is not set" +
           (if (default.nonEmpty) " using \"" + default + "\"" else ""))
         default
       })
-      case hd :: Nil => hd
+      case hd :: Nil =>
+        log("using argument " + hd + " as value for " + name)
+        hd
       case _ => throw LocalError("too many arguments: " + args.mkString(" ")
         + "; expected: 1")
     }

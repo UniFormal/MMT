@@ -371,8 +371,9 @@ class PdfLatex extends LaTeXBuildTarget {
 
   override def start(args: List[String]) {
     super.start(args)
-    val nonOptArgs = if (nameOfExecutable.nonEmpty) nameOfExecutable :: remainingStartArguments
-    else remainingStartArguments
+    val (_, nonOpts) = splitOptions(remainingStartArguments)
+    val nonOptArgs = if (nameOfExecutable.nonEmpty) nameOfExecutable :: nonOpts
+    else nonOpts
     val newPath = getFromFirstArgOrEnvvar(nonOptArgs, "PDFLATEX", pdflatexPath)
     if (newPath != pdflatexPath) {
       pdflatexPath = newPath
