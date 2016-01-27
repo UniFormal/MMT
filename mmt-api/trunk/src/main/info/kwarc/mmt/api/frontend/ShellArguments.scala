@@ -186,7 +186,7 @@ object ShellArguments {
   val toplevelArgs: OptionDescrs = List(
     OptionDescr("help", "h", NoArg, "command line help"),
     OptionDescr("about", "a", NoArg, "about the program"),
-    OptionDescr("shell", "", NoArg, "start an interactive shell"),
+    OptionDescr("shell", "i", NoArg, "start an interactive shell"),
     OptionDescr("keepalive", "w", NoArg, "wait for processes to finish"),
     OptionDescr("noshell", "w", NoArg, "same as keepalive"),
     OptionDescr("send", "", IntArg, "send commands to remote port"),

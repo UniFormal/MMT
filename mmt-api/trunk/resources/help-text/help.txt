@@ -25,7 +25,7 @@ The default exit behaviour is to terminate immediately after COMMANDS have been 
 MMT, it will start an interactive shell for the user to enter commands. The default behaviour of MMT can be overwritten
 with the following arguments.
 
-      --shell               execute COMMANDS and take further commands on the MMT shell.
+  -i, --shell               execute COMMANDS and take further commands on the MMT shell.
                             (this is the default if no arguments are provided.)
   -w, --keepalive           execute COMMANDS and terminate only after all threads have finished.
                             (no MMT shell will be started.)
