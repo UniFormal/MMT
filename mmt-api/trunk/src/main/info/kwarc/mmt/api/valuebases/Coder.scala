@@ -22,11 +22,14 @@ class Coder[Code](codecs: List[Codec[Code]], operators: List[CodecOperator[Code]
          val cop = operators.find(_.id == op).getOrElse {
             throw GeneralError("codec not found: " + op)
          }
-         val tpars = pars.drop(cop.numberOfOtherParameters)
-         if (tpars.length != cop.numberOfTypeParameters)
-            throw CodecNotApplicable
-         val parsC = tpars map buildCodec
-         cop(parsC:_*)
+         val numPars = pars.length
+         val tpars = cop.typeParameterPositions map {i =>
+            if (i < 1 || i > numPars)
+               throw CodecNotApplicable
+            pars(i-1)
+         }
+         val tparsC = tpars map buildCodec
+         cop(tparsC:_*)
       case OMS(op) =>
          codecs.find(_.exp == OMS(op)).getOrElse {
             throw GeneralError("codec not found: " + op)

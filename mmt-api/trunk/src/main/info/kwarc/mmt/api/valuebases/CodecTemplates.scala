@@ -10,7 +10,7 @@ import uom._
 abstract class ListCodec[Code](id: GlobalName, list: GlobalName, nil: GlobalName, cons: GlobalName)
    extends CodecOperator[Code](id, list) {self =>
    
-   val numberOfTypeParameters = 1
+   val typeParameterPositions = List(1)
    
    def aggregate(cs: List[Code]): Code
    def separate(c: Code): List[Code]
@@ -26,8 +26,6 @@ abstract class ListCodec[Code](id: GlobalName, list: GlobalName, nil: GlobalName
     * @return a codec for OMA(OMS(tp), cs.head.tp) 
     */
    def apply(cs: Codec[Code]*) = {
-      if (cs.length != numberOfTypeParameters)
-         throw CodecNotApplicable
       val codec = cs.head
       new Codec[Code](id(codec.exp), tp(codec.tp)) {
          def encode(t: Term) = self.aggregate(self.destruct(t) map codec.encode)

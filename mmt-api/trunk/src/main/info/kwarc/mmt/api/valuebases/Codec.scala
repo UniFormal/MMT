@@ -35,10 +35,11 @@ abstract class AtomicCodec[Rep,Code](id: GlobalName, tp: Term, semType: Semantic
  */
 abstract class CodecOperator[Code](val id: GlobalName, val tp: GlobalName) {
 
-   val numberOfOtherParameters: Int
-   val numberOfTypeParameters: Int
+   /** positions in the argument list (starting from 1) in OMA(list, ...) that are type arguments */ 
+   val typeParameterPositions : List[Int]
+   
    /**
-    * @param cs one codec for each type parameter; pre: cs.length == this.numberOfTypeParameters
+    * @param cs one codec for each type parameter; pre: cs.length == this.typeParameterPositions.length
     * @return a codec for OMA(OMS(tp), cs.map(_.tp)) 
     */
    def apply(cs: Codec[Code]*) : Codec[Code]
