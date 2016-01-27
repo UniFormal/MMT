@@ -61,9 +61,7 @@ object TMList extends ListCodec[JSON](Codecs.standardList, Math.list, Math.nil, 
 }
 
 object StandardVector extends CodecOperator[JSON](Codecs.standardVector, Math.vector) {self =>
-
-  val numberOfOtherParameters = 1
-  val numberOfTypeParameters = 1
+  val typeParameterPositions : List[Int] = List(1)
 
   def aggregate(cs: List[JSON]): JSON = JSONArray(cs:_*)
   def separate(j: JSON): List[JSON] = j match {
@@ -82,8 +80,6 @@ object StandardVector extends CodecOperator[JSON](Codecs.standardVector, Math.ve
   }
 
   def apply(cs: Codec[JSON]*) = {
-    if (cs.length != 1)
-      throw CodecNotApplicable
     val codec = cs.head
     new Codec[JSON](id(codec.exp), tp(codec.tp)) {
       def encode(t: Term) = self.aggregate(self.destruct(t) map codec.encode)
@@ -96,8 +92,7 @@ object StandardVector extends CodecOperator[JSON](Codecs.standardVector, Math.ve
 /*
 object StandardMatrix extends CodecOperator[JSON](Codecs.standardMatrix, Math.matrix) {self =>
 
-  val numberOfOtherParameters = 1
-  val numberOfTypeParameters = 1
+  val typeParameterPositions : List[Int] = List(1)
 
   def aggregate(cs: List[JSON]): JSON = JSONArray(cs:_*)
   def separate(j: JSON): List[JSON] = j match {
@@ -115,8 +110,6 @@ object StandardMatrix extends CodecOperator[JSON](Codecs.standardMatrix, Math.ma
   }
 
   def apply(cs: Codec[JSON]*) = {
-    if (cs.length != 1)
-      throw CodecNotApplicable
     val codec = cs.head
     new Codec[JSON](id(codec.exp), tp(codec.tp)) {
       def encode(t: Term) = self.aggregate(self.destruct(t) map codec.encode)

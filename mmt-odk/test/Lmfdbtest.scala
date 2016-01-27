@@ -15,7 +15,6 @@ object Lmfdbtest {
     """log console
        log+ debug
        mathpath archive ../../MathHub/
-       extension info.kwarc.mmt.lf.Plugin
        extension info.kwarc.mmt.odk.Plugin
     """.split("\n").foreach(controller.handleLine(_))
 

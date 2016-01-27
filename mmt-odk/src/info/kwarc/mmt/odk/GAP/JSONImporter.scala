@@ -70,15 +70,12 @@ abstract class GAPObject {
     "\n - " + s.getClass.getSimpleName + " " + s.name.toString).mkString("")
 }
 
-case class GAPProperty(name : String, implied : List[String]) extends GAPObject
+case class GAPProperty(name : String, implied : List[String], isTrue :Boolean = false) extends GAPObject
 case class GAPCategory(name : String, implied : List[String]) extends GAPObject
 case class GAPAttribute(name : String, implied : List[String]) extends GAPObject
 case class GAPTester( name : String, implied : List[String]) extends GAPObject
 case class GAPRepresentation(name : String, implied : List[String]) extends GAPObject
 case class GAPFilter(name : String, implied : List[String]) extends GAPObject
-case class GAPUnknown(name : String) extends GAPObject {
-  val implied = Nil
-}
 
 case class Tester(obj : GAPObject) extends GAPObject {
   val name = obj.name + ".tester"
@@ -102,43 +99,55 @@ class GAPReader {
   var representations : List[GAPRepresentation] = Nil
   var filter : List[GAPFilter] = Nil
 
-  def all = properties ++ categories ++ attributes ++ tester ++ representations ++ filter
+  def all = (properties ++ categories ++ attributes ++ tester ++ representations ++ filter).distinct
 
-  private def convert(name : JSONString,j : JSON) {
+  private val reg1 = """Tester\((\w+)\)""".r
+  private val reg2 = """CategoryCollections\((\w+)\)""".r
+
+  private def convert(j : JSON) {
     j match {
       case obj : JSONObject =>
+        val name = obj("name") match {
+          case Some(s: JSONString) => s.value
+          case _ => throw new ParseError("Name missing or not a JSONString: " + obj)
+        }
+        name match {
+          case reg1(s) => return
+          case reg2(s) => return
+          case _ =>
+        }
         val tp = obj("type") match {
           case Some(s : JSONString) => s.value
           case _ => throw new ParseError("Type missing or not a JSONString: " + obj)
         }
         val impls = obj("implied") match {
-          case Some(l : JSONArray) => l.values.toList match {
-            case ls : List[JSONString] => ls.map(_.value)
+          case Some(l: JSONArray) => l.values.toList match {
+            case ls: List[JSONString] => ls.map(_.value)
             case _ => throw new ParseError("implied not a List of JSONStrings: " + obj + "\n" + l.values.getClass)
           }
-          case _ => throw new ParseError("implied missing or not a JSONArray: " + obj)
+          case _ => obj("filters") match {
+            case Some(l: JSONArray) => l.values.toList match {
+              case ls: List[JSONString] => ls.map(_.value)
+              case _ => throw new ParseError("filters not a List of JSONStrings: " + obj + "\n" + l.values.getClass)
+            }
+            case _ => throw new ParseError("implied/filters missing or not a JSONArray: " + obj)
+          }
         }
-        if (tp=="GAP_Property")             properties      ::= GAPProperty(name.value,impls)
-        else if (tp=="GAP_Category")        categories      ::= GAPCategory(name.value,impls)
-        else if (tp=="GAP_Attribute")       attributes      ::= GAPAttribute(name.value,impls)
-        else if (tp=="GAP_Tester")          tester          ::= GAPTester(name.value,impls)
-        else if (tp=="GAP_Representation")  representations ::= GAPRepresentation(name.value,impls)
-        else if (tp=="GAP_Filter")          filter          ::= GAPFilter(name.value,impls)
-        else throw new ParseError("Type not yet implemented: " + tp)
+        if (tp=="GAP_Property")             properties      ::= GAPProperty(name,impls)
+        else if (tp=="GAP_TrueProperty")    properties      ::= GAPProperty(name,impls,true)
+        else if (tp=="GAP_Category")        categories      ::= GAPCategory(name,impls)
+        else if (tp=="GAP_Attribute")       attributes      ::= GAPAttribute(name,impls)
+        else if (tp=="GAP_Tester")          tester          ::= GAPTester(name,impls)
+        else if (tp=="GAP_Representation")  representations ::= GAPRepresentation(name,impls)
+        else if (tp=="GAP_Filter")          filter          ::= GAPFilter(name,impls)
+        else throw new ParseError("Type not yet implemented: " + tp + "in" + obj)
       case _ => throw new ParseError("Not a JSON Object: " + j)
     }
   }
 
-  private val reg1 = """Tester\((\w+)\)""".r
-  private val reg2 = """CategoryCollections\((\w+)\)""".r
-
   def apply(json: JSON) {
     json match {
-      case obj : JSONObject => obj.map.foreach(p => p._1.value match {
-        case reg1(s) =>
-        case reg2(s) =>
-        case _ => convert(p._1,p._2)
-      })
+      case obj : JSONArray => obj.values.foreach(p => convert(p))
       case _ => throw new ParseError("Not a JSON Object")
     }
   }

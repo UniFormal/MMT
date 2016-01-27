@@ -1,6 +1,5 @@
 package info.kwarc.mmt.odk.GAP
 
-import info.kwarc.mmt.api.ParseError
 import info.kwarc.mmt.api.archives.BuildTask
 import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.Controller
@@ -8,8 +7,6 @@ import info.kwarc.mmt.api.frontend.Controller
 class Translator(controller: Controller, bt: BuildTask, index: Document => Unit) {
   var dones : List[GAPObject] = Nil
   var notready : List[GAPObject] = Nil
-
-  private val reg = """Tester\((\w+)\)""".r
 
   private var gap : GAPReader = null
 
