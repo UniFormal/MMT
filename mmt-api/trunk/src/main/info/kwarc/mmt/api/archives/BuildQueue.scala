@@ -8,7 +8,7 @@ import utils._
 import web.{Body, Server, ServerExtension}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.HashMap
+import scala.collection.mutable
 
 /** */
 class QueuedTask(val target: TraversingBuildTarget, val task: BuildTask) {
@@ -25,7 +25,7 @@ class QueuedTask(val target: TraversingBuildTarget, val task: BuildTask) {
 
   def toJson: JSONString = {
     val str = task.inPath.toString
-    JSONString(if (str.isEmpty) task.archive.id else str)
+    JSONString((if (str.isEmpty) task.archive.id else str) + " (" + target.key + ")")
   }
 }
 
@@ -78,15 +78,17 @@ sealed abstract class Dependency {
   *  @param inPath path to file (without inDim)
  */
 case class BuildDependency(key: String, archive: Archive, inPath: FilePath) extends Dependency {
-  def toJson: JSONString = JSONString(inPath.toString)
+  def toJson: JSONString = JSONString(inPath.toString + " (" + key + ")")
 }
 
 /** like [[BuildDependency]] but for a directory
   *
   *  @param inPath path to file (without inDim)
  */
-case class DirBuildDependency(key: String, archive: Archive, inPath: FilePath, children: List[BuildTask]) extends Dependency {
-  def toJson: JSONString = JSONString(archive.id)
+case class DirBuildDependency(key: String, archive: Archive, inPath: FilePath, children: List[BuildTask])
+  extends Dependency {
+  def toJson: JSONString = JSONString(archive.id + "/" + inPath.toString +
+    " (" + key + ") " + children.map(bt => bt.inPath).mkString("[",", ", "]"))
 }
 
 sealed abstract class ResourceDependency extends Dependency
@@ -120,9 +122,7 @@ abstract class BuildManager extends Extension {
   def waitToEnd
 }
 
-/**
-  * builds tasks immediately (no queueing, no dependeny management, no parallel processing)
-  */
+/** builds tasks immediately (no queueing, no dependency management, no parallel processing) */
 class TrivialBuildManager extends BuildManager {
   def addTasks(qts: Iterable[QueuedTask]) = qts.foreach {qt =>
     qt.target.runBuildTask(qt.task)
@@ -139,9 +139,9 @@ class BuildQueue extends BuildManager {
   private var blocked : List[QueuedTask] = Nil
 
   /** all tasks currently in the queue */
-  val alreadyQueued = new HashMap[Dependency,QueuedTask]
+  val alreadyQueued = new mutable.HashMap[Dependency,QueuedTask]
   /** all tasks that were built (successfully or permanently-failing) since the last time the queue was empty */
-  val alreadyBuilt = new HashMap[Dependency,BuildResult]
+  val alreadyBuilt = new mutable.HashMap[Dependency,BuildResult]
   var finishedBuilt = List[(Dependency, BuildResult)]()
 
   private var continue: Boolean = true
@@ -239,7 +239,7 @@ class BuildQueue extends BuildManager {
               val in = exp.producesFrom(out).getOrElse(return None)
               val bd = BuildDependency(key, a, in)
               Some(bd)
-           case f if f.startsWith(a.resolveDimension(source)) =>
+           case fp if fp.startsWith(a.resolveDimension(source)) =>
               val imp = controller.extman.get(classOf[Importer], ???).getOrElse(return None) //TODO what importer to use?
               val in = imp.producesFrom(out).getOrElse(return None)
               val bd = BuildDependency(imp.key, a, in)
