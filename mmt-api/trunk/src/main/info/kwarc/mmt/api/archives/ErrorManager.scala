@@ -11,8 +11,6 @@ import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.web._
 
 import scala.collection.mutable
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.xml.Node
 
 object Table {
@@ -110,11 +108,11 @@ class ErrorManager extends Extension with Logger {
   private var level: Level = Level.Error
 
   /**
-   * @param id the archive
+   * @param a the archive
    * @return the [[ErrorMap]] of the archive
    */
-  def apply(id: String): ErrorMap =
-    errorMaps.find(_.archive.id == id).getOrElse(throw GeneralError("archive does not exist: " + id))
+  def getErrorMap(a: Archive): ErrorMap =
+    errorMaps.find(_.archive.id == a.id).getOrElse(new ErrorMap(a))
 
   /**
    * @param a the archive
@@ -138,7 +136,7 @@ class ErrorManager extends Extension with Logger {
     val f = a / errors / target / fpath
     val bes = ErrorReader.getBuildErrors(f, level, Some((s: String) => log(s))).
       map(BuildError(a, target, fpath.toFile.stripExtension.toFilePath, _))
-    val em = apply(a.id)
+    val em = getErrorMap(a)
     em.put((target, fpath.segments), bes)
   }
 
@@ -158,7 +156,7 @@ class ErrorManager extends Extension with Logger {
     controller.backend.getArchives.foreach { a => loadAllErrors(a) }
   }
 
-  override def destroy(): Unit = {
+  override def destroy: Unit = {
     //TODO remove cl and serve
   }
 
@@ -166,9 +164,7 @@ class ErrorManager extends Extension with Logger {
   private val cl = new ChangeListener {
     /** creates an [[ErrorMap]] for the archive and asynchronously loads its errors */
     override def onArchiveOpen(a: Archive): Unit = {
-      Future {
         loadAllErrors(a)
-      }
     }
 
     /** deletes the [[ErrorMap]] */
@@ -178,9 +174,7 @@ class ErrorManager extends Extension with Logger {
 
     /** reloads the errors */
     override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath): Unit = {
-      Future {
         loadErrors(a, t.key, p.toFile.addExtension("err").toFilePath)
-      }
     }
   }
   private val defaultLimit: Int = 100
