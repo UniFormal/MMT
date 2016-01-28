@@ -152,6 +152,8 @@ abstract class BuildTarget extends FormatBasedExtension {
     remainingStartArguments = rest
     verbose = m.isDefinedAt("verbose")
     quiet = m.isDefinedAt("quiet")
+    if (!quiet) report.groups += key + "-result" // ensure logging if non-quiet
+    if (verbose) report.groups += key
     val (otherOpts, _) = splitOptions(rest)
     if (otherOpts.nonEmpty) {
       logError("unknown option: " + otherOpts.mkString(" "))

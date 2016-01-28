@@ -191,12 +191,10 @@ trait ActionHandling { self: Controller =>
               // opening may fail despite resolveAnyPhysical (i.e. formerly by a MANIFEST.MF without id)
               logError("not an archive: " + root)
             case Some(archive) =>
-              if (!bt.quiet) report.groups += bt.key + "-result" // ensure logging if non-quiet
-              if (bt.verbose) report.groups += bt.key
               val inPath = fp.segments match {
                 case dim :: path =>
                   bt match {
-                    case bt: TraversingBuildTarget if dim != bt.inDim.toString =>
+                    case tbt: TraversingBuildTarget if dim != tbt.inDim.toString =>
                       logError("wrong in-dimension \"" + dim + "\"")
                     case _ =>
                   }
