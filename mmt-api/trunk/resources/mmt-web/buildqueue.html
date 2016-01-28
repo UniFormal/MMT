@@ -21,17 +21,17 @@
     finished<ul>
     <li ng-repeat="e in queue.finished">
         {{e.dependency}} {{e.result.success ? "success" : "failure"}}
-        <span ng-show="e.result.needed.length > 0">missing<span/>
+        <span ng-show="e.result.needed.length > 0">missing</span>
         <ul>
             <li ng-repeat="n in e.result.needed">
             {{n}}
         </ul>
-        <span ng-show="e.result.used.length > 0">used<span/>
+        <span ng-show="e.result.used.length > 0">used</span>
         <ul>
             <li ng-repeat="n in e.result.used">
             {{n}}
         </ul>
-        <span ng-show="e.result.provided.length > 0">provided<span/>
+        <span ng-show="e.result.provided.length > 0">provided</span>
         <ul>
             <li ng-repeat="n in e.result.provided">
             {{n}}
