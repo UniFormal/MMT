@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.archives
 
+import info.kwarc.mmt.api.ExtensionError
 import info.kwarc.mmt.api.utils._
 import File._
 
@@ -42,6 +43,8 @@ class DummyBuildTarget extends TraversingBuildTarget {
     (missingDeps, providedEntities)
   }
 
+  case class FooError(s: String) extends ExtensionError(key, s)
+
   def buildFile(bf: BuildTask): BuildResult = {
     val (needed, provided) = readSource(bf)
     val providedFiles = provided.map(File(_))
@@ -50,6 +53,7 @@ class DummyBuildTarget extends TraversingBuildTarget {
     if (missingDeps.isEmpty) {
       if (provided.isEmpty) {
         logResult("failure for " + bf.inFile)
+        bf.errorCont(FooError("nothing provided"))
         BuildFailure(usedPDs, Nil)
       } else {
         File.write(bf.outFile, provided.mkString("", "\n", "\n"))
@@ -58,7 +62,9 @@ class DummyBuildTarget extends TraversingBuildTarget {
       }
     }
     else {
-      logResult("missing dependencies for " + bf.inPath + ": " + missingDeps)
+      var err = "missing dependencies for " + bf.inPath + ": " + missingDeps.mkString(" ")
+      logResult(err)
+      bf.errorCont(FooError(err))
       MissingDependency(missingDeps.map(PhysicalDependency), providedFiles.map(PhysicalDependency))
     }
   }
