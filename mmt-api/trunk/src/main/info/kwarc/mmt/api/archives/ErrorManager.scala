@@ -121,6 +121,7 @@ class ErrorManager extends Extension with Logger {
    *          load all errors of this archive
    */
   def loadAllErrors(a: Archive): Unit = {
+    errorMaps ::= new ErrorMap(a)
     a.traverse(errors, EmptyPath, TraverseMode(_ => true, _ => true, parallel = false)) {
       case Current(_, FilePath(target :: path)) =>
         loadErrors(a, target, FilePath(path))
@@ -165,7 +166,6 @@ class ErrorManager extends Extension with Logger {
   private val cl = new ChangeListener {
     /** creates an [[ErrorMap]] for the archive and asynchronously loads its errors */
     override def onArchiveOpen(a: Archive): Unit = {
-      errorMaps ::= new ErrorMap(a)
       Future {
         loadAllErrors(a)
       }
