@@ -187,44 +187,38 @@ class BuildQueue extends BuildManager {
     }
   }
 
-  /**
-   * recursively queues all dependencies of the next task; then returns the head of the queue
-   */
-  private def getNextTask: Option[QueuedTask] = synchronized {
-     val qt = queued.peek
-     if (qt == null)
-        return None
-     val qtDep = qt.task.asDependency
-     // queue all dependencies at beginning
-     qt.missingDeps = qt.missingDeps.flatMap {
+  /** recursively queues all dependencies of the next task; then returns the head of the queue */
+  private def getTopTask: (Option[QueuedTask], Iterable[Dependency]) = synchronized {
+    val optQt = Option(queued.poll)
+    optQt.foreach(qt => alreadyQueued -= qt.task.asDependency)
+    val currentMissingDeps = optQt match {
+      case None => Nil
+      case Some(qt) => qt.missingDeps.flatMap {
         case bd: BuildDependency =>
-           buildDependency(bd)
-           Nil
+          buildDependency(bd)
+          Nil
         case bd: DirBuildDependency =>
-           // skip for now
-           // TODO
-           Nil
+          // skip for now
+          // TODO
+          Nil
         case r: ResourceDependency =>
-           List(r)
+          List(r)
         case fd: ForeignDependency =>
-           // should not happen, cannot be handled at this point
-           Nil
-     }
-     if (qt.missingDeps.nonEmpty) {
-        // dependency has not been built yet
-        queued.poll
-        alreadyQueued -= qtDep
+          // should not happen, cannot be handled at this point
+          Nil
+      }
+    }
+    (optQt, currentMissingDeps)
+  }
+
+  private def getNextTask: Option[QueuedTask] = {
+    val (optQt, currentMissingDeps) = getTopTask
+     if (currentMissingDeps.nonEmpty) {
+        val qt = optQt.get // is non-empty if deps are missing
+        qt.missingDeps = currentMissingDeps
         blocked = blocked ::: List(qt)
-     }
-     if (queued.peek != qt) {
-        // all dependencies are queued now; recursively process them
         getNextTask
-     } else {
-        // remove qt from queue and return it
-        queued.poll
-        alreadyQueued -= qtDep
-        Some(qt)
-     }
+     } else optQt
   }
 
   private def findResource(r: ResourceDependency): Option[BuildDependency] = r match {
@@ -309,7 +303,7 @@ class BuildQueue extends BuildManager {
               case MissingDependency(missing, provided) =>
                  // register missing dependencies and requeue
                  qt.missingDeps = missing
-                 queued.add(qt)
+                 blocked = blocked ::: List(qt)
             }
             unblockTasks(res)
           case None =>
