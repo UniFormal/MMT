@@ -52,6 +52,8 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     $scope.showBuildResult = true;
     $scope.clean = function(res) {
         action.exec(action.build(res.archive, "-" + res.target, encodeURIComponent(res.fileName)), function(data) {
+          $scope.htmlText = '';
+          $scope.search();
         });
     };
     $scope.build = function(res) {

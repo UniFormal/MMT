@@ -43,7 +43,8 @@ case class BuildError(archive: Archive, target: String, path: FilePath, data: Er
       archive.root.getName,
       path.toString,
       f.toString,
-      new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(f.toJava.lastModified)),
+      if (data.shortMsg == "cleaned") ""
+      else new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(f.toJava.lastModified)),
       target,
       data.sourceRef.fold("")(_.toString),
       data.shortMsg

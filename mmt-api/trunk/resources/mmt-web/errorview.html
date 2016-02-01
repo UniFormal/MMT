@@ -124,8 +124,8 @@
                 &#10005;</a>
             </td>
             <td ng-repeat="key in colProps" ng-if="columns[key].x">
-                <span ng-show="key != 'fileLink'">{{res[key]}}</span>
-                <span ng-show="key == 'fileLink'">
+                <span ng-show="key != 'fileLink' || res.shortMsg == 'cleaned'">{{res[key]}}</span>
+                <span ng-if="key == 'fileLink' && res.shortMsg != 'cleaned'">
                     <a href="" ng-click="serve(res[key])">{{res[key]}}</a>
                 </span>
             </td>
