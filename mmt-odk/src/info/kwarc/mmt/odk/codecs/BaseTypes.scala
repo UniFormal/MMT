@@ -94,16 +94,16 @@ object StandardMatrix extends CodecOperator[JSON](Codecs.standardMatrix, Math.ma
 
   val typeParameterPositions : List[Int] = List(1)
 
-  def aggregate(cs: List[JSON]): JSON = JSONArray(cs:_*)
-  def separate(j: JSON): List[JSON] = j match {
+  def aggregate(n:Int,m:Int,cs: List[JSON]): JSON = JSONArray(cs:_*)
+  def separate(j: JSON): (Int,Int,List[JSON]) = j match {
     case JSONArray(js@_*) => js.toList
     case _ => throw CodecNotApplicable
   }
 
-  def destruct(tm: Term): List[Term] = tm match {
+  def destruct(tm: Term): List[List[Term]] = tm match {
     case ApplySpine(OMS(Math.matrixconst), List(_,_,_,a,b)) => List(a,b)
   }
-  def construct(elemTp: Term, tms: List[Term]): Term = {
+  def construct(elemTp: Term, tms: List[List[Term]]): Term = {
     tms match {
       case List(a,b)
     }

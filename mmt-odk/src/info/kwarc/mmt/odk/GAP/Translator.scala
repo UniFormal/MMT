@@ -25,6 +25,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit)
 
   def apply(ngap:GAPReader) = {
     gap = ngap
+    print("sorting...")
     sort(gap.all)
     dones.foreach(println(_))
     println(dones.length)

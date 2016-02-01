@@ -1,5 +1,6 @@
 package info.kwarc.mmt.LFX.LFCoprod
 
+import info.kwarc.mmt.api.checking.TypingRule.NotApplicable
 import info.kwarc.mmt.api.{objects, LocalName}
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects._
@@ -118,14 +119,14 @@ object MatchComp extends ComputationRule(cmatch.path) {
       val (a,b,tpA,tpB) = solver.simplify(u) match {
         case inl(t,tp) => (Some(t),None,solver.inferType(t).getOrElse(return None),tp)
         case inr(t,tp) => (None,Some(t),tp,solver.inferType(t).getOrElse(return None))
-        case _ => return None
+        case _ => throw NotApplicable
       }
       val (f,x1,g,x2) = (solver.simplify(t1),solver.simplify(t2)) match {
         case (ccase(y1,tpA2,fx),ccase(y2,tpB2,gx)) => if (!(
           solver.check(Equality(stack,tpA,tpA2,Some(OMS(Typed.ktype)))) &&
           solver.check(Equality(stack,tpB,tpB2,Some(OMS(Typed.ktype)))))) return None
           else (fx,y1,gx,y2)
-        case _ => return None
+        case _ => throw NotApplicable
       }
       history += "Expanding match on coproduct embedding"
       if (a.isDefined) Some(solver.simplify(f ^? (x1/a.get)))
@@ -162,7 +163,7 @@ object AddFuncApply extends ComputationRule(Apply.path) {
   = tm match {
     case Apply(p,u) => solver.simplify(p) match {
       case Addfunc(t1,t2) => Some(solver.simplify(ApplySpine(AddFuncComp(solver)(Addfunc(t1,t2),false).getOrElse(return None),u)))
-      case _ => return None
+      case _ => throw NotApplicable
     }
     case _ => None
   }

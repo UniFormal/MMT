@@ -15,7 +15,7 @@ object JSONImporter extends Importer {
     //     if (bf.inFile.filepath.toString < startAt) return
     val d = bf.inFile.name
     val e = try {
-      reader(JSON.parse(File.read(bf.inFile).replace("\\\n","")))//parseXML(bf.inFile)
+      reader(JSON.parse(File.read(bf.inFile).replace("\\\n","")))
     } catch {
       case utils.ExtractError(msg) =>
         println(msg)

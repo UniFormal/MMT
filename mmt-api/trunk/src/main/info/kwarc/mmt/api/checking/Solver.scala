@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
 import frontend._
+import info.kwarc.mmt.api.checking.TypingRule.NotApplicable
 import modules._
 import objects.Conversions._
 import objects._
@@ -9,6 +10,7 @@ import proving._
 import parser.ParseResult
 
 import scala.collection.mutable.HashSet
+import scala.util.{Failure, Try}
 
 /* ideas
  * inferType should guarantee well-formedness (what about LambdaTerm?)
@@ -131,6 +133,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       private var pushedStates: List[StateData] = Nil
 
       /** evaluates its arguments without applying its side effects on the state
+ *
        *  @return if Some(v), then normal evaluation is guaranteed to return v without errors
        */
       def immutably[A](a: => A): DryRunResult = {
@@ -154,6 +157,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    /** true if all judgments solved so far succeeded (all variables solved, no delayed constraints, no errors) */
    def checkSucceeded = ! hasUnresolvedConstraints && ! hasUnsolvedVariables && errors.isEmpty
    /** the solution to the constraint problem
+ *
     * @return None if there are unresolved constraints or unsolved variables; Some(solution) otherwise
     */
    def getSolution : Option[Substitution] = if (delayed.isEmpty) solution.toSubstitution else None
@@ -190,6 +194,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
 
    /**
     * logs a string representation of the current state
+ *
     * @param prefix the log prefix to use (the normal one by default)
     * (occasionally it's useful to use a different prefix, e.g., "error" or when the normal prefix is not logged but the result should be)
     */
@@ -270,6 +275,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    }
    /**
     * looks up a variable in the appropriate context
+ *
     * @return the variable declaration for name
     */
    def getVar(name: LocalName)(implicit stack: Stack) = (constantContext ++ solution ++ stack.context)(name)
@@ -277,6 +283,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    /** registers the solution for an unknown variable
     *
     * If a solution exists already, their equality is checked.
+ *
     * @param name the solved variable
     * @param value the solution; must not contain object variables, but may contain meta-variables that are declared before the solved variable
     * @return true unless the solution differs from an existing one
@@ -301,6 +308,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    /** registers the solved type for a variable
     *
     * If a type exists already, their equality is checked.
+ *
     * @param name the variable
     * @param value the type; must not contain object variables, but may contain meta-variables that are declared before the solved variable
     * @return true unless the type differs from an existing one
@@ -339,6 +347,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    }
 
    /** registers an error
+ *
     *  @return false
     */
    def error(message: => String)(implicit history: History): Boolean = {
@@ -350,6 +359,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
 
    /** applies this Solver to one Judgement
     *  This method can be called multiple times to solve a system of constraints.
+ *
     *  @param j the Judgement
     *  @return if false, j is disproved; if true, j holds relative to all delayed judgements
     *
@@ -365,6 +375,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    }
 
    /** delays a constraint for future processing
+ *
     * @param j the Judgement to be delayed
     * @param activatable true if the judgment can be activated immediately
     * @return true (i.e., delayed Judgment's always return success)
@@ -472,6 +483,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
 
    /**
     * tries to evaluate an expression without any effect on the state
+ *
     * @return Some(v) if evaluation successful
     */
    override def dryRun[A](a: => A): DryRunResult = immutably(a)
@@ -534,11 +546,13 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
             val rOpt = rules.getByHead(classOf[ComputationRule], h)
             // use first applicable rule
             rOpt foreach {rule =>
-               rule(this)(tm, false) match {
-                  case Some(tmS) =>
+               Try(rule(this)(tm, false)) match {
+                  case util.Success(Some(tmS)) =>
                      history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
                      return tmS
-                  case None =>
+                  case util.Success(None) =>
+                  case Failure(NotApplicable) =>
+                  case Failure(t:Throwable) => throw t
                }
             }
             // no applicable rule, expand a definition
@@ -548,6 +562,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    }
 
    /** special case of the version below where we simplify until an applicable rule is found
+ *
     *  @param tm the term to simplify
     *  @param rm the RuleMap from which an applicable rule is needed
     *  @param stack the context of tm
@@ -558,6 +573,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
 
    /** applies [[ComputationRule]]s expands definitions until a condition is satisfied;
     *  A typical case is transformation into weak head normal form.
+ *
     *  @param tm the term to simplify (It may be simple already.)
     *  @param simple a term is considered simple if this function returns a non-None result
     *  @param stack the context of tm
@@ -701,6 +717,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    }
 
    /** infers the type of a term by applying InferenceRule's
+ *
     * @param tm the term
     * @param stack its Context
     * @return the inferred type, if inference succeeded
@@ -858,6 +875,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    }
 
    /** proves a Universe Judgment
+ *
     * @param j the judgment
     * @return true if succeeded or delayed
     *
@@ -874,6 +892,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    }
 
    /** proves an Inhabitable Judgment
+ *
     * @param j the judgment
     * @return true if succeeded or delayed
     *
@@ -896,6 +915,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    }
 
    /** proves an Equality Judgment by recursively applying in particular EqualityRule's.
+ *
     * @param j the judgement
     * @return false if the Judgment is definitely not provable; true if it has been proved or delayed
     *
@@ -980,6 +1000,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
     * checks equality t1 = t2 at an atomic type by simplification
     *
     * Both t1 and t2 are remembered as the chain of terms resulting from repeated definition expansion
+ *
     * @param terms1 the chain of terms that led to t1 (must be non-empty)
     * @param terms2 the chain of terms that led to t2 (must be non-empty)
     * @param t2Final if true, no simplification possible anymore
@@ -1148,10 +1169,13 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
             }
          //apply a foundation-dependent solving rule selected by the head of tm1
          case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tp.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
-            rules.getFirst(classOf[TypeSolutionRule], h) match {
-               case None => false
-               case Some(rule) => rule(this)(tm, tp)
-            }
+           val allrules =  rules.getByHead(classOf[TypeSolutionRule], h)
+           allrules.foreach(rule => Try(rule(this)(tm, tp)) match {
+                 case util.Success(b:Boolean) => return b
+                 case Failure(NotApplicable) =>
+                 case Failure(t : Throwable) => throw t
+               })
+           false
          case _ => false
       }
    }
@@ -1193,6 +1217,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
 
    /**
     *  tries to prove a goal
+ *
     *  @return the proof term if successful
     */
    def prove(conc: Term)(implicit stack: Stack, history: History): Option[Term] = {
@@ -1200,6 +1225,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
    }
 
    /** applies all ForwardSolutionRules of the given priority
+ *
     * @param priority exactly the rules with this Priority are applied */
    //TODO call this method at appropriate times
    private def forwardRules(priority: ForwardSolutionRule.Priority)(implicit stack: Stack, history: History): Boolean = {
@@ -1247,6 +1273,7 @@ object Solver {
 
   /**
     * tests a term for the an occurrence of an unknown variables that can be isolated by applying solution rules
+ *
     * @param rules the solution rules to test with
     * @param unknowns the list of variables to try to isolate
     * @param t the term in which to test

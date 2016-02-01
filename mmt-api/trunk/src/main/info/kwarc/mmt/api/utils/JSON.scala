@@ -77,6 +77,7 @@ object JSON {
          case '"' => parseString(s)
          case '{' => parseObject(s)
          case '[' => parseArray(s)
+         case _ => throw JSONError("Illegal starting character for JSON")
       }
    }
    
@@ -120,6 +121,7 @@ object JSON {
             case 'r' => ("r", "\r")
             case 't' => ("t", "\t")
             case 'u' => (rest.substring(0,5), "u"+rest.substring(1,4)) //TODO make char
+            case _ => throw JSONError("Illegal starting character " + rest(0) + " for JSON")
          }
       }
       if (!closed)

@@ -69,15 +69,15 @@ object SigmaTerm extends FormationRule(Sigma.path, OfType.path) {
   }
 }
 
-/** Introduction: the type inference rule |-t1:A, x:A|-t2:B(x)[t1/x]  --->  <t1,t2>:Sigma x:A.B(x)  * */
+/** Introduction: the type inference rule |-t1:A, x:A|-t2:B(t1)  --->  <t1,t2>:Sigma x:A.B(t1)  * */
 object TupleTerm extends IntroductionRule(Tuple.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
     tm match {
       case Tuple(t1,t2) =>
           val tpA = solver.inferType(t1)(stack, history).get
           val (xn,_) = Common.pickFresh(solver,LocalName("x"))
-          val sub : Substitution = xn / t2 // TODO Something's wrong here...
-          solver.inferType(t2 ^? sub)(stack ++ xn % tpA,history) map {b => Sigma(xn,tpA,b)}
+          val tpB = solver.inferType(t2)(stack, history).get
+          Some(Sigma(xn,tpA,tpB))
       case _ => None // should be impossible
     }
   }
@@ -130,11 +130,15 @@ object SigmaType extends TypingRule(Sigma.path) {
   def apply(solver:Solver)(tm:Term, tp:Term)(implicit stack: Stack, history: History) : Boolean = {
     Common.makeSigma(solver,tp) match {
       case Sigma(x,tpA,tpB) =>
+        /*
         val tpA2 = solver.inferType(Proj1(tm))
         val tpB2 = solver.inferType(Proj2(tm))(stack,history)
         if (tpA2.isDefined && tpB2.isDefined) solver.check(Equality(stack,tpA,tpA2.get,None)) &&
           solver.check(Equality(stack,tpB ^? (x / Proj1(tm)),tpB2.get,None))
         else false
+        */
+        solver.check(Typing(stack,Proj1(tm),tpA))
+        solver.check(Typing(stack ++ x % tpA,Proj2(tm),tpB ^? (x / Proj1(tm))))
       case _ => false
     }
   }
