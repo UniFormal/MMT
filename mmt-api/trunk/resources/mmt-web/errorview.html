@@ -119,7 +119,10 @@
         <tbody>
         <tr ng-repeat="res in results | filter : matchFilters() | orderBy : sort.col : sort.asc">
             <td><a href="" ng-click="build(res)" title="rebuild file">
-                &#10227;</a></td>
+                &#10227;</a>
+                <a href="" ng-click="clean(res)" title="clean file">
+                &#10005;</a>
+            </td>
             <td ng-repeat="key in colProps" ng-if="columns[key].x">
                 <span ng-show="key != 'fileLink'">{{res[key]}}</span>
                 <span ng-show="key == 'fileLink'">

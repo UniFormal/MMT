@@ -50,6 +50,10 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     $scope.buildCount = 0;
     $scope.htmlText = '';
     $scope.showBuildResult = true;
+    $scope.clean = function(res) {
+        action.exec(action.build(res.archive, "-" + res.target, encodeURIComponent(res.fileName)), function(data) {
+        });
+    };
     $scope.build = function(res) {
         $scope.buildCount += 1;
         action.exec(action.build(res.archive, res.target, encodeURIComponent(res.fileName)), function(data) {
@@ -58,7 +62,7 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
              $scope.buildCount -= 1;
            });
         });
-    }
+    };
     $scope.hide = function() {
         $http.get(':errors/search2' + $scope.query($scope.maxNumber) + '&hide=true').success(function(data) {
             $scope.hiddenData.push(data);
