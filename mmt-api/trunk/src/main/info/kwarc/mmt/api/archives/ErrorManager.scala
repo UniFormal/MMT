@@ -33,7 +33,9 @@ case class ErrorContent(tp: String, level: Level, sourceRef: Option[parser.Sourc
 /** an [[Error]] as reconstructed from an error file */
 case class BuildError(archive: Archive, target: String, path: FilePath, data: ErrorContent) {
   def toStrList: List[String] = {
-    val f = (archive / errors / target / path).addExtension("err")
+    val f1 = archive / errors / target / path
+    // no support for non-empty error folder names
+    val f = if (f1.isDirectory) f1 / ".err" else f1.addExtension("err")
     List(data.level.toString,
       data.tp,
       archive.id,
@@ -83,8 +85,8 @@ object ErrorReader {
         bes ::= ErrorContent(errType, lvl, srcR, shortMsg)
     }
     if (node.child.isEmpty && (emptyErr || errorLevel <= Level.Force)) {
-      bes ::= (if (emptyErr) ErrorContent("", 0, None, "corrupt error file")
-      else ErrorContent("", 0, None, "no error"))
+      bes ::= ErrorContent("", 0, None, if (!f.exists) "cleaned" else
+        if (emptyErr) "corrupt empty error file" else "no error")
     }
     bes.reverse
   }
@@ -114,16 +116,22 @@ class ErrorManager extends Extension with Logger {
   def getErrorMap(a: Archive): ErrorMap =
     errorMaps.find(_.archive.id == a.id).getOrElse(new ErrorMap(a))
 
-  /**
-   * @param a the archive
-   *          load all errors of this archive
-   */
+  /** load all errors of this archive from *.err files
+    *
+    * directories a recognized by mere .err files
+    *
+    * @param a the archive
+    */
   def loadAllErrors(a: Archive): Unit = {
     errorMaps ::= new ErrorMap(a)
-    a.traverse(errors, EmptyPath, TraverseMode(_ => true, _ => true, parallel = false)) {
+    a.traverse[Unit](errors, EmptyPath, TraverseMode(_ => true, _ => true, parallel = false))({
       case Current(_, FilePath(target :: path)) =>
         loadErrors(a, target, FilePath(path))
-    }
+    }, {
+      case (Current(_, FilePath(target :: path)), _) =>
+        loadErrors(a, target, FilePath(path) / ".err")
+      case (Current(_, `EmptyPath`), _) =>
+    })
   }
 
   /** load all errors of a build target applied to a file
@@ -174,7 +182,8 @@ class ErrorManager extends Extension with Logger {
 
     /** reloads the errors */
     override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath): Unit = {
-        loadErrors(a, t.key, p.toFile.addExtension("err").toFilePath)
+        loadErrors(a, t.key, if ((a / t.inDim / p).isDirectory)
+          p / ".err" else p.toFile.addExtension("err").toFilePath)
     }
   }
   private val defaultLimit: Int = 100

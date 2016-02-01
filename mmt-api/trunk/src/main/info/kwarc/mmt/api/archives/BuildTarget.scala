@@ -432,7 +432,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     } finally {
       bt.errorCont.close
     }
-    if (!bt.isDir) controller.notifyListeners.onFileBuilt(bt.archive, this, bt.inPath)
+    controller.notifyListeners.onFileBuilt(bt.archive, this, bt.inPath)
     res
   }
 
@@ -459,7 +459,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
     * @param curr the outDim directory to be deleted
     */
   def cleanDir(a: Archive, curr: Current) {
-    delete(getFolderErrorFile(a, curr.path))
+    val inPath = curr.path
+    delete(getFolderErrorFile(a, inPath))
+    controller.notifyListeners.onFileBuilt(a, this, inPath)
   }
 
   /** recursively delete output files in parallel (!) */
