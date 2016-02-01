@@ -48,7 +48,7 @@ class DummyBuildTarget extends TraversingBuildTarget {
   def buildFile(bf: BuildTask): BuildResult = {
     val (needed, provided) = readSource(bf)
     val providedFiles = provided.map(File(_))
-    val (used, missingDeps) = needed.map(l => File((bf.outFile.up / l).setExtension(outExt))).partition(_.exists)
+    val (used, missingDeps) = needed.map(l => File(bf.archive / outDim / l).setExtension(outExt)).partition(_.exists)
     val usedPDs = used.map(PhysicalDependency)
     if (missingDeps.isEmpty) {
       if (provided.isEmpty) {
