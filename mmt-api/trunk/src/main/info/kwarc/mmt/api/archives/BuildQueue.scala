@@ -195,8 +195,7 @@ class BuildQueue extends BuildManager {
       case None => Nil
       case Some(qt) => qt.missingDeps.flatMap {
         case bd: BuildDependency =>
-          buildDependency(bd)
-          Nil
+          List(bd)
         case bd: DirBuildDependency =>
           // skip for now
           // TODO
@@ -213,12 +212,23 @@ class BuildQueue extends BuildManager {
 
   private def getNextTask: Option[QueuedTask] = {
     val (optQt, currentMissingDeps) = getTopTask
-     if (currentMissingDeps.nonEmpty) {
-        val qt = optQt.get // is non-empty if deps are missing
-        qt.missingDeps = currentMissingDeps
+    val (bDeps, fDeps) = currentMissingDeps.partition {
+      case bd: BuildDependency => true
+      case _ => false
+    }
+    if (currentMissingDeps.nonEmpty) {
+      val qt = optQt.get // is non-empty if deps are missing
+      qt.missingDeps = fDeps
+      if (fDeps.nonEmpty) {
         blocked = blocked ::: List(qt)
-        getNextTask
-     } else optQt
+      }
+      if (bDeps.nonEmpty && fDeps.isEmpty) {
+        queued.addFirst(qt) // requeue
+      }
+      // insert dependencies at front
+      bDeps.foreach(bd => buildDependency(bd.asInstanceOf[BuildDependency]))
+      getNextTask
+    } else optQt
   }
 
   private def findResource(r: ResourceDependency): Option[BuildDependency] = r match {
