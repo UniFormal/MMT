@@ -142,9 +142,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
 
   /** like seCont but may wrap in NestedModule */
-  private def moduleCont(m: Module, par: ParentInfo)(implicit state: ParserState) {
+  private def moduleCont(m: Module, par: HasParentInfo)(implicit state: ParserState) {
     val se = par match {
-       case IsDoc(dp) => m
+       case IsDoc(_) => m
        case IsMod(mp, ln) =>
           val nm = new NestedModule(m)
           nm.setDocumentHome(ln)
@@ -187,20 +187,32 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   // ******************************* the entry points
   
-  def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): Document = {
-    val (d, _) = apply(new ParserState(new Reader(ps.stream), ps, errorCont))
-    d
+  def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) = {
+    val (se, _) = apply(new ParserState(new Reader(ps.stream), ps, errorCont))
+    se
   }
 
-  private def apply(state: ParserState): (Document, ParserState) = {
-    val dpath = state.ps.dpath
-    val doc = new Document(dpath, root = true, nsMap = state.namespaces)
-    seCont(doc)(state)
-    logGroup {
-      readInDocument(doc)(state)
+  private def apply(state: ParserState): (StructuralElement, ParserState) = {
+    state.ps.parentInfo match {
+       case IsRootDoc(dpath) =>
+          val doc = new Document(dpath, root = true, nsMap = state.namespaces)
+          seCont(doc)(state)
+          logGroup {
+            readInDocument(doc)(state)
+          }
+          end(doc)(state)
+          (doc, state)
+       case IsRootMod(mpath) => throw LocalError("unsupported")
+       case _ => throw LocalError("unsupported")
+       /*case IsDoc(dp) =>
+          val doc = controller.globalLookup.getAs(classOf[Document],dp)
+          readInDocument(doc)(state)
+          (???,state)
+       case IsMod(mp, rd) =>
+          val mod = controller.globalLookup.getAs(classOf[DeclaredModule],mp)
+          readInModule(mod, mod.getInnerContext, Nil)(state)
+          (???, state)*/
     }
-    end(doc)(state)
-    (doc, state)
   }
 
   // ********************************* low level read functions for names, terms, etc.
@@ -326,17 +338,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
   }
   
-  // *************** the two major methods for reading in documents and modules 
+  // *************** the two major methods for reading in documents and modules
 
-  /** abstraction to unify operations inside a document and inside a module */ 
-  private abstract class ParentInfo {
-     def docHome: DPath
-  }
-  private case class IsDoc(docHome: DPath) extends ParentInfo
-  private case class IsMod(mod: MPath, relDoc: LocalName) extends ParentInfo {
-     def docHome = mod.toDPath / relDoc
-  }  
-  
   /** the main loop for reading declarations that can occur in documents
     * @param doc the containing Document (must be in the controller already)
     */
@@ -638,7 +641,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     * @param modHome the containing theory (if any)
     * @param context the context (excluding the theory to be read)
     */
-  private def readTheory(parent: ParentInfo, context: Context)(implicit state: ParserState) {
+  private def readTheory(parent: HasParentInfo, context: Context)(implicit state: ParserState) {
     val rname = readName
     val (ns, name) = parent match {
       case IsDoc(doc) =>
@@ -721,7 +724,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     * @param context the context (excluding the view to be read)
     * @param isImplicit whether the view is implicit
     */
-  private def readView(parent: ParentInfo, context: Context, isImplicit: Boolean)(implicit state: ParserState) {
+  private def readView(parent: HasParentInfo, context: Context, isImplicit: Boolean)(implicit state: ParserState) {
     val rname = readName
     val (ns, name) = parent match {
       case IsDoc(doc) =>
@@ -841,18 +844,18 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     * @param context the context (excluding the structure to be read)
     * @param isImplicit whether the structure is implicit
     */
-  private def readStructure(parent: IsMod, link: Option[DeclaredLink], context: Context,
+  private def readStructure(parentInfo: IsMod, link: Option[DeclaredLink], context: Context,
                             isImplicit: Boolean)(implicit state: ParserState) {
     val givenName = readName
     val name = link.map { l => resolveName(l.from, givenName) }.getOrElse(givenName)
-    val spath = parent.mod ? name
+    val spath = parentInfo.modParent ? name
     readDelimiter(":")
     val tpC = new TermContainer
     //doComponent(TypeComponent, tpC, context)
     val tp = OMMOD(readMPath(spath)._2)
     tpC.parsed = tp
-    val s = new DeclaredStructure(OMMOD(parent.mod), name, tpC, isImplicit) // TODO add metamorph?
-    s.setDocumentHome(parent.relDoc)
+    val s = new DeclaredStructure(OMMOD(parentInfo.modParent), name, tpC, isImplicit) // TODO add metamorph?
+    s.setDocumentHome(parentInfo.relDocParent)
     seCont(s)
     if (state.reader.endOfDeclaration) {
       // s: tp RS
@@ -951,7 +954,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     new Pattern(OMMOD(tpath), name, pr, bd, nt)
   }
 
-  def readOpaque(pi: ParentInfo, context: Context)(implicit state: ParserState): OpaqueElement = {
+  def readOpaque(pi: HasParentInfo, context: Context)(implicit state: ParserState): OpaqueElement = {
       val (format, freg) = state.reader.readToken
       val oi = controller.extman.get(classOf[OpaqueTextParser], format).getOrElse {
          throw makeError(freg, "unknown opaque format: " + format)
@@ -961,6 +964,6 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
          case _:IsMod => state.reader.readDeclaration
       }
       val pu = ParsingUnit(state.makeSourceRef(treg), context, text, state.namespaces)
-      oi.fromString(objectParser, pi.docHome, pu)(state.errorCont)
+      oi.fromString(objectParser, pi.docParent, pu)(state.errorCont)
    }
 }

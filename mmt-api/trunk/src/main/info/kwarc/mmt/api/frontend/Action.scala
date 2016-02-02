@@ -165,7 +165,7 @@ object Action extends  RegexParsers {
   private def elaboration = path <~ "elaboration" ^^ { p => Elaboration(p) }
 
   private def component = (path <~ "component") ~ str ^^ { case p ~ s => Component(p, ComponentKey.parse(s)) }
-
+  
   private def get = path ^^ { p => Get(p) }
 
   private def windowaction = windowclose | windowpos | gui

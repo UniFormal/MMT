@@ -253,8 +253,8 @@ class ActionServer extends ServerExtension("action") {
       // special case for sending a response when exiting
       new Thread {
         override def run {
-          Thread.sleep(2)
-          sys.exit
+          Thread.sleep(100)
+          controller.handle(act)
         }
       }.start
       return Server.XmlResponse(<exited/>)

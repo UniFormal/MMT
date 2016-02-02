@@ -5,6 +5,53 @@ import info.kwarc.mmt.api.archives.{BuildQueue, BuildManager}
 import info.kwarc.mmt.api.frontend.AnaArgs.OptionDescrs
 import utils._
 
+/**
+ * used to add a new command line application to MMT
+ * 
+ * ShellExtensions are looked for after all configurations are loaded.
+ * These must contain the corresponding [[ExtensionConf]] entry so that MMT can find a ShellExtension. 
+ */
+abstract class ShellExtension(command: String) extends FormatBasedExtension {
+   def isApplicable(s: String) = s == command
+   /** executed via the shell command "mmt :command ARGS"
+    *  @return true iff MMT should clean up and exit
+    */
+   def run(args: List[String]): Boolean
+   /** help text for this command */
+   def helpText: String
+}
+
+/**
+ * pass on arguments to an MMT server instance and terminate
+ */
+class ShellSendCommand extends ShellExtension("send") {
+   def helpText = "mmt :send URL ARGS"
+   def run(args: List[String]): Boolean = {
+      if (args.isEmpty) {
+         println(helpText)
+         return true
+      }
+      val target = args.head
+      val server = if (target.forall(_.isDigit)) {
+         // port number
+         URI("http", "localhost:" + args.head) 
+      } else {
+         URI(target)
+      }
+      val url = (server / ":action") ? args.tail.mkString(" ")
+      try {
+        println("sending: " + url.toString)
+        val ret = utils.xml.get(url.toURL)
+        println(ret.toString)
+      } catch {
+        case e: Exception =>
+          println("error while connecting to remote MMT: " + e.getMessage)
+      }
+      true
+   }
+}
+
+
 /** Creates a Controller and provides a shell interface to it.
   *
   * The command syntax is given by the Action class and the parser in its companion object.
@@ -12,16 +59,64 @@ import utils._
 class Shell {
   lazy val controller = new Controller
 
-  private def getHelpText(cmd: String): Option[Iterator[String]] =
-    Option(getClass.getResourceAsStream("/help-text/" + cmd + ".txt")).
-      map(scala.io.Source.fromInputStream(_).getLines())
-
-  private def printHelpText(cmd: String) {
-    getHelpText(cmd).foreach(_.foreach(println))
+  private def getHelpText(cmd: String): Option[String] = {
+     val s = MMTSystem.getResourceAsString("/help-text/" + cmd + ".txt")
+     Option(s)
   }
 
-  def main(a: Array[String]) {
+  private def printHelpText(cmd: String) {
+    getHelpText(cmd) foreach println
+  }
 
+  /** creates controller, loads configurations/startup files, processes arguments, possibly drops into shell or terminates */
+  def main(a: Array[String]) {
+    try {
+       mainRaw(a)
+    } catch {case e: Error =>
+       controller.report(e)
+       throw e
+    } finally {
+       controller.cleanup
+    }
+  }
+
+  private def loadConfig(cfg: File) {
+     if (cfg.exists) {
+        controller.loadConfig(MMTConfig.parse(cfg), false)
+     }
+  }
+  private def loadMsl(msl: File) {
+     if (msl.exists) {
+        controller.execFileAction(msl, None)
+     }
+  }
+  
+  /** main method without exception handling */
+  private def mainRaw(a: Array[String]) {
+     // load additional configurations (default config is loaded by Controller.init)
+     val cfgLocations: List[File] = List(MMTSystem.rootFolder / "mmtrc", MMTSystem.userConfigFile)
+     cfgLocations foreach loadConfig
+     // execute startup arguments
+     val startup = MMTSystem.rootFolder / "startup.msl"
+     loadMsl(startup)
+     
+     // check for "mmt :command ARGS" and delegate to ShellExtensions
+     a.toList match {
+       case ccom::args if ccom.startsWith(":") =>
+          val com = ccom.substring(1)
+          controller.extman.getOrAddExtension(classOf[ShellExtension], com) match {
+             case Some(se) =>
+                val cleanup = se.run(args)
+                if (cleanup) {
+                   controller.cleanup
+                }
+             case None =>
+                println("no shell extension found for " + com)
+          }
+          return
+       case _ =>
+    }
+     
     // parse command line arguments
     val args = ShellArguments.parse(a.toList).getOrElse {
       printHelpText("usage")
@@ -46,64 +141,25 @@ class Shell {
       printHelpText("about")
       sys.exit(0)
     }
+    
+    // load additional config files as given by arguments
+    args.cfgFiles.map(File(_)) foreach loadConfig
 
-    // for the remaining cases we want to execute commands.
-    // so we will join them with semicolons
 
-    val mmtCommands = if (args.mmtFiles.nonEmpty) {
-      "file" :: args.mmtFiles
-    } else {
-      Nil: List[String]
-    }
-    val mbtCommands = if (args.scalaFiles.nonEmpty) {
-      "mbt" :: args.scalaFiles
-    } else {
-      Nil: List[String]
+    if (args.useQueue) {
+       controller.extman.addExtension(new BuildQueue)
     }
 
-    if (args.useQueue)
-      {
-        controller.extman.addExtension(new BuildQueue)
-      }
-    val commands = mmtCommands ++ mbtCommands ++ args.commands
+    // run -file and -mbt commands    
+    val mmtCommands = args.mmtFiles map {s => ExecFile(File(s), None)}
+    val mbtCommands = args.scalaFiles map {s => MBT(File(s))}
+    (mmtCommands ::: mbtCommands) foreach {a => controller.handle(a)}
+    // run the remaining commands
+    args.commands.mkString(" ").split(" ; ") foreach {l => controller.handleLine(l, showLog = false)}
 
-    // maybe we want to send something to the remote
-    if (args.send.isDefined) {
-      val uri = (URI("http", "localhost:" + args.send.get) / ":admin") ? commands.mkString(" ")
-      try {
-        println("sending: " + uri.toString)
-        val ret = utils.xml.get(uri.toJava.toURL)
-        println(ret.toString())
-      } catch {
-        case e: Exception =>
-          println("error while connecting to remote MMT: " + e.getMessage)
-      }
-      sys.exit(0)
-    }
-
-    try {
-      // execute startup arguments
-      val startup = MMTSystem.rootFolder / "startup.msl"
-      if (startup.exists) {
-        controller.execFileAction(startup, None)
-      }
-      // load additional configurations (default config is loaded by Controller.init)
-      // TODO val clCfg = FILE path from --cfg switch, add at the end of startupLocations
-      val cfgLocations: List[File] = List(MMTSystem.rootFolder / "mmtrc", MMTSystem.userConfigFile) ++ args.cfgFiles.map(File(_))
-      //println("trying to run " + startup)
-      cfgLocations.foreach {l =>
-        if (l.exists) {
-          controller.loadConfig(MMTConfig.parse(l), false)
-        }
-      }
-
-      //run the commands for each line.
-      commands.mkString(" ").split(" ; ") foreach {l => controller.handleLine(l, showLog = false)}
-
-      // if we want a shell, prompt and handle input
-      if (args.prompt) {
+    // if we want a shell, prompt and handle input
+    if (args.prompt) {
         printHelpText("shelltitle")
-        // create a new shell.
         val Input = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
         // switch on console reports for wrong user inputs
         controller.report.addHandler(ConsoleHandler)
@@ -113,21 +169,12 @@ class Shell {
           controller.handleLine(command.get, showLog = true)
           command = Option(Input.readLine())
         }
-      }
-      val optBuildQueue = controller.extman.get(classOf[BuildManager])
-      // cleanup if we want to exit.
-      if (args.runCleanup) {
-        optBuildQueue.foreach(_.waitToEnd)
-        controller.cleanup
-      }
-    } catch {
-      case e: Error =>
-        controller.report(e)
-        controller.cleanup
-        throw e
-      case e: Exception =>
-        controller.cleanup
-        throw e
+    }
+    
+    // cleanup if we want to exit
+    if (args.runCleanup) {
+       controller.extman.get(classOf[BuildManager]).foreach(_.waitToEnd)
+       controller.cleanup
     }
   }
 }

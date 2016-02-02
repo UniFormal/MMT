@@ -85,7 +85,9 @@ case class BuildDependency(key: String, archive: Archive, inPath: FilePath) exte
   def toJson: JSONString = JSONString(inPath.toString + " (" + key + ")")
 
   def getTarget(controller: Controller): TraversingBuildTarget =
-    controller.extman.getOrAddExtension(classOf[TraversingBuildTarget], key)
+    controller.extman.getOrAddExtension(classOf[TraversingBuildTarget], key).getOrElse {
+      throw RegistrationError("build target not found: " + key) 
+    }
 
   def getErrorFile: File = (archive / errors / key / inPath).addExtension("err")
 

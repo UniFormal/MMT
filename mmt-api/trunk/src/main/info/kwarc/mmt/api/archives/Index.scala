@@ -136,15 +136,18 @@ abstract class Importer extends TraversingBuildTarget {imp =>
       val (arch, path) = controller.backend.resolveLogical(ps.source).getOrElse {
         throw LocalError("cannot find source file for URI: " + ps.source)
       }
+      val dpath = ps.parentInfo match {
+         case IsRootDoc(dp) => dp
+         case _ => throw LocalError("can only interpret root documents")
+      }
       imp.build(arch, FilePath(path), Some(errorCont))
       try {
-        controller.get(ps.dpath).asInstanceOf[Document]
+        controller.globalLookup.getAs(classOf[Document],dpath)
       } catch {
         case e: Error => throw LocalError("no document produced")
       }
     }
   }
-
 }
 
 /** a trivial importer that reads OMDoc documents and returns them */

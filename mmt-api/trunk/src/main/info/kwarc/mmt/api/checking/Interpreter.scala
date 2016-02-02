@@ -20,14 +20,19 @@ abstract class Interpreter extends Importer {
   def inExts = List(format)
 
   /** parses a [[ParsingStream]] and returns a checked result */
-  def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): Document
+  def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): StructuralElement
 
   /** creates a [[ParsingStream]] for the input file and interprets it */
   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
     val dPath = getDPath(bf.archive, bf.inPath) // bf.narrationDPath except for extension
     val nsMap = controller.getNamespaceMap ++ bf.archive.namespaceMap
-    val ps = new ParsingStream(bf.base / bf.inPath.segments, dPath, nsMap, format, File.Reader(bf.inFile))
-    val doc = apply(ps)(bf.errorCont)
+    val ps = new ParsingStream(bf.base / bf.inPath.segments, IsRootDoc(dPath), nsMap, format, File.Reader(bf.inFile))
+    apply(ps)(bf.errorCont)
+    val doc = try {
+       controller.globalLookup.getAs(classOf[Document], dPath)
+    } catch {
+       case e: Error => throw LocalError("no document produced")
+    }    
     index(doc)
     BuildResult.empty
   }
@@ -106,11 +111,11 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker) extends Inter
   def format = parser.format
 
   /** parses a [[ParsingStream]] and checks the result */
-  def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): Document = {
+  def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): StructuralElement = {
     try {
-      val doc = parser(ps)(errorCont)
-      checker(ps.dpath)(new CheckingEnvironment(errorCont, RelationHandler.ignore))
-      doc
+      val se = parser(ps)(errorCont)
+      checker(se)(new CheckingEnvironment(errorCont, RelationHandler.ignore))
+      se
     } finally {
       ps.stream.close
     }

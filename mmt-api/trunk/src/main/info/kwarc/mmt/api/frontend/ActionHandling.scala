@@ -11,7 +11,7 @@ import backend._
 import ontology._
 
 /** an auxiliary class to split the [[Controller]] class into multiple files */
-trait ActionHandling { self: Controller =>
+trait ActionHandling {self: Controller =>
 
   private def getOAFOrError = getOAF.getOrElse {
     throw GeneralError("no OAF configuration entry found")
@@ -179,7 +179,9 @@ trait ActionHandling { self: Controller =>
       }
       val inputs = realFiles flatMap collectInputs
       val (usageOpts, _) = AnaArgs(usageOption, args)
-      val bt = extman.getOrAddExtension(classOf[BuildTarget], key, args)
+      val bt = extman.getOrAddExtension(classOf[BuildTarget], key, args) getOrElse {
+         throw RegistrationError("build target not found: " + key)
+      }
       if (usageOpts.nonEmpty) {
         AnaArgs.usageMessage(ShellArguments.toplevelArgs ++ usageOption ++
           BuildTargetModifier.optDescrs ++ bt.verbOpts ++ bt.buildOpts).foreach(println)
@@ -266,7 +268,9 @@ trait ActionHandling { self: Controller =>
           backend.closeArchive(id)
           notifyListeners.onArchiveClose(arch)
         case _ =>
-          val bt = extman.getOrAddExtension(classOf[BuildTarget], key)
+          val bt = extman.getOrAddExtension(classOf[BuildTarget], key) getOrElse {
+             throw RegistrationError("build target not found: " + key)
+          }
           bt(mod, arch, in)
       }
     }

@@ -164,8 +164,7 @@ class Server(val port: Int, controller: Controller) extends HServer with Logger 
         case ":change" :: _ => Some(ChangeResponse)
         case ":mws" :: _ => Some(MwsResponse)
         case hd::tl if hd.startsWith(":") =>
-          val pl = try {controller.extman.getOrAddExtension(classOf[ServerExtension], hd.substring(1))}
-          catch {case e: Error =>
+          val pl = controller.extman.getOrAddExtension(classOf[ServerExtension], hd.substring(1)) getOrElse {
              return Some(errorResponse("no plugin registered for context " + hd))
           }
           val hlet = new HLet {

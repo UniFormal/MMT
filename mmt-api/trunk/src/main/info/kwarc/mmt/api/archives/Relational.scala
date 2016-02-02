@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import frontend._
 import parser._
 import utils._
+import documents._
 
 /** a build target for computing mmt structure dependencies */
 class Relational extends TraversingBuildTarget {
@@ -31,9 +32,9 @@ class Relational extends TraversingBuildTarget {
   }
 
   def buildFile(bf: BuildTask): BuildResult = {
-    val ps = new ParsingStream(bf.base / bf.inPath.segments, getDocDPath(bf),
+    val ps = new ParsingStream(bf.base / bf.inPath.segments, IsRootDoc(getDocDPath(bf)),
       bf.archive.namespaceMap, "mmt", File.Reader(bf.inFile))
-    val doc = parser(ps)(bf.errorCont)
+    val doc = parser(ps)(bf.errorCont).asInstanceOf[Document] // must succeed because of IsRootDoc
     storeRel(doc)
     doc.getModulesResolved(controller.localLookup) foreach indexModule
     BuildResult.empty

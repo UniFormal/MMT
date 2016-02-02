@@ -102,17 +102,20 @@ class MMTConfig {
     def getEntries[E <: ConfEntry](cls: Class[E]): List[E] = entries.collect {
        case e: E@unchecked if cls.isInstance(e) => e
     }
-    def getEntryO[E <: ConfEntry](cls: Class[E], id: String): Option[E] = getEntries(cls).find {e =>
+    def getEntry[E <: ConfEntry](cls: Class[E], id: String): Option[E] = getEntries(cls).find {e =>
        e.id == id
     }
-    def getEntry[E <: ConfEntry](cls: Class[E], id: String): E = getEntryO(cls, id) getOrElse {
-      throw ConfigurationError(id)
-    }
     
-    def getArchive(aid : String) = getEntry(classOf[ArchiveConf], aid)
+    def getArchive(aid : String) = getEntry(classOf[ArchiveConf], aid) getOrElse {
+       throw ConfigurationError("archive not registered: " + aid)
+    }
     def getArchives = getEntries(classOf[ArchiveConf])
-    def getFormat(id: String) = getEntry(classOf[FormatConf], id)
-    def getProfile(id : String) = getEntry(classOf[ProfileConf], id)
+    def getFormat(id: String) = getEntry(classOf[FormatConf], id) getOrElse {
+       throw ConfigurationError("format not registered: " + id)
+    }
+    def getProfile(id : String) = getEntry(classOf[ProfileConf], id) getOrElse {
+       throw ConfigurationError("profile not registered: " + id)
+    }
     
     def getImporters(format : String) = getFormat(format).importers
     def getExporters(format : String) = getFormat(format).exporters

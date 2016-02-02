@@ -60,8 +60,8 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
    private val containers = List("omdoc", "theory", "view")
    private val shapeRelevant = List("metadata", "parameters", "definition", "from", "to")
 
-   def apply(ps: parser.ParsingStream)(implicit errorCont: ErrorHandler): Document = {
-      val parser = new ConsParser(ps.dpath, new SourceFromReader(ps.stream), errorCont)
+   def apply(ps: parser.ParsingStream)(implicit errorCont: ErrorHandler): StructuralElement = {
+      val parser = new ConsParser(ps.parentInfo, new SourceFromReader(ps.stream), errorCont)
       try {
          parser.nextch
          parser.document()
@@ -91,7 +91,7 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
    import Stack._
    
    /** XML parser that streams documents/modules and calls the reader on the other ones */
-   private class ConsParser(dpath: DPath, input: Source, errorCont: ErrorHandler) extends ConstructingParser(input, true) {
+   private class ConsParser(parentInfo: ParentInfo, input: Source, errorCont: ErrorHandler) extends ConstructingParser(input, true) {
       /** the stack of currently open tags, innermost first */
       private var openTags : List[StackElement] = Nil
       /** holds the root element once parsing has finished */
@@ -127,6 +127,10 @@ class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
             case Nil =>
                // special treatment of the toplevel container 
                streamer.log("parsing shape of top element")
+               val dpath = parentInfo match {
+                  case IsRootDoc(dp) => dp
+                  case _ => throw ParseError("parsing of non-root-documents unsupported")
+               }
                reader.readDocument(dpath, node)(catchSE)
                val ParsedContainer(doc: Document) = openTags.head
                root = doc

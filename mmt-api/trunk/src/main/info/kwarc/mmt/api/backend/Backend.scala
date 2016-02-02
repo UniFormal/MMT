@@ -7,6 +7,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.utils._
+import parser._
 
 // local XML databases or query engines to access local XML files: baseX or Saxon
 
@@ -15,7 +16,7 @@ case class NotApplicable(message: String = "") extends java.lang.Throwable
 /** An abstraction over physical storage units that hold MMT content */
 abstract class Storage {
   protected def loadXML(u: URI, dpath: DPath, reader: BufferedReader)(implicit controller: Controller) {
-    val ps = new parser.ParsingStream(u, dpath, NamespaceMap(dpath), "omdoc", reader)
+    val ps = new ParsingStream(u, IsRootDoc(dpath), NamespaceMap(dpath), "omdoc", reader)
     controller.read(ps, interpret = false)(ErrorThrower)
   }
 

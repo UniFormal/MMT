@@ -189,7 +189,6 @@ object ShellArguments {
     OptionDescr("shell", "i", NoArg, "start an interactive shell"),
     OptionDescr("keepalive", "w", NoArg, "wait for processes to finish"),
     OptionDescr("noshell", "w", NoArg, "same as keepalive"),
-    OptionDescr("send", "", IntArg, "send commands to remote port"),
     OptionDescr("mbt", "", StringListArg, "mbt input file "),
     OptionDescr("file", "", StringListArg, "msl input file"),
     OptionDescr("cfg", "", StringListArg, "config input file"),

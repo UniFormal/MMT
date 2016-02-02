@@ -98,11 +98,6 @@ a.treerelation {
    height: 30px;
    font-size:20px;
    margin-top: 3%;
-   white-space: nowrap;
-     
-}
-
-#breadcrumbs {
    margin-left: 10px;
    margin-right: 10px;
    color: blue;

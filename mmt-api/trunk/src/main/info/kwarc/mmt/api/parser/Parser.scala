@@ -57,16 +57,45 @@ object ParseResult {
    }
 }
 
+/** passed to [[Parser]]s and [[checking.Interpreter]]s to indicate the place inside a larger element the input is located */ 
+sealed abstract class ParentInfo
+/** abstraction to unify operations inside a root document or module */ 
+sealed abstract class RootInfo extends ParentInfo {
+   /** the path of this element */
+   val path: Path
+}
+/** the content is a root document */
+case class IsRootDoc(path: DPath) extends RootInfo
+/** the content is a root module */
+case class IsRootMod(path: MPath) extends RootInfo
+
+/** abstraction to unify operations inside a document and inside a module */ 
+sealed abstract class HasParentInfo extends ParentInfo {
+   def docParent: DPath
+}
+/** the content is located inside a document
+ *  @param parent the parent document
+ */
+case class IsDoc(docParent: DPath) extends HasParentInfo
+/** the content is located inside a module
+ *  @param modParent the parent module
+ *  @param relDocParent the path of the parent document relative to the parent module
+ */
+case class IsMod(modParent: MPath, relDocParent: LocalName) extends HasParentInfo {
+   /** the parent document */
+   def docParent = modParent.toDPath / relDocParent
+}  
+  
 
 /** ParsingStream encapsulates the input of a [[StructureParser]]
   *
   * @param source the URI of the stream
-  * @param dpath the URI of the document in the stream
+  * @param parentInfo information about the parent (if any) of the content in the stream (which - if given - must exist)
   * @param nsMap defined namespaces
   * @param format the format of the stream
   * @param stream the stream to parse
   */
-case class ParsingStream(source: URI, dpath: DPath, nsMap: NamespaceMap, format: String, stream: java.io.BufferedReader)
+case class ParsingStream(source: URI, parentInfo: ParentInfo, nsMap: NamespaceMap, format: String, stream: java.io.BufferedReader)
 
 object ParsingStream {
   /** to allow passing a string instead of a reader */
@@ -89,7 +118,7 @@ object ParsingStream {
     val nsMap = nsMapOpt.getOrElse(NamespaceMap(dpath))
     val format = formatOpt.getOrElse(f.getExtension.getOrElse(""))
     val stream = streamOpt.getOrElse(fileToReader(f))
-    new ParsingStream(FileURI(f), dpath, nsMap, format, stream)
+    new ParsingStream(FileURI(f), IsRootDoc(dpath), nsMap, format, stream)
   }
 
   /** creates a ParsingStream from a string
@@ -101,7 +130,7 @@ object ParsingStream {
     */
   def fromString(s: String, dpath: DPath, format: String, nsMapOpt: Option[NamespaceMap] = None) = {
     val nsMap = nsMapOpt.getOrElse(NamespaceMap(dpath))
-    new ParsingStream(dpath.uri, dpath, nsMap, format, s)
+    new ParsingStream(dpath.uri, IsRootDoc(dpath), nsMap, format, s)
   }
 
   /** creates a parsing stream for a source file in an archive
@@ -123,7 +152,7 @@ object ParsingStream {
     val dpath = DPath(base / inPathOMDoc) // bf.narrationDPath except for extension
     val stream = strOpt.getOrElse(File.Reader(a / source / inPath))
     val nsMap = nsMapOpt.getOrElse(NamespaceMap.empty) ++ a.namespaceMap 
-    ParsingStream(base / inPath.segments, dpath, nsMap(dpath), inPath.toFile.getExtension.getOrElse(""), stream)
+    ParsingStream(base / inPath.segments, IsRootDoc(dpath), nsMap(dpath), inPath.toFile.getExtension.getOrElse(""), stream)
   }
 }
 
@@ -167,9 +196,9 @@ trait StructureParser extends FormatBasedExtension {
   /** the main interface function: parses a stream and registers all elements (usually a single document) in it
     *
     * @param ps the encapsulated input stream
-    * @return the document into which the stream was parsed
+    * @return the element into which the stream was parsed (of the type corresponding to ps.parentInfo)
     */
-  def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): Document
+  def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): StructuralElement
 }
 
 /** the designated super class for all parsers */

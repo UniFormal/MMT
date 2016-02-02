@@ -175,12 +175,12 @@ class Controller extends ROController with ActionHandling with Logger {
    private def loadAllNeededTargets(conf: MMTConfig) {
       val archives = conf.getArchives
       val activeFormats = archives.flatMap(_.formats).distinct.map {id =>
-        conf.getEntries(classOf[FormatConf]).find(_.id == id).getOrElse(throw new Exception("Unknown format id: " + id))
+        conf.getEntries(classOf[FormatConf]).find(_.id == id).getOrElse(throw ConfigurationError("Unknown format id: " + id))
       }
       val preloadedBuildTargets = extman.get(classOf[BuildTarget])
       val neededTargets = activeFormats.flatMap(f => f.importers ::: f.exporters).distinct.flatMap {key => 
         if (!preloadedBuildTargets.exists(_.key == key)) {
-          Some(conf.getEntry(classOf[ExtensionConf], key))
+          conf.getEntry(classOf[ExtensionConf], key)
         } else None
       }
       neededTargets foreach {comp =>
@@ -226,12 +226,17 @@ class Controller extends ROController with ActionHandling with Logger {
     * @return the read Document
     */
   def read(ps: ParsingStream, interpret: Boolean, mayImport: Boolean = false)(implicit errorCont: ErrorHandler): Document = {
+     val dpath = ps.parentInfo match {
+        case IsRootDoc(dp) => dp
+        case _ =>
+           throw GeneralError("can only read root documents")
+     }
      // (M) denotes whether the document is already in memory
      // If (M), we reuse the old structure and merge updates into it
      // The merging happens in the 'add' method.
-     val oldDocOpt = localLookup.getO(ps.dpath) map {
+     val oldDocOpt = localLookup.getO(dpath) map {
         case d: Document => d
-        case _ => throw AddError("a non-document with this URI already exists: " + ps.dpath)
+        case _ => throw AddError("a non-document with this URI already exists: " + dpath)
      }
      oldDocOpt.foreach {doc =>
         // (M): deactivate the old structure
@@ -260,12 +265,14 @@ class Controller extends ROController with ActionHandling with Logger {
        throw GeneralError(s"no ${if (interpret) "interpreter" else "parser"} for format ${ps.format} found")
      }
      // interpret the document
-     val newDoc = interpreter(ps)
+     interpreter(ps)
      // (M): delete all now-inactive parts of the old structure 
      oldDocOpt.foreach {doc => deleteInactive(doc)}
      // return the read document
      // (M) return the reused document
-     oldDocOpt getOrElse newDoc
+     oldDocOpt getOrElse {
+        globalLookup.getAs(classOf[Document], dpath)
+     }
   }
 
   // ******************************* lookup of MMT URIs

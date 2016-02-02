@@ -126,13 +126,14 @@ class ExtensionManager(controller: Controller) extends Logger {
     *
     * @param args additional arguments for the extension (appended to those in configuration); ignored if extension has already been created
     */
-  def getOrAddExtension[E <: FormatBasedExtension](cls: Class[E], format: String, args: List[String] = Nil): E = {
-    get(cls, format) getOrElse {
-      val tc = controller.getConfig.getEntry(classOf[ExtensionConf], format)
-      val ext = addExtension(tc.cls, tc.args ::: args)
-      ext match {
-        case e: E@unchecked if cls.isInstance(e) => e
-        case _ => throw RegistrationError(s"extension for $format exists but has unexpected type")
+  def getOrAddExtension[E <: FormatBasedExtension](cls: Class[E], format: String, args: List[String] = Nil): Option[E] = {
+    get(cls, format) orElse {
+      controller.getConfig.getEntry(classOf[ExtensionConf], format) map {tc =>
+         val ext = addExtension(tc.cls, tc.args ::: args)
+         ext match {
+           case e: E@unchecked if cls.isInstance(e) => e
+           case _ => throw RegistrationError(s"extension for $format exists but has unexpected type")
+         }
       }
     }
   }
@@ -268,7 +269,10 @@ class ExtensionManager(controller: Controller) extends Logger {
       new web.SubmitCommentServer).foreach(addExtension(_))
     //queryExtensions
     List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,
-      new ontology.Present, new ontology.PresentDecl).foreach(addExtension(_))
+      new ontology.Present, new ontology.PresentDecl)
+    // shell extensions
+    List(new ShellSendCommand).foreach(addExtension(_))
+    
     lexerExtensions ::= GenericEscapeLexer
     lexerExtensions ::= UnicodeReplacer
     //lexerExtensions ::= new PrefixedTokenLexer('\\')
