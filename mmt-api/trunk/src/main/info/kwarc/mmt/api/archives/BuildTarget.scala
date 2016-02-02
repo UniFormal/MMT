@@ -137,8 +137,10 @@ abstract class BuildTarget extends FormatBasedExtension {
     OptionDescr("quiet", "q", NoArg, "do not show result information"),
     OptionDescr("verbose", "v", NoArg, "show log information")
   )
+
   /** options to be overridden by subclasses */
   def buildOpts: OptionDescrs = Nil
+
   /** the map computed from buildOpts */
   protected var optionsMap: OptionMap = Map.empty
   /** arguments to be consumed by subclasses */
@@ -569,12 +571,13 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   def getAnyDeps(dep: BuildDependency): Set[Dependency] = {
-    if (dep.key == key)
+    if (dep.key == key) {
+      // we are within the current target
       getDeps(makeBuildTask(dep.archive, dep.inPath))
-    else controller.extman.getOrAddExtension(classOf[BuildTarget], dep.key, Nil) match {
-      case bt: TraversingBuildTarget => bt.getDeps(bt.makeBuildTask(dep.archive, dep.inPath))
-      //TODO resolve non-simple dependencies
-      case _ => Set.empty
+    }
+    else {
+      val bt = dep.getTarget(controller)
+      bt.getDeps(bt.makeBuildTask(dep.archive, dep.inPath))
     }
   }
 
@@ -599,11 +602,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
   override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
     val ts = getTopsortedDeps(getFilesRec(a, in))
     ts.foreach {
-      case bd: BuildDependency => if (bd.key == key) update(bd.archive, up, bd.inPath)
-      else controller.extman.getOrAddExtension(classOf[BuildTarget], bd.key, Nil) match {
-        case bt: TraversingBuildTarget => bt.update(bd.archive, up, bd.inPath)
-        case _ => log("build target not found: " + bd.key)
-      }
+      case bd: BuildDependency =>
+        (if (bd.key == key) this else bd.getTarget(controller)).update(bd.archive, up, bd.inPath)
       case _ =>
     }
   }
