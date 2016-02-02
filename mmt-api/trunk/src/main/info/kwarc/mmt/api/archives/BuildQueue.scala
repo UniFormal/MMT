@@ -246,7 +246,7 @@ class BuildQueue extends BuildManager {
         if (ts.isEmpty) optQt
         else {
           queued.addFirst(qt)
-          ts.foreach(buildDependency)
+          ts.foreach(t => buildDependency(qt.task.asDependency, t))
           getNextTask
         }
       }
@@ -279,11 +279,12 @@ class BuildQueue extends BuildManager {
       None
   }
 
-  private def buildDependency(bd: BuildDependency) {
+  private def buildDependency(top: Dependency, bd: BuildDependency) {
     val qts = bd.getTarget(controller).makeBuildTasks(bd.archive, bd.inPath, None).map {
       qt =>
         qt.lowPriority = false
         qt.dependencyClosure = true
+        qt.missingDeps = qt.missingDeps.filter(d => d != top)
         qt
     }
     addTasks(qts)
