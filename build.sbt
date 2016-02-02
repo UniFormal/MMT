@@ -184,13 +184,17 @@ lazy val oeis = (project in file("mmt-oeis")).
 // wrapper project that depends on most other projects
 // the deployed jar is stand-alone and can be used as a unix shell script
 lazy val mmt = (project in file("mmt-exts")).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit).
   settings(commonSettings("mmt-exts"): _*).
   settings(
     exportJars := false,
     publish := {},
     deploy <<= assembly in Compile map deployTo("mmt.jar"),
     mainClass in assembly := Some("info.kwarc.mmt.api.frontend.Run"),
+    assemblyExcludedJars in assembly := {
+      val cp = (fullClasspath in assembly).value
+      cp filter { j => jeditJars.contains(j.data.getName) }
+    },
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(
       prependShellScript = Some(Seq("#!/bin/bash", """exec /usr/bin/java -Xmx2048m -jar "$0" "$@"""")))
   )
