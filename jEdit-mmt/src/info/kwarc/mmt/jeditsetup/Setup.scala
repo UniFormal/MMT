@@ -3,6 +3,10 @@ package info.kwarc.mmt.jeditsetup
 import info.kwarc.mmt.api.utils.File._
 import info.kwarc.mmt.api.utils._
 
+object FatSetup {
+  def main(args: Array[String]) = Setup.main2(true, args)
+}
+
 /** install script for jEdit
   *
   * copies jars, modes, abbreviations etc. to jEdit settings directory
@@ -13,7 +17,9 @@ object Setup {
     *
     * @param args the location of the jedit settings folder
     */
-  def main(args: Array[String]) {
+  def main(args: Array[String]) = main2(false, args)
+
+  def main2(fat: Boolean, args: Array[String]) {
     val l = args.length
     val installOpt = if (l >= 1) args(0) match {
       case "install" => Some(true)
@@ -27,7 +33,7 @@ object Setup {
     val jedit = File(args(1))
     val contentOpt = if (l == 3) Some(File(args(2))) else None
     val programLocation = File(getClass.getProtectionDomain.getCodeSource.getLocation.getPath).getParentFile
-    val deploy = programLocation.getParentFile
+    val deploy = if (fat) programLocation else programLocation.getParentFile
     val setup = deploy / "jedit-plugin" / "plugin"
     val install = installOpt.get
 
@@ -36,17 +42,18 @@ object Setup {
       println("error: not valid directories")
       sys.exit()
     }
-    doIt(setup, deploy, jedit, install, contentOpt)
+    doIt(fat, setup, deploy, jedit, install, contentOpt)
   }
 
   /** install/uninstall routine
     *
+    * @param fat use the fat mmt.jar
     * @param setup the deploy/jedit-plugin/plugin folder
     * @param jedit the jEdit settings folder
     * @param install true/false for install/uninstall
     * @param contentOpt the folder in which to look for archives
     */
-  def doIt(setup: File, deploy: File, jedit: File, install: Boolean, contentOpt: Option[File]) {
+  def doIt(fat: Boolean, setup: File, deploy: File, jedit: File, install: Boolean, contentOpt: Option[File]) {
     /** copies or deletes a file depending on install/uninstall */
     def copyFromOrDelete(dir: File, f: List[String]) {
       if (install) {
@@ -63,7 +70,13 @@ object Setup {
       "tiscaf.jar")
     val allJars = List("lfcatalog", "lfcatalog.jar") :: mainJars.map(List("main", _)) ++
       libJars.map(List("lib", _))
-    allJars.foreach(copyFromOrDelete(deploy, _))
+    if (fat) {
+      val tar = jedit / "MMTPlugin.jar"
+      if (install) copy(deploy / "mmt.jar", tar)
+      else delete(tar)
+    } else {
+      allJars.foreach(copyFromOrDelete(deploy, _))
+    }
     // modes
     // * copy/delete the mode files
     val modeFiles = (setup / "modes").list.filter(_.endsWith(".xml"))
