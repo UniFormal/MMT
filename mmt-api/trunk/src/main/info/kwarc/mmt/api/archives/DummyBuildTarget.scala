@@ -18,7 +18,7 @@ class DummyBuildTarget extends TraversingBuildTarget {
 
   override def getDeps(bt: BuildTask): Set[Dependency] = {
     val (needed, _) = readSource(bt: BuildTask)
-    val fooFiles = needed.map(l => (l, File(bt.inFile.up / l))).collect {
+    val fooFiles = needed.map(l => (l, bt.archive / inDim / l)).collect {
       case (l, f) if f.exists => l
     }
     fooFiles.map(l => BuildDependency(key, bt.archive, File(l).toFilePath)).toSet

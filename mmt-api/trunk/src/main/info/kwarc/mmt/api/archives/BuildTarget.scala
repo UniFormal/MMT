@@ -273,8 +273,6 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   protected def getErrorFile(a: Archive, inPath: FilePath): File = (a / errors / key / inPath).addExtension("err")
 
-  protected def getErrorFile(d: BuildDependency): File = (d.archive / errors / d.key / d.inPath).addExtension("err")
-
   protected def getFolderErrorFile(a: Archive, inPath: FilePath) = a / errors / key / inPath / (folderName + ".err")
 
   /** some logging for lmh */
@@ -472,7 +470,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       { c => cleanFile(a, c) }, { case (c, _) => cleanDir(a, c) })
   }
 
-  private def modified(inFile: File, errorFile: File): Boolean = {
+  def modified(inFile: File, errorFile: File): Boolean = {
     val mod = Modification(inFile, errorFile)
     mod == Modified || mod == Added
   }
@@ -503,7 +501,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
             val rn = errLev <= Level.Force || modified(inFile, errorFile) || errs ||
               getDeps(bf).exists {
                 case bd: BuildDependency =>
-                  val errFile = getErrorFile(bd)
+                  val errFile = bd.getErrorFile
                   modified(errFile, errorFile)
                 case ForeignDependency(fFile) => modified(fFile, errorFile)
                 case _ => false

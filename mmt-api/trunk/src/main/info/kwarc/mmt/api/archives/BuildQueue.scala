@@ -86,6 +86,10 @@ case class BuildDependency(key: String, archive: Archive, inPath: FilePath) exte
 
   def getTarget(controller: Controller): TraversingBuildTarget =
     controller.extman.getOrAddExtension(classOf[TraversingBuildTarget], key)
+
+  def getErrorFile: File = (archive / errors / key / inPath).addExtension("err")
+
+
 }
 
 /** like [[BuildDependency]] but for a directory
@@ -218,7 +222,10 @@ class BuildQueue extends BuildManager {
   }
 
   private def isUpToDate(bd: BuildDependency): Boolean = {
-    false
+    val target = bd.getTarget(controller)
+    val inFile = bd.archive / target.inDim / bd.inPath
+    val errFile = bd.getErrorFile
+    !target.modified(inFile, errFile)
   }
 
   private def getNextTask: Option[QueuedTask] = {
@@ -227,18 +234,22 @@ class BuildQueue extends BuildManager {
       case bd: BuildDependency => true
       case _ => false
     }
+    val bds = bDeps.collect { case bd: BuildDependency => bd }
     if (currentMissingDeps.nonEmpty) {
       val qt = optQt.get // is non-empty if deps are missing
-      qt.missingDeps = fDeps
       if (fDeps.nonEmpty) {
+        qt.missingDeps = fDeps
         blocked = blocked ::: List(qt)
+        getNextTask
+      } else {
+        val (_, ts) = bds.partition(isUpToDate)
+        if (ts.isEmpty) optQt
+        else {
+          queued.addFirst(qt)
+          ts.foreach(buildDependency)
+          getNextTask
+        }
       }
-      if (bDeps.nonEmpty && fDeps.isEmpty) {
-        queued.addFirst(qt) // requeue
-      }
-      // insert dependencies at front
-      bDeps.foreach(bd => buildDependency(bd.asInstanceOf[BuildDependency]))
-      getNextTask
     } else optQt
   }
 
