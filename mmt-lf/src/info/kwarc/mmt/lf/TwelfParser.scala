@@ -58,7 +58,10 @@ class TwelfParser extends Parser(new NotationBasedParser) {
        lineList ::= line
     }
     lines = lineList.reverse.toArray
-    dpath = ps.dpath
+    dpath = ps.parentInfo match {
+       case IsRootDoc(dp) => dp
+       case _ => throw LocalError("parsing of non-root documents not supported")
+    }
     source = ps.source
     flat = ""
     lineStarts = new ArraySeq [(Int, Int)] (0)
