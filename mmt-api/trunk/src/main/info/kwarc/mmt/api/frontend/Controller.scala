@@ -154,8 +154,8 @@ class Controller extends ROController with ActionHandling with Logger {
     }
   }
 
-   /** integrate a configuration into the current state */
-   def loadConfig(conf: MMTConfig, loadEverything: Boolean) {
+  /** integrate a configuration into the current state */
+  def loadConfig(conf: MMTConfig, loadEverything: Boolean) {
        state.config.add(conf)
        conf.getEntries(classOf[NamespaceConf]).foreach {case NamespaceConf(id,uri) =>
           state.nsMap = state.nsMap.add(id, uri)
@@ -164,7 +164,11 @@ class Controller extends ROController with ActionHandling with Logger {
          loadAllArchives(conf)
          loadAllNeededTargets(conf)
        }
-    }
+   }
+  def loadConfigFile(f: File, loadEverything: Boolean) {
+     val cfg = MMTConfig.parse(f)
+     loadConfig(cfg, loadEverything)
+  }
     
    private def loadAllArchives(conf: MMTConfig) {
        conf.getArchives foreach { arch =>

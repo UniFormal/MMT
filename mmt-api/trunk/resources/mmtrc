@@ -18,6 +18,9 @@ foobar     info.kwarc.mmt.api.archives.DummyBuildTarget
 
 mmttex     info.kwarc.mmt.latex.MMTTeX
 
+setup      info.kwarc.mmt.doc.Setup
+jeditsetup info.kwarc.mmt.jeditsetup.Setup
+
 #semantics
 http://cds.omdoc.org/urtheories?LF info.kwarc.mmt.lf.Plugin
 

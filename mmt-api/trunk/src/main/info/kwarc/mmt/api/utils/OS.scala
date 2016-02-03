@@ -28,4 +28,14 @@ object OS {
         case Linux => uh
      }
   }
+  
+  def jEditSettingsFolder = {
+     val jEditSettingsFolderName = OS.detect match {
+       case Windows => "jEdit"
+       case MacOS => "jEdit"
+       case _ => ".jedit"
+     }
+     val f = OS.settingsFolder / jEditSettingsFolderName
+     if (f.isDirectory) Some(f) else None
+  }
 }
