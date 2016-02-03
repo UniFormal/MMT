@@ -92,7 +92,10 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       implicit val errorCont = new ErrorListForwarder(mmt.errorSource, controller, path)
       errorCont.reset
       try {
-         val doc = controller.read(ps, true, true)
+         val doc = controller.read(ps, true, true) match {
+            case d: Document => d
+            case _ => throw ImplementationError("document expected")
+         }
          // add narrative structure of doc to outline tree
          buildTreeDoc(root, doc)
          // register errors with ErrorList plugin

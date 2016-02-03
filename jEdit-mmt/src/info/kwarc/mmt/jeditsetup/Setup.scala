@@ -1,51 +1,50 @@
 package info.kwarc.mmt.jeditsetup
 
-import info.kwarc.mmt.api.utils.File._
-import info.kwarc.mmt.api.utils._
+import info.kwarc.mmt.api._
+import frontend._
+import utils._
+import utils.File._
 
-object FatSetup {
-  def main(args: Array[String]) = Setup.main2(true, args)
-}
-
-/** install script for jEdit
+/** install methods for jEdit
   *
   * copies jars, modes, abbreviations etc. to jEdit settings directory
   * installation is idempotent
   */
-object Setup {
-  /** This code works if run from setup script in the deploy/jedit-plugin folder
-    *
-    * @param args the location of the jedit settings folder
-    */
-  def main(args: Array[String]) = main2(false, args)
+class Setup extends ShellExtension("jeditsetup") {
 
-  def main2(fat: Boolean, args: Array[String]) {
+   def helpText = "needed arguments: (install | uninstall) [JEDIT/SETTINGS/FOLDER]"
+   
+   /** run method as ShellExtension */
+   def run(args: List[String]): Boolean = {
     val l = args.length
-    val installOpt = if (l >= 1) args(0) match {
-      case "install" => Some(true)
-      case "uninstall" => Some(false)
-      case _ => None
-    } else None
-    if (l > 3 || installOpt.isEmpty) {
-      println("usage: setup (install | uninstall) /JEDIT/SETTINGS/FOLDER [/DEFAULT/CONTENT/FOLDER]")
-      sys.exit()
+    val (installOpt,fat) = if (l >= 1) args(0) match {
+      case "install" => (Some(true), true)
+      case "uninstall" => (Some(false), true)
+      case "install-jars" => (Some(true), false)
+      case "uninstall-jars" => (Some(false), false)
+      case _ => (None, false)
+    } else (None, false)
+    val jeditOpt = if (l >= 2) Some(File(args(1))) else OS.jEditSettingsFolder
+    if (l <= 0 || l >= 2 || installOpt.isEmpty || jeditOpt.isEmpty) {
+      println(helpText)
+      return true
     }
-    val jedit = File(args(1))
-    val contentOpt = if (l == 3) Some(File(args(2))) else None
     val programLocation = File(getClass.getProtectionDomain.getCodeSource.getLocation.getPath).getParentFile
     val deploy = if (fat) programLocation else programLocation.getParentFile
     val setup = deploy / "jedit-plugin" / "plugin"
+    if (!setup.isDirectory) {
+      println("plugin directory not found, looked in " + setup)
+      return true
+    }
+    val jedit = jeditOpt.get
     val install = installOpt.get
 
     println("trying to (un)install from " + setup + " to " + jedit)
-    if (!setup.isDirectory || !jedit.isDirectory) {
-      println("error: not valid directories")
-      sys.exit()
-    }
-    doIt(fat, setup, deploy, jedit, install, contentOpt)
+    doIt(setup, deploy, jedit, install, fat)
+    true
   }
 
-  /** install/uninstall routine
+  /** the actual install/uninstall process
     *
     * @param fat use the fat mmt.jar
     * @param setup the deploy/jedit-plugin/plugin folder
@@ -53,7 +52,7 @@ object Setup {
     * @param install true/false for install/uninstall
     * @param contentOpt the folder in which to look for archives
     */
-  def doIt(fat: Boolean, setup: File, deploy: File, jedit: File, install: Boolean, contentOpt: Option[File]) {
+  private def doIt(setup: File, deploy: File, jedit: File, install: Boolean, fat: Boolean) {
     /** copies or deletes a file depending on install/uninstall */
     def copyFromOrDelete(dir: File, f: List[String]) {
       if (install) {
@@ -148,12 +147,13 @@ object Setup {
         println("deleting directory " + d)
       }
     }
-
-    if (install && contentOpt.isDefined) {
-      println("adding property for content folder")
+    
+    if (install) controller.getOAF.map {oaf =>
+      val contentFolder = oaf.root 
+      println("adding property for content folder " + contentFolder)
       val propsFile = jedit / "properties"
       val propsOld = if (propsFile.exists) File.read(propsFile) else ""
-      val encoded = contentOpt.get.toString.replace("\\", "\\\\").replace(":", "\\:").replace("=", "\\=")
+      val encoded = contentFolder.toString.replace("\\", "\\\\").replace(":", "\\:").replace("=", "\\=")
       val newValues = "info.kwarc.mmt.jedit.MMTPlugin.archives=" + encoded
       val propsNew = propsOld + "\n" + newValues
       File.write(propsFile, propsNew)
