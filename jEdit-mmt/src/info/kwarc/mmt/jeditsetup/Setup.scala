@@ -12,25 +12,27 @@ import utils.File._
   */
 class Setup extends ShellExtension("jeditsetup") {
 
-   def helpText = "needed arguments: (install | uninstall) [JEDIT/SETTINGS/FOLDER]"
-   
-   /** run method as ShellExtension */
-   def run(args: List[String]): Boolean = {
+  def helpText = "needed arguments: (install | uninstall) [JEDIT/SETTINGS/FOLDER]"
+
+  /** run method as ShellExtension */
+  def run(args: List[String]): Boolean = {
     val l = args.length
-    val (installOpt,fat) = if (l >= 1) args(0) match {
-      case "install" => (Some(true), true)
-      case "uninstall" => (Some(false), true)
-      case "install-jars" => (Some(true), false)
-      case "uninstall-jars" => (Some(false), false)
-      case _ => (None, false)
-    } else (None, false)
+    val installOpt = if (l >= 1) args(0) match {
+      case "install" => Some(true)
+      case "uninstall" => Some(false)
+      case _ => None
+    } else None
     val jeditOpt = if (l >= 2) Some(File(args(1))) else OS.jEditSettingsFolder
     if (l <= 0 || l >= 2 || installOpt.isEmpty || jeditOpt.isEmpty) {
       println(helpText)
       return true
     }
     val programLocation = File(getClass.getProtectionDomain.getCodeSource.getLocation.getPath).getParentFile
-    val deploy = if (fat) programLocation else programLocation.getParentFile
+    val (deploy, fat) = if (programLocation.getName == "main") {
+      (programLocation.getParentFile, false)
+    } else {
+      (programLocation, true)
+    }
     val setup = deploy / "jedit-plugin" / "plugin"
     if (!setup.isDirectory) {
       println("plugin directory not found, looked in " + setup)
@@ -46,22 +48,21 @@ class Setup extends ShellExtension("jeditsetup") {
 
   /** the actual install/uninstall process
     *
-    * @param fat use the fat mmt.jar
-    * @param setup the deploy/jedit-plugin/plugin folder
-    * @param jedit the jEdit settings folder
+    * @param setup   the deploy/jedit-plugin/plugin folder
+    * @param jedit   the jEdit settings folder
     * @param install true/false for install/uninstall
-    * @param contentOpt the folder in which to look for archives
+    * @param fat     use the fat mmt.jar
     */
   private def doIt(setup: File, deploy: File, jedit: File, install: Boolean, fat: Boolean) {
     /** copies or deletes a file depending on install/uninstall */
-    def copyFromOrDelete(dir: File, f: List[String]) {
+    def copyFromOrDelete(dir: File, f: List[String], g: List[String]) {
       if (install) {
-        copy(dir / f, jedit / f)
+        copy(dir / f, jedit / g)
       } else {
-        delete(jedit / f)
+        delete(jedit / g)
       }
     }
-    def copyOrDelete(f: List[String]) = copyFromOrDelete(setup, f: List[String])
+    def copyOrDelete(f: List[String]) = copyFromOrDelete(setup, f, f)
     // copy/delete the jars
     // see src/project/Utils.scala for sbt
     val mainJars = List("mmt-api.jar", "mmt-lf.jar", "MMTPlugin.jar", "mmt-specware.jar", "mmt-pvs.jar")
@@ -70,11 +71,9 @@ class Setup extends ShellExtension("jeditsetup") {
     val allJars = List("lfcatalog", "lfcatalog.jar") :: mainJars.map(List("main", _)) ++
       libJars.map(List("lib", _))
     if (fat) {
-      val tar = jedit / "MMTPlugin.jar"
-      if (install) copy(deploy / "mmt.jar", tar)
-      else delete(tar)
+      copyFromOrDelete(deploy, List("mmt.jar"), List("jars", "MMTPlugin.jar"))
     } else {
-      allJars.foreach(copyFromOrDelete(deploy, _))
+      allJars.foreach(f => copyFromOrDelete(deploy, f, List("jars", FilePath(f).name)))
     }
     // modes
     // * copy/delete the mode files
@@ -147,9 +146,9 @@ class Setup extends ShellExtension("jeditsetup") {
         println("deleting directory " + d)
       }
     }
-    
-    if (install) controller.getOAF.map {oaf =>
-      val contentFolder = oaf.root 
+
+    if (install) controller.getOAF.map { oaf =>
+      val contentFolder = oaf.root
       println("adding property for content folder " + contentFolder)
       val propsFile = jedit / "properties"
       val propsOld = if (propsFile.exists) File.read(propsFile) else ""
