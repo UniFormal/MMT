@@ -108,14 +108,14 @@ object Report {
 
 /**
  * takes a log message from [[Report]] and displays/stores etc. it
- *
- * @param id an identifier for this handler
+  *
+  * @param id an identifier for this handler
  */
 abstract class ReportHandler(val id: String) {
   /**
    * logs a message
- *
-   * @param ind indentation level
+    *
+    * @param ind indentation level
    * @param group generating component
    * @param msgParts the multi-line message
    */
@@ -177,13 +177,17 @@ object ConsoleHandler extends ReportHandler("console") {
 /** common methods for logging to a file */
 abstract class FileHandler(val filename: File) extends ReportHandler(filename.toString) {
   protected val file = utils.File.Writer(filename)
+  protected var alreadyClosed = false
 
   override def flush {
     file.flush
   }
 
   override def cleanup {
-    file.close
+    if (!alreadyClosed) {
+      file.close
+      alreadyClosed = true
+    }
   }
 }
 
@@ -236,11 +240,9 @@ class HtmlFileHandler(filename: File) extends FileHandler(filename) {
   override def toString: String = "html " + filename
 
   override def cleanup {
-    try {
+    if (!alreadyClosed) {
       file.println("</body>\n</html>\n")
       super.cleanup
-    } catch {
-      case _: IOException => ()
     }
   }
 }

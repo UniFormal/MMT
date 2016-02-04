@@ -74,6 +74,7 @@ class Shell {
       case e: Error =>
         controller.report(e)
         controller.cleanup
+        throw(e)
     }
   }
 
