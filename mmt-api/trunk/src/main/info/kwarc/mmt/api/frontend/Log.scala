@@ -1,7 +1,9 @@
 package info.kwarc.mmt.api.frontend
 
+import java.io.IOException
+
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.utils._
+import utils._
 
 /** extended by all classes that use the logging aspect */
 trait Logger {
@@ -106,11 +108,13 @@ object Report {
 
 /**
  * takes a log message from [[Report]] and displays/stores etc. it
+ *
  * @param id an identifier for this handler
  */
 abstract class ReportHandler(val id: String) {
   /**
    * logs a message
+ *
    * @param ind indentation level
    * @param group generating component
    * @param msgParts the multi-line message
@@ -232,8 +236,12 @@ class HtmlFileHandler(filename: File) extends FileHandler(filename) {
   override def toString: String = "html " + filename
 
   override def cleanup {
-    file.println("</body>\n</html>\n")
-    super.cleanup
+    try {
+      file.println("</body>\n</html>\n")
+      super.cleanup
+    } catch {
+      case _: IOException => ()
+    }
   }
 }
 
