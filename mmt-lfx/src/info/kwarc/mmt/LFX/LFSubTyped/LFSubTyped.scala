@@ -11,6 +11,7 @@ object LFSubTyped {
   val thname = "Sub"
   val path = baseURI ? thname
   def lfsubsymbol(name : String) = path ? name
+  val judgpath = baseURI ? "SubTypeJudg"
 }
 
 class LFSubSymbol(name:String) {
@@ -18,10 +19,23 @@ class LFSubSymbol(name:String) {
   val term = OMS(path)
 }
 
+class LFSubJudgSymbol(name:String) {
+  val path = LFSubTyped.judgpath ? name
+  val term = OMS(path)
+}
+
 object subtypeOf extends LFSubSymbol("subtypeOf") {
   def apply(t : Term) = OMA(OMID(path),List(t))
   def unapply(t : Term) : Option[Term] = t match {
     case OMA(OMID(this.path), List(a)) => Some(a)
+    case _ => None
+  }
+}
+
+object subtypeJudg extends LFSubJudgSymbol("subtypeJudge") {
+  def apply(t1 : Term, t2 : Term) = OMA(term,List(t1,t2))
+  def unapply(t : Term) : Option[(Term,Term)] = t match {
+    case OMA(this.term,List(t1,t2)) => Some(t1,t2)
     case _ => None
   }
 }

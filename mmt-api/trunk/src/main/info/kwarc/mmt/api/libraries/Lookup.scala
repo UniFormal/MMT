@@ -41,8 +41,9 @@ abstract class Lookup {
    /** important special case */
    def getModule(path: MPath): Module = getAs(classOf[Module], path)
 
-   /** lookup a declaration in a (possibly complex) module 
-    * @param home the module in which to look up
+   /** lookup a declaration in a (possibly complex) module
+     *
+     * @param home the module in which to look up
     * @param name the name look up
     * @param error the continuation to call on the error message
     * @return the declaration
@@ -96,6 +97,7 @@ abstract class Lookup {
     * 
     * This can be used to retrieve the source of an assignment declared in a DeclaredLink.
     * It is also the official way to test whether a Constant is an assignment.
+    *
     * @param a the Constant declaration/assignment
     * @return if assignment: the source theory and the containing link; if declaration: the containing theory
     */
@@ -146,7 +148,13 @@ abstract class Lookup {
            case Some(df) => df
            case None => getAs(classOf[Constant], theo ? ln).df match {
              case Some(df) => traverse(df)
-             case None => t
+             case None => morph match {
+               case OMID(p) => get(p) match {
+                 case s:Structure => OMS(s.path / LocalName(theo) / ln)
+                 case _ => t
+               }
+               case _ => t
+             }
            }
          }
        }

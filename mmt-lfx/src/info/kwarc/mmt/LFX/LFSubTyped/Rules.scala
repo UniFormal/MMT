@@ -1,5 +1,6 @@
 package info.kwarc.mmt.LFX.LFSubTyped
 
+import info.kwarc.mmt.api.checking.TypingRule.NotApplicable
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api.objects._
@@ -71,5 +72,34 @@ object PiRule extends SubtypingRule {
       val (xn,_) = Context.pickFresh(stack.context, x1)
       Some(solver.check(Subtyping(stack,a2,a1)) && solver.check(Subtyping(stack ++ xn % a2, b1 ^? (x1/OMV(xn)),b2 ^? (x2/OMV(xn)))))
     case _ => throw TypingRule.NotApplicable
+  }
+}
+
+object SubJudgUniverseRule extends UniverseRule(subtypeJudg.path) {
+  def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = tm match {
+    case subtypeJudg(t1,t2) => solver.check(Inhabitable(stack,t1)) && solver.check(Inhabitable(stack,t2))
+    case _ => false
+  }
+}
+
+object SubJudgUniverseType extends InferenceRule(subtypeJudg.path, OfType.path) {
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+    tm match {
+      case subtypeJudg(t1,t2) => Some(OMS(Typed.kind))
+      case _ => None
+    }
+  }
+}
+
+object SubJudgRule extends SubtypingRule {
+  val head = subtypeJudg.path
+
+  def applicable(tp1: Term, tp2: Term) : Boolean = true
+
+  def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History) : Option[Boolean] = {
+    solver.prove(subtypeJudg(tp1, tp2)).getOrElse {
+      throw NotApplicable
+    }
+    Some(true)
   }
 }
