@@ -23,7 +23,7 @@ class Setup extends ShellExtension("jeditsetup") {
       case _ => None
     } else None
     val jeditOpt = if (l >= 2) Some(File(args(1))) else OS.jEditSettingsFolder
-    if (l <= 0 || l >= 2 || installOpt.isEmpty || jeditOpt.isEmpty) {
+    if (l <= 0 || l > 2 || installOpt.isEmpty || jeditOpt.isEmpty) {
       println(helpText)
       return true
     }
