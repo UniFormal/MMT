@@ -2,28 +2,26 @@ package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.{BuildQueue, BuildManager}
-import info.kwarc.mmt.api.frontend.AnaArgs.OptionDescrs
 import utils._
 
-/**
- * used to add a new command line application to MMT
- * 
- * ShellExtensions are looked for after all configurations are loaded.
- * These must contain the corresponding [[ExtensionConf]] entry so that MMT can find a ShellExtension. 
- */
+/** used to add a new command line application to MMT
+  *
+  * ShellExtensions are looked for after all configurations are loaded.
+  * These must contain the corresponding [[ExtensionConf]] entry so that MMT can find a ShellExtension.
+  */
 abstract class ShellExtension(command: String) extends FormatBasedExtension {
    def isApplicable(s: String) = s == command
-   /** executed via the shell command "mmt :command ARGS"
-    *  @return true iff MMT should clean up and exit
+
+  /** executed via the shell command "mmt :command ARGS"
+    *
+    * @return true iff MMT should clean up and exit
     */
    def run(args: List[String]): Boolean
    /** help text for this command */
    def helpText: String
 }
 
-/**
- * pass on arguments to an MMT server instance and terminate
- */
+/** pass on arguments to an MMT server instance and terminate */
 class ShellSendCommand extends ShellExtension("send") {
    def helpText = "mmt :send URL ARGS"
    def run(args: List[String]): Boolean = {
@@ -34,7 +32,7 @@ class ShellSendCommand extends ShellExtension("send") {
       val target = args.head
       val server = if (target.forall(_.isDigit)) {
          // port number
-         URI("http", "localhost:" + args.head) 
+         URI("http", "localhost:" + args.head)
       } else {
          URI(target)
       }
@@ -90,7 +88,7 @@ class Shell {
         controller.execFileAction(msl, None)
      }
   }
-  
+
   /** main method without exception handling */
   private def mainRaw(a: Array[String]) {
      // load additional configurations (default config is loaded by Controller.init)
@@ -99,7 +97,7 @@ class Shell {
      // execute startup arguments
      val startup = MMTSystem.rootFolder / "startup.msl"
      loadMsl(startup)
-     
+
      // check for "mmt :command ARGS" and delegate to ShellExtensions
      a.toList match {
        case ccom::args if ccom.startsWith(":") =>
@@ -116,7 +114,7 @@ class Shell {
           return
        case _ =>
     }
-     
+
     // parse command line arguments
     val args = ShellArguments.parse(a.toList).getOrElse {
       printHelpText("usage")
@@ -128,7 +126,7 @@ class Shell {
       args.commands.foreach { s =>
         val optHelp = getHelpText(s)
         if (optHelp.isDefined) {
-          optHelp.get.foreach(println)
+          println(optHelp.get)
           sys.exit(0)
         }
       }
@@ -141,7 +139,7 @@ class Shell {
       printHelpText("about")
       sys.exit(0)
     }
-    
+
     // load additional config files as given by arguments
     args.cfgFiles.map(File(_)) foreach loadConfig
 
@@ -150,7 +148,7 @@ class Shell {
        controller.extman.addExtension(new BuildQueue)
     }
 
-    // run -file and -mbt commands    
+    // run -file and -mbt commands
     val mmtCommands = args.mmtFiles map {s => ExecFile(File(s), None)}
     val mbtCommands = args.scalaFiles map {s => MBT(File(s))}
     (mmtCommands ::: mbtCommands) foreach {a => controller.handle(a)}
@@ -170,7 +168,7 @@ class Shell {
           command = Option(Input.readLine())
         }
     }
-    
+
     // cleanup if we want to exit
     if (args.runCleanup) {
        controller.extman.get(classOf[BuildManager]).foreach(_.waitToEnd)
