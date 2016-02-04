@@ -200,6 +200,8 @@ object ShellArguments {
     val helpFlag = m.get("help").isDefined
     val aboutFlag = m.get("about").isDefined
     val os = m.get("keepalive").toList ++ m.get("shell").toList ++ m.get("noshell").toList
+    // make -w, --noshell and --keepalive behave in the same way
+    val wOpt = m.get("noshell").isDefined || m.get("keepalive").isDefined
     val sa = ShellArguments(
       help = helpFlag,
       about = aboutFlag,
@@ -209,8 +211,8 @@ object ShellArguments {
       cfgFiles = getStringList(m, "cfg"),
       commands = cs,
       shell = m.get("shell").isDefined,
-      noshell = m.get("noshell").isDefined,
-      keepalive = m.get("keepalive").isDefined,
+      noshell = wOpt,
+      keepalive = wOpt,
       useQueue = m.get("queue").isDefined
     )
     val fs = sa.mmtFiles ++ sa.scalaFiles ++ sa.cfgFiles

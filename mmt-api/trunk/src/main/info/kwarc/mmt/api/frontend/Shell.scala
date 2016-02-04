@@ -70,11 +70,10 @@ class Shell {
   def main(a: Array[String]) {
     try {
        mainRaw(a)
-    } catch {case e: Error =>
-       controller.report(e)
-       throw e
-    } finally {
-       controller.cleanup
+    } catch {
+      case e: Error =>
+        controller.report(e)
+        controller.cleanup
     }
   }
 
