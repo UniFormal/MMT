@@ -9,13 +9,25 @@ import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.utils.MyList._
 import info.kwarc.mmt.api.utils._
 
+class MMTError(val mainFile: File, es: ErrorSource, el: Int, sf: String, sl: Int, sc: Int, ec: Int, msg: String)
+   extends DefaultErrorSource.DefaultError(es, el, sf, sl, sc, ec, msg)
+
 /**
  * sends MMT errors directly to jEdit ErrorList
  * @param file the source file, in which the errors are found
  */
 class ErrorListForwarder(errorSource: DefaultErrorSource, controller: Controller, src: File) extends ErrorHandler {
+   /**
+    * remove all errors whose mainFile is src
+    */
    def reset {
-      errorSource.removeFileErrors(src.toString)
+      // we can't remove individual errors from a DefaultErrorSource, so remove everything and readd appropriately
+      val errors = errorSource.getAllErrors
+      errorSource.clear
+      errors.foreach {case e: MMTError =>
+         if (e.mainFile != src)
+            errorSource.addError(e)
+      }
    }
    protected def addError(e: Error) = e match {
       case s: SourceError =>
@@ -31,7 +43,7 @@ class ErrorListForwarder(errorSource: DefaultErrorSource, controller: Controller
                case u => u.toString
             }
          }
-         val error = new DefaultErrorSource.DefaultError(errorSource, tp, file, pos.line, pos.column, pos.column + reg.length, s.mainMessage)
+         val error = new MMTError(src, errorSource, tp, file, pos.line, pos.column, pos.column + reg.length, s.mainMessage)
          s.extraMessages foreach {m => error.addExtraMessage(m)}
          errorSource.addError(error)
       case e: Invalid =>
@@ -69,13 +81,13 @@ class ErrorListForwarder(errorSource: DefaultErrorSource, controller: Controller
             SourceRef(utils.FileURI(src), SourceRegion(SourcePosition(0,0,0), SourcePosition(0,0,0)))
          }
          val reg = ref.region
-         val error = new DefaultErrorSource.DefaultError(errorSource, ErrorSource.ERROR, src.toString,
+         val error = new MMTError(src, errorSource, ErrorSource.ERROR, src.toString,
                reg.start.line, reg.start.column, reg.start.column + reg.length, mainMessage)
          extraMessages foreach {m => error.addExtraMessage(m)}
          errorSource.addError(error)
       case e: Error =>
          // other errors, should not happen
-         val error = new DefaultErrorSource.DefaultError(
+         val error = new MMTError(src,
              errorSource, ErrorSource.ERROR, src.toString, 0, 0, 1, "error with unknown location: " + e.getMessage
          )
          e.toStringLong.split("\\n").foreach {m => error.addExtraMessage(m)}
