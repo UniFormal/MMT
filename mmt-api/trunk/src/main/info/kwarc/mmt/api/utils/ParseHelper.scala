@@ -3,8 +3,11 @@ package info.kwarc.mmt.api.utils
 import info.kwarc.mmt.api.parser.SourcePosition
 
 /** \n, \r, and \r\n are read as \n */
-class Unparsed(s: String, error: String => Nothing) {
-   private var rest: String = s
+class Unparsed(input: String, error: String => Nothing) {
+   private var current: Int = 0
+   private val length = input.length
+   
+   def empty = current == length
    
    /** number of characters that have been eaten */
    private var offset: Int = 0
@@ -21,15 +24,15 @@ class Unparsed(s: String, error: String => Nothing) {
    /** the position of the next character to be read */
    def getSourcePosition = SourcePosition(offset, line, column)
 
-   def remainder = rest
-   def head = rest(0)
+   def remainder = input.substring(current)
+   def head = input(current)
    def next() = {
-      if (rest.isEmpty) error("expected character, found nothing")
+      if (empty) error("expected character, found nothing")
       var c = head
-      rest = rest.substring(1)
+      rest += 1
       if (c == '\r') {
-         if (remainder.nonEmpty && head == '\n') {
-            rest = rest.substring(1)
+         if (!empty && head == '\n') {
+            rest += 1
          }
          c = '\n'
       }
@@ -41,12 +44,12 @@ class Unparsed(s: String, error: String => Nothing) {
       this
    }
    def trim: this.type = {
-      while (!remainder.isEmpty && head.isWhitespace) next()
+      while (!empty && head.isWhitespace) next()
       this
    }
    def drop(s: String) {
       if (rest.startsWith(s)) {
-         rest = rest.substring(s.length)
+         current += s.length
          s.foreach {c => advancePositionBy(c)}
       } else
          error(s"expected $s, found $rest")
@@ -59,7 +62,7 @@ class Unparsed(s: String, error: String => Nothing) {
    /** matches at the beginning of the stream and returns the matched prefix */
    def next(regex: String): Regex.Match = {
       val m = new Regex(regex)
-      val mt = m.findPrefixMatchOf(rest).getOrElse {
+      val mt = m.findPrefixMatchOf(remainder).getOrElse {
          error(s"expected match of $regex, found $rest")
       }
       drop(mt.matched)
@@ -70,22 +73,18 @@ class Unparsed(s: String, error: String => Nothing) {
     * returns all characters up to the next unescaped occurrence of 'until' (that occurrence is eaten but not returned)
     * @param until the delimiter to scan for
     * @param exceptAfter the an escape character  
-    * @param unescape maps a string after the escape character to the eaten escape sequence and its unescaped value
     */
-   def next(until: Char, exceptAfter: Char)(unescape: String => (String,String)): (String,Boolean) = {
+   def next(until: Char, exceptAfter: Char): (String,Boolean) = {
       var seen = ""
-      while (remainder.nonEmpty && head != until) {
+      while (!empty && head != until) {
          if (head == exceptAfter) {
-            next
-            val (eaten, unescaped) = unescape(rest)
-            drop(eaten)
-            seen += unescaped
-         } else {
             seen += head
-            next
+			next
          }
+         seen += head
+         next
       }
-      if (remainder.isEmpty) {
+      if (empty) {
          (seen, false)
       }
       else {

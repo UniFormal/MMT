@@ -63,7 +63,7 @@ object JSON {
       val u = new Unparsed(s, msg => throw JSONError(msg))
       val j = parse(u)
       u.trim
-      if (u.remainder.isEmpty)
+      if (u.empty)
          j
       else throw JSONError("additional characters after successful parse")
    }
@@ -112,21 +112,34 @@ object JSON {
    
    def parseString(s: Unparsed) = {
       s.drop("\"")
-      val (p,closed) = s.next('"', '\\') {rest =>
-         rest(0) match {
-            case c if c == '"' || c == '\\' => (c.toString, c.toString)
-            case 'b' => ("b", "\b")
-            case 'f' => ("f", "\f")
-            case 'n' => ("n", "\n")
-            case 'r' => ("r", "\r")
-            case 't' => ("t", "\t")
-            case 'u' => (rest.substring(0,5), "u"+rest.substring(1,4)) //TODO make char
-            case _ => throw JSONError("Illegal starting character " + rest(0) + " for JSON")
-         }
-      }
+      val (p,closed) = s.next('"', '\\')
       if (!closed)
          throw JSONError("unclosed string")
-      JSONString(p)
+	  var escaped = p
+	  var unescaped = ""
+	  while (escaped.nonEmpty) {
+	     val first = escaped(0)
+	     val (eaten, found) = if (first != '\\') {
+		    (first.toString,first.toString)
+	     } else {
+		    if (escaped.length <= 1)
+			   throw JSONError("unclosed escaped")
+			second = escaped(1)
+            second match {
+               case '"' || '\\' => (second.toString, second.toString)
+               case 'b' => ("b", "\b")
+               case 'f' => ("f", "\f")
+               case 'n' => ("n", "\n")
+               case 'r' => ("r", "\r")
+               case 't' => ("t", "\t")
+               case 'u' => (unescaped.substring(0,5), "u"+unescaped.substring(1,4)) //TODO make char
+               case _ => throw JSONError("Illegal starting character " + escaped(1) + " for JSON")
+			}
+         }
+		 unescaped += found
+         escaped = escaped.substring(eaten.length)
+      }
+      JSONString(unescaped)
    }
 
    def parseObject(s: Unparsed): JSONObject = {
