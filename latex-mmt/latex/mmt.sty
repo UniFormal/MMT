@@ -6,7 +6,7 @@
 %\ProcessOptions
 
 %% the MMT delimiters are 'invalid' by default, this makes them 'other'
-% to write them deliminiters, use ^^1c -- ^^1f
+% to write them, use ^^1c -- ^^1f
 \catcode28=12
 \catcode29=12
 \catcode30=12
@@ -41,6 +41,12 @@
 }
 
 \newcommand{\toMMT}[1]{\immediate\write\lmtfile{#1}}
+
+% abbreviations of \toMMT for common situations --- not tested
+\newcommand{\mmtheory}[2]{\toMMT{theory #1 : #2 =}}
+\newcommand{\mmtheoryend}{\toMMT{^^1d}}
+\newcommand{\mmtinclude}[1]{\toMMT{include #1 ^^1e}}
+\newcommand{\mmtconstant}[4]{\toMMT{constant #1 \mmt@ifnonempty{#2}{:#2^^1f} \mmt@ifnonempty{#3}{= #3^^1f} \mmt@ifnonempty{#4}{\# #4^^1f} ^^1e}}
 
 %% !TERM! is an alias for \fromMMT{TERM}, thus yielding notation similar to Latex $TERM$
 \catcode`!=13
