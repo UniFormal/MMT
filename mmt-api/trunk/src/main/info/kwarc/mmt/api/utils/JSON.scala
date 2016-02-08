@@ -148,11 +148,11 @@ object JSON {
       parseOpenObject(s)
    }
    
-   def parseOpenObject(s: Unparsed): JSONObject = {
+   def parseOpenObject(s: Unparsed, seen: List[(JSONString,JSON)]): JSONObject = {
       s.trim
       if (s.head == '}') {
          s.drop("}")
-         JSONObject()
+         JSONObject(seen.reverse)
       } else {
          s.trim
          val key = parseString(s)
@@ -161,36 +161,36 @@ object JSON {
          val value = parse(s)
          s.trim
          val first = (key,value)
-         val c = s.next
+         val c = s.head
          if (c == ',') {
-            val rest = parseOpenObject(s)
-            first :: rest
-         } else if (c == '}') {
-            JSONObject(List(first))
-         } else throw JSONError("expected ',' or '}', found " + c + " " + c.isWhitespace)
+            s.next
+         }
+         if (c != ',' && c != '}')
+            throw JSONError("expected ',' or '}', found " + c + " ")
+		 parseOpenObject(s, first::seen)
       }
    }
    
    def parseArray(s: Unparsed): JSONArray = {
       s.trim
       s.drop("[")
-      parseOpenArray(s)
+      parseOpenArray(s, Nil)
    }
-   def parseOpenArray(s: Unparsed): JSONArray = {
+   def parseOpenArray(s: Unparsed, seen: List[JSON]): JSONArray = {
       s.trim
       if (s.head == ']') {
          s.drop("]")
-         JSONArray()
+         JSONArray(seen.reverse)
       } else {
          val first = parse(s)
          s.trim
-         val c = s.next
+         val c = s.head
          if (c == ',') {
-            val rest = parseOpenArray(s)
-            first :: rest
-         } else if (c == ']') {
-            JSONArray(first)
-         } else throw JSONError("expected ',' or ']', found " + c)
+		    s.next
+	     }
+         if (c != ',' && c != ']')
+		    throw JSONError("expected ',' or ']', found " + c)
+         parseOpenArray(s, first::seen)
       }
    }
 }
