@@ -124,14 +124,16 @@ object JSON {
 	     } else {
 		    if (escaped.length <= 1)
 			   throw JSONError("unclosed escaped")
-			second = escaped(1)
+			val second = escaped(1)
             second match {
-               case '"' || '\\' => (second.toString, second.toString)
+               case '"' => (second.toString, second.toString)
+               case '\\' => (second.toString, second.toString)
                case 'b' => ("b", "\b")
                case 'f' => ("f", "\f")
                case 'n' => ("n", "\n")
                case 'r' => ("r", "\r")
                case 't' => ("t", "\t")
+               case '/' => ("/","/")
                case 'u' => (unescaped.substring(0,5), "u"+unescaped.substring(1,4)) //TODO make char
                case _ => throw JSONError("Illegal starting character " + escaped(1) + " for JSON")
 			}
@@ -145,7 +147,7 @@ object JSON {
    def parseObject(s: Unparsed): JSONObject = {
       s.trim
       s.drop("{")
-      parseOpenObject(s)
+      parseOpenObject(s,Nil)
    }
    
    def parseOpenObject(s: Unparsed, seen: List[(JSONString,JSON)]): JSONObject = {
@@ -180,7 +182,7 @@ object JSON {
       s.trim
       if (s.head == ']') {
          s.drop("]")
-         JSONArray(seen.reverse)
+         JSONArray(seen.reverse:_*)
       } else {
          val first = parse(s)
          s.trim

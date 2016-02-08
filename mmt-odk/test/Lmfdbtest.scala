@@ -30,6 +30,6 @@ object Lmfdbtest {
     println(res2)
     */
 
-    controller.handleLine("build ODK/GAP gap-omdoc")
+    controller.handleLine("build ODK/GAP gap-omdoc bitesize.json") //bitesize.json")
   }
 }

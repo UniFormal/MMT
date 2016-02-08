@@ -25,10 +25,10 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit)
 
   def apply(ngap:GAPReader) = {
     gap = ngap
-    print("sorting...")
+    println("sorting...")
     sort(gap.all)
-    dones.foreach(println(_))
-    println(dones.length)
+    //dones.foreach(println(_))
+    println("imported " + dones.length + "GAP Objects")
     // println("\n\n--------------------------------------------------\n Throwaways:")
     // testers.foreach(println(_))
   }

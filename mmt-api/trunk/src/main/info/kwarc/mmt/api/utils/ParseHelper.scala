@@ -29,10 +29,10 @@ class Unparsed(input: String, error: String => Nothing) {
    def next() = {
       if (empty) error("expected character, found nothing")
       var c = head
-      rest += 1
+      current += 1
       if (c == '\r') {
          if (!empty && head == '\n') {
-            rest += 1
+            current += 1
          }
          c = '\n'
       }
@@ -48,11 +48,11 @@ class Unparsed(input: String, error: String => Nothing) {
       this
    }
    def drop(s: String) {
-      if (rest.startsWith(s)) {
+      if (remainder.startsWith(s)) {
          current += s.length
          s.foreach {c => advancePositionBy(c)}
       } else
-         error(s"expected $s, found $rest")
+         error(s"expected $s, found $remainder")
    }
    def next(test: Char => Boolean): String = {
       if (test(head)) next() + next(test) else ""
@@ -63,7 +63,7 @@ class Unparsed(input: String, error: String => Nothing) {
    def next(regex: String): Regex.Match = {
       val m = new Regex(regex)
       val mt = m.findPrefixMatchOf(remainder).getOrElse {
-         error(s"expected match of $regex, found $rest")
+         error(s"expected match of $regex, found $remainder")
       }
       drop(mt.matched)
       mt
