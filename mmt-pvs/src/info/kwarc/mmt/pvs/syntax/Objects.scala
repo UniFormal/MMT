@@ -14,11 +14,15 @@ sealed trait Object {
 /** PVS types */
 sealed trait Type extends Object with domain
 /** a */
-case class type_name(place: String, name: name, _res: Option[resolution]) extends Type
+case class type_name(place: String, name: name, _res: Option[resolution]) extends Type {
+  override def toString() = name.id
+}
 /** a(args) */
 case class type_application(place: String, _type: type_name, _arguments: List[Expr]) extends Type
 /** A -> B or (x:A) -> B */
-case class function_type(place: String, _from: domain, _to: Type) extends Type
+case class function_type(place: String, _from: domain, _to: Type) extends Type {
+  override def toString = "(" + _from.toString + " -> " + _to.toString + ")"
+}
 /** predicate subtype -- {x:A|F} */
 //case class setsubtype(place: String, bindings: List[binding], _by: Expr) extends Type
 /** predicate subtype -- A|F, e.g., A | lambda x:A|F */
@@ -26,7 +30,9 @@ case class setsubtype(place:String, _type: Type, _by:Expr) extends Type
 /** (p): type, for a predicate p: _type = a => bool; _ */
 case class expr_as_type(place: String, _expr: Expr, _type: Option[Type]) extends Type
 /** flexary, possibly dependent product -- e.g., A1 * (x2:A2) * ... * An */
-case class tuple_type(place: String, _domains: List[domain]) extends Type
+case class tuple_type(place: String, _domains: List[domain]) extends Type {
+  override def toString = "⟨" + _domains.map(_.toString).mkString(", ") + "⟩"
+}
 /** A1 + ... + An */
 case class cotuple_type(place: String, _arguments: List[Type]) extends Type
 /** {f1:A1, ..., fn: An} */
@@ -54,9 +60,13 @@ sealed trait Expr extends Object with assignment_arg
  *  @param _type the type disambiguating overloading (can be computed from resolution)
  *  @param _res internal, disambiguated reference (internally maintained as a pointer)
  */
-case class name_expr(place: String, name: name, _type: Option[Type], _resolution: resolution) extends Expr
+case class name_expr(place: String, name: name, _type: Option[Type], _resolution: resolution) extends Expr {
+  override def toString() = name.id
+}
 /** */
-case class varname_expr(place: String, id: String, _type: Type) extends Expr
+case class varname_expr(place: String, id: String, _type: Type) extends Expr {
+  override def toString() = id
+}
 /** number literal */
 case class number_expr(place: String, _num: BigInt) extends Expr
 /** rational literal */
@@ -67,9 +77,13 @@ case class rational_expr(place: String, _s:String) extends Expr {
 /** string literal */
 case class string_expr(place: String, _str: String) extends Expr
 /** function application */
-case class application(place: String, _fun: Expr, _arg: Expr, infix: Boolean) extends Expr
+case class application(place: String, _fun: Expr, _arg: Expr, infix: Boolean) extends Expr {
+  override def toString = _fun.toString + "@(" + _arg.toString + ")"
+}
 /** tuple */
-case class tuple_expr(place: String, _arguments: List[Expr]) extends Expr
+case class tuple_expr(place: String, _arguments: List[Expr]) extends Expr {
+  override def toString = "⟨" + _arguments.map(_.toString).mkString(", ") + "⟩"
+}
 /** list */
 case class list_expr(place: String, _arguments: List[Expr]) extends Expr
 /** record */
@@ -86,11 +100,15 @@ case class coercion_expr(place: String, _of: Expr, _to: Type) extends Expr
 // ********** binders
 
 /** universal quantifier */
-case class forall_expr(place: String, bindings: List[binding], _body: Expr) extends Expr
+case class forall_expr(place: String, bindings: List[binding], _body: Expr) extends Expr {
+  override def toString = "∀[" + bindings.map(_.toString).mkString(", ") + "]" + _body.toString
+}
 /** existential quantifier */
 case class exists_expr(place: String, bindings: List[binding], _body: Expr) extends Expr
 /** lambda abstraction */
-case class lambda_expr(place: String, bindings: List[binding], _body: Expr) extends Expr
+case class lambda_expr(place: String, bindings: List[binding], _body: Expr) extends Expr {
+  override def toString = "λ[" + bindings.map(_.toString).mkString(", ") + "]" + _body.toString
+}
 /** equal to lambda, convenience for using predicates as (expression-level) sets */
 case class set_expr(place: String, bindings: List[binding], _body: Expr) extends Expr
 /** let expression  */

@@ -96,7 +96,9 @@ case class type_def_decl(named: NamedDecl, ne: NonEmptiness, arg_formals: List[b
 /**
  * c(G) : A [= t]
  */
-case class const_decl(named: ChainedDecl, arg_formals: List[bindings], tp: DeclaredType, _def: Option[Expr]) extends Decl with Group
+case class const_decl(named: ChainedDecl, arg_formals: List[bindings], tp: DeclaredType, _def: Option[Expr]) extends Decl with Group {
+  override def toString() = named.named.id + "[" + arg_formals.map(_.toString).mkString(", ") + "]: " + tp + " = " + _def.map(_.toString)
+}
 /** defined constant that is always expanded */
 case class macro_decl(decl: const_decl) extends Decl
 
@@ -195,7 +197,9 @@ case class UnnamedDecl(place: String, chain_p: Boolean, semi_colon_p: Boolean) e
 //case class DeclParameters(decl_formals: List[FormalParameter], arg_formals: List[bindings]) extends Group
 
 /** */
-case class DeclaredType(_declared: Type, _internal: Type) extends Group
+case class DeclaredType(_declared: Type, _internal: Type) extends Group {
+  override def toString() = "{" + _declared.toString + " / " + _internal.toString + "}"
+}
 /**
  * formula can have free variables
  */

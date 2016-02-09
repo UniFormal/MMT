@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, DeclaredStructure}
 import info.kwarc.mmt.lf.{Lambda, Apply, ApplySpine, Arrow}
+import info.kwarc.mmt.pvs.syntax.tuple_type
 import utils._
 
 object PVSTheory {
@@ -16,8 +17,76 @@ object PVSTheory {
       val term = OMS(path)
    }
 
-   object expr extends sym("expr")
+   object unknown extends sym("unknown")
+   object prop extends sym("prop")
+
    object tp extends sym("tp")
+
+   object tuple_type extends sym("tuple_type") {
+      def apply(l:List[Term]) : Term = {
+         require(l.length>=2)
+         if (l.length == 2) ApplySpine(this.term,l:_*) else
+            ApplySpine(this.term,l.head,apply(l.tail))
+      }
+      /*
+      def unapply(tm:Term) : Option[List[Term]] = tm match {
+         case Apply(this.term,t) => Some(List(t))
+         case Apply(tuple_type(l1),tuple_type(l2)) => Some(l1:::l2)
+         case Apply(tuple_type(l),t) => Some(l:::List(t))
+         case _ => None
+      }
+      */
+   }
+
+   object tuple_expr extends sym("tuple_expr") {
+      def apply(l:List[(Term,Term)]) : (Term,Term) = {
+         require(l.length>=2)
+         if (l.length == 2) (ApplySpine(this.term,l.head._2,l(1)._2,l.head._1,l(1)._1),tuple_type(List(l.head._2,l(1)._2)))
+         else {
+            val (tm,tp) = apply(l.tail)
+            (ApplySpine(this.term,l.head._2,tp,l.head._1,tm),tuple_type(List(l.head._2,tp)))
+         }
+      }
+      /*
+      def unapply(tm:Term) : Option[List[(Term,Term)]] = tm match {
+         case Apply(Apply(Apply(Apply(this.term,tp1),tp2),tm1),tm2) => Some(List((tm1,tp1),(tm2,tp2)))
+         case Apply(tuple_expr(l1),tuple_expr(l2)) => Some(l1:::l2)
+         case Apply(tuple_expr(l),t) => Some(l:::List(t))
+         case _ => None
+      }
+      */
+   }
+
+   object tm extends sym("expr") {
+      def apply(t:Term) = Apply(this.term,t)
+      def unapply(t:Term) : Option[Term] = t match {
+         case Apply(this.term,tm) => Some(tm)
+         case _ => None
+      }
+   }
+
+   object forall extends sym("forall") {
+      def apply(con:Context,tm:Term) = con.foldRight(tm)((v,t) => ApplySpine(this.term,v.tp.get,Lambda(v.name,tm(v.tp.get),t)))
+   }
+
+   object lambda extends sym("lambda") {
+      def apply(con:Context,tm:Term,tp:Term) = con.foldRight((tm,tp))((v,t) =>
+         (ApplySpine(this.term,v.tp.get,t._2,Lambda(v.name,tm(v.tp.get),t._1)),fun_type(v.tp.get,t._2)))._1
+   }
+
+   object apply extends sym("apply") {
+      def apply(f:Term,t:Term)(tpsrc: Term = unknown.term, tptarget : Term = unknown.term)
+      = ApplySpine(this.term,tpsrc,tptarget,f,t)
+   }
+
+   object fun_type extends sym("fun_type") {
+      def apply(a:Term,b:Term) = ApplySpine(this.term,a,b)
+      def unapply(t:Term) : Option[(Term,Term)] = t match {
+         case Apply(Apply(this.term,a),b) => Some((a,b))
+         case _ => None
+      }
+   }
+   /*
    object ofType extends sym("ofType") {
       def apply(tm:Term,tp:Term) = ApplySpine(this.term,tm,tp)
    }
@@ -105,5 +174,6 @@ object PVSTheory {
          s add Constant(s.toTerm,LocalName("def"),None,Some(dotp(expr.term)),_def,None)
       List(s,Constant(th.toTerm,LocalName(name),None,Some(dotp(expr.term)),Some(OMS((th.path / s.name) ? LocalName("def"))),None))
    }
+   */
 
 }

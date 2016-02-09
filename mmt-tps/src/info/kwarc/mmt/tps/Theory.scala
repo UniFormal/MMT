@@ -9,11 +9,13 @@ object TPSTheory {
    val rootdpath = DPath((URI.http colon "gl.mathhub.info") / "tps")
    val thname = "tpslogic"
    val thpath = rootdpath ? thname
-   abstract class sym(s: String) {
-      val path = thpath ? s
+   abstract class sym(th:String,s: String) {
+      val path = (rootdpath / thname) ? LocalName(th) ? s
       val term = OMS(path)
    }
 
-   object proof extends sym("ded")
+   object proof extends sym("pl0","ded")
+   object tp extends sym("simpletypes","alltypes")
+   object tm extends sym("simpletypes","tm")
 
 }
