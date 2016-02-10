@@ -21,38 +21,79 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
    object State {
 
       private var includes : Set[MPath] = Set()
-      private var pars : List[(LocalName,Term)] = Nil
-      private var LFpars : List[(LocalName,Term)] = Nil
-      var th : DeclaredTheory = null
+      private var pars : List[(LocalName,Term,Boolean)] = Nil
       private var vardecls : List[(LocalName,Term)] = Nil
       private var tccs : List[Term] = Nil
+
+      var th : DeclaredTheory = null
+      var usedvars : List[LocalName] = Nil
+      var boundvars : List[LocalName] = Nil
 
       def reset(t:DeclaredTheory) = {
          includes = Set()
          pars = Nil
-         LFpars = Nil
          vardecls = Nil
          th = t
       }
 
-      def parameters = pars ::: LFpars ::: vardecls
+      def parameters = pars.map(p => (p._1,p._2)):::vardecls
 
       def addinclude(path : MPath) = if (!th.getIncludes.contains(path) && th.path!=path) {
          includes+=path
-         println("Include: " + path)
+         // println("Include: " + path)
          th add PlainInclude(path,th.path)
       }
       def addparameter(name : LocalName, tp : Term, isLF : Boolean = false) = {
-         println("Parameter: " + name + ": " + tp)
-         if (isLF) LFpars ::=(name, tp)
-         else pars ::=(name, tp)
+         // println("Parameter: " + name + ": " + tp)
+         pars ::=(name, tp, isLF)
       }
       def addvardecl(name : LocalName, tp : Term) = {
-         println("Variable: " + name + ": " + tp)
+         // println("Variable: " + name + ": " + tp)
          vardecls::=(name,tp)
       }
 
-      def addtcc(t : Term) = tccs::=t
+      def addtcc(t : Term) = {
+         // println("TCC: " + controller.presenter.asString(t))// .objectLevel.asString(t))
+         tccs::=t
+      }
+
+      def addconstant(name : LocalName, args: List[(LocalName,Term)], giventype : Term, inferredType : Option[Term],
+                      defOpt : Option[Term]): Unit = {
+
+         var actualdef = if (inferredType.isDefined && inferredType.get!=giventype) defOpt.map(
+            d => PVSTheory.asType(inferredType.get,giventype,d,tccs.head)
+         ) else defOpt
+         if (tccs.length>1) {
+            println("Too many tccs in " + name + ": " + tccs.length)
+            sys.exit
+         }
+
+         usedvars = usedvars.filter(!boundvars.contains(_))
+         val localvars = usedvars.map(v => vardecls.find(p => p._1==v)).collect(
+            {case Some(p) => p}).sortBy(vardecls.indexOf(_))
+
+         boundvars = Nil
+         usedvars = Nil
+         tccs = Nil
+
+         if(localvars.nonEmpty) actualdef =
+           actualdef.map(PVSTheory.lambda(localvars.map(p => VarDecl(p._1,Some(p._2),None,None)),_,giventype))
+         var actualtype = giventype
+         if (localvars.nonEmpty) actualtype = localvars.foldRight(actualtype)((p,t) => PVSTheory.fun_type(p._2,t))
+
+         if (args.nonEmpty) {
+            actualdef = actualdef.map(PVSTheory.lambda(args.map(p => VarDecl(p._1,Some(p._2),None,None)),_,giventype))
+            actualtype = args.foldRight(actualtype)((p,tp) => PVSTheory.fun_type(p._2,tp))
+         }
+
+         if (pars.nonEmpty) {
+            actualdef = actualdef.map(Lambda(pars.map(p => VarDecl(p._1,Some(if(p._3) p._2 else PVSTheory.expr(p._2)),None,None)),_))
+            actualtype = Pi(pars.map(p => VarDecl(p._1,Some(if(p._3) p._2 else PVSTheory.expr(p._2)),None,None)),actualtype)
+         }
+
+         th add Constant(th.toTerm,name,None,Some(actualtype),actualdef,None)
+         // println(th.getConstants.head)
+      }
    }
    /*
    var tccs : List[tcc_decl] = Nil
@@ -147,7 +188,7 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
    }
 
    def doFormal(f:FormalParameter) = f match {
-      case formal_type_decl(named,ne) => State.addparameter(newName(named.named.id),PVSTheory.tp.term,false)
+      case formal_type_decl(named,ne) => State.addparameter(newName(named.named.id),PVSTheory.tp.term,true)
        /*
       case formal_subtype_decl(named,_,sup) => parameters.add(newName(named.named.id),PVSTheory.tp.term,false)
          // TODO how do I introduce subtyping conditions?
@@ -162,15 +203,18 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          case var_decl(id,unnamed,tp) => State.addvardecl(doName(id),doType(tp._internal))
          case tcc_decl(named,assertion) => State.addtcc(doExpr(assertion._formula)._1)
          case const_decl(named,arg_formals,tp,optdef) =>
-            println(d)
+            // println(d)
             val name = newName(named.named.id)
             val rettype = doType(tp._declared)
             val (defi,fulltp) = if (optdef.isDefined) {val (a,b) = doExpr(optdef.get);(Some(a),Some(b))} else (None,None)
-            println(arg_formals)
-            println(rettype)
-            println(fulltp)
-            println(defi)
-            sys.exit
+
+            State.addconstant(
+               name,
+               arg_formals.flatMap(_._bindings.map(b => (newName(b.id),doType(b._type)))),
+               rettype,
+               fulltp,
+               defi
+            )
           /*
          case var_decl(id,unnamed,tp) => Nil
          case tcc:tcc_decl => tccs::=tcc ; Nil
@@ -231,12 +275,13 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          case forall_expr(_,bindings,body) =>
             val bd = doExpr(body)._1
             val con = Context(bindings.map(b => VarDecl(newName(b.id),Some(doType(b._type)),None,None)):_*)
+            State.boundvars:::=con.map(_.name)
             (PVSTheory.forall(con,bd),PVSTheory.prop.term)
          case application(_,f,arg,_) =>
             val (tmf,tpf) = doExpr(f)
             val (tmarg,tparg) = doExpr(arg)
             val tptarget = tpf match {
-               case PVSTheory.tm(PVSTheory.fun_type(a,b)) => b
+               case PVSTheory.fun_type(a,b) => b
                case _ => PVSTheory.unknown.term
             }
             (PVSTheory.apply(tmf,tmarg)(tparg,tptarget),tptarget)
@@ -248,11 +293,13 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          case lambda_expr(_,bindings,body) =>
             val (bd,tptarget) = doExpr(body)
             val con = Context(bindings.map(b => VarDecl(doName(b.id),Some(doType(b._type)),None,None)):_*)
+            State.boundvars:::=con.map(_.name)
             (PVSTheory.lambda(con,bd,tptarget),con.foldRight(tptarget)((v,t) => PVSTheory.fun_type(v.tp.get,t)))
          case tuple_expr(_,args) => PVSTheory.tuple_expr(args map doExpr)
          case varname_expr(_,id,tp) =>
             //vars+= ((newName(id),doType(tp)))
-            (OMV(doName(id)),doType(tp))
+            State.usedvars ::= newName(id)
+            (OMV(newName(id)),doType(tp))
           /*
          case lambda_expr(_,bindings,body) =>
             val bd = doExpr(body)

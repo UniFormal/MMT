@@ -57,7 +57,7 @@ object PVSTheory {
       */
    }
 
-   object tm extends sym("expr") {
+   object expr extends sym("expr") {
       def apply(t:Term) = Apply(this.term,t)
       def unapply(t:Term) : Option[Term] = t match {
          case Apply(this.term,tm) => Some(tm)
@@ -66,15 +66,15 @@ object PVSTheory {
    }
 
    object forall extends sym("forall") {
-      def apply(con:Context,tm:Term) = con.foldRight(tm)((v,t) => ApplySpine(this.term,v.tp.get,Lambda(v.name,tm(v.tp.get),t)))
+      def apply(con:Context,tm:Term) = con.foldRight(tm)((v,t) => ApplySpine(this.term,v.tp.get,Lambda(v.name,expr(v.tp.get),t)))
    }
 
    object lambda extends sym("lambda") {
       def apply(con:Context,tm:Term,tp:Term) = con.foldRight((tm,tp))((v,t) =>
-         (ApplySpine(this.term,v.tp.get,t._2,Lambda(v.name,tm(v.tp.get),t._1)),fun_type(v.tp.get,t._2)))._1
+         (ApplySpine(this.term,v.tp.get,t._2,Lambda(v.name,expr(v.tp.get),t._1)),fun_type(v.tp.get,t._2)))._1
    }
 
-   object apply extends sym("apply") {
+   object apply extends sym("pvsapply") {
       def apply(f:Term,t:Term)(tpsrc: Term = unknown.term, tptarget : Term = unknown.term)
       = ApplySpine(this.term,tpsrc,tptarget,f,t)
    }
@@ -85,6 +85,11 @@ object PVSTheory {
          case Apply(Apply(this.term,a),b) => Some((a,b))
          case _ => None
       }
+   }
+
+   object asType extends sym("asType") {
+      def apply(tpA : Term, tpB : Term, tmA : Term, tcc : Term) =
+      ApplySpine(this.term,tpA,tpB,tmA,tcc)
    }
    /*
    object ofType extends sym("ofType") {
