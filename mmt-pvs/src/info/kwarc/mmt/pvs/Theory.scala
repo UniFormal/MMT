@@ -12,7 +12,7 @@ object PVSTheory {
    val rootdpath = DPath(URI.http colon "pvs.csl.sri.com")
    val thname = "PVS"
    val thpath = rootdpath ? thname
-   abstract class sym(s: String) {
+   class sym(s: String) {
       val path = thpath ? s
       val term = OMS(path)
    }
@@ -87,9 +87,40 @@ object PVSTheory {
       }
    }
 
-   object asType extends sym("asType") {
+   object asType extends sym("TypeCast") {
       def apply(tpA : Term, tpB : Term, tmA : Term, tcc : Term) =
       ApplySpine(this.term,tpA,tpB,tmA,tcc)
+   }
+
+   object proof extends sym("proof") {
+      def apply(s:String, t:Term) = ApplySpine(this.term,new sym(s).term,t)
+   }
+
+   object expr_as_type extends sym("expr_as_type") {
+      def apply(expr : Term, tp : Term) = ApplySpine(this.term,tp,expr)
+   }
+
+   object selection extends sym("selection") {
+      def apply(cons : Term, vars : Context, body : Term, constp : Term) =
+      ApplySpine(this.term,constp,cons,OMBIND(new sym("selbind").term,
+         vars.map(v => VarDecl(v.name,v.tp.map(expr(_)),v.df,v.not)),body))
+   }
+
+   object pvsmatch extends sym("match") {
+      def apply(tm : Term, tmtp : Term, cases : List[Term], rettp : Term) =
+      ApplySpine(this.term, tmtp, rettp, tm, ApplySpine(new sym("caselist").term,cases:_*))
+   }
+
+   object subtp extends  sym("subtp") {
+      def apply(tp : Term) = Apply(this.term,tp)
+   }
+
+   object typJudg extends sym("typing_judgement") {
+      def apply(tm : Term, tmtp : Term, restp : Term) = ApplySpine(this.term,tmtp,tm,restp)
+   }
+
+   object fieldapp extends sym("fieldapp") {
+      def apply(tm : Term, field : String) = ApplySpine(this.term,tm,OML(VarDecl(LocalName(field),None,None,None)))
    }
    /*
    object ofType extends sym("ofType") {

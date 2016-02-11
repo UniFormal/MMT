@@ -14,9 +14,7 @@ sealed trait Object {
 /** PVS types */
 sealed trait Type extends Object with domain
 /** a */
-case class type_name(place: String, name: name, _res: Option[resolution]) extends Type {
-  override def toString() = name.id
-}
+case class type_name(place: String, name: name, _res: Option[resolution]) extends Type
 /** a(args) */
 case class type_application(place: String, _type: type_name, _arguments: List[Expr]) extends Type
 /** A -> B or (x:A) -> B */
