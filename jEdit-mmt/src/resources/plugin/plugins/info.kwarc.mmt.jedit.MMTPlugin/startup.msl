@@ -1,0 +1,9 @@
+log file mmtplugin.log
+log+ archive
+log+ backend
+
+extension info.kwarc.mmt.lf.Plugin
+extension info.kwarc.mmt.lf.LFF
+extension info.kwarc.mmt.lf.hollight.Plugin
+
+base http://docs.omdoc.org/

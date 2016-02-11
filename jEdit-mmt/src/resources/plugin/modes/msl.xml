@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE MODE SYSTEM "xmode.dtd">
+
+<MODE>
+	<PROPS>
+		<PROPERTY NAME="wordBreakChars" VALUE=" " />
+		<PROPERTY NAME="lineComment" VALUE="//" />
+	</PROPS>
+	<RULES ESCAPE="\" IGNORE_CASE="FALSE" HIGHLIGHT_DIGITS="FALSE">
+		
+	   <EOL_SPAN TYPE="COMMENT1">//</EOL_SPAN>	
+
+		<KEYWORDS>
+		   <KEYWORD1>base</KEYWORD1>
+		   <KEYWORD1>exit</KEYWORD1>
+			<KEYWORD1>archive</KEYWORD1>
+		   <KEYWORD1>mathpath</KEYWORD1>
+		   <KEYWORD1>server</KEYWORD1>
+		   <KEYWORD1>plugin</KEYWORD1>
+		   <KEYWORD1>log</KEYWORD1>
+		   <KEYWORD1>log+</KEYWORD1>
+		   <KEYWORD1>log-</KEYWORD1>
+
+			<KEYWORD2>user</KEYWORD2>
+			<KEYWORD2>controller</KEYWORD2>
+			<KEYWORD2>presenter</KEYWORD2>
+			<KEYWORD2>extman</KEYWORD2>
+			<KEYWORD2>archive</KEYWORD2>
+			
+			<KEYWORD3>clean</KEYWORD3>
+			<KEYWORD3>compile</KEYWORD3>
+			<KEYWORD3>content</KEYWORD3>
+			<KEYWORD3>validate</KEYWORD3>
+			<KEYWORD3>notation</KEYWORD3>
+			<KEYWORD3>extract</KEYWORD3>
+			<KEYWORD3>integrate</KEYWORD3>
+		</KEYWORDS>
+	   
+   </RULES>
+</MODE>
