@@ -232,9 +232,9 @@ class BuildTask(val key: String, val archive: Archive, val inFile: File, val chi
   /** the name of the folder if inFile is a folder */
   def dirName: String = outFile.toFilePath.dirPath.name
 
-  def asDependency = children match {
+  def asDependency: BuildDependency = children match {
     case Some(ch) => DirBuildDependency(key, archive, inPath, ch)
-    case None => BuildDependency(key, archive, inPath)
+    case None => FileBuildDependency(key, archive, inPath)
   }
 }
 
@@ -499,7 +499,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
             lazy val errs = hadErrors(errorFile, errLev)
             val rn = errLev <= Level.Force || modified(inFile, errorFile) || errs ||
               getDeps(bf).exists {
-                case bd: BuildDependency =>
+                case bd: FileBuildDependency =>
                   val errFile = bd.getErrorFile
                   modified(errFile, errorFile)
                 case ForeignDependency(fFile) => modified(fFile, errorFile)
@@ -558,7 +558,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     if (inFile.isDirectory)
       inFile.list.flatMap(n => getFilesRec(a, FilePath(in.segments ::: List(n)))).toSet
     else if (inFile.isFile && includeFile(inFile.getName) && includeDir(inFile.up.getName))
-      Set(BuildDependency(key, a, in))
+      Set(FileBuildDependency(key, a, in))
     else Set.empty
   }
 
@@ -567,7 +567,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     makeBuildTask(a, inPath, a / inDim / inPath, None, None)
   }
 
-  def getAnyDeps(dep: BuildDependency): Set[Dependency] = {
+  def getAnyDeps(dep: FileBuildDependency): Set[Dependency] = {
     if (dep.key == key) {
       // we are within the current target
       getDeps(makeBuildTask(dep.archive, dep.inPath))
@@ -585,7 +585,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     while (unknown.nonEmpty) {
       val p = unknown.head
       val ds: Set[Dependency] = p match {
-        case bd: BuildDependency => getAnyDeps(bd)
+        case bd: FileBuildDependency => getAnyDeps(bd)
         case _ => Set.empty
       }
       deps += ((p, ds))
@@ -599,7 +599,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
     val ts = getTopsortedDeps(getFilesRec(a, in))
     ts.foreach {
-      case bd: BuildDependency =>
+      case bd: FileBuildDependency =>
         (if (bd.key == key) this else bd.getTarget(controller)).update(bd.archive, up, bd.inPath)
       case _ =>
     }

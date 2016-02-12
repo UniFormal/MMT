@@ -29,7 +29,7 @@ trait STeXAnalysis {
       case None =>
         logError("missing archive " + ar + " for " + fp)
         None
-      case Some(arch) => Some(BuildDependency(key, arch, fp))
+      case Some(arch) => Some(FileBuildDependency(key, arch, fp))
     }
   }
 
@@ -42,18 +42,18 @@ trait STeXAnalysis {
           })
         optRepo match {
           case Some(List(List(_, id))) => mkDep(a, id, fp, key)
-          case _ => Some(BuildDependency(key, a, fp))
+          case _ => Some(FileBuildDependency(key, a, fp))
         }
   }
 
   protected def matchPathAndRep(key: String, a: Archive, line: String): Option[Dependency] =
     line match {
-      case beginModnl(b) => Some(BuildDependency(key, a, entryToPath(b)))
+      case beginModnl(b) => Some(FileBuildDependency(key, a, entryToPath(b)))
       case mhinputRef(_, r, b) =>
         val fp = entryToPath(b)
         Option(r) match {
           case Some(id) => mkDep(a, id, fp, "sms")
-          case None => Some(BuildDependency("sms", a, fp))
+          case None => Some(FileBuildDependency("sms", a, fp))
         }
       case tikzinput(_, r, b) => mhRepos(a, r, b, "tikzsvg")
       case includeMhProblem(_, r, b) => mhRepos(a, r, b, key)
@@ -67,10 +67,10 @@ trait STeXAnalysis {
             val path = entryToPath(p)
             tl match {
               case List(List("repos", id)) => mkDep(a, id, path, depKey)
-              case Nil => Some(BuildDependency(depKey, a, path))
+              case Nil => Some(FileBuildDependency(depKey, a, path))
               case _ => None
             }
-          case None => Some(BuildDependency(depKey, a, fp))
+          case None => Some(FileBuildDependency(depKey, a, fp))
           case _ => None
         }
       case _ => None

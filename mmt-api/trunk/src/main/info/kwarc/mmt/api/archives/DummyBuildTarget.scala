@@ -21,7 +21,7 @@ class DummyBuildTarget extends TraversingBuildTarget {
     val fooFiles = needed.map(l => (l, bt.archive / inDim / l)).collect {
       case (l, f) if f.exists => l
     }
-    fooFiles.map(l => BuildDependency(key, bt.archive, File(l).toFilePath)).toSet
+    fooFiles.map(l => FileBuildDependency(key, bt.archive, File(l).toFilePath)).toSet
   }
 
   def readSource(bt: BuildTask): (List[String], List[String]) = {

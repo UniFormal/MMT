@@ -24,7 +24,7 @@ class AllTeX extends LaTeXDirTarget {
     if (dirFiles.nonEmpty) {
       createLocalPaths(a, dir)
       val ds = getTopsortedDeps(getFilesRec(a, in))
-      val ts = ds.collect { case bd: BuildDependency if bd.key == key => bd }.map(d => d.archive / inDim / d.inPath)
+      val ts = ds.collect { case bd: FileBuildDependency if bd.key == key => bd }.map(d => d.archive / inDim / d.inPath)
       val files = ts.filter(dirFiles.map(f => dir / f).contains(_)).map(_.getName)
       assert(files.length == dirFiles.length)
       val langs = files.flatMap(f => getLang(File(f))).toSet
@@ -452,7 +452,7 @@ class AllPdf extends PdfLatex {
     val aStr = archString(a)
     val name = in.getName
     langFiles(optLang, getDirFiles(a, in.up, super.includeFile)).
-      filter(_ != name).map(f => BuildDependency("pdflatex", a, bt.inPath.dirPath / f)).toSet
+      filter(_ != name).map(f => FileBuildDependency("pdflatex", a, bt.inPath.dirPath / f)).toSet
   }
 }
 

@@ -131,7 +131,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     }
     log(in + ": " + res.mkString(", "))
     val safe = res.filter {
-      case BuildDependency(_, ar, fp) =>
+      case FileBuildDependency(_, ar, fp) =>
         val f: File = ar / inDim / fp
         if (f == in) {
           log(LocalError(getOutPath(a, in) + " imports itself"))

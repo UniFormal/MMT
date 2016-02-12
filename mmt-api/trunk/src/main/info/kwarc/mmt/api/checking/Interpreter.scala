@@ -32,7 +32,7 @@ abstract class Interpreter extends Importer {
        controller.globalLookup.getAs(classOf[Document], dPath)
     } catch {
        case e: Error => throw LocalError("no document produced")
-    }    
+    }
     index(doc)
     BuildResult.empty
   }
@@ -98,7 +98,7 @@ abstract class Interpreter extends Importer {
     }
     result -= ((a, fp))
     log(if (result.isEmpty) "no dependencies" else "dependencies are: " + result.mkString(" "))
-    result.map(p => BuildDependency(key, p._1, p._2))
+    result.map(p => FileBuildDependency(key, p._1, p._2))
   }
 }
 
