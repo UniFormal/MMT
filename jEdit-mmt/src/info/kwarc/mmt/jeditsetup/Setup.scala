@@ -181,7 +181,7 @@ class Setup extends ShellExtension("jeditsetup") {
     } else {
       println("deleting property for content folder: " + archKey)
       val newLines = propsOld.split("\n").filter(!_.startsWith(archKey)).toList
-      if (newLines != List("")) {
+      if (newLines.nonEmpty && newLines != List("")) {
         File.WriteLineWise(propsFile, newLines)
       } else delete(propsFile)
     }
