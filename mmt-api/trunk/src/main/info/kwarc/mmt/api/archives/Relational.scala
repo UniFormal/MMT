@@ -62,7 +62,7 @@ class Relational extends TraversingBuildTarget {
 
   // no history can be checked therefore simply rebuild on update
   override def update(a: Archive, up: Update, in: FilePath = EmptyPath) {
-    build(a, in)
+    build(a, up, in)
   }
 }
 

@@ -130,7 +130,7 @@ object Action extends  RegexParsers {
   private def printall = "printAll" ^^ { case _ => PrintAll }
 
   private def printallxml = "printXML" ^^ { case _ => PrintAllXML }
-  
+
   private def printConfig = "printConfig" ^^ {case _ => PrintConfig}
 
   private def clear = "clear" ^^ { case _ => Clear }
@@ -165,7 +165,7 @@ object Action extends  RegexParsers {
   private def elaboration = path <~ "elaboration" ^^ { p => Elaboration(p) }
 
   private def component = (path <~ "component") ~ str ^^ { case p ~ s => Component(p, ComponentKey.parse(s)) }
-  
+
   private def get = path ^^ { p => Get(p) }
 
   private def windowaction = windowclose | windowpos | gui
@@ -205,9 +205,9 @@ object Action extends  RegexParsers {
       (km.tail, Clean)
     else if ("*!&".contains(km.last))
       (km.init, km.last match {
-        case '!' => UpdateOnError(Level.Error)
-        case '&' => BuildDepsFirst(UpdateOnError(Level.Error))
-        case _ => UpdateOnError(Level.Ignore)
+        case '!' => Update(Level.Error)
+        case '&' => BuildDepsFirst(Update(Level.Error))
+        case _ => Update(Level.Ignore)
       })
     else (km, Build)
   }
@@ -218,13 +218,13 @@ object Action extends  RegexParsers {
     ("--force" | "--onChange" | "--onError\\??(=\\d)?".r | "--clean" | "--depsFirst\\??(=\\d)?".r) ^^ {
       case "--force" => Build
       case "--clean" => Clean
-      case "--onError" => UpdateOnError(Level.Error)
-      case "--depsFirst" => BuildDepsFirst(UpdateOnError(Level.Error))
-      case "--onChange" => UpdateOnError(Level.Ignore)
+      case "--onError" => Update(Level.Error)
+      case "--depsFirst" => BuildDepsFirst(Update(Level.Error))
+      case "--onChange" => Update(Level.Ignore)
       case s =>
         val c = s.last
-        val up = if (c == '?') UpdateOnError(Level.Error, true)
-        else UpdateOnError(c.asDigit - 1, s.contains('?')) // 0 => force
+        val up = if (c == '?') Update(Level.Error, true)
+        else Update(c.asDigit - 1, s.contains('?')) // 0 => force
         if (s.startsWith("--depsFirst")) BuildDepsFirst(up)
         else up
     }

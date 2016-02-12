@@ -72,6 +72,12 @@ class STeXImporter extends Importer {
 
   override def apply(modifier: BuildTargetModifier, arch: Archive, in: FilePath) {
     modifier match {
+      case Build(up) =>
+        //running twice, first to load all theories, then to successfully parse objects
+        build(arch, up, in)
+        firstRun = false
+        build(arch, up, in)
+        firstRun = true
       case up: Update =>
         //running twice, first to load all theories, then to successfully parse objects
         update(arch, up, in)

@@ -73,8 +73,8 @@ abstract class MMTScript extends Extension {
 
   def updateBuild(ifHadErrors: Boolean) {
     val archives = config.getArchives
-    archives.foreach(a => runImporters(a.id, UpdateOnError(Level.Error)))
-    archives.foreach(a => runExporters(a.id, UpdateOnError(Level.Error)))
+    archives.foreach(a => runImporters(a.id, Update(Level.Error)))
+    archives.foreach(a => runExporters(a.id, Update(Level.Error)))
   }
 
   def plainBuild(btm: BuildTargetModifier) {
@@ -83,7 +83,7 @@ abstract class MMTScript extends Extension {
     archives.foreach(a => runExporters(a.id, btm))
   }
 
-    
+
   def smartBuild(mod : BuildTargetModifier, profile : String, targets : List[String]) {
     val archives = try {
       config.getProfile(profile).archives.map(aid => config.getArchive(aid))
@@ -105,7 +105,7 @@ abstract class MMTScript extends Extension {
       }
     }
   }
-  
+
   def make(comp : String, files : List[String]) = controller.makeAction(comp, files)
 
   def build(ids: List[String], target: String, modifier: archives.BuildTargetModifier, in: FilePath = EmptyPath) {

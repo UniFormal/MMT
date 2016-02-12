@@ -222,7 +222,7 @@ trait ActionHandling {self: Controller =>
           throw GeneralError("no importer found")
         }
         log("building " + f)
-        importer.build(a, FilePath(p), Some(errorCont))
+        importer.build(a, Build.update, FilePath(p), Some(errorCont))
       case None =>
         throw GeneralError(f + " is not in a known archive")
     }

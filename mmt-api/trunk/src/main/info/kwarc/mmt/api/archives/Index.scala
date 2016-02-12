@@ -140,7 +140,7 @@ abstract class Importer extends TraversingBuildTarget {imp =>
          case IsRootDoc(dp) => dp
          case _ => throw LocalError("can only interpret root documents")
       }
-      imp.build(arch, FilePath(path), Some(errorCont))
+      imp.build(arch, Build.update, FilePath(path), Some(errorCont))
       try {
         controller.globalLookup.getAs(classOf[Document],dpath)
       } catch {

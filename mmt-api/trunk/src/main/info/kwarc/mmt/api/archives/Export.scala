@@ -15,6 +15,7 @@ trait Exporter extends BuildTarget {
 
   /**
     * sends output to a certain file, file is created new and deleted if empty afterwards
+ *
     * @param out the output file to be used while executing body
     * @param body any code that produces output
     */
@@ -61,15 +62,16 @@ trait Exporter extends BuildTarget {
   def exportView(view: DeclaredView, bf: BuildTask)
 
   /** applied to every namespace
+ *
     * @param dpath the namespace
     * @param namespaces the sub-namespace in this namespace
     * @param modules the modules in this namespace
     */
   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask])
 
-  def build(a: Archive, in: FilePath) {
-    contentExporter.build(a, in)
-    narrationExporter.build(a, in)
+  def build(a: Archive, up: Update, in: FilePath) {
+    contentExporter.build(a, up, in)
+    narrationExporter.build(a, up, in)
   }
 
   def update(a: Archive, up: Update, in: FilePath) {
