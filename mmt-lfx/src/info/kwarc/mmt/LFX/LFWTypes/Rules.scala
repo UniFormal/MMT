@@ -175,31 +175,18 @@ object recTerm extends EliminationRule(rec.path, OfType.path) {
 
 object recApply extends ComputationRule(Apply.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term]
-  = {
-    def eliminaterec(c:Term,p:Term,a:Term,u:Term,stack1:Stack) : Term = {
-      val input=Apply(rec(c,p),sup(a,u))
-      val domu = solver.simplify(solver.inferType(u).getOrElse(return input)) match {
-        case Pi(_, d, _) => d
-        case Arrow(d, _) => d
-        case _ => return input
-      }
-      val (y, _) = Context.pickFresh(stack.context, LocalName("r"))
-      history += "Expanding recursive definition"
-      val out = solver.simplify(Apply(u,OMV(y)))(stack1++y%domu,history) match {
-        case sup(a1,u1) => eliminaterec(c,p,a1,u1,stack1++y%domu)
-        case _ => Apply(rec(c,p),Apply(u,OMV(y)))
-      }
-      solver.simplify(ApplySpine(p, a, u, Lambda(y, domu, out)))
-    }
-    solver.simplify(tm) match {
-      case Apply(rec(c, p), t) =>
-        solver.simplify(t)(stack, history) match {
-          case sup(a, u) => Some(eliminaterec(c,p,a,u,stack))
-          case _ => None
+  = tm match {
+      case Apply(rec(c, p), sup(a,u)) =>
+        val (y, _) = Context.pickFresh(stack.context, LocalName("r"))
+        history += "Expanding recursive definition"
+        val domu = solver.simplify(solver.inferType(u).getOrElse(return None)) match {
+          case Pi(_, d, _) => d
+          case Arrow(d, _) => d
+          case _ => return None
         }
-      case _ => None
+         Some(ApplySpine(p,a,u,Lambda(y,domu,Apply(rec(c,p),Apply(u,y)))))
+      case _ => throw TypingRule.NotApplicable
     }
-  }
 }
 
 /** equality-checking: the eta rule |- a = b : A, |- f = g : B(a)->W ---> |-sup(a,f) = sup(b,g) */

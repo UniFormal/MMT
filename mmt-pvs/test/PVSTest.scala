@@ -25,6 +25,7 @@ object PVSTest {
 """.split("\\n").foreach(controller.handleLine(_))
 
     //
+    // build PVS/Prelude mmt-omdoc
     // build PVS/NASA pvs-omdoc
 
     //controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")

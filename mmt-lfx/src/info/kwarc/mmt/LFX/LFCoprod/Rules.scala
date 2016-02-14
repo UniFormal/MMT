@@ -55,6 +55,7 @@ object CoprodType extends TypingRule(Coprod.path) {
             val tpnB = solver.inferType(b,false).getOrElse(return false)
             solver.check(Equality(stack,tpA,tpnA,None))
             solver.check(Equality(stack,tpB,tpnB,None))
+          case _ => throw TypingRule.NotApplicable
         }
       }
     case _ => throw TypingRule.NotApplicable
@@ -90,16 +91,27 @@ object MatchTerm extends EliminationRule(cmatch.path, OfType.path) {
         case _ => return None
       }
       val (x,_) = Common.pickFresh(solver, v)
+      history += "inferring type of match term"
+      solver.check(Typing(stack ++ x%tpA,f ^? x1/OMV(x),c ^? v/inl(OMV(x),tpB)))
+      solver.check(Typing(stack ++ x%tpB,g ^? x2/OMV(x),c ^? v/inr(OMV(x),tpA)))
+      solver.check(Subtyping(stack,Coprod(tpA,tpB),cotp))
+      solver.check(Typing(stack,u,Coprod(tpA,tpB)))
+
+      Some(c ^? v/u)
+
+      /*
       val apb = solver.safeSimplifyUntil(solver.inferType(u)(stack,history).getOrElse(return None))(Coprod.unapply)._1
       if(!( apb match {
-        case Coprod(a,b) => solver.check(Equality(stack,a,tpA,Some(OMS(Typed.ktype)))) &&
-          solver.check(Equality(stack,b,tpB,Some(OMS(Typed.ktype))))
+        case Coprod(a,b) => solver.check(Subtyping(stack,a,tpA)) &&
+          solver.check(Subtyping(stack,b,tpB))
         case _ => false
       })) return None
       solver.check(Equality(stack,cotp,apb,Some(OMS(Typed.ktype))))
 
       if(!(solver.check(Typing(stack++x%tpA,f ^? x1/OMV(x),c ^? v/inl(x,tpB))) && solver.check(Typing(stack++x%tpB,g ^? x2/OMV(x),c ^? v/inr(x,tpA)))))
         return None
+
+      */
 
       Some(c ^? v/u)
     case _ => None
@@ -122,15 +134,15 @@ object MatchComp extends ComputationRule(cmatch.path) {
         case _ => throw NotApplicable
       }
       val (f,x1,g,x2) = (solver.simplify(t1),solver.simplify(t2)) match {
-        case (ccase(y1,tpA2,fx),ccase(y2,tpB2,gx)) => if (!(
-          solver.check(Equality(stack,tpA,tpA2,Some(OMS(Typed.ktype)))) &&
-          solver.check(Equality(stack,tpB,tpB2,Some(OMS(Typed.ktype)))))) return None
-          else (fx,y1,gx,y2)
+        case (ccase(y1,tpA2,fx),ccase(y2,tpB2,gx)) =>
+          solver.check(Equality(stack,tpA,tpA2,Some(OMS(Typed.ktype))))
+          solver.check(Equality(stack,tpB,tpB2,Some(OMS(Typed.ktype))))
+          (fx,y1,gx,y2)
         case _ => throw NotApplicable
       }
       history += "Expanding match on coproduct embedding"
-      if (a.isDefined) Some(solver.simplify(f ^? (x1/a.get)))
-      else if (b.isDefined) Some(solver.simplify(g ^? (x2/b.get))) else None
+      if (a.isDefined) Some(f ^? (x1/a.get))
+      else if (b.isDefined) Some(g ^? (x2/b.get)) else throw NotApplicable
     case _ => None
   }
 }
@@ -139,7 +151,15 @@ object MatchComp extends ComputationRule(cmatch.path) {
 
 object AddFuncComp extends ComputationRule(Addfunc.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term]
-  = tm match {
+  = {
+    val (x,_) = Context.pickFresh(stack.context,LocalName("x"))
+    try { getFunTerm(solver)(tm,covered).map(p => Lambda(x,p._2,p._1(OMV(x)))) } catch {
+      case t : Throwable => throw t
+    }
+  }
+
+  def getFunTerm(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History)
+  : Option[(Term => Term,Term)] = tm match {
     case Addfunc(t1,t2) =>
       (solver.simplify(solver.inferType(t1)(stack,history).getOrElse(return None)),
         solver.simplify(solver.inferType(t2)(stack,history).getOrElse(return None))) match {
@@ -148,21 +168,24 @@ object AddFuncComp extends ComputationRule(Addfunc.path) {
           val (x1,sub1) = Context.pickFresh((stack++x%Coprod(tpA,tpB)).context,y1)
           solver.check(Equality(stack++x%Coprod(tpA,tpB),tpC ^? y1/inl(x,tpB),tpC2 ^? y2/inr(x,tpA),Some(OMS(Typed.ktype))))
           history+="Expanding function addition"
-          Some(Lambda(x,Coprod(tpA,tpB),
-            solver.simplify(cmatch(OMV(x),x1,tpA,Apply(t1,OMV(x1)),x1,tpB,Apply(t2,OMV(x1)),x1,Coprod(tpA,tpB),tpC ^? y1/OMV(x1)))(stack++x%Coprod(tpA,tpB),history)
-           // cmatch(OMV(x),x1,tpA,Apply(t1 ^? sub1,OMV(x1)),tpC,x1,tpB,Apply(t2 ^? y2/OMV(x1),OMV(x1)),tpC2)
-          ))
+          Some((tx => cmatch(tx,x1,tpA,Apply(t1,OMV(x1)),x1,tpB,Apply(t2,OMV(x1)),x1,Coprod(tpA,tpB),tpC ^? y1/OMV(x1)),Coprod(tpA,tpB)))
         case _ => None
       }
     case _ => None
   }
 }
 
+// useless ?
 object AddFuncApply extends ComputationRule(Apply.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term]
   = tm match {
     case Apply(p,u) => solver.simplify(p) match {
-      case Addfunc(t1,t2) => Some(solver.simplify(ApplySpine(AddFuncComp(solver)(Addfunc(t1,t2),false).getOrElse(return None),u)))
+      case Addfunc(t1,t2) =>
+        val (x,_) = Context.pickFresh(stack.context,LocalName("x"))
+        AddFuncComp.getFunTerm(solver)(Addfunc(t1,t2),covered).map(p => p._1(OMV(x))) match {
+          case Some(cmatch(y,tm1,tm2,n,tm3,tm4)) => Some(cmatch(u,tm1,tm2,n,tm3,tm4))
+          case _ => throw NotApplicable
+        }//.getOrElse(return None),u))
       case _ => throw NotApplicable
     }
     case _ => None
@@ -172,7 +195,6 @@ object AddFuncApply extends ComputationRule(Apply.path) {
 /** Type inference rule for function addition */
 
 object CompFuncTerm extends EliminationRule(Addfunc.path, OfType.path) {
-
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
     case Addfunc(t1,t2) => solver.inferType(AddFuncComp(solver)(tm,false).getOrElse(return None))(stack,history)
     case _ => None
