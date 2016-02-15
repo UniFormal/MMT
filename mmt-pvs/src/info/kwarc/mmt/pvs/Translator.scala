@@ -222,11 +222,19 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
 
          th
       case datatype(TopDatatypeBody(named, theory_formals, importings,constructors)) =>
-         println(" -- Datatype: " + named.id)
+         // println(" -- Datatype: " + named.id)
          implicit val th = new DeclaredTheory(path,doName(named.id),Some(PVSTheory.thpath))
-         println("TODO: Datatypes!")
-         // sys.exit
-         // TODO !
+         State.reset(th)
+         theory_formals foreach doFormal
+         constructors foreach (c =>
+         {
+            val realtp = PVSTheory.expr(c.accessors.foldRight(th.toTerm.asInstanceOf[Term])((a,b) => PVSTheory.fun_type(doType(a._type),b)))
+            State.addconstant(newName(c.named.id),Nil,realtp,None,
+               Some(PVSTheory.constructor(c.recognizer,c.accessors.map(a => (a.named.id,doType(a._type)))))
+            )
+            // TODO c.ordnum, c.subtypeid
+         })
+
          th
       case _ =>
          println(" -- OTHER: "+m.getClass)

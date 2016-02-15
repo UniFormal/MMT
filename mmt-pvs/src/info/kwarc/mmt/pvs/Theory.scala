@@ -185,6 +185,11 @@ object PVSTheory {
       def apply(l:List[String]) = ApplySpine(this.term,l.map(StringLiterals(_)):_*)
    }
 
+   object constructor extends sym("constructor") {
+      def apply(recognizer : String, accessors : List[(String,Term)]) = ApplySpine(this.term,
+         OMLIT(recognizer,StringLiterals)::accessors.map(p =>OML(VarDecl(LocalName(p._1),Some(p._2),None,None))):_*)
+   }
+
    /*
    object ofType extends sym("ofType") {
       def apply(tm:Term,tp:Term) = ApplySpine(this.term,tm,tp)

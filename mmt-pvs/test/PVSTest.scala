@@ -15,8 +15,8 @@ object PVSTest {
     controller.handleLine("log+ archive")
     controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
 
+    // log+ debug
     """log+ pvs-omdoc
-    log+ debug
 
     mathpath archive ../../MathHub
 
