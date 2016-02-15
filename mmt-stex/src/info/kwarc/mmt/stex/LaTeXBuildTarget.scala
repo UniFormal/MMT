@@ -150,7 +150,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
 
   override def getDeps(bt: BuildTask): Set[Dependency] = {
     val in = bt.inFile
-    if (in.exists()) {
+    if (in.exists && in.isFile) {
       if (key == "sms") Set.empty
       else
         readingSource(if (List("tikzsvg", "allpdf").contains(key)) "pdflatex" else key, bt.archive, in).toSet

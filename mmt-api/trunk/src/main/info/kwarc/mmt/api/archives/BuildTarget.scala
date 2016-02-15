@@ -273,9 +273,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   protected def getOutPath(a: Archive, outFile: File) = outFile.toFilePath
 
-  protected def getErrorFile(a: Archive, inPath: FilePath): File = FileBuildDependency(key, a, inPath).getErrorFile
+  protected def getErrorFile(a: Archive, inPath: FilePath): File = FileBuildDependency(key, a, inPath).getErrorFile(controller)
 
-  protected def getFolderErrorFile(a: Archive, inPath: FilePath) = a / errors / key / inPath / (folderName + ".err")
+  def getFolderErrorFile(a: Archive, inPath: FilePath) = a / errors / key / inPath / (folderName + ".err")
 
   /** some logging for lmh */
   protected def logResult(s: String) {
@@ -385,27 +385,31 @@ abstract class TraversingBuildTarget extends BuildTarget {
     val testFile = getTestOutFile(bt.archive, bt.inPath)
     val diffFile = testFile.addExtension("diff")
     val outFile = bt.outFile
-    if (outFile.exists && testFile.exists) {
-      var diffLog: Option[String] = Some("") // assume a difference if no diff is run
-      if (testMod.compareWithTest) {
-        diffLog = ShellCommand.run("diff", "-u", testFile.toString, outFile.toString)
-        if (diffLog.isDefined) {
-          File.write(diffFile, diffLog.get)
-          logResult("wrote: " + diffFile)
-        } else {
-          logResult("no differences for: " + outFile)
+    if (outFile.exists) {
+      if (testFile.exists) {
+        var diffLog: Option[String] = Some("") // assume a difference if no diff is run
+        if (testMod.compareWithTest) {
+          diffLog = ShellCommand.run("diff", "-u", testFile.toString, outFile.toString)
+          if (diffLog.isDefined) {
+            File.write(diffFile, diffLog.get)
+            logResult("wrote: " + diffFile)
+          } else {
+            logResult("no differences for: " + outFile)
+          }
+        }
+        if (diffLog.isDefined && testMod.updateTest) {
+          Files.copy(outFile.toPath, testFile.toPath, StandardCopyOption.REPLACE_EXISTING)
+          logResult("updated " + testFile)
+        }
+      } else {
+        if (testMod.addTest) {
+          testFile.up.mkdirs
+          Files.copy(outFile.toPath, testFile.toPath)
+          logResult("added " + testFile)
         }
       }
-      if (diffLog.isDefined && testMod.updateTest) {
-        Files.copy(outFile.toPath, testFile.toPath, StandardCopyOption.REPLACE_EXISTING)
-        logResult("updated " + testFile)
-      }
     } else {
-      if (testMod.addTest) {
-        testFile.up.mkdirs
-        Files.copy(outFile.toPath, testFile.toPath)
-        logResult("added " + testFile)
-      }
+      logResult("no output: " + outFile)
     }
   }
 
@@ -484,35 +488,38 @@ abstract class TraversingBuildTarget extends BuildTarget {
       errorFile.exists && ErrorReader.getBuildErrors(errorFile, errorLevel, None).nonEmpty
 
   def rebuildNeeded(deps: Set[Dependency], bt: BuildTask, level: Level): Boolean = {
-      val errorFile = getErrorFile(bt.archive, bt.inPath)
-      val errs = hadErrors(errorFile, level)
-      level <= Level.Force || modified(bt.inFile, errorFile) || errs ||
-              deps.exists {
-                case bd: FileBuildDependency =>
-                  val errFile = bd.getErrorFile
-                  modified(errFile, errorFile)
-                case ForeignDependency(fFile) => modified(fFile, errorFile)
-                case _ => false // for now
-              }
+    val errorFile = bt.asDependency.getErrorFile(controller)
+    val errs = hadErrors(errorFile, level)
+    val mod = modified(bt.inFile, errorFile)
+    level <= Level.Force || mod|| errs ||
+      deps.exists {
+        case bd: BuildDependency =>
+          val errFile = bd.getErrorFile(controller)
+          modified(errFile, errorFile)
+        case PhysicalDependency(fFile) => modified(fFile, errorFile)
+        case _ => false // for now
+      } || bt.isDir && bt.children.getOrElse(Nil).exists { bf =>
+      modified(bf.asDependency.getErrorFile(controller), errorFile)
+    }
   }
 
   def checkOrRunBuildTask(deps: Set[Dependency], bt: BuildTask, up: Update): Option[BuildResult] = {
     var res: Option[BuildResult] = None
     val outPath = bt.outPath
-        val Update(errLev, dryRun, testMod) = up
-        val rn = rebuildNeeded(deps, bt, errLev)
-        if (!rn) {
-          logResult("up-to-date " + outPath)
-        }
-        if (rn && dryRun) {
-          logResult("out-dated " + outPath)
-        }
-        if (rn && !dryRun) {
-          res = Some(runBuildTask(bt))
-        }
-        if (testMod.makeTests) {
-          compareOutputAndTest(testMod, bt)
-        }
+    val Update(errLev, dryRun, testMod) = up
+    val rn = rebuildNeeded(deps, bt, errLev)
+    if (!rn) {
+      logResult("up-to-date " + outPath)
+    }
+    if (rn && dryRun) {
+      logResult("out-dated " + outPath)
+    }
+    if (rn && !dryRun) {
+      res = Some(runBuildTask(bt))
+    }
+    if (testMod.makeTests) {
+      compareOutputAndTest(testMod, bt)
+    }
     res
   }
 
@@ -530,10 +537,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
       val changes = childChanged.exists(_._1)
       val children = childChanged.map(_._2)
       val bd = makeBuildTask(a, inPath, inDir, Some(children), None)
-      if (changes) {
-        runBuildTask(bd)
-      }
-      (changes, bd)
+      var res = checkOrRunBuildTask(Set.empty, bd, up)
+      (changes || res.isDefined, bd)
     })
   }
 
@@ -566,9 +571,10 @@ abstract class TraversingBuildTarget extends BuildTarget {
     else Set.empty
   }
 
-  /** makes a build task for a single file */
+  /** makes a build task for a single file (ignoring built children) for directories */
   def makeBuildTask(a: Archive, inPath: FilePath): BuildTask = {
-    makeBuildTask(a, inPath, a / inDim / inPath, None, None)
+    val inFile = a / inDim / inPath
+    makeBuildTask(a, inPath, inFile, if (inFile.isDirectory) Some(Nil) else None, None)
   }
 
   def getAnyDeps(dep: FileBuildDependency): Set[Dependency] = {
@@ -605,7 +611,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     val ts = Relational.flatTopsort(controller, deps)
     ts.foreach {
       case bd: FileBuildDependency =>
-        val target = (if (bd.key == key) this else bd.getTarget(controller))
+        val target = if (bd.key == key) this else bd.getTarget(controller)
         val bt = target.makeBuildTask(bd.archive, bd.inPath)
         checkOrRunBuildTask(deps.getOrElse(bd, Set.empty), bt, up)
       case _ =>

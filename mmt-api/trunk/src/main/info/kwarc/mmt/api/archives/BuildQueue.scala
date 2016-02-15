@@ -93,6 +93,8 @@ sealed abstract class BuildDependency extends Dependency {
     controller.extman.getOrAddExtension(classOf[TraversingBuildTarget], key).getOrElse {
       throw RegistrationError("build target not found: " + key)
     }
+
+  def getErrorFile(controller: Controller): File
 }
 
 /** dependency on another [[BuildTask]]
@@ -102,7 +104,7 @@ sealed abstract class BuildDependency extends Dependency {
 case class FileBuildDependency(key: String, archive: Archive, inPath: FilePath) extends BuildDependency {
   def toJson: JSONString = JSONString(inPath.toString + " (" + key + ")")
 
-  def getErrorFile: File = (archive / errors / key / inPath).addExtension("err")
+  def getErrorFile(controller: Controller): File = (archive / errors / key / inPath).addExtension("err")
 }
 
 /** like [[FileBuildDependency]] but for a directory
@@ -113,6 +115,8 @@ case class DirBuildDependency(key: String, archive: Archive, inPath: FilePath, c
   extends BuildDependency {
   def toJson: JSONString = JSONString(archive.id + "/" + inPath.toString +
     " (" + key + ") " + children.map(bt => bt.inPath).mkString("[", ", ", "]"))
+
+  def getErrorFile(controller: Controller): File = getTarget(controller).getFolderErrorFile(archive, inPath)
 }
 
 sealed abstract class ResourceDependency extends Dependency
@@ -150,7 +154,7 @@ abstract class BuildManager extends Extension {
     case fbd: FileBuildDependency =>
       val target = fbd.getTarget(controller)
       val inFile = fbd.archive / target.inDim / fbd.inPath
-      val errFile = fbd.getErrorFile
+      val errFile = fbd.getErrorFile(controller)
       !target.modified(inFile, errFile)
     case dbd: DirBuildDependency => true // ignore for now
   }
