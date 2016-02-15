@@ -78,8 +78,8 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             d => PVSTheory.asType(inferredType.get,giventype,d,PVSTheory.tccs(tccs:_*))
          ) else defOpt
 
-         usedvars = usedvars.filter(!boundvars.contains(_))
-         val localvars = usedvars.map(v => vardecls.find(p => p._1==v)).collect(
+         usedvars = usedvars.filter(x => !boundvars.contains(x) && !args.exists(p => p._1==x))//.filter(x => )
+         val localvars = usedvars.distinct.map(v => vardecls.find(p => p._1==v)).collect(
             {case Some(p) => p}).sortBy(vardecls.indexOf(_))
 
          boundvars = Nil
@@ -92,7 +92,7 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          if (localvars.nonEmpty) actualtype = localvars.foldRight(actualtype)((p,t) => PVSTheory.fun_type(p._2,t))
 
          if (args.nonEmpty) {
-            actualdef = actualdef.map(PVSTheory.lambda(args.map(p => VarDecl(p._1,Some(p._2),None,None)),_,giventype))
+            actualdef = actualdef.map(PVSTheory.lambda(args.map(p => VarDecl(p._1,Some(p._2),None,None)),_,actualtype))
             actualtype = args.foldRight(actualtype)((p,tp) => PVSTheory.fun_type(p._2,tp))
          }
 
@@ -103,6 +103,9 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             actualtype = Pi(pars.map(p => VarDecl(p._1,Some(if(p._3) p._2 else PVSTheory.expr(p._2)),None,None)),actualtype)
          }
 
+         //val c = Constant(th.toTerm,name,None,Some(actualtype),actualdef,None)
+         //println(c)
+
          th add Constant(th.toTerm,name,None,Some(actualtype),actualdef,None)
          // println(th.getConstants.head)
       }
@@ -110,7 +113,7 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
       def addprop(name : LocalName, formula : Term,kind : String): Unit = {
 
          usedvars = usedvars.filter(!boundvars.contains(_))
-         val localvars = usedvars.map(v => vardecls.find(p => p._1==v)).collect(
+         val localvars = usedvars.distinct.map(v => vardecls.find(p => p._1==v)).collect(
             {case Some(p) => p}).sortBy(vardecls.indexOf(_))
 
          if (tccs.nonEmpty) {
@@ -136,8 +139,8 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
       def addtype(name : LocalName,args: List[(LocalName,Term)],dftp : Option[Term],nonempty : Option[Term]) = {
 
 
-         usedvars = usedvars.filter(!boundvars.contains(_))
-         val localvars = usedvars.map(v => vardecls.find(p => p._1==v)).collect(
+         usedvars = usedvars.filter(x => !boundvars.contains(x) && !args.exists(p => p._1==x))
+         val localvars = usedvars.distinct.map(v => vardecls.find(p => p._1==v)).collect(
             {case Some(p) => p}).sortBy(vardecls.indexOf(_))
          // if (localvars.nonEmpty) throw new Exception("Type declaration has local variables")
          boundvars = Nil
@@ -166,7 +169,7 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
 
       def addsubtype(name : LocalName,tp : Term,nonempty : Option[Term]): Unit = {
          usedvars = usedvars.filter(!boundvars.contains(_))
-         val localvars = usedvars.map(v => vardecls.find(p => p._1==v)).collect(
+         val localvars = usedvars.distinct.map(v => vardecls.find(p => p._1==v)).collect(
             {case Some(p) => p}).sortBy(vardecls.indexOf(_))
          // if (localvars.nonEmpty) throw new Exception("Type declaration has local variables")
          boundvars = Nil
@@ -202,15 +205,15 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
    }
 
    def doModule(d:DPath)(m: syntax.Module): modules.Module = m match {
-      case t: theory =>
+      case theory(named, theory_formals,assuming,exporting, decls) =>
          val cont = Context() // (t.theory_formals map doFormalPars) collect {case Some(v) => v}
-         implicit val th = new DeclaredTheory(path,doName(t.named.id),Some(PVSTheory.thpath),cont)
+         implicit val th = new DeclaredTheory(path,doName(named.id),Some(PVSTheory.thpath),cont)
 
          State.reset(th)
-         t.theory_formals foreach doFormal
-         t.assuming foreach doAssumption
+         theory_formals foreach doFormal
+         assuming foreach doAssumption
          // TODO: assuming, exporting_, possibly named stuff?
-         t._decls foreach doDecl
+         decls foreach doDecl
 
          // println(" -- Theory")
 
@@ -218,9 +221,9 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          // println(sb.get)
 
          th
-      case d:datatype =>
-         println(" -- Datatype: "+d.body.named.id)
-         implicit val th = new DeclaredTheory(path,doName(d.body.named.id),Some(PVSTheory.thpath))
+      case datatype(TopDatatypeBody(named, theory_formals, importings,constructors)) =>
+         println(" -- Datatype: " + named.id)
+         implicit val th = new DeclaredTheory(path,doName(named.id),Some(PVSTheory.thpath))
          println("TODO: Datatypes!")
          // sys.exit
          // TODO !
@@ -310,6 +313,22 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          case macro_decl(decl) => doDecl(decl) // TODO wut?
          case type_from_decl(named,nonempty,tp) =>
             State.addsubtype(newName(named.named.id),doType(tp._internal),None) // TODO nonempty
+         case ind_decl(named,args,tp,body) => // TODO mark as inductive?
+            val name = newName(named.id)
+            val rettype = doType(tp._declared)
+            val (defi,fulltp) = doExpr(body)
+            State.addconstant(
+               name,
+               args.flatMap(_._bindings.map(b => (newName(b.id),doType(b._type)))),
+               rettype,
+               Some(fulltp),
+               Some(defi)
+            )
+         case auto_rewrite(unnamed,key,kind,listofrewritenamed) =>
+            {} // TODO
+         case enumtype_decl(named,enumelements) =>
+            State.addtype(newName(named.id),Nil,Some(PVSTheory.enumtype(enumelements.map(_._id))),None)
+
           /*
          case application_judgement(named,nameexpr,argformals,tp) =>
             val name = newName(named.id.getOrElse("app_judgement"))
@@ -426,24 +445,43 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          case number_expr(_,j) => (OMLIT(j,NatLiterals),NatLiterals.synType)
          case update_expr(_,expr,assignlist) =>
             val (tm,tp) = doExpr(expr)
-            (PVSTheory.recupdate(tm,assignlist.flatMap( _ match {
-               case assignment(_, args, expr1) => args.map(a => a match {
-                  case field_assign(_,id) => (id,doExpr(expr1)._1)
-                  case _ =>
-                     println(e)
-                     println(tm)
-                     println(tp)
-                     println(a.getClass)
-                     println(doExpr(expr1))
-                     println(a)
-                     sys.exit
-               })
-               case maplet(_, args, expr1:Expr) => args.map(_ match {
-                  case field_assign(_,id) => (id,doExpr(expr1)._1)
-                  case _ => ???
-               })
-               case _ => ???
+            (PVSTheory.recupdate(tm,assignlist.map(_ match {
+               case assignment(_,args,expr1) =>
+                  val ass = doExpr(expr1)._1
+                  args.head match {
+                     case field_assign(_,id) => (id,
+                        if (args.tail.isEmpty) ass
+                        else PVSTheory.funupdate(PVSTheory.fieldapp(tm,id),List((PVSTheory.tuple_expr(args.tail.map(a => a match {
+                           case x : Expr => doExpr(x)._1
+                           case x =>
+                            println("TODO update_expr field assignment arg in tuple " + x.getClass)
+                            sys.exit
+                        })),ass)))
+                       )
+                     case varname_expr(_,id,_) => (id,
+                       if (args.tail.isEmpty) ass
+                       else PVSTheory.funupdate(PVSTheory.fieldapp(tm,id),List((PVSTheory.tuple_expr(args.tail.map(a => a match {
+                          case x : Expr => doExpr(x)._1
+                          case x =>
+                             println("TODO update_expr var assignment arg in tuple " + x.getClass)
+                             sys.exit
+                       })),ass)))
+                       )
+                     case x =>
+                        println("TODO update_expr assignment arg type " + x.getClass)
+                        println(x)
+                        println(e)
+                        println(tm)
+                        println(assignlist)
+                        println(ass)
+                        println(args)
+                        sys.exit
+                  }
+               case x =>
+                  println("TODO update_expr type " + x.getClass)
+                sys.exit
             })),tp)
+         case string_expr(_,str) => (OMLIT(str,StringLiterals),StringLiterals.synType)
          case _ => println("TODO Expr: " + e.getClass + ": " + e); sys.exit
       }
       doSourceRef(e, eM._1)

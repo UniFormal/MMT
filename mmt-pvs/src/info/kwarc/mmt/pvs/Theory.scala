@@ -4,13 +4,15 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, DeclaredStructure}
-import info.kwarc.mmt.api.uom.{StandardNat, RealizedType}
+import info.kwarc.mmt.api.uom.{StandardString, StandardNat, RealizedType}
 import info.kwarc.mmt.lf.{Lambda, Apply, ApplySpine, Arrow}
 import info.kwarc.mmt.pvs.syntax.tuple_type
 import utils._
 
-// TODO needs adding
+
 object NatLiterals extends RealizedType(OMS(PVSTheory.thpath ? "NatLiterals"),StandardNat)
+// TODO needs adding
+object StringLiterals extends RealizedType(OMS(PVSTheory.thpath ? "StringLiterals"),StandardString)
 
 object PVSTheory {
    val rootdpath = DPath(URI.http colon "pvs.csl.sri.com")
@@ -120,24 +122,20 @@ object PVSTheory {
       def apply(tm : Term, field : String) = ApplySpine(this.term,tm,OML(VarDecl(LocalName(field),None,None,None)))
    }
 
-   // recordexpr # [| 1,... |]
    object recordexpr extends sym("recordexpr") {
       def apply(nametpdf : (LocalName,Term,Term)*) =
       ApplySpine(this.term,nametpdf.map(t => OML(VarDecl(t._1,Some(expr(t._2)),Some(t._3),None))):_*)
    }
 
-   // rectp # {| 1,... |}
    object recordtp extends sym("rectp") {
       def apply(nametp : (LocalName,Term)*) =
          ApplySpine(this.term,nametp.map(t => OML(VarDecl(t._1,Some(expr(t._2)),None,None))):_*)
    }
 
-   // setsub : {A} (expr (A => prop)) -> tp
    object setsub extends sym("setsub") {
       def apply(tp:Term,expr:Term) = ApplySpine(this.term,tp,expr)
    }
 
-   //pvspi : {A} (expr A -> tp) -> tp
    object pvspi extends sym("pvspi") {
       def apply(bound : LocalName, boundtp : Term, rettp : Term) = ApplySpine(this.term,boundtp,Lambda(bound,boundtp,rettp))
       def unapply(t:Term) : Option[(LocalName,Term,Term)] = t match {
@@ -147,8 +145,6 @@ object PVSTheory {
       }
    }
 
-
-   //pvssigma : {A} (expr A -> tp) -> tp
    object pvssigma extends sym("pvssigma") {
       def apply(bound : LocalName, boundtp : Term, rettp : Term) = ApplySpine(this.term,boundtp,Lambda(bound,boundtp,rettp))
       def unapply(t:Term) : Option[(LocalName,Term,Term)] = t match {
@@ -158,18 +154,15 @@ object PVSTheory {
       }
    }
 
-   // wie forall
    object exists extends sym("exists") {
       def apply(con:Context,tm:Term) = con.foldRight(tm)((v,t) => ApplySpine(this.term,v.tp.get,Lambda(v.name,expr(v.tp.get),t)))
    }
 
-   // subtpJudg : tp -> tp -> expr prop = [A,B] forall [x] typing_judgement x B
    object subtpJudg extends sym("subtpJudg") {
       def apply(subtp : Term, suptp : Term) = ApplySpine(this.term,subtp,suptp)
    }
 
    // TODO temporary pseudosolution
-   // tcclist # tcc 1,...
    object tccs extends sym("tcclist") {
       def apply(tm:Term*) = if (tm.isEmpty) unknown.term else if (tm.length==1) tm.head else ApplySpine(this.term,tm:_*)
    }
@@ -179,7 +172,17 @@ object PVSTheory {
    }
 
    object recupdate extends sym("recupdate") {
-      def apply(tm:Term,l:List[(String,Term)]) = ApplySpine(this.term,tm::l.map(p => OML(VarDecl(LocalName(p._1),None,Some(p._2),None))):_*)
+      def apply(tm:Term,l:List[(String,Term)]) = ApplySpine(this.term,tm::l.map(p => OML(VarDecl(LocalName(p._1),
+         None,Some(p._2),None))):_*)
+   }
+   // funupdate # 1 where 2,...
+   object funupdate extends sym("funupdate") {
+      def apply(f : Term, l:List[(Term,Term)]) = ApplySpine(this.term,f::l.map(p => OML(VarDecl(LocalName("value"),
+         Some(p._1),Some(p._2),None))):_*)
+   }
+   // enumtype # 1 |...
+   object enumtype extends sym("enumtype") {
+      def apply(l:List[String]) = ApplySpine(this.term,l.map(StringLiterals(_)):_*)
    }
 
    /*
