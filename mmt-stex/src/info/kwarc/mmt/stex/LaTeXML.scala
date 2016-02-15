@@ -23,7 +23,8 @@ class AllTeX extends LaTeXDirTarget {
     val dirFiles = getDirFiles(a, dir, includeFile)
     if (dirFiles.nonEmpty) {
       createLocalPaths(a, dir)
-      val ds = getTopsortedDeps(getFilesRec(a, in))
+      val deps = getDepsMap(getFilesRec(a, in))
+      val ds = Relational.flatTopsort(controller, deps)
       val ts = ds.collect { case bd: FileBuildDependency if bd.key == key => bd }.map(d => d.archive / inDim / d.inPath)
       val files = ts.filter(dirFiles.map(f => dir / f).contains(_)).map(_.getName)
       assert(files.length == dirFiles.length)
@@ -42,8 +43,9 @@ class AllTeX extends LaTeXDirTarget {
                             files: List[String], force: Boolean) {
     val all = dir / ("all" + lang.map("." + _).getOrElse("") + ".tex")
     val ls = langFiles(lang, files)
+    val outPath = getOutPath(a, all)
     if (!force && all.exists() && ls.forall(f => (dir / f).lastModified() < all.lastModified()))
-      logResult("up-to-date " + getOutPath(a, all)) // does not detect deleted files!
+      logResult("up-to-date " + outPath) // does not detect deleted files!
     else {
       val w = File.Writer(all)
       ambleText("pre", a, lang).foreach(w.println)
@@ -55,7 +57,7 @@ class AllTeX extends LaTeXDirTarget {
       }
       ambleText("post", a, lang).foreach(w.println)
       w.close()
-      logSuccess(getOutPath(a, all))
+      logSuccess(outPath)
     }
   }
 }

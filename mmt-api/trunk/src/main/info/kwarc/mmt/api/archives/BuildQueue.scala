@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.archives
 
 import java.util.concurrent.ConcurrentLinkedDeque
 
+import info.kwarc.mmt.api.Level.Level
 import info.kwarc.mmt.api._
 import frontend._
 import utils._
@@ -28,6 +29,10 @@ class QueuedTask(val target: TraversingBuildTarget, val task: BuildTask) {
   def toJson: JSONString = {
     val str = task.inPath.toString
     JSONString((if (str.isEmpty) task.archive.id else str) + " (" + target.key + ")")
+  }
+
+  def rebuildNeeded(level: Level): Boolean = {
+    target.rebuildNeeded(missingDeps.toSet, task, level)
   }
 }
 
@@ -77,7 +82,18 @@ sealed abstract class Dependency {
   def toJson: JSONString
 }
 
-sealed abstract class BuildDependency extends Dependency
+sealed abstract class BuildDependency extends Dependency {
+  def key: String
+
+  def archive: Archive
+
+  def inPath: FilePath
+
+  def getTarget(controller: Controller): TraversingBuildTarget =
+    controller.extman.getOrAddExtension(classOf[TraversingBuildTarget], key).getOrElse {
+      throw RegistrationError("build target not found: " + key)
+    }
+}
 
 /** dependency on another [[BuildTask]]
   *
@@ -85,11 +101,6 @@ sealed abstract class BuildDependency extends Dependency
   */
 case class FileBuildDependency(key: String, archive: Archive, inPath: FilePath) extends BuildDependency {
   def toJson: JSONString = JSONString(inPath.toString + " (" + key + ")")
-
-  def getTarget(controller: Controller): TraversingBuildTarget =
-    controller.extman.getOrAddExtension(classOf[TraversingBuildTarget], key).getOrElse {
-      throw RegistrationError("build target not found: " + key)
-    }
 
   def getErrorFile: File = (archive / errors / key / inPath).addExtension("err")
 }
@@ -147,9 +158,10 @@ abstract class BuildManager extends Extension {
 
 /** builds tasks immediately (no queueing, no dependency management, no parallel processing) */
 class TrivialBuildManager extends BuildManager {
-  def addTasks(up: Update, qts: Iterable[QueuedTask]) = qts.foreach { qt =>
-    qt.target.runBuildTask(qt.task)
-  }
+  def addTasks(up: Update, qts: Iterable[QueuedTask]) =
+    qts.foreach { qt =>
+          qt.target.checkOrRunBuildTask(qt.missingDeps.toSet, qt.task, up)
+        }
 
   // no need to wait
   def waitToEnd {}

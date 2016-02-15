@@ -104,7 +104,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     val exclude = excludes.exists(patternMatch)
     val include = includes.exists(patternMatch)
     val noDoc = exclude || includes.nonEmpty && !include
-    if (noDoc) logResult("skipping " + getOutPath(bt.archive, bt.inFile))
+    if (noDoc) logResult("skipping " + bt.outPath)
     noDoc
   }
 
@@ -130,16 +130,17 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
       }
     }
     log(in + ": " + res.mkString(", "))
+    val outPath = getOutPath(a, in)
     val safe = res.filter {
       case FileBuildDependency(_, ar, fp) =>
         val f: File = ar / inDim / fp
         if (f == in) {
-          log(LocalError(getOutPath(a, in) + " imports itself"))
+          log(LocalError(outPath + " imports itself"))
           false
         }
         else if (f.exists()) true
         else {
-          log(LocalError(getOutPath(a, in) + " missing: " + f))
+          log(LocalError(outPath + " missing: " + f))
           false
         }
       case _ => true
