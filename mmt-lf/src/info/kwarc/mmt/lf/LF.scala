@@ -90,7 +90,7 @@ object Arrow extends LFSym("arrow") {
 	def apply(t1 : Term, t2 : Term) = OMA(this.term,List(t1,t2))
 	def apply(in: List[Term], out: Term) = if (in.isEmpty) out else OMA(this.term, in ::: List(out))
 	def unapply(t : Term) : Option[(Term,Term)] = t match {
-		case OMA(this.term, hd :: tl) if !tl.isEmpty => Some((hd, apply(tl.init, tl.last)))
+		case OMA(this.term, hd :: tl) if tl.nonEmpty => Some((hd, apply(tl.init, tl.last)))
 		case _ => None
 	}
 }

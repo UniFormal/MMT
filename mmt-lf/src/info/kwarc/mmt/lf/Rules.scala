@@ -350,7 +350,7 @@ object Solve extends SolutionRule(Apply.path) {
              var newCon : Context = j.stack.context.take(i) // the resulting context
              // iterate over the variables vd after x
              j.stack.context.drop(i+1) foreach {vd =>
-                if (vd.freeVars.exists(dropped.contains _)) {
+                if (vd.freeVars.exists(dropped.contains)) {
                    // vd depends on x, we use weakening to drop vd as well
                    dropped ::= vd.name
                 } else {
@@ -359,7 +359,7 @@ object Solve extends SolutionRule(Apply.path) {
                 }
              }
              // check whether weakening is applicable: dropped variables may not occur in t or Lambda(x,a,tm2)
-             if (t.freeVars.exists(dropped.contains _))
+             if (t.freeVars.exists(dropped.contains))
                 // most important special case: x occurs free in t so that eta is not applicable
                 return None
              if (j.tm2.freeVars.exists(dropped.filterNot(_ == x) contains _))

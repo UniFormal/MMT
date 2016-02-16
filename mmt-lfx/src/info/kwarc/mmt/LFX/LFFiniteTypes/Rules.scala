@@ -5,9 +5,6 @@ import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf.{Pi, Arrow, OfType, Typed}
 
-/**
- * Created by raupi on 19.10.15.
- */
 object Common {
   /** convenience function for recursively checking the judgement |- a: type */
   def isType(solver: Solver, a: Term)(implicit stack: Stack, history: History) =
