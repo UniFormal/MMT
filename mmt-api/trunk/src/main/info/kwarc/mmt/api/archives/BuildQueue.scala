@@ -9,6 +9,7 @@ import utils._
 import web.{Body, Server, ServerExtension}
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable
 import scala.collection.mutable
 
 /** */
@@ -29,10 +30,6 @@ class QueuedTask(val target: TraversingBuildTarget, val task: BuildTask) {
   def toJson: JSONString = {
     val str = task.inPath.toString
     JSONString((if (str.isEmpty) task.archive.id else str) + " (" + target.key + ")")
-  }
-
-  def rebuildNeeded(level: Level): Boolean = {
-    target.rebuildNeeded(missingDeps.toSet, task, level)
   }
 }
 
@@ -149,15 +146,6 @@ abstract class BuildManager extends Extension {
   def addTasks(up: Update, qts: Iterable[QueuedTask])
 
   def waitToEnd
-
-  protected def isUpToDate(update: Update, bd: BuildDependency): Boolean = bd match {
-    case fbd: FileBuildDependency =>
-      val target = fbd.getTarget(controller)
-      val inFile = fbd.archive / target.inDim / fbd.inPath
-      val errFile = fbd.getErrorFile(controller)
-      !target.modified(inFile, errFile)
-    case dbd: DirBuildDependency => true // ignore for now
-  }
 }
 
 /** builds tasks immediately (no queueing, no dependency management, no parallel processing) */
@@ -180,7 +168,9 @@ class BuildQueue extends BuildManager {
   val alreadyQueued = new mutable.HashMap[Dependency, QueuedTask]
   /** all tasks that were built (successfully or permanently-failing) since the last time the queue was empty */
   val alreadyBuilt = new mutable.HashMap[Dependency, BuildResult]
-  var finishedBuilt = List[(Dependency, BuildResult)]()
+  var finishedBuilt = immutable.Queue[(Dependency, BuildResult)]()
+  /** global update policy*/
+  var updatePolicy = Update(Level.Force)
 
   private var continue: Boolean = true
   private var stopOnEmpty: Boolean = false
@@ -188,6 +178,7 @@ class BuildQueue extends BuildManager {
   val sleepTime: Int = 2000
 
  private def addTask(up: Update, qt: QueuedTask) {
+    updatePolicy = up
     val qtDep = qt.task.asDependency
     if (alreadyBuilt isDefinedAt qtDep) {
       if (qt.dependencyClosure) {
@@ -260,8 +251,11 @@ class BuildQueue extends BuildManager {
         blocked = blocked ::: List(qt)
         getNextTask
       } else {
-        val updatePolicy = Update(Level.Ignore) // fix up-to-date policy for now
-        val (_, ts) = bds.partition(isUpToDate(updatePolicy, _))
+        val (ts, _) = bds.partition { bd =>
+          val tar = bd.getTarget(controller)
+          val bt = tar.makeBuildTask(bd.archive, bd.inPath)
+          tar.rebuildNeeded(tar.getDeps(bt), bt, updatePolicy.errorLevel)
+        }
         if (ts.isEmpty) optQt
         else {
           queued.addFirst(qt)
@@ -344,19 +338,26 @@ class BuildQueue extends BuildManager {
         getNextTask match {
           case Some(qt) =>
             // TODO run this in a Future
-            val res = qt.target.runBuildTask(qt.task)
+            val optRes = qt.target.checkOrRunBuildTask(qt.missingDeps.toSet, qt.task, updatePolicy)
+            var res = optRes.getOrElse(BuildSuccess(Nil, Nil))
             val qtDep = qt.task.asDependency
-            finishedBuilt ::=(qtDep, res)
+            finishedBuilt +:=(qtDep, res)
+            if (finishedBuilt.length > 200) {
+              finishedBuilt = finishedBuilt.dropRight(100)
+            }
             res match {
               case _: BuildSuccess | _: BuildFailure =>
                 // remember finished build
-                alreadyBuilt(qtDep) = res
+                if (optRes.isDefined || !alreadyBuilt.isDefinedAt(qtDep)) {
+                  alreadyBuilt(qtDep) = res
+                }
               case MissingDependency(missing, provided) =>
                 // register missing dependencies and requeue
                 qt.missingDeps = missing
                 blocked = blocked ::: List(qt)
             }
-            unblockTasks(res)
+            if (optRes.nonEmpty)
+              unblockTasks(res)
           case None =>
             alreadyBuilt.clear
             if (stopOnEmpty)

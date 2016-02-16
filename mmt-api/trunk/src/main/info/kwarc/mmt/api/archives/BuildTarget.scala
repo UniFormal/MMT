@@ -95,16 +95,16 @@ object BuildTargetModifier {
       mod = Clean
     }
     force.foreach { _ =>
-      mod = if (dr || testMod.makeTests) Update(Level.Force, dryRun = dr, testMod) else Build
+      mod = Build(Update(Level.Force, dryRun = dr, testMod))
     }
     onChange.foreach { _ =>
-      mod = Update(Level.Ignore, dryRun = dr, testMod)
+      mod = Build(Update(Level.Ignore, dryRun = dr, testMod))
     }
     onError.foreach { o =>
-      mod = makeUpdateModifier(o, dr, testMod)
+      mod = Build(makeUpdateModifier(o, dr, testMod))
     }
     onErrorDry.foreach { o =>
-      mod = makeUpdateModifier(o, dry = true, testMod)
+      mod = Build(makeUpdateModifier(o, dry = true, testMod))
     }
     depsFirst.foreach { o =>
       mod = BuildDepsFirst(makeUpdateModifier(o, dr, testMod))
