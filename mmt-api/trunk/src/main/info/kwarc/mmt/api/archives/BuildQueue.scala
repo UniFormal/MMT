@@ -163,6 +163,7 @@ class TrivialBuildManager extends BuildManager {
 class BuildQueue extends BuildManager {
   private val queued = new ConcurrentLinkedDeque[QueuedTask]
   private var blocked: List[QueuedTask] = Nil
+  private var cycleCheck: Set[BuildDependency] = Set.empty
 
   /** all tasks currently in the queue */
   val alreadyQueued = new mutable.HashMap[Dependency, QueuedTask]
@@ -251,18 +252,12 @@ class BuildQueue extends BuildManager {
         blocked = blocked ::: List(qt)
         getNextTask
       } else {
-        val (ts, _) = bds.partition { bd =>
-          val tar = bd.getTarget(controller)
-          val bt = tar.makeBuildTask(bd.archive, bd.inPath)
-          tar.rebuildNeeded(tar.getDeps(bt), bt, updatePolicy.errorLevel)
+        qt.missingDeps = Nil
+        queued.addFirst(qt)
+        cycleCheck += qt.task.asDependency
+        bds.foreach(t => buildDependency(updatePolicy, t))
+        getNextTask
         }
-        if (ts.isEmpty) optQt
-        else {
-          queued.addFirst(qt)
-          ts.foreach(t => buildDependency(updatePolicy, qt.task.asDependency, t))
-          getNextTask
-        }
-      }
     } else optQt
   }
 
@@ -292,16 +287,15 @@ class BuildQueue extends BuildManager {
       None
   }
 
-  private def buildDependency(up: Update, top: Dependency, bd: BuildDependency) = bd match {
+  private def buildDependency(up: Update, bd: BuildDependency) = if (!cycleCheck.contains(bd)) bd match {
     case fbd: FileBuildDependency =>
-    val qts = fbd.getTarget(controller).makeBuildTasks(fbd.archive, fbd.inPath, None).map {
-      qt =>
-        qt.lowPriority = false
-        qt.dependencyClosure = true
-        qt.missingDeps = qt.missingDeps.filter(d => d != top)
-        qt
-    }
-    addTasks(up, qts)
+      val tar = fbd.getTarget(controller)
+      val bt = tar.makeBuildTask(fbd.archive, fbd.inPath)
+      val qt = new QueuedTask(tar, bt)
+      qt.lowPriority = false
+      qt.dependencyClosure = true
+      qt.missingDeps = tar.getDeps(bt)
+      addTask(up, qt)
     case dbd: DirBuildDependency => // ignore for now
   }
 
@@ -341,6 +335,7 @@ class BuildQueue extends BuildManager {
             val optRes = qt.target.checkOrRunBuildTask(qt.missingDeps.toSet, qt.task, updatePolicy)
             var res = optRes.getOrElse(BuildSuccess(Nil, Nil))
             val qtDep = qt.task.asDependency
+            if (!qt.dependencyClosure) cycleCheck -=(qtDep)
             finishedBuilt +:=(qtDep, res)
             if (finishedBuilt.length > 200) {
               finishedBuilt = finishedBuilt.dropRight(100)
@@ -359,6 +354,7 @@ class BuildQueue extends BuildManager {
             if (optRes.nonEmpty)
               unblockTasks(res)
           case None =>
+            cycleCheck = Set.empty
             alreadyBuilt.clear
             if (stopOnEmpty)
               continue = false
