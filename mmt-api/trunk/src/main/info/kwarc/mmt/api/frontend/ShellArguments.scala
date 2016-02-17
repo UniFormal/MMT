@@ -192,7 +192,7 @@ object ShellArguments {
     OptionDescr("mbt", "", StringListArg, "mbt input file "),
     OptionDescr("file", "", StringListArg, "msl input file"),
     OptionDescr("cfg", "", StringListArg, "config input file"),
-    OptionDescr("queue", "", NoArg, "start a build queue")
+    OptionDescr("noqueue", "", NoArg, "do not start a build queue")
   )
 
   def parse(arguments: List[String]): Option[ShellArguments] = {
@@ -213,7 +213,7 @@ object ShellArguments {
       shell = m.get("shell").isDefined,
       noshell = wOpt,
       keepalive = wOpt,
-      useQueue = m.get("queue").isDefined
+      useQueue = m.get("noqueue").isEmpty
     )
     val fs = sa.mmtFiles ++ sa.scalaFiles ++ sa.cfgFiles
     if (helpFlag && aboutFlag) {
