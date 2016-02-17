@@ -36,14 +36,16 @@ case class BuildError(archive: Archive, target: String, path: FilePath, data: Er
     val f1 = archive / errors / target / path
     // no support for non-empty error folder names
     val f = if (f1.isDirectory) f1 / ".err" else f1.addExtension("err")
-    List(data.level.toString,
+    val msg = data.shortMsg
+    val clean = msg == "cleaned"
+    List(if (clean || msg == "no error") "" else Level.toString(data.level),
       data.tp,
       archive.id,
       archive.root.up.getName,
       archive.root.getName,
       path.toString,
       f.toString,
-      if (data.shortMsg == "cleaned") ""
+      if (clean) ""
       else new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(f.toJava.lastModified)),
       target,
       data.sourceRef.fold("")(_.toString),
@@ -86,21 +88,17 @@ object ErrorReader {
         bes ::= ErrorContent(errType, lvl, srcR, shortMsg)
     }
     if (node.child.isEmpty && (emptyErr || errorLevel <= Level.Force)) {
-      bes ::= ErrorContent("", 0, None, if (!f.exists) "cleaned" else
-        if (emptyErr) "corrupt empty error file" else "no error")
+      bes ::= ErrorContent("", 0, None, if (!f.exists) "cleaned"
+      else if (emptyErr) "corrupt empty error file" else "no error")
     }
     bes.reverse
   }
 }
 
-/**
- * maintains the errors of an archive, mapping (target,path) to error list
- */
+/** maintains the errors of an archive, mapping (target,path) to error list */
 class ErrorMap(val archive: Archive) extends mutable.HashMap[(String, List[String]), List[BuildError]]
 
-/**
- * maintains all errors produced while running [[BuildTarget]]s on [[Archive]]s
- */
+/** maintains all errors produced while running [[BuildTarget]]s on [[Archive]]s */
 class ErrorManager extends Extension with Logger {
   self =>
   override val logPrefix = "errormanager"
@@ -110,10 +108,11 @@ class ErrorManager extends Extension with Logger {
   /** the error level to pick */
   private var level: Level = Level.Error
 
-  /**
-   * @param a the archive
-   * @return the [[ErrorMap]] of the archive
-   */
+  /** get entries of an archive
+    *
+    * @param a the archive
+    * @return the [[ErrorMap]] of the archive
+    */
   def getErrorMap(a: Archive): ErrorMap =
     errorMaps.find(_.archive.id == a.id).getOrElse(new ErrorMap(a))
 
@@ -173,7 +172,7 @@ class ErrorManager extends Extension with Logger {
   private val cl = new ChangeListener {
     /** creates an [[ErrorMap]] for the archive and asynchronously loads its errors */
     override def onArchiveOpen(a: Archive): Unit = {
-        loadAllErrors(a)
+      loadAllErrors(a)
     }
 
     /** deletes the [[ErrorMap]] */
@@ -183,8 +182,8 @@ class ErrorManager extends Extension with Logger {
 
     /** reloads the errors */
     override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath): Unit = {
-        loadErrors(a, t.key, if ((a / t.inDim / p).isDirectory)
-          p / ".err" else p.toFile.addExtension("err").toFilePath)
+      loadErrors(a, t.key, if ((a / t.inDim / p).isDirectory) p / ".err"
+      else p.toFile.addExtension("err").toFilePath)
     }
   }
   private val defaultLimit: Int = 100

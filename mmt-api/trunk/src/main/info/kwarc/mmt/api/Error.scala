@@ -63,7 +63,7 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
           }
         }
       }
-    } 
+    }
     div("error") {
       div {
         text(this.getClass.getName + " of level " + level.toString)
@@ -126,6 +126,16 @@ object Level {
     case "" | "2" => Error
     case "3" => Fatal
     case _ => throw ParseError("unknown error level: " + s)
+  }
+
+  def toString(l: Level): String = l match {
+    case -1 => "force"
+    case 0 => "info"
+    case 1 => "warn"
+    case 2 => "error"
+    case 3 => "fatal"
+    case 4 => "ignore"
+    case _ => "unknown" + l
   }
 }
 

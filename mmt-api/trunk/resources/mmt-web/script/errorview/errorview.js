@@ -50,6 +50,7 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     $scope.buildCount = 0;
     $scope.htmlText = '';
     $scope.showBuildResult = true;
+    $scope.buildLevel = 0;
     $scope.clean = function(res) {
         action.exec(action.build(res.archive, "-" + res.target, encodeURIComponent(res.fileName)), function(data) {
           $scope.htmlText = '';
@@ -58,7 +59,7 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     };
     $scope.build = function(res) {
         $scope.buildCount += 1;
-        action.exec(action.build(res.archive, res.target, encodeURIComponent(res.fileName)), function(data) {
+        action.exec(action.build(res.archive, res.target + $scope.buildLevel, encodeURIComponent(res.fileName)), function(data) {
            if (data !== '<div></div>') $scope.htmlText = data;
            $scope.$apply(function () {
              $scope.buildCount -= 1;

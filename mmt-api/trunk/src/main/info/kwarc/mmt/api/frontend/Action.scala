@@ -16,7 +16,7 @@ import scala.util.parsing.combinator._
   * This object implements a combinator parser for Actions. It is used in particular by the [[Controller]]
   * It is straightforward to understand the grammar from the source code.
   */
-object Action extends  RegexParsers {
+object Action extends RegexParsers {
   private var nsMap: NamespaceMap = NamespaceMap.empty
   private var home: File = File(System.getProperty("user.dir"))
 
@@ -119,6 +119,7 @@ object Action extends  RegexParsers {
   private def envvar = "envvar" ~> str ~ quotedStr ^^ { case name ~ value => SetEnvVar(name, value) }
 
   private def read = "read" ~> file ^^ { f => Read(f, false) }
+
   private def interpret = "interpret" ~> file ^^ { f => Read(f, true) }
 
   private def graph = "graph" ~> file ^^ { f => Graph(f) }
@@ -131,7 +132,7 @@ object Action extends  RegexParsers {
 
   private def printallxml = "printXML" ^^ { case _ => PrintAllXML }
 
-  private def printConfig = "printConfig" ^^ {case _ => PrintConfig}
+  private def printConfig = "printConfig" ^^ { case _ => PrintConfig }
 
   private def clear = "clear" ^^ { case _ => Clear }
 
@@ -182,7 +183,7 @@ object Action extends  RegexParsers {
   private def mpath = str ^^ { s => Path.parseM(s, nsMap) }
 
   // [str_1,...,str_n] or str
-  private def stringList = ("\\[.*\\]" r) ^^ { s => stringToList(s.substring(1, s.length - 1), ",")} |
+  private def stringList = ("\\[.*\\]" r) ^^ { s => stringToList(s.substring(1, s.length - 1), ",") } |
     str ^^ { s => List(s) }
 
   private def file = str ^^ { s => File(home.resolve(s)) }
@@ -203,11 +204,12 @@ object Action extends  RegexParsers {
   private def keyMod = str ^^ { case km =>
     if (km.startsWith("-"))
       (km.tail, Clean)
-    else if ("*!&".contains(km.last))
+    else if ("*!&012345".contains(km.last))
       (km.init, km.last match {
-        case '!' => Update(Level.Error)
+        case '!' => Build(Update(Level.Error))
         case '&' => BuildDepsFirst(Update(Level.Error))
-        case _ => Update(Level.Ignore)
+        case '*' => Build(Update(Level.Ignore))
+        case d => Build(Update(d.asDigit - 1))
       })
     else (km, Build)
   }
@@ -390,7 +392,7 @@ case object Local extends Action {
   *
   * concrete syntax: mathpath fs uri:URI file:FILE
   *
-  * @param uri the logical identifier of the directory
+  * @param uri  the logical identifier of the directory
   * @param file the physical identifeir of the directory
   */
 case class AddMathPathFS(uri: URI, file: File) extends Action {
@@ -441,7 +443,7 @@ case object OAFPush extends Action {
   *
   * concrete syntax: importer cls:CLASS args:STRING*
   *
-  * @param cls the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"
+  * @param cls  the name of a class implementing Compiler, e.g., "info.kwarc.mmt.api.lf.Twelf"
   * @param args a list of arguments that will be passed to the compiler's init method
   */
 case class AddExtension(cls: String, args: List[String]) extends Action {
@@ -480,9 +482,9 @@ case object PrintAll extends Action
 /** print all loaded knowledge items to STDOUT in XML syntax */
 case object PrintAllXML extends Action
 
-/** print all configuration entries to STDOUT*/
+/** print all configuration entries to STDOUT */
 case object PrintConfig extends Action {
-   override def toString = "printConfig"
+  override def toString = "printConfig"
 }
 
 /** run a Scala interpreter or evaluate a Scala expression */
@@ -626,8 +628,8 @@ case class Closure(p: Path) extends MakeAbstract {
   def make(controller: Controller): Document = p match {
     case doc ? name =>
       controller.get(doc ? name) // retrieve once to make sure it's in memory
-      val cl = controller.depstore.theoryClosure(doc ? name)
-      val clp = cl.map{p => MRef(doc, p)}
+    val cl = controller.depstore.theoryClosure(doc ? name)
+      val clp = cl.map { p => MRef(doc, p) }
       new Document(doc, root = true, inititems = clp)
   }
 

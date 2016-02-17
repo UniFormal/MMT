@@ -91,6 +91,14 @@
         </a>
         <span ng-show="showBuildResult"><p ng-bind-html="htmlText"/></span>
     </div>
+    <select ng-model="buildLevel">
+        <option value="0">force build</option>
+        <option value="1">build on info</option>
+        <option value="2">build on warning</option>
+        <option value="3">build on error</option>
+        <option value="4">build on fatal error</option>
+        <option value="5">build on change</option>
+    </select>
     <table>
         <thead>
         <tr>
@@ -124,7 +132,7 @@
                 &#10005;</a>
             </td>
             <td ng-repeat="key in colProps" ng-if="columns[key].x">
-                <span ng-show="key != 'fileLink' || res.shortMsg == 'cleaned'">{{res[key]}}</span>
+                <span ng-if="key != 'fileLink' || res.shortMsg == 'cleaned'">{{res[key]}}</span>
                 <span ng-if="key == 'fileLink' && res.shortMsg != 'cleaned'">
                     <a href="" ng-click="serve(res[key])">{{res[key]}}</a>
                 </span>
