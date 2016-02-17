@@ -34,6 +34,7 @@ object Coprod extends CoprodSymbol("Coprod") {
   }
 }
 
+
 object inl extends CoprodSymbol("inl") {
   def apply(tm:Term,tp2:Term) = OMA(this.term,List(tm,tp2))
   def unapply(t:Term) : Option[(Term,Term)] = t match {
@@ -49,7 +50,7 @@ object inr extends CoprodSymbol("inr") {
     case _ => None
   }
 }
-
+/*
 object ccase extends CoprodSymbol("coprodcase") {
   def apply(x:LocalName,tp:Term,t:Term) = OMBIND(this.term,OMV(x)%tp,t)
   def unapply(t:Term) : Option[(LocalName,Term,Term)] = t match {
@@ -72,6 +73,18 @@ object cmatch extends CoprodSymbol("coprodmatch") {
     = apply(t,ccase(v1,tp1,left),ccase(v2,tp2,right),v,cotp,to)
   def unapply(tm:Term) : Option[(Term,Term,Term,LocalName,Term,Term)] = tm match {
     case OMA(this.term,List(t1,left,right,cto(v,cotp,to))) => Some((t1,left,right,v,cotp,to))
+    case _ => None
+  }
+}
+*/
+// 	coprodmatch # 2 match V1T either 3 or 4 to 5 
+object cmatch extends CoprodSymbol("coprodmatch") {
+  def apply(t:Term, x: LocalName, left : Term, right : Term, to : Term) = OMBINDC(this.term,List(VarDecl(x,None,None,None)),List(t,left,right,to))
+  def unapply(tm : Term) : Option[(Term, LocalName, Term, Term, Term)] = tm match {
+    case OMBINDC(this.term,Context(VarDecl(x,_,None,_), rest @ _*),tms) =>
+      if (rest.nonEmpty) return None
+      if (tms.length!=4) return None
+      Some((tms.head,x,tms(1),tms(2),tms(3)))
     case _ => None
   }
 }
