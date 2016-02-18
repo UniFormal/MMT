@@ -58,7 +58,7 @@ class OAF(val uri: URI, val root: File, val report: Report) extends Logger {
       }
    }
    /** @return the ssh of the remote git manager - git@authority: */
-   def ssh = "git@" + uri.authority.getOrElse("") + ":"
+   def ssh(pathS: String) = "git@" + uri.authority.getOrElse("") + ":" + pathS + ".git"
    /** initializes a repository */
    def init(pathS: String) {
       val path = utils.stringToList(pathS, "/")
@@ -72,7 +72,7 @@ class OAF(val uri: URI, val root: File, val report: Report) extends Logger {
       File.WriteLineWise(repos / mf, List(s"id: $pathS", s"narration-base: http://mathhub.info/$pathS"))
       git(repos, "add", mf)
       git(repos, "commit", "-m", "\"automatically created by MMT\"")
-      git(repos, "remote", "add", "origin", ssh + pathS + ".git")
+      git(repos, "remote", "add", "origin", ssh(pathS))
       git(repos, "push", "origin", "master")
    }
    /** clones a repository */
@@ -81,7 +81,7 @@ class OAF(val uri: URI, val root: File, val report: Report) extends Logger {
       if (localPath.exists) {
          log("target directory exists, skipping")
       } else {
-         val success = git(root, "clone", (uri/path).toString + ".git", path)
+         val success = git(root, "clone", ssh(path), path)
          if (!success) return None
       }
       Some(localPath)

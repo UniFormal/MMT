@@ -7,6 +7,17 @@ import java.awt.event.{ActionListener,ActionEvent}
 case class Item(label: String, id: String)
 
 object Swing {
+
+   /** run code on the Swing thread */ 
+   def invokeLater[A](a: => A) {
+      val r = new Runnable() {
+        def run {
+          a
+        }
+      }
+      SwingUtilities.invokeLater(r)
+   }
+
    /** a JPanel containing a list of horizontal radio buttons
     * that hides the boilerplate Java code
     * @param items the label-id pairs of the buttons
