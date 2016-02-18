@@ -17,50 +17,66 @@ class Setup extends ShellExtension("jeditsetup") {
   /** run method as ShellExtension */
   def run(args: List[String]): Boolean = {
     val l = args.length
-    val installOpt = if (l >= 1) args(0) match {
-      case "install" => Some(true)
-      case "uninstall" => Some(false)
-      case _ => None
-    } else None
+    val (installOpt,fat) = if (l >= 1) args(0) match {
+      case "install" => (Some(true),true)
+      case "uninstall" => (Some(false), true)
+      case "install-jars" => (Some(true), false)
+      case "uninstall-jars" => (Some(false), false)
+      case _ => (None, true)
+    } else (None, true)
     val jeditOpt = if (l >= 2) Some(File(args(1))) else OS.jEditSettingsFolder
     if (jeditOpt.isEmpty) {
         println("jEdit settings folder not found")
-    }
-    if (!MMTSystem.runFromJar) {
-      println("jeditsetup can only be run from a .jar")
-      return true
     }
     if (l <= 0 || l > 2 || installOpt.isEmpty || jeditOpt.isEmpty) {
       println(helpText)
       return true
     }
-    val jarFile: File = MMTSystem.classFolder
-    val programLocation: File = jarFile.up
-    val (deploy, fat) = if (programLocation.getName == "main") {
-      (programLocation.up, false)
+    val classFolderOrJarFile: File = MMTSystem.classFolder
+    val rl = if (classFolderOrJarFile.isFile) {
+      if (classFolderOrJarFile.getName == "mmt.jar")
+        FatJar(classFolderOrJarFile)
+      else
+        DeployFolder(classFolderOrJarFile.up.up, fat)
     } else {
-      (jarFile, true)
+        DeployFolder(classFolderOrJarFile.up.up.up.up / "deploy", fat)
     }
     val jedit = jeditOpt.get
     val install = installOpt.get
 
     if (install) {
       println("trying to install to " + jedit)
-    } else
-    {
+    } else {
       println("trying to uninstall from " + jedit)
     }
-    doIt(deploy, jedit, install, fat)
+    doIt(jedit, install, rl)
     true
   }
 
+  private abstract class ResourceLocation
+  private case class FatJar(file: File) extends ResourceLocation
+  private case class DeployFolder(folder: File, installFat: Boolean) extends ResourceLocation
+  
   /** the actual install/uninstall process
     *
+    * @param deploy  if fat: the fat jar; otherwise, the MMT deploy directory
     * @param jedit   the jEdit settings folder
     * @param install true/false for install/uninstall
     * @param fat     use the fat mmt.jar
     */
-  private def doIt(deploy: File, jedit: File, install: Boolean, fat: Boolean) {
+  private def doIt(jedit: File, install: Boolean, rl: ResourceLocation) {
+    def getResource(path: String): String = {
+      rl match {
+        case FatJar(_) => MMTSystem.getResourceAsString(path)
+        case DeployFolder(f,_) =>
+          val pluginFolder = f.up / "src" / "jEdit-mmt" / "src" / "resources"
+          File.read(pluginFolder / path)
+      }
+    }
+    def getPluginResource(f: List[String]): String = getResource("/plugin/" + f.mkString("/"))
+    def handleResourceLineWise(path: String)(proc: String => Unit) =
+       stringToList(getResource(path), "\\n").foreach(proc)
+
     /** copies or deletes a file depending on install/uninstall */
     def copyFromOrDelete(dir: File, f: List[String], g: List[String]) {
       if (install) {
@@ -69,20 +85,6 @@ class Setup extends ShellExtension("jeditsetup") {
         delete(jedit / g)
       }
     }
-    // copy/delete the jars
-    // see src/project/Utils.scala for sbt
-    val mainJars = List("mmt-api.jar", "mmt-lf.jar", "MMTPlugin.jar", "mmt-specware.jar", "mmt-pvs.jar")
-    val libJars = List("scala-library.jar", "scala-parser-combinators.jar", "scala-reflect.jar", "scala-xml.jar",
-      "tiscaf.jar")
-    val allJars = List("lfcatalog", "lfcatalog.jar") :: mainJars.map(List("main", _)) ++
-      libJars.map(List("lib", _))
-    (jedit / "jars").mkdirs()
-    if (fat) {
-      copyFromOrDelete(deploy, Nil, List("jars", "MMTPlugin.jar"))
-    } else {
-      allJars.foreach(f => copyFromOrDelete(deploy, f, List("jars", FilePath(f).name)))
-    }
-    // modes
     def copyOrDelete(f: List[String]) = {
       val file = jedit / f
       if (install) {
@@ -91,12 +93,29 @@ class Setup extends ShellExtension("jeditsetup") {
         }
         else {
           println("creating " + file)
-          File.write(file, MMTSystem.getResourceAsString("/plugin/" + f.mkString("/")))
+          File.write(file, getPluginResource(f))
         }
       } else {
         delete(file)
       }
     }
+    // copy/delete the jars
+    // see src/project/Utils.scala for sbt
+    val mainJars = List("mmt-api.jar", "mmt-lf.jar", "MMTPlugin.jar", "mmt-specware.jar", "mmt-pvs.jar")
+    val libJars = List("scala-library.jar", "scala-parser-combinators.jar", "scala-reflect.jar", "scala-xml.jar",
+      "tiscaf.jar")
+    val allJars = List("lfcatalog", "lfcatalog.jar") :: mainJars.map(List("main", _)) ::: libJars.map(List("lib", _))
+    (jedit / "jars").mkdirs()
+    rl match {
+      case FatJar(f) =>
+         copyFromOrDelete(f, Nil, List("jars", "MMTPlugin.jar"))
+      case DeployFolder(deploy, fat) =>
+        if (fat)
+          copyFromOrDelete(deploy, List("mmt.jar"), List("jars", "MMTPlugin.jar"))
+        else
+          allJars.foreach(f => copyFromOrDelete(deploy, f, List("jars", f.last)))
+    }
+    // modes
     // * copy/delete the mode files
     val modeFiles = List("mmt.xml", "mmtlog.xml", "msl.xml")
     modeFiles.foreach { e => copyOrDelete(List("modes", e)) }
@@ -106,8 +125,6 @@ class Setup extends ShellExtension("jeditsetup") {
     var newCatalog: List[String] = Nil
     val modeEntries = modeFiles.map(e => "FILE=\"" + e + "\"")
     def isMMTEntry(line: String) = modeEntries.exists(line.contains)
-    def handleResourceLineWise(path : String)(proc: String => Unit) =
-      scala.io.Source.fromInputStream(MMTSystem.getResource(path)).getLines.foreach(proc)
     // read current catalog without MMT entries
     // write new catalog
     if (!jcat.exists) {
@@ -148,7 +165,7 @@ class Setup extends ShellExtension("jeditsetup") {
     }
     // append MMT abbrevs if installing
     if (install) {
-      handleResourceLineWise(sabb) { l => newAbbrevs ::= l }
+      handleResourceLineWise(sabb) {l => newAbbrevs ::= l}
     }
     // write new abbrevs
     if (newAbbrevs.nonEmpty) {

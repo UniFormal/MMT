@@ -2,32 +2,63 @@ package info.kwarc.mmt.jedit
 
 import errorlist._
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.source
-import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.parser._
-import info.kwarc.mmt.api.utils.MyList._
-import info.kwarc.mmt.api.utils._
+import archives.source
+import frontend._
+import objects._
+import parser._
+import utils.MyList._
+import utils._
 
 class MMTError(val mainFile: File, es: ErrorSource, el: Int, sf: String, sl: Int, sc: Int, ec: Int, msg: String)
    extends DefaultErrorSource.DefaultError(es, el, sf, sl, sc, ec, msg)
 
+class MMTErrorSource extends DefaultErrorSource("MMT") {
+
+   private def removeErrorMsg(e: ErrorSource.Error) {
+     	gui.Swing.invokeLater {
+				 val msg = new ErrorSourceUpdate(this, ErrorSourceUpdate.ERROR_REMOVED, e)
+				  org.gjt.sp.jedit.EditBus.send(msg)
+			}
+	 }
+   private def getErrorSet(file: File) = {
+      val key = file.toString
+      val es = errors.get(key)
+      if (es != null) {
+        es
+      } else { 
+        val empty = new DefaultErrorSource.ErrorListForPath()
+        errors.put(key, empty)
+        empty      }
+   }
+
+   def removeFileErrors(file: File) {
+     val errorSet = getErrorSet(file)
+     val iter = errorSet.iterator
+     while (iter.hasNext) {
+       iter.next() match {
+         case e: MMTError =>
+           if (e.mainFile == file)
+             errorSet.remove(e)
+             removeErrorMsg(e)
+         case e =>
+           // should be impossible
+           if (e.getFilePath == file.toString)
+             errorSet.remove(e)
+             removeErrorMsg(e)
+       }
+     }
+   }
+}
 /**
  * sends MMT errors directly to jEdit ErrorList
  * @param file the source file, in which the errors are found
  */
-class ErrorListForwarder(errorSource: DefaultErrorSource, controller: Controller, src: File) extends ErrorHandler {
+class ErrorListForwarder(errorSource: MMTErrorSource, controller: Controller, src: File) extends ErrorHandler {
    /**
     * remove all errors whose mainFile is src
     */
    def reset {
-      // we can't remove individual errors from a DefaultErrorSource, so remove everything and readd appropriately
-      val errors = errorSource.getAllErrors
-      errorSource.clear
-      errors.foreach {case e: MMTError =>
-         if (e.mainFile != src)
-            errorSource.addError(e)
-      }
+      errorSource.removeFileErrors(src)
    }
    protected def addError(e: Error) = e match {
       case s: SourceError =>

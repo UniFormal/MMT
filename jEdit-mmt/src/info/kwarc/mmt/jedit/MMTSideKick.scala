@@ -90,8 +90,8 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val tree = new SideKickParsedData(path.toJava.getName)
       val root = tree.root
       val errorCont = new ErrorListForwarder(mmt.errorSource, controller, path)
-      errorCont.reset
       try {
+         errorCont.reset
          val doc = controller.read(ps, true, true)(errorCont) match {
             case d: Document => d
             case _ => throw ImplementationError("document expected")
