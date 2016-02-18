@@ -119,7 +119,7 @@ object ApplyTerm extends EliminationRule(Apply.path, OfType.path) {
                        history += "does not look like a function type at this point"
                        solver.error("this is not a function type (type level rewriting is not supported)")
                     } else {
-                       throw TypingRule.NotApplicable
+                       throw RuleNotApplicable
                     }
                     None
               }

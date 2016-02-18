@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.DeclaredTheory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, DeclaredStructure}
-import info.kwarc.mmt.api.uom.{StandardString, StandardNat, RealizedType}
+import info.kwarc.mmt.api.uom.{StandardRat, StandardString, StandardNat, RealizedType}
 import info.kwarc.mmt.lf.{Lambda, Apply, ApplySpine, Arrow}
 import info.kwarc.mmt.pvs.syntax.tuple_type
 import utils._
@@ -13,6 +13,7 @@ import utils._
 object NatLiterals extends RealizedType(OMS(PVSTheory.thpath ? "NatLiterals"),StandardNat)
 // TODO needs adding
 object StringLiterals extends RealizedType(OMS(PVSTheory.thpath ? "StringLiterals"),StandardString)
+object RationalLiterals extends RealizedType(OMS(PVSTheory.thpath ? "RationalLi"),StandardRat)
 
 object PVSTheory {
    val rootdpath = DPath(URI.http colon "pvs.csl.sri.com")

@@ -55,14 +55,20 @@ object SigmaTerm extends FormationRule(Sigma.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
     Common.makeSigma(solver,tm) match {
       case Sigma(x,a,b) =>
-        if (!covered) Common.isType(solver,a)
+        if (!covered) solver.check(Inhabitable(stack,a))
         val (xn,sub) = Common.pickFresh(solver, x)
+        val aT = solver.inferType(a).getOrElse(return None)
         solver.inferType(b ^? sub)(stack ++ xn % a, history) flatMap {bT =>
           if (bT.freeVars contains xn) {
             // usually an error, but xn may disappear later, especially when unknown in b are not solved yet
             None
-          } else
-            Some(bT)
+          } else if (solver.safecheck(Subtyping(stack,aT,bT)).getOrElse(false)) {
+              solver.check(Subtyping(stack,aT,bT))
+              Some(bT)
+            } else if (solver.safecheck(Subtyping(stack,bT,aT)).getOrElse(false)) {
+            solver.check(Subtyping(stack,bT,aT))
+            Some(aT)
+          } else None
         }
       case _ => None // should be impossible
     }
@@ -92,7 +98,7 @@ object ProjectionTerm {
       solver.inferType(t)(stack, history) match {
         case None =>
           history += "failed"
-          solver.inferType(tm)(stack, history.branch) // inference of the argument may solve some varialbes
+          solver.inferType(tm)(stack, history.branch) // inference of the argument may solve some variables
           None
         case Some(tp) =>
           history += "tuple type is: " + solver.presentObj(tp)

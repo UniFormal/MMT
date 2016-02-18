@@ -1,9 +1,9 @@
 package info.kwarc.mmt.LFX.TypedHierarchy
 
-import info.kwarc.mmt.api.checking.TypingRule.NotApplicable
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects.{OMS, Stack, Term}
 import info.kwarc.mmt.lf.OfType
+
 
 object TypeLevelUniverse extends UniverseRule(TypeLevel.path) {
   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = tm match {
@@ -21,30 +21,42 @@ object TypeLevelSubRule extends SubtypingRule {
   }
 
   def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History) : Option[Boolean] = tp1 match {
-    case TypeLevel(i) =>
+    case DefinedTypeLevel(i) =>
       tp2 match {
-        case TypeLevel(j) => Some(i<=j)
-        case t @ TypeUniverse() => Some(true)
+        case DefinedTypeLevel(j) => Some(i<=j)
+        case TypeUniverse.term => Some(true)
+        case OMS(TypeUniverse.altpath) => Some(true)
         case _ => Some(false)
       }
-    case _ => throw TypingRule.NotApplicable
+    case TypeLevel(t) => tp2 match {
+      case TypeUniverse.term => Some(true)
+      case OMS(TypeUniverse.altpath) => Some(true)
+      case _ => Some(false)
+    }
+    case _ => throw RuleNotApplicable
   }
 }
 
 object LevelTyping extends TypingRule(TypeLevel.path) {
-  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean = tm match {
-    case TypeLevel(i) => tp match {
-      case TypeLevel(j) => i<=j
-      case t @ TypeUniverse() => true
-      case _ => throw TypingRule.NotApplicable
+  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean =
+    solver.inferType(tm).map(solver.safeSimplifyUntil(_)(TypeLevel.unapply)._1).getOrElse(throw RuleNotApplicable) match {
+    case DefinedTypeLevel(i) => tp match {
+      case DefinedTypeLevel(j) => i<=j
+      case t if TypeUniverse.unapply(t) => true
+      case _ => throw RuleNotApplicable
     }
-    case _ => throw TypingRule.NotApplicable
+    case TypeLevel(t2) => tp match {
+      case t if TypeUniverse.unapply(t) => true
+      case _ => throw RuleNotApplicable
+    }
+    case _ => throw RuleNotApplicable
   }
 }
 
 object LevelType extends InferenceRule(TypeLevel.path,OfType.path) {
   def apply(solver : Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
-    case TypeLevel(i) => Some(TypeLevel(i+1))
-    case _ => throw TypingRule.NotApplicable
+    case DefinedTypeLevel(i) => Some(DefinedTypeLevel(i + 1))
+    case TypeLevel(t) => Some(TypeUniverse.term)
+    case _ => throw RuleNotApplicable
   }
 }

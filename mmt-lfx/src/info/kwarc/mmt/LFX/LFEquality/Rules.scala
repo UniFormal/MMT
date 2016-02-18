@@ -13,11 +13,7 @@ object EqTerm extends FormationRule(eqtype.path, OfType.path) {
       case eqtype(tm1,tm2) =>
         val tp1 = solver.inferType(tm1).getOrElse(return None)
         val tp2 = solver.inferType(tm2).getOrElse(return None)
-        if (solver.safecheck(Equality(stack,tp1,tp2,None)) contains true) {
-          solver.check(Equality(stack,tp1,tp2,None))
-          val tp = solver.inferType(tp1).getOrElse(return None)
-          Some(tp)
-        } else if (solver.safecheck(Subtyping(stack,tp1,tp2)) contains true) {
+        if (solver.safecheck(Subtyping(stack,tp1,tp2)) contains true) {
           solver.check(Subtyping(stack,tp1,tp2))
           val tp = solver.inferType(tp2).getOrElse(return None)
           Some(tp)
@@ -59,7 +55,7 @@ object CongTerm extends EliminationRule(cong.path, OfType.path) {
           val (xn,_) = Context.pickFresh(solver.constantContext ++ solver.getPartialSolution ++ stack.context, x)
           val (pn,_) = Context.pickFresh(solver.constantContext ++ solver.getPartialSolution ++ stack.context, q)
           Some(Pi(xn,tpA,Pi(pn,eqtype(OMV(xn),a),ApplySpine(c,OMV(xn),OMV(pn)))))
-        case _ => throw TypingRule.NotApplicable
+        case _ => throw RuleNotApplicable
       }
     case _ => None
   }

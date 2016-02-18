@@ -2,7 +2,6 @@ package info.kwarc.mmt.api.checking
 
 import info.kwarc.mmt.api._
 import frontend._
-import info.kwarc.mmt.api.checking.TypingRule.NotApplicable
 import modules._
 import objects.Conversions._
 import objects._
@@ -546,13 +545,17 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
             val rOpt = rules.getByHead(classOf[ComputationRule], h)
             // use first applicable rule
             rOpt foreach {rule =>
-               Try(rule(this)(tm, false)) match {
-                  case util.Success(Some(tmS)) =>
+               try {
+                 val ret =rule(this)(tm, false)
+                 ret match {
+                   case Some(tmS) =>
                      history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
                      return tmS
-                  case util.Success(None) =>
-                  case Failure(NotApplicable) =>
-                  case Failure(t:Throwable) => throw t
+                   case None => None
+                 }
+               } catch {
+                 case t : Exception if t==RuleNotApplicable => None
+                 case t : Throwable => throw t
                }
             }
             // no applicable rule, expand a definition
@@ -702,6 +705,29 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
        // the foundation-dependent cases
        // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
+         var activerules = rules.get(classOf[TypingRule])
+         var haveresult = false
+         var ret = None.asInstanceOf[Option[Boolean]]
+         while (!haveresult) {
+           val (tpS, ruleOpt) = limitedSimplify(tm, activerules)
+           ruleOpt match {
+             case Some(rule) =>
+               history += ("applying rule for " + rule.head.name.toString)
+               haveresult = true
+               ret = try {Some(rule(this)(tm,tpS))} catch {
+                 case t : Exception if t==RuleNotApplicable =>
+                   history+="rule not applicable!"
+                   haveresult = false
+                   activerules -= rule
+                   None
+               }
+             case None =>
+               history += "no applicable rule"
+               haveresult = true
+           }
+         }
+         ret.getOrElse(false)
+         /*
          limitedSimplify(tp,rules.get(classOf[TypingRule])) match {
            case (tpS, Some(rule)) =>
              try {
@@ -713,6 +739,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
               // either this is an atomic type, or no typing rule is known
               checkByInference(tpS)
          }
+         */
      }
    }
 
@@ -783,7 +810,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
                     history += ("applying rule for " + rule.head.name.toString)
                     haveresult = true
                     ret = try {rule(this)(tmS, covered)} catch {
-                       case TypingRule.NotApplicable =>
+                       case t : Exception if t==RuleNotApplicable =>
                           history+="rule not applicable!"
                         haveresult = false
                         activerules -= rule
@@ -855,7 +882,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
             case Some(rule) =>
               history += ("applying rule for " + rule.head.name.toString)
               (try { rule(this)(tp1S,tp2S)} catch {
-                case TypingRule.NotApplicable =>
+                case t : Exception if t==RuleNotApplicable =>
                   history+="rule not applicable!"
                   haveresult = false
                   activerules -= rule
@@ -1171,8 +1198,8 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
          case TorsoNormalForm(OMV(m), Appendage(h,_) :: _) if solution.isDeclared(m) && ! tp.freeVars.contains(m) => //TODO what about occurrences of m in tm1?
            val allrules =  rules.getByHead(classOf[TypeSolutionRule], h)
            allrules.foreach(rule => Try(rule(this)(tm, tp)) match {
-                 case util.Success(b:Boolean) => return b
-                 case Failure(NotApplicable) =>
+                 case scala.util.Success(b:Boolean) => return b
+                 case Failure(RuleNotApplicable) =>
                  case Failure(t : Throwable) => throw t
                })
            false

@@ -21,10 +21,21 @@ object WTypeTerm extends FormationRule(WType.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
     tm match {
       case WType(x,a,b) =>
-        if (!covered) Common.isType(solver,a)
+        if (!covered) solver.check(Inhabitable(stack,a))//Common.isType(solver,a)
         val (xn,sub) = Common.pickFresh(solver,x)
-        val tpb = solver.inferType(b ^? sub)(stack ++ xn%a, history).getOrElse(return None)
-        if (solver.check(Equality(stack,tpb,OMS(Typed.ktype),None))) Some(OMS(Typed.ktype)) else None
+        val tpA = solver.inferType(a,covered).getOrElse(return None)
+        val tpB = solver.inferType(b ^? sub)(stack ++ xn%a, history).getOrElse(return None)
+        if (solver.safecheck(Subtyping(stack,tpA,tpB)).getOrElse(false)) {
+          solver.check(Subtyping(stack,tpA,tpB))
+          Some(tpB)
+        } else if (solver.safecheck(Subtyping(stack,tpB,tpA)).getOrElse(false)) {
+          solver.check(Subtyping(stack,tpB,tpA))
+          Some(tpA)
+        } else {
+          solver.check(Equality(stack,tpA,tpB,None))
+          Some(tpA)
+        }
+      case _ => None
     }
   }
 }
@@ -185,7 +196,7 @@ object recApply extends ComputationRule(Apply.path) {
           case _ => return None
         }
          Some(ApplySpine(p,a,u,Lambda(y,domu,Apply(rec(c,p),Apply(u,y)))))
-      case _ => throw TypingRule.NotApplicable
+      case _ => throw RuleNotApplicable
     }
 }
 

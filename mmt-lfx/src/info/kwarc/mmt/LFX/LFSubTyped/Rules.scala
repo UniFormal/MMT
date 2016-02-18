@@ -1,6 +1,5 @@
 package info.kwarc.mmt.LFX.LFSubTyped
 
-import info.kwarc.mmt.api.checking.TypingRule.NotApplicable
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api.objects._
@@ -38,7 +37,7 @@ object SubtypeOfTypeRule extends SubtypingRule {
     case subtypeOf(t) =>
       val tpt = solver.inferType(t)
       if (tpt.isDefined) Some(solver.check(Subtyping(stack,tpt.get,tp2))) else Some(false)
-    case _ => throw TypingRule.NotApplicable
+    case _ => throw RuleNotApplicable
   }
 }
 
@@ -52,7 +51,7 @@ object SubtypeOfRule extends SubtypingRule {
     solver.inferType(tp1) match {
       case Some(t) => solver.safeSimplifyUntil(t)(subtypeOf.unapply)._1 match {
         case subtypeOf(s) => Some(solver.check(Subtyping(stack,s,tp2)))
-        case _ => throw TypingRule.NotApplicable
+        case _ => throw RuleNotApplicable
       }
       case _ => history += "could not infer type of "+solver.presentObj(tp1)
         None
@@ -71,7 +70,7 @@ object PiRule extends SubtypingRule {
     case (Pi(x1,a1,b1),Pi(x2,a2,b2)) =>
       val (xn,_) = Context.pickFresh(stack.context, x1)
       Some(solver.check(Subtyping(stack,a2,a1)) && solver.check(Subtyping(stack ++ xn % a2, b1 ^? (x1/OMV(xn)),b2 ^? (x2/OMV(xn)))))
-    case _ => throw TypingRule.NotApplicable
+    case _ => throw RuleNotApplicable
   }
 }
 
@@ -98,7 +97,7 @@ object SubJudgRule extends SubtypingRule {
 
   def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History) : Option[Boolean] = {
     solver.prove(subtypeJudg(tp1, tp2)).getOrElse {
-      throw NotApplicable
+      throw RuleNotApplicable
     }
     Some(true)
   }

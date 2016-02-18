@@ -1,6 +1,5 @@
 package info.kwarc.mmt.LFX.LFCoprod
 
-import info.kwarc.mmt.api.checking.TypingRule.NotApplicable
 import info.kwarc.mmt.api.{objects, LocalName}
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects._
@@ -21,7 +20,17 @@ object CoprodTerm extends FormationRule(Coprod.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
     tm match {
       case Coprod(tp1,tp2) =>
-        if ( Common.isType(solver,tp1) && Common.isType(solver,tp2)) Some(OMS(Typed.ktype)) else None
+        solver.check(Inhabitable(stack,tp1))
+        solver.check(Inhabitable(stack,tp2))
+        val tpA = solver.inferType(tp1,covered).getOrElse(return None)
+        val tpB = solver.inferType(tp2,covered).getOrElse(return None)
+        if (solver.safecheck(Subtyping(stack,tpA,tpB)) contains true) {
+          solver.check(Subtyping(stack,tpA,tpB))
+          Some(tpB)
+        } else if (solver.safecheck(Subtyping(stack,tpB,tpA)) contains true) {
+          solver.check(Subtyping(stack,tpB,tpA))
+          Some(tpA)
+        } else None
       case _ => None // should be impossible
     }
   }
@@ -33,32 +42,11 @@ object inlTerm extends IntroductionRule(inl.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
     tm match {
       case inl(t,tp2) =>
-        if (Common.isType(solver,tp2)) {
-          val tp1 = solver.inferType(t).getOrElse(return None)
-          Some(Coprod(tp1,tp2))
-        } else None
+        solver.check(Inhabitable(stack,tp2))
+        val tp1 = solver.inferType(t).getOrElse(return None)
+        Some(Coprod(tp1,tp2))
       case _ => None
     }
-  }
-}
-
-object CoprodType extends TypingRule(Coprod.path) {
-  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = tp match {
-    case Coprod(tpA,tpB) =>
-      solver.safeSimplifyUntil(tm)(inl.unapply)._1 match {
-        case inl(a,tpnB) =>
-          val tpnA = solver.inferType(a,false).getOrElse(return false)
-          solver.check(Equality(stack,tpA,tpnA,None))
-          solver.check(Equality(stack,tpB,tpnB,None))
-        case _ => solver.safeSimplifyUntil(tm)(inr.unapply)._1 match {
-          case inr(b,tpnA) =>
-            val tpnB = solver.inferType(b,false).getOrElse(return false)
-            solver.check(Equality(stack,tpA,tpnA,None))
-            solver.check(Equality(stack,tpB,tpnB,None))
-          case _ => throw TypingRule.NotApplicable
-        }
-      }
-    case _ => throw TypingRule.NotApplicable
   }
 }
 
@@ -68,17 +56,37 @@ object inrTerm extends IntroductionRule(inr.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
     tm match {
       case inr(t,tp1) =>
-        if (Common.isType(solver,tp1)) {
-          val tp2 = solver.inferType(t).getOrElse(return None)
-          Some(Coprod(tp1,tp2))
-        } else None
+        solver.check(Inhabitable(stack,tp1))
+        val tp2 = solver.inferType(t).getOrElse(return None)
+        Some(Coprod(tp1,tp2))
       case _ => None
     }
   }
 }
 
+/** Typing rule for coproducts **/
+object CoprodType extends TypingRule(Coprod.path) {
+  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = tp match {
+    case Coprod(tpA,tpB) =>
+      solver.safeSimplifyUntil(tm)(inl.unapply)._1 match {
+        case inl(a,tpnB) =>
+          val tpnA = solver.inferType(a,false).getOrElse(return false)
+          solver.check(Subtyping(stack,tpnA,tpA))
+          solver.check(Subtyping(stack,tpnB,tpB))
+        case _ => solver.safeSimplifyUntil(tm)(inr.unapply)._1 match {
+          case inr(b,tpnA) =>
+            val tpnB = solver.inferType(b,false).getOrElse(return false)
+            solver.check(Subtyping(stack,tpnA,tpA))
+            solver.check(Subtyping(stack,tpnB,tpB))
+          case _ => throw RuleNotApplicable
+        }
+      }
+    case _ => throw RuleNotApplicable
+  }
+}
+
 /** Elimination: the type inference rule x:A|-f:C(inl(x)), x:B|-g:C(inr(x)), |-u:A+B
-  * ---> u match case x . f to C(x); case y . g to C(y) : C(u) **/
+  * ---> u match x either f or g to C(x) : C(u) **/
 object MatchTerm extends EliminationRule(cmatch.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
     case cmatch(u,x,f,g,c) =>
@@ -131,7 +139,7 @@ object MatchComp extends ComputationRule(cmatch.path) {
           case _ => None
         }
       }
-      case _ => throw TypingRule.NotApplicable
+      case _ => None
     }
     case _ => None
   }
@@ -142,38 +150,53 @@ object MatchComp extends ComputationRule(cmatch.path) {
 object AddFuncComp extends ComputationRule(Addfunc.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term]
   = {
-    val (x,_) = Context.pickFresh(stack.context,LocalName("x"))
-    try { getFunTerm(solver)(tm,covered).map(p => Lambda(x,p._2,p._1(OMV(x)))) } catch {
+    try {
+      history += "Expanding function addition"
+      val (f,tp,st) = getFunTerm(solver)(tm,covered).getOrElse(return None)
+      val (x,_) = Context.pickFresh(st.context,LocalName("x"))
+      Some(Lambda(x,tp,f(OMV(x))))
+    } catch {
       case t : Throwable => throw t
     }
   }
 
   def getFunTerm(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History)
-  : Option[(Term => Term,Term)] = tm match {
-    case Addfunc(t1,t2) =>
-      (solver.simplify(solver.inferType(t1)(stack,history).getOrElse(return None)),
-        solver.simplify(solver.inferType(t2)(stack,history).getOrElse(return None))) match {
+  : Option[((Term => Term),Term,Stack)] = tm match {
+    case Addfunc(f,g) =>
+      (solver.simplify(solver.inferType(f)(stack,history).getOrElse(return None)),
+        solver.simplify(solver.inferType(g)(stack,history).getOrElse(return None))) match {
         case (Pi(y1,tpA,tpC),Pi(y2,tpB,tpC2)) =>
           val (x,_) = Context.pickFresh(stack.context,LocalName("x"))
-          val (x1,sub1) = Context.pickFresh((stack++x%Coprod(tpA,tpB)).context,y1)
           solver.check(Equality(stack++x%Coprod(tpA,tpB),tpC ^? y1/inl(x,tpB),tpC2 ^? y2/inr(x,tpA),Some(OMS(Typed.ktype))))
-          history+="Expanding function addition"
-          val ret : Term => Term = tx => cmatch(tx,x1,Apply(t1,OMV(x1)),Apply(t2,OMV(x1)),tpC^?y1/OMV(x1))
-          Some((ret,Coprod(tpA,tpB)))
+          val ret : (Term => Term) = tx => cmatch(tx,x,Apply(f,OMV(x)),Apply(g,OMV(x)),tpC^?y1/OMV(x))
+          Some((ret,Coprod(tpA,tpB),stack ++ x%Coprod(tpA,tpB)))
         case _ => None
       }
     case _ => None
   }
 }
 
-/** Type inference rule for function addition */
-
-object CompFuncTerm extends EliminationRule(Addfunc.path, OfType.path) {
-  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
-    case Addfunc(t1,t2) => solver.inferType(AddFuncComp(solver)(tm,false).getOrElse(return None))(stack,history)
+/** Shouldn't be necessary, but apparently is **/
+object ApplyFuncComp extends ComputationRule(Apply.path) {
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term]
+  = tm match {
+    case ApplySpine(Addfunc(f,g),List(t)) =>
+      val (fun,tpab,_) = AddFuncComp.getFunTerm(solver)(Addfunc(f,g),covered).getOrElse(throw RuleNotApplicable)
+      Some(fun(t))
     case _ => None
   }
 }
+
+
+/** Type inference rule for function addition */
+/*
+object CompFuncTerm extends EliminationRule(Addfunc.path, OfType.path) {
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
+    case Addfunc(t1,t2) => solver.inferType(AddFuncComp(solver)(tm,covered).getOrElse(return None))(stack,history)
+    case _ => None
+  }
+}
+*/
 
 object MatchEquality extends TermHeadBasedEqualityRule(Nil,cmatch.path,cmatch.path) {
   def apply(check: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History): Option[Continue[Boolean]] = (tm1,tm2) match {

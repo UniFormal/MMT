@@ -19,6 +19,14 @@ class Symbol(s:String) {
 }
 
 object TypeLevel extends Symbol("TypeLevel") {
+  def apply(t:Term) = OMA(this.term,List(t))
+  def unapply(t:Term) : Option[Term] = t match {
+    case OMA(this.term,List(tm)) => Some(tm)
+    case _ => None
+  }
+}
+
+object DefinedTypeLevel extends Symbol("TypeLevel") {
   def apply(i : BigInt) = {
     require(i>=0)
     OMA(this.term,List(NatLiterals(i)))

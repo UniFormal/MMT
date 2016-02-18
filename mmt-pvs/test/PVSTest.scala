@@ -20,14 +20,11 @@ object PVSTest {
 
     mathpath archive ../../MathHub
 
-    build PVS/Prelude mmt-omdoc
-    build PVS/Prelude pvs-omdoc
     build PVS/NASA pvs-omdoc
 """.split("\\n").foreach(controller.handleLine(_))
 
-    //
     // build PVS/Prelude mmt-omdoc
-    // build PVS/NASA pvs-omdoc
+    // build PVS/Prelude pvs-omdoc
 
     //controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
     //controller.handleLine("build PVS/Prelude mmt-omdoc")

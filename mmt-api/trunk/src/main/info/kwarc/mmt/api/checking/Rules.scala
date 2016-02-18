@@ -38,8 +38,9 @@ object TypingRule {
     * may be thrown by a TypingRule to indicate that type of tm should be inferred and equated to tp 
     */
    object SwitchToInference extends java.lang.Throwable
-   object NotApplicable extends java.lang.Throwable
 }
+
+case object RuleNotApplicable extends Exception
 
 /** An TypingRule checks a term against a type.
  *  It may recursively call other checks.

@@ -246,6 +246,7 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          State.addtcc(doExpr(ass._formula)._1)
       case assumption(named,ass) =>
          State.addprop(newName(named.named.id),doExpr(ass._formula)._1,"assumption")
+      case i : importing => doDecl(i) // TODO ???
       case _ => println("TODO Assumption: "+ad.getClass); sys.exit
    }
 
@@ -255,6 +256,7 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          PVSTheory.subtp(doType(sup._declared)),true)
          // TODO how do I introduce subtyping conditions properly?
       case formal_const_decl(named,tp) => State.addparameter(newName(named.named.id),doType(tp._declared),false)
+      case i : importing => doDecl(i) // TODO ???
       case _ => println("TODO Formal: " + f.getClass + ": " + f); sys.exit
    }
 
@@ -262,6 +264,7 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
 
    def doDecl(d: Decl) {
       val ret = d match {
+         case importing(unnamed,name) => {} // TODO is inferred anyway?
          case var_decl(id,unnamed,tp) => State.addvardecl(doName(id),doType(tp._internal))
          case tcc_decl(named,assertion) => State.addtcc(doExpr(assertion._formula)._1)
          case const_decl(named,arg_formals,tp,optdef) =>
@@ -451,6 +454,7 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             val (tm,tp) = doExpr(expr)
             (PVSTheory.projection(tm,j),PVSTheory.projection(tp,j))
          case number_expr(_,j) => (OMLIT(j,NatLiterals),NatLiterals.synType)
+         case rational_expr(_,s) => (OMLIT(s.replace(" ","/"),RationalLiterals),RationalLiterals.synType)
          case update_expr(_,expr,assignlist) =>
             val (tm,tp) = doExpr(expr)
             (PVSTheory.recupdate(tm,assignlist.map(_ match {

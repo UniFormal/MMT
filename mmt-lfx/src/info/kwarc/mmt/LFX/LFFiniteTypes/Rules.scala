@@ -1,5 +1,6 @@
 package info.kwarc.mmt.LFX.LFFiniteTypes
 
+import info.kwarc.mmt.LFX.TypedHierarchy.{DefinedTypeLevel, TypeLevel, TypedHierarchy}
 import info.kwarc.mmt.api.LocalName
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects._
@@ -19,7 +20,8 @@ object EmptyFunTerm extends FormationRule(EmptyFun.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
     tm match {
       case EmptyFun(tp) =>
-        if ( Common.isType(solver,tp)) Some(Arrow(EmptyType.term,tp)) else None
+        solver.check(Inhabitable(stack,tp))
+        Some(Arrow(EmptyType.term,tp))
       case _ => None // should be impossible
     }
   }
@@ -27,7 +29,7 @@ object EmptyFunTerm extends FormationRule(EmptyFun.path, OfType.path) {
 
 
 /** Type 0->A has exactly one Element for each A **/
-object ZeroTypeRule extends TypeBasedEqualityRule(Nil, Pi.path) {
+object ZeroFunTypeRule extends TypeBasedEqualityRule(Nil, Pi.path) {
   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = tp match {
     case Pi(_,EmptyType.term,_) => Some(true)
     case _ => None
@@ -38,4 +40,18 @@ object ZeroTypeRule extends TypeBasedEqualityRule(Nil, Pi.path) {
     case _ => false
   }
 
+}
+
+object ZeroTypeRule extends IntroductionRule(EmptyType.path,OfType.path) {
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
+    case EmptyType.term => Some(OMS(Typed.ktype))
+    case _ => None
+  }
+}
+
+object ZeroBasetypeRule extends IntroductionRule(EmptyType.path,OfType.path) {
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
+    case EmptyType.term => Some(DefinedTypeLevel(0))
+    case _ => None
+  }
 }
