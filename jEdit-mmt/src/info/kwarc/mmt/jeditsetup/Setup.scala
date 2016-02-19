@@ -12,7 +12,7 @@ import utils.File._
   */
 class Setup extends ShellExtension("jeditsetup") {
 
-  def helpText = "needed arguments: (install | uninstall) [JEDIT/SETTINGS/FOLDER]"
+  def helpText = "needed arguments: (install | install-jars | uninstall) [JEDIT/SETTINGS/FOLDER]"
 
   /** run method as ShellExtension */
   def run(args: List[String]): Boolean = {
@@ -25,25 +25,29 @@ class Setup extends ShellExtension("jeditsetup") {
       case _ => (None, true)
     } else (None, true)
     val jeditOpt = if (l >= 2) Some(File(args(1))) else OS.jEditSettingsFolder
-    if (jeditOpt.isEmpty) {
-        println("jEdit settings folder not found")
-    }
-    if (l <= 0 || l > 2 || installOpt.isEmpty || jeditOpt.isEmpty) {
-      println(helpText)
-      return true
-    }
     val classFolderOrJarFile: File = MMTSystem.classFolder
     val rl = if (classFolderOrJarFile.isFile) {
-      if (classFolderOrJarFile.getName == "mmt.jar")
+      if (classFolderOrJarFile.name == "mmt.jar")
         FatJar(classFolderOrJarFile)
       else
         DeployFolder(classFolderOrJarFile.up.up, fat)
     } else {
-        DeployFolder(classFolderOrJarFile.up.up.up.up / "deploy", fat)
+      var src = classFolderOrJarFile.up
+      while (!src.isRoot && src.name != "src") src = src.up
+      DeployFolder(src.up / "deploy", fat)
+    }
+    if (jeditOpt.isEmpty) {
+      println("jEdit settings folder not found")
+    }
+    if (!rl.exists) {
+      println("fatal: jEdit-mmt resources are missing")
+    }
+    if (l <= 0 || l > 2 || installOpt.isEmpty || jeditOpt.isEmpty || !rl.exists) {
+      println(helpText)
+      return true
     }
     val jedit = jeditOpt.get
     val install = installOpt.get
-
     if (install) {
       println("trying to install to " + jedit)
     } else {
@@ -53,24 +57,29 @@ class Setup extends ShellExtension("jeditsetup") {
     true
   }
 
-  private abstract class ResourceLocation
+  private abstract class ResourceLocation {
+    def exists: Boolean = true
+  }
   private case class FatJar(file: File) extends ResourceLocation
-  private case class DeployFolder(folder: File, installFat: Boolean) extends ResourceLocation
-  
+  private case class DeployFolder(folder: File, installFat: Boolean) extends ResourceLocation {
+    val pluginFolder = folder.up / "src" / "jEdit-mmt" / "src" / "resources"
+
+    override def exists = {
+      folder.exists && folder.isDirectory && pluginFolder.exists && pluginFolder.isDirectory
+    }
+  }
+
   /** the actual install/uninstall process
     *
-    * @param deploy  if fat: the fat jar; otherwise, the MMT deploy directory
     * @param jedit   the jEdit settings folder
     * @param install true/false for install/uninstall
-    * @param fat     use the fat mmt.jar
+    * @param rl      resource location
     */
   private def doIt(jedit: File, install: Boolean, rl: ResourceLocation) {
     def getResource(path: String): String = {
       rl match {
         case FatJar(_) => MMTSystem.getResourceAsString(path)
-        case DeployFolder(f,_) =>
-          val pluginFolder = f.up / "src" / "jEdit-mmt" / "src" / "resources"
-          File.read(pluginFolder / path)
+        case df@DeployFolder(f,_) => File.read(df.pluginFolder / path)
       }
     }
     def getPluginResource(f: List[String]): String = getResource("/plugin/" + f.mkString("/"))
@@ -78,7 +87,7 @@ class Setup extends ShellExtension("jeditsetup") {
        stringToList(getResource(path), "\\n").foreach(proc)
 
     /** copies or deletes a file depending on install/uninstall */
-    def copyFromOrDelete(dir: File, f: List[String], g: List[String]) {
+    def copyFrom(dir: File, f: List[String], g: List[String]) {
       if (install) {
         copy(dir / f, jedit / g)
       } else {
@@ -106,14 +115,18 @@ class Setup extends ShellExtension("jeditsetup") {
       "tiscaf.jar")
     val allJars = List("lfcatalog", "lfcatalog.jar") :: mainJars.map(List("main", _)) ::: libJars.map(List("lib", _))
     (jedit / "jars").mkdirs()
-    rl match {
-      case FatJar(f) =>
-         copyFromOrDelete(f, Nil, List("jars", "MMTPlugin.jar"))
-      case DeployFolder(deploy, fat) =>
-        if (fat)
-          copyFromOrDelete(deploy, List("mmt.jar"), List("jars", "MMTPlugin.jar"))
-        else
-          allJars.foreach(f => copyFromOrDelete(deploy, f, List("jars", f.last)))
+    if (install) {
+      rl match {
+        case FatJar(f) =>
+          copyFrom(f, Nil, List("jars", "MMTPlugin.jar"))
+        case DeployFolder(deploy, fat) =>
+          if (fat)
+            copyFrom(deploy, List("mmt.jar"), List("jars", "MMTPlugin.jar"))
+          else
+            allJars.foreach(f => copyFrom(deploy, f, List("jars", f.last)))
+      }
+    } else {
+        allJars.foreach(f => delete(jedit / List("jars", f.last)))
     }
     // modes
     // * copy/delete the mode files
@@ -205,8 +218,10 @@ class Setup extends ShellExtension("jeditsetup") {
   }
 
   private def delete(f: File) {
-    f.delete
-    println("deleting " + f)
+    if (f.exists && f.isFile) {
+      f.delete
+      println("deleting " + f)
+    }
   }
 
   private def copy(from: File, to: File) {
