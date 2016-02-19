@@ -1,5 +1,6 @@
 package info.kwarc.mmt.stex
 
+import java.io.{PrintStream, InputStream}
 import java.net.{BindException, ServerSocket}
 import java.nio.file.Files
 
@@ -268,14 +269,16 @@ class LaTeXML extends LaTeXBuildTarget {
     latexmls = setLatexmlBin(latexmls, bt)
   }
 
-  private def procIO(output: StringBuffer): ProcessIO =
-    new ProcessIO(_.close(), _.close(), { i =>
+  private def procIO(output: StringBuffer): ProcessIO = {
+    def handleOutput(s: PrintStream)(i: InputStream): Unit = {
       val in = scala.io.Source.fromInputStream(i)
       val str = in.mkString
       in.close()
       output.append(str)
       if (pipeOutput) System.err.print(str)
-    }, true)
+    }
+    new ProcessIO(_.close(), handleOutput(System.out), handleOutput(System.err), true)
+  }
 
   def isServerRunning(realPort: Int): Boolean =
     try {
