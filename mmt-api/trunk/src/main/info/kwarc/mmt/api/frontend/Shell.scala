@@ -40,7 +40,7 @@ class ShellSendCommand extends ShellExtension("send") {
       try {
         println("sending: " + url.toString)
         val ret = utils.xml.get(url.toURL)
-        println(ret.toString)
+        println(ret.nonEmptyChildren.flatMap(d => d.nonEmptyChildren.map(_.toString)).mkString("\n"))
       } catch {
         case e: Exception =>
           println("error while connecting to remote MMT: " + e.getMessage)
