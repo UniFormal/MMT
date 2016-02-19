@@ -613,7 +613,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       case bd: FileBuildDependency =>
         val target = if (bd.key == key) this else bd.getTarget(controller)
         val bt = target.makeBuildTask(bd.archive, bd.inPath)
-        checkOrRunBuildTask(deps.getOrElse(bd, Set.empty), bt, up)
+        target.checkOrRunBuildTask(deps.getOrElse(bd, Set.empty), bt, up)
       case _ =>
     }
   }
