@@ -275,7 +275,7 @@ class LaTeXML extends LaTeXBuildTarget {
       val str = in.mkString
       in.close()
       output.append(str)
-      if (pipeOutput) System.err.print(str)
+      if (pipeOutput) s.print(str)
     }
     new ProcessIO(_.close(), handleOutput(System.out), handleOutput(System.err), true)
   }
