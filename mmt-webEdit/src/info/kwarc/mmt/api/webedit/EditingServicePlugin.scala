@@ -135,7 +135,7 @@ class EditingServicePlugin(val controller: Controller) {
     try {
       val spath = Path.parseS(spathS, NamespaceMap(mmt.mmtbase))
       val constants = controller.get(spath) match {
-        case c: Constant => c.notC.getVerbal match {
+        case c: Constant => c.notC.getVerbalDefault match {
           case None => Nil
           case Some(a) => List(c.name -> a.fixity.markers)
         }

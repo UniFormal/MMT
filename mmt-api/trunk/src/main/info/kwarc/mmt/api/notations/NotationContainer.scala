@@ -3,8 +3,6 @@ package info.kwarc.mmt.api.notations
 import info.kwarc.mmt.api._
 import collection.mutable.HashMap
 
-
-
 class NotationDimension {
    private var _notations = new HashMap[Int,List[TextNotation]]
    private var _maxArity = -1 //maximum arity of this notations, smaller ones imply partial applications
@@ -15,23 +13,14 @@ class NotationDimension {
 
    def maxArity = _maxArity
    //default notation
-   def default = get(maxArity, None) //assuming fully applied
+   def default = get(Some(maxArity), None).headOption //assuming fully applied
 
-   def get(arity : Int, lang : Option[String] = None) : Option[TextNotation] = {
-     notations.get(arity) match {
-       case Some(l) => 
-         val options = lang match {
-           case None => l
-           case Some(lang) => l.filter(_.scope.languages.contains(lang))
-         }
-         options match {
-           case Nil => None 
-           case _ => 
-             val res = options.reduceLeft((x,y) => if (x.scope.priority > y.scope.priority) x else y)
-             Some(res)
-         }
-       case None => None
+   def get(arity : Option[Int] = None, lang : Option[String] = None) : List[TextNotation] = {
+     var options = arity.map(notations.getOrElse(_, Nil)).getOrElse(notations.values.flatten).toList
+     lang.foreach {l => 
+       options = options.filter(_.scope.languages.contains(l))
      }
+     NotationDimension.order(options)
    }
 
    def set(not : TextNotation) = {
@@ -50,6 +39,13 @@ class NotationDimension {
       changed
    }
    def delete = notations.clear
+}
+
+object NotationDimension {
+  def order(notations : List[TextNotation]) : List[TextNotation] = {
+     notations.sortWith((x,y) => x.scope.priority > y.scope.priority || 
+                                (x.scope.priority == y.scope.priority && x.arity.length > y.arity.length))
+  }
 }
 
 /** A NotationContainer wraps around various notations that can be associated with a Declaration */
@@ -97,17 +93,30 @@ class NotationContainer extends ComponentContainer {
                        verbalization.toList.map(_ => VerbalizationNotationComponent(this))
    
    /** @return an appropriate notation for presentation, if any */
-   def getPresent: Option[TextNotation] = presentation orElse parsing orElse verbalization
+   def getPresentDefault : Option[TextNotation] = presentation orElse parsing orElse verbalization
    /** @return an appropriate notation for parsing, if any */
-   def getParse  : Option[TextNotation] = parsing
+   def getParseDefault  : Option[TextNotation] = parsing
    /** @return an appropriate notation for verbalization, if any */
-   def getVerbal : Option[TextNotation] = verbalization
+   def getVerbalDefault : Option[TextNotation] = verbalization
+   def getNotations(dim : Option[Int], lang : Option[String] = None) : List[TextNotation] = {
+     dim match {
+       case None => 
+         val all = parsingDim.get(None, lang) ::: presentationDim.get(None, lang) ::: verbalizationDim.get(None, lang)
+         NotationDimension.order(all)
+       case Some(1) => parsingDim.get(None, lang)
+       case Some(2) => presentationDim.get(None, lang) ::: parsingDim.get(None, lang)
+       case Some(3) => verbalizationDim.get(None, lang)
+       case Some(n) => throw ImplementationError("Invalid notation dimension value " + n)
+     }
+   }
+     
    def getAllNotations : List[TextNotation] = {
      List(parsingDim.notations.values.flatten, 
           presentationDim.notations.values.flatten,
           verbalizationDim.notations.values.flatten
      ).flatten
    }
+   
    def toNode = {
       val n1 = parsingDim.notations.values.flatten map {
          case n if ! metadata.Generated(n) => 

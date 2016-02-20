@@ -12,7 +12,7 @@ import utils._
 
 import HTMLAttributes._
 
-abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
+abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
    override val outExt = "html"
 
    def apply(s : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) = {
@@ -262,7 +262,7 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
    // ********************** narrative elements
 
    /** captures common parts of narrative and content element rendering */
-   private def doNarrativeElement(ne: NarrativeElement, recurse: NarrativeElement => Unit) {ne match {
+   protected def doNarrativeElement(ne: NarrativeElement, recurse: NarrativeElement => Unit) {ne match {
       case doc: Document =>
         div("document toggle-root inlineBoxSibling") {
           div("document-header", attributes=List(toggleTarget -> "document-body")) {
@@ -307,11 +307,11 @@ abstract class HTMLPresenter(objectPresenter: ObjectPresenter) extends Presenter
         }
    }}
    /** auxiliary method of doDocument */
-   private def doNarrativeElementInDoc(ne: NarrativeElement) {
+   protected def doNarrativeElementInDoc(ne: NarrativeElement) {
       doNarrativeElement(ne, doNarrativeElementInDoc(_))
    }
    /** auxiliary method of doTheory */
-   private def doNarrativeElementInMod(body: Body, ne: NarrativeElement) {ne match {
+   protected def doNarrativeElementInMod(body: Body, ne: NarrativeElement) {ne match {
       case r:SRef =>
          val d = body.get(r.target.name)
          doDeclaration(d)

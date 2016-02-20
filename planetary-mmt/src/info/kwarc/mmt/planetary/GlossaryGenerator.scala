@@ -111,7 +111,7 @@ object GlossaryGenerator {
 
     val notations = (constant.notC.parsingDim.notations.values.flatten ++ constant.notC.presentationDim.notations.values.flatten).map(n => spath -> n).toList.distinct
 
-    val defs = controller.depstore.queryList(spath, ToObject(IRels.isDefinedBy)) map {
+    val defs = controller.depstore.queryList(spath, ToObject(IRels.isDefinedBy)) flatMap {
           case p: Path =>
             controller.get(p) match {
               case fd: Constant =>
@@ -166,8 +166,8 @@ object GlossaryGenerator {
         // adding definition (as hidden for now)
         //("style" -> "display:none;")
         div(attributes = ("id" -> (defId)) :: ("style" -> "display:none;") :: Nil) {
-          defs.flatten foreach { fd =>
-            presenter(fd)(rh)
+          defs foreach { fd =>
+            presenter.apply(fd)(rh)
           }
         }
       }

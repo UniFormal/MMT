@@ -22,15 +22,6 @@ object sTeXMetaData {
   val conservativeExtension : MetaDatum = new MetaDatum(rolePath, OMSTR("conservative-extension"))
 }
 
-/** Filters errors before passing them to the another error handler */
-class FilteringErrorHandler(handler : ErrorHandler, filter : Error => Boolean) extends ErrorHandler {
-  override def mark = handler.mark
-  override def hasNewErrors = handler.hasNewErrors
-  override def catchIn(a: => Unit) = handler.catchIn(a)
-  override def apply(e: Error) =if (filter(e)) handler.apply(e) //otherwise ignore
-  def addError(e : Error) = {} //nothing to do here, not caalled
-}
-
 object sTeX {
   def inSmglom(p : Path) : Boolean = {
     //group is smglom

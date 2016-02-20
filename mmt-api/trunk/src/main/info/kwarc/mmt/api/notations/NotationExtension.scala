@@ -161,7 +161,7 @@ abstract class NotationExtension {
             (implicit unknown: () => Term): Term
    def constructTerm(fun: Term, args: List[Term]): Term
    /** called to deconstruct a term before presentation */
-   def destructTerm(t: Term)(implicit getNotation: GlobalName => Option[TextNotation]): Option[PragmaticTerm]
+   def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm]
 }
 
 /** the standard mixfix notation for a list of [[Marker]]s */
@@ -172,14 +172,16 @@ object MixfixNotation extends NotationExtension {
    def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation)
       (implicit unknown: () => Term) = ComplexTerm(op, subs, con, args)
    def constructTerm(fun: Term, args: List[Term]) = OMA(fun, args)
-   def destructTerm(t: Term)(implicit getNotation: GlobalName => Option[TextNotation]): Option[PragmaticTerm] = t match {
+   def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = t match {
       case ComplexTerm(op, subs, con, args) =>
-         getNotation(op) flatMap {not =>
+        getNotations(op).foldLeft[Option[PragmaticTerm]](None) { 
+          (res,not) => if (res.isDefined) res else {
             if (not.arity.canHandle(subs.length, con.length, args.length, false)) {
               Some(PragmaticTerm(op, subs, con, args, false, not, Position.positions(t)))
             }
             else None
-         }
+          }
+        }
       case _ => None
    }
 }
@@ -223,15 +225,16 @@ class HOASNotation(val language: MPath, val hoas: HOAS) extends NotationExtensio
    }
    def constructTerm(fun: Term, args: List[Term]) = hoas.apply(fun::args)
    
-   def destructTerm(t: Term)(implicit getNotation: GlobalName => Option[TextNotation]): Option[PragmaticTerm] = t match {
+   def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = t match {
       case OMA(OMS(hoas.apply), OMS(op)::rest) =>
          val appPos = (0 until 1+rest.length).toList.map(i => Position(1+i))
-         getNotation(op) flatMap {not =>
-            if (not.arity.canHandle(0,0,rest.length, false)) {
-              // OMA(apply, op, args)  <-->  OMA(op, args)
-              val appTerm = PragmaticTerm(op, Substitution(), Context(), rest, false, not, appPos)
-              Some(appTerm)
-            } else rest.reverse match {
+         getNotations(op).foldLeft[Option[PragmaticTerm]](None) { 
+           (res,not) => if (res.isDefined) res else {
+             if (not.arity.canHandle(0,0,rest.length, false)) {
+               // OMA(apply, op, args)  <-->  OMA(op, args)
+               val appTerm = PragmaticTerm(op, Substitution(), Context(), rest, false, not, appPos)
+               Some(appTerm)
+             } else rest.reverse match {
                case OMBINDC(OMS(hoas.bind), con, args) :: _ =>
                   // OMA(apply, op, subs, OMBIND(bind, con, args))  <-->  OMBIND(op@subs, con, args)
                   val subs = rest.init.map(a => Sub(OMV.anonymous, a))
@@ -244,7 +247,8 @@ class HOASNotation(val language: MPath, val hoas: HOAS) extends NotationExtensio
                   } else
                      None
                case _ => None
-            }
+             }
+           }
          }
       case OMA(OMS(hoas.typeAtt), List(tp)) => tp match {
          case OMS(op) =>
@@ -334,40 +338,41 @@ class NestedHOASNotation(language: MPath, obj: HOAS, meta: HOAS) extends Notatio
       case t => (Context(), t)
    }
    
-   def destructTerm(t: Term)(implicit getNotation: GlobalName => Option[TextNotation]): Option[PragmaticTerm] = {
-      if (t.toString == "(LF?apply Kernel?Comb Kernel?bool Kernel?bool (LF?apply Kernel?Comb Kernel?bool (LF?apply Kernel?fun Kernel?bool Kernel?bool) (LF?apply Kernel?equal Kernel?bool) (LF?apply Kernel?Comb Kernel?bool Kernel?bool (LF?apply Kernel?Comb Kernel?bool (LF?apply Kernel?fun Kernel?bool Kernel?bool) bool?/\\ p) q)) p)")
-         true
+   def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = {
       val (op, metaArgs, objArgs) = unapplication(t).getOrElse(return None)
-      val not = getNotation(op).getOrElse(return None)
-      val paths = (0 until objArgs.length).toList.map(i => Position((0 until i).toList.map(_ => 4)))
-      val objArgPos = paths.reverse.map(p => p / 5)
-      val opMetaPath = paths.lastOption.getOrElse(Position.Init) / 4
-      val opMetaPos = if (metaArgs.isEmpty) List(opMetaPath)
-         else (0 until metaArgs.length+1).toList.map(i => opMetaPath / (i+1))
-      val arity = not.arity
-      val numLeadingImplArgs = if (arity.variables.isEmpty) 
-            arity.arguments.takeWhile(_.isInstanceOf[ImplicitArg]).length
-         else
-            0
-      val numSubArgs = metaArgs.length - numLeadingImplArgs
-      val subargs = metaArgs.take(numSubArgs)
-      val args = metaArgs.drop(numSubArgs) ::: objArgs
-      if (arity.canHandle(subargs.length,0,args.length, false)) {
-         // List(), List(4), ..., List(4, ..., 4)
-         val tP = PragmaticTerm(op, subargs.map(Sub(OMV.anonymous, _)), Nil, args, false, not, opMetaPos ::: objArgPos)
-         Some(tP)
-      } else if (objArgs.length == 1) {
-         val (con, scope) = unbinding(objArgs.last)
-         if (arity.canHandle(metaArgs.length, con.length, 1, false)) {
-            // List(), List(4,2), ..., List(4,2,...,4,2)
-            val conPaths = (0 until con.length).toList.map(i => (0 until i).toList.flatMap(_ => List(4,2)))
-            val conPos = conPaths.map(p => Position(5) / p / 4 / 1)
-            val scopePos = Position(5) / conPaths.last / 4 / 2
-            val tP = PragmaticTerm(op, metaArgs.map(Sub(OMV.anonymous, _)), con, List(scope), false,
-                                   not, opMetaPos ::: conPos ::: List(scopePos))
-            Some(tP)
-         } else
-            None
-      } else None
+      getNotations(op).foldLeft[Option[PragmaticTerm]](None) { 
+        (res,not) => if (res.isDefined) res else {
+          val paths = (0 until objArgs.length).toList.map(i => Position((0 until i).toList.map(_ => 4)))
+          val objArgPos = paths.reverse.map(p => p / 5)
+          val opMetaPath = paths.lastOption.getOrElse(Position.Init) / 4
+          val opMetaPos = if (metaArgs.isEmpty) List(opMetaPath)
+             else (0 until metaArgs.length+1).toList.map(i => opMetaPath / (i+1))
+          val arity = not.arity
+          val numLeadingImplArgs = if (arity.variables.isEmpty) 
+                arity.arguments.takeWhile(_.isInstanceOf[ImplicitArg]).length
+             else
+                0
+          val numSubArgs = metaArgs.length - numLeadingImplArgs
+          val subargs = metaArgs.take(numSubArgs)
+          val args = metaArgs.drop(numSubArgs) ::: objArgs
+          if (arity.canHandle(subargs.length,0,args.length, false)) {
+             // List(), List(4), ..., List(4, ..., 4)
+             val tP = PragmaticTerm(op, subargs.map(Sub(OMV.anonymous, _)), Nil, args, false, not, opMetaPos ::: objArgPos)
+             Some(tP)
+          } else if (objArgs.length == 1) {
+             val (con, scope) = unbinding(objArgs.last)
+             if (arity.canHandle(metaArgs.length, con.length, 1, false)) {
+                // List(), List(4,2), ..., List(4,2,...,4,2)
+                val conPaths = (0 until con.length).toList.map(i => (0 until i).toList.flatMap(_ => List(4,2)))
+                val conPos = conPaths.map(p => Position(5) / p / 4 / 1)
+                val scopePos = Position(5) / conPaths.last / 4 / 2
+                val tP = PragmaticTerm(op, metaArgs.map(Sub(OMV.anonymous, _)), con, List(scope), false,
+                                       not, opMetaPos ::: conPos ::: List(scopePos))
+                Some(tP)
+             } else
+                None
+          } else None
+        }
+      }
    }
 }

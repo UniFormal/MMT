@@ -44,7 +44,7 @@ class Pragmatics(controller: Controller) {
       applicableByLevel(level).constructTerm(fun, args) 
    }
    
-   def makePragmatic(t: Term)(implicit getNotation: GlobalName => Option[TextNotation]) : Option[PragmaticTerm] = {
+   def makePragmatic(t: Term)(implicit getNotations: GlobalName => List[TextNotation]) : Option[PragmaticTerm] = {
       val applicable = notExts.filter(_.isApplicable(t)).sortBy(_.priority).reverse
       applicable.foreach {ne =>
          ne.destructTerm(t).foreach {tP => return Some(tP)}
@@ -52,7 +52,7 @@ class Pragmatics(controller: Controller) {
       return None
    }
    
-   def mostPragmatic(t: Term) : Term = makePragmatic(t)(p => presentation.Presenter.getNotation(controller, p, false)) match {
+   def mostPragmatic(t: Term) : Term = makePragmatic(t)(p => presentation.Presenter.getNotations(controller, p, false)) match {
       case Some(tP) => tP.term
       case None => t
    }

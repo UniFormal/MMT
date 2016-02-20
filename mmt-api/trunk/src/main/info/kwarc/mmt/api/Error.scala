@@ -252,6 +252,17 @@ abstract class ErrorHandler {
   protected def addError(e: Error)
 }
 
+
+/** Filters errors before passing them to the another error handler */
+class FilteringErrorHandler(handler : ErrorHandler, filter : Error => Boolean) extends ErrorHandler {
+  override def mark = handler.mark
+  override def hasNewErrors = handler.hasNewErrors
+  override def catchIn(a: => Unit) = handler.catchIn(a)
+  override def apply(e: Error) =if (filter(e)) handler.apply(e) //otherwise ignore
+  def addError(e : Error) = {} //nothing to do here, not called
+}
+
+
 /** an error handler that needs opening and closing */
 abstract class OpenCloseHandler extends ErrorHandler {
   def open

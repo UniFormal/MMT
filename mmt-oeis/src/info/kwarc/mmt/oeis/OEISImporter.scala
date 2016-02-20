@@ -5,7 +5,7 @@ import archives._
 import documents._
 import frontend._
 import info.kwarc.mmt.api.parser.SourceRef
-import info.kwarc.mmt.stex.{FilteringErrorHandler, OMDoc}
+import info.kwarc.mmt.stex.{OMDoc}
 import informal._
 import modules._
 import notations._

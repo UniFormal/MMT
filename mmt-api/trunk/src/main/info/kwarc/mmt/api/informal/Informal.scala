@@ -23,9 +23,9 @@ object Opaque extends InformalSym("opaque") {
   def apply(child : List[Term]) = OMA(term, child)
 }
 
-object Narration extends InformalSym("narration") {
-  
-}
+object Narration extends InformalSym("narration")
+object MathMLNarration extends InformalSym("mathml-narration")
+
 
 object FlexiformalXML {
   def apply(node : Node) : Term = {

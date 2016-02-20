@@ -12,15 +12,16 @@ import informal._
 import archives._
 import notations._
 import utils.xml._
+import info.kwarc.mmt.api.opaque.OpaqueElement
 
 class NotationPresenter(contr : Controller, var notations : List[(GlobalName,TextNotation)] = Nil)
   extends presentation.MathMLPresenter {
   controller = contr
   report = controller.report
-  override def getNotation(path: GlobalName): Option[TextNotation] = {
+  override def getNotations(path: GlobalName): List[TextNotation] = {
     notations.find(p => p._1 == path) match {
-      case None => super.getNotation(path)
-      case Some(p) => Some(p._2)
+      case None => super.getNotations(path)
+      case Some(p) => List(p._2)
     }
   }
   //this overrides variable presentation to placeholders for notation rendering (currently changing color to red)
@@ -52,10 +53,10 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
    }
 
    override def doAttributedTerm(t : Term, k : OMID, v : Term)(pc : PresentationContext) = k.path match {
-    case Narration.path =>
+    case p if p == Narration.path || p == MathMLNarration.path =>
       doInformal(v,t)(pc : PresentationContext)
       1
-    case _ => doDefault(t)(pc)
+    case _ => println("$@##@#@#@####"); doDefault(t)(pc)
   }
 
   def doInformal(t : Term, tm : Term)(implicit pc : PresentationContext) : Unit = t match {
@@ -66,12 +67,12 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
   }
 
   def doInfToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) = o match {
-    case OMATTR(t, k, v) => //nothing to do
+    case OMATTR(t, k, v) if k.path != MathMLNarration.path => //normal html
       val attrs = t.head.map(p => HTMLAttributes.symref -> p.toPath).toList
       pc.out(openTag("span", attrs))
       body
       pc.out(closeTag("span"))
-    case _ =>
+    case _ => //wrapping as mathml
       val nsAtts = List("xmlns" -> namespace("mathml"))
       val mmtAtts = pc.owner match {
          case None => Nil
@@ -100,13 +101,28 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
     case _ => super.doDelimiter(p, d, implicits)
   }
 
+  
+  //Namespaces whose nodes and attributes we ignore
+  private val ignoredNamespaces = List("http://omdoc.org/ns",  //omdoc 
+                                   "http://kwarc.info/ns/sTeX",  //stex
+                                   "http://purl.org/dc/elements/1.1/", //dc
+                                   "http://www.openmath.org/OpenMath" //openmath
+                                   )
+  //Namespaces for whose nodes and attributes we remove the prefix because they are in HTML5 (e.g. mathml & svg)
+  private val coveredNamespaces = List("http://www.w3.org/1998/Math/MathML" //mathml
+                                   )
+  
   def cleanAttribs(attrs : scala.xml.MetaData, scope : scala.xml.NamespaceBinding) : scala.xml.MetaData = {
     var newAttr : scala.xml.MetaData = attrs
     def traverse(att : scala.xml.MetaData) : Unit = att match {
       case scala.xml.Null => scala.xml.Null //nothing to do
       case p : scala.xml.PrefixedAttribute =>
-        if (p.pre == "stex") {
-          newAttr = newAttr.remove(scope.getURI(p.pre), scope, p.key)
+        val uri = scope.getURI(p.pre)
+        if (ignoredNamespaces.contains(uri) || coveredNamespaces.contains(uri)) { //removing prefix attr
+          newAttr = newAttr.remove(uri, scope, p.key)
+        }
+        if (coveredNamespaces.contains(uri)) { //adding an unprefixed attr back
+          newAttr = new scala.xml.UnprefixedAttribute(p.key, p.value, newAttr)
         }
         traverse(att.next)
       case u : scala.xml.UnprefixedAttribute =>
@@ -117,12 +133,12 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
     traverse(attrs)
     newAttr
   }
-
+  
   private def cleanScope(scope : scala.xml.NamespaceBinding) : scala.xml.NamespaceBinding = {
     if (scope == scala.xml.TopScope) {
       scope
     } else {
-        if (scope.prefix == "om" || scope.prefix == "dc" || scope.prefix == "omdoc" || scope.prefix == "stex"  || scope.prefix == null) {
+        if (ignoredNamespaces.contains(scope.uri) || coveredNamespaces.contains(scope.uri) || scope.prefix == null) {
           cleanScope(scope.parent)
         } else {
           scala.xml.NamespaceBinding(scope.prefix, scope.uri, cleanScope(scope.parent))
@@ -140,11 +156,19 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
       }
     case s : scala.xml.SpecialNode => pc.out(s.toString)
     case _ =>
-      val scope = cleanScope(n.scope)
-      val attribs = cleanAttribs(n.attributes, n.scope)
-      pc.rh.writeStartTag(n.prefix, n.label, attribs, scope)
-      n.child.map(c => doInformal(c, tm)(pc))
-      pc.rh.writeEndTag(n.prefix, n.label)
+      val prefixURI = n.scope.getURI(n.prefix)
+      if (n.prefix == null || !ignoredNamespaces.contains(prefixURI)) { 
+        //removing prefix for html5-convered namespaces (e.g. mathml, svg)
+        val prefix = if (coveredNamespaces.contains(prefixURI)) null else n.prefix
+        val scope = cleanScope(n.scope)
+        val attribs = cleanAttribs(n.attributes, n.scope)
+        pc.rh.writeStartTag(prefix, n.label, attribs, scope)
+        n.child.map(c => doInformal(c, tm)(pc))
+        pc.rh.writeEndTag(prefix, n.label)
+      } else {
+        //TODO report warning
+        //nothing to do
+      }
   }
 }
 
@@ -159,7 +183,8 @@ abstract class PlanetaryAbstractPresenter(name : String) extends Presenter(new I
 
   def mathhubPath(p : Path) : String = {
     val uri = p.doc.uri
-    URI(uri.scheme, uri.authority, uri.path.head :: uri.path.tail.head :: "source" :: uri.path.tail.tail, uri.absolute).toString
+    //URI(uri.scheme, uri.authority, uri.path.head :: uri.path.tail.head :: "source" :: uri.path.tail.tail, uri.absolute).toString
+    uri.toString
   }
 
   import htmlRh._
@@ -213,8 +238,8 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
 
    import htmlRh._
 
-   protected def doName(p: Path) {
-      val s = p.last
+   protected def doName(p: ContentPath) {
+      val s = p.name.toPath
       var attrs = p match {
         case g : GlobalName => List("id" -> (g.module.name.toPath + "?" + g.name.toPath))
         case m : MPath => List("id" -> m.name.toPath)
@@ -224,7 +249,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
       span(cls="name", attributes=attrs) {text(s)}
    }
 
-    def doName(path : Path, loadable : Boolean) : Unit = loadable match {
+    def doName(path : ContentPath, loadable : Boolean) : Unit = loadable match {
      case true =>
        span(cls = "name") {
          text(path.last)
@@ -233,7 +258,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
    }
 
    protected def doMath(t: Obj) {
-        apply(t, None)(rh)
+     apply(t, None)(rh)
    }
    private def doComponent(comp: DeclarationComponent, t: Obj) {
       td {span {text(comp.toString)}}
@@ -251,16 +276,11 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        div("theory-header") {doName(t.path)}
        t.getPrimitiveDeclarations.foreach {
          case PlainInclude(from,to) =>
-           span("include") {
-             table {
-               tr {
-                 td { span("keyword") {text("includes")} }
-                 td {
-                   span(attributes = List(HTMLAttributes.symref -> from.toPath)) {
-                     text(from.name.toPath)
-                   }
-                 }
-               }
+           div(cls = "include") {
+             span("keyword") {text("includes")} 
+             text(" ")
+             span(attributes = List(HTMLAttributes.symref -> from.toPath)) {
+               text(from.name.toPath)
              }
            }
          case c : Constant =>
@@ -275,6 +295,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      div(cls = "constant") {
        if (!c.name.toPath.contains('.')) {//TODO hack to check if informal constant
          span("keyword"){text("constant")}
+         text(" ")
          doName(c.path)
          doNotations(c.notC.getAllNotations.map(c.path -> _), c.path)
        }
@@ -372,60 +393,6 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      }
    }
 
-   /*
-   def doFlexiformalDeclaration(fd : FlexiformalDeclaration) : Unit = fd match {
-     case n : PlainNarration =>
-       div("flexiformal plain") {
-         doNarrativeObject(fd.df)
-       }
-     case d : Definition =>
-       div(cls = "flexiformal definition",
-           attributes = List(("jobad:defines" -> d.targets.head.toPath))) {
-         //span("keyword"){text("definition" )}
-         doNarrativeObject(fd.df)
-       }
-     case d : Example =>
-       div(cls = "flexiformal example",
-           attributes = List(("jobad:example" -> d.targets.head.toPath))) {
-         //span("keyword"){text("definition" )}
-         doNarrativeObject(fd.df)
-       }
-     case ex : Exercise =>
-       div(cls = "flexiformal exercise") {
-         //span("keyword"){text("definition" )}
-         doNarrativeObject(ex.prob)
-         ex.solution.map { sol =>
-           rh("<p>Solution : </p>")
-           div(cls = "flexiformal solution", id = ex.path.toPath) {
-             doNarrativeObject(sol)
-           }
-         }
-       }
-     case x =>
-       throw ImplementationError("Presentation for " + x.getClass() + " not implemented yet")
-   }
-
-   def doNarrativeObject(no : FlexiformalObject) : Unit = no match {
-     case n : FlexiformalXML => rh(n.node)
-     case r : FlexiformalRef => r.self match {
-      case false =>
-        rh("<span jobad:href=\"" + r.target.toPath + "\">")
-        r.objects.foreach(doNarrativeObject)
-        rh("</span>")
-      case true =>
-        rh("<span class=\"definiendum\" jobad:href=\"" + r.target.toPath + "\">")
-        r.objects.foreach(doNarrativeObject)
-        rh("</span>")
-     }
-     case tm : FlexiformalTerm =>
-       apply(tm.term, None)(rh)
-     case n : FlexiformalNode =>
-       rh.writeStartTag(n.node.prefix, n.node.label, n.node.attributes, n.node.scope)
-       n.child.map(doNarrativeObject)
-       rh.writeEndTag(n.node.prefix, n.node.label)
-   }
-   */
-
    def doView(v: DeclaredView) {}
    override def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
      div("namespace") {
@@ -446,7 +413,6 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
          }
       }
    }
-
 
    def doRef(r : NRef) = r match {
      case d: DRef if d.target.last == OMV.anonymous => //nested doc
@@ -474,7 +440,8 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
 	         doView(v)
            }
        }
-     case s => throw ImplementationError("Presenting for " + s.getClass() + " not implemented yet ")
+     case s => 
+       throw ImplementationError("Presenting for " + s.getClass() + " not implemented yet ")
    }
 
    def doDocument(doc: Document) {
@@ -482,7 +449,9 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        ul("doc-body") { doc.getDeclarations foreach {
          case x : NRef => doRef(x)
          case d : Document => doDocument(d)
-         case s => throw ImplementationError("Presenting for " + s.getClass() + " not implemented yet ")
+         case op : OpaqueElement => // div { out(op.raw.toString)} 
+         case s => 
+           throw ImplementationError("Presenting for " + s.getClass() + " not implemented yet ")
        }}
      }
    }

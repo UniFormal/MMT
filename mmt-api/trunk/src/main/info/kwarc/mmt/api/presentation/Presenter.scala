@@ -101,13 +101,14 @@ object Presenter {
       }
    }
    
-   def getNotation(controller: frontend.Controller, p: ContentPath, twoDim: Boolean) : Option[TextNotation] = {
+   def getNotations(controller: frontend.Controller, p: ContentPath, twoDim: Boolean) : List[TextNotation] = {
       val notC = controller.globalLookup.getO(p) flatMap {
          case c: symbols.Constant => if (c.notC.isDefined) Some(c.notC) else None
          case p: patterns.Pattern => if (p.notC.isDefined) Some(p.notC) else None
          case _ => None
       }
-      notC.flatMap(n => if (twoDim) n.getPresent else n.getParse)
+      val dim = if (twoDim) 2 else 1
+      notC.map(n => n.getNotations(Some(dim), None)).getOrElse(Nil)
    }
 }
 

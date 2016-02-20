@@ -310,8 +310,8 @@ class NotationBasedPresenter extends ObjectPresenter {
     *         one position p for each component c of o' such that the c is the p-subobject of o
     *         a notation to use for presenting o'
     */ 
-   implicit protected def getNotation(p: GlobalName): Option[TextNotation] = {
-      Presenter.getNotation(controller, p, twoDimensional)
+   implicit protected def getNotations(p: GlobalName): List[TextNotation] = {
+      Presenter.getNotations(controller, p, twoDimensional)
    }
    /**
     * called on objects for which no notation is available
@@ -514,7 +514,7 @@ class NotationBasedPresenter extends ObjectPresenter {
          lazy val default = return doDefault(obj)(pc)
          obj match {
             case OMS(p) =>
-               val not = getNotation(p).getOrElse(default)
+               val not = getNotations(p).find(_.arity.isConstant).getOrElse(default)
                if (not.arity.isConstant) {
                  def doMarkers(ms : List[Marker]) : Unit = ms match {
                    case Nil => //nothing to do

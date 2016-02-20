@@ -133,15 +133,19 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     if ((this / relational).exists) {
       traverse(relational, in, Archive.traverseIf(kd)) { case Current(inFile, inPath) =>
         utils.File.ReadLineWise(inFile) { line =>
-          val re = controller.relman.parse(line, NamespaceMap(DPath(narrationBase)))
-          re match {
-            case Relation(Includes, to: MPath, from: MPath) =>
-              controller.library.addImplicit(OMMOD(from), OMMOD(to), OMIDENT(OMMOD(to)))
-            case Relation(HasMeta, thy: MPath, meta: MPath) =>
-              controller.library.addImplicit(OMMOD(meta), OMMOD(thy), OMIDENT(OMMOD(thy)))
-            case _ =>
+          try {
+            val re = controller.relman.parse(line, NamespaceMap(DPath(narrationBase)))
+            re match {
+              case Relation(Includes, to: MPath, from: MPath) =>
+                controller.library.addImplicit(OMMOD(from), OMMOD(to), OMIDENT(OMMOD(to)))
+              case Relation(HasMeta, thy: MPath, meta: MPath) =>
+                controller.library.addImplicit(OMMOD(meta), OMMOD(thy), OMIDENT(OMMOD(thy)))
+              case _ =>
+            }
+            controller.depstore += re
+          } catch { //TODO treat this as normal build target and report errors
+            case e : ParseError => log(e.getMessage)
           }
-          controller.depstore += re
         }
       }
     }

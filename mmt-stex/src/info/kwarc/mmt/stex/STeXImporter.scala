@@ -252,12 +252,12 @@ class STeXImporter extends Importer {
         case "definition" => //omdoc definition -> immt flexiformal declaration
           val name = getName(n, thy)
           val targetsS = (n \ "@for").text.split(" ").filter(_ != "")
-          val targets = targetsS map { s =>
+          val targets = targetsS.toList.distinct map { s =>
             s.split("\\?").toList match {
               case tname :: sname :: Nil => resolveSPath(Some(tname), sname, thy.path)
               case l =>
                 val error = new STeXParseError(s"Definition has invalid target attribute",
-                  Some(s"expected `thyName?symName` found `$s`. Defaulting to current theory and using `${l.last}` as symName"), sref, Some(Level.Error))
+                  Some(s"expected `thyName?symName` found `$s`. Defaulting to current theory and using `${l.last}` as symName"), sref, Some(Level.Warning))
                 errorCont(error)
                 resolveSPath(None, l.last, thy.path)
             }
@@ -269,6 +269,16 @@ class STeXImporter extends Importer {
               val dfn = Definition(OMMOD(mpath), name, targets.toList, no)
               sref.foreach(ref => SourceRef.update(dfn, ref))
               add(dfn)
+          }
+        case "assertion" => 
+          val name = getName(n, thy)
+          val spath = thy.path ? name
+          parseNarrativeObject(n)(dpath, thy, errorCont) match {
+            case None => //nothing to do
+            case Some(no) =>
+              val ass = Assertion(OMMOD(mpath), name, no)
+              sref.foreach(ref => SourceRef.update(ass, ref))
+              add(ass)
           }
         case "example" => //omdoc example -> immt flexiformal declaration
           val name = getName(n, thy)
@@ -369,6 +379,9 @@ class STeXImporter extends Importer {
       case e: Exception =>
         val sref = parseSourceRef(n, doc.path)
         val err = STeXParseError.from(e, "Skipping declaration-level element `" + n.label + "` due to unexpected error", None, sref, None)
+        println(e.getMessage)
+        println(e.getStackTraceString)
+        println(n)
         errorCont(err)
     }
   }
@@ -481,7 +494,10 @@ class STeXImporter extends Importer {
     val sref = parseSourceRef(n, dpath)
     n.label match {
       case "term" =>
-        val cd = (n \ "@cd").text
+        var cd = (n \ "@cd").text
+        if (cd == "theory1") {//TODO HACK for ODK demo, to remove when fixed in sTeX
+          cd = thy.name.toPath
+        }
         val name = (n \ "@name").text
         val refName = resolveSPath(Some(cd), name, thy.path)
         val term = OMS(refName)
@@ -573,8 +589,8 @@ class STeXImporter extends Importer {
   }
 
   def rewriteCMP(node: scala.xml.Node)(implicit mpath: MPath, errorCont: ErrorHandler): scala.xml.Node = node.label match {
-    case "OMS" if xml.attr(node, "cd") == "OMPres" =>
-        <om:OMS base={Narration.path.doc.toPath} module={Narration.path.module.name.toPath} name={Narration.path.name.toPath}/>
+    case "OMS" if xml.attr(node, "cd") == "OMPres" && xml.attr(node, "name") == "PMML" =>
+      MathMLNarration.term.toNode
     case "OMS" =>
       val cd = xml.attr(node, "cd")
       val name = xml.attr(node, "name")

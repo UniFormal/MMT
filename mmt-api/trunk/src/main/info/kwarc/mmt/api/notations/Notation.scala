@@ -98,7 +98,7 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
       subs = subs ::: implsBeforeVar 
       // the attribution
       val attribution = attrib > 0
-      Arity(subs, vars, args, attribution)
+      Arity(subs.distinct, vars.distinct, args.distinct, attribution)
    }
    /** @return the list of markers that should be used for parsing */
    lazy val parsingMarkers = markers flatMap {

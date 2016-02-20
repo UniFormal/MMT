@@ -128,7 +128,7 @@ class LatexExporter extends Exporter {
           case None => ""
           case Some(tn) => "[" + tn.arity.length + "]"
         }
-        val notBody = c.notC.getPresent match {
+        val notBody = c.notC.getPresentDefault match {
           case None => translate(c.name.toString, delimEscapes ::: UnicodeConverter.maps)
           case Some(tn) =>
             doMarkers(tn.presentationMarkers)

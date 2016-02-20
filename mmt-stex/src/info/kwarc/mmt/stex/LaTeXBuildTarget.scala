@@ -114,7 +114,6 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   def buildFile(bt: BuildTask): BuildResult = if (!skip(bt)) reallyBuildFile(bt)
   else BuildResult.empty
 
-
   protected def readingSource(key: String, a: Archive, in: File): Seq[Dependency] = {
     var res: List[Dependency] = Nil
     val source = readSourceRebust(in)
