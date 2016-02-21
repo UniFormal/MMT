@@ -56,7 +56,7 @@ object Action extends RegexParsers {
 
   private def mathpathJava = "java" ~> file ^^ { f => AddMathPathJava(f) }
 
-  private def archive = archopen | archdim | archmar | archbuild | filebuild
+  private def archive = archopen | archdim | archmar | archbuild | filebuild | confbuild
 
   private def archopen = "archive" ~> "add" ~> file ^^ { f => AddArchive(f) }
 
@@ -65,6 +65,11 @@ object Action extends RegexParsers {
   private def archbuild = "build" ~> stringList ~ keyMod ~ optFilePath ^^ {
     case ids ~ km ~ in =>
       ArchiveBuild(ids, km._1, km._2, in)
+  }
+  
+  private def confbuild = "cbuild" ~> str ~ stringList ~ str ^^ {
+    case mod ~ comps ~ profile => 
+      ConfBuild(mod, comps, profile)
   }
 
   private def filebuild = ("make" | "rbuild") ~> str ~ (str *) ^^ {
@@ -459,6 +464,11 @@ case class AddArchive(folder: java.io.File) extends Action {
 case class ArchiveBuild(ids: List[String], dim: String, modifier: BuildTargetModifier, in: FilePath = EmptyPath) extends Action {
   override def toString = "build " + MyList(ids).mkString("[", ",", "]") + " " + modifier.toString(dim) +
     (if (in.segments.isEmpty) "" else " " + in)
+}
+
+/** handle building relative to a configuration file */
+case class ConfBuild(mod : String, targets : List[String], profile : String) extends Action {
+  override def toString = "cbuild " + mod + " " + MyList(targets).mkString("[", ",", "]") + " " + profile
 }
 
 /** handle the make command line */

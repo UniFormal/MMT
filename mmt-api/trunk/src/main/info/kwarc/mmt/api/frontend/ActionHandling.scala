@@ -52,6 +52,8 @@ trait ActionHandling {self: Controller =>
             backend.addStore(LocalSystem(b))
           case AddArchive(f) =>
             addArchive(f)
+          case ConfBuild(mod, targets, profile) => 
+            confBuildAction(mod, targets, profile)
           case MakeAction(key, args) =>
             makeAction(key, args)
           case ArchiveBuild(ids, key, mod, in) =>
@@ -160,6 +162,34 @@ trait ActionHandling {self: Controller =>
     OptionDescr("usage", "", NoArg, "display usage message"),
     OptionDescr("help-command", "", NoArg, "help about the build target"))
 
+  def confBuildAction(modS : String, targets : List[String], profile : String) = {
+    val config = getConfig
+    val mod  = modS match {
+      case "Build" => Build
+      case "Clean" => Clean
+      case _ => Update(Level.Error)
+    }
+    val archives = try {
+      config.getProfile(profile).archives.map(aid => config.getArchive(aid))
+    } catch {
+      case e : Exception => config.getArchives
+    }
+    archives foreach {a =>
+      config.getArchive(a.id).formats foreach {f =>
+        val imps = config.getImporters(f)
+        val exps = config.getExporters(f)
+        var foundChanged = false
+        imps foreach { imp =>
+          if (targets.contains(imp) || targets.isEmpty) foundChanged = true
+          if (foundChanged) archiveBuildAction(List(a.id), imp, mod, EmptyPath)
+        }
+        exps foreach { exp =>
+          if (targets.contains(exp) || foundChanged || targets.isEmpty) archiveBuildAction(List(a.id), exp, mod, EmptyPath)
+        }
+      }
+    }
+  }
+    
   def makeAction(key: String, allArgs: List[String]) {
     report.addHandler(ConsoleHandler)
     val optPair = BuildTargetModifier.splitArgs(allArgs, s => logError(s))

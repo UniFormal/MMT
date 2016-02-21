@@ -84,26 +84,8 @@ abstract class MMTScript extends Extension {
   }
 
 
-  def smartBuild(mod : BuildTargetModifier, profile : String, targets : List[String]) {
-    val archives = try {
-      config.getProfile(profile).archives.map(aid => config.getArchive(aid))
-    } catch {
-      case e : Exception => config.getArchives
-    }
-    archives foreach {a =>
-      config.getArchive(a.id).formats foreach {f =>
-        val imps = config.getImporters(f)
-        val exps = config.getExporters(f)
-        var foundChanged = false
-        imps foreach { imp =>
-          if (targets.contains(imp) || targets.isEmpty) foundChanged = true
-          if (foundChanged) build(List(a.id), imp, mod)
-        }
-        exps foreach { exp =>
-          if (targets.contains(exp) || foundChanged || targets.isEmpty) build(List(a.id), exp, mod)
-        }
-      }
-    }
+  def smartBuild(mod : String, profile : String, targets : List[String]) {
+    controller.confBuildAction(mod, targets, profile)
   }
 
   def make(comp : String, files : List[String]) = controller.makeAction(comp, files)
@@ -111,7 +93,6 @@ abstract class MMTScript extends Extension {
   def build(ids: List[String], target: String, modifier: archives.BuildTargetModifier, in: FilePath = EmptyPath) {
     controller.archiveBuildAction(ids, target, modifier, in)
   }
-
   /**
    * run the script; the content of the .mbt file will be used to implement this method
    */

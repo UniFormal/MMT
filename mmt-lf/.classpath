@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry excluding="main/java/|test/java/|test/resources/" kind="src" path="src"/>
-	<classpathentry kind="src" path="test"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/mmt-api"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_COMPILER_CONTAINER"/>
-	<classpathentry kind="lib" path="C:/Users/fr/.ivy2/cache/org.scala-lang.modules/scala-xml_2.11/bundles/scala-xml_2.11-1.0.4.jar"/>
-	<classpathentry kind="lib" path="C:/Users/fr/.ivy2/cache/org.scala-lang.modules/scala-parser-combinators_2.11/bundles/scala-parser-combinators_2.11-1.0.4.jar"/>
-	<classpathentry kind="lib" path="C:/Users/fr/.ivy2/cache/org.scalatest/scalatest_2.11/bundles/scalatest_2.11-2.2.5.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/deploy-wrapper/lfcatalog/lfcatalog.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/scala-parser-combinators.jar"/>
+	<classpathentry kind="lib" path="/deploy-wrapper/lib/scala-xml.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
