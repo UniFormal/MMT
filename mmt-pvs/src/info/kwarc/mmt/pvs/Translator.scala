@@ -35,8 +35,6 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
       var usedvars : List[LocalName] = Nil
       var boundvars : List[LocalName] = Nil
 
-      var rectp : Term = null
-
       def reset(t:DeclaredTheory) = {
          includes = Set()
          pars = Nil
@@ -64,9 +62,9 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          vardecls::=(name,tp)
       }
 
-      def addtcc(t : Term) = {
+      def addtcc(tm : Term) = {
          // println("TCC: " + controller.presenter.asString(t))// .objectLevel.asString(t))
-         tccs::=t
+         tccs::=tm
       }
 
       def addconversion(kind:String,expr:Term) = conversions::=(kind,expr) // TODO and then?
@@ -196,12 +194,14 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
       }
    }
 
-   def doDocument(d: pvs_file) {
+   def doDocument(d: pvs_file) : BuildResult = {
       // println("Document:" +bt.narrationDPath)
       val modsM = d._modules map doModule(path)
-      val mrefsM = modsM.map(m => {controller.add(m) ;MRef(bt.narrationDPath, m.path)})
-      // val doc = new Document(bt.narrationDPath, true, mrefsM)
-      // index(doc)
+      val doc = new Document(bt.narrationDPath, true)
+      modsM.foreach(m => {controller.add(m);doc.add(MRef(bt.narrationDPath, m.path))}) //.add(m) ; MRef(bt.narrationDPath, m.path)})
+      controller.add(doc)
+      index(doc)
+      BuildResult.empty
    }
 
    def doModule(d:DPath)(m: syntax.Module): modules.Module = m match {
@@ -212,15 +212,17 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          State.reset(th)
          theory_formals foreach doFormal
          assuming foreach doAssumption
-         // TODO: assuming, exporting_, possibly named stuff?
-         decls foreach doDecl
+         // TODO: exporting_, possibly named stuff?
+         decls foreach { d => doDecl(d) }
 
-         // println(" -- Theory")
+         println(" -- Theory")
+         //println(m)
+         //println(th)
 
          // presenter(th)
          // println(sb.get)
 
-         th
+         State.th
       case datatype(TopDatatypeBody(named, theory_formals, importings,constructors)) =>
          // println(" -- Datatype: " + named.id)
          implicit val th = new DeclaredTheory(path,doName(named.id),Some(PVSTheory.thpath))
@@ -235,7 +237,7 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             // TODO c.ordnum, c.subtypeid
          })
 
-         th
+         State.th
       case _ =>
          println(" -- OTHER: "+m.getClass)
          sys.exit
@@ -246,7 +248,10 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          State.addtcc(doExpr(ass._formula)._1)
       case assumption(named,ass) =>
          State.addprop(newName(named.named.id),doExpr(ass._formula)._1,"assumption")
+      case i : name_judgement => doDecl(i) // TODO ???
       case i : importing => doDecl(i) // TODO ???
+      case i : application_judgement => doDecl(i) // TODO ???
+      case i : var_decl => doDecl(i) // TODO ???
       case _ => println("TODO Assumption: "+ad.getClass); sys.exit
    }
 
@@ -270,13 +275,12 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          case const_decl(named,arg_formals,tp,optdef) =>
             // println(d)
             val name = newName(named.named.id)
-            State.rectp = doType(tp._declared)
             val (defi,fulltp) = if (optdef.isDefined) {val (a,b) = doExpr(optdef.get);(Some(a),Some(b))} else (None,None)
 
             State.addconstant(
                name,
                arg_formals.flatMap(_._bindings.map(b => (newName(b.id),doType(b._type)))),
-               State.rectp,
+               doType(tp._declared),
                fulltp,
                defi
             )
@@ -339,17 +343,7 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             {} // TODO
          case enumtype_decl(named,enumelements) =>
             State.addtype(newName(named.id),Nil,Some(PVSTheory.enumtype(enumelements.map(_._id))),None)
-
-          /*
-         case application_judgement(named,nameexpr,argformals,tp) =>
-            val name = newName(named.id.getOrElse("app_judgement"))
-            val fun = doExpr(nameexpr)
-            val returntype = doType(tp._internal)
-            val pars = argformals.flatMap(_._bindings.map(b => (newName(b.id),doType(b._type))))
-            vars++= pars
-            List(Constant(th.toTerm,name,None,Some(parameters.universalizetp(
-               PVSTheory.subtp(PVSTheory.PVSapply(fun,pars.map(p => OMV(p._1))),returntype))),None,None))
-         */
+         case inline_datatype(InlineDatatypeBody(named,args,consts)) => // TODO
 
          case _ => println("TODO Decl: " + d.getClass + ": " + d); sys.exit
       }
@@ -364,6 +358,7 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             val last = doms.reverse.head match {
                case tp : Type => doType(tp)
                case tp : DeclaredType => doType(tp._internal)
+               case binding(id,named,tp) => doType(tp)
                case _ => throw new Exception("Last element of tuple is not independently typed")
             }
             val rest = doms.dropRight(1)
@@ -420,7 +415,7 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
             val (tms,tps) = args.map(doExpr).unzip
             (PVSTheory.tuple_expr(tms),PVSTheory.tuple_type(tps))
          case varname_expr(_,id,tp) =>
-            State.usedvars ::= newName(id)
+            State.usedvars ::= doName(id)
             (OMV(newName(id)),doType(tp))
          case cases_expr(_,expr,sels) =>
             val (t,tp) = doExpr(expr)
@@ -433,7 +428,7 @@ class PVSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
                   casetp
                )
             })
-            (PVSTheory.pvsmatch(t,tp,cases,State.rectp),State.rectp)
+            (PVSTheory.pvsmatch(t,tp,cases,PVSTheory.unknown.term),PVSTheory.unknown.term)
          case field_appl_expr(_,id,expr) =>
             (PVSTheory.fieldapp(doExpr(expr)._1,id),PVSTheory.unknown.term) // TODO Unknown Type!
          case record_expr(_,asslist) =>

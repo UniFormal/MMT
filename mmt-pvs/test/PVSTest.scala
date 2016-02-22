@@ -20,7 +20,8 @@ object PVSTest {
 
     mathpath archive ../../MathHub
 
-    build PVS/NASA pvs-omdoc
+    build PVS/Prelude mmt-omdoc
+    build PVS/Prelude pvs-omdoc
 """.split("\\n").foreach(controller.handleLine(_))
 
     // build PVS/Prelude mmt-omdoc

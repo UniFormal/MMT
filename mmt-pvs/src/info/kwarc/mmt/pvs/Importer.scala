@@ -15,9 +15,9 @@ class PVSImporter extends Importer {
 
    private val parseXML = syntax.makeParser
 
-   private var startAt = "/home/raupi/lmh/MathHub/PVS/NASA/source/pvsxml/stdtokenizer"
+   private var startAt = "/home/raupi/lmh/MathHub/PVS/NASA/source/series/pvsxml/power_series"
    def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
-   //   if (bf.inFile.toFilePath.toString < startAt) return BuildResult.empty
+  //    if (bf.inFile.toFilePath.toString < startAt) return BuildResult.empty
       val d = bf.inFile.name
       val e = try {
          parseXML(bf.inFile)
@@ -44,6 +44,6 @@ class PVSImporter extends Importer {
             conv.doDocument(pvs_file(List(m)))
             //conv.doModule(m)
       }
-      BuildResult.empty
+      // BuildResult.empty
    }
 }

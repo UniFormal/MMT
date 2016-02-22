@@ -705,6 +705,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
        // the foundation-dependent cases
        // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
+         /*
          var activerules = rules.get(classOf[TypingRule])
          var haveresult = false
          var ret = None.asInstanceOf[Option[Boolean]]
@@ -720,14 +721,18 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
                    haveresult = false
                    activerules -= rule
                    None
+                 case TypingRule.SwitchToInference =>
+                  return checkByInference(tpS)
                }
              case None =>
                history += "no applicable rule"
                haveresult = true
+               return checkByInference(tpS)
            }
          }
          ret.getOrElse(false)
-         /*
+          */
+
          limitedSimplify(tp,rules.get(classOf[TypingRule])) match {
            case (tpS, Some(rule)) =>
              try {
@@ -739,7 +744,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
               // either this is an atomic type, or no typing rule is known
               checkByInference(tpS)
          }
-         */
+
      }
    }
 
