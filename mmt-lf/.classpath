@@ -6,7 +6,6 @@
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_COMPILER_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/deploy-wrapper/lfcatalog/lfcatalog.jar"/>
-	<classpathentry kind="lib" path="/deploy-wrapper/lib/scala-parser-combinators.jar"/>
 	<classpathentry kind="lib" path="/deploy-wrapper/lib/scala-xml.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
