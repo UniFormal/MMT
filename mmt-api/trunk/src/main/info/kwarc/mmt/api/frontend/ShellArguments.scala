@@ -148,19 +148,17 @@ object AnaArgs {
   *
   * @param help       Should we print a help text
   * @param about      Should we print an about text
-  * @param send       Should we send commands to a remote port instead of running them locally?
   * @param mmtFiles   List of MMT files to load
   * @param scalaFiles List of Scala files to load
   * @param cfgFiles   List of config files to load
   * @param commands   List of commands to run
-  * @param shell      interactive shell requested
-  * @param noshell    interactive shell unrequested
-  * @param keepalive  keepalive requested
+  * @param shell      interactive mode requested (show shell, terminate manually)
+  * @param noshell    batch mode unrequested (no shell, terminate immediately)
+  * @param keepalive  server mode requested (after shell (if at all) terminate only when processes finished)
   */
 case class ShellArguments(
    help: Boolean,
    about: Boolean,
-   send: Option[Int],
    mmtFiles: List[String],
    scalaFiles: List[String],
    cfgFiles: List[String],
@@ -170,13 +168,15 @@ case class ShellArguments(
    keepalive: Boolean,
    useQueue: Boolean
  ) {
-   /** decides whether or not to show the shell
-    *  default behavior: show shell if nothing else is happening
+   /** decides whether to run in interactive/server or batch/server mode
+    *  default behavior: interactive if nothing else is happening
     */
    def prompt = if (shell) true else if (noshell) false else {
-      send.isEmpty && commands.isEmpty
+      commands.isEmpty
    }
-   /** do not keep alive but terminate/cleanup processes and exit after commands have been processed */
+   /** decides whether to run in non-server or server mode
+     * default behavior: batch
+     */
    def runCleanup = ! keepalive && ! prompt
 }
 
@@ -186,9 +186,9 @@ object ShellArguments {
   val toplevelArgs: OptionDescrs = List(
     OptionDescr("help", "h", NoArg, "command line help"),
     OptionDescr("about", "a", NoArg, "about the program"),
-    OptionDescr("shell", "i", NoArg, "start an interactive shell"),
-    OptionDescr("keepalive", "w", NoArg, "wait for processes to finish"),
-    OptionDescr("noshell", "w", NoArg, "same as keepalive"),
+    OptionDescr("shell", "i", NoArg, "force interactive mode (start shell)"),
+    OptionDescr("noshell", "", NoArg, "force batch mode (execute command line arguments and terminate)"),
+    OptionDescr("keepalive", "w", NoArg, "force server mode (wait for secondary processes to finish)"),
     OptionDescr("mbt", "", StringListArg, "mbt input file "),
     OptionDescr("file", "", StringListArg, "msl input file"),
     OptionDescr("cfg", "", StringListArg, "config input file"),
@@ -197,31 +197,24 @@ object ShellArguments {
 
   def parse(arguments: List[String]): Option[ShellArguments] = {
     val (m, cs) = AnaArgs(toplevelArgs, arguments)
-    val helpFlag = m.get("help").isDefined
-    val aboutFlag = m.get("about").isDefined
-    val os = m.get("keepalive").toList ++ m.get("shell").toList ++ m.get("noshell").toList
-    // make -w, --noshell and --keepalive behave in the same way
-    val wOpt = m.get("noshell").isDefined || m.get("keepalive").isDefined
     val sa = ShellArguments(
-      help = helpFlag,
-      about = aboutFlag,
-      send = m.get("send").map(a => a.asInstanceOf[IntVal].value),
+      help = m.get("help").isDefined,
+      about = m.get("about").isDefined,
       mmtFiles = getStringList(m, "file"),
       scalaFiles = getStringList(m, "mbt"),
       cfgFiles = getStringList(m, "cfg"),
       commands = cs,
       shell = m.get("shell").isDefined,
-      noshell = wOpt,
-      keepalive = wOpt,
+      noshell = m.get("noshell").isDefined,
+      keepalive = m.get("keepalive").isDefined,
       useQueue = m.get("noqueue").isEmpty
     )
     val fs = sa.mmtFiles ++ sa.scalaFiles ++ sa.cfgFiles
-    if (helpFlag && aboutFlag) {
+    if (sa.help && sa.about) {
       println("atmost one of --help and --about arguments can be used.")
       None
-    }
-    else if (os.length > 1) {
-      println("At most one of --shell, --noshell and --keepalive arguments can be used.")
+    } else if (sa.shell && sa.noshell) {
+      println("At most one of --shell and --noshell arguments can be used.")
       None
     } else {
       var fail = false
@@ -232,7 +225,7 @@ object ShellArguments {
           fail = true
         }
       }
-      if (fail || helpFlag) {
+      if (fail || sa.help) {
         usageMessage(toplevelArgs).foreach(println)
       }
       if (fail) None else Some(sa)
