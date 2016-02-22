@@ -74,11 +74,6 @@ trait Exporter extends BuildTarget {
     narrationExporter.build(a, up, in)
   }
 
-  def update(a: Archive, up: Update, in: FilePath) {
-    contentExporter.update(a, up, in)
-    narrationExporter.update(a, up, in)
-  }
-
   def clean(a: Archive, in: FilePath) {
     contentExporter.clean(a, in)
     narrationExporter.clean(a, in)

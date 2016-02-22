@@ -52,7 +52,7 @@ trait ActionHandling {self: Controller =>
             backend.addStore(LocalSystem(b))
           case AddArchive(f) =>
             addArchive(f)
-          case ConfBuild(mod, targets, profile) => 
+          case ConfBuild(mod, targets, profile) =>
             confBuildAction(mod, targets, profile)
           case MakeAction(key, args) =>
             makeAction(key, args)
@@ -167,7 +167,7 @@ trait ActionHandling {self: Controller =>
     val mod  = modS match {
       case "Build" => Build
       case "Clean" => Clean
-      case _ => Update(Level.Error)
+      case _ => Build(Update(Level.Error))
     }
     val archives = try {
       config.getProfile(profile).archives.map(aid => config.getArchive(aid))
@@ -189,7 +189,7 @@ trait ActionHandling {self: Controller =>
       }
     }
   }
-    
+
   def makeAction(key: String, allArgs: List[String]) {
     report.addHandler(ConsoleHandler)
     val optPair = BuildTargetModifier.splitArgs(allArgs, s => logError(s))

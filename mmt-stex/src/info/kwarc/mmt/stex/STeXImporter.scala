@@ -78,12 +78,6 @@ class STeXImporter extends Importer {
         firstRun = false
         build(arch, up, in)
         firstRun = true
-      case up: Update =>
-        //running twice, first to load all theories, then to successfully parse objects
-        update(arch, up, in)
-        firstRun = false
-        update(arch, up, in)
-        firstRun = true
       case BuildDepsFirst(up) => buildDepsFirst(arch, up, in)
       case Clean => clean(arch, in)
     }
@@ -270,7 +264,7 @@ class STeXImporter extends Importer {
               sref.foreach(ref => SourceRef.update(dfn, ref))
               add(dfn)
           }
-        case "assertion" => 
+        case "assertion" =>
           val name = getName(n, thy)
           val spath = thy.path ? name
           parseNarrativeObject(n)(dpath, thy, errorCont) match {

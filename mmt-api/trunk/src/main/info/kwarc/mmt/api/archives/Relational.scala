@@ -59,11 +59,6 @@ class Relational extends TraversingBuildTarget {
   private def indexModule(mod: StructuralElement) {
     storeRel(mod)
   }
-
-  // no history can be checked therefore simply rebuild on update
-  override def update(a: Archive, up: Update, in: FilePath = EmptyPath) {
-    build(a, up, in)
-  }
 }
 
 /** an object to extract dependencies from a controller */

@@ -220,17 +220,13 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
     if (errDir.isDirectory) errDir.deleteDir
   }
 
-  override def update(a: Archive, up: Update, in: FilePath = EmptyPath) {
+  override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
     a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
       case _ =>
     }, {
       case (c@Current(inDir, inPath), _) =>
         buildDir(a, inPath, inDir, force = false)
     })
-  }
-
-  override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
-    update(a, up, in)
   }
 
   override def buildDir(bt: BuildTask, builtChildren: List[BuildTask]): BuildResult =

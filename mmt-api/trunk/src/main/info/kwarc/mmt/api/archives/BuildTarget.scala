@@ -23,7 +23,7 @@ case class BuildDepsFirst(update: Update) extends BuildTargetModifier {
   def toString(dim: String) = dim + "&"
 }
 
-case class Update(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModifiers = TestModifiers()) extends BuildTargetModifier {
+case class Update(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModifiers = TestModifiers()) {
   def key: String =
     if (errorLevel <= Level.Force) ""
     else if (errorLevel < Level.Ignore) "!" else "*"
@@ -82,7 +82,7 @@ object BuildTargetModifier {
     val os = clean ++ force ++ onChange ++ onError ++ onErrorDry ++ depsFirst ++ depsFirstDry
     val testMod = makeTestModifiers(m)
     var fail = false
-    var mod: BuildTargetModifier = Update(Level.Ignore, dryRun = dr, testMod)
+    var mod: BuildTargetModifier = Build(Update(Level.Ignore, dryRun = dr, testMod))
     if (os.length > 1) {
       log("only one allowed of: clean, force, onChange, onError, depsFirst")
       fail = true
@@ -162,11 +162,8 @@ abstract class BuildTarget extends FormatBasedExtension {
     }
   }
 
-  /** build this target in a given archive */
+  /** build or update this target in a given archive */
   def build(a: Archive, up: Update, in: FilePath)
-
-  /** update this target in a given archive */
-  def update(a: Archive, up: Update, in: FilePath)
 
   /** build estimated dependencies first */
   def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {}
@@ -186,7 +183,6 @@ abstract class BuildTarget extends FormatBasedExtension {
     modifier match {
       case Build(up) => build(arch, up, in)
       case BuildDepsFirst(up) => buildDepsFirst(arch, up, in)
-      case up: Update => update(arch, up, in)
       case Clean => clean(arch, in)
     }
   }
@@ -521,25 +517,6 @@ abstract class TraversingBuildTarget extends BuildTarget {
       compareOutputAndTest(testMod, bt)
     }
     res
-  }
-
-  /** recursively reruns build if the input file has changed
-    *
-    * the decision is made based on the time stamps and the system's last-modified date
-    */
-  def update(a: Archive, up: Update, in: FilePath) {
-    a.traverse[(Boolean, BuildTask)](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
-      case c@Current(inFile, inPath) =>
-        lazy val bf = makeBuildTask(a, inPath, inFile, None, None)
-        val optRes = checkOrRunBuildTask(getDeps(bf), bf, up)
-        (optRes.isDefined, bf)
-    }, { case (c@Current(inDir, inPath), childChanged) =>
-      val changes = childChanged.exists(_._1)
-      val children = childChanged.map(_._2)
-      val bd = makeBuildTask(a, inPath, inDir, Some(children), None)
-      var res = checkOrRunBuildTask(Set.empty, bd, up)
-      (changes || res.isDefined, bd)
-    })
   }
 
   //TODO sort this out
