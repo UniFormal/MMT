@@ -28,6 +28,7 @@ object JSONImporter extends Importer {
         println(msg)
         sys.exit
     }
+    println(reader.all.length + " Objects parsed")
 
     /*
     val conv = new PVSImportTask(controller, bf, index)
@@ -46,36 +47,55 @@ object JSONImporter extends Importer {
 }
 
 abstract class GAPObject {
-  val name : String
-  val dependencies : List[String]
-  private var deps : Set[GAPObject] = Set()
+  val name: String
+  val dependencies: List[String]
+  private var deps: Set[GAPObject] = Set()
   private var computed = false
+  private var depvalue = -1
 
   def getInner = this
 
   private val reg1 = """Tester\((\w+)\)""".r
   private val reg2 = """CategoryCollections\((\w+)\)""".r
 
-  def implications(all:List[GAPObject]) : Set[GAPObject] = if (!computed) {
-    def fromName(s:String) : GAPObject = s match {
-      case reg1(s2) => Tester(fromName(s2))
-      case reg2(s2) => CategoryCollections(fromName(s2))
-      case _ => all.find(_.name==s).getOrElse {
-        throw new ParseError("GAP Object not found in import: " + s)
+  def implications(all: List[GAPObject]): Set[GAPObject] = {
+    if (!computed) {
+      def fromName(s: String): GAPObject = s match {
+        case reg1(s2) => Tester(fromName(s2))
+        case reg2(s2) => CategoryCollections(fromName(s2))
+        case _ => all.find(_.name == s).getOrElse {
+          throw new ParseError("GAP Object not found in import: " + s)
+        }
       }
-    }
-    deps = dependencies.map(ref =>
-      if (ref == "<<unknown>>") this else {try { fromName(ref) } catch {
-        case ParseError(s) => throw new ParseError(s + " in " + ref)
-      }}
+      deps = dependencies.map(ref =>
+        if (ref == "<<unknown>>") this
+        else {
+          try {
+            fromName(ref)
+          } catch {
+            case ParseError(s) =>
+              println(s + " in " + ref)
+              this
+            //throw new ParseError(s + " in " + ref)
+
+          }
+        }
       ).toSet - this
-    computed = true
-    deps
-  } else deps
+      computed = true
+      deps
+    } else deps
+  }
   /*
   override def toString = this.getClass.getSimpleName + " " + name + impls.map(s =>
     "\n - " + s.getClass.getSimpleName + " " + s.name.toString).mkString("")
     */
+  def depweight(all: List[GAPObject]) : Int = {
+    if (depvalue < 0) {
+      depvalue = implications(all).map(_.depweight(all)).sum
+      depvalue
+    }
+    else depvalue
+  }
 }
 
 case class GAPProperty(name : String, implied : List[String], isTrue :Boolean = false) extends GAPObject {
@@ -154,16 +174,16 @@ class GAPReader {
         }
         if (tp == "GAP_Property") {
           val impls = Try(obj("implied") match {
-            case Some(l: JSONArray) => l.values.toList match {
-              case ls: List[JSONString] => ls.map(_.value)
+            case Some(l: JSONArray) => l.values.toList map (_ match {
+              case s:JSONString => s.value
               case _ => throw new ParseError("implied not a List of JSONStrings: " + obj + "\n" + l.values.getClass)
-            }
+            })
             case _ => throw new ParseError("implied missing in " + obj)
           }).getOrElse(obj("filters") match {
-            case Some(l: JSONArray) => l.values.toList match {
-              case ls: List[JSONString] => ls.map(_.value)
+            case Some(l: JSONArray) => l.values.toList map (_ match {
+              case s:JSONString => s.value
               case _ => throw new ParseError("filters not a List of JSONStrings: " + obj + "\n" + l.values.getClass)
-            }
+            })
             case _ => throw new ParseError("filters missing in " + obj)
           })
           properties      ::= GAPProperty(name,impls)

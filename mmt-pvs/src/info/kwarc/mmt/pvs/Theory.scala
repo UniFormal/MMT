@@ -11,9 +11,8 @@ import utils._
 
 
 object NatLiterals extends RealizedType(OMS(PVSTheory.thpath ? "NatLiterals"),StandardNat)
-// TODO needs adding
 object StringLiterals extends RealizedType(OMS(PVSTheory.thpath ? "StringLiterals"),StandardString)
-object RationalLiterals extends RealizedType(OMS(PVSTheory.thpath ? "RationalLi"),StandardRat)
+object RationalLiterals extends RealizedType(OMS(PVSTheory.thpath ? "RationalLiterals"),StandardRat)
 
 object PVSTheory {
    val rootdpath = DPath(URI.http colon "pvs.csl.sri.com")
