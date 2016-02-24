@@ -32,11 +32,11 @@ trait Extension extends Logger {
   case class LocalError(s: String) extends ExtensionError(logPrefix, s)
 
   /** MMT initialization */
-  def init(controller: Controller) {
+  private[api] def init(controller: Controller) {
     this.controller = controller
     report = controller.report
   }
-  
+
   /** any extension can initialize other extensions if those are not meant to be added to the ExtensionManager */
   protected def initOther(e: Extension) {
      e.init(controller)
@@ -230,7 +230,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     val kwp = new KeywordBasedParser(nbp)
     val rbc = new RuleBasedChecker
     val msc = new MMTStructureChecker(rbc)
-    val mmtint = new TwoStepInterpreter(kwp, msc)
+    val mmtint = new TwoStepInterpreter(kwp, msc) with MMTStructureEstimator
     val nbpr = new NotationBasedPresenter {
       override def twoDimensional = false
     }
@@ -272,7 +272,7 @@ class ExtensionManager(controller: Controller) extends Logger {
       new ontology.Present, new ontology.PresentDecl)
     // shell extensions
     List(new ShellSendCommand).foreach(addExtension(_))
-    
+
     lexerExtensions ::= GenericEscapeLexer
     lexerExtensions ::= UnicodeReplacer
     //lexerExtensions ::= new PrefixedTokenLexer('\\')

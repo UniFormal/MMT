@@ -16,12 +16,13 @@ class DummyBuildTarget extends TraversingBuildTarget {
 
   override val outExt = "bar"
 
-  override def getDeps(bt: BuildTask): Set[Dependency] = {
+  override def estimateResult(bt: BuildTask) = {
     val (needed, _) = readSource(bt: BuildTask)
     val fooFiles = needed.map(l => (l, bt.archive / inDim / l)).collect {
       case (l, f) if f.exists => l
     }
-    fooFiles.map(l => FileBuildDependency(key, bt.archive, File(l).toFilePath)).toSet
+    val ds = fooFiles.map(l => FileBuildDependency(key, bt.archive, File(l).toFilePath))
+    BuildSuccess(ds, Nil)
   }
 
   def readSource(bt: BuildTask): (List[String], List[String]) = {

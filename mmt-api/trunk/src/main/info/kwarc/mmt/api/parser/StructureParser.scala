@@ -2,6 +2,9 @@ package info.kwarc.mmt.api.parser
 
 import info.kwarc.mmt.api._
 import documents._
+import info.kwarc.mmt.api.archives.{BuildResult, BuildSuccess, LogicalDependency, BuildTask}
+import info.kwarc.mmt.api.checking.Interpreter
+import info.kwarc.mmt.api.frontend.Controller
 import modules._
 import notations._
 import objects._
@@ -36,7 +39,7 @@ class ParserState(val reader: Reader, val ps: ParsingStream, val errorCont: Erro
     s.namespaces = namespaces
     s
   }
-  
+
   def makeSourceRef(reg: SourceRegion) = SourceRef(ps.source, reg)
 }
 
@@ -48,40 +51,6 @@ object ViewKey {
   }
 }
 
-/**
- * only adjusted resolveName to avoid reading content
- */
-class RelKeywordBasedParser extends KeywordBasedParser(DefaultObjectParser) {
-  override def resolveName(home: Term, name: LocalName)(implicit state: ParserState) = name
-
-  override def getPatternsFromMeta(_o: Option[MPath]): List[(String, GlobalName)] = Nil
-
-  override def seCont(se: StructuralElement)(implicit state: ParserState) =
-    se match {
-      case _: Constant =>
-      case _ =>
-        val reg = currentSourceRegion
-        SourceRef.update(se, state.makeSourceRef(reg))
-        try {
-           controller.memory.content.add(se)
-        } catch {
-          case e: Error => log("error after parsing: " + e.getMessage)
-        }
-    }
-
-  override def getParseExt(se: StructuralElement, key: String): Option[ParserExtension] =
-    key match {
-      case "rule" => Some(RelRuleParser)
-      case _ =>
-        super.getParseExt(se, key)
-    }
-
-}
-
-object RelRuleParser extends RuleConstantParser {
-  override def apply(sp: KeywordBasedParser, s: ParserState, se: StructuralElement, keyword: String, con:Context = Context.empty) =
-    s.reader.readDeclaration
-}
 
 /**
  * A StructureParser reads MMT declarations (but not objects) and
@@ -107,7 +76,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   val format = "mmt"
 
   // *********************************** interface to the controller: add elements and errors etc.
-  
+
   /**
    * A continuation function called on every StructuralElement that was found
    *
@@ -177,7 +146,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /**
    * A continuation function called on every error that occurred
    */
-  private def errorCont(e: SourceError)(implicit state: ParserState) = {
+  protected def errorCont(e: => SourceError)(implicit state: ParserState) = {
     state.errorCont(e)
   }
   /** convenience function to create SourceError's */
@@ -186,7 +155,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
 
   // ******************************* the entry points
-  
+
   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) = {
     val (se, _) = apply(new ParserState(new Reader(ps.stream), ps, errorCont))
     se
@@ -216,7 +185,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   // ********************************* low level read functions for names, terms, etc.
-  
+
   /** read a LocalName from the stream
     * throws SourceError iff ill-formed or empty
     */
@@ -285,6 +254,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   /**
    * reads one out of a list of permitted delimiters
+ *
    * @param delims the permitted delimiter
    * @return the read delimiter
    * throws SourceError iff anything else found
@@ -299,6 +269,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
 
   /**
    * reads until the object delimiter and parses the found string
+ *
    * @return the raw string, the region, and the parsed term
    */
   def readParsedObject(context: Context, topRule: Option[ParsingRule] = None)(implicit state: ParserState): (String, SourceRegion, Term) = {
@@ -337,10 +308,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         name
     }
   }
-  
+
   // *************** the two major methods for reading in documents and modules
 
   /** the main loop for reading declarations that can occur in documents
+ *
     * @param doc the containing Document (must be in the controller already)
     */
   private def readInDocument(doc: Document)(implicit state: ParserState) {
@@ -410,6 +382,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   /** the main loop for reading declarations that can occur in a theory
+ *
     * @param mod the containing module (added already)
     * @param context the context (including the containing module)
     * @param patterns the patterns of the meta-theory (precomputed in readInDocument)
@@ -420,7 +393,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                            patterns: List[(String, GlobalName)])(implicit state: ParserState) {
      readInModuleAux(mod, mod.asDocument.path, context, patterns)
   }
-  
+
   private def readInModuleAux(mod: Body, docHome: DPath, context: Context,
                            patterns: List[(String, GlobalName)])(implicit state: ParserState) {
     //This would make the last RS marker of a module optional, but it's problematic with nested modules.
@@ -528,7 +501,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                } else {
                   val name = mod.asDocument.getLocally(currentSection) match {
                      case Some(d) => (d.getDeclarations.length+1).toString
-                     case _ => throw ImplementationError("section not found") 
+                     case _ => throw ImplementationError("section not found")
                   }
                   (name, nameTitle)
                }
@@ -626,8 +599,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     readInModuleAux(mod, docRoot / nextSection, context, patterns) // compiled code is not actually tail-recursive
   }
 
-  // *************** auxiliary methods of readInModule and readInDocument that read particular elements 
-  
+  // *************** auxiliary methods of readInModule and readInDocument that read particular elements
+
   private def readParameters(context: Context)(implicit state: ParserState): Context = {
     val (name,srg) = state.reader.readToken
     readDelimiter(":")
@@ -637,8 +610,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       else vdc
   }
   /** auxiliary function to read Theories
-    * @param docHome the containing document (not the namespace) or module
-    * @param modHome the containing theory (if any)
+ *
+    * @param parent the containing document or module (if any)
     * @param context the context (excluding the theory to be read)
     */
   private def readTheory(parent: HasParentInfo, context: Context)(implicit state: ParserState) {
@@ -720,6 +693,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
 
   /** auxiliary function to read views
+ *
     * @param parent the containing document/module
     * @param context the context (excluding the view to be read)
     * @param isImplicit whether the view is implicit
@@ -767,6 +741,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     controller.extman.getParserExtension(se, key)
 
   /** reads the components of a [[Constant]]
+ *
     * @param givenName the name of the constant
     * @param parent the containing [[DeclaredModule]]
     * @param link the home theory for term components
@@ -840,7 +815,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   }
 
   /** auxiliary function to read structures
-    * @param parent the containing module
+ *
+    * @param parentInfo the containing module
     * @param context the context (excluding the structure to be read)
     * @param isImplicit whether the structure is implicit
     */
@@ -954,7 +930,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     new Pattern(OMMOD(tpath), name, pr, bd, nt)
   }
 
-  def readOpaque(pi: HasParentInfo, context: Context)(implicit state: ParserState): OpaqueElement = {
+  private def readOpaque(pi: HasParentInfo, context: Context)(implicit state: ParserState): OpaqueElement = {
       val (format, freg) = state.reader.readToken
       val oi = controller.extman.get(classOf[OpaqueTextParser], format).getOrElse {
          throw makeError(freg, "unknown opaque format: " + format)
@@ -966,4 +942,66 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       val pu = ParsingUnit(state.makeSourceRef(treg), context, text, state.namespaces)
       oi.fromString(objectParser, pi.docParent, pu)(state.errorCont)
    }
+}
+
+
+/**
+  * estimates the [[archives.BuildResult]] of an mmt [[Interpreter]] by using the [[StructureParser]] superficially
+  */
+trait MMTStructureEstimator {self: Interpreter =>
+  private var used: List[MPath] = Nil
+  private var provided: List[MPath] = Nil
+
+  override def estimateResult(bt: BuildTask) = {
+     val (dp,ps) = buildTaskToParsingStream(bt)
+     used = Nil
+     provided = Nil
+     parser(ps)(bt.errorCont)
+     used = used.distinct
+     provided = provided.distinct
+     used = used diff provided
+     BuildSuccess(used map LogicalDependency, provided map LogicalDependency)
+  }
+
+  private lazy val parser = new KeywordBasedParser(DefaultObjectParser) {
+    self.initOther(this)
+    private object AddUsed extends StatelessTraverser {
+      def traverse(t: Term)(implicit con : Context, init: Unit) = t match {
+        case OMMOD(p) =>
+          used ::= p
+          t
+        case _ => Traverser(this, t)
+      }
+    }
+
+    override def seCont(se: StructuralElement)(implicit state: ParserState) = se match {
+      case t: Theory =>
+        provided ::= t.path
+        t match {
+          case t: DeclaredTheory =>
+            t.meta foreach { m => used ::= m }
+          case t: DefinedTheory =>
+            AddUsed(t.df, Context.empty)
+        }
+      case v: View =>
+        provided ::= v.path
+        AddUsed(v.from, Context.empty)
+        AddUsed(v.to, Context.empty)
+      case s: Structure =>
+        AddUsed(s.from, Context.empty)
+      case _ =>
+    }
+
+    // below: trivialize methods that are not needed for structure estimation
+
+    override def resolveName(home: Term, name: LocalName)(implicit state: ParserState) = name
+    override def getPatternsFromMeta(_o: Option[MPath]): List[(String, GlobalName)] = Nil
+    override def errorCont(e: => SourceError)(implicit state: ParserState) {}
+    override def getParseExt(se: StructuralElement, key: String): Option[ParserExtension] = key match {
+      case "rule" => None
+      case _ =>
+        super.getParseExt(se, key)
+    }
+    override def end(s: StructuralElement)(implicit state: ParserState) {}
+  }
 }

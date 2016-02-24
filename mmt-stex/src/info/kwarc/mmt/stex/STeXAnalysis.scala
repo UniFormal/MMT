@@ -29,9 +29,17 @@ trait STeXAnalysis {
       case None =>
         logError("missing archive " + ar + " for " + fp)
         None
-      case Some(arch) => Some(FileBuildDependency(key, arch, fp))
+      case Some(arch) => Some(mkFileDep(key, arch, fp))
     }
   }
+
+  def mkFileDep(key: String, archive: Archive, filePath: FilePath): Dependency =
+    if (List("latexml", "pdflatex", "tikzsvg").contains(key)) {
+      val file = (archive / inDim / filePath).setExtension("tex")
+      PhysicalDependency(file)
+    } else {
+      FileBuildDependency(key, archive, filePath)
+    }
 
   def mhRepos(a: Archive, r: String, b: String, key: String): Option[Dependency] =  {
          val fp = entryToPath(b)
@@ -42,13 +50,13 @@ trait STeXAnalysis {
           })
         optRepo match {
           case Some(List(List(_, id))) => mkDep(a, id, fp, key)
-          case _ => Some(FileBuildDependency(key, a, fp))
+          case _ => Some(mkFileDep(key, a, fp))
         }
   }
 
   protected def matchPathAndRep(key: String, a: Archive, line: String): Option[Dependency] =
     line match {
-      case beginModnl(b) => Some(FileBuildDependency(key, a, entryToPath(b)))
+      case beginModnl(b) => Some(mkFileDep(key, a, entryToPath(b)))
       case mhinputRef(_, r, b) =>
         val fp = entryToPath(b)
         Option(r) match {
@@ -67,10 +75,10 @@ trait STeXAnalysis {
             val path = entryToPath(p)
             tl match {
               case List(List("repos", id)) => mkDep(a, id, path, depKey)
-              case Nil => Some(FileBuildDependency(depKey, a, path))
+              case Nil => Some(mkFileDep(depKey, a, path))
               case _ => None
             }
-          case None => Some(FileBuildDependency(depKey, a, fp))
+          case None => Some(mkFileDep(depKey, a, fp))
           case _ => None
         }
       case _ => None
@@ -99,7 +107,6 @@ trait STeXAnalysis {
         logFailure(bt.outPath)
     }
   }
-
 
   private def mkImport(b: File, r: String, p: String, a: String, ext: String) =
     "\\importmodule[load=" + b + "/" + r + "/source/" + p + ",ext=" + ext + "]" + a
@@ -147,8 +154,4 @@ trait STeXAnalysis {
     }
     w.close()
   }
-
-
 }
-
-

@@ -313,9 +313,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
     */
   def buildDir(bd: BuildTask, builtChildren: List[BuildTask]): BuildResult = BuildSuccess(Nil, Nil)
 
-  /** abstract method to compute the estimated direct dependencies */
-  def getDeps(bf: BuildTask): Set[Dependency] =
-    Set.empty
+  /** abstract method to estimate the [[BuildResult]] without building, e.g., to predict dependencies */
+  def estimateResult(bf: BuildTask): BuildSuccess = BuildSuccess(Nil,Nil)
 
   /** entry point for recursive building */
   def build(a: Archive, up: Update, in: FilePath = EmptyPath) {
@@ -344,7 +343,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
       case Current(inFile, inPath) =>
         val bf = makeBuildTask(a, inPath, inFile, None, eCOpt)
         val qt = new QueuedTask(this, bf)
-        qt.missingDeps = getDeps(bf)
+        val estRes = estimateResult(bf)
+        qt.missingDeps = estRes.used
+        qt.willProvide = estRes.provided
         cont(qt)
         bf
     }, {
@@ -538,6 +539,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
     via the estimated dependencies getDeps. (This only works if the estimated dependencies are
     at least the actual dependencies and are non-cyclic.)
   */
+
+  private def getDeps(bt: BuildTask): Set[Dependency] = estimateResult(bt).used.toSet
 
   protected def getFilesRec(a: Archive, in: FilePath): Set[Dependency] = {
     val inFile = a / inDim / in

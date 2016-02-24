@@ -66,7 +66,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
   val logPrefix = "library"
 
   // ************************ stateful data structures and basic accessors
-  
+
   /** all known root documents except for those induced by modules */
   private val documents = new scala.collection.mutable.HashMap[DPath,Document]
   /** all known root modules (which also induce root documents) */
@@ -92,10 +92,10 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
     val ln = name.drop(rootMod.name.length)
     (rootMod, ln)
   }
-  
+
   /** direct lookup of p for dp = p / ln, also returns ln
    *  this considers both root documents  p / ln and root modules p / ln.init ? ln.head
-   *  the longest known p is chosen in case of ambiguity 
+   *  the longest known p is chosen in case of ambiguity
    */
   private def documentsGetRoot(dp: DPath, error: String => Nothing): (Document, LocalName) = {
     val top = dp.^^
@@ -123,7 +123,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
   }
 
   // ******************* document level retrieval
-  /** 
+  /**
    *  dereferences a narrative URI d
    *  Retrieval starts in the root document doc such that d = doc.path / left.
    *  Then it dereferences left step-wise (from left to right), considering any nesting (e.g., documents or modules).
@@ -149,7 +149,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
      val (doc, left) = documentsGetRoot(d, error)
      getNarrativeAux(doc, left)
   }
-  
+
   /** tries to interpret a narrative element as a document
    *  in particular, this treats modules as documents, and dereferences NRefs
    */
@@ -166,12 +166,12 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
 
   // ******************* module level retrieval
 
-  /** 
+  /**
    *  dereferences a content URI p
    *  Retrieval starts in the root module mod such that p = mod.path / left.
    *  Then it dereferences left step-wise (from left to right), considering only the nesting of modules.
    *  seeAsMod is used to turn intermediate retrieval results into modules.
-   *  
+   *
    *  Note the similarity to getNarrative.
    */
   private def getContent(p: MPath, error: String => Nothing): ContentElement = {
@@ -202,18 +202,18 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
      case s: Structure => s
      case _ => error("element exists but is not module-like: " + ce.path)
   }
-   
+
   // ******************* declaration level retrieval
   private val sourceError = (s: String) => throw GetError("error while looking up source declaration: "+s)
 
   /** dereferences a declaration level reference
-   * 
+   *
    * Retrieval starts in the given module 'home'.
    * Then it dereferences 'name' step-wise, considering only the MMT module system, in particular elaboration.
-   * 
+   *
    * This method goes beyond URI dereferencing because the module may be a complex expression.
    * For plain URI dereferencing, the 'home' is simply an OMMOD.
-   * 
+   *
    * Defined modules are expanded, which allows referencing into their materialized body.
    */
 
@@ -330,9 +330,9 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
         }
     }
   }
-  
+
   /** auxiliary method of get for lookups in a [[DeclaredTheory]] */
-  private def getInTheory(t: DeclaredTheory, args: List[Term], name: LocalName, error: String => Nothing) = { 
+  private def getInTheory(t: DeclaredTheory, args: List[Term], name: LocalName, error: String => Nothing) = {
      val decl = t.getMostSpecific(name) map {
         case (d, ln) => (instantiate(d, t.parameters, args), ln)
      }
@@ -369,10 +369,10 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
      }
   }
 
-  
+
   /** thrown by getInLink if the link provides no assignment */
   private case class PartialLink() extends java.lang.Throwable
-  
+
   /** auxiliary method of get to unify lookup in structures and views
     * throws PartialLink() if no assignment provided
     */
@@ -502,7 +502,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
     }
 
   // ******************* additional retrieval methods
-  
+
   def getDeclarationsInScope(mod: Term): List[Content] = {
     val impls = visibleVia(mod).toList
     val decls = impls flatMap { case (from, via) =>
@@ -554,7 +554,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
   }
 
   // ******************* state-changing interface: add, delete, update
-  
+
   /** add, delete, and update must first locate the containing element
    *  Therefore, they share a lot of code, which is captured in this class.
    */
@@ -591,9 +591,9 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
            }
      }}
   }
-    
+
   // ******************* adding elements
-  
+
   /**
    * adds a declaration
    * @param e the added declaration
@@ -634,7 +634,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
         throw AddError(s"implicit morphism $nw from $from to $to induced by ${e.path} in conflict with existing implicit morphism $old")
     }
   }
-  
+
   /** the bureaucracy of adding 'se' */
   private class Adder(se: StructuralElement) extends ChangeProcessor {
      def errorFun(msg: String) = throw AddError(msg)
@@ -690,7 +690,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
     log("deleting " + path)
     Deleter.apply(path)
   }
-  
+
   private object Deleter extends ChangeProcessor {
      def errorFun(msg: String) = throw DeleteError(msg)
      def primitiveDocument(dp: DPath) = {
@@ -715,15 +715,15 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
         notifyUpdated(cp)
      }
   }
-  
- // ******************* updating elements  
-  
+
+ // ******************* updating elements
+
   /** updates a StructuralElement */
   def update(e: StructuralElement) {
     log("updating " + e.path)
     new Updater(e).run
   }
-  
+
   /** almost the same as Adder; the only overrides are replacing "add" and "Add" with "update" and "Update" */
   private class Updater(se: StructuralElement) extends Adder(se) {
      override def errorFun(msg: String) = throw UpdateError(msg)
@@ -744,7 +744,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
         }
      }
   }
-  
+
   /** moves an element with a given path to the end of its parent document */
   def reorder(p: Path) {
      Reorderer.apply(p)
@@ -761,9 +761,9 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
      }
      def component(cp: CPath, cont: ComponentContainer) {}
   }
-  
+
   // change management
-  
+
   /** marks all known dependent components as dirty
     *
     * This method is public because components may be changed from the outside.
@@ -802,7 +802,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
   }
 
   // delete everything
-  
+
   /** forgets everything */
   def clear {
     modules.clear

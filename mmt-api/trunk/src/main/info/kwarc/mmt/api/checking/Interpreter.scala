@@ -22,11 +22,17 @@ abstract class Interpreter extends Importer {
   /** parses a [[ParsingStream]] and returns a checked result */
   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): StructuralElement
 
-  /** creates a [[ParsingStream]] for the input file and interprets it */
-  def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
-    val dPath = getDPath(bf.archive, bf.inPath) // bf.narrationDPath except for extension
+  protected def buildTaskToParsingStream(bf: BuildTask): (DPath, ParsingStream) = {
+    val inPathOMDoc = bf.inPath.toFile.setExtension("omdoc").toFilePath
+    val dPath = DPath(bf.archive.narrationBase / inPathOMDoc.segments) // bf.narrationDPath except for extension
     val nsMap = controller.getNamespaceMap ++ bf.archive.namespaceMap
     val ps = new ParsingStream(bf.base / bf.inPath.segments, IsRootDoc(dPath), nsMap, format, File.Reader(bf.inFile))
+    (dPath,ps)
+  }
+
+  /** creates a [[ParsingStream]] for the input file and interprets it */
+  def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
+    val (dPath,ps) = buildTaskToParsingStream(bf)
     apply(ps)(bf.errorCont)
     val doc = try {
        controller.globalLookup.getAs(classOf[Document], dPath)
@@ -34,72 +40,19 @@ abstract class Interpreter extends Importer {
        case e: Error => throw LocalError("no document produced")
     }
     index(doc)
-    BuildResult.empty
+    val provided = doc.getModulesResolved(controller.globalLookup).map {m =>
+       m.path
+    } map LogicalDependency
+    val used = Nil //TODO how to get exact dependencies at this point?
+    //TODO how to return MissingDependency?
+    if (bf.errorCont.hasNewErrors)
+       BuildFailure(used, provided)
+    else
+       BuildSuccess(used, provided)
   }
 
-  /** bf.narrationDPath except for extension */
-  def getDPath(a: Archive, fp: FilePath): DPath = {
-    val inPathOMDoc = fp.toFile.setExtension("omdoc").toFilePath
-    DPath(a.narrationBase / inPathOMDoc.segments)
-  }
 
-  /** reconstruct source file form DPATH */
-  def dPathToFile(p: Path): List[(Archive, FilePath)] =
-    p match {
-      case DPath(uri) =>
-        Relational.getArchives(controller).
-          flatMap { a =>
-            if (a.narrationBase <= uri) {
-              val b = a.narrationBase.toString
-              val c = uri.toString.stripPrefix(b)
-              if (c.startsWith("/http..")) None // filter out content documents
-              else Some((a, File(a.rootString + "/" + inDim + c).setExtension(format)))
-            } else None
-          }.map { afp =>
-          if (afp._2.length() == 0) log("missing file: " + afp._2 + " for path " + p)
-          (afp._1, FilePath((afp._1.root / inDim.toString).relativize(afp._2).segments.tail))
-        }
-      case _ => Nil
-    }
 
-  //TODO this method does not belong here; also remove any its auxiliary functions
-  /** directly resolved logical dependencies */
-  override def getDeps(bt: BuildTask): Set[Dependency] = {
-    val a = bt.archive
-    val fp = bt.inPath
-    val rs = controller.depstore
-    val d = getDPath(a, fp)
-    log("estimate dependencies for: " + d.toString)
-    val usedTheories = rs.querySet(d, +Declares * RelationExp.Deps)
-    val reducedTheories = usedTheories.map {
-      case MPath(p, LocalName(hd :: _ :: _)) => MPath(p, LocalName(List(hd)))
-      case t => t
-    }.toList.sortBy(_.toString)
-    var result: Set[(Archive, FilePath)] = Set.empty
-    reducedTheories.foreach { theo =>
-      val provider = rs.querySet(theo, -Declares).toList.sortBy(_.toString)
-      if (provider.isEmpty)
-        log("  nothing provides: " + theo + " for " + d)
-      else {
-        val ds = provider.flatMap(dPathToFile)
-        result ++= ds
-        ds match {
-          case Nil => log("  no document found for: " + theo)
-          case hd :: Nil =>
-            if (ds == dPathToFile(d))
-              log("  theory provided in same document: " + theo)
-            else
-              log("  " + hd + " for " + theo)
-          case _ =>
-            log("  several documents found for: " + theo)
-            log("    " + ds.mkString(" "))
-        }
-      }
-    }
-    result -= ((a, fp))
-    log(if (result.isEmpty) "no dependencies" else "dependencies are: " + result.mkString(" "))
-    result.map(p => FileBuildDependency(key, p._1, p._2))
-  }
 }
 
 /** a combination of a Parser and a Checker

@@ -265,8 +265,8 @@ class FilteringErrorHandler(handler : ErrorHandler, filter : Error => Boolean) e
 
 /** an error handler that needs opening and closing */
 abstract class OpenCloseHandler extends ErrorHandler {
-  def open
-  def close
+  def open: Unit
+  def close: Unit
 }
 
 /** combines the actions of multiple handlers */

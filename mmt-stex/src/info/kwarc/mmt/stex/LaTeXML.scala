@@ -269,17 +269,6 @@ class LaTeXML extends LaTeXBuildTarget {
     latexmls = setLatexmlBin(latexmls, bt)
   }
 
-  private def procIO(output: StringBuffer): ProcessIO = {
-    def handleOutput(s: PrintStream)(i: InputStream): Unit = {
-      val in = scala.io.Source.fromInputStream(i)
-      val str = in.mkString
-      in.close()
-      output.append(str)
-      if (pipeOutput) s.print(str)
-    }
-    new ProcessIO(_.close(), handleOutput(System.out), handleOutput(System.err), true)
-  }
-
   def isServerRunning(realPort: Int): Boolean =
     try {
       val s = new ServerSocket(realPort)
@@ -329,7 +318,7 @@ class LaTeXML extends LaTeXBuildTarget {
         val pbs = Process(Seq(latexmls, "--expire=" + expire, "--port=" + realPort,
           "--autoflush=100"), bt.archive / inDim, lEnv: _*)
         if (!isServerRunning(realPort) && expire > -1) {
-          pbs.run(procIO(output))
+          pbs.run(BasicIO.standard(false).daemonized)
           Thread.sleep(delaySecs)
         }
         val pb = Process(argSeq, bt.archive / inDim, lEnv: _*)
@@ -450,14 +439,15 @@ class AllPdf extends PdfLatex {
   override def includeFile(n: String): Boolean =
     n.endsWith(".tex") && n.startsWith("all.")
 
-  override def getDeps(bt: BuildTask): Set[Dependency] = {
+  override def estimateResult(bt: BuildTask) = {
     val in = bt.inFile
     val a = bt.archive
     val optLang = getLang(in)
     val aStr = archString(a)
     val name = in.getName
-    langFiles(optLang, getDirFiles(a, in.up, super.includeFile)).
-      filter(_ != name).map(f => FileBuildDependency("pdflatex", a, bt.inPath.dirPath / f)).toSet
+    val ls = langFiles(optLang, getDirFiles(a, in.up, super.includeFile)).
+      filter(_ != name).map(f => FileBuildDependency("pdflatex", a, bt.inPath.dirPath / f))
+    BuildSuccess(ls, Nil)
   }
 }
 

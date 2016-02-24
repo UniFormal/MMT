@@ -48,7 +48,7 @@ class Report extends Logger {
       s(i + 1).toString
     }
     val prefixList = utils.stringToList(prefix, "#")
-    if (prefixList.forall(p => groups.contains(p))) {
+    if (prefixList.forall(p => groups.contains(p)) || groups.contains("all")) {
       val msgParts = utils.stringToList(msg, "\\n")
       handlers.foreach(_.apply(ind, caller, prefix, msgParts))
     }

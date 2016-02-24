@@ -147,16 +147,17 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     safe
   }
 
-  override def getDeps(bt: BuildTask): Set[Dependency] = {
+  override def estimateResult(bt: BuildTask) = {
     val in = bt.inFile
-    if (in.exists && in.isFile) {
-      if (key == "sms") Set.empty
+    val ds = if (in.exists && in.isFile) {
+      if (key == "sms") Nil
       else
-        readingSource(if (List("tikzsvg", "allpdf").contains(key)) "pdflatex" else key, bt.archive, in).toSet
+        readingSource(if (List("tikzsvg", "allpdf").contains(key)) "pdflatex" else key, bt.archive, in).toList
     } else {
       logResult("unknown file: " + in)
-      Set.empty
+      Nil
     }
+    BuildSuccess(ds.distinct, Nil) //TODO add estimate of provided resources
   }
 
   /** run process with logger synchronously within the given timeout
