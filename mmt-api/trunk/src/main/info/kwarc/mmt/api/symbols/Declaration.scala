@@ -52,6 +52,8 @@ abstract class Declaration extends ContentElement {
    def alternativeName: Option[LocalName] = None
    /** the full MMT URI, parent ? name */
    def path = GlobalName(parent, name)
+   /** the OMS referencing this declaration */
+   def toTerm = OMS(path)
    /** the component used to identify anonymous declarations, e.g., the from of an import, None by default but may be overridden */ 
    def implicitKey : Option[MPath] = None
 }

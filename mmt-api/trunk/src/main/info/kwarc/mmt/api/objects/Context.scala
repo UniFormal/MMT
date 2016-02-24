@@ -16,7 +16,7 @@ import scala.xml.Node
  * @param df optional definiens
  * @param ats OpenMath-style attributions
  */
-case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: Option[TextNotation]) extends Obj {
+case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: Option[TextNotation]) extends Obj with NamedElement {
    type ThisType = VarDecl
    /** self-written copy method to copy metadata */
    def copy(name : LocalName = this.name, tp : Option[Term] = this.tp, df : Option[Term] = this.df,
@@ -103,22 +103,21 @@ object StructureVarDecl {
 }
 
 /** represents an MMT context as a list of variable declarations */
-case class Context(variables : VarDecl*) extends Obj {
+case class Context(variables : VarDecl*) extends Obj with ElementContainer[VarDecl] with DefaultLookup[VarDecl] {
    type ThisType = Context
+   def getDeclarations = variables.toList
+   
    /** add a theory inclusion at the end */
    def ++(p : MPath) : Context = this ++ Context(p)
    /** add variable at the end */
    def ++(v : VarDecl) : Context = this ++ Context(v)
    /** concatenate contexts */
    def ++(that : Context) : Context = this ::: that
+
    /** look up a variable by name, throws LookupError if not declared */
-   def apply(name : LocalName) : VarDecl = {
-      variables.reverse.foreach {vd =>
-         if (vd.name == name) return vd
-      }
+   def apply(name : LocalName) : VarDecl = getO(name).getOrElse {
       throw LookupError(name, this)
    }
-   def isDeclared(name : LocalName) = index(name).isDefined
    /** @return the de Bruijn index of the variable, starting from 0 */
    def index(name: LocalName): Option[Int] = variables.lastIndexWhere(_.name == name) match { 
 	   case -1 => None

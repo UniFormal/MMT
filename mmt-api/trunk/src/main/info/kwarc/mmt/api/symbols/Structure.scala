@@ -24,7 +24,6 @@ abstract class Structure extends Declaration with Link {
    /** the domain of a structure is its home theory*/
    val to = home
    val isImplicit: Boolean
-   def toTerm = OMDL(home.toMPath, name)
    
    def isInclude = Include.unapply(this).isDefined
    private def nameOrKeyword = this match {

@@ -76,13 +76,13 @@ class Controller extends ROController with ActionHandling with Logger {
 
   // **************************** data state and components
 
-  /** maintains all knowledge */
-  val memory = new Memory(report)
-  val depstore = memory.ontology
-  val library = memory.content
-
   /** maintains all customizations for specific languages */
   val extman = new ExtensionManager(this)
+
+  /** maintains all knowledge */
+  val memory = new Memory(extman, report)
+  val depstore = memory.ontology
+  val library = memory.content
 
   /** convenience for getting the default text-based presenter (for error messages, logging, etc.) */
   def presenter: Presenter = extman.get(classOf[Presenter], "present-text-notations").get

@@ -12,15 +12,13 @@ import scala.xml.Node
   *
   * The structural elements are subdivided according to their dimension: content, presentation, or narration.
   */
-trait StructuralElement extends Content with metadata.HasMetaData {
+trait StructuralElement extends Content with NamedElement with metadata.HasMetaData {
   /** the MMT URI of the element */
   def path: Path
 
   //def governingPath = path match {case c: ContentPath => Some(c) case _ => None}
   /** the containing knowledge item, a URL if none */
   def parent: Path
-  /** the name relative to the parent */
-  def name: LocalName
 
   /** the children of this element */
   def getDeclarations: List[StructuralElement]

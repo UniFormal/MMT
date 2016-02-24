@@ -18,7 +18,7 @@ import documents._
  * In particular, declaration names must be unique independent of the narrative grouping.
  * The latter is stored as a [[Document]], which holds [[SRef]] to the logical declarations.  
 */
-trait Body extends ContentElement {self =>
+trait Body extends ContentElement with MutableElementContainer[Declaration] {self =>
    /** the set of named statements, indexed by name
     * if a statement has an alternativeName, it occurs twice in this map
     */
@@ -47,18 +47,18 @@ trait Body extends ContentElement {self =>
    def declares(name: LocalName) = statements.isDefinedAt(name)
    /** the set of names of all declarations */
    def domain = statements.keySet
-   /** retrieve a named declaration, may throw exception if not present */ 
-   def get(name : LocalName) : Declaration = statements(name)
+
    /** retrieve a declaration */ 
    def getO(name : LocalName) : Option[Declaration] = statements.get(name)
-   /** same as get(LocalName(name)) */ 
-   def get(name : String) : Declaration = get(LocalName(name))
+   
+   def getMostSpecific(name: LocalName): Option[(Declaration, LocalName)] = getMostSpecific(name, LocalName(Nil)) 
+   
    /** retrieves the most specific applicable declaration
     * @param name the name of the declaration
     * @param rest the suffix that has been split off so far; this argument should be omitted in calls from outside this class 
     * @return the most specific (longest prefix of name) known declaration (if any) and the remaining suffix
     */
-   def getMostSpecific(name: LocalName, rest : LocalName = LocalName(Nil)) : Option[(Declaration, LocalName)] =
+   private def getMostSpecific(name: LocalName, rest : LocalName) : Option[(Declaration, LocalName)] =
       statements.get(name) match {
          case Some(d) => Some((d, rest))
          case None => name match {
@@ -135,7 +135,7 @@ trait Body extends ContentElement {self =>
             add(s)
       }
    }
-   /** moves  to the end of its section (if the relDocHome of ln has changed, it is also moved to the new section)
+   /** moves a declaration to the end of its section (if the relDocHome of ln has changed, it is also moved to the new section)
     *  also moves all subsequent ln/X declarations (and updates their relDocHome) 
     */ 
    def reorder(ln: LocalName) {

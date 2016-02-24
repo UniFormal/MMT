@@ -14,7 +14,7 @@ import scala.xml.NodeSeq
 
 /** auxiliary class of [[Library]] to optimize storage
   *
-  * This uses [[scala.ref.SoftReference]]s so that modules are automatically removed when memory is needed.
+  * This uses [[scala.ref.SoftReference]]s so that modules are automatically unloaded when memory is needed.
   */
 class ModuleHashMap {
   private val underlying = new mutable.HashMap[MPath, SoftReference[Module]]
@@ -62,7 +62,7 @@ class ModuleHashMap {
   *
   * @param report parameter for logging.
   */
-class Library(val report: frontend.Report) extends Lookup with Logger {
+class Library(extman: ExtensionManager, val report: Report) extends Lookup with Logger {
   val logPrefix = "library"
 
   // ************************ stateful data structures and basic accessors
@@ -117,10 +117,13 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
      p match {
         case d: DPath => getNarrative(d, error)
         case p: MPath => getContent(p, error)
-        case p ?? n => get(OMMOD(p), n, error)
+        case p ?? n => getDeclarationInTerm(OMMOD(p), n, error)
         case c: CPath => throw GetError("retrieval of components not possible")
      }
   }
+  /** retrieval in a module expressions */
+  def get(home: Term, name: LocalName, error: String => Nothing): Declaration = getDeclarationInTerm(home, name, error)
+
 
   // ******************* document level retrieval
   /**
@@ -180,7 +183,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
         if (left.isEmpty) ce
         else {
            val m = seeAsMod(ce, error)
-           val d = getInAtomicModule(m, Nil, LocalName(left.head), error)
+           val d = getDeclarationInElement(m, Nil, LocalName(left.head), error)
            getContentAux(d, left.tail)
          }
      }
@@ -196,7 +199,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
    *  In particular, [[NestedModule]]s are turned into [[Module]]s, which allows referencing into nested theory-like elements.
    */
   // TODO Once structures are nested modules, this can return Module instead of ContentElement
-  private def seeAsMod(ce: ContentElement, error: String => Nothing) = ce match {
+  private def seeAsMod(ce: ContentElement, error: String => Nothing): ContentElement = ce match {
      case m: Module => m
      case nm: NestedModule => nm.module
      case s: Structure => s
@@ -215,30 +218,28 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
    * For plain URI dereferencing, the 'home' is simply an OMMOD.
    *
    * Defined modules are expanded, which allows referencing into their materialized body.
+   * 
+   * @param home module expression that materializes into a [[Module]] or a [[NestedModule]]
+   * @param name declaration name relative to that materialization
+   * @param error error continuation
    */
 
-  def get(home: Term, name: LocalName, error: String => Nothing): Declaration = home match {
-    // lookup in atomic modules
+  private def getDeclarationInTerm(home: Term, name: LocalName, error: String => Nothing): Declaration = home match {
+    // base case: lookup in atomic modules
     case OMPMOD(p, args) =>
        val mod = seeAsMod(getContent(p, error), error)
-       getInAtomicModule(mod, args, name, error)
-    // lookup in structures
-    case OMDL(h, n) =>
-      val s = getStructure(h ? n, msg => throw GetError("declaration exists but is not a structure: " + h ? n + "\n" + msg))
-      try {
-        getInLink(s, name, error)
-      } catch {
-        case PartialLink() =>
-          // return default assignment
-          val da = get(s.from, name, sourceError) match {
-            case c: Constant => ConstantAssignment(s.toTerm, name, None, Some(OMID(h ? s.name / name)))
-            case d: Structure => DefLinkAssignment(s.toTerm, name, d.from, OMDL(h, s.name / name))
-            case _ => throw ImplementationError("unimplemented default assignment")
-          }
-          da.setOrigin(DefaultAssignment)
-          da
-      }
-    // lookup in complex modules
+       getDeclarationInElement(mod, args, name, error)
+    // base case: lookup in atomic declaration
+    case OMS(p) =>
+       getO(p) match {
+         case Some(ce: ContentElement) =>
+           getDeclarationInElement(ce, Nil, name, error)
+         case Some(e) =>
+           error("element exists but cannot contain declarations: " + e.path)
+         case None =>
+           error("containing declaration not found: " + p)
+       }
+    // complex cases: lookup in module expressions
     case ComplexTheory(cont) =>
       cont.mapVarDecls { case (before, vd) =>
         val vdDecl = vd.toDeclaration(ComplexTheory(before))
@@ -300,19 +301,23 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
   }
 
   /** auxiliary method of get for lookups in a parent that has already been retrieved */
-  private def getInAtomicModule(mod: ContentElement, args: List[Term], name: LocalName, error: String => Nothing): Declaration = {
+  private def getDeclarationInElement(mod: ContentElement, args: List[Term], name: LocalName, error: String => Nothing): Declaration = {
     mod match {
       //lookup in atomic modules
       case t: DefinedTheory =>
-        val d = get(t.df, name, error)
+        val d = getDeclarationInTerm(t.df, name, error)
         instantiate(d, t.parameters, args)
-      case t: DeclaredTheory =>
-         getInTheory(t, args, name, error)
-      case s: Structure =>
+      case v: DefinedView =>
         if (0 != args.length)
           throw GetError("number of arguments does not match number of parameters")
-        get(s.toTerm, name, error)
-      case v: View =>
+        getDeclarationInTerm(v.df, name, error)
+      case s: DefinedStructure =>
+        if (0 != args.length)
+          throw GetError("number of arguments does not match number of parameters")
+        getDeclarationInTerm(s.df, name, error)
+      case t: DeclaredTheory =>
+         getInTheory(t, args, name, error)
+      case v: DeclaredView =>
         if (0 != args.length)
           throw GetError("number of arguments does not match number of parameters")
         try {
@@ -328,6 +333,38 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
             da.setOrigin(DefaultAssignment)
             da
         }
+      case s: DeclaredStructure =>
+          try {
+            getInLink(s, name, error)
+          } catch {
+            case PartialLink() =>
+              // return default assignment
+              val da = get(s.from, name, sourceError) match {
+                case c: Constant => ConstantAssignment(s.toTerm, name, None, Some(OMID(s.path / name)))
+                case d: Structure => DefLinkAssignment(s.toTerm, name, d.from, OMDL(s.home.toMPath, s.name / name))
+                case _ => throw ImplementationError("unimplemented default assignment")
+              }
+              da.setOrigin(DefaultAssignment)
+              da
+          }
+      case dd: DerivedDeclaration =>
+        if (0 != args.length)
+          throw GetError("number of arguments does not match number of parameters")
+        val sf = extman.get(classOf[StructuralFeature], dd.feature) getOrElse {
+          error("")
+        }
+        val context = Context.empty //TODO
+        val elaboration = sf.elaborate(context, dd)
+        elaboration.getMostSpecific(name) match {
+          case Some((d, ln)) =>
+            if (ln.isEmpty)
+              d
+            else
+              getDeclarationInElement(d, args, ln, error)
+          case None => error("")
+        }
+      case e =>
+        error("element cannot contain declarations: " + e.path)
     }
   }
 
@@ -342,7 +379,7 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
          // a prefix exists and resolves to d, a suffix ln is left
          case _: Constant | _: RuleConstant => error("local name " + ln + " left after resolving to constant")
          case s: Structure =>
-           val sym = get(s.from, ln, sourceError) // resolve ln in the domain of d
+           val sym = getDeclarationInTerm(s.from, ln, sourceError) // resolve ln in the domain of d
            translateByLink(sym, s, error) // translate sym along l
          case nm: NestedModule =>
            error("local name " + ln + " left after resolving to nested module")
@@ -357,11 +394,11 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
                val imp = implicitGraph(OMMOD(mpath), t.toTerm) getOrElse {
                  throw GetError("no implicit morphism from " + mpath + " to " + t.path)
                }
-               val sym = get(OMMOD(mpath), ln, sourceError)
+               val sym = getDeclarationInTerm(OMMOD(mpath), ln, sourceError)
                translate(sym, imp, error) // translate the result along the implicit morphism
              case l: Link =>
                // continue lookup in domain of l
-               val sym = get(l.from, ln, sourceError)
+               val sym = getDeclarationInTerm(l.from, ln, sourceError)
                translateByLink(sym, l, error) // translate the result along the link
            }
          case _ => throw NotFound(t.path ? name)//GetError(name + " is not declared in " + t.path)
@@ -369,28 +406,23 @@ class Library(val report: frontend.Report) extends Lookup with Logger {
      }
   }
 
-
   /** thrown by getInLink if the link provides no assignment */
   private case class PartialLink() extends java.lang.Throwable
 
   /** auxiliary method of get to unify lookup in structures and views
     * throws PartialLink() if no assignment provided
     */
-  private def getInLink(l: Link, name: LocalName, error: String => Nothing): Declaration = l match {
-    case l: DefinedLink =>
-      get(l.df, name, error)
-    case l: DeclaredLink =>
-      l.getMostSpecific(name.simplify) match {
+  private def getInLink(l: DeclaredLink, name: LocalName, error: String => Nothing): Declaration = {
+     l.getMostSpecific(name.simplify) match {
         case Some((a, LocalName(Nil))) => a // perfect match TODO Here should probably happen something
         case Some((a, ln)) => a match {
           case a: Constant => error("local name " + ln + " left after resolving to constant assignment")
-          case a: DefinedLink => get(a.df, name.simplify, error) // <- names in links should always start with [T]/...?
-
+          case a: DefinedLink => getDeclarationInTerm(a.df, name.simplify, error) // <- names in links should always start with [T]/...?
         }
         case None =>
           // TODO multiple ComplexSteps resulting from inclusions in a row must be normalized away somewhere
           throw PartialLink()
-      }
+     }
   }
 
   /** instantiates parameters of a declaration with arguments

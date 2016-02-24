@@ -11,12 +11,12 @@ abstract class ROMemory {
 }
 
 /** Groups all stateful objects of the controller that store MMT data */
-class Memory(val report: Report) extends ROMemory {
+class Memory(extman: ExtensionManager, val report: Report) extends ROMemory {
 
   /** maintains the ontology */
   val ontology = new RelStore(report)
   /** maintains all content elements */
-  val content = new Library(report)
+  val content = new Library(extman, report)
 
   /** forgets everything */
   def clear {

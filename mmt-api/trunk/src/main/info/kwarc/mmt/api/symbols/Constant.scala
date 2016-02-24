@@ -15,7 +15,6 @@ abstract class Constant extends Declaration with HasNotation {
    def rl : Option[String]
 
   override def alternativeName = alias
-  def toTerm = OMID(path)
 
   def tp = tpC.get
   def df = dfC.get

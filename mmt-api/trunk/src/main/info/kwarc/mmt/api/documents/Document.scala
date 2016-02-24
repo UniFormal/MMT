@@ -16,13 +16,15 @@ import scala.xml.Elem
  * @param root true if this does not have a containing document
  * @param nsMap the namespaces declared in this document
  */
-class Document(val path: DPath, val root: Boolean = false, val contentAncestor: Option[Body] = None, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty) extends NarrativeElement {
+class Document(val path: DPath, val root: Boolean = false, val contentAncestor: Option[Body] = None, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty)
+     extends NarrativeElement with MutableElementContainer[NarrativeElement] {
   /** the containing document if root == false; otherwise, the URI without path */ 
   def parentOpt = if (root) None else Some(parent)
   val parent: DPath = if (root) path ^^ else path ^
   val name = if (root) path.name else LocalName(path.name.last)
 
   private var items: List[NarrativeElement] = inititems
+  def domain = items.map(_.name)
 
   /** returns the namespace map that was used while parsing the document */
   def getNamespaceMap: NamespaceMap = nsMap
@@ -34,7 +36,7 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
   def getModulesResolved(lib: Lookup): List[Module] = items collect {
     case r: MRef => lib.getModule(r.target)
   }
-
+ 
   /**
    * @param controller Controller for looking up documents
    * @return list of modules declared/referenced anywhere in this Document (depth first)
@@ -46,23 +48,6 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
     case d: Document => d.collectModules(controller)
   }
 
-  /**
-   * adds a child after a given child or at the end
-   */
-  def add(i: NarrativeElement, afterOpt: Option[LocalName] = None) {
-     // default: insert at end
-     def defaultPos = items.length
-     val pos = afterOpt match {
-        case Some(a) => items.indexWhere(_.name == a) match {
-           case -1 => defaultPos // maybe issue warning that afterOpt not found
-           case i => i
-        }
-        case None => defaultPos 
-     }
-     val (bef,aft) = items.splitAt(pos) // order(pos) == aft.head
-     items = bef ::: i :: aft
-  }
-  
   def getMostSpecific(name: LocalName) : Option[(NarrativeElement, LocalName)] = {
      if (name.isEmpty) Some((this, LocalName.empty))
      else {
@@ -81,18 +66,33 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
    *  
    *  use Library.getNarrative for smarter dereferencing
    */
-  def getLocally(name: LocalName): Option[NarrativeElement] = { 
+  def getO(name: LocalName): Option[NarrativeElement] = { 
      getMostSpecific(name).flatMap {
        case (ne, LocalName.empty) => Some(ne)
-       case (parDoc: Document, rest) => parDoc.getLocally(rest)
+       case (parDoc: Document, rest) => parDoc.getO(rest)
        case _ => None
      }
   }
+  /** same as get */
+  def getLocally(name: LocalName) = getO(name)
   
-  /** deletes a child */
-  def delete(n: LocalName) {
-     items = items.filterNot(_.name == n)
+  /**
+   * adds a child after a given child or at the end
+   */
+  def add(i: NarrativeElement, afterOpt: Option[LocalName] = None) {
+     // default: insert at end
+     def defaultPos = items.length
+     val pos = afterOpt match {
+        case Some(a) => items.indexWhere(_.name == a) match {
+           case -1 => defaultPos // maybe issue warning that afterOpt not found
+           case i => i
+        }
+        case None => defaultPos 
+     }
+     val (bef,aft) = items.splitAt(pos) // order(pos) == aft.head
+     items = bef ::: i :: aft
   }
+  
   /** updates or adds a child */
   def update(ne: NarrativeElement) {
      val i = items.indexWhere(_.name == ne.name)
@@ -102,6 +102,12 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
        add(ne)
   }
   
+  /** deletes a child */
+  def delete(n: LocalName) = {
+     val d = getO(n)
+     items = items.filterNot(_.name == n)
+     d
+  }
   /** moves ln to the end */
   def reorder(ln: LocalName) {
      items.find(_.name == ln) match {

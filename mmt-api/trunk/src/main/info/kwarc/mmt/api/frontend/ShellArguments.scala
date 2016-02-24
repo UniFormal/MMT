@@ -172,7 +172,7 @@ case class ShellArguments(
     *  default behavior: interactive if nothing else is happening
     */
    def prompt = if (shell) true else if (noshell) false else {
-      commands.isEmpty
+      scalaFiles.isEmpty && mmtFiles.isEmpty && commands.isEmpty
    }
    /** decides whether to run in non-server or server mode
      * default behavior: batch

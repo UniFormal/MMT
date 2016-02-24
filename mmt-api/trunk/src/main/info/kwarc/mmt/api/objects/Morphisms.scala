@@ -105,7 +105,7 @@ object Morph {
 case class DomainElement(name: LocalName, defined: Boolean, subdomain: Option[(Term, List[LocalName])])
 
 object TheoryExp {
-  val empty = ComplexTheory(Context())
+  val empty = ComplexTheory(Context.empty)
 
   /** simplifies a theory expression using basic algebraic laws, e.g., commutativity of union */
   def simplify(thy: Term): Term = thy match {

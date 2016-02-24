@@ -35,6 +35,9 @@ abstract class Storage {
     * a storage may add more/additional content than necessary, e.g., the containing file/theory or a dependency closure
     */
   def load(path: Path)(implicit controller: Controller)
+  
+  //TODO: method for querying
+  // def query(q: ???): Iterator[Path]
 
   /** called to release all held resources, override as needed */
   def destroy {}
