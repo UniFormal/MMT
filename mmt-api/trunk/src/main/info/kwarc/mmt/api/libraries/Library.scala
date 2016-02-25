@@ -302,24 +302,25 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
 
   /** auxiliary method of get for lookups in a parent that has already been retrieved */
   private def getDeclarationInElement(mod: ContentElement, args: List[Term], name: LocalName, error: String => Nothing): Declaration = {
+    // only theories may have parameters for now
     mod match {
-      //lookup in atomic modules
+      case t: Theory => 
+      case d =>
+          if (0 != args.length)
+            throw GetError("number of arguments does not match number of parameters")
+    }
+    // now the actual lookup
+    mod match {
       case t: DefinedTheory =>
         val d = getDeclarationInTerm(t.df, name, error)
         instantiate(d, t.parameters, args)
       case v: DefinedView =>
-        if (0 != args.length)
-          throw GetError("number of arguments does not match number of parameters")
         getDeclarationInTerm(v.df, name, error)
       case s: DefinedStructure =>
-        if (0 != args.length)
-          throw GetError("number of arguments does not match number of parameters")
         getDeclarationInTerm(s.df, name, error)
       case t: DeclaredTheory =>
          getInTheory(t, args, name, error)
       case v: DeclaredView =>
-        if (0 != args.length)
-          throw GetError("number of arguments does not match number of parameters")
         try {
           getInLink(v, name, error)
         } catch {
@@ -347,22 +348,8 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
               da.setOrigin(DefaultAssignment)
               da
           }
-      case dd: DerivedDeclaration =>
-        if (0 != args.length)
-          throw GetError("number of arguments does not match number of parameters")
-        val sf = extman.get(classOf[StructuralFeature], dd.feature) getOrElse {
-          error("")
-        }
-        val context = Context.empty //TODO
-        val elaboration = sf.elaborate(context, dd)
-        elaboration.getMostSpecific(name) match {
-          case Some((d, ln)) =>
-            if (ln.isEmpty)
-              d
-            else
-              getDeclarationInElement(d, args, ln, error)
-          case None => error("")
-        }
+      case nm: NestedModule =>
+        getDeclarationInElement(nm.module, args, name, error)
       case e =>
         error("element cannot contain declarations: " + e.path)
     }
@@ -370,40 +357,66 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
 
   /** auxiliary method of get for lookups in a [[DeclaredTheory]] */
   private def getInTheory(t: DeclaredTheory, args: List[Term], name: LocalName, error: String => Nothing) = {
-     val decl = t.getMostSpecific(name) map {
+     val declLnOpt = t.getMostSpecific(name) map {
         case (d, ln) => (instantiate(d, t.parameters, args), ln)
      }
-     decl match {
+     declLnOpt match {
        case Some((d, LocalName(Nil))) => d // perfect match
        case Some((d, ln)) => d match {
          // a prefix exists and resolves to d, a suffix ln is left
-         case _: Constant | _: RuleConstant => error("local name " + ln + " left after resolving to constant")
          case s: Structure =>
-           val sym = getDeclarationInTerm(s.from, ln, sourceError) // resolve ln in the domain of d
+           val sym = getDeclarationInTerm(s.from, ln, sourceError) // resolve ln in the domain of s
            translateByLink(sym, s, error) // translate sym along l
-         case nm: NestedModule =>
-           error("local name " + ln + " left after resolving to nested module")
+         case dd: DerivedDeclaration =>
+            getInElaboration(dd, ln, error)
+         case e =>
+           error("local name " + ln + " left after resolving to " + e.path)
        }
        case None => name match {
-         // no prefix of name is declared in t
+         // initial complex steps are possible even if no prefix of name is declared in t
          case ComplexStep(mpath) / ln =>
-           // TODO is this needed?
-           get(mpath) match {
-             case _: Theory =>
-               // continue lookup in mpath
+           getO(mpath) match {
+             case Some(included: Theory) =>
+               // continue lookup in (possibly implicitly) included theory
                val imp = implicitGraph(OMMOD(mpath), t.toTerm) getOrElse {
-                 throw GetError("no implicit morphism from " + mpath + " to " + t.path)
+                 error("no implicit morphism from " + mpath + " to " + t.path)
                }
-               val sym = getDeclarationInTerm(OMMOD(mpath), ln, sourceError)
+               val sym = getDeclarationInElement(included, Nil, ln, sourceError)
                translate(sym, imp, error) // translate the result along the implicit morphism
-             case l: Link =>
+             case Some(l: Link) =>
                // continue lookup in domain of l
                val sym = getDeclarationInTerm(l.from, ln, sourceError)
                translateByLink(sym, l, error) // translate the result along the link
+             case Some(e) =>
+               error("cannot resolve complex step " + mpath)
+             case None =>
+               error("cannot resolve " + mpath)
            }
-         case _ => throw NotFound(t.path ? name)//GetError(name + " is not declared in " + t.path)
+         case _ => throw NotFound(t.path ? name) // [[Storage]]s may add declarations to a theory dynamically, so we throw NotFound
        }
      }
+  }
+
+  /**
+   * look up 'name' in elaboration of dd
+   */
+  private def getInElaboration(dd: DerivedDeclaration, name: LocalName, error: String => Nothing): Declaration = {
+      val sf = extman.get(classOf[StructuralFeature], dd.feature) getOrElse {
+        error("structural feature " + dd.feature + " not known")
+      }
+      val context = Context.empty //TODO
+      val elaboration = sf.elaborate(context, dd)
+      elaboration.getMostSpecific(name) match {
+        case Some((d: DerivedDeclaration, ln)) =>
+          if (ln.isEmpty)
+            d
+          else
+            getInElaboration(d, ln, error)
+        case Some((e,ln)) =>
+          error("cannot elaborate " + ln + " after resolving to " + e.path)
+        case None =>
+          error("cannot resolve " + name + " in " + dd.path)
+      }
   }
 
   /** thrown by getInLink if the link provides no assignment */
@@ -414,13 +427,15 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
     */
   private def getInLink(l: DeclaredLink, name: LocalName, error: String => Nothing): Declaration = {
      l.getMostSpecific(name.simplify) match {
-        case Some((a, LocalName(Nil))) => a // perfect match TODO Here should probably happen something
+        case Some((a, LocalName(Nil))) =>
+          a // perfect match
         case Some((a, ln)) => a match {
-          case a: Constant => error("local name " + ln + " left after resolving to constant assignment")
-          case a: DefinedLink => getDeclarationInTerm(a.df, name.simplify, error) // <- names in links should always start with [T]/...?
+          case a: Constant =>
+            error("local name " + ln + " left after resolving to constant assignment")
+          case a: DefinedLink =>
+            getDeclarationInTerm(a.df, ln, error) //TODO should be domain(a.df)/ln
         }
         case None =>
-          // TODO multiple ComplexSteps resulting from inclusions in a row must be normalized away somewhere
           throw PartialLink()
      }
   }
@@ -450,7 +465,8 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
           sS.add(instantiate(d, params, args))
         }
         sS
-      case nm: NestedModule => throw ImplementationError("substitution of nested modules not implemented yet")
+      case nm: NestedModule =>
+        throw ImplementationError("substitution in nested modules not implemented yet")
     }
   }
 
@@ -460,8 +476,8 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
       case OMMOD(v) =>
         val link = getView(v)
         translateByLink(d, link, error)
-      case OMDL(h, n) =>
-        val link = getStructure(h ? n)
+      case OMS(p) =>
+        val link = getStructure(p)
         translateByLink(d, link, error)
       case OMCOMP(Nil) => d
       case OMCOMP(hd :: tl) => translate(translate(d, hd, error), OMCOMP(tl), error)
@@ -506,8 +522,8 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
           case Some(a: Constant) => a.name
           case _ => declT.name
         })
-        // TODO Simplify here or somewhere else? (alternatively gettype-thingy of solver?)
-        def mapTerm(t: Term) = ApplyMorphs.traverse(t)(Context.apply(l.from.toMPath), l.toTerm) //t * l.toTerm
+        // TODO is it better to use lazy morphism application?
+        def mapTerm(t: Term) = ApplyMorphs.traverse(t)(Context(l.from.toMPath), l.toTerm) //t * l.toTerm
       // translate declT along assigOpt
       val newDecl = declT match {
           case c: Constant =>
@@ -527,7 +543,8 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
               DefinedStructure(l.to, newName, r.from, a.df, isImplicit = false)
             case None =>
               DefinedStructure(l.to, newName, r.from, OMCOMP(r.toTerm, l.toTerm), isImplicit = false) //TODO should be a DeclaredStructure
-            case _ => throw GetError("link " + l.path + " provides non-StructureAssignment for structure " + r.path)
+            case _ =>
+              throw GetError("link " + l.path + " provides bad assignment for structure " + r.path)
           }
         }
         newDecl

@@ -113,7 +113,7 @@ trait RecursivelyElaboratableElement[S <: StructuralElement] extends StructuralE
   
  */
 abstract class GenericLookup {
-  //generic lookup method where containers lazyly resolve names inside 
+  //generic lookup method where containers lazily resolve names inside 
   //e.g. getInTheory method from library would become .get or .getElab method of DeclaredTheory Class
   def getDeclarationInElement(elem : NamedElement, name : LocalName) : NamedElement = name match {
     case LocalName.empty => elem
