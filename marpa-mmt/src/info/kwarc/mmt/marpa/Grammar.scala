@@ -67,35 +67,52 @@ object Grammar {
 				name
 			}
 	}
+	
+	//rules that start or end with the following are not considered
+	private var omittedRules = Set("N482", "_coset_", 
+	    "_polynomialring_", "_logarithm_logarithm");
+	private def isOmitted(rule:String):Boolean = {
+	  	  omittedRules.foldLeft(false) { (acc:Boolean, omitted:String) => 
+	  	    acc || rule.startsWith(omitted) || rule.endsWith(omitted)
+	  	  }
+	}
 	def getRuleNr(name:String):String = {
 			val regex = """\d*""".r
-					val Some(pref) = regex findFirstIn name.reverse 
-					pref.reverse
+			val Some(pref) = regex findFirstIn name.reverse 
+			pref.reverse
 	}
 	//adds the Top Rule and all of the necessary subrules to the Grammar
 	def addTopRule(rawName:String, markers:List[Marker]) {
 		val topPatt = """\?.*""".r
-				val q = """[^a-zA-Z0-9]""".r
-				//rawName is the path of the notation - it is used to ensure topLevelRule name uniqueness
-				val Some(suff) = topPatt findFirstIn rawName 
-				val notUniqueName = q replaceAllIn (suff, m => "_")
-				val uniqueName = createTopRuleName(notUniqueName)
-				NotationContent ::= uniqueName 
-				if (!(uniqueName.endsWith("N482")||uniqueName.startsWith("_coset_"))){
-					eventList ::= "event '"+uniqueName+"' = completed "+uniqueName 
-				}
+		val q = """[^a-zA-Z0-9]""".r
+		//rawName is the path of the notation - it is used to ensure topLevelRule name uniqueness
+		val Some(suff) = topPatt findFirstIn rawName 
+		val notUniqueName = q replaceAllIn (suff, m => "_")
+		val uniqueName = createTopRuleName(notUniqueName)
+		NotationContent ::= uniqueName 
+		
 
 		currentTopRuleNr = getRuleNr(uniqueName)
-				val content:List[String] = "topLevel"::markers.map(
-						x => x match { 
-							//	          NOTE: #seq_ is used to indicate whether the Delim is 
-							//	          inside a sequence argument, since if it is in one
-							//	          the text inside the Delim should never be empty
-							//	          to avoid infinite left recursion
-						case Delim(text) => addRule(Delim("#seq_"+text)) 
-						case _ => addRule(x)
-						})
-						rules = rules | Set((Rule(uniqueName,content)))     //uniqueness of top level notations is assumed
+		val content:List[String] = markers.map(
+				x => x match { 
+					//	          NOTE: #seq_ is used to indicate whether the Delim is 
+					//	          inside a sequence argument, since if it is in one
+					//	          the text inside the Delim should never be empty
+					//	          to avoid infinite left recursion
+				case Delim(text) => addRule(Delim("#seq_"+text)) 
+				case _ => addRule(x)
+				})
+				
+		if (!(content.length == 1 
+		    && content(0).startsWith("argRule")) // do not include rules that only have one argRule (creates cycles)	   
+		) { 
+		  rules = rules | Set((Rule(uniqueName,"topLevel"::content)))     //uniqueness of top level notations is assumed
+		} else {
+		  omittedRules += uniqueName
+		}
+		if (!isOmitted(uniqueName)) {
+			eventList ::= "event '"+uniqueName+"' = completed "+uniqueName 
+		}
 	}
 
 
@@ -608,14 +625,13 @@ object Grammar {
 		    			case Nil => "Notation ::= " + NotationContent.head :: Nil
 		    			case _   => val r = Grammar.rules.toList 
 		    			"Notation ::= " + NotationContent.head :: tl.map(x => 
-		    			if (x.endsWith("N482")||
-		    					x.startsWith("_coset_")) {
-		    				"#Ommited top level rule"
+		    			if (isOmitted(x)) {
+		    				"#Omitted top level rule"
 		    			} else {
 		    				"| " + x
 		    			})
 		    			}
-		    			val result = pref:::Notation:::extractedRules :::eventList
+		    			val result = pref:::Notation:::extractedRules:::eventList
 		    					//clean up   
 		    					eventList = List[String]();
 		    			rules = Set[Rule]();

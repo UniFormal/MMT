@@ -107,7 +107,8 @@ def apply(uriComps: List[String], query: String, body : Body): HLet = {
 				//Here the post request is handled
 			case "getGrammar" :: _ => getGrammarResponse
 			case "getContentMathML" :: _ => getContentMathML
-			case _ => errorResponse("Invalid request: " + uriComps.mkString("/"), List(new PlanetaryError("Invalid Request" + uriComps)))
+			case _ => errorResponse("Invalid request: " + uriComps.mkString("/"), 
+			    List(new PlanetaryError("Invalid Request" + uriComps)))
 			}
 		} catch {
 		case e : Error => 
@@ -358,35 +359,3 @@ def getContentMathML : HLet  = new HLet {
 	}
 
 }
-
-
-
-
-//  def getNotations : HLet = new HLet {
-//    def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = try {
-//      val reqBody = new Body(tk)
-//      val params = reqBody.asJSON.obj
-//      val spathS = params.get("spath").getOrElse(throw ServerError("No spath found")).toString
-//      val languageO = params.get("language").map(_.toString)
-//      val dimensionO = params.get("dimension").map(_.toString)
-//      
-//      val spath = Path.parse(spathS)
-//      controller.get(spath) match {
-//        case c : Constant =>
-//          var notations = dimensionO match {
-//            case None => c.notC.getAllNotations
-//            case Some("parsing") => c.notC.parsingDim.notations.values.flatten
-//            case Some("presentation") => c.notC.presentationDim.notations.values.flatten
-//            case Some("verbalization") => c.notC.verbalizationDim.notations.values.flatten
-//            case Some(s) => throw ServerError("Invalid notation dimension: '" + s  + "'. Expected parsing, presentation or verbalization")
-//          }
-//          
-//          notations = languageO match {
-//            case None => notations
-//            case Some(lang) => notations.filter(_.scope.languages.contains(lang))
-//          }
-//          Server.JsonResponse(JSONArray(notations.map(n => JSONArray(toStringMarkers(n))).toList)).aact(tk)
-//        case x => throw ServerError("Expected path pointing to constant, found :" + x.getClass())
-//      }
-//    }
-//  }
