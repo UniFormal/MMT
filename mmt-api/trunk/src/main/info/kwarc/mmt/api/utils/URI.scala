@@ -2,6 +2,8 @@ package info.kwarc.mmt.api.utils
 
 import java.net
 
+import info.kwarc.mmt.api.ImplementationError
+
 /** Custom implementation of the URI RFC that's better than java.net.URI
   *
   * @param abs true if the path is absolute (ignored if scheme or authority are present) */
@@ -11,11 +13,14 @@ case class URI(scheme: Option[String],
                private val abs: Boolean = false,
                query: Option[String] = None,
                fragment: Option[String] = None) {
+  private def isIllegal = (!abs && path.nonEmpty && (scheme.isDefined || authority.isDefined)) || (!abs && path.startsWith(List("")))
+  if (isIllegal) throw ImplementationError("illegal URI: " + this)
   /** true if the path is absolute; automatically set to true if scheme or authority are present */
-  def absolute: Boolean = abs || scheme.isDefined || authority.isDefined
+  def absolute: Boolean = abs
+  // abs = absolute // TODO dirty hack
 
-  /** drop authority, path, query, fragment, append authority */
-  def colon(n: String): URI = URI(scheme, Some(n))
+  /** drop authority, path, query, fragment, append authority and make path absolute */
+  def colon(n: String): URI = URI(scheme, Some(n), abs = true)
 
   /** drop path, query, fragment, append (absolute) path of length 1 */
   def !/(n: String): URI = this !/ List(n)
@@ -32,7 +37,10 @@ case class URI(scheme: Option[String],
     * path stays relative/absolute; but URI(_, Some(_), Nil, false, _, _) / _ turns path absolute
     * trailing empty segment of this URI is dropped when appending
     */
-  def /(p: List[String]): URI = URI(scheme, authority, pathNoTrailingSlash ::: p, absolute)
+  def /(p: List[String]): URI = {
+    val mustBeAbs = p.nonEmpty && (scheme.isDefined || authority.isDefined)
+    URI(scheme, authority, pathNoTrailingSlash ::: p, absolute || mustBeAbs)
+  }
 
   /** drops query and fragment, drop last path segment (if any) */
   def ^ : URI = URI(scheme, authority, if (path.isEmpty) Nil else path.init, absolute)
