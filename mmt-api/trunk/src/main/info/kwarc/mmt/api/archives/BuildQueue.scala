@@ -26,11 +26,13 @@ class QueuedTask(val target: TraversingBuildTarget, val task: BuildTask) {
   /** resources that will be provided once successfully built */
   var willProvide: List[ResourceDependency] = Nil
 
-  def toJson: JSONString = {
+  def toJString: String = {
     val str = task.inPath.toString
-    JSONString((if (str.isEmpty) task.archive.id else str) + " (" + target.key + ")" +
-      missingDeps.map(_.toJString).mkString(" [", ", ", "]"))
+    (if (str.isEmpty) task.archive.id else str) + " (" + target.key + ")" +
+      missingDeps.map(_.toJString).mkString(" [", ", ", "]")
   }
+
+  def toJson: JSONString = JSONString(toJString)
 }
 
 /** */
@@ -166,6 +168,7 @@ class BuildQueue extends BuildManager {
   var finishedBuilt = immutable.Queue[(Dependency, BuildResult)]()
   /** global update policy */
   var updatePolicy = Update(Level.Force)
+  var currentQueueTask: Option[QueuedTask] = None
 
   private var continue: Boolean = true
   private var stopOnEmpty: Boolean = false
@@ -210,25 +213,28 @@ class BuildQueue extends BuildManager {
   }
 
   /** recursively queues all dependencies of the next task; then returns the head of the queue */
-  private def getTopTask: (Option[QueuedTask], List[Dependency]) = synchronized {
-    val optQt = Option(queued.poll)
-    optQt.foreach(qt => alreadyQueued -= qt.task.asDependency)
-    val currentMissingDeps = optQt match {
+  private def getTopTask: List[Dependency] = synchronized {
+    currentQueueTask = Option(queued.poll)
+    currentQueueTask.foreach(qt => alreadyQueued -= qt.task.asDependency)
+    currentQueueTask match {
       case None => Nil
-      case Some(qt) => qt.missingDeps
+      case Some(qt) => qt.missingDeps.filter {
+        case PhysicalDependency(file) => !file.exists
+        case _ => true
+      }
     }
-    (optQt, currentMissingDeps)
   }
 
   private def getNextTask: Option[QueuedTask] = {
-    val (optQt, currentMissingDeps) = getTopTask
+    val currentMissingDeps = getTopTask
     val (bDeps, fDeps) = currentMissingDeps.partition {
       case bd: FileBuildDependency => true
       case _ => false
     }
     val bds = bDeps.collect { case bd: BuildDependency => bd }
     if (currentMissingDeps.nonEmpty) {
-      val qt = optQt.get // is non-empty if deps are missing
+      val qt = currentQueueTask.get // is non-empty if deps are missing
+      currentQueueTask = None
       if (fDeps.nonEmpty) {
         qt.missingDeps = fDeps
         blocked = blocked ::: List(qt)
@@ -240,7 +246,7 @@ class BuildQueue extends BuildManager {
         bds.foreach(t => buildDependency(updatePolicy, t))
         getNextTask
       }
-    } else optQt
+    } else currentQueueTask
   }
 
   private def findResource(r: ResourceDependency): Option[FileBuildDependency] = r match {
@@ -320,7 +326,7 @@ class BuildQueue extends BuildManager {
       while (continue) {
         getNextTask match {
           case Some(qt) =>
-            // TODO run this in a Future
+            // TODO run this in a Future and track dependencies
             val optRes = qt.target.checkOrRunBuildTask(qt.missingDeps.toSet, qt.task, updatePolicy)
             val res1 = optRes.getOrElse(BuildSuccess(Nil, Nil))
             val res = res1 match {
@@ -329,8 +335,11 @@ class BuildQueue extends BuildManager {
               case _ => res1
             }
             val qtDep = qt.task.asDependency
-            if (!qt.dependencyClosure) cycleCheck -= (qtDep)
-            finishedBuilt +:=(qtDep, res)
+            if (!qt.dependencyClosure) cycleCheck -= qtDep
+            synchronized {
+              currentQueueTask = None
+              finishedBuilt +:=(qtDep, res)
+            }
             if (finishedBuilt.length > 200) {
               finishedBuilt = finishedBuilt.dropRight(100)
             }
@@ -375,7 +384,7 @@ class BuildQueue extends BuildManager {
 
   def getQueueInfo: JSON = synchronized {
     val iter = queued.iterator.asScala
-    val q = iter.toList.map(_.toJson)
+    val q = currentQueueTask.toList.map(q => JSONString("running: " + q.toJString)) ++ iter.toList.map(_.toJson)
     val bs = blocked.map(_.toJson)
     val fs = finishedBuilt.map {
       case (d, r) =>
