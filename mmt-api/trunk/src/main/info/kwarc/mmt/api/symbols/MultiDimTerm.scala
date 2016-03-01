@@ -105,8 +105,6 @@ class TermContainer extends AbstractTermContainer {
    def update(tc: ComponentContainer) = {tc match {
       case tc: TermContainer =>
          var changed = (read = tc.read)
-         if (changed)
-            true
          if (changed || tc.parsed.isDefined)
             changed |= (parsed = tc.parsed)
          if (changed || tc.analyzed.isDefined)
