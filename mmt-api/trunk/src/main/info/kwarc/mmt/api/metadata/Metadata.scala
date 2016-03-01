@@ -119,7 +119,6 @@ object MetaDatum {
       case n: Elem if n.label == "meta" && n.child.length >= 1 =>
          // some text is split into several child nodes
          val key = Path.parseS(xml.attr(node, "property"), nsMap(keyBase))
-         println(n.child.length + " " + n.child)
          val literal = n.child(0)
          val value = if (literal.isInstanceOf[Elem] && n.child.length == 1)
             Obj.parseTerm(literal, nsMap)
