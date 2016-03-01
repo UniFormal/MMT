@@ -11,7 +11,7 @@ import scala.xml._
  */
 trait HasMetaData {
    var metadata = new MetaData
-   def getMetaDataNode : NodeSeq = if (metadata.getAll.isEmpty) Nil else metadata.toNode 
+   def getMetaDataNode : NodeSeq = if (metadata.getAll.isEmpty) Nil else metadata.toNode
 }
 
 /**
@@ -97,12 +97,12 @@ class MetaDatum(val key: GlobalName, val value: Obj) {
    def toNode = this match {
       case Link(key, uri) => <link rel={key.toPath} resource={uri.toString}/>
       case Tag(key) => <tag property={key.toPath}/>
-      case _ => <meta property={key.toPath}>{value.toOBJNode}</meta> 
+      case _ => <meta property={key.toPath}>{value.toOBJNode}</meta>
    }
    override def toString = {
       if (value == null) key.toString
       else {key.toString + " -> " + value.toString}
-   } 
+   }
 }
 
 /** helper object */
@@ -116,9 +116,12 @@ object MetaDatum {
       case <tag/> =>
          val key = Path.parseS(xml.attr(node, "property"), nsMap(keyBase))
          Tag(key)
-      case Elem(_,"meta",_,_,literal) => //strangely, XML matching does not work
+      case n: Elem if n.label == "meta" && n.child.length >= 1 =>
+         // some text is split into several child nodes
          val key = Path.parseS(xml.attr(node, "property"), nsMap(keyBase))
-         val value = if (literal.isInstanceOf[Elem])
+         println(n.child.length + " " + n.child)
+         val literal = n.child(0)
+         val value = if (literal.isInstanceOf[Elem] && n.child.length == 1)
             Obj.parseTerm(literal, nsMap)
          else
             // fallback: string-valued meta-data
