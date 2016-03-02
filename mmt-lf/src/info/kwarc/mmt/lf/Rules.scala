@@ -64,7 +64,7 @@ object PiTerm extends FormationRule(Pi.path, OfType.path) {
               if (bT.freeVars contains xn) {
                  // usually an error, but xn may disappear later, especially when unknown in b are not solved yet 
                  //solver.error("type of Pi-scope has been inferred, but contains free variable " + xn + ": " + solver.presentObj(bT))
-                 None
+                 throw RuleNotApplicable
               } else
                  Some(bT)
            }

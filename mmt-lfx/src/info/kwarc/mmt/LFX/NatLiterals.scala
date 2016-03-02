@@ -18,6 +18,8 @@ object NatLit {
 
 object NatLiterals extends RealizedType(OMS(NatLit.symbol("NatLit")),StandardNat)
 /** the rule that makes type a valid universe */
+/*
 object NatLiteralsType extends UniverseRule(NatLit.symbol("NatLit")) {
   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = tm == OMS(NatLit.symbol("NatLit"))
 }
+*/

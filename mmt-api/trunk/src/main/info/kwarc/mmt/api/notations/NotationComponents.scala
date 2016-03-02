@@ -28,7 +28,8 @@ object Delimiter {
 }
 
 /** a delimiter
- * @param s the delimiting String, %w for whitespace
+  *
+  * @param s the delimiting String, %w for whitespace
  */
 case class Delim(s: String) extends Delimiter {
    override def toString = {
@@ -80,11 +81,22 @@ case class SymbolName() extends PlaceholderDelimiter {
 sealed abstract class ArgumentMarker extends Marker with ArgumentComponent
 
 /** an argument
- * @param n absolute value is the argument position, negative iff it is in the binding scope
+  *
+  * @param n absolute value is the argument position, negative iff it is in the binding scope
  */
-case class Arg(number: Int, precedence : Option[Precedence] = None) extends ArgumentMarker {
+sealed abstract class Arg extends ArgumentMarker {
+  val number: Int
+  val precedence : Option[Precedence]
    override def toString = number.toString
-   def by(s:String) = SeqArg(number,Delim(s))
+   def by(s:String) : SeqArg = SimpSeqArg(number,Delim(s))
+
+}
+
+case class SimpArg(number : Int, precedence : Option[Precedence] = None) extends Arg
+
+case class LabelArg(number : Int, typed: Boolean, defined : Boolean, precedence : Option[Precedence] = None) extends Arg {
+  override def toString = "L" + number.toString + (if (typed) "T" else "") + (if (defined) "D" else "")
+  override def by(s:String) = LabelSeqArg(number,Delim(s),typed,defined)
 }
 
 /**
@@ -96,17 +108,33 @@ case class ImplicitArg(number: Int, precedence : Option[Precedence] = None) exte
    override def toString = "%I" + number
 }
 
-/** a sequence argument 
- * @param n absolute value is the argument position, negative iff it is in the binding scope
+/** a sequence argument
+  *
+  * @param n absolute value is the argument position, negative iff it is in the binding scope
  * @param sep the delimiter between elements of the sequence 
  */
-case class SeqArg(number: Int, sep: Delim, precedence : Option[Precedence] = None) extends ArgumentMarker {
-   override def toString = number.toString + sep + "…"
+sealed abstract class SeqArg extends ArgumentMarker {
+  val number: Int
+  val sep: Delim
+  def makeCorrespondingArg(n: Int): Arg
+  val precedence : Option[Precedence]
+  override def toString = number.toString + sep + "…"
    override def isSequence = true
 }
 
-/** a variable binding 
- * @param n the number of the variable
+
+case class SimpSeqArg(number : Int, sep : Delim, precedence : Option[Precedence] = None) extends SeqArg {
+  def makeCorrespondingArg(n: Int) = SimpArg(n, precedence)
+}
+
+case class LabelSeqArg(number: Int, sep: Delim, typed : Boolean, defined : Boolean, precedence : Option[Precedence] = None) extends SeqArg {
+  override def toString = "L" + number.toString + (if (typed) "T" else "") + (if (defined) "D" else "") + sep + "…"
+  def makeCorrespondingArg(n: Int) = LabelArg(n, typed, defined, precedence)
+}
+
+/** a variable binding
+  *
+  * @param n the number of the variable
  * @param typed true if the variable carries a type (to be inferred if omitted)
  * @param sep if given, this is a variable sequence with this separator;
  *   for typed variables with the same type, only the last one needs a type 
@@ -222,7 +250,8 @@ case class PhantomMarker(content : List[Marker]) extends PresentationMarker{
   }
 }
 /** a marker for mglyph, to load non-standard symbols
- *  @param src the source (link) of the symbol
+  *
+  *  @param src the source (link) of the symbol
  *  @param alt the text to show in case of failure
  *  */
 case class GlyphMarker( src : Delim, alt: String = "Failed Loading") extends PresentationMarker{
@@ -429,8 +458,9 @@ object PresentationMarker {
      }
    }
    
-   /** recursively replaces all presentation markers with their list of children and flattens the whole list 
-    *  @return all non-presentation markers in m in traversal order
+   /** recursively replaces all presentation markers with their list of children and flattens the whole list
+     *
+     *  @return all non-presentation markers in m in traversal order
     */ 
    def flatten(m: Marker): List[Marker] = m match {
       case p: PresentationMarker =>
@@ -477,7 +507,7 @@ object Marker {
             } catch {
                case e: Throwable => throw ParseError("not a valid marker " + s) 
             }
-         case s: String if s.startsWith("V") =>
+         case s: String if s.startsWith("V") && s(1).isDigit =>
             //Vn ---> variable
             var i = 1
             while (i < s.length && s(i).isDigit) {i+=1}
@@ -499,19 +529,39 @@ object Marker {
                Var(n, false, Some(Delim(sep)))
             } else
                throw ParseError("not a valid marker " + s)
-         case s: String if s.endsWith("…") =>
+         case s: String if s.startsWith("L") && s(1).isDigit =>
+           //On ---> OML
+           var i = 1
+           while (i < s.length && s(i).isDigit) {i+=1}
+           val n = s.substring(1,i).toInt
+           var d = s.substring(i)
+           var typed = false
+           var defined = false
+           if (d.startsWith("T")) {
+             d = d.substring(1)
+             typed = true
+           }
+           if (d.startsWith("D")) {
+             d = d.substring(1)
+             defined = true
+           }
+           if (d.endsWith("…")) {
+             val sep = d.dropRight(1)
+             LabelSeqArg(n,Delim(sep),typed,defined)
+           } else LabelArg(n,typed,defined)
+         case s: String if s.endsWith("…") && s(0).isDigit =>
             //nsep… ---> sequence argument/scope
             var i = 0
             while (s(i).isDigit) {i+=1}
-            val n = s.substring(0,i).toInt
+            val n = s.substring(0, i).toInt
             val rem = s.substring(i,s.length-1)
-            SeqArg(n, Delim(rem))
+            SimpSeqArg(n, Delim(rem))
          case "" => throw ParseError("not a valid marker")
          case s:String =>
             try {
                val n = s.toInt
                //n ---> arguments, no sequence
-               Arg(n.abs) //TODO deprecate negative positions
+               SimpArg(n.abs) //TODO deprecate negative positions
             } catch {case e: Throwable =>
                //other string ---> delimiter
                Delim(s)

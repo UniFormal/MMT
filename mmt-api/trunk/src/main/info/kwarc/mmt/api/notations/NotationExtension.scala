@@ -44,8 +44,8 @@ abstract class SimpleFixity extends Fixity {
    protected def implArgs = (0 until impl).toList.map(i => ImplicitArg(i+1))
    /** ImplicitArgs Args1 Delim Args2 with Args1.length == beforeOp */
    protected def argsWithOp(beforeOp: Int) =
-      (0 until beforeOp).toList.map(i => Arg(1+impl+i)) ::: delim ::
-      (beforeOp until expl).toList.map(i => Arg(1+impl+i))
+      (0 until beforeOp).toList.map(i => SimpArg(1+impl+i)) ::: delim ::
+      (beforeOp until expl).toList.map(i => SimpArg(1+impl+i))
    protected def simpleArgs = {
       val delimStr = delim match {
          case SymbolName() => Nil
@@ -94,7 +94,7 @@ case class Postfix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity 
  * assumes arguments are one variable and one scope; expl must be 1
  */
 case class Bindfix(delim: Delimiter, impl: Int, expl: Int, assoc: Boolean) extends SimpleFixity {
-   def markers = List(delim, Var(impl+1, true, None), Delim("."), Arg(impl+2))
+   def markers = List(delim, Var(impl+1, true, None), Delim("."), SimpArg(impl+2))
    def asString = {
       val assocString = if (assoc) "-assoc" else ""
       ("bindfix"+assocString, simpleArgs)

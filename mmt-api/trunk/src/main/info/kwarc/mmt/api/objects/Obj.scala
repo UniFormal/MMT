@@ -456,6 +456,16 @@ case class OML(vd: VarDecl) extends Term {
     def toNode = vd.toNode.copy(label = "OML")
 }
 
+object OML {
+   def apply(name : LocalName, tp : Option[Term], df : Option[Term]) : OML = OML(VarDecl(name,tp,df,None))
+   /*
+   def unapply(t : Term) : Option[(LocalName,Option[Term],Option[Term])] = t match {
+      case o : OML => Some((o.vd.name,o.vd.tp,o.vd.df))
+      case _ => None
+   }
+   */
+}
+
 /**
  * ComplexTerm provides apply/unapply methods to unify OMA and OMBINDC as well as named arguments and complex binders
  * 

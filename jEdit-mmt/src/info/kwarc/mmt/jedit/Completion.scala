@@ -38,7 +38,7 @@ class IDCompletion(view : org.gjt.sp.jedit.View, controller: Controller, constan
            val text = not.parsingMarkers.map {
               case d: Delimiter => d.expand(con.path).text
               case w: WordMarker => " " + w.word + " "
-              case SeqArg(_,sep,_) => " " + sep.text + " "
+              case sa: SeqArg => " " + sa.sep.text + " "
               case a:Arg => " "
               case _:ImplicitArg => ""
               case v: Var => " "
@@ -61,8 +61,7 @@ class IDCompletion(view : org.gjt.sp.jedit.View, controller: Controller, constan
 }
 
 /**
- * @param text the string that is to be completed
- * @param items the list of completions
+ *
  */
 class ProverCompletion(view : org.gjt.sp.jedit.View, controller: Controller, region: SourceRegion, options: List[Term])
   extends SideKickCompletion(view, "", options.map(o => controller.presenter.asString(o))) {

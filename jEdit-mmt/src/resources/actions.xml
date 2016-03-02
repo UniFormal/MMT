@@ -14,6 +14,11 @@
 		   wm.addDockableWindow("mmt-refactordockable");
 		</CODE>
 	</ACTION>
+	<ACTION NAME="mmt-graphdockable-show">
+		<CODE>
+		   wm.addDockableWindow("mmt-graphdockable");
+		</CODE>
+	</ACTION>
 	<ACTION NAME="mmt-compile">
 		<CODE>
 		   jEdit.getPlugin("info.kwarc.mmt.jedit.MMTPlugin", true).compileActions().compileCurrent(view);

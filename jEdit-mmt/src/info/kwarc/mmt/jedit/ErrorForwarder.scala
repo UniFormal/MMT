@@ -62,8 +62,10 @@ class ErrorListForwarder(errorSource: MMTErrorSource, controller: Controller, ma
    /**
     * remove all errors whose mainFile is src
     */
+   private var errors : Array[ErrorSource.Error] = Array()
    def reset {
       errorSource.removeFileErrors(mainFile)
+      errors = Array()
    }
    protected def addError(e: Error) = e match {
       case s: SourceError =>

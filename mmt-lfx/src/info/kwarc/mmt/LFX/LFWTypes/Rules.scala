@@ -196,7 +196,7 @@ object recApply extends ComputationRule(Apply.path) {
           case _ => return None
         }
          Some(ApplySpine(p,a,u,Lambda(y,domu,Apply(rec(c,p),Apply(u,y)))))
-      case _ => throw RuleNotApplicable
+      case _ => None
     }
 }
 

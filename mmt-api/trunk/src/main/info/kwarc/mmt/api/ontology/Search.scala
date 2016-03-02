@@ -33,7 +33,7 @@ case class TermPattern(qvars: Context, query: Term)
 
 object TermPattern {
    val qvarBinder = utils.mmt.mmtcd ? "qvar"
-   val qvarMarkers = List(Delim("$"), Var(1, false, Some(Delim(","))), Delim(":"), Arg(2))
+   val qvarMarkers = List(Delim("$"), Var(1, false, Some(Delim(","))), Delim(":"), SimpArg(2))
    val qvarNot = new TextNotation(Mixfix(qvarMarkers), Precedence.infinite, None)
    val qvarRule = ParsingRule(qvarBinder, qvarNot)
    class RemoveUnknowns(unk: Context) extends StatelessTraverser {

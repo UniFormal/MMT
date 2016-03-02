@@ -155,7 +155,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          case syntax.mo(s) => List(WordMarker(s))
          case mrow(ls) => ls map (_ match {
             case syntax.mo(s) => WordMarker(s)
-            case s: syntax.render => Arg(s.num.getOrElse(throw new Exception("Error during notation parsing")))
+            case s: syntax.render => SimpArg(s.num.getOrElse(throw new Exception("Error during notation parsing")))
          })}
       val t=TextNotation(Mixfix(pattern),Precedence.integer(prec),None)
       NotationContainer(t)

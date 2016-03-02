@@ -598,8 +598,8 @@ class NotationBasedPresenter extends ObjectPresenter {
                         val compFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[ArgumentMarker]
                         //val delimFollows = ! markersLeft.isEmpty && markersLeft.head.isInstanceOf[parser.Delimiter]
                         current match {
-                           case c @ Arg(n,_) =>
-                              val child = if (n < firstArgNumber) subargs(n-1) else args(n-firstArgNumber)
+                           case c : Arg =>
+                              val child = if (c.number < firstArgNumber) subargs(c.number-1) else args(c.number-firstArgNumber)
                               doChild(c, child, currentPosition)
                               if (compFollows) doSpace(1)
                            case c @ ImplicitArg(n,_) =>

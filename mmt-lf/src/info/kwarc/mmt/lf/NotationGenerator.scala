@@ -53,14 +53,14 @@ class NotationGenerator extends ChangeListener {
          if (notC.parsing.isEmpty) {
             val parseMarkers = SymbolName() ::
                 Range(0,numImplicitArgs).map {i => ImplicitArg(i+1)}.toList :::
-                Range(numImplicitArgs,numTotalArgs).map {i => Arg(i+1)}.toList
+                Range(numImplicitArgs,numTotalArgs).map {i => SimpArg(i+1)}.toList
             val nt = new TextNotation(Mixfix(parseMarkers), Precedence.integer(0), Some(LF._path))
             metadata.Generated.set(nt)
             c.notC.parsingDim.set(nt)
          }
          if (notC.presentation.isEmpty) {
             val tree = if (numImplicitArgs == numTotalArgs) Nil else {
-               val hyps = Range(numImplicitArgs,numTotalArgs).map {i => Arg(i+1)}.toList
+               val hyps = Range(numImplicitArgs,numTotalArgs).map {i => SimpArg(i+1)}.toList
                List(FractionMarker(hyps, List(InferenceMarker), true))
             }
             val presentationMarkers : List[Marker] = tree ::: SymbolName() ::

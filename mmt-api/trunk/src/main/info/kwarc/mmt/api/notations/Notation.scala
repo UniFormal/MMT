@@ -148,7 +148,7 @@ object TextNotation {
    /** helpful when constructing notations programmatically */
    def fromMarkers(prec: Precedence, meta: Option[MPath], scope : NotationScope = NotationScope.default)(ms: Any*): TextNotation = {
       val markers : List[Marker] = ms.toList map {
-         case i: Int => Arg(i)
+         case i: Int => SimpArg(i)
          case m: Marker => m
          case s: String => Marker.parse(s)
       }
@@ -255,7 +255,7 @@ object TextNotation {
 /** defines some implicit conversions to produce Markers */
 object NotationConversions {
    /** integers are converted to argument markers */
-   implicit def fromInt(n:Int) = Arg(n)
+   implicit def fromInt(n:Int) = SimpArg(n)
    /** strings are converted to delimiters */
    implicit def fromString(s:String) = Delim(s)
 }

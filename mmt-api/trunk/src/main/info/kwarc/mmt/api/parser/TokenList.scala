@@ -152,19 +152,19 @@ class TokenList(private var tokens: List[TokenListElem]) {
     var newTokens: List[TokenListElem] = Nil
     def doFoundArg(fa: FoundArg) {
       fa match {
-        case FoundArg(sl, n) =>
-          if (sl.length == 1 && tokens(sl.start).isInstanceOf[MatchedList])
-            newTokens ::= tokens(sl.start)
+        case fa :FoundArg =>
+          if (fa.slice.length == 1 && tokens(fa.slice.start).isInstanceOf[MatchedList])
+            newTokens ::= tokens(fa.slice.start)
           else
-            newTokens ::= new UnmatchedList(new TokenList(sl.toList))
+            newTokens ::= new UnmatchedList(new TokenList(fa.slice.toList))
       }
     }
     found foreach {
       case _: FoundDelim =>
       case fa: FoundArg =>
         doFoundArg(fa)
-      case FoundSeqArg(_, args) =>
-        args foreach doFoundArg
+      case fsa : FoundSeqArg =>
+        fsa.args foreach doFoundArg
       case fv: FoundVar =>
         fv.getVars foreach {
           case SingleFoundVar(_, _, tpOpt) =>

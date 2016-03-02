@@ -31,12 +31,12 @@ case class Arity(subargs: List[ArgumentComponent],
       case _ => false
    }
    def numNormalSubs = subargs.count {
-      case Arg(n,_) => true
+      case _: Arg => true
       case ImplicitArg(_,_) => true
       case _ => false
    }
    def numNormalArgs = arguments.count {
-      case Arg(n,_) => true
+      case _: Arg => true
       case ImplicitArg(_,_) => true
       case _ => false
    }
@@ -76,7 +76,7 @@ case class Arity(subargs: List[ArgumentComponent],
     */
    private def distributeArgs(argComps: List[ArgumentComponent], numArgs: Int) : (Int, Int) = {
       val seqArgPositions = argComps.flatMap {
-         case SeqArg(n,_,_) => List(n)
+         case sa: SeqArg => List(sa.number)
          case _ => Nil
       }
       distribute(numArgs, arguments.length, seqArgPositions)
@@ -96,9 +96,9 @@ case class Arity(subargs: List[ArgumentComponent],
                         perSeqArg: Int, seqArgCutOff: Int)(p: Int): Int = {
          var i = p
          subargs foreach {
-            case SeqArg(n,_,_) if n < p =>
+            case sa:SeqArg if sa.number < p =>
                i += perSeqSub - 1
-               if (n < seqSubCutOff) i += 1
+               if (sa.number < seqSubCutOff) i += 1
             case _ =>
          }
          variables foreach {
@@ -108,9 +108,9 @@ case class Arity(subargs: List[ArgumentComponent],
             case _ =>
          }
          arguments foreach {
-            case SeqArg(n,_,_) if n < p =>
+            case sa:SeqArg if sa.number < p =>
                i += perSeqArg - 1
-               if (n < seqArgCutOff) i += 1
+               if (sa.number < seqArgCutOff) i += 1
             case _ =>
          }
          i
@@ -127,8 +127,8 @@ case class Arity(subargs: List[ArgumentComponent],
          case _:Arg | _ :ImplicitArg =>
             result ::= List(remain.head)
             remain = remain.tail
-         case SeqArg(n,_,_) =>
-            val len = if (n < cutoff) perSeq+1 else perSeq
+         case sa:SeqArg =>
+            val len = if (sa.number < cutoff) perSeq+1 else perSeq
             result ::= remain.take(len)
             remain = remain.drop(len)
       }
@@ -163,9 +163,9 @@ case class Arity(subargs: List[ArgumentComponent],
     * flattens all sequence arguments/variables of a notation according to a complex term
     * 
     * @param markers the list of markers to flatten
-    * @param args number of arguments
+    * @param subs number of arguments before variables
     * @param vars number of variables
-    * @param scs number of scopes
+    * @param args number of arguments after variables
     * 
     * if there is more than 1 sequence arguments, the available arguments are evenly distributed over the sequences
     * remaining arguments are distributed in order of content position
@@ -181,13 +181,14 @@ case class Arity(subargs: List[ArgumentComponent],
       val (perSeqArg, seqArgCutOff) = distributeArgs(arguments, args)
       val remap = remapFun(perSeqSub, seqSubCutOff, perSeqVar, seqVarCutOff, perSeqArg, seqArgCutOff) _
       def flattenOne(m: Marker): List[Marker] = m match {
-         case Arg(n,p) =>
-            List(Arg(remap(n),p))
-         case SeqArg(n, sep,p) =>
-            val length = if (n < seqArgCutOff) perSeqArg+1 else perSeqArg
-            val first = remap(n)
-            if (length == 0) Nil
-            else Range(1,length).toList.flatMap(i => List(Arg(first+i-1,p), sep)) ::: List(Arg(first+length-1,p))
+         case LabelArg(n,tp,df,p) =>
+            List(LabelArg(remap(n),tp,df,p))
+         case SimpArg(n,p) =>
+            List(SimpArg(remap(n),p))
+         case sa:SeqArg =>
+            val length = if (sa.number < seqArgCutOff) perSeqArg+1 else perSeqArg
+            val first = remap(sa.number)
+            utils.insertSep((0 until length).toList.map(i => sa.makeCorrespondingArg(first + i)), sa.sep)
          case ImplicitArg(n,p) =>
             List(ImplicitArg(remap(n),p))
          case Var(n, tpd, None, p) =>
@@ -195,8 +196,7 @@ case class Arity(subargs: List[ArgumentComponent],
          case v @ Var(n, tpd, Some(sep), p) =>
             val length = if (n < seqVarCutOff) perSeqVar+1 else perSeqVar
             val first = remap(n)
-            if (length == 0) Nil
-            else Range(1,length).toList.flatMap(i => List(Var(first+i-1, tpd, None, p), sep)) ::: List(Var(first+length-1, tpd, None, p))
+            utils.insertSep((0 until length).toList.map(i => Var(first+i, tpd, None, p)), sep)
          case AttributedObject => if (attrib) List(AttributedObject) else Nil
          case d: Delimiter =>
             List(d)
@@ -223,8 +223,8 @@ case class Arity(subargs: List[ArgumentComponent],
 
 object Arity {
    def constant = Arity(Nil,Nil, Nil,false)
-   def plainApplication = Arity(Nil, Nil, List(SeqArg(1,Delim(""))), false)
-   def plainBinder = Arity(Nil, List(Var(1,false,Some(Delim("")))), List(Arg(2)), false)
-   def attribution = Arity(Nil, Nil, List(Arg(1)),true)
+   def plainApplication = Arity(Nil, Nil, List(SimpSeqArg(1,Delim(""))), false)
+   def plainBinder = Arity(Nil, List(Var(1,false,Some(Delim("")))), List(SimpArg(2)), false)
+   def attribution = Arity(Nil, Nil, List(SimpArg(1)),true)
 }
 

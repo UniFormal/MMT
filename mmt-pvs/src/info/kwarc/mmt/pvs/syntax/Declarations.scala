@@ -74,7 +74,7 @@ case class formal_theory_decl(named: ChainedDecl, _name: theory_name) extends Fo
 // ********** declarations in a theory
 
 /** 
- *  a declaration in the assumptions of a theory
+ *  a declaration in the assumptions of a theory, essentially formal parameters of axiom flavor and some auxiliary declarations
  *  
  *  This is the same as [[Decl]] except for also allowing assumptions (= axioms).
  */

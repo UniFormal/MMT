@@ -99,6 +99,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          // add narrative structure of doc to outline tree
          buildTreeDoc(root, doc)
          // register errors with ErrorList plugin
+         // errorCont.readd
       } catch {case e: Exception =>
          val msg = e.getClass + ": " + e.getMessage
          val pe = ParseError("unknown error: " + msg).setCausedBy(e)
@@ -229,6 +230,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          case OMV(n) => n.toString
          case OMID(p) => p.name.toString
          case l: OMLITTrait => l.toString
+         case OML(VarDecl(nm,_,_,_)) => nm.toString
          case OMSemiFormal(_) => "unparsed: " + tP.toString
          case ComplexTerm(op, _,_,_) => op.last.toString
          case _ => ""
@@ -236,6 +238,10 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
       val child = new DefaultMutableTreeNode(new MMTObjAsset(t, context, parent, label, reg))
       node.add(child)
       tP match {
+         case OML(VarDecl(_,tp,df,_)) =>
+            (tp.toList:::df.toList) foreach {t =>
+               buildTreeTerm(child, parent, t, context, reg)
+            }
          case OMBINDC(binder,cont, scopes) =>
             if (! binder.isInstanceOf[OMID])
                buildTreeTerm(child, parent, binder, context, reg)

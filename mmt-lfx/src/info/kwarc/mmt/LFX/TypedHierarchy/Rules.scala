@@ -1,8 +1,11 @@
 package info.kwarc.mmt.LFX.TypedHierarchy
 
+import info.kwarc.mmt.LFX.NatLiterals
 import info.kwarc.mmt.api.checking._
-import info.kwarc.mmt.api.objects.{OMS, Stack, Term}
-import info.kwarc.mmt.lf.OfType
+import info.kwarc.mmt.api.objects
+import info.kwarc.mmt.api.objects.{OMV, OMS, Stack, Term}
+import info.kwarc.mmt.lf.{Pi, OfType}
+import objects.Conversions._
 
 
 object TypeLevelUniverse extends UniverseRule(TypeLevel.path) {
@@ -11,6 +14,7 @@ object TypeLevelUniverse extends UniverseRule(TypeLevel.path) {
     case _ => false
   }
 }
+
 
 object TypeLevelSubRule extends SubtypingRule {
   val head = TypeLevel.path
@@ -58,5 +62,17 @@ object LevelType extends InferenceRule(TypeLevel.path,OfType.path) {
     case DefinedTypeLevel(i) => Some(DefinedTypeLevel(i + 1))
     case TypeLevel(t) => Some(TypeUniverse.term)
     case _ => throw RuleNotApplicable
+  }
+}
+
+object PiLevel extends FormationRule(Pi.path, OfType.path) {
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+    tm match {
+      case Pi(x,NatLiterals.synType,Pi(y,TypeLevel(OMV(x2)),t)) if x==x2 =>
+        //if (!covered) isType(solver,a)
+        solver.inferType(t,covered)(stack ++ x%NatLiterals.synType ++ y%TypeLevel(OMV(x2)),history).getOrElse(return None)
+        Some(TypeUniverse.term)
+      case _ => throw RuleNotApplicable
+    }
   }
 }

@@ -418,6 +418,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             s
          case _:OMID =>
             null
+         case OML(VarDecl(name,tp,df,_)) => OML(name,tp.map(checkTerm(context,_)),df.map(checkTerm(context,_)))
          case OMV(name) =>
             if (! context.isDeclared(name))
                env.errorCont(InvalidObject(s, "variable is not declared"))

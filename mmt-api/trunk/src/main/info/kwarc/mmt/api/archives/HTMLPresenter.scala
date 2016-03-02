@@ -175,7 +175,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
          val firstVar = tn.arity.firstVarNumberIfAny
          val firstArg = tn.arity.firstArgNumberIfAny
          text {tn.markers.map {
-            case Arg(n,_) =>
+            case SimpArg(n,_) =>
                val argNum = n-firstArg
                if (argNum < 5)
                   List("a", "b", "c", "d", "e")(argNum)
@@ -187,7 +187,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
                   List("I", "J", "K")(argNum)
                else
                   "I" + argNum.toString
-            case SeqArg(n, sep,_) => n.toString + sep.text + "..." + sep.text + n.toString
+            case SimpSeqArg(n, sep,_) => n.toString + sep.text + "..." + sep.text + n.toString
             case Var(n, typed, sepOpt,_) =>
                val varNum = n-firstVar
                val varname = if (varNum < 3)

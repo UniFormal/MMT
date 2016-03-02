@@ -330,7 +330,7 @@ class STeXImporter extends Importer {
                 val macro_name = (n \ "@macro_name").text
                 val nrArgs = (n \ "@nargs").text.toInt
                 val macroMk = Delim("\\" + macro_name)
-                val notArgs = macroMk :: (0 until nrArgs).toList.flatMap(i => Delim("{") :: Arg(i + 1) :: Delim("}") :: Nil)
+                val notArgs = macroMk :: (0 until nrArgs).toList.flatMap(i => Delim("{") :: SimpArg(i + 1) :: Delim("}") :: Nil)
                 val stexScope = NotationScope(None, "stex" :: "tex" :: Nil, 0)
                 val texNotation = new TextNotation(Mixfix(notArgs), Precedence.integer(0), None, stexScope)
                 c.notC.parsingDim.set(texNotation)
@@ -524,7 +524,7 @@ class STeXImporter extends Importer {
                     tmpS = ""
                   }
                   i += 1
-                  markers = markers :+ Arg(i)
+                  markers = markers :+ SimpArg(i)
               }
               case c => tmpS += c.text
             }
@@ -669,9 +669,9 @@ class STeXImporter extends Importer {
     case "render" =>
       val argName = (n \ "@name").text
       argMap(argName) match {
-        case ProtoArg(nr) => Arg(nr, None) :: Nil //TODO add precedence back and fix printing and parsing of Args with precedence Some(getPrecedence(n))
+        case ProtoArg(nr) => SimpArg(nr, None) :: Nil //TODO add precedence back and fix printing and parsing of Args with precedence Some(getPrecedence(n))
         case ProtoVar(nr) => Var(nr, typed = false, None, None) :: Nil //TODO Some(getPrecedence(n)
-        case ProtoSub(nr) => Arg(nr, None) :: Nil //Some(getPrecedence(n))
+        case ProtoSub(nr) => SimpArg(nr, None) :: Nil //Some(getPrecedence(n))
       }
     case "iterate" =>
       val argName = (n \ "@name").text
@@ -688,7 +688,7 @@ class STeXImporter extends Importer {
           }
       }
       argMap(argName) match {
-        case ProtoArg(nr) => SeqArg(nr, delim, precO) :: Nil
+        case ProtoArg(nr) => SimpSeqArg(nr, delim, precO) :: Nil
         case ProtoVar(nr) => Var(nr, typed = false, Some(delim), precO) :: Nil
         case ProtoSub(nr) => throw new STeXParseError("Cannot have sequence sub as argument in notation rendering", None, None, None)
       }

@@ -22,7 +22,7 @@ object Rectype extends LFRecSymbol("Rectype") {
   def apply(v:Term*) = OMA(this.term, v.toList)
   def apply(con: Context) = OMA(this.term, con map {v => OML(v)})
   def unapply(t : Term) : Option[List[OML]] = t match {
-    case OMBIND(this.term,con,_) => Some(con map {v => OML(v)})
+    case OMA(this.term,ls) => Some(ls map {_ match {case o:OML => o case _ => return None}})
     case _ => None
   }
 }
@@ -31,7 +31,7 @@ object Recexp extends LFRecSymbol("Recexp") {
   def apply(v:OML*) = OMA(this.term, v.toList)
   def apply(con: Context) = OMA(this.term, con map {v => OML(v)})
   def unapply(t : Term) : Option[List[OML]] = t match {
-    case OMBIND(this.term,con,_) => Some(con map {v => OML(v)})
+    case OMA(this.term,ls) => Some(ls map {_ match {case o:OML => o case _ => return None}})
     case _ => None
   }
 }
@@ -39,7 +39,7 @@ object Recexp extends LFRecSymbol("Recexp") {
 object Getfield extends LFRecSymbol("Getfield") {
   def apply(t:Term,v:OML) = OMA(this.term,List(t,v))
   def unapply(t : Term) : Option[(Term,OML)] = t match {
-    case OMBIND(this.term,Context(v),tm) => Some((tm,OML(v)))
+    case OMA(this.term,List(tm, v)) => Some((tm,v match {case o:OML => o case _ => return None}))
     case _ => None
   }
 }

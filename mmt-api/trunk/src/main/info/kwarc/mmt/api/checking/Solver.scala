@@ -722,12 +722,20 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
                    activerules -= rule
                    None
                  case TypingRule.SwitchToInference =>
-                  return checkByInference(tpS)
+                   val r = checkByInference(tpS)
+                   if (r) {
+                     haveresult = true
+                     Some(true)
+                   } else {
+                     haveresult = false
+                     activerules -= rule
+                     None
+                   }
                }
              case None =>
                history += "no applicable rule"
                haveresult = true
-               return checkByInference(tpS)
+               Some(checkByInference(tpS))
            }
          }
          ret.getOrElse(false)

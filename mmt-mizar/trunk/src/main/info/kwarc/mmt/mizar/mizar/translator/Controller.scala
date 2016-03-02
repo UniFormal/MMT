@@ -207,7 +207,7 @@ object TranslationController {
         val sname = Delim(format.symbol.name)
         val args = 1.to(argnr).flatMap {x => 
           val d = if (x == leftargnr + 1) sname else Delim(",")
-          d :: Arg(x) :: Nil
+          d :: SimpArg(x) :: Nil
         }.toList match {
           case Nil => Nil
           case l => l.tail //to remove first extra delimiter (need args separated by delim)
@@ -242,16 +242,16 @@ object TranslationController {
 	        case None => //single delimiter
 	          def genMarkers(args : Int, namePos : Int) : List[Marker] = args match {
 	            case 0 => Nil
-	            case 1 => Arg(0) :: Nil
+	            case 1 => SimpArg(0) :: Nil
 	            case n => 
 	              val delimS = if (namePos == 1) format.symbol.name else ","
-	              Arg(n - 1) :: Delim(delimS) :: genMarkers(n - 1, namePos - 1)
+	              SimpArg(n - 1) :: Delim(delimS) :: genMarkers(n - 1, namePos - 1)
 	          }
 	          genMarkers(argnr, leftargnr)
 	        case Some(rightsymbol) => // double delimiter
 	          val first = Delim(format.symbol.name)
 	          val last = Delim(rightsymbol.name)
-	          val rest = 0.to(argnr - 1).toList.map(Arg(_))
+	          val rest = 0.to(argnr - 1).toList.map(SimpArg(_))
 	          first :: (rest ::: List(last))
 	      }
           val not = new TextNotation(Mixfix(markers), Precedence.integer(0), None)

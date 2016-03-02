@@ -171,9 +171,11 @@ class GenericScalaExporter extends Exporter {
   }
 
   private def arityToScala(arity: Arity): List[(String, String)] = arity.components.map {
-    case Arg(n, _) => ("x" + n.abs, "Term")
+    case SimpArg(n, _) => ("x" + n.abs, "Term")
+    case LabelArg(n,_,_,_) => ("x" + n.abs, "OML")
     case ImplicitArg(n, _) => ("x" + n.abs, "Term")
-    case SeqArg(n, _, _) => ("xs" + n.abs, "List[Term]")
+    case SimpSeqArg(n, _, _) => ("xs" + n.abs, "List[Term]")
+    case LabelSeqArg(n, _, _,_,_) => ("xs" + n.abs, "List[OML]")
     case Var(n, _, None, _) => ("v" + n, "VarDecl")
     case Var(n, _, Some(_), _) => ("vs" + n, "Context")
   }

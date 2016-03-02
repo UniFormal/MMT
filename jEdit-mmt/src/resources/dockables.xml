@@ -8,4 +8,7 @@
 	<DOCKABLE NAME="mmt-refactordockable">
 		new info.kwarc.mmt.jedit.MMTRefactorDockable(view, position);
 	</DOCKABLE>
+	<DOCKABLE NAME="mmt-graphdockable">
+		new info.kwarc.mmt.jedit.MMTGraphDockable(view, position);
+	</DOCKABLE>
 </DOCKABLES>
