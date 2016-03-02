@@ -318,7 +318,7 @@ class XMLReader(controller: Controller) extends Logger {
             addDeclaration(dd)
             decls.foreach {d =>
                logGroup {
-                  readInModule(home / name, nsMap, dd.theory, d)
+                  readInModule(home / name, nsMap, dd.module, d)
                }
             }
          //TODO remove patterns and instances

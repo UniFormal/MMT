@@ -71,7 +71,7 @@ case class VarDecl(name : LocalName, tp : Option[Term], df : Option[Term], not: 
          case Some(df) =>
             DefinedStructure(home, name, from, df, false)
       }
-      case _ => Constant(home, name, None, tp, df, None)
+      case _ => Constant(home, name, None, tp, df, None, NotationContainer(not))
    }
 }
 

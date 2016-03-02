@@ -83,14 +83,14 @@ class MMTStructureSimplifier(oS: uom.ObjectSimplifier) extends uom.Simplifier(oS
     }
   }
   
-   def getBody(context: Context, moduleExp: Term): ElementContainer[NamedElement] = moduleExp match {
+  def getBody(context: Context, moduleExp: Term): ElementContainer[NamedElement] = moduleExp match {
      case OMMOD(p) => lup.getTheory(p) match {
        case m: DefinedModule => getBody(context, m.df)
        case m: DeclaredModule => m
      }
      //TODO OMPMOD
      case ComplexTheory(cont) => cont
-   }
+  }
 
    /* everything below here is Mihnea's enrichment code, which may be outdated or incomplete */
   

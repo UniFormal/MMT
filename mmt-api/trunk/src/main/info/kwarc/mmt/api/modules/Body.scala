@@ -45,8 +45,8 @@ trait Body extends ContentElement with MutableElementContainer[Declaration] {sel
 
    /** true iff a declaration for a name is present */ 
    def declares(name: LocalName) = statements.isDefinedAt(name)
-   /** the set of names of all declarations */
-   def domain = statements.keySet
+   /** the list of names of all declarations */
+   def domain: List[LocalName] = getDeclarations.map(_.name)
 
    /** retrieve a declaration */ 
    def getO(name : LocalName) : Option[Declaration] = statements.get(name)

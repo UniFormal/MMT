@@ -368,7 +368,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
            val sym = getDeclarationInTerm(s.from, ln, sourceError) // resolve ln in the domain of s
            translateByLink(sym, s, error) // translate sym along l
          case dd: DerivedDeclaration =>
-            getInElaboration(dd, ln, error)
+            getInElaboration(t, dd, ln, error)
          case e =>
            error("local name " + ln + " left after resolving to " + e.path)
        }
@@ -400,18 +400,17 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
   /**
    * look up 'name' in elaboration of dd
    */
-  private def getInElaboration(dd: DerivedDeclaration, name: LocalName, error: String => Nothing): Declaration = {
+  private def getInElaboration(parent: DeclaredModule, dd: DerivedDeclaration, name: LocalName, error: String => Nothing): Declaration = {
       val sf = extman.get(classOf[StructuralFeature], dd.feature) getOrElse {
         error("structural feature " + dd.feature + " not known")
       }
-      val context = Context.empty //TODO
-      val elaboration = sf.elaborate(context, dd)
+      val elaboration = sf.elaborate(parent, dd)
       elaboration.getMostSpecific(name) match {
         case Some((d: DerivedDeclaration, ln)) =>
           if (ln.isEmpty)
             d
           else
-            getInElaboration(d, ln, error)
+            getInElaboration(parent, d, ln, error)
         case Some((e,ln)) =>
           error("cannot elaborate " + ln + " after resolving to " + e.path)
         case None =>
@@ -523,7 +522,7 @@ class Library(extman: ExtensionManager, val report: Report) extends Lookup with 
           case _ => declT.name
         })
         // TODO is it better to use lazy morphism application?
-        def mapTerm(t: Term) = ApplyMorphs.traverse(t)(Context(l.from.toMPath), l.toTerm) //t * l.toTerm
+        def mapTerm(t: Term) = ApplyMorphs(t, l.toTerm, Context(l.from.toMPath)) //t * l.toTerm
       // translate declT along assigOpt
       val newDecl = declT match {
           case c: Constant =>
