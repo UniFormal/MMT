@@ -32,19 +32,23 @@ class MMTErrorSource extends DefaultErrorSource("MMT") {
      while (sets.hasNext) {
        val set = sets.next
        val es = set.iterator
+       var remove: List[MMTError] = Nil
        while (es.hasNext) {
           es.next match {
             case e: MMTError =>
                if (e.mainFile == file) {
-                 set.remove(e)
-                 gui.Swing.invokeLater {
-           	        val msg = new ErrorSourceUpdate(this, ErrorSourceUpdate.ERROR_REMOVED, e)
-            			  org.gjt.sp.jedit.EditBus.send(msg)
-            		 }
+                 remove ::= e
                }
             case e =>
                // should be impossible
           }
+       }
+       remove.foreach {e =>
+         set.remove(e)
+            gui.Swing.invokeLater {
+              val msg = new ErrorSourceUpdate(this, ErrorSourceUpdate.ERROR_REMOVED, e)
+         		  org.gjt.sp.jedit.EditBus.send(msg)
+         	 }
        }
      }
    }
