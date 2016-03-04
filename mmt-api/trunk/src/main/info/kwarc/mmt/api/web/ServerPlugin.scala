@@ -3,11 +3,13 @@ package info.kwarc.mmt.api.web
 import java.util.Calendar
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
 import tiscaf._
+
+import Server._
 
 /**
  * An MMT extensions that handles certain requests in MMT's HTTP server.
@@ -49,7 +51,7 @@ class PostServer extends ServerExtension("post") {
     val dpath = DPath(URI(dpathS))
     log("Received content : " + content)
     controller.read(parser.ParsingStream.fromString(content, dpath, format), interpret = true)(ErrorThrower)
-    Server.TextResponse("Success")
+    TextResponse("Success")
   }
 }
 
@@ -85,7 +87,7 @@ class SVGServer extends ServerExtension("svg") {
       arch.root / "export" / "svg" / "content" / inPathFile
     }
     val node = utils.File.read(svgFile.setExtension("svg"))
-    Server.TypedTextResponse(node, "text")
+    TypedTextResponse(node, "text")
   }
 }
 
@@ -104,7 +106,7 @@ class QueryServer extends ServerExtension("query") {
     Query.infer(q)(Nil) // type checking
     val res = controller.evaluator.evaluate(q)
     val resp = res.toNode
-    Server.XmlResponse(resp)
+    XmlResponse(resp)
   }
 }
 
@@ -169,7 +171,7 @@ class SearchServer extends ServerExtension("search") {
         }
       }
     }
-    Server.XmlResponse(htmlres)
+    XmlResponse(htmlres)
   }
 }
 
@@ -230,7 +232,7 @@ class GetActionServer extends ServerExtension("mmt") {
       case _ =>
           <notallowed action={action.toString}/>.toString
     }
-    Server.XmlResponse(resp)
+    XmlResponse(resp)
   }
 }
 
@@ -274,7 +276,7 @@ class ActionServer extends ServerExtension("action") {
         }
       }
     }
-    Server.XmlResponse(html)
+    XmlResponse(html)
   }
 }
 
@@ -323,9 +325,9 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
         println(ex)
     }
     finally {
-      Server.XmlResponse("<p>not ok</p>")
+      XmlResponse("<p>not ok</p>")
     }
-    Server.XmlResponse("<p>OK</p>")
+    XmlResponse("<p>OK</p>")
   }
 
   def Writer(f: File) = {
@@ -340,80 +342,57 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
   }
 }
 
-/** obsolete */
-class AlignServer extends ServerExtension("align") {
-  //override def start(args: List[String]) {}
-  def apply(path: List[String], query: String, body: Body) = {
-    val root_hol = controller.backend.getArchive("hollight").foreach { a =>
-      val alignments_hol = a.root / "relational" / "alignments" / "alignments.rel"
-      val fhol = File(alignments_hol)
-      try {
-        read(fhol)
-      }
-      catch {
-        case ex: Exception =>
-          println(ex)
-      }
-    }
-    val root_miz = controller.backend.getArchive("MML").foreach { a =>
-      val alignments_miz = a.root / "relational" / "alignments" / "alignments.rel"
-      val fmiz = File(alignments_miz)
-      try {
-        read(fmiz)
-      }
-      catch {
-        case ex: Exception =>
-          println(ex)
-      }
-    }
-    val path = Path.parse(query, controller.getNamespaceMap)
-    val list = getSymbolAlignments(path)._1
-    if (list.isEmpty) {
-      Server.TextResponse("")
-    }
-    else {
-      val concept = getSymbolAlignments(path)._2.split("\\?").last
-      val symbolAlignments = getSymbolAlignments(path)._1.distinct.map { s => s.toPath }
-      val prepJson = symbolAlignments.map { el =>
-        "{\"name\": " + "\"" + el.split('?').last + "\", " + "\", parent\": " + "\"" + concept + "\"" + ", " + "\"address\": " + "\"" + el + "\"" + markLibrary(el) + "}"
-      }.mkString(",")
-      val rootJson = "[{\"name\":" + "\"" + concept + "\"" + ",\"parent\":\"null\"," + "\"children\": [" + prepJson + "]}]"
-      Server.TextResponse(rootJson)
-    }
+import symbols._
+import modules._
+class URIProducer extends BuildTarget {
+  def key = "uris"
+  
+  private def jsonFile(a: Archive) = a / archives.export / key / "uris.json"
+  
+  def build(a: Archive, up: Update, in: FilePath) {
+     val thys = controller.depstore.querySet(DPath(a.narrationBase), Transitive(+Declares) * HasType(IsTheory))
+     File.stream(jsonFile(a), "[\n", ",\n", "\n]") {out =>
+       thys.foreach {thy =>
+         catchErrors("error while processing " + thy) {
+           controller.globalLookup.getO(thy) match {
+             case Some(d: DeclaredTheory) =>
+               catchErrors("error while flattening " + d.path) {
+                  controller.simplifier.flatten(d)
+               }
+               d.getDeclarationsElaborated.foreach {
+                 case c: Constant =>
+                   val tpS = c.tp match {
+                     case Some(t) =>
+                       catchErrors("error while presenting " + t, "") {
+                         controller.presenter.asString(t)
+                       }
+                     case None => ""
+                   }
+                   val j = JSONObject("uri" -> JSONString(c.path.toPath), "type" -> JSONString(tpS))
+                   out(j.toString)
+                 case _ =>
+               }
+             case _ =>
+           }
+         }
+       }
+     }
   }
+  def clean(a: Archive, in: FilePath) {
+    delete(jsonFile(a))
+  }
+}
 
-  def findHomeLibrary(path: String, lib: String): Boolean = {
-    path contains lib
-  }
-
-  def markLibrary(s: String): String = {
-    if (s contains "hol") " ,\"note\": " + "\"hol\""
-    else if (s contains "MML") " ,\"note\": " + "\"mizar\""
-    else if (s contains "Mizar") " ,\"note\": " + "\"mizar\""
-    else "root"
-  }
-
-  def read(f: File) {
-    File.ReadLineWise(f) { line =>
-      val ns = NamespaceMap.empty
-      val re = controller.relman.parse(line, ns)
-      controller.depstore += re
-    }
-  }
-
-  def printList(args: List[_]): Unit = {
-    args.foreach(println)
-  }
-
-  def getSymbolAlignments(p: Path): (List[Path], String) = {
-    val l = controller.depstore.queryList(p, Symmetric(Transitive(ToObject(IsAlignedWith))))
-    if (l.isEmpty) {
-      (l, "")
-    }
-    else {
-      // identify the M-MMT URI and store in val concept
-      val concept = l.head
-      (controller.depstore.queryList(concept, Symmetric(Transitive(ToObject(IsAlignedWith)))), concept.toPath)
-    }
-  }
+/**
+ * serves all constant URIs in an archive or a group of archives
+ */
+class URIServer extends ServerExtension("uris") {
+   def apply(path: List[String], query: String, body: Body) = {
+     val archive = controller.backend.getArchive(query).getOrElse {
+       throw LocalError("archive not found: " + query)
+     }
+     val f = archive / Dim("export") / "uris" / "uris.json"
+     val json = File.read(f)
+     TypedTextResponse(json, "application/json")
+   }
 }

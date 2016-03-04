@@ -148,6 +148,8 @@ abstract class BuildTarget extends FormatBasedExtension {
   var verbose: Boolean = false
   var quiet: Boolean = false
 
+  //TODO @CM This method should not be overridden here. Any argument parsing should go into a separate trait that individual BuildTargets may or may not  mix in
+  //The same holds for the related declarations above. 
   override def start(args: List[String]) {
     val (m, rest) = AnaArgs(verbOpts ++ buildOpts, args)
     optionsMap = m
@@ -163,13 +165,14 @@ abstract class BuildTarget extends FormatBasedExtension {
   }
 
   /** build or update this target in a given archive */
-  def build(a: Archive, up: Update, in: FilePath)
+  def build(a: Archive, up: Update, in: FilePath): Unit
 
   /** build estimated dependencies first */
+  //TODO @CM this method does not belong here and should be removed
   def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {}
 
   /** clean this target in a given archive */
-  def clean(a: Archive, in: FilePath)
+  def clean(a: Archive, in: FilePath): Unit
 
   /** the main function to run the build target
     *

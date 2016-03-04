@@ -11,6 +11,7 @@ import parser._
 import presentation._
 import proving._
 import uom._
+import utils._
 import utils.MyList._
 import web._
 
@@ -30,7 +31,23 @@ trait Extension extends Logger {
 
   /** a custom error class for this extension */
   case class LocalError(s: String) extends ExtensionError(logPrefix, s)
+  /** convenience method for wrapping code in error handler that throws [[LocalError]] */
+  protected def catchErrors(msg: String)(code: => Unit): Unit = {
+     try {code}
+     catch {case e: Error =>
+       log(LocalError(msg).setCausedBy(e))
+     }
+  }
+  /** like its partner but with return value */
+  protected def catchErrors[A](msg: String, recoverWith: => A)(code: => A): A = {
+     try {code}
+     catch {case e: Error =>
+       log(LocalError(msg).setCausedBy(e))
+       recoverWith
+     }
+  }
 
+  
   /** MMT initialization */
   private[api] def init(controller: Controller) {
     this.controller = controller
@@ -265,7 +282,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     //parserExtensions ::= new ControlParser
     //serverPlugins
     List(new web.GetActionServer, new web.SVGServer, new web.QueryServer, new web.SearchServer,
-      new web.TreeView, new web.BreadcrumbsServer, new web.ActionServer, new web.AlignServer,
+      new web.TreeView, new web.BreadcrumbsServer, new web.ActionServer,
       new web.SubmitCommentServer).foreach(addExtension(_))
     //queryExtensions
     List(new ontology.Parse, new ontology.Infer, new ontology.Analyze, new ontology.Simplify,

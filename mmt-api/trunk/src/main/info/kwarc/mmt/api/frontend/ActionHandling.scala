@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
 import archives._
-import info.kwarc.mmt.api.frontend.AnaArgs.OptionDescrs
+import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
 import utils._
 import checking._
 import web._

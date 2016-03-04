@@ -24,7 +24,10 @@ case class JSONFloat(value: Double) extends JSONNumber
 case class JSONBoolean(value: Boolean) extends JSONValue
 
 case class JSONString(value: String) extends JSONValue {
-  override def toString = "\"" + JSONFormat.quoteString(value) + "\""
+  override def toString = {
+    val escaped = JSONFormat.quoteString(value) //also escapes / to \/ which is allowed but weird
+    "\"" + escaped + "\""
+  }
 }
 
 case class JSONArray(values: JSON*) extends JSON {
@@ -134,7 +137,10 @@ object JSON {
                case 'r' => ("r", "\r")
                case 't' => ("t", "\t")
                case '/' => ("/","/")
-               case 'u' => (unescaped.substring(0,5), "u"+unescaped.substring(1,4)) //TODO make char
+               case 'u' =>
+                 val hex = unescaped.substring(1,4)
+                 val char = Integer.parseInt(hex, 16).toChar
+                 (unescaped.substring(0,5), char)
                case _ => throw JSONError("Illegal starting character " + escaped(1) + " for JSON")
 			}
          }

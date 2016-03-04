@@ -180,6 +180,34 @@ object File {
     strings.foreach { s => fw.write(s) }
     fw.close
   }
+  
+  /**
+   * streams a list-like object to a file
+   * @param f the file to write to
+   * @param begin initial text
+   * @param sep text in between elements
+   * @param end terminal text
+   * @param work some code that calls its argument on every element
+   * example: (l: List[Node]) => stream(f, "<root>", "\n", "</root>"){out => l map {a => out(a.toString)}}
+   */
+  def stream(f: File, begin: String = "", sep: String = "", end: String="")(work: (String => Unit) => Unit) = {
+     val fw = Writer(f)
+     fw.write(begin)
+     var writeSep = false
+     def out(s: String) {
+       if (writeSep)
+         fw.write(sep)
+       else
+         writeSep = true
+       fw.write(s)
+     }
+     try {
+       work(out)
+       fw.write(end)
+     } finally {
+       fw.close
+     }
+  }
 
   /**
    * convenience method for writing a list of lines into a file
