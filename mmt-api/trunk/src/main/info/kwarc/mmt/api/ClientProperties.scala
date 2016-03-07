@@ -63,7 +63,7 @@ class BooleanClientProperty[-C <: ClientProperties](p: URI) extends ClientProper
    def unset(t: C) {
      put(t, false)
    }
-   def is(t: C) = unapply(t) == Some(true)
+   def is(t: C) = get(t) == Some(true)
 }
 
 
