@@ -22,7 +22,14 @@
       <script type="text/javascript" src="script/jquery/jquery-ui.js"></script>
       <script type="text/javascript" src="script/tree/jquery.hotkeys.js"></script><!-- used by  stree -->
       <script type="text/javascript" src="script/tree/jquery.jstree.js"></script>
-<!--<script type="text/javascript" src="/script/SVGPan/SVGPan.js"></script>-->
+
+<!-- incremental search by Kazuhisa Nakasho -->
+      <script type="text/javascript" src="script/incsearch/incsearch.js"></script>
+      <script type="text/javascript" src="script/incsearch/treeview.js"></script>
+      <link rel='stylesheet' href='css/incsearch/jstree.css'>
+      <link rel='stylesheet' href='css/incsearch/index.css'>
+      <link rel='stylesheet' href='css/incsearch/incsearch.css'>
+      <link rel='stylesheet' href='css/incsearch/treeview.css'>
 
 <!-- Core JS API for MMT interaction -->
       <script type="text/javascript" src="script/mmt/mmt-js-api.js"></script>
@@ -87,7 +94,22 @@
 </table>
 </div>
 
-<!-- widgets -->
+<!-- incremental search -->
+<div id='incsearch' class='item'></div>
+<div id='treeview' class='item'>
+<!--   <ul>
+     <li class='treeitem'>Root node 1
+       <ul>
+         <li class='treeitem'>Child node 1</li>
+         <li class='treeitem'>Child node 2</li>
+       </ul>
+     </li>
+   </ul>-->
+</div>
+<div id='content' class='item'>
+</div>
+
+<!-- search -->
 <div id="search">
 <div class="panel panel-default" id="panel1">
    <div class="panel-heading">

@@ -34,6 +34,15 @@ $(function () {
    $('[data-toggle="popover"]').popover({html:true})
 });
 
+// initialize incremental search
+$(function() {
+   $('#treeview').jstree({
+      "plugins" : []
+   });
+   var searcher = new Incsearch($('#incsearch'));
+   var treeeview = new Treeview(searcher);
+});
+
 // add event handler to parse box that parses via the server 
 $(function(){
    var inpbox = $('#parseForm #inputbox');

@@ -1,0 +1,12 @@
+@charset "UTF-8";
+
+#treeview {
+    float: left;
+    width: 300px;
+    border-right: 1px solid #808080;
+}
+
+#treeview .treeitem :hover {
+  color:#233bba;
+  text-decoration:underline;
+}

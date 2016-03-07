@@ -1,0 +1,50 @@
+@charset "UTF-8";
+
+html {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  margin: 0;
+}
+
+body, .item {
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  height: 100%;
+  overflow: auto;
+}
+
+#content {
+  float: left;
+  /*position: relative;*/
+  padding-bottom: 5px;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+#content h2 {
+  margin-left: 10px;
+}
+
+#content h2 span {
+  font-size: 15px;
+}
+
+#content h3 {
+  padding: 5px;
+  font-size: 20px;
+  border-left: 10px solid #00008b;
+  margin: 10px;
+}
+
+#content h3 span.type {
+  font-size: 25px;
+}
+
+#content h3 span.defined-in {
+  font-size: 16px;
+  font-weight: normal;
+}
