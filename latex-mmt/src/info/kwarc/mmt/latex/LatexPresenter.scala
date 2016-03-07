@@ -154,7 +154,7 @@ class LatexPresenter(oP: ObjectPresenter) extends Presenter(oP) {
         case t: DeclaredTheory =>
           controller.simplifier.flatten(t)
           rh << BeginModule(t.parent, t.name).toString()
-          t.getDeclarationsElaborated foreach doElement
+          doElement(t.asDocument) // or better t.getDeclarationsElaborated foreach doElement ?
           rh << EndModule.toString()
         case PlainInclude(from, to) =>
           rh << ImportModule(from).toString
