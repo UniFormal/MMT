@@ -1,72 +1,15 @@
 package info.kwarc.mmt.latex
+
 import info.kwarc.mmt.api._
 import utils._
-import web._
 import objects._
-import parser._
 import symbols._
+import modules._
+import documents._
+import opaque._
 import presentation._
 import notations._
 import frontend._
-import scala.collection._
-import scala.concurrent._
-import tiscaf._
-
-case class LatexError(val text : String) extends Error(text)
-
-/*
-class LatexState(val dpath : DPath, controller : Controller) {
-  val dictionary = new mutable.HashMap[LocalName, String] // ?needed
-  
-  val parser = new LatexStructureParser(this, controller)        
-
-  def context = varContexts match {
-    case Nil => Context()
-    case hd :: Nil => hd
-    case l => l.reduceLeft((x,y) => x ++ y)
-  }
-  
-  var varContexts : List[Context] = Nil
-  def addContext(con : Context = Context()) = varContexts ::= con
-  def addVar(v : VarDecl) = varContexts = (varContexts.head ++ v) :: varContexts.tail
-  
-  def clearContext() = varContexts = varContexts.tail
-  
-  var mod : MPath = null //current module
-  
-  val seqReader = new SeqBufReader
-  val parserState = new ParserState(new Reader(seqReader), dpath)
-  
-  var notationQueue = new mutable.Queue[String]
-  
-  def setParserState(text : String) {
-    seqReader.appendLine(text)
-  }
-  
-  val varIds = new mutable.HashMap[LocalName,Int]
-  
-  var currentId = 0
-  def getFreshId = {
-    currentId += 1
-    currentId
-  }
-  
-  def addVar(name : LocalName) = {
-    varIds(name) = getFreshId
-    resolveVar(name)
-  }
-  
-  def resolveVar(name : LocalName) = varIds(name)
-  
-  def waitDone() {  
-    
-    while(!seqReader.isDone) {
-      Thread.sleep(10)
-    } 
-    Thread.sleep(100)
-  }
-}
-* */
 
 class LatexObjectPresenter extends NotationBasedPresenter {
    private val unicodeMap = new scala.collection.mutable.HashMap[Char,String]()
@@ -185,20 +128,55 @@ class LatexObjectPresenter extends NotationBasedPresenter {
 }
 
 
-/*
+/**
+ * replaces mmt with stex declarations, keeps embedded latex as is 
+ */
 class LatexPresenter(oP: ObjectPresenter) extends Presenter(oP) {
-   var currentJob : String = ""
+  def key = "mmt-latex"
    
-   override val logPrefix = "mmt-latex"    
-     
-   val states = new mutable.HashMap[String, LatexState] 
-   
-   def apply(c : StructuralElement, rh : RenderingHandler) {
-      rh(c.toString)
+   def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {
+      e match {
+        case d: Document =>
+          if (standalone) standaloneHeader
+          doElement(d)
+          if (standalone) standaloneFooter
+        case se =>
+          doElement(se)
+      }
    }
    
-   def apply(o : Obj, rh : RenderingHandler) : Unit = apply(o, rh, states(currentJob).dictionary)
+   private def doElement(se: StructuralElement)(implicit rh : RenderingHandler) {
+     se match {
+        case d: Document =>
+          d.getDeclarations foreach doElement
+        case oe: UnknownOpaqueElement if oe.format == "latex" =>
+          rh << oe.raw.text
+        case t: DeclaredTheory =>
+          controller.simplifier.flatten(t)
+          rh << BeginModule(t.parent, t.name).toString()
+          t.getDeclarationsElaborated foreach doElement
+          rh << EndModule.toString()
+        case PlainInclude(from, to) =>
+          rh << ImportModule(from).toString
+        case c: Constant =>
+          rh << SymDef(c.home.toMPath, c.name).toString
+        case _ =>
+          rh << "skipping " + se.path
+     }
+   }
    
+   private def standaloneHeader {
+      rh << """\documentclass{stex}"""
+      rh << """\begin{document}"""
+   }
+   private def standaloneFooter {
+      rh << """\end{document}"""
+   }
+}
+
+/*
+ * 
+ * // from old LatexPresenter
    private def toLatex(tm : Term, scope : MPath, state : LatexState) : String = {
      val (notations, extensions) = AbstractObjectParser.getNotations(controller, OMMOD(scope))
      val notationsHash = notations.map(n => (n.name, n)).toMap
@@ -584,3 +562,59 @@ object Utils {
 }
 
 */
+
+/*
+case class LatexError(val text : String) extends Error(text)
+
+class LatexState(val dpath : DPath, controller : Controller) {
+  val dictionary = new mutable.HashMap[LocalName, String] // ?needed
+  
+  val parser = new LatexStructureParser(this, controller)        
+
+  def context = varContexts match {
+    case Nil => Context()
+    case hd :: Nil => hd
+    case l => l.reduceLeft((x,y) => x ++ y)
+  }
+  
+  var varContexts : List[Context] = Nil
+  def addContext(con : Context = Context()) = varContexts ::= con
+  def addVar(v : VarDecl) = varContexts = (varContexts.head ++ v) :: varContexts.tail
+  
+  def clearContext() = varContexts = varContexts.tail
+  
+  var mod : MPath = null //current module
+  
+  val seqReader = new SeqBufReader
+  val parserState = new ParserState(new Reader(seqReader), dpath)
+  
+  var notationQueue = new mutable.Queue[String]
+  
+  def setParserState(text : String) {
+    seqReader.appendLine(text)
+  }
+  
+  val varIds = new mutable.HashMap[LocalName,Int]
+  
+  var currentId = 0
+  def getFreshId = {
+    currentId += 1
+    currentId
+  }
+  
+  def addVar(name : LocalName) = {
+    varIds(name) = getFreshId
+    resolveVar(name)
+  }
+  
+  def resolveVar(name : LocalName) = varIds(name)
+  
+  def waitDone() {  
+    
+    while(!seqReader.isDone) {
+      Thread.sleep(10)
+    } 
+    Thread.sleep(100)
+  }
+}
+* */
