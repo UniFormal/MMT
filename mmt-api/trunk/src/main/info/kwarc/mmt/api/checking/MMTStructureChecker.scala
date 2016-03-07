@@ -79,9 +79,15 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             val contextI = context ++ t.getInnerContext
             // content structure
             val tDecls = t.getPrimitiveDeclarations
+            // mark all children as unchecked
+            tDecls foreach {d =>
+              UncheckedElement.set(d)
+            }
+            // check each child and mark it as checked (independent of whether there are errors)
             logGroup {
                tDecls foreach {d =>
                   check(contextI, d)
+                  UncheckedElement.erase(d)
                }
             }
             // narrative structure
@@ -410,14 +416,14 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                case Some(d : Declaration) =>
                   if (! content.hasImplicit(d.home, ComplexTheory(context)))
                      env.errorCont(InvalidObject(s, "constant " + d.path + " is not imported into current context " + context))
+                  if (UncheckedElement.is(d))
+                     env.errorCont(InvalidObject(s, "constant " + d.path + " is used before being declared " + context))
                case _ =>
                   env.errorCont(InvalidObject(s, path + " does not refer to constant"))
             }
             env.pCont(path)
             //wrap in implicit morphism?
             s
-         case _:OMID =>
-            null
          case OML(VarDecl(name,tp,df,_)) => OML(name,tp.map(checkTerm(context,_)),df.map(checkTerm(context,_)))
          case OMV(name) =>
             if (! context.isDeclared(name))
@@ -582,3 +588,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
    private def checkSubstitutionRealization(context: Context, subs: Substitution, from: Context)(implicit env: Environment) =
       checkSubstitution(context, subs, from, Context(), false)
 }
+
+
+/**
+ * if set, the element appears to be in scope but has not been checked yet
+ */
+object UncheckedElement extends BooleanClientProperty[StructuralElement](utils.mmt.baseURI / "clientProperties" / "controller" / "checked")
+

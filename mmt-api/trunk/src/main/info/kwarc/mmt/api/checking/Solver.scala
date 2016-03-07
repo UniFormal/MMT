@@ -56,9 +56,12 @@ case class Success[A](result: A) extends DryRunResult {
  *
  * Use: Create a new instance for every problem, call apply on all constraints, then call getSolution.
  */
-class Solver(val controller: Controller, val constantContext: Context, initUnknowns: Context, val rules: RuleSet)
+class Solver(val controller: Controller, checkingUnit: CheckingUnit, val rules: RuleSet)
       extends CheckingCallback with Logger {
 
+   val constantContext = checkingUnit.context
+   val initUnknowns = checkingUnit.unknowns
+  
    /**
     * to have better control over state changes, all stateful variables are encapsulated a second time
     */
@@ -179,8 +182,8 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
 
    /** for Logger */
    val report = controller.report
-   /** prefix used when logging (can be changed flexibly by object-checker to filter the log better) */
-   var logPrefix = "solver"
+   /** the component URI if provided, solver otherwise */
+   val logPrefix = checkingUnit.component.map(_.toString).getOrElse("solver")
    /** the SubstitutionApplier to be used throughout */
    private implicit val sa = new MemoizedSubstitutionApplier
    /** a DefinitionExpander to be used throughout */
@@ -356,6 +359,11 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       false
    }
 
+   /**
+    * main entry method: runs the solver on the judgment in the checking unit
+    */
+   def applyMain = apply(checkingUnit.judgement)
+   
    /** applies this Solver to one Judgement
     *  This method can be called multiple times to solve a system of constraints.
  *
@@ -1239,7 +1247,7 @@ class Solver(val controller: Controller, val constantContext: Context, initUnkno
       val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
       log(msg)
       history += msg
-      val pu = ProvingUnit(context, conc, logPrefix)
+      val pu = ProvingUnit(checkingUnit.component, context, conc, logPrefix)
       controller.extman.get(classOf[Prover]) foreach {prover =>
          val (found, proof) = prover.apply(pu, rules, 8) //Set the timeout on the prover
          if (found) {
@@ -1287,10 +1295,11 @@ object Solver {
   def check(controller: Controller, stack: Stack, tm: Term): Either[(Term,Term),Solver] = {
       val ParseResult(unknowns,free,tmU) = ParseResult.fromTerm(tm)
       val etp = LocalName("expected_type")
-      val rules = RuleSet.collectRules(controller, stack.context)
-      val solver = new Solver(controller, stack.context, unknowns ++ VarDecl(etp, None, None, None), rules)
       val j = Typing(stack, tmU, OMV(etp), None)
-      solver(j)
+      val cu = CheckingUnit(None, stack.context, unknowns ++ VarDecl(etp, None, None, None), j)
+      val rules = RuleSet.collectRules(controller, stack.context)
+      val solver = new Solver(controller, cu, rules)
+      solver.applyMain
       if (solver.checkSucceeded) solver.getSolution match {
          case Some(sub) =>
              val tmR = tmU ^ sub
@@ -1306,7 +1315,8 @@ object Solver {
       }
       implicit val stack = Stack(Context())
       implicit val history = new History(Nil)
-      val solver = new Solver(controller, context, Context(), rules)
+      val cu = CheckingUnit(None, context, Context.empty, null) // awkward but works because we do not call applyMain
+      val solver = new Solver(controller, cu, rules)
       val tpOpt = solver.inferType(tm, true)
       tpOpt map {tp => solver.simplify(tp)}
   }

@@ -12,7 +12,7 @@ import scala.xml.Node
   *
   * The structural elements are subdivided according to their dimension: content, presentation, or narration.
   */
-trait StructuralElement extends Content with NamedElement with metadata.HasMetaData {
+trait StructuralElement extends Content with NamedElement {
   /** the MMT URI of the element */
   def path: Path
 
@@ -44,12 +44,6 @@ trait StructuralElement extends Content with NamedElement with metadata.HasMetaD
   }
   def getOrigin = origin
   def isGenerated = origin != Original
-
-  /** the API may deactivate a StructuralElement instead of deleting it to permit reusing it later
-    *
-    * invariant: API client code may assume that this flag is never set
-    */
-  var status: ElementStatus = Active
 
   /** two StructuralElement's are compatible
     * if they have the same type, same Path, and agree in all parts that are TermContainer's
@@ -85,23 +79,6 @@ trait StructuralElement extends Content with NamedElement with metadata.HasMetaD
      this.metadata = that.metadata
   }
 }
-
-/** the status of a [[ContentElement]] during a parse-check cycle
-  *
-  * When reading a input that already exists in memory but may have been changed in the source,
-  * the old instance is kept for change management.
-  */
-abstract class ElementStatus
-
-/** the default state: the element exists in the MMT content base
-  */
-case object Active extends ElementStatus
-
-/** a temporary state during parsing set by [[info.kwarc.mmt.api.frontend.Controller.read]]
-  *
-  * the element does not exist in the theory, but is expected to be recreated during the current parse.
-  */
-case object Inactive extends ElementStatus
 
 /** A ContentElement is any knowledge item that is used to represent mathematical content.
   *
@@ -140,7 +117,7 @@ trait NarrativeElement extends StructuralElement {
 
 /** The trait Content is mixed into any class that can be rendered.
   */
-trait Content {
+trait Content extends metadata.HasMetaData with ClientProperties {
   /** XML representation */
   def toNode: Node
 

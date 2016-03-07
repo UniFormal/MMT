@@ -37,7 +37,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, outerLogP
             controller.globalLookup.getO(p) match {
                case Some(t:modules.DeclaredTheory) =>
                   t.getDeclarations.foreach {
-                     case c: Constant if c.status == Active => c.tp.foreach {tp =>
+                     case c: Constant if ! UncheckedElement.is(c) => c.tp.foreach {tp =>
                         val a = Atom(c.toTerm, tp, c.rl)
                         facts.addConstantAtom(a)
                      }

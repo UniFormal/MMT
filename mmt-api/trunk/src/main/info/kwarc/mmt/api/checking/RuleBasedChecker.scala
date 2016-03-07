@@ -28,10 +28,9 @@ class RuleBasedChecker extends ObjectChecker {
       }
       // ** checking **
       log("using " + rules.getAll.mkString(", "))
-      val solver = new Solver(controller, cu.context, cu.unknowns, rules)
-      solver.logPrefix = cu.component.toString
+      val solver = new Solver(controller, cu, rules)
       val mayHold = logGroup {
-         solver.apply(cu.judgement)
+         solver.applyMain
       }
       // if solved, we can substitute all unknowns; if not, we still substitute partially
       val psol = solver.getPartialSolution

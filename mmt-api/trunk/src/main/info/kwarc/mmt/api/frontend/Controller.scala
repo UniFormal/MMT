@@ -270,7 +270,8 @@ class Controller extends ROController with ActionHandling with Logger {
      }
      // interpret the document
      interpreter(ps)
-     // (M): delete all now-inactive parts of the old structure 
+     // (M): delete all now-inactive parts of the old structure
+     // TODO for two-step interpreters, deleteInactive should be called after parsing (currently: after checking)
      oldDocOpt.foreach {doc => deleteInactive(doc)}
      // return the read document
      // (M) return the reused document
@@ -368,7 +369,7 @@ class Controller extends ROController with ActionHandling with Logger {
   def add(nw: StructuralElement) {
     iterate {
           localLookup.getO(nw.path) match {
-            case Some(old) if old.status == Inactive =>
+            case Some(old) if InactiveElement.is(old) =>
               /* optimization for change management
                * If an inactive element with the same path already exists, we try to reuse it.
                * That way, already-performed computations and checks do not have to be redone;
@@ -410,7 +411,7 @@ class Controller extends ROController with ActionHandling with Logger {
                   }
                 }
                 // activate the old one
-                old.status = Active
+                InactiveElement.erase(old)
                 // notify listeners if a component changed
                 if (hasChanged)
                    notifyListeners.onUpdate(nw)
@@ -442,11 +443,16 @@ class Controller extends ROController with ActionHandling with Logger {
     }
   }
 
+  /**
+   * if set, the element is deactivated
+   */
+  private val InactiveElement = new BooleanClientProperty[StructuralElement](utils.mmt.baseURI / "clientProperties" / "controller" / "status")
+
   /** marks this and its descendants as inactive */
   private def deactivate(se: StructuralElement) {
      if (!se.isGenerated)
        // generated constants and refs to them (see (*)) should be updated/removed by change listeners
-       se.status = Inactive
+       InactiveElement.is(se)
      //log("deactivating " + se.path)
      se match {
         case b: modules.Body =>
@@ -454,7 +460,7 @@ class Controller extends ROController with ActionHandling with Logger {
         case r: NRef =>
            localLookup.getO(r.target) foreach {d =>
               if (d.isGenerated)
-                 se.status = Active //(*)
+                 InactiveElement.erase(se) //(*)
               deactivate(d)
            }
         case _ =>
@@ -463,7 +469,7 @@ class Controller extends ROController with ActionHandling with Logger {
   }
   /** deletes all inactive descendants */
   private def deleteInactive(se: StructuralElement) {
-     if (se.status == Inactive) {
+     if (InactiveElement.is(se)) {
         log("deleting deactivated " + se.path)
         delete(se.path)
         notifyListeners.onDelete(se)

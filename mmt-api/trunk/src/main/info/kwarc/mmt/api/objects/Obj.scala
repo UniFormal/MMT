@@ -10,84 +10,11 @@ import presentation._
 import Conversions._
 
 import scala.xml.{Node,Elem,Utility}
-import scala.collection.mutable.ListMap
-
-/** a trait to be mixed into Obj 
- * it provides a stateful key-value map for storing arbitrary information
- *
- * This trait introduces state into the stateless Obj case classes and should be used cautiously.
- * For example, x match {case x => x} preserves all client properties while
- * x match {case OMS(p) => OMS(p)} deletes all client properties. 
- * Software components should only access properties they put themselves or
- * that are explicitly guaranteed by other components.
- * 
- * While a bad idea in most situations, client properties are very useful occasionally.
- * Example applications:
- *   - UOM uses a property to remember whether a Term has been simplified already
- *   - UOM uses a property to remember what kind of change a simplification has produced
- */
-trait ClientProperties {
-   lazy val clientProperty = new ListMap[URI, Any]
-}
-
-/** convenience to create get and put methods for objects with ClientProperties
- *  @param property the client property for which to generate get and put methods
- */
-class TermProperty[A](val property: utils.URI) {
-   /** put the client property */
-   def put(t: Obj, a:A) {
-      t.clientProperty(property) = a
-   }
-   /** get the client property if defined */
-   def get(t: Obj): Option[A] = t.clientProperty.get(property) match {
-      case Some(a: A @unchecked) =>  // :A is unchecked but true if put was used to set the property
-         Some(a)
-      case None => None
-      case Some(_) =>
-         throw ImplementationError("client property has bad type") // impossible if put was used
-   }
-   def erase(t: Term) {
-      t.clientProperty -= property
-   }
-}
-
-object TermProperty {
-   /** removes all term properties */
-   def eraseAll(t: Term) {
-      t.clientProperty.clear
-      t match {
-         case ComplexTerm(_, subs, cont, args) =>
-            subs.foreach {s => eraseAll(s.target)}
-            cont.foreach {v => 
-               v.tp foreach eraseAll
-               v.df foreach eraseAll
-            }
-            args foreach eraseAll
-         case _ =>
-      }
-   }
-}
-
-/**
- * apply/unapply methods that encapsulate functionality for attaching a Boolean clientProperty to a Term
- */
-class BooleanTermProperty(property: utils.URI) extends TermProperty[Boolean](property){
-   def apply(t: Term) : Term = {
-     put(t, true)
-     t
-   }
-   def unapply(t: Term): Option[Term] =
-      get(t) match {
-          case Some(true) => Some(t)
-          case _ => None
-      }
-   def is(t: Term) = unapply(t) == Some(true)
-}
 
 /**
  * An Obj represents an MMT object. MMT objects are represented by immutable Scala objects.
  */
-abstract class Obj extends Content with ontology.BaseType with HasMetaData with ClientProperties with HashEquality[Obj] {
+abstract class Obj extends Content with ontology.BaseType with HashEquality[Obj] {
    /** the type of this instance
     *  
     *  This is needed to provide sharper return types for inductive functions,
