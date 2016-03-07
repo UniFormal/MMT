@@ -22,6 +22,7 @@ abstract class Interpreter extends Importer {
   /** parses a [[ParsingStream]] and returns a checked result */
   def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): StructuralElement
 
+  /** converts the interface of [[Importer]] to the one of [[Parser]] */
   protected def buildTaskToParsingStream(bf: BuildTask): (DPath, ParsingStream) = {
     val inPathOMDoc = bf.inPath.toFile.setExtension("omdoc").toFilePath
     val dPath = DPath(bf.archive.narrationBase / inPathOMDoc.segments) // bf.narrationDPath except for extension
@@ -50,9 +51,6 @@ abstract class Interpreter extends Importer {
     else
        BuildSuccess(used, provided)
   }
-
-
-
 }
 
 /** a combination of a Parser and a Checker

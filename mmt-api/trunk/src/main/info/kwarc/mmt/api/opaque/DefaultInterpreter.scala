@@ -1,24 +1,32 @@
 package info.kwarc.mmt.api.opaque
 
 import info.kwarc.mmt.api._
+import objects._
+import parser._
 import presentation._
+import checking._
 
 import scala.xml._
 
 /** completely unknown elements  */
-class UnknownOpaqueElement(val parent: DPath, val raw: NodeSeq) extends OpaqueElement {
-   def format = "unknown"
-}
+class UnknownOpaqueElement(val parent: DPath, val format: String, val raw: NodeSeq) extends OpaqueElement
 
 /** a fallback/default parser for completely unknown elements  */
-object DefaultOpaqueElementInterpreter extends OpaqueElementInterpreter with OpaqueHTMLPresenter {
+class DefaultOpaqueElementInterpreter extends OpaqueElementInterpreter with OpaqueTextParser with OpaqueChecker with OpaqueHTMLPresenter {
    type OE = UnknownOpaqueElement
    
    def format = "unknown"
 
-   def fromNode(parent: DPath, nsMap: NamespaceMap, nodes: NodeSeq) = new UnknownOpaqueElement(parent, nodes)
+   def fromNode(parent: DPath, nsMap: NamespaceMap, nodes: NodeSeq) = new UnknownOpaqueElement(parent, format, nodes)
+   
+   def fromString(oP: ObjectParser, parent: DPath, pu: ParsingUnit)(implicit eh: ErrorHandler): OE = {
+      val elem = scala.xml.Text(pu.term)
+      new UnknownOpaqueElement(parent, format, elem)
+   }
+   
+   def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe : OpaqueElement)(implicit ce: CheckingEnvironment) {}
    
    def toHTML(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh : RenderingHandler) {
-      rh(<pre>{oe.raw}</pre>)
+      rh(<pre>{oe.raw.text}</pre>)
    }
 }

@@ -281,7 +281,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
         }
       case oe: OpaqueElement =>
          val oi = controller.extman.get(classOf[OpaqueHTMLPresenter], oe.format)
-                  .getOrElse(DefaultOpaqueElementInterpreter)
+                  .getOrElse(new DefaultOpaqueElementInterpreter)
          div("opaque-"+oe.format + " inlineBoxSibling") {
             oi.toHTML(objectPresenter, oe)(rh)
          }
