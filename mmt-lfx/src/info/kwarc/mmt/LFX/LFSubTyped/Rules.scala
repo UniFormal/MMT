@@ -1,11 +1,12 @@
 package info.kwarc.mmt.LFX.LFSubTyped
 
 import info.kwarc.mmt.api.checking._
-import info.kwarc.mmt.api.objects
+import info.kwarc.mmt.api.{LocalName, objects}
 import info.kwarc.mmt.api.objects._
 import objects.Conversions._
-import info.kwarc.mmt.lf.{Pi, Typed, OfType}
+import info.kwarc.mmt.lf._
 
+/** Declared Subtypes **/
 object SubUniverseRule extends UniverseRule(subtypeOf.path) {
   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = tm match {
     case subtypeOf(t) => solver.check(Inhabitable(stack,t))
@@ -74,6 +75,8 @@ object PiRule extends SubtypingRule {
   }
 }
 
+/** Subtyping Judgments **/
+
 object SubJudgUniverseRule extends UniverseRule(subtypeJudg.path) {
   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = tm match {
     case subtypeJudg(t1,t2) => solver.check(Inhabitable(stack,t1)) && solver.check(Inhabitable(stack,t2))
@@ -100,5 +103,80 @@ object SubJudgRule extends SubtypingRule {
       throw RuleNotApplicable
     }
     Some(true)
+  }
+}
+
+/** Predicate Subtypes **/
+
+object Predsubtype extends FormationRule(predsubtp.path,OfType.path) {
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
+    case predsubtp(tpA, p) =>
+      solver.safeSimplifyUntil(solver.inferType(p,covered).getOrElse(return None))(Pi.unapply)._1 match {
+        case Pi(x,tpx,f) =>
+          solver.check(Subtyping(stack,tpA,tpx))
+          solver.check(Typing(stack ++ x%tpA,f,OMS(Typed.ktype),None))
+          Some(OMS(Typed.ktype))
+        case _ => throw RuleNotApplicable
+      }
+    case _ => throw RuleNotApplicable
+  }
+}
+
+object Predsubrule extends SubtypingRule {
+  val head = predsubtp.path
+
+  def applicable(tp1: Term, tp2: Term): Boolean = tp1 match {
+    case predsubtp(tpA, p) => true
+    case _ => false
+  }
+
+  def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History): Option[Boolean] = tp1 match {
+    case predsubtp(tpA, p) =>
+      solver.safeSimplifyUntil(solver.inferType(p, true).getOrElse(return None))(Pi.unapply)._1 match {
+        case Pi(x, tpx, f) =>
+          def default = {
+            val (y, sub) = Context.pickFresh((stack ++ x % tpx).context, LocalName("_"))
+            Some(solver.check(Typing(stack ++ x % tpx ++ y % solver.simplify(Apply(p, x)), x, tp2)))
+          }
+          solver.safeSimplifyUntil(tp2)(predsubtp.unapply)._1 match {
+            case predsubtp(tpB, q) =>
+              solver.safeSimplifyUntil(solver.inferType(q, true).getOrElse(return default))(Pi.unapply)._1 match {
+                case Pi(x2, tpB2, g) =>
+                  /* x:A, P(x) |- x : B,   x:A |- P(x) => Q(x) ---> {A | P(x)} <: {B | Q(x)} */
+                  history += "Trying to prove " + solver.presentObj(Arrow(Apply(p, x), Apply(q, x)))
+                  val ret = solver.prove(Arrow(Apply(p, x), Apply(q, x)))(stack ++ x % tpA, history)
+                  if (ret.isDefined) default else Some(false)
+                case _ =>
+                  default
+                case _ =>
+                  default
+              }
+            case _ => throw RuleNotApplicable
+          }
+        case _ => throw RuleNotApplicable
+      }
+  }
+}
+
+object PredsubTyping extends TypingRule(predsubtp.path) {
+  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = tp match {
+    case predsubtp(tpA,p) =>
+      solver.check(Typing(stack,tm,tpA))
+      val ret = solver.prove(Apply(p,tm))
+      if (ret.isDefined) true else false
+    case _ => throw RuleNotApplicable
+  }
+}
+
+object PredOfTerm extends EliminationRule(PredOf.path,OfType.path) {
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
+    case PredOf(t) =>
+      val tp = solver.inferType(t).getOrElse(throw RuleNotApplicable)
+      solver.safeSimplifyUntil(tp)(predsubtp.unapply)._1 match {
+        case predsubtp(tpA,p) =>
+          Some(Apply(p,t))
+        case _ => None
+      }
+    case _ => throw RuleNotApplicable
   }
 }

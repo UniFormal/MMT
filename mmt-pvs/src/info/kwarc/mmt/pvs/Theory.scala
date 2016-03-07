@@ -1,5 +1,6 @@
 package info.kwarc.mmt.pvs
 
+import info.kwarc.mmt.LFX.LFRecords.{Recexp, Rectype, LFRecords}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.FinalConstant
@@ -206,16 +207,19 @@ object PVSTheory {
    }
 
    object recordexpr extends sym("recordexpr") {
-      def apply(nametpdf : (LocalName,Term,Term)*) =
-         ApplySpine(this.term,nametpdf.map(t => OML(VarDecl(t._1,Some(expr(t._2)),Some(t._3),None))):_*)
+      def apply(nametpdf : (LocalName,Term,Term)*) = {
+         val rtp = Recexp(nametpdf map (t => OML(t._1, Some(tp.term), Some(t._2))): _*)
+         val rdf = Recexp(nametpdf map (t => OML(t._1, Some(expr(t._2)), Some(t._3))): _*)
+         ApplySpine(this.term, rtp,rdf)
+      }
    }
 
    object recordtp extends sym("rectp") {
       def apply(nametp : (LocalName,Term)*) =
-         ApplySpine(this.term,nametp.map(t => OML(VarDecl(t._1,Some(expr(t._2)),None,None))):_*)
+         ApplySpine(this.term,Recexp(nametp.map(t => OML(t._1,Some(tp.term),Some(t._2))):_*))
       def unapply(t:Term) : Option[List[(String,Term)]] = t match {
          case ApplySpine(this.term,l) => Some(l.map(_ match {
-            case OML(VarDecl(name,Some(expr(tp)),df,not)) => (name.toString,tp)
+            case OML(VarDecl(name,Some(tp.term),Some(df),not)) => (name.toString,df)
             case _ => throw new Exception("Invalid Record type")
          }))
          case _ => None

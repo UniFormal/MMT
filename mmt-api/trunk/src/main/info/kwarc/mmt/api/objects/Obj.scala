@@ -454,6 +454,9 @@ case class OML(vd: VarDecl) extends Term {
     def substitute(sub: Substitution)(implicit sa: SubstitutionApplier) = OML(vd ^^ sub)
     def toCMLQVars(implicit qvars: Context) = <label>{vd.toCMLQVars}</label>
     def toNode = vd.toNode.copy(label = "OML")
+    val name = vd.name
+    val tp = vd.tp
+    val df = vd.df
 }
 
 object OML {

@@ -1,8 +1,7 @@
 package info.kwarc.mmt.tptp
 
 import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.frontend.{StringArg,OptionDescr}
-import info.kwarc.mmt.api.frontend.AnaArgs.OptionDescrs
+import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
 import info.kwarc.mmt.api.utils._
 
 class TPTPImporter extends TraversingBuildTarget {

@@ -1,9 +1,10 @@
 package info.kwarc.mmt.LFX.LFRecords
 
-import info.kwarc.mmt.api.LocalName
+import info.kwarc.mmt.api.{objects, LocalName}
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf.{OfType, Typed}
+import objects.Conversions._
 
 object Common {
   /** convenience function for recursively checking the judgement |- a: type */
@@ -19,9 +20,13 @@ object Common {
 object RecordTypeTerm extends FormationRule(Rectype.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
     tm match {
-      case Rectype(fields) if fields.forall(p => p.vd.tp.isDefined) =>
-        if ((fields map (v => Common.isType(solver,v.vd.tp.get))).forall(p => p))
-        Some(OMS(Typed.ktype)) else None
+      case Rectype(fields) if fields.forall(p => p.tp.isDefined) =>
+        history += "Checking record type " + solver.presentObj(tm)
+        fields.foldLeft(stack)((s,o) => {
+          solver.check(Typing(stack,o.tp.get,OMS(Typed.ktype)))
+          stack ++ o.name%o.tp.get
+        })
+        Some(OMS(Typed.ktype))
       case _ => None // should be impossible
     }
   }
@@ -32,23 +37,14 @@ object RecordTypeTerm extends FormationRule(Rectype.path, OfType.path) {
 object RecordExpTerm extends IntroductionRule(Recexp.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
     tm match {
-      case Recexp(fields) if fields.forall(p => p.vd.df.isDefined) =>
+      case Recexp(fields) if fields.forall(p => p.df.isDefined) =>
         history += "Inferring record type of "+solver.presentObj(tm)
-        val names = fields.map(v => v.vd.name)
-        val defs = fields.map(v => v.vd.df.get)
-        val tps = fields.map(v => {
-          val tpdec = v.vd.tp
-          val tpinf = solver.inferType(v.vd.df.get)
-          if (tpdec.isEmpty) tpinf else
-          if (tpinf.isEmpty) tpdec else
-          if (solver.check(Equality(stack, tpdec.get, tpinf.get, Some(OMS(Typed.ktype))))) tpinf
-          else None
-        })
-        if (tps.forall(_.isDefined)) Some(Rectype(fields.indices map (i => OML(VarDecl(names(i),Some(tps(i).get),Some(defs(i)),None))) :_*))
-        else {
-          history += "Couldn't infer type of record field element!"
-          None
-        }
+        var sub = Substitution.empty
+        Some(Rectype(fields.map(o => {
+          val tp = solver.inferType(o.df.get ^? sub,covered).getOrElse(return None)
+          sub = sub ++ o.name/o.df.get
+          OML(o.name,Some(tp),None)
+        }):_*))
       case _ => None // should be impossible
     }
   }
@@ -59,12 +55,16 @@ object RecordExpTerm extends IntroductionRule(Recexp.path, OfType.path) {
 object GetfieldTerm extends EliminationRule(Getfield.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
     case Getfield(rec,v) =>
-      val tp = solver.safeSimplifyUntil(solver.inferType(rec).getOrElse(return None))(Rectype.unapply)._1
+      val tp = solver.inferType(rec).getOrElse(return None)
       history += (solver.presentObj(rec)+" must have type "+solver.presentObj(tp))
-      tp match {
+      solver.safeSimplifyUntil(tp)(Rectype.unapply)._1 match {
         case Rectype(fields) =>
-          val tpv = fields.collectFirst{case OML(p) if p.name==v.vd.name => p}
-          if (tpv.isEmpty || tpv.get.tp.isEmpty) None else Some(tpv.get.tp.get)
+          var sub = Substitution.empty
+          fields.foreach(o => {
+            if (o.name == v.name) return Some(o.tp.get ^? sub)
+            else sub = sub ++ o.name/Getfield(rec,o)
+          })
+          None
         case _ => None
       }
     case _ => None // should be impossible
@@ -76,12 +76,12 @@ object GetfieldTerm extends EliminationRule(Getfield.path, OfType.path) {
 object RecTypeCheck extends TypingRule(Rectype.path) {
   def apply(solver:Solver)(tm:Term, tp:Term)(implicit stack: Stack, history: History) : Boolean = tp match {
       case Rectype(fields) =>
-        val tpmatches = fields map (f =>
-            if (f.vd.tp.isDefined)
-              solver.check(Typing(stack,Getfield(tm,f),f.vd.tp.get))
-            else false
-          )
-        tpmatches forall (p => p)
+        var sub = Substitution.empty
+        fields foreach (f => {
+          solver.check(Typing(stack,Getfield(tm,f),f.tp.getOrElse(return false) ^? sub))
+          sub = sub ++ f.name/Getfield(tm,f)
+        })
+        true
       case _ => false
     }
 }
@@ -135,4 +135,20 @@ object GetFieldComp extends ComputationRule(Getfield.path) {
       fields collectFirst {case OML(g) if g.name==f.vd.name && g.df.isDefined => g.df.get}
     case _ => None
   }
+}
+
+object RecSubtype extends SubtypingRule {
+  val head = Rectype.path
+  def applicable(tp1: Term, tp2: Term) = (tp1,tp2) match {
+    case (Rectype(l),Rectype(r)) => true
+    case _ => false
+  }
+
+  def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History) : Option[Boolean] =
+    (solver.safeSimplifyUntil(tp1)(Rectype.unapply)._1,solver.safeSimplifyUntil(tp2)(Rectype.unapply)._1) match {
+      case (Rectype(l),Rectype(r)) => Some(r.forall(o => l.exists(q => o.name == q.name &&
+          solver.safecheck(Subtyping(stack,q.tp.getOrElse(return None),o.tp.getOrElse(return None))).getOrElse(return None)
+        )))
+      case _ => None
+    }
 }
