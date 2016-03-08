@@ -149,7 +149,7 @@ abstract class BuildTarget extends FormatBasedExtension {
   var quiet: Boolean = false
 
   //TODO @CM This method should not be overridden here. Any argument parsing should go into a separate trait that individual BuildTargets may or may not  mix in
-  //The same holds for the related declarations above. 
+  //The same holds for the related declarations above.
   override def start(args: List[String]) {
     val (m, rest) = AnaArgs(verbOpts ++ buildOpts, args)
     optionsMap = m
@@ -167,8 +167,14 @@ abstract class BuildTarget extends FormatBasedExtension {
   /** build or update this target in a given archive */
   def build(a: Archive, up: Update, in: FilePath): Unit
 
-  /** build estimated dependencies first */
-  //TODO @CM this method does not belong here and should be removed
+  /** build estimated dependencies first
+    *
+    * this can be used by the trivial build manager to build
+    * targets (like latexml) in dependency order provided that
+    * estimated dependencies are correct.
+    *
+    * For a queue build manager this code is obsolete
+    * */
   def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {}
 
   /** clean this target in a given archive */
@@ -523,24 +529,19 @@ abstract class TraversingBuildTarget extends BuildTarget {
     res
   }
 
-  //TODO sort this out
   /*
-   here is indeed some duplicate work.
+   here is still some duplicate work.
    getFilesRec is similar to makeBuildTasks, both traverse the folders recursively
    - getFilesRec returns files to be built as dependencies (but no directories)
    - makeBuildTasks returns QueuedTasks (also for directories)
    QueuedTasks (bad name?) are created from BuildTasks still to be queued by addTasks in build
    (the construction via traverse, a continuation and reverse is overkill compared to getFilesRec)
 
-   we still have 4 separate actions: build, update, depsFirst and clean (where clean is undisputed)
-   - tasks are currently only collected and queued for "build"!
-   - "build" should be a special case of "update", however
-   "update" needs to perform the up-to-date test to exclude some task that need not to be rebuild
-   but the up-to-date test should be made by the queue manager.
-
-   "depsFirst" is a wrapper around the update action, where dependent task are updated earlier
+   "depsFirst" is a wrapper around checkOrRunBuildTask where dependent tasks are updated earlier
     via the estimated dependencies getDeps. (This only works if the estimated dependencies are
     at least the actual dependencies and are non-cyclic.)
+
+    "depFirst" is currently only kept for comparison and testing purposes and may eventually be disposed off
   */
 
   private def getDeps(bt: BuildTask): Set[Dependency] = estimateResult(bt).used.toSet
