@@ -20,7 +20,7 @@ import scala.concurrent.duration._
 import scala.sys.process.{ProcessBuilder, ProcessLogger}
 
 /** common code for sms, latexml und pdf generation */
-abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis {
+abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis with BuildTargetArguments {
   val localpathsFile = "localpaths.tex"
   val inDim = source
   var pipeOutput: Boolean = false
@@ -45,7 +45,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   override def buildOpts: OptionDescrs = commonOpts
 
   override def start(args: List[String]) {
-    super.start(args)
+    anaStartArgs(args)
     pipeOutput = optionsMap.get(pipeOutputOption).isDefined
     optionsMap.get(timeoutOption).foreach { case v => timeoutVal = v.getIntVal }
     optionsMap.get(key).foreach { case v => nameOfExecutable = v.getStringVal }

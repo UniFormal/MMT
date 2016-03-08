@@ -121,17 +121,8 @@ object BuildTargetModifier {
   }
 }
 
-/** A BuildTarget provides build/update/clean methods that generate one or more dimensions in an [[Archive]]
-  * from an input dimension.
-  */
-abstract class BuildTarget extends FormatBasedExtension {
-  /** a string identifying this build target, used for parsing commands, logging, error messages */
-  def key: String
-
-  def isApplicable(format: String): Boolean = format == key
-
-  /** defaults to the key */
-  override def logPrefix: String = key
+/* a trait for parsing options of extensions **/
+trait BuildTargetArguments { buildtarget: BuildTarget =>
 
   def verbOpts: OptionDescrs = List(
     OptionDescr("quiet", "q", NoArg, "do not show result information"),
@@ -148,9 +139,7 @@ abstract class BuildTarget extends FormatBasedExtension {
   var verbose: Boolean = false
   var quiet: Boolean = false
 
-  //TODO @CM This method should not be overridden here. Any argument parsing should go into a separate trait that individual BuildTargets may or may not  mix in
-  //The same holds for the related declarations above.
-  override def start(args: List[String]) {
+  def anaStartArgs(args: List[String]) {
     val (m, rest) = AnaArgs(verbOpts ++ buildOpts, args)
     optionsMap = m
     remainingStartArguments = rest
@@ -163,6 +152,19 @@ abstract class BuildTarget extends FormatBasedExtension {
       logError("unknown option: " + otherOpts.mkString(" "))
     }
   }
+}
+
+/** A BuildTarget provides build/update/clean methods that generate one or more dimensions in an [[Archive]]
+  * from an input dimension.
+  */
+abstract class BuildTarget extends FormatBasedExtension {
+  /** a string identifying this build target, used for parsing commands, logging, error messages */
+  def key: String
+
+  def isApplicable(format: String): Boolean = format == key
+
+  /** defaults to the key */
+  override def logPrefix: String = key
 
   /** build or update this target in a given archive */
   def build(a: Archive, up: Update, in: FilePath): Unit

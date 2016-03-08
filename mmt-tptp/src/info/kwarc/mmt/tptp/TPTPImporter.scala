@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
 import info.kwarc.mmt.api.utils._
 
-class TPTPImporter extends TraversingBuildTarget {
+class TPTPImporter extends TraversingBuildTarget with BuildTargetArguments {
   val key: String = "tptp-twelf"
   val inDim = source
   val outDim = Dim("twelf")
@@ -37,7 +37,7 @@ class TPTPImporter extends TraversingBuildTarget {
     * the (swi) prolog binary, file, and goal can also be given via "envvar" (below)
     */
   override def start(args: List[String]) {
-    super.start(args)
+    anaStartArgs(args)
     tptp2Xmain = optionsMap.get("tptp2Xmain").map(_.getStringVal).
       getOrElse(controller.getEnvVar("Tptp2X").getOrElse(tptp2Xmain))
     tptp2Xgoal = optionsMap.get("tptp2Xgoal").map(_.getStringVal).

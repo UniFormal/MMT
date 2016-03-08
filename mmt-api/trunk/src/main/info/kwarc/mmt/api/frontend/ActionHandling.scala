@@ -213,8 +213,12 @@ trait ActionHandling {self: Controller =>
          throw RegistrationError("build target not found: " + key)
       }
       if (usageOpts.nonEmpty) {
+        val moreOpts = bt match {
+          case pbt: BuildTargetArguments => pbt.verbOpts ++ pbt.buildOpts
+          case _ => Nil
+        }
         AnaArgs.usageMessage(ShellArguments.toplevelArgs ++ usageOption ++
-          BuildTargetModifier.optDescrs ++ bt.verbOpts ++ bt.buildOpts).foreach(println)
+          BuildTargetModifier.optDescrs ++ moreOpts).foreach(println)
       } else {
         inputs foreach { case (root, fp) =>
           addArchive(root) // add the archive

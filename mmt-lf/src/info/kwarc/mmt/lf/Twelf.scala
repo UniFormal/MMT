@@ -45,8 +45,7 @@ class Twelf extends Importer with frontend.ChangeListener {
     * first argument is the location of the twelf-server script; alternatively set variable Twelf
     */
   override def start(args: List[String]) {
-    super.start(args)
-    val p = getFromFirstArgOrEnvvar(remainingStartArguments, "Twelf", "twelf-server")
+    val p = getFromFirstArgOrEnvvar(args, "Twelf", "twelf-server")
     path = File(p)
     catalog = new Catalog(port = port, searchPort = true, log = report("lfcatalog", _))
     catalog.init //  throws PortUnavailable

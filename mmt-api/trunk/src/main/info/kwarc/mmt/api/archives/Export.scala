@@ -39,15 +39,6 @@ trait Exporter extends BuildTarget {
   }
 
   override def start(args: List[String]) {
-    super.start(args)
-    if (!quiet){
-      controller.report.groups += contentExporter.logPrefix + "-result"
-      controller.report.groups += narrationExporter.logPrefix + "-result"
-    }
-    if (verbose){
-      controller.report.groups += contentExporter.logPrefix
-      controller.report.groups += narrationExporter.logPrefix
-    }
     controller.extman.addExtension(contentExporter, args)
     controller.extman.addExtension(narrationExporter, args)
   }
