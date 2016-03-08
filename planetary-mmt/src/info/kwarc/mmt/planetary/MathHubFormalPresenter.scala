@@ -1,19 +1,13 @@
 package info.kwarc.mmt.planetary
 
 import info.kwarc.mmt.api._
-import modules._
-import symbols._
-import documents._
-import presentation._
-import frontend._
-import objects._
-import utils._
-import informal._
 import archives._
+import documents._
+import modules._
 import opaque._
-import notations._
-import utils.xml._
-import HTMLAttributes._
+import presentation.HTMLAttributes._
+import presentation._
+import symbols._
 
 
 class MathHubFormalPresenter extends HTMLPresenter(new MathMLPresenter) {
@@ -25,7 +19,7 @@ class MathHubFormalPresenter extends HTMLPresenter(new MathMLPresenter) {
         doNarrativeElementInDoc(doc)
      }
    }
-   
+
    /** captures common parts of narrative and content element rendering */
    override def doNarrativeElement(ne: NarrativeElement, recurse: NarrativeElement => Unit) {ne match {
       case doc: Document =>
@@ -38,7 +32,7 @@ class MathHubFormalPresenter extends HTMLPresenter(new MathMLPresenter) {
              NarrativeMetadata.title.get(doc).foreach {t =>
                 text(": ")
                 text(t)
-             } 
+             }
           }
           div("document-body") {
              doc.getDeclarations foreach recurse
@@ -46,19 +40,19 @@ class MathHubFormalPresenter extends HTMLPresenter(new MathMLPresenter) {
         }
       case oe: OpaqueElement =>
          val oi = controller.extman.get(classOf[OpaqueHTMLPresenter], oe.format)
-                  .getOrElse(DefaultOpaqueElementInterpreter)
+                  .getOrElse(new DefaultOpaqueElementInterpreter)
          div("opaque-"+oe.format + " inlineBoxSibling") {
             oi.toHTML(objectPresenter, oe)(rh)
          }
-      case m: MRef if controller.get(m.target).isInstanceOf[DeclaredTheory] => 
+      case m: MRef if controller.get(m.target).isInstanceOf[DeclaredTheory] =>
         div {
           doTheory(controller.get(m.target).asInstanceOf[DeclaredTheory])
         }
-      case m: MRef if controller.get(m.target).isInstanceOf[DeclaredView] =>   
+      case m: MRef if controller.get(m.target).isInstanceOf[DeclaredView] =>
         div{
           doView(controller.get(m.target).asInstanceOf[DeclaredView])
         }
-      case s : SRef if controller.get(s.target).isInstanceOf[Declaration] => 
+      case s : SRef if controller.get(s.target).isInstanceOf[Declaration] =>
         div {
           doDeclaration(controller.get(s.target).asInstanceOf[Declaration])
         }

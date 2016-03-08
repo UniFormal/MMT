@@ -2,7 +2,7 @@ package info.kwarc.mmt.leo.AgentSystem.MMTSystem
 
 import info.kwarc.mmt.api.objects.{ComplexTheory, OMPMOD}
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.api.{Active, modules}
+import info.kwarc.mmt.api.modules
 import info.kwarc.mmt.leo.AgentSystem.{Change, Section}
 
 
@@ -119,7 +119,7 @@ class FactSection(blackboard:MMTBlackboard,shapeDepth: Int) extends Section(blac
           blackboard.controller.globalLookup.getO(p) match {
             case Some(t: modules.DeclaredTheory) =>
               t.getDeclarations.foreach {
-                case c: Constant if c.status == Active => c.tp.foreach { tp =>
+                case c: Constant => c.tp.foreach { tp =>
                   val a = Atom(c.toTerm, tp, c.rl)
                   data.addConstantAtom(a)
                 }
@@ -133,7 +133,7 @@ class FactSection(blackboard:MMTBlackboard,shapeDepth: Int) extends Section(blac
       isInitialized=true
     }
   }
-  
+
   def passiveOp(fact:Fact,flag:String) = handleChange(new Change(this, fact, List(flag)))//TODO add specific fact pointers
   def passiveAdd(fact:Fact) = passiveOp(fact,"ADD")
 }
