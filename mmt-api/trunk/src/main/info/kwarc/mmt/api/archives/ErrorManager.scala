@@ -25,10 +25,19 @@ object Table {
     "fileDate",
     "target",
     "sourceRef",
+    "sourceRegion",
     "shortMsg")
 }
 
-case class ErrorContent(tp: String, level: Level, sourceRef: Option[parser.SourceRef], shortMsg: String)
+case class ErrorContent(tp: String, level: Level, sourceRef: Option[SourceRef], shortMsg: String) {
+  def updateSource(optSource: Option[File]): ErrorContent = optSource match {
+    case None => this
+    case Some(src) => sourceRef match {
+      case Some(_) => this
+      case None => ErrorContent(tp, level, Some(SourceRef(FileURI(src), parser.SourceRegion.none)), shortMsg)
+    }
+  }
+}
 
 /** an [[Error]] as reconstructed from an error file */
 case class BuildError(archive: Archive, target: String, path: FilePath, data: ErrorContent) {
@@ -38,6 +47,9 @@ case class BuildError(archive: Archive, target: String, path: FilePath, data: Er
     val f = if (f1.isDirectory) f1 / ".err" else f1.addExtension("err")
     val msg = data.shortMsg
     val clean = msg == "cleaned"
+    val sourceURI = data.sourceRef.fold("")(_.container.toString)
+    val sourceFile = if (sourceURI.startsWith("file:")) sourceURI.substring(5) else ""
+    val source = if (File(sourceFile).exists()) "file://" + sourceFile else ""
     List(if (clean || msg == "no error") "" else Level.toString(data.level),
       data.tp,
       archive.id,
@@ -48,7 +60,8 @@ case class BuildError(archive: Archive, target: String, path: FilePath, data: Er
       if (clean) ""
       else new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(f.toJava.lastModified)),
       target,
-      data.sourceRef.fold("")(_.toString),
+      source,
+      data.sourceRef.fold("")(_.region.twoDimString),
       data.shortMsg
     )
   }
@@ -68,7 +81,7 @@ object ErrorReader {
       val List(tgt, srcRef, errType, shortMsg, level) =
         getAttrs(List("target", "sref", "type", "shortMsg", "level"), x)
       def infoMessage(msg: String) =
-        log.map(f => f(msg + "\nFile: " + f + "\nNode: " + shortMsg))
+        log.foreach(f => f(msg + "\nFile: " + f + "\nNode: " + shortMsg))
       var lvl: Level = Level.Error
       if (level.isEmpty) infoMessage("empty error level")
       else
@@ -118,7 +131,7 @@ class ErrorManager extends Extension with Logger {
 
   /** load all errors of this archive from *.err files
     *
-    * directories a recognized by mere .err files
+    * directories are recognized by mere .err files
     *
     * @param a the archive
     */
@@ -140,10 +153,10 @@ class ErrorManager extends Extension with Logger {
     * @param target the build target
     * @param fpath  the file
     */
-  def loadErrors(a: Archive, target: String, fpath: FilePath): Unit = {
+  def loadErrors(a: Archive, target: String, fpath: FilePath, source: Option[File] = None): Unit = {
     val f = a / errors / target / fpath
     val bes = ErrorReader.getBuildErrors(f, level, Some((s: String) => log(s))).
-      map(BuildError(a, target, fpath.toFile.stripExtension.toFilePath, _))
+      map(e => BuildError(a, target, fpath.toFile.stripExtension.toFilePath, e.updateSource(source)))
     val em = getErrorMap(a)
     em.put((target, fpath.segments), bes)
   }
@@ -183,7 +196,7 @@ class ErrorManager extends Extension with Logger {
     /** reloads the errors */
     override def onFileBuilt(a: Archive, t: TraversingBuildTarget, p: FilePath): Unit = {
       loadErrors(a, t.key, if ((a / t.inDim / p).isDirectory) p / ".err"
-      else p.toFile.addExtension("err").toFilePath)
+      else p.toFile.addExtension("err").toFilePath, Some(a / t.inDim / p))
     }
   }
   private val defaultLimit: Int = 100

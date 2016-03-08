@@ -132,9 +132,14 @@
                 &#10005;</a>
             </td>
             <td ng-repeat="key in colProps" ng-if="columns[key].x">
-                <span ng-if="key != 'fileLink' || res.shortMsg == 'cleaned'">{{res[key]}}</span>
                 <span ng-if="key == 'fileLink' && res.shortMsg != 'cleaned'">
                     <a href="" ng-click="serve(res[key])">{{res[key]}}</a>
+                </span>
+                <span ng-if="key == 'sourceRef' && res[key] != ''">
+                    <a ng-href="{{res[key]}}" target="_blank">{{res[key]}}</a>
+                </span>
+                <span ng-if="!(key == 'fileLink' && res.shortMsg != 'cleaned' || key == 'sourceRef' && res[key] != '')">
+                    {{res[key]}}
                 </span>
             </td>
         </tr>
