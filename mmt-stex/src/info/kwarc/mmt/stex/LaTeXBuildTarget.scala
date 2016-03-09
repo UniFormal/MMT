@@ -207,6 +207,10 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
   // we do nothing for single files
   def reallyBuildFile(bt: BuildTask): BuildResult = BuildResult.empty
 
+  override def runBuildTask(bt: BuildTask): BuildResult = if (bt.isDir) {
+    super.runBuildTask(bt)
+  } else BuildResult.empty
+
   override def cleanFile(a: Archive, curr: Current) {
   }
 
