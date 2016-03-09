@@ -77,12 +77,11 @@
         <span ng-show="number <= results.length">result: {{results.length}}</span>
     </span>
 
-    <p>restrict the number of displayed entries to support fast searches in
-        every column. Click <a href="" ng-click="search()"
-                               title="search for selection">&#8631;</a>
-        to reload choice (revealing undisplayed
-        or rebuilt results).</p>
-
+    <p>restrict the number of displayed entries to support fast searches in every column.</p>
+    Click
+    <button ng-click="search()" title="search for selection" style="color:green;"><b>RELOAD</b></button>
+    (to reveal undisplayed or rebuilt results).
+    <p/>
     <div>{{buildCount}} pending builds
         <a href="" ng-click="showBuildResult = !showBuildResult">
             <span ng-show="showBuildResult"

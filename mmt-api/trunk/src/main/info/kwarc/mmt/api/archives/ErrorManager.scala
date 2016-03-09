@@ -61,7 +61,9 @@ case class BuildError(archive: Archive, target: String, path: FilePath, data: Er
       else new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(f.toJava.lastModified)),
       target,
       source,
-      data.sourceRef.fold("")(_.region.twoDimString),
+      data.sourceRef.fold(""){ sr =>
+        val r = sr.region
+        if (r == parser.SourceRegion.none) "" else r.twoDimString},
       data.shortMsg
     )
   }
@@ -154,12 +156,22 @@ class ErrorManager extends Extension with Logger {
     * @param target the build target
     * @param fpath  the file
     */
-  def loadErrors(a: Archive, target: String, fpath: FilePath, source: Option[File] = None): Unit = {
+  def loadErrors(a: Archive, target: String, fpath: FilePath, source: Option[File]): Unit = {
     val f = a / errors / target / fpath
     val bes = ErrorReader.getBuildErrors(f, level, Some((s: String) => log(s))).
       map(e => BuildError(a, target, fpath.toFile.stripExtension.toFilePath, e.updateSource(source)))
     val em = getErrorMap(a)
     em.put((target, fpath.segments), bes)
+  }
+
+  def loadErrors(a: Archive, target: String, fpath: FilePath): Unit = {
+    val optBt = controller.extman.getOrAddExtension(classOf[TraversingBuildTarget], target)
+    optBt match {
+      case None => loadErrors(a, target, fpath, None)
+      case Some(bt) =>
+        val source = a / bt.inDim / fpath.toFile.stripExtension.toFilePath
+        loadErrors(a, target, fpath, Some(source))
+    }
   }
 
   /** iterator over all errors given as (archive, target, path, error) */
