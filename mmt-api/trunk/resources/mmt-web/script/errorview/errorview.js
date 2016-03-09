@@ -23,10 +23,11 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     $scope.maxNumber = 100;
     $scope.maxGroups = 6;
     $scope.searchText = '';
-    $scope.query = function (limit) {
+    $scope.query = function (doFilter, limit) {
          var res = '';
          for (k in $scope.columns) {
-                var str = escape($scope.columns[k].search);
+                var str = '';
+                if (doFilter) str = escape($scope.columns[k].search);
                 if (str != '') res = res + '&' + k + "=" + str;
             };
          for (var i = 0; i < $scope.hiddenData.length; i++) {
@@ -44,7 +45,7 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     };
     $scope.group = function() {
         $scope.columns[$scope.field].x = true;
-        $http.get(':errors/group/' + $scope.field + $scope.query($scope.maxGroups)).success(function(data) {
+        $http.get(':errors/group/' + $scope.field + $scope.query(false, $scope.maxGroups)).success(function(data) {
           $scope.groups = data;
         });
     };
@@ -67,12 +68,16 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
            });
         });
     };
-    $scope.hide = function() {
-        $http.get(':errors/search2' + $scope.query($scope.maxNumber) + '&hide=true').success(function(data) {
+    $scope.hide = function(content) {
+        $http.get(':errors/search2?' + $scope.field + '=' + content + '&hide=true').success(function(data) {
             $scope.hiddenData.push(data);
-            $scope.clear();
+            $scope.columns[$scope.field].search = '';
             $scope.search();
         });
+    };
+    $scope.clearlast = function() {
+        $scope.hiddenData.pop();
+        $scope.search();
     };
     $scope.clearhidden = function() {
         $scope.hiddenData = [];
@@ -81,12 +86,12 @@ angular.module('searchApp', ['ngSanitize']).controller('SearchController',
     $scope.search = function() {
         $scope.count();
         $scope.group();
-        $http.get(':errors/search2' + $scope.query($scope.maxNumber)).success(function(data) {
+        $http.get(':errors/search2' + $scope.query(true, $scope.maxNumber)).success(function(data) {
           $scope.results = data;
         });
     };
     $scope.count = function() {
-        $http.get(':errors/count2' + $scope.query($scope.maxNumber)).success(function(data) {
+        $http.get(':errors/count2' + $scope.query(true, $scope.maxNumber)).success(function(data) {
           $scope.number = data[0].count;
         });
     };

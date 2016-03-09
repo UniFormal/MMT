@@ -35,7 +35,7 @@
                    ng-click="columns[field].search = g.content; search()"
                    title="select corresponding entries">&#8631;</a>
                 <a href=""
-                   ng-click="columns[field].search = g.content; hide()"
+                   ng-click="hide(g.content)"
                    title="hide corresponding entries">&#8630;</a>
                 {{g.content}}
             </td>
@@ -68,8 +68,9 @@
     </table>
 
     <p/>
-    <button ng-click="clearhidden()">clear hidden filters</button>
-    <button ng-click="clear()">clear search fields</button>
+    <button ng-click="clearlast()">remove last hidden entry</button>
+    <button ng-click="clearhidden()">clear all hidden entries</button>
+    <button ng-click="clear()">clear search fields below</button>
     maximal entries:
     <input type="number" min="0" max="10000" ng-model="maxNumber"/>
     <span>
@@ -104,8 +105,6 @@
             <th>
                 <a href="" ng-click="search()"
                    title="search for selection">&#8631;</a>
-                <a href="" ng-click="hide()"
-                   title="hide selection">&#8630;</a>
             </th>
             <th ng-repeat="key in colProps" ng-if="columns[key].x">
                 <span style="cursor:pointer"
