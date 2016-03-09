@@ -633,7 +633,7 @@ object Grammar {
 		    			}
 		    			val result = pref:::Notation:::extractedRules:::eventList
 		    					//clean up   
-		    					eventList = List[String]();
+		    	    eventList = List[String]();
 		    			rules = Set[Rule]();
 		    			NotationContent = List.empty[String]
 		    					index = 0;

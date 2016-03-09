@@ -77,24 +77,6 @@ import java.net.URLDecoder
 import info.kwarc.mmt.api.utils._
 import scala.collection.mutable.ListBuffer
 
-class MarpaBody(tk: HTalk) extends Body(tk: HTalk) {
-	def asMarpaSubst : MarpaSubst = {
-	val byteArray: Array[Byte] = tk.req.octets.getOrElse(throw ServerError("no body found in MarpaBody"))
-			var bis : ByteArrayInputStream = null
-			var ois : ObjectInputStream = null
-			var obj : Object = null
-			try {
-				bis = new ByteArrayInputStream(byteArray)
-				ois = new ObjectInputStream(bis)
-				obj =  ois.readObject()
-			} finally {
-				if (bis != null) bis.close
-				if (ois != null) ois.close
-			}
-	obj.asInstanceOf[MarpaSubst]
-}
-} 
-
 case class PlanetaryError(val text : String) extends Error(text)
 
 class MarpaGrammarGenerator extends ServerExtension("marpa") with Logger {
@@ -108,7 +90,7 @@ def apply(uriComps: List[String], query: String, body : Body): HLet = {
 			case "getGrammar" :: _ => getGrammarResponse
 			case "getContentMathML" :: _ => getContentMathML
 			case _ => errorResponse("Invalid request: " + uriComps.mkString("/"), 
-			    List(new PlanetaryError("Invalid Request" + uriComps)))
+					List(new PlanetaryError("Invalid Request" + uriComps)))
 			}
 		} catch {
 		case e : Error => 
@@ -137,12 +119,12 @@ def getGrammarResponse : HLet  = new HLet {
 
 		pairIndexNotation = notations.toList.zipWithIndex
 		pairIndexNotation.foreach( x => 
-  		if (x._1._2.presentationMarkers != Nil) {
-  			Grammar.addTopRule(x._1._1.toPath+"N"+x._2.toString, x._1._2.presentationMarkers)}) //adding rules to the grammar
-    val grammarAsStringList = Grammar.getMarpaGrammar.map(x => info.kwarc.mmt.api.utils.JSONString(x))
-		val resp = info.kwarc.mmt.api.utils.JSONArray(grammarAsStringList : _*)
-//		val params = reqBody.asJSON
-		Server.JsonResponse(resp).aact(tk)
+		if (x._1._2.presentationMarkers != Nil) {
+			Grammar.addTopRule(x._1._1.toPath+"N"+x._2.toString, x._1._2.presentationMarkers)}) //adding rules to the grammar
+			val grammarAsStringList = Grammar.getMarpaGrammar.map(x => info.kwarc.mmt.api.utils.JSONString(x))
+			val resp = info.kwarc.mmt.api.utils.JSONArray(grammarAsStringList : _*)
+			//		val params = reqBody.asJSON
+			Server.JsonResponse(resp).aact(tk)
 	}
 }
 
@@ -156,8 +138,8 @@ def unescape(text:String):String = {
 				case 'q'::'u'::'o'::'t'::tail if (escapeFlag) => recUnescape(tail,acc+"\"",true)
 				case 'l'::'t'::tail if (escapeFlag) => recUnescape(tail,acc+"<",true)
 				case 'g'::'t'::tail if (escapeFlag) => recUnescape(tail,acc+">",true)
-        case x::tail => recUnescape(tail,acc+x,true)
-        case _ => acc
+				case x::tail => recUnescape(tail,acc+x,true)
+				case _ => acc
 				}
 		}
 		recUnescape(text.toList,"",false)
@@ -165,197 +147,230 @@ def unescape(text:String):String = {
 }
 
 def getContentMathML : HLet  = new HLet {
-		def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
-			println("In getConentMathML")  
-			val reqBody : MarpaSubst = new MarpaBody(tk).asMarpaSubst
-			val status : String = reqBody.getStatus();
-			val payload = reqBody.getPayload();
-			val key : String = reqBody.getKey();
-			val input : String = reqBody.getInput();
-			println("MarpaSubst.key = " + key)
-      var ruleNr : Int = -1;
-      val pattern = "N(\\d+)$".r
-      val argPattern = "A(\\d+)(ArgSeq|VarSeq|Arg|Var)$".r
-      pattern.findAllIn(key).matchData foreach {
-        m => ruleNr = m.group(1).toInt;
-      }
-      println("MarpaSubst rule number = " + ruleNr.toString())
-      println("MarpaSubst payload = " + payload.toString())
-      println("MarpaSubst input = " + input)
-      var argMap : Map[Int, String] = new HashMap[Int, String]();
-      var varMap : Map[Int, String] = new HashMap[Int, String]();
-      var seqArgMap : Map[Int, List[String]] = new HashMap[Int, List[String]]();
-      var seqVarMap : Map[Int, List[String]] = new HashMap[Int, List[String]]();
-      //Construct argument maps
-      val notPosArr : Array[Array[Integer]] = payload.getOrElse("position", Array(Array()))
-      val notStart : Integer = notPosArr(0)(0)
-      val notLength : Integer = notPosArr(0)(1)
-      payload foreach (p => {
-        val key = p._1;
-        val posArr = p._2;
-        if (key != "position") {
-          var argNr : Int = -1
-          var argType : String = "Invalid"
-          argPattern.findAllIn(key).matchData foreach {
-              m => {argNr = m.group(1).toInt
-                    argType = m.group(2).toString
-              }
-          }
-          println("ArgNr = " + argNr.toString + " ArgType = " + argType)
-          p._2 foreach (pos => {
-             //Depending on key type add to one of the maps
-            val start = pos(0)
-            val length = pos(1)
-            var value = input.substring(notStart + start, notStart + start + length)
-            println("key = " + key + " value = " + value)
-            if (argType == "Arg") {
-              argMap += (argNr -> value)
-            } else if (argType == "Var") {
-              varMap += (argNr -> value)
-            } else if (argType == "ArgSeq") {
-              var currList : List[String]= List()
-              if (seqArgMap.contains(argNr)) {
-                currList = seqArgMap(argNr)
-                seqArgMap -= argNr
-              }
-              currList = currList :+ value
-              seqArgMap += (argNr -> currList)
-              
-            } else if (argType == "VarSeq") {
-              var currList : List[String]= List()
-              if (seqVarMap.contains(argNr)) {
-                currList = seqVarMap(argNr)
-                seqVarMap -= argNr
-              }
-              currList = currList :+ value
-              seqVarMap += (argNr -> currList)
-            } else {
-               println("Invalid argument type")
-            }
-           })
-        } 
-      })
-     
-      
-			val result = doNotationTerm(
-			       pairIndexNotation(ruleNr)._1._1 ,
-			       pairIndexNotation(ruleNr)._1._2 , 
-             argMap, varMap, seqArgMap, seqVarMap)
-      println("Creating CML response")
-      var data : Map[String, String] = new HashMap[String, String]()
-      data += ("status" -> "OK")
-      val payloadMap = payload.toMap
-      println("payload.toString = " + payloadMap)
-      //data += ("payload" -> new JSONObject(payloadMap))
-      var cml = unescape(result.toCML.toString)
-      println("HTML Escaped cml  = " + cml)
-      cml = URLDecoder.decode(cml, "UTF-8")
-      println("URL Escaped cml = " + cml)
-      data += ("cml" -> cml)
-      data += ("input" -> input)
-//      Ok(Json.toJson(response.toMap))
-      val dataJSONString : Map[String, JSONString] = data.map(pair => (pair._1 ->  JSONString(pair._2.toString)))
-      val resp = info.kwarc.mmt.api.utils.JSONObject(dataJSONString.toSeq : _*)
-      println("Sending Content Math ML response = " + resp.toString())
-			Server.JsonResponse(resp).aact(tk)
-		}
-	}
+			def aact(tk : HTalk)(implicit ec : ExecutionContext) : Future[Unit] = {
+				println("In getConentMathML")  
+				val reqBody = new Body(tk)
+				val paramsJSON : scala.util.parsing.json.JSONObject = bodyAsJSON(reqBody)
+				
 
-	def doNotationTerm(spath : GlobalName, 
-			not : TextNotation,
-			argMap : Map[Int, String], 
-      varMap : Map[Int, String],
-      seqArgMap : Map[Int, List[String]],
-      seqVarMap : Map[Int, List[String]]) : Term = {
-      
-      println( "path = " + spath.toString + "\n notation = " + not.toString)
-			
-      def getArg(i : Int) : List[Term] = {
-        val sArgs : List[String] = seqArgMap.getOrElse(i, argMap.get(i).toList) //should throw exception instead of Nil
-        sArgs.map(a => OMV(a))
-      }
-      def getVarDecl(i : Int) : List[VarDecl] = {
-        val sArgs : List[String] = seqArgMap.getOrElse(i, argMap.get(i).toList) //should throw exception instead of Nil
-        sArgs.map(a => VarDecl(LocalName(a),  None, None, None))
-      }
-      
-      val arity = not.arity
-					//arity.canHandle(numberOfSubstitution, nrOfVariables, nrOfArguments)
-			//val sub = Substitution(arity.subargs.map(sa => Sub(OMV.anonymous, OMV( argumentValues(sa.number-1) ))) : _*)
-      val sub = Substitution()
-      val con = Context(arity.variables.flatMap(v => getVarDecl(v.number)) :_*)
-      val args = arity.arguments flatMap {a => getArg(a.number)}
-      
-      val term = ComplexTerm(spath, sub, con, args)
-			println ("subs = " + arity.subargs.size)
-			println ("con = " + arity.variables.size)
-			println ("args = " + arity.arguments.size)
-			println( "\nTerm = " + term.toCML.toString)
-			term
-	}
- //utils
-  private def errorResponse(text : String, errors : List[Throwable]) : HLet = {
-    JsonResponse("", s"MMT Error in Planetary extension: $text ", errors)
-  }
-  
-  private def JsonResponse(content : String, info : String, errors : List[Throwable]) : HLet = {
-    val response : HashMap[String, JSON] = new collection.mutable.HashMap[String, JSON]()
-    response("content") = JSONString(content)
-    if (errors == Nil) { //no errors
-      val status = new collection.mutable.HashMap[String, JSON]()
-      status("conversion") = JSONInt(0) //success
-      val messages = new collection.mutable.HashMap[String, JSON]()
-      if (info != "") {
-        val message = new collection.mutable.HashMap[String, JSON]()
-        message("type") = JSONString("Info")
-        message("shortMsg") = JSONString(info)
-        message("longMsg") = JSONString(info)
-        //no srcref
-        messages("0") = JSONObject(message.toSeq : _*)
-      }
-      status("messages") = JSONObject(messages.toSeq : _*)
-      response("status") = JSONObject(status.toSeq : _*)        
-    } else { //there are errors
-      val status = new collection.mutable.HashMap[String, JSON]()
-      if (content == "") {
-        status("conversion") = JSONInt(2) //failed with errors
-      } else {
-        status("conversion") = JSONInt(2) //success with errors
-      }
-      val messages = new collection.mutable.HashMap[String, JSON]()
-      errors.zipWithIndex foreach { p => 
-        val message = new collection.mutable.HashMap[String, JSON]()
-        p._1 match {
-          case se : SourceError =>
-            message("type") = JSONString("Fatal")
-            message("shortMsg") = JSONString(se.mainMessage)
-            message("longMsg") = JSONString(se.getStackTrace.mkString("\n"))
-            message("srcref") = JSONObject(List("from" -> JSONObject(List("line" -> JSONInt(se.ref.region.start.line), "col"-> JSONInt(se.ref.region.start.column)) : _*), 
-                                 "to" -> JSONObject(List("line" -> JSONInt(se.ref.region.end.line), "col" -> JSONInt(se.ref.region.end.column)) : _*)) : _*)
-          case e =>
-            message("type") = JSONString("Fatal")
-            message("shortMsg") = JSONString(e.getMessage)
-            message("longMsg") = JSONString(e.getStackTrace.mkString("\n"))
-            //no srcref :(
-          }
-          messages(p._2.toString) = JSONObject(message.toSeq : _*)
-      }
-      status("messages") = JSONObject(messages.toSeq : _*)
-      response("status") = JSONObject(status.toSeq : _*)
-    }
-      log("Sending Response: " + response)
-      Server.JsonResponse(JSONObject(response.toSeq : _*))     
-  }
+				val params = paramsJSON.obj
+  			val status = params("status").toString
+  			val key = params("key").toString
+  			val input = params("input").toString
+  		  val payloadUnparsed = params("payload") match {
+				  case scala.util.parsing.json.JSONObject(x) => x
+				}
+				def parseJSONtoList(arr : scala.util.parsing.json.JSONArray) : List[Int] = {
+				  val scala.util.parsing.json.JSONArray(list) = arr
+				  list map {
+				     case x : Int => x
+				     case x : Double => x.toInt
+				     case x : Float => x.toInt
+				     case x => throw ServerError("parseJSONtoList mismatch")
+				   }		   
+				}
+				def parseJSONtoNestedList(arr : scala.util.parsing.json.JSONArray) : List[List[Int]] = {
+				  val scala.util.parsing.json.JSONArray(list) = arr
+				  list.map({
+				    case innerList : scala.util.parsing.json.JSONArray => parseJSONtoList(innerList)
+				  })
+				}
 
-	private def toStringMarkers(not : TextNotation) : List[String] = {
-			not.parsingMarkers flatMap {
-			case a : Arg => Some("_")
-			case a : SeqArg => Some("_...")
-			case a : ImplicitArg => None
-			case d : Delimiter => Some(d.text)
-			case v : Var => Some("_")
-			case _ => None
+        val payload = payloadUnparsed map {
+				  case (k : String, v : scala.util.parsing.json.JSONArray) => (k, parseJSONtoNestedList(v))
+				}
+        
+				println("Params = " + params.toString())
+				println("Payload = " + payload.toString())
+
+				var ruleNr : Int = -1;
+				val pattern = "N(\\d+)$".r
+				val argPattern = "A(\\d+)(ArgSeq|VarSeq|Arg|Var)$".r
+				pattern.findAllIn(key).matchData foreach { m => ruleNr = m.group(1).toInt;}
+				println("MarpaSubst rule number = " + ruleNr.toString())
+				println("MarpaSubst key = " + key)
+				println("MarpaSubst payload = " + payload.toString())
+				println("MarpaSubst input = " + input)
+				var argMap : Map[Int, String] = new HashMap[Int, String]();
+				var varMap : Map[Int, String] = new HashMap[Int, String]();
+				var seqArgMap : Map[Int, List[String]] = new HashMap[Int, List[String]]();
+				var seqVarMap : Map[Int, List[String]] = new HashMap[Int, List[String]]();
+				//Construct argument maps
+				val notPosArr : List[List[Int]] = payload.getOrElse("position", List(List()))
+				val notStart : Int = notPosArr(0)(0)
+				val notLength : Int = notPosArr(0)(1)
+				payload foreach (p => {
+					val key = p._1;
+					val posArr = p._2;
+					if (key != "position") {
+						var argNr : Int = -1
+								var argType : String = "Invalid"
+								argPattern.findAllIn(key).matchData foreach {
+						m => {argNr = m.group(1).toInt
+								argType = m.group(2).toString
+						}
+					}
+					println("ArgNr = " + argNr.toString + " ArgType = " + argType)
+					p._2 foreach (pos => {
+						//Depending on key type add to one of the maps
+						val start = pos(0)
+								val length = pos(1)
+								var value = input.substring(notStart + start, notStart + start + length)
+								println("key = " + key + " value = " + value)
+								if (argType == "Arg") {
+									argMap += (argNr -> value)
+								} else if (argType == "Var") {
+									varMap += (argNr -> value)
+								} else if (argType == "ArgSeq") {
+									var currList : List[String]= List()
+											if (seqArgMap.contains(argNr)) {
+												currList = seqArgMap(argNr)
+														seqArgMap -= argNr
+											}
+						currList = currList :+ value
+								seqArgMap += (argNr -> currList)
+
+								} else if (argType == "VarSeq") {
+									var currList : List[String]= List()
+											if (seqVarMap.contains(argNr)) {
+												currList = seqVarMap(argNr)
+														seqVarMap -= argNr
+											}
+						currList = currList :+ value
+								seqVarMap += (argNr -> currList)
+								} else {
+									println("Invalid argument type")
+								}
+					})
+					} 
+				})
+
+				val result = doNotationTerm(
+						pairIndexNotation(ruleNr)._1._1 ,
+						pairIndexNotation(ruleNr)._1._2 , 
+						argMap, varMap, seqArgMap, seqVarMap)
+				println("Creating CML response")
+				var data : Map[String, String] = new HashMap[String, String]()
+				data += ("status" -> "OK")
+				val payloadMap = payload.toMap
+				println("payload.toString = " + payloadMap)
+				//data += ("payload" -> new JSONObject(payloadMap))
+				var cml = unescape(result.toCML.toString)
+				println("HTML Escaped cml  = " + cml)
+				cml = URLDecoder.decode(cml, "UTF-8")
+				println("URL Escaped cml = " + cml)
+				data += ("cml" -> cml)
+				data += ("input" -> input)
+				//      Ok(Json.toJson(response.toMap))
+				val dataJSONString : Map[String, JSONString] = data.map(pair => (pair._1 ->  JSONString(pair._2.toString)))
+				val resp = info.kwarc.mmt.api.utils.JSONObject(dataJSONString.toSeq : _*)
+				println("Sending Content Math ML response = " + resp.toString())
+				tk.setHeader("Access-Control-Allow-Origin", "*")
+				Server.JsonResponse(resp).aact(tk)
 			}
-	}
+		}
 
+		def doNotationTerm(spath : GlobalName, 
+				not : TextNotation,
+				argMap : Map[Int, String], 
+				varMap : Map[Int, String],
+				seqArgMap : Map[Int, List[String]],
+				seqVarMap : Map[Int, List[String]]) : Term = {
+
+				println( "path = " + spath.toString + "\n notation = " + not.toString)
+
+				def getArg(i : Int) : List[Term] = {
+					val sArgs : List[String] = seqArgMap.getOrElse(i, argMap.get(i).toList) //should throw exception instead of Nil
+							sArgs.map(a => OMV(a))
+				}
+				def getVarDecl(i : Int) : List[VarDecl] = {
+					val sArgs : List[String] = seqArgMap.getOrElse(i, argMap.get(i).toList) //should throw exception instead of Nil
+							sArgs.map(a => VarDecl(LocalName(a),  None, None, None))
+				}
+
+				val arity = not.arity
+						//arity.canHandle(numberOfSubstitution, nrOfVariables, nrOfArguments)
+						//val sub = Substitution(arity.subargs.map(sa => Sub(OMV.anonymous, OMV( argumentValues(sa.number-1) ))) : _*)
+						val sub = Substitution()
+						val con = Context(arity.variables.flatMap(v => getVarDecl(v.number)) :_*)
+						val args = arity.arguments flatMap {a => getArg(a.number)}
+
+				val term = ComplexTerm(spath, sub, con, args)
+						println ("subs = " + arity.subargs.size)
+						println ("con = " + arity.variables.size)
+						println ("args = " + arity.arguments.size)
+						println( "\nTerm = " + term.toCML.toString)
+						term
+		}
+		//utils
+		private def errorResponse(text : String, errors : List[Throwable]) : HLet = {
+				JsonResponse("", s"MMT Error in Planetary extension: $text ", errors)
+		}
+
+		private def JsonResponse(content : String, info : String, errors : List[Throwable]) : HLet = {
+				val response : HashMap[String, JSON] = new collection.mutable.HashMap[String, JSON]()
+						response("content") = JSONString(content)
+						if (errors == Nil) { //no errors
+							val status = new collection.mutable.HashMap[String, JSON]()
+									status("conversion") = JSONInt(0) //success
+									val messages = new collection.mutable.HashMap[String, JSON]()
+									if (info != "") {
+										val message = new collection.mutable.HashMap[String, JSON]()
+												message("type") = JSONString("Info")
+												message("shortMsg") = JSONString(info)
+												message("longMsg") = JSONString(info)
+												//no srcref
+												messages("0") = JSONObject(message.toSeq : _*)
+									}
+							status("messages") = JSONObject(messages.toSeq : _*)
+									response("status") = JSONObject(status.toSeq : _*)        
+						} else { //there are errors
+							val status = new collection.mutable.HashMap[String, JSON]()
+									if (content == "") {
+										status("conversion") = JSONInt(2) //failed with errors
+									} else {
+										status("conversion") = JSONInt(2) //success with errors
+									}
+							val messages = new collection.mutable.HashMap[String, JSON]()
+									errors.zipWithIndex foreach { p => 
+									val message = new collection.mutable.HashMap[String, JSON]()
+									p._1 match {
+									case se : SourceError =>
+									message("type") = JSONString("Fatal")
+									message("shortMsg") = JSONString(se.mainMessage)
+									message("longMsg") = JSONString(se.getStackTrace.mkString("\n"))
+									message("srcref") = JSONObject(List("from" -> JSONObject(List("line" -> JSONInt(se.ref.region.start.line), "col"-> JSONInt(se.ref.region.start.column)) : _*), 
+											"to" -> JSONObject(List("line" -> JSONInt(se.ref.region.end.line), "col" -> JSONInt(se.ref.region.end.column)) : _*)) : _*)
+									case e =>
+									message("type") = JSONString("Fatal")
+									message("shortMsg") = JSONString(e.getMessage)
+									message("longMsg") = JSONString(e.getStackTrace.mkString("\n"))
+									//no srcref :(
+									}
+									messages(p._2.toString) = JSONObject(message.toSeq : _*)
+							}
+							status("messages") = JSONObject(messages.toSeq : _*)
+									response("status") = JSONObject(status.toSeq : _*)
+						}
+		log("Sending Response: " + response)
+		Server.JsonResponse(JSONObject(response.toSeq : _*))     
+		}
+
+		private def toStringMarkers(not : TextNotation) : List[String] = {
+				not.parsingMarkers flatMap {
+				case a : Arg => Some("_")
+				case a : SeqArg => Some("_...")
+				case a : ImplicitArg => None
+				case d : Delimiter => Some(d.text)
+				case v : Var => Some("_")
+				case _ => None
+				}
+		}
+		def bodyAsJSON(b : Body) : scala.util.parsing.json.JSONObject = {
+      val bodyS = b.asString
+      scala.util.parsing.json.JSON.parseRaw(bodyS) match {
+        case Some(j : scala.util.parsing.json.JSONObject) => j
+        case _ => throw ServerError("Invalid JSON " + bodyS)
+      }
+    }
 }
