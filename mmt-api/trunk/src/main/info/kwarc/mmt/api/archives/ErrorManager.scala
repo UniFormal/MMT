@@ -95,7 +95,8 @@ object ErrorReader {
         srcR = if (srcRef.isEmpty) None else Some(SourceRef.fromURI(URI(srcRef)))
       }
       catch {
-        case e: ParseError => infoMessage(e.getMessage)
+        // java.net.URISyntaxException: Relative path in absolute URI
+        case e: Exception => infoMessage(e.getMessage)
       }
       if (lvl >= errorLevel)
         bes ::= ErrorContent(errType, lvl, srcR, shortMsg)
