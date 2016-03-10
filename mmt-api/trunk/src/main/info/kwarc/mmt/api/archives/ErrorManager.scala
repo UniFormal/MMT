@@ -6,6 +6,7 @@ import java.util.Date
 import info.kwarc.mmt.api.Level.Level
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.ontology.TermPattern.RemoveUnknowns
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.web._
@@ -138,14 +139,14 @@ class ErrorManager extends Extension with Logger {
     *
     * @param a the archive
     */
-  def loadAllErrors(a: Archive): Unit = {
+  def loadAllErrors(a: Archive, removeUnknowns: Boolean): Unit = {
     errorMaps ::= new ErrorMap(a)
     a.traverse[Unit](errors, EmptyPath, TraverseMode(_ => true, _ => true, parallel = false))({
       case Current(_, FilePath(target :: path)) =>
-        loadErrors(a, target, FilePath(path))
+        loadErrors(a, target, FilePath(path), removeUnknowns)
     }, {
       case (Current(_, FilePath(target :: path)), _) =>
-        loadErrors(a, target, FilePath(path) / ".err")
+        loadErrors(a, target, FilePath(path) / ".err", removeUnknowns)
       case (Current(_, `EmptyPath`), _) =>
     })
   }
@@ -164,13 +165,18 @@ class ErrorManager extends Extension with Logger {
     em.put((target, fpath.segments), bes)
   }
 
-  def loadErrors(a: Archive, target: String, fpath: FilePath): Unit = {
+  def loadErrors(a: Archive, target: String, fpath: FilePath, removeUnknowns: Boolean): Unit = {
     val optBt = controller.extman.getOrAddExtension(classOf[TraversingBuildTarget], target)
     optBt match {
       case None => loadErrors(a, target, fpath, None)
       case Some(bt) =>
-        val source = a / bt.inDim / fpath.toFile.stripExtension.toFilePath
-        loadErrors(a, target, fpath, Some(source))
+        val fp = fpath.toFile.stripExtension.toFilePath
+        val source = a / bt.inDim / fp
+        if (removeUnknowns && !source.exists) {
+          log("cleaning " + target + " for: " + source)
+          bt.clean(a, fp)
+        }
+        else loadErrors(a, target, fpath, Some(source))
     }
   }
 
@@ -183,11 +189,14 @@ class ErrorManager extends Extension with Logger {
 
   /** registers a [[ChangeListener]] and a [[ServerExtension]] */
   override def start(args: List[String]): Unit = {
-    val (m, _) = AnaArgs(List(OptionDescr("level", "", IntArg, "error level to pick (0 means all)")), args)
+    val opts = List(
+      OptionDescr("level", "", IntArg, "error level to pick (0 means all)"),
+      OptionDescr("clean-unknown-sources", "", NoArg, "clean output files of for missing sources"))
+    val (m, _) = AnaArgs(opts, args)
     m.get("level").foreach { v => level = v.getIntVal - 1 }
     controller.extman.addExtension(cl)
     controller.extman.addExtension(serve)
-    controller.backend.getArchives.foreach { a => loadAllErrors(a) }
+    controller.backend.getArchives.foreach { a => loadAllErrors(a, m.isDefinedAt("clean-unknown-sources")) }
   }
 
   override def destroy: Unit = {
@@ -198,7 +207,7 @@ class ErrorManager extends Extension with Logger {
   private val cl = new ChangeListener {
     /** creates an [[ErrorMap]] for the archive and asynchronously loads its errors */
     override def onArchiveOpen(a: Archive): Unit = {
-      loadAllErrors(a)
+      loadAllErrors(a, false)
     }
 
     /** deletes the [[ErrorMap]] */

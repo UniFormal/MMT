@@ -479,7 +479,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   /** recursively delete output files in parallel (!) */
   def clean(a: Archive, in: FilePath = EmptyPath) {
-    a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel = true))(
+    a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel = true), sendLog = true, forClean = true)(
       { c => cleanFile(a, c) }, { case (c, _) => cleanDir(a, c) })
   }
 

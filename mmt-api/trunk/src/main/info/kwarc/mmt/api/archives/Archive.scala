@@ -54,7 +54,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
 
   /** the absolute path to a given dimension */
   def /(dim: ArchiveDimension) = root / resolveDimension(dim)
-  
+
   /** the relative path in the archive of a give dimension */
   def resolveDimension(dim: ArchiveDimension): FilePath = dim match {
     case r@RedirectableDimension(key, _) => properties.get(key) match {
@@ -102,7 +102,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   def MMTPathToContentPath(m: MPath): File = this / content / Archive.MMTPathToContentPath(m)
 
   /** traverses a dimension calling continuations on files and subdirectories */
-  def traverse[A](dim: ArchiveDimension, in: FilePath, mode: TraverseMode, sendLog: Boolean = true)
+  def traverse[A](dim: ArchiveDimension, in: FilePath, mode: TraverseMode, sendLog: Boolean = true, forClean: Boolean = false)
                  (onFile: Current => A, onDir: (Current, List[A]) => A = (_: Current, _: List[A]) => ()): Option[A] = {
     val TraverseMode(filter, filterDir, parallel) = mode
     def recurse(n: String): List[A] =
@@ -121,7 +121,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
       else None
     }
     else if (filter(inFileName) && filterDir(inFile.up.getName))
-      if (!inFile.isFile) {
+      if (!forClean && !inFile.isFile) {
         if (sendLog) log("file does not exist: " + inFile)
         None
       }
