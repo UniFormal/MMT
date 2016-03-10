@@ -220,8 +220,10 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
 
   override def cleanDir(a: Archive, curr: Current) {
     val dir = curr.file
-    dir.list.filter(dirFileFilter).sorted.
-      map(f => dir / f).foreach(deleteWithLog)
+    if (dir.exists & dir.isDirectory) {
+      dir.list.filter(dirFileFilter).sorted.
+        map(f => dir / f).foreach(deleteWithLog)
+    }
     val errFile = getFolderErrorFile(a, curr.path)
     delete(errFile)
     val errDir = errFile.up

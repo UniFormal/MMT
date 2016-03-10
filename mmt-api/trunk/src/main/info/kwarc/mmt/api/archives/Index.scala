@@ -97,19 +97,18 @@ abstract class Importer extends TraversingBuildTarget {imp =>
       super.cleanFile(a, curr)
       return
     }
-    val doc = try {
-      controller.read(ParsingStream.fromFile(narrFile, Some(DPath(a.narrationBase / narrPath.segments)), Some(a.namespaceMap)), interpret = false)(new ErrorLogger(report))
-    } catch {
-      case e: java.io.IOException =>
-        report(LocalError("io error, could not clean content of " + narrFile).setCausedBy(e))
-        return
-    }
-    // TODO remove document from controller? mark document as dirty in controller?
-    //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly
-    doc.collectModules(controller) foreach {mp =>
+    try {
+      val doc = controller.read(ParsingStream.fromFile(narrFile, Some(DPath(a.narrationBase / narrPath.segments)), Some(a.namespaceMap)), interpret = false)(new ErrorLogger(report))
+      // TODO remove document from controller? mark document as dirty in controller?
+      //TODO if the same module occurs in multiple narrations, we have to use getLocalItems and write/parse the documents in narration accordingly
+      doc.collectModules(controller) foreach {mp =>
         val cPath = Archive.MMTPathToContentPath(mp)
         delete(a / content / cPath)
         delete((a / relational / cPath).setExtension("rel"))
+      }
+    } catch {
+      case e: Exception =>
+        report(LocalError("error, could not clean content of " + narrFile).setCausedBy(e))
     }
     delete((a / relational / narrPath).setExtension("rel"))
     super.cleanFile(a, curr)

@@ -47,7 +47,7 @@ trait Extension extends Logger {
      }
   }
 
-  
+
   /** MMT initialization */
   private[api] def init(controller: Controller) {
     this.controller = controller
@@ -155,6 +155,15 @@ class ExtensionManager(controller: Controller) extends Logger {
     }
   }
 
+  /** like getOrAddExtension, but also checks for a possible exporter key */
+  def getOrAddExtensionOrExporter[E <: FormatBasedExtension](cls: Class[E], format: String): Option[E] = {
+    if (format.endsWith("_content") || format.endsWith("_narration")) {
+      val exporter = format.substring(0, format.lastIndexOf('_'))
+      getOrAddExtension(classOf[Exporter], exporter)
+    }
+    getOrAddExtension(cls, format)
+   }
+
   var lexerExtensions: List[LexerExtension] = Nil
   var notationExtensions: List[notations.NotationExtension] = Nil
 
@@ -204,6 +213,7 @@ class ExtensionManager(controller: Controller) extends Logger {
         throw RegistrationError("error while starting extension: " + e.getMessage).setCausedBy(e)
       case e: Exception =>
         removeExtension(ext)
+        e.printStackTrace()
         throw RegistrationError("unknown error while starting extension: " + e.getClass.toString + ": " + e.getMessage).setCausedBy(e)
     }
     knownExtensionTypes.foreach { cls =>

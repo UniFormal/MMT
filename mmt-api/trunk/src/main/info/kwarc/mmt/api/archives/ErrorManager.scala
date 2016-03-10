@@ -166,23 +166,31 @@ class ErrorManager extends Extension with Logger {
   }
 
   def loadErrors(a: Archive, target: String, fpath: FilePath, removeUnknowns: Boolean): Unit = {
-    val optBt = controller.extman.getOrAddExtension(classOf[TraversingBuildTarget], target)
+    val optBt = controller.extman.getOrAddExtensionOrExporter(classOf[TraversingBuildTarget], target)
     optBt match {
       case None =>
         // check for a plain build target
         val optTar = controller.extman.getOrAddExtension(classOf[BuildTarget], target)
         if (removeUnknowns && optTar.isEmpty) {
           val f = a / errors / target / fpath
-          log("unknown " + target + " deleting: " + f)
-          f.delete
+          if (f.exists()) {
+            log("unknown " + target + " deleting: " + f)
+            f.delete
+          }
+          if (f.name == ".err" && f.up.isDirectory && f.up.children.isEmpty) {
+            log("unknown " + target + " deleting folder: " + f)
+            f.up.deleteDir
+          }
         }
         else loadErrors(a, target, fpath, None)
       case Some(bt) =>
-        val fp = fpath.toFile.stripExtension.toFilePath
+        val isFolder = a / errors / target / fpath == bt.getFolderErrorFile(a, fpath.dirPath)
+        val fp = if (isFolder) fpath.dirPath else fpath.toFile.stripExtension.toFilePath
         val source = a / bt.inDim / fp
+        val curr = Current(source, fp)
         if (removeUnknowns && !source.exists) {
-          log("cleaning " + target + " for: " + source)
-          bt.clean(a, fp)
+          log("cleaning " + target + " for" + (if (isFolder) " folder: " else ": ") + source)
+          if (isFolder) bt.cleanDir(a, curr) else bt.cleanFile(a, curr)
         }
         else loadErrors(a, target, fpath, Some(source))
     }

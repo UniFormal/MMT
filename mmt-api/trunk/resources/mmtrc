@@ -1,6 +1,9 @@
 #extensions
 twelf-omdoc info.kwarc.mmt.lf.Twelf
+lf-scala    info.kwarc.mmt.lf.ScalaExporter
 tptp-twelf  info.kwarc.mmt.tptp.TPTPImporter
+mmt-latex   info.kwarc.mmt.api.archives.latex.LatexExporter
+mws         info.kwarc.mmt.api.archives.MWSHarvestExporter
 planetary   info.kwarc.mmt.planetary.PlanetaryPresenter
 html        info.kwarc.mmt.api.archives.HTMLExporter
 svg         info.kwarc.mmt.api.archives.GraphViz
