@@ -2,7 +2,6 @@
 twelf-omdoc info.kwarc.mmt.lf.Twelf
 tptp-twelf  info.kwarc.mmt.tptp.TPTPImporter
 planetary   info.kwarc.mmt.planetary.PlanetaryPresenter
-mmt-deps    info.kwarc.mmt.api.archives.Relational
 html        info.kwarc.mmt.api.archives.HTMLExporter
 svg         info.kwarc.mmt.api.archives.GraphViz
 
