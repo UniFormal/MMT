@@ -98,6 +98,16 @@ var interactiveViewing = {
                res['unfold'] = function(){folded.removeMClass('math-folded');};
             else
                res['fold'] = function(){$(mmt.focus).addMClass('math-folded');};
+               /*
+            var alignTargets = [];
+            if (alignTargets.length != 0) {
+               var aligns = {};
+               alignTargets.forEach(function(at) {
+                  aligns[at] = me.showComputationResult("a", "aligned", at)
+               })
+               res["align to"] = aligns
+            }
+            */
 		}
 		
 		if (mmt.currentURI !== null) {
@@ -143,12 +153,14 @@ var interactiveViewing = {
 	/* showQuery where the query is for the result of applying a wrapper function to the selected expression;
 	 * typical wrappers: qmt.infer, qmt.simplify
 	 */
-	showComputationResult : function (key, title){
+	showComputationResult : function (key, title, param){
 		var q = qmt.subobject(qmt.component(qmt.literalPath(mmt.currentElement), mmt.currentComponent), mmt.currentPosition)
 		if (key == "i")
 		  q = qmt.infer(q, uris.lf)
     	else if (key == "s")
   		  q = qmt.simplify(q, uris.lf)
+  		else if (key == "a")
+  		  q = qmt.align(q, param)
 		this.showQuery(qmt.present(q), title);
 	},
 	/* showQuery where the query if for (if comp is non-null: a component of) the declaration of the current MMT URI */

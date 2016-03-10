@@ -240,18 +240,17 @@ object PVSTheory {
       }
    }
 
-   object recupdate extends sym("recupdate") {
-      def apply(tm:Term,l:List[(String,Term)]) = ApplySpine(this.term,tm::l.map(p => OML(VarDecl(LocalName(p._1),
-         None,Some(p._2),None))):_*)
-   }
-
-   object funupdate extends sym("funupdate") {
-      def apply(f : Term, l:List[(Term,Term)]) = ApplySpine(this.term,f::l.map(p => OML(VarDecl(LocalName("value"),
-         Some(p._1),Some(p._2),None))):_*)
-   }
-
    object enumtype extends sym("enumtype") {
       def apply(l:List[String]) = ApplySpine(this.term,l.map(StringLiterals(_)):_*)
+   }
+
+   object update extends sym("update") {
+      def apply(e : Term, up : Term) = ApplySpine(this.term,List(e,up):_*)
+   }
+
+   object recupdate extends sym("recupdate") {
+      def apply(field:String, expr:Term, args : List[Term] = Nil) =
+         ApplySpine(this.term,OML(LocalName(field),None,None)::expr::args:_*)
    }
 
    /*

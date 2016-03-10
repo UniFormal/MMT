@@ -76,18 +76,22 @@ object PiRule extends SubtypingRule {
 }
 
 /** Subtyping Judgments **/
-
+/*
 object SubJudgUniverseRule extends UniverseRule(subtypeJudg.path) {
   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = tm match {
     case subtypeJudg(t1,t2) => solver.check(Inhabitable(stack,t1)) && solver.check(Inhabitable(stack,t2))
     case _ => false
   }
 }
+*/
 
 object SubJudgUniverseType extends InferenceRule(subtypeJudg.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
     tm match {
-      case subtypeJudg(t1,t2) => Some(OMS(Typed.kind))
+      case subtypeJudg(t1,t2) =>
+        solver.check(Typing(stack,t1,OMS(Typed.ktype)))
+        solver.check(Typing(stack,t2,OMS(Typed.ktype)))
+        Some(OMS(Typed.ktype))
       case _ => None
     }
   }
@@ -114,7 +118,7 @@ object Predsubtype extends FormationRule(predsubtp.path,OfType.path) {
       solver.safeSimplifyUntil(solver.inferType(p,covered).getOrElse(return None))(Pi.unapply)._1 match {
         case Pi(x,tpx,f) =>
           solver.check(Subtyping(stack,tpA,tpx))
-          solver.check(Typing(stack ++ x%tpA,f,OMS(Typed.ktype),None))
+          solver.check(Typing(stack ++ x%tpA,Apply(p,x),OMS(Typed.ktype),None))
           Some(OMS(Typed.ktype))
         case _ => throw RuleNotApplicable
       }
@@ -148,13 +152,13 @@ object Predsubrule extends SubtypingRule {
                   if (ret.isDefined) default else Some(false)
                 case _ =>
                   default
-                case _ =>
-                  default
               }
-            case _ => throw RuleNotApplicable
+            case _ =>
+              default
           }
         case _ => throw RuleNotApplicable
       }
+    case _ => throw RuleNotApplicable
   }
 }
 

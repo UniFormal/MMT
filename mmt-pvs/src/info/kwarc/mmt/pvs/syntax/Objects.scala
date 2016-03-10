@@ -135,7 +135,11 @@ case class selection(place: String, _cons: name_expr, bindings: List[binding], _
 
 // ********** updates
 
-sealed trait update_assignment
+sealed trait update_assignment {
+  val place : String
+  val assignment_args: List[assignment_arg]
+  val _expr : Expr
+}
 case class assignment(place: String, assignment_args: List[assignment_arg], _expr: Expr) extends update_assignment
 case class maplet(place:String, assignment_args:List[assignment_arg],_expr:Expr) extends update_assignment
 /** */

@@ -90,6 +90,8 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         return theory
       }
 
+      println("Doing " + theory.path)
+
       theory_formals foreach doFormal
       assuming foreach doAssumption
       decls foreach (doDecl(_)(false))
@@ -111,34 +113,38 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         case _ : Exception =>
           throw Dependency(meta)
       }
+
+      println("Doing " + theory.path)
+
       importings foreach doFormal
       theory_formals foreach doFormal
       val datatp = Constant(state.th.toTerm, doName(named.id), None, Some(PVSTheory.tp.term), None, None)
       state.th add datatp
 
-      constructors.foreach(con => {
-        // case constructor(NamedDecl(id,_,_),_,accessors,recognizer,_) => {
-        val conname = newName(con.named.id)
-        val accs = con.accessors.map(a => (newName(a.named.id), doType(a._type)))
-        val contp = if (accs.isEmpty) datatp.toTerm
-        else if (accs.length == 1) PVSTheory.fun_type(accs.head._2, datatp.toTerm)
-        else PVSTheory.fun_type(PVSTheory.tuple_type(accs.map(_._2)), datatp.toTerm)
-        val const = Constant(state.th.toTerm, conname, None, Some(PVSTheory.expr(contp)), None, Some("Constructor"))
-        // println(const)
-        val reco = Constant(state.th.toTerm, newName(con.recognizer), None, Some(
-          PVSTheory.expr(PVSTheory.fun_type(datatp.toTerm, PVSTheory.bool.term))), None, Some("Recognizer"))
-        state.th add reco
-        accs.foreach(ac =>
-          state.th add Constant(state.th.toTerm, ac._1, None, Some(
-            PVSTheory.fun_type(PVSTheory.setsub(datatp.toTerm, reco.toTerm), ac._2)
-          ), None, Some("Accessor"))
-        )
-      }) // TODO subtype_id ?
+      constructors.foreach(doDatatypeConstructor(_,datatp)) // TODO subtype_id ?
       state.th
 
     case _ =>
       println(" -- OTHER: " + m.getClass)
       sys.exit
+  }
+
+  def doDatatypeConstructor(con:constructor,datatp:FinalConstant) = {
+    val conname = newName(con.named.id)
+    val accs = con.accessors.map(a => (newName(a.named.id), doType(a._type)))
+    val contp = if (accs.isEmpty) datatp.toTerm
+    else if (accs.length == 1) PVSTheory.fun_type(accs.head._2, datatp.toTerm)
+    else PVSTheory.fun_type(PVSTheory.tuple_type(accs.map(_._2)), datatp.toTerm)
+    val const = Constant(state.th.toTerm, conname, None, Some(PVSTheory.expr(contp)), None, Some("Constructor"))
+    // println(const)
+    val reco = Constant(state.th.toTerm, newName(con.recognizer), None, Some(
+      PVSTheory.expr(PVSTheory.fun_type(datatp.toTerm, PVSTheory.bool.term))), None, Some("Recognizer"))
+    state.th add reco
+    accs.foreach(ac =>
+      state.th add Constant(state.th.toTerm, ac._1, None, Some(
+        PVSTheory.fun_type(PVSTheory.setsub(datatp.toTerm, reco.toTerm), ac._2)
+      ), None, Some("Accessor"))
+    )
   }
 
   def doAssumption (ad:AssumingDecl) : Unit = ad match {
@@ -185,6 +191,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       val fulltp = doType(tp._internal)
       val v = VarDecl(doName(id),Some(PVSTheory.expr(fulltp)),None,None)
       state.th.parameters = state.th.parameters ++ v
+    case d : Decl => doDecl(d)(true)
     case _ =>
       println("TODO Formal: " + f.getClass + ": " + f)
       sys.exit
@@ -285,6 +292,13 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
     case enumtype_decl(NamedDecl(id,_,_),enum_elts) =>
       state.th add Constant(state.th.toTerm,newName(id),None,Some(PVSTheory.tp.term),
         Some(PVSTheory.enumtype(enum_elts.map(_._id))),None)
+    case importing(_,namedec) =>
+      state.addinclude(doMPath(namedec,true))
+    case inline_datatype(InlineDatatypeBody(NamedDecl(id,_,_),arg_formals,constructors)) =>
+      // TODO check if right
+      val datatp = Constant(state.th.toTerm, doName(id), None, Some(PVSTheory.tp.term), None, None)
+      state.th add datatp
+      constructors foreach(doDatatypeConstructor(_,datatp))
     case _ =>
       println("TODO Decl: " + d.getClass + ": " + d)
       sys.exit
@@ -436,6 +450,30 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         val (tm,tp) = doExpr(expr)
         PVSTheory.projection(tm,tp,i)
       case update_expr(_,expr,assignlist) =>
+        def doUpdateAssignment(ex : Term,ass : update_assignment) : Term = {
+          val (asstm,asstp) = doExpr(ass._expr)
+          PVSTheory.update(ex,ass.assignment_args match {
+            case field_assign(_,id)::args =>
+              println("Update " + ex)
+              println(" - " + asstm)
+              println(" - " + asstp)
+              val realargs = args.map(x => doExpr(x.asInstanceOf[Expr])._1)
+              println("field_assign -> " + id +
+                (if (args.nonEmpty) "("+realargs.map(_.toString).mkString(", ")+")" else "") +
+                " = " + asstm)
+              PVSTheory.recupdate(id,asstm,realargs)
+            case x =>
+              println("TODO update_expr assignment arg of type " + x.getClass)
+              println("Update " + ex)
+              println(" - " + asstm)
+              println(" - " + asstp)
+              println(" - " + x)
+              sys.exit
+          })
+        }
+        val (tm,tp) = doExpr(expr)
+        (assignlist.foldLeft(tm)((t,ass) => doUpdateAssignment(t,ass)),tp)
+        /*
         val (tm,tp) = doExpr(expr)
         (PVSTheory.recupdate(tm,assignlist.map(_ match {
           case assignment(_,args,expr1) =>
@@ -459,6 +497,9 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
                     sys.exit
                 }))._1,ass)))
                 )
+              case proj_assign(_,ind) =>
+                if (args.tail.isEmpty) ass
+                ???
               case x =>
                 println("TODO update_expr assignment arg type " + x.getClass)
                 println(x)
@@ -473,6 +514,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
             println("TODO update_expr type " + x.getClass)
             sys.exit
         })),tp)
+        */
       case string_expr(_,str) => (OMLIT(str,StringLiterals),StringLiterals.synType)
       case _ =>
         println("TODO Expr: " + e.getClass + ": " + e)
@@ -513,7 +555,10 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       thid=thid.dropRight(4)
     }
     */
+
     /*
+    println(n)
+    println(res)
     println("id        : " + id)
     println("thid      : " + thid)
     println("lib_id    : " + library_id)
@@ -521,21 +566,8 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
     println("opttarget : " + opttarget)
     println("allactuals: " + allactuals)
     */
-    val doc = DPath((URI.http colon "pvs.csl.sri.com") / (if (library_id=="") "Prelude" else  library_id))
 
-    // redirect booleans
-    if (doc.toString == "http://pvs.csl.sri.com/Prelude" && thid == "booleans") {
-      // println("Yields: " + OMS(PVSTheory.thpath ? id))
-      return OMS(PVSTheory.thpath ? id)
-    }
-    // redirect Equality
-    if (doc.toString == "http://pvs.csl.sri.com/Prelude" && thid == "equalities") {
-      val sym = OMS(PVSTheory.thpath ? id)
-      // apply theory parameter (should be exactly one)
-      val ret = if (allactuals.nonEmpty) ApplySpine(sym, allactuals map (a => doObject(a)): _*) else sym
-      // println("Yields: " + ret)
-      return ret
-    }
+    val dpath = doMPath(theory_name("",thid,library_id,mappings,opttarget,allactuals,Nil))
 
     if(mappings.nonEmpty) {
       println("Found mappings in doPath")
@@ -546,22 +578,62 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       sys.exit
     }
 
-    if((doc ? thid).toString == state.th.path.toString && (
+    if(dpath.toString == state.th.path.toString && (
       state.parameters.exists(v => v.name==LocalName(id)) ||
       state.vars.exists(v => v.name==LocalName(id)))) {
       // if (state.vars.exists(v => v.name==LocalName(id))) println("Yields: " + OMV(id))
       OMV(id)
-    } else if ((doc ? thid).toString == state.th.path.toString) {
+    } else if (dpath.toString == state.th.path.toString) {
       OMS(state.th.path ? id)
     } else {
-      if (state.isPrelude) state.addinclude(doc ? thid) // should be unnecessary ouside of Prelude
-      val sym = OMS((doc ? thid) ? id)
+      if (state.isPrelude) state.addinclude(dpath) // should be unnecessary ouside of Prelude
+      val sym = OMS(dpath ? id)
       // apply theory parameters
       val ret = if (allactuals.nonEmpty) ApplySpine(sym, allactuals map (a => doObject(a)): _*) else sym
       // println("Yields: " + ret)
       ret
     }
+  }
 
+  def doMPath(thname : theory_name, isimport : Boolean = false) : MPath = {
+    var (thid,library_id,mappings,opttarget,allactuals) =
+      (thname.id,thname.library_id,thname.mappings,thname.target,thname.actuals ::: thname.dactuals)
+
+    /*
+    println(n)
+    println(res)
+    println("id        : " + id)
+    println("thid      : " + thid)
+    println("lib_id    : " + library_id)
+    println("mappings  : " + mappings)
+    println("opttarget : " + opttarget)
+    println("allactuals: " + allactuals)
+    */
+
+    val doc =
+      if (library_id=="") {
+        if (thid == state.th.name.toString) path
+        else if (isimport)  state.th.path.^^
+        else {
+          val optth = state.th.getIncludes.find(p => p.^^ == state.th.path.^^ && p.name.toString == thid)
+          if (optth.isDefined) optth.get.^^
+          else DPath((URI.http colon "pvs.csl.sri.com") / "Prelude")
+        }
+      }
+      else {
+        val ret = DPath(URI(library_id))
+        println("PATH: " + ret)
+        ret
+      }
+    // DPath((URI.http colon "pvs.csl.sri.com") / (if (library_id=="") "Prelude" else  library_id))
+
+    // redirect booleans and equalities
+    if (doc.toString == "http://pvs.csl.sri.com/Prelude" && (thid == "booleans" || thid == "equalities")) {
+      // println("Yields: " + OMS(PVSTheory.thpath ? id))
+      return PVSTheory.thpath
+    }
+    // if ((doc ? thid)!=state.th.path) println("PATH TO: " + (doc ? thid))
+    doc ? thid
   }
 
 }
