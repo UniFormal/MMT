@@ -84,7 +84,7 @@ object ErrorReader {
       val List(tgt, srcRef, errType, shortMsg, level) =
         getAttrs(List("target", "sref", "type", "shortMsg", "level"), x)
       def infoMessage(msg: String) =
-        log.foreach(f => f(msg + "\nFile: " + f + "\nNode: " + shortMsg))
+        log.foreach(e => e(msg + "\nFile: " + f + "\nNode: " + shortMsg))
       var lvl: Level = Level.Error
       if (level.isEmpty) infoMessage("empty error level")
       else
@@ -215,7 +215,7 @@ class ErrorManager extends Extension with Logger {
   private val cl = new ChangeListener {
     /** creates an [[ErrorMap]] for the archive and asynchronously loads its errors */
     override def onArchiveOpen(a: Archive): Unit = {
-      loadAllErrors(a, false)
+      loadAllErrors(a, removeUnknowns = false)
     }
 
     /** deletes the [[ErrorMap]] */
