@@ -238,6 +238,8 @@ class BuildTask(val key: String, val archive: Archive, val inFile: File, val chi
 
   def isDir = children.isDefined
 
+  def isEmptyDir = children.isDefined && children.get.isEmpty
+
   /** the name of the folder if inFile is a folder */
   def dirName: String = outFile.toFilePath.dirPath.name
 
@@ -361,7 +363,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
         bf
     }, {
       case (Current(inDir, inPath), builtChildren) =>
-        val bd = makeBuildTask(a, inPath, inDir, Some(builtChildren), None)
+        val realChildren = builtChildren.filter(!_.isEmptyDir)
+        val bd = makeBuildTask(a, inPath, inDir, Some(realChildren), None)
         val qt = new QueuedTask(this, bd)
         cont(qt)
         bd
@@ -429,12 +432,13 @@ abstract class TraversingBuildTarget extends BuildTarget {
       bt.outFile.up.mkdirs
     }
     var res: BuildResult = BuildResult.empty
-    bt.errorCont.open
+    if (!bt.isEmptyDir) bt.errorCont.open
     try {
       res = bt.children match {
         case None => buildFile(bt)
-        case Some(children) =>
+        case Some(children@_ :: _) =>
           buildDir(bt, children)
+        case _ => res
       }
     } catch {
       case e: Error => bt.errorCont(e)
@@ -443,7 +447,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
         bt.errorCont(le)
         res = BuildFailure(Nil, Nil)
     } finally {
-      bt.errorCont.close
+      if (!bt.isEmptyDir) bt.errorCont.close
     }
     controller.notifyListeners.onFileBuilt(bt.archive, this, bt.inPath)
     res
