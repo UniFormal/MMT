@@ -212,6 +212,8 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
   } else BuildResult.empty
 
   override def cleanFile(a: Archive, curr: Current) {
+    // these error files are no longer generated, though
+    delete(getErrorFile(a, curr.path))
   }
 
   def dirFileFilter(f: String): Boolean

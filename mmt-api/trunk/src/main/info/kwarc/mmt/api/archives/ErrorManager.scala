@@ -168,7 +168,15 @@ class ErrorManager extends Extension with Logger {
   def loadErrors(a: Archive, target: String, fpath: FilePath, removeUnknowns: Boolean): Unit = {
     val optBt = controller.extman.getOrAddExtension(classOf[TraversingBuildTarget], target)
     optBt match {
-      case None => loadErrors(a, target, fpath, None)
+      case None =>
+        // check for a plain build target
+        val optTar = controller.extman.getOrAddExtension(classOf[BuildTarget], target)
+        if (removeUnknowns && optTar.isEmpty) {
+          val f = a / errors / target / fpath
+          log("unknown " + target + " deleting: " + f)
+          f.delete
+        }
+        else loadErrors(a, target, fpath, None)
       case Some(bt) =>
         val fp = fpath.toFile.stripExtension.toFilePath
         val source = a / bt.inDim / fp
